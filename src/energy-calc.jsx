@@ -2216,6 +2216,9 @@ export default function EnergyCalcApp() {
   const docxPreviewRef = useRef(null);
   const [nzebReportHtml, setNzebReportHtml] = useState(null);
   const [showTour, setShowTour] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showAPIDoc, setShowAPIDoc] = useState(false);
+  const [showImportWizard, setShowImportWizard] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
@@ -4558,6 +4561,8 @@ export default function EnergyCalcApp() {
             </button>
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
+            <button onClick={() => setShowImportWizard(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Import din alte softuri">📥</button>
+            <button onClick={() => setShowAIAssistant(!showAIAssistant)} className="text-xs px-2 py-1 rounded-lg border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors hidden lg:block shrink-0 text-amber-400" title="Zephren AI Assistant">🤖</button>
             <button onClick={function(){setShowTour(true);}} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Ghid utilizare">?</button>
             <button onClick={toggleThemeManual} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors shrink-0">{theme==="dark"?"☀":"🌙"}</button>
             <button onClick={() => setLang(l => l==="RO"?"EN":"RO")}
@@ -9328,6 +9333,105 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
           </div>
         );
       })()}
+
+      {/* #10 AI Assistant */}
+      {showAIAssistant && (
+        <div className="fixed bottom-4 right-4 z-[9998] w-80 bg-[#12141f] border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-amber-500/10 border-b border-amber-500/20">
+            <div className="flex items-center gap-2"><span>🤖</span><span className="text-sm font-bold text-amber-400">Zephren AI</span></div>
+            <button onClick={() => setShowAIAssistant(false)} className="text-white/40 hover:text-white">&times;</button>
+          </div>
+          <div className="p-4 max-h-80 overflow-y-auto space-y-3 text-xs">
+            <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3">
+              <p className="text-amber-400/80 font-medium mb-1">Bun venit! Cum te pot ajuta?</p>
+              <p className="opacity-50">Pot răspunde la întrebări despre normative, calcule energetice, sau completarea certificatului.</p>
+            </div>
+            <div className="space-y-2">
+              {["Ce normativ se aplică pentru nZEB?", "Cum calculez U-value pentru un perete?", "Ce înseamnă RER și cât trebuie să fie?", "Cum aleg sursa de încălzire optimă?"].map(q => (
+                <button key={q} onClick={() => showToast("AI: Funcționalitate în dezvoltare — disponibilă în versiunea Pro", "info", 3000)}
+                  className="w-full text-left text-[11px] px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] opacity-70 hover:opacity-100 transition-all">
+                  💬 {q}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="px-4 py-3 border-t border-white/5">
+            <div className="flex gap-2">
+              <input type="text" placeholder="Întreabă ceva..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500/50" />
+              <button className="px-3 py-2 rounded-lg bg-amber-500 text-black text-xs font-bold">→</button>
+            </div>
+            <div className="text-[9px] opacity-20 mt-1 text-center">Powered by AI · Plan Pro necesar</div>
+          </div>
+        </div>
+      )}
+
+      {/* #12 API Documentation */}
+      {showAPIDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.7)"}} onClick={() => setShowAPIDoc(false)}>
+          <div className="bg-[#12141f] border border-white/10 rounded-2xl p-6 max-w-lg w-full space-y-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">📡 Zephren API (v1.0)</h3>
+              <button onClick={() => setShowAPIDoc(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
+            </div>
+            <div className="text-xs space-y-3 opacity-70">
+              <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
+                <div className="text-amber-400 mb-1">POST /api/calculate</div>
+                <div className="opacity-50">Calcul energetic complet. Trimite datele clădirii, returnează Ep, CO₂, clasă, RER.</div>
+              </div>
+              <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
+                <div className="text-amber-400 mb-1">POST /api/generate-cpe</div>
+                <div className="opacity-50">Generează certificat DOCX completat automat. Returnează blob.</div>
+              </div>
+              <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
+                <div className="text-amber-400 mb-1">GET /api/materials</div>
+                <div className="opacity-50">Baza de date materiale: λ, ρ, μ pentru 80+ materiale.</div>
+              </div>
+              <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
+                <div className="text-amber-400 mb-1">GET /api/climate/:city</div>
+                <div className="opacity-50">Date climatice lunare pentru 60 localități românești.</div>
+              </div>
+              <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
+                <div className="text-amber-400 mb-1">POST /api/export-xml</div>
+                <div className="opacity-50">Export XML format MDLPA registru electronic.</div>
+              </div>
+            </div>
+            <div className="text-[10px] opacity-30 text-center pt-2 border-t border-white/5">
+              API disponibil în planul Business · Documentație completă la zephren.ro/api
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* #8 Import din alte softuri */}
+      {showImportWizard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.7)"}} onClick={() => setShowImportWizard(false)}>
+          <div className="bg-[#12141f] border border-white/10 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">📥 Import proiect</h3>
+              <button onClick={() => setShowImportWizard(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
+            </div>
+            <div className="space-y-3">
+              {[
+                {name:"Zephren JSON", ext:".json", desc:"Format nativ Zephren", ready:true},
+                {name:"CSV anvelopă", ext:".csv", desc:"Import elemente din tabel CSV", ready:true},
+                {name:"ENERG+ export", ext:".xml", desc:"Import din software ENERG+", ready:false},
+                {name:"Doset CPE", ext:".dcp", desc:"Import din Doset certificare", ready:false},
+                {name:"BuildDesk", ext:".bdk", desc:"Import din BuildDesk Energy", ready:false},
+              ].map(f => (
+                <div key={f.name} className={`flex items-center gap-3 p-3 rounded-xl border ${f.ready ? "border-white/10 hover:bg-white/[0.04] cursor-pointer" : "border-white/5 opacity-40 cursor-not-allowed"}`}
+                  onClick={() => f.ready && showToast("Folosește butonul Import JSON/CSV din toolbar", "info")}>
+                  <div className="w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center text-xs font-mono opacity-60">{f.ext}</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{f.name}</div>
+                    <div className="text-[10px] opacity-40">{f.desc}</div>
+                  </div>
+                  {f.ready ? <span className="text-emerald-400 text-xs">✓</span> : <span className="text-[10px] opacity-30">În curând</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showBridgeCatalog && (
         <ThermalBridgeCatalog
