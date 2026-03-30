@@ -9,7 +9,7 @@
  *   await window.storage.list(prefix) → { keys: [...] }
  */
 
-const STORAGE_PREFIX = "certen_";
+const STORAGE_PREFIX = "zephren_";
 
 function prefixedKey(key) {
   return STORAGE_PREFIX + key;

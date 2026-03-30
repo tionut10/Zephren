@@ -1,6 +1,6 @@
 {
-  "name": "CertEn — Calculator Performanță Energetică",
-  "short_name": "CertEn",
+  "name": "Zephren — Calculator Performanță Energetică",
+  "short_name": "Zephren",
   "description": "Calculator performanță energetică clădiri conform Mc 001-2022",
   "start_url": "/",
   "display": "standalone",

@@ -2019,7 +2019,7 @@ export default function EnergyCalcApp() {
     (async () => {
       if (typeof window === "undefined" || !window.storage) return;
       try {
-        const r = await window.storage.get("certen-tier-data");
+        const r = await window.storage.get("zephren-tier-data");
         if (r && r.value) {
           const d = JSON.parse(r.value);
           if (d.tier) setUserTier(d.tier);
@@ -2035,7 +2035,7 @@ export default function EnergyCalcApp() {
   const saveTierData = useCallback(async (t, pc, cc, rd) => {
     if (typeof window === "undefined" || !window.storage) return;
     try {
-      await window.storage.set("certen-tier-data", JSON.stringify({tier:t||userTier, projectCount:pc??projectCount, certCount:cc??certCount, certResetDate:rd||certResetDate}));
+      await window.storage.set("zephren-tier-data", JSON.stringify({tier:t||userTier, projectCount:pc??projectCount, certCount:cc??certCount, certResetDate:rd||certResetDate}));
     } catch(e) {}
   }, [userTier, projectCount, certCount, certResetDate]);
 
@@ -2790,7 +2790,7 @@ export default function EnergyCalcApp() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `CertEn_${building.address || "proiect"}_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `Zephren_${building.address || "proiect"}_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, useNA2023, finAnalysisInputs]);
@@ -2837,7 +2837,7 @@ export default function EnergyCalcApp() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "CertEn_" + (building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,30) + "_" + new Date().toISOString().slice(0,10) + ".csv";
+    a.download = "Zephren_" + (building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,30) + "_" + new Date().toISOString().slice(0,10) + ".csv";
     a.click();
     URL.revokeObjectURL(url);
     showToast("CSV exportat cu succes.", "success");
@@ -4159,7 +4159,7 @@ export default function EnergyCalcApp() {
           <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3">
               <span>⚡</span>
-              <span className="text-xs font-bold text-amber-400">CertEn</span>
+              <span className="text-xs font-bold text-amber-400">Zephren</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold">{lang==="EN"?"Choose your plan":"Alege planul potrivit"}</h2>
             <p className="text-xs sm:text-sm opacity-40 mt-1">{lang==="EN"?"Switch anytime · Cancel anytime":"Poți schimba oricând · Fără obligații"}</p>
@@ -4505,7 +4505,7 @@ export default function EnergyCalcApp() {
             <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm sm:text-lg shrink-0" style={{background:"linear-gradient(135deg, #f59e0b, #d97706)"}}>⚡</div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold tracking-tight truncate">CertEn</h1>
+              <h1 className="text-sm sm:text-base font-bold tracking-tight truncate">Zephren</h1>
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <p className="text-[9px] uppercase tracking-widest opacity-30 hidden sm:block">Performanță Energetică</p>
@@ -7003,7 +7003,7 @@ export default function EnergyCalcApp() {
                 // După merge runs textul poate fi: "...versiunea..." sau ". versiunea........"
                 // Cea mai sigură abordare: înlocuim orice nod care conține "versiunea"
                 xml = xml.replace(/(<w:t[^>]*>)([^<]*versiunea[^<]*)(<\/w:t>)/g,
-                  "$1CertEn v2.0$3");
+                  "$1Zephren v2.0$3");
                 // Golim grupurile de puncte rămase (8-20 dots) din zona program calcul
                 xml = xml.replace(/(<w:t[^>]*>)(\.{8,20})(<\/w:t>)/g, "$1 $3");
 
@@ -7290,7 +7290,7 @@ export default function EnergyCalcApp() {
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
     <ScopElaborare>${esc(building.scopCpe || "vanzare")}</ScopElaborare>
-    <ProgramCalcul>CertEn v2.0</ProgramCalcul>
+    <ProgramCalcul>Zephren v2.0</ProgramCalcul>
   </DateIdentificare>
   <Auditor>
     <Nume>${esc(auditor.name)}</Nume>
@@ -7625,7 +7625,7 @@ table.d .dv{text-align:center;font-weight:bold;font-size:7.5pt}
 </style>
 </head><body>
 <button class="back-btn no-print" onclick="window.history.back()">&#x2190; ${T.back}</button>
-${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0.07"><div style="transform:rotate(-35deg);font-size:80pt;font-weight:900;color:#003366;white-space:nowrap;font-family:sans-serif;letter-spacing:10px">CertEn DEMO</div></div>' : ''}
+${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0.07"><div style="transform:rotate(-35deg);font-size:80pt;font-weight:900;color:#003366;white-space:nowrap;font-family:sans-serif;letter-spacing:10px">Zephren DEMO</div></div>' : ''}
 
 <!-- ======== PAGINA 1 ======== -->
 <div class="hdr">
@@ -7692,7 +7692,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <tr>
   <td colspan="5" class="L" style="background:#E7E6E6"><strong>Scopul elabor\u0103rii CPE:</strong></td>
   <td colspan="8" class="L">${({"vanzare":"V\u00e2nzare","inchiriere":"\u00cenchiriere","receptie":"Recep\u021bie cl\u0103dire nou\u0103","informare":"Informare proprietar","renovare":"Renovare major\u0103","alt":"Alt scop"})[building.scopCpe] || "V\u00e2nzare"}</td>
-  <td colspan="7" class="L"><strong>Program de calcul:</strong> CertEn v1.0</td>
+  <td colspan="7" class="L"><strong>Program de calcul:</strong> Zephren v1.0</td>
 </tr>
 </table>
 
@@ -7880,7 +7880,7 @@ ${[
   ctx.fillText(data.substring(0, 35), c.width / 2, c.height - 2);
 })();
 </script>
-<div class="ft">Pagina 1/3 | Mc 001-2022 (Ord. MDLPA 16/2023) | CertEn v1.0 | ${dateNow}</div>
+<div class="ft">Pagina 1/3 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren v1.0 | ${dateNow}</div>
 
 
 <!-- ======== PAGINA 2 ======== -->

@@ -1,5 +1,5 @@
-// CertEn Service Worker — PWA Offline Mode
-const CACHE_NAME = 'certen-v2';
+// Zephren Service Worker — PWA Offline Mode
+const CACHE_NAME = 'zephren-v2';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.svg'];
 
 self.addEventListener('install', e => {
