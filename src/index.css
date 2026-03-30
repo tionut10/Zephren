@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* DM Sans is loaded via Google Fonts in index.html */
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent FOUC */
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+  }
+  nav, aside, .no-print {
+    display: none !important;
+  }
+}
