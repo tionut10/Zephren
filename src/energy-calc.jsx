@@ -6945,17 +6945,18 @@ export default function EnergyCalcApp() {
                 rWT("/Recepție/Inf", "");
                 rWT("/Închir", "");
 
-                // 7. PROGRAM CALCUL — run-uri separate: "..............." + " " + "versiunea" + "........"
-                // Înlocuim punctele cu "CertEn" și "versiunea" cu "v1.0"
-                rWT("versiunea", "v1.0");
-                // Înlocuim doar primele 2 grupuri de puncte (program calcul), nu pe toate
+                // 7. PROGRAM CALCUL — noduri: "..............." + "." + "versiunea" + "........"
+                // Înlocuim cu: "CertEn" + " " + "v2.0" + " "
+                rWT("versiunea", "v2.0");
                 let dotReplacedCount = 0;
                 xml = xml.replace(/(<w:t[^>]*>)\.{5,}(<\/w:t>)/g, (m, p1, p2) => {
                   dotReplacedCount++;
-                  if (dotReplacedCount === 1) return p1 + "CertEn Mc001" + p2;
+                  if (dotReplacedCount === 1) return p1 + "CertEn" + p2;
                   if (dotReplacedCount === 2) return p1 + " " + p2;
                   return m;
                 });
+                // Nodul "." singur (între puncte și versiunea) → spațiu
+                xml = xml.replace(/(<w:t[^>]*>)\.\s*(<\/w:t>)/g, "$1 $2");
 
                 // 8. ARII — zzz,z e Aref, yyy,y e aria desfășurată (nod separat)
                 rWT("zzz,z", fmtRo(Aref, 1));
