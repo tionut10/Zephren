@@ -6935,15 +6935,15 @@ export default function EnergyCalcApp() {
                 // Dacă există și "înălțime" ca nod separat, golim
                 rWT("înălțime", "");
 
-                // 6. SCOP CPE — split în mai multe noduri: "Vânz"+"are"+"/Închir"+"ie"+"/Recepție/Inf"
-                // După merge runs ar trebui combinat. Încercăm și variante parțiale:
-                const scopLabel = ({"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție clădire nouă","informare":"Informare proprietar","renovare":"Renovare majoră","alt":"Alt scop"})[building.scopCpe] || "Vânzare";
-                rWTpart("Vânzare/Închiriere/Recepție/Inf", scopLabel);
+                // 6. SCOP CPE — split în 5 noduri: "Vânz"+"are"+"/Închir"+"ie"+"/Recepție/Inf"
+                // După merge runs devine "Vânzare/Închirie/Recepție/Inf" — înlocuim cu scopul ales
+                const scopLabel = ({"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"})[building.scopCpe] || "Vânzare";
+                // After merge runs, should become "Vânzare/Închirie/Recepție/Inf"
                 rWTpart("Vânzare/Închirie/Recepție/Inf", scopLabel);
-                // Fallback: înlocuim doar "Vânz" cu scopul (primul nod din split)
-                rWT("Vânz", scopLabel);
-                // Golim restul split-urilor dacă au rămas
-                rWT("/Închir", ""); rWT("/Recepție/Inf", "");
+                rWTpart("Vânzare/Închiriere/Recepție/Inf", scopLabel);
+                // If merge didn't work, replace the specific split parts
+                rWT("/Recepție/Inf", "");
+                rWT("/Închir", "");
 
                 // 7. PROGRAM CALCUL — run-uri separate: "..............." + " " + "versiunea" + "........"
                 // Înlocuim punctele cu "CertEn" și "versiunea" cu "v1.0"
@@ -6961,14 +6961,16 @@ export default function EnergyCalcApp() {
                 rWT("zzz,z", fmtRo(Aref, 1));
                 rWT("yyy,y", fmtRo(arieDesf, 1));
 
-                // 9. ENERGIE PRIMARĂ xxxx,x — ÎNAINTE de xxxx (volum)
-                rWTseq("xxxx,x", [fmtRo(epFinal, 1), fmtRo(epFinal, 1)]);
+                // 9. ENERGIE PRIMARĂ xxxx,x — 2 apariții: EP real, EP referință nZEB
+                const epRefMax = NZEB_THRESHOLDS[building.category]?.ep_max || 148;
+                rWTseq("xxxx,x", [fmtRo(Au > 0 ? epFinal * Au : 0, 1), fmtRo(Au > 0 ? epRefMax * Au : 0, 1)]);
 
                 // 10. VOLUM xxxx (fără virgulă)
                 rWT("xxxx", Math.round(Vol).toString());
 
-                // 11. CONSUM FINAL xx,x (2 apariții: termic, electric)
-                rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1)]);
+                // 11. CONSUM FINAL xx,x (4 apariții: termic, electric, clădire reală EP, clădire referință EP)
+                const epRef = NZEB_THRESHOLDS[building.category]?.ep_max || 148;
+                rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1)]);
 
                 // 12. xxx,x secvențial (8 apariții totale)
                 //     1=aria utilă, 2=CO₂, 3=solar_th, 4=solar_electric, 5=pompe_cald, 6=biomasa, 7=alt_SRE, 8=total_SRE
@@ -6994,8 +6996,9 @@ export default function EnergyCalcApp() {
                   rWTpart("Nume auditor", auditor.name);
                   rWTpart("nume auditor", auditor.name);
                 }
-                // Gradul auditorului — template are "I / II" → înlocuim cu gradul real
-                rWT("I / II", auditor.grade || "I");
+                // Gradul auditorului — template are noduri separate: "I" + "/" + "II"
+                // Înlocuim "II" cu gradul real (e ultimul din secvența grad)
+                // Nu putem folosi rWT("I / II") pentru că sunt 3 noduri separate
                 // "Auditor energetic" label rămâne neschimbat — e doar titlu
                 if (auditor.company) {
                   rWTpart("Firma/PFA", auditor.company);
