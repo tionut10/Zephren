@@ -6945,18 +6945,13 @@ export default function EnergyCalcApp() {
                 rWT("/Recepție/Inf", "");
                 rWT("/Închir", "");
 
-                // 7. PROGRAM CALCUL — noduri: "..............." + "." + "versiunea" + "........"
-                // Înlocuim cu: "CertEn" + " " + "v2.0" + " "
-                rWT("versiunea", "v2.0");
-                let dotReplacedCount = 0;
-                xml = xml.replace(/(<w:t[^>]*>)\.{5,}(<\/w:t>)/g, (m, p1, p2) => {
-                  dotReplacedCount++;
-                  if (dotReplacedCount === 1) return p1 + "CertEn" + p2;
-                  if (dotReplacedCount === 2) return p1 + " " + p2;
-                  return m;
-                });
-                // Nodul "." singur (între puncte și versiunea) → spațiu
-                xml = xml.replace(/(<w:t[^>]*>)\.\s*(<\/w:t>)/g, "$1 $2");
+                // 7. PROGRAM CALCUL — înlocuim direct pe textul care conține "versiunea"
+                // După merge runs textul poate fi: "...versiunea..." sau ". versiunea........"
+                // Cea mai sigură abordare: înlocuim orice nod care conține "versiunea"
+                xml = xml.replace(/(<w:t[^>]*>)([^<]*versiunea[^<]*)(<\/w:t>)/g,
+                  "$1CertEn v2.0$3");
+                // Golim grupurile de puncte rămase (8-20 dots) din zona program calcul
+                xml = xml.replace(/(<w:t[^>]*>)(\.{8,20})(<\/w:t>)/g, "$1 $3");
 
                 // 8. ARII — zzz,z e Aref, yyy,y e aria desfășurată (nod separat)
                 rWT("zzz,z", fmtRo(Aref, 1));
