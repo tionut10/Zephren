@@ -6,6 +6,8 @@
     <title>CertEn — Calculator Performanță Energetică Mc 001-2022</title>
     <meta name="description" content="Calculator performanță energetică clădiri conform Mc 001-2022, SR EN ISO 52000-1/NA:2023, EPBD 2024/1275. Certificat energetic, nZEB, ZEB." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#f59e0b" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -13,5 +15,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
   </body>
 </html>

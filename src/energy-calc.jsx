@@ -2211,6 +2211,7 @@ export default function EnergyCalcApp() {
   const [printMode, setPrintMode] = useState(false);
   const [pdfPreviewHtml, setPdfPreviewHtml] = useState(null);
   const [docxPreviewBlob, setDocxPreviewBlob] = useState(null);
+  const [presentationMode, setPresentationMode] = useState(false);
   const [docxPreviewUrl, setDocxPreviewUrl] = useState(null);
   const docxPreviewRef = useRef(null);
   const [nzebReportHtml, setNzebReportHtml] = useState(null);
@@ -5187,7 +5188,7 @@ export default function EnergyCalcApp() {
                           <Select label={t("Tip sursă",lang)} value={heating.source} onChange={v => setHeating(p=>({...p,source:v}))}
                             options={HEAT_SOURCES.map(s=>({value:s.id, label:`${s.label} (${s.cat})`}))} />
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Input label={t("Putere nominală",lang)} value={heating.power} onChange={v => setHeating(p=>({...p,power:v}))} type="number" unit="kW" min="0" step="0.1" />
+                            <Input label={t("Putere nominală",lang)} value={heating.power} onChange={v => setHeating(p=>({...p,power:v}))} type="number" unit="kW" min="0" step="0.1" tooltip="Puterea termică nominală a generatorului — Mc 001 Cap.3, valoare de pe plăcuța echipamentului" />
                             <Input label={HEAT_SOURCES.find(s=>s.id===heating.source)?.isCOP ? "COP/SCOP" : "Randament generare (eta_gen)"}
                               value={heating.eta_gen} onChange={v => setHeating(p=>({...p,eta_gen:v}))} type="number"
                               unit={HEAT_SOURCES.find(s=>s.id===heating.source)?.isCOP ? "" : "%"} step="0.01" />
@@ -5226,7 +5227,7 @@ export default function EnergyCalcApp() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <Select label={t("Regim",lang)} value={heating.regime} onChange={v => setHeating(p=>({...p,regime:v}))}
                             options={[{value:"continuu",label:"Continuu 24h"},{value:"intermitent",label:"Intermitent (reducere nocturnă)"},{value:"oprire",label:"Intermitent (oprire nocturnă)"}]} />
-                          <Input label={t("Temp. confort (theta_int)",lang)} value={heating.theta_int} onChange={v => setHeating(p=>({...p,theta_int:v}))} type="number" unit="°C" />
+                          <Input label={t("Temp. confort (theta_int)",lang)} value={heating.theta_int} onChange={v => setHeating(p=>({...p,theta_int:v}))} type="number" unit="°C" tooltip="Temperatura interioară de calcul — Mc 001 Tabel 1.2: 20°C rezidențial, 18°C depozite, 24°C sănătate" />
                           <Input label={t("Reducere nocturnă",lang)} value={heating.nightReduction} onChange={v => setHeating(p=>({...p,nightReduction:v}))} type="number" unit="°C" />
                           {/* #7 Multi-zonă simplificată */}
                           <div className="col-span-full border-t border-white/5 pt-2 mt-1">
@@ -6610,6 +6611,59 @@ export default function EnergyCalcApp() {
                   </div>
                 )}
               </Card>
+
+              {/* #19 Grafic radar performanță pe utilități */}
+              {instSummary && (
+                <Card title="Profil performanță energetică" className="mb-4">
+                  <div className="flex items-center justify-center">
+                    <svg viewBox="0 0 300 280" width="100%" style={{maxWidth:"400px"}} className="opacity-90">
+                      {(() => {
+                        const cx = 150, cy = 130, maxR = 100;
+                        const utils = [
+                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#ef4444"},
+                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#f97316"},
+                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#3b82f6"},
+                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#8b5cf6"},
+                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#eab308"},
+                        ];
+                        const n = utils.length;
+                        const angleStep = (2 * Math.PI) / n;
+                        const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
+                        // Grid circles
+                        const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
+                          const r = maxR * f;
+                          const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
+                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />;
+                        });
+                        // Axes
+                        const axes = utils.map((u, i) => {
+                          const [x, y] = getXY(i, maxR + 15);
+                          const [ax, ay] = getXY(i, maxR);
+                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" /><text x={x} y={y} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.6)">{u.label}</text></g>;
+                        });
+                        // Data polygon
+                        const pts = utils.map((u, i) => {
+                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1));
+                          return getXY(i, r).join(",");
+                        }).join(" ");
+                        // Value labels
+                        const vals = utils.map((u, i) => {
+                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 10;
+                          const [x, y] = getXY(i, r);
+                          return <text key={"v"+i} x={x} y={y} textAnchor="middle" fontSize="7" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
+                        });
+                        // nZEB reference polygon
+                        const nzebVals = [49, 18, 13, 5, 6]; // Mc 001 A+ thresholds
+                        const nzebPts = nzebVals.map((v, i) => {
+                          const r = maxR * Math.min(v / utils[i].max, 1);
+                          return getXY(i, r).join(",");
+                        }).join(" ");
+                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.08)" stroke="#22c55e" strokeWidth="1" strokeDasharray="3 2" /><polygon points={pts} fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5" />{vals}<text x={cx} y={cy + maxR + 40} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
+                      })()}
+                    </svg>
+                  </div>
+                </Card>
+              )}
 
               <Card title={t("Sumar final — Date pentru Certificatul de Performanță Energetică",lang)} className="border-amber-500/20">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -8412,6 +8466,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </div>
                   )}
 
+                  {/* #20 Mod prezentare */}
+                  <button onClick={() => setPresentationMode(true)}
+                    disabled={!instSummary}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] text-xs opacity-60 hover:opacity-100 transition-all">
+                    <span>🖥️</span> Mod prezentare (ecran complet)
+                  </button>
+
                 </div>
 
                 {/* Preview CPE — renderizare DOCX oficial */}
@@ -9118,6 +9179,49 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               </div>
               )}
 
+              {/* #13 Deviz estimativ reabilitare */}
+              <button onClick={() => {
+                if (!rehabComparison) { showToast("Configurați scenariul de reabilitare în Pasul 5", "error"); return; }
+                const ri = rehabScenarioInputs;
+                const lines = [];
+                lines.push("DEVIZ ESTIMATIV REABILITARE ENERGETICĂ");
+                lines.push("Clădire: " + (building.address || "—") + ", " + (building.city || "—"));
+                lines.push("Data: " + new Date().toLocaleDateString("ro-RO"));
+                lines.push("Auditor: " + (auditor.name || "—") + " / " + (auditor.atestat || "—"));
+                lines.push("─".repeat(60));
+                lines.push("Nr. | Măsură | Cantitate | Preț unitar | Total estimat");
+                lines.push("─".repeat(60));
+                let nr = 1, totalInv = 0;
+                const Au = parseFloat(building.areaUseful) || 0;
+                if (ri.addInsulWall) { const c = Au * 3.5 * 45; totalInv += c; lines.push(nr++ + " | Termoizolație pereți ETICS " + ri.insulWallThickness + "cm | " + (Au*3.5).toFixed(0) + " m² | 45 €/m² | " + c.toFixed(0) + " €"); }
+                if (ri.addInsulRoof) { const c = Au * 1.1 * 35; totalInv += c; lines.push(nr++ + " | Termoizolație acoperiș " + ri.insulRoofThickness + "cm | " + (Au*1.1).toFixed(0) + " m² | 35 €/m² | " + c.toFixed(0) + " €"); }
+                if (ri.addInsulBasement) { const c = Au * 25; totalInv += c; lines.push(nr++ + " | Izolație planșeu subsol " + ri.insulBasementThickness + "cm | " + Au.toFixed(0) + " m² | 25 €/m² | " + c.toFixed(0) + " €"); }
+                if (ri.replaceWindows) { const wArea = glazingElements.reduce((s,e) => s + (parseFloat(e.area)||0), 0); const c = wArea * 280; totalInv += c; lines.push(nr++ + " | Înlocuire tâmplărie (U=" + ri.newWindowU + ") | " + wArea.toFixed(1) + " m² | 280 €/m² | " + c.toFixed(0) + " €"); }
+                if (ri.addHR) { const c = Au * 12; totalInv += c; lines.push(nr++ + " | Ventilare mecanică cu HR " + ri.hrEfficiency + "% | 1 buc | " + (Au*12).toFixed(0) + " € | " + c.toFixed(0) + " €"); }
+                if (ri.addPV) { const c = parseFloat(ri.pvArea||0) * 350; totalInv += c; lines.push(nr++ + " | Panouri PV " + ri.pvArea + " m² | " + ri.pvArea + " m² | 350 €/m² | " + c.toFixed(0) + " €"); }
+                if (ri.addHP) { const c = Au * 55; totalInv += c; lines.push(nr++ + " | Pompă de căldură COP=" + ri.hpCOP + " | 1 buc | " + (Au*55).toFixed(0) + " € | " + c.toFixed(0) + " €"); }
+                if (ri.addSolarTh) { const c = parseFloat(ri.solarThArea||0) * 500; totalInv += c; lines.push(nr++ + " | Solar termic " + ri.solarThArea + " m² | " + ri.solarThArea + " m² | 500 €/m² | " + c.toFixed(0) + " €"); }
+                lines.push("─".repeat(60));
+                lines.push("TOTAL INVESTIȚIE ESTIMATĂ: " + totalInv.toFixed(0) + " € (fără TVA)");
+                lines.push("TVA 19%: " + (totalInv * 0.19).toFixed(0) + " €");
+                lines.push("TOTAL CU TVA: " + (totalInv * 1.19).toFixed(0) + " €");
+                lines.push("");
+                lines.push("Economie anuală estimată: " + (rehabComparison.savings.qfSaved * 0.12).toFixed(0) + " €/an");
+                lines.push("Termen recuperare simplu: " + (totalInv / Math.max(1, rehabComparison.savings.qfSaved * 0.12)).toFixed(1) + " ani");
+                lines.push("");
+                lines.push("Notă: Prețurile sunt estimative (2025-2026, fără TVA) și pot varia ±30% în funcție de zonă, furnizor și complexitatea lucrărilor.");
+                const blob = new Blob([lines.join("\n")], {type:"text/plain;charset=utf-8"});
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "Deviz_estimativ_" + (building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25) + ".txt";
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+                showToast("Deviz estimativ descărcat", "success");
+              }}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-sm mt-4">
+                <span>📋</span> Generează deviz estimativ reabilitare (.txt)
+              </button>
+
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
                 <button onClick={() => setStep(6)}
@@ -9175,6 +9279,55 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
           onClose={() => { setShowBridgeModal(false); setEditingBridge(null); }}
         />
       )}
+
+      {/* #20 Mod prezentare ecran complet */}
+      {presentationMode && instSummary && (() => {
+        const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
+        const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+        const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+        const cls = getEnergyClass(epF, catKey);
+        const co2Cls = getCO2Class(co2F, building.category);
+        const rer = renewSummary?.rer || 0;
+        const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+        const isNZEB = epF <= nzeb.ep_max && rer >= nzeb.rer_min;
+        const Au = parseFloat(building.areaUseful) || 0;
+        return (
+          <div className="fixed inset-0 z-[99999] bg-[#0d1117] flex flex-col items-center justify-center p-8" onClick={() => setPresentationMode(false)}>
+            <button onClick={() => setPresentationMode(false)} className="absolute top-4 right-4 text-white/40 hover:text-white text-2xl">✕</button>
+            <div className="text-center mb-8">
+              <div className="text-xs uppercase tracking-[0.3em] text-amber-500/60 mb-2">Certificat de Performanță Energetică</div>
+              <div className="text-2xl font-light text-white/60 mb-1">{building.address || "—"}, {building.city}</div>
+              <div className="text-sm text-white/30">{BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label} · {building.yearBuilt} · Au = {Au} m²</div>
+            </div>
+            <div className="flex items-center gap-16">
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-widest text-white/30 mb-3">Clasa energetică</div>
+                <div className="w-32 h-32 rounded-3xl flex items-center justify-center text-6xl font-black" style={{backgroundColor:cls.color+"30",color:cls.color,border:`3px solid ${cls.color}60`}}>{cls.cls}</div>
+                <div className="text-3xl font-bold mt-3 font-mono" style={{color:cls.color}}>{epF.toFixed(1)}</div>
+                <div className="text-xs text-white/40">kWh/(m²·an)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-widest text-white/30 mb-3">Emisii CO₂</div>
+                <div className="w-32 h-32 rounded-3xl flex items-center justify-center text-6xl font-black" style={{backgroundColor:co2Cls.color+"30",color:co2Cls.color,border:`3px solid ${co2Cls.color}60`}}>{co2Cls.cls}</div>
+                <div className="text-3xl font-bold mt-3 font-mono" style={{color:co2Cls.color}}>{co2F.toFixed(1)}</div>
+                <div className="text-xs text-white/40">kgCO₂/(m²·an)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-widest text-white/30 mb-3">Regenerabile</div>
+                <div className="w-32 h-32 rounded-3xl flex items-center justify-center text-5xl font-black" style={{backgroundColor:rer>=30?"#22c55e30":"#ef444430",color:rer>=30?"#22c55e":"#ef4444",border:`3px solid ${rer>=30?"#22c55e60":"#ef444460"}`}}>{rer.toFixed(0)}%</div>
+                <div className="text-lg font-bold mt-3" style={{color:rer>=30?"#22c55e":"#ef4444"}}>RER</div>
+                <div className="text-xs text-white/40">min 30% nZEB</div>
+              </div>
+            </div>
+            <div className="mt-8 flex items-center gap-4">
+              {isNZEB && <div className="px-6 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-bold">✓ nZEB CONFORM</div>}
+              {!isNZEB && <div className="px-6 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold">✗ nZEB NECONFORM</div>}
+              <div className="text-xs text-white/20">Nota energetică: {cls.score}/100 · Consum final: {instSummary.qf_total_m2.toFixed(1)} kWh/(m²·an)</div>
+            </div>
+            <div className="mt-6 text-[10px] text-white/15">Click oriunde pentru a închide · {auditor.name} · {auditor.company} · {new Date().toLocaleDateString("ro-RO")}</div>
+          </div>
+        );
+      })()}
 
       {showBridgeCatalog && (
         <ThermalBridgeCatalog
