@@ -22,6 +22,28 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
+    <script>
+    // Force SW update on every page load — ensures new deploys are picked up
+    if('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        reg.update();
+        // If a new SW is waiting, activate it immediately
+        if (reg.waiting) { reg.waiting.postMessage('skipWaiting'); }
+        reg.addEventListener('updatefound', function() {
+          var newSW = reg.installing;
+          if (newSW) newSW.addEventListener('statechange', function() {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              newSW.postMessage('skipWaiting');
+            }
+          });
+        });
+      }).catch(function(){});
+      // Reload when the new SW takes over
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!refreshing) { refreshing = true; window.location.reload(); }
+      });
+    }
+    </script>
   </body>
 </html>
