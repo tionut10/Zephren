@@ -7372,6 +7372,12 @@ export default function EnergyCalcApp({ cloud }) {
                     </div>
                   </Card>
 
+                </div>
+              </div>
+
+              {/* ── ANALIZE DETALIATE (sub grid, full-width) ── */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+
                   {/* ── VERIFICARE CONDENS GLASER (ISO 13788) ── */}
                   {opaqueElements.length > 0 && selectedClimate && (
                     <Card title="Verificare condens Glaser (ISO 13788)">
@@ -7614,7 +7620,6 @@ export default function EnergyCalcApp({ cloud }) {
                       </div>
                     </Card>
                   )}
-                </div>
               </div>
 
               {/* Navigation */}
