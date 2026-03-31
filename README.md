@@ -1,4 +1,4 @@
-# CertEn — Calculator Performanță Energetică Clădiri
+# Zephren — Calculator Performanță Energetică Clădiri
 
 Calculator performanță energetică conform **Mc 001-2022**, **SR EN ISO 52000-1/NA:2023**, **EPBD 2024/1275**.
 
