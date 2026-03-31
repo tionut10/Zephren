@@ -13,7 +13,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split heavy libraries into separate chunks for better caching
           "react-vendor": ["react", "react-dom"],
           "pdf-engine": ["jspdf", "jspdf-autotable"],
           "excel-engine": ["xlsx"],
