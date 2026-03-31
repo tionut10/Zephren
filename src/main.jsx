@@ -6,6 +6,18 @@ import ReactDOM from "react-dom/client";
 const EnergyCalcApp = lazy(() => import("./energy-calc.jsx"));
 const LandingPage = lazy(() => import("./landing.jsx"));
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error) { console.warn("CRASH:", error?.message, error?.stack?.substring(0, 600)); }
+  render() {
+    if (this.state.error) return React.createElement("pre", {
+      style: { color: "#f87171", background: "#0a0a1a", padding: 32, whiteSpace: "pre-wrap", fontFamily: "monospace", minHeight: "100vh" }
+    }, "Error: " + this.state.error.message + "\n\n" + (this.state.error.stack || ""));
+    return this.props.children;
+  }
+}
+
 function Router() {
   const [route, setRoute] = useState(window.location.hash === "#app" ? "app" : "landing");
 
@@ -27,10 +39,12 @@ function Router() {
         </div>
       </div>
     }>
-      {route === "app"
-        ? <EnergyCalcApp />
-        : <LandingPage onStart={goToApp} />
-      }
+      <ErrorBoundary>
+        {route === "app"
+          ? <EnergyCalcApp />
+          : <LandingPage onStart={goToApp} />
+        }
+      </ErrorBoundary>
     </Suspense>
   );
 }

@@ -8527,7 +8527,7 @@ export default function EnergyCalcApp({ cloud }) {
                       </div>
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center justify-between">
-                          <span className="opacity-50">EP ≤ {zebVerification.getNzebEpMax(building.category, selectedClimate?.zone)}</span>
+                          <span className="opacity-50">EP ≤ {zebVerification.nzeb.ep_max}</span>
                           <span style={{ color: zebVerification.nzeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.nzeb.epOk ? "✓" : "✗"}</span>
                         </div>
                         <div className="flex items-center justify-between">
