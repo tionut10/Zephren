@@ -29,6 +29,21 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Smooth scroll for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mobile responsive navbar */
+@media (max-width: 640px) {
+  .nav-desktop { display: none !important; }
+  .nav-mobile { display: flex !important; }
+}
+@media (min-width: 641px) {
+  .nav-mobile { display: none !important; }
+  .nav-mobile-menu { display: none !important; }
+}
+
 /* Print styles */
 @media print {
   body {

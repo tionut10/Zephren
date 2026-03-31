@@ -6,6 +6,21 @@
   "functions": {
     "api/preview-docx.js": {
       "maxDuration": 10
+    },
+    "api/calculate.js": {
+      "maxDuration": 10
+    },
+    "api/generate-xml.js": {
+      "maxDuration": 10
+    },
+    "api/ai-assistant.js": {
+      "maxDuration": 30
+    },
+    "api/create-checkout.js": {
+      "maxDuration": 10
+    },
+    "api/stripe-webhook.js": {
+      "maxDuration": 10
     }
   }
 }

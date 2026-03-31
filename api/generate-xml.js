@@ -1,0 +1,120 @@
+/**
+ * POST /api/generate-xml
+ *
+ * Receives project data and returns XML in MDLPA format
+ * (Romanian energy performance certificate XML schema).
+ */
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    const body = req.body;
+
+    if (!body || typeof body !== "object") {
+      return res.status(400).json({ error: "Request body is required" });
+    }
+
+    const {
+      building,       // { name, address, county, locality, cadastral, yearBuilt, ... }
+      owner,          // { name, cnp_cui, address }
+      auditor,        // { name, attestation, company }
+      results,        // { ep, energyClass, co2, rer, breakdown }
+      envelope,       // { walls_u, roof_u, floor_u, windows_u }
+      systems,        // { heating, cooling, hotWater, ventilation, lighting }
+      issuedDate,     // ISO date string
+    } = body;
+
+    if (!building || !results) {
+      return res
+        .status(400)
+        .json({ error: "'building' and 'results' fields are required" });
+    }
+
+    const escapeXml = (str) =>
+      String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+
+    const e = escapeXml;
+    const date = issuedDate || new Date().toISOString().split("T")[0];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<CertificatPerformantaEnergetica xmlns="urn:mdlpa:certificat-energetic:v1">
+  <Antet>
+    <DataEmitere>${e(date)}</DataEmitere>
+    <Scop>Certificat de performanta energetica</Scop>
+    <Legislatie>Mc 001-2022, Legea 238/2024</Legislatie>
+  </Antet>
+
+  <Cladire>
+    <Denumire>${e(building.name)}</Denumire>
+    <Adresa>${e(building.address)}</Adresa>
+    <Judet>${e(building.county)}</Judet>
+    <Localitate>${e(building.locality)}</Localitate>
+    <NumarCadastral>${e(building.cadastral)}</NumarCadastral>
+    <AnConstructie>${e(building.yearBuilt)}</AnConstructie>
+    <SuprafataUtila>${e(building.area)}</SuprafataUtila>
+    <Volum>${e(building.volume)}</Volum>
+    <TipCladire>${e(building.buildingType)}</TipCladire>
+    <ZonaClimatica>${e(building.climateZone)}</ZonaClimatica>
+  </Cladire>
+
+  <Proprietar>
+    <Nume>${e(owner?.name)}</Nume>
+    <CNP_CUI>${e(owner?.cnp_cui)}</CNP_CUI>
+    <Adresa>${e(owner?.address)}</Adresa>
+  </Proprietar>
+
+  <AuditorEnergetic>
+    <Nume>${e(auditor?.name)}</Nume>
+    <Atestare>${e(auditor?.attestation)}</Atestare>
+    <Firma>${e(auditor?.company)}</Firma>
+  </AuditorEnergetic>
+
+  <AnvelopaTermica>
+    <PereteExterior_U>${e(envelope?.walls_u)}</PereteExterior_U>
+    <Acoperis_U>${e(envelope?.roof_u)}</Acoperis_U>
+    <Planeu_U>${e(envelope?.floor_u)}</Planeu_U>
+    <Ferestre_U>${e(envelope?.windows_u)}</Ferestre_U>
+  </AnvelopaTermica>
+
+  <SistemeTehniceInstalatii>
+    <SistemIncalzire>${e(systems?.heating)}</SistemIncalzire>
+    <SistemRacire>${e(systems?.cooling)}</SistemRacire>
+    <ApaCalda>${e(systems?.hotWater)}</ApaCalda>
+    <Ventilatie>${e(systems?.ventilation)}</Ventilatie>
+    <Iluminat>${e(systems?.lighting)}</Iluminat>
+  </SistemeTehniceInstalatii>
+
+  <RezultateCalcul>
+    <EnergieSpecificaPrimara unit="kWh/m2/an">${e(results.ep)}</EnergieSpecificaPrimara>
+    <ClasaEnergetica>${e(results.energyClass)}</ClasaEnergetica>
+    <EmisiiCO2 unit="kgCO2/m2/an">${e(results.co2)}</EmisiiCO2>
+    <RER>${e(results.rer)}</RER>
+    <Defalcare>
+      <Incalzire unit="kWh/m2/an">${e(results.breakdown?.heating)}</Incalzire>
+      <ApaCalda unit="kWh/m2/an">${e(results.breakdown?.hotWater)}</ApaCalda>
+      <Racire unit="kWh/m2/an">${e(results.breakdown?.cooling)}</Racire>
+      <Iluminat unit="kWh/m2/an">${e(results.breakdown?.lighting)}</Iluminat>
+      <Regenerabile unit="kWh/m2/an">${e(results.breakdown?.renewable)}</Regenerabile>
+    </Defalcare>
+  </RezultateCalcul>
+</CertificatPerformantaEnergetica>`;
+
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="certificat_energetic_${date}.xml"`
+    );
+    return res.status(200).send(xml);
+  } catch (err) {
+    console.error("[api/generate-xml] Error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}

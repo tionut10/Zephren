@@ -9,7 +9,8 @@ const LandingPage = lazy(() => import("./landing.jsx"));
 function Router() {
   const [route, setRoute] = useState(window.location.hash === "#app" ? "app" : "landing");
 
-  // Listen for hash changes
+  const goToApp = () => { window.location.hash = "#app"; setRoute("app"); };
+
   React.useEffect(() => {
     const handler = () => setRoute(window.location.hash === "#app" ? "app" : "landing");
     window.addEventListener("hashchange", handler);
@@ -26,7 +27,10 @@ function Router() {
         </div>
       </div>
     }>
-      {route === "app" ? <EnergyCalcApp /> : <LandingPage onStart={() => { window.location.hash = "#app"; setRoute("app"); }} />}
+      {route === "app"
+        ? <EnergyCalcApp />
+        : <LandingPage onStart={goToApp} />
+      }
     </Suspense>
   );
 }

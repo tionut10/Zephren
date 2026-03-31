@@ -140,23 +140,57 @@
 
 ## TODO-uri pentru dezvoltare ulterioară
 
-### 🔴 PRIORITATE CRITICĂ
-- [ ] **TODO-ISO52016**: Implementare metodă orară ISO 52016-1 (înlocuiește calcMonthlyISO13790, linia 1007). Necesită date climatice orare din NA:2023.
-- [ ] **TODO-EPBD-AG**: Rescalare A–G conform EPBD 2024/1275 Art.16 (clasa A=ZEB, G=15% cele mai ineficiente). Așteptăm ordin ministerial RO.
+### 🔴 PRIORITATE CRITICĂ — TOATE REZOLVATE
 
-### 🟡 PRIORITATE MEDIE
-- [ ] **TODO-GLASER-UI**: Adăugare UI pentru vizualizare diagrame Glaser (glaserResult e calculat, linia 3132, trebuie randare în Step 2 sau Step 5)
-- [ ] **TODO-ZEB-UI**: Adăugare secțiune verificare ZEB în Step 5/6 (zebVerification e calculat, linia 3142)
-- [ ] **TODO-FIN-UI**: Adăugare tab analiză financiară în Step 7 (financialAnalysis e calculat, linia 3172)
-- [ ] **TODO-COST-UI**: Afișare cost anual energie în Step 5 (annualEnergyCost e calculat, linia 3224)
-- [ ] **TODO-SUMMER-UI**: Adăugare verificare confort vară per element opac în Step 2
+### 🟡 PRIORITATE MEDIE (rămase)
+- [ ] Dev mode preview crash — SWC Fast Refresh pe 80+ hooks. Workaround: `npm run build && npx serve dist -s -l 5173`. Build-ul de producție funcționează perfect.
+- [ ] Praguri EPBD A-G — Valorile curente sunt estimate bazate pe EPBD 2024/1275 + Reg. UE 2025/2273. Actualizare necesară când se publică ordinul ministerial RO oficial.
 
-### 🟢 NICE TO HAVE
-- [ ] **TODO-XML-EXPORT**: Export XML pentru viitorul registru electronic MDLPA
-- [ ] **TODO-BACS**: Verificare obligație BACS (Building Automation) pt. clădiri >290kW
-- [ ] **TODO-EV-CHARGER**: Calcul puncte încărcare vehicule electrice (EPBD Art.12)
-- [ ] **TODO-GWP-LIFECYCLE**: Calcul GWP pe ciclul de viață (Reg. delegat C/2025/8723)
-- [ ] **TODO-SOLAR-READY**: Verificare "solar-ready" obligatorie (EPBD Art.11)
+### ✅ REZOLVATE în v3.1 (2026-03-31)
+- [x] **Export PDF nativ**: jsPDF + autotable, A4, 4 secțiuni, clase colorate, tabel consum, badge nZEB
+- [x] **ISO 52016-1 framework**: calcHourlyISO52016() — 5R1C simplified, 8760h, ready for TMY data
+- [x] **EPBD A-G rescaling**: getEnergyClassEPBD() cu EPBD_AG_THRESHOLDS configurabile + toggle EPBD_AG_ACTIVE
+- [x] **Team UI**: Modal echipă cu creare, invitații, manage members, cloud projects browser, buton 👥 toolbar
+- [x] **Supabase Auth**: Login/Register/Google OAuth + cloud projects (src/lib/auth.jsx, useZephrenCloud.js)
+- [x] **API REST**: 3 endpoints Vercel serverless (api/calculate.js, generate-xml.js, ai-assistant.js)
+- [x] **Stripe Checkout**: api/create-checkout.js + api/stripe-webhook.js, activateTier() cu redirect
+- [x] **Multi-user/echipă**: Schema SQL (teams, team_members, team_invitations) + RLS policies
+- [x] **AI Assistant**: Claude Haiku funcțional, chat cu context (building, ep, rer, category)
+- [x] **Export Excel**: .xlsx cu 5 sheet-uri (Clădire, Opace, Vitraje, Punți, Rezultate) via xlsx
+- [x] **Import ENERG+**: Parser XML pentru format ENERG+ (building info + opaque elements)
+- [x] **Export XML MDLPA**: Client-side XML complet + API endpoint generate-xml.js
+- [x] **Cloud sync**: Buton ☁️ salvare cloud, indicator user, logout din toolbar
+- [x] **Plan gating**: free/pro/business cu canAccess(), sync tier din Supabase profile
+- [x] **SWC plugin**: Migrare @vitejs/plugin-react → @vitejs/plugin-react-swc (fix Fast Refresh 82+ hooks)
+- [x] **TMY Generator**: generateTMY() — sinusoidal diurnal + solar radiation, 8760h din 12 luni
+- [x] **ISO 52016-1 hourly calc**: calcHourlyISO52016 wired cu TMY auto-generat, useMemo hourlyISO
+- [x] **EPBD A-G activat**: EPBD_AG_ACTIVE=true, getEnergyClassEPBD() folosită peste tot
+- [x] **Dev mode fix**: launch.json cu npx serve dist pentru preview production build
+
+### ✅ REZOLVATE în v3.0 (2026-03-31)
+- [x] **GLASER-UI**: Diagramă Glaser SVG vizuală (profil temp + punct de rouă)
+- [x] **ZEB-UI**: Dashboard sumar cu status nZEB/ZEB + badges
+- [x] **FIN-UI**: Analiză financiară + multi-scenariu comparație
+- [x] **COST-UI**: Cost anual cu defalcare + dashboard KPI
+- [x] **SUMMER-UI**: Confort termic vară per element (Cat. I-IV)
+- [x] **BACS**: Verificare BACS obligatoriu (EPBD Art.14, >290kW)
+- [x] **EV-CHARGER**: Calcul puncte încărcare EV (EPBD Art.12)
+- [x] **SOLAR-READY**: Checklist solar-ready (EPBD Art.11)
+- [x] **GWP-LIFECYCLE**: GWP detaliat EN 15978 pe materiale
+- [x] **Grafic Sankey**: Flux energie intrări vs. pierderi
+- [x] **Hartă climatică**: SVG interactivă România cu 30+ localități
+- [x] **Galerie foto**: Upload imagini clădire pe zone
+- [x] **Catalog produse**: Ferestre (Rehau/Veka/Gealan), PC (Daikin/Viessmann), PV (LONGi/JA Solar)
+- [x] **Smart rehab**: Motor sugestii reabilitare prioritizate
+- [x] **Infiltrații aer**: Calcul n50 → clasificare etanșeitate
+- [x] **Iluminat natural**: FLZ simplificat + reducere LENI
+- [x] **Print layout**: CSS print optimizat A4
+- [x] **Animații**: fadeSlideIn + scaleIn tranziții
+- [x] **Keyboard shortcuts**: Ctrl+M (hartă), Ctrl+Shift+P (prezentare), F1 (ghid)
+- [x] **Notificări CPE**: Alert expirare în <1 an
+- [x] **Template-uri noi**: +5 tipologii (garsonieră, duplex, hală, școală, spital)
+- [x] **Prețuri materiale 2026**: Bază de date detaliată EUR
+- [x] **Traduceri EN**: 11 chei noi pentru features v3
 
 ---
 
