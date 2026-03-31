@@ -978,10 +978,10 @@ const CONTROL_TYPES = [
 const FUELS = [
   // Prețuri actualizate Q1/2026 conform date normative, OUG 6/2025, OUG 12/2026
   { id:"gaz", label:"Gaz natural", fP_nren:1.17, fP_ren:0.00, fP_tot:1.17, fCO2:0.202, pci:34.00, unit:"mc", price_lei_kwh:0.31, price_note:"Plafonat 310 lei/MWh TVA incl. (OUG 6/2025), din apr.2026: min(contract, reglementat) per OUG 12/2026" },
-  { id:"motorina", label:"Motorină/combustibil lichid", fP_nren:1.10, fP_ren:0.00, fP_tot:1.10, fCO2:0.279, pci:42.60, unit:"litri", price_lei_kwh:0.75, price_note:"Preț orientativ 2025-2026" },
-  { id:"carbune", label:"Cărbune (huilă)", fP_nren:1.20, fP_ren:0.00, fP_tot:1.20, fCO2:0.341, pci:26.00, unit:"kg", price_lei_kwh:0.18, price_note:"Preț orientativ 2025" },
-  { id:"biomasa", label:"Biomasă (lemn/peleți)", fP_nren:0.23, fP_ren:0.85, fP_tot:1.08, fCO2:0.029, pci:17.50, unit:"kg", price_lei_kwh:0.22, price_note:"Peleți ENplus A1: 1300-1500 lei/t; Lemn 5.0-5.3 kWh/kg" },
-  { id:"electricitate", label:"Electricitate din rețea (SEN)", fP_nren:2.50, fP_ren:0.00, fP_tot:2.50, fCO2:0.107, pci:null, unit:"kWh", price_lei_kwh:1.10, price_note:"Post-dereglementare 1 iul 2025: 1.03-1.15 lei/kWh TVA incl. (variații zonale)" },
+  { id:"motorina", label:"Motorină/combustibil lichid", fP_nren:1.10, fP_ren:0.00, fP_tot:1.10, fCO2:0.263, pci:42.60, unit:"litri", price_lei_kwh:0.75, price_note:"Preț orientativ 2025-2026" },
+  { id:"carbune", label:"Cărbune (huilă)", fP_nren:1.20, fP_ren:0.00, fP_tot:1.20, fCO2:0.348, pci:26.00, unit:"kg", price_lei_kwh:0.18, price_note:"Preț orientativ 2025" },
+  { id:"biomasa", label:"Biomasă (lemn/peleți)", fP_nren:0.28, fP_ren:0.80, fP_tot:1.08, fCO2:0.039, pci:17.50, unit:"kg", price_lei_kwh:0.22, price_note:"Peleți ENplus A1: 1300-1500 lei/t; Lemn 5.0-5.3 kWh/kg" },
+  { id:"electricitate", label:"Electricitate din rețea (SEN)", fP_nren:2.62, fP_ren:0.00, fP_tot:2.62, fCO2:0.107, pci:null, unit:"kWh", price_lei_kwh:1.10, price_note:"Post-dereglementare 1 iul 2025: 1.03-1.15 lei/kWh TVA incl. (variații zonale)" },
   { id:"termoficare", label:"Termoficare/cogenerare", fP_nren:0.92, fP_ren:0.00, fP_tot:0.92, fCO2:0.220, pci:null, unit:"kWh", price_lei_kwh:0.40, price_note:"Tarif mediu 2025, subvenționat local" },
   { id:"gpl", label:"GPL (gaz petrolier lichefiat)", fP_nren:1.15, fP_ren:0.00, fP_tot:1.15, fCO2:0.227, pci:46.00, unit:"litri", price_lei_kwh:0.55, price_note:"Preț variabil ~4.5-6.0 lei/L (2024-2025)" },
   { id:"lemn_foc", label:"Lemne de foc", fP_nren:0.09, fP_ren:1.00, fP_tot:1.09, fCO2:0.018, pci:14.40, unit:"kg", price_lei_kwh:0.12, price_note:"Plafonat 400 lei/mc, putere calorifică ~5.0-5.3 kWh/kg" },
@@ -1095,22 +1095,23 @@ const BIOMASS_TYPES = [
 // GRILE CLASARE ENERGETICĂ — Cap. 5 Mc 001-2022
 // ═══════════════════════════════════════════════════════════════
 
-// Clase: A+, A, B, C, D, E, F, G — praguri [kWh/(m2·an)] energie primară
+// Clase: A+, A, B, C, D, E, F, G — praguri [kWh/(m2·an)] energie primară totală
+// Conform Mc 001-2022 Tabele 5.7-5.14 (valorile TOTAL din fiecare tabel)
 // TODO-EPBD-AG: Rescalare conform EPBD 2024/1275 Art.16 (A=ZEB, G=15% stoc național) — așteptăm ordin ministerial RO
 const ENERGY_CLASSES_DB = {
-  RI_cool: { label:"Case individuale (cu răcire)", thresholds:[86,122,243,372,501,626,751] },
-  RI_nocool: { label:"Case individuale (fără răcire)", thresholds:[73,103,210,330,450,560,665] },
-  RC_cool: { label:"Bloc locuințe colective (cu răcire)", thresholds:[80,112,220,335,450,565,680] },
-  RC_nocool: { label:"Bloc locuințe colective (fără răcire)", thresholds:[68,95,190,290,390,490,590] },
+  RI_cool: { label:"Case individuale (cu răcire)", thresholds:[91,129,257,390,522,652,783] },
+  RI_nocool: { label:"Case individuale (fără răcire)", thresholds:[78,110,220,340,460,575,690] },
+  RC_cool: { label:"Bloc locuințe colective (cu răcire)", thresholds:[73,101,198,297,396,495,595] },
+  RC_nocool: { label:"Bloc locuințe colective (fără răcire)", thresholds:[60,84,168,260,352,440,528] },
   RA_cool: { label:"Apartament (cu răcire)", thresholds:[73,101,198,297,396,495,595] },
-  RA_nocool: { label:"Apartament (fără răcire)", thresholds:[62,86,172,260,348,436,524] },
-  BI: { label:"Birouri", thresholds:[95,140,280,420,560,700,840] },
-  ED: { label:"Educație", thresholds:[80,115,230,345,460,575,690] },
+  RA_nocool: { label:"Apartament (fără răcire)", thresholds:[60,84,168,260,352,440,528] },
+  BI: { label:"Birouri", thresholds:[68,97,193,302,410,511,614] },
+  ED: { label:"Educație", thresholds:[55,78,157,248,340,425,510] },
   SA: { label:"Sănătate", thresholds:[130,190,380,570,760,950,1140] },
-  HC: { label:"Hotel / Cazare", thresholds:[110,160,320,480,640,800,960] },
-  CO: { label:"Comercial", thresholds:[100,145,290,435,580,725,870] },
-  SP: { label:"Sport", thresholds:[90,130,260,390,520,650,780] },
-  AL: { label:"Altele", thresholds:[95,140,280,420,560,700,840] },
+  HC: { label:"Hotel / Cazare", thresholds:[85,120,240,370,500,625,750] },
+  CO: { label:"Comercial", thresholds:[75,107,213,330,447,558,670] },
+  SP: { label:"Sport", thresholds:[70,100,200,310,420,525,630] },
+  AL: { label:"Altele", thresholds:[68,97,193,302,410,511,614] },
 };
 
 const CLASS_LABELS = ["A+","A","B","C","D","E","F","G"];
@@ -1121,37 +1122,48 @@ const CLASS_COLORS = ["#10b981","#22c55e","#84cc16","#eab308","#f97316","#ef4444
 // Obligatoriu: clădiri publice noi din 01.01.2028, toate clădirile noi din 01.01.2030
 const ZEB_FACTOR = 0.90; // EP max = nZEB_threshold * 0.90
 
-// Praguri nZEB conform Mc 001-2022 Tabel 5.6 + Legea 238/2024 Art.6
-// ep_max: valoare maximă (zona climatică IV-V); variază 120.1-147.9 pentru RI pe zone I-V
-// rer_min: 30% minim surse regenerabile (Legea 238/2024)
+// Praguri nZEB conform Mc 001-2022 Tabel 2.10a — diferențiate pe zone climatice I-V
+// ep_max: [zona I, zona II, zona III, zona IV, zona V] kWh/(m²·an) energie primară totală
+// rer_min: 30% minim surse regenerabile (Legea 238/2024 Art.6)
 // rer_onsite_min: 10% pe amplasament (Legea 238/2024 + 20% prin garanții de origine)
 // ZEB (EPBD 2024/1275): ep_max * 0.9, fără emisii fosile on-site — termen transpunere 29 mai 2026
 const NZEB_THRESHOLDS = {
-  RI: { ep_max: 148, rer_min: 30, rer_onsite_min: 10 },
-  RC: { ep_max: 130, rer_min: 30, rer_onsite_min: 10 },
-  RA: { ep_max: 120, rer_min: 30, rer_onsite_min: 10 },
-  BI: { ep_max: 170, rer_min: 30, rer_onsite_min: 10 },
-  ED: { ep_max: 140, rer_min: 30, rer_onsite_min: 10 },
-  SA: { ep_max: 200, rer_min: 30, rer_onsite_min: 10 },
-  HC: { ep_max: 180, rer_min: 30, rer_onsite_min: 10 },
-  CO: { ep_max: 160, rer_min: 30, rer_onsite_min: 10 },
-  SP: { ep_max: 150, rer_min: 30, rer_onsite_min: 10 },
-  AL: { ep_max: 170, rer_min: 30, rer_onsite_min: 10 },
+  RI: { ep_max: [120, 128, 133, 141, 148], rer_min: 30, rer_onsite_min: 10 },
+  RC: { ep_max: [99, 104, 106, 110, 113], rer_min: 30, rer_onsite_min: 10 },
+  RA: { ep_max: [99, 104, 106, 110, 113], rer_min: 30, rer_onsite_min: 10 },
+  BI: { ep_max: [95, 98, 99, 101, 103], rer_min: 30, rer_onsite_min: 10 },
+  ED: { ep_max: [62, 67, 71, 77, 82], rer_min: 30, rer_onsite_min: 10 },
+  SA: { ep_max: [163, 169, 171, 175, 179], rer_min: 30, rer_onsite_min: 10 },
+  HC: { ep_max: [97, 101, 104, 107, 112], rer_min: 30, rer_onsite_min: 10 },
+  CO: { ep_max: [96, 103, 108, 115, 121], rer_min: 30, rer_onsite_min: 10 },
+  SP: { ep_max: [93, 98, 100, 104, 108], rer_min: 30, rer_onsite_min: 10 },
+  AL: { ep_max: [95, 98, 99, 101, 103], rer_min: 30, rer_onsite_min: 10 },
 };
 
 // Praguri CO2 per categorie [kg CO2/(m²·an)] — A+ la G (7 praguri)
+// Conform Mc 001-2022 Tabele 5.7-5.14 (valorile TOTAL CO2)
 const CO2_CLASSES_DB = {
-  RI: { thresholds: [5, 10, 20, 35, 50, 70, 90] },
-  RC: { thresholds: [4, 8, 17, 30, 43, 60, 78] },
-  RA: { thresholds: [4, 7, 15, 26, 38, 53, 68] },
-  BI: { thresholds: [6, 11, 22, 34, 45, 56, 67] },
-  ED: { thresholds: [5, 9, 18, 28, 37, 46, 55] },
-  SA: { thresholds: [8, 15, 30, 46, 61, 76, 91] },
-  HC: { thresholds: [7, 13, 26, 38, 51, 64, 77] },
-  CO: { thresholds: [6, 12, 23, 35, 46, 58, 70] },
-  SP: { thresholds: [6, 10, 21, 31, 42, 52, 62] },
-  AL: { thresholds: [6, 11, 22, 34, 45, 56, 67] },
+  RI: { thresholds: [16.1, 22.8, 45.5, 70.1, 94.8, 118.4, 142.1] },
+  RC: { thresholds: [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9] },
+  RA: { thresholds: [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9] },
+  BI: { thresholds: [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4] },
+  ED: { thresholds: [8.5, 12.0, 24.0, 37.0, 50.0, 62.5, 75.0] },
+  SA: { thresholds: [19.0, 27.0, 54.0, 83.0, 112.0, 140.0, 168.0] },
+  HC: { thresholds: [13.0, 18.5, 37.0, 57.0, 77.0, 96.0, 115.0] },
+  CO: { thresholds: [11.5, 16.4, 32.8, 50.5, 68.5, 85.5, 102.5] },
+  SP: { thresholds: [10.7, 15.3, 30.5, 47.5, 64.5, 80.5, 96.5] },
+  AL: { thresholds: [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4] },
 };
+
+const FP_ELEC = 2.62; // fP_tot electricitate SEN — Mc 001-2022 Tabel 5.17
+
+// Helper: extrage ep_max nZEB pentru categorie + zonă climatică
+// zone: "I"-"V" string → index 0-4 în array-ul ep_max
+function getNzebEpMax(category, zone) {
+  const t = NZEB_THRESHOLDS[category] || NZEB_THRESHOLDS.AL;
+  const zoneIdx = {"I":0,"II":1,"III":2,"IV":3,"V":4}[zone] ?? 2; // implicit zona III
+  return Array.isArray(t.ep_max) ? t.ep_max[zoneIdx] : t.ep_max;
+}
 
 const WATER_TEMP_MONTH = [5, 5, 7, 9, 12, 15, 17, 17, 14, 11, 8, 6];
 
@@ -1163,16 +1175,30 @@ function calcUtilFactor(gamma, a) {
 
 // TODO-ISO52016: Înlocuire cu metoda orară ISO 52016-1:2017 (necesită date climatice orare din SR EN ISO 52010-1/NA:2023)
 // Metoda lunară rămâne validă conform Mc 001-2022 dar va fi deprecată la viitoarea actualizare normativă
+// Capacitate termică interioară efectivă Cm,int,eff [J/(m²·K)] — Mc 001-2022 Tabel 2.20
+// Mapare tip structură → clasă inerție termică
+const THERMAL_MASS_CLASS = {
+  "Structură metalică":       80000,   // foarte ușoară
+  "Structură lemn":           80000,   // foarte ușoară
+  "Panouri prefabricate mari":165000,  // medie (beton prefabricat)
+  "Cadre beton armat":        165000,  // medie
+  "Zidărie portantă":         260000,  // masivă (cărămidă, piatră)
+  "Pereți cortină + beton":   165000,  // medie
+  "BCA + cadre beton":        165000,  // medie
+  "Structură mixtă":          165000,  // medie (implicit)
+};
+
 function calcMonthlyISO13790(params) {
   var G_env = params.G_env, V = params.V, Au = params.Au, climate = params.climate;
   var theta_int = params.theta_int, gEls = params.glazingElements, sf = parseFloat(params.shadingFactor) || 0.90;
   var hrEta = params.hrEta || 0, category = params.category, n50 = parseFloat(params.n50) || 4.0;
+  var structure = params.structure || "";
   if (!climate || !Au || !V) return null;
   var days = [31,28,31,30,31,30,31,31,30,31,30,31];
   var mNames = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
   var H_tr = G_env, H_ve = 0.34 * 0.5 * V * (1 - hrEta);
   var H_inf = 0.34 * n50 * V * 0.07 / 3.6;
-  var Cm = Au * 80000;
+  var Cm = Au * (THERMAL_MASS_CLASS[structure] || 165000); // Mc 001-2022 Tabel 2.20, implicit medie
   var H_total = H_tr + H_ve;
   var tau = H_total > 0 ? Cm / (H_total * 3600) : 50;
   var a_H = 1 + tau / 15;
@@ -2009,8 +2035,9 @@ function calcSmartRehab(building, instSummary, renewSummary, opaqueElements, gla
   const rer = renewSummary?.rer || 0;
   const cat = building?.category || "AL";
   const nzeb = NZEB_THRESHOLDS[cat] || NZEB_THRESHOLDS.AL;
+  const nzebEpMax = getNzebEpMax(cat, climate?.zone);
   const Au = parseFloat(building?.areaUseful) || 100;
-  const gap = epActual - nzeb.ep_max;
+  const gap = epActual - nzebEpMax;
 
   // Analiză pereți
   const walls = opaqueElements?.filter(e => e.type === "PE") || [];
@@ -2039,11 +2066,11 @@ function calcSmartRehab(building, instSummary, renewSummary, opaqueElements, gla
     detail:`RER actual = ${rer.toFixed(0)}% (minim nZEB: 30%). PV 3-5 kWp per 100m² Au.`, costEstimate: Math.round(Au*0.05*1100)+" EUR", payback:"6-10 ani" });
 
   // Pompă căldură
-  if (epActual > nzeb.ep_max * 1.2) suggestions.push({ priority:2, system:"Instalații", measure:"Pompă de căldură aer-apă", impact: "-40–60% consum primar încălzire",
+  if (epActual > nzebEpMax * 1.2) suggestions.push({ priority:2, system:"Instalații", measure:"Pompă de căldură aer-apă", impact: "-40–60% consum primar încălzire",
     detail:"COP 3.5-4.5. Reduce drastic consumul de energie primară. Combină cu PV.", costEstimate: Math.round(Au*55)+" EUR", payback:"8-14 ani" });
 
   // Ventilare HR
-  if (epActual > nzeb.ep_max) suggestions.push({ priority:2, system:"Instalații", measure:"Ventilare mecanică cu recuperare căldură", impact: "-15–25% pierderi ventilare",
+  if (epActual > nzebEpMax) suggestions.push({ priority:2, system:"Instalații", measure:"Ventilare mecanică cu recuperare căldură", impact: "-15–25% pierderi ventilare",
     detail:"Eficiență HR 80-90%. Reduce pierderile de ventilare cu menținerea calității aerului.", costEstimate: Math.round(Au*12)+" EUR", payback:"10-15 ani" });
 
   // Solar termic
@@ -3685,6 +3712,531 @@ export default function EnergyCalcApp({ cloud }) {
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
+  // DEMO 2 — Bloc P+4 anii '70, reabilitare termică București
+  // Rezidențial colectiv, cazan gaz condensare, fără regenerabile
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo2 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Bd. Unirii nr. 42, Bl. M5, Sc. A-B",
+      city: "București", county: "București", postalCode: "030167",
+      category: "RC", structure: "Panouri prefabricate mari",
+      yearBuilt: "1973", yearRenov: "2024",
+      floors: "P+4", basement: true, attic: false,
+      units: "40", stairs: "2",
+      areaUseful: "2400", volume: "6600", areaEnvelope: "3200",
+      heightBuilding: "16.5", heightFloor: "2.75",
+      locality: "București",
+      perimeter: "100", n50: "3.0", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "vanzare", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. BCA 30cm + EPS 15cm ETICS (reab. 2024)", type: "PE", orientation: "Mixt", area: "1200", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Terasă necirculabilă — XPS 15cm (reab.)", type: "PT", orientation: "Orizontal", area: "480", layers: [
+        { matName: "Membrană bitum", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
+        { matName: "XPS 15cm", material: "Polistiren extrudat XPS", thickness: "150", lambda: 0.034, rho: 35 },
+        { matName: "Șapă pante", material: "Șapă ciment", thickness: "40", lambda: 1.40, rho: 2000 },
+        { matName: "Beton armat planseu", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      ]},
+      { name: "Planșeu peste subsol (neizolat)", type: "PB", orientation: "Orizontal", area: "480", layers: [
+        { matName: "Parchet", material: "Parchet lemn", thickness: "15", lambda: 0.18, rho: 600 },
+        { matName: "Șapă", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC dublu Low-E (înlocuite 2024)", glazingType: "Dublu vitraj Low-E", frameType: "PVC (5 camere)", u: "1.30", g: "0.55", area: "280", orientation: "Mixt", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee intermediare ×5 niveluri", type: "Joncțiuni pereți", psi: "0.10", length: "500" },
+      { name: "PE — Terasă", type: "Acoperiș", psi: "0.12", length: "100" },
+      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.06", length: "420" },
+      { name: "Stâlpi beton (punți termice semnificative)", type: "Joncțiuni pereți", psi: "0.15", length: "200" },
+      { name: "Consolă balcon beton ×40 apartamente", type: "Joncțiuni pereți", psi: "0.65", length: "160" },
+    ]);
+    setHeating({
+      source: "GAZ_COND", power: "200", eta_gen: "0.97",
+      nominalPower: "200",
+      emission: "RAD_OT", eta_em: "0.93",
+      distribution: "MED_INT", eta_dist: "0.90",
+      control: "TERMO_RAD", eta_ctrl: "0.93",
+      regime: "intermitent", theta_int: "20", nightReduction: "3",
+      tStaircase: "12", tBasement: "8", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "100", dailyLiters: "50",
+      storageVolume: "2000", storageLoss: "3.0",
+      pipeLength: "120", pipeInsulated: true,
+      circRecirculation: true, circHours: "16",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "LED", pDensity: "4.5", controlType: "TIMER",
+      fCtrl: "0.90", operatingHours: "1800", naturalLightRatio: "25",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Popescu Ion-Cristian",
+      atestat: "CT-00845",
+      grade: "II",
+      company: "TermoProiect SRL",
+      phone: "0722 345 678",
+      email: "popescu@termoproiect.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Bloc de locuințe P+4 din 1973, structură panouri prefabricate mari cu pereți BCA 30cm. Reabilitare termică executată 2024: termoizolație ETICS cu EPS 15cm pe fațade, XPS 15cm pe terasă, înlocuire tâmplărie cu PVC dublu vitraj Low-E. Centrala termică de scară cu cazan condensare gaz 200kW. Punți termice semnificative la consolele de balcon din beton armat. Ventilare naturală prin fante de ventilare în tâmplărie nouă. Nu există surse regenerabile. Clasa energetică estimată C-D.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 2 încărcat — Bloc P+4 '73 reabilitat termic București. Cazan gaz condensare, fără regenerabile.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 3 — Clădire birouri nouă P+3, Cluj-Napoca
+  // Birouri, VRF + ventilare HR80% + PV 30kWp, clasă A-B
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo3 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Fabricii nr. 5, Clădirea Innovation Hub",
+      city: "Cluj-Napoca", county: "Cluj", postalCode: "400500",
+      category: "BI", structure: "Cadre beton armat",
+      yearBuilt: "2025", yearRenov: "",
+      floors: "P+3", basement: true, attic: false,
+      units: "1", stairs: "2",
+      areaUseful: "3200", volume: "11200", areaEnvelope: "3600",
+      heightBuilding: "14.0", heightFloor: "3.20",
+      locality: "Cluj-Napoca",
+      perimeter: "120", n50: "1.5", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "receptie", parkingSpaces: "60",
+    });
+    setOpaqueElements([
+      { name: "Pereți cortină — vată bazaltică 15cm + beton armat", type: "PE", orientation: "Mixt", area: "1400", layers: [
+        { matName: "Placaj compozit aluminiu", material: "Aluminiu", thickness: "4", lambda: 160.0, rho: 2700 },
+        { matName: "Vată bazaltică 15cm", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.035, rho: 80 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+        { matName: "Gips-carton", material: "Gips-carton", thickness: "12", lambda: 0.25, rho: 900 },
+      ]},
+      { name: "Terasă verde extensivă — XPS 15cm", type: "PT", orientation: "Orizontal", area: "800", layers: [
+        { matName: "Substrat vegetal", material: "Pământ uscat", thickness: "80", lambda: 0.40, rho: 1500 },
+        { matName: "Membrană hidroizolație", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
+        { matName: "XPS 15cm", material: "Polistiren extrudat XPS", thickness: "150", lambda: 0.034, rho: 35 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+      ]},
+      { name: "Placă pe sol — XPS 10cm", type: "PL", orientation: "Orizontal", area: "800", layers: [
+        { matName: "Gresie porțelanată", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă armată", material: "Șapă ciment", thickness: "80", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
+        { matName: "Radier beton", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Fațadă cortină tripan Low-E argon (S+E+V)", glazingType: "Triplu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.00", g: "0.35", area: "850", orientation: "S", frameRatio: "15" },
+      { name: "Ferestre tripan Low-E (Nord)", glazingType: "Triplu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.00", g: "0.35", area: "250", orientation: "N", frameRatio: "15" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee intermediare ×4", type: "Joncțiuni pereți", psi: "0.06", length: "480" },
+      { name: "PE — Terasă", type: "Acoperiș", psi: "0.08", length: "120" },
+      { name: "Glafuri fațadă cortină — profil RPT", type: "Ferestre", psi: "0.03", length: "600" },
+      { name: "Soclu/fundație — izolat perimetral", type: "Joncțiuni pereți", psi: "0.10", length: "120" },
+    ]);
+    setHeating({
+      source: "PC_AA", power: "120", eta_gen: "3.50",
+      nominalPower: "120",
+      emission: "VENT_CONV", eta_em: "0.93",
+      distribution: "BINE_INT", eta_dist: "0.95",
+      control: "INTELIG", eta_ctrl: "0.97",
+      regime: "intermitent", theta_int: "21", nightReduction: "4",
+      tStaircase: "", tBasement: "10", tAttic: "",
+    });
+    setAcm({
+      source: "BOILER_E", consumers: "80", dailyLiters: "10",
+      storageVolume: "500", storageLoss: "2.0",
+      pipeLength: "40", pipeInsulated: true,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({
+      system: "VRF", power: "150", eer: "4.50",
+      cooledArea: "3200", distribution: "BINE_INT",
+      hasCooling: true,
+    });
+    setVentilation({
+      type: "MEC_HR80", airflow: "5600", fanPower: "2000",
+      operatingHours: "3000", hrEfficiency: "80",
+    });
+    setLighting({
+      type: "LED_PRO", pDensity: "3.5", controlType: "BMS",
+      fCtrl: "0.55", operatingHours: "2500", naturalLightRatio: "40",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "160", orientation: "S", tilt: "10",
+      inverterType: "PREM", inverterEta: "0.97",
+      peakPower: "30", usage: "autoconsum",
+    });
+    setHeatPump({
+      ...INITIAL_HP, enabled: true,
+      type: "PC_AA", cop: "3.50",
+      scopHeating: "3.20", covers: "heating",
+    });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Moldovan Alexandra-Elena",
+      atestat: "CT-02180",
+      grade: "I",
+      company: "Green Building Advisors SRL",
+      phone: "0756 234 567",
+      email: "moldovan@gba-audit.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Clădire de birouri nouă P+3 cu subsol, proiectată conform standardelor nZEB. Structură cadre beton armat cu fațadă cortină din aluminiu cu RPT și triplu vitraj Low-E argon. Sistem VRF pentru încălzire/răcire cu ventiloconvectoare pe 4 țevi. Ventilare mecanică centralizată cu recuperare căldură η=80%. Sistem PV 30kWp pe terasă verde extensivă. Iluminat LED profesional cu management BMS integrat. Test etanșeitate n50=1.5 h⁻¹. Clădirea îndeplinește cerințele nZEB cu clasă energetică A-B.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 3 încărcat — Birouri noi Cluj-Napoca cu VRF + PV 30kWp + HR 80%. Navigați prin pașii 1-7.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 4 — Grădiniță reabilitată, Iași
+  // Educație, cazan peleți + solar termic + PV 10kWp
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo4 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Ciurchi nr. 123",
+      city: "Iași", county: "Iași", postalCode: "700359",
+      category: "ED", structure: "Cadre beton armat",
+      yearBuilt: "1985", yearRenov: "2025",
+      floors: "P+1", basement: true, attic: false,
+      units: "1", stairs: "1",
+      areaUseful: "650", volume: "2275", areaEnvelope: "1300",
+      heightBuilding: "7.5", heightFloor: "3.30",
+      locality: "Iași",
+      perimeter: "80", n50: "2.0", shadingFactor: "0.90",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "receptie", parkingSpaces: "8",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. cărămidă 38cm + EPS 15cm ETICS (reab.)", type: "PE", orientation: "Mixt", area: "520", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Terasă — EPS 20cm (reab. 2025)", type: "PT", orientation: "Orizontal", area: "350", layers: [
+        { matName: "Membrană PVC", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "EPS 20cm", material: "Polistiren expandat EPS 100", thickness: "200", lambda: 0.036, rho: 25 },
+        { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
+      ]},
+      { name: "Planșeu peste subsol — EPS 10cm (reab.)", type: "PB", orientation: "Orizontal", area: "350", layers: [
+        { matName: "Parchet laminat", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 600 },
+        { matName: "Șapă", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.036, rho: 25 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC tripan (înlocuite 2025)", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "0.90", g: "0.50", area: "130", orientation: "Mixt", frameRatio: "25" },
+      { name: "Uși acces tripan PVC", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "1.20", g: "0.40", area: "12", orientation: "N", frameRatio: "40" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.08", length: "80" },
+      { name: "PE — Terasă", type: "Acoperiș", psi: "0.10", length: "80" },
+      { name: "PE — Subsol/fundație", type: "Joncțiuni pereți", psi: "0.12", length: "80" },
+      { name: "Glaf ferestre", type: "Ferestre", psi: "0.04", length: "180" },
+      { name: "Colțuri exterioare", type: "Joncțiuni pereți", psi: "0.06", length: "60" },
+    ]);
+    setHeating({
+      source: "BIO_AUT", power: "80", eta_gen: "0.88",
+      nominalPower: "80",
+      emission: "RAD_OT", eta_em: "0.93",
+      distribution: "MED_INT", eta_dist: "0.90",
+      control: "ZONAL", eta_ctrl: "0.95",
+      regime: "intermitent", theta_int: "22", nightReduction: "5",
+      tStaircase: "", tBasement: "10", tAttic: "",
+    });
+    setAcm({
+      source: "SOLAR_AUX", consumers: "25", dailyLiters: "15",
+      storageVolume: "500", storageLoss: "2.0",
+      pipeLength: "20", pipeInsulated: true,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({
+      type: "MEC_HR70", airflow: "1200", fanPower: "350",
+      operatingHours: "2000", hrEfficiency: "70",
+    });
+    setLighting({
+      type: "LED", pDensity: "4.5", controlType: "PREZ_DAY",
+      fCtrl: "0.60", operatingHours: "2000", naturalLightRatio: "35",
+    });
+    setSolarThermal({
+      ...INITIAL_SOLAR_TH, enabled: true,
+      type: "TUB_VID", area: "10", orientation: "S", tilt: "40",
+      eta0: "0.72", a1: "1.2",
+    });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "55", orientation: "S", tilt: "15",
+      inverterType: "STD", inverterEta: "0.96",
+      peakPower: "10", usage: "autoconsum",
+    });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({
+      ...INITIAL_BIO, enabled: true,
+      type: "PELETI", boilerEta: "0.88", power: "80",
+      covers: "heating", annualConsumption: "18",
+    });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Ursache Dragoș-Mihai",
+      atestat: "CT-01890",
+      grade: "I",
+      company: "EcoEnergy Moldova SRL",
+      phone: "0733 456 789",
+      email: "ursache@ecoenergy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Grădiniță P+1 din 1985, reabilitată integral 2025. ETICS cu EPS 15cm pe fațade, EPS 20cm pe terasă, EPS 10cm sub planșeu subsol. Tâmplărie PVC tripan. Sursă termică: cazan automat pe peleți 80kW cu siloz 5t. Solar termic 10m² tuburi vidate pentru ACM. PV 10kWp pe terasă. Ventilare mecanică cu recuperare 70%. Iluminat LED cu senzori prezență și lumină naturală. Clasă energetică estimată B.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 4 încărcat — Grădiniță reabilitată Iași cu cazan peleți + solar termic + PV 10kWp.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 5 — Casă interbelică reabilitare profundă, Brașov
+  // Rezidențial individual, PC aer-apă + PV + solar termic
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo5 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Republicii nr. 78",
+      city: "Brașov", county: "Brașov", postalCode: "500030",
+      category: "RI", structure: "Zidărie portantă",
+      yearBuilt: "1935", yearRenov: "2025",
+      floors: "P+1", basement: true, attic: true,
+      units: "1", stairs: "1",
+      areaUseful: "160", volume: "480", areaEnvelope: "520",
+      heightBuilding: "8.50", heightFloor: "3.20",
+      locality: "Brașov",
+      perimeter: "42", n50: "1.5", shadingFactor: "0.88",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "vanzare", parkingSpaces: "1",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. zidărie 50cm + vată minerală 20cm (reab.)", type: "PE", orientation: "Mixt", area: "190", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "Vată minerală bazaltică 20cm", material: "Vată minerală bazaltică", thickness: "200", lambda: 0.035, rho: 80 },
+        { matName: "Cărămidă plină 50cm", material: "Cărămidă plină", thickness: "500", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pod lemn izolat — vată 30cm între căpriori (reab.)", type: "PP", orientation: "Orizontal", area: "90", layers: [
+        { matName: "Gips-carton", material: "Gips-carton", thickness: "12", lambda: 0.25, rho: 900 },
+        { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
+        { matName: "Vată minerală bazaltică 30cm", material: "Vată minerală bazaltică", thickness: "300", lambda: 0.035, rho: 80 },
+        { matName: "Dușumea lemn existentă", material: "Lemn moale (brad/molid)", thickness: "25", lambda: 0.14, rho: 500 },
+      ]},
+      { name: "Planșeu peste subsol — XPS 10cm (reab.)", type: "PB", orientation: "Orizontal", area: "80", layers: [
+        { matName: "Parchet lemn masiv", material: "Parchet lemn", thickness: "20", lambda: 0.18, rho: 600 },
+        { matName: "Șapă cu incalzire pardoseală", material: "Șapă ciment", thickness: "65", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
+        { matName: "Beton existent", material: "Beton simplu", thickness: "200", lambda: 1.28, rho: 2200 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC tripan Low-E argon (profil heritage)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "18", orientation: "S", frameRatio: "28" },
+      { name: "Ferestre PVC tripan Low-E (Nord+Est)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "10", orientation: "N", frameRatio: "28" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Soclu/fundație — izolat perimetral XPS", type: "Joncțiuni pereți", psi: "0.10", length: "42" },
+      { name: "PE — Cornișă pod (izolat continuu)", type: "Acoperiș", psi: "0.08", length: "42" },
+      { name: "Glaf ferestre — montaj în planul izolației", type: "Ferestre", psi: "0.03", length: "55" },
+      { name: "Planșeu intermediar — centură beton", type: "Joncțiuni pereți", psi: "0.06", length: "42" },
+    ]);
+    setHeating({
+      source: "PC_AA", power: "10", eta_gen: "3.50",
+      nominalPower: "10",
+      emission: "PARD", eta_em: "0.97",
+      distribution: "BINE_INT", eta_dist: "0.96",
+      control: "INTELIG", eta_ctrl: "0.97",
+      regime: "continuu", theta_int: "20", nightReduction: "2",
+      tStaircase: "", tBasement: "8", tAttic: "5",
+    });
+    setAcm({
+      source: "PC_ACM", consumers: "4", dailyLiters: "55",
+      storageVolume: "200", storageLoss: "1.5",
+      pipeLength: "8", pipeInsulated: true,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({
+      system: "PC_REV", power: "10", eer: "3.80",
+      cooledArea: "120", distribution: "BINE_INT",
+      hasCooling: true,
+    });
+    setVentilation({
+      type: "MEC_HR80", airflow: "200", fanPower: "60",
+      operatingHours: "4500", hrEfficiency: "85",
+    });
+    setLighting({
+      type: "LED", pDensity: "4.0", controlType: "PREZ_DAY",
+      fCtrl: "0.60", operatingHours: "1600", naturalLightRatio: "30",
+    });
+    setSolarThermal({
+      ...INITIAL_SOLAR_TH, enabled: true,
+      type: "PLAN", area: "4", orientation: "S", tilt: "45",
+      eta0: "0.75", a1: "3.5",
+    });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "25", orientation: "S", tilt: "35",
+      inverterType: "PREM", inverterEta: "0.97",
+      peakPower: "5", usage: "autoconsum",
+    });
+    setHeatPump({
+      ...INITIAL_HP, enabled: true,
+      type: "PC_AA", cop: "3.50",
+      scopHeating: "3.00", covers: "heating_acm",
+    });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Bîrsan Cristina-Maria",
+      atestat: "CT-01567",
+      grade: "I",
+      company: "PatrimoniumEnergy SRL",
+      phone: "0768 567 890",
+      email: "birsan@patrimoniu-energy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Casă individuală interbelică P+1 din 1935, zonă protejată Brașov. Reabilitare profundă 2025 cu păstrarea caracterului arhitectural. Termoizolație vată minerală 20cm pe fațade (tencuială decorativă clasică), 30cm vată în pod, XPS 10cm sub planșeu subsol. Tâmplărie PVC tripan profil heritage cu șprosuri. Pompă de căldură aer-apă 10kW Daikin Altherma cu pardoseală radiantă. Ventilare mecanică Zehnder ComfoAir cu HR η=85%. PV 5kWp pe versant sud + solar termic 4m². n50=1.5 h⁻¹. Clasă energetică estimată B.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 5 încărcat — Casă interbelică reabilitată Brașov cu PC aer-apă + PV 5kWp + solar termic.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 6 — Supermarket nou, Timișoara
+  // Comerț, chiller + UTA + PV 50kWp, clasă A-B
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo6 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Calea Aradului nr. 85",
+      city: "Timișoara", county: "Timiș", postalCode: "300088",
+      category: "CO", structure: "Structură metalică",
+      yearBuilt: "2025", yearRenov: "",
+      floors: "P", basement: false, attic: false,
+      units: "1", stairs: "0",
+      areaUseful: "2200", volume: "11000", areaEnvelope: "4000",
+      heightBuilding: "6.00", heightFloor: "5.00",
+      locality: "Timișoara",
+      perimeter: "200", n50: "2.5", shadingFactor: "0.90",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "receptie", parkingSpaces: "120",
+    });
+    setOpaqueElements([
+      { name: "Pereți panouri sandwich 12cm vată minerală", type: "PE", orientation: "Mixt", area: "1200", layers: [
+        { matName: "Tablă zincată ext.", material: "Oțel", thickness: "0.6", lambda: 58.0, rho: 7850 },
+        { matName: "Vată minerală 12cm", material: "Vată minerală bazaltică", thickness: "120", lambda: 0.038, rho: 90 },
+        { matName: "Tablă zincată int.", material: "Oțel", thickness: "0.5", lambda: 58.0, rho: 7850 },
+      ]},
+      { name: "Acoperiș panouri sandwich 15cm", type: "PT", orientation: "Orizontal", area: "2200", layers: [
+        { matName: "Membrană PVC", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "Vată minerală 15cm", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 90 },
+        { matName: "Tablă trapezoidală", material: "Oțel", thickness: "0.7", lambda: 58.0, rho: 7850 },
+      ]},
+      { name: "Placă pe sol — XPS 10cm", type: "PL", orientation: "Orizontal", area: "2200", layers: [
+        { matName: "Rășină epoxidică", material: "Gresie ceramică", thickness: "5", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă armată", material: "Șapă ciment", thickness: "100", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
+        { matName: "Radier beton", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Vitrine comerciale dublu vitraj Low-E (fațadă principală)", glazingType: "Dublu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.40", g: "0.40", area: "180", orientation: "S", frameRatio: "12" },
+      { name: "Uși automate acces dublu Low-E", glazingType: "Dublu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.80", g: "0.45", area: "20", orientation: "S", frameRatio: "20" },
+    ]);
+    setThermalBridges([
+      { name: "Soclu hală — izolat perimetral", type: "Joncțiuni pereți", psi: "0.12", length: "200" },
+      { name: "Cornișă acoperiș — profil sandwich", type: "Acoperiș", psi: "0.08", length: "200" },
+      { name: "Glafuri vitrine", type: "Ferestre", psi: "0.05", length: "90" },
+    ]);
+    setHeating({
+      source: "PC_AA", power: "80", eta_gen: "3.20",
+      nominalPower: "80",
+      emission: "AERO", eta_em: "0.88",
+      distribution: "BINE_INT", eta_dist: "0.95",
+      control: "INTELIG", eta_ctrl: "0.97",
+      regime: "intermitent", theta_int: "19", nightReduction: "5",
+      tStaircase: "", tBasement: "", tAttic: "",
+    });
+    setAcm({
+      source: "BOILER_E", consumers: "30", dailyLiters: "10",
+      storageVolume: "150", storageLoss: "2.0",
+      pipeLength: "15", pipeInsulated: true,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({
+      system: "CHILLER_A", power: "150", eer: "3.00",
+      cooledArea: "2200", distribution: "BINE_INT",
+      hasCooling: true,
+    });
+    setVentilation({
+      type: "UTA", airflow: "12000", fanPower: "4000",
+      operatingHours: "3500", hrEfficiency: "75",
+    });
+    setLighting({
+      type: "LED_PRO", pDensity: "3.5", controlType: "PREZ_DAY",
+      fCtrl: "0.60", operatingHours: "3000", naturalLightRatio: "15",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "280", orientation: "S", tilt: "5",
+      inverterType: "PREM", inverterEta: "0.97",
+      peakPower: "50", usage: "autoconsum",
+    });
+    setHeatPump({
+      ...INITIAL_HP, enabled: true,
+      type: "PC_AA", cop: "3.20",
+      scopHeating: "2.80", covers: "heating",
+    });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Lazăr Bogdan-Nicolae",
+      atestat: "CT-02450",
+      grade: "I",
+      company: "West Energy Consulting SRL",
+      phone: "0745 890 123",
+      email: "lazar@westenergy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Supermarket nou P din 2025, structură metalică cu panouri sandwich. Încălzire/răcire prin pompă de căldură aer-apă 80kW + chiller aer 150kW, distribuție prin UTA centralizată cu recuperare 75%. Iluminat LED profesional cu senzori prezență și lumină naturală. PV 50kWp pe acoperiș (280m² panouri mono pe suport metalic). Consum ridicat de răcire datorat echipamentelor frigorifice. EV charger ready cu 4 stații pregătite. Clasă energetică estimată A-B.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 6 încărcat — Supermarket nou Timișoara cu chiller + UTA + PV 50kWp.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
   // FEATURE: EXPORT / IMPORT PROIECT (JSON)
   // ═══════════════════════════════════════════════════════════
   const exportProject = useCallback(() => {
@@ -4217,7 +4769,7 @@ export default function EnergyCalcApp({ cloud }) {
     const hr = vt && vt.hasHR ? (parseFloat(ventilation.hrEfficiency) || vt.hrEta || 0) : 0;
     return calcMonthlyISO13790({G_env:envelopeSummary.totalHeatLoss, V:V, Au:Au, climate:selectedClimate,
       theta_int:parseFloat(heating.theta_int)||20, glazingElements:glazingElements, shadingFactor:building.shadingFactor,
-      hrEta:hr, category:building.category, n50:building.n50});
+      hrEta:hr, category:building.category, n50:building.n50, structure:building.structure});
   }, [envelopeSummary, selectedClimate, building, heating.theta_int, glazingElements, ventilation]);
 
   // ─── ISO 52016-1 Hourly calculation (using generated TMY) ───
@@ -4328,7 +4880,7 @@ export default function EnergyCalcApp({ cloud }) {
     // ci cu fP_ambient (1.0 per NA:2023, 0 per Mc 001 vechi)
     let ep_h;
     if (isCOP) {
-      const fP_elec = fuel?.fP_tot || 2.50;
+      const fP_elec = fuel?.fP_tot || FP_ELEC;
       const qAmbient_h = Math.max(0, qH_nd - qf_h);
       const fP_ambient = useNA2023 ? 1.0 : 0;
       ep_h = qf_h * fP_elec + qAmbient_h * fP_ambient;
@@ -4338,16 +4890,16 @@ export default function EnergyCalcApp({ cloud }) {
     const acmIsCOP = ACM_SOURCES.find(a => a.id === acm.source)?.isCOP || false;
     let ep_w;
     if (acmIsCOP) {
-      const fP_elec = acmFuel?.fP_tot || 2.50;
+      const fP_elec = acmFuel?.fP_tot || FP_ELEC;
       const qAmbient_w = Math.max(0, qACM_nd - qf_w);
       const fP_ambient = useNA2023 ? 1.0 : 0;
       ep_w = qf_w * fP_elec + qAmbient_w * fP_ambient;
     } else {
       ep_w = qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
     }
-    const ep_c = qf_c * (coolFuel?.fP_tot || 2.50);
-    const ep_v = qf_v * 2.50; // ventilare = electricitate
-    const ep_l = qf_l * 2.50; // iluminat = electricitate
+    const ep_c = qf_c * (coolFuel?.fP_tot || FP_ELEC);
+    const ep_v = qf_v * FP_ELEC; // ventilare = electricitate
+    const ep_l = qf_l * FP_ELEC; // iluminat = electricitate
     const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l;
     const ep_total_m2 = Au > 0 ? ep_total / Au : 0;
 
@@ -4429,7 +4981,7 @@ export default function EnergyCalcApp({ cloud }) {
       const solarH = selectedClimate.solar.Oriz || 360;
       // PR = performance ratio ~0.80
       qPV_kWh = area * etaPV * etaInv * solarH * oriF * tiltF * 0.80;
-      qPV = qPV_kWh * 2.50; // conversie energie primară (electricitate)
+      qPV = qPV_kWh * FP_ELEC; // conversie energie primară (electricitate)
     }
 
     // POMPĂ DE CĂLDURĂ (partea regenerabilă = 1 - 1/COP)
@@ -4478,7 +5030,7 @@ export default function EnergyCalcApp({ cloud }) {
       qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
       const cogenFuelData = FUELS.find(f => f.id === (otherRenew.cogenFuel || "gaz"));
       // CHP electric replaces grid electricity; thermal replaces boiler heat
-      qCogen_ep_reduction = qCogen_el * 2.50 + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
+      qCogen_ep_reduction = qCogen_el * FP_ELEC + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
       qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.205);
     }
 
@@ -4486,7 +5038,7 @@ export default function EnergyCalcApp({ cloud }) {
     const totalRenewable_m2 = Au > 0 ? totalRenewable / Au : 0;
 
     // RER = Renewable Energy Ratio (toate valorile în energie primară pentru consistență)
-    const fP_elec = 2.50, fP_therm = 1.17;
+    const fP_elec = FP_ELEC, fP_therm = 1.17;
     const totalRenewable_ep = qSolarTh * fP_therm + qPV_kWh * fP_elec + qPC_ren * fP_elec + qBio_ren * 1.08 + qWind * fP_elec + qCogen_el * fP_elec + qCogen_th * fP_therm;
     const epTotal = instSummary.ep_total || 1;
     const rer = epTotal > 0 ? (totalRenewable_ep / epTotal) * 100 : 0;
@@ -4501,7 +5053,7 @@ export default function EnergyCalcApp({ cloud }) {
     // NA:2023 (Tabel A.16): fP=0 pentru energia ambientală a PC
     // Mc001 original (Tabel 5.17): fP=1.0 pentru energia ambientală
     const ambientFP = useNA2023 ? 0 : 1.0;
-    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * 2.50 + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * 2.50 + qCogen_ep_reduction;
+    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction;
     const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
     const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
 
@@ -4612,7 +5164,7 @@ export default function EnergyCalcApp({ cloud }) {
       const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
       const acmFuel = acm.source === "CAZAN_H" ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz") : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
       const fP_acm = (FUELS.find(f => f.id === acmFuel) || FUELS[0]).fP_tot;
-      const ep = qf_h * fP + qf_w * fP_acm + qf_c * 2.50 + qf_v * 2.50 + qf_l * 2.50;
+      const ep = qf_h * fP + qf_w * fP_acm + qf_c * FP_ELEC + qf_v * FP_ELEC + qf_l * FP_ELEC;
       return { name, tExt, deltaT, qf_h, qf_w, qf_c, qf_v, qf_l, qf_total, ep, daysInMonth: daysInMonth[i] };
     });
   }, [instSummary, selectedClimate, envelopeSummary, building.areaUseful, building.volume, building.category, heating.theta_int, monthlyISO, cooling.eer]);
@@ -4739,7 +5291,7 @@ export default function EnergyCalcApp({ cloud }) {
     let newQfH, newFuelFpH, newFuelCO2H;
     if (ri.addHP) {
       const cop = parseFloat(ri.hpCOP) || 4.0;
-      newQfH = newQH / cop; newFuelFpH = 2.50; newFuelCO2H = 0.107;
+      newQfH = newQH / cop; newFuelFpH = FP_ELEC; newFuelCO2H = 0.107;
     } else {
       const etaH = instSummary.eta_total_h || 0.80;
       newQfH = etaH > 0 ? newQH / etaH : 0;
@@ -4753,10 +5305,10 @@ export default function EnergyCalcApp({ cloud }) {
       : instSummary.qf_v;
     const newQfL = instSummary.qf_l;
     const newQfTotal = newQfH + newQfW + newQfC + newQfV + newQfL;
-    const acmFp = ri.addHP ? 2.50 : (instSummary.fuel?.fP_tot || 1.17);
-    const newEp = newQfH * newFuelFpH + newQfW * acmFp + newQfC * 2.50 + newQfV * 2.50 + newQfL * 2.50;
+    const acmFp = ri.addHP ? FP_ELEC : (instSummary.fuel?.fP_tot || 1.17);
+    const newEp = newQfH * newFuelFpH + newQfW * acmFp + newQfC * FP_ELEC + newQfV * FP_ELEC + newQfL * FP_ELEC;
     let renewEp = 0;
-    if (ri.addPV) { renewEp += (parseFloat(ri.pvArea)||0) * 0.21 * 0.97 * (selectedClimate?.solar?.Oriz||330) * 0.80 * 2.50; }
+    if (ri.addPV) { renewEp += (parseFloat(ri.pvArea)||0) * 0.21 * 0.97 * (selectedClimate?.solar?.Oriz||330) * 0.80 * FP_ELEC; }
     if (ri.addSolarTh) { renewEp += (parseFloat(ri.solarThArea)||0) * 0.75 * (selectedClimate?.solar?.S||390) * 0.85; }
     const newEpM2 = Au > 0 ? Math.max(0, newEp - renewEp) / Au : 0;
     const newClass = getEnergyClassEPBD(newEpM2, catKey);
@@ -4798,11 +5350,11 @@ export default function EnergyCalcApp({ cloud }) {
     const isFossil = src && !src.isCOP && ["gaz","motorina","carbune","gpl"].includes(src.fuel);
     return {
       nzeb: {
-        epOk: epActual <= nzeb.ep_max,
+        epOk: epActual <= getNzebEpMax(building.category, selectedClimate?.zone),
         rerOk: rerActual >= nzeb.rer_min,
         rerOnsiteOk: renewSummary.rerOnSite >= nzeb.rer_onsite_min,
-        compliant: epActual <= nzeb.ep_max && rerActual >= nzeb.rer_min,
-        ep_max: nzeb.ep_max,
+        compliant: epActual <= getNzebEpMax(building.category, selectedClimate?.zone) && rerActual >= nzeb.rer_min,
+        ep_max: getNzebEpMax(building.category, selectedClimate?.zone),
       },
       zeb: {
         epOk: epActual <= zeb.ep_max,
@@ -5072,7 +5624,7 @@ export default function EnergyCalcApp({ cloud }) {
     <EmisiiCO2 unit="kgCO2/(m2·an)">${co2F.toFixed(1)}</EmisiiCO2>
     <ClasaEnergetica>${cls.cls}</ClasaEnergetica>
     <NotaEnergetica>${cls.score}</NotaEnergetica>
-    <ConformNZEB>${epF <= (NZEB_THRESHOLDS[building.category]?.ep_max || 999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30)}</ConformNZEB>
+    <ConformNZEB>${epF <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30)}</ConformNZEB>
   </BilanțEnergetic>
   <Auditor>
     <Nume>${auditor.name || ""}</Nume>
@@ -5141,7 +5693,7 @@ export default function EnergyCalcApp({ cloud }) {
       const rer = renewSummary?.rer || 0;
       const Au = parseFloat(building.areaUseful) || 0;
       const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-      const isNZEB = epF <= nzeb.ep_max && rer >= nzeb.rer_min;
+      const isNZEB = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
       const w = doc.internal.pageSize.getWidth();
       let y = 15;
 
@@ -5339,7 +5891,7 @@ export default function EnergyCalcApp({ cloud }) {
     const rer = renewSummary?.rer || 0;
     const Au = parseFloat(building.areaUseful) || 0;
     const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-    const isNZEB = epF <= nzeb.ep_max && rer >= nzeb.rer_min;
+    const isNZEB = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
     const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || building.category;
 
     const lines = [];
@@ -5362,7 +5914,7 @@ export default function EnergyCalcApp({ cloud }) {
     lines.push(`Energie finală: ${instSummary.qf_total_m2?.toFixed(1)} kWh/(m²·an)`);
     lines.push(`RER (rata energie regenerabilă): ${rer.toFixed(1)}%`);
     lines.push(`Conformitate nZEB: ${isNZEB ? "DA — conform Legea 238/2024" : "NU — necesită reabilitare"}`);
-    lines.push(`  Prag EP: ≤${nzeb.ep_max} kWh/(m²·an), actual: ${epF.toFixed(1)}`);
+    lines.push(`  Prag EP: ≤${getNzebEpMax(building.category, selectedClimate?.zone)} kWh/(m²·an), actual: ${epF.toFixed(1)}`);
     lines.push(`  Prag RER: ≥${nzeb.rer_min}%, actual: ${rer.toFixed(1)}%`);
     lines.push("");
     lines.push("3. OBSERVAȚII ȘI CONSTATĂRI");
@@ -6296,6 +6848,61 @@ export default function EnergyCalcApp({ cloud }) {
                           <div>
                             <div className="font-bold text-emerald-300">DEMO COMPLET — Casă nouă nZEB Constanța 2025</div>
                             <div className="opacity-50 mt-0.5">PC sol-apă + PV 6kWp + solar termic + HR 92% · 5 elem. opace · 4 vitraje · 7 punți · Toți pașii 1-7</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button onClick={() => loadFullDemo2()}
+                        className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🏢</span>
+                          <div>
+                            <div className="font-bold text-emerald-300">DEMO — Bloc P+4 '73 reabilitat București</div>
+                            <div className="opacity-50 mt-0.5">Cazan gaz condensare · fără regenerabile · 3 elem. opace · 1 vitraje · 5 punți · Toți pașii 1-7</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button onClick={() => loadFullDemo3()}
+                        className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🏬</span>
+                          <div>
+                            <div className="font-bold text-emerald-300">DEMO — Birouri noi P+3 Cluj-Napoca</div>
+                            <div className="opacity-50 mt-0.5">VRF + PV 30kWp + HR 80% + LED BMS · 3 elem. opace · 2 vitraje · 4 punți · Toți pașii 1-7</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button onClick={() => loadFullDemo4()}
+                        className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🏫</span>
+                          <div>
+                            <div className="font-bold text-emerald-300">DEMO — Grădiniță reabilitată Iași</div>
+                            <div className="opacity-50 mt-0.5">Cazan peleți + solar termic + PV 10kWp + HR 70% · 3 elem. opace · 2 vitraje · 5 punți · Toți pașii 1-7</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button onClick={() => loadFullDemo5()}
+                        className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🏚️</span>
+                          <div>
+                            <div className="font-bold text-emerald-300">DEMO — Casă interbelică reabilitată Brașov</div>
+                            <div className="opacity-50 mt-0.5">PC aer-apă + PV 5kWp + solar termic + HR 85% · 3 elem. opace · 2 vitraje · 4 punți · Toți pașii 1-7</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button onClick={() => loadFullDemo6()}
+                        className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🛒</span>
+                          <div>
+                            <div className="font-bold text-emerald-300">DEMO — Supermarket nou Timișoara</div>
+                            <div className="opacity-50 mt-0.5">Chiller + UTA + PV 50kWp + LED senzori · 3 elem. opace · 2 vitraje · 3 punți · Toți pașii 1-7</div>
                           </div>
                         </div>
                       </button>
@@ -7691,7 +8298,7 @@ export default function EnergyCalcApp({ cloud }) {
                   {/* nZEB check */}
                   {renewSummary && (() => {
                     const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                    const isNzeb = renewSummary.rer >= nzeb.rer_min && renewSummary.ep_adjusted_m2 < nzeb.ep_max;
+                    const isNzeb = renewSummary.rer >= nzeb.rer_min && renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone);
                     return (
                     <Card title={t("Verificare nZEB",lang)} className={isNzeb ? "border-emerald-500/20" : "border-red-500/20"}>
                       <div className="space-y-2">
@@ -7702,9 +8309,9 @@ export default function EnergyCalcApp({ cloud }) {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs opacity-60">Ep &lt; {nzeb.ep_max} kWh/(m²an)</span>
-                          <span className={cn("text-xs font-medium", renewSummary.ep_adjusted_m2 < nzeb.ep_max ? "text-emerald-400" : "text-red-400")}>
-                            {renewSummary.ep_adjusted_m2 < nzeb.ep_max ? "DA" : "NU"} ({renewSummary.ep_adjusted_m2.toFixed(1)})
+                          <span className="text-xs opacity-60">Ep &lt; {getNzebEpMax(building.category, selectedClimate?.zone)} kWh/(m²an)</span>
+                          <span className={cn("text-xs font-medium", renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone) ? "text-emerald-400" : "text-red-400")}>
+                            {renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU"} ({renewSummary.ep_adjusted_m2.toFixed(1)})
                           </span>
                         </div>
                         <div className="flex items-center justify-between pt-1 border-t border-white/5">
@@ -7857,7 +8464,7 @@ export default function EnergyCalcApp({ cloud }) {
                     </div>
                     <div className="flex items-center justify-between bg-white/[0.03] rounded-lg p-3">
                       <span className="text-xs opacity-60">Statut nZEB</span>
-                      {(() => { const nz = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL; const ok = rer >= nz.rer_min && epFinal < nz.ep_max; return (
+                      {(() => { const nz = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL; const ok = rer >= nz.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone); return (
                       <Badge color={ok ? "green" : "red"}>
                         {ok ? "CONFORM" : "NECONFORM"}
                       </Badge>
@@ -7920,7 +8527,7 @@ export default function EnergyCalcApp({ cloud }) {
                       </div>
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center justify-between">
-                          <span className="opacity-50">EP ≤ {zebVerification.nzeb.ep_max}</span>
+                          <span className="opacity-50">EP ≤ {zebVerification.getNzebEpMax(building.category, selectedClimate?.zone)}</span>
                           <span style={{ color: zebVerification.nzeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.nzeb.epOk ? "✓" : "✗"}</span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -7962,7 +8569,7 @@ export default function EnergyCalcApp({ cloud }) {
                 <Card title={t("Dashboard sumar",lang)} className="mb-6">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (NZEB_THRESHOLDS[building.category]?.ep_max || 999) ? "#22c55e" : "#ef4444" },
+                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
                       { label:"Emisii CO₂", value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
                       { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
                       { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
@@ -7980,7 +8587,7 @@ export default function EnergyCalcApp({ cloud }) {
                       const ep = renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999;
                       const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
                       const rer = renewSummary?.rer || 0;
-                      const isNZEB = ep <= nzeb.ep_max && rer >= nzeb.rer_min;
+                      const isNZEB = ep <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
                       const zeb = ZEB_THRESHOLDS[building.category];
                       const isZEB = zeb && ep <= zeb.ep_max * ZEB_FACTOR && rer >= zeb.rer_min;
                       return <>
@@ -8213,7 +8820,7 @@ export default function EnergyCalcApp({ cloud }) {
                     {(function() {
                       const cat = building.category || "RI";
                       const isRes = ["RI","RC","RA"].includes(cat);
-                      const nzebEp = (NZEB_THRESHOLDS[cat] || NZEB_THRESHOLDS.RI).ep_max;
+                      const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
                       return isRes ? [
                         {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
                         {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
@@ -8375,12 +8982,12 @@ export default function EnergyCalcApp({ cloud }) {
                     {(() => {
                       var nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
                       var epF = renewSummary.ep_adjusted_m2;
-                      var isN = epF <= nzeb.ep_max && renewSummary.rer >= nzeb.rer_min;
+                      var isN = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min;
                       return (
                         <div className={cn("p-4 rounded-xl border text-center", isN ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
                           <div className="text-2xl font-black mb-1" style={{color:isN?"#22c55e":"#ef4444"}}>{isN?"✓":"✗"}</div>
                           <div className="text-xs font-bold">nZEB</div>
-                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{nzeb.ep_max} kWh/m²a</div>
+                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{getNzebEpMax(building.category, selectedClimate?.zone)} kWh/m²a</div>
                           <div className="text-[10px] opacity-50">RER: {renewSummary.rer.toFixed(0)}/{nzeb.rer_min}%</div>
                         </div>
                       );
@@ -8389,7 +8996,7 @@ export default function EnergyCalcApp({ cloud }) {
                     {/* ZEB readiness */}
                     {(() => {
                       var nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                      var zebMax = nzeb.ep_max * ZEB_FACTOR;
+                      var zebMax = getNzebEpMax(building.category, selectedClimate?.zone) * ZEB_FACTOR;
                       var epF = renewSummary.ep_adjusted_m2;
                       var hasFossil = ["gaz","motorina","carbune"].includes(instSummary.fuel?.id);
                       var isZEB = epF <= zebMax && !hasFossil && renewSummary.rer >= 30;
@@ -9149,14 +9756,14 @@ export default function EnergyCalcApp({ cloud }) {
                 rWT("yyy,y", fmtRo(arieDesf, 1));
 
                 // 9. ENERGIE PRIMARĂ xxxx,x — 2 apariții: EP real, EP referință nZEB
-                const epRefMax = NZEB_THRESHOLDS[building.category]?.ep_max || 148;
+                const epRefMax = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
                 rWTseq("xxxx,x", [fmtRo(Au > 0 ? epFinal * Au : 0, 1), fmtRo(Au > 0 ? epRefMax * Au : 0, 1)]);
 
                 // 10. VOLUM xxxx (fără virgulă)
                 rWT("xxxx", Math.round(Vol).toString());
 
                 // 11. CONSUM FINAL xx,x (4 apariții: termic, electric, clădire reală EP, clădire referință EP)
-                const epRef = NZEB_THRESHOLDS[building.category]?.ep_max || 148;
+                const epRef = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
                 rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1)]);
 
                 // 12. xxx,x secvențial (8 apariții totale)
@@ -9214,7 +9821,7 @@ export default function EnergyCalcApp({ cloud }) {
 
                 // 17. nZEB status text
                 const nzebDocx = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                const nzebOkDocx = epFinal <= nzebDocx.ep_max && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
+                const nzebOkDocx = epFinal <= getNzebEpMax(building.category, selectedClimate?.zone) && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
                 rWTpart("nZEB DA/NU", nzebOkDocx ? "DA" : "NU");
 
                 // 18. CATEGORIE + localizare
@@ -9489,7 +10096,7 @@ export default function EnergyCalcApp({ cloud }) {
       <Iluminat unit="kWh_an">${(instSummary.qf_l||0).toFixed(0)}</Iluminat>
       <Total unit="kWh_an">${(instSummary.qf_total||0).toFixed(0)}</Total>
     </ConsumFinal>
-    <nZEB indeplineste="${epFinal <= (NZEB_THRESHOLDS[building.category]?.ep_max||999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min||30)}"/>
+    <nZEB indeplineste="${epFinal <= (getNzebEpMax(building.category, selectedClimate?.zone)||999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min||30)}"/>
   </RezultateEnergetice>
 </CertificatPerformantaEnergetica>`;
 
@@ -9649,7 +10256,7 @@ export default function EnergyCalcApp({ cloud }) {
 
               // nZEB
               const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-              const nzebOk = rer >= nzeb.rer_min && epFinal < nzeb.ep_max;
+              const nzebOk = rer >= nzeb.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone);
               const nzebLabel = nzebOk ? "DA" : "NU";
 
               // Dates
@@ -10220,7 +10827,7 @@ ${(() => {
                           const annCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh / 4.95;
                           const epF = renewSummary.ep_adjusted_m2;
                           const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                          const gap = Math.max(0, epF - nzeb.ep_max);
+                          const gap = Math.max(0, epF - getNzebEpMax(building.category, selectedClimate?.zone));
                           const rerGap = Math.max(0, nzeb.rer_min - renewSummary.rer);
                           return (<>
                             <div className="grid grid-cols-3 gap-2 text-center">
@@ -10373,7 +10980,7 @@ ${(() => {
                     const isEN = lang === "EN";
                     const dateNow = new Date().toISOString().slice(0,10);
                     const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
-                    const zebMax = nzeb.ep_max * ZEB_FACTOR;
+                    const zebMax = getNzebEpMax(building.category, selectedClimate?.zone) * ZEB_FACTOR;
                     const hasFossil = ["gaz","motorina","carbune"].includes(instSummary.fuel?.id);
                     const isZEB = epF <= zebMax && !hasFossil && renewSummary.rer >= 30;
 
@@ -10397,14 +11004,14 @@ ${(() => {
 
                     // Criterii complete nZEB L.238/2024
                     const criteria = [
-                      { id: "EP", name: "Energie primară (Ep)", value: epF.toFixed(1) + " kWh/m²·an", limit: "< " + nzeb.ep_max + " kWh/m²·an", ok: epF <= nzeb.ep_max, weight: "CRITIC" },
+                      { id: "EP", name: "Energie primară (Ep)", value: epF.toFixed(1) + " kWh/m²·an", limit: "< " + getNzebEpMax(building.category, selectedClimate?.zone) + " kWh/m²·an", ok: epF <= getNzebEpMax(building.category, selectedClimate?.zone), weight: "CRITIC" },
                       { id: "RER", name: "RER total (Renewable Energy Ratio)", value: renewSummary.rer.toFixed(1) + "%", limit: "≥ " + nzeb.rer_min + "%", ok: renewSummary.rer >= nzeb.rer_min, weight: "CRITIC" },
                       { id: "RER_ONSITE", name: "RER on-site (producție proprie)", value: renewSummary.rerOnSite.toFixed(1) + "%", limit: "≥ 10%", ok: renewSummary.rerOnSiteOk, weight: "CRITIC" },
                       { id: "N50", name: "Permeabilitate la aer (n50)", value: n50Val.toFixed(1) + " h⁻¹", limit: "≤ 1.0 h⁻¹ (nZEB) / ≤ 3.0 h⁻¹ (renovare)", ok: n50Val <= 3.0, ideal: n50Val <= 1.0, weight: "MAJOR" },
                     ];
                     const allOpOk = uChecks.every(function(c){return c.ok === null || c.ok === true;});
                     const allGlOk = glazUChecks.every(function(c){return c.ok;});
-                    const globalNzeb = epF <= nzeb.ep_max && renewSummary.rer >= nzeb.rer_min && renewSummary.rerOnSiteOk && allOpOk && allGlOk;
+                    const globalNzeb = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min && renewSummary.rerOnSiteOk && allOpOk && allGlOk;
 
                     // Cost-optim simplu per măsură (NPV pe 20 ani, discount 5%)
                     const costEn = instSummary ? (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) : 0;
@@ -10531,7 +11138,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 <div class="note" style="line-height:1.6">
 <strong>Legislație națională:</strong> Legea 372/2005 privind performanța energetică a clădirilor (mod. Legea 238/2024 + OUG 59/2025 RED III); Mc 001-2022 (Ord. MDLPA 16/2023); C107/2005 + Ord. 2641/2017; I5-2022 (ventilare și climatizare); SR 4839:2014 (date climatice).<br>
 <strong>Legislație europeană:</strong> Directiva UE 2024/1275 (EPBD IV) — termen transpunere 29 mai 2026; Reg. Delegat UE 2025/2273 (republicare metodologie cost-optimă, referință 50 kWh/m²·an); SR EN ISO 52000-1:2017/NA:2023; SR EN ISO 52016-1:2017; SR EN ISO 13790; I5-2022 (ventilare).<br>
-<strong>Praguri nZEB categoria ${building.category}:</strong> Ep < ${nzeb.ep_max} kWh/m²·an, RER ≥ ${nzeb.rer_min}%, RER on-site ≥ ${NZEB_THRESHOLDS[building.category]?.rer_onsite_min || 10}%.<br>
+<strong>Praguri nZEB categoria ${building.category}:</strong> Ep < ${getNzebEpMax(building.category, selectedClimate?.zone)} kWh/m²·an, RER ≥ ${nzeb.rer_min}%, RER on-site ≥ ${NZEB_THRESHOLDS[building.category]?.rer_onsite_min || 10}%.<br>
 <strong>Notă:</strong> Acest raport este generat automat și are caracter orientativ. Nu înlocuiește raportul de audit energetic elaborat de un auditor atestat MDLPA.
 </div>
 
@@ -10782,7 +11389,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
             const nzebThresh = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-            const isNZEB = rer >= nzebThresh.rer_min && epFinal < nzebThresh.ep_max;
+            const isNZEB = rer >= nzebThresh.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone);
 
             // ── Analiza pierderilor prin anvelopa ──
             const envelopeAnalysis = (() => {
@@ -11470,7 +12077,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
                   <div className="text-xs font-medium opacity-50 mb-2">Nota privind auditul energetic</div>
                   <div className="text-[10px] opacity-35 space-y-1.5">
-                    <div>Acest raport de audit este generat automat pe baza datelor introduse si serveste ca instrument orientativ de predimensionare. Nu inlocuieste auditul energetic detaliat realizat de un auditor energetic atestat MDLPA conform Legii 372/2005 modificata prin Legea 238/2024. Factori conversie conform SR EN ISO 52000-1:2017/NA:2023 (fP electricitate=2.50, fCO2 electricitate=0.107, fP energie ambientala=0).</div>
+                    <div>Acest raport de audit este generat automat pe baza datelor introduse si serveste ca instrument orientativ de predimensionare. Nu inlocuieste auditul energetic detaliat realizat de un auditor energetic atestat MDLPA conform Legii 372/2005 modificata prin Legea 238/2024. Factori conversie conform SR EN ISO 52000-1:2017/NA:2023 (fP electricitate=2.62, fCO2 electricitate=0.107, fP energie ambientala=0).</div>
                     <div>Recomandari bazate pe: Mc 001-2022 (Ordinul MDLPA 16/2023), C107/2005, SR EN ISO 13790, Directiva UE 2024/1275 (EPBD IV), Legea 238/2024, si valorile de referinta din normativele romanesti.</div>
                     <div>Costurile orientative sunt estimate la nivelul anului 2025 si nu includ TVA, proiectare, avize sau alte costuri conexe.</div>
                     <div>Directiva UE 2024/1275 (EPBD IV, termen transpunere mai 2026) va introduce: clădiri cu emisii zero (ZEB) obligatoriu din 2028/2030, scală armonizată A-G (fără A+), pașaport renovare, jurnal digital al clădirii, și standarde minime de performanță energetică (MEPS).</div>
@@ -11609,7 +12216,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
         const co2Cls = getCO2Class(co2F, building.category);
         const rer = renewSummary?.rer || 0;
         const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-        const isNZEB = epF <= nzeb.ep_max && rer >= nzeb.rer_min;
+        const isNZEB = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
         const Au = parseFloat(building.areaUseful) || 0;
         return (
           <div className="fixed inset-0 z-[99999] bg-[#0d1117] flex flex-col items-center justify-center p-8" onClick={() => setPresentationMode(false)}>
