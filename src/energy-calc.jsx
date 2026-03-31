@@ -6699,7 +6699,7 @@ export default function EnergyCalcApp({ cloud }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 justify-end shrink-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 sm:gap-2 justify-end shrink min-w-0 overflow-x-auto no-scrollbar">
             <button onClick={function(){setPrintMode(true);setTimeout(function(){window.print();setPrintMode(false);},500);}} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0">🖨️</button>
             {storageStatus && <span className="text-[8px] opacity-20 hidden lg:inline shrink-0">{storageStatus}</span>}
             <div className="flex items-center gap-0.5 hidden md:flex shrink-0">
