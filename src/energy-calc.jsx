@@ -2247,13 +2247,13 @@ const TYPICAL_BUILDINGS_EXTRA = [
   },
 ];
 
-// Pre-concatenated template list — avoids [...spread] on every render
-const ALL_TEMPLATES = [...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA];
+// Note: template list is spread inline where used — Rollup's module
+// concatenation breaks hoisted const references at module level.
 
 // ═══════════════════════════════════════════════════════════════
 // CATALOG PRODUSE REALE — Ferestre, PC, PV (F3)
 // ═══════════════════════════════════════════════════════════════
-var PRODUCT_CATALOG = { // var prevents Rollup TDZ on circular module refs
+const PRODUCT_CATALOG = {
   windows: [
     { brand:"Rehau", model:"Brillant-Design 70mm", u:1.30, g:0.62, type:"PVC dublu", price:160 },
     { brand:"Rehau", model:"Synego 80mm", u:1.00, g:0.55, type:"PVC tripan", price:240 },
@@ -3597,7 +3597,7 @@ export default function EnergyCalcApp({ cloud }) {
   }, []);
 
   const loadTypicalBuilding = useCallback((tplId) => {
-    const tpl = ALL_TEMPLATES.find(t => t.id === tplId);
+    const tpl = [...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].find(t => t.id === tplId);
     if (!tpl) return;
     setBuilding(prev => ({...prev, ...tpl.building}));
     setOpaqueElements(tpl.opaque || []);
@@ -6967,7 +6967,7 @@ export default function EnergyCalcApp({ cloud }) {
 
                       <div className="border-t border-white/[0.06] my-2"></div>
 
-                      {ALL_TEMPLATES.map(tpl => (
+                      {[...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].map(tpl => (
                         <button key={tpl.id} onClick={() => { loadTypicalBuilding(tpl.id); showToast(`Template "${tpl.label}" încărcat`, "success"); }}
                           className="w-full text-left px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-500/20 transition-all text-xs">
                           <div className="font-medium">{tpl.label}</div>
