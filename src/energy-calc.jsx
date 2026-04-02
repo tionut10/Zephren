@@ -3599,11 +3599,90 @@ export default function EnergyCalcApp({ cloud }) {
   const loadTypicalBuilding = useCallback((tplId) => {
     const tpl = [...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].find(t => t.id === tplId);
     if (!tpl) return;
+    pushUndo();
+    // Pas 1-2: Clădire + anvelopă
     setBuilding(prev => ({...prev, ...tpl.building}));
     setOpaqueElements(tpl.opaque || []);
     setGlazingElements(tpl.glazing || []);
     setThermalBridges((tpl.bridges || []).map(b => ({...b, type: "Predefinit"})));
-  }, []);
+
+    // Pas 3-4: Instalații + regenerabile — defaults realiste per categorie
+    const cat = tpl.building?.category || tpl.cat || "RI";
+    const yr = parseInt(tpl.building?.yearBuilt) || 1980;
+    const isNew = yr >= 2020;
+    const isRenov = yr < 2020 && parseInt(tpl.building?.yearRenov) > 2015;
+
+    // Încălzire — defaults per epocă și categorie
+    const heatDefaults = {
+      // Clădiri vechi: gaz standard/condensare, radiatoare
+      old: { source: "GAZ_STD", power: "", eta_gen: "0.85", emission: "RAD_OT", eta_em: "0.93",
+        distribution: "SLAB_INT", eta_dist: "0.85", control: "FARA", eta_ctrl: "0.82",
+        regime: "intermitent", theta_int: "20", nightReduction: "4", tStaircase: "15", tBasement: "10", tAttic: "5" },
+      // Renovate: gaz condensare, robinete termostatice
+      renov: { source: "GAZ_COND", power: "", eta_gen: "0.97", emission: "RAD_OT", eta_em: "0.93",
+        distribution: "MED_INT", eta_dist: "0.90", control: "TERMO_RAD", eta_ctrl: "0.93",
+        regime: "intermitent", theta_int: "20", nightReduction: "3", tStaircase: "15", tBasement: "10", tAttic: "5" },
+      // Noi: PC sau gaz condensare cu pardoseală
+      new_ri: { source: "PC_AA", power: "", eta_gen: "3.50", emission: "PARD", eta_em: "0.97",
+        distribution: "BINE_INT", eta_dist: "0.95", control: "INTELIG", eta_ctrl: "0.97",
+        regime: "continuu", theta_int: "20", nightReduction: "2", tStaircase: "", tBasement: "8", tAttic: "5" },
+      new_bi: { source: "PC_AA", power: "", eta_gen: "3.50", emission: "VENT_CONV", eta_em: "0.93",
+        distribution: "BINE_INT", eta_dist: "0.95", control: "INTELIG", eta_ctrl: "0.97",
+        regime: "intermitent", theta_int: "21", nightReduction: "4", tStaircase: "", tBasement: "10", tAttic: "" },
+    };
+    const hKey = isNew ? (["BI","CO","SP"].includes(cat) ? "new_bi" : "new_ri") : isRenov ? "renov" : "old";
+    setHeating(heatDefaults[hKey]);
+
+    // ACM
+    setAcm({
+      source: isNew ? "PC_ACM" : "CAZAN_H",
+      consumers: tpl.building?.units || "1", dailyLiters: (ACM_CONSUMPTION[cat] || 50).toString(),
+      storageVolume: "", storageLoss: "2.0", pipeLength: "", pipeInsulated: isNew || isRenov,
+      circRecirculation: ["RC","HC","SA"].includes(cat), circHours: ["RC","HC","SA"].includes(cat) ? "12" : "",
+    });
+
+    // Răcire
+    const hasCool = isNew || ["BI","CO","HC","SA","SP"].includes(cat);
+    setCooling({
+      system: hasCool ? (isNew ? "PC_REV" : "SPLIT") : "NONE",
+      power: "", eer: hasCool ? (isNew ? "4.00" : "3.50") : "",
+      cooledArea: "", distribution: hasCool ? "BINE_INT" : "", hasCooling: hasCool,
+    });
+
+    // Ventilare
+    setVentilation({
+      type: isNew ? "MEC_HR80" : isRenov ? "MEC_EXT" : "NAT",
+      airflow: "", fanPower: "", operatingHours: "",
+      hrEfficiency: isNew ? "80" : "",
+    });
+
+    // Iluminat
+    setLighting({
+      type: isNew ? "LED" : yr >= 2000 ? "CFL" : "TUB_T8",
+      pDensity: isNew ? "4.5" : yr >= 2000 ? "8.0" : "10.0",
+      controlType: isNew ? "PREZ_DAY" : isRenov ? "TIMER" : "MAN",
+      fCtrl: isNew ? "0.60" : isRenov ? "0.90" : "1.00",
+      operatingHours: (LIGHTING_HOURS[cat] || 2000).toString(),
+      naturalLightRatio: "25",
+    });
+
+    // Regenerabile — doar pentru clădiri noi
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: isNew,
+      ...(isNew ? { type: "MONO", area: "", peakPower: "", orientation: "S", tilt: "15", inverterType: "STD", inverterEta: "0.96", usage: "autoconsum" } : {}),
+    });
+    setHeatPump({ ...INITIAL_HP, enabled: isNew && hKey.startsWith("new"),
+      ...(isNew ? { type: "PC_AA", cop: "3.50", scopHeating: "3.00", covers: "heating_acm" } : {}),
+    });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+
+    // Auditor gol
+    setAuditor(prev => ({ ...prev, name: "", atestat: "", grade: "", company: "", phone: "", email: "",
+      date: new Date().toISOString().slice(0, 10), observations: "" }));
+
+    setStep(1);
+  }, [pushUndo]);
 
   // ═══════════════════════════════════════════════════════════
   // EXEMPLU DEMO COMPLET — Casă individuală P+1+M, Constanța 2025, nZEB clasa A
