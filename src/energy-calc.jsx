@@ -4408,17 +4408,40 @@ export default function EnergyCalcApp({ cloud }) {
     thermalBridges.forEach(function(b) {
       rows.push(["Punte", b.name||"", b.type||"", "", "", "", "", "", "", b.psi||"", b.length||""].join(","));
     });
-    // Summary row
+    // Summary
     rows.push("");
+    rows.push("=== DATE GENERALE ===");
     rows.push("Parametru,Valoare");
     rows.push("Categorie," + (building.category||""));
     rows.push("Localitate," + (building.locality||""));
     rows.push("Au m2," + (building.areaUseful||""));
     rows.push("Volum m3," + (building.volume||""));
     rows.push("An constructie," + (building.yearBuilt||""));
-    rows.push("Sursa incalzire," + (heating.source||""));
+    rows.push("Zona climatica," + (selectedClimate?.zone||""));
+    // Systems
+    rows.push("");
+    rows.push("=== INSTALATII ===");
+    rows.push("Sursa incalzire," + (HEAT_SOURCES.find(function(s){return s.id===heating.source;})?.label||heating.source));
+    rows.push("Randament generare," + (heating.eta_gen||""));
+    rows.push("Sursa ACM," + (ACM_SOURCES.find(function(s){return s.id===acm.source;})?.label||acm.source));
+    rows.push("Sistem racire," + (COOLING_SYSTEMS.find(function(s){return s.id===cooling.system;})?.label||cooling.system));
+    rows.push("Tip ventilare," + (VENTILATION_TYPES.find(function(s){return s.id===ventilation.type;})?.label||ventilation.type));
+    rows.push("Tip iluminat," + (LIGHTING_TYPES.find(function(s){return s.id===lighting.type;})?.label||lighting.type));
+    // Results
+    if (instSummary) {
+      var epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
+      var co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+      rows.push("");
+      rows.push("=== REZULTATE ===");
+      rows.push("Energie primara kWh/(m2·an)," + (epF?.toFixed(1)||""));
+      rows.push("Emisii CO2 kgCO2/(m2·an)," + (co2F?.toFixed(1)||""));
+      rows.push("Clasa energetica," + (getEnergyClassEPBD(epF, building.category)?.cls||""));
+      rows.push("RER %," + ((renewSummary?.rer||0).toFixed(1)));
+      rows.push("Coef global G W/(m3·K)," + (envelopeSummary?.G?.toFixed(4)||""));
+      rows.push("Energie finala kWh/(m2·an)," + (instSummary.qf_total_m2?.toFixed(1)||""));
+    }
 
-    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["\uFEFF" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -4426,7 +4449,7 @@ export default function EnergyCalcApp({ cloud }) {
     a.click();
     URL.revokeObjectURL(url);
     showToast("CSV exportat cu succes.", "success");
-  }, [building, opaqueElements, glazingElements, thermalBridges, heating, showToast]);
+  }, [building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, instSummary, renewSummary, envelopeSummary, selectedClimate, showToast]);
 
   // ═══════════════════════════════════════════════════════════
   // EXPORT EXCEL (.xlsx) — Structured workbook with multiple sheets
@@ -4471,19 +4494,107 @@ export default function EnergyCalcApp({ cloud }) {
       if (instSummary) {
         const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
         const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+        const Au = parseFloat(building.areaUseful) || 1;
         const resultsData = [
           ["Indicator", "Valoare", "Unitate"],
-          ["Energie primară", epF?.toFixed(1)||"", "kWh/(m²·an)"],
+          ["Energie primară totală", epF?.toFixed(1)||"", "kWh/(m²·an)"],
           ["Emisii CO₂", co2F?.toFixed(1)||"", "kgCO₂/(m²·an)"],
           ["Clasă energetică", getEnergyClassEPBD(epF, building.category)?.cls||"", ""],
-          ["RER", ((renewSummary?.rer||0)*100).toFixed(1), "%"],
+          ["RER", (renewSummary?.rer||0).toFixed(1), "%"],
+          ["Conform nZEB", (renewSummary?.rer||0) >= 30 && epF <= getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU", ""],
           ["Coef. global G", envelopeSummary?.G?.toFixed(4)||"", "W/(m³·K)"],
-          ["Energie finală", instSummary.qf_total_m2?.toFixed(1)||"", "kWh/(m²·an)"],
-          ["Qf încălzire", instSummary.qf_h?.toFixed(1)||"", "kWh/an"],
-          ["Qf ACM", instSummary.qf_w?.toFixed(1)||"", "kWh/an"],
-          ["Qf răcire", instSummary.qf_c?.toFixed(1)||"", "kWh/an"],
+          ["", "", ""],
+          ["Energie finală per utilitate", "kWh/an", "kWh/(m²·an)"],
+          ["Încălzire", instSummary.qf_h?.toFixed(0)||"", (instSummary.qf_h/Au)?.toFixed(1)||""],
+          ["Apă caldă (ACM)", instSummary.qf_w?.toFixed(0)||"", (instSummary.qf_w/Au)?.toFixed(1)||""],
+          ["Răcire", instSummary.qf_c?.toFixed(0)||"", (instSummary.qf_c/Au)?.toFixed(1)||""],
+          ["Ventilare", instSummary.qf_v?.toFixed(0)||"", (instSummary.qf_v/Au)?.toFixed(1)||""],
+          ["Iluminat", instSummary.qf_l?.toFixed(0)||"", (instSummary.qf_l/Au)?.toFixed(1)||""],
+          ["TOTAL finală", instSummary.qf_total?.toFixed(0)||"", instSummary.qf_total_m2?.toFixed(1)||""],
+          ["", "", ""],
+          ["Energie primară per utilitate", "kWh/an", "kWh/(m²·an)"],
+          ["Încălzire", instSummary.ep_h?.toFixed(0)||"", (instSummary.ep_h/Au)?.toFixed(1)||""],
+          ["Apă caldă (ACM)", instSummary.ep_w?.toFixed(0)||"", (instSummary.ep_w/Au)?.toFixed(1)||""],
+          ["Răcire", instSummary.ep_c?.toFixed(0)||"", (instSummary.ep_c/Au)?.toFixed(1)||""],
+          ["Ventilare", instSummary.ep_v?.toFixed(0)||"", (instSummary.ep_v/Au)?.toFixed(1)||""],
+          ["Iluminat", instSummary.ep_l?.toFixed(0)||"", (instSummary.ep_l/Au)?.toFixed(1)||""],
+          ["TOTAL primară", instSummary.ep_total?.toFixed(0)||"", instSummary.ep_total_m2?.toFixed(1)||""],
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resultsData), "Rezultate");
+      }
+
+      // Sheet 6: Monthly balance (if available)
+      if (monthlyISO && monthlyISO.length === 12) {
+        const monthData = [["Lună", "T ext (°C)", "Q pierderi (kWh)", "Q aporturi (kWh)", "Q încălzire (kWh)", "Q răcire (kWh)", "η_H", "γ_H"]];
+        monthlyISO.forEach(m => monthData.push([
+          m.name, m.tExt?.toFixed(1)||"", m.Q_loss?.toFixed(0)||"", m.Q_gain?.toFixed(0)||"",
+          m.qH_nd?.toFixed(0)||"", m.qC_nd?.toFixed(0)||"", m.eta_H?.toFixed(3)||"", m.gamma_H?.toFixed(3)||""
+        ]));
+        monthData.push(["TOTAL", "", monthlyISO.reduce((s,m)=>s+(m.Q_loss||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.Q_gain||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.qH_nd||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.qC_nd||0),0).toFixed(0), "", ""]);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthData), "Bilanț lunar");
+      }
+
+      // Sheet 7: Systems
+      const sysData = [
+        ["Sistem", "Parametru", "Valoare"],
+        ["Încălzire", "Sursă", HEAT_SOURCES.find(s=>s.id===heating.source)?.label||heating.source],
+        ["", "Putere nominală (kW)", heating.power||""],
+        ["", "Randament generare", heating.eta_gen||""],
+        ["", "Sistem emisie", EMISSION_SYSTEMS.find(s=>s.id===heating.emission)?.label||""],
+        ["", "Calitate distribuție", DISTRIBUTION_QUALITY.find(s=>s.id===heating.distribution)?.label||""],
+        ["", "Tip reglaj", CONTROL_TYPES.find(s=>s.id===heating.control)?.label||""],
+        ["ACM", "Sursă", ACM_SOURCES.find(s=>s.id===acm.source)?.label||acm.source],
+        ["", "Consumatori", acm.consumers||""],
+        ["", "Litri/zi/pers", acm.dailyLiters||""],
+        ["Răcire", "Sistem", COOLING_SYSTEMS.find(s=>s.id===cooling.system)?.label||cooling.system],
+        ["", "EER", cooling.eer||""],
+        ["Ventilare", "Tip", VENTILATION_TYPES.find(s=>s.id===ventilation.type)?.label||ventilation.type],
+        ["", "Debit (m³/h)", ventilation.airflow||""],
+        ["", "Recuperare (%)", ventilation.hrEfficiency||""],
+        ["Iluminat", "Tip", LIGHTING_TYPES.find(s=>s.id===lighting.type)?.label||lighting.type],
+        ["", "Densitate (W/m²)", lighting.pDensity||""],
+        ["", "LENI (kWh/m²·an)", instSummary?.leni?.toFixed(1)||""],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sysData), "Instalații");
+
+      // Sheet 8: Renewables
+      const renData = [
+        ["Sursă regenerabilă", "Parametru", "Valoare"],
+        ["PV", "Activ", photovoltaic.enabled ? "DA" : "NU"],
+        ["", "Putere (kWp)", photovoltaic.peakPower||""],
+        ["", "Suprafață (m²)", photovoltaic.area||""],
+        ["", "Producție (kWh/an)", renewSummary?.qPV_kWh?.toFixed(0)||""],
+        ["Solar termic", "Activ", solarThermal.enabled ? "DA" : "NU"],
+        ["", "Suprafață (m²)", solarThermal.area||""],
+        ["", "Producție (kWh/an)", renewSummary?.qSolarTh?.toFixed(0)||""],
+        ["Pompă căldură", "Activ", heatPump.enabled ? "DA" : "NU"],
+        ["", "Tip", heatPump.type||""],
+        ["", "COP nominal", heatPump.cop||""],
+        ["Biomasă", "Activ", biomass.enabled ? "DA" : "NU"],
+        ["", "Tip", biomass.type||""],
+        ["", "", ""],
+        ["TOTAL", "RER (%)", (renewSummary?.rer||0).toFixed(1)],
+        ["", "RER on-site (%)", (renewSummary?.rerOnSite||0).toFixed(1)],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(renData), "Regenerabile");
+
+      // Sheet 9: Auditor
+      if (auditor.name) {
+        const audData = [
+          ["Câmp", "Valoare"],
+          ["Nume auditor", auditor.name||""],
+          ["Nr. atestat", auditor.atestat||""],
+          ["Grad", auditor.grade||""],
+          ["Firmă", auditor.company||""],
+          ["Telefon", auditor.phone||""],
+          ["Email", auditor.email||""],
+          ["Data CPE", auditor.date||""],
+          ["Observații", auditor.observations||""],
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(audData), "Auditor");
       }
 
       const filename = `Zephren_${(building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25)}_${new Date().toISOString().slice(0,10)}.xlsx`;
