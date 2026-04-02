@@ -10029,16 +10029,17 @@ export default function EnergyCalcApp({ cloud }) {
                 rWT("zzz,z", fmtRo(Aref, 1));
                 rWT("yyy,y", fmtRo(arieDesf, 1));
 
-                // 9. ENERGIE PRIMARĂ xxxx,x — 2 apariții: EP real, EP referință nZEB
+                // 9. ENERGIE PRIMARĂ xxxx,x — 2 apariții: EP real total [kWh/an], EP referință total [kWh/an]
                 const epRefMax = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
-                rWTseq("xxxx,x", [fmtRo(Au > 0 ? epFinal * Au : 0, 1), fmtRo(Au > 0 ? epRefMax * Au : 0, 1)]);
+                const epTotalReal = Au > 0 ? epFinal * Au : 0;
+                const epTotalRef = Au > 0 ? epRefMax * Au : 0;
+                rWTseq("xxxx,x", [fmtRo(epTotalReal, 1), fmtRo(epTotalRef, 1)]);
 
                 // 10. VOLUM xxxx (fără virgulă)
                 rWT("xxxx", Math.round(Vol).toString());
 
-                // 11. CONSUM FINAL xx,x (4 apariții: termic, electric, clădire reală EP, clădire referință EP)
-                const epRef = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
-                rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1), fmtRo(qfFinal_t + qfFinal_e, 1)]);
+                // 11. CONSUM FINAL xx,x (4 apariții: termic specifc, electric specific, EP specific real, EP specific ref)
+                rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1), fmtRo(epFinal, 1), fmtRo(epRefMax, 1)]);
 
                 // 12. xxx,x secvențial (8 apariții totale)
                 //     1=aria utilă, 2=CO₂, 3=solar_th, 4=solar_electric, 5=pompe_cald, 6=biomasa, 7=alt_SRE, 8=total_SRE
@@ -10097,6 +10098,44 @@ export default function EnergyCalcApp({ cloud }) {
                 const nzebDocx = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
                 const nzebOkDocx = epFinal <= getNzebEpMax(building.category, selectedClimate?.zone) && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
                 rWTpart("nZEB DA/NU", nzebOkDocx ? "DA" : "NU");
+
+                // 17b. RESCRIE SCALE CLASARE ÎN DOCX
+                // Template-ul MDLPA are scale fixe hardcodate (birouri). Rescrim cu scalele
+                // corecte pentru categoria curentă din ENERGY_CLASSES_DB.
+                const gridDocx = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category] || ENERGY_CLASSES_DB.AL;
+                const co2GridDocx = CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL;
+                if (gridDocx && gridDocx.thresholds) {
+                  const th = gridDocx.thresholds;
+                  const ct = co2GridDocx.thresholds;
+                  // Rescrie scale energie primară — template are "≤ 23", "23 ... 32", etc.
+                  // Strategia: căutăm pattern-uri numerice din scalele vechi și le înlocuim
+                  // cu valorile noi. Template-urile MDLPA au formatul "≤ XX" și "XX ... YY"
+                  const oldScales = [
+                    // Scale birouri (template default) — cele din DOCX original
+                    [23, 32, 65, 153, 241, 302, 362],    // încălzire
+                    [26, 36, 72, 85, 98, 122, 146],      // ACM
+                    [7, 10, 20, 30, 39, 49, 59],         // răcire
+                    [6, 8, 17, 26, 35, 43, 52],          // ventilare
+                    [5, 7, 14, 27, 39, 49, 59],          // iluminat
+                  ];
+                  // Noile scale — proporționale cu scala totală per categorie
+                  // Proporțiile pe utilitate sunt aprox: încălzire 45%, ACM 25%, răcire 10%, ventilare 8%, iluminat 12%
+                  const ratios = [0.45, 0.25, 0.10, 0.08, 0.12];
+                  oldScales.forEach((oldTh, utilIdx) => {
+                    const newTh = th.map(t => Math.round(t * ratios[utilIdx]));
+                    oldTh.forEach((oldVal, clsIdx) => {
+                      // Înlocuim prima apariție a valorii vechi cu cea nouă
+                      // Formatul în DOCX: "≤ 23" sau "23" standalone
+                      const oldStr = String(oldVal);
+                      const newStr = String(newTh[clsIdx]);
+                      if (oldStr !== newStr) {
+                        // Cautăm în XML noduri <w:t> care conțin exact numărul
+                        const re = new RegExp("(<w:t[^>]*>)([^<]*\\b)" + oldStr + "(\\b[^<]*)(</w:t>)", "g");
+                        xml = xml.replace(re, "$1$2" + esc(newStr) + "$3$4");
+                      }
+                    });
+                  });
+                }
 
                 // 18. CATEGORIE + localizare
                 const catLabelDocx = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
