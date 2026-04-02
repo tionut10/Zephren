@@ -12720,8 +12720,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               {/* Legend */}
               {Object.entries(ZONE_COLORS).map(([zone, color], i) => (
                 <g key={zone}>
-                  <circle cx={20} cy={368 + i*15} r="4" fill={color} />
-                  <text x={30} y={371 + i*15} fill="rgba(255,255,255,0.5)" fontSize="8">Zona {zone} ({zone==="I"?"θe=-12°C":zone==="II"?"θe=-15°C":zone==="III"?"θe=-18°C":zone==="IV"?"θe=-21°C":"θe=-25°C"})</text>
+                  <circle cx={20} cy={320 + i*14} r="4" fill={color} />
+                  <text x={30} y={323 + i*14} fill="rgba(255,255,255,0.5)" fontSize="7.5">Zona {zone} ({zone==="I"?"θe=-12°C":zone==="II"?"θe=-15°C":zone==="III"?"θe=-18°C":zone==="IV"?"θe=-21°C":"θe=-25°C"})</text>
                 </g>
               ))}
             </svg>
