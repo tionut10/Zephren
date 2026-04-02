@@ -2248,12 +2248,12 @@ const TYPICAL_BUILDINGS_EXTRA = [
 ];
 
 // Pre-concatenated template list — avoids [...spread] on every render
-const ALL_TEMPLATES = ALL_TEMPLATES;
+const ALL_TEMPLATES = [...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA];
 
 // ═══════════════════════════════════════════════════════════════
 // CATALOG PRODUSE REALE — Ferestre, PC, PV (F3)
 // ═══════════════════════════════════════════════════════════════
-const PRODUCT_CATALOG = {
+var PRODUCT_CATALOG = { // var prevents Rollup TDZ on circular module refs
   windows: [
     { brand:"Rehau", model:"Brillant-Design 70mm", u:1.30, g:0.62, type:"PVC dublu", price:160 },
     { brand:"Rehau", model:"Synego 80mm", u:1.00, g:0.55, type:"PVC tripan", price:240 },
