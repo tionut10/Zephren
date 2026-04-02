@@ -40,10 +40,13 @@ function fixHookTDZ() {
     enforce: "post",
     transform(code, id) {
       if (!id.includes("energy-calc.jsx")) return null;
-      // Convert ALL const to var in this file to eliminate TDZ entirely.
-      // The file has 80+ hooks and complex forward references that Rollup
-      // can't always resolve safely with const TDZ semantics.
-      const patched = code.replace(/\bconst\s+/g, "var ");
+      // Convert const to var ONLY for simple assignments (not destructuring).
+      // This avoids TDZ issues from Rollup's module concatenation while
+      // preserving destructuring patterns like const [a, b] = useState(...)
+      const patched = code.replace(
+        /\bconst\s+(\w+)\s*=/g,
+        "var $1 ="
+      );
       return patched !== code ? patched : null;
     },
   };
