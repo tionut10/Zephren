@@ -23,25 +23,26 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-    // Force SW update on every page load — ensures new deploys are picked up
+    // Nuke all old service workers and caches, then register fresh
     if('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(function(reg) {
-        reg.update();
-        // If a new SW is waiting, activate it immediately
-        if (reg.waiting) { reg.waiting.postMessage('skipWaiting'); }
-        reg.addEventListener('updatefound', function() {
-          var newSW = reg.installing;
-          if (newSW) newSW.addEventListener('statechange', function() {
-            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              newSW.postMessage('skipWaiting');
-            }
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        var hadOld = false;
+        regs.forEach(function(r) { r.unregister(); hadOld = true; });
+        // Clear all caches
+        if (typeof caches !== 'undefined') {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) { caches.delete(k); });
           });
-        });
-      }).catch(function(){});
-      // Reload when the new SW takes over
-      var refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        if (!refreshing) { refreshing = true; window.location.reload(); }
+        }
+        // If we nuked old SWs, reload once to get fresh assets
+        if (hadOld && !sessionStorage.getItem('sw_nuked')) {
+          sessionStorage.setItem('sw_nuked', '1');
+          window.location.reload();
+          return;
+        }
+        sessionStorage.removeItem('sw_nuked');
+        // Register new SW after cleanup
+        navigator.serviceWorker.register('/sw.js').catch(function(){});
       });
     }
     </script>
