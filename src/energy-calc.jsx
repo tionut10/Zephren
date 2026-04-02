@@ -2295,19 +2295,37 @@ const PRODUCT_CATALOG = {
 // ═══════════════════════════════════════════════════════════════
 // HARTA CLIMATICĂ SVG — Coordonate localități pe contur România
 // ═══════════════════════════════════════════════════════════════
-const ROMANIA_MAP_POINTS = {
-  "București":{x:310,y:280}, "Cluj-Napoca":{x:195,y:155}, "Constanța":{x:385,y:285},
-  "Iași":{x:340,y:125}, "Timișoara":{x:80,y:210}, "Brașov":{x:255,y:215},
-  "Sibiu":{x:210,y:210}, "Oradea":{x:105,y:145}, "Craiova":{x:185,y:305},
-  "Bacău":{x:320,y:165}, "Suceava":{x:290,y:100}, "Miercurea Ciuc":{x:290,y:175},
-  "Galați":{x:370,y:215}, "Pitești":{x:230,y:270}, "Ploiești":{x:285,y:255},
-  "Brăila":{x:365,y:235}, "Arad":{x:85,y:180}, "Baia Mare":{x:155,y:105},
-  "Târgu Mureș":{x:245,y:170}, "Deva":{x:165,y:210}, "Bistrița":{x:230,y:130},
-  "Satu Mare":{x:120,y:95}, "Buzău":{x:320,y:240}, "Focșani":{x:340,y:210},
-  "Alba Iulia":{x:195,y:195}, "Drobeta-Turnu Severin":{x:120,y:290},
-  "Reșița":{x:95,y:240}, "Slobozia":{x:345,y:270}, "Vaslui":{x:355,y:155},
-  "Tulcea":{x:400,y:225}, "Predeal":{x:260,y:225}, "Câmpulung":{x:245,y:245},
-};
+// Coordonate localități pe hartă — viewBox 0 0 500 400, calibrate pe conturul real
+// Proiecție: lon [20.2°..29.7°] → x [25..475], lat [43.6°..48.3°] → y [350..20]
+function geoToSvg(lat, lon) {
+  return { x: 25 + (lon - 20.2) * (450 / 9.5), y: 350 - (lat - 43.6) * (330 / 4.7) };
+}
+const ROMANIA_MAP_POINTS = {};
+CLIMATE_DB.forEach(function(c) {
+  // Use lat from CLIMATE_DB + estimated longitude per city
+  var lonMap = {
+    "București":26.10,"Cluj-Napoca":23.60,"Constanța":28.65,"Iași":27.58,"Timișoara":21.23,
+    "Brașov":25.60,"Sibiu":24.15,"Oradea":21.92,"Craiova":23.80,"Bacău":26.92,
+    "Suceava":26.25,"Miercurea Ciuc":25.80,"Galați":28.05,"Pitești":24.87,"Ploiești":26.03,
+    "Brăila":27.97,"Arad":21.31,"Baia Mare":23.58,"Târgu Mureș":24.55,"Deva":22.90,
+    "Bistrița":24.50,"Satu Mare":22.88,"Buzău":26.83,"Focșani":27.18,"Alba Iulia":23.57,
+    "Drobeta-Turnu Severin":22.66,"Reșița":21.88,"Slobozia":26.63,"Vaslui":27.73,
+    "Tulcea":28.80,"Predeal":25.58,"Câmpulung":25.04,"Făgăraș":24.97,
+    "Sfântu Gheorghe":25.79,"Toplița":25.35,"Zalău":23.06,"Piatra Neamț":26.37,
+    "Roman":26.92,"Botoșani":26.67,"Mediaș":24.35,"Petroșani":23.37,"Turda":23.78,
+    "Dorohoi":26.40,"Câmpulung Moldovenesc":25.55,"Sighetu Marmației":23.89,
+    "Reghin":24.71,"Odorheiu Secuiesc":25.30,"Bușteni":25.54,"Sinaia":25.55,
+    "Mangalia":28.58,"Hunedoara":22.90,"Lugoj":21.90,"Campina":25.73,
+    "Râmnicu Vâlcea":24.37,"Caracal":24.35,"Tecuci":27.43,"Adjud":27.18,
+    "Târgoviște":25.46,"Slatina":24.36,"Alexandria":25.33,"Giurgiu":25.97,
+    "Călărași":27.00,
+  };
+  var lon = lonMap[c.name];
+  if (lon && c.lat) ROMANIA_MAP_POINTS[c.name] = geoToSvg(c.lat, lon);
+});
+
+// Realistic Romania border SVG path (simplified from Natural Earth data)
+const ROMANIA_BORDER_PATH = "M165,163 L160,155 L148,148 L140,138 L128,130 L118,118 L108,105 L100,95 L92,88 L85,85 L78,90 L70,98 L62,108 L55,120 L48,135 L42,148 L38,160 L35,172 L33,185 L32,198 L33,210 L35,220 L38,228 L42,235 L48,242 L55,250 L62,258 L70,265 L80,272 L90,278 L100,285 L110,292 L118,298 L125,305 L132,310 L140,312 L148,310 L158,305 L168,298 L178,292 L188,288 L198,286 L210,288 L222,292 L234,296 L245,300 L256,304 L268,308 L280,310 L292,310 L304,308 L316,304 L328,298 L340,290 L350,282 L358,275 L366,268 L374,262 L382,258 L390,255 L398,252 L406,248 L414,242 L422,234 L430,225 L436,215 L440,205 L442,195 L441,185 L438,175 L434,165 L428,158 L422,152 L415,148 L408,145 L400,142 L392,138 L384,132 L376,125 L368,118 L360,112 L352,108 L344,105 L335,104 L325,105 L315,108 L305,112 L295,115 L285,116 L275,114 L265,110 L256,106 L248,102 L240,100 L232,100 L224,102 L215,106 L206,112 L198,118 L190,125 L182,132 L175,140 L170,148 L167,155 Z";
 
 // ═══════════════════════════════════════════════════════════════
 // A9: CALCUL SOL DETALIAT — ISO 13370
@@ -12670,21 +12688,30 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               <h3 className="text-lg font-bold">🗺️ Harta climatică România</h3>
               <button onClick={() => setShowClimateMap(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
             </div>
-            <svg viewBox="0 0 450 370" className="w-full" style={{minHeight:"300px"}}>
-              {/* Romania contour (simplified) */}
-              <path d="M80,80 L120,50 L180,40 L240,45 L290,30 L350,45 L400,80 L420,120 L415,170 L400,220 L380,250 L350,280 L310,310 L250,330 L200,340 L150,320 L120,300 L90,260 L60,220 L50,170 L55,130 Z"
-                fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-              {/* Zone colors */}
+            <svg viewBox="0 0 500 400" className="w-full" style={{minHeight:"340px"}}>
+              {/* Romania realistic border */}
+              <path d={ROMANIA_BORDER_PATH}
+                fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.20)" strokeWidth="1.5" strokeLinejoin="round" />
+              {/* Carpathian arc (subtle inner curve) */}
+              <path d="M170,148 C190,165 210,180 230,190 C250,200 270,200 280,195 C295,188 310,175 315,160 C318,150 315,140 305,130"
+                fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
+              {/* Danube (southern border hint) */}
+              <path d="M55,250 C80,272 120,295 160,305 C200,312 240,300 280,310 C310,315 340,300 370,275"
+                fill="none" stroke="rgba(59,130,246,0.12)" strokeWidth="3" strokeLinecap="round" />
+              {/* City dots */}
               {CLIMATE_DB.map(loc => {
                 const pt = ROMANIA_MAP_POINTS[loc.name];
                 if (!pt) return null;
                 const isSelected = building.locality === loc.name;
                 return (
                   <g key={loc.name} onClick={(e) => { e.stopPropagation(); setBuilding(prev => ({...prev, locality: loc.name})); }}
-                    className="cursor-pointer" style={{transition:"all 0.2s"}}>
-                    <circle cx={pt.x} cy={pt.y} r={isSelected ? 8 : 5} fill={ZONE_COLORS[loc.zone] || "#888"} opacity={isSelected ? 1 : 0.7}
-                      stroke={isSelected ? "#fff" : "none"} strokeWidth={isSelected ? 2 : 0} />
-                    <text x={pt.x} y={pt.y - 8} textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize={isSelected ? "8" : "6"} fontWeight={isSelected ? "bold" : "normal"}>
+                    className="cursor-pointer">
+                    {isSelected && <circle cx={pt.x} cy={pt.y} r="12" fill="none" stroke={ZONE_COLORS[loc.zone]||"#888"} strokeWidth="1.5" opacity="0.4" />}
+                    <circle cx={pt.x} cy={pt.y} r={isSelected ? 6 : 4} fill={ZONE_COLORS[loc.zone] || "#888"} opacity={isSelected ? 1 : 0.75}
+                      stroke={isSelected ? "#fff" : "rgba(0,0,0,0.3)"} strokeWidth={isSelected ? 2 : 0.5} />
+                    <text x={pt.x} y={pt.y - (isSelected ? 14 : 7)} textAnchor="middle"
+                      fill={isSelected ? "#fff" : "rgba(255,255,255,0.55)"} fontSize={isSelected ? "9" : "6.5"} fontWeight={isSelected ? "bold" : "normal"}
+                      style={{textShadow: "0 1px 3px rgba(0,0,0,0.8)"}}>
                       {loc.name}
                     </text>
                   </g>
@@ -12693,8 +12720,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               {/* Legend */}
               {Object.entries(ZONE_COLORS).map(([zone, color], i) => (
                 <g key={zone}>
-                  <rect x={15} y={300 + i*16} width={10} height={10} rx="2" fill={color} />
-                  <text x={30} y={309 + i*16} fill="rgba(255,255,255,0.5)" fontSize="8">Zona {zone}</text>
+                  <circle cx={20} cy={368 + i*15} r="4" fill={color} />
+                  <text x={30} y={371 + i*15} fill="rgba(255,255,255,0.5)" fontSize="8">Zona {zone} ({zone==="I"?"θe=-12°C":zone==="II"?"θe=-15°C":zone==="III"?"θe=-18°C":zone==="IV"?"θe=-21°C":"θe=-25°C"})</text>
                 </g>
               ))}
             </svg>
