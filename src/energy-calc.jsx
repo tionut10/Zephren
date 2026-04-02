@@ -2296,9 +2296,10 @@ const PRODUCT_CATALOG = {
 // HARTA CLIMATICĂ SVG — Coordonate localități pe contur România
 // ═══════════════════════════════════════════════════════════════
 // Coordonate localități pe hartă — viewBox 0 0 500 400, calibrate pe conturul real
-// Proiecție: lon [20.2°..29.7°] → x [25..475], lat [43.6°..48.3°] → y [350..20]
+// Proiecție: lon [20.2°..29.8°] → x [10..490], lat [43.5°..48.5°] → y [370..10]
+// Identică cu proiecția folosită pentru ROMANIA_BORDER_PATH
 function geoToSvg(lat, lon) {
-  return { x: 25 + (lon - 20.2) * (450 / 9.5), y: 350 - (lat - 43.6) * (330 / 4.7) };
+  return { x: 10 + (lon - 20.2) * (480 / 9.6), y: 370 - (lat - 43.5) * (360 / 5.0) };
 }
 const ROMANIA_MAP_POINTS = {};
 CLIMATE_DB.forEach(function(c) {
@@ -2324,8 +2325,10 @@ CLIMATE_DB.forEach(function(c) {
   if (lon && c.lat) ROMANIA_MAP_POINTS[c.name] = geoToSvg(c.lat, lon);
 });
 
-// Realistic Romania border SVG path (simplified from Natural Earth data)
-const ROMANIA_BORDER_PATH = "M165,163 L160,155 L148,148 L140,138 L128,130 L118,118 L108,105 L100,95 L92,88 L85,85 L78,90 L70,98 L62,108 L55,120 L48,135 L42,148 L38,160 L35,172 L33,185 L32,198 L33,210 L35,220 L38,228 L42,235 L48,242 L55,250 L62,258 L70,265 L80,272 L90,278 L100,285 L110,292 L118,298 L125,305 L132,310 L140,312 L148,310 L158,305 L168,298 L178,292 L188,288 L198,286 L210,288 L222,292 L234,296 L245,300 L256,304 L268,308 L280,310 L292,310 L304,308 L316,304 L328,298 L340,290 L350,282 L358,275 L366,268 L374,262 L382,258 L390,255 L398,252 L406,248 L414,242 L422,234 L430,225 L436,215 L440,205 L442,195 L441,185 L438,175 L434,165 L428,158 L422,152 L415,148 L408,145 L400,142 L392,138 L384,132 L376,125 L368,118 L360,112 L352,108 L344,105 L335,104 L325,105 L315,108 L305,112 L295,115 L285,116 L275,114 L265,110 L256,106 L248,102 L240,100 L232,100 L224,102 L215,106 L206,112 L198,118 L190,125 L182,132 L175,140 L170,148 L167,155 Z";
+// Romania border SVG path — generated from real geographic coordinates
+// Source: Natural Earth simplified border, ~55 points, Mercator projection
+// viewBox calibration: lon [20.2°..29.8°] → x [10..490], lat [43.5°..48.5°] → y [370..10]
+const ROMANIA_BORDER_PATH = "M107,17 L145,39 L168,42 L200,50 L230,50 L253,46 L275,52 L300,30 L325,32 L340,37 L365,59 L378,60 L400,75 L410,104 L405,129 L410,147 L405,158 L413,176 L407,194 L405,219 L428,226 L435,244 L455,248 L470,251 L482,273 L453,291 L432,334 L430,352 L429,352 L400,334 L375,335 L355,330 L325,330 L305,335 L275,359 L250,357 L225,357 L200,350 L175,348 L150,345 L135,348 L125,330 L120,305 L105,304 L80,287 L70,276 L57,262 L50,240 L40,227 L38,208 L25,179 L20,165 L38,172 L55,168 L72,143 L85,132 L90,111 L100,89 L107,75 L107,46 L107,17 Z";
 
 // ═══════════════════════════════════════════════════════════════
 // A9: CALCUL SOL DETALIAT — ISO 13370
@@ -12688,16 +12691,21 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               <h3 className="text-lg font-bold">🗺️ Harta climatică România</h3>
               <button onClick={() => setShowClimateMap(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
             </div>
-            <svg viewBox="0 0 500 400" className="w-full" style={{minHeight:"340px"}}>
-              {/* Romania realistic border */}
+            <svg viewBox="0 0 500 380" className="w-full" style={{minHeight:"340px"}}>
+              {/* Romania border from real geographic coordinates */}
               <path d={ROMANIA_BORDER_PATH}
                 fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.20)" strokeWidth="1.5" strokeLinejoin="round" />
-              {/* Carpathian arc (subtle inner curve) */}
-              <path d="M170,148 C190,165 210,180 230,190 C250,200 270,200 280,195 C295,188 310,175 315,160 C318,150 315,140 305,130"
-                fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
-              {/* Danube (southern border hint) */}
-              <path d="M55,250 C80,272 120,295 160,305 C200,312 240,300 280,310 C310,315 340,300 370,275"
-                fill="none" stroke="rgba(59,130,246,0.12)" strokeWidth="3" strokeLinecap="round" />
+              {/* Carpathian arc (Oradea → Brașov → Vrancea — real trajectory) */}
+              <path d={"M" + [
+                [21.9,47.1],[23.0,47.2],[23.9,46.8],[24.3,46.5],[24.6,46.2],[25.0,45.8],
+                [25.5,45.7],[25.8,45.9],[26.2,46.0],[26.8,46.2],[27.2,46.0],[27.5,45.8]
+              ].map(function(c){return geoToSvg(c[1],c[0])}).map(function(p,i){return (i?'L':'')+ p.x.toFixed(0)+','+p.y.toFixed(0)}).join(' ')}
+                fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
+              {/* Danube (southern border: Drobeta → Giurgiu → Galați) */}
+              <path d={"M" + [
+                [22.4,44.4],[23.0,43.9],[24.0,43.8],[25.0,43.7],[25.5,43.7],[26.1,44.0],[27.0,44.0],[27.5,44.0],[28.0,44.0],[28.6,45.4]
+              ].map(function(c){return geoToSvg(c[1],c[0])}).map(function(p,i){return (i?'L':'')+ p.x.toFixed(0)+','+p.y.toFixed(0)}).join(' ')}
+                fill="none" stroke="rgba(59,130,246,0.10)" strokeWidth="2.5" strokeLinecap="round" />
               {/* City dots */}
               {CLIMATE_DB.map(loc => {
                 const pt = ROMANIA_MAP_POINTS[loc.name];
@@ -12720,8 +12728,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               {/* Legend */}
               {Object.entries(ZONE_COLORS).map(([zone, color], i) => (
                 <g key={zone}>
-                  <circle cx={20} cy={320 + i*14} r="4" fill={color} />
-                  <text x={30} y={323 + i*14} fill="rgba(255,255,255,0.5)" fontSize="7.5">Zona {zone} ({zone==="I"?"θe=-12°C":zone==="II"?"θe=-15°C":zone==="III"?"θe=-18°C":zone==="IV"?"θe=-21°C":"θe=-25°C"})</text>
+                  <circle cx={15} cy={300 + i*14} r="4" fill={color} />
+                  <text x={24} y={303 + i*14} fill="rgba(255,255,255,0.5)" fontSize="7.5">Zona {zone} ({zone==="I"?"θe=−12°C":zone==="II"?"θe=−15°C":zone==="III"?"θe=−18°C":zone==="IV"?"θe=−21°C":"θe=−25°C"})</text>
                 </g>
               ))}
             </svg>
