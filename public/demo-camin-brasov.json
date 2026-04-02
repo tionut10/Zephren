@@ -1,0 +1,166 @@
+{
+  "version": "2.0",
+  "exportDate": "2026-04-02",
+  "software": "Zephren v3.0 — import din Disertație Tunaru 2019",
+  "building": {
+    "address": "Str. Universității nr. 1",
+    "city": "Brașov",
+    "county": "Brașov",
+    "postalCode": "500068",
+    "category": "HC",
+    "structure": "Cadre beton armat",
+    "yearBuilt": "1997",
+    "yearRenov": "",
+    "floors": "2S+P+4E",
+    "basement": true,
+    "attic": false,
+    "units": "95",
+    "stairs": "1",
+    "areaUseful": "2950",
+    "volume": "12667",
+    "areaEnvelope": "3727",
+    "heightBuilding": "19.60",
+    "heightFloor": "2.80",
+    "locality": "Brașov",
+    "perimeter": "140",
+    "n50": "4.0",
+    "shadingFactor": "0.90",
+    "solarReady": false,
+    "scopCpe": "vanzare",
+    "parkingSpaces": "0"
+  },
+  "opaqueElements": [
+    {
+      "name": "Pereți ext. beton 30cm + EPS 10cm (ETICS)",
+      "type": "PE",
+      "orientation": "Mixt",
+      "area": "1907",
+      "layers": [
+        { "matName": "Tencuială interioară", "material": "Tencuială var-ciment", "thickness": "10", "lambda": 0.87, "rho": 1800 },
+        { "matName": "Diafragmă beton armat 30cm", "material": "Beton armat", "thickness": "300", "lambda": 1.74, "rho": 2400 },
+        { "matName": "Termoizolație EPS 10cm", "material": "Polistiren expandat EPS 80", "thickness": "100", "lambda": 0.042, "rho": 20 },
+        { "matName": "Tencuială exterioară", "material": "Tencuială var-ciment", "thickness": "15", "lambda": 0.93, "rho": 1800 }
+      ]
+    },
+    {
+      "name": "Pereți ext. contact teren (subsol, fără izolație)",
+      "type": "PE",
+      "orientation": "Mixt",
+      "area": "129",
+      "layers": [
+        { "matName": "Tencuială interioară", "material": "Tencuială var-ciment", "thickness": "10", "lambda": 0.87, "rho": 1800 },
+        { "matName": "Diafragmă beton 30cm", "material": "Beton armat", "thickness": "300", "lambda": 1.74, "rho": 2400 },
+        { "matName": "Hidroizolație", "material": "Bitum (membrană)", "thickness": "3", "lambda": 0.17, "rho": 1050 },
+        { "matName": "Protecție zidărie 7.5cm", "material": "Cărămidă plină", "thickness": "75", "lambda": 0.755, "rho": 1800 }
+      ]
+    },
+    {
+      "name": "Planșeu terasă necirculabilă (BCA zgură 20cm)",
+      "type": "PT",
+      "orientation": "Orizontal",
+      "area": "754",
+      "layers": [
+        { "matName": "Tencuială interioară", "material": "Tencuială var-ciment", "thickness": "20", "lambda": 0.87, "rho": 1800 },
+        { "matName": "Plăci BCA zgură 20cm", "material": "BCA (beton celular autoclavizat)", "thickness": "200", "lambda": 0.36, "rho": 600 },
+        { "matName": "Placă beton armat 15cm", "material": "Beton armat", "thickness": "150", "lambda": 1.74, "rho": 2400 },
+        { "matName": "Beton de pantă", "material": "Șapă ciment", "thickness": "70", "lambda": 0.93, "rho": 2000 },
+        { "matName": "Șapă suport", "material": "Șapă ciment", "thickness": "35", "lambda": 0.93, "rho": 2000 },
+        { "matName": "Hidroizolație", "material": "Bitum (membrană)", "thickness": "3", "lambda": 0.17, "rho": 1050 },
+        { "matName": "Nisip protecție", "material": "Pietriș", "thickness": "10", "lambda": 0.70, "rho": 1700 }
+      ]
+    },
+    {
+      "name": "Placă pe sol (pardoseală rece — gresie)",
+      "type": "PL",
+      "orientation": "Orizontal",
+      "area": "754",
+      "layers": [
+        { "matName": "Gresie", "material": "Gresie ceramică", "thickness": "20", "lambda": 2.03, "rho": 2300 },
+        { "matName": "Șapă", "material": "Șapă ciment", "thickness": "50", "lambda": 0.93, "rho": 2000 },
+        { "matName": "Placă beton armat 15cm", "material": "Beton armat", "thickness": "150", "lambda": 1.74, "rho": 2400 },
+        { "matName": "Strat pietriș", "material": "Pietriș", "thickness": "250", "lambda": 0.70, "rho": 1700 }
+      ]
+    }
+  ],
+  "glazingElements": [
+    { "name": "Ferestre PVC termopan — Sud", "glazingType": "Dublu vitraj", "frameType": "PVC (5 camere)", "u": "1.67", "g": "0.75", "area": "8.97", "orientation": "S", "frameRatio": "25" },
+    { "name": "Ferestre PVC termopan — Nord", "glazingType": "Dublu vitraj", "frameType": "PVC (5 camere)", "u": "1.67", "g": "0.75", "area": "6.3", "orientation": "N", "frameRatio": "25" },
+    { "name": "Ferestre PVC termopan — Est", "glazingType": "Dublu vitraj", "frameType": "PVC (5 camere)", "u": "1.67", "g": "0.75", "area": "139.93", "orientation": "E", "frameRatio": "25" },
+    { "name": "Ferestre PVC termopan — Vest", "glazingType": "Dublu vitraj", "frameType": "PVC (5 camere)", "u": "1.67", "g": "0.75", "area": "27.83", "orientation": "V", "frameRatio": "25" }
+  ],
+  "thermalBridges": [
+    { "name": "Soclu — placă pe sol (scund)", "type": "Joncțiuni pereți", "psi": "0.29", "length": "140" },
+    { "name": "Cornișă terasă", "type": "Acoperiș", "psi": "0.42", "length": "140" },
+    { "name": "PE — Planșee intermediare ×6 niveluri", "type": "Joncțiuni pereți", "psi": "0.10", "length": "840" },
+    { "name": "Glaf ferestre PVC", "type": "Ferestre", "psi": "0.08", "length": "250" },
+    { "name": "Colțuri exterioare", "type": "Joncțiuni pereți", "psi": "0.05", "length": "140" }
+  ],
+  "heating": {
+    "source": "GAZ_STD",
+    "power": "400",
+    "eta_gen": "0.85",
+    "nominalPower": "400",
+    "emission": "RAD_OT",
+    "eta_em": "0.93",
+    "distribution": "MED_INT",
+    "eta_dist": "0.90",
+    "control": "FARA",
+    "eta_ctrl": "0.82",
+    "regime": "continuu",
+    "theta_int": "20",
+    "nightReduction": "0",
+    "tStaircase": "15",
+    "tBasement": "10",
+    "tAttic": ""
+  },
+  "acm": {
+    "source": "CAZAN_H",
+    "consumers": "332",
+    "dailyLiters": "50",
+    "storageVolume": "2000",
+    "storageLoss": "3.0",
+    "pipeLength": "80",
+    "pipeInsulated": false,
+    "circRecirculation": true,
+    "circHours": "16"
+  },
+  "cooling": {
+    "system": "NONE",
+    "power": "",
+    "eer": "",
+    "cooledArea": "",
+    "distribution": "",
+    "hasCooling": false
+  },
+  "ventilation": {
+    "type": "NAT",
+    "airflow": "",
+    "fanPower": "",
+    "operatingHours": "",
+    "hrEfficiency": ""
+  },
+  "lighting": {
+    "type": "INCAND",
+    "pDensity": "25.0",
+    "controlType": "MAN",
+    "fCtrl": "1.00",
+    "operatingHours": "3000",
+    "naturalLightRatio": "19"
+  },
+  "solarThermal": { "enabled": false },
+  "photovoltaic": { "enabled": false },
+  "heatPump": { "enabled": false },
+  "biomass": { "enabled": false },
+  "otherRenew": { "windEnabled": false, "cogenEnabled": false },
+  "auditor": {
+    "name": "ing. Ionuț Tunaru",
+    "atestat": "",
+    "grade": "",
+    "company": "Universitatea Transilvania Brașov",
+    "phone": "",
+    "email": "",
+    "date": "2019-06-15",
+    "mdlpaCode": "",
+    "observations": "Cămin studențesc 2S+P+4E, str. Universității nr.1, Brașov. Structură beton armat cu pereți diafragmă 30cm + EPS 10cm ETICS. Terasă necirculabilă cu BCA zgură 20cm (subizolată). Centrală termică proprie pe gaz natural, radiatoare tablă ambutisată. Tâmplărie PVC termopan dublu. Ventilare naturală. Iluminat incandescent. Fără răcire/climatizare. Clădire certificată energetic — clasă C (240.74 kWh/m²an) conform disertație 2019. Necesită reabilitare: izolație suplimentară terasă, înlocuire iluminat cu LED, adăugare ventilare mecanică."
+  }
+}
