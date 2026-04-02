@@ -6895,7 +6895,7 @@ export default function EnergyCalcApp({ cloud }) {
                   </Card>
 
                   <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">template rapid</span>}>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
                       {/* DEMO COMPLET — exemplu fictiv cu toate câmpurile */}
                       <button onClick={() => {
                           loadFullDemo();
