@@ -46,10 +46,86 @@ html {
 
 /* Print styles */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
   body {
     background: white !important;
+    color: black !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  nav, aside, .no-print {
+  /* Hide non-printable elements */
+  nav, aside, header, footer,
+  .no-print,
+  [class*="sticky"],
+  button:not(.print-keep),
+  [class*="animate-"],
+  [class*="sidebar"],
+  [class*="toast"] {
     display: none !important;
+  }
+  /* Show main content full-width */
+  main, .main-content, [class*="col-span"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Grid to single column for print */
+  [class*="grid-cols"] {
+    grid-template-columns: 1fr !important;
+    gap: 8pt !important;
+  }
+  /* Card styling for print */
+  [class*="rounded-xl"], [class*="rounded-lg"] {
+    border: 0.5pt solid #ccc !important;
+    border-radius: 4pt !important;
+    background: white !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Force dark text */
+  *, *::before, *::after {
+    color: black !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+  /* Preserve colored badges/indicators */
+  [class*="bg-emerald"], [class*="bg-amber"], [class*="bg-red"], [class*="bg-sky"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  /* Page breaks */
+  h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  .page-break-before {
+    page-break-before: always;
+    break-before: always;
+  }
+  /* Energy class badge — preserve color */
+  [class*="text-4xl"][class*="font-bold"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: inherit !important;
+  }
+  /* SVG charts */
+  svg {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  /* Links show URL */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #666 !important;
+  }
+  a[href^="#"]::after, a[href^="javascript"]::after {
+    content: none;
   }
 }

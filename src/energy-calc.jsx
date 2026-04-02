@@ -431,6 +431,45 @@ const T = {
   "Catalog produse":{EN:"Product catalog"},"Ghid utilizare":{EN:"User guide"},
   "Calcul orar ISO 52016-1":{EN:"Hourly calculation ISO 52016-1"},
   "Clasificare EPBD A-G":{EN:"EPBD A-G classification"},
+  // ── v3.2 Modal/dialog translations ──
+  "Salvează":{EN:"Save"},"Anulează":{EN:"Cancel"},"Șterge":{EN:"Delete"},"Confirmă":{EN:"Confirm"},
+  "Închide":{EN:"Close"},"Înapoi":{EN:"Back"},"Continuă":{EN:"Continue"},"Descarcă":{EN:"Download"},
+  "Element opac — Editor straturi":{EN:"Opaque element — Layer editor"},
+  "Element vitrat — Editor":{EN:"Glazing element — Editor"},
+  "Punte termică — Editor":{EN:"Thermal bridge — Editor"},
+  "Denumire element":{EN:"Element name"},"Tip element":{EN:"Element type"},
+  "Suprafață":{EN:"Area"},"Orientare":{EN:"Orientation"},"Straturi":{EN:"Layers"},
+  "Material":{EN:"Material"},"Grosime":{EN:"Thickness"},"Conductivitate":{EN:"Conductivity"},
+  "Adaugă strat":{EN:"Add layer"},"Șterge strat":{EN:"Delete layer"},
+  "Tip vitraj":{EN:"Glazing type"},"Tip ramă":{EN:"Frame type"},
+  "Coeficient U":{EN:"U-value"},"Factor solar g":{EN:"Solar factor g"},
+  "Caută material":{EN:"Search material"},"Selectează material":{EN:"Select material"},
+  "Verificare condens Glaser (ISO 13788)":{EN:"Glaser condensation check (ISO 13788)"},
+  "Element analizat":{EN:"Analyzed element"},"Confort termic vară":{EN:"Summer thermal comfort"},
+  "Etanșeitate la aer":{EN:"Air tightness"},"Iluminat natural":{EN:"Natural lighting"},
+  "Referință U'max nZEB":{EN:"nZEB U'max reference"},
+  "Verificare nZEB / ZEB (EPBD 2024/1275)":{EN:"nZEB / ZEB check (EPBD 2024/1275)"},
+  "Statut nZEB":{EN:"nZEB status"},"Grilă aplicabilă":{EN:"Applicable grid"},
+  "Cost anual energie estimat (prețuri 2025)":{EN:"Estimated annual energy cost (2025 prices)"},
+  "Profil temperatură lunară":{EN:"Monthly temperature profile"},
+  "Radiație solară anuală":{EN:"Annual solar radiation"},
+  "Estimare rapidă":{EN:"Quick estimate"},"Distribuție pierderi":{EN:"Loss distribution"},
+  "Necesitar încălzire":{EN:"Heating need"},"Necesitar specific":{EN:"Specific need"},
+  "Se generează...":{EN:"Generating..."},"Se exportă...":{EN:"Exporting..."},
+  "Completați calculul energetic (Pasul 5) înainte de export.":{EN:"Complete energy calculation (Step 5) before export."},
+  "Niciun element opac definit.":{EN:"No opaque elements defined."},
+  "Niciun element vitrat definit.":{EN:"No glazing elements defined."},
+  "Nicio punte termică definită.":{EN:"No thermal bridges defined."},
+  "Sumar instalații":{EN:"Systems summary"},"Sumar regenerabile":{EN:"Renewables summary"},
+  "Energie ambientală pompă căldură":{EN:"Heat pump ambient energy"},
+  "Producție PV":{EN:"PV production"},"Producție solară termică":{EN:"Solar thermal production"},
+  "Rata energie regenerabilă (RER)":{EN:"Renewable energy ratio (RER)"},
+  "Conform":{EN:"Compliant"},"Neconform":{EN:"Non-compliant"},
+  "Scenarii reabilitare":{EN:"Rehabilitation scenarios"},
+  "Măsuri recomandate":{EN:"Recommended measures"},
+  "Analiza financiară":{EN:"Financial analysis"},
+  "Investiție totală":{EN:"Total investment"},"Economie totală":{EN:"Total savings"},
+  "Diagrama Glaser — profil temperatură și vapori":{EN:"Glaser diagram — temperature and vapor profile"},
 };
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -2208,6 +2247,9 @@ const TYPICAL_BUILDINGS_EXTRA = [
   },
 ];
 
+// Pre-concatenated template list — avoids [...spread] on every render
+const ALL_TEMPLATES = ALL_TEMPLATES;
+
 // ═══════════════════════════════════════════════════════════════
 // CATALOG PRODUSE REALE — Ferestre, PC, PV (F3)
 // ═══════════════════════════════════════════════════════════════
@@ -2413,6 +2455,7 @@ const STEPS = [
 // ═══════════════════════════════════════════════════════════
 // CLĂDIRI TIP ROMÂNEȘTI — template-uri pre-populate
 // ═══════════════════════════════════════════════════════════
+/* eslint-disable -- data tables */
 const TYPICAL_BUILDINGS = [
   { id:"BLOC_P4_70", label:"Bloc P+4, anii '70 (panouri BCA)", cat:"RC",
     building:{ category:"RC", structure:"Panouri prefabricate mari", floors:"P+4", basement:true, attic:false, units:"40", stairs:"2", heightBuilding:"16.5", heightFloor:"2.75" },
@@ -3049,6 +3092,7 @@ export default function EnergyCalcApp({ cloud }) {
   // ─── Persistent Storage (auto-save/load) ───
   const [storageStatus, setStorageStatus] = useState("");
   const [printMode, setPrintMode] = useState(false);
+  const [exporting, setExporting] = useState(null); // null | "docx" | "pdf" | "excel" | "xml"
   const [pdfPreviewHtml, setPdfPreviewHtml] = useState(null);
   const [docxPreviewBlob, setDocxPreviewBlob] = useState(null);
   const [presentationMode, setPresentationMode] = useState(false);
@@ -3553,7 +3597,7 @@ export default function EnergyCalcApp({ cloud }) {
   }, []);
 
   const loadTypicalBuilding = useCallback((tplId) => {
-    const tpl = [...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].find(t => t.id === tplId);
+    const tpl = ALL_TEMPLATES.find(t => t.id === tplId);
     if (!tpl) return;
     setBuilding(prev => ({...prev, ...tpl.building}));
     setOpaqueElements(tpl.opaque || []);
@@ -4310,6 +4354,7 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════
   const exportExcel = useCallback(async () => {
     try {
+      setExporting("excel");
       const XLSX = (await import("xlsx")).default || await import("xlsx");
       const wb = XLSX.utils.book_new();
 
@@ -4367,7 +4412,7 @@ export default function EnergyCalcApp({ cloud }) {
       showToast("Excel exportat cu succes.", "success");
     } catch(e) {
       showToast("Eroare export Excel: " + e.message, "error");
-    }
+    } finally { setExporting(null); }
   }, [building, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, envelopeSummary, selectedClimate, showToast]);
 
   // ═══════════════════════════════════════════════════════════
@@ -5682,6 +5727,7 @@ export default function EnergyCalcApp({ cloud }) {
   const exportPDFNative = useCallback(async () => {
     if (!instSummary) { showToast("Completați calculul energetic (Pasul 5)", "error"); return; }
     try {
+      setExporting("pdf");
       const { default: jsPDF } = await import("jspdf");
       await import("jspdf-autotable");
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -5814,7 +5860,7 @@ export default function EnergyCalcApp({ cloud }) {
     } catch(e) {
       showToast("Eroare generare PDF: " + e.message, "error");
       console.error("PDF export error:", e);
-    }
+    } finally { setExporting(null); }
   }, [building, auditor, instSummary, renewSummary, annualEnergyCost, selectedClimate, cooling.hasCooling, showToast]);
 
   // ═══════════════════════════════════════════════════════════
@@ -6634,6 +6680,17 @@ export default function EnergyCalcApp({ cloud }) {
         </div>
       )}
 
+      {/* Export loading overlay */}
+      {exporting && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{background:"rgba(10,10,26,0.8)",backdropFilter:"blur(4px)"}}>
+          <div className="text-center">
+            <div className="w-12 h-12 border-3 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="text-amber-400 font-bold text-lg">{t("Se exportă...",lang)}</div>
+            <div className="text-xs opacity-40 mt-2">{exporting === "docx" ? "DOCX CPE" : exporting === "pdf" ? "PDF" : exporting === "excel" ? "Excel" : "XML"}</div>
+          </div>
+        </div>
+      )}
+
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center" style={{background:"rgba(245,158,11,0.1)",backdropFilter:"blur(2px)"}}>
@@ -6646,10 +6703,11 @@ export default function EnergyCalcApp({ cloud }) {
       )}
 
       {/* Step progress indicator */}
-      <div className="w-full px-2 sm:px-6 py-1" style={{background:theme==="dark"?"rgba(26,29,46,0.5)":"rgba(0,0,0,0.02)"}}>
-        <div className="max-w-7xl mx-auto flex items-center gap-0.5 sm:gap-1">
+      <div className="w-full px-2 sm:px-6 py-1 no-print" style={{background:theme==="dark"?"rgba(26,29,46,0.5)":"rgba(0,0,0,0.02)"}}>
+        <div className="max-w-7xl mx-auto flex items-center gap-0.5 sm:gap-1" role="tablist" aria-label="Pași calcul energetic">
           {STEPS.map((s, i) => (
-            <button key={s.id} onClick={() => setStep(s.id)} className="flex-1 group relative" title={`${s.id}. ${s.label}`}>
+            <button key={s.id} onClick={() => setStep(s.id)} className="flex-1 group relative" title={`${s.id}. ${s.label}`}
+              role="tab" aria-selected={s.id === step} aria-label={`Pas ${s.id}: ${lang==="EN" ? s.labelEN : s.label}`}>
               <div className="h-1.5 sm:h-2 rounded-full transition-all duration-500" style={{
                 background: s.id < step ? "linear-gradient(90deg,#22c55e,#4ade80)" :
                   s.id === step ? "linear-gradient(90deg,#f59e0b,#fbbf24)" :
@@ -6671,7 +6729,7 @@ export default function EnergyCalcApp({ cloud }) {
       </div>
 
       {/* HEADER */}
-      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-4">
+      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-4 no-print">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 shrink">
             <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
@@ -6760,7 +6818,7 @@ export default function EnergyCalcApp({ cloud }) {
 
       <div className="max-w-7xl mx-auto flex gap-0 min-h-[calc(100vh-73px)] relative">
         {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-        <nav className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
+        <nav aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2">✕</button>
           {STEPS.map(s => (
             <button key={s.id} onClick={() => { if(!s.locked){setStep(s.id);setSidebarOpen(false);} }}
@@ -6909,7 +6967,7 @@ export default function EnergyCalcApp({ cloud }) {
 
                       <div className="border-t border-white/[0.06] my-2"></div>
 
-                      {[...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].map(tpl => (
+                      {ALL_TEMPLATES.map(tpl => (
                         <button key={tpl.id} onClick={() => { loadTypicalBuilding(tpl.id); showToast(`Template "${tpl.label}" încărcat`, "success"); }}
                           className="w-full text-left px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-500/20 transition-all text-xs">
                           <div className="font-medium">{tpl.label}</div>
