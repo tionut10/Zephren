@@ -10,8 +10,8 @@
     {
       "name": "energy-app",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "dist", "-s"],
-      "port": 5173,
+      "runtimeArgs": ["serve", "dist", "-s", "-p", "3456"],
+      "port": 3456,
       "autoPort": true
     }
   ]

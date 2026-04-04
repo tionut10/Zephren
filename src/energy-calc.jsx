@@ -9878,19 +9878,8 @@ export default function EnergyCalcApp({ cloud }) {
             const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
 
             // ═══════════════════════════════════════════════════════════
-            // GENERARE DOCX CU FIND-REPLACE PE TEMPLATE OFICIAL
+            // GENERARE DOCX CU DOCXTEMPLATER + PIZZIP
             // ═══════════════════════════════════════════════════════════
-
-            const loadJSZip = () => {
-              return new Promise((resolve, reject) => {
-                if (window.JSZip) { resolve(window.JSZip); return; }
-                const s = document.createElement("script");
-                s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
-                s.onload = () => resolve(window.JSZip);
-                s.onerror = () => reject(new Error("Nu s-a putut încărca JSZip"));
-                document.head.appendChild(s);
-              });
-            };
 
             const fmtRo = (v, dec=1) => {
               const n = parseFloat(v) || 0;
@@ -9903,13 +9892,9 @@ export default function EnergyCalcApp({ cloud }) {
               if (!instSummary) { showToast("Completați pașii 1-4.", "error"); return; }
 
               try {
-                const JSZip = await loadJSZip();
                 const arrayBuffer = fileOrBuffer instanceof ArrayBuffer ? fileOrBuffer : await fileOrBuffer.arrayBuffer();
-                const zip = await JSZip.loadAsync(arrayBuffer);
-                const docXml = await zip.file("word/document.xml").async("string");
 
                 // ── Calcul valori finale ──
-                const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
                 const co2Final_m2 = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary.co2_total_m2 || 0);
                 const qfFinal_t = Au > 0 ? (instSummary.qf_h + instSummary.qf_w) / Au : 0;
                 const qfFinal_e = Au > 0 ? (instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) / Au : 0;
@@ -9933,254 +9918,461 @@ export default function EnergyCalcApp({ cloud }) {
                 const nrCam = building.units || "3";
                 const arieDesf = Aref * 1.15;
 
-                let xml = docXml;
-                const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+                const baseCat = building.category;
+                const epbdT = EPBD_AG_ACTIVE ? (EPBD_AG_THRESHOLDS[baseCat] || EPBD_AG_THRESHOLDS.RI) : null;
+                const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
+                const epRefMax = getNzebEpMax(baseCat, selectedClimate?.zone) || 148;
 
-                // ═══════════════════════════════════════════
-                // FIX: Merge adjacent <w:r> runs with same formatting before replace
-                // Word often splits text like "xxx,x" across multiple runs
-                // ═══════════════════════════════════════════
-                const mergeRuns = (xmlStr) => {
-                  // Merge consecutive <w:r> elements where <w:rPr> is identical
-                  // Pattern: </w:t></w:r><w:r><w:rPr>SAME</w:rPr><w:t>
-                  // Simplified: merge adjacent <w:t> text within same paragraph
-                  return xmlStr.replace(
-                    /(<w:t[^>]*>)([^<]*)<\/w:t><\/w:r>\s*<w:r>(?:<w:rPr>([^]*?)<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>([^<]*<\/w:t>)/g,
-                    function(match, p1, text1, rpr, text2) {
-                      return p1 + text1 + text2;
-                    }
-                  );
-                };
-                // Apply merge multiple passes (runs can be 3-4 deep)
-                for (let pass = 0; pass < 4; pass++) {
-                  const prev = xml;
-                  xml = mergeRuns(xml);
-                  if (xml === prev) break;
+                let scaleEP;
+                if (EPBD_AG_ACTIVE && epbdT) {
+                  scaleEP = [Math.round(epbdT.A/2), epbdT.A, epbdT.B, epbdT.C, epbdT.D, epbdT.E, epbdT.F];
+                } else {
+                  const templateCatKeyD = ["RI","RC","RA"].includes(baseCat) ? baseCat + "_cool" : baseCat;
+                  scaleEP = (ENERGY_CLASSES_DB[templateCatKeyD] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
                 }
 
-                // STRATEGIA: Replace direct pe conținutul <w:t> nodes
-                const rWT = (search, repl) => {
-                  const e = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                  xml = xml.replace(new RegExp("(<w:t[^>]*>)" + e + "(</w:t>)", "g"), "$1" + esc(repl) + "$2");
-                };
-
-                const rWTpart = (search, repl) => {
-                  const e = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                  xml = xml.replace(new RegExp("(<w:t[^>]*>)([^<]*)" + e + "([^<]*)(</w:t>)", "g"), "$1$2" + esc(repl) + "$3$4");
-                };
-
-                const rWTseq = (search, values) => {
-                  const e = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                  let idx = 0;
-                  xml = xml.replace(new RegExp("(<w:t[^>]*>)" + e + "(</w:t>)", "g"), (m, p1, p2) => {
-                    if (idx < values.length) return p1 + esc(values[idx++]) + p2;
-                    return m;
-                  });
-                };
-
-                // ═══════════════════════════════════════════
-                // 1. NR CAMERE — " x " e nod separat cu color roșu
-                //    <w:t> x </w:t> → <w:t> 3 </w:t>
-                // ═══════════════════════════════════════════
-                if (building.category === "RA") {
-                  rWT(" x ", " " + nrCam + " ");
-                }
-
-                // 2. AN CONSTRUIRE — <w:t>AAAA</w:t>
-                rWT("AAAA", yearStr);
-
-                // 2b. DATA VALABILITATE — <w:t>zz/ll/aa</w:t>
+                const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"};
                 const expiryD = new Date(auditor.date || new Date());
                 expiryD.setFullYear(expiryD.getFullYear() + 10);
-                rWT("zz/ll/aa", expiryD.toLocaleDateString("ro-RO"));
-
-                // 3. ADRESA — nodul conține "..... adresa ....." → înlocuim tot conținutul nodului
-                xml = xml.replace(/(<w:t[^>]*>)[.\s]*adresa[.\s]*(<\/w:t>)/g, "$1" + esc(fullAddress) + "$2");
-                // Linia cu doar puncte (deasupra adresei): înlocuim cu spațiu gol
-                xml = xml.replace(/(<w:t[^>]*>)\.{20,}(<\/w:t>)/g, "$1 $2");
-
-                // 4. COORDONATE GPS — <w:t>II,IIII x LL,LLLL</w:t>
-                rWT("II,IIII x LL,LLLL", fmtRo(latV,4) + " x " + fmtRo(lngV,4));
-
-                // 5. REGIM ÎNĂLȚIME — <w:t>regim</w:t> e un nod separat (fără spațiu trailing)
-                rWT("regim", regimStr);
-                // Dacă există și "înălțime" ca nod separat, golim
-                rWT("înălțime", "");
-
-                // 6. SCOP CPE — split în 5 noduri: "Vânz"+"are"+"/Închir"+"ie"+"/Recepție/Inf"
-                // După merge runs devine "Vânzare/Închirie/Recepție/Inf" — înlocuim cu scopul ales
-                const scopLabel = ({"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"})[building.scopCpe] || "Vânzare";
-                // After merge runs, should become "Vânzare/Închirie/Recepție/Inf"
-                rWTpart("Vânzare/Închirie/Recepție/Inf", scopLabel);
-                rWTpart("Vânzare/Închiriere/Recepție/Inf", scopLabel);
-                // If merge didn't work, replace the specific split parts
-                rWT("/Recepție/Inf", "");
-                rWT("/Închir", "");
-
-                // 7. PROGRAM CALCUL — înlocuim direct pe textul care conține "versiunea"
-                // După merge runs textul poate fi: "...versiunea..." sau ". versiunea........"
-                // Cea mai sigură abordare: înlocuim orice nod care conține "versiunea"
-                xml = xml.replace(/(<w:t[^>]*>)([^<]*versiunea[^<]*)(<\/w:t>)/g,
-                  "$1Zephren v2.0$3");
-                // Golim grupurile de puncte rămase (8-20 dots) din zona program calcul
-                xml = xml.replace(/(<w:t[^>]*>)(\.{8,20})(<\/w:t>)/g, "$1 $3");
-
-                // 8. ARII — zzz,z e Aref, yyy,y e aria desfășurată (nod separat)
-                rWT("zzz,z", fmtRo(Aref, 1));
-                rWT("yyy,y", fmtRo(arieDesf, 1));
-
-                // 9. ENERGIE PRIMARĂ xxxx,x — 2 apariții: EP real total [kWh/an], EP referință total [kWh/an]
-                const epRefMax = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
+                const nzebDocx = NZEB_THRESHOLDS[baseCat] || NZEB_THRESHOLDS.AL;
+                const nzebOk = epFinal <= epRefMax && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
+                const enClassDocx = getEnergyClassEPBD(epFinal, catKey);
                 const epTotalReal = Au > 0 ? epFinal * Au : 0;
                 const epTotalRef = Au > 0 ? epRefMax * Au : 0;
-                rWTseq("xxxx,x", [fmtRo(epTotalReal, 1), fmtRo(epTotalRef, 1)]);
-
-                // 10. VOLUM xxxx (fără virgulă)
-                rWT("xxxx", Math.round(Vol).toString());
-
-                // 11. CONSUM FINAL xx,x (4 apariții: termic specifc, electric specific, EP specific real, EP specific ref)
-                rWTseq("xx,x", [fmtRo(qfFinal_t, 1), fmtRo(qfFinal_e, 1), fmtRo(epFinal, 1), fmtRo(epRefMax, 1)]);
-
-                // 12. xxx,x secvențial (8 apariții totale)
-                //     1=aria utilă, 2=CO₂, 3=solar_th, 4=solar_electric, 5=pompe_cald, 6=biomasa, 7=alt_SRE, 8=total_SRE
-                rWTseq("xxx,x", [
-                  fmtRo(Aref, 1),
-                  fmtRo(co2Final_m2, 1),
-                  fmtRo(sre_st, 1),
-                  fmtRo(sre_pv, 1),
-                  fmtRo(sre_pc, 1),
-                  fmtRo(sre_bio, 1),
-                  fmtRo(sre_other, 1),
-                  fmtRo(sre_total, 1),
-                ]);
-
-                // 13. NR ATESTAT — XX/XXXXX
-                if (auditor.atestat) rWT("XX/XXXXX", auditor.atestat);
-
-                // 14. DATE AUDITOR — textul real din template MDLPA
-                if (auditor.name) {
-                  // Template MDLPA: "Nume &amp; prenume auditor energetic" → înlocuim cu numele real
-                  // rWTpart caută în XML raw, deci "&amp;" e forma corectă
-                  xml = xml.replace(/(<w:t[^>]*>)Nume &amp; prenume auditor energetic(<\/w:t>)/g, "$1" + esc(auditor.name) + "$2");
-                  rWTpart("Nume auditor", auditor.name);
-                  rWTpart("nume auditor", auditor.name);
-                }
-                // Gradul auditorului — template are noduri separate: "I" + "/" + "II"
-                // Înlocuim "II" cu gradul real (e ultimul din secvența grad)
-                // Nu putem folosi rWT("I / II") pentru că sunt 3 noduri separate
-                // "Auditor energetic" label rămâne neschimbat — e doar titlu
-                if (auditor.company) {
-                  rWTpart("Firma/PFA", auditor.company);
-                  rWTpart("denumire firma", auditor.company);
-                }
-                if (auditor.phone) rWTpart("nr. telefon", auditor.phone);
-                if (auditor.email) rWTpart("adresa email", auditor.email);
-                if (auditor.date) {
-                  rWT("ZZ.LL.AAAA", auditor.date.split("-").reverse().join("."));
-                  rWT("ZZ/LL/AAAA", auditor.date.split("-").reverse().join("/"));
-                }
-                // MDLPA code
-                if (auditor.mdlpaCode) {
-                  rWTpart("cod unic", auditor.mdlpaCode);
-                  rWTpart("Cod unic", auditor.mdlpaCode);
-                }
-
-                // 15. CLASA ENERGETICA — common: "A"..."G" placeholder or "clasa"
-                const enClassDocx = getEnergyClassEPBD(epFinal, catKey);
-                rWTpart("Clasa ", "Clasa " + enClassDocx.cls + " ");
-
-                // 16. RER total — "RR,R" or "rr,r"
-                if (renewSummary) {
-                  rWT("RR,R", fmtRo(renewSummary.rer, 1));
-                }
-
-                // 17. nZEB status text
-                const nzebDocx = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                const nzebOkDocx = epFinal <= getNzebEpMax(building.category, selectedClimate?.zone) && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
-                rWTpart("nZEB DA/NU", nzebOkDocx ? "DA" : "NU");
-
-                // 17b. RESCRIE SCALE CLASARE ÎN DOCX
-                // Template-ul MDLPA are scale fixe hardcodate (birouri). Rescrim cu scalele
-                // corecte pentru categoria curentă din ENERGY_CLASSES_DB.
-                const gridDocx = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category] || ENERGY_CLASSES_DB.AL;
-                const co2GridDocx = CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL;
-                if (gridDocx && gridDocx.thresholds) {
-                  const th = gridDocx.thresholds;
-                  const ct = co2GridDocx.thresholds;
-                  // Rescrie scale energie primară — template are "≤ 23", "23 ... 32", etc.
-                  // Strategia: căutăm pattern-uri numerice din scalele vechi și le înlocuim
-                  // cu valorile noi. Template-urile MDLPA au formatul "≤ XX" și "XX ... YY"
-                  const oldScales = [
-                    // Scale birouri (template default) — cele din DOCX original
-                    [23, 32, 65, 153, 241, 302, 362],    // încălzire
-                    [26, 36, 72, 85, 98, 122, 146],      // ACM
-                    [7, 10, 20, 30, 39, 49, 59],         // răcire
-                    [6, 8, 17, 26, 35, 43, 52],          // ventilare
-                    [5, 7, 14, 27, 39, 49, 59],          // iluminat
-                  ];
-                  // Noile scale — proporționale cu scala totală per categorie
-                  // Proporțiile pe utilitate sunt aprox: încălzire 45%, ACM 25%, răcire 10%, ventilare 8%, iluminat 12%
-                  const ratios = [0.45, 0.25, 0.10, 0.08, 0.12];
-                  oldScales.forEach((oldTh, utilIdx) => {
-                    const newTh = th.map(t => Math.round(t * ratios[utilIdx]));
-                    oldTh.forEach((oldVal, clsIdx) => {
-                      // Înlocuim prima apariție a valorii vechi cu cea nouă
-                      // Formatul în DOCX: "≤ 23" sau "23" standalone
-                      const oldStr = String(oldVal);
-                      const newStr = String(newTh[clsIdx]);
-                      if (oldStr !== newStr) {
-                        // Cautăm în XML noduri <w:t> care conțin exact numărul
-                        const re = new RegExp("(<w:t[^>]*>)([^<]*\\b)" + oldStr + "(\\b[^<]*)(</w:t>)", "g");
-                        xml = xml.replace(re, "$1$2" + esc(newStr) + "$3$4");
-                      }
-                    });
-                  });
-                }
-
-                // 18. CATEGORIE + localizare
-                const catLabelDocx = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
-                rWTpart("categorie functionala", catLabelDocx);
-                rWTpart("categorie funcțională", catLabelDocx);
-                if (building.city) rWTpart("localitatea", building.city);
-                if (building.county) { rWTpart("judetul", building.county); rWTpart("județul", building.county); }
-                if (selectedClimate?.zone) rWTpart("zona climatica", "zona " + selectedClimate.zone);
-
-                // 19. GWP lifecycle
                 const gwpVal = parseFloat(building.gwpLifecycle) || 0;
-                const co2OpDocx = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary.co2_total_m2 || 0);
                 const ybDocx = parseInt(building.yearBuilt) || 2000;
-                const embodiedDocx = ybDocx >= 2020 ? (["RI","RC","RA"].includes(building.category) ? 10 : 12) : 5;
-                const gwpTotalDocx = gwpVal > 0 ? gwpVal : (co2OpDocx + embodiedDocx);
-                rWT("GWP,G", fmtRo(gwpTotalDocx, 1));
-                rWTpart("GWP lifecycle", fmtRo(gwpTotalDocx, 1) + " kgCO2eq/m2an");
+                const embodiedDocx = ybDocx >= 2020 ? (["RI","RC","RA"].includes(baseCat) ? 10 : 12) : 5;
+                const gwpTotalDocx = gwpVal > 0 ? gwpVal : (co2Final_m2 + embodiedDocx);
 
                 // ═══════════════════════════════════════════
-                // 20. ANEXA-SPECIFIC: tabele elemente detaliate
+                // APEL API PYTHON — python-docx pe template original
                 // ═══════════════════════════════════════════
-                if (mode === "anexa") {
-                  // Tabel elemente opace — secvential placeholders E1..E10
+                const templateBase64 = btoa(new Uint8Array(arrayBuffer).reduce((s, b) => s + String.fromCharCode(b), ""));
+
+                const payload = {
+                  template: templateBase64,
+                  mode: mode,
+                  category: baseCat,
+                  photo: auditor.photo || null,
+                  data: {
+                    year: yearStr,
+                    expiry: expiryD.toLocaleDateString("ro-RO"),
+                    address: fullAddress,
+                    gps: fmtRo(latV, 4) + " x " + fmtRo(lngV, 4),
+                    regime: regimStr,
+                    scope: scopeLabels[building.scopCpe] || "Vânzare",
+                    software: "Zephren v2.0",
+                    area_ref: fmtRo(Aref, 1),
+                    area_gross: fmtRo(arieDesf, 1),
+                    volume: Math.round(Vol).toString(),
+                    nr_units: nrCam,
+                    category_label: BUILDING_CATEGORIES.find(c=>c.id===baseCat)?.label || "",
+                    city: building.city || "",
+                    county: building.county || "",
+                    climate_zone: selectedClimate?.zone ? "zona " + selectedClimate.zone : "",
+                    ep_total_real: fmtRo(epTotalReal, 1),
+                    ep_total_ref: fmtRo(epTotalRef, 1),
+                    qf_thermal: fmtRo(qfFinal_t, 1),
+                    qf_electric: fmtRo(qfFinal_e, 1),
+                    ep_specific: fmtRo(epFinal, 1),
+                    ep_ref: fmtRo(epRefMax, 1),
+                    co2_val: fmtRo(co2Final_m2, 1),
+                    sre_st: fmtRo(sre_st, 1),
+                    sre_pv: fmtRo(sre_pv, 1),
+                    sre_pc: fmtRo(sre_pc, 1),
+                    sre_bio: fmtRo(sre_bio, 1),
+                    sre_other: fmtRo(sre_other, 1),
+                    sre_total: fmtRo(sre_total, 1),
+                    s_ap: String(scaleEP[0]), s_a: String(scaleEP[1]), s_b: String(scaleEP[2]),
+                    s_c: String(scaleEP[3]), s_d: String(scaleEP[4]), s_e: String(scaleEP[5]), s_f: String(scaleEP[6]),
+                    co2_ap: fmtRo(co2Grid.thresholds[0],1), co2_a: fmtRo(co2Grid.thresholds[1],1),
+                    co2_b: fmtRo(co2Grid.thresholds[2],1), co2_c: fmtRo(co2Grid.thresholds[3],1),
+                    co2_d: fmtRo(co2Grid.thresholds[4],1), co2_e: fmtRo(co2Grid.thresholds[5],1),
+                    co2_f: fmtRo(co2Grid.thresholds[6],1),
+                    auditor_name: auditor.name || "",
+                    auditor_atestat: auditor.atestat || "",
+                    auditor_company: auditor.company || "",
+                    auditor_phone: auditor.phone || "",
+                    auditor_email: auditor.email || "",
+                    auditor_date: auditor.date ? auditor.date.split("-").reverse().join(".") : "",
+                    auditor_mdlpa: auditor.mdlpaCode || "",
+                    energy_class: enClassDocx.cls,
+                    ep_class_real: enClassDocx.cls,
+                    ep_class_ref: getEnergyClassEPBD(epRefMax, catKey).cls,
+                    co2_class_real: getCO2Class(co2Final_m2, building.category).cls,
+                    rer: renewSummary ? fmtRo(renewSummary.rer, 1) : "0,0",
+                    nzeb: nzebOk ? "DA" : "NU",
+                    gwp: fmtRo(gwpTotalDocx, 1),
+                  },
+                };
+
+                const resp = await fetch("/api/generate-cpe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!resp.ok) {
+                  const err = await resp.json().catch(() => ({ error: "Server error" }));
+                  throw new Error(err.error || "Eroare server: " + resp.status);
+                }
+
+                const blob = await resp.blob();
+
+                // Tot post-processing-ul (checkboxes, foto, scale) se face server-side în Python
+
+                // [Checkpoint: tot codul vechi de post-processing (checkboxes, foto, repack) a fost eliminat]
+                // [Python API gestionează totul server-side]
+                if (false && mode === "anexa_DISABLED") {
+                  // TOT ACEST BLOC E DEZACTIVAT — python-docx face totul server-side
+                  const checkCB = (n) => {
+                    let count = 0;
+                    xml = xml.replace(/<w:checkBox><w:sizeAuto\/><w:default w:val="0"\/><\/w:checkBox>/g, (match) => {
+                      if (count === n) { count++; return '<w:checkBox><w:sizeAuto/><w:default w:val="1"/></w:checkBox>'; }
+                      count++;
+                      return match;
+                    });
+                  };
+
+                  // ── Helper: bifează mai multe checkbox-uri dintr-o dată (eficient) ──
+                  const checkCBs = (indices) => {
+                    const set = new Set(indices);
+                    let count = 0;
+                    xml = xml.replace(/<w:checkBox><w:sizeAuto\/><w:default w:val="0"\/><\/w:checkBox>/g, (match) => {
+                      const result = set.has(count) ? '<w:checkBox><w:sizeAuto/><w:default w:val="1"/></w:checkBox>' : match;
+                      count++;
+                      return result;
+                    });
+                  };
+
+                  const isRes = ["RI","RC","RA"].includes(building.category);
+                  const uRef = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
+                  const hSource = HEAT_SOURCES.find(function(h){return h.id===heating.source;});
+                  const acmSrc = ACM_SOURCES.find(function(a){return a.id===acm.source;});
+                  const coolSrc = COOLING_SYSTEMS.find(function(c){return c.id===cooling.source;});
+                  const ventType = VENTILATION_TYPES.find(function(v){return v.id===ventilation.type;});
+                  const lightType = LIGHTING_TYPES.find(function(l){return l.id===lighting.type;});
+                  const lightCtrl = LIGHTING_CONTROL.find(function(l){return l.id===lighting.control;});
+
+                  // ══════════════════════════════════════
+                  // ANEXA 1 — RECOMANDĂRI (CB 0-64)
+                  // ══════════════════════════════════════
+                  const cbAnex1 = [];
+
+                  // Anvelopă — bifăm dacă U calculat > U referință
+                  const opaqueU = opaqueElements.map(function(el) {
+                    if (!el.layers || el.layers.length === 0) return { type: el.type, u: 999 };
+                    const elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
+                    const rsi = elType ? elType.rsi : 0.13;
+                    const rse = elType ? elType.rse : 0.04;
+                    const rL = el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0);
+                    return { type: el.type, u: 1/(rsi+rL+rse) };
+                  });
+                  // CB0: pereți exteriori neconformi
+                  if (opaqueU.some(function(e){ return e.type==="PE" && e.u > (uRef.PE||0.25); })) cbAnex1.push(0);
+                  // CB1: planșeu peste subsol
+                  if (opaqueU.some(function(e){ return e.type==="PB" && e.u > (uRef.PB||0.29); })) cbAnex1.push(1);
+                  // CB2: terasă/planșeu sub pod
+                  if (opaqueU.some(function(e){ return (e.type==="PT"||e.type==="PP") && e.u > (uRef[e.type]||0.15); })) cbAnex1.push(2);
+                  // CB3: planșee contact exterior / placă pe sol
+                  if (opaqueU.some(function(e){ return (e.type==="PL"||e.type==="SE") && e.u > (uRef[e.type]||0.20); })) cbAnex1.push(3);
+                  // CB5: tâmplărie
+                  const uGlazRef = isRes ? 1.30 : 1.80;
+                  if (glazingElements.some(function(e){ return (parseFloat(e.u)||0) > uGlazRef; })) cbAnex1.push(5);
+                  // CB6: grile ventilare higroreglabile
+                  if (!ventilation.type || ventilation.type === "natural_neorg") cbAnex1.push(6);
+                  // CB13: robinete termostat
+                  if (heating.source && !["electric_direct","pc_aer_aer"].includes(heating.source)) cbAnex1.push(13);
+                  // CB21: automatizare
+                  if (!heating.control || heating.control === "manual") cbAnex1.push(21);
+                  // CB25: iluminat LED
+                  if (lighting.type && lighting.type !== "led") cbAnex1.push(25);
+                  // CB26: senzori prezență
+                  if (!lighting.control || !["sensor_presence","daylight_dimming"].includes(lighting.control)) cbAnex1.push(26);
+                  // CB27: regenerabile
+                  if (!solarThermal.enabled && !photovoltaic.enabled) cbAnex1.push(27);
+                  // CB28: recuperare căldură
+                  if (!ventilation.type || !ventilation.type.includes("mec_hr")) cbAnex1.push(28);
+
+                  // Estimare costuri (CB 48-53): < 1000, 1k-10k, 10k-25k, 25k-50k, 50k-100k, > 100k
+                  const totalCostEst = (financialAnalysis?.totalInvestment || annualEnergyCost?.totalEur || 0);
+                  if (totalCostEst < 1000) cbAnex1.push(48);
+                  else if (totalCostEst < 10000) cbAnex1.push(49);
+                  else if (totalCostEst < 25000) cbAnex1.push(50);
+                  else if (totalCostEst < 50000) cbAnex1.push(51);
+                  else if (totalCostEst < 100000) cbAnex1.push(52);
+                  else cbAnex1.push(53);
+
+                  // Estimare economii energie (CB 54-59): <10%, 10-20, 20-30, 30-40, 40-50, >60%
+                  const savings = financialAnalysis?.energySavingsPercent || 20;
+                  if (savings < 10) cbAnex1.push(54);
+                  else if (savings < 20) cbAnex1.push(55);
+                  else if (savings < 30) cbAnex1.push(56);
+                  else if (savings < 40) cbAnex1.push(57);
+                  else if (savings < 50) cbAnex1.push(58);
+                  else cbAnex1.push(59);
+
+                  // Durată recuperare (CB 60-64): <1 an, 1-3, 3-7, 7-10, >10
+                  const payback = financialAnalysis?.paybackYears || 5;
+                  if (payback < 1) cbAnex1.push(60);
+                  else if (payback < 3) cbAnex1.push(61);
+                  else if (payback < 7) cbAnex1.push(62);
+                  else if (payback < 10) cbAnex1.push(63);
+                  else cbAnex1.push(64);
+
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — DATE CLĂDIRE (CB 65+)
+                  // ══════════════════════════════════════
+
+                  // Tipul clădirii: CB65=existentă, CB66=nouă finalizată, CB67=existentă nefinalizată
+                  const yearB = parseInt(building.yearBuilt) || 2000;
+                  if (yearB >= new Date().getFullYear() - 1) cbAnex1.push(66); // nouă finalizată
+                  else cbAnex1.push(65); // existentă
+
+                  // Categoria clădirii (CB 68-111)
+                  const catCBMap = {
+                    RI: [68, 69],   // rezidențial + casă individuală
+                    RC: [68, 71],   // rezidențial + bloc locuințe
+                    RA: [68, 71],   // rezidențial + bloc locuințe
+                    BI: [79, 80],   // birouri + birouri
+                    ED: [74, 76],   // învățământ + școală
+                    SA: [86, 87],   // sănătate + spital
+                    HC: [94, 95],   // turism + hotel
+                    CO: [103, 104], // comerț + magazin mic
+                    SP: [99, 100],  // sport + sală
+                    AL: [108, 111], // alte tipuri + alte clădiri
+                  };
+                  const catCBs = catCBMap[building.category] || catCBMap.AL;
+                  catCBs.forEach(function(cb){ cbAnex1.push(cb); });
+
+                  // Zone climatice (CB 112-116 = zone I-V)
+                  const zoneNum = parseInt(selectedClimate?.zone) || 3;
+                  if (zoneNum >= 1 && zoneNum <= 5) cbAnex1.push(111 + zoneNum); // CB112=I, CB113=II, ...
+
+                  // Zone eoliene (CB 117-120 = zone I-IV)
+                  // Derivăm zona eoliană din locație (simplificat: câmpie=I-II, munte=III-IV)
+                  const windZone = zoneNum <= 2 ? 1 : (zoneNum <= 4 ? 2 : 3);
+                  if (windZone >= 1 && windZone <= 4) cbAnex1.push(116 + windZone);
+
+                  // Structura constructivă (CB 127-134)
+                  const structCBMap = {
+                    "Zidărie portantă": 127,
+                    "Cadre beton armat": 129,
+                    "Panouri prefabricate mari": 133,
+                    "Structură metalică": 132,
+                    "Structură lemn": 131,
+                    "Mixtă": 134,
+                  };
+                  const structCB = structCBMap[building.structure];
+                  if (structCB) cbAnex1.push(structCB);
+
+                  // ── ÎNCĂLZIRE (CB 135+) ──
+                  // CB135=Da funcțională, CB136=Da nefuncțională, CB137=Nu
+                  if (heating.source) cbAnex1.push(135); else cbAnex1.push(137);
+
+                  // Sursa încălzire (CB 138-149)
+                  if (heating.source) {
+                    const heatSrcCBMap = {
+                      gaz_conv: 144,    // CT în clădire
+                      gaz_cond: 144,
+                      termoficare: 146, // Termoficare
+                      electric_direct: 139, // Sursă electrică
+                      pc_aer_apa: 149,  // Altă sursă
+                      pc_aer_aer: 139,
+                      pc_sol_apa: 149,
+                      pc_apa_apa: 149,
+                      centrala_gpl: 144,
+                      cazan_lemn: 138,  // Sursă proprie
+                      cazan_peleti: 138,
+                      soba_teracota: 138,
+                      pompa_caldura: 149,
+                    };
+                    const hCB = heatSrcCBMap[heating.source];
+                    if (hCB) cbAnex1.push(hCB);
+                  }
+
+                  // Tipul sistemului de încălzire (CB 150-157)
+                  if (heating.source === "soba_teracota") cbAnex1.push(150);
+                  else if (heating.source === "electric_direct") cbAnex1.push(154);
+                  else cbAnex1.push(151); // corpuri statice (default)
+
+                  // Tip distribuție (CB 160=inferioară, 161=superioară, 162=mixtă)
+                  cbAnex1.push(160); // default inferioară
+
+                  // ── ACM (CB 176+) ──
+                  if (acm.source) cbAnex1.push(176); else cbAnex1.push(178);
+
+                  // Sursa ACM (CB 179-186)
+                  if (acm.source) {
+                    const acmSrcCBMap = {
+                      ct_prop: 181,     // CT în clădire
+                      boiler_electric: 180, // Sursă electrică
+                      termoficare: 183,
+                      solar_termic: 179,
+                      pc: 186,
+                    };
+                    const aCB = acmSrcCBMap[acm.source];
+                    if (aCB) cbAnex1.push(aCB);
+                  }
+
+                  // Echipament ACM (CB 187-190)
+                  if (acm.source === "boiler_electric") cbAnex1.push(187); // Boiler acumulare
+                  else if (acm.source === "ct_prop") cbAnex1.push(188); // Instant
+
+                  // Recirculare ACM (CB 193=funcțională, 194=nu funcționează, 195=nu există)
+                  cbAnex1.push(195); // default: nu există
+
+                  // ── RĂCIRE/CLIMATIZARE (CB 202+) ──
+                  const hasCool = instSummary && instSummary.hasCool;
+                  if (hasCool) cbAnex1.push(202); else cbAnex1.push(204);
+
+                  // Tip sursă frig (CB 205-215)
+                  if (hasCool && cooling.source) {
+                    const coolCBMap = {
+                      split: 214,
+                      chiller_aer: 205,
+                      chiller_apa: 206,
+                      pc_aer_apa: 207,
+                      pc_apa_apa: 208,
+                      pc_aer_aer: 209,
+                      monobloc: 213,
+                    };
+                    const cCB = coolCBMap[cooling.source];
+                    if (cCB) cbAnex1.push(cCB);
+                  }
+
+                  // Climatizat complet/parțial (CB 229=complet, 230=global, 231=parțial)
+                  if (hasCool) cbAnex1.push(229);
+
+                  // Fără controlul umidității (CB 232)
+                  if (hasCool) cbAnex1.push(232);
+
+                  // ── VENTILARE MECANICĂ (CB 256+) ──
+                  const hasVent = ventilation.type && ventilation.type !== "natural_neorg";
+                  if (hasVent) cbAnex1.push(256); else cbAnex1.push(258);
+
+                  // Tip ventilare (CB 259-265)
+                  if (ventilation.type === "natural_neorg") cbAnex1.push(259);
+                  else if (ventilation.type === "natural_org") cbAnex1.push(260);
+                  else if (hasVent) cbAnex1.push(261); // Mecanică
+
+                  // Recuperator (CB 270=Da, 271=Nu)
+                  if (ventilation.type && ventilation.type.includes("hr")) cbAnex1.push(270);
+                  else cbAnex1.push(271);
+
+                  // ── ILUMINAT (CB 272+) ──
+                  if (lighting.type) cbAnex1.push(272); else cbAnex1.push(274);
+
+                  // Control iluminat (CB 275-280)
+                  if (lighting.control === "manual") cbAnex1.push(276);
+                  else if (lighting.control === "daylight_dimming") { cbAnex1.push(277); cbAnex1.push(278); }
+                  else if (lighting.control === "sensor_presence") { cbAnex1.push(277); cbAnex1.push(279); }
+                  else cbAnex1.push(275); // Funcționare on/off
+
+                  // Tip iluminat (CB 281-284)
+                  if (lighting.type === "fluorescent") cbAnex1.push(281);
+                  else if (lighting.type === "incandescent") cbAnex1.push(282);
+                  else if (lighting.type === "led") cbAnex1.push(283);
+                  else cbAnex1.push(284); // Mixt
+
+                  // Stare rețea (CB 285=Bună default)
+                  cbAnex1.push(285);
+
+                  // ── REGENERABILE (CB 288+) ──
+                  // Panouri termosolare: CB288=Există, CB289=Nu
+                  if (solarThermal.enabled) cbAnex1.push(288); else cbAnex1.push(289);
+                  // PV: CB290=Există, CB291=Nu există
+                  if (photovoltaic.enabled) cbAnex1.push(290); else cbAnex1.push(291);
+                  // Pompă căldură: CB292=Există, CB293=Nu
+                  if (heatPump.enabled) cbAnex1.push(292); else cbAnex1.push(293);
+                  // Tip PC (CB 294-300)
+                  if (heatPump.enabled) {
+                    const pcCBMap = { "sol_apa_deschisa":294, "sol_apa_inchisa":295, "aer_apa":296, "aer_aer":297, "apa_aer":298, "sol_aer":299 };
+                    const pcCB = pcCBMap[heatPump.type];
+                    if (pcCB) cbAnex1.push(pcCB);
+                  }
+                  // Biomasă: CB301=Există, CB302=Nu
+                  if (biomass.enabled) cbAnex1.push(301); else cbAnex1.push(302);
+                  // Tip biomasă (CB 303-305)
+                  if (biomass.enabled) {
+                    if (biomass.type === "peleti") cbAnex1.push(303);
+                    else if (biomass.type === "brichete") cbAnex1.push(304);
+                    else cbAnex1.push(305);
+                  }
+                  // Eoliană: CB306=Există, CB307=Nu
+                  if (otherRenew && otherRenew.windEnabled) cbAnex1.push(306); else cbAnex1.push(307);
+
+                  // ── Aplică toate checkbox-urile dintr-o dată ──
+                  checkCBs(cbAnex1);
+
+                  // ══════════════════════════════════════
+                  // ANEXA 1 — TEXT: adresa, nr certificat
+                  // ══════════════════════════════════════
+                  rWTpart("[adresa]", fullAddress);
+                  xml = xml.replace(/(<w:t[^>]*>)\.{6,}(<\/w:t>)/g, function(match, p1, p2) {
+                    // Golim primele 2 grupuri de puncte (nr certificat)
+                    return p1 + " " + p2;
+                  });
+
+                  // An construcție/renovare
+                  rWTpart(".................","" + yearStr + (building.yearRenov ? " / " + building.yearRenov : ""));
+
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — GEOMETRIE + CLIMAT
+                  // ══════════════════════════════════════
+                  const seV = Vol > 0 ? (parseFloat(building.areaEnvelope) || 0) / Vol : 0;
+                  const nrPers = Math.max(1, Math.round(Aref / (isRes ? 30 : 15)));
+
+                  // Regim înălțime — numerele din template: noduri "2 (nr)" și "5 (nr)"
+                  const floorCount = parseInt(building.floors?.replace(/[^0-9]/g, "")) || 0;
+                  rWT("2\n(nr)", String(building.basement ? 1 : 0));
+
+                  // Arii și volume
+                  // Nodurile din Anexa 2 ce conțin "m2" sau "m³" sunt lângă valori
+                  // Folosim rWTpart pentru a completa valorile
+
+                  // Arie referință totală pardoseală
+                  rWTpart("Aria de referință totală", "Aria de referință totală a pardoselii: " + fmtRo(Aref, 1));
+                  // Volumul interior de referință
+                  rWTpart("Volumul interior de referință", "Volumul interior de referință V: " + fmtRo(Vol, 1));
+
+                  // Factor formă
+                  rWTpart("Factorul de formă", "Factorul de formă al clădirii, SE/V: " + fmtRo(seV, 3));
+
+                  // Număr persoane
+                  rWTpart("pers.", fmtRo(nrPers, 0) + " pers.");
+
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — TABEL ANVELOPĂ
+                  // ══════════════════════════════════════
+                  // Template-ul are rânduri fixe: PE 1, PE 2, FE, UE, TE, Sb, CS, ...
+                  // Completăm cu valorile calculate per element
                   opaqueElements.forEach(function(el, idx) {
                     const n = idx + 1;
-                    const uCalc = el.layers && el.layers.length > 0 ? (function() {
-                      const elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
-                      const rsi = elType ? elType.rsi : 0.13;
-                      const rse = elType ? elType.rse : 0.04;
-                      const rL = el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0);
-                      return 1/(rsi+rL+rse);
-                    })() : 0;
+                    const elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
+                    const rsi = elType ? elType.rsi : 0.13;
+                    const rse = elType ? elType.rse : 0.04;
+                    const rL = el.layers ? el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0) : 0;
+                    const uCalc = rL > 0 ? 1/(rsi+rL+rse) : 0;
                     const rCalc = uCalc > 0 ? 1/uCalc : 0;
+                    const uRefEl = uRef[el.type] || 0;
+                    const rRefEl = uRefEl > 0 ? 1/uRefEl : 0;
                     rWT("E" + n + "_den", el.name || "Element " + n);
-                    rWT("E" + n + "_tip", ELEMENT_TYPES.find(function(t){return t.id===el.type;})?.label || el.type);
+                    rWT("E" + n + "_tip", elType?.label || el.type);
                     rWT("E" + n + "_sup", fmtRo(el.area || 0, 1));
                     rWT("E" + n + "_U", fmtRo(uCalc, 3));
                     rWT("E" + n + "_R", fmtRo(rCalc, 3));
+                    rWT("E" + n + "_Rref", fmtRo(rRefEl, 3));
                     rWT("E" + n + "_ori", el.orientation || "—");
-                    // Straturi detaliate — concatenate
                     if (el.layers && el.layers.length > 0) {
                       const layerStr = el.layers.map(function(l){ return (l.matName||"?") + " " + (l.thickness||0) + "mm, λ=" + (l.lambda||0); }).join("; ");
                       rWT("E" + n + "_str", layerStr);
                     }
                   });
+
+                  // Arie totală anvelopă
+                  const seTotal = parseFloat(building.areaEnvelope) || opaqueElements.reduce(function(s,e){ return s + (parseFloat(e.area)||0); }, 0) + glazingElements.reduce(function(s,e){ return s + (parseFloat(e.area)||0); }, 0);
+                  rWTpart("Aria totală a anvelopei", "Aria totală a anvelopei, SE: " + fmtRo(seTotal, 1));
 
                   // Tabel elemente vitrate
                   glazingElements.forEach(function(el, idx) {
@@ -10193,27 +10385,89 @@ export default function EnergyCalcApp({ cloud }) {
                     rWT("V" + n + "_tip", el.glazingType || "—");
                   });
 
-                  // Punti termice sumar
+                  // Punți termice sumar
                   const tbTotal = thermalBridges.reduce(function(s,b){ return s + (parseFloat(b.psi)||0) * (parseFloat(b.length)||0); }, 0);
                   rWT("PT_total", fmtRo(tbTotal, 1));
                   rWT("PT_nr", String(thermalBridges.length));
 
-                  // Instalatii detalii
-                  const hSource = HEAT_SOURCES.find(function(h){return h.id===heating.source;});
-                  rWTpart("sursa incalzire", hSource?.label || "—");
-                  rWTpart("sursa încălzire", hSource?.label || "—");
-                  rWTpart("randament generare", fmtRo(heating.eta_gen || (hSource?.eta_gen || 0), 2));
-                  rWTpart("putere nominala", fmtRo(heating.nominalPower || 0, 1));
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — DETALII INSTALAȚII
+                  // ══════════════════════════════════════
+                  // Încălzire
+                  if (hSource) {
+                    rWTpart("sursa incalzire", hSource.label);
+                    rWTpart("sursa încălzire", hSource.label);
+                    rWTpart("randament generare", fmtRo(heating.eta_gen || (hSource.eta_gen || 0), 2));
+                    rWTpart("putere nominala", fmtRo(heating.nominalPower || 0, 1));
+                    // Combustibil — completăm textul "combustibil ....."
+                    const fuelLabel = FUELS.find(function(f){return f.id===heating.fuel;})?.label || "";
+                    if (fuelLabel) {
+                      rWTpart("combustibil .....................", "combustibil " + fuelLabel);
+                      rWTpart("cu combustibil\n", "cu combustibil " + fuelLabel + "\n");
+                    }
+                    // Putere nominală în kW
+                    rWTpart("Necesarul de căldură de calcul", "Necesarul de căldură de calcul (sarcina termică necesară) " + fmtRo(heating.nominalPower || 0, 1));
+                    rWTpart("Puterea termică instalată totală pentru încălzire", "Puterea termică instalată totală pentru încălzire " + fmtRo(heating.nominalPower || 0, 1));
+                  }
 
                   // ACM
-                  const acmSrc = ACM_SOURCES.find(function(a){return a.id===acm.source;});
-                  rWTpart("sursa ACM", acmSrc?.label || "—");
+                  if (acmSrc) {
+                    rWTpart("sursa ACM", acmSrc.label);
+                    const acmFuel = FUELS.find(function(f){return f.id===acm.fuel;})?.label || "";
+                    if (acmFuel) rWTpart("combustibil ...........", "combustibil " + acmFuel);
+                  }
 
-                  // Clasa energetica text
+                  // Răcire
+                  if (hasCool && coolSrc) {
+                    rWTpart("Valoarea nominală medie a coeficientului", "Valoarea nominală medie a coeficientului de performanță EER al sursei de răcire: " + fmtRo(cooling.eer || cooling.cop || 3.0, 1));
+                  }
+
+                  // Ventilare — eficiență HR
+                  if (hasVent) {
+                    const hrEta = ventilation.hrEta || (instSummary?.hrEta || 0);
+                    rWTpart("Eficiență declarată pe durata verii/iernii", "Eficiență declarată pe durata verii/iernii: " + fmtRo(hrEta * 100, 0) + " / " + fmtRo(hrEta * 100, 0));
+                  }
+
+                  // Iluminat — puteri
+                  const pNecIlum = Au > 0 && instSummary?.leni ? (instSummary.leni * Au / 8760 || 0) : 0;
+                  rWTpart("Puterea electrică totală necesară a sistemului de iluminat", "Puterea electrică totală necesară a sistemului de iluminat: " + fmtRo(pNecIlum, 1));
+                  rWTpart("Puterea electrică instalată totală a sistemului de iluminat", "Puterea electrică instalată totală a sistemului de iluminat: " + fmtRo(pNecIlum * 1.2, 1));
+
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — SURSE REGENERABILE (detalii text)
+                  // ══════════════════════════════════════
+                  if (solarThermal.enabled) {
+                    const stType = SOLAR_THERMAL_TYPES.find(function(t){return t.id===solarThermal.type;});
+                    rWTpart("Tip panou (plan, cu tuburi vidate etc.)", "Tip panou: " + (stType?.label || solarThermal.type || "plan"));
+                    rWTpart("Număr panouri\n", "Număr panouri: " + (solarThermal.panels || Math.ceil((parseFloat(solarThermal.area)||4)/2)) + "\n");
+                  }
+                  if (photovoltaic.enabled) {
+                    const pvType = PV_TYPES.find(function(t){return t.id===photovoltaic.type;});
+                    rWTpart("Tip panou (\nmonocristalin", "Tip panou: " + (pvType?.label || "monocristalin"));
+                    rWTpart("Număr panouri\n", "Număr panouri: " + (photovoltaic.panels || Math.ceil((parseFloat(photovoltaic.kWp)||3)/0.4)) + "\n");
+                  }
+                  if (heatPump.enabled) {
+                    rWTpart("Număr pompe de căldură", "Număr pompe de căldură: 1");
+                    rWTpart("Valoarea medie", "Valoarea medie SCOP/SEER: " + fmtRo(heatPump.cop || 3.5, 1));
+                  }
+
+                  // Energie exportată
+                  const expTh = renewSummary ? (renewSummary.exportedThermal || 0) : 0;
+                  const expEl = renewSummary ? (renewSummary.exportedElectric || renewSummary.qPV_kWh || 0) : 0;
+                  // Nod "Energia termică exportată:" urmat de un nod cu valoare
+                  rWTpart("Energia termică exportată:", "Energia termică exportată: " + fmtRo(expTh, 0));
+                  rWTpart("Energia electrică exportată:", "Energia electrică exportată: " + fmtRo(expEl, 0));
+                  rWTpart("Energia termică exportată din surse regenerabile", "Energia termică exportată din surse regenerabile: " + fmtRo(expTh, 0));
+                  rWTpart("Energia electrică exportată din surse regenerabile", "Energia electrică exportată din surse regenerabile: " + fmtRo(expEl, 0));
+
+                  // ══════════════════════════════════════
+                  // ANEXA 2 — INDICATORI + CONSUM DETALIAT
+                  // ══════════════════════════════════════
+                  // Clasa energetică text
                   rWT("CLASA_EP", enClassDocx.cls);
                   rWT("NOTA_EP", String(enClassDocx.score));
 
-                  // Consum specific pe utilitati (Anexa detaliata)
+                  // Consum specific pe utilități (Anexa detaliată)
                   if (instSummary) {
                     rWT("qf_inc", fmtRo(Au > 0 ? instSummary.qf_h / Au : 0, 1));
                     rWT("qf_acm", fmtRo(Au > 0 ? instSummary.qf_w / Au : 0, 1));
@@ -10225,6 +10479,26 @@ export default function EnergyCalcApp({ cloud }) {
                     rWT("ep_rac", fmtRo(Au > 0 ? (instSummary.ep_c||0) / Au : 0, 1));
                     rWT("ep_ven", fmtRo(Au > 0 ? (instSummary.ep_v||0) / Au : 0, 1));
                     rWT("ep_ilu", fmtRo(Au > 0 ? (instSummary.ep_l||0) / Au : 0, 1));
+                    // CO2 per utilitate
+                    rWT("co2_inc", fmtRo(Au > 0 ? (instSummary.co2_h_m2||0) : 0, 1));
+                    rWT("co2_acm", fmtRo(Au > 0 ? (instSummary.co2_w_m2||0) : 0, 1));
+                    rWT("co2_rac", fmtRo(Au > 0 ? (instSummary.co2_c_m2||0) : 0, 1));
+                    rWT("co2_ven", fmtRo(Au > 0 ? (instSummary.co2_v_m2||0) : 0, 1));
+                    rWT("co2_ilu", fmtRo(Au > 0 ? (instSummary.co2_l_m2||0) : 0, 1));
+                  }
+
+                  // Indicatori EPP, RERP, CO2, SRI
+                  rWTpart("Indicatorul energiei primare EP", "Indicatorul energiei primare EPP: " + fmtRo(epFinal, 1));
+                  rWTpart("Indicele RER", "Indicele RERP: " + fmtRo((renewSummary?.rer || 0), 1));
+                  rWTpart("Indicatorul emisiilor de CO", "Indicatorul emisiilor de CO2: " + fmtRo(co2Final_m2, 1));
+                  // SRI — Smart Readiness Indicator (simplificat)
+                  const sriVal = (heating.control === "pid" || heating.control === "bacs_a") ? 60 : (heating.control === "termostat" ? 30 : 10);
+                  rWTpart("Indicele SRI", "Indicele SRI: " + sriVal + "%");
+
+                  // Ore depășire temperatură confort (răcire)
+                  if (hasCool) {
+                    rWTpart("Timpul dintr-un an în care temperatura interioară depășește", "Timpul dintr-un an: " + (instSummary.overheatingHours || 0));
+                    rWTpart("Volumul de referință al zonei climatizate", "Volumul de referință al zonei climatizate: " + fmtRo(Vol, 0));
                   }
                 }
 
@@ -10250,7 +10524,7 @@ export default function EnergyCalcApp({ cloud }) {
                       zip.file("word/media/" + imgFilename, imgData, {base64: true});
 
                       // Add relationship
-                      let relsXml = await zip.file("word/_rels/document.xml.rels").async("string");
+                      let relsXml = zip.file("word/_rels/document.xml.rels").asText();
                       const newRid = "rIdFoto1";
                       const contentType = imgExt === "png" ? "image/png" : "image/jpeg";
                       if (!relsXml.includes(newRid)) {
@@ -10261,7 +10535,7 @@ export default function EnergyCalcApp({ cloud }) {
 
                       // Add content type
                       if (zip.file("[Content_Types].xml")) {
-                        let ctXml = await zip.file("[Content_Types].xml").async("string");
+                        let ctXml = zip.file("[Content_Types].xml").asText();
                         const extKey = imgExt === "jpeg" ? "jpg" : imgExt;
                         if (!ctXml.includes('Extension="' + extKey + '"') && !ctXml.includes('Extension="jpeg"')) {
                           ctXml = ctXml.replace("</Types>",
@@ -10297,13 +10571,7 @@ export default function EnergyCalcApp({ cloud }) {
                 // Aplicăm fix CSS post-render în useEffect
                 // ═══════════════════════════════════════════
 
-                // ── Repack DOCX ──
-                zip.file("word/document.xml", xml);
-                const blob = await zip.generateAsync({
-                  type: "blob",
-                  mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                  compression: "DEFLATE", compressionOptions: { level: 6 }
-                });
+                // blob vine direct de la API Python (nu mai e nevoie de repack)
 
                 const filename = mode === "anexa"
                   ? "Anexa_CPE_" + (building.address || "proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,40) + "_" + new Date().toISOString().slice(0,10) + ".docx"
