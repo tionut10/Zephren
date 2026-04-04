@@ -23,7 +23,6 @@
       "maxDuration": 10
     },
     "api/generate-cpe.py": {
-      "runtime": "@vercel/python",
       "maxDuration": 30
     }
   }
