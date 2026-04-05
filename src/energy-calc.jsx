@@ -11581,6 +11581,22 @@ ${(() => {
                           options={[{value:"I",label:"Gradul I"},{value:"II",label:"Gradul II"},{value:"III",label:"Gradul III"}]} />
                       </div>
                       <Input label={t("Firma / PFA",lang)} value={auditor.company} onChange={v => setAuditor(p=>({...p,company:v}))} />
+                      {tier.brandingCPE && (
+                        <div className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.03] border border-white/10">
+                          {auditor.companyLogo && <img src={auditor.companyLogo} alt="Logo" className="h-8 object-contain" />}
+                          <label className="text-xs opacity-50 cursor-pointer hover:opacity-80">
+                            {auditor.companyLogo ? "Schimbă logo" : "📎 Adaugă logo firmă (Business)"}
+                            <input type="file" accept="image/*" className="hidden" onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = () => setAuditor(p=>({...p,companyLogo:reader.result}));
+                              reader.readAsDataURL(file);
+                              e.target.value = "";
+                            }} />
+                          </label>
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input label={t("Telefon",lang)} value={auditor.phone} onChange={v => setAuditor(p=>({...p,phone:v}))} />
                         <Input label={t("Email",lang)} value={auditor.email} onChange={v => setAuditor(p=>({...p,email:v}))} />
@@ -12983,7 +12999,62 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 </button>
               </div>
 
-              {/* Export raport audit */}
+              {/* Simulare what-if interactivă */}
+              {instSummary && (() => {
+                const [simInsul, setSimInsul] = React.useState(10);
+                const [simWindow, setSimWindow] = React.useState(1.0);
+                const [simPV, setSimPV] = React.useState(0);
+                const baseEp = epFinal;
+                // Estimare simplificată impact
+                const insulImpact = (simInsul - 5) * 1.5; // fiecare cm peste 5cm reduce ~1.5 kWh/m²
+                const windowImpact = (1.4 - simWindow) * 15; // fiecare 0.1 U reducere ~1.5 kWh/m²
+                const pvImpact = simPV * 1.1; // fiecare m² PV produce ~1.1 kWh/m²·an specific
+                const simEp = Math.max(10, baseEp - insulImpact - windowImpact - pvImpact);
+                const simClass = getEnergyClassEPBD(simEp, catKey);
+                const savings = baseEp - simEp;
+                const savingsEur = savings * Au * 0.12 / 4.97; // ~0.12 EUR/kWh
+                return (
+                  <Card title="Simulare what-if — impact reabilitare" className="mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label className="text-[10px] opacity-50 block mb-1">Grosime izolație pereți [cm]</label>
+                        <input type="range" min="0" max="25" value={simInsul} onChange={e => setSimInsul(+e.target.value)} className="w-full" />
+                        <div className="text-xs font-mono text-center">{simInsul} cm</div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] opacity-50 block mb-1">U ferestre [W/(m²·K)]</label>
+                        <input type="range" min="0.6" max="2.5" step="0.1" value={simWindow} onChange={e => setSimWindow(+e.target.value)} className="w-full" />
+                        <div className="text-xs font-mono text-center">{simWindow.toFixed(1)}</div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] opacity-50 block mb-1">Suprafață PV [m²]</label>
+                        <input type="range" min="0" max="100" value={simPV} onChange={e => setSimPV(+e.target.value)} className="w-full" />
+                        <div className="text-xs font-mono text-center">{simPV} m²</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold" style={{color:simClass.color}}>{simClass.cls}</div>
+                        <div className="text-[9px] opacity-40">Clasă simulată</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-emerald-400">{simEp.toFixed(0)}</div>
+                        <div className="text-[9px] opacity-40">EP simulat</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-amber-400">-{savings.toFixed(0)}</div>
+                        <div className="text-[9px] opacity-40">kWh/(m²·an)</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-emerald-400">~{savingsEur.toFixed(0)}</div>
+                        <div className="text-[9px] opacity-40">EUR/an economii</div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* Export raport audit + deviz */}
               <div className="flex flex-wrap gap-3 mt-6">
                 <button onClick={() => {
                   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Raport Audit Energetic — ${building.address || "Proiect"}</title>
@@ -13021,6 +13092,32 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 }} disabled={!instSummary}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-sm transition-all">
                   📊 Export Raport Audit (HTML/PDF)
+                </button>
+                <button onClick={() => {
+                  if (!rehabComparison) { showToast("Completați scenariul de reabilitare", "error"); return; }
+                  const rc = rehabComparison;
+                  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Deviz Estimativ Reabilitare</title>
+                  <style>body{font-family:Arial;max-width:800px;margin:20px auto;padding:20px}h1{color:#b45309}
+                  table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ddd;padding:8px;text-align:left}
+                  th{background:#f0f0f0}.total{font-weight:bold;background:#fef3c7}
+                  @media print{body{margin:0}}</style></head><body>
+                  <h1>DEVIZ ESTIMATIV REABILITARE ENERGETICĂ</h1>
+                  <p><strong>Clădire:</strong> ${building.address || ""}, ${building.city || ""}<br>
+                  <strong>Categorie:</strong> ${BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || ""}<br>
+                  <strong>Data:</strong> ${new Date().toLocaleDateString("ro-RO")}</p>
+                  <table><tr><th>Nr.</th><th>Lucrare</th><th>Cantitate</th><th>Preț unitar (EUR)</th><th>Total (EUR)</th></tr>
+                  ${rc.measures ? rc.measures.map((m,i) => "<tr><td>"+(i+1)+"</td><td>"+m.label+"</td><td>"+(m.qty||"-")+"</td><td>"+(m.unitCost||"-")+"</td><td><strong>"+(m.cost||0).toLocaleString("ro-RO")+"</strong></td></tr>").join("") :
+                  "<tr><td>1</td><td>Termoizolarea pereților exteriori</td><td>"+(opaqueElements.filter(e=>e.type==="PE").reduce((s,e)=>s+(parseFloat(e.area)||0),0).toFixed(0))+" m²</td><td>42</td><td>"+(opaqueElements.filter(e=>e.type==="PE").reduce((s,e)=>s+(parseFloat(e.area)||0),0)*42).toFixed(0)+"</td></tr>"}
+                  <tr class="total"><td colspan="4">TOTAL ESTIMAT (fără TVA)</td><td>${(rc.totalInvest || rc.original?.qfTotal || 0).toLocaleString("ro-RO")} EUR</td></tr>
+                  </table>
+                  <p><em>Prețuri orientative 2026. Devizul final se stabilește pe baza ofertelor de la furnizori.</em></p>
+                  </body></html>`;
+                  const w = window.open("", "_blank");
+                  w.document.write(html); w.document.close();
+                  showToast("Deviz estimativ generat", "success");
+                }} disabled={!instSummary}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-sm transition-all">
+                  💰 Export Deviz Estimativ
                 </button>
               </div>
 
