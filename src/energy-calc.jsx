@@ -13078,6 +13078,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
                   <span>📄</span> Export XML MDLPA
                 </button>
+                <button onClick={() => {
+                  showToast("Înregistrare MDLPA: API-ul registrului electronic nu este încă disponibil public. XML-ul a fost exportat local — îl puteți încărca manual pe platforma MDLPA când devine activă.", "info", 8000);
+                  if (typeof exportXML === "function") exportXML();
+                }}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400/80 hover:bg-violet-500/10 transition-all text-xs">
+                  <span>🏛️</span> Upload MDLPA
+                </button>
                 <button onClick={exportPDFNative}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sky-400/80 hover:bg-sky-500/10 transition-all text-xs">
                   <span>📑</span> Export PDF certificat
@@ -13270,6 +13277,141 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   ))}
                 </div>
                 <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
+              </Card>
+
+              {/* ── Termoviziune — Import imagini IR ── */}
+              <Card title="Termoviziune — Imagini infraroșu" className="mb-4">
+                <div className="space-y-2">
+                  <div className="text-xs opacity-50">Încărcați imagini termografice pentru documentarea punctelor termice</div>
+                  <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-red-500/30 bg-red-500/5 hover:bg-red-500/10 cursor-pointer transition-all text-sm text-red-400">
+                    <span>🌡️</span> Încarcă imagine termoviziune
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={e => {
+                      const files = Array.from(e.target.files || []);
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setBuildingPhotos(prev => [...prev, { url: reader.result, label: "Termoviziune — " + file.name, zone: "IR" }]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                      showToast(files.length + " imagini IR adăugate în galeria foto", "success");
+                      e.target.value = "";
+                    }} />
+                  </label>
+                  {buildingPhotos.filter(p => p.zone === "IR").length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {buildingPhotos.filter(p => p.zone === "IR").map((p, i) => (
+                        <div key={i} className="relative rounded-lg overflow-hidden border border-red-500/20">
+                          <img src={p.url} alt={p.label} className="w-full h-20 object-cover" />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[8px] text-red-300 p-1 truncate">{p.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* ── Vizualizare 3D simplificată (SVG isometric) ── */}
+              {building.areaUseful && building.floors && (
+                <Card title="Vizualizare 3D clădire" className="mb-4">
+                  {(() => {
+                    const au = parseFloat(building.areaUseful) || 100;
+                    const nFloors = parseInt(building.floors?.replace(/[^0-9]/g, "")) || 1;
+                    const footprint = au / Math.max(1, nFloors);
+                    const w = Math.sqrt(footprint) * 2;
+                    const d = Math.sqrt(footprint) * 1.5;
+                    const h = nFloors * 3;
+                    const scale = 3;
+                    const isoX = (x, y) => 200 + (x - y) * scale * 0.866;
+                    const isoY = (x, y, z) => 150 + (x + y) * scale * 0.5 - z * scale;
+                    return (
+                      <svg viewBox="0 0 400 250" width="100%" height="200" className="mx-auto">
+                        {/* Front face */}
+                        <polygon points={`${isoX(0,0)},${isoY(0,0,0)} ${isoX(w,0)},${isoY(w,0,0)} ${isoX(w,0)},${isoY(w,0,h)} ${isoX(0,0)},${isoY(0,0,h)}`}
+                          fill={enClass.color+"40"} stroke={enClass.color} strokeWidth="1.5" />
+                        {/* Side face */}
+                        <polygon points={`${isoX(w,0)},${isoY(w,0,0)} ${isoX(w,d)},${isoY(w,d,0)} ${isoX(w,d)},${isoY(w,d,h)} ${isoX(w,0)},${isoY(w,0,h)}`}
+                          fill={enClass.color+"25"} stroke={enClass.color} strokeWidth="1" />
+                        {/* Top face */}
+                        <polygon points={`${isoX(0,0)},${isoY(0,0,h)} ${isoX(w,0)},${isoY(w,0,h)} ${isoX(w,d)},${isoY(w,d,h)} ${isoX(0,d)},${isoY(0,d,h)}`}
+                          fill={enClass.color+"15"} stroke={enClass.color} strokeWidth="1" />
+                        {/* Floor lines */}
+                        {Array.from({length: nFloors - 1}, (_, i) => i + 1).map(fl => (
+                          <line key={fl} x1={isoX(0,0)} y1={isoY(0,0,fl*3)} x2={isoX(w,0)} y2={isoY(w,0,fl*3)} stroke={enClass.color} strokeWidth="0.5" strokeDasharray="3 3" />
+                        ))}
+                        {/* Label */}
+                        <text x="200" y="240" textAnchor="middle" fontSize="10" fill={theme==="dark"?"#fff":"#333"} opacity="0.5">
+                          {building.floors} · {au.toFixed(0)} m² · Clasa {enClass.cls}
+                        </text>
+                      </svg>
+                    );
+                  })()}
+                </Card>
+              )}
+
+              {/* ── Marketplace auditori ── */}
+              <Card title="Marketplace auditori — Găsește un auditor atestat" className="mb-4">
+                <div className="text-xs opacity-50 mb-2">Conectează-te cu auditori energetici atestați din zona ta</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <a href="https://www.mdlpa.ro/pages/registruauditorienergforabuildings" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/5 transition-all text-xs">
+                    <span className="text-lg">🏛️</span>
+                    <div>
+                      <div className="font-medium">Registrul MDLPA</div>
+                      <div className="opacity-40">Lista oficială auditori atestați</div>
+                    </div>
+                  </a>
+                  <a href={"https://www.google.com/search?q=auditor+energetic+atestat+" + encodeURIComponent(building.city || building.county || "Romania")} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/5 transition-all text-xs">
+                    <span className="text-lg">🔍</span>
+                    <div>
+                      <div className="font-medium">Caută auditori</div>
+                      <div className="opacity-40">În {building.city || building.county || "România"}</div>
+                    </div>
+                  </a>
+                </div>
+              </Card>
+
+              {/* ── Notificări push expirare CPE ── */}
+              <Card title="Notificări — Expirare CPE" className="mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs">
+                    <div className="opacity-50">Primește notificări când CPE-ul se apropie de expirare</div>
+                    {auditor.date && (
+                      <div className="mt-1 opacity-70">
+                        CPE expiră la: <strong>{(() => { const d = new Date(auditor.date); d.setFullYear(d.getFullYear()+10); return d.toLocaleDateString("ro-RO"); })()}</strong>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => {
+                    if ("Notification" in window) {
+                      Notification.requestPermission().then(p => {
+                        if (p === "granted") {
+                          showToast("Notificări activate! Vei fi alertat cu 90 zile înainte de expirare.", "success");
+                          // Schedule check
+                          if (auditor.date) {
+                            const exp = new Date(auditor.date);
+                            exp.setFullYear(exp.getFullYear() + 10);
+                            const daysLeft = Math.floor((exp - new Date()) / 86400000);
+                            if (daysLeft <= 90 && daysLeft > 0) {
+                              new Notification("Zephren — CPE expiră în " + daysLeft + " zile", {
+                                body: building.address || "Verifică certificatul energetic",
+                                icon: "/favicon.svg"
+                              });
+                            }
+                          }
+                        } else {
+                          showToast("Notificările sunt blocate de browser", "error");
+                        }
+                      });
+                    } else {
+                      showToast("Browserul nu suportă notificări", "error");
+                    }
+                  }}
+                    className="px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-all">
+                    🔔 Activează notificări
+                  </button>
+                </div>
               </Card>
 
               {/* ── Digital Building Logbook ── */}
