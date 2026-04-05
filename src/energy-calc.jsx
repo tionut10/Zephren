@@ -9589,6 +9589,67 @@ export default function EnergyCalcApp({ cloud }) {
                 </Card>
               </div>
 
+              {/* ── COMPARAȚIE REAL vs. REFERINȚĂ ── */}
+              {instSummary && (
+                <Card title="Comparație clădire reală vs. clădire de referință (nZEB)">
+                  {(() => {
+                    const epRef = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
+                    const ratios = [0.45, 0.25, 0.10, 0.08, 0.12];
+                    const labels = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
+                    const colors = ["#ef4444","#f97316","#3b82f6","#8b5cf6","#eab308"];
+                    const realVals = [instSummary.ep_h, instSummary.ep_w, instSummary.ep_c, instSummary.ep_v, instSummary.ep_l].map(v => Au > 0 ? v/Au : 0);
+                    const refVals = ratios.map(r => epRef * r);
+                    const maxVal = Math.max(...realVals, ...refVals, 1);
+                    return (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-7 gap-1 text-[10px] font-medium opacity-60 mb-2">
+                          <div className="col-span-2">Utilitate</div>
+                          <div className="text-right">Real</div>
+                          <div className="col-span-2 text-center">Comparație</div>
+                          <div className="text-right">Ref. nZEB</div>
+                          <div className="text-right">Diferență</div>
+                        </div>
+                        {labels.map((label, i) => {
+                          const diff = realVals[i] - refVals[i];
+                          const pctDiff = refVals[i] > 0 ? (diff / refVals[i] * 100) : 0;
+                          return (
+                            <div key={label} className="grid grid-cols-7 gap-1 items-center text-xs">
+                              <div className="col-span-2 flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full" style={{backgroundColor:colors[i]}} />
+                                {label}
+                              </div>
+                              <div className="text-right font-mono">{realVals[i].toFixed(1)}</div>
+                              <div className="col-span-2 flex items-center gap-0.5 h-4">
+                                <div className="h-full rounded-l" style={{width:`${realVals[i]/maxVal*100}%`,backgroundColor:colors[i],opacity:0.8,minWidth:"2px"}} />
+                                <div className="h-full rounded-r border border-dashed border-emerald-500/50" style={{width:`${refVals[i]/maxVal*100}%`,backgroundColor:"#22c55e20",minWidth:"2px"}} />
+                              </div>
+                              <div className="text-right font-mono text-emerald-400/70">{refVals[i].toFixed(1)}</div>
+                              <div className={`text-right font-mono font-bold ${diff > 0 ? "text-red-400" : "text-emerald-400"}`}>
+                                {diff > 0 ? "+" : ""}{pctDiff.toFixed(0)}%
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div className="pt-2 border-t border-white/10 grid grid-cols-7 gap-1 items-center text-xs font-bold">
+                          <div className="col-span-2">TOTAL EP</div>
+                          <div className="text-right font-mono">{epFinal.toFixed(1)}</div>
+                          <div className="col-span-2" />
+                          <div className="text-right font-mono text-emerald-400">{epRef.toFixed(1)}</div>
+                          <div className={`text-right font-mono ${epFinal > epRef ? "text-red-400" : "text-emerald-400"}`}>
+                            {epFinal > epRef ? "+" : ""}{((epFinal - epRef) / epRef * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] opacity-40 pt-1">
+                          <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-amber-500/60" /> Clădire reală</span>
+                          <span className="flex items-center gap-1"><span className="w-3 h-2 rounded border border-dashed border-emerald-500" /> Referință nZEB</span>
+                          <span>Valori în kWh/(m²·an)</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </Card>
+              )}
+
               {/* ── TOGGLE NA:2023 ── */}
               <div className="flex items-center gap-3 mb-3 bg-white/[0.03] border border-white/10 rounded-xl p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
