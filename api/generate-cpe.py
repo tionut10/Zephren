@@ -185,48 +185,128 @@ def replace_scales(doc, category, new_ep_scale, new_co2_scale=None):
 
 # ═══════════════════════════════════════════════════════
 # REPLACE CLASS INDICATORS — the colored arrows on scales
+# Includes REPOSITIONING the shape vertically to the correct class row
 # ═══════════════════════════════════════════════════════
+
+# Vertical positions (EMU) for each class row on the scale
+# Derived from template: class A posV=510540, class B posV=977265
+# Spacing per class: 977265 - 510540 = 466725 EMU
+_CLASS_SPACING = 466725
+_CLASS_POS_V = {
+    "A+": 510540 - _CLASS_SPACING,    #   43815
+    "A":  510540,                      #  510540
+    "B":  977265,                      #  977265
+    "C":  977265 + _CLASS_SPACING,     # 1443990
+    "D":  977265 + 2 * _CLASS_SPACING, # 1910715
+    "E":  977265 + 3 * _CLASS_SPACING, # 2377440
+    "F":  977265 + 4 * _CLASS_SPACING, # 2844165
+    "G":  977265 + 5 * _CLASS_SPACING, # 3310890
+}
+
+# CO2 scale has same spacing but slightly different base
+_CO2_CLASS_POS_V = {
+    "A+": 963930 - _CLASS_SPACING * 2, #   30480
+    "A":  963930 - _CLASS_SPACING,     #  497205
+    "B":  963930,                      #  963930
+    "C":  963930 + _CLASS_SPACING,     # 1430655
+    "D":  963930 + 2 * _CLASS_SPACING, # 1897380
+    "E":  963930 + 3 * _CLASS_SPACING, # 2364105
+    "F":  963930 + 4 * _CLASS_SPACING, # 2830830
+    "G":  963930 + 5 * _CLASS_SPACING, # 3297555
+}
+
+
+def _update_shape_pos_v(shape_xml_str, new_pos_v):
+    """Update the posOffset within positionV in a mc:AlternateContent XML string."""
+    # Replace the posOffset value inside <wp:positionV ...><wp:posOffset>VALUE</wp:posOffset>
+    return re.sub(
+        r'(<wp:positionV[^>]*>[\s\S]*?<wp:posOffset>)-?\d+(</wp:posOffset>)',
+        lambda m: m.group(1) + str(new_pos_v) + m.group(2),
+        shape_xml_str
+    )
+
+
 def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
-    """Replace the class letter indicators (A, B, etc.) positioned on the scales.
-    These are standalone single letters that appear RIGHT AFTER the ≤ threshold nodes."""
+    """Replace class letter text AND reposition the arrow shapes on the scales."""
+    import zipfile as _zf
+
+    # Work directly on the XML string for precise shape manipulation
+    xml_file = doc.part._element.getparent()
+    # Access the raw XML via the document element
     body = doc.element.body
-    all_texts = body.findall(".//w:t", NSMAP)
+    # Serialize body to string for regex-based shape manipulation
+    body_xml = etree.tostring(body, encoding="unicode")
 
-    state = 0  # 0=searching for first ≤, 1=found EP ≤, 2=replacing EP, 3=found CO2 ≤, 4=replacing CO2
-    le_count = 0
-    ep_replaced = 0
-    co2_replaced = 0
+    # Find mc:AlternateContent blocks with class indicators (H > 150000)
+    alt_pattern = re.compile(r'(<mc:AlternateContent>[\s\S]*?</mc:AlternateContent>)')
+    blocks = list(alt_pattern.finditer(body_xml))
 
-    for t_elem in all_texts:
-        text = t_elem.text or ""
-        text_stripped = text.strip()
+    all_indicators = []  # (match, letter, posH, posV)
 
-        if state == 0 and text_stripped == "\u2264":  # ≤
-            le_count += 1
-            if le_count == 2:  # Second ≤ = end of EP A+ threshold pair
-                state = 1
-        elif state == 1:
-            # Next standalone uppercase letters are EP class indicators
-            if len(text_stripped) <= 2 and text_stripped.isalpha() and text_stripped.isupper():
-                if ep_replaced < 2:
-                    t_elem.text = text.replace(text_stripped, ep_class_real)
-                    ep_replaced += 1
-                elif ep_replaced < 4:
-                    t_elem.text = text.replace(text_stripped, ep_class_ref)
-                    ep_replaced += 1
-                    if ep_replaced == 4:
-                        state = 2
-                        le_count = 0
-        elif state == 2 and text_stripped == "\u2264":
-            le_count += 1
-            if le_count == 2:
-                state = 3
-        elif state == 3:
-            if len(text_stripped) <= 2 and text_stripped.isalpha() and text_stripped.isupper():
-                t_elem.text = text.replace(text_stripped, co2_class_real)
-                co2_replaced += 1
-                if co2_replaced >= 2:
-                    break
+    for m in blocks:
+        content = m.group(1)
+        letters = re.findall(r'<w:t[^>]*>([A-G]\+?)</w:t>', content)
+        pos_h = re.search(r'positionH[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
+        pos_v = re.search(r'positionV[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
+        if not letters or not pos_h or not pos_v:
+            continue
+        h = int(pos_h.group(1))
+        v = int(pos_v.group(1))
+        letter = letters[0]
+        if h > 150000 and len(letter) <= 2:
+            all_indicators.append((m, letter, h, v))
+
+    # Clasificare prin ORDINE în document (nu prin H):
+    # Clădiri: 3 indicatori → EP_real(1), EP_ref(2), CO2(3)
+    # Apartamente: 2 indicatori → EP_real(1), CO2(2)
+    if len(all_indicators) >= 3:
+        ep_indicators = all_indicators[:2]  # Primele 2 = EP (real + ref)
+        co2_indicators = all_indicators[2:]  # Al 3-lea = CO2
+    elif len(all_indicators) == 2:
+        ep_indicators = all_indicators[:1]  # Primul = EP real
+        co2_indicators = all_indicators[1:]  # Al 2-lea = CO2
+    else:
+        ep_indicators = all_indicators
+        co2_indicators = []
+
+    # Replace EP real indicators (first group — higher posV = further down = typically "B")
+    # Template has: ref (A, lower V) then real (B, higher V)
+    # So sorted: [0]=ref(A, V=510540), [1]=real(B, V=977265) for single indicators
+    # For 4 indicators: [0,1]=ref pair, [2,3]=real pair
+
+    new_xml = body_xml
+
+    # EP indicators: [0]=real, [1]=ref (ordine din document)
+    if len(ep_indicators) >= 1:
+        # EP REAL (primul indicator)
+        m, letter, h, v = ep_indicators[0]
+        new_content = m.group(1)
+        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + ep_class_real + r'\g<2>', new_content)
+        new_pos = _CLASS_POS_V.get(ep_class_real, v)
+        new_content = _update_shape_pos_v(new_content, new_pos)
+        new_xml = new_xml.replace(m.group(1), new_content, 1)
+
+    if len(ep_indicators) >= 2:
+        # EP REFERINȚĂ (al doilea indicator)
+        m, letter, h, v = ep_indicators[1]
+        new_content = m.group(1)
+        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + ep_class_ref + r'\g<2>', new_content)
+        new_pos = _CLASS_POS_V.get(ep_class_ref, v)
+        new_content = _update_shape_pos_v(new_content, new_pos)
+        new_xml = new_xml.replace(m.group(1), new_content, 1)
+
+    # Replace CO2 indicators
+    for m, letter, h, v in co2_indicators:
+        new_content = m.group(1)
+        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + co2_class_real + r'\g<2>', new_content)
+        new_pos = _CO2_CLASS_POS_V.get(co2_class_real, v)
+        new_content = _update_shape_pos_v(new_content, new_pos)
+        new_xml = new_xml.replace(m.group(1), new_content, 1)
+
+    # Parse modified XML back into the document
+    new_body = etree.fromstring(new_xml)
+    parent = body.getparent()
+    parent.replace(body, new_body)
 
 
 # ═══════════════════════════════════════════════════════
