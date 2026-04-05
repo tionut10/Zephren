@@ -12877,8 +12877,49 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 </button>
               </div>
 
+              {/* Export raport audit */}
+              <div className="flex flex-wrap gap-3 mt-6">
+                <button onClick={() => {
+                  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Raport Audit Energetic — ${building.address || "Proiect"}</title>
+                  <style>body{font-family:Arial,sans-serif;max-width:900px;margin:20px auto;padding:20px;color:#1a1a2e}
+                  h1{color:#b45309;border-bottom:2px solid #b45309;padding-bottom:8px}h2{color:#1e40af;margin-top:24px}
+                  table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:13px}
+                  th{background:#f0f0f0;font-weight:bold}.ok{color:#16a34a}.warn{color:#d97706}.fail{color:#dc2626}
+                  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold}
+                  .badge-ok{background:#dcfce7;color:#166534}.badge-fail{background:#fef2f2;color:#991b1b}
+                  @media print{body{margin:0}}</style></head><body>
+                  <h1>RAPORT DE AUDIT ENERGETIC</h1>
+                  <p><strong>Clădire:</strong> ${building.address || "—"}, ${building.city || ""}<br>
+                  <strong>Categorie:</strong> ${BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || ""}<br>
+                  <strong>Auditor:</strong> ${auditor.name || "—"} · ${auditor.atestat || ""}<br>
+                  <strong>Data:</strong> ${auditor.date || new Date().toISOString().slice(0,10)}</p>
+                  <h2>1. Performanță energetică</h2>
+                  <table><tr><th>Indicator</th><th>Valoare</th><th>Referință nZEB</th><th>Status</th></tr>
+                  <tr><td>EP specific</td><td>${epFinal.toFixed(1)} kWh/(m²·an)</td><td>${getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(1) || "—"}</td><td class="${epFinal <= (getNzebEpMax(building.category,selectedClimate?.zone)||999) ? "ok" : "fail"}">${epFinal <= (getNzebEpMax(building.category,selectedClimate?.zone)||999) ? "✓ Conform" : "✗ Depășit"}</td></tr>
+                  <tr><td>CO₂</td><td>${co2Final.toFixed(1)} kgCO₂/(m²·an)</td><td>—</td><td>Clasa ${co2Class.cls}</td></tr>
+                  <tr><td>RER</td><td>${rer.toFixed(1)}%</td><td>≥ 30%</td><td class="${rer >= 30 ? "ok" : "fail"}">${rer >= 30 ? "✓" : "✗"}</td></tr>
+                  <tr><td>Clasă energetică</td><td><strong>${enClass.cls}</strong></td><td>—</td><td>—</td></tr>
+                  <tr><td>nZEB</td><td colspan="2">${isNZEB ? "DA" : "NU"}</td><td class="${isNZEB ? "ok" : "fail"}">${isNZEB ? "✓ Conform" : "✗ Neconform"}</td></tr></table>
+                  <h2>2. Recomandări</h2><ul>
+                  ${(smartSuggestions||[]).map(s => "<li><strong>" + s.measure + "</strong> (" + s.system + ") — " + s.impact + "</li>").join("")}
+                  </ul>
+                  <h2>3. Anvelopă</h2>
+                  <table><tr><th>Element</th><th>Suprafață</th><th>U calculat</th><th>U ref</th></tr>
+                  ${(envelopeAnalysis||[]).map(e => "<tr><td>" + e.name + "</td><td>" + (e.area||0).toFixed(1) + " m²</td><td>" + (e.u||0).toFixed(3) + "</td><td>" + (e.uRef||"—") + "</td></tr>").join("")}
+                  </table>
+                  <p style="margin-top:40px;font-size:11px;color:#888">Generat cu Zephren v2.0 · ${new Date().toLocaleDateString("ro-RO")}</p>
+                  </body></html>`;
+                  const w = window.open("", "_blank");
+                  w.document.write(html); w.document.close();
+                  showToast("Raport audit generat — Print → Save as PDF", "success");
+                }} disabled={!instSummary}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-sm transition-all">
+                  📊 Export Raport Audit (HTML/PDF)
+                </button>
+              </div>
+
               {/* Navigation */}
-              <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
+              <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
                 <button onClick={() => setStep(6)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 6: Certificat
