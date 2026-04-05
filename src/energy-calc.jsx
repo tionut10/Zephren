@@ -11636,6 +11636,39 @@ ${(() => {
                       placeholder="Observatii privind starea cladirii, limitari ale evaluarii, etc." />
                   </Card>
 
+                  {/* Dashboard auditor statistici */}
+                  <Card title="Statistici auditor">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-amber-400">{certCount}</div>
+                        <div className="text-[9px] opacity-40">Certificate luna</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-emerald-400">{projectList.length}</div>
+                        <div className="text-[9px] opacity-40">Proiecte salvate</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold" style={{color:enClass.color}}>{enClass.cls}</div>
+                        <div className="text-[9px] opacity-40">Clasă curentă</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
+                        <div className="text-lg font-bold text-blue-400">{rer.toFixed(0)}%</div>
+                        <div className="text-[9px] opacity-40">RER</div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Google Maps localizare */}
+                  {building.city && (
+                    <Card title="Localizare">
+                      <div className="rounded-lg overflow-hidden border border-white/10" style={{height:"150px"}}>
+                        <iframe
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent((building.address||"") + ", " + building.city + ", Romania")}&z=15&output=embed`}
+                          className="w-full h-full border-0" title="Map" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+                      </div>
+                    </Card>
+                  )}
+
                   <Card title={t("Foto cladire (optional)",lang)}>
                     <div className="space-y-2">
                       {auditor.photo && (

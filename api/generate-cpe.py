@@ -923,6 +923,51 @@ class handler(BaseHTTPRequestHandler):
                     toggle_checkboxes(doc, cb_indices)
 
             # ═══════════════════════════════════════
+            # 4b. ANEXA 2 — TEXT REPLACEMENTS
+            # ═══════════════════════════════════════
+            if mode == "anexa":
+                # Adresa și nr certificat
+                replace_in_doc(doc, "[adresa]", data.get("address", ""))
+                # An construcție/renovare
+                replace_in_doc(doc, ".................", data.get("year", "") + (" / " + data.get("year_renov", "") if data.get("year_renov") else ""))
+                # Arie referință totală
+                au = data.get("area_ref", "")
+                vol = data.get("volume", "")
+                if au:
+                    replace_in_doc(doc, "Aria de referință totală", "Aria de referință totală a pardoselii: " + au + " m²")
+                if vol:
+                    replace_in_doc(doc, "Volumul interior de referință", "Volumul interior de referință V: " + vol + " m³")
+                # Factor formă
+                try:
+                    au_f = float(au.replace(",", ".")) if au else 0
+                    vol_f = float(vol.replace(",", ".")) if vol else 0
+                    ae = float(data.get("area_envelope", "0").replace(",", ".")) if data.get("area_envelope") else au_f * 1.3
+                    se_v = ae / vol_f if vol_f > 0 else 0
+                    replace_in_doc(doc, "Factorul de formă", "Factorul de formă al clădirii, SE/V: " + format_ro(se_v, 3))
+                except:
+                    pass
+                # Nr persoane
+                try:
+                    is_res = category in ("RI", "RC", "RA")
+                    nr_pers = max(1, round(au_f / (30 if is_res else 15)))
+                    replace_in_doc(doc, "pers.", str(nr_pers) + " pers.")
+                except:
+                    pass
+                # Detalii instalații — combustibil
+                fuel_labels = {"gaz_nat": "gaz natural", "gpl": "GPL", "motorina": "motorină",
+                               "lemn": "lemne", "peleti": "peleți", "carbune": "cărbune",
+                               "electric": "electricitate", "biogaz": "biogaz"}
+                fuel = fuel_labels.get(data.get("heating_fuel", ""), data.get("heating_fuel", ""))
+                if fuel:
+                    replace_in_doc(doc, "combustibil .....................", "combustibil " + fuel)
+                    replace_in_doc(doc, "combustibil ...........", "combustibil " + fuel)
+                # Putere nominală încălzire
+                hp = data.get("heating_power", "0")
+                if hp and hp != "0":
+                    replace_in_doc(doc, "Necesarul de căldură de calcul", "Necesarul de căldură de calcul: " + hp + " kW")
+                    replace_in_doc(doc, "Puterea termică instalată totală pentru încălzire", "Puterea termică instalată totală: " + hp + " kW")
+
+            # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine
             # ═══════════════════════════════════════
             photo_b64 = body.get("photo")
