@@ -3240,9 +3240,39 @@ export default function EnergyCalcApp({ cloud }) {
     try {
       var data = JSON.stringify({building:building,opaqueElements:opaqueElements,glazingElements:glazingElements,thermalBridges:thermalBridges,heating:heating,acm:acm,cooling:cooling,ventilation:ventilation,lighting:lighting,solarThermal:solarThermal,photovoltaic:photovoltaic,heatPump:heatPump,biomass:biomass,otherRenew:otherRenew,auditor:auditor,step:step});
       await window.storage.set("energopro-project", data);
+      // Istoric versiuni — păstrăm ultimele 10
+      try {
+        var histRaw = await window.storage.get("energopro-history");
+        var hist = histRaw && histRaw.value ? JSON.parse(histRaw.value) : [];
+        hist.unshift({ ts: new Date().toISOString(), data: data });
+        if (hist.length > 10) hist = hist.slice(0, 10);
+        await window.storage.set("energopro-history", JSON.stringify(hist));
+      } catch(eh) { /* history save failed */ }
       setStorageStatus("Salvat " + new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}));
     } catch(e) { /* storage unavailable */ }
   }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor,step]);
+
+  // Restaurare versiune anterioară din istoric
+  const restoreVersion = useCallback(async (index) => {
+    try {
+      var histRaw = await window.storage.get("energopro-history");
+      if (!histRaw || !histRaw.value) { showToast("Niciun istoric disponibil", "error"); return; }
+      var hist = JSON.parse(histRaw.value);
+      if (index >= hist.length) { showToast("Versiune inexistentă", "error"); return; }
+      var d = JSON.parse(hist[index].data);
+      if (d.building) setBuilding(function(p) { return Object.assign({}, p, d.building); });
+      if (d.opaqueElements) setOpaqueElements(d.opaqueElements);
+      if (d.glazingElements) setGlazingElements(d.glazingElements);
+      if (d.thermalBridges) setThermalBridges(d.thermalBridges);
+      if (d.heating) setHeating(function(p) { return Object.assign({}, p, d.heating); });
+      if (d.acm) setAcm(function(p) { return Object.assign({}, p, d.acm); });
+      if (d.cooling) setCooling(function(p) { return Object.assign({}, p, d.cooling); });
+      if (d.ventilation) setVentilation(function(p) { return Object.assign({}, p, d.ventilation); });
+      if (d.lighting) setLighting(function(p) { return Object.assign({}, p, d.lighting); });
+      if (d.auditor) setAuditor(function(p) { return Object.assign({}, p, d.auditor); });
+      showToast("Restaurat versiunea din " + new Date(hist[index].ts).toLocaleString("ro-RO"), "success");
+    } catch(e) { showToast("Eroare restaurare: " + e.message, "error"); }
+  }, [showToast]);
 
   const loadFromStorage = useCallback(async () => {
     if (typeof window === "undefined" || !window.storage) return;
