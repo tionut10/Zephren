@@ -3454,19 +3454,18 @@ export default function EnergyCalcApp({ cloud }) {
 
   useEffect(function() { loadFromStorage(); }, []);
 
-  // Auto-generate DOCX preview when entering Step 6
+  // Auto-generate HTML preview when entering Step 6
   const autoPreviewTriggered = useRef(false);
   useEffect(() => {
-    if (step === 6 && !autoPreviewTriggered.current && !docxPreviewBlob) {
+    if (step === 6 && !autoPreviewTriggered.current && !pdfPreviewHtml) {
       autoPreviewTriggered.current = true;
-      // Trigger click on the preview button after a short delay to let IIFE render
       setTimeout(() => {
         const btn = document.querySelector('[data-auto-preview]');
         if (btn) btn.click();
       }, 500);
     }
     if (step !== 6) autoPreviewTriggered.current = false;
-  }, [step, docxPreviewBlob]);
+  }, [step, pdfPreviewHtml]);
 
   // Render DOCX preview when blob changes
   useEffect(() => {
@@ -11690,21 +11689,11 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </button>
                   )}
 
-                  <button onClick={async function() {
+                  <button onClick={function() {
                     try {
-                      const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
-                      showToast("Se generează preview CPE...", "info", 2000);
-                      const buf = await fetchTemplate(tpl.cpe);
-                      const blob = await generateDocxCPE(buf, "cpe", {download: false});
-                      if (blob) {
-                        setDocxPreviewBlob(blob);
-                        try {
-                          const resp = await fetch("/api/preview-docx", { method: "POST", body: blob });
-                          if (resp.ok) {
-                            const data = await resp.json();
-                            setDocxPreviewUrl(data.url);
-                          }
-                        } catch(e2) { /* fallback to docx-preview */ }
+                      const html = generatePDF();
+                      if (html) {
+                        setPdfPreviewHtml(html);
                         showToast("Preview CPE actualizat", "success", 1500);
                       }
                     } catch(e) { showToast("Eroare: " + e.message, "error"); }
@@ -11734,25 +11723,16 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 {/* Preview CPE — renderizare DOCX oficial */}
                 <div className="xl:col-span-2 xl:sticky xl:top-6 xl:self-start">
                   <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
-                    {!docxPreviewBlob ? (
+                    {!pdfPreviewHtml ? (
                       <div className="text-center py-16 space-y-4">
                         <div className="animate-pulse">
                           <div className="text-4xl mb-3">📜</div>
                           <div className="text-sm opacity-50">{lang==="EN" ? "Generating certificate preview..." : "Se generează previzualizarea certificatului..."}</div>
                         </div>
                       </div>
-                    ) : docxPreviewUrl ? (
-                      <div className="bg-white rounded-lg overflow-hidden" style={{height:"85vh"}}>
-                        <iframe
-                          src={`https://docs.google.com/gview?url=${encodeURIComponent(docxPreviewUrl)}&embedded=true`}
-                          className="w-full h-full border-0"
-                          title="CPE Preview"
-                          sandbox="allow-scripts allow-same-origin"
-                        />
-                      </div>
                     ) : (
-                      <div className="bg-white rounded-lg overflow-hidden" style={{maxHeight:"85vh",overflowY:"auto"}}>
-                        <div ref={docxPreviewRef} className="docx-preview-container" style={{transformOrigin:"top left",minHeight:"200px"}} />
+                      <div className="bg-white rounded-lg overflow-hidden" style={{height:"85vh"}}>
+                        <iframe srcDoc={pdfPreviewHtml} className="w-full h-full border-0" style={{background:"#fff"}} title="CPE Preview" />
                       </div>
                     )}
                   </Card>
