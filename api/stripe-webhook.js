@@ -9,6 +9,8 @@
  * - customer.subscription.updated → update plan
  */
 
+export const config = { api: { bodyParser: false } };
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -23,9 +25,22 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Stripe webhook not configured" });
   }
 
-  // In production, verify the webhook signature.
-  // For now, we trust the payload (Vercel's network is isolated).
-  const event = req.body;
+  // Read raw body for signature verification
+  const chunks = [];
+  for await (const chunk of req) { chunks.push(chunk); }
+  const rawBody = Buffer.concat(chunks).toString("utf-8");
+
+  // Verify Stripe webhook signature
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(stripeKey);
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+  } catch (err) {
+    console.error("[Webhook] Signature verification failed:", err.message);
+    return res.status(400).json({ error: "Invalid signature" });
+  }
 
   if (!event || !event.type) {
     return res.status(400).json({ error: "Invalid event" });

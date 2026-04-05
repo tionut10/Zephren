@@ -30,12 +30,12 @@ export default async function handler(req, res) {
     pro: {
       priceId: process.env.STRIPE_PRICE_PRO || "price_placeholder_pro",
       name: "Zephren Pro",
-      amount: 19900, // 199 RON in bani
+      amount: 9900, // 99 RON in bani
     },
     business: {
       priceId: process.env.STRIPE_PRICE_BUSINESS || "price_placeholder_business",
       name: "Zephren Business",
-      amount: 39900, // 399 RON in bani
+      amount: 24900, // 249 RON in bani
     },
   };
 

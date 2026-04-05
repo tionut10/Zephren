@@ -2881,7 +2881,7 @@ export default function EnergyCalcApp({ cloud }) {
           if (d.certCount) setCertCount(d.certCount);
           if (d.certResetDate) setCertResetDate(d.certResetDate);
         }
-      } catch(e) {}
+      } catch(e) { console.warn("Tier data load:", e.message); }
     })();
   }, []);
 

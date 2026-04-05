@@ -95,7 +95,8 @@ export default async function handler(req, res) {
     const Q_heat = ((H_tr + H_ve) * dd * 24) / 1000;
 
     // Primary energy for heating (kWh)
-    const primaryFactor_heat = isHeatPump ? 2.5 : heatingSystem === "electric" ? 2.5 : 1.1;
+    // fP conform Mc 001-2022 Tabel 5.17: electricitate=2.62, gaz=1.17, termoficare=0.92
+    const primaryFactor_heat = isHeatPump ? 2.62 : heatingSystem === "electric" ? 2.62 : heatingSystem === "termoficare" ? 0.92 : 1.17;
     const EP_heat = (Q_heat / (isHeatPump ? heatEff : heatEff)) * primaryFactor_heat;
 
     // Hot water (kWh/m2/year — simplified)

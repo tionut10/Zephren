@@ -134,9 +134,23 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
     }
   };
 
-  const handleForgot = (e) => {
+  const handleForgot = async (e) => {
     e.preventDefault();
-    showToast("Link de resetare trimis la " + email);
+    if (!email) { showToast("Introdu adresa de email."); return; }
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
+        import.meta.env.VITE_SUPABASE_ANON_KEY || "placeholder"
+      );
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/#reset",
+      });
+      if (error) throw error;
+      showToast("Link de resetare trimis la " + email);
+    } catch(err) {
+      showToast("Eroare: " + (err.message || "Nu s-a putut trimite linkul"));
+    }
   };
 
   return (
