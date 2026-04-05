@@ -4687,6 +4687,45 @@ export default function EnergyCalcApp({ cloud }) {
     reader.readAsText(file);
   }, [showToast]);
 
+  // Import OCR — scanare certificat existent cu Claude Vision
+  const importOCR = useCallback(async (file) => {
+    try {
+      showToast("Se analizează imaginea cu AI...", "info", 5000);
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const mediaType = file.type || "image/jpeg";
+      const resp = await fetch("/api/ocr-cpe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, mediaType }),
+      });
+      if (!resp.ok) throw new Error("OCR API error: " + resp.status);
+      const result = await resp.json();
+      if (result.data) {
+        const d = result.data;
+        const updates = {};
+        if (d.address) updates.address = d.address;
+        if (d.city) updates.city = d.city;
+        if (d.county) updates.county = d.county;
+        if (d.yearBuilt) updates.yearBuilt = String(d.yearBuilt);
+        if (d.category) updates.category = d.category;
+        if (d.areaUseful) updates.areaUseful = String(d.areaUseful);
+        if (d.volume) updates.volume = String(d.volume);
+        if (d.floors) updates.floors = d.floors;
+        if (d.scope) updates.scopCpe = d.scope;
+        setBuilding(function(p) { return Object.assign({}, p, updates); });
+        if (d.auditorName) setAuditor(function(p) { return Object.assign({}, p, { name: d.auditorName, atestat: d.auditorAtestat || p.atestat }); });
+        showToast("OCR import: " + Object.keys(updates).length + " câmpuri extrase din imagine", "success");
+      } else {
+        showToast("Nu s-au putut extrage date din imagine", "error");
+      }
+    } catch(e) { showToast("Eroare OCR: " + e.message, "error"); }
+  }, [showToast]);
+
   // Import DOSET XML (program MDLPA)
   const importDOSET = useCallback((file) => {
     const reader = new FileReader();
@@ -4932,10 +4971,12 @@ export default function EnergyCalcApp({ cloud }) {
         }
       };
       reader.readAsText(file.slice(0, 5000)); // Read first 5KB for detection
+    } else if (file.type && file.type.startsWith("image/")) {
+      importOCR(file);
     } else {
-      showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .gbxml", "error");
+      showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .gbxml, imagini", "error");
     }
-  }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus]);
+  }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus, importOCR]);
 
   // ─── Climate auto-selection ───
   const selectedClimate = useMemo(() =>
