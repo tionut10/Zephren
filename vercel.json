@@ -24,6 +24,9 @@
     },
     "api/generate-cpe.py": {
       "maxDuration": 30
+    },
+    "api/preview-pdf.js": {
+      "maxDuration": 30
     }
   }
 }
