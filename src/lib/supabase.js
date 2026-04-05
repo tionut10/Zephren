@@ -4,14 +4,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "[Supabase] Missing environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env"
-  );
+  console.warn("[Supabase] Missing env vars. Running in offline mode.");
 }
 
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-key",
+export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,
@@ -19,4 +17,4 @@ export const supabase = createClient(
       detectSessionInUrl: true,
     },
   }
-);
+) : null;

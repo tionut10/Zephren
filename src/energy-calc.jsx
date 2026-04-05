@@ -2851,9 +2851,9 @@ export default function EnergyCalcApp({ cloud }) {
   // TIER SYSTEM — Free / Pro / Business
   // ═══════════════════════════════════════════════════════════════
   const TIERS = {
-    free:     { id:"free",     label:"Free",     price:0,   maxProjects:2, maxCerts:0,  multiUser:false, watermark:true,  nzebReport:false, docxExport:false, brandingCPE:false },
-    pro:      { id:"pro",      label:"Pro",      price:199, maxProjects:999, maxCerts:15, multiUser:false, watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:false },
-    business: { id:"business", label:"Business", price:399, maxProjects:999, maxCerts:999,multiUser:true,  watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:true  },
+    free:     { id:"free",     label:"Free",     price:0,  maxProjects:2, maxCerts:0,  multiUser:false, watermark:true,  nzebReport:false, docxExport:false, brandingCPE:false },
+    pro:      { id:"pro",      label:"Pro",      price:99, maxProjects:999, maxCerts:15, multiUser:false, watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:false },
+    business: { id:"business", label:"Business", price:249,maxProjects:999, maxCerts:999,multiUser:true,  watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:true  },
   };
 
   const [userTier, setUserTier] = useState("free");

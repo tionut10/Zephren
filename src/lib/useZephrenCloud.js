@@ -24,7 +24,8 @@ import { PLAN_FEATURES, canAccess } from "./planGating";
 let _supabasePromise = null;
 
 /**
- * Dynamically import and initialise the Supabase client.
+ * Get the shared Supabase client singleton.
+ * Imports from supabase.js to avoid creating duplicate clients.
  * Returns null when the library or env vars are missing.
  */
 function getSupabase() {
@@ -42,8 +43,9 @@ function getSupabase() {
         return null;
       }
 
-      const { createClient } = await import("@supabase/supabase-js");
-      return createClient(url, key);
+      // Import shared singleton from supabase.js (avoids duplicate clients)
+      const { supabase } = await import("./supabase.js");
+      return supabase;
     } catch (err) {
       console.warn(
         "[ZephrenCloud] @supabase/supabase-js not available. Running in offline mode.",

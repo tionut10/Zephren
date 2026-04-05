@@ -2,48 +2,58 @@
  * planGating.js
  *
  * Feature gating based on user subscription plan.
- * Defines which features are available at each tier (free, pro, business)
- * and provides a helper to check access.
+ * Defines which features are available at each tier (free, pro, business).
+ * Synced with TIERS in energy-calc.jsx.
  */
 
 export const PLAN_FEATURES = {
   free: {
     maxProjects: 2,
+    maxCerts: 0,
     exportDOCX: false,
     exportXML: false,
     nzebReport: false,
     aiAssistant: false,
     multiUser: false,
     api: false,
+    watermark: true,
+    brandingCPE: false,
   },
   pro: {
-    maxProjects: Infinity,
+    maxProjects: 999,
+    maxCerts: 15,
     exportDOCX: true,
     exportXML: true,
     nzebReport: true,
     aiAssistant: false,
     multiUser: false,
     api: false,
+    watermark: false,
+    brandingCPE: false,
   },
   business: {
-    maxProjects: Infinity,
+    maxProjects: 999,
+    maxCerts: 999,
     exportDOCX: true,
     exportXML: true,
     nzebReport: true,
     aiAssistant: true,
     multiUser: true,
     api: true,
+    watermark: false,
+    brandingCPE: true,
   },
 };
 
 /**
  * Check whether a given plan grants access to a specific feature.
- *
- * @param {string|null|undefined} plan - The user's plan ("free", "pro", "business").
- *   Falls back to "free" when null/undefined.
- * @param {string} feature - One of the keys in PLAN_FEATURES (e.g. "exportDOCX").
- * @returns {boolean} Whether the feature is enabled for the plan.
+ * @param {string|null|undefined} plan
+ * @param {string} feature - Key from PLAN_FEATURES
+ * @returns {boolean}
  */
 export function canAccess(plan, feature) {
-  return PLAN_FEATURES[plan || "free"][feature] || false;
+  const tier = PLAN_FEATURES[plan || "free"];
+  if (!tier) return false;
+  const val = tier[feature];
+  return typeof val === "boolean" ? val : !!val;
 }
