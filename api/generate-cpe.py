@@ -216,6 +216,56 @@ _CO2_CLASS_POS_V = {
 }
 
 
+# Culorile oficiale CPE pentru fiecare clasă energetică (EP)
+_EP_CLASS_COLORS = {
+    "A+": {"vml": "#00a651", "hex": "00A651"},  # verde închis
+    "A":  {"vml": "#32c832", "hex": "32C832"},  # verde
+    "B":  {"vml": "lime",    "hex": "00FF00"},  # lime/verde deschis
+    "C":  {"vml": "yellow",  "hex": "FFFF00"},  # galben
+    "D":  {"vml": "#ffc000", "hex": "FFC000"},  # portocaliu deschis
+    "E":  {"vml": "#ff6600", "hex": "FF6600"},  # portocaliu
+    "F":  {"vml": "red",     "hex": "FF0000"},  # roșu
+    "G":  {"vml": "#c00000", "hex": "C00000"},  # roșu închis
+}
+
+# Culorile oficiale CPE pentru clasele CO2
+_CO2_CLASS_COLORS = {
+    "A+": {"vml": "#00b0f0", "hex": "00B0F0"},  # albastru deschis
+    "A":  {"vml": "#009bff", "hex": "009BFF"},  # albastru
+    "B":  {"vml": "#0070c0", "hex": "0070C0"},  # albastru mediu
+    "C":  {"vml": "#ffc000", "hex": "FFC000"},  # galben-portocaliu
+    "D":  {"vml": "#ff6600", "hex": "FF6600"},  # portocaliu
+    "E":  {"vml": "#ff0000", "hex": "FF0000"},  # roșu
+    "F":  {"vml": "#c00000", "hex": "C00000"},  # roșu închis
+    "G":  {"vml": "#800000", "hex": "800000"},  # maro
+}
+
+
+def _update_shape_color(shape_xml_str, color_info):
+    """Update fill color in both DrawingML (a:srgbClr) and VML (fillcolor) representations."""
+    result = shape_xml_str
+    hex_color = color_info["hex"]
+    vml_color = color_info["vml"]
+
+    # Update DrawingML solidFill — first srgbClr occurrence (shape fill, not outline)
+    result = re.sub(
+        r'(<a:solidFill>\s*<a:srgbClr val=")[A-Fa-f0-9]{6}(")',
+        r'\g<1>' + hex_color + r'\g<2>',
+        result,
+        count=1
+    )
+
+    # Update VML fillcolor attribute
+    result = re.sub(
+        r'fillcolor="[^"]*"',
+        'fillcolor="' + vml_color + '"',
+        result,
+        count=1
+    )
+
+    return result
+
+
 def _update_shape_pos_v(shape_xml_str, new_pos_v):
     """Update BOTH the modern (wp:anchor posOffset) and VML fallback (style top:) positions."""
     # 1. Update wp:anchor posOffset
@@ -305,11 +355,13 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
     new_xml = body_xml
 
-    def move_indicator(text_match, new_class, class_pos_map, old_v):
-        """Move both text indicator AND its paired pentagon shape."""
+    def move_indicator(text_match, new_class, class_pos_map, old_v, is_co2=False):
+        """Move both text indicator AND its paired pentagon shape, and update colors."""
         nonlocal new_xml
         new_pos = class_pos_map.get(new_class, old_v)
         delta_v = new_pos - old_v  # displacement in EMU
+        color_map = _CO2_CLASS_COLORS if is_co2 else _EP_CLASS_COLORS
+        color = color_map.get(new_class, color_map.get("B"))
 
         # 1. Update textbox (letter + position)
         new_content = text_match.group(1)
@@ -324,6 +376,7 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
             new_path_pos = pv + delta_v  # same displacement
             new_path_content = pm.group(1)
             new_path_content = _update_shape_pos_v(new_path_content, new_path_pos)
+            new_path_content = _update_shape_color(new_path_content, color)
             new_xml = new_xml.replace(pm.group(1), new_path_content, 1)
 
     # EP indicators: [0]=real, [1]=ref (ordine din document)
@@ -337,7 +390,7 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
     # CO2 indicators
     for m, letter, h, v in co2_indicators:
-        move_indicator(m, co2_class_real, _CO2_CLASS_POS_V, v)
+        move_indicator(m, co2_class_real, _CO2_CLASS_POS_V, v, is_co2=True)
 
     # Parse modified XML back into the document
     new_body = etree.fromstring(new_xml)
