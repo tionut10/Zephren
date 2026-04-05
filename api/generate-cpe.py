@@ -216,28 +216,29 @@ _CO2_CLASS_POS_V = {
 }
 
 
-# Culorile oficiale CPE pentru fiecare clasă energetică (EP)
+# Culorile EXACTE din template-urile CPE originale MDLPA
+# Extrase din imaginile scale bars (word/media/image*.jpeg)
 _EP_CLASS_COLORS = {
-    "A+": {"vml": "#00a651", "hex": "00A651"},  # verde închis
-    "A":  {"vml": "#32c832", "hex": "32C832"},  # verde
-    "B":  {"vml": "lime",    "hex": "00FF00"},  # lime/verde deschis
-    "C":  {"vml": "yellow",  "hex": "FFFF00"},  # galben
-    "D":  {"vml": "#ffc000", "hex": "FFC000"},  # portocaliu deschis
-    "E":  {"vml": "#ff6600", "hex": "FF6600"},  # portocaliu
-    "F":  {"vml": "red",     "hex": "FF0000"},  # roșu
-    "G":  {"vml": "#c00000", "hex": "C00000"},  # roșu închis
+    "A+": {"vml": "#009B01", "hex": "009B01"},  # verde închis
+    "A":  {"vml": "#32C831", "hex": "32C831"},  # verde
+    "B":  {"vml": "#00FF01", "hex": "00FF01"},  # lime
+    "C":  {"vml": "#FFFF01", "hex": "FFFF01"},  # galben
+    "D":  {"vml": "#FA9C00", "hex": "FA9C00"},  # portocaliu
+    "E":  {"vml": "#FF6400", "hex": "FF6400"},  # portocaliu roșu
+    "F":  {"vml": "#FE4101", "hex": "FE4101"},  # roșu portocaliu
+    "G":  {"vml": "#FE0000", "hex": "FE0000"},  # roșu
 }
 
-# Culorile oficiale CPE pentru clasele CO2
+# Culorile EXACTE pentru clasele CO2
 _CO2_CLASS_COLORS = {
-    "A+": {"vml": "#00b0f0", "hex": "00B0F0"},  # albastru deschis
-    "A":  {"vml": "#009bff", "hex": "009BFF"},  # albastru
-    "B":  {"vml": "#0070c0", "hex": "0070C0"},  # albastru mediu
-    "C":  {"vml": "#ffc000", "hex": "FFC000"},  # galben-portocaliu
-    "D":  {"vml": "#ff6600", "hex": "FF6600"},  # portocaliu
-    "E":  {"vml": "#ff0000", "hex": "FF0000"},  # roșu
-    "F":  {"vml": "#c00000", "hex": "C00000"},  # roșu închis
-    "G":  {"vml": "#800000", "hex": "800000"},  # maro
+    "A+": {"vml": "#0000FE", "hex": "0000FE"},  # albastru închis
+    "A":  {"vml": "#3265FF", "hex": "3265FF"},  # albastru
+    "B":  {"vml": "#009BFF", "hex": "009BFF"},  # albastru mediu
+    "C":  {"vml": "#9CD2FF", "hex": "9CD2FF"},  # albastru deschis
+    "D":  {"vml": "#BEBEBE", "hex": "BEBEBE"},  # gri deschis
+    "E":  {"vml": "#969696", "hex": "969696"},  # gri mediu
+    "F":  {"vml": "#646464", "hex": "646464"},  # gri închis
+    "G":  {"vml": "#333333", "hex": "333333"},  # gri foarte închis
 }
 
 
