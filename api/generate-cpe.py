@@ -249,33 +249,54 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     alt_pattern = re.compile(r'(<mc:AlternateContent>[\s\S]*?</mc:AlternateContent>)')
     blocks = list(alt_pattern.finditer(body_xml))
 
-    all_indicators = []  # (match, letter, posH, posV)
+    # Colectăm TOATE shape-urile indicator — atât textbox (cu litera) cât și pentagon (path)
+    # Fiecare indicator are 2 shape-uri consecutive: textbox + pentagon (sau invers)
+    text_indicators = []   # (match, letter, posH, posV) — textbox cu litera
+    path_indicators = []   # (match, posH, posV) — pentagon/arrow fără text
 
     for m in blocks:
         content = m.group(1)
         letters = re.findall(r'<w:t[^>]*>([A-G]\+?)</w:t>', content)
         pos_h = re.search(r'positionH[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
         pos_v = re.search(r'positionV[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
-        if not letters or not pos_h or not pos_v:
+        if not pos_h or not pos_v:
             continue
         h = int(pos_h.group(1))
         v = int(pos_v.group(1))
-        letter = letters[0]
-        if h > 150000 and len(letter) <= 2:
-            all_indicators.append((m, letter, h, v))
+        is_path = 'coordsize' in content or '<v:path' in content
 
-    # Clasificare prin ORDINE în document (nu prin H):
-    # Clădiri: 3 indicatori → EP_real(1), EP_ref(2), CO2(3)
-    # Apartamente: 2 indicatori → EP_real(1), CO2(2)
-    if len(all_indicators) >= 3:
-        ep_indicators = all_indicators[:2]  # Primele 2 = EP (real + ref)
-        co2_indicators = all_indicators[2:]  # Al 3-lea = CO2
-    elif len(all_indicators) == 2:
-        ep_indicators = all_indicators[:1]  # Primul = EP real
-        co2_indicators = all_indicators[1:]  # Al 2-lea = CO2
+        if h > 150000 and len(letters) > 0 and len(letters[0]) <= 2 and not is_path:
+            text_indicators.append((m, letters[0], h, v))
+        elif is_path and -50000 <= h < 300000:
+            # Pentagon shapes have small H (-1270 to 50165 EMU range)
+            path_indicators.append((m, h, v))
+
+    # Clasificare prin ORDINE în document:
+    # Clădiri: 3 text indicators → EP_real(1), EP_ref(2), CO2(3)
+    # Apartamente: 2 text indicators → EP_real(1), CO2(2)
+    if len(text_indicators) >= 3:
+        ep_indicators = text_indicators[:2]
+        co2_indicators = text_indicators[2:]
+    elif len(text_indicators) == 2:
+        ep_indicators = text_indicators[:1]
+        co2_indicators = text_indicators[1:]
     else:
-        ep_indicators = all_indicators
+        ep_indicators = text_indicators
         co2_indicators = []
+
+    # Perechi text-pentagon: pentagonul urmează imediat după textbox
+    # Construim o mapare: pentru fiecare text indicator, găsim pentagonul cel mai apropiat (următor)
+    def find_next_path(text_match, all_paths):
+        """Find the path shape immediately AFTER a text shape in the XML."""
+        text_end = text_match.end()
+        best = None
+        best_dist = float('inf')
+        for pm, ph, pv in all_paths:
+            dist = pm.start() - text_end
+            if 0 < dist < best_dist:
+                best = (pm, ph, pv)
+                best_dist = dist
+        return best
 
     # Replace EP real indicators (first group — higher posV = further down = typically "B")
     # Template has: ref (A, lower V) then real (B, higher V)
@@ -284,32 +305,39 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
     new_xml = body_xml
 
+    def move_indicator(text_match, new_class, class_pos_map, old_v):
+        """Move both text indicator AND its paired pentagon shape."""
+        nonlocal new_xml
+        new_pos = class_pos_map.get(new_class, old_v)
+        delta_v = new_pos - old_v  # displacement in EMU
+
+        # 1. Update textbox (letter + position)
+        new_content = text_match.group(1)
+        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
+        new_content = _update_shape_pos_v(new_content, new_pos)
+        new_xml = new_xml.replace(text_match.group(1), new_content, 1)
+
+        # 2. Find and update paired pentagon (path shape right after textbox)
+        path = find_next_path(text_match, path_indicators)
+        if path:
+            pm, ph, pv = path
+            new_path_pos = pv + delta_v  # same displacement
+            new_path_content = pm.group(1)
+            new_path_content = _update_shape_pos_v(new_path_content, new_path_pos)
+            new_xml = new_xml.replace(pm.group(1), new_path_content, 1)
+
     # EP indicators: [0]=real, [1]=ref (ordine din document)
     if len(ep_indicators) >= 1:
-        # EP REAL (primul indicator)
         m, letter, h, v = ep_indicators[0]
-        new_content = m.group(1)
-        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + ep_class_real + r'\g<2>', new_content)
-        new_pos = _CLASS_POS_V.get(ep_class_real, v)
-        new_content = _update_shape_pos_v(new_content, new_pos)
-        new_xml = new_xml.replace(m.group(1), new_content, 1)
+        move_indicator(m, ep_class_real, _CLASS_POS_V, v)
 
     if len(ep_indicators) >= 2:
-        # EP REFERINȚĂ (al doilea indicator)
         m, letter, h, v = ep_indicators[1]
-        new_content = m.group(1)
-        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + ep_class_ref + r'\g<2>', new_content)
-        new_pos = _CLASS_POS_V.get(ep_class_ref, v)
-        new_content = _update_shape_pos_v(new_content, new_pos)
-        new_xml = new_xml.replace(m.group(1), new_content, 1)
+        move_indicator(m, ep_class_ref, _CLASS_POS_V, v)
 
-    # Replace CO2 indicators
+    # CO2 indicators
     for m, letter, h, v in co2_indicators:
-        new_content = m.group(1)
-        new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + co2_class_real + r'\g<2>', new_content)
-        new_pos = _CO2_CLASS_POS_V.get(co2_class_real, v)
-        new_content = _update_shape_pos_v(new_content, new_pos)
-        new_xml = new_xml.replace(m.group(1), new_content, 1)
+        move_indicator(m, co2_class_real, _CO2_CLASS_POS_V, v)
 
     # Parse modified XML back into the document
     new_body = etree.fromstring(new_xml)
