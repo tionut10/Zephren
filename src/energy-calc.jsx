@@ -1020,7 +1020,7 @@ const FUELS = [
   { id:"motorina", label:"Motorină/combustibil lichid", fP_nren:1.10, fP_ren:0.00, fP_tot:1.10, fCO2:0.263, pci:42.60, unit:"litri", price_lei_kwh:0.75, price_note:"Preț orientativ 2025-2026" },
   { id:"carbune", label:"Cărbune (huilă)", fP_nren:1.20, fP_ren:0.00, fP_tot:1.20, fCO2:0.348, pci:26.00, unit:"kg", price_lei_kwh:0.18, price_note:"Preț orientativ 2025" },
   { id:"biomasa", label:"Biomasă (lemn/peleți)", fP_nren:0.28, fP_ren:0.80, fP_tot:1.08, fCO2:0.039, pci:17.50, unit:"kg", price_lei_kwh:0.22, price_note:"Peleți ENplus A1: 1300-1500 lei/t; Lemn 5.0-5.3 kWh/kg" },
-  { id:"electricitate", label:"Electricitate din rețea (SEN)", fP_nren:2.62, fP_ren:0.00, fP_tot:2.62, fCO2:0.107, pci:null, unit:"kWh", price_lei_kwh:1.10, price_note:"Post-dereglementare 1 iul 2025: 1.03-1.15 lei/kWh TVA incl. (variații zonale)" },
+  { id:"electricitate", label:"Electricitate din rețea (SEN)", fP_nren:2.62, fP_ren:0.00, fP_tot:2.62, fCO2:0.107, pci:null, unit:"kWh", price_lei_kwh:1.12, price_note:"Media 2026: ~1.12 lei/kWh TVA incl. (ANRE, actualizat aprilie 2026)" },
   { id:"termoficare", label:"Termoficare/cogenerare", fP_nren:0.92, fP_ren:0.00, fP_tot:0.92, fCO2:0.220, pci:null, unit:"kWh", price_lei_kwh:0.40, price_note:"Tarif mediu 2025, subvenționat local" },
   { id:"gpl", label:"GPL (gaz petrolier lichefiat)", fP_nren:1.15, fP_ren:0.00, fP_tot:1.15, fCO2:0.227, pci:46.00, unit:"litri", price_lei_kwh:0.55, price_note:"Preț variabil ~4.5-6.0 lei/L (2024-2025)" },
   { id:"lemn_foc", label:"Lemne de foc", fP_nren:0.09, fP_ren:1.00, fP_tot:1.09, fCO2:0.018, pci:14.40, unit:"kg", price_lei_kwh:0.12, price_note:"Plafonat 400 lei/mc, putere calorifică ~5.0-5.3 kWh/kg" },
@@ -1581,7 +1581,9 @@ function calcSummerComfort(layers, climate, orientation) {
     rCum += R;
   }
 
-  // Factor amortizare ν = e^(-D) (simplificat)
+  // Factor amortizare ν = e^(-D/2) — aproximare C107/7-2002 Anexa F
+  // D = totalD = Σ(d_i) unde d_i = R_i × s_i (rezistență × coef. stocaj termic)
+  // Factorul /2 corespunde perioadei de 24h cu ω = 2π/T, T = 24h
   var dampingFactor = Math.exp(-totalD / 2);
   // Defazaj Δφ ≈ D / (2π) × 24 [ore]
   var phaseShift = (totalD / (2 * Math.PI)) * 24;
@@ -6010,7 +6012,7 @@ export default function EnergyCalcApp({ cloud }) {
     const rer = renewSummary?.rer || 0;
     const Au = parseFloat(building.areaUseful) || 0;
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<CPE_RegistruElectronic xmlns="urn:mdlpa:cpe:2023" version="1.0">
+<CPE_RegistruElectronic xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" version="1.0">
   <MetaDate>
     <FormatVersiune>Mc001-2022</FormatVersiune>
     <DataExport>${new Date().toISOString()}</DataExport>
@@ -10821,7 +10823,7 @@ export default function EnergyCalcApp({ cloud }) {
               const expDate = auditor.date ? (() => { const d = new Date(auditor.date); d.setFullYear(d.getFullYear()+10); return d.toISOString().slice(0,10).split("-").reverse().join("."); })() : "";
 
               const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<CertificatPerformantaEnergetica xmlns="urn:mdlpa:cpe:2023" versiune="1.0">
+<CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
   <DateIdentificare>
     <CodUnic>${esc(auditor.mdlpaCode)}</CodUnic>
     <DataElaborare>${validDate}</DataElaborare>

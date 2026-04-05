@@ -378,7 +378,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </li>
                 ))}
               </ul>
-              <button onClick={onStart} style={{ width: "100%", padding: "12px", borderRadius: "10px", border: p.highlight ? "none" : "1px solid rgba(255,255,255,0.15)", background: p.highlight ? "#f59e0b" : "transparent", color: p.highlight ? "#000" : "#fff", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+              <button onClick={() => {
+                if (p.id === "free") { onStart(); }
+                else { onStart(); /* navigate to app, then user upgrades from settings */ }
+              }} style={{ width: "100%", padding: "12px", borderRadius: "10px", border: p.highlight ? "none" : "1px solid rgba(255,255,255,0.15)", background: p.highlight ? "#f59e0b" : "transparent", color: p.highlight ? "#000" : "#fff", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
                 {p.cta}
               </button>
             </div>

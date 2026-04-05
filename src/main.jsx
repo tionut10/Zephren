@@ -11,9 +11,24 @@ class ErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) { return { error }; }
   componentDidCatch(error) { console.warn("CRASH:", error?.message, error?.stack?.substring(0, 600)); }
   render() {
-    if (this.state.error) return React.createElement("pre", {
-      style: { color: "#f87171", background: "#0a0a1a", padding: 32, whiteSpace: "pre-wrap", fontFamily: "monospace", minHeight: "100vh" }
-    }, "Error: " + this.state.error.message + "\n\n" + (this.state.error.stack || ""));
+    if (this.state.error) return React.createElement("div", {
+      style: { color: "#f87171", background: "#0a0a1a", padding: 32, fontFamily: "DM Sans, sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }
+    },
+      React.createElement("div", { style: { fontSize: "48px", marginBottom: "16px" } }, "⚠️"),
+      React.createElement("h1", { style: { fontSize: "20px", fontWeight: "bold", marginBottom: "8px" } }, "Eroare neașteptată"),
+      React.createElement("p", { style: { fontSize: "13px", opacity: 0.6, maxWidth: "500px", textAlign: "center", marginBottom: "24px" } }, this.state.error.message),
+      React.createElement("div", { style: { display: "flex", gap: "12px" } },
+        React.createElement("button", {
+          onClick: () => this.setState({ error: null }),
+          style: { padding: "10px 24px", borderRadius: "8px", background: "#f59e0b", color: "#000", fontWeight: "bold", border: "none", cursor: "pointer" }
+        }, "Încearcă din nou"),
+        React.createElement("button", {
+          onClick: () => { window.location.hash = ""; window.location.reload(); },
+          style: { padding: "10px 24px", borderRadius: "8px", background: "#333", color: "#fff", border: "1px solid #555", cursor: "pointer" }
+        }, "Pagina principală")
+      ),
+      React.createElement("pre", { style: { marginTop: "24px", fontSize: "10px", opacity: 0.3, maxWidth: "600px", overflow: "auto", maxHeight: "200px" } }, this.state.error.stack || "")
+    );
     return this.props.children;
   }
 }
