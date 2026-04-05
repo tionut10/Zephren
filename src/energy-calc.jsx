@@ -10502,76 +10502,7 @@ export default function EnergyCalcApp({ cloud }) {
                   }
                 }
 
-                // ═══════════════════════════════════════════
-                // 21. FIX FOTO CLĂDIRE — convertesc anchor floating în text inline
-                // Template MDLPA are textbox floating (mc:AlternateContent > wp:anchor)
-                // docx-preview nu pozitioneaza corect wp:anchor — înlocuim cu inline
-                // ═══════════════════════════════════════════
-                // The FOTO textbox is wrapped in <mc:AlternateContent>..FOTO..</mc:AlternateContent>
-                // We find and replace the first mc:AlternateContent that contains "FOTO"
-                const mcFotoRegex = /<mc:AlternateContent>[\s\S]*?FOTO[\s\S]*?<\/mc:AlternateContent>/;
-                const mcMatch = xml.match(mcFotoRegex);
-                if (mcMatch) {
-                  if (auditor.photo) {
-                    // Insert actual image into DOCX
-                    const base64Match = auditor.photo.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
-                    if (base64Match) {
-                      const imgExt = base64Match[1] === "jpg" ? "jpeg" : base64Match[1];
-                      const imgData = base64Match[2];
-                      const imgFilename = "image_foto." + (imgExt === "jpeg" ? "jpg" : imgExt);
-
-                      // Add image to word/media/
-                      zip.file("word/media/" + imgFilename, imgData, {base64: true});
-
-                      // Add relationship
-                      let relsXml = zip.file("word/_rels/document.xml.rels").asText();
-                      const newRid = "rIdFoto1";
-                      const contentType = imgExt === "png" ? "image/png" : "image/jpeg";
-                      if (!relsXml.includes(newRid)) {
-                        relsXml = relsXml.replace("</Relationships>",
-                          '<Relationship Id="' + newRid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + imgFilename + '"/></Relationships>');
-                        zip.file("word/_rels/document.xml.rels", relsXml);
-                      }
-
-                      // Add content type
-                      if (zip.file("[Content_Types].xml")) {
-                        let ctXml = zip.file("[Content_Types].xml").asText();
-                        const extKey = imgExt === "jpeg" ? "jpg" : imgExt;
-                        if (!ctXml.includes('Extension="' + extKey + '"') && !ctXml.includes('Extension="jpeg"')) {
-                          ctXml = ctXml.replace("</Types>",
-                            '<Default Extension="' + extKey + '" ContentType="' + contentType + '"/></Types>');
-                          zip.file("[Content_Types].xml", ctXml);
-                        }
-                      }
-
-                      // Replace mc:AlternateContent with inline image
-                      const inlineDrawing = '<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
-                        '<wp:extent cx="647700" cy="584200"/>' +
-                        '<wp:docPr id="99" name="Foto Cladire"/>' +
-                        '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
-                        '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-                        '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-                        '<pic:nvPicPr><pic:cNvPr id="99" name="foto"/><pic:cNvPicPr/></pic:nvPicPr>' +
-                        '<pic:blipFill><a:blip r:embed="' + newRid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
-                        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="647700" cy="584200"/></a:xfrm>' +
-                        '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
-                        '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>';
-                      xml = xml.replace(mcFotoRegex, inlineDrawing);
-                    }
-                  } else {
-                    // No photo — replace floating textbox with simple centered placeholder
-                    const simplePlaceholder = '<w:t xml:space="preserve">FOTO CL\u0102DIRE</w:t>';
-                    xml = xml.replace(mcFotoRegex, simplePlaceholder);
-                  }
-                }
-
-                // ═══════════════════════════════════════════
-                // 22. SCALA ENERGETICĂ — lăsăm mc:AlternateContent intact
-                // docx-preview le renderizează ca floating shapes
-                // Aplicăm fix CSS post-render în useEffect
-                // ═══════════════════════════════════════════
-
-                // blob vine direct de la API Python (nu mai e nevoie de repack)
+                // Foto + scale + repack se fac server-side în Python API
 
                 const filename = mode === "anexa"
                   ? "Anexa_CPE_" + (building.address || "proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,40) + "_" + new Date().toISOString().slice(0,10) + ".docx"
