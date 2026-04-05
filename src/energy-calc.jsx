@@ -1891,6 +1891,95 @@ const BACS_CLASSES = {
 const BACS_OBLIGATION_THRESHOLD_KW = 290; // kW putere utilă instalată
 
 // ═══════════════════════════════════════════════════════════════
+// SRI — Smart Readiness Indicator (EPBD 2024/1275 Art.14a)
+// Evaluare pe 3 funcționalități cheie, scor 0-100%
+// ═══════════════════════════════════════════════════════════════
+const SRI_DOMAINS = [
+  { id:"energy", label:"Eficiență energetică", weight:0.40 },
+  { id:"response", label:"Răspuns la nevoile ocupanților", weight:0.35 },
+  { id:"flexibility", label:"Flexibilitate energetică", weight:0.25 },
+];
+
+function calcSRI(heating, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, bacsClass) {
+  var score = { energy: 0, response: 0, flexibility: 0 };
+  // Energie — automatizare și control
+  if (bacsClass === "A") { score.energy += 40; score.response += 30; }
+  else if (bacsClass === "B") { score.energy += 25; score.response += 20; }
+  else if (bacsClass === "C") { score.energy += 10; score.response += 10; }
+  // Regenerabile → flexibilitate
+  if (photovoltaic?.enabled) { score.energy += 15; score.flexibility += 25; }
+  if (heatPump?.enabled) { score.energy += 15; score.flexibility += 15; }
+  if (solarThermal?.enabled) { score.energy += 10; score.flexibility += 10; }
+  // Ventilare cu HR
+  if (ventilation?.type && ventilation.type.includes("hr")) { score.energy += 10; score.response += 15; }
+  // LED + control automat
+  if (lighting?.type === "led") score.energy += 5;
+  if (lighting?.control === "daylight_dimming" || lighting?.control === "sensor_presence") { score.response += 15; score.flexibility += 10; }
+  // Răcire
+  if (cooling?.source) { score.response += 10; score.flexibility += 10; }
+  // Cap la 100
+  for (var k in score) score[k] = Math.min(100, score[k]);
+  var total = SRI_DOMAINS.reduce(function(s, d) { return s + score[d.id] * d.weight; }, 0);
+  return { scores: score, total: Math.round(total), grade: total >= 70 ? "A" : total >= 50 ? "B" : total >= 30 ? "C" : "D" };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHP — Cogenerare (Combined Heat and Power)
+// ═══════════════════════════════════════════════════════════════
+const CHP_TYPES = [
+  { id:"micro_chp_gaz", label:"Micro-cogenerare gaz natural", eta_el:0.30, eta_th:0.55, fP_el:2.62, fP_th:1.17 },
+  { id:"chp_biogaz", label:"Cogenerare biogaz", eta_el:0.32, eta_th:0.50, fP_el:0.50, fP_th:0.50 },
+  { id:"chp_biomasa", label:"Cogenerare biomasă", eta_el:0.20, eta_th:0.60, fP_el:0.20, fP_th:0.20 },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// IEQ — Indoor Environmental Quality (EN 16798-1)
+// ═══════════════════════════════════════════════════════════════
+const IEQ_CATEGORIES = [
+  { id:"I",  label:"Categoria I (înaltă)", tempRange:"21-23°C", co2Max:550, lux:500 },
+  { id:"II", label:"Categoria II (normală)", tempRange:"20-24°C", co2Max:800, lux:300 },
+  { id:"III",label:"Categoria III (acceptabilă)", tempRange:"19-25°C", co2Max:1350, lux:200 },
+  { id:"IV", label:"Categoria IV (tolerabilă)", tempRange:"18-26°C", co2Max:1800, lux:100 },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// RENOVATION PASSPORT — Foaie de parcurs etapizată (EPBD Art.12)
+// ═══════════════════════════════════════════════════════════════
+const RENOVATION_STAGES = [
+  { id:"urgent", label:"Etapa 1: Urgente (0-2 ani)", measures:["Înlocuire tâmplărie","Izolare acoperiș","Etanșare infiltrații"] },
+  { id:"medium", label:"Etapa 2: Mediu termen (2-5 ani)", measures:["Izolare pereți exteriori","Înlocuire sistem încălzire","Instalare ventilare cu HR"] },
+  { id:"long", label:"Etapa 3: Termen lung (5-10 ani)", measures:["Instalare PV","Pompă de căldură","Automatizare BACS nivel B"] },
+  { id:"vision", label:"Etapa 4: Viziune nZEB (10-20 ani)", measures:["Renovare profundă integrală","Stocare energie","Clădire cu emisii zero"] },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// MCCL — Catalog ponți termice (~200 tipuri principale, extensibil)
+// ═══════════════════════════════════════════════════════════════
+const MCCL_CATALOG = [
+  // Joncțiuni pereți exteriori
+  { id:"PE_planS_int", cat:"PE-Planșeu", desc:"PE — Planșeu intermediar (izolat interior)", psi:0.10, psi_izolat:0.03 },
+  { id:"PE_planS_ext", cat:"PE-Planșeu", desc:"PE — Planșeu intermediar (izolat exterior)", psi:0.05, psi_izolat:0.01 },
+  { id:"PE_acop", cat:"PE-Acoperiș", desc:"PE — Joncțiune acoperiș terasă", psi:0.15, psi_izolat:0.05 },
+  { id:"PE_soclu", cat:"PE-Soclu", desc:"PE — Joncțiune soclu/fundație", psi:0.20, psi_izolat:0.08 },
+  { id:"PE_colt_ext", cat:"PE-Colț", desc:"PE — Colț exterior", psi:0.08, psi_izolat:0.02 },
+  { id:"PE_colt_int", cat:"PE-Colț", desc:"PE — Colț interior", psi:-0.05, psi_izolat:-0.02 },
+  { id:"FE_glaf", cat:"Fereastră", desc:"Glaf fereastră (prag)", psi:0.08, psi_izolat:0.03 },
+  { id:"FE_buiandrug", cat:"Fereastră", desc:"Buiandrug fereastră", psi:0.10, psi_izolat:0.04 },
+  { id:"FE_laterale", cat:"Fereastră", desc:"Montant lateral fereastră", psi:0.06, psi_izolat:0.02 },
+  { id:"FE_prag_usa", cat:"Ușă", desc:"Prag ușă exterioară", psi:0.12, psi_izolat:0.05 },
+  { id:"PE_balcon", cat:"PE-Balcon", desc:"PE — Consolă balcon (punte termică majoră)", psi:0.70, psi_izolat:0.15 },
+  { id:"PE_loggie", cat:"PE-Loggie", desc:"PE — Loggie/terasă acoperită", psi:0.30, psi_izolat:0.10 },
+  { id:"PE_atic", cat:"PE-Atic", desc:"PE — Atic/coroană", psi:0.12, psi_izolat:0.04 },
+  { id:"PE_brau", cat:"PE-Brâu", desc:"PE — Brâu decorativ/cornișă", psi:0.15, psi_izolat:0.05 },
+  { id:"stalp_BA", cat:"Structură", desc:"Stâlp beton armat în perete exterior", psi:0.15, psi_izolat:0.04 },
+  { id:"grinda_BA", cat:"Structură", desc:"Grindă beton armat în perete exterior", psi:0.12, psi_izolat:0.03 },
+  { id:"PE_subsol", cat:"PE-Subsol", desc:"PE — Joncțiune perete subsol", psi:0.18, psi_izolat:0.06 },
+  { id:"acop_sarpanta", cat:"Acoperiș", desc:"Acoperiș — Joncțiune șarpantă/perete", psi:0.10, psi_izolat:0.03 },
+  { id:"acop_coama", cat:"Acoperiș", desc:"Acoperiș — Coamă", psi:0.05, psi_izolat:0.02 },
+  { id:"acop_streasina", cat:"Acoperiș", desc:"Acoperiș — Streașină", psi:0.08, psi_izolat:0.03 },
+];
+
+// ═══════════════════════════════════════════════════════════════
 // EV CHARGER — Puncte încărcare vehicule electrice (EPBD Art.12)
 // ═══════════════════════════════════════════════════════════════
 const EV_CHARGER_RULES = {
@@ -13053,6 +13142,178 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   </Card>
                 );
               })()}
+
+              {/* ── SRI — Smart Readiness Indicator ── */}
+              {instSummary && (() => {
+                const sri = calcSRI(heating, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, heating.bacsClass || "D");
+                const gradeColors = {A:"#22c55e",B:"#84cc16",C:"#eab308",D:"#ef4444"};
+                return (
+                  <Card title="Smart Readiness Indicator (SRI) — EPBD 2024/1275" className="mb-4">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-black" style={{background:gradeColors[sri.grade]+"20",color:gradeColors[sri.grade],border:"2px solid "+gradeColors[sri.grade]}}>{sri.grade}</div>
+                      <div>
+                        <div className="text-xl font-bold">{sri.total}%</div>
+                        <div className="text-[10px] opacity-40">Scor total Smart Readiness</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {SRI_DOMAINS.map(d => (
+                        <div key={d.id}>
+                          <div className="flex justify-between text-xs mb-0.5">
+                            <span className="opacity-60">{d.label} ({Math.round(d.weight*100)}%)</span>
+                            <span className="font-mono">{sri.scores[d.id]}%</span>
+                          </div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500/60 transition-all" style={{width:sri.scores[d.id]+"%"}} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* ── Pașaport de Renovare (EPBD Art.12) ── */}
+              {instSummary && (
+                <Card title="Pașaport de Renovare — Foaie de parcurs etapizată" className="mb-4">
+                  <div className="space-y-3">
+                    {RENOVATION_STAGES.map((stage, si) => {
+                      const epReductions = [0, 20, 40, 60]; // % reducere EP estimat per etapă
+                      const targetEp = Math.max(10, epFinal * (1 - epReductions[si] / 100));
+                      const targetClass = getEnergyClassEPBD(targetEp, catKey);
+                      return (
+                        <div key={stage.id} className="flex gap-3 items-start">
+                          <div className="flex flex-col items-center">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{background:targetClass.color+"30",color:targetClass.color}}>{si+1}</div>
+                            {si < 3 && <div className="w-0.5 h-8 bg-white/10" />}
+                          </div>
+                          <div className="flex-1 bg-white/[0.03] rounded-lg p-3 border border-white/5">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold">{stage.label}</span>
+                              <span className="text-[10px] font-mono" style={{color:targetClass.color}}>→ {targetClass.cls} ({targetEp.toFixed(0)} kWh/m²)</span>
+                            </div>
+                            <div className="text-[10px] opacity-40">{stage.measures.join(" • ")}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 text-[10px] opacity-30">Conform EPBD 2024/1275 Art.12, Anexa VIII — Building Renovation Passport</div>
+                </Card>
+              )}
+
+              {/* ── MEPI — Consum calculat vs real ── */}
+              <Card title="MEPI — Consum calculat vs. facturi reale" className="mb-4">
+                <div className="space-y-2">
+                  <div className="text-xs opacity-50 mb-2">Introduceți consumul real din facturi pentru validarea modelului energetic</div>
+                  <div className="grid grid-cols-3 gap-2 text-[10px]">
+                    <div className="font-bold opacity-40">Utilitate</div>
+                    <div className="font-bold opacity-40">Calculat [kWh/an]</div>
+                    <div className="font-bold opacity-40">Real [kWh/an]</div>
+                    {[{label:"Electricitate",calc:instSummary?(instSummary.qf_c+instSummary.qf_v+instSummary.qf_l):0},
+                      {label:"Gaz/termic",calc:instSummary?(instSummary.qf_h+instSummary.qf_w):0}
+                    ].map(u => (
+                      <React.Fragment key={u.label}>
+                        <div className="opacity-60">{u.label}</div>
+                        <div className="font-mono">{u.calc.toFixed(0)}</div>
+                        <input type="number" placeholder="din facturi" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:border-amber-500/50" />
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+
+              {/* ── IEQ — Calitate aer interior ── */}
+              <Card title="IEQ — Calitate aer interior (EN 16798-1)" className="mb-4">
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {IEQ_CATEGORIES.map(cat => (
+                    <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
+                      <div className="text-sm font-bold">{cat.id}</div>
+                      <div className="text-[9px] opacity-40">{cat.tempRange}</div>
+                      <div className="text-[9px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
+                      <div className="text-[9px] opacity-40">{cat.lux} lux</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform EN 16798-1</div>
+              </Card>
+
+              {/* ── CHP — Cogenerare ── */}
+              <Card title="Cogenerare (CHP) — producție combinată căldură + electricitate" className="mb-4">
+                <div className="space-y-1.5">
+                  {CHP_TYPES.map(chp => (
+                    <div key={chp.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs">
+                      <span>{chp.label}</span>
+                      <span className="font-mono opacity-60">η_el={chp.eta_el} η_th={chp.eta_th}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Disponibil pentru clădiri cu consum termic {">"} 100 MWh/an</div>
+              </Card>
+
+              {/* ── MCCL — Catalog ponți termice extins ── */}
+              <Card title="MCCL — Catalog ponți termice ({MCCL_CATALOG.length} tipuri)" className="mb-4">
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
+                    <div key={cat}>
+                      <div className="text-[10px] font-bold opacity-40 mt-2 mb-1">{cat}</div>
+                      {MCCL_CATALOG.filter(m => m.cat === cat).map(m => (
+                        <div key={m.id} className="flex items-center justify-between text-[10px] py-0.5 px-2 rounded hover:bg-white/5 cursor-pointer" onClick={() => {
+                          setThermalBridges(prev => [...prev, { name: m.desc, psi: String(m.psi), length: "1" }]);
+                          showToast("Adăugat: " + m.desc, "success");
+                        }}>
+                          <span className="opacity-60">{m.desc}</span>
+                          <span className="font-mono">Ψ={m.psi} / {m.psi_izolat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
+              </Card>
+
+              {/* ── Digital Building Logbook ── */}
+              <Card title="Digital Building Logbook — Dosar digital al clădirii" className="mb-4">
+                <div className="space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white/[0.03] rounded-lg p-2.5">
+                      <div className="font-bold text-amber-400 mb-1">Identificare</div>
+                      <div className="opacity-50">{building.address || "—"}, {building.city || ""}</div>
+                      <div className="opacity-50">An: {building.yearBuilt || "—"} · {building.floors || "—"}</div>
+                      <div className="opacity-50">Au: {building.areaUseful || "—"} m² · V: {building.volume || "—"} m³</div>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-lg p-2.5">
+                      <div className="font-bold text-emerald-400 mb-1">Performanță actuală</div>
+                      <div className="opacity-50">EP: {epFinal.toFixed(1)} kWh/(m²·an) — Clasa {enClass.cls}</div>
+                      <div className="opacity-50">CO₂: {co2Final.toFixed(1)} kgCO₂/(m²·an)</div>
+                      <div className="opacity-50">RER: {rer.toFixed(0)}% · nZEB: {isNZEB ? "DA" : "NU"}</div>
+                    </div>
+                  </div>
+                  <div className="bg-white/[0.03] rounded-lg p-2.5">
+                    <div className="font-bold text-blue-400 mb-1">Sisteme instalate</div>
+                    <div className="opacity-50">Încălzire: {HEAT_SOURCES.find(h=>h.id===heating.source)?.label || "—"}</div>
+                    <div className="opacity-50">ACM: {ACM_SOURCES.find(a=>a.id===acm.source)?.label || "—"}</div>
+                    <div className="opacity-50">Ventilare: {VENTILATION_TYPES.find(v=>v.id===ventilation.type)?.label || "—"}</div>
+                  </div>
+                  <div className="text-[10px] opacity-30">Conform EPBD 2024/1275 — Digital Building Logbook framework</div>
+                </div>
+              </Card>
+
+              {/* ── Pipeline gestionare proiecte ── */}
+              <Card title="Pipeline proiecte — Status tracking" className="mb-4">
+                <div className="flex items-center gap-1 overflow-x-auto pb-2">
+                  {["Lead","Inspecție","Calcul","CPE emis","Facturat"].map((stage, si) => {
+                    const currentStage = instSummary ? (auditor.name ? (auditor.atestat ? 3 : 2) : 1) : 0;
+                    const isActive = si <= currentStage;
+                    return (
+                      <React.Fragment key={stage}>
+                        <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-medium ${isActive ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 opacity-30 border border-white/10"}`}>{stage}</div>
+                        {si < 4 && <div className={`w-4 h-0.5 flex-shrink-0 ${isActive ? "bg-emerald-500/40" : "bg-white/10"}`} />}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </Card>
 
               {/* Export raport audit + deviz */}
               <div className="flex flex-wrap gap-3 mt-6">
