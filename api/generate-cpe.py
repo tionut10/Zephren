@@ -364,10 +364,23 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         color_map = _CO2_CLASS_COLORS if is_co2 else _EP_CLASS_COLORS
         color = color_map.get(new_class, color_map.get("B"))
 
-        # 1. Update textbox (letter + position)
+        # 1. Update textbox (letter + position + text color white)
         new_content = text_match.group(1)
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         new_content = _update_shape_pos_v(new_content, new_pos)
+        # Set text color to white for contrast on colored background
+        # Add <w:color w:val="FFFFFF"/> inside <w:rPr> of runs containing the class letter
+        if '<w:color' not in new_content:
+            # Insert w:color before </w:rPr> in the first run
+            new_content = re.sub(
+                r'(<w:rPr>)([\s\S]*?)(</w:rPr>[\s\S]*?<w:t)',
+                r'\g<1>\g<2><w:color w:val="FFFFFF"/>\g<3>',
+                new_content,
+                count=2  # both runs (2 copies of the letter)
+            )
+        else:
+            # Update existing color to white
+            new_content = re.sub(r'<w:color w:val="[^"]*"/>', '<w:color w:val="FFFFFF"/>', new_content)
         new_xml = new_xml.replace(text_match.group(1), new_content, 1)
 
         # 2. Find and update paired pentagon (path shape right after textbox)
