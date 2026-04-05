@@ -278,22 +278,43 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             # 1. TEXT REPLACEMENTS — mapare directă
             # ═══════════════════════════════════════
-            simple_replacements = {
-                "AAAA": data.get("year", "____"),
-                "zz/ll/aa": data.get("expiry", ""),
-                "II,IIII x LL,LLLL": data.get("gps", ""),
-                "regim": data.get("regime", ""),
-                "zzz,z": data.get("area_ref", ""),
-                "yyy,y": data.get("area_gross", ""),
-                "xxxx": data.get("volume", ""),
-                "XX/XXXXX": data.get("auditor_atestat", ""),
-                "ZZ.LL.AAAA": data.get("auditor_date", ""),
-                "ZZ/LL/AAAA": data.get("auditor_date", "").replace(".", "/"),
-                "RR,R": data.get("rer", "0,0"),
-                "GWP,G": data.get("gwp", "0,0"),
-            }
+            # ═══ CRITICAL: ordinea contează! ═══
+            # Înlocuim pattern-urile LUNGI înainte de cele SCURTE
+            # "xxxx,x" ÎNAINTE de "xxxx" (altfel "xxxx" corupe "xxxx,x")
+            # "xxx,x" ÎNAINTE de "xx,x" (altfel "xx,x" corupe "xxx,x")
+            # "ZZ.LL.AAAA" ÎNAINTE de "AAAA"
 
-            for old, new in simple_replacements.items():
+            # 1. Secvențiale (cele mai lungi pattern-uri primele)
+            ep_total_vals = [data.get("ep_total_real", "0,0"), data.get("ep_total_ref", "0,0")]
+            replace_seq(doc, "xxxx,x", ep_total_vals)
+
+            xxx_vals = [data.get("area_ref", "0,0"), data.get("co2_val", "0,0"),
+                        data.get("sre_st", "0,0"), data.get("sre_pv", "0,0"),
+                        data.get("sre_pc", "0,0"), data.get("sre_bio", "0,0"),
+                        data.get("sre_other", "0,0"), data.get("sre_total", "0,0")]
+            replace_seq(doc, "xxx,x", xxx_vals)
+
+            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0"),
+                       data.get("ep_specific", "0,0"), data.get("ep_ref", "0,0")]
+            replace_seq(doc, "xx,x", xx_vals)
+
+            # 2. Înlocuiri simple (de la cele mai lungi la cele mai scurte)
+            ordered_replacements = [
+                ("II,IIII x LL,LLLL", data.get("gps", "")),
+                ("ZZ.LL.AAAA", data.get("auditor_date", "")),
+                ("ZZ/LL/AAAA", data.get("auditor_date", "").replace(".", "/")),
+                ("XX/XXXXX", data.get("auditor_atestat", "")),
+                ("zz/ll/aa", data.get("expiry", "")),
+                ("GWP,G", data.get("gwp", "0,0")),
+                ("RR,R", data.get("rer", "0,0")),
+                ("zzz,z", data.get("area_ref", "")),
+                ("yyy,y", data.get("area_gross", "")),
+                ("AAAA", data.get("year", "____")),
+                ("xxxx", data.get("volume", "")),
+                ("regim", data.get("regime", "")),
+            ]
+
+            for old, new in ordered_replacements:
                 if new:
                     replace_in_doc(doc, old, new)
 
@@ -380,19 +401,7 @@ class handler(BaseHTTPRequestHandler):
             # nZEB status
             replace_in_doc(doc, "nZEB DA/NU", "nZEB " + data.get("nzeb", "NU"))
 
-            # Sequentials: xxxx,x (2x), xx,x (4x), xxx,x (8x)
-            ep_total_vals = [data.get("ep_total_real", "0,0"), data.get("ep_total_ref", "0,0")]
-            replace_seq(doc, "xxxx,x", ep_total_vals)
-
-            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0"),
-                       data.get("ep_specific", "0,0"), data.get("ep_ref", "0,0")]
-            replace_seq(doc, "xx,x", xx_vals)
-
-            xxx_vals = [data.get("area_ref", "0,0"), data.get("co2_val", "0,0"),
-                        data.get("sre_st", "0,0"), data.get("sre_pv", "0,0"),
-                        data.get("sre_pc", "0,0"), data.get("sre_bio", "0,0"),
-                        data.get("sre_other", "0,0"), data.get("sre_total", "0,0")]
-            replace_seq(doc, "xxx,x", xxx_vals)
+            # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
             # Nr camere (RA)
             if category == "RA":
