@@ -8,7 +8,7 @@ export default function Step1Identification({
   building, updateBuilding, lang, selectedClimate,
   BUILDING_CATEGORIES, STRUCTURE_TYPES,
   autoDetectLocality, estimateGeometry, avRatio,
-  loadFullDemo, loadFullDemo2, loadFullDemo3, loadFullDemo4, loadFullDemo5, loadFullDemo6,
+  loadFullDemo, loadFullDemo2, loadFullDemo3, loadFullDemo4, loadFullDemo5, loadFullDemo6, loadFullDemo7, loadFullDemo8,
   loadTypicalBuilding, showToast,
   goToStep,
 }) {
@@ -50,16 +50,14 @@ export default function Step1Identification({
 
           <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">template rapid</span>}>
             <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
-              {/* DEMO COMPLET — exemplu fictiv cu toate câmpurile */}
-              <button onClick={() => {
-                  loadFullDemo();
-              }}
+              {/* 8 DEMO-URI COMPLETE — scenarii reale piața certificării energetice România */}
+              <button onClick={() => loadFullDemo()}
                 className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🏠</span>
+                  <span className="text-base">🏢</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO COMPLET — Casă nouă nZEB Constanța 2025</div>
-                    <div className="opacity-50 mt-0.5">PC sol-apă + PV 6kWp + solar termic + HR 92% · 5 elem. opace · 4 vitraje · 7 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Ap. 2 cam. bloc P+4 '82 București — VÂNZARE</div>
+                    <div className="opacity-50 mt-0.5">Cel mai frecvent CPE · cazan gaz condensare 24kW · fără izolație · fără regenerabile · Clasă D-E</div>
                   </div>
                 </div>
               </button>
@@ -69,8 +67,8 @@ export default function Step1Identification({
                 <div className="flex items-center gap-2">
                   <span className="text-base">🏢</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO — Bloc P+4 '73 reabilitat București</div>
-                    <div className="opacity-50 mt-0.5">Cazan gaz condensare · fără regenerabile · 3 elem. opace · 1 vitraje · 5 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Ap. 3 cam. bloc P+10 '74 reabilitat Cluj — VÂNZARE</div>
+                    <div className="opacity-50 mt-0.5">ETICS EPS 10cm · centrală de scară gaz condensare · PVC dublu Low-E · Clasă C</div>
                   </div>
                 </div>
               </button>
@@ -78,10 +76,10 @@ export default function Step1Identification({
               <button onClick={() => loadFullDemo3()}
                 className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🏬</span>
+                  <span className="text-base">🏠</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO — Birouri noi P+3 Cluj-Napoca</div>
-                    <div className="opacity-50 mt-0.5">VRF + PV 30kWp + HR 80% + LED BMS · 3 elem. opace · 2 vitraje · 4 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Casă nouă P+1 nZEB Constanța 2025 — RECEPȚIE</div>
+                    <div className="opacity-50 mt-0.5">PC aer-apă 10kW + PV 6kWp + HR 90% · BCA 30cm + EPS 15cm · Clasă A nZEB</div>
                   </div>
                 </div>
               </button>
@@ -89,10 +87,10 @@ export default function Step1Identification({
               <button onClick={() => loadFullDemo4()}
                 className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🏫</span>
+                  <span className="text-base">🏚️</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO — Grădiniță reabilitată Iași</div>
-                    <div className="opacity-50 mt-0.5">Cazan peleți + solar termic + PV 10kWp + HR 70% · 3 elem. opace · 2 vitraje · 5 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Casă veche P '62 sat rural Vaslui — VÂNZARE</div>
+                    <div className="opacity-50 mt-0.5">Sobă teracotă lemne · zidărie 50cm · ferestre lemn · fără izolație · Clasă F-G (cel mai rău scenariu)</div>
                   </div>
                 </div>
               </button>
@@ -100,10 +98,10 @@ export default function Step1Identification({
               <button onClick={() => loadFullDemo5()}
                 className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🏚️</span>
+                  <span className="text-base">🏡</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO — Casă interbelică reabilitată Brașov</div>
-                    <div className="opacity-50 mt-0.5">PC aer-apă + PV 5kWp + solar termic + HR 85% · 3 elem. opace · 2 vitraje · 4 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Vilă P+1+M reab. cu PC Brașov — REABILITARE</div>
+                    <div className="opacity-50 mt-0.5">GVP 25cm + vată 15cm · PC aer-apă 12kW + PV 5kWp + solar termic 4m² · Clasă B</div>
                   </div>
                 </div>
               </button>
@@ -111,10 +109,32 @@ export default function Step1Identification({
               <button onClick={() => loadFullDemo6()}
                 className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🛒</span>
+                  <span className="text-base">🏗️</span>
                   <div>
-                    <div className="font-bold text-emerald-300">DEMO — Supermarket nou Timișoara</div>
-                    <div className="opacity-50 mt-0.5">Chiller + UTA + PV 50kWp + LED senzori · 3 elem. opace · 2 vitraje · 3 punți · Toți pașii 1-7</div>
+                    <div className="font-bold text-emerald-300">Bloc nou P+6 nZEB Iași 2025 — RECEPȚIE</div>
+                    <div className="opacity-50 mt-0.5">Gaz condensare 200kW · EPS grafitat 15cm · PV 20kWp · HR 70% · Clasă B nZEB</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo7()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏬</span>
+                  <div>
+                    <div className="font-bold text-emerald-300">Birouri P+3 Cluj-Napoca 2024 — ÎNCHIRIERE</div>
+                    <div className="opacity-50 mt-0.5">VRF Daikin + fațadă cortină tripan + PV 30kWp + LED BMS + HR 80% · Clasă A</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo8()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏨</span>
+                  <div>
+                    <div className="font-bold text-emerald-300">Pensiune P+1 Sibiu reab. 2024 — TURISM</div>
+                    <div className="opacity-50 mt-0.5">Cazan peleți 60kW + solar termic 8m² + PV 8kWp + EPS 12cm · Clasă C</div>
                   </div>
                 </div>
               </button>

@@ -1218,138 +1218,286 @@ export default function EnergyCalcApp({ cloud }) {
   }, [pushUndo]);
 
   // ═══════════════════════════════════════════════════════════
-  // EXEMPLU DEMO COMPLET — Casă individuală P+1+M, Constanța 2025, nZEB clasa A
-  // Toate câmpurile completate, calcul integral funcțional pași 1-7
+  // DEMO 1 — Apartament 2 camere bloc P+4, anii '80, București — VÂNZARE
+  // Cel mai frecvent CPE din România. Clasă D-E.
   // ═══════════════════════════════════════════════════════════
   const loadFullDemo = useCallback(() => {
     pushUndo();
-    // PAS 1 — Casă individuală P+1+M nouă 2025, Constanța, zona climatică I
+    setBuilding({
+      address: "Str. Drumul Taberei nr. 35, Bl. C14, Sc. 2, Et. 3, Ap. 42",
+      city: "București", county: "București", postalCode: "061352",
+      category: "RC", structure: "Panouri prefabricate mari",
+      yearBuilt: "1982", yearRenov: "",
+      floors: "P+4", basement: true, attic: false,
+      units: "1", stairs: "1",
+      areaUseful: "52", volume: "140", areaEnvelope: "98",
+      heightBuilding: "15.0", heightFloor: "2.70",
+      locality: "București",
+      perimeter: "30.0", n50: "4.0", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "vanzare", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Perete ext. prefabricat GBN 30cm — neizolat", type: "PE", orientation: "S", area: "18", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Perete ext. Nord — prefabricat neizolat", type: "PE", orientation: "N", area: "14", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu intermediar beton (ap. etaj 3)", type: "PI", orientation: "Orizontal", area: "52", layers: [
+        { matName: "Parchet lemn", material: "Parchet lemn", thickness: "15", lambda: 0.18, rho: 600 },
+        { matName: "Șapă ciment", material: "Șapă ciment", thickness: "40", lambda: 1.40, rho: 2000 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "140", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC dublu (înlocuite de proprietar)", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.40", g: "0.60", area: "8.5", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre PVC dublu (Nord)", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.40", g: "0.60", area: "3.2", orientation: "N", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee intermediare (consolă balcon beton)", type: "Joncțiuni pereți", psi: "0.65", length: "3.5" },
+      { name: "PE — Planșeu curent ×2 niveluri adiacente", type: "Joncțiuni pereți", psi: "0.10", length: "60" },
+      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.06", length: "22" },
+      { name: "Colțuri exterioare ×2", type: "Joncțiuni pereți", psi: "0.08", length: "5.4" },
+      { name: "Prag ușă balcon", type: "Ferestre", psi: "0.10", length: "1.8" },
+    ]);
+    setHeating({
+      source: "GAZ_COND", power: "24", eta_gen: "0.97",
+      nominalPower: "24",
+      emission: "RAD_OT", eta_em: "0.93",
+      distribution: "MED_INT", eta_dist: "0.92",
+      control: "TERMO_RAD", eta_ctrl: "0.93",
+      regime: "intermitent", theta_int: "20", nightReduction: "3",
+      tStaircase: "12", tBasement: "8", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "3", dailyLiters: "50",
+      storageVolume: "0", storageLoss: "0",
+      pipeLength: "6", pipeInsulated: false,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "LED", pDensity: "5.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1600", naturalLightRatio: "20",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Popescu Marian-Cristian",
+      atestat: "CT-00845",
+      grade: "II",
+      company: "TermoProiect SRL",
+      phone: "0722 345 678",
+      email: "popescu@termoproiect.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Apartament 2 camere, et. 3, bloc P+4 din 1982, structură panouri mari prefabricate tip S, sector 6 București. Pereți exteriori BCA 30cm fără termoizolație exterioară (blocul nu a beneficiat de programul de reabilitare termică). Proprietarul a înlocuit tâmplăria originală cu PVC dublu vitraj. Centrala murală pe gaz cu condensare Viessmann Vitodens 050-W 24kW (2021), montată în bucătărie, cu preparare instantanee ACM. Radiatoare oțel tip panou cu robineți termostatici pe fiecare corp. Ventilare naturală. Punți termice semnificative la consolele de balcon din beton armat nearmat termic. Fațadele nu au izolație — se recomandă reabilitare termică prin asociația de proprietari. Clasa energetică estimată D-E.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 1 încărcat — Apartament 2 camere bloc P+4 '82 București, cazan gaz condensare, fără izolație. Clasă D-E.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 2 — Apartament 3 camere bloc P+10, anii '70, reabilitat termic, Cluj-Napoca — VÂNZARE
+  // Bloc OD mare reabilitat. Clasă C.
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo2 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Mehedinți nr. 12, Bl. R4, Sc. 3, Et. 7, Ap. 85",
+      city: "Cluj-Napoca", county: "Cluj", postalCode: "400394",
+      category: "RC", structure: "Panouri prefabricate mari",
+      yearBuilt: "1974", yearRenov: "2023",
+      floors: "P+10", basement: true, attic: false,
+      units: "1", stairs: "1",
+      areaUseful: "68", volume: "184", areaEnvelope: "115",
+      heightBuilding: "33.0", heightFloor: "2.70",
+      locality: "Cluj-Napoca",
+      perimeter: "34.0", n50: "2.5", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "vanzare", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. BCA 30cm + EPS 10cm ETICS (reab. 2023)", type: "PE", orientation: "S", area: "22", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.036, rho: 25 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. Nord — BCA 30cm + EPS 10cm ETICS", type: "PE", orientation: "N", area: "16", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.036, rho: 25 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu intermediar beton (ap. curent etaj 7)", type: "PI", orientation: "Orizontal", area: "68", layers: [
+        { matName: "Parchet laminat", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 600 },
+        { matName: "Șapă ciment", material: "Șapă ciment", thickness: "40", lambda: 1.40, rho: 2000 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "140", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC dublu Low-E (înlocuite la reabilitare 2023)", glazingType: "Dublu vitraj Low-E", frameType: "PVC (5 camere)", u: "1.30", g: "0.55", area: "10.5", orientation: "Mixt", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee adiacente ×2 niveluri", type: "Joncțiuni pereți", psi: "0.08", length: "68" },
+      { name: "PE — Consolă balcon beton (rezolvat parțial la reab.)", type: "Joncțiuni pereți", psi: "0.35", length: "4.0" },
+      { name: "Glaf ferestre PVC Low-E", type: "Ferestre", psi: "0.04", length: "25" },
+      { name: "Colțuri exterioare ×2", type: "Joncțiuni pereți", psi: "0.06", length: "5.4" },
+    ]);
+    setHeating({
+      source: "GAZ_COND", power: "100", eta_gen: "0.97",
+      nominalPower: "100",
+      emission: "RAD_OT", eta_em: "0.93",
+      distribution: "MED_INT", eta_dist: "0.90",
+      control: "TERMO_RAD", eta_ctrl: "0.93",
+      regime: "intermitent", theta_int: "20", nightReduction: "3",
+      tStaircase: "12", tBasement: "8", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "4", dailyLiters: "50",
+      storageVolume: "0", storageLoss: "0",
+      pipeLength: "35", pipeInsulated: true,
+      circRecirculation: true, circHours: "14",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "LED", pDensity: "4.5", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1600", naturalLightRatio: "25",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Moldovan Radu-Alexandru",
+      atestat: "CT-01523",
+      grade: "II",
+      company: "CertEnergy Transilvania SRL",
+      phone: "0744 567 890",
+      email: "moldovan@certenergy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Apartament 3 camere, et. 7, bloc P+10 din 1974, structură panouri mari prefabricate, Mănăștur, Cluj-Napoca. Blocul a beneficiat de reabilitare termică prin programul național 2023: ETICS cu EPS 10cm pe fațade, XPS 10cm pe terasă, înlocuire tâmplărie cu PVC dublu Low-E. Centrala termică de scară cu cazan gaz condensare Buderus 100kW. Radiatoare din fontă cu robineți termostatici. Punți termice parțial rezolvate la consolele de balcon. Ventilare naturală prin fante reglabile în tâmplăria nouă. Fără surse regenerabile. Clasa energetică estimată C.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 2 încărcat — Ap. 3 camere bloc P+10 '74 reabilitat Cluj-Napoca, centrală de scară gaz condensare. Clasă C.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 3 — Casă individuală P+1 nouă, Constanța 2025 — nZEB RECEPȚIE
+  // PC aer-apă, PV 6kWp, HR 90%, BCA 30cm + EPS 15cm. Clasă A.
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo3 = useCallback(() => {
+    pushUndo();
     setBuilding({
       address: "Str. Lahovari nr. 18",
       city: "Constanța", county: "Constanța", postalCode: "900650",
       category: "RI", structure: "Cadre beton armat",
       yearBuilt: "2025", yearRenov: "",
-      floors: "P+1+M", basement: false, attic: true,
+      floors: "P+1", basement: false, attic: false,
       units: "1", stairs: "1",
-      areaUseful: "185", volume: "510", areaEnvelope: "520",
-      heightBuilding: "9.20", heightFloor: "2.80",
+      areaUseful: "165", volume: "462", areaEnvelope: "440",
+      heightBuilding: "7.00", heightFloor: "2.80",
       locality: "Constanța",
-      perimeter: "48.0", n50: "0.8", shadingFactor: "0.90",
+      perimeter: "44.0", n50: "0.8", shadingFactor: "0.90",
       gwpLifecycle: "", solarReady: true,
       scopCpe: "receptie", parkingSpaces: "2",
     });
-
-    // PAS 2 — Anvelopă nZEB: 5 elemente opace cu izolație groasă
     setOpaqueElements([
-      { name: "Pereți ext. GVP 25cm + vată bazaltică 20cm (ETICS)", type: "PE", orientation: "S", area: "95", layers: [
+      { name: "Pereți ext. BCA 30cm + EPS 15cm ETICS (Sud+Est+Vest)", type: "PE", orientation: "S", area: "85", layers: [
         { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
-        { matName: "Vată minerală bazaltică 20cm", material: "Vată minerală bazaltică", thickness: "200", lambda: 0.035, rho: 80 },
-        { matName: "Cărămidă cu goluri (GVP)", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
-        { matName: "Tencuială interioară", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
       ]},
-      { name: "Pereți ext. Nord — GVP 25cm + vată 20cm", type: "PE", orientation: "N", area: "65", layers: [
+      { name: "Pereți ext. Nord — BCA 30cm + EPS 15cm ETICS", type: "PE", orientation: "N", area: "45", layers: [
         { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
-        { matName: "Vată minerală bazaltică 20cm", material: "Vată minerală bazaltică", thickness: "200", lambda: 0.035, rho: 80 },
-        { matName: "GVP", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
-        { matName: "Tencuială interioară", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
       ]},
-      { name: "Acoperiș mansardă — vată 30cm între căpriori", type: "PP", orientation: "Orizontal", area: "110", layers: [
-        { matName: "Gips-carton", material: "Gips-carton", thickness: "12", lambda: 0.25, rho: 900 },
+      { name: "Terasă necirculabilă — EPS 20cm", type: "PT", orientation: "Orizontal", area: "85", layers: [
+        { matName: "Membrană bitum", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
+        { matName: "EPS 20cm", material: "Polistiren expandat EPS 100", thickness: "200", lambda: 0.036, rho: 25 },
         { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
-        { matName: "Vată minerală bazaltică 30cm", material: "Vată minerală bazaltică", thickness: "300", lambda: 0.035, rho: 80 },
-        { matName: "OSB", material: "OSB", thickness: "18", lambda: 0.13, rho: 600 },
-        { matName: "Folie difuzie", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
       ]},
-      { name: "Placă pe sol — XPS 20cm sub radier", type: "PL", orientation: "Orizontal", area: "95", layers: [
+      { name: "Placă pe sol — XPS 15cm sub radier", type: "PL", orientation: "Orizontal", area: "85", layers: [
         { matName: "Gresie ceramică", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
         { matName: "Șapă cu încălzire pardoseală", material: "Șapă ciment", thickness: "75", lambda: 1.40, rho: 2000 },
-        { matName: "XPS 20cm", material: "Polistiren extrudat XPS", thickness: "200", lambda: 0.032, rho: 35 },
+        { matName: "XPS 15cm", material: "Polistiren extrudat XPS", thickness: "150", lambda: 0.032, rho: 35 },
         { matName: "Radier beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
       ]},
-      { name: "Planșeu intermediar beton (neîncălzit → încălzit)", type: "PI", orientation: "Orizontal", area: "95", layers: [
-        { matName: "Parchet lemn", material: "Parchet lemn", thickness: "15", lambda: 0.18, rho: 600 },
-        { matName: "Șapă ciment", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
-        { matName: "Beton armat", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
-      ]},
     ]);
-
-    // 4 tipuri de ferestre pe orientări diferite
     setGlazingElements([
-      { name: "Ferestre PVC tripan Low-E argon (Sud)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "22", orientation: "S", frameRatio: "22" },
-      { name: "Ferestre PVC tripan Low-E (Nord)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "8", orientation: "N", frameRatio: "22" },
-      { name: "Ferestre PVC tripan (Est+Vest)", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "0.90", g: "0.50", area: "12", orientation: "E", frameRatio: "25" },
-      { name: "Ușă terasă glisantă tripan (Sud)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "1.00", g: "0.40", area: "5.4", orientation: "S", frameRatio: "30" },
+      { name: "Ferestre PVC tripan Low-E argon (Sud)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "18", orientation: "S", frameRatio: "22" },
+      { name: "Ferestre PVC tripan Low-E (Nord+Est+Vest)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "12", orientation: "N", frameRatio: "22" },
+      { name: "Ușă terasă glisantă tripan (Sud)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "1.00", g: "0.40", area: "4.5", orientation: "S", frameRatio: "30" },
     ]);
-
-    // 7 punți termice detaliate
     setThermalBridges([
-      { name: "PE — Placă pe sol (izolat perimetral XPS)", type: "Joncțiuni pereți", psi: "0.08", length: "48" },
-      { name: "PE — Acoperiș mansardă (izolat continuu)", type: "Acoperiș", psi: "0.06", length: "48" },
-      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.04", length: "48" },
-      { name: "Glaf fereastră — montaj RAL în izolație", type: "Ferestre", psi: "0.02", length: "65" },
-      { name: "Colț exterior ×8", type: "Joncțiuni pereți", psi: "0.05", length: "74" },
-      { name: "Prag ușă terasă", type: "Ferestre", psi: "0.05", length: "6" },
-      { name: "Colț interior ×4 (favorabil)", type: "Joncțiuni pereți", psi: "-0.03", length: "37" },
+      { name: "PE — Placă pe sol (izolat perimetral XPS)", type: "Joncțiuni pereți", psi: "0.08", length: "44" },
+      { name: "PE — Terasă (atic izolat continuu)", type: "Acoperiș", psi: "0.06", length: "44" },
+      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.04", length: "44" },
+      { name: "Glaf fereastră — montaj RAL în izolație", type: "Ferestre", psi: "0.02", length: "55" },
+      { name: "Colț exterior ×4", type: "Joncțiuni pereți", psi: "0.05", length: "28" },
+      { name: "Prag ușă terasă", type: "Ferestre", psi: "0.05", length: "2.5" },
     ]);
-
-    // PAS 3 — Instalații complete nZEB
     setHeating({
-      source: "PC_SA", power: "12", eta_gen: "4.50",
-      nominalPower: "12",
+      source: "PC_AA", power: "10", eta_gen: "4.20",
+      nominalPower: "10",
       emission: "PARD", eta_em: "0.97",
       distribution: "BINE_INT", eta_dist: "0.96",
       control: "INTELIG", eta_ctrl: "0.98",
       regime: "continuu", theta_int: "20", nightReduction: "2",
-      tStaircase: "15", tBasement: "10", tAttic: "5",
+      tStaircase: "", tBasement: "", tAttic: "",
     });
-
     setAcm({
       source: "PC_ACM", consumers: "4", dailyLiters: "50",
-      storageVolume: "300", storageLoss: "1.0",
+      storageVolume: "200", storageLoss: "1.0",
       pipeLength: "8", pipeInsulated: true,
       circRecirculation: false, circHours: "",
     });
-
     setCooling({
-      system: "PC_REV", power: "12", eer: "5.50",
-      cooledArea: "150", distribution: "BINE_INT",
+      system: "PC_REV", power: "10", eer: "5.20",
+      cooledArea: "140", distribution: "BINE_INT",
       hasCooling: true,
     });
-
     setVentilation({
-      type: "MEC_HR90", airflow: "250", fanPower: "80",
-      operatingHours: "4000", hrEfficiency: "92",
+      type: "MEC_HR90", airflow: "220", fanPower: "70",
+      operatingHours: "4000", hrEfficiency: "90",
     });
-
     setLighting({
       type: "LED", pDensity: "3.5", controlType: "PREZ_DAY",
       fCtrl: "0.55", operatingHours: "1600", naturalLightRatio: "35",
     });
-
-    // PAS 4 — Regenerabile: PV 6kWp + solar termic 6m² + PC sol-apă
-    setSolarThermal({
-      ...INITIAL_SOLAR_TH, enabled: true,
-      type: "TUB_VID", area: "6", orientation: "S", tilt: "40",
-      eta0: "0.72", a1: "1.2",
-    });
-
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
     setPhotovoltaic({
       ...INITIAL_PV, enabled: true,
-      type: "MONO", area: "28", orientation: "S", tilt: "25",
+      type: "MONO", area: "32", orientation: "S", tilt: "20",
       inverterType: "PREM", inverterEta: "0.97",
-      peakPower: "5.88", usage: "autoconsum",
+      peakPower: "6", usage: "autoconsum",
     });
-
     setHeatPump({
       ...INITIAL_HP, enabled: true,
-      type: "sol-apa", cop: "4.50",
-      scopHeating: "3.82", covers: "heating_acm",
+      type: "PC_AA", cop: "4.20",
+      scopHeating: "3.50", covers: "heating_acm",
     });
-
     setBiomass({ ...INITIAL_BIO, enabled: false });
     setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
-
-    // PAS 6 — Auditor complet
     setAuditor({
       name: "ing. Marinescu Andrei-Gabriel",
       atestat: "CT-01256",
@@ -1359,83 +1507,77 @@ export default function EnergyCalcApp({ cloud }) {
       email: "marinescu@energreen.ro",
       date: new Date().toISOString().slice(0, 10),
       mdlpaCode: "",
-      observations: "Casă individuală nouă P+1+M, proiectată conform standardului nZEB (Legea 238/2024). Structură beton armat cu pereți GVP 25cm + vată bazaltică 20cm ETICS, acoperiș mansardă cu vată 30cm, placă pe sol cu XPS 20cm. Sursa termică: pompă de căldură sol-apă 12kW (SCOP 3.82) cu sondă geotermală 2×80m, pardoseală radiantă pe ambele niveluri. Ventilare mecanică centralizată cu recuperare η=92% (unitate Zehnder ComfoAir Q450). Producție PV: 28m² panouri monocristaline pe versant sud mansardă (5.88 kWp) + 6m² colectori solari tuburi vidate pentru ACM. Test etanșeitate n50=0.8 h⁻¹ (conform Passivhaus). Certificat de origine verde pentru 20% din consumul electric. Clădirea îndeplinește integral cerințele nZEB și se apropie de ZEB (EPBD 2024/1275).",
+      observations: "Casă individuală nouă P+1 proiectată nZEB conform Legii 238/2024 și Mc 001-2022. Structură cadre beton armat cu pereți BCA 30cm + EPS 15cm ETICS, terasă EPS 20cm, placă pe sol XPS 15cm. Pompă de căldură aer-apă Daikin Altherma 3 H HT 10kW (SCOP 3.50) cu pardoseală radiantă pe ambele niveluri. Ventilare mecanică centralizată cu recuperare η=90% (Atrea Duplex 250). PV 6kWp (32m² panouri mono pe terasă, orientare sud, 20°). Test etanșeitate n50=0.8 h⁻¹. Clădirea îndeplinește integral cerințele nZEB. Clasă energetică A.",
       photo: "",
     });
-
     setStep(1);
-    showToast("Demo complet încărcat — Casă nouă nZEB Constanța cu PC sol-apă + PV 6kWp + solar termic. Navigați prin toți pașii 1-7.", "success", 5000);
+    showToast("Demo 3 încărcat — Casă nouă P+1 nZEB Constanța cu PC aer-apă 10kW + PV 6kWp + HR 90%. Clasă A.", "success", 5000);
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
-  // DEMO 2 — Bloc P+4 anii '70, reabilitare termică București
-  // Rezidențial colectiv, cazan gaz condensare, fără regenerabile
+  // DEMO 4 — Casă veche P, anii '60, zidărie 50cm, sat rural, Vaslui — VÂNZARE
+  // Sobă teracotă + lemne, ferestre lemn, fără izolație. Clasă F-G.
   // ═══════════════════════════════════════════════════════════
-  const loadFullDemo2 = useCallback(() => {
+  const loadFullDemo4 = useCallback(() => {
     pushUndo();
     setBuilding({
-      address: "Bd. Unirii nr. 42, Bl. M5, Sc. A-B",
-      city: "București", county: "București", postalCode: "030167",
-      category: "RC", structure: "Panouri prefabricate mari",
-      yearBuilt: "1973", yearRenov: "2024",
-      floors: "P+4", basement: true, attic: false,
-      units: "40", stairs: "2",
-      areaUseful: "2400", volume: "6600", areaEnvelope: "3200",
-      heightBuilding: "16.5", heightFloor: "2.75",
-      locality: "București",
-      perimeter: "100", n50: "3.0", shadingFactor: "0.85",
+      address: "Sat Vutcani nr. 142, com. Vutcani",
+      city: "Vutcani", county: "Vaslui", postalCode: "737570",
+      category: "RI", structure: "Zidărie portantă",
+      yearBuilt: "1962", yearRenov: "",
+      floors: "P", basement: false, attic: true,
+      units: "1", stairs: "1",
+      areaUseful: "65", volume: "176", areaEnvelope: "210",
+      heightBuilding: "4.50", heightFloor: "2.70",
+      locality: "Vaslui",
+      perimeter: "34.0", n50: "8.0", shadingFactor: "0.95",
       gwpLifecycle: "", solarReady: false,
       scopCpe: "vanzare", parkingSpaces: "0",
     });
     setOpaqueElements([
-      { name: "Pereți ext. BCA 30cm + EPS 15cm ETICS (reab. 2024)", type: "PE", orientation: "Mixt", area: "1200", layers: [
-        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
-        { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
-        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
-        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+      { name: "Pereți ext. cărămidă plină 50cm — neizolat", type: "PE", orientation: "Mixt", area: "85", layers: [
+        { matName: "Tencuială ext. var", material: "Tencuială var-ciment", thickness: "25", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 50cm", material: "Cărămidă plină", thickness: "500", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int. var", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
       ]},
-      { name: "Terasă necirculabilă — XPS 15cm (reab.)", type: "PT", orientation: "Orizontal", area: "480", layers: [
-        { matName: "Membrană bitum", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
-        { matName: "XPS 15cm", material: "Polistiren extrudat XPS", thickness: "150", lambda: 0.034, rho: 35 },
-        { matName: "Șapă pante", material: "Șapă ciment", thickness: "40", lambda: 1.40, rho: 2000 },
-        { matName: "Beton armat planseu", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      { name: "Pod neizolat — dușumea lemn pe grinzi", type: "PP", orientation: "Orizontal", area: "70", layers: [
+        { matName: "Tencuială tavan", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "Dușumea lemn", material: "Lemn moale (brad/molid)", thickness: "25", lambda: 0.14, rho: 500 },
       ]},
-      { name: "Planșeu peste subsol (neizolat)", type: "PB", orientation: "Orizontal", area: "480", layers: [
-        { matName: "Parchet", material: "Parchet lemn", thickness: "15", lambda: 0.18, rho: 600 },
-        { matName: "Șapă", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
-        { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      { name: "Placă pe sol — beton neizolat", type: "PL", orientation: "Orizontal", area: "70", layers: [
+        { matName: "Dușumea lemn pe grinzi", material: "Lemn moale (brad/molid)", thickness: "30", lambda: 0.14, rho: 500 },
+        { matName: "Beton simplu", material: "Beton simplu", thickness: "100", lambda: 1.28, rho: 2200 },
       ]},
     ]);
     setGlazingElements([
-      { name: "Ferestre PVC dublu Low-E (înlocuite 2024)", glazingType: "Dublu vitraj Low-E", frameType: "PVC (5 camere)", u: "1.30", g: "0.55", area: "280", orientation: "Mixt", frameRatio: "25" },
+      { name: "Ferestre lemn dublu (originale '60)", glazingType: "Dublu vitraj", frameType: "Lemn", u: "2.80", g: "0.75", area: "7.5", orientation: "Mixt", frameRatio: "35" },
     ]);
     setThermalBridges([
-      { name: "PE — Planșee intermediare ×5 niveluri", type: "Joncțiuni pereți", psi: "0.10", length: "500" },
-      { name: "PE — Terasă", type: "Acoperiș", psi: "0.12", length: "100" },
-      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.06", length: "420" },
-      { name: "Stâlpi beton (punți termice semnificative)", type: "Joncțiuni pereți", psi: "0.15", length: "200" },
-      { name: "Consolă balcon beton ×40 apartamente", type: "Joncțiuni pereți", psi: "0.65", length: "160" },
+      { name: "PE — Pod neizolat (cornișă)", type: "Acoperiș", psi: "0.25", length: "34" },
+      { name: "PE — Placă pe sol (neizolat)", type: "Joncțiuni pereți", psi: "0.20", length: "34" },
+      { name: "Glaf ferestre lemn (montaj tradițional)", type: "Ferestre", psi: "0.15", length: "18" },
+      { name: "Colțuri exterioare ×4", type: "Joncțiuni pereți", psi: "0.10", length: "18" },
     ]);
     setHeating({
-      source: "GAZ_COND", power: "200", eta_gen: "0.97",
-      nominalPower: "200",
-      emission: "RAD_OT", eta_em: "0.93",
-      distribution: "MED_INT", eta_dist: "0.90",
-      control: "TERMO_RAD", eta_ctrl: "0.93",
-      regime: "intermitent", theta_int: "20", nightReduction: "3",
-      tStaircase: "12", tBasement: "8", tAttic: "",
+      source: "SOBA_LEMN", power: "8", eta_gen: "0.55",
+      nominalPower: "8",
+      emission: "SOBA", eta_em: "0.80",
+      distribution: "LOCAL", eta_dist: "1.00",
+      control: "MAN", eta_ctrl: "0.80",
+      regime: "intermitent", theta_int: "18", nightReduction: "5",
+      tStaircase: "", tBasement: "", tAttic: "0",
     });
     setAcm({
-      source: "CAZAN_H", consumers: "100", dailyLiters: "50",
-      storageVolume: "2000", storageLoss: "3.0",
-      pipeLength: "120", pipeInsulated: true,
-      circRecirculation: true, circHours: "16",
+      source: "BOILER_E", consumers: "2", dailyLiters: "40",
+      storageVolume: "80", storageLoss: "3.0",
+      pipeLength: "3", pipeInsulated: false,
+      circRecirculation: false, circHours: "",
     });
     setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
     setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
     setLighting({
-      type: "LED", pDensity: "4.5", controlType: "TIMER",
-      fCtrl: "0.90", operatingHours: "1800", naturalLightRatio: "25",
+      type: "FLUOR", pDensity: "7.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1400", naturalLightRatio: "15",
     });
     setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
     setPhotovoltaic({ ...INITIAL_PV, enabled: false });
@@ -1443,40 +1585,261 @@ export default function EnergyCalcApp({ cloud }) {
     setBiomass({ ...INITIAL_BIO, enabled: false });
     setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
     setAuditor({
-      name: "ing. Popescu Ion-Cristian",
-      atestat: "CT-00845",
-      grade: "II",
-      company: "TermoProiect SRL",
-      phone: "0722 345 678",
-      email: "popescu@termoproiect.ro",
+      name: "ing. Apetrei Dumitru-Ionuț",
+      atestat: "CT-02034",
+      grade: "III",
+      company: "CertEast Moldova SRL",
+      phone: "0755 234 567",
+      email: "apetrei@certeast.ro",
       date: new Date().toISOString().slice(0, 10),
       mdlpaCode: "",
-      observations: "Bloc de locuințe P+4 din 1973, structură panouri prefabricate mari cu pereți BCA 30cm. Reabilitare termică executată 2024: termoizolație ETICS cu EPS 15cm pe fațade, XPS 15cm pe terasă, înlocuire tâmplărie cu PVC dublu vitraj Low-E. Centrala termică de scară cu cazan condensare gaz 200kW. Punți termice semnificative la consolele de balcon din beton armat. Ventilare naturală prin fante de ventilare în tâmplărie nouă. Nu există surse regenerabile. Clasa energetică estimată C-D.",
+      observations: "Casă parter din 1962, sat Vutcani, jud. Vaslui. Zidărie portantă cărămidă plină 50cm fără izolație termică. Pod neizolat cu dușumea lemn pe grinzi lemn, acoperiș cu învelitoare tablă. Ferestre originale lemn dublu cu etanșeitate degradată. Încălzire cu sobă de teracotă pe lemne (η~55%), o singură sursă pentru 2 din 3 camere. ACM cu boiler electric 80L. Ventilare naturală necontrolată, infiltrații semnificative (n50≈8 h⁻¹). Fără surse regenerabile. Se recomandă urgent: izolație pod 20cm vată, izolație fațade EPS 10cm, înlocuire tâmplărie cu PVC dublu, centrală pe peleți/gaz GPL. Clasa energetică estimată F-G — cel mai defavorabil scenariu real.",
       photo: "",
     });
     setStep(1);
-    showToast("Demo 2 încărcat — Bloc P+4 '73 reabilitat termic București. Cazan gaz condensare, fără regenerabile.", "success", 5000);
+    showToast("Demo 4 încărcat — Casă veche P '62 sat rural Vaslui, sobă lemne, fără izolație. Clasă F-G.", "success", 5000);
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
-  // DEMO 3 — Clădire birouri nouă P+3, Cluj-Napoca
-  // Birouri, VRF + ventilare HR80% + PV 30kWp, clasă A-B
+  // DEMO 5 — Vilă P+1+M, post-2000, reabilitare cu PC, Brașov — REABILITARE
+  // GVP 25cm + vată 15cm, PC aer-apă 12kW, PV 5kWp, solar termic 4m². Clasă B.
   // ═══════════════════════════════════════════════════════════
-  const loadFullDemo3 = useCallback(() => {
+  const loadFullDemo5 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Zizinului nr. 45",
+      city: "Brașov", county: "Brașov", postalCode: "500414",
+      category: "RI", structure: "Cadre beton armat",
+      yearBuilt: "2003", yearRenov: "2025",
+      floors: "P+1+M", basement: true, attic: true,
+      units: "1", stairs: "1",
+      areaUseful: "210", volume: "630", areaEnvelope: "580",
+      heightBuilding: "9.50", heightFloor: "2.80",
+      locality: "Brașov",
+      perimeter: "46.0", n50: "1.5", shadingFactor: "0.88",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "reabilitare", parkingSpaces: "2",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. GVP 25cm + vată bazaltică 15cm ETICS (reab. 2025)", type: "PE", orientation: "S", area: "80", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "Vată minerală bazaltică 15cm", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.035, rho: 80 },
+        { matName: "Cărămidă cu goluri (GVP)", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. Nord — GVP 25cm + vată 15cm", type: "PE", orientation: "N", area: "55", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "Vată minerală bazaltică 15cm", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.035, rho: 80 },
+        { matName: "GVP 25cm", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Acoperiș mansardă — vată 25cm între căpriori (reab.)", type: "PP", orientation: "Orizontal", area: "95", layers: [
+        { matName: "Gips-carton", material: "Gips-carton", thickness: "12", lambda: 0.25, rho: 900 },
+        { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
+        { matName: "Vată minerală bazaltică 25cm", material: "Vată minerală bazaltică", thickness: "250", lambda: 0.035, rho: 80 },
+        { matName: "OSB", material: "OSB", thickness: "18", lambda: 0.13, rho: 600 },
+      ]},
+      { name: "Planșeu peste subsol — XPS 10cm (reab.)", type: "PB", orientation: "Orizontal", area: "75", layers: [
+        { matName: "Parchet lemn masiv", material: "Parchet lemn", thickness: "15", lambda: 0.18, rho: 600 },
+        { matName: "Șapă cu încălzire pardoseală", material: "Șapă ciment", thickness: "65", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
+        { matName: "Beton armat existent", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC tripan Low-E argon (Sud+Est+Vest)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "24", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre PVC tripan Low-E (Nord)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "8", orientation: "N", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Soclu/fundație — izolat perimetral XPS", type: "Joncțiuni pereți", psi: "0.10", length: "46" },
+      { name: "PE — Cornișă mansardă (izolat continuu)", type: "Acoperiș", psi: "0.08", length: "46" },
+      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.05", length: "46" },
+      { name: "Glaf ferestre — montaj în planul izolației", type: "Ferestre", psi: "0.03", length: "60" },
+      { name: "Colțuri exterioare ×8", type: "Joncțiuni pereți", psi: "0.05", length: "76" },
+    ]);
+    setHeating({
+      source: "PC_AA", power: "12", eta_gen: "3.80",
+      nominalPower: "12",
+      emission: "PARD", eta_em: "0.97",
+      distribution: "BINE_INT", eta_dist: "0.96",
+      control: "INTELIG", eta_ctrl: "0.97",
+      regime: "continuu", theta_int: "20", nightReduction: "2",
+      tStaircase: "", tBasement: "8", tAttic: "5",
+    });
+    setAcm({
+      source: "PC_ACM", consumers: "5", dailyLiters: "50",
+      storageVolume: "250", storageLoss: "1.5",
+      pipeLength: "10", pipeInsulated: true,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({
+      system: "PC_REV", power: "12", eer: "4.20",
+      cooledArea: "170", distribution: "BINE_INT",
+      hasCooling: true,
+    });
+    setVentilation({
+      type: "MEC_HR80", airflow: "250", fanPower: "80",
+      operatingHours: "4500", hrEfficiency: "82",
+    });
+    setLighting({
+      type: "LED", pDensity: "3.5", controlType: "PREZ_DAY",
+      fCtrl: "0.60", operatingHours: "1600", naturalLightRatio: "30",
+    });
+    setSolarThermal({
+      ...INITIAL_SOLAR_TH, enabled: true,
+      type: "PLAN", area: "4", orientation: "S", tilt: "45",
+      eta0: "0.75", a1: "3.5",
+    });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "26", orientation: "S", tilt: "35",
+      inverterType: "PREM", inverterEta: "0.97",
+      peakPower: "5", usage: "autoconsum",
+    });
+    setHeatPump({
+      ...INITIAL_HP, enabled: true,
+      type: "PC_AA", cop: "3.80",
+      scopHeating: "3.20", covers: "heating_acm",
+    });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Bîrsan Cristina-Maria",
+      atestat: "CT-01567",
+      grade: "I",
+      company: "PatrimoniumEnergy SRL",
+      phone: "0768 567 890",
+      email: "birsan@patrimoniu-energy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Vilă P+1+M din 2003, reabilitare profundă 2025. Structură cadre beton armat cu pereți GVP 25cm, termoizolație ETICS vată bazaltică 15cm pe fațade, vată 25cm în mansardă, XPS 10cm sub planșeu subsol. Tâmplărie nouă PVC tripan Low-E argon. Pompă de căldură aer-apă Daikin Altherma 3 12kW (SCOP 3.20) cu pardoseală radiantă P+1, convectoare în mansardă. Solar termic 4m² panouri plane pentru ACM + PV 5kWp monocristalin pe versant sud. Ventilare mecanică cu HR η=82%. n50=1.5 h⁻¹. Clasă energetică estimată B.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 5 încărcat — Vilă P+1+M reabilitată Brașov cu PC aer-apă 12kW + PV 5kWp + solar termic 4m². Clasă B.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 6 — Bloc de locuințe nou P+6, Iași 2025 — nZEB RECEPȚIE
+  // Centrală de scară gaz condensare 200kW, EPS grafitat 15cm, PV 20kWp. Clasă B.
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo6 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Bd. Chimiei nr. 28, Bloc Rezidențial Copou Gardens",
+      city: "Iași", county: "Iași", postalCode: "700359",
+      category: "RC", structure: "Cadre beton armat",
+      yearBuilt: "2025", yearRenov: "",
+      floors: "P+6", basement: true, attic: false,
+      units: "42", stairs: "2",
+      areaUseful: "2800", volume: "7840", areaEnvelope: "3400",
+      heightBuilding: "21.0", heightFloor: "2.80",
+      locality: "Iași",
+      perimeter: "110", n50: "1.5", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: true,
+      scopCpe: "receptie", parkingSpaces: "48",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. BCA 30cm + EPS grafitat 15cm ETICS", type: "PE", orientation: "Mixt", area: "1500", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS grafitat 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.031, rho: 20 },
+        { matName: "BCA 30cm", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Terasă necirculabilă — XPS 15cm", type: "PT", orientation: "Orizontal", area: "400", layers: [
+        { matName: "Membrană bitum", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
+        { matName: "XPS 15cm", material: "Polistiren extrudat XPS", thickness: "150", lambda: 0.034, rho: 35 },
+        { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
+      ]},
+      { name: "Planșeu peste subsol — EPS 10cm", type: "PB", orientation: "Orizontal", area: "400", layers: [
+        { matName: "Gresie ceramică", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă ciment", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.036, rho: 25 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC tripan Low-E argon (toate orientările)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "420", orientation: "Mixt", frameRatio: "22" },
+      { name: "Uși acces scări tripan PVC", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "1.20", g: "0.40", area: "12", orientation: "N", frameRatio: "35" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee intermediare ×7 niveluri", type: "Joncțiuni pereți", psi: "0.06", length: "770" },
+      { name: "PE — Terasă", type: "Acoperiș", psi: "0.08", length: "110" },
+      { name: "PE — Subsol/fundație (izolat perimetral)", type: "Joncțiuni pereți", psi: "0.08", length: "110" },
+      { name: "Glaf ferestre PVC tripan", type: "Ferestre", psi: "0.03", length: "560" },
+      { name: "Consolă balcon — ruptoare termice Schöck", type: "Joncțiuni pereți", psi: "0.08", length: "240" },
+      { name: "Colțuri exterioare ×4", type: "Joncțiuni pereți", psi: "0.04", length: "84" },
+    ]);
+    setHeating({
+      source: "GAZ_COND", power: "200", eta_gen: "0.98",
+      nominalPower: "200",
+      emission: "RAD_OT", eta_em: "0.95",
+      distribution: "BINE_INT", eta_dist: "0.93",
+      control: "TERMO_RAD", eta_ctrl: "0.95",
+      regime: "continuu", theta_int: "20", nightReduction: "2",
+      tStaircase: "15", tBasement: "10", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "100", dailyLiters: "50",
+      storageVolume: "2000", storageLoss: "2.5",
+      pipeLength: "120", pipeInsulated: true,
+      circRecirculation: true, circHours: "16",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({
+      type: "MEC_HR70", airflow: "4200", fanPower: "1200",
+      operatingHours: "3500", hrEfficiency: "70",
+    });
+    setLighting({
+      type: "LED", pDensity: "4.0", controlType: "PREZ_DAY",
+      fCtrl: "0.65", operatingHours: "1800", naturalLightRatio: "25",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({
+      ...INITIAL_PV, enabled: true,
+      type: "MONO", area: "110", orientation: "S", tilt: "10",
+      inverterType: "STD", inverterEta: "0.96",
+      peakPower: "20", usage: "autoconsum",
+    });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Ursache Dragoș-Mihai",
+      atestat: "CT-01890",
+      grade: "I",
+      company: "EcoEnergy Moldova SRL",
+      phone: "0733 456 789",
+      email: "ursache@ecoenergy.ro",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "Bloc de locuințe nou P+6 cu subsol, proiectat nZEB conform Legii 238/2024 și Mc 001-2022. Structură cadre beton armat cu pereți BCA 30cm + EPS grafitat 15cm ETICS (λ=0.031). Terasă necirculabilă XPS 15cm, planșeu peste subsol EPS 10cm. Tâmplărie PVC tripan Low-E argon (U=0.80). Ruptoare termice Schöck la toate consolele de balcon. Centrală termică de scară cu cazan gaz condensare Viessmann Vitodens 200-W 200kW. Radiatoare oțel cu robineți termostatici. Ventilare mecanică pe fiecare apartament cu recuperare η=70%. PV 20kWp pe terasă (110m²). n50=1.5 h⁻¹. Clasă energetică estimată B, nZEB.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 6 încărcat — Bloc nou P+6 nZEB Iași cu gaz condensare 200kW + PV 20kWp + HR 70%. Clasă B.", "success", 5000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 7 — Clădire birouri P+3, Cluj-Napoca 2024 — ÎNCHIRIERE
+  // VRF Daikin, fațadă cortină tripan Low-E, PV 30kWp, LED BMS. Clasă A.
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo7 = useCallback(() => {
     pushUndo();
     setBuilding({
       address: "Str. Fabricii nr. 5, Clădirea Innovation Hub",
       city: "Cluj-Napoca", county: "Cluj", postalCode: "400500",
       category: "BI", structure: "Cadre beton armat",
-      yearBuilt: "2025", yearRenov: "",
+      yearBuilt: "2024", yearRenov: "",
       floors: "P+3", basement: true, attic: false,
       units: "1", stairs: "2",
       areaUseful: "3200", volume: "11200", areaEnvelope: "3600",
       heightBuilding: "14.0", heightFloor: "3.20",
       locality: "Cluj-Napoca",
-      perimeter: "120", n50: "1.5", shadingFactor: "0.85",
+      perimeter: "120", n50: "1.2", shadingFactor: "0.85",
       gwpLifecycle: "", solarReady: true,
-      scopCpe: "receptie", parkingSpaces: "60",
+      scopCpe: "inchiriere", parkingSpaces: "60",
     });
     setOpaqueElements([
       { name: "Pereți cortină — vată bazaltică 15cm + beton armat", type: "PE", orientation: "Mixt", area: "1400", layers: [
@@ -1507,6 +1870,7 @@ export default function EnergyCalcApp({ cloud }) {
       { name: "PE — Terasă", type: "Acoperiș", psi: "0.08", length: "120" },
       { name: "Glafuri fațadă cortină — profil RPT", type: "Ferestre", psi: "0.03", length: "600" },
       { name: "Soclu/fundație — izolat perimetral", type: "Joncțiuni pereți", psi: "0.10", length: "120" },
+      { name: "Atașament ancorare fațadă cortină", type: "Joncțiuni pereți", psi: "0.02", length: "480" },
     ]);
     setHeating({
       source: "PC_AA", power: "120", eta_gen: "3.50",
@@ -1559,337 +1923,124 @@ export default function EnergyCalcApp({ cloud }) {
       email: "moldovan@gba-audit.ro",
       date: new Date().toISOString().slice(0, 10),
       mdlpaCode: "",
-      observations: "Clădire de birouri nouă P+3 cu subsol, proiectată conform standardelor nZEB. Structură cadre beton armat cu fațadă cortină din aluminiu cu RPT și triplu vitraj Low-E argon. Sistem VRF pentru încălzire/răcire cu ventiloconvectoare pe 4 țevi. Ventilare mecanică centralizată cu recuperare căldură η=80%. Sistem PV 30kWp pe terasă verde extensivă. Iluminat LED profesional cu management BMS integrat. Test etanșeitate n50=1.5 h⁻¹. Clădirea îndeplinește cerințele nZEB cu clasă energetică A-B.",
+      observations: "Clădire birouri Class A P+3 cu subsol tehnic, Cluj-Napoca, 2024. Fațadă cortină aluminiu cu RPT și triplu vitraj Low-E argon (U=1.0, g=0.35). Sistem VRF Daikin RXYSA (COP 3.50, EER 4.50) cu ventiloconvectoare pe 4 țevi. UTA centralizată cu recuperare căldură η=80%, debit 5600 m³/h. PV 30kWp monocristalin pe terasă verde extensivă. Iluminat LED profesional cu management BMS integrat, senzori prezență și lumină naturală pe fiecare zonă. n50=1.2 h⁻¹. Scopul certificatului: închiriere. Clasa energetică A.",
       photo: "",
     });
     setStep(1);
-    showToast("Demo 3 încărcat — Birouri noi Cluj-Napoca cu VRF + PV 30kWp + HR 80%. Navigați prin pașii 1-7.", "success", 5000);
+    showToast("Demo 7 încărcat — Birouri Class A Cluj-Napoca cu VRF + PV 30kWp + LED BMS + HR 80%. Clasă A.", "success", 5000);
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
-  // DEMO 4 — Grădiniță reabilitată, Iași
-  // Educație, cazan peleți + solar termic + PV 10kWp
+  // DEMO 8 — Pensiune P+1, Sibiu, reabilitare 2024 — TURISM
+  // Cazan peleți 60kW, solar termic 8m² ACM, PV 8kWp, EPS 12cm. Clasă C.
   // ═══════════════════════════════════════════════════════════
-  const loadFullDemo4 = useCallback(() => {
+  const loadFullDemo8 = useCallback(() => {
     pushUndo();
     setBuilding({
-      address: "Str. Ciurchi nr. 123",
-      city: "Iași", county: "Iași", postalCode: "700359",
-      category: "ED", structure: "Cadre beton armat",
-      yearBuilt: "1985", yearRenov: "2025",
+      address: "Str. Turnului nr. 15",
+      city: "Sibiu", county: "Sibiu", postalCode: "550160",
+      category: "HO", structure: "Zidărie portantă",
+      yearBuilt: "1995", yearRenov: "2024",
       floors: "P+1", basement: true, attic: false,
-      units: "1", stairs: "1",
-      areaUseful: "650", volume: "2275", areaEnvelope: "1300",
-      heightBuilding: "7.5", heightFloor: "3.30",
-      locality: "Iași",
-      perimeter: "80", n50: "2.0", shadingFactor: "0.90",
+      units: "12", stairs: "1",
+      areaUseful: "420", volume: "1260", areaEnvelope: "850",
+      heightBuilding: "7.50", heightFloor: "2.80",
+      locality: "Sibiu",
+      perimeter: "68.0", n50: "2.0", shadingFactor: "0.90",
       gwpLifecycle: "", solarReady: true,
-      scopCpe: "receptie", parkingSpaces: "8",
+      scopCpe: "turism", parkingSpaces: "10",
     });
     setOpaqueElements([
-      { name: "Pereți ext. cărămidă 38cm + EPS 15cm ETICS (reab.)", type: "PE", orientation: "Mixt", area: "520", layers: [
+      { name: "Pereți ext. GVP 25cm + EPS 12cm ETICS (reab. 2024)", type: "PE", orientation: "S", area: "130", layers: [
         { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 12cm", material: "Polistiren expandat EPS 100", thickness: "120", lambda: 0.036, rho: 25 },
+        { matName: "Cărămidă cu goluri (GVP)", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. Nord — GVP 25cm + EPS 12cm ETICS", type: "PE", orientation: "N", area: "90", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 12cm", material: "Polistiren expandat EPS 100", thickness: "120", lambda: 0.036, rho: 25 },
+        { matName: "GVP 25cm", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Terasă necirculabilă — EPS 15cm (reab.)", type: "PT", orientation: "Orizontal", area: "220", layers: [
+        { matName: "Membrană bitum", material: "Bitum (membrană)", thickness: "10", lambda: 0.17, rho: 1050 },
         { matName: "EPS 15cm", material: "Polistiren expandat EPS 100", thickness: "150", lambda: 0.036, rho: 25 },
-        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
-        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
-      ]},
-      { name: "Terasă — EPS 20cm (reab. 2025)", type: "PT", orientation: "Orizontal", area: "350", layers: [
-        { matName: "Membrană PVC", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
-        { matName: "EPS 20cm", material: "Polistiren expandat EPS 100", thickness: "200", lambda: 0.036, rho: 25 },
         { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
-        { matName: "Beton armat", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
+        { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
       ]},
-      { name: "Planșeu peste subsol — EPS 10cm (reab.)", type: "PB", orientation: "Orizontal", area: "350", layers: [
-        { matName: "Parchet laminat", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 600 },
-        { matName: "Șapă", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
-        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.036, rho: 25 },
+      { name: "Planșeu peste subsol — XPS 8cm (reab.)", type: "PB", orientation: "Orizontal", area: "220", layers: [
+        { matName: "Gresie ceramică", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă ciment", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 8cm", material: "Polistiren extrudat XPS", thickness: "80", lambda: 0.034, rho: 35 },
         { matName: "Beton armat", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
       ]},
     ]);
     setGlazingElements([
-      { name: "Ferestre PVC tripan (înlocuite 2025)", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "0.90", g: "0.50", area: "130", orientation: "Mixt", frameRatio: "25" },
-      { name: "Uși acces tripan PVC", glazingType: "Triplu vitraj", frameType: "PVC (5 camere)", u: "1.20", g: "0.40", area: "12", orientation: "N", frameRatio: "40" },
+      { name: "Ferestre PVC dublu Low-E (înlocuite 2024)", glazingType: "Dublu vitraj Low-E", frameType: "PVC (5 camere)", u: "1.30", g: "0.55", area: "55", orientation: "Mixt", frameRatio: "25" },
+      { name: "Uși acces + restaurant dublu Low-E", glazingType: "Dublu vitraj Low-E", frameType: "PVC (5 camere)", u: "1.50", g: "0.50", area: "8", orientation: "S", frameRatio: "30" },
     ]);
     setThermalBridges([
-      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.08", length: "80" },
-      { name: "PE — Terasă", type: "Acoperiș", psi: "0.10", length: "80" },
-      { name: "PE — Subsol/fundație", type: "Joncțiuni pereți", psi: "0.12", length: "80" },
-      { name: "Glaf ferestre", type: "Ferestre", psi: "0.04", length: "180" },
-      { name: "Colțuri exterioare", type: "Joncțiuni pereți", psi: "0.06", length: "60" },
+      { name: "PE — Planșeu intermediar", type: "Joncțiuni pereți", psi: "0.08", length: "68" },
+      { name: "PE — Terasă", type: "Acoperiș", psi: "0.10", length: "68" },
+      { name: "PE — Subsol/fundație", type: "Joncțiuni pereți", psi: "0.12", length: "68" },
+      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.05", length: "90" },
+      { name: "Colțuri exterioare ×4", type: "Joncțiuni pereți", psi: "0.06", length: "30" },
+      { name: "Prag uși acces", type: "Ferestre", psi: "0.10", length: "5" },
     ]);
     setHeating({
-      source: "BIO_AUT", power: "80", eta_gen: "0.88",
-      nominalPower: "80",
+      source: "BIO_AUT", power: "60", eta_gen: "0.90",
+      nominalPower: "60",
       emission: "RAD_OT", eta_em: "0.93",
-      distribution: "MED_INT", eta_dist: "0.90",
+      distribution: "MED_INT", eta_dist: "0.92",
       control: "ZONAL", eta_ctrl: "0.95",
-      regime: "intermitent", theta_int: "22", nightReduction: "5",
-      tStaircase: "", tBasement: "10", tAttic: "",
+      regime: "continuu", theta_int: "21", nightReduction: "2",
+      tStaircase: "15", tBasement: "10", tAttic: "",
     });
     setAcm({
-      source: "SOLAR_AUX", consumers: "25", dailyLiters: "15",
+      source: "SOLAR_AUX", consumers: "30", dailyLiters: "60",
       storageVolume: "500", storageLoss: "2.0",
-      pipeLength: "20", pipeInsulated: true,
-      circRecirculation: false, circHours: "",
+      pipeLength: "25", pipeInsulated: true,
+      circRecirculation: true, circHours: "14",
     });
     setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
-    setVentilation({
-      type: "MEC_HR70", airflow: "1200", fanPower: "350",
-      operatingHours: "2000", hrEfficiency: "70",
-    });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
     setLighting({
       type: "LED", pDensity: "4.5", controlType: "PREZ_DAY",
-      fCtrl: "0.60", operatingHours: "2000", naturalLightRatio: "35",
+      fCtrl: "0.65", operatingHours: "2200", naturalLightRatio: "25",
     });
     setSolarThermal({
       ...INITIAL_SOLAR_TH, enabled: true,
-      type: "TUB_VID", area: "10", orientation: "S", tilt: "40",
-      eta0: "0.72", a1: "1.2",
-    });
-    setPhotovoltaic({
-      ...INITIAL_PV, enabled: true,
-      type: "MONO", area: "55", orientation: "S", tilt: "15",
-      inverterType: "STD", inverterEta: "0.96",
-      peakPower: "10", usage: "autoconsum",
-    });
-    setHeatPump({ ...INITIAL_HP, enabled: false });
-    setBiomass({
-      ...INITIAL_BIO, enabled: true,
-      type: "PELETI", boilerEta: "0.88", power: "80",
-      covers: "heating", annualConsumption: "18",
-    });
-    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
-    setAuditor({
-      name: "ing. Ursache Dragoș-Mihai",
-      atestat: "CT-01890",
-      grade: "I",
-      company: "EcoEnergy Moldova SRL",
-      phone: "0733 456 789",
-      email: "ursache@ecoenergy.ro",
-      date: new Date().toISOString().slice(0, 10),
-      mdlpaCode: "",
-      observations: "Grădiniță P+1 din 1985, reabilitată integral 2025. ETICS cu EPS 15cm pe fațade, EPS 20cm pe terasă, EPS 10cm sub planșeu subsol. Tâmplărie PVC tripan. Sursă termică: cazan automat pe peleți 80kW cu siloz 5t. Solar termic 10m² tuburi vidate pentru ACM. PV 10kWp pe terasă. Ventilare mecanică cu recuperare 70%. Iluminat LED cu senzori prezență și lumină naturală. Clasă energetică estimată B.",
-      photo: "",
-    });
-    setStep(1);
-    showToast("Demo 4 încărcat — Grădiniță reabilitată Iași cu cazan peleți + solar termic + PV 10kWp.", "success", 5000);
-  }, [pushUndo, showToast]);
-
-  // ═══════════════════════════════════════════════════════════
-  // DEMO 5 — Casă interbelică reabilitare profundă, Brașov
-  // Rezidențial individual, PC aer-apă + PV + solar termic
-  // ═══════════════════════════════════════════════════════════
-  const loadFullDemo5 = useCallback(() => {
-    pushUndo();
-    setBuilding({
-      address: "Str. Republicii nr. 78",
-      city: "Brașov", county: "Brașov", postalCode: "500030",
-      category: "RI", structure: "Zidărie portantă",
-      yearBuilt: "1935", yearRenov: "2025",
-      floors: "P+1", basement: true, attic: true,
-      units: "1", stairs: "1",
-      areaUseful: "160", volume: "480", areaEnvelope: "520",
-      heightBuilding: "8.50", heightFloor: "3.20",
-      locality: "Brașov",
-      perimeter: "42", n50: "1.5", shadingFactor: "0.88",
-      gwpLifecycle: "", solarReady: true,
-      scopCpe: "vanzare", parkingSpaces: "1",
-    });
-    setOpaqueElements([
-      { name: "Pereți ext. zidărie 50cm + vată minerală 20cm (reab.)", type: "PE", orientation: "Mixt", area: "190", layers: [
-        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
-        { matName: "Vată minerală bazaltică 20cm", material: "Vată minerală bazaltică", thickness: "200", lambda: 0.035, rho: 80 },
-        { matName: "Cărămidă plină 50cm", material: "Cărămidă plină", thickness: "500", lambda: 0.80, rho: 1800 },
-        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
-      ]},
-      { name: "Pod lemn izolat — vată 30cm între căpriori (reab.)", type: "PP", orientation: "Orizontal", area: "90", layers: [
-        { matName: "Gips-carton", material: "Gips-carton", thickness: "12", lambda: 0.25, rho: 900 },
-        { matName: "Barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 980 },
-        { matName: "Vată minerală bazaltică 30cm", material: "Vată minerală bazaltică", thickness: "300", lambda: 0.035, rho: 80 },
-        { matName: "Dușumea lemn existentă", material: "Lemn moale (brad/molid)", thickness: "25", lambda: 0.14, rho: 500 },
-      ]},
-      { name: "Planșeu peste subsol — XPS 10cm (reab.)", type: "PB", orientation: "Orizontal", area: "80", layers: [
-        { matName: "Parchet lemn masiv", material: "Parchet lemn", thickness: "20", lambda: 0.18, rho: 600 },
-        { matName: "Șapă cu incalzire pardoseală", material: "Șapă ciment", thickness: "65", lambda: 1.40, rho: 2000 },
-        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
-        { matName: "Beton existent", material: "Beton simplu", thickness: "200", lambda: 1.28, rho: 2200 },
-      ]},
-    ]);
-    setGlazingElements([
-      { name: "Ferestre PVC tripan Low-E argon (profil heritage)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "18", orientation: "S", frameRatio: "28" },
-      { name: "Ferestre PVC tripan Low-E (Nord+Est)", glazingType: "Triplu vitraj Low-E", frameType: "PVC (6-7 camere)", u: "0.80", g: "0.45", area: "10", orientation: "N", frameRatio: "28" },
-    ]);
-    setThermalBridges([
-      { name: "PE — Soclu/fundație — izolat perimetral XPS", type: "Joncțiuni pereți", psi: "0.10", length: "42" },
-      { name: "PE — Cornișă pod (izolat continuu)", type: "Acoperiș", psi: "0.08", length: "42" },
-      { name: "Glaf ferestre — montaj în planul izolației", type: "Ferestre", psi: "0.03", length: "55" },
-      { name: "Planșeu intermediar — centură beton", type: "Joncțiuni pereți", psi: "0.06", length: "42" },
-    ]);
-    setHeating({
-      source: "PC_AA", power: "10", eta_gen: "3.50",
-      nominalPower: "10",
-      emission: "PARD", eta_em: "0.97",
-      distribution: "BINE_INT", eta_dist: "0.96",
-      control: "INTELIG", eta_ctrl: "0.97",
-      regime: "continuu", theta_int: "20", nightReduction: "2",
-      tStaircase: "", tBasement: "8", tAttic: "5",
-    });
-    setAcm({
-      source: "PC_ACM", consumers: "4", dailyLiters: "55",
-      storageVolume: "200", storageLoss: "1.5",
-      pipeLength: "8", pipeInsulated: true,
-      circRecirculation: false, circHours: "",
-    });
-    setCooling({
-      system: "PC_REV", power: "10", eer: "3.80",
-      cooledArea: "120", distribution: "BINE_INT",
-      hasCooling: true,
-    });
-    setVentilation({
-      type: "MEC_HR80", airflow: "200", fanPower: "60",
-      operatingHours: "4500", hrEfficiency: "85",
-    });
-    setLighting({
-      type: "LED", pDensity: "4.0", controlType: "PREZ_DAY",
-      fCtrl: "0.60", operatingHours: "1600", naturalLightRatio: "30",
-    });
-    setSolarThermal({
-      ...INITIAL_SOLAR_TH, enabled: true,
-      type: "PLAN", area: "4", orientation: "S", tilt: "45",
+      type: "PLAN", area: "8", orientation: "S", tilt: "40",
       eta0: "0.75", a1: "3.5",
     });
     setPhotovoltaic({
       ...INITIAL_PV, enabled: true,
-      type: "MONO", area: "25", orientation: "S", tilt: "35",
-      inverterType: "PREM", inverterEta: "0.97",
-      peakPower: "5", usage: "autoconsum",
+      type: "MONO", area: "44", orientation: "S", tilt: "15",
+      inverterType: "STD", inverterEta: "0.96",
+      peakPower: "8", usage: "autoconsum",
     });
-    setHeatPump({
-      ...INITIAL_HP, enabled: true,
-      type: "PC_AA", cop: "3.50",
-      scopHeating: "3.00", covers: "heating_acm",
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({
+      ...INITIAL_BIO, enabled: true,
+      type: "PELETI", boilerEta: "0.90", power: "60",
+      covers: "heating", annualConsumption: "14",
     });
-    setBiomass({ ...INITIAL_BIO, enabled: false });
     setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
     setAuditor({
-      name: "ing. Bîrsan Cristina-Maria",
-      atestat: "CT-01567",
+      name: "ing. Dăscălescu Ana-Maria",
+      atestat: "CT-01745",
       grade: "I",
-      company: "PatrimoniumEnergy SRL",
-      phone: "0768 567 890",
-      email: "birsan@patrimoniu-energy.ro",
+      company: "TransilvaniaEnergy Audit SRL",
+      phone: "0769 345 678",
+      email: "dascalescu@transenergy.ro",
       date: new Date().toISOString().slice(0, 10),
       mdlpaCode: "",
-      observations: "Casă individuală interbelică P+1 din 1935, zonă protejată Brașov. Reabilitare profundă 2025 cu păstrarea caracterului arhitectural. Termoizolație vată minerală 20cm pe fațade (tencuială decorativă clasică), 30cm vată în pod, XPS 10cm sub planșeu subsol. Tâmplărie PVC tripan profil heritage cu șprosuri. Pompă de căldură aer-apă 10kW Daikin Altherma cu pardoseală radiantă. Ventilare mecanică Zehnder ComfoAir cu HR η=85%. PV 5kWp pe versant sud + solar termic 4m². n50=1.5 h⁻¹. Clasă energetică estimată B.",
+      observations: "Pensiune turistică P+1 cu 12 camere, Sibiu, construită 1995, reabilitată 2024. Structură zidărie portantă GVP 25cm, termoizolație ETICS cu EPS 12cm pe fațade, EPS 15cm pe terasă, XPS 8cm sub planșeu subsol. Tâmplărie PVC dublu Low-E. Cazan automat pe peleți Viessmann Vitoligno 300-C 60kW cu siloz 4t și alimentare automată. Solar termic 8m² panouri plane pentru preparare ACM turism (consum ridicat). PV 8kWp monocristalin pe terasă. Ventilare naturală. Iluminat LED cu senzori prezență pe holuri și spații comune. Scopul certificatului: turism/clasificare. Clasă energetică estimată C.",
       photo: "",
     });
     setStep(1);
-    showToast("Demo 5 încărcat — Casă interbelică reabilitată Brașov cu PC aer-apă + PV 5kWp + solar termic.", "success", 5000);
-  }, [pushUndo, showToast]);
-
-  // ═══════════════════════════════════════════════════════════
-  // DEMO 6 — Supermarket nou, Timișoara
-  // Comerț, chiller + UTA + PV 50kWp, clasă A-B
-  // ═══════════════════════════════════════════════════════════
-  const loadFullDemo6 = useCallback(() => {
-    pushUndo();
-    setBuilding({
-      address: "Calea Aradului nr. 85",
-      city: "Timișoara", county: "Timiș", postalCode: "300088",
-      category: "CO", structure: "Structură metalică",
-      yearBuilt: "2025", yearRenov: "",
-      floors: "P", basement: false, attic: false,
-      units: "1", stairs: "0",
-      areaUseful: "2200", volume: "11000", areaEnvelope: "4000",
-      heightBuilding: "6.00", heightFloor: "5.00",
-      locality: "Timișoara",
-      perimeter: "200", n50: "2.5", shadingFactor: "0.90",
-      gwpLifecycle: "", solarReady: true,
-      scopCpe: "receptie", parkingSpaces: "120",
-    });
-    setOpaqueElements([
-      { name: "Pereți panouri sandwich 12cm vată minerală", type: "PE", orientation: "Mixt", area: "1200", layers: [
-        { matName: "Tablă zincată ext.", material: "Oțel", thickness: "0.6", lambda: 58.0, rho: 7850 },
-        { matName: "Vată minerală 12cm", material: "Vată minerală bazaltică", thickness: "120", lambda: 0.038, rho: 90 },
-        { matName: "Tablă zincată int.", material: "Oțel", thickness: "0.5", lambda: 58.0, rho: 7850 },
-      ]},
-      { name: "Acoperiș panouri sandwich 15cm", type: "PT", orientation: "Orizontal", area: "2200", layers: [
-        { matName: "Membrană PVC", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
-        { matName: "Vată minerală 15cm", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 90 },
-        { matName: "Tablă trapezoidală", material: "Oțel", thickness: "0.7", lambda: 58.0, rho: 7850 },
-      ]},
-      { name: "Placă pe sol — XPS 10cm", type: "PL", orientation: "Orizontal", area: "2200", layers: [
-        { matName: "Rășină epoxidică", material: "Gresie ceramică", thickness: "5", lambda: 1.30, rho: 2300 },
-        { matName: "Șapă armată", material: "Șapă ciment", thickness: "100", lambda: 1.40, rho: 2000 },
-        { matName: "XPS 10cm", material: "Polistiren extrudat XPS", thickness: "100", lambda: 0.034, rho: 35 },
-        { matName: "Radier beton", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
-      ]},
-    ]);
-    setGlazingElements([
-      { name: "Vitrine comerciale dublu vitraj Low-E (fațadă principală)", glazingType: "Dublu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.40", g: "0.40", area: "180", orientation: "S", frameRatio: "12" },
-      { name: "Uși automate acces dublu Low-E", glazingType: "Dublu vitraj Low-E", frameType: "Aluminiu cu RPT", u: "1.80", g: "0.45", area: "20", orientation: "S", frameRatio: "20" },
-    ]);
-    setThermalBridges([
-      { name: "Soclu hală — izolat perimetral", type: "Joncțiuni pereți", psi: "0.12", length: "200" },
-      { name: "Cornișă acoperiș — profil sandwich", type: "Acoperiș", psi: "0.08", length: "200" },
-      { name: "Glafuri vitrine", type: "Ferestre", psi: "0.05", length: "90" },
-    ]);
-    setHeating({
-      source: "PC_AA", power: "80", eta_gen: "3.20",
-      nominalPower: "80",
-      emission: "AERO", eta_em: "0.88",
-      distribution: "BINE_INT", eta_dist: "0.95",
-      control: "INTELIG", eta_ctrl: "0.97",
-      regime: "intermitent", theta_int: "19", nightReduction: "5",
-      tStaircase: "", tBasement: "", tAttic: "",
-    });
-    setAcm({
-      source: "BOILER_E", consumers: "30", dailyLiters: "10",
-      storageVolume: "150", storageLoss: "2.0",
-      pipeLength: "15", pipeInsulated: true,
-      circRecirculation: false, circHours: "",
-    });
-    setCooling({
-      system: "CHILLER_A", power: "150", eer: "3.00",
-      cooledArea: "2200", distribution: "BINE_INT",
-      hasCooling: true,
-    });
-    setVentilation({
-      type: "UTA", airflow: "12000", fanPower: "4000",
-      operatingHours: "3500", hrEfficiency: "75",
-    });
-    setLighting({
-      type: "LED_PRO", pDensity: "3.5", controlType: "PREZ_DAY",
-      fCtrl: "0.60", operatingHours: "3000", naturalLightRatio: "15",
-    });
-    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
-    setPhotovoltaic({
-      ...INITIAL_PV, enabled: true,
-      type: "MONO", area: "280", orientation: "S", tilt: "5",
-      inverterType: "PREM", inverterEta: "0.97",
-      peakPower: "50", usage: "autoconsum",
-    });
-    setHeatPump({
-      ...INITIAL_HP, enabled: true,
-      type: "PC_AA", cop: "3.20",
-      scopHeating: "2.80", covers: "heating",
-    });
-    setBiomass({ ...INITIAL_BIO, enabled: false });
-    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
-    setAuditor({
-      name: "ing. Lazăr Bogdan-Nicolae",
-      atestat: "CT-02450",
-      grade: "I",
-      company: "West Energy Consulting SRL",
-      phone: "0745 890 123",
-      email: "lazar@westenergy.ro",
-      date: new Date().toISOString().slice(0, 10),
-      mdlpaCode: "",
-      observations: "Supermarket nou P din 2025, structură metalică cu panouri sandwich. Încălzire/răcire prin pompă de căldură aer-apă 80kW + chiller aer 150kW, distribuție prin UTA centralizată cu recuperare 75%. Iluminat LED profesional cu senzori prezență și lumină naturală. PV 50kWp pe acoperiș (280m² panouri mono pe suport metalic). Consum ridicat de răcire datorat echipamentelor frigorifice. EV charger ready cu 4 stații pregătite. Clasă energetică estimată A-B.",
-      photo: "",
-    });
-    setStep(1);
-    showToast("Demo 6 încărcat — Supermarket nou Timișoara cu chiller + UTA + PV 50kWp.", "success", 5000);
+    showToast("Demo 8 încărcat — Pensiune turistică Sibiu cu cazan peleți 60kW + solar termic 8m² + PV 8kWp. Clasă C.", "success", 5000);
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
@@ -4533,6 +4684,7 @@ export default function EnergyCalcApp({ cloud }) {
             autoDetectLocality={autoDetectLocality} estimateGeometry={estimateGeometry} avRatio={avRatio}
             loadFullDemo={loadFullDemo} loadFullDemo2={loadFullDemo2} loadFullDemo3={loadFullDemo3}
             loadFullDemo4={loadFullDemo4} loadFullDemo5={loadFullDemo5} loadFullDemo6={loadFullDemo6}
+            loadFullDemo7={loadFullDemo7} loadFullDemo8={loadFullDemo8}
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
           />}
