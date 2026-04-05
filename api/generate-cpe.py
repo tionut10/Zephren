@@ -217,13 +217,21 @@ _CO2_CLASS_POS_V = {
 
 
 def _update_shape_pos_v(shape_xml_str, new_pos_v):
-    """Update the posOffset within positionV in a mc:AlternateContent XML string."""
-    # Replace the posOffset value inside <wp:positionV ...><wp:posOffset>VALUE</wp:posOffset>
-    return re.sub(
+    """Update BOTH the modern (wp:anchor posOffset) and VML fallback (style top:) positions."""
+    # 1. Update wp:anchor posOffset
+    result = re.sub(
         r'(<wp:positionV[^>]*>[\s\S]*?<wp:posOffset>)-?\d+(</wp:posOffset>)',
         lambda m: m.group(1) + str(new_pos_v) + m.group(2),
         shape_xml_str
     )
+    # 2. Update VML fallback style "top:XXpt" — convert EMU to pt (1pt = 12700 EMU)
+    new_top_pt = round(new_pos_v / 12700, 1)
+    result = re.sub(
+        r'(style="[^"]*?)top:\s*-?[\d.]+pt',
+        lambda m: m.group(1) + "top:" + str(new_top_pt) + "pt",
+        result
+    )
+    return result
 
 
 def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
