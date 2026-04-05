@@ -426,6 +426,293 @@ def toggle_checkboxes(doc, indices):
 
 
 # ═══════════════════════════════════════════════════════
+# COMPUTE CHECKBOXES — mapare date clădire → indici checkbox Anexa
+# ═══════════════════════════════════════════════════════
+
+# U referință Mc 001-2022 (nZEB)
+_U_REF_RES = {"PE":0.25,"PR":0.67,"PS":0.29,"PT":0.15,"PP":0.15,"PB":0.29,"PL":0.20,"SE":0.20}
+_U_REF_NRES = {"PE":0.33,"PR":0.80,"PS":0.35,"PT":0.17,"PP":0.17,"PB":0.35,"PL":0.22,"SE":0.22}
+
+
+def compute_checkboxes(data, category):
+    """Compute checkbox indices to toggle based on building data.
+    Returns list of 0-based indices for the 308-checkbox Anexa clădire template."""
+    cbs = []
+    is_res = category in ("RI", "RC", "RA")
+    u_ref = _U_REF_RES if is_res else _U_REF_NRES
+
+    # Parse opaque U-values
+    try:
+        opaque_u = json.loads(data.get("opaque_u_values", "[]"))
+    except:
+        opaque_u = []
+    glaz_max_u = float(data.get("glazing_max_u", "0") or "0")
+
+    # ══════════════════════════════
+    # ANEXA 1 — RECOMANDĂRI (CB 0-47)
+    # ══════════════════════════════
+
+    # Anvelopă — bifăm dacă U calculat > U referință
+    if any(e.get("type") == "PE" and float(e.get("u", 0)) > u_ref.get("PE", 0.25) for e in opaque_u):
+        cbs.append(0)  # Pereți exteriori
+    if any(e.get("type") == "PB" and float(e.get("u", 0)) > u_ref.get("PB", 0.29) for e in opaque_u):
+        cbs.append(1)  # Planșeu subsol
+    if any(e.get("type") in ("PT", "PP") and float(e.get("u", 0)) > u_ref.get(e["type"], 0.15) for e in opaque_u):
+        cbs.append(2)  # Terasă/pod
+    if any(e.get("type") in ("PL", "SE") and float(e.get("u", 0)) > u_ref.get(e["type"], 0.20) for e in opaque_u):
+        cbs.append(3)  # Planșee contact exterior
+    # CB5: tâmplărie
+    u_glaz_ref = 1.30 if is_res else 1.80
+    if glaz_max_u > u_glaz_ref:
+        cbs.append(5)
+    # CB6: grile ventilare
+    vent_type = data.get("ventilation_type", "")
+    if not vent_type or vent_type == "natural_neorg":
+        cbs.append(6)
+    # CB13: robinete termostat
+    h_src = data.get("heating_source", "")
+    if h_src and h_src not in ("electric_direct", "pc_aer_aer"):
+        cbs.append(13)
+    # CB21: automatizare
+    h_ctrl = data.get("heating_control", "")
+    if not h_ctrl or h_ctrl == "manual":
+        cbs.append(21)
+    # CB25: iluminat LED
+    l_type = data.get("lighting_type", "")
+    if l_type and l_type != "led":
+        cbs.append(25)
+    # CB26: senzori prezență
+    l_ctrl = data.get("lighting_control", "")
+    if not l_ctrl or l_ctrl not in ("sensor_presence", "daylight_dimming"):
+        cbs.append(26)
+    # CB27: regenerabile
+    st_en = data.get("solar_thermal_enabled", "") == "true"
+    pv_en = data.get("pv_enabled", "") == "true"
+    if not st_en and not pv_en:
+        cbs.append(27)
+    # CB28: recuperare căldură
+    if not vent_type or "hr" not in vent_type:
+        cbs.append(28)
+
+    # Cost/Savings/Payback (CB 48-64) — valori estimate
+    # Fără financialAnalysis, folosim default-uri
+    cbs.append(50)  # 10k-25k EUR (default mediu)
+    cbs.append(56)  # 20-30% savings
+    cbs.append(62)  # 3-7 ani payback
+
+    # ══════════════════════════════
+    # ANEXA 2 — DATE CLĂDIRE (CB 65+)
+    # ══════════════════════════════
+
+    # Tip clădire (CB 65=existentă, 66=nouă, 67=existentă nefinalizată)
+    year_b = int(data.get("year_built", "2000") or "2000")
+    import datetime
+    if year_b >= datetime.datetime.now().year - 1:
+        cbs.append(66)
+    else:
+        cbs.append(65)
+
+    # Categoria clădirii (CB 68-111)
+    cat_map = {
+        "RI": [68, 69], "RC": [68, 71], "RA": [68, 71],
+        "BI": [79, 80], "ED": [74, 76], "SA": [86, 87],
+        "HC": [94, 95], "CO": [103, 104], "SP": [99, 100],
+        "AL": [108, 111],
+    }
+    for cb in cat_map.get(category, cat_map["AL"]):
+        cbs.append(cb)
+
+    # Zone climatice (CB 112-116 = zone I-V)
+    zone_num = int(data.get("climate_zone_num", "3") or "3")
+    if 1 <= zone_num <= 5:
+        cbs.append(111 + zone_num)
+
+    # Zone eoliene (CB 117-120)
+    wind_zone = 1 if zone_num <= 2 else (2 if zone_num <= 4 else 3)
+    if 1 <= wind_zone <= 4:
+        cbs.append(116 + wind_zone)
+
+    # Structura constructivă (CB 127-134)
+    struct_map = {
+        "Zidărie portantă": 127, "Cadre beton armat": 129,
+        "Panouri prefabricate mari": 133, "Structură metalică": 132,
+        "Structură lemn": 131, "Mixtă": 134,
+    }
+    struct_cb = struct_map.get(data.get("structure", ""), None)
+    if struct_cb:
+        cbs.append(struct_cb)
+
+    # ══════════════════════════════
+    # ANEXA 2 — INSTALAȚII
+    # ══════════════════════════════
+
+    # ÎNCĂLZIRE (CB 135+)
+    if h_src:
+        cbs.append(135)  # Da, funcțională
+    else:
+        cbs.append(137)  # Nu
+
+    if h_src:
+        heat_src_map = {
+            "gaz_conv": 144, "gaz_cond": 144, "termoficare": 146,
+            "electric_direct": 139, "pc_aer_apa": 149, "pc_aer_aer": 139,
+            "pc_sol_apa": 149, "pc_apa_apa": 149, "centrala_gpl": 144,
+            "cazan_lemn": 138, "cazan_peleti": 138, "soba_teracota": 138,
+            "pompa_caldura": 149,
+        }
+        h_cb = heat_src_map.get(h_src)
+        if h_cb:
+            cbs.append(h_cb)
+
+    # Tip sistem încălzire
+    if h_src == "soba_teracota":
+        cbs.append(150)
+    elif h_src == "electric_direct":
+        cbs.append(154)
+    elif h_src:
+        cbs.append(151)  # corpuri statice
+
+    # Distribuție
+    cbs.append(160)  # inferioară (default)
+
+    # ACM (CB 176+)
+    acm_src = data.get("acm_source", "")
+    if acm_src:
+        cbs.append(176)  # Da
+    else:
+        cbs.append(178)  # Nu
+
+    if acm_src:
+        acm_map = {
+            "ct_prop": 181, "boiler_electric": 180, "termoficare": 183,
+            "solar_termic": 179, "pc": 186,
+        }
+        a_cb = acm_map.get(acm_src)
+        if a_cb:
+            cbs.append(a_cb)
+
+    if acm_src == "boiler_electric":
+        cbs.append(187)
+    elif acm_src == "ct_prop":
+        cbs.append(188)
+
+    cbs.append(195)  # Recirculare nu există (default)
+
+    # RĂCIRE (CB 202+)
+    has_cool = data.get("cooling_has", "") == "true"
+    if has_cool:
+        cbs.append(202)
+    else:
+        cbs.append(204)
+
+    if has_cool:
+        cool_src = data.get("cooling_source", "")
+        cool_map = {
+            "split": 214, "chiller_aer": 205, "chiller_apa": 206,
+            "pc_aer_apa": 207, "pc_apa_apa": 208, "pc_aer_aer": 209,
+            "monobloc": 213,
+        }
+        c_cb = cool_map.get(cool_src)
+        if c_cb:
+            cbs.append(c_cb)
+        cbs.append(229)  # Complet climatizat
+        cbs.append(232)  # Fără controlul umidității
+
+    # VENTILARE (CB 256+)
+    has_vent = vent_type and vent_type != "natural_neorg"
+    if has_vent:
+        cbs.append(256)
+    else:
+        cbs.append(258)
+
+    if vent_type == "natural_neorg":
+        cbs.append(259)
+    elif vent_type == "natural_org":
+        cbs.append(260)
+    elif has_vent:
+        cbs.append(261)
+
+    if vent_type and "hr" in vent_type:
+        cbs.append(270)
+    else:
+        cbs.append(271)
+
+    # ILUMINAT (CB 272+)
+    if l_type:
+        cbs.append(272)
+    else:
+        cbs.append(274)
+
+    if l_ctrl == "manual":
+        cbs.append(276)
+    elif l_ctrl == "daylight_dimming":
+        cbs.extend([277, 278])
+    elif l_ctrl == "sensor_presence":
+        cbs.extend([277, 279])
+    else:
+        cbs.append(275)
+
+    if l_type == "fluorescent":
+        cbs.append(281)
+    elif l_type == "incandescent":
+        cbs.append(282)
+    elif l_type == "led":
+        cbs.append(283)
+    else:
+        cbs.append(284)
+
+    cbs.append(285)  # Stare bună (default)
+
+    # REGENERABILE (CB 288+)
+    if st_en:
+        cbs.append(288)
+    else:
+        cbs.append(289)
+    if pv_en:
+        cbs.append(290)
+    else:
+        cbs.append(291)
+
+    hp_en = data.get("heat_pump_enabled", "") == "true"
+    if hp_en:
+        cbs.append(292)
+    else:
+        cbs.append(293)
+
+    if hp_en:
+        hp_type_map = {
+            "sol_apa_deschisa": 294, "sol_apa_inchisa": 295,
+            "aer_apa": 296, "aer_aer": 297, "apa_aer": 298, "sol_aer": 299,
+        }
+        hp_cb = hp_type_map.get(data.get("heat_pump_type", ""))
+        if hp_cb:
+            cbs.append(hp_cb)
+
+    bio_en = data.get("biomass_enabled", "") == "true"
+    if bio_en:
+        cbs.append(301)
+    else:
+        cbs.append(302)
+
+    if bio_en:
+        bio_type = data.get("biomass_type", "")
+        if bio_type == "peleti":
+            cbs.append(303)
+        elif bio_type == "brichete":
+            cbs.append(304)
+        else:
+            cbs.append(305)
+
+    wind_en = data.get("wind_enabled", "") == "true"
+    if wind_en:
+        cbs.append(306)
+    else:
+        cbs.append(307)
+
+    return cbs
+
+
+# ═══════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════
 def format_ro(val, dec=1):
@@ -626,7 +913,12 @@ class handler(BaseHTTPRequestHandler):
             # 4. CHECKBOXES (Anexa)
             # ═══════════════════════════════════════
             if mode == "anexa":
-                cb_indices = body.get("checkboxes", [])
+                # Compute checkbox indices from building data (server-side)
+                cb_indices = compute_checkboxes(data, category)
+                # Also accept client-side overrides if provided
+                client_cbs = body.get("checkboxes", [])
+                if client_cbs:
+                    cb_indices = list(set(cb_indices + client_cbs))
                 if cb_indices:
                     toggle_checkboxes(doc, cb_indices)
 

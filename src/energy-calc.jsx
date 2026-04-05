@@ -10003,6 +10003,36 @@ export default function EnergyCalcApp({ cloud }) {
                     rer: renewSummary ? fmtRo(renewSummary.rer, 1) : "0,0",
                     nzeb: nzebOk ? "DA" : "NU",
                     gwp: fmtRo(gwpTotalDocx, 1),
+                    // Date instalații + anvelopă (pentru checkbox-uri Anexa)
+                    heating_source: heating.source || "",
+                    heating_fuel: heating.fuel || "",
+                    heating_control: heating.control || "",
+                    heating_power: String(heating.nominalPower || 0),
+                    acm_source: acm.source || "",
+                    cooling_source: cooling.source || "",
+                    cooling_has: instSummary?.hasCool ? "true" : "false",
+                    ventilation_type: ventilation.type || "",
+                    lighting_type: lighting.type || "",
+                    lighting_control: lighting.control || "",
+                    solar_thermal_enabled: solarThermal.enabled ? "true" : "false",
+                    pv_enabled: photovoltaic.enabled ? "true" : "false",
+                    heat_pump_enabled: heatPump.enabled ? "true" : "false",
+                    heat_pump_type: heatPump.type || "",
+                    biomass_enabled: biomass.enabled ? "true" : "false",
+                    biomass_type: biomass.type || "",
+                    wind_enabled: (otherRenew && otherRenew.windEnabled) ? "true" : "false",
+                    structure: building.structure || "",
+                    year_built: building.yearBuilt || "",
+                    climate_zone_num: String(parseInt(selectedClimate?.zone) || 3),
+                    opaque_u_values: JSON.stringify(opaqueElements.map(function(el) {
+                      if (!el.layers || el.layers.length === 0) return {type: el.type, u: 0};
+                      var elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
+                      var rsi = elType ? elType.rsi : 0.13;
+                      var rse = elType ? elType.rse : 0.04;
+                      var rL = el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0);
+                      return {type: el.type, u: rL > 0 ? 1/(rsi+rL+rse) : 0};
+                    })),
+                    glazing_max_u: String(Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;}))),
                   },
                 };
 
