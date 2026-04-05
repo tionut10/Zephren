@@ -1,221 +1,137 @@
 import { describe, it, expect } from "vitest";
+import { getEnergyClass, getCO2Class } from "../classification.js";
+import { calcMonthlyISO13790, calcUtilFactor } from "../iso13790.js";
+import CLIMATE_DB from "../../data/climate.json";
 
-// Import functions directly by evaluating the module
-// Since energy-calc.jsx is a React component file, we extract pure functions for testing
-// These tests validate the mathematical correctness of core calculations
+const bucuresti = CLIMATE_DB.find(c => c.name === "București");
+
+// ═══════════════════════════════════════════════════════════════
+// Clasificare energetică — getEnergyClass
+// ═══════════════════════════════════════════════════════════════
 
 describe("getEnergyClass", () => {
-  // Re-implement the classification logic for isolated testing
-  const ENERGY_CLASSES = {
-    RI_nocool: [
-      { cls: "A", max: 87 }, { cls: "B", max: 174 }, { cls: "C", max: 261 },
-      { cls: "D", max: 348 }, { cls: "E", max: 435 }, { cls: "F", max: 522 },
-      { cls: "G", max: Infinity },
-    ],
+  it("clasifică A+ pentru consum foarte scăzut", () => {
+    const r = getEnergyClass(30, "RI_nocool");
+    expect(r.cls).toBe("A+");
+    expect(r.idx).toBe(0);
+  });
+
+  it("clasifică A pentru consum scăzut sub pragul A", () => {
+    const r = getEnergyClass(100, "RI_nocool");
+    expect(r.cls).toBe("A");
+    expect(r.idx).toBe(1);
+  });
+
+  it("clasifică B pentru consum mediu-scăzut", () => {
+    const r = getEnergyClass(150, "RI_nocool");
+    expect(r.cls).toBe("B");
+  });
+
+  it("clasifică G pentru consum foarte ridicat", () => {
+    const r = getEnergyClass(800, "RI_nocool");
+    expect(r.cls).toBe("G");
+    expect(r.idx).toBe(7);
+  });
+
+  it("returnează scor între 1 și 100", () => {
+    const r = getEnergyClass(50, "RI_nocool");
+    expect(r.score).toBeGreaterThanOrEqual(1);
+    expect(r.score).toBeLessThanOrEqual(100);
+  });
+
+  it("returnează placeholder pentru categorie necunoscută", () => {
+    const r = getEnergyClass(100, "INEXISTENT");
+    expect(r.cls).toBe("—");
+    expect(r.idx).toBe(-1);
+  });
+
+  it("funcționează pentru birouri (BI)", () => {
+    const r = getEnergyClass(50, "BI");
+    expect(r.cls).toBe("A+");
+    // 68 e pragul A+ pentru BI
+    const r2 = getEnergyClass(90, "BI");
+    expect(r2.cls).toBe("A");
+  });
+
+  it("clasifică corect la limita exactă a pragului", () => {
+    // RI_nocool thresholds: [78, 110, 220, 340, 460, 575, 690]
+    const r = getEnergyClass(78, "RI_nocool");
+    expect(r.cls).toBe("A+"); // ep <= 78 → A+
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Clasificare CO2 — getCO2Class
+// ═══════════════════════════════════════════════════════════════
+
+describe("getCO2Class", () => {
+  it("clasifică A+ pentru emisii foarte scăzute", () => {
+    const r = getCO2Class(5, "RI");
+    expect(r.cls).toBe("A+");
+  });
+
+  it("clasifică G pentru emisii foarte ridicate", () => {
+    const r = getCO2Class(200, "RI");
+    expect(r.cls).toBe("G");
+  });
+
+  it("folosește categoria AL ca fallback", () => {
+    const r = getCO2Class(5, "CATEGORIE_INEXISTENTA");
+    expect(r.cls).toBeDefined();
+    expect(["A+", "A", "B", "C", "D", "E", "F", "G"]).toContain(r.cls);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ISO 13790 lunar — integrare rapidă cu date climatice reale
+// ═══════════════════════════════════════════════════════════════
+
+describe("calcMonthlyISO13790 — integrare cu date climatice București", () => {
+  const baseParams = {
+    G_env: 150,      // W/K coeficient global pierderi
+    V: 250,          // m³ volum interior
+    Au: 100,         // m² suprafață utilă
+    climate: bucuresti,
+    theta_int: 20,
+    glazingElements: [{ area: 15, g: 0.5, frameRatio: 25, orientation: "S" }],
+    shadingFactor: 0.9,
+    category: "RI",
+    n50: 4,
+    structure: "Zidărie portantă",
   };
 
-  function getEnergyClass(ep, catKey) {
-    const grid = ENERGY_CLASSES[catKey];
-    if (!grid) return { cls: "—", score: 0 };
-    for (let i = 0; i < grid.length; i++) {
-      if (ep <= grid[i].max) {
-        return { cls: grid[i].cls, idx: i, score: Math.max(0, Math.round(100 - (ep / grid[i].max) * 100)) };
+  it("returnează 12 rezultate lunare", () => {
+    const results = calcMonthlyISO13790(baseParams);
+    expect(results).not.toBeNull();
+    expect(results).toHaveLength(12);
+  });
+
+  it("cererea de încălzire este pozitivă iarna (Ianuarie)", () => {
+    const results = calcMonthlyISO13790(baseParams);
+    // Ianuarie: temp ext = -1.5°C, deci deltaT > 0
+    expect(results[0].qH_nd).toBeGreaterThan(0);
+    expect(results[0].name).toBe("Ian");
+  });
+
+  it("cererea de răcire este 0 iarna", () => {
+    const results = calcMonthlyISO13790(baseParams);
+    // Lunile cu temp ext < 15°C nu au răcire
+    expect(results[0].qC_nd).toBe(0); // Ianuarie
+    expect(results[1].qC_nd).toBe(0); // Februarie
+    expect(results[11].qC_nd).toBe(0); // Decembrie
+  });
+
+  it("Q_loss > 0 pentru luni cu deltaT pozitiv", () => {
+    const results = calcMonthlyISO13790(baseParams);
+    for (const m of results) {
+      if (m.deltaT > 0) {
+        expect(m.Q_loss).toBeGreaterThan(0);
       }
     }
-    return { cls: "G", score: 0 };
-  }
-
-  it("classifies A for low ep", () => {
-    expect(getEnergyClass(50, "RI_nocool").cls).toBe("A");
   });
 
-  it("classifies B for medium-low ep", () => {
-    expect(getEnergyClass(100, "RI_nocool").cls).toBe("B");
-  });
-
-  it("classifies G for very high ep", () => {
-    expect(getEnergyClass(600, "RI_nocool").cls).toBe("G");
-  });
-
-  it("returns score between 0-100", () => {
-    const result = getEnergyClass(50, "RI_nocool");
-    expect(result.score).toBeGreaterThanOrEqual(0);
-    expect(result.score).toBeLessThanOrEqual(100);
-  });
-});
-
-describe("EPBD A-G Classification", () => {
-  const EPBD_THRESHOLDS = {
-    RI: { A: 50, B: 75, C: 100, D: 150, E: 200, F: 300 },
-  };
-
-  function getEnergyClassEPBD(ep, cat) {
-    const t = EPBD_THRESHOLDS[cat] || EPBD_THRESHOLDS.RI;
-    const classes = [
-      { cls: "A", max: t.A }, { cls: "B", max: t.B }, { cls: "C", max: t.C },
-      { cls: "D", max: t.D }, { cls: "E", max: t.E }, { cls: "F", max: t.F },
-      { cls: "G", max: Infinity },
-    ];
-    for (const c of classes) {
-      if (ep <= c.max) return { cls: c.cls };
-    }
-    return { cls: "G" };
-  }
-
-  it("A class for ep <= 50", () => {
-    expect(getEnergyClassEPBD(45, "RI").cls).toBe("A");
-  });
-
-  it("B class for 50 < ep <= 75", () => {
-    expect(getEnergyClassEPBD(60, "RI").cls).toBe("B");
-  });
-
-  it("G class for ep > 300", () => {
-    expect(getEnergyClassEPBD(400, "RI").cls).toBe("G");
-  });
-});
-
-describe("TMY Generator", () => {
-  const temp_month = [-1.5, 0.5, 5.5, 11.5, 17.0, 20.5, 22.5, 22.0, 17.0, 11.0, 5.0, 0.5]; // București
-
-  function generateTMY(temp_month, lat) {
-    if (!temp_month || temp_month.length !== 12) return null;
-    const T_ext = new Float64Array(8760);
-    const Q_sol = new Float64Array(8760);
-    const daysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    const latRad = (lat || 45) * Math.PI / 180;
-    const dtr = [7, 8, 10, 11, 12, 12, 13, 13, 11, 10, 7, 6];
-    let rngState = 42;
-    const rng = () => { rngState = (rngState * 1664525 + 1013904223) & 0x7fffffff; return (rngState / 0x7fffffff) * 2 - 1; };
-
-    let h = 0;
-    for (let m = 0; m < 12; m++) {
-      const T_mean = temp_month[m];
-      const halfRange = dtr[m] / 2;
-      const T_next = temp_month[(m + 1) % 12];
-      for (let d = 0; d < daysPerMonth[m]; d++) {
-        const dayFraction = d / daysPerMonth[m];
-        const T_base = T_mean + (T_next - T_mean) * dayFraction * 0.3;
-        const doy = h / 24;
-        const decl = 23.45 * Math.sin(2 * Math.PI * (284 + doy) / 365) * Math.PI / 180;
-        for (let hr = 0; hr < 24; hr++) {
-          const hourAngle = 2 * Math.PI * (hr - 15) / 24;
-          const diurnal = -Math.cos(hourAngle) * halfRange;
-          const noise = rng() * 1.5;
-          T_ext[h] = T_base + diurnal + noise;
-          const hourAngleSolar = (hr - 12) * 15 * Math.PI / 180;
-          const sinAlt = Math.sin(latRad) * Math.sin(decl) + Math.cos(latRad) * Math.cos(decl) * Math.cos(hourAngleSolar);
-          Q_sol[h] = sinAlt > 0.01 ? 1367 * Math.pow(0.7, Math.pow(1 / sinAlt, 0.678)) * sinAlt * (0.45 + 0.15 * Math.sin(2 * Math.PI * (doy - 80) / 365)) : 0;
-          h++;
-        }
-      }
-    }
-    return { T_ext, Q_sol_horiz: Q_sol };
-  }
-
-  it("generates 8760 hourly values", () => {
-    const tmy = generateTMY(temp_month, 44.43);
-    expect(tmy).not.toBeNull();
-    expect(tmy.T_ext.length).toBe(8760);
-    expect(tmy.Q_sol_horiz.length).toBe(8760);
-  });
-
-  it("winter temperatures are cold, summer warm", () => {
-    const tmy = generateTMY(temp_month, 44.43);
-    // January average (hours 0-743)
-    let janSum = 0;
-    for (let i = 0; i < 744; i++) janSum += tmy.T_ext[i];
-    const janAvg = janSum / 744;
-    // July average (hours ~4344-5087)
-    let julSum = 0;
-    for (let i = 4344; i < 5088; i++) julSum += tmy.T_ext[i];
-    const julAvg = julSum / 744;
-    expect(janAvg).toBeLessThan(5);
-    expect(julAvg).toBeGreaterThan(15);
-  });
-
-  it("solar radiation is zero at night", () => {
-    const tmy = generateTMY(temp_month, 44.43);
-    // Check midnight (hour 0) — should be 0 or near 0
-    expect(tmy.Q_sol_horiz[0]).toBe(0);
-    // Check noon in summer — should be positive
-    const noonJuly = 4344 + 12; // July 1, noon
-    expect(tmy.Q_sol_horiz[noonJuly]).toBeGreaterThan(0);
-  });
-
-  it("returns null for invalid input", () => {
-    expect(generateTMY(null, 44)).toBeNull();
-    expect(generateTMY([1, 2, 3], 44)).toBeNull();
-  });
-});
-
-describe("ISO 52016-1 Hourly Calculation", () => {
-  function calcHourlyISO52016(params) {
-    const { T_ext, Au, H_tr, H_ve, C_m, theta_int_set_h, theta_int_set_c, Q_int, Q_sol } = params;
-    if (!T_ext || T_ext.length !== 8760) return { error: "Need 8760h data" };
-    const H_em = H_tr * 0.5;
-    const H_ms = 9.1 * Au;
-    const H_is = 3.45 * Au;
-    const dt = 3600;
-    let theta_m_prev = 20;
-    let qH_total = 0, qC_total = 0;
-    for (let h = 0; h < 8760; h++) {
-      const T_e = T_ext[h];
-      const Q_i = Q_int ? Q_int[h] : Au * 5;
-      const Q_s = Q_sol ? Q_sol[h] : 0;
-      const phi_total = 0.5 * (Q_i + Q_s);
-      const phi_m = H_em * T_e + phi_total * (H_ms / (H_ms + H_em));
-      const theta_m = (theta_m_prev * C_m / dt + phi_m) / (C_m / dt + H_ms + H_em);
-      const theta_free = T_e + (Q_i + Q_s) / (H_tr + H_ve);
-      if (theta_free < theta_int_set_h) {
-        qH_total += Math.max(0, (H_tr + H_ve) * (theta_int_set_h - T_e) - Q_i - Q_s) / 1000;
-      } else if (theta_free > theta_int_set_c) {
-        qC_total += Math.max(0, Q_i + Q_s - (H_tr + H_ve) * (T_e - theta_int_set_c)) / 1000;
-      }
-      theta_m_prev = theta_m;
-    }
-    return { qH_nd_annual: Math.round(qH_total), qC_nd_annual: Math.round(qC_total), error: null };
-  }
-
-  it("calculates heating and cooling needs", () => {
-    const T_ext = new Float64Array(8760);
-    // Simple: cold winter, hot summer
-    for (let h = 0; h < 8760; h++) {
-      const month = Math.floor(h / 730);
-      T_ext[h] = [-5, -3, 3, 10, 16, 22, 25, 24, 18, 10, 3, -3][Math.min(month, 11)];
-    }
-    const result = calcHourlyISO52016({
-      T_ext, Au: 100, H_tr: 150, H_ve: 50, C_m: 100 * 165000,
-      theta_int_set_h: 20, theta_int_set_c: 26,
-    });
-    expect(result.error).toBeNull();
-    expect(result.qH_nd_annual).toBeGreaterThan(0);
-    expect(result.qC_nd_annual).toBeGreaterThanOrEqual(0);
-  });
-
-  it("returns error for wrong data length", () => {
-    const result = calcHourlyISO52016({
-      T_ext: new Float64Array(100), Au: 100, H_tr: 150, H_ve: 50, C_m: 100000,
-      theta_int_set_h: 20, theta_int_set_c: 26,
-    });
-    expect(result.error).toBeTruthy();
-  });
-});
-
-describe("U-value calculation", () => {
-  it("calculates U-value from layers", () => {
-    const layers = [
-      { thickness: 15, lambda: 0.87 },  // plaster 15mm
-      { thickness: 300, lambda: 0.22 },  // BCA 300mm
-      { thickness: 100, lambda: 0.036 }, // EPS 100mm
-      { thickness: 5, lambda: 0.70 },    // render 5mm
-    ];
-    const rsi = 0.13, rse = 0.04;
-    const rLayers = layers.reduce((s, l) => s + (l.thickness / 1000) / l.lambda, 0);
-    const U = 1 / (rsi + rLayers + rse);
-    expect(U).toBeGreaterThan(0.1);
-    expect(U).toBeLessThan(0.5);
-    // BCA 30cm + EPS 10cm should give U ~ 0.25-0.30
-    expect(U).toBeCloseTo(0.27, 1);
+  it("returnează null pentru parametri lipsă", () => {
+    expect(calcMonthlyISO13790({ G_env: 150 })).toBeNull();
+    expect(calcMonthlyISO13790({ climate: bucuresti })).toBeNull();
   });
 });

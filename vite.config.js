@@ -2,57 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 
-// Fix 1 (dev only): Neutralise React Fast Refresh for energy-calc.jsx.
-// The file has 80+ hooks which exceeds Refresh's per-component limit.
-function neutraliseRefreshDev() {
-  return {
-    name: "neutralise-refresh-dev",
-    enforce: "post",
-    apply: "serve",
-    transform(code, id) {
-      if (!id.includes("energy-calc.jsx")) return null;
-      let patched = code;
-      const noop = [
-        "/* react-refresh disabled for this file (hook limit) */",
-        "const $RefreshReg$ = () => {};",
-        "const $RefreshSig$ = () => { const s = (c) => c; s.s = () => {}; return s; };",
-      ].join("\n");
-      patched = patched.replace(
-        /import\s+RefreshRuntime\s+from\s+["']\/?\@react-refresh["'];?/g,
-        noop
-      );
-      patched = patched.replace(
-        /if\s*\(import\.meta\.hot\)\s*\{[\s\S]*?import\.meta\.hot\.accept\(\);\s*\}/g,
-        "/* HMR accept removed — full reload on change */"
-      );
-      return patched !== code ? patched : null;
-    },
-  };
-}
-
-// Fix 2 (dev AND build): Eliminate TDZ for forward-referenced hook vars.
-// Several useMemo/useCallback vars are referenced in dependency arrays of
-// hooks declared earlier in the function body. `const` has TDZ enforcement;
-// converting to `var` matches the safe hoisting behaviour.
-function fixHookTDZ() {
-  return {
-    name: "fix-hook-tdz",
-    enforce: "post",
-    transform(code, id) {
-      if (!id.includes("energy-calc.jsx")) return null;
-      // Convert hook-assigned consts to var to prevent TDZ from
-      // forward references in useCallback dependency arrays.
-      const patched = code.replace(
-        /\bconst\s+(\w+)\s*=\s*(useMemo|useCallback)\(/g,
-        "var $1 = $2("
-      );
-      return patched !== code ? patched : null;
-    },
-  };
-}
+// Post-split: neutraliseRefreshDev and fixHookTDZ are no longer needed.
+// The monolithic energy-calc.jsx (14K+ lines, 80+ hooks) has been split into
+// ~30 modules. React Fast Refresh works correctly with smaller files.
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), neutraliseRefreshDev(), fixHookTDZ()],
+  plugins: [react(), tailwindcss()],
+  test: {
+    exclude: ["e2e/**", "node_modules/**"],
+  },
   resolve: {
     dedupe: ["react", "react-dom"],
   },

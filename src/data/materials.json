@@ -1,0 +1,1061 @@
+[
+  {
+    "cat": "Altele",
+    "name": "Argilă uscată",
+    "lambda": 1.50,
+    "rho": 1700,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Argilă umedă",
+    "lambda": 2.10,
+    "rho": 2000,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Cauciuc EPDM granulat (pardoseală)",
+    "lambda": 0.17,
+    "rho": 1200,
+    "mu": 6000
+  },
+  {
+    "cat": "Altele",
+    "name": "Nisip umed",
+    "lambda": 2.00,
+    "rho": 1900,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Nisip uscat",
+    "lambda": 0.58,
+    "rho": 1500,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Pietriș",
+    "lambda": 0.70,
+    "rho": 1700,
+    "mu": 15
+  },
+  {
+    "cat": "Altele",
+    "name": "Pietriș sortat",
+    "lambda": 2.00,
+    "rho": 1800,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Polistiren reciclat",
+    "lambda": 0.040,
+    "rho": 18,
+    "mu": 35
+  },
+  {
+    "cat": "Altele",
+    "name": "Sol (pământ)",
+    "lambda": 1.50,
+    "rho": 1800,
+    "mu": 50
+  },
+  {
+    "cat": "Altele",
+    "name": "Sticlă (geam simplu)",
+    "lambda": 1.00,
+    "rho": 2500,
+    "mu": 1000000
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer neventilat (1cm)",
+    "lambda": 0.025,
+    "rho": 1.2,
+    "mu": 1,
+    "note": "Rezistență termică R=0.15"
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer neventilat (2cm)",
+    "lambda": 0.14,
+    "rho": 1.2,
+    "mu": 1
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer neventilat (3cm)",
+    "lambda": 0.16,
+    "rho": 1.2,
+    "mu": 1
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer neventilat (5cm)",
+    "lambda": 0.18,
+    "rho": 1.2,
+    "mu": 1
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer neventilat (10cm)",
+    "lambda": 0.18,
+    "rho": 1.2,
+    "mu": 1
+  },
+  {
+    "cat": "Altele",
+    "name": "Strat de aer ventilat (orice grosime)",
+    "lambda": 0,
+    "rho": 1.2,
+    "mu": 1,
+    "note": "Nu adaugă rezistență termică"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton armat",
+    "lambda": 1.74,
+    "rho": 2400,
+    "mu": 100
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton autocompactant (SCC)",
+    "lambda": 1.70,
+    "rho": 2350,
+    "mu": 100
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton cu fibre de sticlă (GRC)",
+    "lambda": 0.50,
+    "rho": 1900,
+    "mu": 50
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton celular neautoclavizat",
+    "lambda": 0.29,
+    "rho": 700,
+    "mu": 6
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton cu agregate ușoare (LC)",
+    "lambda": 0.40,
+    "rho": 1000,
+    "mu": 10
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton de perlit",
+    "lambda": 0.15,
+    "rho": 400,
+    "mu": 4
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton de polistiren (EPS beton)",
+    "lambda": 0.18,
+    "rho": 500,
+    "mu": 5
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton de vermiculit",
+    "lambda": 0.12,
+    "rho": 350,
+    "mu": 4
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton de zgură",
+    "lambda": 0.58,
+    "rho": 1300,
+    "mu": 15
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton fibrat",
+    "lambda": 1.65,
+    "rho": 2300,
+    "mu": 90
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton hemp (hempcrete)",
+    "lambda": 0.06,
+    "rho": 300,
+    "mu": 3
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton precomprimat",
+    "lambda": 1.74,
+    "rho": 2400,
+    "mu": 100
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton simplu",
+    "lambda": 1.28,
+    "rho": 2200,
+    "mu": 70
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton ușor (ponce)",
+    "lambda": 0.52,
+    "rho": 1200,
+    "mu": 8
+  },
+  {
+    "cat": "Betoane",
+    "name": "Șapă anhidrit",
+    "lambda": 1.20,
+    "rho": 2100,
+    "mu": 20
+  },
+  {
+    "cat": "Betoane",
+    "name": "Șapă autonivelantă",
+    "lambda": 1.40,
+    "rho": 1900,
+    "mu": 40
+  },
+  {
+    "cat": "Betoane",
+    "name": "Șapă ciment",
+    "lambda": 1.40,
+    "rho": 2000,
+    "mu": 50
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Covor PVC",
+    "lambda": 0.17,
+    "rho": 1500,
+    "mu": 10000
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Faianță ceramică",
+    "lambda": 1.00,
+    "rho": 2000,
+    "mu": 200
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Fibrogips (Fermacell)",
+    "lambda": 0.32,
+    "rho": 1150,
+    "mu": 13
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Gips-carton",
+    "lambda": 0.25,
+    "rho": 900,
+    "mu": 8
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Gips-carton rezistent apă",
+    "lambda": 0.25,
+    "rho": 950,
+    "mu": 10
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Gips-carton rezistent foc",
+    "lambda": 0.25,
+    "rho": 1000,
+    "mu": 8
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Gresie ceramică",
+    "lambda": 1.30,
+    "rho": 2300,
+    "mu": 200
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Linoleum",
+    "lambda": 0.17,
+    "rho": 1200,
+    "mu": 1000
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Mortar adeziv",
+    "lambda": 0.90,
+    "rho": 1800,
+    "mu": 10
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Panouri HPL",
+    "lambda": 0.30,
+    "rho": 1400,
+    "mu": 200
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Parchet lemn",
+    "lambda": 0.18,
+    "rho": 600,
+    "mu": 50
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Parchet stratificat",
+    "lambda": 0.17,
+    "rho": 570,
+    "mu": 50
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placaj ceramic exterior",
+    "lambda": 1.20,
+    "rho": 2000,
+    "mu": 200
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placaj din lemn",
+    "lambda": 0.15,
+    "rho": 550,
+    "mu": 50
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placi fibrociment",
+    "lambda": 0.35,
+    "rho": 1400,
+    "mu": 30
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Stucco decorativ",
+    "lambda": 0.80,
+    "rho": 1700,
+    "mu": 10
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială acrilică (exterior)",
+    "lambda": 0.70,
+    "rho": 1500,
+    "mu": 15
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială de ipsos",
+    "lambda": 0.40,
+    "rho": 1200,
+    "mu": 7
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială decorativă",
+    "lambda": 0.70,
+    "rho": 1600,
+    "mu": 10
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială termoizolantă",
+    "lambda": 0.08,
+    "rho": 250,
+    "mu": 8
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială termoizolantă aerogelică",
+    "lambda": 0.028,
+    "rho": 200,
+    "mu": 5
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială var-ciment",
+    "lambda": 0.87,
+    "rho": 1800,
+    "mu": 10
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Barieră vapori aluminiu",
+    "lambda": 200,
+    "rho": 2700,
+    "mu": 1000000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Bitum (membrană)",
+    "lambda": 0.17,
+    "rho": 1050,
+    "mu": 50000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Bitum modificat APP",
+    "lambda": 0.17,
+    "rho": 1100,
+    "mu": 50000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Bitum modificat SBS",
+    "lambda": 0.17,
+    "rho": 1050,
+    "mu": 50000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Folie PE",
+    "lambda": 0.40,
+    "rho": 980,
+    "mu": 100000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Geotextil",
+    "lambda": 0.04,
+    "rho": 150,
+    "mu": 5
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrana drenantă HDPE",
+    "lambda": 0.40,
+    "rho": 950,
+    "mu": 100000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană EPDM",
+    "lambda": 0.25,
+    "rho": 1150,
+    "mu": 6000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană PVC",
+    "lambda": 0.16,
+    "rho": 1350,
+    "mu": 30000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană TPO/FPO",
+    "lambda": 0.22,
+    "rho": 1100,
+    "mu": 50000
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Polimer lichid (acoperiș)",
+    "lambda": 0.20,
+    "rho": 1200,
+    "mu": 15000
+  },
+  {
+    "cat": "Lemn",
+    "name": "Bambus laminat",
+    "lambda": 0.17,
+    "rho": 700,
+    "mu": 50
+  },
+  {
+    "cat": "Lemn",
+    "name": "CLT (Cross Laminated Timber)",
+    "lambda": 0.12,
+    "rho": 470,
+    "mu": 50
+  },
+  {
+    "cat": "Lemn",
+    "name": "Fag",
+    "lambda": 0.17,
+    "rho": 680,
+    "mu": 50
+  },
+  {
+    "cat": "Lemn",
+    "name": "Glulam (lemn lamelat)",
+    "lambda": 0.13,
+    "rho": 450,
+    "mu": 40
+  },
+  {
+    "cat": "Lemn",
+    "name": "HDF",
+    "lambda": 0.18,
+    "rho": 900,
+    "mu": 20
+  },
+  {
+    "cat": "Lemn",
+    "name": "Lemn moale (brad/molid)",
+    "lambda": 0.14,
+    "rho": 500,
+    "mu": 30
+  },
+  {
+    "cat": "Lemn",
+    "name": "Lemn tare (stejar)",
+    "lambda": 0.18,
+    "rho": 700,
+    "mu": 50
+  },
+  {
+    "cat": "Lemn",
+    "name": "LVL (Laminated Veneer Lumber)",
+    "lambda": 0.13,
+    "rho": 510,
+    "mu": 50
+  },
+  {
+    "cat": "Lemn",
+    "name": "MDF",
+    "lambda": 0.14,
+    "rho": 750,
+    "mu": 12
+  },
+  {
+    "cat": "Lemn",
+    "name": "Mesteacăn",
+    "lambda": 0.14,
+    "rho": 510,
+    "mu": 35
+  },
+  {
+    "cat": "Lemn",
+    "name": "OSB",
+    "lambda": 0.13,
+    "rho": 600,
+    "mu": 30
+  },
+  {
+    "cat": "Lemn",
+    "name": "OSB3 structural",
+    "lambda": 0.13,
+    "rho": 620,
+    "mu": 30
+  },
+  {
+    "cat": "Lemn",
+    "name": "PAL",
+    "lambda": 0.15,
+    "rho": 650,
+    "mu": 25
+  },
+  {
+    "cat": "Lemn",
+    "name": "Pin",
+    "lambda": 0.14,
+    "rho": 520,
+    "mu": 35
+  },
+  {
+    "cat": "Lemn",
+    "name": "Plop",
+    "lambda": 0.12,
+    "rho": 400,
+    "mu": 20
+  },
+  {
+    "cat": "Metale",
+    "name": "Aluminiu",
+    "lambda": 200,
+    "rho": 2700,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Cupru",
+    "lambda": 380,
+    "rho": 8900,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Oțel",
+    "lambda": 58,
+    "rho": 7850,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Oțel inoxidabil",
+    "lambda": 17,
+    "rho": 7900,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Plumb",
+    "lambda": 35,
+    "rho": 11340,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Tablă zincată",
+    "lambda": 58,
+    "rho": 7850,
+    "mu": 1000000
+  },
+  {
+    "cat": "Metale",
+    "name": "Zinc",
+    "lambda": 110,
+    "rho": 7140,
+    "mu": 1000000
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Aerogel",
+    "lambda": 0.015,
+    "rho": 120,
+    "mu": 5
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Aerogel mat",
+    "lambda": 0.016,
+    "rho": 150,
+    "mu": 5
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Bumbac reciclat (izolație)",
+    "lambda": 0.040,
+    "rho": 30,
+    "mu": 2
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Celuloză insuflată",
+    "lambda": 0.039,
+    "rho": 55,
+    "mu": 2
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Cânepă (hemp)",
+    "lambda": 0.042,
+    "rho": 40,
+    "mu": 2
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "EPS 150 (compresiune)",
+    "lambda": 0.035,
+    "rho": 25,
+    "mu": 50
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "EPS 200 (trafic greu)",
+    "lambda": 0.035,
+    "rho": 30,
+    "mu": 60
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Fibră de lemn",
+    "lambda": 0.042,
+    "rho": 160,
+    "mu": 3
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Fibră de lemn flexibilă",
+    "lambda": 0.040,
+    "rho": 50,
+    "mu": 2
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Fibră de lemn rigidă (fațadă)",
+    "lambda": 0.038,
+    "rho": 230,
+    "mu": 5
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Lână de oaie",
+    "lambda": 0.038,
+    "rho": 25,
+    "mu": 2
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Neopor Plus (BASF)",
+    "lambda": 0.030,
+    "rho": 20,
+    "mu": 40
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Paie comprimate",
+    "lambda": 0.052,
+    "rho": 100,
+    "mu": 3
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Perlit expandat vrac",
+    "lambda": 0.055,
+    "rho": 80,
+    "mu": 3
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Perlită expandată",
+    "lambda": 0.050,
+    "rho": 100,
+    "mu": 3
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "PIR cu folie alu",
+    "lambda": 0.022,
+    "rho": 32,
+    "mu": 10000
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "PIR sandwich panel",
+    "lambda": 0.021,
+    "rho": 35,
+    "mu": 60
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plută expandată",
+    "lambda": 0.045,
+    "rho": 120,
+    "mu": 15
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Polistiren expandat EPS 100",
+    "lambda": 0.036,
+    "rho": 25,
+    "mu": 50
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Polistiren expandat EPS 60",
+    "lambda": 0.044,
+    "rho": 15,
+    "mu": 30
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Polistiren expandat EPS 80",
+    "lambda": 0.039,
+    "rho": 20,
+    "mu": 40
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Polistiren extrudat XPS",
+    "lambda": 0.034,
+    "rho": 35,
+    "mu": 100
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Polistiren grafitat EPS Neo",
+    "lambda": 0.031,
+    "rho": 20,
+    "mu": 40
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "PUR proiectat in situ",
+    "lambda": 0.028,
+    "rho": 40,
+    "mu": 50
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă fenolică (Kooltherm)",
+    "lambda": 0.020,
+    "rho": 35,
+    "mu": 50
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă poliizocianurică (PIR)",
+    "lambda": 0.023,
+    "rho": 32,
+    "mu": 60
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă poliuretanică (PUR)",
+    "lambda": 0.025,
+    "rho": 35,
+    "mu": 60
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Sticlă celulară (Foamglas)",
+    "lambda": 0.040,
+    "rho": 115,
+    "mu": 100000
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vacuum Insulation Panel (VIP)",
+    "lambda": 0.007,
+    "rho": 200,
+    "mu": 100000
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată bazaltică acoperiș",
+    "lambda": 0.037,
+    "rho": 180,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată bazaltică fațadă",
+    "lambda": 0.036,
+    "rho": 120,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată bazaltică HD",
+    "lambda": 0.035,
+    "rho": 150,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată minerală bazaltică",
+    "lambda": 0.040,
+    "rho": 100,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată minerală de sticlă",
+    "lambda": 0.038,
+    "rho": 25,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vată minerală λ=0.032 (premium)",
+    "lambda": 0.032,
+    "rho": 40,
+    "mu": 1
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vermiculit expandat",
+    "lambda": 0.070,
+    "rho": 100,
+    "mu": 3
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "XPS 300 (fundații)",
+    "lambda": 0.033,
+    "rho": 40,
+    "mu": 150
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "XPS 500 (trafic greu)",
+    "lambda": 0.033,
+    "rho": 50,
+    "mu": 200
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "XPS CO₂ (ecologic)",
+    "lambda": 0.033,
+    "rho": 33,
+    "mu": 150
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA (beton celular autoclavizat)",
+    "lambda": 0.22,
+    "rho": 600,
+    "mu": 6
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA densitate mică",
+    "lambda": 0.16,
+    "rho": 450,
+    "mu": 6
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA Ytong",
+    "lambda": 0.12,
+    "rho": 400,
+    "mu": 5
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA Ytong Plus",
+    "lambda": 0.07,
+    "rho": 300,
+    "mu": 5
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA Ytong λ=0.09",
+    "lambda": 0.09,
+    "rho": 300,
+    "mu": 5
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc beton ușor (argex)",
+    "lambda": 0.23,
+    "rho": 600,
+    "mu": 5
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 25",
+    "lambda": 0.27,
+    "rho": 850,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 30",
+    "lambda": 0.21,
+    "rho": 800,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 30 N+F",
+    "lambda": 0.23,
+    "rho": 820,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 38 T Profi",
+    "lambda": 0.13,
+    "rho": 680,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 44",
+    "lambda": 0.17,
+    "rho": 750,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 44 T Profi",
+    "lambda": 0.12,
+    "rho": 660,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Porotherm 50 T Profi",
+    "lambda": 0.11,
+    "rho": 650,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc ceramic Wienerberger 30",
+    "lambda": 0.21,
+    "rho": 800,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc de beton vibropresate",
+    "lambda": 1.10,
+    "rho": 2000,
+    "mu": 15
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Bloc Ytong Energo+",
+    "lambda": 0.06,
+    "rho": 275,
+    "mu": 5
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă aparentă (clinker)",
+    "lambda": 1.05,
+    "rho": 2000,
+    "mu": 50
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă cu goluri (GVP)",
+    "lambda": 0.46,
+    "rho": 1200,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă eficientă",
+    "lambda": 0.33,
+    "rho": 900,
+    "mu": 8
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă plină",
+    "lambda": 0.80,
+    "rho": 1800,
+    "mu": 10
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă silico-calcar",
+    "lambda": 0.99,
+    "rho": 1900,
+    "mu": 20
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Piatră naturală",
+    "lambda": 2.30,
+    "rho": 2600,
+    "mu": 200
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Zidărie de piatră de calcar",
+    "lambda": 1.40,
+    "rho": 2200,
+    "mu": 50
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Zidărie din cărămidă de zgură",
+    "lambda": 0.60,
+    "rho": 1400,
+    "mu": 15
+  }
+]

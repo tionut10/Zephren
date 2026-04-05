@@ -1,0 +1,242 @@
+[
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Planșeu intermediar",
+    "psi": 0.1,
+    "desc": "Joncțiune perete exterior cu planșeu intermediar",
+    "psi_izolat": 0.04,
+    "detail": "Planșeul din beton traversează peretele exterior, creând o punte liniară. Cu izolație continuă pe fațadă se reduce la Ψ≈0,04."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Planșeu terasă",
+    "psi": 0.15,
+    "desc": "Joncțiune perete exterior cu planșeu terasă",
+    "psi_izolat": 0.06,
+    "detail": "Atic/cornișă unde planșeul terasă întâlnește peretele. Risc condensare. Cu izolație continuă: Ψ≈0,06."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Planșeu peste subsol",
+    "psi": 0.2,
+    "desc": "Joncțiune perete exterior cu planșeu peste subsol",
+    "psi_izolat": 0.08,
+    "detail": "Zona soclu/CTS. Cea mai frecventă punte termică la blocuri vechi. Izolație perimetrală fundație: Ψ≈0,08."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Soclu/fundație",
+    "psi": 0.25,
+    "desc": "Joncțiune perete exterior cu soclu sau fundație",
+    "psi_izolat": 0.1,
+    "detail": "Fundația din beton conduce căldura direct în sol. Izolație XPS perimetral min 60cm adâncime: Ψ≈0,10."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Colț exterior",
+    "psi": 0.05,
+    "desc": "Colț exterior al clădirii",
+    "psi_izolat": 0.02,
+    "detail": "Convergența a două suprafețe exterioare. Suprafața interioară mai mică → răcire. Cu izolație continuă: Ψ≈0,02."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Colț interior",
+    "psi": -0.05,
+    "desc": "Colț interior al clădirii (favorabil)",
+    "psi_izolat": -0.03,
+    "detail": "Suprafața interioară mai mare decât cea exterioară → efect favorabil (Ψ negativ). Reduce pierderea totală."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Perete int. portant",
+    "psi": 0.05,
+    "desc": "Joncțiune perete exterior cu perete interior portant",
+    "psi_izolat": 0.02,
+    "detail": "Peretele interior penetrează izolația exterioară. Cu izolație termică pe prima porțiune (≈50cm) a peretelui interior: Ψ≈0,02."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete ext. — Planșeu pe sol",
+    "psi": 0.3,
+    "desc": "Joncțiune perete exterior cu placa pe sol",
+    "psi_izolat": 0.12,
+    "detail": "Placa de beton pe sol fără ruptură termică la perete. Izolație sub placă + perimetrală: Ψ≈0,12."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Glaf fereastră — montaj standard",
+    "psi": 0.08,
+    "desc": "Perimetrul ferestrei (montaj în zidărie)",
+    "psi_izolat": 0.03,
+    "detail": "Tâmplăria montată în planul zidăriei, fără acoperirea ramei cu izolație. Montaj în planul izolației: Ψ≈0,03."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Glaf fereastră — montaj în izolație",
+    "psi": 0.04,
+    "desc": "Perimetrul ferestrei (montaj în planul termoizolației)",
+    "psi_izolat": 0.02,
+    "detail": "Tâmplăria pozitionată în dreptul stratului termoizolant → punte redusă. Cu bandă precomprimată: Ψ≈0,02."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Glaf fereastră — montaj complet izolat",
+    "psi": 0.02,
+    "desc": "Montaj cu console izolate (RAL)",
+    "psi_izolat": 0.01,
+    "detail": "Montaj conform RAL cu console portante izolate, bandă interioară/exterioară, revenire izolație: Ψ≈0,01."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Prag ușă exterioară",
+    "psi": 0.1,
+    "desc": "Prag ușă la exterior",
+    "psi_izolat": 0.05,
+    "detail": "Pragul metalic/beton al ușii exterioare. Cu prag cu ruptură termică: Ψ≈0,05."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Pervaz/glaf sub fereastră",
+    "psi": 0.06,
+    "desc": "Zona sub glaf (pervaz exterior)",
+    "psi_izolat": 0.03,
+    "detail": "Zona de sub fereastră unde se montează radiatorul. Izolația continuă sub glaf: Ψ≈0,03."
+  },
+  {
+    "cat": "Balcoane",
+    "name": "Consolă balcon — beton neîntrerupt",
+    "psi": 0.7,
+    "desc": "Consolă balcon beton fără ruptură termică",
+    "psi_izolat": 0.15,
+    "detail": "CEA MAI GRAVĂ punte termică! Placa de beton a balconului continuă din planșeul interior. Cu ruptoare termice (Schöck Isokorb): Ψ≈0,15."
+  },
+  {
+    "cat": "Balcoane",
+    "name": "Consolă balcon — cu ruptoare termice",
+    "psi": 0.15,
+    "desc": "Consolă balcon cu ruptoare termice (Isokorb etc.)",
+    "psi_izolat": 0.08,
+    "detail": "Ruptoarele termice întrerup transmisia prin placa de beton. Soluție premium: Ψ≈0,08."
+  },
+  {
+    "cat": "Balcoane",
+    "name": "Loggie — parapete beton",
+    "psi": 0.3,
+    "desc": "Loggie cu parapete din beton",
+    "psi_izolat": 0.1,
+    "detail": "Parapetele de beton ale loggiei transmit căldură. Izolație termică pe parapet + sub balcon: Ψ≈0,10."
+  },
+  {
+    "cat": "Balcoane",
+    "name": "Balcon închis (extindere)",
+    "psi": 0.4,
+    "desc": "Balcon închis neizolat termic",
+    "psi_izolat": 0.12,
+    "detail": "Balcon închis cu tâmplărie dar fără izolație termică pe placa de beton. Izolație completă + tâmplărie performantă: Ψ≈0,12."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Cornișă acoperiș — streașină",
+    "psi": 0.1,
+    "desc": "Cornișă / streașină acoperiș",
+    "psi_izolat": 0.04,
+    "detail": "Zona unde acoperișul se prelungește peste perete. Continuitatea izolației la cornișă: Ψ≈0,04."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Coamă acoperiș",
+    "psi": 0.05,
+    "desc": "Coamă acoperiș înclinat",
+    "psi_izolat": 0.02,
+    "detail": "Vârful acoperișului unde se întâlnesc cele două pante. Impact redus dacă izolația e continuă."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Luminatoare / trapă acces pod",
+    "psi": 0.15,
+    "desc": "Perimetrul luminatoarelor sau trapei de acces",
+    "psi_izolat": 0.06,
+    "detail": "Deschideri în planșeul terasă sau acoperiș. Cu ramă izolată termic: Ψ≈0,06."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Parapetul atic",
+    "psi": 0.12,
+    "desc": "Aticul de pe terasă (bloc)",
+    "psi_izolat": 0.05,
+    "detail": "Aticul de pe blocuri: beton/zidărie neizolat continuă puntea de la perete la terasă. Cu izolație continuă pe atic: Ψ≈0,05."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Jgheab/streașină metalică",
+    "psi": 0.08,
+    "desc": "Suport metalic jgheab streașină",
+    "psi_izolat": 0.03,
+    "detail": "Console metalice pentru jgheab penetrează izolația. Cu console din inox sau poliamidă: Ψ≈0,03."
+  },
+  {
+    "cat": "Stâlpi/grinzi",
+    "name": "Stâlp beton în perete exterior",
+    "psi": 0.15,
+    "desc": "Stâlp beton armat în perete exterior",
+    "psi_izolat": 0.05,
+    "detail": "Stâlpul de beton are λ=1,74, mult mai mare decât zidăria. Cu izolație continuă pe fațadă acoperind stâlpul: Ψ≈0,05."
+  },
+  {
+    "cat": "Stâlpi/grinzi",
+    "name": "Grindă de centură / buiandrug",
+    "psi": 0.12,
+    "desc": "Grindă de centură / buiandrug beton",
+    "psi_izolat": 0.04,
+    "detail": "Centura de beton la nivel planșeu. Cu izolație continuă care acoperă grinda: Ψ≈0,04."
+  },
+  {
+    "cat": "Stâlpi/grinzi",
+    "name": "Stâlp metalic neîntrerupt",
+    "psi": 0.2,
+    "desc": "Stâlp metalic neîntrerupt termic",
+    "psi_izolat": 0.08,
+    "detail": "Oțelul are λ=58 W/mK — punte termică severă. Cu ruptură termică sau carcasă izolată: Ψ≈0,08."
+  },
+  {
+    "cat": "Stâlpi/grinzi",
+    "name": "Grindă metalică în perete",
+    "psi": 0.25,
+    "desc": "Grindă IPE/HEA care penetrează peretele",
+    "psi_izolat": 0.1,
+    "detail": "Grinda de oțel penetrează complet anvelopa. Cu capăt izolat și ruptură termică: Ψ≈0,10."
+  },
+  {
+    "cat": "Instalații",
+    "name": "Țeavă neizolată prin perete ext.",
+    "psi": 0.15,
+    "desc": "Conducte care traversează peretele exterior",
+    "psi_izolat": 0.03,
+    "detail": "Treceri instalații prin perete exterior. Cu manșon izolant și spumă PUR la anulare: Ψ≈0,03."
+  },
+  {
+    "cat": "Instalații",
+    "name": "Canal ventilare prin perete",
+    "psi": 0.2,
+    "desc": "Canal/tubulătură ventilare prin anvelopă",
+    "psi_izolat": 0.06,
+    "detail": "Canalele de ventilare din tablă sau beton penetrează izolația. Cu racord izolat termic: Ψ≈0,06."
+  },
+  {
+    "cat": "Instalații",
+    "name": "Coș de fum exterior",
+    "psi": 0.3,
+    "desc": "Coș de fum aderent la perete exterior",
+    "psi_izolat": 0.1,
+    "detail": "Coșul de fum din beton/zidărie aderent la peretele exterior. Cu izolație pe coș: Ψ≈0,10."
+  },
+  {
+    "cat": "Instalații",
+    "name": "Cutie de jaluzele (casetă roletă)",
+    "psi": 0.3,
+    "desc": "Casetă roletă/jaluzea în peretele exterior",
+    "psi_izolat": 0.1,
+    "detail": "Caseta de roletă din plastic/aluminiu înlocuiește izolația deasupra ferestrei. Cu casetă izolată termic: Ψ≈0,10."
+  }
+]
