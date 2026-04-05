@@ -5386,6 +5386,36 @@ export default function EnergyCalcApp({ cloud }) {
     return Math.round(score / total * 100);
   }, [building, opaqueElements, glazingElements, heating, instSummary, renewSummary, auditor]);
 
+  // Validare per pas — avertizare la navigare forward
+  const validateStep = (currentStep) => {
+    const Au = parseFloat(building.areaUseful) || 0;
+    const Vol = parseFloat(building.volume) || 0;
+    const warns = [];
+    if (currentStep === 1) {
+      if (Au <= 0) warns.push("Suprafața utilă (Au) este obligatorie");
+      if (Vol <= 0) warns.push("Volumul interior este obligatoriu");
+      if (!building.locality) warns.push("Selectați localitatea");
+      if (!building.category) warns.push("Selectați categoria funcțională");
+    } else if (currentStep === 2) {
+      if (opaqueElements.length === 0) warns.push("Adăugați cel puțin un element opac");
+      if (glazingElements.length === 0) warns.push("Adăugați cel puțin un element vitrat");
+    } else if (currentStep === 3) {
+      if (!heating.source) warns.push("Selectați sursa de încălzire");
+    }
+    if (warns.length > 0) {
+      showToast("⚠ " + warns.join(" • "), "error", 5000);
+    }
+    return warns.length === 0;
+  };
+
+  // Navigare cu validare
+  const goToStep = (targetStep, fromStep) => {
+    if (targetStep > fromStep) {
+      validateStep(fromStep); // avertizare dar nu blochează
+    }
+    setStep(targetStep);
+  };
+
   // ═══════════════════════════════════════════════════════════
   // FEATURE: DEFALCARE CONSUM PE LUNI (profil climatice lunar)
   // ═══════════════════════════════════════════════════════════
@@ -7380,7 +7410,7 @@ export default function EnergyCalcApp({ cloud }) {
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
                 <div />
-                <button onClick={() => setStep(2)}
+                <button onClick={() => goToStep(2, 1)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 2: Anvelopă →
                 </button>
@@ -7897,7 +7927,7 @@ export default function EnergyCalcApp({ cloud }) {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 1: Identificare
                 </button>
-                <button onClick={() => setStep(3)}
+                <button onClick={() => goToStep(3, 2)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 3: Instalații →
                 </button>
@@ -8239,7 +8269,7 @@ export default function EnergyCalcApp({ cloud }) {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 2: Anvelopă
                 </button>
-                <button onClick={() => setStep(4)}
+                <button onClick={() => goToStep(4, 3)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 4: Regenerabile →
                 </button>
@@ -8607,7 +8637,7 @@ export default function EnergyCalcApp({ cloud }) {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 3: Instalații
                 </button>
-                <button onClick={() => setStep(5)}
+                <button onClick={() => goToStep(5, 4)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 5: Calcul energetic →
                 </button>
@@ -9856,7 +9886,7 @@ export default function EnergyCalcApp({ cloud }) {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 4: Regenerabile
                 </button>
-                <button onClick={() => setStep(6)}
+                <button onClick={() => goToStep(6, 5)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 6: Certificat CPE →
                 </button>
@@ -11464,6 +11494,7 @@ ${(() => {
                     if (!building.locality) warns.push("❌ Localitatea de calcul nu este selectată — Pasul 1");
                     if (!building.category) warns.push("❌ Categoria funcțională nu este selectată — Pasul 1");
                     if (opaqueElements.length === 0 && glazingElements.length === 0) warns.push("❌ Niciun element de anvelopă definit — Pasul 2");
+                    if ((parseFloat(building.volume) || 0) <= 0) warns.push("❌ Volumul interior nu este definit — Pasul 1");
                     if (!heating.source) warns.push("❌ Sursa de încălzire nu este configurată — Pasul 3");
                     if (!instSummary) warns.push("❌ Calculul energetic nu este disponibil (completați pașii 1-4)");
                     // IMPORTANTE — afectează calitatea
@@ -11789,12 +11820,17 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               {/* ═══ EXPORT DOCX OFICIAL — full-width sub grid ═══ */}
               {(() => {
                 const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
+                const dataComplete = Au > 0 && instSummary && building.locality && building.category;
+                const canGenerate = canExportDocx && dataComplete;
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
                     <button
-                      disabled={!canExportDocx}
+                      disabled={!canGenerate}
                       onClick={async () => {
-                        if (!canExportDocx) return;
+                        if (!canGenerate) {
+                          if (!dataComplete) showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error");
+                          return;
+                        }
                         try {
                           showToast("Se generează CPE DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.cpe);
@@ -11804,7 +11840,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !canExportDocx
+                        !canGenerate
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
                           : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
                       }`}>
@@ -11817,9 +11853,12 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       </div>
                     </button>
                     <button
-                      disabled={!canExportDocx}
+                      disabled={!canGenerate}
                       onClick={async () => {
-                        if (!canExportDocx) return;
+                        if (!canGenerate) {
+                          if (!dataComplete) showToast("Completați datele obligatorii", "error");
+                          return;
+                        }
                         try {
                           showToast("Se generează Anexa DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.anexa);
@@ -11829,7 +11868,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !canExportDocx
+                        !canGenerate
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
                           : "border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 cursor-pointer"
                       }`}>
@@ -11907,7 +11946,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 5: Calcul
                 </button>
-                <button onClick={() => setStep(7)}
+                <button onClick={() => goToStep(7, 6)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
                   Pasul 7: Audit →
                 </button>
