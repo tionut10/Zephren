@@ -4687,6 +4687,81 @@ export default function EnergyCalcApp({ cloud }) {
     reader.readAsText(file);
   }, [showToast]);
 
+  // Import DOSET XML (program MDLPA)
+  const importDOSET = useCallback((file) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(ev.target.result, "text/xml");
+        const getText = (tag) => { const el = doc.querySelector(tag); return el ? el.textContent.trim() : ""; };
+        const getNum = (tag) => parseFloat(getText(tag)) || 0;
+        const updates = {};
+        // DOSET XML structure
+        const addr = getText("adresa_cladire") || getText("AdresaCladire") || getText("adresa");
+        if (addr) updates.address = addr;
+        const au = getNum("aria_utila") || getNum("AriaUtila") || getNum("au");
+        if (au) updates.areaUseful = String(au);
+        const vol = getNum("volum_incalzit") || getNum("VolumIncalzit") || getNum("volum");
+        if (vol) updates.volume = String(vol);
+        const year = getText("an_constructie") || getText("AnConstructie");
+        if (year) updates.yearBuilt = year;
+        const cat = getText("categorie_functionala") || getText("CategorieFunctionala");
+        if (cat) { const m = {"1":"RI","2":"RC","3":"RA","4":"BI","5":"ED","6":"SA","7":"HC","8":"CO","9":"SP"}; updates.category = m[cat] || cat; }
+        const locality = getText("localitate") || getText("Localitate");
+        if (locality) updates.city = locality;
+        const county = getText("judet") || getText("Judet");
+        if (county) updates.county = county;
+        if (Object.keys(updates).length > 0) setBuilding(function(p) { return Object.assign({}, p, updates); });
+        showToast("Import DOSET: " + Object.keys(updates).length + " câmpuri importate", "success");
+      } catch(e) { showToast("Eroare parsare DOSET: " + e.message, "error"); }
+    };
+    reader.readAsText(file);
+  }, [showToast]);
+
+  // Import gbXML / IFC (format internațional BIM)
+  const importGbXML = useCallback((file) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(ev.target.result, "text/xml");
+        const ns = doc.documentElement.namespaceURI || "";
+        const qry = (tag) => doc.getElementsByTagNameNS(ns, tag)[0]?.textContent?.trim() || doc.querySelector(tag)?.textContent?.trim() || "";
+        const qryNum = (tag) => parseFloat(qry(tag)) || 0;
+        const updates = {};
+        // gbXML Campus > Building
+        const bldg = doc.getElementsByTagNameNS(ns, "Building")[0] || doc.querySelector("Building");
+        if (bldg) {
+          const area = parseFloat(bldg.querySelector("Area")?.textContent) || qryNum("FloorArea") || qryNum("Area");
+          if (area > 0) updates.areaUseful = String(area);
+          const name = bldg.getAttribute("buildingType") || "";
+          if (name) { const m = {"Office":"BI","School":"ED","Hospital":"SA","Hotel":"HC","Retail":"CO"}; updates.category = m[name] || "AL"; }
+        }
+        // Surfaces → opaque elements
+        const importedOpaque = [];
+        const surfaces = doc.getElementsByTagNameNS(ns, "Surface");
+        for (var si = 0; si < Math.min(surfaces.length, 20); si++) {
+          var surf = surfaces[si];
+          var sType = surf.getAttribute("surfaceType") || "";
+          if (sType.includes("Wall") || sType.includes("Roof") || sType.includes("Floor")) {
+            var sName = surf.getAttribute("id") || "gbXML Surface " + (si+1);
+            var areaEl = surf.getElementsByTagNameNS(ns, "Area")[0] || surf.querySelector("Area");
+            var sArea = areaEl ? parseFloat(areaEl.textContent) : 0;
+            var typeMap = {"ExteriorWall":"PE","Roof":"PT","InteriorFloor":"PI","SlabOnGrade":"PL","Underground":"PB"};
+            var elType = "PE";
+            for (var k in typeMap) { if (sType.includes(k)) { elType = typeMap[k]; break; } }
+            if (sArea > 0) importedOpaque.push({ name: sName, area: String(sArea), type: elType, orientation: "N", layers: [] });
+          }
+        }
+        if (Object.keys(updates).length > 0) setBuilding(function(p) { return Object.assign({}, p, updates); });
+        if (importedOpaque.length > 0) setOpaqueElements(function(prev) { return prev.concat(importedOpaque); });
+        showToast("Import gbXML: " + Object.keys(updates).length + " câmpuri + " + importedOpaque.length + " suprafețe", "success");
+      } catch(e) { showToast("Eroare parsare gbXML/IFC: " + e.message, "error"); }
+    };
+    reader.readAsText(file);
+  }, [showToast]);
+
   const importProject = useCallback((file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -4843,10 +4918,24 @@ export default function EnergyCalcApp({ cloud }) {
       importProject(file);
     } else if (file.name.endsWith(".csv")) {
       importCSV(file);
+    } else if (file.name.endsWith(".xml") || file.name.endsWith(".gbxml")) {
+      // Detect format: DOSET, ENERG+, or gbXML
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var content = ev.target.result;
+        if (content.includes("gbXML") || content.includes("Campus") || content.includes("Surface")) {
+          importGbXML(file);
+        } else if (content.includes("DOSET") || content.includes("doset") || content.includes("aria_utila")) {
+          importDOSET(file);
+        } else {
+          importENERGPlus(file);
+        }
+      };
+      reader.readAsText(file.slice(0, 5000)); // Read first 5KB for detection
     } else {
-      showToast("Format nesuportat. Acceptă: .json sau .csv", "error");
+      showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .gbxml", "error");
     }
-  }, [importProject, importCSV]);
+  }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus]);
 
   // ─── Climate auto-selection ───
   const selectedClimate = useMemo(() =>
