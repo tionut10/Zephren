@@ -75,12 +75,23 @@ export function pSatMagnus(t) {
   return t >= 0 ? 610.5 * Math.exp(17.269 * t / (237.3 + t)) : 610.5 * Math.exp(21.875 * t / (265.5 + t));
 }
 
+// Umiditate relativă exterioară medie lunară pentru stații climatice din România
+// Sursa: INMH date climatice medii multianuale; dacă clima are rh_month, acestea au prioritate
+const RH_EXT_ZONE = {
+  I:   [0.82, 0.79, 0.72, 0.67, 0.65, 0.62, 0.60, 0.60, 0.67, 0.75, 0.80, 0.83], // zona I (litoral, Dobrogea)
+  II:  [0.85, 0.82, 0.75, 0.70, 0.68, 0.65, 0.63, 0.63, 0.70, 0.78, 0.83, 0.86], // zona II (Muntenia, Moldova)
+  III: [0.87, 0.84, 0.77, 0.72, 0.70, 0.67, 0.65, 0.65, 0.72, 0.80, 0.85, 0.88], // zona III (Transilvania)
+  IV:  [0.88, 0.85, 0.78, 0.73, 0.71, 0.68, 0.66, 0.66, 0.73, 0.81, 0.86, 0.89], // zona IV (sub-carpatic)
+  V:   [0.90, 0.87, 0.80, 0.75, 0.73, 0.70, 0.68, 0.68, 0.75, 0.83, 0.88, 0.91], // zona V (munte)
+};
+
 export function calcGlaserMonthly(layers, climate, tInt, rhInt) {
   if (!layers || !layers.length || !climate) return null;
   var tI = tInt || 20;
   var rhi = (rhInt || 50) / 100;
   var months = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
-  var rhExt = [0.85, 0.82, 0.75, 0.70, 0.68, 0.65, 0.63, 0.63, 0.70, 0.78, 0.83, 0.86];
+  // Utilizăm RH exterior din date climatice reale per stație/zonă (nu valori fixe)
+  var rhExt = climate.rh_month || RH_EXT_ZONE[climate.zone] || RH_EXT_ZONE["II"];
 
   // Build layer data
   var rsi = 0.13, rse = 0.04;

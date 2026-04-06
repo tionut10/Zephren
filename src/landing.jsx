@@ -68,7 +68,7 @@ const STATS = [
   { value: "60", label: "Localități climatice" },
   { value: "30", label: "Punți termice SVG" },
   { value: "17", label: "Normative integrate" },
-  { value: "7", label: "Pași calculator" },
+  { value: "8", label: "Pași calculator" },
 ];
 
 const V3_FEATURES = [

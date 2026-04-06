@@ -4,37 +4,153 @@ export const SRI_DOMAINS = [
   { id:"flexibility", label:"Flexibilitate energetică", weight:0.25 },
 ];
 
+// ═══════════════════════════════════════════════════════════════
+// ECONOMIE ENERGETICĂ BACS — EN 15232-1:2017 Tabel 6
+// Factor reducere consum față de clasa C (referință):
+// Clasa A: -25–40%, Clasa B: -10–25%, Clasa C: 0%, Clasa D: +10–50%
+// ═══════════════════════════════════════════════════════════════
+export const BACS_ENERGY_FACTORS = {
+  residential: {
+    A: { heating: 0.67, cooling: 0.70, ventilation: 0.73, lighting: 0.75, acm: 0.80 },
+    B: { heating: 0.83, cooling: 0.86, ventilation: 0.87, lighting: 0.90, acm: 0.92 },
+    C: { heating: 1.00, cooling: 1.00, ventilation: 1.00, lighting: 1.00, acm: 1.00 },
+    D: { heating: 1.51, cooling: 1.30, ventilation: 1.20, lighting: 1.10, acm: 1.10 },
+  },
+  nonresidential: {
+    A: { heating: 0.68, cooling: 0.60, ventilation: 0.60, lighting: 0.55, acm: 0.78 },
+    B: { heating: 0.84, cooling: 0.82, ventilation: 0.80, lighting: 0.78, acm: 0.89 },
+    C: { heating: 1.00, cooling: 1.00, ventilation: 1.00, lighting: 1.00, acm: 1.00 },
+    D: { heating: 1.30, cooling: 1.45, ventilation: 1.30, lighting: 1.20, acm: 1.15 },
+  },
+};
+
+export function calcBACSEnergyImpact(bacsClass, category, qH_total, qC_total, qV_total, qL_total, qACM_total) {
+  const isRes = ["RI","RC","RA"].includes(category);
+  const factors = isRes ? BACS_ENERGY_FACTORS.residential : BACS_ENERGY_FACTORS.nonresidential;
+  const f = factors[bacsClass] || factors["C"];
+  const fRef = factors["C"]; // referință
+  return {
+    bacsClass,
+    savingHeating_pct: Math.round((1 - f.heating) * 100),
+    savingCooling_pct: Math.round((1 - f.cooling) * 100),
+    savingVent_pct: Math.round((1 - f.ventilation) * 100),
+    savingLight_pct: Math.round((1 - f.lighting) * 100),
+    savingACM_pct: Math.round((1 - f.acm) * 100),
+    // Economii absolute [kWh/an]
+    savingHeating_kwh: Math.round((qH_total || 0) * (1 - f.heating)),
+    savingCooling_kwh: Math.round((qC_total || 0) * (1 - f.cooling)),
+    savingTotal_kwh: Math.round(
+      (qH_total || 0) * (1 - f.heating) +
+      (qC_total || 0) * (1 - f.cooling) +
+      (qV_total || 0) * (1 - f.ventilation) +
+      (qL_total || 0) * (1 - f.lighting) +
+      (qACM_total || 0) * (1 - f.acm)
+    ),
+  };
+}
+
 export function calcSRI(heating, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, bacsClass) {
   var score = { energy: 0, response: 0, flexibility: 0 };
-  // Energie — automatizare și control BACS (EPBD Anexa I)
-  if (bacsClass === "A") { score.energy += 40; score.response += 30; score.flexibility += 20; }
-  else if (bacsClass === "B") { score.energy += 25; score.response += 20; score.flexibility += 10; }
-  else if (bacsClass === "C") { score.energy += 10; score.response += 10; }
-  // Regenerabile → flexibilitate
+  // BACS scoring granular per EN 52120-1:2022 (simplificat pe 3 domenii principale)
+  // Clasa A: control predictiv, optimizare continuă, integrare DR
+  // Clasa B: control avansat cu setpoint adaptiv și programare
+  // Clasa C: control automat de bază cu termostat programabil
+  // Clasa D: fără automatizare (manual)
+  var bacsScores = {
+    A: { energy: 40, response: 35, flexibility: 25 },
+    B: { energy: 25, response: 20, flexibility: 12 },
+    C: { energy: 10, response: 10, flexibility: 3 },
+    D: { energy: 0,  response: 0,  flexibility: 0 },
+  };
+  var bs = bacsScores[bacsClass] || bacsScores["C"];
+  score.energy += bs.energy; score.response += bs.response; score.flexibility += bs.flexibility;
+  // Regenerabile → flexibilitate și energie
   if (photovoltaic?.enabled) { score.energy += 15; score.flexibility += 25; }
-  if (heatPump?.enabled) { score.energy += 15; score.flexibility += 15; }
-  if (solarThermal?.enabled) { score.energy += 10; score.flexibility += 10; }
-  // Ventilare cu recuperare căldură (ID-urile conțin "HR" — uppercase)
+  if (heatPump?.enabled) { score.energy += 12; score.flexibility += 15; }
+  if (solarThermal?.enabled) { score.energy += 8; score.flexibility += 8; }
+  // Ventilare cu recuperare căldură
   var ventHasHR = ventilation?.type && (ventilation.type.includes("HR") || ventilation.type === "UTA");
-  if (ventHasHR) { score.energy += 10; score.response += 15; }
-  // LED + control automat — ID-urile din LIGHTING_TYPES/LIGHTING_CONTROL sunt uppercase
+  if (ventHasHR) { score.energy += 10; score.response += 12; }
+  // Control ventilare bazat pe CO₂/prezență
+  if (ventilation?.demandControl) { score.response += 10; score.flexibility += 8; score.energy += 5; }
+  // LED + control automat
   if (lighting?.type === "LED" || lighting?.type === "LED_PRO") score.energy += 5;
   var lightControl = lighting?.controlType || lighting?.control || "";
   if (lightControl === "PREZ_DAY" || lightControl === "DAYLIGHT" || lightControl === "PREZ" || lightControl === "BMS") {
     score.response += 15; score.flexibility += 10;
   }
-  // Răcire activă (hasCooling flag + sistem diferit de NONE)
+  // Răcire activă
   var hasCoolingActive = cooling?.hasCooling && cooling?.system && cooling.system !== "NONE";
-  if (hasCoolingActive) { score.response += 10; score.flexibility += 10; }
-  // Stocare energie (baterie / EV bidirectional V2G) — factor flexibilitate
-  if (photovoltaic?.enabled && photovoltaic?.storage) { score.flexibility += 15; }
+  if (hasCoolingActive) { score.response += 8; score.flexibility += 8; }
+  // Stocare energie (baterie PV / EV V2G)
+  if (photovoltaic?.enabled && photovoltaic?.storage) { score.flexibility += 15; score.energy += 5; }
+  // EV charging bidirectional (V2G)
+  if (photovoltaic?.v2g) { score.flexibility += 10; }
   // Cap la 100 per domeniu
   for (var k in score) score[k] = Math.min(100, Math.max(0, score[k]));
   var total = SRI_DOMAINS.reduce(function(s, d) { return s + score[d.id] * d.weight; }, 0);
   return {
     scores: score, total: Math.round(total),
     grade: total >= 70 ? "A" : total >= 50 ? "B" : total >= 30 ? "C" : "D",
-    interpretation: total >= 70 ? "Clădire inteligentă performantă" : total >= 50 ? "Automatizare avansată" : total >= 30 ? "Automatizare de bază" : "Fără inteligență energetică",
+    interpretation: total >= 70 ? "Clădire inteligentă performantă" :
+                    total >= 50 ? "Automatizare avansată" :
+                    total >= 30 ? "Automatizare de bază" : "Fără inteligență energetică",
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VERIFICARE CONFORMITATE U la RENOVARE MAJORĂ (>25% anvelopă)
+// Mc 001-2022 Art.5 + Legea 372/2005 republicată
+// ═══════════════════════════════════════════════════════════════
+export const U_MAX_MAJOR_RENOV = {
+  // [W/(m²·K)] per tip element — renovare majoră clădiri existente (Mc 001-2022 Tabel 2.5)
+  PE:  { rezidential: 0.35, nerezidential: 0.40 }, // perete exterior
+  PT:  { rezidential: 0.20, nerezidential: 0.25 }, // planșeu terasă
+  PP:  { rezidential: 0.20, nerezidential: 0.25 }, // planșeu pod
+  PB:  { rezidential: 0.30, nerezidential: 0.35 }, // planșeu subsol
+  PL:  { rezidential: 0.35, nerezidential: 0.40 }, // placă sol
+  FE:  { rezidential: 1.30, nerezidential: 1.50 }, // fereastră
+};
+
+export function checkMajorRenovConformity(elements, glazingElements, category) {
+  const isRes = ["RI","RC","RA"].includes(category);
+  const uKey = isRes ? "rezidential" : "nerezidential";
+  const results = [];
+
+  (elements || []).forEach(function(el) {
+    const uMax = U_MAX_MAJOR_RENOV[el.type]?.[uKey];
+    if (!uMax) return;
+    const R = (el.layers || []).reduce(function(r, l) {
+      return r + ((parseFloat(l.thickness) || 0) / 1000) / (l.lambda || 1);
+    }, 0.17);
+    const U = 1 / Math.max(R, 0.01);
+    results.push({
+      type: el.type, name: el.name || el.type,
+      U: Math.round(U * 100) / 100, Umax: uMax,
+      conform: U <= uMax,
+      deficit: U > uMax ? Math.round((U - uMax) * 100) / 100 : 0,
+    });
+  });
+
+  (glazingElements || []).forEach(function(gl) {
+    const uMax = U_MAX_MAJOR_RENOV["FE"]?.[uKey];
+    const U = parseFloat(gl.u) || 2.5;
+    results.push({
+      type: "FE", name: gl.name || ("Fereastră " + (gl.orientation || "")),
+      U: U, Umax: uMax,
+      conform: U <= uMax,
+      deficit: U > uMax ? Math.round((U - uMax) * 100) / 100 : 0,
+    });
+  });
+
+  const nonConform = results.filter(r => !r.conform);
+  return {
+    results,
+    allConform: nonConform.length === 0,
+    nonConformCount: nonConform.length,
+    verdict: nonConform.length === 0 ? "CONFORM — toate elementele respectă U maxim" :
+             `NECONFORM — ${nonConform.length} element(e) depășesc U maxim admis`,
+    color: nonConform.length === 0 ? "#22c55e" : "#ef4444",
   };
 }
 

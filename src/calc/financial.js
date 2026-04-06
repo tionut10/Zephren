@@ -9,8 +9,11 @@ export function calcFinancialAnalysis(params) {
   var annualMaint = params.annualMaint || 0;       // EUR/an mentenanță suplimentară
   var discountRate = (params.discountRate || 5) / 100;  // rată actualizare
   var escalation = (params.escalation || 3) / 100;      // escaladare preț energie/an
+  var maintEscalation = (params.maintEscalation || 2) / 100; // escaladare mentenanță/an (configurable)
   var period = params.period || 30;                // ani
   var residualValue = params.residualValue || 0;   // valoare reziduală la final
+  // LCOE params
+  var annualEnergyKwh = params.annualEnergyKwh || 0; // kWh/an produs/economisit
 
   if (investCost <= 0 || annualSaving <= 0) return null;
 
@@ -24,7 +27,7 @@ export function calcFinancialAnalysis(params) {
 
   for (var y = 1; y <= period; y++) {
     var saving = annualSaving * Math.pow(1 + escalation, y - 1);
-    var maint = annualMaint * Math.pow(1.02, y - 1); // mentenanță crește 2%/an
+    var maint = annualMaint * Math.pow(1 + maintEscalation, y - 1);
     var cf = saving - maint;
     if (y === period) cf += residualValue;
     cashFlows.push(cf);
@@ -67,15 +70,28 @@ export function calcFinancialAnalysis(params) {
   // Cost global per EN 15459 (simplificat)
   var globalCost = investCost;
   for (var gc = 1; gc <= period; gc++) {
-    globalCost += (annualSaving * Math.pow(1 + escalation, gc - 1) * -1 + annualMaint * Math.pow(1.02, gc - 1)) / Math.pow(1 + discountRate, gc);
+    globalCost += (annualSaving * Math.pow(1 + escalation, gc - 1) * -1 + annualMaint * Math.pow(1 + maintEscalation, gc - 1)) / Math.pow(1 + discountRate, gc);
   }
   globalCost -= residualValue / Math.pow(1 + discountRate, period);
+
+  // LCOE — Levelized Cost of Energy (EUR/kWh) per EN 15459-1 Anexa B
+  // = VAN costuri totale / VAN energie totală produsă/economisită
+  var lcoe = null;
+  if (annualEnergyKwh > 0) {
+    var totalDiscountedCost = investCost;
+    var totalDiscountedEnergy = 0;
+    for (var le = 1; le <= period; le++) {
+      totalDiscountedCost += (annualMaint * Math.pow(1 + maintEscalation, le - 1)) / Math.pow(1 + discountRate, le);
+      totalDiscountedEnergy += annualEnergyKwh / Math.pow(1 + discountRate, le);
+    }
+    lcoe = totalDiscountedEnergy > 0 ? totalDiscountedCost / totalDiscountedEnergy : null;
+  }
 
   // Analiză sensitivitate NPV (±10%, ±20% față de economie anuală) — EN 15459-1 §8
   function calcNPVForSaving(savingAdj) {
     var n = -investCost;
     for (var y2 = 1; y2 <= period; y2++) {
-      var cf2 = savingAdj * Math.pow(1 + escalation, y2 - 1) - annualMaint * Math.pow(1.02, y2 - 1);
+      var cf2 = savingAdj * Math.pow(1 + escalation, y2 - 1) - annualMaint * Math.pow(1 + maintEscalation, y2 - 1);
       if (y2 === period) cf2 += residualValue;
       n += cf2 / Math.pow(1 + discountRate, y2);
     }
@@ -96,6 +112,7 @@ export function calcFinancialAnalysis(params) {
     paybackDiscounted: paybackDisc,
     bcRatio: Math.round(bcRatio * 100) / 100,
     globalCost: Math.round(globalCost),
+    lcoe: lcoe !== null ? Math.round(lcoe * 1000) / 1000 : null, // EUR/kWh
     cashFlows: cashFlows,
     cumulativeCF: cumulativeCF,
     investCost: investCost,
@@ -104,4 +121,34 @@ export function calcFinancialAnalysis(params) {
     verdict: npv > 0 ? "PROFITABIL" : "NEPROFITABIL",
     verdictColor: npv > 0 ? "#22c55e" : "#ef4444",
   };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPARATOR SCENARII FINANCIARE — Comparare simultană 2-4 pachete
+// Fiecare pachet: { label, investCost, annualSaving, annualMaint, annualEnergyKwh }
+// ═══════════════════════════════════════════════════════════════
+export function calcFinancialScenarios(scenarios, commonParams) {
+  if (!scenarios || scenarios.length < 2) return null;
+  var cp = commonParams || {};
+  var results = scenarios.map(function(sc) {
+    var res = calcFinancialAnalysis({
+      investCost: sc.investCost,
+      annualSaving: sc.annualSaving,
+      annualMaint: sc.annualMaint || 0,
+      annualEnergyKwh: sc.annualEnergyKwh || 0,
+      discountRate: cp.discountRate || 5,
+      escalation: cp.escalation || 3,
+      maintEscalation: cp.maintEscalation || 2,
+      period: cp.period || 30,
+      residualValue: sc.residualValue || 0,
+    });
+    return { label: sc.label, epReduction: sc.epReduction || 0, rerGain: sc.rerGain || 0, result: res };
+  });
+  // Scenariul optim = NPV maxim
+  var bestIdx = 0;
+  results.forEach(function(r, i) {
+    if (r.result && results[bestIdx].result && r.result.npv > results[bestIdx].result.npv) bestIdx = i;
+  });
+  results[bestIdx].isBest = true;
+  return results;
 }
