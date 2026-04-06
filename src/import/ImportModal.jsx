@@ -13,12 +13,16 @@ const FORMATS = [
   { ext: ".xlsx/.xls",  icon: "XLS",  label: "Excel",            desc: "Template Zephren sau generic",  color: "#22c55e", ai: false },
   { ext: ".csv",        icon: "CSV",  label: "CSV Anvelopă",     desc: "Elemente constructive tabel",   color: "#84cc16", ai: false },
   { ext: ".xml",        icon: "XML",  label: "XML (ENERG+/BIM)", desc: "ENERG+, DOSET, gbXML",         color: "#eab308", ai: false },
+  { ext: ".ifc",        icon: "IFC",  label: "IFC/BIM",          desc: "Revit, ArchiCAD, gbXML (AI)",   color: "#06b6d4", ai: true  },
   { ext: ".pdf",        icon: "PDF",  label: "PDF",              desc: "Certificat CPE sau audit",      color: "#f97316", ai: true  },
   { ext: ".docx",       icon: "DOC",  label: "DOCX",             desc: "Raport Word (extracție AI)",    color: "#ef4444", ai: true  },
   { ext: "img",         icon: "IMG",  label: "Imagine",          desc: "CPE scanat (extracție AI)",     color: "#a855f7", ai: true  },
+  { ext: "facade",      icon: "🏠",   label: "Foto fațadă",      desc: "Estimare vizuală AI",           color: "#ec4899", ai: true  },
+  { ext: "invoice",     icon: "⚡",   label: "Factură energie",  desc: "Gaz / curent / termoficare",    color: "#f59e0b", ai: true  },
+  { ext: "paste",       icon: "📋",   label: "Paste text/XML",   desc: "Lipire din alte softuri",       color: "#64748b", ai: false },
 ];
 
-const ACCEPT_ALL = ".json,.xlsx,.xls,.csv,.xml,.gbxml,.pdf,.docx,.doc,.jpg,.jpeg,.png,.webp";
+const ACCEPT_ALL = ".json,.xlsx,.xls,.csv,.xml,.gbxml,.ifc,.pdf,.docx,.doc,.jpg,.jpeg,.png,.webp";
 
 // ── Extracție text din DOCX (ZIP→XML) ─────────────────────────────────────────
 async function extractDocxText(buffer) {
@@ -209,10 +213,11 @@ export default function ImportModal({
   showToast,
 }) {
   const [dragOver, setDragOver] = useState(false);
-  const [phase, setPhase] = useState("pick");   // pick | loading | preview | done
+  const [phase, setPhase] = useState("pick");   // pick | loading | preview | done | paste
   const [loadMsg, setLoadMsg] = useState("");
   const [extractedData, setExtractedData] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [pasteText, setPasteText] = useState("");
   const fileInputRef = useRef();
 
   const handleFile = useCallback(async (file) => {
@@ -337,6 +342,29 @@ export default function ImportModal({
       return;
     }
 
+    // ── IFC — trimis ca text la API ──────────────────────────────────────────
+    if (fmt === "ifc" || file.name.toLowerCase().endsWith(".ifc")) {
+      setPhase("loading");
+      setLoadMsg("Parsare BIM/IFC cu AI...");
+      try {
+        const text = await file.text();
+        const res = await fetch("/api/import-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileType: "ifc", fileData: text }),
+        });
+        if (!res.ok) throw new Error("API error " + res.status);
+        const { data, error } = await res.json();
+        if (error) throw new Error(error);
+        if (data) { setExtractedData(data); setPhase("preview"); }
+        else { showToast("Nu s-au extras date din IFC", "error"); setPhase("pick"); }
+      } catch (e) {
+        showToast("Eroare IFC: " + e.message, "error");
+        setPhase("pick");
+      }
+      return;
+    }
+
     showToast("Format nerecunoscut: " + file.name, "error");
   }, [importProject, importCSV, importENERGPlus, importDOSET, importGbXML, importOCR, onClose, showToast]);
 
@@ -352,6 +380,117 @@ export default function ImportModal({
     onApply(extractedData);
     onClose();
   }, [extractedData, onApply, onClose]);
+
+  // ── Fațadă foto ─────────────────────────────────────────────────────────────
+  const handleFacadeFile = useCallback(async (file) => {
+    if (!file) return;
+    setFileName(file.name);
+    setPhase("loading");
+    setLoadMsg("Analiză vizuală fațadă cu AI...");
+    try {
+      const base64 = await readAsBase64(file);
+      const res = await fetch("/api/import-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileType: "facade", fileData: base64, mimeType: file.type || "image/jpeg" }),
+      });
+      if (!res.ok) throw new Error("API error " + res.status);
+      const { data, error } = await res.json();
+      if (error) throw new Error(error);
+      if (data) { setExtractedData(data); setPhase("preview"); }
+      else { showToast("Nu s-a putut analiza imaginea", "error"); setPhase("pick"); }
+    } catch (e) {
+      showToast("Eroare foto fațadă: " + e.message, "error");
+      setPhase("pick");
+    }
+  }, [showToast]);
+
+  // ── Factură energie ──────────────────────────────────────────────────────────
+  const handleInvoiceFile = useCallback(async (file) => {
+    if (!file) return;
+    setFileName(file.name);
+    setPhase("loading");
+    setLoadMsg("Extracție date factură energie cu AI...");
+    try {
+      const base64 = await readAsBase64(file);
+      const fmt = file.name.toLowerCase().endsWith(".pdf") ? "pdf" : "image";
+      const res = await fetch("/api/import-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileType: fmt, fileData: base64, mimeType: file.type }),
+      });
+      if (!res.ok) throw new Error("API error " + res.status);
+      const { data, error } = await res.json();
+      if (error) throw new Error(error);
+      if (data) {
+        // Conversia datelor facturii în formatul așteptat de onApply
+        setExtractedData({ _invoiceData: data });
+        setPhase("invoice-preview");
+      } else {
+        showToast("Nu s-au extras date din factură", "error");
+        setPhase("pick");
+      }
+    } catch (e) {
+      showToast("Eroare factură: " + e.message, "error");
+      setPhase("pick");
+    }
+  }, [showToast]);
+
+  // ── Paste text — auto-detect și parsare ──────────────────────────────────────
+  const handlePasteSubmit = useCallback(async () => {
+    const text = pasteText.trim();
+    if (!text) return;
+    setPhase("loading");
+    setFileName("text lipit");
+
+    // Detectare format
+    if (text.startsWith("{") || text.startsWith("[")) {
+      // JSON
+      try {
+        const data = JSON.parse(text);
+        setExtractedData(data);
+        setPhase("preview");
+      } catch {
+        showToast("JSON invalid", "error");
+        setPhase("paste");
+      }
+    } else if (text.includes("<?xml") || text.includes("<") ) {
+      // XML — auto-detect ENERG+/DOSET/gbXML
+      setLoadMsg("Parsare XML...");
+      const blob = new Blob([text], { type: "text/xml" });
+      const file = new File([blob], "pasted.xml", { type: "text/xml" });
+      if (text.includes("gbXML") || text.includes("Campus") || text.includes("Surface")) {
+        importGbXML(file);
+      } else if (text.includes("DOSET") || text.includes("aria_utila")) {
+        importDOSET(file);
+      } else {
+        importENERGPlus(file);
+      }
+      onClose();
+    } else {
+      // Text liber → Claude AI
+      setLoadMsg("Analiză text cu AI...");
+      try {
+        const res = await fetch("/api/chat-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+        if (!res.ok) throw new Error("API error " + res.status);
+        const { data, reply } = await res.json();
+        if (data) {
+          setExtractedData(data);
+          setPhase("preview");
+        } else {
+          showToast("Nu s-au extras date: " + (reply || ""), "error");
+          setPhase("paste");
+        }
+      } catch (e) {
+        showToast("Eroare AI: " + e.message, "error");
+        setPhase("paste");
+      }
+    }
+  }, [pasteText, importGbXML, importDOSET, importENERGPlus, onClose, showToast]);
 
   return (
     <div
@@ -424,6 +563,37 @@ export default function ImportModal({
               ))}
             </div>
 
+            {/* Butoane acțiuni speciale */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Fațadă foto */}
+              <label className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/10 cursor-pointer transition-all text-center">
+                <span className="text-lg">🏠</span>
+                <span className="text-[9px] font-medium text-pink-300">Foto fațadă</span>
+                <span className="text-[8px] opacity-40">Estimare vizuală AI</span>
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) handleFacadeFile(e.target.files[0]); }} />
+              </label>
+
+              {/* Factură energie */}
+              <label className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer transition-all text-center">
+                <span className="text-lg">⚡</span>
+                <span className="text-[9px] font-medium text-amber-300">Factură energie</span>
+                <span className="text-[8px] opacity-40">Gaz / curent / termoficare</span>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) handleInvoiceFile(e.target.files[0]); }} />
+              </label>
+
+              {/* Paste text */}
+              <button
+                onClick={() => setPhase("paste")}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-500/20 bg-slate-500/5 hover:bg-slate-500/10 transition-all text-center"
+              >
+                <span className="text-lg">📋</span>
+                <span className="text-[9px] font-medium text-slate-300">Paste text/XML</span>
+                <span className="text-[8px] opacity-40">Din alte softuri</span>
+              </button>
+            </div>
+
             {/* Template download */}
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 flex items-center gap-3">
               <div className="text-xl">📋</div>
@@ -439,9 +609,70 @@ export default function ImportModal({
               </button>
             </div>
 
-            {/* Note formte AI */}
+            {/* Note formate AI */}
             <div className="text-[10px] opacity-30 text-center">
-              Extracția AI (PDF, DOCX, imagini) necesită ANTHROPIC_API_KEY configurat pe server
+              Extracția AI (PDF, DOCX, IFC, imagini) necesită ANTHROPIC_API_KEY configurat pe server
+            </div>
+          </>
+        )}
+
+        {/* ── Faza: paste ──────────────────────────────────────────────────── */}
+        {phase === "paste" && (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <button onClick={() => setPhase("pick")} className="text-xs opacity-50 hover:opacity-80">← Înapoi</button>
+              <span className="text-sm font-semibold">📋 Lipește conținut din alt soft</span>
+            </div>
+            <div className="text-[10px] opacity-40 mb-2">
+              Acceptă: JSON Zephren, XML ENERG+/DOSET/gbXML, text liber (descriere clădire)
+            </div>
+            <textarea
+              value={pasteText}
+              onChange={e => setPasteText(e.target.value)}
+              placeholder={`Lipești orice: XML din ENERG+, JSON, sau descriere liberă...\n\nEx: "Bloc 1980, 4 etaje, 3 camere, cazan gaz condensare, fără izolație, București"`}
+              className="w-full h-40 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs font-mono resize-none focus:outline-none focus:border-white/20"
+              autoFocus
+            />
+            <button
+              onClick={handlePasteSubmit}
+              disabled={!pasteText.trim()}
+              className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold text-sm transition-all"
+            >
+              Procesează →
+            </button>
+          </>
+        )}
+
+        {/* ── Faza: invoice-preview ────────────────────────────────────────── */}
+        {phase === "invoice-preview" && extractedData?._invoiceData && (
+          <>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-emerald-400">✓</span>
+              <span>Date extrase din <span className="font-mono text-xs opacity-60">{fileName}</span></span>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+              <div className="text-xs font-semibold text-amber-300">⚡ Date consum energie</div>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                {Object.entries(extractedData._invoiceData).filter(([,v]) => v && v !== "").map(([k, v]) => (
+                  <div key={k} className="flex gap-1">
+                    <span className="opacity-40 truncate">{k}:</span>
+                    <span className="font-medium text-white/70 truncate">{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="text-[10px] opacity-40 border-t border-white/5 pt-2">
+              Datele facturii sunt informative — utilizați-le pentru validarea calculului de consum.
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setPhase("pick"); setExtractedData(null); }}
+                className="flex-1 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-sm transition-all">
+                ← Înapoi
+              </button>
+              <button onClick={() => { showToast("Date factură salvate în notițe proiect", "success"); onClose(); }}
+                className="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm transition-all">
+                OK
+              </button>
             </div>
           </>
         )}

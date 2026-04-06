@@ -10,6 +10,83 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 
+const IFC_PROMPT = `Ești un expert BIM și certificare energetică clădiri (Mc 001-2022, ISO 13790).
+Analizează fișierul IFC (STEP format) și extrage datele disponibile.
+
+Returnează DOAR JSON cu aceeași structură ca mai jos:
+{
+  "building": {
+    "address": "", "city": "", "county": "",
+    "category": "RI|RC|RA|BI|ED|SA|HC|CO|SP|AL",
+    "structure": "Zidărie portantă|Cadre beton|Structură metalică|Panouri prefabricate|Lemn",
+    "yearBuilt": "", "floors": "",
+    "areaUseful": "", "volume": "", "heightFloor": ""
+  },
+  "opaqueElements": [
+    { "name": "", "type": "PE|PT|PP|PL|PB|PI", "area": "", "orientation": "", "tau": 1.0,
+      "layers": [{ "matName": "", "thickness": "", "lambda": 0.0, "rho": 0 }] }
+  ],
+  "glazingElements": [
+    { "name": "", "area": "", "u": 0, "g": 0, "orientation": "", "frameRatio": "25", "type": "" }
+  ],
+  "thermalBridges": [],
+  "heating": { "source": "", "power": "", "eta_gen": "", "theta_int": "20" },
+  "acm": { "source": "", "dailyLiters": "60" },
+  "cooling": { "hasCooling": false },
+  "ventilation": { "type": "NAT" }
+}
+
+Mapări IFC→tip element:
+- IfcWall cu IsExternal=true → PE (perete exterior)
+- IfcRoof, IfcSlab tip roof → PT sau PP
+- IfcSlab tip floor/baseslab → PL
+- IfcWindow, IfcDoor cu geam → glazingElement
+- Orientare: calculează din normalele pereților (0°=N, 90°=E, 180°=S, 270°=V)
+- IfcSpace → volum și suprafață
+- IfcBuilding, IfcSite → adresă, an construcție
+
+RĂSPUNDE DOAR CU JSON.`;
+
+const FACADE_PROMPT = `Ești un expert în evaluarea clădirilor din România pentru certificare energetică (Mc 001-2022).
+Analizează fotografia FAȚADEI și estimează toate datele vizibile sau inferate.
+
+Returnează DOAR JSON:
+{
+  "building": {
+    "category": "RI|RC|RA|BI|ED|SA|HC|CO|SP|AL",
+    "structure": "Zidărie portantă|Cadre beton|Structură metalică|Panouri prefabricate|Lemn",
+    "yearBuilt": "",
+    "floors": "",
+    "heightFloor": "2.80",
+    "areaUseful": ""
+  },
+  "opaqueElements": [
+    { "name": "Perete exterior fațadă", "type": "PE", "area": "", "orientation": "",
+      "layers": [] }
+  ],
+  "glazingElements": [
+    { "name": "Ferestre fațadă", "area": "", "u": 0, "g": 0, "orientation": "", "type": "" }
+  ],
+  "confidence": {
+    "buildingType": "high|medium|low",
+    "yearEstimate": "high|medium|low",
+    "insulationStatus": "izolat|neizolat|partial|necunoscut",
+    "windowType": "simplu|dublu|triplu|necunoscut",
+    "generalCondition": "buna|medie|rea|necunoscut"
+  },
+  "notes": "Observații vizuale: stare tencuială, tip ferestrele, prezență izolație, etc."
+}
+
+Inferențe tipice pentru România:
+- Bloc panouri prefabricate (1970-1989) → yearBuilt ≈ 1980, structure = Panouri prefabricate, n50 ≈ 6
+- Bloc cărămidă fără izolație → structure = Zidărie portantă
+- Casă interbelică → yearBuilt 1920-1940
+- Izolație ETICS vizibilă (plăci EPS la exterior) → izolat
+- Ferestre PVC → dublu sau triplu vitraj
+- Ferestre lemn vechi → simplu sau dublu vitraj
+
+RĂSPUNDE DOAR CU JSON.`;
+
 const EXTRACTION_PROMPT = `Ești un expert în certificarea energetică a clădirilor din România (Mc 001-2022).
 Analizează documentul și extrage TOATE datele disponibile în format JSON strict.
 
@@ -140,8 +217,23 @@ export default async function handler(req, res) {
         },
         { type: "text", text: EXTRACTION_PROMPT },
       ];
+    } else if (fileType === "ifc") {
+      // IFC STEP text — trimis ca text simplu (primele 15000 chars)
+      messageContent = [
+        { type: "text", text: `Fișier IFC (STEP format):\n\n${fileData.slice(0, 15000)}\n\n---\n\n${IFC_PROMPT}` },
+      ];
+    } else if (fileType === "facade") {
+      // Fotografie fațadă clădire
+      const base64Data = fileData.replace(/^data:[^;]+;base64,/, "");
+      messageContent = [
+        {
+          type: "image",
+          source: { type: "base64", media_type: mimeType || "image/jpeg", data: base64Data },
+        },
+        { type: "text", text: FACADE_PROMPT },
+      ];
     } else {
-      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image" });
+      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image, ifc, facade" });
     }
 
     const response = await client.messages.create({

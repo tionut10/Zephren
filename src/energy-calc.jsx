@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { renderAsync } from "docx-preview";
 import ImportModal from "./import/ImportModal.jsx";
+import ChatImport from "./components/ChatImport.jsx";
+import ShareModal, { decodeShareableData } from "./components/ShareModal.jsx";
 
 // ── Data imports ──
 import CLIMATE_DB from "./data/climate.json";
@@ -612,6 +614,7 @@ export default function EnergyCalcApp({ cloud }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [showAPIDoc, setShowAPIDoc] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
@@ -968,6 +971,37 @@ export default function EnergyCalcApp({ cloud }) {
   useEffect(() => { refreshProjectList(); }, []);
 
   useEffect(function() { loadFromStorage(); }, []);
+
+  // Auto-import din URL ?import=<base64> (ShareModal)
+  useEffect(function() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("import");
+    if (!encoded) return;
+    try {
+      const compressed = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      const data = decodeShareableData(compressed);
+      if (!data) return;
+      pushUndo();
+      if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+      if (data.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
+      if (data.glazingElements?.length) setGlazingElements(data.glazingElements);
+      if (data.thermalBridges?.length) setThermalBridges(data.thermalBridges);
+      if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+      if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+      if (data.cooling && Object.keys(data.cooling).length) setCooling(p => ({...INITIAL_COOLING, ...p, ...data.cooling}));
+      if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+      if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+      if (data.solarThermal?.enabled !== undefined) setSolarThermal(p => ({...INITIAL_SOLAR_TH, ...p, ...data.solarThermal}));
+      if (data.photovoltaic?.enabled !== undefined) setPhotovoltaic(p => ({...INITIAL_PV, ...p, ...data.photovoltaic}));
+      if (data.heatPump?.enabled !== undefined) setHeatPump(p => ({...INITIAL_HP, ...p, ...data.heatPump}));
+      if (data.biomass?.enabled !== undefined) setBiomass(p => ({...INITIAL_BIO, ...p, ...data.biomass}));
+      // Curăță URL-ul
+      window.history.replaceState({}, "", window.location.pathname);
+      showToast("Proiect încărcat din link de partajare", "success");
+    } catch (e) {
+      console.warn("URL import failed:", e);
+    }
+  }, []); // eslint-disable-line
 
   // Auto-generate PDF preview when entering Step 6
   const autoPreviewTriggered = useRef(false);
@@ -5293,6 +5327,7 @@ export default function EnergyCalcApp({ cloud }) {
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
             <button onClick={() => setShowImportWizard(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Import din alte softuri">📥</button>
+            <button onClick={() => setShowShareModal(true)} className="text-xs px-2 py-1 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-400 transition-colors hidden lg:block shrink-0" title="Partajare link + QR">🔗</button>
             <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:block shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
             {cloud?.isLoggedIn && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/60 hidden xl:block shrink-0">{cloud.user?.name?.split(" ")[0] || cloud.user?.email?.split("@")[0]}</span>}
             {cloud?.isLoggedIn && <button onClick={cloud.logout} className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/5 text-white/30 hidden xl:block shrink-0">Logout</button>}
@@ -5759,6 +5794,36 @@ export default function EnergyCalcApp({ cloud }) {
             }]);
           }}
           onClose={() => setShowBridgeCatalog(false)}
+        />
+      )}
+
+      {/* ═══ ChatImport — buton flotant + chat panel ═══ */}
+      <ChatImport
+        onApply={(data) => {
+          pushUndo();
+          if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+          if (data.opaqueElements?.length) setOpaqueElements(prev => [...prev, ...data.opaqueElements]);
+          if (data.glazingElements?.length) setGlazingElements(prev => [...prev, ...data.glazingElements]);
+          if (data.thermalBridges?.length) setThermalBridges(prev => [...prev, ...data.thermalBridges]);
+          if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+          if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+          if (data.cooling && Object.keys(data.cooling).length) setCooling(p => ({...INITIAL_COOLING, ...p, ...data.cooling}));
+          if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+          if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+          if (data.solarThermal?.enabled !== undefined) setSolarThermal(p => ({...INITIAL_SOLAR_TH, ...p, ...data.solarThermal}));
+          if (data.photovoltaic?.enabled !== undefined) setPhotovoltaic(p => ({...INITIAL_PV, ...p, ...data.photovoltaic}));
+          if (data.heatPump?.enabled !== undefined) setHeatPump(p => ({...INITIAL_HP, ...p, ...data.heatPump}));
+          if (data.biomass?.enabled !== undefined) setBiomass(p => ({...INITIAL_BIO, ...p, ...data.biomass}));
+        }}
+        showToast={showToast}
+      />
+
+      {/* ═══ ShareModal — link + QR ═══ */}
+      {showShareModal && (
+        <ShareModal
+          projectState={{ building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass }}
+          onClose={() => setShowShareModal(false)}
+          showToast={showToast}
         />
       )}
 

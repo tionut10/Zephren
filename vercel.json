@@ -30,6 +30,12 @@
     },
     "api/import-document.js": {
       "maxDuration": 30
+    },
+    "api/chat-import.js": {
+      "maxDuration": 15
+    },
+    "api/import-invoice.js": {
+      "maxDuration": 30
     }
   }
 }

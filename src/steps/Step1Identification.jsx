@@ -1,6 +1,59 @@
+import { useState, useCallback } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
+
+// ── OSM Geocodare ─────────────────────────────────────────────────────────────
+async function geocodeAddress({ address, city, county }) {
+  const q = [address, city, county, "Romania"].filter(Boolean).join(", ");
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1`;
+  const res = await fetch(url, { headers: { "Accept-Language": "ro", "User-Agent": "Zephren/3.2" } });
+  if (!res.ok) throw new Error("Nominatim error");
+  const data = await res.json();
+  if (!data.length) throw new Error("Adresa nu a fost găsită");
+  const r = data[0];
+  const addr = r.address || {};
+  return {
+    lat: parseFloat(r.lat),
+    lon: parseFloat(r.lon),
+    city: addr.city || addr.town || addr.village || addr.municipality || "",
+    county: addr.county?.replace(/^Județul\s*/i, "") || addr.state || "",
+    postal: addr.postcode || "",
+  };
+}
+
+async function getBuildingFootprint(lat, lon) {
+  // Overpass API: caută clădiri în raza de 30m
+  const query = `[out:json][timeout:10];way["building"](around:30,${lat},${lon});out geom;`;
+  const res = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: "data=" + encodeURIComponent(query),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.elements?.length) return null;
+  const way = data.elements[0];
+  if (!way.geometry?.length) return null;
+  // Calculează aria poligonului (formula shoelace pe coordonate sferice)
+  const coords = way.geometry;
+  let area = 0;
+  const R = 6371000; // raza Pământ în metri
+  for (let i = 0; i < coords.length - 1; i++) {
+    const lat1 = coords[i].lat * Math.PI / 180;
+    const lon1 = coords[i].lon * Math.PI / 180;
+    const lat2 = coords[i + 1].lat * Math.PI / 180;
+    const lon2 = coords[i + 1].lon * Math.PI / 180;
+    area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+  }
+  area = Math.abs(area * R * R / 2);
+  const tags = way.tags || {};
+  return {
+    footprintM2: Math.round(area),
+    levels: parseInt(tags["building:levels"] || tags.levels || "0") || null,
+    yearBuilt: tags["start_date"] || tags["construction_date"] || null,
+    buildingType: tags.building || null,
+  };
+}
 
 export default function Step1Identification({
   building, updateBuilding, lang, selectedClimate,
@@ -13,6 +66,37 @@ export default function Step1Identification({
   goToStep,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+  const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
+  const [geoSuggestion, setGeoSuggestion] = useState(null);
+
+  const handleGeocode = useCallback(async () => {
+    if (!building.address && !building.city) {
+      showToast("Completați adresa sau localitatea mai întâi", "info");
+      return;
+    }
+    setGeoStatus("loading");
+    setGeoSuggestion(null);
+    try {
+      const geo = await geocodeAddress({ address: building.address, city: building.city, county: building.county });
+      if (geo.city && !building.city) updateBuilding("city", geo.city);
+      if (geo.county && !building.county) updateBuilding("county", geo.county);
+      if (geo.postal && !building.postal) updateBuilding("postal", geo.postal);
+      autoDetectLocality(geo.city || building.city);
+
+      // Caută footprint clădire
+      try {
+        const fp = await getBuildingFootprint(geo.lat, geo.lon);
+        if (fp) {
+          setGeoSuggestion(fp);
+        } else {
+          setGeoStatus("ok");
+        }
+      } catch { setGeoStatus("ok"); }
+    } catch (e) {
+      setGeoStatus("error");
+      showToast("Geocodare eșuată: " + e.message, "error");
+    }
+  }, [building, updateBuilding, autoDetectLocality, showToast]);
 
   return (
     <div>
@@ -32,6 +116,51 @@ export default function Step1Identification({
                 <Input label={t("Județ",lang)} value={building.county} onChange={v => updateBuilding("county",v)} />
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} />
+
+              {/* Geocodare OSM */}
+              <button
+                onClick={handleGeocode}
+                disabled={geoStatus === "loading"}
+                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {geoStatus === "loading"
+                  ? <><span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin" /> Geocodare OSM...</>
+                  : <><span>🔍</span> Autocompletare adresă (OSM)</>}
+              </button>
+
+              {/* Sugestie footprint clădire */}
+              {geoSuggestion && (
+                <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-3 space-y-2">
+                  <div className="text-xs font-semibold text-sky-300">📐 Date clădire din OpenStreetMap</div>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <div className="opacity-60">Amprentă:</div>
+                    <div className="font-medium">{geoSuggestion.footprintM2} m²</div>
+                    {geoSuggestion.levels && <><div className="opacity-60">Etaje:</div><div className="font-medium">{geoSuggestion.levels}</div></>}
+                    {geoSuggestion.yearBuilt && <><div className="opacity-60">An construcție:</div><div className="font-medium">{geoSuggestion.yearBuilt}</div></>}
+                    {geoSuggestion.buildingType && <><div className="opacity-60">Tip OSM:</div><div className="font-medium">{geoSuggestion.buildingType}</div></>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (geoSuggestion.footprintM2 && !building.areaUseful) {
+                          const estimatedUseful = Math.round(geoSuggestion.footprintM2 * (geoSuggestion.levels || 1) * 0.85);
+                          updateBuilding("areaUseful", String(estimatedUseful));
+                        }
+                        if (geoSuggestion.yearBuilt && !building.yearBuilt) updateBuilding("yearBuilt", geoSuggestion.yearBuilt);
+                        if (geoSuggestion.levels && !building.floors) updateBuilding("floors", `P+${geoSuggestion.levels - 1}E`);
+                        setGeoSuggestion(null);
+                        setGeoStatus("ok");
+                        showToast("Date OSM aplicate", "success");
+                      }}
+                      className="flex-1 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[10px] font-medium transition-all"
+                    >Aplică date</button>
+                    <button
+                      onClick={() => { setGeoSuggestion(null); setGeoStatus("ok"); }}
+                      className="px-3 py-1 rounded-lg border border-white/10 text-[10px] opacity-50 hover:opacity-70 transition-all"
+                    >Ignoră</button>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
