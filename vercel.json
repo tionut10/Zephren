@@ -27,6 +27,9 @@
     },
     "api/preview-pdf.js": {
       "maxDuration": 30
+    },
+    "api/import-document.js": {
+      "maxDuration": 30
     }
   }
 }

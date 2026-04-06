@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { renderAsync } from "docx-preview";
+import ImportModal from "./import/ImportModal.jsx";
 
 // ── Data imports ──
 import CLIMATE_DB from "./data/climate.json";
@@ -39,6 +40,7 @@ import Step4Renewables from "./steps/Step4Renewables.jsx";
 import Step5Calculation from "./steps/Step5Calculation";
 import Step6Certificate from "./steps/Step6Certificate";
 import Step7Audit from "./steps/Step7Audit";
+import Step8Advanced from "./steps/Step8Advanced.jsx";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -3241,7 +3243,7 @@ export default function EnergyCalcApp({ cloud }) {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); exportProject(); }
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
-      if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "7") { e.preventDefault(); setStep(parseInt(e.key)); }
+      if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "8") { e.preventDefault(); setStep(parseInt(e.key)); }
       if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); setStep(s => Math.max(1, s - 1)); }
       if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); setStep(s => Math.min(7, s + 1)); }
       if (e.key === "Escape") { setPdfPreviewHtml(null); setNzebReportHtml(null); setShowProjectManager(false); setShowClimateMap(false); setShowPhotoGallery(false); setShowProductCatalog(false); }
@@ -3305,10 +3307,12 @@ export default function EnergyCalcApp({ cloud }) {
         }
       };
       reader.readAsText(file.slice(0, 5000)); // Read first 5KB for detection
+    } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls") || file.name.endsWith(".pdf") || file.name.endsWith(".docx")) {
+      setShowImportWizard(true);
     } else if (file.type && file.type.startsWith("image/")) {
       importOCR(file);
     } else {
-      showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .gbxml, imagini", "error");
+      showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .xlsx, .pdf, .docx, imagini", "error");
     }
   }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus, importOCR]);
 
@@ -5220,7 +5224,7 @@ export default function EnergyCalcApp({ cloud }) {
           ))}
         </div>
         <div className="text-center mt-0.5">
-          <span className="text-[8px] sm:text-[9px] opacity-30">{step}/7 — {STEPS.find(s=>s.id===step)?.label} | {dataProgress}% complet</span>
+          <span className="text-[8px] sm:text-[9px] opacity-30">{step}/{STEPS.length} — {STEPS.find(s=>s.id===step)?.label} | {dataProgress}% complet</span>
         </div>
       </div>
 
@@ -5512,6 +5516,14 @@ export default function EnergyCalcApp({ cloud }) {
             getURefNZEB, setThermalBridges,
             t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
           }} />}
+
+          {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}
+          {step === 8 && <Step8Advanced {...{
+            building, climate: selectedClimate,
+            opaqueElements, glazingElements, thermalBridges,
+            instSummary, renewSummary,
+            systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem },
+          }} />}
           </div>
         </main>
       </div>
@@ -5707,42 +5719,33 @@ export default function EnergyCalcApp({ cloud }) {
 
       {/* #8 Import din alte softuri */}
       {showImportWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.7)"}} onClick={() => setShowImportWizard(false)}>
-          <div className="bg-[#12141f] border border-white/10 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">📥 Import proiect</h3>
-              <button onClick={() => setShowImportWizard(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
-            </div>
-            <div className="space-y-3">
-              {[
-                {name:"Zephren JSON", ext:".json", desc:"Format nativ Zephren", ready:true},
-                {name:"CSV anvelopă", ext:".csv", desc:"Import elemente din tabel CSV", ready:true},
-                {name:"ENERG+ export", ext:".xml", desc:"Import din software ENERG+", ready:true, handler:"energ"},
-                {name:"Doset CPE", ext:".dcp", desc:"Import din Doset certificare", ready:false},
-                {name:"BuildDesk", ext:".bdk", desc:"Import din BuildDesk Energy", ready:false},
-              ].map(f => (
-                <div key={f.name} className={`flex items-center gap-3 p-3 rounded-xl border ${f.ready ? "border-white/10 hover:bg-white/[0.04] cursor-pointer" : "border-white/5 opacity-40 cursor-not-allowed"}`}
-                  onClick={() => {
-                    if (!f.ready) return;
-                    if (f.handler === "energ") {
-                      const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".xml";
-                      inp.onchange = (ev) => { if (ev.target.files[0]) { importENERGPlus(ev.target.files[0]); setShowImportWizard(false); } };
-                      inp.click();
-                    } else {
-                      showToast("Folosește butonul Import JSON/CSV din toolbar", "info");
-                    }
-                  }}>
-                  <div className="w-10 h-10 rounded-lg bg-white/[0.05] flex items-center justify-center text-xs font-mono opacity-60">{f.ext}</div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{f.name}</div>
-                    <div className="text-[10px] opacity-40">{f.desc}</div>
-                  </div>
-                  {f.ready ? <span className="text-emerald-400 text-xs">✓</span> : <span className="text-[10px] opacity-30">În curând</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ImportModal
+          onClose={() => setShowImportWizard(false)}
+          onApply={(data) => {
+            pushUndo();
+            if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+            if (data.opaqueElements?.length) setOpaqueElements(prev => [...prev, ...data.opaqueElements]);
+            if (data.glazingElements?.length) setGlazingElements(prev => [...prev, ...data.glazingElements]);
+            if (data.thermalBridges?.length) setThermalBridges(prev => [...prev, ...data.thermalBridges]);
+            if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+            if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+            if (data.cooling && Object.keys(data.cooling).length) setCooling(p => ({...INITIAL_COOLING, ...p, ...data.cooling}));
+            if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+            if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+            if (data.solarThermal?.enabled !== undefined) setSolarThermal(p => ({...INITIAL_SOLAR_TH, ...p, ...data.solarThermal}));
+            if (data.photovoltaic?.enabled !== undefined) setPhotovoltaic(p => ({...INITIAL_PV, ...p, ...data.photovoltaic}));
+            if (data.heatPump?.enabled !== undefined) setHeatPump(p => ({...INITIAL_HP, ...p, ...data.heatPump}));
+            if (data.biomass?.enabled !== undefined) setBiomass(p => ({...INITIAL_BIO, ...p, ...data.biomass}));
+            showToast("Date importate cu succes în pașii 1–4", "success");
+          }}
+          importProject={importProject}
+          importCSV={importCSV}
+          importENERGPlus={importENERGPlus}
+          importDOSET={importDOSET}
+          importGbXML={importGbXML}
+          importOCR={importOCR}
+          showToast={showToast}
+        />
       )}
 
       {showBridgeCatalog && (
