@@ -1009,7 +1009,27 @@ class handler(BaseHTTPRequestHandler):
                                 break
 
             # ═══════════════════════════════════════
-            # 6. SAVE & RETURN
+            # 6. STRIP TRAILING EMPTY PARAGRAPHS
+            # ═══════════════════════════════════════
+            # Elimină paragrafele goale de la finalul documentului
+            # (cauzează pagina a 2-a goală în Word/LibreOffice)
+            body_el = doc.element.body
+            sect_pr = body_el.find(qn("w:sectPr"))
+            if sect_pr is not None:
+                children = list(body_el)
+                sect_idx = children.index(sect_pr)
+                # Parcurge de la finalul documentului spre sectPr
+                for child in reversed(children[:sect_idx]):
+                    if child.tag != qn("w:p"):
+                        break
+                    # Un paragraf e considerat gol dacă nu conține text
+                    texts = [t.text for t in child.iter(qn("w:t")) if t.text and t.text.strip()]
+                    if texts:
+                        break
+                    body_el.remove(child)
+
+            # ═══════════════════════════════════════
+            # 7. SAVE & RETURN
             # ═══════════════════════════════════════
             buf = io.BytesIO()
             doc.save(buf)
