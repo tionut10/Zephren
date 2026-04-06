@@ -833,23 +833,24 @@ class handler(BaseHTTPRequestHandler):
                                     if scope_runs:
                                         scope_runs[0].text = scope
 
-            # Program calcul — "versiunea"
-            replace_in_doc(doc, "versiunea", "")
+            # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN"
             software = data.get("software", "Zephren v2.0")
-            # Clear dots in program section
-            for para in doc.paragraphs:
-                if "." * 8 in para.text:
-                    for run in para.runs:
-                        if "." * 8 in run.text:
-                            run.text = re.sub(r'\.{8,}', ' ', run.text)
+            program_name = "ZEPHREN"
+            def fill_program_field(paragraphs):
+                for para in paragraphs:
+                    if "Program de calcul utilizat" in para.text or "versiunea" in para.text:
+                        inserted = False
+                        for run in para.runs:
+                            if re.search(r'\.{4,}', run.text):
+                                run.text = re.sub(r'\.{4,}', program_name if not inserted else '', run.text)
+                                inserted = True
+                            elif "versiunea" in run.text:
+                                run.text = run.text.replace("versiunea", "")
+            fill_program_field(doc.paragraphs)
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
-                        for para in cell.paragraphs:
-                            if "." * 8 in para.text:
-                                for run in para.runs:
-                                    if "." * 8 in run.text:
-                                        run.text = re.sub(r'\.{8,}', ' ', run.text)
+                        fill_program_field(cell.paragraphs)
 
             # Auditor name/company/phone/email
             auditor_replacements = {
