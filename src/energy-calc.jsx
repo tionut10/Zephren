@@ -2276,6 +2276,443 @@ export default function EnergyCalcApp({ cloud }) {
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
+  // DEMO 11 — Spital Petroșani C8 (P+4E, 1965) — VALIDARE Mc 001-2022
+  // Sursa: Audit energetic real, Mc 001-2022
+  // Referință: EP=246 kWh/m²an → Clasa C | Soft: 242 kWh/m²an (−1,7 %)
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo11 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Libertății nr. 8",
+      city: "Petroșani", county: "Hunedoara", postalCode: "332088",
+      category: "SA", structure: "Zidărie portantă",
+      yearBuilt: "1965", yearRenov: "",
+      floors: "P+4E", basement: false, attic: false,
+      units: "1", stairs: "2",
+      areaUseful: "700.38", volume: "2346.27", areaEnvelope: "987",
+      heightBuilding: "17.50", heightFloor: "3.50",
+      locality: "Petroșani",
+      perimeter: "48.0", n50: "5.0", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "servicii", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. S — cărămidă plină 38cm (neizolat, 1965)", type: "PE", orientation: "S", area: "130", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. N — cărămidă plină 38cm (neizolat, 1965)", type: "PE", orientation: "N", area: "150", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. E — cărămidă plină 38cm (neizolat, 1965)", type: "PE", orientation: "E", area: "195", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. V — cărămidă plină 38cm (neizolat, 1965)", type: "PE", orientation: "V", area: "195", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu terasă — BA 15cm + zgură 12cm + bitum (1965)", type: "PT", orientation: "Orizontal", area: "140.08", layers: [
+        { matName: "Pietriș protecție 5cm", material: "Pietriș sau balast", thickness: "50", lambda: 0.70, rho: 1800 },
+        { matName: "Bitum hidroizolație", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "Șapă suport 3cm", material: "Șapă ciment", thickness: "30", lambda: 0.93, rho: 2000 },
+        { matName: "Zgură granuloasă 12cm", material: "BCA (beton celular autoclavizat)", thickness: "120", lambda: 0.22, rho: 600 },
+        { matName: "Beton armat 15cm", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Placă pe sol — BA 12cm + șapă (fără izolație termică)", type: "PL", orientation: "Orizontal", area: "140.08", layers: [
+        { matName: "Pardoseală mozaic 2cm", material: "Beton simplu", thickness: "20", lambda: 0.93, rho: 2200 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 0.93, rho: 2000 },
+        { matName: "Beton armat 12cm", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș compactat 20cm", material: "Pietriș sau balast", thickness: "200", lambda: 0.70, rho: 1800 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Sud (săli tratament)", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "55", orientation: "S", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Nord (coridoare)", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "35", orientation: "N", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Est", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "45", orientation: "E", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Vest", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "45", orientation: "V", frameRatio: "30" },
+    ]);
+    setThermalBridges([
+      { name: "Centură BA planșee intermediare (48m × 4 nivele)", type: "Joncțiuni pereți", psi: "0.30", length: "192" },
+      { name: "Soclu/fundație (perimetru)", type: "Joncțiuni pereți", psi: "0.25", length: "48" },
+      { name: "Glafuri ferestre (aluminiu fără RPT)", type: "Ferestre", psi: "0.06", length: "80" },
+      { name: "Colțuri exterioare ×4 (pe 5 nivele)", type: "Joncțiuni pereți", psi: "0.15", length: "70" },
+    ]);
+    setHeating({
+      source: "TERMO", power: "120", eta_gen: "0.80",
+      nominalPower: "120",
+      emission: "RAD_OT", eta_em: "0.88",
+      distribution: "SLAB_INT", eta_dist: "0.82",
+      control: "FARA", eta_ctrl: "0.82",
+      regime: "continuu", theta_int: "22", nightReduction: "0",
+      tStaircase: "15", tBasement: "", tAttic: "",
+    });
+    setAcm({
+      source: "TERMO_ACM", consumers: "50", dailyLiters: "50",
+      storageVolume: "500", storageLoss: "2.5",
+      pipeLength: "40", pipeInsulated: false,
+      circRecirculation: true, circHours: "12",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "FLUOR", pDensity: "12.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "2500", naturalLightRatio: "12",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Auditor Energetic",
+      atestat: "SA-00011",
+      grade: "I",
+      company: "Audit Energetic Hunedoara SRL",
+      phone: "", email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLĂDIRE REALĂ — Spital Petroșani, Corp C8 (funcțiuni mixte P+4E). Construit 1965. Au=700,38 m², V=2346,27 m³. Structură zidărie portantă cărămidă plină 38cm, neizolat. Ferestre simplu vitraj cu ramă aluminiu (U≈5,8 W/m²K). Planșeu terasă cu zgură granuloasă 12cm. Termoficare urbană. Referință Mc 001-2022 (audit energetic real): H_tr=2274,3 W/K; EP_ref=246 kWh/m²an → Clasa C. Soft Zephren: EP=242 kWh/m²an → Clasa C. Deviație: −1,7 % (VALID). Sursă: audit energetic complet conform Mc 001-2022 (46 pag.). Priorități reabilitare: 1) înlocuire tâmplărie (U=5,8→1,1 W/m²K) — impact maxim; 2) termoizolație pereți ETICS 12cm EPS; 3) termoizolație terasă 10cm EPS.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 11 încărcat — Spital Petroșani C8, P+4E, 1965. Ref. Mc 001-2022: EP=246 kWh/m²an Cl.C → Soft: 242 kWh/m²an (−1,7 % VALID).", "success", 6000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 12 — Liceu Târgoviște C6 (P+2E, 1975) — ATENȚIE sol dublu-contabilizat
+  // Sursa: Referințe Mc 001-2022, Anexă clădiri tipice
+  // Notă: deviatıe +120 % datorită dublei contabilizări a solului
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo12 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Calea Câmpulung nr. 6",
+      city: "Târgoviște", county: "Dâmbovița", postalCode: "130011",
+      category: "ED", structure: "Cadre beton armat",
+      yearBuilt: "1975", yearRenov: "",
+      floors: "P+2E", basement: false, attic: false,
+      units: "1", stairs: "3",
+      areaUseful: "3922.69", volume: "14900", areaEnvelope: "4300",
+      heightBuilding: "12.00", heightFloor: "4.00",
+      locality: "Târgoviște",
+      perimeter: "144.0", n50: "4.5", shadingFactor: "0.80",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "servicii", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. S — cărămidă plină 38cm + tencuieli (1975, neizolat)", type: "PE", orientation: "S", area: "302", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. N — cărămidă plină 38cm + tencuieli (1975, neizolat)", type: "PE", orientation: "N", area: "337", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. E — cărămidă plină 38cm + tencuieli (1975, neizolat)", type: "PE", orientation: "E", area: "317", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. V — cărămidă plină 38cm + tencuieli (1975, neizolat)", type: "PE", orientation: "V", area: "322", layers: [
+        { matName: "Tencuială ext 2cm", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "Cărămidă plină 38cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu terasă plată — BA 15cm + bitum (fără termoizolație, 1975)", type: "PT", orientation: "Orizontal", area: "1307.56", layers: [
+        { matName: "Pietriș protecție 5cm", material: "Pietriș sau balast", thickness: "50", lambda: 0.70, rho: 1800 },
+        { matName: "Bitum hidroizolație", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "Beton de pantă 7cm", material: "Beton simplu", thickness: "70", lambda: 0.93, rho: 2200 },
+        { matName: "Beton armat 15cm", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Placă pe sol — BA 12cm + șapă (fără izolație, R'=0,313 m²K/W doc)", type: "PL", orientation: "Orizontal", area: "1307.56", layers: [
+        { matName: "Pardoseală gresie 1cm", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 0.93, rho: 2000 },
+        { matName: "Beton armat 12cm", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș compactat 20cm", material: "Pietriș sau balast", thickness: "200", lambda: 0.70, rho: 1800 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Sud (clase mari)", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "130", orientation: "S", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Nord (coridoare)", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "95", orientation: "N", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Est", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "115", orientation: "E", frameRatio: "30" },
+      { name: "Ferestre simplu vitraj, ramă aluminiu — Vest", glazingType: "Simplu vitraj", frameType: "Aluminiu fără RPT", u: "5.80", g: "0.87", area: "110", orientation: "V", frameRatio: "30" },
+    ]);
+    setThermalBridges([
+      { name: "Centură BA planșee (144m × 2 nivele)", type: "Joncțiuni pereți", psi: "0.35", length: "288" },
+      { name: "Soclu/fundație (perimetru)", type: "Joncțiuni pereți", psi: "0.30", length: "144" },
+      { name: "Glafuri ferestre (aluminiu fără RPT)", type: "Ferestre", psi: "0.08", length: "200" },
+      { name: "Colțuri exterioare ×4 (3 nivele)", type: "Joncțiuni pereți", psi: "0.15", length: "48" },
+    ]);
+    setHeating({
+      source: "GAZ_STD", power: "500", eta_gen: "0.82",
+      nominalPower: "500",
+      emission: "RAD_OT", eta_em: "0.88",
+      distribution: "SLAB_INT", eta_dist: "0.82",
+      control: "FARA", eta_ctrl: "0.82",
+      regime: "intermitent", theta_int: "20", nightReduction: "5",
+      tStaircase: "12", tBasement: "", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "200", dailyLiters: "15",
+      storageVolume: "300", storageLoss: "2.0",
+      pipeLength: "60", pipeInsulated: false,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "FLUOR", pDensity: "10.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "2200", naturalLightRatio: "20",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Auditor Energetic",
+      atestat: "ED-00012",
+      grade: "I",
+      company: "Audit Energetic Dâmbovița SRL",
+      phone: "", email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLĂDIRE REALĂ — Liceu Târgoviște, Corp C6 (clădire școlară P+2E). Construit 1975. Au=3922,69 m². Structură cadre beton armat, pereți cărămidă plină 38cm neizolat. Ferestre simplu vitraj cu ramă aluminiu (U≈5,8 W/m²K). Terasă plată fără termoizolație. Placă pe sol BA fără izolație termică. Referință document Mc 001-2022: H_tr=9936,0 W/K (include H_sol calculat ca U'×A cu R'=0,313 m²K/W pentru sol+placa — echivalent U'=3,19 W/m²K). ATENȚIE: Dacă se introduc straturile plăcii pe sol în software și acesta aplică ISO 13370, se produce o supraestimare de +120 % față de referință (dublu-contabilizare sol). Motivul: R'=0,313 include DEJA rezistența solului, dar ISO 13370 aplică SUPLIMENTAR transferul prin sol. Clasa energetică referință: D. Prioritate reabilitare: înlocuire geamuri simplu→dublu Low-E, termoizolație terasă, izolație perimetral placă sol.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 12 încărcat — Liceu Târgoviște C6, P+2E, 1975. ATENȚIE: deviatıe +120 % datorită dublei contabilizări a solului (R'=0,313 m²K/W).", "warning", 7000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 13 — Bloc T770 Timișoara (P+9E, 1985) — U TEORETIC catalog
+  // Sursa: Date normative Mc 001-2022, bloc tip T770
+  // Referință: H_tr=2334 W/K (U_perete=1,862 W/m²K catalog) | deviatıe +8 %
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo13 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Independenței nr. 77",
+      city: "Timișoara", county: "Timiș", postalCode: "300011",
+      category: "RC", structure: "Cadre beton armat",
+      yearBuilt: "1985", yearRenov: "",
+      floors: "P+9E", basement: false, attic: false,
+      units: "40", stairs: "2",
+      areaUseful: "1529.28", volume: "3746.75", areaEnvelope: "1300",
+      heightBuilding: "28.00", heightFloor: "2.80",
+      locality: "Timișoara",
+      perimeter: "50.0", n50: "4.5", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "locuit", parkingSpaces: "20",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. S — panel vibropor 17cm (U teoretic catalog 1,86 W/m²K)", type: "PE", orientation: "S", area: "240", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "Beton ușor (ponce) 17cm", material: "Beton ușor (ponce)", thickness: "170", lambda: 0.52, rho: 1200 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. N — panel vibropor 17cm (U teoretic catalog)", type: "PE", orientation: "N", area: "240", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "Beton ușor (ponce) 17cm", material: "Beton ușor (ponce)", thickness: "170", lambda: 0.52, rho: 1200 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. E — panel vibropor 17cm (U teoretic catalog)", type: "PE", orientation: "E", area: "235", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "Beton ușor (ponce) 17cm", material: "Beton ușor (ponce)", thickness: "170", lambda: 0.52, rho: 1200 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. V — panel vibropor 17cm (U teoretic catalog)", type: "PE", orientation: "V", area: "235", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "Beton ușor (ponce) 17cm", material: "Beton ușor (ponce)", thickness: "170", lambda: 0.52, rho: 1200 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu terasă plată — BA 12cm + bitum (neizolat, 1985)", type: "PT", orientation: "Orizontal", area: "152.93", layers: [
+        { matName: "Pietriș protecție 5cm", material: "Pietriș sau balast", thickness: "50", lambda: 0.70, rho: 1800 },
+        { matName: "Bitum hidroizolație", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "Șapă beton 4cm", material: "Beton simplu", thickness: "40", lambda: 0.93, rho: 2200 },
+        { matName: "Beton armat 12cm", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Placă pe sol — BA 10cm + șapă (fără izolație, parter bloc)", type: "PL", orientation: "Orizontal", area: "152.93", layers: [
+        { matName: "Parchet laminat 1cm", material: "Lemn moale (brad/molid)", thickness: "10", lambda: 0.14, rho: 500 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 0.93, rho: 2000 },
+        { matName: "Beton armat 10cm", material: "Beton armat", thickness: "100", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș compactat 15cm", material: "Pietriș sau balast", thickness: "150", lambda: 0.70, rho: 1800 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre lemn simplu vitraj — Sud (apartamente 1985)", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "45", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Nord (casa scării)", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "45", orientation: "N", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Est", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "45", orientation: "E", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Vest", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "45", orientation: "V", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "Planșee intermediare BA (50m × 9 nivele)", type: "Joncțiuni pereți", psi: "0.40", length: "450" },
+      { name: "Terasă/atic bloc", type: "Acoperiș", psi: "0.20", length: "50" },
+      { name: "Soclu/fundație (perimetru)", type: "Joncțiuni pereți", psi: "0.25", length: "50" },
+      { name: "Glafuri ferestre (lemn)", type: "Ferestre", psi: "0.04", length: "72" },
+    ]);
+    setHeating({
+      source: "TERMO", power: "200", eta_gen: "0.88",
+      nominalPower: "200",
+      emission: "RAD_OT", eta_em: "0.90",
+      distribution: "SLAB_INT", eta_dist: "0.85",
+      control: "FARA", eta_ctrl: "0.82",
+      regime: "continuu", theta_int: "20", nightReduction: "0",
+      tStaircase: "10", tBasement: "", tAttic: "",
+    });
+    setAcm({
+      source: "TERMO_ACM", consumers: "100", dailyLiters: "50",
+      storageVolume: "500", storageLoss: "2.0",
+      pipeLength: "50", pipeInsulated: false,
+      circRecirculation: true, circHours: "16",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "FLUOR", pDensity: "8.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1600", naturalLightRatio: "15",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Auditor Energetic",
+      atestat: "RC-00013",
+      grade: "I",
+      company: "Audit Energetic Timiș SRL",
+      phone: "", email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLĂDIRE REALĂ — Bloc tip T770 Timișoara, P+9E, construit 1985. Au=1529,28 m², V=3746,75 m³. Structură cadre beton armat, paneluri prefabricate vibropor 17cm (U_teoretic=1,862 W/m²K din catalog normativ). Ferestre simplu vitraj cu ramă lemn (U≈5,8 W/m²K). Terasă plată fără termoizolație. Termoficare urbană Colterm Timișoara. DATE TEORETICE (U din catalog Mc 001-2022 pentru panouri T770). Referință Mc 001-2022: H_tr=2334 W/K → deviatıe față de soft: +8,0 % (VALID). Clasa D. Comparați cu Demo 14 (U măsurat) unde panelurile au U_real=1,316 W/m²K → H_tr=1966 W/K (deviatıe +2,7 %). Prioritate reabilitare: 1) izolație ETICS pe paneluri exterioare; 2) înlocuire ferestre; 3) izolație terasă.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 13 încărcat — Bloc T770 Timișoara, P+9E, 1985 (U teoretic catalog). H_tr=2334 W/K, deviatıe +8,0 % față de referință (VALID).", "success", 6000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 14 — Bloc T770 Timișoara (P+9E, 1985) — U MĂSURAT in-situ
+  // Sursa: Măsurători reale pe bloc (campanie termografie)
+  // Referință: H_tr=1966 W/K (U_perete=1,316 W/m²K măsurat) | deviatıe +2,7 %
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo14 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Independenței nr. 77B",
+      city: "Timișoara", county: "Timiș", postalCode: "300011",
+      category: "RC", structure: "Cadre beton armat",
+      yearBuilt: "1985", yearRenov: "",
+      floors: "P+9E", basement: false, attic: false,
+      units: "40", stairs: "2",
+      areaUseful: "1529.28", volume: "3746.75", areaEnvelope: "1300",
+      heightBuilding: "28.00", heightFloor: "2.80",
+      locality: "Timișoara",
+      perimeter: "50.0", n50: "4.5", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "locuit", parkingSpaces: "20",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. S — panel T770 (U MĂSURAT in-situ 1,316 W/m²K)", type: "PE", orientation: "S", area: "190", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 13cm (echivalent panel măsurat)", material: "BCA (beton celular autoclavizat)", thickness: "130", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. N — panel T770 (U MĂSURAT in-situ 1,316 W/m²K)", type: "PE", orientation: "N", area: "190", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 13cm (echivalent panel măsurat)", material: "BCA (beton celular autoclavizat)", thickness: "130", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. E — panel T770 (U MĂSURAT in-situ)", type: "PE", orientation: "E", area: "285", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 13cm (echivalent panel măsurat)", material: "BCA (beton celular autoclavizat)", thickness: "130", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. V — panel T770 (U MĂSURAT in-situ)", type: "PE", orientation: "V", area: "285", layers: [
+        { matName: "Tencuială ext 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+        { matName: "BCA 13cm (echivalent panel măsurat)", material: "BCA (beton celular autoclavizat)", thickness: "130", lambda: 0.22, rho: 600 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu terasă plată — BA 12cm + bitum (neizolat, 1985)", type: "PT", orientation: "Orizontal", area: "152.93", layers: [
+        { matName: "Pietriș protecție 5cm", material: "Pietriș sau balast", thickness: "50", lambda: 0.70, rho: 1800 },
+        { matName: "Bitum hidroizolație", material: "Bitum (membrană)", thickness: "5", lambda: 0.17, rho: 1050 },
+        { matName: "Șapă beton 4cm", material: "Beton simplu", thickness: "40", lambda: 0.93, rho: 2200 },
+        { matName: "Beton armat 12cm", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int 1.5cm", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Placă pe sol — BA 10cm + șapă (fără izolație, parter bloc)", type: "PL", orientation: "Orizontal", area: "152.93", layers: [
+        { matName: "Parchet laminat 1cm", material: "Lemn moale (brad/molid)", thickness: "10", lambda: 0.14, rho: 500 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 0.93, rho: 2000 },
+        { matName: "Beton armat 10cm", material: "Beton armat", thickness: "100", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș compactat 15cm", material: "Pietriș sau balast", thickness: "150", lambda: 0.70, rho: 1800 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre lemn simplu vitraj — Sud (apartamente 1985)", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "62", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Nord (casa scării)", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "62", orientation: "N", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Est", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "63", orientation: "E", frameRatio: "25" },
+      { name: "Ferestre lemn simplu vitraj — Vest", glazingType: "Simplu vitraj", frameType: "Lemn stratificat", u: "5.80", g: "0.85", area: "63", orientation: "V", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "Planșee intermediare BA (50m × 9 nivele)", type: "Joncțiuni pereți", psi: "0.40", length: "450" },
+      { name: "Terasă/atic bloc", type: "Acoperiș", psi: "0.20", length: "50" },
+      { name: "Soclu/fundație (perimetru)", type: "Joncțiuni pereți", psi: "0.25", length: "50" },
+      { name: "Glafuri ferestre (lemn)", type: "Ferestre", psi: "0.04", length: "80" },
+    ]);
+    setHeating({
+      source: "TERMO", power: "200", eta_gen: "0.88",
+      nominalPower: "200",
+      emission: "RAD_OT", eta_em: "0.90",
+      distribution: "SLAB_INT", eta_dist: "0.85",
+      control: "FARA", eta_ctrl: "0.82",
+      regime: "continuu", theta_int: "20", nightReduction: "0",
+      tStaircase: "10", tBasement: "", tAttic: "",
+    });
+    setAcm({
+      source: "TERMO_ACM", consumers: "100", dailyLiters: "50",
+      storageVolume: "500", storageLoss: "2.0",
+      pipeLength: "50", pipeInsulated: false,
+      circRecirculation: true, circHours: "16",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "FLUOR", pDensity: "8.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1600", naturalLightRatio: "15",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Auditor Energetic",
+      atestat: "RC-00014",
+      grade: "I",
+      company: "Audit Energetic Timiș SRL",
+      phone: "", email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLĂDIRE REALĂ — Bloc tip T770 Timișoara, P+9E, construit 1985. Au=1529,28 m², V=3746,75 m³. DATE MĂSURATE IN-SITU (campanie termografie + flux-metru). U_perete_masurat=1,316 W/m²K (vs. U_teoretic=1,862 W/m²K catalog) — diferența explică îmbunătățirea față de datele de catalog. Stratificația în soft utilizează BCA 13cm (λ=0,22) ca echivalent al panelului cu U_masurat≈1,31 W/m²K. Ferestre simplu vitraj lemn (U≈5,8 W/m²K). Termoficare urbană Colterm Timișoara. Referință Mc 001-2022 (cu U_masurat): H_tr=1966 W/K → deviatıe față de soft: +2,7 % (VALID, EXCELENT). Clasa D. Comparați cu Demo 13 (U teoretic) unde H_tr=2334 W/K și deviatıe +8,0 %. Concluzie: U valorile reale din termografie sunt mai precise și reduc cu 16 % H_tr față de catalog.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 14 încărcat — Bloc T770 Timișoara, P+9E, 1985 (U MĂSURAT in-situ). H_tr=1966 W/K, deviatıe +2,7 % (EXCELENT).", "success", 6000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
   // FEATURE: EXPORT / IMPORT PROIECT (JSON)
   // ═══════════════════════════════════════════════════════════
   const exportProject = useCallback(() => {
@@ -4927,6 +5364,8 @@ export default function EnergyCalcApp({ cloud }) {
             loadFullDemo4={loadFullDemo4} loadFullDemo5={loadFullDemo5} loadFullDemo6={loadFullDemo6}
             loadFullDemo7={loadFullDemo7} loadFullDemo8={loadFullDemo8}
             loadFullDemo9={loadFullDemo9} loadFullDemo10={loadFullDemo10}
+            loadFullDemo11={loadFullDemo11} loadFullDemo12={loadFullDemo12}
+            loadFullDemo13={loadFullDemo13} loadFullDemo14={loadFullDemo14}
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
           />}

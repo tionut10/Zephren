@@ -8,6 +8,7 @@ export default function Step1Identification({
   autoDetectLocality, estimateGeometry, avRatio,
   loadFullDemo, loadFullDemo2, loadFullDemo3, loadFullDemo4, loadFullDemo5, loadFullDemo6, loadFullDemo7, loadFullDemo8,
   loadFullDemo9, loadFullDemo10,
+  loadFullDemo11, loadFullDemo12, loadFullDemo13, loadFullDemo14,
   loadTypicalBuilding, showToast,
   goToStep,
 }) {
@@ -161,6 +162,50 @@ export default function Step1Identification({
                   <div>
                     <div className="font-bold text-amber-300">Cămin studențesc 2S+P+4E Brașov 1997 — VALIDARE (disertație)</div>
                     <div className="opacity-50 mt-0.5">BA 30cm + EPS 10cm · terasă neizolată · cazan gaz 350kW · Ref. MC2006: q_tot=240,7 kWh/m²an Cl.C</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo11()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏥</span>
+                  <div>
+                    <div className="font-bold text-amber-300">Spital Petroșani C8 P+4E 1965 — VALIDARE Mc 001-2022</div>
+                    <div className="opacity-50 mt-0.5">Cărămidă 38cm + simplu vitraj · termoficare · Ref. Mc2022: EP=246 kWh/m²an Cl.C · deviatıe −1,7 % VALID</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo12()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">⚠️</span>
+                  <div>
+                    <div className="font-bold text-red-400">Liceu Târgoviște C6 P+2E 1975 — ATENȚIE sol dublu-contabilizat</div>
+                    <div className="opacity-50 mt-0.5">Cărămidă 38cm + simplu vitraj mare · gaz · H_tr=9936 W/K · deviatıe +120 % (metodologie sol)</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo13()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏢</span>
+                  <div>
+                    <div className="font-bold text-amber-300">Bloc T770 Timișoara P+9E 1985 — VALIDARE U teoretic</div>
+                    <div className="opacity-50 mt-0.5">Panel vibropor 17cm (U=1,86 catalog) · termoficare · H_tr=2334 W/K · deviatıe +8,0 % VALID</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo14()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏢</span>
+                  <div>
+                    <div className="font-bold text-emerald-300">Bloc T770 Timișoara P+9E 1985 — VALIDARE U măsurat</div>
+                    <div className="opacity-50 mt-0.5">Panel măsurat in-situ (U=1,32) · termoficare · H_tr=1966 W/K · deviatıe +2,7 % EXCELENT</div>
                   </div>
                 </div>
               </button>
