@@ -1031,39 +1031,331 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
-              {/* ── Vizualizare 3D simplificată (SVG isometric) ── */}
+              {/* ── Vizualizare 3D detaliată (SVG isometric) ── */}
               {building.areaUseful && building.floors && (
-                <Card title="Vizualizare 3D clădire" className="mb-4">
+                <Card title="VIZUALIZARE 3D CLĂDIRE" className="mb-4">
                   {(() => {
                     const au = parseFloat(building.areaUseful) || 100;
-                    const nFloors = parseInt(building.floors?.replace(/[^0-9]/g, "")) || 1;
-                    const footprint = au / Math.max(1, nFloors);
-                    const w = Math.sqrt(footprint) * 2;
-                    const d = Math.sqrt(footprint) * 1.5;
-                    const h = nFloors * 3;
-                    const scale = 3;
-                    const isoX = (x, y) => 200 + (x - y) * scale * 0.866;
-                    const isoY = (x, y, z) => 150 + (x + y) * scale * 0.5 - z * scale;
+                    const perim = parseFloat(building.perimeter) || 0;
+                    const fStr = building.floors || "P";
+
+                    // Parse floor string (e.g., "2S+P+4E+M")
+                    const nSubs = (() => { const m = fStr.match(/(\d+)S/); return m ? parseInt(m[1]) : (fStr.includes("S") ? 1 : 0); })();
+                    const nAbove = (() => { const m = fStr.match(/\+(\d+)E/); return m ? parseInt(m[1]) : 0; })();
+                    const hasMans = fStr.includes("M");
+                    const nFloors = 1 + nAbove;
+                    const hasPitch = building.category === "RI" || (hasMans && !["RC","BI","ED","SA","HC","CO"].includes(building.category));
+                    const isApartBlock = ["RC","RA"].includes(building.category);
+
+                    // Building footprint from perimeter + area
+                    const footprint = au / Math.max(1, nFloors + (hasMans ? 1 : 0));
+                    let WW, DD;
+                    if (perim > 4) {
+                      const half = perim / 2;
+                      const disc = half * half / 4 - footprint;
+                      if (disc >= 0 && Math.sqrt(Math.max(0,disc)) < half / 2) {
+                        WW = half / 2 + Math.sqrt(Math.max(0, disc));
+                        DD = half / 2 - Math.sqrt(Math.max(0, disc));
+                      } else {
+                        WW = Math.sqrt(footprint) * 1.6;
+                        DD = Math.sqrt(footprint) * 0.62;
+                      }
+                    } else {
+                      WW = Math.sqrt(footprint) * 1.6;
+                      DD = Math.sqrt(footprint) * 0.62;
+                    }
+                    if (WW / DD > 5) WW = DD * 5;
+                    if (DD / WW > 3) DD = WW * 3;
+
+                    const flH = 3.0;
+                    const bH = nFloors * flH;
+                    const sH = nSubs * flH;
+                    const mansH = hasMans ? flH * 0.75 : 0;
+                    const totalH = bH + mansH;
+
+                    // Adaptive scale to fit SVG
+                    const SVG_W = 560, SVG_H = 370;
+                    const maxHoriz = WW + DD;
+                    const maxVert = totalH + sH + 3;
+                    const sc = Math.min(11, 280 / maxHoriz, 230 / maxVert);
+                    const cx = SVG_W * 0.40, cy = SVG_H * 0.60;
+
+                    // Isometric projection (30° angle)
+                    const C30 = Math.cos(Math.PI / 6), S30 = Math.sin(Math.PI / 6);
+                    const px = (x, y) => cx + (x - y) * C30 * sc;
+                    const py = (x, y, z) => cy - (x + y) * S30 * sc - z * sc;
+                    const P = (x, y, z) => `${px(x,y)},${py(x,y,z)}`;
+
+                    const ec = enClass.color;
+                    const isDark = theme === "dark";
+
+                    // Glazing ratio → window size
+                    const totalGlaz = glazingElements?.reduce((s, e) => s + (parseFloat(e.area) || 0), 0) || 0;
+                    const wallArea = 2 * (WW + DD) * flH * nFloors;
+                    const glazR = Math.min(0.48, Math.max(0.06, totalGlaz / Math.max(1, wallArea)));
+                    const winH = flH * Math.min(0.58, glazR * 1.8 + 0.12);
+
+                    const nWF = Math.max(1, Math.min(9, Math.round(WW / 3.2)));
+                    const nWS = Math.max(1, Math.min(7, Math.round(DD / 3.2)));
+                    const stepF = WW / (nWF + 1);
+                    const stepS = DD / (nWS + 1);
+
+                    const parts = [];
+
+                    // Ground shadow
+                    parts.push(<ellipse key="shadow"
+                      cx={px(WW/2, DD/2)} cy={py(WW/2, DD/2, -sH > 0 ? -sH : 0) + sc * 0.3}
+                      rx={(WW + DD) * sc * 0.52 * C30} ry={(WW + DD) * sc * 0.18}
+                      fill="rgba(0,0,0,0.32)" />);
+
+                    // Basement levels
+                    for (let s = nSubs; s > 0; s--) {
+                      const z0 = -(nSubs - s + 1) * flH, z1 = z0 + flH;
+                      parts.push(
+                        <polygon key={`bf${s}`}
+                          points={`${P(0,0,z0)} ${P(WW,0,z0)} ${P(WW,0,z1)} ${P(0,0,z1)}`}
+                          fill={isDark ? "rgba(40,45,62,0.88)" : "rgba(175,175,195,0.75)"}
+                          stroke="rgba(100,110,140,0.5)" strokeWidth="0.8" />,
+                        <polygon key={`bs${s}`}
+                          points={`${P(WW,0,z0)} ${P(WW,DD,z0)} ${P(WW,DD,z1)} ${P(WW,0,z1)}`}
+                          fill={isDark ? "rgba(30,34,50,0.88)" : "rgba(155,155,175,0.75)"}
+                          stroke="rgba(90,100,130,0.4)" strokeWidth="0.5" />
+                      );
+                      // Small basement windows
+                      for (let w = 0; w < nWF; w++) {
+                        const xl = stepF*(w+0.3), xr = stepF*(w+0.7);
+                        const zw0 = z0+flH*0.3, zw1 = z0+flH*0.65;
+                        parts.push(<polygon key={`bw${s}${w}`}
+                          points={`${P(xl,0,zw0)} ${P(xr,0,zw0)} ${P(xr,0,zw1)} ${P(xl,0,zw1)}`}
+                          fill="rgba(140,180,210,0.22)" stroke="rgba(150,200,230,0.38)" strokeWidth="0.5"/>);
+                      }
+                    }
+
+                    // Main walls — front (Y=0) and side (X=WW)
+                    parts.push(
+                      <polygon key="wf"
+                        points={`${P(0,0,0)} ${P(WW,0,0)} ${P(WW,0,bH)} ${P(0,0,bH)}`}
+                        fill={ec+"36"} stroke={ec} strokeWidth="1.6" />,
+                      <polygon key="ws"
+                        points={`${P(WW,0,0)} ${P(WW,DD,0)} ${P(WW,DD,bH)} ${P(WW,0,bH)}`}
+                        fill={ec+"1E"} stroke={ec} strokeWidth="1.0" strokeOpacity="0.7" />
+                    );
+
+                    // Floor lines
+                    for (let f = 1; f < nFloors; f++) {
+                      const z = f * flH;
+                      parts.push(
+                        <line key={`lf${f}`} x1={px(0,0)} y1={py(0,0,z)} x2={px(WW,0)} y2={py(WW,0,z)}
+                          stroke={ec} strokeWidth="0.8" strokeOpacity="0.45"/>,
+                        <line key={`ls${f}`} x1={px(WW,0)} y1={py(WW,0,z)} x2={px(WW,DD)} y2={py(WW,DD,z)}
+                          stroke={ec} strokeWidth="0.5" strokeOpacity="0.28"/>
+                      );
+                    }
+
+                    // Vertical corner lines (structural columns suggestion)
+                    const colStep = WW / Math.max(1, nWF);
+                    for (let c = 1; c < nWF; c++) {
+                      const xc = colStep * c;
+                      parts.push(<line key={`col${c}`}
+                        x1={px(xc,0)} y1={py(xc,0,0)} x2={px(xc,0)} y2={py(xc,0,bH)}
+                        stroke={ec} strokeWidth="0.35" strokeOpacity="0.2"/>);
+                    }
+
+                    // Windows — front face (skip ground floor position 0 = door)
+                    for (let f = 0; f < nFloors; f++) {
+                      const zb = f*flH + flH*0.18, zt = zb + winH;
+                      for (let w = 0; w < nWF; w++) {
+                        if (f === 0 && w === 0) continue; // door slot
+                        const xl = stepF*(w+0.22), xr = stepF*(w+0.78);
+                        parts.push(
+                          <polygon key={`wf${f}${w}`}
+                            points={`${P(xl,0,zb)} ${P(xr,0,zb)} ${P(xr,0,zt)} ${P(xl,0,zt)}`}
+                            fill="rgba(130,205,255,0.38)" stroke="rgba(160,225,255,0.65)" strokeWidth="0.75"/>,
+                          <line key={`wfm${f}${w}`}
+                            x1={px((xl+xr)/2,0)} y1={py((xl+xr)/2,0,zb)}
+                            x2={px((xl+xr)/2,0)} y2={py((xl+xr)/2,0,zt)}
+                            stroke="rgba(160,225,255,0.3)" strokeWidth="0.4"/>
+                        );
+                      }
+                    }
+
+                    // Windows — side face
+                    for (let f = 0; f < nFloors; f++) {
+                      const zb = f*flH + flH*0.18, zt = zb + winH;
+                      for (let w = 0; w < nWS; w++) {
+                        const yl = stepS*(w+0.22), yr = stepS*(w+0.78);
+                        parts.push(<polygon key={`ws${f}${w}`}
+                          points={`${P(WW,yl,zb)} ${P(WW,yr,zb)} ${P(WW,yr,zt)} ${P(WW,yl,zt)}`}
+                          fill="rgba(100,170,220,0.2)" stroke="rgba(130,195,235,0.4)" strokeWidth="0.5"/>);
+                      }
+                    }
+
+                    // Door — ground floor, front face
+                    const dX0 = stepF * 0.18, dX1 = stepF * 0.82, dH = flH * 0.72;
+                    parts.push(
+                      <polygon key="door"
+                        points={`${P(dX0,0,0)} ${P(dX1,0,0)} ${P(dX1,0,dH)} ${P(dX0,0,dH)}`}
+                        fill={isDark ? "rgba(55,42,28,0.9)" : "rgba(110,80,50,0.85)"}
+                        stroke="rgba(155,115,75,0.75)" strokeWidth="1.0"/>,
+                      <line key="door-v"
+                        x1={px((dX0+dX1)/2,0)} y1={py((dX0+dX1)/2,0,0)}
+                        x2={px((dX0+dX1)/2,0)} y2={py((dX0+dX1)/2,0,dH)}
+                        stroke="rgba(155,115,75,0.4)" strokeWidth="0.5"/>,
+                      <polygon key="door-step"
+                        points={`${P(dX0-0.25,0,0)} ${P(dX1+0.25,0,0)} ${P(dX1+0.25,-0.55,0)} ${P(dX0-0.25,-0.55,0)}`}
+                        fill={isDark ? "rgba(70,60,50,0.65)" : "rgba(140,120,100,0.65)"}
+                        stroke="rgba(140,110,85,0.4)" strokeWidth="0.5"/>
+                    );
+
+                    // Balconies for apartment blocks
+                    if (isApartBlock && nFloors >= 3) {
+                      const bW = WW * 0.30, bX = WW * 0.18, bD2 = 1.35;
+                      for (let f = 1; f < nFloors; f++) {
+                        const z = f * flH;
+                        parts.push(
+                          <polygon key={`balt${f}`}
+                            points={`${P(bX,-bD2,z)} ${P(bX+bW,-bD2,z)} ${P(bX+bW,0,z)} ${P(bX,0,z)}`}
+                            fill={ec+"22"} stroke={ec} strokeWidth="0.7" strokeOpacity="0.5"/>,
+                          <polygon key={`balf${f}`}
+                            points={`${P(bX,-bD2,z-0.05)} ${P(bX+bW,-bD2,z-0.05)} ${P(bX+bW,-bD2,z+0.85)} ${P(bX,-bD2,z+0.85)}`}
+                            fill={ec+"12"} stroke={ec} strokeWidth="0.6" strokeOpacity="0.38"/>
+                        );
+                      }
+                    }
+
+                    // Mansardă level
+                    if (hasMans) {
+                      const ins = Math.min(WW*0.12, 2.0), insD = Math.min(DD*0.10, 1.5);
+                      parts.push(
+                        <polygon key="mf"
+                          points={`${P(ins,0,bH)} ${P(WW-ins,0,bH)} ${P(WW-ins,0,bH+mansH)} ${P(ins,0,bH+mansH)}`}
+                          fill={ec+"2A"} stroke={ec} strokeWidth="1.0" strokeOpacity="0.75"/>,
+                        <polygon key="ms"
+                          points={`${P(WW-ins,0,bH)} ${P(WW-ins,DD-insD,bH)} ${P(WW-ins,DD-insD,bH+mansH)} ${P(WW-ins,0,bH+mansH)}`}
+                          fill={ec+"18"} stroke={ec} strokeWidth="0.7" strokeOpacity="0.5"/>,
+                        <polygon key="mt"
+                          points={`${P(ins,0,bH+mansH)} ${P(WW-ins,0,bH+mansH)} ${P(WW-ins,DD-insD,bH+mansH)} ${P(ins,DD-insD,bH+mansH)}`}
+                          fill={ec+"20"} stroke={ec} strokeWidth="0.8" strokeOpacity="0.55"/>
+                      );
+                      // Dormer window
+                      const mwX = WW/2 - WW*0.09, mwX2 = WW/2 + WW*0.09;
+                      parts.push(<polygon key="mwin"
+                        points={`${P(mwX,0,bH+mansH*0.1)} ${P(mwX2,0,bH+mansH*0.1)} ${P(mwX2,0,bH+mansH*0.8)} ${P(mwX,0,bH+mansH*0.8)}`}
+                        fill="rgba(130,205,255,0.28)" stroke="rgba(160,220,255,0.5)" strokeWidth="0.6"/>);
+                    }
+
+                    // Roof
+                    if (hasPitch) {
+                      const rX = WW/2, rH = totalH + Math.min(WW,DD) * 0.40;
+                      parts.push(
+                        <polygon key="rf-back"
+                          points={`${P(0,0,totalH)} ${P(0,DD,totalH)} ${P(rX,DD,rH)} ${P(rX,0,rH)}`}
+                          fill={ec+"12"} stroke={ec} strokeWidth="0.6" strokeOpacity="0.4"/>,
+                        <polygon key="rf-side"
+                          points={`${P(WW,0,totalH)} ${P(WW,DD,totalH)} ${P(rX,DD,rH)} ${P(rX,0,rH)}`}
+                          fill={ec+"26"} stroke={ec} strokeWidth="1.0" strokeOpacity="0.65"/>,
+                        <polygon key="rf-gable"
+                          points={`${P(0,0,totalH)} ${P(WW,0,totalH)} ${P(rX,0,rH)}`}
+                          fill={ec+"38"} stroke={ec} strokeWidth="1.4"/>,
+                        <line key="rf-ridge"
+                          x1={px(rX,0)} y1={py(rX,0,rH)} x2={px(rX,DD)} y2={py(rX,DD,rH)}
+                          stroke={ec} strokeWidth="1.8"/>
+                      );
+                    } else {
+                      // Flat roof + parapet
+                      const pH = 0.52;
+                      parts.push(
+                        <polygon key="rf-top"
+                          points={`${P(0,0,totalH)} ${P(WW,0,totalH)} ${P(WW,DD,totalH)} ${P(0,DD,totalH)}`}
+                          fill={ec+"20"} stroke={ec} strokeWidth="1.1"/>,
+                        <polygon key="rf-par-f"
+                          points={`${P(0,0,totalH)} ${P(WW,0,totalH)} ${P(WW,0,totalH+pH)} ${P(0,0,totalH+pH)}`}
+                          fill={ec+"44"} stroke={ec} strokeWidth="1.1"/>,
+                        <polygon key="rf-par-s"
+                          points={`${P(WW,0,totalH)} ${P(WW,DD,totalH)} ${P(WW,DD,totalH+pH)} ${P(WW,0,totalH+pH)}`}
+                          fill={ec+"2C"} stroke={ec} strokeWidth="0.8" strokeOpacity="0.7"/>
+                      );
+                    }
+
+                    // Floor level labels
+                    const lblX = px(-1.5, 0) - 4;
+                    const flLbls = [];
+                    for (let f = 0; f < nFloors; f++) {
+                      flLbls.push(<text key={`fl${f}`}
+                        x={lblX} y={py(-1.5,0, f*flH + flH*0.5) + 3}
+                        textAnchor="end" fontSize="8" fontFamily="Arial,sans-serif"
+                        fill={isDark?"rgba(255,255,255,0.42)":"rgba(0,0,0,0.42)"}>
+                        {f===0?"P":`E${f}`}
+                      </text>);
+                    }
+                    if (hasMans) flLbls.push(<text key="flM"
+                      x={lblX} y={py(-1.5,0,bH+mansH*0.45)+3}
+                      textAnchor="end" fontSize="8" fontFamily="Arial,sans-serif"
+                      fill={isDark?"rgba(255,255,255,0.42)":"rgba(0,0,0,0.42)"}>M</text>);
+                    for (let s = 1; s <= nSubs; s++) {
+                      flLbls.push(<text key={`fs${s}`}
+                        x={lblX} y={py(-1.5,0,-s*flH+flH*0.5)+3}
+                        textAnchor="end" fontSize="8" fontFamily="Arial,sans-serif"
+                        fill={isDark?"rgba(255,255,255,0.28)":"rgba(0,0,0,0.28)"}>
+                        {nSubs>1?`${nSubs-s+1}S`:"S"}
+                      </text>);
+                    }
+
+                    // Energy class badge position (above building)
+                    const topZ = hasPitch ? totalH + Math.min(WW,DD)*0.40*0.55 : totalH + 1.0;
+                    const bdgX = px(WW*0.5, 0), bdgY = py(WW*0.5, 0, topZ) - 20;
+
                     return (
-                      <svg viewBox="0 0 400 250" width="100%" height="200" className="mx-auto">
-                        {/* Front face */}
-                        <polygon points={`${isoX(0,0)},${isoY(0,0,0)} ${isoX(w,0)},${isoY(w,0,0)} ${isoX(w,0)},${isoY(w,0,h)} ${isoX(0,0)},${isoY(0,0,h)}`}
-                          fill={enClass.color+"40"} stroke={enClass.color} strokeWidth="1.5" />
-                        {/* Side face */}
-                        <polygon points={`${isoX(w,0)},${isoY(w,0,0)} ${isoX(w,d)},${isoY(w,d,0)} ${isoX(w,d)},${isoY(w,d,h)} ${isoX(w,0)},${isoY(w,0,h)}`}
-                          fill={enClass.color+"25"} stroke={enClass.color} strokeWidth="1" />
-                        {/* Top face */}
-                        <polygon points={`${isoX(0,0)},${isoY(0,0,h)} ${isoX(w,0)},${isoY(w,0,h)} ${isoX(w,d)},${isoY(w,d,h)} ${isoX(0,d)},${isoY(0,d,h)}`}
-                          fill={enClass.color+"15"} stroke={enClass.color} strokeWidth="1" />
-                        {/* Floor lines */}
-                        {Array.from({length: nFloors - 1}, (_, i) => i + 1).map(fl => (
-                          <line key={fl} x1={isoX(0,0)} y1={isoY(0,0,fl*3)} x2={isoX(w,0)} y2={isoY(w,0,fl*3)} stroke={enClass.color} strokeWidth="0.5" strokeDasharray="3 3" />
-                        ))}
-                        {/* Label */}
-                        <text x="200" y="240" textAnchor="middle" fontSize="10" fill={theme==="dark"?"#fff":"#333"} opacity="0.5">
-                          {building.floors} · {au.toFixed(0)} m² · Clasa {enClass.cls}
-                        </text>
-                      </svg>
+                      <div className="relative">
+                        <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" height="320"
+                          style={{overflow:"visible"}}>
+
+                          {parts}
+                          {flLbls}
+
+                          {/* Energy class badge */}
+                          <rect x={bdgX-24} y={bdgY-15} width="48" height="28" rx="6"
+                            fill={ec} fillOpacity="0.92"/>
+                          <text x={bdgX} y={bdgY+6} textAnchor="middle"
+                            fontSize="17" fontWeight="bold" fontFamily="Arial,sans-serif" fill="white">
+                            {enClass.cls}
+                          </text>
+
+                          {/* EP value below badge */}
+                          <text x={bdgX} y={bdgY+22} textAnchor="middle"
+                            fontSize="8" fontFamily="Arial,sans-serif" fill={ec} fillOpacity="0.75">
+                            {epFinal.toFixed(0)} kWh/m²
+                          </text>
+
+                          {/* Info label */}
+                          <text x={SVG_W/2} y={SVG_H-8} textAnchor="middle" fontSize="10"
+                            fontFamily="Arial,sans-serif"
+                            fill={isDark?"rgba(255,255,255,0.42)":"rgba(0,0,0,0.42)"}>
+                            {building.floors} · Au {au.toFixed(0)} m² · EP {epFinal.toFixed(0)} kWh/(m²·an) · Clasa {enClass.cls}
+                          </text>
+
+                          {/* Compass rose */}
+                          <g transform="translate(518,46)">
+                            <circle r="19" fill="rgba(0,0,0,0.28)" stroke="rgba(255,255,255,0.13)" strokeWidth="1"/>
+                            <text x="0" y="-7" textAnchor="middle" fontSize="7.5" fontFamily="Arial,sans-serif" fill="rgba(255,255,255,0.62)">N</text>
+                            <text x="0" y="14" textAnchor="middle" fontSize="7.5" fontFamily="Arial,sans-serif" fill="rgba(255,255,255,0.38)">S</text>
+                            <text x="-11" y="4" textAnchor="middle" fontSize="7.5" fontFamily="Arial,sans-serif" fill="rgba(255,255,255,0.38)">V</text>
+                            <text x="11" y="4" textAnchor="middle" fontSize="7.5" fontFamily="Arial,sans-serif" fill="rgba(255,255,255,0.38)">E</text>
+                            <polygon points="0,-14 2.8,-4 0,-7 -2.8,-4" fill="rgba(239,68,68,0.92)"/>
+                            <polygon points="0,14 2.8,4 0,7 -2.8,4" fill="rgba(255,255,255,0.32)"/>
+                          </g>
+
+                          {/* Scale bar */}
+                          <g transform={`translate(22,${SVG_H-28})`}>
+                            <line x1="0" y1="0" x2={sc*5} y2="0" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5"/>
+                            <line x1="0" y1="-4" x2="0" y2="4" stroke="rgba(255,255,255,0.32)" strokeWidth="1"/>
+                            <line x1={sc*5} y1="-4" x2={sc*5} y2="4" stroke="rgba(255,255,255,0.32)" strokeWidth="1"/>
+                            <text x={sc*2.5} y="-7" textAnchor="middle" fontSize="8"
+                              fontFamily="Arial,sans-serif" fill="rgba(255,255,255,0.38)">5 m</text>
+                          </g>
+
+                        </svg>
+                      </div>
                     );
                   })()}
                 </Card>
