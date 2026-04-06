@@ -5578,6 +5578,12 @@ export default function EnergyCalcApp({ cloud }) {
             }
           }}
           onClose={() => { setShowOpaqueModal(false); setEditingOpaque(null); }}
+          lang={lang}
+          buildingCategory={building.category}
+          heating={heating}
+          selectedClimate={selectedClimate}
+          calcOpaqueR={calcOpaqueR}
+          constructionSolutions={CONSTRUCTION_SOLUTIONS}
         />
       )}
 
