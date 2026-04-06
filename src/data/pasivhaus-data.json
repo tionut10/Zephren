@@ -1,0 +1,101 @@
+{
+  "PH_CRITERIA": {
+    "classic": {
+      "label": "Pasivhaus Classic",
+      "heatingDemand": 15,
+      "coolingDemand": 15,
+      "peakHeating": 10,
+      "primaryEnergy": 120,
+      "pressureTest": 0.6,
+      "thermalBridgeFree": 0.01
+    },
+    "plus": {
+      "label": "Pasivhaus Plus",
+      "heatingDemand": 15,
+      "coolingDemand": 15,
+      "peakHeating": 10,
+      "primaryEnergy": 60,
+      "pressureTest": 0.6,
+      "renewableProduction": 60
+    },
+    "premium": {
+      "label": "Pasivhaus Premium",
+      "heatingDemand": 15,
+      "coolingDemand": 15,
+      "peakHeating": 10,
+      "primaryEnergy": 30,
+      "pressureTest": 0.6,
+      "renewableProduction": 120
+    },
+    "enerphit": {
+      "label": "EnerPHit (Renovare)",
+      "heatingDemand": 25,
+      "coolingDemand": 25,
+      "peakHeating": 10,
+      "primaryEnergy": 150,
+      "pressureTest": 1
+    }
+  },
+  "PH_REQUIREMENTS": [
+    {
+      "id": "u_wall",
+      "label": "U pereți exteriori ≤ 0.15 W/(m²·K)",
+      "critical": true
+    },
+    {
+      "id": "u_roof",
+      "label": "U acoperiș ≤ 0.13 W/(m²·K)",
+      "critical": true
+    },
+    {
+      "id": "u_floor",
+      "label": "U pardoseală/subsol ≤ 0.15 W/(m²·K)",
+      "critical": true
+    },
+    {
+      "id": "u_window",
+      "label": "U ferestre ≤ 0.80 W/(m²·K) (tripan)",
+      "critical": true
+    },
+    {
+      "id": "g_window",
+      "label": "g ferestre ≥ 0.50 (S/SE/SV)",
+      "critical": false
+    },
+    {
+      "id": "n50",
+      "label": "Etanșeitate n50 ≤ 0.6 ach@50Pa",
+      "critical": true
+    },
+    {
+      "id": "ventil",
+      "label": "Ventilare mecanică cu HR ≥ 75%",
+      "critical": true
+    },
+    {
+      "id": "tb_free",
+      "label": "Punți termice Ψ ≤ 0.01 W/(m·K)",
+      "critical": true
+    },
+    {
+      "id": "solar_g",
+      "label": "Orientare Sud ≥ 40% din suprafața vitrată",
+      "critical": false
+    },
+    {
+      "id": "compact",
+      "label": "Compacitate (A/V) ≤ 0.7 m⁻¹",
+      "critical": false
+    },
+    {
+      "id": "shading",
+      "label": "Umbrire vară (suprafețe S/SE/SV)",
+      "critical": false
+    },
+    {
+      "id": "therm_mass",
+      "label": "Masă termică interioară ≥ 50 kg/m² (gips)",
+      "critical": false
+    }
+  ]
+}

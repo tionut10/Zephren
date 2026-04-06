@@ -1,0 +1,18 @@
+{
+  "THETA_INT_DESIGN": {
+    "RI": 20,
+    "RC": 20,
+    "RA": 20,
+    "BI": 20,
+    "ED": 20,
+    "SA": 22,
+    "HC": 20,
+    "CO": 18,
+    "SP": 17,
+    "AL": 20
+  },
+  "SAFETY_FACTOR": {
+    "rezidential": 1.1,
+    "nerezidential": 1.05
+  }
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "label": "Identificare",
+    "labelEN": "Identification",
+    "icon": "📋",
+    "desc": "Date generale clădire",
+    "descEN": "General building data"
+  },
+  {
+    "id": 2,
+    "label": "Anvelopă",
+    "labelEN": "Envelope",
+    "icon": "🏗️",
+    "desc": "Elemente constructive",
+    "descEN": "Building elements"
+  },
+  {
+    "id": 3,
+    "label": "Instalații",
+    "labelEN": "Systems",
+    "icon": "⚙️",
+    "desc": "Încălzire, ACM, clima",
+    "descEN": "Heating, DHW, HVAC"
+  },
+  {
+    "id": 4,
+    "label": "Regenerabile",
+    "labelEN": "Renewables",
+    "icon": "☀️",
+    "desc": "Surse energie verde",
+    "descEN": "Green energy"
+  },
+  {
+    "id": 5,
+    "label": "Calcul",
+    "labelEN": "Calculation",
+    "icon": "📊",
+    "desc": "Bilanț energetic",
+    "descEN": "Energy balance"
+  },
+  {
+    "id": 6,
+    "label": "Certificat",
+    "labelEN": "Certificate",
+    "icon": "📜",
+    "desc": "Clasare & CPE",
+    "descEN": "Classification & EPC"
+  },
+  {
+    "id": 7,
+    "label": "Audit",
+    "labelEN": "Audit",
+    "icon": "🔍",
+    "desc": "Recomandări",
+    "descEN": "Recommendations"
+  },
+  {
+    "id": 8,
+    "label": "Avansat",
+    "labelEN": "Advanced",
+    "icon": "🔬",
+    "desc": "EN 12831 · Benchmark · PNRR · Pasivhaus",
+    "descEN": "EN 12831 · Benchmark · PNRR · Pasivhaus"
+  }
+]

@@ -1,0 +1,76 @@
+{
+  "GWP_FACTORS": {
+    "Cărămidă plină": 0.24,
+    "Cărămidă cu goluri (GVP)": 0.2,
+    "BCA (beton celular autoclavizat)": 0.28,
+    "Beton armat": 0.13,
+    "Beton simplu": 0.1,
+    "Șapă ciment": 0.12,
+    "Polistiren expandat EPS 60": 3.3,
+    "Polistiren expandat EPS 80": 3.3,
+    "Polistiren expandat EPS 100": 3.3,
+    "Polistiren extrudat XPS": 3.8,
+    "Polistiren grafitat EPS Neo": 3.5,
+    "Vată minerală bazaltică": 1.2,
+    "Vată minerală de sticlă": 1.05,
+    "Spumă poliuretanică (PUR)": 4.2,
+    "Spumă poliizocianurică (PIR)": 4,
+    "Plută expandată": 0.15,
+    "Aerogel": 5.5,
+    "Fibră de lemn": 0.12,
+    "Celuloză insuflată": 0.08,
+    "Cânepă (hemp)": 0.1,
+    "Lână de oaie": 0.15,
+    "CLT (Cross Laminated Timber)": -0.7,
+    "Glulam (lemn lamelat)": -0.6,
+    "Lemn moale (brad/molid)": -0.5,
+    "Lemn tare (stejar)": -0.45,
+    "Gips-carton": 0.35,
+    "Tencuială var-ciment": 0.12,
+    "Tencuială decorativă": 0.15,
+    "Oțel": 1.8,
+    "Aluminiu": 8.2,
+    "Gresie ceramică": 0.7,
+    "Bitum (membrană)": 0.5,
+    "Sticlă celulară (Foamglas)": 1.1,
+    "Vacuum Insulation Panel (VIP)": 6,
+    "Perlită expandată": 0.45,
+    "OSB": 0.45,
+    "Parchet lemn": 0.28,
+    "Bloc ceramic Porotherm 44": 0.22
+  },
+  "GWP_GLAZING": {
+    "Simplu vitraj": {
+      "gwp": 42,
+      "label": "Simplu vitraj"
+    },
+    "Dublu vitraj (4-12-4)": {
+      "gwp": 55,
+      "label": "Dublu vitraj standard"
+    },
+    "Dublu vitraj termoizolant": {
+      "gwp": 60,
+      "label": "Dublu vitraj TI"
+    },
+    "Dublu vitraj Low-E": {
+      "gwp": 65,
+      "label": "Dublu vitraj Low-E"
+    },
+    "Triplu vitraj": {
+      "gwp": 80,
+      "label": "Triplu vitraj"
+    },
+    "Triplu vitraj Low-E": {
+      "gwp": 88,
+      "label": "Triplu vitraj Low-E"
+    },
+    "Triplu vitraj 2×Low-E": {
+      "gwp": 95,
+      "label": "Triplu vitraj 2×Low-E"
+    },
+    "default": {
+      "gwp": 65,
+      "label": "Fereastră standard"
+    }
+  }
+}
