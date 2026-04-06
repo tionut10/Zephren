@@ -2044,6 +2044,238 @@ export default function EnergyCalcApp({ cloud }) {
   }, [pushUndo, showToast]);
 
   // ═══════════════════════════════════════════════════════════
+  // DEMO 9 — Casă P+M Brașov 2009 — VALIDARE lucrare master
+  // Sursa: Lucrare master Mizgan Alexandru, UTB Brașov 2017-2018
+  // Referință: q_tot=174,90 kWh/m²an → Clasa B (MC 001-2006)
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo9 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Exemplu nr. 12",
+      city: "Brașov", county: "Brașov", postalCode: "500001",
+      category: "RI", structure: "BCA + cadre beton",
+      yearBuilt: "2009", yearRenov: "",
+      floors: "P+M", basement: false, attic: true,
+      units: "1", stairs: "1",
+      areaUseful: "149.61", volume: "433.54", areaEnvelope: "383.60",
+      heightBuilding: "7.00", heightFloor: "2.80",
+      locality: "Brașov",
+      perimeter: "38.0", n50: "3.0", shadingFactor: "0.90",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "locuit", parkingSpaces: "1",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. S+V — GVP 25cm + EPS 10cm ETICS", type: "PE", orientation: "S", area: "57", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.038, rho: 25 },
+        { matName: "GVP 25cm", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. N+E — GVP 25cm + EPS 10cm ETICS", type: "PE", orientation: "N", area: "57", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.038, rho: 25 },
+        { matName: "GVP 25cm", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. E+V (laterali) — GVP 25cm + EPS 10cm", type: "PE", orientation: "E", area: "79.70", layers: [
+        { matName: "Tencuială decorativă", material: "Tencuială decorativă", thickness: "5", lambda: 0.70, rho: 1600 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.038, rho: 25 },
+        { matName: "GVP 25cm", material: "Cărămidă cu goluri (GVP)", thickness: "250", lambda: 0.46, rho: 1200 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu pod/mansardă — vată minerală 20cm (pod neîncălzit)", type: "PP", orientation: "Orizontal", area: "81.80", layers: [
+        { matName: "Gips-carton 12.5mm", material: "Gips-carton", thickness: "13", lambda: 0.41, rho: 900 },
+        { matName: "Vată minerală 20cm", material: "Vată minerală (vrac/saltea)", thickness: "200", lambda: 0.042, rho: 30 },
+        { matName: "Gips-carton 12.5mm", material: "Gips-carton", thickness: "13", lambda: 0.41, rho: 900 },
+      ]},
+      { name: "Placă pe sol — XPS 8cm + BA + șapă", type: "PL", orientation: "Orizontal", area: "81.80", layers: [
+        { matName: "Gresie ceramică", material: "Gresie ceramică", thickness: "10", lambda: 1.30, rho: 2300 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
+        { matName: "XPS 8cm", material: "Polistiren extrudat XPS", thickness: "80", lambda: 0.034, rho: 35 },
+        { matName: "Beton armat 15cm", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș compactat", material: "Pietriș sau balast", thickness: "100", lambda: 0.70, rho: 1800 },
+      ]},
+      { name: "Ușă de intrare — lemn masiv opacă", type: "PE", orientation: "N", area: "1.89", layers: [
+        { matName: "Lemn masiv 6cm", material: "Lemn moale (brad/molid)", thickness: "60", lambda: 0.14, rho: 500 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC termopan dublu — Sud", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.80", g: "0.75", area: "5.73", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre PVC termopan dublu — Vest", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.80", g: "0.75", area: "9.87", orientation: "V", frameRatio: "25" },
+      { name: "Ferestre PVC termopan dublu — Est", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.80", g: "0.75", area: "7.08", orientation: "E", frameRatio: "25" },
+      { name: "Ferestre PVC termopan dublu — Nord", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.80", g: "0.75", area: "1.74", orientation: "N", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșeu/centură GVP-beton (perimetru fiecare nivel)", type: "Joncțiuni pereți", psi: "0.20", length: "38" },
+      { name: "PE — Colțuri exterioare ×4 (P+M = 8 colțuri)", type: "Joncțiuni pereți", psi: "0.10", length: "14" },
+      { name: "PE — Soclu/fundație (perimetru)", type: "Joncțiuni pereți", psi: "0.25", length: "38" },
+      { name: "PE — Cornișă acoperiș mansardă", type: "Acoperiș", psi: "0.10", length: "38" },
+      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.06", length: "49" },
+    ]);
+    setHeating({
+      source: "GAZ_COND", power: "24", eta_gen: "0.97",
+      nominalPower: "24",
+      emission: "RAD_OT", eta_em: "0.93",
+      distribution: "MED_INT", eta_dist: "0.92",
+      control: "TERMO_RAD", eta_ctrl: "0.93",
+      regime: "intermitent", theta_int: "20", nightReduction: "3",
+      tStaircase: "", tBasement: "", tAttic: "5",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "4", dailyLiters: "50",
+      storageVolume: "0", storageLoss: "0",
+      pipeLength: "8", pipeInsulated: false,
+      circRecirculation: false, circHours: "",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "MIXED", pDensity: "8.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "1400", naturalLightRatio: "15",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Mizgan Alexandru",
+      atestat: "CT-02134",
+      grade: "II",
+      company: "UTB Brașov — Lucrare master",
+      phone: "",
+      email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLADIRE REALA — sursa: Lucrare de masterat Mizgan Alexandru, UTB Brașov, 2017-2018 (Traseu IV). Casă unifamilială P+M, construcție 2009, Brașov (Zona IV climatică, Te=-21°C). Structură zidărie GVP 25cm cu termoizolație ETICS EPS 10cm. Planșeu mansardă cu vată minerală 20cm (pod neîncălzit, τ≈0,9). Placă pe sol cu XPS. Tâmplărie PVC termopan dublu, g=0,75. Cazan gaz condensare 24kW. Referință MC 001-2006: H_T=158,22 W/K; H_v=87,14 W/K (n=0,6 h⁻¹); q_inc=121,0 kWh/m²an → Clasa C; q_tot=174,90 kWh/m²an → Clasa B. Metodologie Mc 001-2022 (ISO 13790 lunar) produce valori diferite față de MC 001-2006 (grade-zile SR 4839) datorită tratamentului distinct al solului (ISO 13370) și separării H_ve/H_inf.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 9 încărcat — Casă P+M Brașov 2009 (lucrare master Mizgan). Referință MC 001-2006: q_tot=174,9 kWh/m²an, Clasa B.", "success", 6000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // DEMO 10 — Cămin studențesc 2S+P+4E Brașov 1997 — VALIDARE disertație
+  // Sursa: Disertație Ionuț Tunaru, UTB Brașov 2019
+  // Referință: q_tot=240,74 kWh/m²an → Clasa C (MC 001-2006)
+  // ═══════════════════════════════════════════════════════════
+  const loadFullDemo10 = useCallback(() => {
+    pushUndo();
+    setBuilding({
+      address: "Str. Universității nr. 1",
+      city: "Brașov", county: "Brașov", postalCode: "500068",
+      category: "HC", structure: "Cadre beton armat",
+      yearBuilt: "1997", yearRenov: "",
+      floors: "2S+P+4E", basement: true, attic: false,
+      units: "85", stairs: "2",
+      areaUseful: "2950", volume: "12667", areaEnvelope: "3726.77",
+      heightBuilding: "19.60", heightFloor: "2.80",
+      locality: "Brașov",
+      perimeter: "140.0", n50: "4.0", shadingFactor: "0.85",
+      gwpLifecycle: "", solarReady: false,
+      scopCpe: "locuit", parkingSpaces: "0",
+    });
+    setOpaqueElements([
+      { name: "Pereți ext. BA 30cm + EPS 10cm — zone S+V (fațade principale)", type: "PE", orientation: "S", area: "668", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.040, rho: 25 },
+        { matName: "Beton armat 30cm", material: "Beton armat", thickness: "300", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. BA 30cm + EPS 10cm — zone N+E (fațade secundare)", type: "PE", orientation: "N", area: "668", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.040, rho: 25 },
+        { matName: "Beton armat 30cm", material: "Beton armat", thickness: "300", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. BA 30cm + EPS 10cm — zona E", type: "PE", orientation: "E", area: "285", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.040, rho: 25 },
+        { matName: "Beton armat 30cm", material: "Beton armat", thickness: "300", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți ext. BA 30cm — zona V", type: "PE", orientation: "V", area: "285.94", layers: [
+        { matName: "Tencuială ext.", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+        { matName: "EPS 10cm", material: "Polistiren expandat EPS 100", thickness: "100", lambda: 0.040, rho: 25 },
+        { matName: "Beton armat 30cm", material: "Beton armat", thickness: "300", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Pereți subsol în contact cu terenul — BA 30cm neizolat", type: "PB", orientation: "Orizontal", area: "128.80", layers: [
+        { matName: "Beton armat 30cm", material: "Beton armat", thickness: "300", lambda: 1.74, rho: 2400 },
+        { matName: "Tencuială int.", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Planșeu terasă necirculabilă — BCA-zgură 20cm (neizolat)", type: "PT", orientation: "Orizontal", area: "754", layers: [
+        { matName: "Nisip 1cm", material: "Nisip sau mortar de pozare", thickness: "10", lambda: 0.70, rho: 1600 },
+        { matName: "Hidroizolație bitum", material: "Bitum (membrană)", thickness: "4", lambda: 0.17, rho: 1050 },
+        { matName: "Șapă suport 3.5cm", material: "Șapă ciment", thickness: "35", lambda: 0.93, rho: 2000 },
+        { matName: "Beton de pantă 7cm", material: "Beton simplu", thickness: "70", lambda: 0.93, rho: 2200 },
+        { matName: "Beton armat 15cm", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+        { matName: "Plăci BCA-zgură 20cm", material: "BCA (beton celular autoclavizat)", thickness: "200", lambda: 0.36, rho: 800 },
+        { matName: "Tencuială interioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+      ]},
+      { name: "Placă pe sol 2S — BA 15cm + șapă + pietriș (fără izolație termică)", type: "PL", orientation: "Orizontal", area: "754", layers: [
+        { matName: "Gresie ceramică", material: "Gresie ceramică", thickness: "20", lambda: 2.03, rho: 2300 },
+        { matName: "Șapă ciment 5cm", material: "Șapă ciment", thickness: "50", lambda: 0.93, rho: 2000 },
+        { matName: "Beton armat 15cm", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+        { matName: "Pietriș 25cm", material: "Pietriș sau balast", thickness: "250", lambda: 0.70, rho: 1800 },
+      ]},
+    ]);
+    setGlazingElements([
+      { name: "Ferestre PVC termopan — Est (fațadă principală cu camere)", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.67", g: "0.75", area: "139.93", orientation: "E", frameRatio: "25" },
+      { name: "Ferestre PVC termopan — Vest", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.67", g: "0.75", area: "27.83", orientation: "V", frameRatio: "25" },
+      { name: "Ferestre PVC termopan — Sud", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.67", g: "0.75", area: "8.97", orientation: "S", frameRatio: "25" },
+      { name: "Ferestre PVC termopan — Nord (casa scării)", glazingType: "Dublu vitraj", frameType: "PVC (5 camere)", u: "1.67", g: "0.75", area: "6.30", orientation: "N", frameRatio: "25" },
+    ]);
+    setThermalBridges([
+      { name: "PE — Planșee intermediare BA (5 nivele × perimetru)", type: "Joncțiuni pereți", psi: "0.40", length: "700" },
+      { name: "PE — Terasă/atic", type: "Acoperiș", psi: "0.15", length: "140" },
+      { name: "PE — Soclu/fundație", type: "Joncțiuni pereți", psi: "0.30", length: "140" },
+      { name: "Glaf ferestre PVC", type: "Ferestre", psi: "0.06", length: "370" },
+      { name: "Colțuri exterioare ×4", type: "Joncțiuni pereți", psi: "0.10", length: "20" },
+    ]);
+    setHeating({
+      source: "GAZ_STD", power: "350", eta_gen: "0.85",
+      nominalPower: "350",
+      emission: "RAD_OT", eta_em: "0.90",
+      distribution: "SLAB_INT", eta_dist: "0.85",
+      control: "FARA", eta_ctrl: "0.82",
+      regime: "intermitent", theta_int: "20", nightReduction: "4",
+      tStaircase: "10", tBasement: "5", tAttic: "",
+    });
+    setAcm({
+      source: "CAZAN_H", consumers: "332", dailyLiters: "50",
+      storageVolume: "1000", storageLoss: "3.0",
+      pipeLength: "80", pipeInsulated: false,
+      circRecirculation: true, circHours: "16",
+    });
+    setCooling({ system: "NONE", power: "", eer: "", cooledArea: "", distribution: "", hasCooling: false });
+    setVentilation({ type: "NAT", airflow: "", fanPower: "", operatingHours: "", hrEfficiency: "" });
+    setLighting({
+      type: "FLUOR", pDensity: "10.0", controlType: "MAN",
+      fCtrl: "1.00", operatingHours: "2000", naturalLightRatio: "10",
+    });
+    setSolarThermal({ ...INITIAL_SOLAR_TH, enabled: false });
+    setPhotovoltaic({ ...INITIAL_PV, enabled: false });
+    setHeatPump({ ...INITIAL_HP, enabled: false });
+    setBiomass({ ...INITIAL_BIO, enabled: false });
+    setOtherRenew({ ...INITIAL_OTHER, windEnabled: false, cogenEnabled: false });
+    setAuditor({
+      name: "ing. Tunaru Ionuț",
+      atestat: "CT-03187",
+      grade: "II",
+      company: "UTB Brașov — Disertație",
+      phone: "",
+      email: "",
+      date: new Date().toISOString().slice(0, 10),
+      mdlpaCode: "",
+      observations: "CLADIRE REALA — sursa: Disertație Ionuț Tunaru, UTB Brașov 2019. Cămin studențesc 2S+P+4E, Str. Universității nr. 1, Brașov (Zona IV climatică, Te=-21°C), construit 1997. Structură cadre BA, pereți ext. BA 30cm + EPS 10cm. Terasă neizolată termic (BCA-zgură 20cm, R=0,976 m²K/W). Placă pe sol fără termoizolație. Tâmplărie PVC dublu vitraj (g=0,75). Centrală termică proprie gaz natural 350kW. 85 garsoniere × 332 persoane. Referință MC 001-2006: H_T=2214,87 W/K; H_v=2584,10 W/K (n=0,6 h⁻¹); q_inc=113,6 kWh/m²an → Clasa B; q_acm=117,3 kWh/m²an → Clasa E; q_tot=240,74 kWh/m²an → Clasa C. Notă: metodologia Mc 001-2022 (ISO 13790 lunar, ISO 13370 sol) produce EP mai mare față de MC 001-2006 din cauza tratamentului diferit al solului și al separării H_ve/H_inf. Terasa cu R=0,976 m²K/W (U=1,03 W/m²K) este elementul cel mai deficitar al anvelopei — prioritate maximă de reabilitare.",
+      photo: "",
+    });
+    setStep(1);
+    showToast("Demo 10 încărcat — Cămin studențesc 2S+P+4E Brașov 1997 (disertație Tunaru). Referință MC 001-2006: q_tot=240,7 kWh/m²an, Clasa C.", "success", 6000);
+  }, [pushUndo, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
   // FEATURE: EXPORT / IMPORT PROIECT (JSON)
   // ═══════════════════════════════════════════════════════════
   const exportProject = useCallback(() => {
@@ -2884,7 +3116,13 @@ export default function EnergyCalcApp({ cloud }) {
     if (acm.source === "CAZAN_H") eta_acm = eta_gen;
     const solarFr = acmSrc?.solarFraction || 0;
     const storageLoss = Math.min(10, Math.max(0, parseFloat(acm.storageLoss) || 2)) / 100; // V3: clamp 0-10%
-    const qf_w = eta_acm > 0 ? (qACM_nd * (1 - solarFr) * (1 + storageLoss)) / (acmSrc?.isCOP ? eta_acm : eta_acm) : 0;
+    // qf_w = energie finală ACM: necesar net × (1-fracție_solară) × (1+pierderi_boiler) / eficiență
+    // La PC pentru ACM (isCOP=true): eta_acm=COP, se împarte direct (fără storageLoss separat că COP include distribuția)
+    const qf_w = eta_acm > 0
+      ? (acmSrc?.isCOP
+          ? qACM_nd * (1 - solarFr) / eta_acm               // pompă căldură ACM: Q_final = Q_nd / COP
+          : qACM_nd * (1 - solarFr) * (1 + storageLoss) / eta_acm) // cazan/boiler: includ pierderi boiler
+      : 0;
     const acmFuel = acm.source === "CAZAN_H" ? fuel : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
 
     // COOLING
@@ -3010,12 +3248,15 @@ export default function EnergyCalcApp({ cloud }) {
       const oriF = ORIENT_FACTORS[solarThermal.orientation] || 1;
       const tiltF = TILT_FACTORS[solarThermal.tilt] || 1;
       const solarIrrad = selectedClimate.solar[solarThermal.orientation] || selectedClimate.solar.S;
-      // B5 FIX: Producție anuală cu coeficient pierderi a1 (EN 12975)
-      // eta_seasonal = eta0 - a1 * ΔT / G_solar, unde ΔT ≈ 40K (temperatura medie operare - mediu)
+      // Producție anuală cu eficiență sezoniera conform EN 12975 / SR EN ISO 9806
+      // eta_seasonal = eta0 - a1 * ΔT / G_ref, unde G_ref = iradianță medie în ore de funcționare
+      // România: ~1300-1500 ore/an de funcționare colector (ore cu G > 100 W/m²)
+      // Conversia: solarIrrad [kWh/(m²·an)] / peak_sun_hours → G_ref [kW/m²] × 1000 = [W/m²]
       const a1 = parseFloat(solarThermal.a1) || 3.5;
-      const deltaT = 40; // K — diferență medie între temperatura fluidului și exterior
-      const gRef = solarIrrad > 0 ? solarIrrad / (365 * 8) : 400; // W/m² iradianță medie pe ore de soare
-      const etaSeasonal = Math.max(0.1, eta0 - a1 * deltaT / (gRef > 0 ? gRef * 1000 : 400));
+      const deltaT = 40; // K — diferență medie fluidul colectorului față de exterior (EN 12975 §B.1)
+      const peakSunHours = 1400; // ore/an pentru România (medie multi-zonă), corect față de 365*8=2920 greșit
+      const gRef = solarIrrad > 0 ? (solarIrrad / peakSunHours) * 1000 : 300; // W/m² iradianță medie operare
+      const etaSeasonal = Math.max(0.15, eta0 - a1 * deltaT / Math.max(gRef, 100));
       qSolarTh = area * etaSeasonal * solarIrrad * oriF * tiltF * 0.85;
     }
 
@@ -4685,6 +4926,7 @@ export default function EnergyCalcApp({ cloud }) {
             loadFullDemo={loadFullDemo} loadFullDemo2={loadFullDemo2} loadFullDemo3={loadFullDemo3}
             loadFullDemo4={loadFullDemo4} loadFullDemo5={loadFullDemo5} loadFullDemo6={loadFullDemo6}
             loadFullDemo7={loadFullDemo7} loadFullDemo8={loadFullDemo8}
+            loadFullDemo9={loadFullDemo9} loadFullDemo10={loadFullDemo10}
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
           />}

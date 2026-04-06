@@ -6,25 +6,36 @@ export const SRI_DOMAINS = [
 
 export function calcSRI(heating, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, bacsClass) {
   var score = { energy: 0, response: 0, flexibility: 0 };
-  // Energie — automatizare și control
-  if (bacsClass === "A") { score.energy += 40; score.response += 30; }
-  else if (bacsClass === "B") { score.energy += 25; score.response += 20; }
+  // Energie — automatizare și control BACS (EPBD Anexa I)
+  if (bacsClass === "A") { score.energy += 40; score.response += 30; score.flexibility += 20; }
+  else if (bacsClass === "B") { score.energy += 25; score.response += 20; score.flexibility += 10; }
   else if (bacsClass === "C") { score.energy += 10; score.response += 10; }
   // Regenerabile → flexibilitate
   if (photovoltaic?.enabled) { score.energy += 15; score.flexibility += 25; }
   if (heatPump?.enabled) { score.energy += 15; score.flexibility += 15; }
   if (solarThermal?.enabled) { score.energy += 10; score.flexibility += 10; }
-  // Ventilare cu HR
-  if (ventilation?.type && ventilation.type.includes("hr")) { score.energy += 10; score.response += 15; }
-  // LED + control automat
-  if (lighting?.type === "led") score.energy += 5;
-  if (lighting?.control === "daylight_dimming" || lighting?.control === "sensor_presence") { score.response += 15; score.flexibility += 10; }
-  // Răcire
-  if (cooling?.source) { score.response += 10; score.flexibility += 10; }
-  // Cap la 100
-  for (var k in score) score[k] = Math.min(100, score[k]);
+  // Ventilare cu recuperare căldură (ID-urile conțin "HR" — uppercase)
+  var ventHasHR = ventilation?.type && (ventilation.type.includes("HR") || ventilation.type === "UTA");
+  if (ventHasHR) { score.energy += 10; score.response += 15; }
+  // LED + control automat — ID-urile din LIGHTING_TYPES/LIGHTING_CONTROL sunt uppercase
+  if (lighting?.type === "LED" || lighting?.type === "LED_PRO") score.energy += 5;
+  var lightControl = lighting?.controlType || lighting?.control || "";
+  if (lightControl === "PREZ_DAY" || lightControl === "DAYLIGHT" || lightControl === "PREZ" || lightControl === "BMS") {
+    score.response += 15; score.flexibility += 10;
+  }
+  // Răcire activă (hasCooling flag + sistem diferit de NONE)
+  var hasCoolingActive = cooling?.hasCooling && cooling?.system && cooling.system !== "NONE";
+  if (hasCoolingActive) { score.response += 10; score.flexibility += 10; }
+  // Stocare energie (baterie / EV bidirectional V2G) — factor flexibilitate
+  if (photovoltaic?.enabled && photovoltaic?.storage) { score.flexibility += 15; }
+  // Cap la 100 per domeniu
+  for (var k in score) score[k] = Math.min(100, Math.max(0, score[k]));
   var total = SRI_DOMAINS.reduce(function(s, d) { return s + score[d.id] * d.weight; }, 0);
-  return { scores: score, total: Math.round(total), grade: total >= 70 ? "A" : total >= 50 ? "B" : total >= 30 ? "C" : "D" };
+  return {
+    scores: score, total: Math.round(total),
+    grade: total >= 70 ? "A" : total >= 50 ? "B" : total >= 30 ? "C" : "D",
+    interpretation: total >= 70 ? "Clădire inteligentă performantă" : total >= 50 ? "Automatizare avansată" : total >= 30 ? "Automatizare de bază" : "Fără inteligență energetică",
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -117,10 +128,10 @@ export function checkSolarReady(building, renewables) {
   const checks = [
     { id:"roof_struct", label:"Structura acoperișului suportă panouri solare", ok: building.solarReady || false },
     { id:"roof_orient", label:"Orientare acoperiș favorabilă (S/SE/SV)", ok: true },
-    { id:"cabling", label:"Pre-cablare electrică pentru PV", ok: renewables?.pv?.hasPV || false },
-    { id:"inverter_space", label:"Spațiu rezervat invertor + tablou", ok: renewables?.pv?.hasPV || false },
-    { id:"pipe_routing", label:"Trasee conducte pentru solar termic", ok: renewables?.solarThermal?.hasSolarTh || false },
-    { id:"storage_space", label:"Spațiu pentru vas acumulare solar", ok: renewables?.solarThermal?.hasSolarTh || false },
+    { id:"cabling", label:"Pre-cablare electrică pentru PV", ok: renewables?.pv?.enabled || false },
+    { id:"inverter_space", label:"Spațiu rezervat invertor + tablou", ok: renewables?.pv?.enabled || false },
+    { id:"pipe_routing", label:"Trasee conducte pentru solar termic", ok: renewables?.solarThermal?.enabled || false },
+    { id:"storage_space", label:"Spațiu pentru vas acumulare solar", ok: renewables?.solarThermal?.enabled || false },
     { id:"roof_access", label:"Acces sigur pe acoperiș pentru mentenanță", ok: building.solarReady || false },
     { id:"load_calc", label:"Calcul sarcini structurale acoperiș", ok: false },
   ];

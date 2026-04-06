@@ -26,19 +26,26 @@ export function calcSummerComfort(layers, climate, orientation) {
   // Defazaj Δφ ≈ D / (2π) × 24 [ore]
   var phaseShift = (totalD / (2 * Math.PI)) * 24;
 
-  // Temperatura maximă pe suprafața interioară
-  var tExtMax = Math.max.apply(null, climate.temp_month.slice(5, 8)) + 12; // temp max zilnică vara
-  var tInt = 24; // temperatura medie interioară
-  var amplitudeExt = (tExtMax - tInt);
+  // Temperatura maximă exterioară de calcul pentru confort vară (C107/7-2002 §3.2)
+  // Valoarea de referință: media lunilor calde (iun-aug) + amplitudine diurnă zilnică
+  // Amplitudinea diurnă tipică pentru România: 8-12°C (funcție de zonă)
+  var tExtSummerAvg = Math.max.apply(null, climate.temp_month.slice(5, 8)); // max medie lunară vară
+  var tExtWinterAvg = Math.min.apply(null, climate.temp_month.slice(0, 3));
+  // Amplitudine diurnă estimată din variabilitatea climatică (mai mare în zone continentale)
+  var climaticRange = tExtSummerAvg - tExtWinterAvg;
+  var diurnalAmp = climaticRange > 40 ? 12 : climaticRange > 30 ? 10 : 8; // °C
+  var tExtMax = tExtSummerAvg + diurnalAmp; // temperatura de vârf zilnică vara
+  var tInt = 24; // temperatura medie interioară de referință (C107/7)
+  var amplitudeExt = Math.max(0, tExtMax - tInt);
   var amplitudeInt = amplitudeExt * dampingFactor;
   var tSurfMax = tInt + amplitudeInt;
 
-  // Sarcină solară prin orientare
-  var solarGain = (climate.solar[orientation] || climate.solar.S || 400) * 0.15; // factor transmisie estimat
+  // Câștig solar prin element (estimat din iradianța pe orientare × absorbție × rezistență termică ext.)
+  var solarGain = (climate.solar[orientation] || climate.solar.S || 400) * 0.15; // kWh/(m²·an) estim. absorbit
 
-  // Categorii confort SR EN 16798-1
+  // Categorii confort vară SR EN 16798-1:2019 (echivalent C107/7-2002 Cat. I-IV)
   var category = tSurfMax <= 25 ? "I" : tSurfMax <= 26 ? "II" : tSurfMax <= 27 ? "III" : "IV";
-  var ok = tSurfMax <= 27; // maxim cat. III
+  var ok = tSurfMax <= 27; // maxim Cat. III (acceptabil)
 
   return {
     D: Math.round(totalD * 100) / 100,

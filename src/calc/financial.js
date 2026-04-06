@@ -71,6 +71,24 @@ export function calcFinancialAnalysis(params) {
   }
   globalCost -= residualValue / Math.pow(1 + discountRate, period);
 
+  // Analiză sensitivitate NPV (±10%, ±20% față de economie anuală) — EN 15459-1 §8
+  function calcNPVForSaving(savingAdj) {
+    var n = -investCost;
+    for (var y2 = 1; y2 <= period; y2++) {
+      var cf2 = savingAdj * Math.pow(1 + escalation, y2 - 1) - annualMaint * Math.pow(1.02, y2 - 1);
+      if (y2 === period) cf2 += residualValue;
+      n += cf2 / Math.pow(1 + discountRate, y2);
+    }
+    return Math.round(n);
+  }
+  var sensitivity = {
+    saving_m20: calcNPVForSaving(annualSaving * 0.80),
+    saving_m10: calcNPVForSaving(annualSaving * 0.90),
+    saving_base: Math.round(npv),
+    saving_p10: calcNPVForSaving(annualSaving * 1.10),
+    saving_p20: calcNPVForSaving(annualSaving * 1.20),
+  };
+
   return {
     npv: Math.round(npv),
     irr: irr !== null ? Math.round(irr * 10000) / 100 : null,
@@ -82,6 +100,8 @@ export function calcFinancialAnalysis(params) {
     cumulativeCF: cumulativeCF,
     investCost: investCost,
     annualSaving: annualSaving,
+    sensitivity: sensitivity,
     verdict: npv > 0 ? "PROFITABIL" : "NEPROFITABIL",
+    verdictColor: npv > 0 ? "#22c55e" : "#ef4444",
   };
 }

@@ -28,9 +28,12 @@ export function calcMonthlyISO13790(params) {
   var days = [31,28,31,30,31,30,31,31,30,31,30,31];
   var mNames = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
   var H_tr = G_env, H_ve = 0.34 * 0.5 * V * (1 - hrEta);
-  var H_inf = 0.34 * n50 * V * 0.07 / 3.6;
+  // H_inf: infiltrații din n50 cu factor protecție vânt e=0.07 (ISO 13789 §8.3)
+  // Formula: H_inf = 0.34 * n_inf * V, unde n_inf = n50 * e_shield [h⁻¹]
+  var H_inf = 0.34 * n50 * V * 0.07; // W/K — fără /3.6 (corectat: 0.34 include deja conversia ore→secunde)
   var Cm = Au * (THERMAL_MASS_CLASS[structure] || 165000); // Mc 001-2022 Tabel 2.20, implicit medie
-  var H_total = H_tr + H_ve;
+  // H_total include infiltrații pentru calcul corect al constantei de timp τ
+  var H_total = H_tr + H_ve + H_inf;
   var tau = H_total > 0 ? Cm / (H_total * 3600) : 50;
   var a_H = 1 + tau / 15;
   var qIntMap = {RI:4,RC:4,RA:4,BI:8,ED:6,SA:5,HC:4.5,CO:8,SP:5,AL:5};

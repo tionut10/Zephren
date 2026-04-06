@@ -1,14 +1,13 @@
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
-import { TYPICAL_BUILDINGS } from "../data/typical-buildings.js";
-import { TYPICAL_BUILDINGS_EXTRA } from "../data/typical-buildings.js";
 
 export default function Step1Identification({
   building, updateBuilding, lang, selectedClimate,
   BUILDING_CATEGORIES, STRUCTURE_TYPES,
   autoDetectLocality, estimateGeometry, avRatio,
   loadFullDemo, loadFullDemo2, loadFullDemo3, loadFullDemo4, loadFullDemo5, loadFullDemo6, loadFullDemo7, loadFullDemo8,
+  loadFullDemo9, loadFullDemo10,
   loadTypicalBuilding, showToast,
   goToStep,
 }) {
@@ -139,15 +138,32 @@ export default function Step1Identification({
                 </div>
               </button>
 
-              <div className="border-t border-white/[0.06] my-2"></div>
+              <div className="border-t border-white/[0.06] my-2 flex items-center gap-2">
+                <span className="text-[10px] opacity-30 whitespace-nowrap">exemple reale validate</span>
+                <div className="flex-1 border-t border-white/[0.06]"></div>
+              </div>
 
-              {[...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA].map(tpl => (
-                <button key={tpl.id} onClick={() => { loadTypicalBuilding(tpl.id); showToast(`Template "${tpl.label}" încărcat`, "success"); }}
-                  className="w-full text-left px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-500/20 transition-all text-xs">
-                  <div className="font-medium">{tpl.label}</div>
-                  <div className="opacity-30 mt-0.5">{tpl.opaque.length} elem. opace · {tpl.glazing.length} vitraje · {tpl.bridges.length} punți</div>
-                </button>
-              ))}
+              <button onClick={() => loadFullDemo9()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏠</span>
+                  <div>
+                    <div className="font-bold text-amber-300">Casă P+M Brașov 2009 — VALIDARE (lucrare master)</div>
+                    <div className="opacity-50 mt-0.5">GVP 25cm + EPS 10cm · vată 20cm pod · cazan gaz cond. 24kW · Ref. MC2006: q_tot=174,9 kWh/m²an Cl.B</div>
+                  </div>
+                </div>
+              </button>
+
+              <button onClick={() => loadFullDemo10()}
+                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏫</span>
+                  <div>
+                    <div className="font-bold text-amber-300">Cămin studențesc 2S+P+4E Brașov 1997 — VALIDARE (disertație)</div>
+                    <div className="opacity-50 mt-0.5">BA 30cm + EPS 10cm · terasă neizolată · cazan gaz 350kW · Ref. MC2006: q_tot=240,7 kWh/m²an Cl.C</div>
+                  </div>
+                </div>
+              </button>
             </div>
           </Card>
         </div>

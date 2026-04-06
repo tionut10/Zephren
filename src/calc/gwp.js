@@ -18,6 +18,18 @@ export const GWP_FACTORS = { // kgCO2eq/kg — valori medii EPD
   "Vacuum Insulation Panel (VIP)":6.00, "Perlită expandată":0.45,
 };
 
+// Materiale izolante care pot necesita înlocuire după 30 de ani (EN 15978 §B.4.7)
+// EPS, XPS, PUR, PIR, vată minerală — durabilitate estimată 30-50 ani în structuri uscate
+const INSULATION_KEYWORDS = [
+  "EPS","XPS","PUR","PIR","Vată minerală","Vată de sticlă","Celuloză","Cânepă","Lână",
+  "Perlită","Plută","Aerogel","VIP","Vacuum","spumă","foam","Fibră de lemn",
+];
+function isInsulationMaterial(name) {
+  if (!name) return false;
+  var n = name.toLowerCase();
+  return INSULATION_KEYWORDS.some(function(k) { return n.includes(k.toLowerCase()); });
+}
+
 export function calcGWPDetailed(opaqueElements, glazingElements, areaUseful, lifetime) {
   if (!opaqueElements?.length || !areaUseful) return null;
   lifetime = lifetime || 50; // ani
@@ -35,7 +47,9 @@ export function calcGWPDetailed(opaqueElements, glazingElements, areaUseful, lif
       const mass = area * d * rho; // kg
       const gwpFactor = GWP_FACTORS[layer.material || layer.matName] || 0.15; // fallback
       const gwp_a = mass * gwpFactor;
-      const needsReplacement = (layer.lambda || 1) < 0.06; // izolații
+      // needsReplacement: materiale izolante cu durabilitate < durata de viață a clădirii
+      const matName = layer.material || layer.matName || "";
+      const needsReplacement = isInsulationMaterial(matName) || ((layer.lambda || 1) < 0.06 && !matName.includes("Aerogel") && !matName.includes("VIP"));
       const gwp_b = needsReplacement && lifetime > 30 ? gwp_a * 0.5 : 0;
       const gwp_c = mass * 0.02; // 2% eliminare
       const gwp_d = gwpFactor < 0 ? mass * gwpFactor * -0.3 : 0; // credit reciclare lemn
