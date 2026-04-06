@@ -3436,7 +3436,7 @@ export default function EnergyCalcApp({ cloud }) {
     const n_inf = n50 * e_shield; // rata infiltrare din n50
     const n = Math.max(0.5, n_inf); // minim 0.5 h-1 (ventilare igienică)
     const ventType = VENTILATION_TYPES.find(v => v.id === ventilation.type);
-    const hrEta = ventType?.hasHR ? (parseFloat(ventilation.hrEfficiency) || ventType.hrEta * 100) / 100 : 0;
+    const hrEta = ventType?.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : ventType.hrEta || 0) : 0;
     const ventLoss = 0.34 * n * volume * (1 - hrEta);
     const totalLossWithVent = totalHeatLoss + ventLoss;
 
@@ -3577,7 +3577,7 @@ export default function EnergyCalcApp({ cloud }) {
     const sfp = ventType?.sfp || 0;
     const ventHours = parseFloat(ventilation.operatingHours) || (selectedClimate?.season || 190) * 16;
     const qf_v = (sfp * (airflow / 3600) * ventHours) / 1000; // kWh/an — airflow m³/h → m³/s for SFP [W/(m³/s)]
-    const hrEta = ventType?.hasHR ? (parseFloat(ventilation.hrEfficiency) || ventType.hrEta || 0) : 0;
+    const hrEta = ventType?.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : ventType.hrEta || 0) : 0;
 
     // LIGHTING (LENI) — improved per EN 15193-1
     const pDens = parseFloat(lighting.pDensity) || 4.5;

@@ -200,7 +200,7 @@ export default function Step3Systems({
                 <div className="space-y-3">
                   <Select label={t("Tip ventilare",lang)} value={ventilation.type} onChange={v => {
                     const vt = VENTILATION_TYPES.find(t=>t.id===v);
-                    setVentilation(p=>({...p,type:v,hrEfficiency:vt?.hrEta?.toString()||""}));
+                    setVentilation(p=>({...p,type:v,hrEfficiency:vt?.hrEta ? (vt.hrEta*100).toFixed(0) : ""}));
                   }} options={VENTILATION_TYPES.map(s=>({value:s.id,label:s.label}))} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Debit aer proaspăt",lang)} value={ventilation.airflow} onChange={v => setVentilation(p=>({...p,airflow:v}))} type="number" unit="m3/h"
