@@ -3486,7 +3486,7 @@ export default function EnergyCalcApp({ cloud }) {
     const V = parseFloat(building.volume) || 0;
     if (!Au || !V) return null;
     const vt = VENTILATION_TYPES.find(t => t.id === ventilation.type);
-    const hr = vt && vt.hasHR ? (parseFloat(ventilation.hrEfficiency) || vt.hrEta || 0) : 0;
+    const hr = vt && vt.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : vt.hrEta || 0) : 0;
     return calcMonthlyISO13790({G_env:envelopeSummary.totalHeatLoss, V:V, Au:Au, climate:selectedClimate,
       theta_int:parseFloat(heating.theta_int)||20, glazingElements:glazingElements, shadingFactor:building.shadingFactor,
       hrEta:hr, category:building.category, n50:building.n50, structure:building.structure});
