@@ -3,6 +3,7 @@ import { renderAsync } from "docx-preview";
 import ImportModal from "./import/ImportModal.jsx";
 import ChatImport from "./components/ChatImport.jsx";
 import ShareModal, { decodeShareableData } from "./components/ShareModal.jsx";
+import QuickFillWizard from "./components/QuickFillWizard.jsx";
 
 // ── Data imports ──
 import CLIMATE_DB from "./data/climate.json";
@@ -615,6 +616,7 @@ export default function EnergyCalcApp({ cloud }) {
   const [showAPIDoc, setShowAPIDoc] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showQuickFill, setShowQuickFill] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
@@ -5326,6 +5328,7 @@ export default function EnergyCalcApp({ cloud }) {
             </button>
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
+            <button onClick={() => setShowQuickFill(true)} className="text-xs px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors shrink-0" title="Completare rapidă date clădire">⚡ Quick Fill</button>
             <button onClick={() => setShowImportWizard(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Import din alte softuri">📥</button>
             <button onClick={() => setShowShareModal(true)} className="text-xs px-2 py-1 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-400 transition-colors hidden lg:block shrink-0" title="Partajare link + QR">🔗</button>
             <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:block shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
@@ -5794,6 +5797,25 @@ export default function EnergyCalcApp({ cloud }) {
             }]);
           }}
           onClose={() => setShowBridgeCatalog(false)}
+        />
+      )}
+
+      {/* ═══ QuickFill Wizard ═══ */}
+      {showQuickFill && (
+        <QuickFillWizard
+          onClose={() => setShowQuickFill(false)}
+          onApply={(data) => {
+            pushUndo();
+            if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+            if (data.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
+            if (data.glazingElements?.length) setGlazingElements(data.glazingElements);
+            if (data.thermalBridges?.length) setThermalBridges(data.thermalBridges);
+            if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+            if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+            if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+            if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+          }}
+          showToast={showToast}
         />
       )}
 
