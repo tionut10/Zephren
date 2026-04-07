@@ -21,7 +21,9 @@ import { calcSolarACMDetailed, COLLECTOR_TYPES } from "../calc/solar-acm-detaile
 import { checkPasivhaus } from "../calc/pasivhaus.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
 import { calcBenchmark } from "../calc/benchmark.js";
-import { checkMajorRenovConformity } from "../calc/epbd.js";
+import { checkMajorRenovConformity, calcBACSEnergyImpact, BACS_ENERGY_FACTORS } from "../calc/epbd.js";
+import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
+import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
 import { checkGP123, SOLAR_PEAK_HOURS } from "../calc/gp123.js";
 import { calcVMCHR, recommendVMCType } from "../calc/vmc-hr.js";
@@ -35,6 +37,9 @@ import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 
 const TAB_SECTIONS = [
   { id:"benchmark",   icon:"📊", label:"Benchmark" },
+  { id:"bacs",        icon:"🤖", label:"BACS" },
+  { id:"acm_en15316", icon:"🚿", label:"ACM detaliat" },
+  { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale" },
   { id:"en12831",     icon:"🔥", label:"Sarcină vârf" },
   { id:"ventilare",   icon:"💨", label:"Ventilare" },
   { id:"vmc_hr",      icon:"🔄", label:"VMC-HR" },
@@ -129,6 +134,21 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [xmlValidating, setXmlValidating] = useState(false);
 
   // ── PVGIS API state ──
+  // ── BACS state ──
+  const [bacsClass, setBacsClass] = useState("C");
+  // ── ACM EN 15316 state ──
+  const [acmPipeInsul, setAcmPipeInsul] = useState(true);
+  const [acmCirculation, setAcmCirculation] = useState(false);
+  const [acmInsulClass, setAcmInsulClass] = useState("B");
+  const [acmConsuLevel, setAcmConsuLevel] = useState("med");
+  // ── IEQ categoria ventilare ──
+  const [ieqCategory, setIeqCategory] = useState("II");
+  // ── Borehole sonde geotermale state ──
+  const [groundTypeId, setGroundTypeId] = useState("sol_mixt");
+  const [boreholeDepth, setBoreholeDepth] = useState(100);
+  const [nBoreholes, setNBoreholes] = useState(2);
+  const [boreholeOp, setBoreholeOp] = useState(2400);
+
   const [pvgisData, setPvgisData] = useState(null);
   const [pvgisLoading, setPvgisLoading] = useState(false);
   const [pvgisError, setPvgisError] = useState(null);
@@ -226,6 +246,32 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const zone = climate?.zone || "III";
   const epActual = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 150;
 
+  // ── BACS ──
+  const bacsResult = useMemo(() => calcBACSEnergyImpact(
+    bacsClass, cat,
+    instSummary?.qH_nd_total || 0,
+    instSummary?.qC_nd_total || 0,
+    instSummary?.qf_v || 0,
+    instSummary?.qf_l || 0,
+    instSummary?.qf_w || 0,
+  ), [bacsClass, cat, instSummary]);
+
+  // ── ACM EN 15316 ──
+  const acmEN15316 = useMemo(() => calcACMen15316({
+    category: cat,
+    nPersons: nPersons ? parseInt(nPersons) : Math.ceil(Au / 30),
+    consumptionLevel: acmConsuLevel,
+    tSupply: 55,
+    climateZone: zone,
+    climate,
+    hasPipeInsulation: acmPipeInsul,
+    hasCirculation: acmCirculation,
+    insulationClass: acmInsulClass,
+    acmSource: systems?.acm?.source || "ct_gaz",
+    etaGenerator: parseFloat(systems?.heating?.eta_gen) || 0.87,
+    solarFraction: renewSummary?.solarThermalFraction || 0,
+  }), [cat, nPersons, Au, acmConsuLevel, zone, climate, acmPipeInsul, acmCirculation, acmInsulClass, systems, renewSummary]);
+
   // ── Benchmark ──
   const benchmark = useMemo(() => calcBenchmark({
     category: cat, zone, epActual,
@@ -246,14 +292,28 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     internalGains: 6,
   }), [Au, glazingElements, climate]);
 
-  // ── Ventilare ──
+  // ── Ventilare (EN 16798-1) ──
   const ventFlow = useMemo(() => calcVentilationFlow({
-    Au, H: V/Au, category: cat, ieqCategory: "II",
+    Au, H: V/Au, category: cat, ieqCategory,
     ventType: systems?.ventType || "NATURAL",
     occupancy: nPersons ? parseInt(nPersons) : null,
     hrEta: systems?.hrEta || 0,
     climate,
-  }), [Au, V, cat, systems, nPersons, climate]);
+  }), [Au, V, cat, ieqCategory, systems, nPersons, climate]);
+
+  // ── Borehole sizing sonde geotermale ──
+  const boreholeResult = useMemo(() => {
+    if (!peakLoad?.phi_H_total) return null;
+    return calcBoreholeSizing({
+      phi_H_design_kW: peakLoad.phi_H_total / 1000,
+      phi_H_annual_kwh: instSummary?.qH_nd_total || 0,
+      scop: 4.2,
+      groundTypeId,
+      boreholeDepth: parseInt(boreholeDepth) || 100,
+      nBoreholes: parseInt(nBoreholes) || 2,
+      operatingHours: parseInt(boreholeOp) || 2400,
+    });
+  }, [peakLoad, instSummary, groundTypeId, boreholeDepth, nBoreholes, boreholeOp]);
 
   // ── Pompă de căldură ──
   const hpSizing = useMemo(() => peakLoad ? calcHeatPumpSizing({
@@ -587,12 +647,306 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   </div>
                 ))}
               </div>
+              {/* SVG Percentile visualization */}
+              {(() => {
+                const bm = benchmark.benchmark;
+                const maxEP = bm.p90 * 1.15;
+                const w = 500, h = 60;
+                const toX = v => Math.round(Math.min(v / maxEP, 1) * w);
+                const myX = toX(epActual);
+                return (
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">Distribuție percentile stoc similar (zona {zone})</div>
+                    <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-lg overflow-hidden">
+                      {/* Gradient background A→G */}
+                      <defs>
+                        <linearGradient id="bm_grad" x1="0" x2="1" y1="0" y2="0">
+                          <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3"/>
+                          <stop offset="40%" stopColor="#eab308" stopOpacity="0.3"/>
+                          <stop offset="100%" stopColor="#ef4444" stopOpacity="0.3"/>
+                        </linearGradient>
+                      </defs>
+                      <rect x="0" y="0" width={w} height={h} fill="url(#bm_grad)" rx="4"/>
+                      {/* Percentile markers */}
+                      {[
+                        { v: bm.p10, lbl: "p10", color: "#22c55e" },
+                        { v: bm.p25, lbl: "p25", color: "#84cc16" },
+                        { v: bm.p50, lbl: "median", color: "#eab308" },
+                        { v: bm.p75, lbl: "p75", color: "#f97316" },
+                        { v: bm.p90, lbl: "p90", color: "#ef4444" },
+                      ].map(({ v, lbl, color }) => {
+                        const x = toX(v);
+                        return (
+                          <g key={lbl}>
+                            <line x1={x} y1={4} x2={x} y2={h-4} stroke={color} strokeWidth="1" strokeDasharray="3,2"/>
+                            <text x={x} y={h-2} fill={color} fontSize="7" textAnchor="middle">{lbl}</text>
+                            <text x={x} y={13} fill={color} fontSize="7" textAnchor="middle">{v}</text>
+                          </g>
+                        );
+                      })}
+                      {/* My building marker */}
+                      <polygon points={`${myX},${h-16} ${myX-6},${h-4} ${myX+6},${h-4}`}
+                        fill={benchmark.percentileActual?.color || "#6366f1"} opacity="0.9"/>
+                      <text x={myX} y={h/2-2} fill="white" fontSize="8" fontWeight="bold" textAnchor="middle">▼ {epActual}</text>
+                    </svg>
+                  </div>
+                );
+              })()}
               <div className="text-xs text-slate-400 bg-slate-800 rounded-lg p-3">
                 {benchmark.verdict}<br/>
                 <span className="text-indigo-300">{benchmark.recommendation}</span>
               </div>
             </div>
           ) : <p className="text-slate-500 text-sm">Date insuficiente pentru benchmark.</p>}
+        </Card>
+      )}
+
+      {/* ═══ BACS (EN 15232-1) ═══ */}
+      {activeTab === "bacs" && (
+        <Card className="p-4">
+          <SectionHeader icon="🤖" title="Automatizare clădire BACS — SR EN 15232-1:2017"
+            subtitle="Impact automatizare asupra consumului energetic. EPBD 2024/1275 impune minim clasa B pentru clădiri noi." />
+          <div className="mb-4">
+            <div className="text-xs text-slate-400 mb-2">Clasă BACS selectată</div>
+            <div className="grid grid-cols-4 gap-2">
+              {["A","B","C","D"].map(cls => (
+                <button key={cls} onClick={() => setBacsClass(cls)}
+                  className={cn("py-2 rounded-lg text-sm font-bold border transition-all",
+                    bacsClass === cls
+                      ? cls === "A" ? "bg-green-900/40 border-green-500 text-green-300"
+                        : cls === "B" ? "bg-blue-900/40 border-blue-500 text-blue-300"
+                        : cls === "C" ? "bg-slate-700 border-slate-500 text-slate-200"
+                        : "bg-red-900/40 border-red-500 text-red-300"
+                      : "bg-slate-800/50 border-slate-700 text-slate-500 hover:border-slate-500")}>
+                  {cls}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 text-xs text-slate-500">
+              {bacsClass === "A" && "Control predictiv — AI, optimizare continuă, integrare grid (economie 25-40%)"}
+              {bacsClass === "B" && "Control avansat — setpoint adaptiv, programare, senzori CO₂ (economie 10-25%)"}
+              {bacsClass === "C" && "Control de bază — termostat programabil (referință, economie 0%)"}
+              {bacsClass === "D" && "Fără automatizare — manual (consum +10-50% față de referință)"}
+            </div>
+          </div>
+          {bacsResult && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Încălzire", saving: bacsResult.savingHeating_pct, kwh: bacsResult.savingHeating_kwh },
+                  { label: "Răcire",    saving: bacsResult.savingCooling_pct, kwh: bacsResult.savingCooling_kwh },
+                  { label: "Ventilare", saving: bacsResult.savingVent_pct,    kwh: 0 },
+                  { label: "Iluminat",  saving: bacsResult.savingLight_pct,   kwh: 0 },
+                ].map(item => (
+                  <div key={item.label} className={cn("rounded-lg p-3 text-center border",
+                    item.saving > 0 ? "bg-green-900/20 border-green-800/30" : item.saving < 0 ? "bg-red-900/20 border-red-800/30" : "bg-slate-800 border-slate-700")}>
+                    <div className="text-xs text-slate-400">{item.label}</div>
+                    <div className={cn("text-2xl font-bold", item.saving > 0 ? "text-green-300" : item.saving < 0 ? "text-red-300" : "text-slate-300")}>
+                      {item.saving > 0 ? "-" : item.saving < 0 ? "+" : ""}{Math.abs(item.saving)}%
+                    </div>
+                    {item.kwh !== 0 && <div className="text-[10px] text-slate-500">{item.kwh > 0 ? "-" : "+"}{Math.abs(item.kwh).toLocaleString()} kWh/an</div>}
+                  </div>
+                ))}
+              </div>
+              <div className={cn("rounded-xl p-4 border",
+                bacsResult.savingTotal_kwh > 0 ? "bg-green-900/20 border-green-700/30" : "bg-amber-900/20 border-amber-700/30")}>
+                <div className="text-sm font-medium text-slate-200 mb-1">Economie totală estimată</div>
+                <div className={cn("text-3xl font-bold", bacsResult.savingTotal_kwh > 0 ? "text-green-300" : "text-red-300")}>
+                  {bacsResult.savingTotal_kwh > 0 ? "-" : "+"}{Math.abs(bacsResult.savingTotal_kwh).toLocaleString()} kWh/an
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Față de clasa C (referință). Cost upgrade BMS clasa B: ~2.000-5.000 EUR, amortizare &lt;5 ani.
+                </div>
+              </div>
+              {/* Tabel comparativ toate clasele */}
+              <div>
+                <div className="text-xs font-medium text-slate-400 uppercase mb-2">Comparativ toate clasele BACS</div>
+                <div className="overflow-auto">
+                  <table className="w-full text-xs text-slate-300">
+                    <thead><tr className="text-slate-500 border-b border-slate-700">
+                      <th className="text-left pb-1.5">Clasă</th>
+                      <th className="text-right pb-1.5">Încălzire</th>
+                      <th className="text-right pb-1.5">Răcire</th>
+                      <th className="text-right pb-1.5">Ventilare</th>
+                      <th className="text-right pb-1.5">Iluminat</th>
+                    </tr></thead>
+                    <tbody>
+                      {["A","B","C","D"].map(cls => {
+                        const isRes = ["RI","RC","RA"].includes(cat);
+                        const f = (isRes ? BACS_ENERGY_FACTORS.residential : BACS_ENERGY_FACTORS.nonresidential)[cls];
+                        return (
+                          <tr key={cls} className={cn("border-b border-slate-800", cls === bacsClass && "bg-indigo-900/20")}>
+                            <td className="py-1.5 font-bold text-indigo-300">{cls}</td>
+                            <td className="text-right">{Math.round((1-f.heating)*100)}%</td>
+                            <td className="text-right">{Math.round((1-f.cooling)*100)}%</td>
+                            <td className="text-right">{Math.round((1-f.ventilation)*100)}%</td>
+                            <td className="text-right">{Math.round((1-f.lighting)*100)}%</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-[10px] text-slate-600 mt-1">Valori negative = economie față de clasa C (referință). Sursa: SR EN 15232-1:2017 Tabel 6.</div>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* ═══ ACM DETALIAT EN 15316 ═══ */}
+      {activeTab === "acm_en15316" && (
+        <Card className="p-4">
+          <SectionHeader icon="🚿" title="ACM detaliat — SR EN 15316-3/5:2017"
+            subtitle="Pierderi distribuție, stocare și circulație. Eficiență sistem preparare apă caldă menajeră." />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Nivel consum ACM</div>
+              <div className="flex gap-1">
+                {[["low","Scăzut"],["med","Mediu"],["high","Ridicat"]].map(([v,lbl]) => (
+                  <button key={v} onClick={() => setAcmConsuLevel(v)}
+                    className={cn("flex-1 py-1.5 rounded text-xs font-medium border transition-all",
+                      acmConsuLevel === v ? "bg-indigo-700 border-indigo-500 text-white" : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500")}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Conductă distribuție</div>
+              <div className="flex gap-1">
+                <button onClick={() => setAcmPipeInsul(true)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", acmPipeInsul ? "bg-green-900/30 border-green-600 text-green-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Izolată</button>
+                <button onClick={() => setAcmPipeInsul(false)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", !acmPipeInsul ? "bg-red-900/30 border-red-600 text-red-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Neizolată</button>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Pompă circulație</div>
+              <div className="flex gap-1">
+                <button onClick={() => setAcmCirculation(false)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", !acmCirculation ? "bg-green-900/30 border-green-600 text-green-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Nu</button>
+                <button onClick={() => setAcmCirculation(true)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", acmCirculation ? "bg-amber-900/30 border-amber-600 text-amber-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Da</button>
+              </div>
+            </div>
+          </div>
+          {acmEN15316 ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400">Cerere netă</div>
+                  <div className="text-xl font-bold text-white">{acmEN15316.Q_nd_annual_kWh.toLocaleString()}</div>
+                  <div className="text-[10px] text-slate-400">kWh/an</div>
+                </div>
+                <div className={cn("rounded-lg p-3 text-center", acmEN15316.f_dist_pct > 20 ? "bg-red-900/20" : "bg-slate-800")}>
+                  <div className="text-xs text-slate-400">Pierderi distribuție</div>
+                  <div className={cn("text-xl font-bold", acmEN15316.f_dist_pct > 20 ? "text-red-300" : "text-white")}>{acmEN15316.f_dist_pct}%</div>
+                  <div className="text-[10px] text-slate-400">{acmEN15316.Q_dist_kWh.toLocaleString()} kWh/an</div>
+                </div>
+                <div className={cn("rounded-lg p-3 text-center", acmEN15316.f_storage_pct > 15 ? "bg-amber-900/20" : "bg-slate-800")}>
+                  <div className="text-xs text-slate-400">Pierderi stocare</div>
+                  <div className={cn("text-xl font-bold", acmEN15316.f_storage_pct > 15 ? "text-amber-300" : "text-white")}>{acmEN15316.f_storage_pct}%</div>
+                  <div className="text-[10px] text-slate-400">{acmEN15316.q_standby_kWh_day} kWh/zi standby</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400">Eficiență sistem</div>
+                  <div className="text-xl font-bold" style={{ color: acmEN15316.color }}>{Math.round(acmEN15316.eta_system * 100)}%</div>
+                  <div className="text-[10px] text-slate-400">{acmEN15316.verdict}</div>
+                </div>
+              </div>
+              {acmEN15316.solarFraction_pct > 0 && (
+                <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3">
+                  <div className="text-xs font-medium text-amber-300">Acoperire solară termică: {acmEN15316.solarFraction_pct}%</div>
+                  <div className="text-xs text-slate-400 mt-1">Contribuție solară: {acmEN15316.Q_solar_kWh.toLocaleString()} kWh/an</div>
+                </div>
+              )}
+              <ResultRow label="Consum specific" value={`${acmEN15316.q_specific_L} L/zi·pers (nivel: ${acmConsuLevel})`} />
+              <ResultRow label="Temperaturi sistem" value={`${acmEN15316.tSupply}°C livrare / ${acmEN15316.tCold}°C intrare`} />
+              <ResultRow label="Volum boiler recomandat" value={`${acmEN15316.vol_L} L`} />
+              <ResultRow label="Energie finală la generator" value={`${acmEN15316.Q_final_kWh.toLocaleString()} kWh/an`} />
+              {acmEN15316.recommendations.length > 0 && (
+                <div className="space-y-1.5">
+                  {acmEN15316.recommendations.map((r, i) => (
+                    <div key={i} className="text-xs text-amber-300 bg-amber-900/20 rounded p-2">⚠ {r}</div>
+                  ))}
+                </div>
+              )}
+              <div className="text-[10px] text-slate-600">{acmEN15316.reference}</div>
+            </div>
+          ) : <p className="text-slate-500 text-sm">Introduceți aria utilă și categoria clădirii.</p>}
+        </Card>
+      )}
+
+      {/* ═══ SONDE GEOTERMALE ═══ */}
+      {activeTab === "sonde_geo" && (
+        <Card className="p-4">
+          <SectionHeader icon="🌍" title="Sonde geotermale — dimensionare"
+            subtitle="SR EN ISO 13370 + VDI 4640-2:2001 — lungime sonde, număr, adâncime, cost estimat" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Tip sol</div>
+              <select value={groundTypeId} onChange={e => setGroundTypeId(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white">
+                {GROUND_TYPES.map(g => <option key={g.id} value={g.id}>{g.label} (λ={g.lambda} W/m·K)</option>)}
+              </select>
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Adâncime per sondă [m]</div>
+              <input type="number" value={boreholeDepth} onChange={e => setBoreholeDepth(e.target.value)}
+                min="30" max="300" step="10"
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Număr sonde</div>
+              <input type="number" value={nBoreholes} onChange={e => setNBoreholes(e.target.value)}
+                min="1" max="20" step="1"
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Ore funcționare/an</div>
+              <input type="number" value={boreholeOp} onChange={e => setBoreholeOp(e.target.value)}
+                min="1200" max="4000" step="200"
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+          </div>
+          {boreholeResult ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="bg-indigo-900/20 border border-indigo-700/30 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400">Lungime totală sonde</div>
+                  <div className="text-2xl font-bold text-indigo-300">{boreholeResult.totalBoreholeLength_m}</div>
+                  <div className="text-[10px] text-slate-400">m ({boreholeResult.nBoreholes} × {boreholeResult.boreholeDepth_m}m)</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400">Suprafață amprenta teren</div>
+                  <div className="text-2xl font-bold text-white">{boreholeResult.footprintArea_m2}</div>
+                  <div className="text-[10px] text-slate-400">m² (distanță min. {boreholeResult.minSpacing_m}m)</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400">Putere extrasă sol</div>
+                  <div className="text-2xl font-bold text-white">{boreholeResult.phi_ground_kW}</div>
+                  <div className="text-[10px] text-slate-400">kW (q={boreholeResult.q_specific_Wm} W/m)</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <ResultRow label="Temperatură fluid estimată" value={`${boreholeResult.t_fluid_avg}°C`} />
+                  <ResultRow label="Cost forare sonde" value={`${boreholeResult.costBorehole.toLocaleString()} EUR`} />
+                  <ResultRow label="Cost echipament HP" value={`${boreholeResult.costEquipment.toLocaleString()} EUR`} />
+                  <ResultRow label="COST TOTAL estimat" value={`${boreholeResult.costTotal.toLocaleString()} EUR`} />
+                </div>
+                <div>
+                  <ResultRow label="Colectori orizontali necesari" value={`${boreholeResult.neededHorizArea_m2} m²`} />
+                  <ResultRow label="Energie extrasă anual" value={`${boreholeResult.annualGround_kwh.toLocaleString()} kWh/an`} />
+                  <ResultRow label="Factabilitate orizontal" value={boreholeResult.horizFeasible ? "✓ Fezabil" : "✗ Suprafață insuficientă"} />
+                </div>
+              </div>
+              {boreholeResult.warnings.map((w, i) => (
+                <div key={i} className="text-xs text-amber-300 bg-amber-900/20 rounded p-2">⚠ {w}</div>
+              ))}
+              <div className="text-xs text-slate-400 bg-slate-800 rounded-lg p-3">
+                <strong>Recomandare:</strong> {boreholeResult.recommendation}<br/>
+                <span className="text-slate-600">{boreholeResult.referinta}</span>
+              </div>
+            </div>
+          ) : <p className="text-slate-500 text-sm">Introduceți datele de sarcină termică (calculul EN 12831 trebuie finalizat).</p>}
         </Card>
       )}
 
@@ -669,11 +1023,29 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="💨" title="Debit ventilare igienic — SR EN 16798-1:2019"
             subtitle="Verificare calitate aer interior, calcul CO₂ estimat și conformitate debit" />
-          <div className="mb-4 flex gap-3">
-            <div className="flex-1">
+          <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <label className="text-xs text-slate-400 block mb-1">Număr persoane (opțional)</label>
               <input type="number" value={nPersons} onChange={e=>setNPersons(e.target.value)} min="1" placeholder="auto"
                 className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white" />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Categorie IEQ (EN 16798-1)</label>
+              <div className="flex gap-1">
+                {[["I","I — Înaltă","text-green-300"],["II","II — Normală","text-blue-300"],["III","III — Moderată","text-amber-300"],["IV","IV — Minimă","text-red-300"]].map(([v, lbl, cls]) => (
+                  <button key={v} onClick={() => setIeqCategory(v)}
+                    className={cn("flex-1 py-1 rounded text-[10px] border transition-all font-medium",
+                      ieqCategory === v ? `border-white/30 bg-white/10 ${cls}` : "border-slate-700 bg-slate-800 text-slate-500 hover:border-slate-500")}>
+                    {lbl.split(" — ")[0]}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1">
+                {ieqCategory === "I" && "Cat. I: CO₂ ≤550 ppm, 10 L/s·pers — spații premium, persoane sensibile"}
+                {ieqCategory === "II" && "Cat. II: CO₂ ≤800 ppm, 7 L/s·pers — recomandată general"}
+                {ieqCategory === "III" && "Cat. III: CO₂ ≤1350 ppm, 4 L/s·pers — clădiri existente / renovare"}
+                {ieqCategory === "IV" && "Cat. IV: CO₂ ≤1800 ppm, 2.5 L/s·pers — minimum acceptabil"}
+              </div>
             </div>
           </div>
           {ventFlow ? (

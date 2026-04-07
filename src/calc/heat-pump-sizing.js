@@ -36,6 +36,18 @@ export const HP_TYPES = [
     seer_curve: { "20": 4.5, "25": 4.8, "30": 4.5, "35": 4.2 },
     t_biv: -20, f_backup: 0.02,
   },
+  {
+    id: "GA_ORIZONTAL", label: "Sol-Apă (G/W) colectori orizontali", type: "GA",
+    cop_curve: { "-15": 3.0, "-10": 3.3, "-7": 3.5, "2": 3.9, "7": 4.2, "10": 4.4, "12": 4.6 },
+    seer_curve: { "20": 4.0, "25": 4.3, "30": 4.1, "35": 3.8 },
+    t_biv: -15, f_backup: 0.03,
+  },
+  {
+    id: "WA", label: "Apă-Apă (W/W) cu apă freatică", type: "WA",
+    cop_curve: { "-15": 4.5, "-10": 4.8, "-7": 5.0, "2": 5.5, "7": 6.0, "10": 6.5, "12": 7.0 },
+    seer_curve: { "20": 5.0, "25": 5.5, "30": 5.2, "35": 4.8 },
+    t_biv: -20, f_backup: 0.01,
+  },
 ];
 
 function interpolateCOP(curve, tExt) {
@@ -88,6 +100,125 @@ export function calcSCOP(hpType, climate, phi_H_design, phi_H_annual_kwh) {
     t_biv: hp.t_biv,
     classification: scop >= 4.5 ? "A+++" : scop >= 3.8 ? "A++" : scop >= 3.2 ? "A+" : scop >= 2.5 ? "A" : "B/C",
     color: scop >= 4.0 ? "#22c55e" : scop >= 3.0 ? "#84cc16" : scop >= 2.5 ? "#eab308" : "#ef4444",
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DIMENSIONARE SONDE GEOTERMALE — SR EN ISO 13370 + VDI 4640-2
+// Calcul lungime sonde verticale / suprafață colectori orizontali
+// ═══════════════════════════════════════════════════════════════
+
+// Conductivitate termică sol [W/(m·K)] — tipuri de sol Romania
+export const GROUND_TYPES = [
+  { id: "argila_umeda",   label: "Argilă umedă",            lambda: 2.0, capacity: 2.0E6 },
+  { id: "nisip_umed",     label: "Nisip umed / pietriș",     lambda: 2.4, capacity: 1.8E6 },
+  { id: "roca_sedim",     label: "Rocă sedimentară",         lambda: 2.3, capacity: 2.0E6 },
+  { id: "roca_dura",      label: "Granit / rocă cristalină", lambda: 3.0, capacity: 2.2E6 },
+  { id: "argila_uscata",  label: "Argilă uscată / loess",    lambda: 1.2, capacity: 1.5E6 },
+  { id: "nisip_uscat",    label: "Nisip uscat",              lambda: 0.8, capacity: 1.3E6 },
+  { id: "sol_mixt",       label: "Sol mixt (medie)",         lambda: 1.8, capacity: 1.9E6 },
+];
+
+// Extracție termică specifică [W/m] funcție de conductivitate — VDI 4640-2 Tab.4
+function getSpecificExtraction(lambda_s, operatingHoursPerYear) {
+  // Relație empirică VDI 4640: q_s ≈ f(λ, ore funcționare)
+  const h = operatingHoursPerYear || 2400;
+  const baseFactor = h <= 1800 ? 1.2 : h <= 2400 ? 1.0 : h <= 3600 ? 0.85 : 0.70;
+  // q_s [W/m] = 8 × λ^0.75 × factorOre
+  return 8 * Math.pow(lambda_s, 0.75) * baseFactor;
+}
+
+export function calcBoreholeSizing(params) {
+  const {
+    phi_H_design_kW,   // sarcină termică de vârf [kW]
+    phi_H_annual_kwh,  // consum anual încălzire [kWh/an]
+    scop,              // SCOP sezonier (pompă)
+    groundTypeId,      // ID tip sol
+    boreholeDepth,     // adâncime sondă [m] (50-200m)
+    nBoreholes,        // număr sonde (1-20)
+    operatingHours,    // ore funcționare/an (1800-3600)
+    horizontalArea,    // suprafață disponibilă teren [m²] (pt. colectori orizontali)
+    hpTypeId,          // ID tip pompă (GA sau GA_ORIZONTAL)
+  } = params;
+
+  if (!phi_H_design_kW) return null;
+
+  const ground = GROUND_TYPES.find(g => g.id === groundTypeId) || GROUND_TYPES[6];
+  const lambda_s = ground.lambda;
+  const h_op = operatingHours || 2400;
+  const scop_val = scop || 4.0;
+
+  // Putere extrasă din sol [kW] = Φ_H × (1 - 1/SCOP)
+  const phi_ground_kW = phi_H_design_kW * (1 - 1 / scop_val);
+
+  // Extracție termică specifică [W/m] — VDI 4640
+  const q_specific_Wm = getSpecificExtraction(lambda_s, h_op);
+
+  // ── SONDE VERTICALE ──────────────────────────────────
+  // Lungime totală sonde [m] = Φ_sol[W] / q_specific[W/m]
+  const totalBoreholeLength_m = (phi_ground_kW * 1000) / q_specific_Wm;
+  const depth = boreholeDepth || 100; // m adâncime per sondă
+  const nBH = nBoreholes || Math.ceil(totalBoreholeLength_m / depth);
+  const actualDepth = Math.ceil(totalBoreholeLength_m / nBH);
+
+  // Distanța minimă între sonde [m] — VDI 4640: min 5m, rec. 6-8m
+  const minSpacing_m = Math.max(6, actualDepth * 0.05);
+  const footprintArea_m2 = Math.ceil(Math.pow(nBH, 0.5) * (minSpacing_m + 2)) ** 2;
+
+  // ── COLECTORI ORIZONTALI ─────────────────────────────
+  // q_specific_orizontal: 10-35 W/m² (mai mică decât sonde)
+  const q_horiz_Wm2 = lambda_s >= 2.0 ? 25 : lambda_s >= 1.5 ? 20 : 15; // W/m²
+  const neededArea_m2 = (phi_ground_kW * 1000) / q_horiz_Wm2;
+  const availableArea = horizontalArea || 0;
+  const horizFeasible = availableArea >= neededArea_m2 * 0.9;
+
+  // ── VOLUM GROUTING / COST ────────────────────────────
+  const groutingVolume_L = nBH * actualDepth * 3.14 * 0.075 * 0.075 * 1000; // tuburi DN150
+  const costPerMeter = lambda_s >= 2.5 ? 85 : 75; // EUR/m forare
+  const costBorehole = nBH * actualDepth * costPerMeter;
+  const costEquipment = phi_H_design_kW * 600; // EUR/kW HP sol-apă
+  const costTotal = costBorehole + costEquipment;
+
+  // ── VERIFICARE TEMPERATURĂ FLUID ─────────────────────
+  // Temperatura medie fluid (tur/retur) — min. admisă: -5°C (glicol) / +1°C (apa)
+  const t_fluid_avg = 5 - (phi_ground_kW / (actualDepth * nBH * q_specific_Wm / 1000)) * 2;
+
+  // ── ENERGIE EXTRASĂ ANUAL ────────────────────────────
+  const annualGround_kwh = phi_H_annual_kwh ? phi_H_annual_kwh * (1 - 1 / scop_val) : phi_ground_kW * h_op;
+
+  return {
+    groundType: ground.label,
+    lambda_s,
+    phi_ground_kW: Math.round(phi_ground_kW * 10) / 10,
+    q_specific_Wm: Math.round(q_specific_Wm * 10) / 10,
+
+    // Sonde verticale
+    totalBoreholeLength_m: Math.round(totalBoreholeLength_m),
+    nBoreholes: nBH,
+    boreholeDepth_m: actualDepth,
+    minSpacing_m: Math.round(minSpacing_m * 10) / 10,
+    footprintArea_m2: Math.round(footprintArea_m2),
+    t_fluid_avg: Math.round(t_fluid_avg * 10) / 10,
+
+    // Colectori orizontali
+    neededHorizArea_m2: Math.round(neededArea_m2),
+    q_horiz_Wm2,
+    horizFeasible,
+
+    // Cost
+    costBorehole: Math.round(costBorehole),
+    costEquipment: Math.round(costEquipment),
+    costTotal: Math.round(costTotal),
+    annualGround_kwh: Math.round(annualGround_kwh),
+
+    // Avertizări
+    warnings: [
+      t_fluid_avg < -3 ? "Temperatura fluid sub -3°C — necesită soluție antiîngheț concentrată (propilenglicol ≥35%)." : null,
+      nBH > 10 ? "Număr mare sonde — recomandăm testare termică de răspuns (TRT) pe 72h." : null,
+      footprintArea_m2 > 2000 ? "Suprafață foraj > 2000m² — verificați posibila interferență termică între sonde (λ_s scăzut)." : null,
+    ].filter(Boolean),
+    recommendation: `${nBH} sondă/e × ${actualDepth}m (${Math.round(totalBoreholeLength_m)}m total) — sol: ${ground.label} [λ=${lambda_s} W/(m·K)]`,
+    referinta: "SR EN ISO 13370:2017 + VDI 4640-2:2001",
   };
 }
 

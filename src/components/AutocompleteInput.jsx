@@ -39,12 +39,15 @@ export default function AutocompleteInput({
   const listRef = useRef(null);
   const timerRef = useRef(null);
   const mouseDownRef = useRef(false);
+  // Ref stabil pentru suggestions — evită recrearea filterLocal la fiecare render
+  const suggestionsRef = useRef(suggestions);
+  useEffect(() => { suggestionsRef.current = suggestions; }, [suggestions]);
 
-  // Filtrare locală din `suggestions`
+  // Filtrare locală din `suggestions` — deps stabile (nu include suggestions direct)
   const filterLocal = useCallback((q) => {
     if (!q || q.length < 1) return [];
     const lower = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return suggestions
+    return (suggestionsRef.current || [])
       .filter((s) => {
         const text = (typeof s === "string" ? s : s.label || s.value || "")
           .toLowerCase()
@@ -54,7 +57,7 @@ export default function AutocompleteInput({
       })
       .slice(0, maxItems)
       .map((s) => (typeof s === "string" ? { label: s, value: s } : s));
-  }, [suggestions, maxItems]);
+  }, [maxItems]); // suggestions accesat prin ref, nu prin dep
 
   // Actualizează sugestiile când se schimbă valoarea
   useEffect(() => {

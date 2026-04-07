@@ -709,6 +709,27 @@ def compute_checkboxes(data, category):
     else:
         cbs.append(307)
 
+    # ══════════════════════════════
+    # BACS (CB 308+) — EN 15232-1
+    # Dacă template-ul are câmpuri BACS (Anexe cu CB 308-311)
+    # ══════════════════════════════
+    bacs_class = data.get("bacs_class", "C")
+    bacs_cb_map = {"A": 308, "B": 309, "C": 310, "D": 311}
+    bacs_cb = bacs_cb_map.get(bacs_class)
+    if bacs_cb:
+        cbs.append(bacs_cb)
+
+    # SRI readiness (CB 312+)
+    sri_total = int(data.get("sri_total", "0") or "0")
+    if sri_total >= 70:
+        cbs.append(312)  # SRI class A
+    elif sri_total >= 50:
+        cbs.append(313)  # SRI class B
+    elif sri_total >= 30:
+        cbs.append(314)  # SRI class C
+    else:
+        cbs.append(315)  # SRI class D
+
     return cbs
 
 
@@ -967,6 +988,95 @@ class handler(BaseHTTPRequestHandler):
                 if hp and hp != "0":
                     replace_in_doc(doc, "Necesarul de căldură de calcul", "Necesarul de căldură de calcul: " + hp + " kW")
                     replace_in_doc(doc, "Puterea termică instalată totală pentru încălzire", "Puterea termică instalată totală: " + hp + " kW")
+
+                # ── U-values per tip element ──────────────────────────────
+                # Înlocuim texte tip "U pereți exteriori" / "U acoperiș" etc.
+                try:
+                    opaque_u = json.loads(data.get("opaque_u_values", "[]"))
+                    glaz_u = float(data.get("glazing_max_u", "0") or "0")
+                    glaz_g = float(data.get("glazing_g_value", "0") or "0")
+
+                    pe_u = [e for e in opaque_u if e.get("type") == "PE"]
+                    pt_u = [e for e in opaque_u if e.get("type") in ("PT","PP")]
+                    pb_u = [e for e in opaque_u if e.get("type") == "PB"]
+                    pl_u = [e for e in opaque_u if e.get("type") == "PL"]
+
+                    if pe_u:
+                        u_val = format_ro(pe_u[0].get("u", 0), 2)
+                        replace_in_doc(doc, "U pereți exteriori", f"U pereți exteriori = {u_val} W/(m²·K)")
+                        replace_in_doc(doc, "coeficientul global de transfer termic al pereților exteriori",
+                                       f"U pereți ext. = {u_val} W/(m²·K)")
+                    if pt_u:
+                        u_val = format_ro(pt_u[0].get("u", 0), 2)
+                        replace_in_doc(doc, "U terasă/acoperiș", f"U terasă = {u_val} W/(m²·K)")
+                    if pb_u:
+                        u_val = format_ro(pb_u[0].get("u", 0), 2)
+                        replace_in_doc(doc, "U planșeu subsol", f"U planșeu subsol = {u_val} W/(m²·K)")
+                    if glaz_u > 0:
+                        replace_in_doc(doc, "U tâmplărie", f"U tâmplărie = {format_ro(glaz_u, 2)} W/(m²·K)")
+                        replace_in_doc(doc, "coeficientul global de transfer termic al tâmplăriei",
+                                       f"U tâmplărie = {format_ro(glaz_u, 2)} W/(m²·K)")
+                    if glaz_g > 0:
+                        replace_in_doc(doc, "factorul solar g", f"factorul solar g = {format_ro(glaz_g, 2)}")
+                except Exception:
+                    pass
+
+                # ── EP breakdown pe destinații ────────────────────────────
+                ep_breakdown = {
+                    "ep_incalzire": data.get("ep_incalzire", ""),
+                    "ep_racire": data.get("ep_racire", ""),
+                    "ep_acm": data.get("ep_acm", ""),
+                    "ep_ventilare": data.get("ep_ventilare", ""),
+                    "ep_iluminat": data.get("ep_iluminat", ""),
+                }
+                ep_labels = {
+                    "ep_incalzire": "EP încălzire",
+                    "ep_racire": "EP răcire",
+                    "ep_acm": "EP ACM",
+                    "ep_ventilare": "EP ventilare",
+                    "ep_iluminat": "EP iluminat",
+                }
+                for key, val in ep_breakdown.items():
+                    if val:
+                        replace_in_doc(doc, ep_labels[key], ep_labels[key] + " = " + val + " kWh/(m²·an)")
+
+                # ── BACS clasă automatizare ───────────────────────────────
+                bacs_class = data.get("bacs_class", "")
+                bacs_labels = {
+                    "A": "Clasa A — control predictiv (economie 25-40%)",
+                    "B": "Clasa B — control avansat (economie 10-25%)",
+                    "C": "Clasa C — automatizare de bază (referință)",
+                    "D": "Clasa D — fără automatizare",
+                }
+                if bacs_class in bacs_labels:
+                    replace_in_doc(doc, "Clasa BACS", "BACS: " + bacs_labels[bacs_class])
+                    replace_in_doc(doc, "clasă automatizare", "Clasă automatizare BACS: " + bacs_class)
+
+                # ── SRI — Smart Readiness Indicator ──────────────────────
+                sri_val = data.get("sri_total", "")
+                sri_grade = data.get("sri_grade", "")
+                if sri_val:
+                    replace_in_doc(doc, "SRI %", f"SRI = {sri_val}% (Clasa {sri_grade})")
+
+                # ── Detalii ACM ───────────────────────────────────────────
+                acm_vol = data.get("acm_storage_volume", "")
+                acm_src_label = {
+                    "ct_prop": "Centrală termică proprie",
+                    "boiler_electric": "Boiler electric",
+                    "termoficare": "Termoficare",
+                    "solar_termic": "Solar termic",
+                    "pc": "Pompă de căldură",
+                }.get(data.get("acm_source", ""), "")
+                if acm_vol:
+                    replace_in_doc(doc, "Volumul vasului de acumulare", "Volum vas ACM: " + acm_vol + " L")
+                if acm_src_label:
+                    replace_in_doc(doc, "sursa de preparare ACM", "Sursă ACM: " + acm_src_label)
+
+                # ── Infiltrații / Etanșeitate ─────────────────────────────
+                n50 = data.get("n50", "")
+                if n50 and float(n50 or 0) > 0:
+                    replace_in_doc(doc, "n50 =", "n50 = " + format_ro(float(n50), 1) + " h⁻¹")
+                    replace_in_doc(doc, "rata de infiltrații", "Rata infiltrații n50 = " + format_ro(float(n50), 1) + " h⁻¹")
 
             # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine
