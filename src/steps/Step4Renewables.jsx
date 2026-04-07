@@ -3,7 +3,7 @@ import { T } from "../data/translations.js";
 import {
   HEAT_SOURCES, FUELS,
   SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA,
-  TILT_FACTORS, BIOMASS_TYPES,
+  TILT_FACTORS, BIOMASS_TYPES, BATTERY_STORAGE_TYPES,
 } from "../data/constants.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
 
@@ -14,6 +14,7 @@ export default function Step4Renewables({
   heatPump, setHeatPump,
   biomass, setBiomass,
   otherRenew, setOtherRenew,
+  battery, setBattery,
   renewSubTab, setRenewSubTab,
   renewSummary, instSummary,
   ORIENTATIONS, getNzebEpMax,
@@ -139,6 +140,44 @@ export default function Step4Renewables({
                 </div>
               </Card>
             </>
+          )}
+
+          {/* ── STOCARE BATERII (în subtabul PV) ── */}
+          {renewSubTab === "pv" && battery && (
+            <Card title={t("Stocare energie în baterii",lang)}>
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={battery.enabled} onChange={e => setBattery(p=>({...p,enabled:e.target.checked}))} className="accent-emerald-500" />
+                  <span className="font-medium">Sistem de stocare în baterii (BESS)</span>
+                </label>
+                {battery.enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    <Select label={t("Tip baterie",lang)} value={battery.type} onChange={v => setBattery(p=>({...p,type:v}))}
+                      options={BATTERY_STORAGE_TYPES.map(b=>({value:b.id,label:`${b.label} (η=${(b.efficiency*100).toFixed(0)}%)`}))} />
+                    <Input label={t("Capacitate nominală",lang)} value={battery.capacity} onChange={v => setBattery(p=>({...p,capacity:v}))} type="number" unit="kWh" min="0" step="0.5" />
+                    <Input label={t("Putere maximă",lang)} value={battery.power} onChange={v => setBattery(p=>({...p,power:v}))} type="number" unit="kW" step="0.5" />
+                    <Input label={t("Adâncime descărcare (DoD)",lang)} value={battery.dod} onChange={v => setBattery(p=>({...p,dod:v}))} type="number" step="0.01" placeholder="0.80–0.95" />
+                    <Input label={t("Autoconsum local",lang)} value={battery.selfConsumptionPct} onChange={v => setBattery(p=>({...p,selfConsumptionPct:v}))} type="number" unit="%" step="1" placeholder="80" className="col-span-2" />
+                  </div>
+                )}
+                {battery.enabled && (
+                  <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3 mt-1">
+                    <div className="text-[10px] opacity-50">
+                      {(() => {
+                        const bType = BATTERY_STORAGE_TYPES.find(b=>b.id===battery.type);
+                        const cap = parseFloat(battery.capacity)||0;
+                        const dod = parseFloat(battery.dod)||0.90;
+                        if (!bType || cap===0) return "Completează capacitatea pentru estimare";
+                        const usable = (cap * dod).toFixed(1);
+                        const cyclesPerYear = 300;
+                        const annualThroughput = (cap * dod * bType.efficiency * cyclesPerYear).toFixed(0);
+                        return `Capacitate utilizabilă: ${usable} kWh | Debit anual estimat: ~${annualThroughput} kWh/an | Cicluri de viață: ~${bType.cycles.toLocaleString()}`;
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
           )}
 
           {/* ── POMPE DE CĂLDURĂ ── */}

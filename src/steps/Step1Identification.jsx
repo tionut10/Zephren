@@ -1,7 +1,51 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
+import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
+import {
+  parseClimateCSV,
+  parseEPW,
+  fetchOpenMeteo,
+  openMeteoToClimateData,
+  validateClimateData,
+} from "../calc/climate-import.js";
+
+// ── Lazy-load localități România ───────────────────────────────────────────────
+let _localitiesCache = null;
+async function getLocalitiesDB() {
+  if (_localitiesCache) return _localitiesCache;
+  try {
+    const m = await import("../data/ro-localities.json");
+    _localitiesCache = m.default || m;
+  } catch {
+    _localitiesCache = { counties: [], localities: [] };
+  }
+  return _localitiesCache;
+}
+
+// ── OSM Street autocomplete ────────────────────────────────────────────────────
+async function searchStreetOSM(query, city, county) {
+  const q = city ? `${query}, ${city}, Romania` : `${query}, Romania`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=7&countrycodes=ro`;
+  try {
+    const res = await fetch(url, { headers: { "Accept-Language": "ro", "User-Agent": "Zephren/3.2" } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data
+      .filter(r => r.address)
+      .map(r => {
+        const a = r.address;
+        const road = a.road || a.pedestrian || a.path || a.footway || "";
+        const houseNr = a.house_number || "";
+        const label = [road, houseNr].filter(Boolean).join(", nr. ") || r.display_name.split(",")[0];
+        return { label, value: label, sub: a.city || a.town || a.village || "" };
+      })
+      .filter(r => r.label);
+  } catch {
+    return [];
+  }
+}
 
 // ── OSM Geocodare ─────────────────────────────────────────────────────────────
 async function geocodeAddress({ address, city, county }) {
@@ -69,6 +113,61 @@ export default function Step1Identification({
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [geoSuggestion, setGeoSuggestion] = useState(null);
 
+  // ── State ERA5/TMY import ────────────────────────────────────────────────────
+  const [importPanelOpen, setImportPanelOpen] = useState(false);
+  const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
+  const [importStatusMsg, setImportStatusMsg] = useState("");
+  const [importedClimateData, setImportedClimateData] = useState(null);
+  const csvFileRef = useRef(null);
+  const epwFileRef = useRef(null);
+
+  // ── State localități ────────────────────────────────────────────────────────
+  const [localitiesDB, setLocalitiesDB] = useState({ counties: [], localities: [] });
+
+  // Încarcă DB la prima interacțiune
+  const ensureLocalitiesLoaded = useCallback(async () => {
+    if (localitiesDB.counties.length > 0) return;
+    const db = await getLocalitiesDB();
+    setLocalitiesDB(db);
+  }, [localitiesDB.counties.length]);
+
+  // Lista județe pentru autocomplete
+  const countySuggestions = useMemo(() =>
+    localitiesDB.counties.map(c => ({ label: c.name, value: c.name, sub: c.code })),
+  [localitiesDB.counties]);
+
+  // Lista localități filtrată după județ selectat
+  const citySuggestions = useMemo(() => {
+    const all = localitiesDB.localities;
+    const filtered = building.county
+      ? all.filter(l => l.county === building.county)
+      : all;
+    return filtered.map(l => ({
+      label: l.name,
+      value: l.name,
+      sub: l.type + (l.county && !building.county ? ` · ${l.county}` : ""),
+      postal: l.postal,
+      county: l.county,
+    }));
+  }, [localitiesDB.localities, building.county]);
+
+  // Handler selectare localitate → auto-completează județ și cod poștal
+  const handleCitySelect = useCallback((item) => {
+    if (item.county) updateBuilding("county", item.county);
+    if (item.postal) updateBuilding("postal", item.postal);
+    autoDetectLocality(item.value);
+  }, [updateBuilding, autoDetectLocality]);
+
+  // Handler selectare județ → filtrează localitățile
+  const handleCountySelect = useCallback((item) => {
+    updateBuilding("county", item.value || item.label);
+  }, [updateBuilding]);
+
+  // Street autocomplete via OSM
+  const searchStreet = useCallback(async (q) => {
+    return searchStreetOSM(q, building.city, building.county);
+  }, [building.city, building.county]);
+
   const handleGeocode = useCallback(async () => {
     if (!building.address && !building.city) {
       showToast("Completați adresa sau localitatea mai întâi", "info");
@@ -98,6 +197,71 @@ export default function Step1Identification({
     }
   }, [building, updateBuilding, autoDetectLocality, showToast]);
 
+  // ── Handlers ERA5/TMY import ─────────────────────────────────────────────────
+  const applyImportedClimate = useCallback((data, sourceName) => {
+    const validation = validateClimateData(data);
+    if (!validation.valid) {
+      setImportStatus("error");
+      setImportStatusMsg("Erori validare: " + validation.errors.join("; "));
+      showToast("Import climă eșuat: " + validation.errors[0], "error");
+      return;
+    }
+    setImportedClimateData({ ...data, _source: sourceName });
+    setImportStatus("ok");
+    setImportStatusMsg(`Date importate: ${sourceName}`);
+    if (validation.warnings.length > 0) {
+      showToast("Import climă OK (cu avertismente): " + validation.warnings[0], "info", 5000);
+    } else {
+      showToast(`Date climatice importate: ${sourceName}`, "success");
+    }
+  }, [showToast]);
+
+  const handleOpenMeteoImport = useCallback(async () => {
+    const lat = selectedClimate?.lat || null;
+    const lon = selectedClimate?.lon || null;
+    if (!lat || !lon) {
+      showToast("Selectați mai întâi o localitate cu coordonate valide.", "error");
+      return;
+    }
+    setImportStatus("loading");
+    setImportStatusMsg("Se descarcă date ERA5 de la Open-Meteo...");
+    try {
+      const raw = await fetchOpenMeteo(lat, lon, 2023);
+      const data = openMeteoToClimateData(raw);
+      applyImportedClimate(data, `Open-Meteo ERA5 2023 (${lat.toFixed(2)}, ${lon.toFixed(2)})`);
+    } catch (err) {
+      setImportStatus("error");
+      setImportStatusMsg("Eroare: " + err.message);
+      showToast("Eroare Open-Meteo: " + err.message, "error");
+    }
+  }, [selectedClimate, applyImportedClimate, showToast]);
+
+  const handleCSVImport = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const data = parseClimateCSV(text);
+      applyImportedClimate(data, `CSV: ${file.name}`);
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  }, [applyImportedClimate]);
+
+  const handleEPWImport = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const data = parseEPW(text);
+      applyImportedClimate(data, `EPW: ${file.name}${data.city && data.city !== "Necunoscut" ? " (" + data.city + ")" : ""}`);
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  }, [applyImportedClimate]);
+
   return (
     <div>
       <div className="mb-6">
@@ -110,10 +274,37 @@ export default function Step1Identification({
         <div className="space-y-5">
           <Card title={t("Adresa clădirii",lang)}>
             <div className="space-y-3">
-              <Input label={t("Strada, nr.",lang)} value={building.address} onChange={v => updateBuilding("address",v)} placeholder="Str. Exemplu, nr. 10" />
+              <AutocompleteInput
+                label={t("Strada, nr.",lang)}
+                value={building.address}
+                onChange={v => updateBuilding("address", v)}
+                onSelect={item => updateBuilding("address", item.value || item.label)}
+                onSearch={searchStreet}
+                debounce={400}
+                placeholder="Str. Exemplu, nr. 10"
+                maxItems={7}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label={t("Localitate",lang)} value={building.city} onChange={v => { updateBuilding("city",v); autoDetectLocality(v); }} />
-                <Input label={t("Județ",lang)} value={building.county} onChange={v => updateBuilding("county",v)} />
+                <AutocompleteInput
+                  label={t("Localitate",lang)}
+                  value={building.city}
+                  onChange={v => { updateBuilding("city", v); autoDetectLocality(v); }}
+                  onSelect={handleCitySelect}
+                  suggestions={citySuggestions}
+                  onFocusCapture={ensureLocalitiesLoaded}
+                  placeholder="Cluj-Napoca"
+                  maxItems={8}
+                />
+                <AutocompleteInput
+                  label={t("Județ",lang)}
+                  value={building.county}
+                  onChange={v => updateBuilding("county", v)}
+                  onSelect={handleCountySelect}
+                  suggestions={countySuggestions}
+                  onFocusCapture={ensureLocalitiesLoaded}
+                  placeholder="Cluj"
+                  maxItems={8}
+                />
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} />
 
@@ -470,6 +661,106 @@ export default function Step1Identification({
                   <ResultRow label="Grade-zile (NGZ)" value={selectedClimate.ngz.toLocaleString()} unit="K·zile" />
                   <ResultRow label="Durata sezon încălzire" value={selectedClimate.season} unit="zile" />
                   <ResultRow label="Altitudine" value={selectedClimate.alt} unit="m" />
+                </div>
+              )}
+
+              {/* ── Buton import ERA5/TMY ── */}
+              <button
+                onClick={() => setImportPanelOpen(v => !v)}
+                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 text-xs font-medium transition-all mt-2"
+              >
+                <span>📡</span>
+                {importPanelOpen ? "Ascunde panel import ERA5/TMY" : "Import ERA5/TMY — date climatice externe"}
+              </button>
+
+              {/* ── Panel import inline ── */}
+              {importPanelOpen && (
+                <div className="mt-2 rounded-xl border border-violet-500/20 bg-violet-900/10 p-3 space-y-3">
+                  <div className="text-xs font-semibold text-violet-300 mb-1">📡 Import date climatice externe</div>
+
+                  {/* Opțiunea 1: Open-Meteo ERA5 */}
+                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
+                    <div className="text-xs font-medium text-slate-200">1. Open-Meteo ERA5 (auto)</div>
+                    <div className="text-[10px] text-slate-400">Descarcă medii lunare 2023 pentru coordonatele localității selectate (gratuit, fără API key).</div>
+                    <button
+                      onClick={handleOpenMeteoImport}
+                      disabled={importStatus === "loading" || !selectedClimate}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-medium transition-all"
+                    >
+                      {importStatus === "loading"
+                        ? <><span className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" /> Se descarcă...</>
+                        : <><span>🌍</span> Descarcă date ERA5</>}
+                    </button>
+                    {!selectedClimate && (
+                      <div className="text-[10px] text-amber-400">Selectați mai întâi o localitate din lista de mai sus.</div>
+                    )}
+                  </div>
+
+                  {/* Opțiunea 2: CSV */}
+                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
+                    <div className="text-xs font-medium text-slate-200">2. Import CSV</div>
+                    <div className="text-[10px] text-slate-400">Format: Lună, T_medie, T_min, T_max, GHI (kWh/m²/lună), RH (%), Vânt (m/s) — 12 rânduri.</div>
+                    <input
+                      ref={csvFileRef}
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleCSVImport}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => csvFileRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
+                    >
+                      <span>📂</span> Alege fișier CSV
+                    </button>
+                  </div>
+
+                  {/* Opțiunea 3: EPW */}
+                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
+                    <div className="text-xs font-medium text-slate-200">3. Import EPW (EnergyPlus)</div>
+                    <div className="text-[10px] text-slate-400">Fișier .epw standard EnergyPlus — extrage automat medii lunare.</div>
+                    <input
+                      ref={epwFileRef}
+                      type="file"
+                      accept=".epw"
+                      onChange={handleEPWImport}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => epwFileRef.current?.click()}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
+                    >
+                      <span>📂</span> Alege fișier EPW
+                    </button>
+                  </div>
+
+                  {/* Status import */}
+                  {importStatus === "ok" && importStatusMsg && (
+                    <div className="flex items-start gap-2 rounded-lg bg-green-900/30 border border-green-700/30 p-2 text-xs text-green-300">
+                      <span className="mt-0.5">✓</span>
+                      <div>
+                        <div className="font-medium">{importStatusMsg}</div>
+                        {importedClimateData?.temp_month && (
+                          <div className="text-[10px] text-green-400 mt-0.5">
+                            T medie ian.: {importedClimateData.temp_month[0]}°C · T medie iul.: {importedClimateData.temp_month[6]}°C
+                            {importedClimateData.GHI_month?.length === 12
+                              ? ` · GHI iul.: ${importedClimateData.GHI_month[6]} kWh/m²`
+                              : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {importStatus === "error" && importStatusMsg && (
+                    <div className="flex items-start gap-2 rounded-lg bg-red-900/30 border border-red-700/30 p-2 text-xs text-red-300">
+                      <span className="mt-0.5">✗</span>
+                      <div>{importStatusMsg}</div>
+                    </div>
+                  )}
+
+                  <div className="text-[10px] text-slate-500 italic">
+                    Notă: datele importate sunt afișate informativ. Calculele principale folosesc datele climatice Mc 001-2022 din baza de date internă.
+                  </div>
                 </div>
               )}
             </div>

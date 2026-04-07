@@ -1,4 +1,5 @@
 import React from "react";
+import ApartmentClasses from "../components/ApartmentClasses.jsx";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -24,7 +25,7 @@ export default function Step6Certificate(props) {
     canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-    exportPDFNative, fetchTemplate,
+    exportPDFNative, exportQuickSheet, fetchTemplate,
     calcOpaqueR,
     // Constants passed as props
     Card, Badge, ResultRow, Select, Input, cn,
@@ -2012,6 +2013,57 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 </div>
               </div>
 
+              {/* ═══ CHECKLIST COMPLETITUDINE CPE ═══ */}
+              {(() => {
+                const completenessItems = [
+                  { label: "Date identificare clădire", ok: !!(building?.address && building?.city) },
+                  { label: "Date climatice selectate", ok: !!(selectedClimate?.name || selectedClimate?.zone) },
+                  { label: "Elemente anvelopă introduse", ok: (opaqueElements?.length ?? 0) > 0 },
+                  { label: "Sistem încălzire configurat", ok: !!(heating?.source && heating.source !== "NONE" && heating.source !== "none") },
+                  { label: "Calcul energetic efectuat", ok: !!instSummary },
+                  { label: "Date auditor completate", ok: !!(auditor?.name && auditor?.atestat) },
+                ];
+                const completenessScore = completenessItems.filter(i => i.ok).length;
+                const completenessTotal = completenessItems.length;
+                const completenessPct = Math.round((completenessScore / completenessTotal) * 100);
+                const allDone = completenessScore === completenessTotal;
+                const barColor = allDone ? "#22c55e" : completenessScore >= 4 ? "#eab308" : "#f97316";
+
+                return (
+                  <div className={`mt-5 rounded-xl border p-4 ${allDone ? "border-emerald-500/25 bg-emerald-500/5" : "border-amber-500/20 bg-white/[0.02]"}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`text-xs font-semibold ${allDone ? "text-emerald-400" : "text-amber-400"}`}>
+                        {allDone ? "✓ Date complete pentru generare CPE" : "Completitudine date CPE DOCX"}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold" style={{color: barColor}}>
+                          {completenessScore}/{completenessTotal} câmpuri completate
+                        </span>
+                        <span className="text-[10px] opacity-40">({completenessPct}%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: completenessPct + "%", background: barColor }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+                      {completenessItems.map((item, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <span className={`text-[11px] flex-shrink-0 ${item.ok ? "text-emerald-400" : "text-red-400/70"}`}>
+                            {item.ok ? "✓" : "○"}
+                          </span>
+                          <span className={`text-[11px] ${item.ok ? "opacity-70" : "opacity-45"}`}>
+                            {item.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ═══ EXPORT DOCX OFICIAL — full-width sub grid ═══ */}
               {(() => {
                 const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
@@ -2131,6 +2183,45 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         </div>
                       </div>
                     </button>
+                    <button
+                      onClick={exportQuickSheet}
+                      disabled={!instSummary}
+                      className={`w-full rounded-xl border transition-all text-sm ${
+                        !instSummary
+                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                          : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
+                      }`}>
+                      <div className="flex items-center justify-center gap-2 px-4 py-3">
+                        <span className="text-lg">📋</span>
+                        <div className="text-left">
+                          <div className="font-medium">Fișă sintetică client</div>
+                          <div className="text-[10px] opacity-60">1 pagină rezumativă client-friendly</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* ═══ CLASE ENERGETICE PER APARTAMENT (doar RC — bloc colectiv) ═══ */}
+              {(building.category === "RC") && (() => {
+                const catKey = "RC" + (cooling.hasCooling ? "_cool" : "_nocool");
+                const epBloc = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
+                const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB["RC_nocool"];
+                return (
+                  <div className="mt-6">
+                    <Card title="🏢 Clase energetice per apartament">
+                      <div className="mb-3 text-[11px] opacity-50">
+                        Calculul distribuie energia blocului pe fiecare apartament cu corecții pentru poziție termică (parter, colț, ultimul etaj) conform Mc 001-2022 Anexa 7.
+                      </div>
+                      <ApartmentClasses
+                        epBuildingM2={epBloc}
+                        thresholds={grid?.thresholds}
+                        buildingArea={Au}
+                        cn={cn}
+                        showToast={showToast}
+                      />
+                    </Card>
                   </div>
                 );
               })()}

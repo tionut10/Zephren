@@ -1,4 +1,5 @@
 import React from "react";
+import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -878,12 +879,27 @@ export default function Step5Calculation(props) {
                       );
                     })()}
                   </div>
+                  {/* ── Preseturi ANRE ── */}
                   <div className="mt-3 pt-3 border-t border-white/5">
-                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">{lang==="EN"?"Edit energy prices (RON/kWh)":"Editează prețuri energie (RON/kWh)"}</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Preseturi ANRE 2025</div>
+                    <div className="grid grid-cols-2 gap-1.5 mb-3">
+                      {ENERGY_PRICE_PRESETS.map(preset => (
+                        <button key={preset.id} onClick={() => setEnergyPrices(p => ({ ...p, ...preset.prices }))}
+                          className="flex items-start gap-2 p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] transition-all text-left">
+                          <span className="text-sm mt-0.5">{preset.icon}</span>
+                          <div>
+                            <div className="text-[10px] font-semibold leading-tight">{preset.label}</div>
+                            <div className="text-[9px] opacity-40 leading-tight">{preset.sublabel}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Tarife personalizate (RON/kWh)</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                       {Object.entries(energyPrices).map(function(entry) { return (
-                        <div key={entry[0]} className="flex items-center gap-1">
-                          <span className="text-[9px] opacity-40 w-12 truncate">{entry[0]}</span>
+                        <div key={entry[0]} className="flex items-center gap-1.5">
+                          <span className="text-xs">{PRICE_ICONS[entry[0]] || "⚙️"}</span>
+                          <span className="text-[9px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
                           <input type="number" value={entry[1]} step="0.01" min="0"
                             onChange={function(e){setEnergyPrices(function(p){var n=Object.assign({},p);n[entry[0]]=parseFloat(e.target.value)||0;return n;});}}
                             className="w-16 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-right"/>

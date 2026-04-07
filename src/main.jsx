@@ -5,6 +5,7 @@ import ReactDOM from "react-dom/client";
 
 const EnergyCalcApp = lazy(() => import("./energy-calc.jsx"));
 const LandingPage = lazy(() => import("./landing.jsx"));
+const ClientReport = lazy(() => import("./components/ClientReport.jsx"));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -33,16 +34,31 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Decodare view param pentru raport client
+function decodeViewParam() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const v = p.get("view");
+    if (!v) return null;
+    return JSON.parse(decodeURIComponent(escape(atob(v))));
+  } catch { return null; }
+}
+
 function Router() {
-  const [route, setRoute] = useState(window.location.hash === "#app" ? "app" : "landing");
+  const viewData = React.useMemo(() => decodeViewParam(), []);
+  const [route, setRoute] = useState(() => {
+    if (viewData) return "view";
+    return window.location.hash === "#app" ? "app" : "landing";
+  });
 
   const goToApp = () => { window.location.hash = "#app"; setRoute("app"); };
 
   React.useEffect(() => {
+    if (viewData) return; // nu schimba ruta dacă suntem în mod view
     const handler = () => setRoute(window.location.hash === "#app" ? "app" : "landing");
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
-  }, []);
+  }, [viewData]);
 
   return (
     <Suspense fallback={
@@ -55,9 +71,11 @@ function Router() {
       </div>
     }>
       <ErrorBoundary>
-        {route === "app"
-          ? <EnergyCalcApp />
-          : <LandingPage onStart={goToApp} />
+        {route === "view"
+          ? <ClientReport data={viewData} onOpenApp={goToApp} />
+          : route === "app"
+            ? <EnergyCalcApp />
+            : <LandingPage onStart={goToApp} />
         }
       </ErrorBoundary>
     </Suspense>

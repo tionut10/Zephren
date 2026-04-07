@@ -1,4 +1,5 @@
 import React from "react";
+import BuildingPhotos from "../components/BuildingPhotos.jsx";
 
 /**
  * Step7Audit — Extracted from energy-calc.jsx lines 12320-13537
@@ -20,7 +21,7 @@ export default function Step7Audit(props) {
     smartSuggestions, multiScenarios,
     buildingPhotos, setBuildingPhotos,
     activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
-    generateAuditReport, exportXML, exportPDFNative, exportBulkProjects,
+    generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
     calcOpaqueR, calcSRI,
     // Constants passed as props
     Card, Badge, ResultRow, Select, Input, cn,
@@ -809,6 +810,14 @@ export default function Step7Audit(props) {
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-sky-500/20 bg-sky-500/5 text-sky-400/80 hover:bg-sky-500/10 transition-all text-xs">
                   <span>📑</span> Export PDF certificat
                 </button>
+                <button onClick={exportExcelFull}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/20 bg-green-500/5 text-green-400/80 hover:bg-green-500/10 transition-all text-xs">
+                  <span>📊</span> Export Excel complet
+                </button>
+                <button onClick={exportFullReport}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
+                  <span>📊</span> Raport tehnic complet PDF
+                </button>
                 <button onClick={exportBulkProjects}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400/80 hover:bg-violet-500/10 transition-all text-xs">
                   <span>📦</span> Export bulk proiecte
@@ -999,36 +1008,14 @@ export default function Step7Audit(props) {
                 <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
               </Card>
 
-              {/* ── Termoviziune — Import imagini IR ── */}
-              <Card title="Termoviziune — Imagini infraroșu" className="mb-4">
-                <div className="space-y-2">
-                  <div className="text-xs opacity-50">Încărcați imagini termografice pentru documentarea punctelor termice</div>
-                  <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-red-500/30 bg-red-500/5 hover:bg-red-500/10 cursor-pointer transition-all text-sm text-red-400">
-                    <span>🌡️</span> Încarcă imagine termoviziune
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={e => {
-                      const files = Array.from(e.target.files || []);
-                      files.forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setBuildingPhotos(prev => [...prev, { url: reader.result, label: "Termoviziune — " + file.name, zone: "IR" }]);
-                        };
-                        reader.readAsDataURL(file);
-                      });
-                      showToast(files.length + " imagini IR adăugate în galeria foto", "success");
-                      e.target.value = "";
-                    }} />
-                  </label>
-                  {buildingPhotos.filter(p => p.zone === "IR").length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      {buildingPhotos.filter(p => p.zone === "IR").map((p, i) => (
-                        <div key={i} className="relative rounded-lg overflow-hidden border border-red-500/20">
-                          <img src={p.url} alt={p.label} className="w-full h-20 object-cover" />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[8px] text-red-300 p-1 truncate">{p.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* ── Fotografii clădire + adnotări ── */}
+              <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
+                <BuildingPhotos
+                  buildingPhotos={buildingPhotos}
+                  setBuildingPhotos={setBuildingPhotos}
+                  showToast={showToast}
+                  cn={cn}
+                />
               </Card>
 
               {/* ── Vizualizare 3D detaliată (SVG isometric) ── */}

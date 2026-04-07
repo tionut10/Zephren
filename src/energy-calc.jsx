@@ -9,7 +9,7 @@ import QuickFillWizard from "./components/QuickFillWizard.jsx";
 import CLIMATE_DB from "./data/climate.json";
 import MATERIALS_DB from "./data/materials.json";
 import THERMAL_BRIDGES_DB from "./data/thermal-bridges.json";
-import { HEAT_SOURCES, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY, CONTROL_TYPES, FUELS, AMBIENT_ENERGY_FACTOR, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, ACM_CONSUMPTION, LIGHTING_HOURS, SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA, TILT_FACTORS, ORIENT_FACTORS, BIOMASS_TYPES } from "./data/constants.js";
+import { HEAT_SOURCES, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY, CONTROL_TYPES, FUELS, AMBIENT_ENERGY_FACTOR, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, ACM_CONSUMPTION, LIGHTING_HOURS, SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA, TILT_FACTORS, ORIENT_FACTORS, BIOMASS_TYPES, BATTERY_STORAGE_TYPES } from "./data/constants.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, NZEB_THRESHOLDS, CO2_CLASSES_DB, WATER_TEMP_MONTH } from "./data/energy-classes.js";
 import { T } from "./data/translations.js";
 import { PRODUCT_CATALOG, STEPS } from "./data/products.js";
@@ -103,30 +103,130 @@ const FRAME_DB = [
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
 
 const BUILDING_CATEGORIES = [
-  { id:"RI", label:"Rezidențial individual (casă)" },
-  { id:"RC", label:"Rezidențial colectiv (bloc)" },
-  { id:"RA", label:"Apartament în bloc" },
-  { id:"BI", label:"Birouri" },
-  { id:"ED", label:"Educație" },
-  { id:"SA", label:"Sănătate" },
-  { id:"HC", label:"Hotel / Cazare" },
-  { id:"CO", label:"Comercial" },
-  { id:"SP", label:"Sport" },
-  { id:"AL", label:"Altele" },
+  // ── REZIDENȚIAL ────────────────────────────────────────────────────
+  { id:"RI",        label:"Rezidențial individual (casă unifamilială)",         group:"Rezidențial" },
+  { id:"RC",        label:"Rezidențial colectiv (bloc de locuințe)",            group:"Rezidențial" },
+  { id:"RA",        label:"Apartament în bloc (unitate locativă)",              group:"Rezidențial" },
+  // ── BIROURI & ADMINISTRATIVE ───────────────────────────────────────
+  { id:"BI",        label:"Clădire de birouri",                                group:"Birouri" },
+  { id:"AD",        label:"Clădire administrativă / instituție publică",        group:"Birouri" },
+  { id:"BA_OFF",    label:"Bancă / instituție financiară",                      group:"Birouri" },
+  // ── EDUCAȚIE ──────────────────────────────────────────────────────
+  { id:"ED",        label:"Educație — generic (școală, liceu)",                 group:"Educație" },
+  { id:"GR",        label:"Grădiniță / creșă",                                 group:"Educație" },
+  { id:"SC",        label:"Școală primară / gimnaziu",                          group:"Educație" },
+  { id:"LI",        label:"Liceu / colegiu național",                           group:"Educație" },
+  { id:"UN",        label:"Universitate / facultate",                           group:"Educație" },
+  { id:"CP",        label:"Cămin studențesc / internat",                        group:"Educație" },
+  // ── SĂNĂTATE ──────────────────────────────────────────────────────
+  { id:"SA",        label:"Sănătate — generic",                                 group:"Sănătate" },
+  { id:"SPA_H",     label:"Spital / clinică cu spitalizare continuă (24/7)",    group:"Sănătate" },
+  { id:"CL",        label:"Clinică ambulatorie / policlinică",                  group:"Sănătate" },
+  { id:"ST",        label:"Cabinet medical / stomatologic",                     group:"Sănătate" },
+  { id:"LB_MED",    label:"Laborator medical / analize",                        group:"Sănătate" },
+  { id:"AS_SOC",    label:"Cămin persoane vârstnice / centru social",           group:"Sănătate" },
+  // ── HOTELURI & TURISM ──────────────────────────────────────────────
+  { id:"HC",        label:"Hotel / motel / pensiune",                           group:"Hoteluri" },
+  { id:"HO_LUX",    label:"Hotel de categorie superioară (4–5 stele)",          group:"Hoteluri" },
+  { id:"HOSTEL",    label:"Hostel / cazare budget",                             group:"Hoteluri" },
+  // ── RESTAURANTE & ALIMENTAȚIE ──────────────────────────────────────
+  { id:"REST",      label:"Restaurant",                                         group:"Restaurante" },
+  { id:"BAR",       label:"Bar / cafenea / pub",                                group:"Restaurante" },
+  { id:"CANTINE",   label:"Cantină / restaurant de întreprindere",              group:"Restaurante" },
+  { id:"FAST_F",    label:"Fast-food / alimentație rapidă",                     group:"Restaurante" },
+  // ── COMERȚ ────────────────────────────────────────────────────────
+  { id:"CO",        label:"Comerț — generic (spații comerciale)",               group:"Comerț" },
+  { id:"MAG",       label:"Magazin / boutique (suprafață mică)",                group:"Comerț" },
+  { id:"SUPER",     label:"Supermarket / hipermarket",                          group:"Comerț" },
+  { id:"MALL",      label:"Mall / centru comercial",                            group:"Comerț" },
+  { id:"AG_COM",    label:"Showroom auto / agenție comercială",                 group:"Comerț" },
+  // ── SPORT & RECREERE ───────────────────────────────────────────────
+  { id:"SP",        label:"Sport — generic (sală sport, teren acoperit)",       group:"Sport" },
+  { id:"PSC",       label:"Piscină acoperită / centru acvatic",                 group:"Sport" },
+  { id:"SALA_POL",  label:"Sală polivalentă / arenă sport",                    group:"Sport" },
+  { id:"FIT",       label:"Sală fitness / club sportiv",                        group:"Sport" },
+  { id:"SPA_W",     label:"SPA / wellness / centru de relaxare",               group:"Sport" },
+  // ── CULTURĂ & SPECTACOLE ───────────────────────────────────────────
+  { id:"CIN",       label:"Cinema / cinematograf",                              group:"Cultură" },
+  { id:"TEA",       label:"Teatru / operă / filarmonie",                        group:"Cultură" },
+  { id:"MUZ",       label:"Muzeu / galerie de artă",                            group:"Cultură" },
+  { id:"BIB",       label:"Bibliotecă / arhivă",                                group:"Cultură" },
+  { id:"CC",        label:"Casă de cultură / centru cultural",                  group:"Cultură" },
+  { id:"EXP",       label:"Sală de conferințe / expoziții",                     group:"Cultură" },
+  // ── TRANSPORT ─────────────────────────────────────────────────────
+  { id:"GARA",      label:"Gară / autogară",                                    group:"Transport" },
+  { id:"AER",       label:"Aeroport / terminal",                                group:"Transport" },
+  // ── INDUSTRIE ─────────────────────────────────────────────────────
+  { id:"IU",        label:"Industrie ușoară / atelier de producție",            group:"Industrie" },
+  { id:"HAL",       label:"Hală industrială / producție grea",                  group:"Industrie" },
+  { id:"DEP",       label:"Depozit / logistică",                                group:"Industrie" },
+  { id:"LAB_IND",   label:"Laborator / cercetare & dezvoltare (R&D)",          group:"Industrie" },
+  { id:"FRG",       label:"Cameră frigorifică / depozit frigorific",            group:"Industrie" },
+  // ── PARCĂRI ───────────────────────────────────────────────────────
+  { id:"PRC",       label:"Parcare acoperită / parcare etajată",                group:"Parcări" },
+  { id:"GAR_IND",   label:"Garaj auto (individual sau colectiv)",               group:"Parcări" },
+  // ── CULTE & ALTELE ─────────────────────────────────────────────────
+  { id:"CUL",       label:"Edificiu de cult (biserică, moschee, sinagogă)",     group:"Altele" },
+  { id:"AL",        label:"Altă destinație (specificați în câmpul note)",       group:"Altele" },
 ];
 
-// Mapare categorie → template DOCX oficial (fișierele din Mc 001-2022)
+// Mapare categorie → template DOCX oficial (fişierele din Mc 001-2022)
+// Categoriile noi moştenesc cel mai apropiat template din normativ
+const _BAZA_CLADIRE = "ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx";
+const _GEN_DOCX = "3-CPE-forma-generala-cladire.docx";
 const CPE_TEMPLATES = {
-  RI: { cpe:"5-CPE-cladire-locuit-individuala-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire de locuit individuală" },
-  RC: { cpe:"6-CPE-cladire-locuit-colectiva-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire de locuit colectivă" },
-  RA: { cpe:"4-CPE-apartament-bloc-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-apartament.docx", cpe_general:"2-CPE-forma-generala-apartament.docx", label:"Apartament în bloc" },
-  BI: { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire de birouri" },
-  ED: { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire pentru învățământ" },
-  SA: { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire sistem sanitar" },
-  HC: { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire turism/cazare" },
-  CO: { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire comerț" },
-  SP: { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire sport" },
-  AL: { cpe:"3-CPE-forma-generala-cladire.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx", label:"Clădire (formă generală)" },
+  RI:       { cpe:"5-CPE-cladire-locuit-individuala-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire de locuit individuală" },
+  RC:       { cpe:"6-CPE-cladire-locuit-colectiva-INC-ACC-RAC-VENT-IL.docx",  anexa:_BAZA_CLADIRE, label:"Clădire de locuit colectivă" },
+  RA:       { cpe:"4-CPE-apartament-bloc-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-apartament.docx", cpe_general:"2-CPE-forma-generala-apartament.docx", label:"Apartament în bloc" },
+  BI:       { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire de birouri" },
+  AD:       { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire administrativă / instituție publică" },
+  BA_OFF:   { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Bancă / instituție financiară" },
+  ED:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire pentru educație (generic)" },
+  GR:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Grădiniță / creșă" },
+  SC:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Ścoală primară / gimnaziu" },
+  LI:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Liceu / colegiu" },
+  UN:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Universitate / facultate" },
+  CP:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cămin studențesc / internat" },
+  SA:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire sistem sanitar (generic)" },
+  SPA_H:    { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Spital / clinică cu spitalizare" },
+  CL:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clinică ambulatorie / policlinică" },
+  ST:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Cabinet medical / stomatologic" },
+  LB_MED:   { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Laborator medical" },
+  AS_SOC:   { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cămin persoane vârstnice / centru social" },
+  HC:       { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hotel / motel / pensiune" },
+  HO_LUX:   { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hotel de categorie superioară" },
+  HOSTEL:   { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hostel / cazare budget" },
+  REST:     { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Restaurant" },
+  BAR:      { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Bar / cafenea / pub" },
+  CANTINE:  { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Cantină / restaurant de întreprindere" },
+  FAST_F:   { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Fast-food / alimentație rapidă" },
+  CO:       { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire comerț (generic)" },
+  MAG:      { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Magazin / boutique" },
+  SUPER:    { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Supermarket / hipermarket" },
+  MALL:     { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Mall / centru comercial" },
+  AG_COM:   { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Showroom auto / agenție comercială" },
+  SP:       { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire sport (generic)" },
+  PSC:      { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Piscină acoperită / centru acvatic" },
+  SALA_POL: { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Sală polivalentă / arenă sport" },
+  FIT:      { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Sală fitness / club sportiv" },
+  SPA_W:    { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"SPA / wellness / centru de relaxare" },
+  CIN:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cinema / cinematograf" },
+  TEA:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Teatru / operă / filarmonie" },
+  MUZ:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Muzeu / galerie de artă" },
+  BIB:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Bibliotecă / arhivă" },
+  CC:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Casă de cultură / centru cultural" },
+  EXP:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Sală de conferințe / expoziții" },
+  GARA:     { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Gară / autogară" },
+  AER:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Aeroport / terminal" },
+  IU:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Industrie uşoară / atelier de producție" },
+  HAL:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Hală industrială / producție grea" },
+  DEP:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Depozit / logistică" },
+  LAB_IND:  { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Laborator / R&D" },
+  FRG:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cameră frigorifică / depozit frigorific" },
+  PRC:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Parcare acoperită / parcare etajată" },
+  GAR_IND:  { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Garaj auto" },
+  CUL:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Edificiu de cult" },
+  AL:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Clădire (formă generală)" },
 };
 
 async function fetchTemplate(filename) {
@@ -136,7 +236,37 @@ async function fetchTemplate(filename) {
 }
 
 const STRUCTURE_TYPES = [
-  "Zidărie portantă","Cadre beton armat","Panouri prefabricate mari","Structură metalică","Structură lemn","Mixtă"
+  // ── ZIDĂRIE PORTANTĂ ──────────────────────────────────────────────────────
+  "Zidărie portantă — cărămidă plină (240 / 290 mm, ante 1980)",
+  "Zidărie portantă — cărămidă cu goluri GVP/GVF (1960–2000)",
+  "Zidărie portantă — BCA (200–300 mm, 1970–prezent)",
+  "Zidărie portantă — BCA cu stâlpișori și centuri BA (zidărie confinată, CR6:2013)",
+  "Zidărie portantă — piatră naturală (ante 1950, clădiri istorice)",
+  "Zidărie portantă — cărămidă tip Porotherm / Thermopan (post-2000)",
+  "Zidărie mixtă — cărămidă + BCA (perete exterior cărămidă, compartimentări BCA)",
+  // ── BETON ARMAT MONOLIT ───────────────────────────────────────────────────
+  "Cadre din beton armat monolit (stâlpi + grinzi + planșee, 1960–prezent)",
+  "Diafragme (pereți structurali) din beton armat monolit (blocuri turn, 1965–1990)",
+  "Sistem dual beton armat — cadre + diafragme (clădiri înalte, seismic)",
+  "Structură monolită cu radier general (subsol + suprastructură BA, post-1990)",
+  // ── PANOURI PREFABRICATE ──────────────────────────────────────────────────
+  "Panouri mari prefabricate PAFP (3 straturi BA + PS + BA, blocuri comuniste 1965–1989)",
+  "Panouri prefabricate 1 strat (BA simplu, prima generație 1960–1975)",
+  "Structură prefabricată — cadre + fâșii prefabricate (școli, spitale tip)",
+  "Construcție modulară prefabricată modernă (sandwich metalic/beton, post-2000)",
+  // ── STRUCTURĂ METALICĂ ────────────────────────────────────────────────────
+  "Structură metalică — cadre oțel cu pereți cortină / panouri sandwich (post-1990)",
+  "Structură ușoară din oțel LSF (Light Steel Frame — case individuale, post-2000)",
+  "Structură mixtă oțel + beton armat compozită (clădiri birouri înalte)",
+  // ── STRUCTURĂ LEMN ────────────────────────────────────────────────────────
+  "Structură lemn — bârne masive (log house / casă din bușteni, tradițional)",
+  "Structură lemn — schelet (platform frame / balloon frame, post-1990)",
+  "Structură lemn masiv stratificat CLT (Cross Laminated Timber, post-2010)",
+  "Structură hibridă lemn + beton (fundații + planșee BA, pereți suprastructură lemn)",
+  // ── STRUCTURI MIXTE ───────────────────────────────────────────────────────
+  "Mixtă — zidărie portantă + planșee BA + coloane/stâlpișori BA (1930–1980)",
+  "Mixtă — cadre BA + elemente metalice (grinzi/ferme oțel)",
+  "Mixtă — pereți portanți zidărie + planșee / șarpantă lemn (interbelică)",
 ];
 
 const ELEMENT_TYPES = [
@@ -555,6 +685,12 @@ export default function EnergyCalcApp({ cloud }) {
   };
   const [otherRenew, setOtherRenew] = useState({...INITIAL_OTHER});
 
+  const INITIAL_BATTERY = {
+    enabled:false, type:"LFP", capacity:"", power:"", dod:"0.90",
+    selfConsumptionPct:"80",
+  };
+  const [battery, setBattery] = useState({...INITIAL_BATTERY});
+
   // ─── STEP 6 STATE ───
   const INITIAL_AUDITOR = {
     name:"", atestat:"", grade:"I", company:"",
@@ -621,6 +757,8 @@ export default function EnergyCalcApp({ cloud }) {
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState("default");
+  const [projectVersions, setProjectVersions] = useState([]); // versiuni pt proiectul selectat în manager
+  const [expandedVersionProjectId, setExpandedVersionProjectId] = useState(null);
 
   // Team management
   const [showTeamManager, setShowTeamManager] = useState(false);
@@ -645,17 +783,17 @@ export default function EnergyCalcApp({ cloud }) {
   const maxUndoLevels = 20;
 
   const pushUndo = useCallback(() => {
-    const snapshot = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor,useNA2023,finAnalysisInputs});
+    const snapshot = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,useNA2023,finAnalysisInputs});
     setUndoStack(prev => {
       const next = [...prev, snapshot];
       return next.length > maxUndoLevels ? next.slice(-maxUndoLevels) : next;
     });
     setRedoStack([]);
-  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor,useNA2023,finAnalysisInputs]);
+  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,useNA2023,finAnalysisInputs]);
 
   const undo = useCallback(() => {
     if (undoStack.length === 0) return;
-    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor});
+    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor});
     setRedoStack(prev => [...prev, current]);
     let prev;
     try { prev = JSON.parse(undoStack[undoStack.length - 1]); } catch { showToast("Eroare undo — date corupte", "error", 2000); return; }
@@ -674,13 +812,14 @@ export default function EnergyCalcApp({ cloud }) {
     if (prev.heatPump) setHeatPump(p => ({...INITIAL_HP, ...prev.heatPump}));
     if (prev.biomass) setBiomass(p => ({...INITIAL_BIO, ...prev.biomass}));
     if (prev.otherRenew) setOtherRenew(p => ({...INITIAL_OTHER, ...prev.otherRenew}));
+    if (prev.battery) setBattery(p => ({...INITIAL_BATTERY, ...prev.battery}));
     if (prev.auditor) setAuditor(p => ({...INITIAL_AUDITOR, ...prev.auditor}));
     showToast("Undo aplicat", "info", 1500);
   }, [undoStack, building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, showToast]);
 
   const redo = useCallback(() => {
     if (redoStack.length === 0) return;
-    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor});
+    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor});
     setUndoStack(prev => [...prev, current]);
     let next;
     try { next = JSON.parse(redoStack[redoStack.length - 1]); } catch { showToast("Eroare redo — date corupte", "error", 2000); return; }
@@ -699,6 +838,7 @@ export default function EnergyCalcApp({ cloud }) {
     if (next.heatPump) setHeatPump(p => ({...INITIAL_HP, ...next.heatPump}));
     if (next.biomass) setBiomass(p => ({...INITIAL_BIO, ...next.biomass}));
     if (next.otherRenew) setOtherRenew(p => ({...INITIAL_OTHER, ...next.otherRenew}));
+    if (next.battery) setBattery(p => ({...INITIAL_BATTERY, ...next.battery}));
     if (next.auditor) setAuditor(p => ({...INITIAL_AUDITOR, ...next.auditor}));
     showToast("Redo aplicat", "info", 1500);
   }, [redoStack, building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, showToast]);
@@ -727,7 +867,7 @@ export default function EnergyCalcApp({ cloud }) {
   const saveToStorage = useCallback(async () => {
     if (typeof window === "undefined" || !window.storage) return;
     try {
-      var data = JSON.stringify({building:building,opaqueElements:opaqueElements,glazingElements:glazingElements,thermalBridges:thermalBridges,heating:heating,acm:acm,cooling:cooling,ventilation:ventilation,lighting:lighting,solarThermal:solarThermal,photovoltaic:photovoltaic,heatPump:heatPump,biomass:biomass,otherRenew:otherRenew,auditor:auditor,step:step});
+      var data = JSON.stringify({building:building,opaqueElements:opaqueElements,glazingElements:glazingElements,thermalBridges:thermalBridges,heating:heating,acm:acm,cooling:cooling,ventilation:ventilation,lighting:lighting,solarThermal:solarThermal,photovoltaic:photovoltaic,heatPump:heatPump,biomass:biomass,otherRenew:otherRenew,battery:battery,auditor:auditor,step:step});
       await window.storage.set("energopro-project", data);
       // Istoric versiuni — păstrăm ultimele 10
       try {
@@ -739,7 +879,7 @@ export default function EnergyCalcApp({ cloud }) {
       } catch(eh) { /* history save failed */ }
       setStorageStatus("Salvat " + new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}));
     } catch(e) { /* storage unavailable */ }
-  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor,step]);
+  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,step]);
 
   // Restaurare versiune anterioară din istoric
   const restoreVersion = useCallback(async (index) => {
@@ -783,6 +923,7 @@ export default function EnergyCalcApp({ cloud }) {
         if (d.heatPump) setHeatPump(function(p) { return Object.assign({}, INITIAL_HP, p, d.heatPump); });
         if (d.biomass) setBiomass(function(p) { return Object.assign({}, INITIAL_BIO, p, d.biomass); });
         if (d.otherRenew) setOtherRenew(function(p) { return Object.assign({}, INITIAL_OTHER, p, d.otherRenew); });
+        if (d.battery) setBattery(function(p) { return Object.assign({}, INITIAL_BATTERY, p, d.battery); });
         if (d.auditor) setAuditor(function(p) { return Object.assign({}, INITIAL_AUDITOR, p, d.auditor); });
         if (d.step) setStep(d.step);
         setStorageStatus("Restaurat");
@@ -797,7 +938,7 @@ export default function EnergyCalcApp({ cloud }) {
     building, opaqueElements, glazingElements, thermalBridges,
     heating, acm, cooling, ventilation, lighting,
     solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, step
-  }), [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor,step]);
+  }), [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,step]);
 
   const loadProjectData = useCallback((d) => {
     if (d.building) setBuilding(p => ({...INITIAL_BUILDING, ...d.building}));
@@ -838,6 +979,48 @@ export default function EnergyCalcApp({ cloud }) {
     } catch(e) {}
   }, []);
 
+  // ── Versioning ──────────────────────────────────────────────────────────────
+  const saveVersion = useCallback(async (projectId, label) => {
+    if (typeof window === "undefined" || !window.storage) return;
+    const data = getProjectData();
+    const ts = Date.now();
+    const key = "ep-ver:" + projectId + ":" + ts;
+    const payload = { ...data, meta: { label: label || "Versiune " + new Date(ts).toLocaleString("ro-RO"), ts, projectId } };
+    try {
+      await window.storage.set(key, JSON.stringify(payload));
+      const res = await window.storage.list("ep-ver:" + projectId + ":");
+      if (res && res.keys && res.keys.length > 10) {
+        const sorted = [...res.keys].sort();
+        for (const old of sorted.slice(0, sorted.length - 10)) { await window.storage.delete(old); }
+      }
+    } catch(e) {}
+  }, [getProjectData]);
+
+  const listVersions = useCallback(async (projectId) => {
+    if (typeof window === "undefined" || !window.storage) return [];
+    try {
+      const res = await window.storage.list("ep-ver:" + projectId + ":");
+      if (!res || !res.keys) return [];
+      const versions = [];
+      for (const key of res.keys) {
+        try {
+          const r = await window.storage.get(key);
+          if (r && r.value) {
+            const d = JSON.parse(r.value);
+            versions.push({ key, ts: d.meta?.ts || 0, label: d.meta?.label || "—", data: d });
+          }
+        } catch(e) {}
+      }
+      return versions.sort((a, b) => b.ts - a.ts);
+    } catch(e) { return []; }
+  }, []);
+
+  const restoreProjectVersion = useCallback(async (versionData) => {
+    loadProjectData(versionData);
+    showToast("Versiune restaurată: " + (versionData.meta?.label || "—"), "success");
+    setExpandedVersionProjectId(null);
+  }, [loadProjectData, showToast]);
+
   const saveProjectAs = useCallback(async (name) => {
     if (typeof window === "undefined" || !window.storage) return;
     const id = "p" + Date.now().toString(36);
@@ -847,19 +1030,22 @@ export default function EnergyCalcApp({ cloud }) {
       await window.storage.set("ep-proj:" + id, JSON.stringify(payload));
       setActiveProjectId(id);
       await refreshProjectList();
+      // Creăm prima versiune automată
+      await saveVersion(id, "Versiune inițială");
       showToast("Proiect salvat: " + (name || building.address), "success");
     } catch(e) { showToast("Eroare salvare: " + e.message, "error"); }
-  }, [getProjectData, building.address, refreshProjectList, showToast]);
+  }, [getProjectData, building.address, refreshProjectList, saveVersion, showToast]);
 
-  const saveCurrentProject = useCallback(async () => {
+  const saveCurrentProject = useCallback(async (createVersion = false) => {
     if (typeof window === "undefined" || !window.storage) return;
     const data = getProjectData();
     const payload = { ...data, meta: { name: building.address || "Proiect", date: new Date().toISOString().slice(0,10), id: activeProjectId } };
     try {
       await window.storage.set("ep-proj:" + activeProjectId, JSON.stringify(payload));
-      showToast("Salvat.", "success", 1500);
+      if (createVersion) { await saveVersion(activeProjectId); }
+      showToast(createVersion ? "Versiune salvată." : "Salvat.", "success", 1500);
     } catch(e) {}
-  }, [getProjectData, building.address, activeProjectId, showToast]);
+  }, [getProjectData, building.address, activeProjectId, saveVersion, showToast]);
 
   const loadProject = useCallback(async (id) => {
     if (typeof window === "undefined" || !window.storage) return;
@@ -881,6 +1067,11 @@ export default function EnergyCalcApp({ cloud }) {
     if (typeof window === "undefined" || !window.storage) return;
     try {
       await window.storage.delete("ep-proj:" + id);
+      // Ștergem și versiunile
+      try {
+        const vRes = await window.storage.list("ep-ver:" + id + ":");
+        if (vRes && vRes.keys) { for (const k of vRes.keys) { await window.storage.delete(k); } }
+      } catch(e) {}
       await refreshProjectList();
       showToast("Proiect șters.", "info");
     } catch(e) {}
@@ -1137,11 +1328,11 @@ export default function EnergyCalcApp({ cloud }) {
   useEffect(function() {
     var timer = setTimeout(function() { saveToStorage(); }, 2000);
     return function() { clearTimeout(timer); };
-  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,auditor]);
+  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor]);
 
   // ─── RESET ALL (Proiect Nou) ───
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [energyPrices, setEnergyPrices] = useState({gaz:0.32, electricitate:1.30, motorina:1.20, carbune:0.25, biomasa:0.22, termoficare:0.45});
+  const [energyPrices, setEnergyPrices] = useState({gaz:0.31, electricitate:1.29, gpl:1.58, motorina:1.22, carbune:0.24, biomasa:0.21, lemn_foc:0.17, termoficare:0.44});
   const resetProject = useCallback(() => {
     setStep(1);
     setBuilding({...INITIAL_BUILDING});
@@ -2998,6 +3189,8 @@ export default function EnergyCalcApp({ cloud }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [building, opaqueElements, glazingElements, thermalBridges, showToast]);
 
+  // (exportExcelFull declared below, after selectedClimate)
+
   // ═══════════════════════════════════════════════════════════
   // IMPORT ENERG+ XML — Parse ENERG+ format files
   // ═══════════════════════════════════════════════════════════
@@ -3356,6 +3549,8 @@ export default function EnergyCalcApp({ cloud }) {
   const selectedClimate = useMemo(() =>
     CLIMATE_DB.find(c => c.name === building.locality) || null
   , [building.locality]);
+
+
 
   const updateBuilding = useCallback((key, val) => {
     setBuilding(prev => ({...prev, [key]: val}));
@@ -4478,6 +4673,272 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════
   // B3: EXPORT PDF NATIV — Generare PDF simplu din HTML
   // ═══════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════
+  // EXPORT EXCEL COMPLET (.xlsx) — 7 foi structurate conform cerintei
+  // ═══════════════════════════════════════════════════════════
+  const exportExcelFull = useCallback(async () => {
+    try {
+      setExporting("excelFull");
+      const XLSX = (await import("xlsx")).default || await import("xlsx");
+      const wb = XLSX.utils.book_new();
+      const Au = parseFloat(building.areaUseful) || 1;
+      const epF = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
+      const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
+      const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "");
+
+      // Foaie 1: Rezumat
+      const rezumatData = [
+        ["REZUMAT"],
+        [],
+        ["DATE CLADIRE", ""],
+        ["Adresa", building.address || ""],
+        ["Localitate", building.locality || ""],
+        ["Judet", building.county || ""],
+        ["Categorie functionala", building.category || ""],
+        ["An constructie", building.yearBuilt || ""],
+        ["Regim inaltime", building.floors || ""],
+        ["Suprafata utila (m2)", building.areaUseful || ""],
+        ["Volum incalzit (m3)", building.volume || ""],
+        ["Suprafata anvelopa (m2)", building.areaEnvelope || ""],
+        ["Structura", building.structure || ""],
+        [],
+        ["DATE CLIMATICE", ""],
+        ["Localitate referinta", selectedClimate?.name || ""],
+        ["Zona climatica", selectedClimate?.zone || ""],
+        ["Temperatura ext. calcul (C)", selectedClimate?.theta_e || ""],
+        ["Temperatura medie anuala (C)", selectedClimate?.theta_a || ""],
+        ["GZile (C*zile)", selectedClimate?.gzile || ""],
+        [],
+        ["KPI ENERGETICI", "", ""],
+        ["Indicator", "Valoare", "Unitate"],
+        ["Energie primara totala EP", epF?.toFixed(1)||"", "kWh/(m2*an)"],
+        ["Energie finala totala EF", instSummary?.qf_total_m2?.toFixed(1)||"", "kWh/(m2*an)"],
+        ["Emisii CO2", co2F?.toFixed(1)||"", "kgCO2/(m2*an)"],
+        ["Clasa energetica EP", getEnergyClassEPBD(epF, catKey)?.cls||"", ""],
+        ["RER total (%)", (renewSummary?.rer||0).toFixed(1), "%"],
+        ["RER on-site (%)", (renewSummary?.rerOnSite||0).toFixed(1), "%"],
+        ["Coef. global pierderi G", envelopeSummary?.G?.toFixed(4)||"", "W/(m3*K)"],
+        ["Conform nZEB", (renewSummary?.rer||0) >= 30 && epF <= getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU", ""],
+        ["EP maxim nZEB", getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(0)||"", "kWh/(m2*an)"],
+        ["LENI iluminat", instSummary?.leni?.toFixed(1)||"", "kWh/(m2*an)"],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rezumatData), "Rezumat");
+
+      // Foaie 2: Anvelopa
+      const anvData = [
+        ["ANVELOPA"],
+        [],
+        ["ELEMENTE OPACE"],
+        ["Denumire", "Tip", "Suprafata (m2)", "Orientare", "U calculat (W/m2K)", "U ref nZEB (W/m2K)", "Straturi"],
+      ];
+      opaqueElements.forEach(el => {
+        const rL = (el.layers||[]).reduce((s,l) => { const d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0); }, 0);
+        const uCalc = rL > 0 ? (1/(0.13+rL+0.04)) : 0;
+        const uRef = el.type==="PE"?0.56:el.type==="PSol"?0.40:el.type==="PlanInt"?0.50:el.type==="PlanExt"?0.20:el.type==="Acoperis"?0.20:0.35;
+        anvData.push([
+          el.name||"", el.type||"", el.area||"", el.orientation||"",
+          uCalc.toFixed(3), uRef.toFixed(2),
+          (el.layers||[]).map(l=>`${l.matName||"?"} (${l.thickness||0}mm, lambda=${l.lambda||0})`).join(" | "),
+        ]);
+      });
+      anvData.push([]);
+      anvData.push(["ELEMENTE VITRATE"]);
+      anvData.push(["Denumire", "Tip vitraj", "Suprafata (m2)", "Orientare", "U (W/m2K)", "g (-)", "Tip rama"]);
+      glazingElements.forEach(el => anvData.push([
+        el.name||"", el.glazingType||"", el.area||"", el.orientation||"",
+        el.u||"", el.g||"", el.frameType||"",
+      ]));
+      anvData.push([]);
+      anvData.push(["PUNTI TERMICE"]);
+      anvData.push(["Denumire", "Tip", "Psi (W/mK)", "Lungime (m)", "Pierdere liniara (W/K)"]);
+      thermalBridges.forEach(b => anvData.push([
+        b.name||"", b.type||"", b.psi||"", b.length||"",
+        ((parseFloat(b.psi)||0)*(parseFloat(b.length)||0)).toFixed(3),
+      ]));
+      if (envelopeSummary) {
+        const totalBridgeLoss = thermalBridges.reduce((s,b)=>s+(parseFloat(b.psi)||0)*(parseFloat(b.length)||0),0);
+        anvData.push(["TOTAL punti termice", "", "", "", totalBridgeLoss.toFixed(3)]);
+        anvData.push([]);
+        anvData.push(["REZUMAT ANVELOPA", "Valoare", "Unitate"]);
+        anvData.push(["Coef. global G", envelopeSummary.G?.toFixed(4)||"", "W/(m3*K)"]);
+        anvData.push(["H_T total", envelopeSummary.H_T?.toFixed(2)||"", "W/K"]);
+        anvData.push(["H_V total", envelopeSummary.H_V?.toFixed(2)||"", "W/K"]);
+      }
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(anvData), "Anvelopa");
+
+      // Foaie 3: Calcul termic ISO 13790
+      if (monthlyISO && monthlyISO.length === 12) {
+        const thermalData = [
+          ["CALCUL TERMIC LUNAR ISO 13790"],
+          [],
+          ["Luna", "T ext (C)", "Q pierderi (kWh)", "Q sol (kWh)", "Q interne (kWh)",
+           "Q aporturi total (kWh)", "Factor utilizare eta_H", "Raport gamma_H",
+           "Q incalzire (kWh)", "Q racire (kWh)"],
+        ];
+        monthlyISO.forEach(m => thermalData.push([
+          m.name, m.tExt?.toFixed(1)||"", m.Q_loss?.toFixed(0)||"",
+          m.Q_sol?.toFixed(0)||"", m.Q_int?.toFixed(0)||"",
+          m.Q_gain?.toFixed(0)||"",
+          m.eta_H?.toFixed(3)||"", m.gamma_H?.toFixed(3)||"",
+          m.qH_nd?.toFixed(0)||"", m.qC_nd?.toFixed(0)||"",
+        ]));
+        thermalData.push([
+          "TOTAL", "",
+          monthlyISO.reduce((s,m)=>s+(m.Q_loss||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.Q_sol||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.Q_int||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.Q_gain||0),0).toFixed(0),
+          "", "",
+          monthlyISO.reduce((s,m)=>s+(m.qH_nd||0),0).toFixed(0),
+          monthlyISO.reduce((s,m)=>s+(m.qC_nd||0),0).toFixed(0),
+        ]);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(thermalData), "Calcul termic");
+      }
+
+      // Foaie 4: Instalatii
+      const instData = [
+        ["INSTALATII — CONSUMURI PER UTILITATE"],
+        [],
+        ["CONSUMURI FINALE SI PRIMARE", "", "", "", ""],
+        ["Utilitate", "Energie finala (kWh/an)", "EF (kWh/m2*an)", "Energie primara (kWh/an)", "EP (kWh/m2*an)",
+         "Factor primar fp", "CO2 (kgCO2/an)"],
+      ];
+      if (instSummary) {
+        const hFuel = HEAT_SOURCES.find(s=>s.id===heating.source);
+        const fpH = hFuel?.fp || heating.fp || 1.1;
+        const rows_inst = [
+          ["Incalzire", instSummary.qf_h, instSummary.ep_h, fpH, instSummary.co2_h],
+          ["Apa calda (ACM)", instSummary.qf_w, instSummary.ep_w, fpH, instSummary.co2_w],
+          ["Racire", instSummary.qf_c, instSummary.ep_c, 2.5, instSummary.co2_c],
+          ["Ventilare", instSummary.qf_v, instSummary.ep_v, 2.5, instSummary.co2_v],
+          ["Iluminat", instSummary.qf_l, instSummary.ep_l, 2.5, instSummary.co2_l],
+        ];
+        rows_inst.forEach(([label, qf, ep, fp, co2]) => instData.push([
+          label,
+          (qf||0).toFixed(0), ((qf||0)/Au).toFixed(1),
+          (ep||0).toFixed(0), ((ep||0)/Au).toFixed(1),
+          fp,
+          (co2||0).toFixed(0),
+        ]));
+        instData.push([
+          "TOTAL",
+          instSummary.qf_total?.toFixed(0)||"", instSummary.qf_total_m2?.toFixed(1)||"",
+          instSummary.ep_total?.toFixed(0)||"", instSummary.ep_total_m2?.toFixed(1)||"",
+          "", instSummary.co2_total?.toFixed(0)||"",
+        ]);
+        instData.push([]);
+        instData.push(["PARAMETRI SISTEME", "", ""]);
+        instData.push(["Sistem", "Parametru", "Valoare"]);
+        instData.push(["Incalzire", "Sursa", HEAT_SOURCES.find(s=>s.id===heating.source)?.label||heating.source]);
+        instData.push(["", "Putere nominala (kW)", heating.power||""]);
+        instData.push(["", "Randament generare (eta_gen)", heating.etaGen||heating.eta_gen||""]);
+        instData.push(["", "Randament distributie (eta_distr)", heating.etaDistr||heating.eta_distr||""]);
+        instData.push(["", "Randament emisie (eta_emit)", heating.etaEmit||heating.eta_emit||""]);
+        instData.push(["", "Factor primar fp", heating.fp||fpH||""]);
+        instData.push(["ACM", "Sursa", ACM_SOURCES.find(s=>s.id===acm.source)?.label||acm.source]);
+        instData.push(["", "Consumatori", acm.consumers||""]);
+        instData.push(["", "Litri/zi/persoana", acm.dailyLiters||""]);
+        instData.push(["Racire", "Sistem", COOLING_SYSTEMS.find(s=>s.id===cooling.system)?.label||cooling.system]);
+        instData.push(["", "EER nominal", cooling.eer||""]);
+        instData.push(["Ventilare", "Tip", VENTILATION_TYPES.find(s=>s.id===ventilation.type)?.label||ventilation.type]);
+        instData.push(["", "Debit (m3/h)", ventilation.airflow||""]);
+        instData.push(["", "Eficienta recuperare (%)", ventilation.hrEfficiency||""]);
+        instData.push(["Iluminat", "Tip", LIGHTING_TYPES.find(s=>s.id===lighting.type)?.label||lighting.type]);
+        instData.push(["", "Densitate putere (W/m2)", lighting.pDensity||""]);
+        instData.push(["", "LENI (kWh/m2*an)", instSummary?.leni?.toFixed(1)||""]);
+      }
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instData), "Instalatii");
+
+      // Foaie 5: Regenerabile
+      const renData = [
+        ["SURSE REGENERABILE"],
+        [],
+        ["Sursa", "Parametru", "Valoare", "Unitate"],
+        ["Fotovoltaic (PV)", "Activ", photovoltaic.enabled ? "DA" : "NU", ""],
+        ["", "Putere de varf (kWp)", photovoltaic.peakPower||photovoltaic.power||"", "kWp"],
+        ["", "Suprafata panouri (m2)", photovoltaic.area||"", "m2"],
+        ["", "Tip panouri", photovoltaic.type||"", ""],
+        ["", "Productie anuala estimata", renewSummary?.qPV_kWh?.toFixed(0)||"", "kWh/an"],
+        [],
+        ["Solar termic", "Activ", solarThermal.enabled ? "DA" : "NU", ""],
+        ["", "Suprafata colectori (m2)", solarThermal.area||"", "m2"],
+        ["", "Tip colectori", solarThermal.type||"", ""],
+        ["", "Productie anuala estimata", renewSummary?.qSolarTh?.toFixed(0)||"", "kWh/an"],
+        [],
+        ["Pompa de caldura", "Activ", heatPump.enabled ? "DA" : "NU", ""],
+        ["", "Tip", heatPump.type||"", ""],
+        ["", "COP nominal", heatPump.cop||"", ""],
+        ["", "Energie ambiental extrasa", renewSummary?.qHP_ren?.toFixed(0)||"", "kWh/an"],
+        [],
+        ["Biomasa", "Activ", biomass.enabled ? "DA" : "NU", ""],
+        ["", "Tip combustibil", biomass.type||"", ""],
+        ["", "Putere nominala (kW)", biomass.power||"", "kW"],
+        [],
+        ["TOTAL REGENERABILE", "", "", ""],
+        ["RER total (%)", (renewSummary?.rer||0).toFixed(1), "", "%"],
+        ["RER on-site (%)", (renewSummary?.rerOnSite||0).toFixed(1), "", "%"],
+        ["Energie regenerabila totala (kWh/an)", renewSummary?.qRen_total?.toFixed(0)||"", "", "kWh/an"],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(renData), "Regenerabile");
+
+      // Foaie 6: Clasificare
+      const clasifData = [
+        ["CLASIFICARE ENERGETICA"],
+        [],
+        ["INDICATORI FINALI", "", ""],
+        ["Indicator", "Valoare", "Unitate"],
+        ["EP total (dupa regenerabile)", epF?.toFixed(1)||"", "kWh/(m2*an)"],
+        ["EP total fara regenerabile", instSummary?.ep_total_m2?.toFixed(1)||"", "kWh/(m2*an)"],
+        ["CO2 total (dupa regenerabile)", co2F?.toFixed(1)||"", "kgCO2/(m2*an)"],
+        [],
+        ["CLASIFICARE", "", ""],
+        ["Clasa energetica EP", getEnergyClassEPBD(epF, catKey)?.cls||"", ""],
+        ["Clasa CO2", getCO2Class(co2F, building.category)?.cls||"", ""],
+        [],
+        ["nZEB", "", ""],
+        ["EP maxim nZEB (zona " + (selectedClimate?.zone||"III") + ")", getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(0)||"", "kWh/(m2*an)"],
+        ["RER minim nZEB (%)", (NZEB_THRESHOLDS[building.category]?.rer_min || 30) + "", "%"],
+        ["RER realizat (%)", (renewSummary?.rer||0).toFixed(1), "%"],
+        ["Conformitate nZEB", (renewSummary?.rer||0) >= (NZEB_THRESHOLDS[building.category]?.rer_min||30) && epF <= getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU", ""],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clasifData), "Clasificare");
+
+      // Foaie 7: Auditor
+      const audData = [
+        ["DATE AUDITOR SI CPE"],
+        [],
+        ["Camp", "Valoare"],
+        ["Nume auditor energetic", auditor.name||""],
+        ["Nr. atestat", auditor.atestat||""],
+        ["Grad atestat", auditor.grade||""],
+        ["Firma / Birou", auditor.company||""],
+        ["Telefon", auditor.phone||""],
+        ["Email", auditor.email||""],
+        ["Data emitere CPE", auditor.date||""],
+        ["Valabilitate CPE (ani)", auditor.validity||10],
+        ["Nr. inregistrare CPE", auditor.cpeNumber||""],
+        ["Scopul auditului", auditor.purpose||""],
+        [],
+        ["OBSERVATII"],
+        [auditor.observations||""],
+        [],
+        ["Data generare fisier", new Date().toLocaleDateString("ro-RO")],
+        ["Versiune calculator", "Zephren Energy Calculator v3.2"],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(audData), "Auditor");
+
+      const filename = `Zephren_COMPLET_${(building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,20)}_${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      showToast("Export Excel complet realizat cu succes — 7 foi de calcul.", "success");
+    } catch(e) {
+      showToast("Eroare export Excel complet: " + e.message, "error");
+    } finally { setExporting(null); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [building, selectedClimate, opaqueElements, glazingElements, thermalBridges,
+      heating, acm, cooling, ventilation, lighting,
+      photovoltaic, solarThermal, heatPump, biomass,
+      instSummary, renewSummary, envelopeSummary, monthlyISO, auditor, showToast]);
   const exportPDFNative = useCallback(async () => {
     if (!instSummary) { showToast("Completați calculul energetic (Pasul 5)", "error"); return; }
     try {
@@ -4502,6 +4963,18 @@ export default function EnergyCalcApp({ cloud }) {
       doc.text("CERTIFICAT DE PERFORMANTA ENERGETICA", w/2, y, { align: "center" }); y += 6;
       doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(100);
       doc.text("conform Mc 001-2022 (Ordinul MDLPA nr. 16/2023)", w/2, y, { align: "center" }); y += 10;
+
+      // QR Code în colțul din dreapta sus
+      try {
+        const QRCode = await import("qrcode");
+        const qrContent = `https://zephren.ro/cpe?adr=${encodeURIComponent(building.address||'')}&cls=${cls.cls}&ep=${epF.toFixed(0)}&an=${new Date().getFullYear()}`;
+        const qrDataUrl = await QRCode.toDataURL(qrContent, { width: 200, margin: 1 });
+        doc.addImage(qrDataUrl, "PNG", w - 40, 10, 25, 25);
+        doc.setFontSize(6); doc.setFont(undefined, "normal"); doc.setTextColor(120);
+        doc.text("Scanează pentru verificare CPE", w - 27.5, 37, { align: "center" });
+      } catch(qrErr) {
+        console.warn("QR code generation failed:", qrErr);
+      }
 
       // Section 1: Building identification
       doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
@@ -4616,6 +5089,702 @@ export default function EnergyCalcApp({ cloud }) {
       console.error("PDF export error:", e);
     } finally { setExporting(null); }
   }, [building, auditor, instSummary, renewSummary, annualEnergyCost, selectedClimate, cooling.hasCooling, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // B4b: FIȘĂ SINTETICĂ 1 PAGINĂ PDF (client-friendly)
+  // ═══════════════════════════════════════════════════════════
+  const exportQuickSheet = useCallback(async () => {
+    if (!instSummary) { showToast("Completați calculul (Pasul 5)", "error"); return; }
+    try {
+      setExporting("pdf_quick");
+      const { default: jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const w = doc.internal.pageSize.getWidth();
+      const h = doc.internal.pageSize.getHeight();
+
+      const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
+      const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+      const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+      const cls = getEnergyClassEPBD(epF, catKey);
+      const co2Cls = getCO2Class(co2F, building.category);
+      const rer = renewSummary?.rer || 0;
+      const Au = parseFloat(building.areaUseful) || 1;
+      const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+      const isNZEB = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
+      const hexToRgb = (h2) => { const r=parseInt(h2.slice(1,3),16), g=parseInt(h2.slice(3,5),16), b=parseInt(h2.slice(5,7),16); return [r,g,b]; };
+
+      let y = 0;
+
+      // ── HEADER colorat ────────────────────────────────────────
+      doc.setFillColor(0, 51, 102);
+      doc.rect(0, 0, w, 22, "F");
+      doc.setFontSize(18); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+      doc.text("ZEPHREN", 15, 13);
+      doc.setFontSize(10); doc.setFont(undefined, "normal");
+      doc.text("Fișă energetică rezumativă", 15, 19);
+      doc.setFontSize(8); doc.setTextColor(180, 210, 255);
+      doc.text(`Generat: ${new Date().toLocaleDateString("ro-RO")}`, w - 15, 19, { align: "right" });
+      y = 28;
+
+      // ── Adresă + auditor ─────────────────────────────────────
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
+      doc.text(`${building.address || "—"}, ${building.city || "—"}, jud. ${building.county || "—"}`, 15, y); y += 5;
+      doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(80);
+      const auditorName = auditor?.name || auditor?.firstName ? `${auditor.firstName || ""} ${auditor.lastName || ""}`.trim() : "";
+      if (auditorName) { doc.text(`Auditor energetic: ${auditorName}`, 15, y); y += 5; }
+      y += 2;
+
+      // ── Clasă energetică mare + CO₂ ──────────────────────────
+      const clsRgb = hexToRgb(cls.color || "#666666");
+      doc.setFillColor(...clsRgb);
+      doc.roundedRect(15, y, 38, 38, 5, 5, "F");
+      doc.setFontSize(32); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+      doc.text(cls.cls, 34, y + 24, { align: "center" });
+      doc.setFontSize(8); doc.setFont(undefined, "normal");
+      doc.text("Clasă EP", 34, y + 34, { align: "center" });
+
+      const co2Rgb = hexToRgb(co2Cls.color || "#666666");
+      doc.setFillColor(...co2Rgb);
+      doc.roundedRect(58, y, 32, 32, 5, 5, "F");
+      doc.setFontSize(20); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+      doc.text(co2Cls.cls, 74, y + 18, { align: "center" });
+      doc.setFontSize(7); doc.setFont(undefined, "normal");
+      doc.text("Clasă CO₂", 74, y + 27, { align: "center" });
+
+      // nZEB badge
+      const nzebColor = isNZEB ? [21, 128, 61] : [185, 28, 28];
+      doc.setFillColor(...nzebColor);
+      doc.roundedRect(95, y, 50, 18, 3, 3, "F");
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+      doc.text(isNZEB ? "✓ nZEB CONFORM" : "✗ nZEB NECONFORM", 120, y + 11, { align: "center" });
+      y += 44;
+
+      // ── 4 indicatori cheie în grid 2×2 ───────────────────────
+      doc.setFillColor(240, 244, 248);
+      doc.rect(15, y, w - 30, 36, "F");
+      const costAnual = annualEnergyCost?.total || 0;
+      const kpis = [
+        { label: "EP [kWh/(m²·an)]", value: epF.toFixed(1) },
+        { label: "CO₂ [kg/(m²·an)]", value: co2F.toFixed(1) },
+        { label: "Cost anual [lei]", value: costAnual > 0 ? costAnual.toLocaleString("ro-RO") : "—" },
+        { label: "RER [%]", value: rer.toFixed(1) + "%" },
+      ];
+      const colW = (w - 30) / 2;
+      kpis.forEach((kpi, i) => {
+        const kx = 15 + (i % 2) * colW + colW / 2;
+        const ky = y + 10 + Math.floor(i / 2) * 18;
+        doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
+        doc.text(kpi.value, kx, ky, { align: "center" });
+        doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(100);
+        doc.text(kpi.label, kx, ky + 5, { align: "center" });
+      });
+      y += 42;
+
+      // ── Mini bar chart distribuție consum ────────────────────
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
+      doc.text("Distribuție consum pe utilități", 15, y); y += 5;
+      const utilColors = {
+        incalzire: [239, 68, 68], acm: [249, 115, 22],
+        racire: [59, 130, 246], ventilare: [34, 197, 94], iluminat: [234, 179, 8],
+      };
+      const utilLabels = {
+        incalzire: "Încălzire", acm: "ACM",
+        racire: "Răcire", ventilare: "Ventilare", iluminat: "Iluminat",
+      };
+      const utilVals = {
+        incalzire: instSummary.q_heating_m2 || 0,
+        acm: instSummary.q_acm_m2 || 0,
+        racire: instSummary.q_cooling_m2 || 0,
+        ventilare: instSummary.q_vent_m2 || 0,
+        iluminat: instSummary.q_light_m2 || 0,
+      };
+      const totalUtil = Object.values(utilVals).reduce((s, v) => s + v, 0) || 1;
+      const barMaxW = w - 70;
+      Object.entries(utilVals).forEach(([key, val]) => {
+        if (val <= 0) return;
+        const barW = (val / totalUtil) * barMaxW;
+        doc.setFillColor(...(utilColors[key] || [100, 100, 100]));
+        doc.rect(35, y, barW, 5, "F");
+        doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(60);
+        doc.text(utilLabels[key], 15, y + 4);
+        doc.text(`${val.toFixed(1)} kWh/m²`, 35 + barW + 2, y + 4);
+        y += 8;
+      });
+      y += 4;
+
+      // ── Top 3 recomandări ─────────────────────────────────────
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
+      doc.text("Top recomandări de îmbunătățire", 15, y); y += 5;
+      doc.setFillColor(240, 244, 248);
+      doc.rect(15, y, w - 30, 28, "F");
+      const recList = rehabComparison?.measures?.slice(0, 3) || [];
+      if (recList.length > 0) {
+        recList.forEach((rec, i) => {
+          doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
+          doc.text(`${i + 1}.`, 18, y + 6 + i * 9);
+          doc.setFont(undefined, "normal"); doc.setTextColor(40);
+          const recText = rec.name || rec.label || rec.desc || "Măsură de reabilitare";
+          doc.text(recText.slice(0, 70), 24, y + 6 + i * 9);
+        });
+      } else {
+        doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(80);
+        doc.text("1. Îmbunătățire izolație termică anvelopă (pereți, acoperiș, planșeu)", 18, y + 6);
+        doc.text("2. Înlocuire tâmplărie exterioară cu profile triple Low-E", 18, y + 15);
+        doc.text("3. Instalare sistem HVAC eficient + recuperare căldură ventilare", 18, y + 22);
+      }
+      y += 34;
+
+      // ── Footer ───────────────────────────────────────────────
+      doc.setFillColor(0, 51, 102);
+      doc.rect(0, h - 10, w, 10, "F");
+      doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(180, 210, 255);
+      doc.text(`Zephren v3.2 | Generat la ${new Date().toLocaleDateString("ro-RO")} | Date cu caracter informativ`, w / 2, h - 4, { align: "center" });
+
+      const filename = `Fisa_Sintetica_${(building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25)}_${new Date().toISOString().slice(0,10)}.pdf`;
+      doc.save(filename);
+      showToast("Fișă sintetică generată: " + filename, "success");
+    } catch(e) {
+      showToast("Eroare generare fișă: " + e.message, "error");
+      console.error("QuickSheet export error:", e);
+    } finally { setExporting(null); }
+  }, [building, auditor, instSummary, renewSummary, annualEnergyCost, rehabComparison, selectedClimate, cooling.hasCooling, getEnergyClassEPBD, getCO2Class, getNzebEpMax, NZEB_THRESHOLDS, showToast]);
+
+  // ═══════════════════════════════════════════════════════════
+  // B4: EXPORT RAPORT TEHNIC COMPLET PDF
+  // ═══════════════════════════════════════════════════════════
+  const exportFullReport = useCallback(async () => {
+    if (!instSummary) { showToast("Completați calculul energetic (Pasul 5)", "error"); return; }
+    try {
+      setExporting("pdf_full");
+      const { default: jsPDF } = await import("jspdf");
+      await import("jspdf-autotable");
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const w = doc.internal.pageSize.getWidth();
+      const h = doc.internal.pageSize.getHeight();
+      let y = 0;
+      const BLUE = [0, 51, 102];
+      const GRAY = [100, 100, 100];
+      const LGRAY = [240, 244, 248];
+      const Au = parseFloat(building.areaUseful) || 1;
+      const V = parseFloat(building.volume) || 1;
+      const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
+      const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+      const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+      const cls = getEnergyClassEPBD(epF, catKey);
+      const co2Cls = getCO2Class(co2F, building.category);
+      const rer = renewSummary?.rer || 0;
+      const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+      const isNZEB = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
+      const hexToRgb = (hex) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return [r,g,b]; };
+
+      const addPageHeader = (pageNum, title) => {
+        doc.setFillColor(...BLUE);
+        doc.rect(0, 0, w, 10, "F");
+        doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(255,255,255);
+        doc.text("ZEPHREN — Raport Tehnic de Performanță Energetică", 8, 6.5);
+        doc.text(`Pag. ${pageNum}`, w - 8, 6.5, { align: "right" });
+        doc.setTextColor(0); doc.setFont(undefined, "normal");
+        y = 16;
+        if (title) {
+          doc.setFontSize(12); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+          doc.text(title, 15, y); y += 2;
+          doc.setDrawColor(...BLUE); doc.setLineWidth(0.5); doc.line(15, y, w-15, y); y += 6;
+          doc.setFont(undefined, "normal"); doc.setTextColor(0);
+        }
+      };
+
+      const addPageFooter = () => {
+        doc.setFontSize(7); doc.setTextColor(...GRAY);
+        doc.text(`Zephren v3.2 | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w/2, h-5, { align: "center" });
+      };
+
+      // ── PAGINA 1: COPERTĂ ──────────────────────────────────────────
+      doc.setFillColor(...BLUE);
+      doc.rect(0, 0, w, 60, "F");
+      doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(180,200,220);
+      doc.text("RAPORT TEHNIC DE PERFORMANȚĂ ENERGETICĂ", w/2, 20, { align: "center" });
+      doc.setFontSize(20); doc.setFont(undefined, "bold"); doc.setTextColor(255,255,255);
+      doc.text("Zephren Energy Report", w/2, 33, { align: "center" });
+      doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(180,200,220);
+      doc.text("conform Mc 001-2022 | ISO 52000-1/NA:2023 | EPBD 2024/1275", w/2, 42, { align: "center" });
+
+      // Clasă energetică pe copertă
+      const clsRgb = hexToRgb(cls.color || "#666666");
+      doc.setFillColor(...clsRgb);
+      doc.roundedRect(w/2 - 16, 50, 32, 20, 4, 4, "F");
+      doc.setFontSize(18); doc.setFont(undefined, "bold"); doc.setTextColor(255,255,255);
+      doc.text("Clasa " + cls.cls, w/2, 64, { align: "center" });
+
+      y = 80;
+      doc.setFontSize(10); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+      doc.text("Clădire:", 15, y); y += 6;
+      doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.setTextColor(0);
+      const bldgLines = [
+        building.address ? `Adresă: ${building.address}, ${building.city || ""}, jud. ${building.county || ""}` : "Adresă: —",
+        `Categorie: ${BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || building.category}`,
+        `An construcție: ${building.yearBuilt || "—"} | Renovare: ${building.yearRenov || "—"}`,
+        `Suprafață utilă: ${Au} m²  |  Volum: ${V} m³`,
+        `Zonă climatică: ${selectedClimate?.name || "—"} — Zona ${selectedClimate?.zone || "—"} (θe = ${selectedClimate?.theta_e || "—"}°C)`,
+      ];
+      bldgLines.forEach(l => { doc.text(l, 20, y); y += 5; });
+
+      y += 4;
+      doc.setFontSize(10); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+      doc.text("Auditor energetic:", 15, y); y += 6;
+      doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.setTextColor(0);
+      const audLines = [
+        `Nume: ${auditor.name || "—"}  |  Atestat: ${auditor.atestat || "—"} / Grad ${auditor.grade || "—"}`,
+        `Firmă: ${auditor.company || "—"}`,
+        `Data elaborării: ${auditor.date || new Date().toLocaleDateString("ro-RO")}  |  Valabilitate: ${auditor.validityYears || 10} ani`,
+      ];
+      audLines.forEach(l => { doc.text(l, 20, y); y += 5; });
+
+      // Sumar KPI pe copertă
+      y += 8;
+      doc.setFillColor(...LGRAY); doc.rect(15, y, w-30, 28, "F");
+      doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+      doc.text("INDICATORI CHEIE", w/2, y+6, { align: "center" }); y += 10;
+      const kpis = [
+        [`EP: ${epF.toFixed(1)} kWh/(m²·an)`, "Energie primară"],
+        [`CO₂: ${co2F.toFixed(1)} kg/(m²·an)`, "Emisii CO₂"],
+        [`RER: ${rer.toFixed(0)}%`, "Surse regenerabile"],
+        [`Ef: ${instSummary.qf_total_m2?.toFixed(1)} kWh/(m²·an)`, "Energie finală"],
+        [`G: ${envelopeSummary?.G?.toFixed(3)} W/(m³·K)`, "Coef. global pierderi"],
+        [isNZEB ? "✓ nZEB" : "✗ non-nZEB", "Cerință EPBD"],
+      ];
+      kpis.forEach((kpi, i) => {
+        const col = i % 3;
+        const row = Math.floor(i / 3);
+        const xk = 22 + col * 58;
+        const yk = y + row * 10;
+        doc.setFont(undefined, "bold"); doc.setFontSize(9); doc.setTextColor(0);
+        doc.text(kpi[0], xk, yk);
+        doc.setFont(undefined, "normal"); doc.setFontSize(7); doc.setTextColor(...GRAY);
+        doc.text(kpi[1], xk, yk + 3.5);
+      });
+      addPageFooter();
+
+      // ── PAGINA 2: ANVELOPĂ ────────────────────────────────────────
+      doc.addPage();
+      addPageHeader(2, "1. Anvelopă clădire — elemente opace și vitrate");
+
+      if (opaqueElements.length > 0) {
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("1.1 Elemente opace", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["Element", "Tip", "Suprafață [m²]", "U [W/(m²·K)]", "Pierderi [W/K]"]],
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 },
+          body: opaqueElements.map(el => {
+            const { u } = calcOpaqueR(el.layers, el.type);
+            const area = parseFloat(el.area) || 0;
+            return [el.name || el.type, el.type, area.toFixed(1), u.toFixed(3), (area * u).toFixed(1)];
+          }),
+          foot: [["TOTAL", "", opaqueElements.reduce((s,e)=>s+(parseFloat(e.area)||0),0).toFixed(1), "—",
+            opaqueElements.reduce((s,e)=>{ const {u}=calcOpaqueR(e.layers,e.type); return s+(parseFloat(e.area)||0)*u; },0).toFixed(1)]],
+          footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7.5 },
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+
+      if (glazingElements.length > 0) {
+        if (y > h - 60) { doc.addPage(); addPageHeader(2, ""); }
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("1.2 Elemente vitrate", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["Element", "Orientare", "Suprafață [m²]", "Uw [W/(m²·K)]", "g [-]", "Pierderi [W/K]"]],
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 },
+          body: glazingElements.map(el => [
+            el.name || "Geam", el.orientation || "S",
+            (parseFloat(el.area)||0).toFixed(1),
+            (parseFloat(el.u)||0).toFixed(2),
+            (parseFloat(el.g)||0).toFixed(2),
+            ((parseFloat(el.area)||0)*(parseFloat(el.u)||0)).toFixed(1),
+          ]),
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+
+      if (thermalBridges.length > 0) {
+        if (y > h - 50) { doc.addPage(); addPageHeader(2, ""); }
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("1.3 Punți termice liniare", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["Descriere", "Tip", "Lungime [m]", "ψ [W/(m·K)]", "L·ψ [W/K]"]],
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 },
+          body: thermalBridges.map(tb => [
+            tb.desc || tb.cat || "PT",
+            tb.cat || "—",
+            (parseFloat(tb.length)||0).toFixed(1),
+            (parseFloat(tb.psi)||0).toFixed(3),
+            ((parseFloat(tb.length)||0)*(parseFloat(tb.psi)||0)).toFixed(2),
+          ]),
+          foot: [["TOTAL", "", thermalBridges.reduce((s,t)=>s+(parseFloat(t.length)||0),0).toFixed(1), "—",
+            thermalBridges.reduce((s,t)=>s+(parseFloat(t.length)||0)*(parseFloat(t.psi)||0),0).toFixed(2)]],
+          footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7.5 },
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+
+      if (envelopeSummary) {
+        if (y > h - 30) { doc.addPage(); addPageHeader(2, ""); }
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("1.4 Sumar anvelopă", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+          body: [
+            ["Suprafață totală anvelopă", `${envelopeSummary.totalArea?.toFixed(1) || "—"} m²`],
+            ["Pierderi transmisie (H_tr)", `${envelopeSummary.totalHeatLoss?.toFixed(2) || "—"} W/K`],
+            ["Coeficient global pierderi G", `${envelopeSummary.G?.toFixed(4) || "—"} W/(m³·K)`],
+            ["Raport A/V", `${envelopeSummary.AV?.toFixed(3) || (envelopeSummary.totalArea/V).toFixed(3)} m⁻¹`],
+          ],
+        });
+        y = doc.lastAutoTable.finalY;
+      }
+      addPageFooter();
+
+      // ── PAGINA 3: CALCUL TERMIC ───────────────────────────────────
+      doc.addPage();
+      addPageHeader(3, "2. Calcul termic — pierderi, câștiguri, bilanț energetic");
+
+      if (monthlyISO && monthlyISO.length === 12) {
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("2.1 Bilanț termic lunar (ISO 13790)", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["Lună", "T ext [°C]", "Q pierderi [kWh]", "Q aporturi [kWh]", "Q încălzire [kWh]", "Q răcire [kWh]", "η_H"]],
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7 },
+          bodyStyles: { fontSize: 7 },
+          body: monthlyISO.map(m => [
+            m.name || "—",
+            m.tExt?.toFixed(1) ?? "—",
+            m.Q_loss?.toFixed(0) ?? "—",
+            m.Q_gain?.toFixed(0) ?? "—",
+            m.qH_nd?.toFixed(0) ?? "—",
+            m.qC_nd?.toFixed(0) ?? "—",
+            m.eta_H?.toFixed(3) ?? "—",
+          ]),
+          foot: [["ANUAL", "—",
+            monthlyISO.reduce((s,m)=>s+(m.Q_loss||0),0).toFixed(0),
+            monthlyISO.reduce((s,m)=>s+(m.Q_gain||0),0).toFixed(0),
+            monthlyISO.reduce((s,m)=>s+(m.qH_nd||0),0).toFixed(0),
+            monthlyISO.reduce((s,m)=>s+(m.qC_nd||0),0).toFixed(0),
+            "—",
+          ]],
+          footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7 },
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+
+      if (y > h - 55) { doc.addPage(); addPageHeader(3, ""); }
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+      doc.text("2.2 Parametri clădire și climă", 15, y); y += 4;
+      doc.autoTable({
+        startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+        headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+        bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+        body: [
+          ["Temperatură interioară de calcul θint", `${heating.theta_int || 20} °C`],
+          ["Temperatură exterioară de proiectare θe", `${selectedClimate?.theta_e ?? "—"} °C`],
+          ["Rata ventilare n50 (test Blower Door)", `${building.n50 || "—"} h⁻¹`],
+          ["Rata schimb aer (ventilare mecanică)", `${ventilation?.ach || "—"} h⁻¹`],
+          ["Temperatură medie anuală", `${selectedClimate?.theta_a ?? "—"} °C`],
+          ["Grad-zile încălzire (HDD)", `${selectedClimate?.HDD ?? "—"} °C·zile`],
+          ["Iradianță orizontală anuală", `${selectedClimate?.Gh ?? "—"} kWh/m²/an`],
+        ],
+      });
+      y = doc.lastAutoTable.finalY;
+      addPageFooter();
+
+      // ── PAGINA 4: INSTALAȚII ──────────────────────────────────────
+      doc.addPage();
+      addPageHeader(4, "3. Instalații energetice — consumuri per utilitate");
+
+      doc.autoTable({
+        startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+        head: [["Utilitate", "Energie finală [kWh/an]", "kWh/(m²·an)", "Energie primară [kWh/an]", "kWh/(m²·an)", "CO₂ [kgCO₂/an]"]],
+        headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+        bodyStyles: { fontSize: 7.5 },
+        body: [
+          ["Încălzire",   instSummary.qf_h?.toFixed(0)||"0",  (instSummary.qf_h/Au)?.toFixed(1)||"0",  instSummary.ep_h?.toFixed(0)||"0",  (instSummary.ep_h/Au)?.toFixed(1)||"0",  instSummary.co2_h?.toFixed(0)||"0"],
+          ["Apă caldă",   instSummary.qf_w?.toFixed(0)||"0",  (instSummary.qf_w/Au)?.toFixed(1)||"0",  instSummary.ep_w?.toFixed(0)||"0",  (instSummary.ep_w/Au)?.toFixed(1)||"0",  instSummary.co2_w?.toFixed(0)||"0"],
+          ["Climatizare", instSummary.qf_c?.toFixed(0)||"0",  (instSummary.qf_c/Au)?.toFixed(1)||"0",  instSummary.ep_c?.toFixed(0)||"0",  (instSummary.ep_c/Au)?.toFixed(1)||"0",  instSummary.co2_c?.toFixed(0)||"0"],
+          ["Ventilare",   instSummary.qf_v?.toFixed(0)||"0",  (instSummary.qf_v/Au)?.toFixed(1)||"0",  instSummary.ep_v?.toFixed(0)||"0",  (instSummary.ep_v/Au)?.toFixed(1)||"0",  instSummary.co2_v?.toFixed(0)||"0"],
+          ["Iluminat",    instSummary.qf_l?.toFixed(0)||"0",  (instSummary.qf_l/Au)?.toFixed(1)||"0",  instSummary.ep_l?.toFixed(0)||"0",  (instSummary.ep_l/Au)?.toFixed(1)||"0",  instSummary.co2_l?.toFixed(0)||"0"],
+        ],
+        foot: [["TOTAL",
+          instSummary.qf_total?.toFixed(0)||"0", (instSummary.qf_total_m2)?.toFixed(1)||"0",
+          (renewSummary?.ep_adjusted||instSummary.ep_total||0).toFixed(0),
+          epF.toFixed(1),
+          (renewSummary?.co2_adjusted||instSummary.co2_total||0).toFixed(0),
+        ]],
+        footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7.5 },
+      });
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Parametri instalații
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+      doc.text("3.1 Parametri sistem încălzire", 15, y); y += 4;
+      doc.autoTable({
+        startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+        headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+        bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+        body: [
+          ["Tip sistem încălzire", heating.type || "—"],
+          ["Eficiență generare ηgen", heating.etaGen ? (heating.etaGen * 100).toFixed(0) + " %" : "—"],
+          ["Eficiență distribuție ηdist", heating.etaDist ? (heating.etaDist * 100).toFixed(0) + " %" : "—"],
+          ["Eficiență emisie ηemit", heating.etaEmit ? (heating.etaEmit * 100).toFixed(0) + " %" : "—"],
+          ["Factor primar fp", heating.fp || "—"],
+          ["Factor emisie CO₂", heating.fCO2 || "—"],
+        ].filter(r => r[1] !== "—"),
+      });
+      y = doc.lastAutoTable.finalY + 3;
+
+      if (annualEnergyCost) {
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("3.2 Costuri energetice anuale estimate", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+          body: [
+            ["Cost total anual", `${annualEnergyCost.total?.toLocaleString("ro-RO") || "—"} lei/an`],
+            ["Echivalent EUR", `~${annualEnergyCost.totalEur?.toLocaleString("ro-RO") || "—"} EUR/an`],
+            ["Cost pe m² util", `${annualEnergyCost.perM2 ? (annualEnergyCost.perM2).toFixed(1) : "—"} lei/(m²·an)`],
+          ],
+        });
+        y = doc.lastAutoTable.finalY;
+      }
+      addPageFooter();
+
+      // ── PAGINA 5: SURSE REGENERABILE ─────────────────────────────
+      doc.addPage();
+      addPageHeader(5, "4. Surse regenerabile de energie");
+
+      const hasPV = parseFloat(photovoltaic?.power) > 0;
+      const hasSolarT = parseFloat(solarThermal?.area) > 0;
+      const hasHP = heatPump?.enabled;
+      const hasBiomass = biomass?.enabled;
+
+      if (renewSummary) {
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["Sursă", "Producție [kWh/an]", "kWh/(m²·an)", "Contribuție RER [%]"]],
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 },
+          body: [
+            hasPV && ["Fotovoltaic (PV)", renewSummary.e_pv?.toFixed(0)||"0", ((renewSummary.e_pv||0)/Au).toFixed(1), "—"],
+            hasSolarT && ["Solar termic ACM", renewSummary.e_solar_acm?.toFixed(0)||"0", ((renewSummary.e_solar_acm||0)/Au).toFixed(1), "—"],
+            hasHP && ["Pompă de căldură", renewSummary.e_hp?.toFixed(0)||"0", ((renewSummary.e_hp||0)/Au).toFixed(1), "—"],
+            hasBiomass && ["Biomasă", renewSummary.e_biomass?.toFixed(0)||"0", ((renewSummary.e_biomass||0)/Au).toFixed(1), "—"],
+          ].filter(Boolean),
+          foot: [["TOTAL RER", renewSummary.totalRenew?.toFixed(0)||"0", ((renewSummary.totalRenew||0)/Au).toFixed(1), rer.toFixed(1)+"%"]],
+          footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7.5 },
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+
+      if (hasPV) {
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("4.1 Sistem fotovoltaic (GP 123/2004)", 15, y); y += 4;
+        const pvProd = renewSummary?.pv_production;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+          body: [
+            ["Putere instalată Ppv", `${photovoltaic.power} kWp`],
+            ["Suprafață panouri", `${photovoltaic.area || (parseFloat(photovoltaic.power)/0.20).toFixed(1)} m²`],
+            ["Orientare", photovoltaic.orientation || "S"],
+            ["Eficiență modul", `${((parseFloat(photovoltaic.eta)||0.20)*100).toFixed(0)} %`],
+            ["Putere invertor", `${photovoltaic.invPower || (parseFloat(photovoltaic.power)*0.95).toFixed(1)} kW`],
+            pvProd && ["Producție anuală estimată", `${pvProd.E_annual?.toLocaleString()} kWh/an`],
+            pvProd && ["Producție specifică", `${pvProd.specific_yield} kWh/kWp·an`],
+          ].filter(Boolean),
+        });
+        y = doc.lastAutoTable.finalY + 3;
+      }
+
+      if (hasSolarT) {
+        if (y > h - 40) { doc.addPage(); addPageHeader(5, ""); }
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text("4.2 Solar termic ACM", 15, y); y += 4;
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+          bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+          body: [
+            ["Suprafață colectori", `${solarThermal.area} m²`],
+            ["Tip colector", solarThermal.type || "—"],
+            ["Fracție solară anuală", renewSummary?.fSolar ? `${(renewSummary.fSolar*100).toFixed(0)} %` : "—"],
+          ],
+        });
+        y = doc.lastAutoTable.finalY;
+      }
+      addPageFooter();
+
+      // ── PAGINA 6: CLASIFICARE ENERGETICĂ ─────────────────────────
+      doc.addPage();
+      addPageHeader(6, "5. Clasificare energetică — Mc 001-2022");
+
+      doc.setFontSize(9); doc.setTextColor(0); doc.setFont(undefined, "normal");
+      doc.text("Clasare conform metodologiei Mc 001-2022 (Ordinul MDLPA nr. 16/2023) și ISO 52000-1/NA:2023", 15, y); y += 8;
+
+      // Clasă mare centru
+      const clsRgb2 = hexToRgb(cls.color || "#666666");
+      doc.setFillColor(...clsRgb2); doc.roundedRect(w/2 - 35, y, 30, 28, 4, 4, "F");
+      doc.setFontSize(22); doc.setFont(undefined, "bold"); doc.setTextColor(255,255,255);
+      doc.text(cls.cls, w/2 - 20, y + 18, { align: "center" });
+      doc.setFontSize(8); doc.text("EP", w/2 - 20, y + 25, { align: "center" });
+
+      const co2Rgb2 = hexToRgb(co2Cls.color || "#666666");
+      doc.setFillColor(...co2Rgb2); doc.roundedRect(w/2 + 5, y, 30, 28, 4, 4, "F");
+      doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(255,255,255);
+      doc.text(co2Cls.cls, w/2 + 20, y + 15, { align: "center" });
+      doc.setFontSize(8); doc.text("CO₂", w/2 + 20, y + 24, { align: "center" });
+      y += 34;
+
+      doc.setFontSize(9); doc.setFont(undefined, "bold");
+      doc.setTextColor(isNZEB ? 21 : 114, isNZEB ? 87 : 28, isNZEB ? 36 : 36);
+      doc.text(isNZEB ? "✓ CONFORM nZEB" : "✗ NECONFORM nZEB", w/2, y, { align: "center" }); y += 8;
+
+      doc.autoTable({
+        startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+        headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+        bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+        body: [
+          ["Energie primară EP [kWh/(m²·an)]", `${epF.toFixed(1)} — Clasă ${cls.cls}`],
+          ["CO₂ specific [kgCO₂/(m²·an)]", `${co2F.toFixed(1)} — Clasă CO₂: ${co2Cls.cls}`],
+          ["Energie finală Ef [kWh/(m²·an)]", `${instSummary.qf_total_m2?.toFixed(1)}`],
+          ["Cotă surse regenerabile RER", `${rer.toFixed(1)} % (minim nZEB: ${nzeb.rer_min} %)`],
+          ["Prag nZEB-EP pentru zonă/categorie", `${getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(0) || "—"} kWh/(m²·an)`],
+          ["Scor energetic", `${cls.score || "—"} / 100`],
+          ["Eticheta energetică", cls.cls + (isNZEB ? " (nZEB)" : "")],
+        ],
+      });
+      y = doc.lastAutoTable.finalY;
+      addPageFooter();
+
+      // ── PAGINA 7: RECOMANDĂRI ─────────────────────────────────────
+      if (rehabComparison || (financialAnalysis)) {
+        doc.addPage();
+        addPageHeader(7, "6. Scenariu de reabilitare și analiză financiară");
+
+        if (rehabComparison) {
+          doc.autoTable({
+            startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+            head: [["Indicator", "Stare actuală", "Stare reabilitată", "Economie"]],
+            headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+            bodyStyles: { fontSize: 7.5 },
+            body: [
+              ["EP [kWh/(m²·an)]",
+                rehabComparison.before?.ep?.toFixed(1)||"—",
+                rehabComparison.after?.ep?.toFixed(1)||"—",
+                rehabComparison.delta?.ep ? rehabComparison.delta.ep.toFixed(1) + " kWh/(m²·an)" : "—"
+              ],
+              ["Clasă energetică",
+                rehabComparison.before?.cls||"—",
+                rehabComparison.after?.cls||"—",
+                rehabComparison.before?.cls !== rehabComparison.after?.cls ? `${rehabComparison.before?.cls} → ${rehabComparison.after?.cls}` : "Idem"
+              ],
+              ["Cost anual energie [lei/an]",
+                rehabComparison.before?.cost?.toLocaleString("ro-RO")||"—",
+                rehabComparison.after?.cost?.toLocaleString("ro-RO")||"—",
+                rehabComparison.delta?.cost ? rehabComparison.delta.cost.toLocaleString("ro-RO") + " lei/an" : "—"
+              ],
+            ],
+          });
+          y = doc.lastAutoTable.finalY + 5;
+        }
+
+        if (financialAnalysis) {
+          doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+          doc.text("6.1 Analiză financiară reabilitare", 15, y); y += 4;
+          doc.autoTable({
+            startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+            headStyles: { fillColor: LGRAY, textColor: [26,26,46], fontStyle: "bold", fontSize: 7.5 },
+            bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
+            body: [
+              ["Investiție totală estimată", `${financialAnalysis.investitie?.toLocaleString("ro-RO") || "—"} lei`],
+              ["Economie anuală energie", `${financialAnalysis.economieAnuala?.toLocaleString("ro-RO") || "—"} lei/an`],
+              ["Perioadă simplă de recuperare (PBP)", `${financialAnalysis.pbp?.toFixed(1) || "—"} ani`],
+              ["VAN (25 ani, rata 5%)", `${financialAnalysis.npv?.toLocaleString("ro-RO") || "—"} lei`],
+              ["Rată internă de rentabilitate IRR", `${financialAnalysis.irr ? (financialAnalysis.irr*100).toFixed(1) + " %" : "—"}`],
+              ["Eligibil PNRR/Casa Verde", financialAnalysis.eligibil ? "Da" : "Nu"],
+            ].filter(r => r[1] !== "—"),
+          });
+          y = doc.lastAutoTable.finalY;
+        }
+        addPageFooter();
+      }
+
+      // ── PAGINA FOTOGRAFII (opțional) ─────────────────────────────
+      if (buildingPhotos && buildingPhotos.length > 0) {
+        doc.addPage();
+        const pageNum = doc.getNumberOfPages();
+        addPageHeader(pageNum, "7. Documentare fotografică");
+        const catLabels = { exterior: "Exterior", interior: "Interior", ir: "Termoviziune IR", instalatii: "Instalații", defecte: "Defecte", altele: "Altele" };
+        // Group by category
+        const grouped = {};
+        buildingPhotos.forEach(p => {
+          const cat = p.zone || "altele";
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(p);
+        });
+        for (const [cat, photos] of Object.entries(grouped)) {
+          if (y > h - 50) { doc.addPage(); addPageHeader(doc.getNumberOfPages(), ""); }
+          doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+          doc.text((catLabels[cat] || cat) + ` (${photos.length})`, 15, y); y += 4;
+          const imgW = 55; const imgH = 38; const cols = 3; const gap = 5;
+          photos.forEach((ph, i) => {
+            if (y + imgH + 10 > h - 12) { doc.addPage(); addPageHeader(doc.getNumberOfPages(), ""); }
+            const col = i % cols;
+            const xImg = 15 + col * (imgW + gap);
+            if (col === 0 && i > 0) y += imgH + 8;
+            try {
+              doc.addImage(ph.url, "JPEG", xImg, y, imgW, imgH, undefined, "MEDIUM");
+            } catch(e) { /* skip unreadable image */ }
+            if (ph.label) {
+              doc.setFontSize(6); doc.setFont(undefined, "normal"); doc.setTextColor(...GRAY);
+              doc.text(ph.label.slice(0,30), xImg + imgW/2, y + imgH + 2, { align: "center" });
+            }
+            if (col === cols - 1 || i === photos.length - 1) { y += imgH + 8; }
+          });
+          y += 4;
+          addPageFooter();
+        }
+      }
+
+      // Semnătură finală pe ultima pagină
+      const finalPage = doc.getNumberOfPages();
+      doc.setPage(finalPage);
+      const ySign = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 15 : 230;
+      doc.setDrawColor(...GRAY); doc.setLineWidth(0.3);
+      doc.line(15, ySign, 85, ySign);
+      doc.line(w - 85, ySign, w - 15, ySign);
+      doc.setFontSize(8); doc.setTextColor(...GRAY);
+      doc.text("Semnătură auditor", 50, ySign + 4, { align: "center" });
+      doc.text("Ștampilă / Dată", w - 50, ySign + 4, { align: "center" });
+
+      const filename = `Zephren_Raport_Tehnic_${(building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25)}_${new Date().toISOString().slice(0,10)}.pdf`;
+      doc.save(filename);
+      showToast(`Raport tehnic complet generat (${doc.getNumberOfPages()} pagini)`, "success");
+    } catch (e) {
+      showToast("Eroare generare raport: " + e.message, "error");
+      console.error("Full report export error:", e);
+    } finally { setExporting(null); }
+  }, [building, auditor, instSummary, renewSummary, annualEnergyCost, selectedClimate,
+      opaqueElements, glazingElements, thermalBridges, envelopeSummary,
+      heating, cooling, ventilation, solarThermal, photovoltaic, heatPump, biomass,
+      monthlyISO, rehabComparison, financialAnalysis, buildingPhotos,
+      cooling.hasCooling, showToast, calcOpaqueR, getNzebEpMax]);
 
   // ═══════════════════════════════════════════════════════════
   // B6: BULK IMPORT/EXPORT — Multiple proiecte
@@ -5269,9 +6438,9 @@ export default function EnergyCalcApp({ cloud }) {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 shrink">
             <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm sm:text-lg shrink-0" style={{background:"linear-gradient(135deg, #f59e0b, #d97706)"}}>⚡</div>
+            <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"40px", width:"auto"}} />
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold tracking-tight truncate">Zephren</h1>
+              <h1 className="text-sm sm:text-base font-bold tracking-tight truncate" style={{display:"none"}}>Zephren</h1>
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <p className="text-[9px] uppercase tracking-widest opacity-30 hidden sm:block">Performanță Energetică</p>
@@ -5455,6 +6624,7 @@ export default function EnergyCalcApp({ cloud }) {
             heatPump={heatPump} setHeatPump={setHeatPump}
             biomass={biomass} setBiomass={setBiomass}
             otherRenew={otherRenew} setOtherRenew={setOtherRenew}
+            battery={battery} setBattery={setBattery}
             renewSubTab={renewSubTab} setRenewSubTab={setRenewSubTab}
             renewSummary={renewSummary} instSummary={instSummary}
             ORIENTATIONS={ORIENTATIONS} getNzebEpMax={getNzebEpMax}
@@ -5505,7 +6675,7 @@ export default function EnergyCalcApp({ cloud }) {
             canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
             presentationMode, setPresentationMode,
             financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-            exportPDFNative, fetchTemplate,
+            exportPDFNative, exportQuickSheet, fetchTemplate,
             calcOpaqueR,
             Card, Badge, ResultRow, Select, Input, cn,
             getEnergyClassEPBD, getCO2Class, getNzebEpMax,
@@ -5538,7 +6708,7 @@ export default function EnergyCalcApp({ cloud }) {
             smartSuggestions, multiScenarios,
             buildingPhotos, setBuildingPhotos,
             activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
-            generateAuditReport, exportXML, exportPDFNative, exportBulkProjects,
+            generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
             calcOpaqueR, calcSRI,
             Card, Badge, ResultRow, Select, Input, cn,
             getEnergyClassEPBD, getCO2Class, getNzebEpMax,
@@ -5560,7 +6730,10 @@ export default function EnergyCalcApp({ cloud }) {
             building, climate: selectedClimate,
             opaqueElements, glazingElements, thermalBridges,
             instSummary, renewSummary,
-            systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem },
+            systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem,
+              ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
+              heating: { etaGen: parseFloat(heating?.etaGen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
+            },
           }} />}
           </div>
         </main>
@@ -5847,13 +7020,20 @@ export default function EnergyCalcApp({ cloud }) {
       />
 
       {/* ═══ ShareModal — link + QR ═══ */}
-      {showShareModal && (
-        <ShareModal
-          projectState={{ building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass }}
-          onClose={() => setShowShareModal(false)}
-          showToast={showToast}
-        />
-      )}
+      {showShareModal && (() => {
+        const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+        const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
+        const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
+        const ec = getEnergyClassEPBD(epFinal, catKey)?.cls || null;
+        const cc = getCO2Class(co2Final, building.category)?.cls || null;
+        return (
+          <ShareModal
+            projectState={{ building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, instSummary, renewSummary, energyClass: ec, co2Class: cc }}
+            onClose={() => setShowShareModal(false)}
+            showToast={showToast}
+          />
+        );
+      })()}
 
       {/* Reset confirmation modal */}
 
@@ -6201,19 +7381,56 @@ export default function EnergyCalcApp({ cloud }) {
                 <div className="text-center py-8 opacity-40 text-sm">Niciun proiect salvat.<br/>Folosește butonul de mai sus pentru a salva.</div>
               )}
               {projectList.map(p => (
-                <div key={p.id} className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer",
-                  p.id === activeProjectId ? "border-amber-500/30 bg-amber-500/5" : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
-                )} onClick={() => loadProject(p.id)}>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{p.name}</div>
-                    <div className="text-[10px] opacity-40 flex gap-2">
-                      <span>{p.date}</span>
-                      {p.category && <span>• {BUILDING_CATEGORIES.find(c=>c.id===p.category)?.label || p.category}</span>}
+                <div key={p.id} className={cn("rounded-xl border transition-all",
+                  p.id === activeProjectId ? "border-amber-500/30 bg-amber-500/5" : "border-white/10 bg-white/[0.02]"
+                )}>
+                  <div className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/[0.02]" onClick={() => loadProject(p.id)}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{p.name}</div>
+                      <div className="text-[10px] opacity-40 flex gap-2">
+                        <span>{p.date}</span>
+                        {p.category && <span>• {BUILDING_CATEGORIES.find(c=>c.id===p.category)?.label?.slice(0,30) || p.category}</span>}
+                      </div>
                     </div>
+                    {p.id === activeProjectId && <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 shrink-0">activ</span>}
+                    {/* Buton versiuni */}
+                    <button onClick={async (e) => {
+                      e.stopPropagation();
+                      if (expandedVersionProjectId === p.id) { setExpandedVersionProjectId(null); setProjectVersions([]); return; }
+                      setExpandedVersionProjectId(p.id);
+                      const vers = await listVersions(p.id);
+                      setProjectVersions(vers);
+                    }} className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/10 opacity-50 hover:opacity-100 transition-all shrink-0">
+                      🕐
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); if (p.id !== activeProjectId) deleteProject(p.id); else showToast("Nu poți șterge proiectul activ.", "error"); }}
+                      className="w-7 h-7 rounded-full hover:bg-red-500/20 flex items-center justify-center text-red-400/50 hover:text-red-400 text-xs transition-all shrink-0">🗑</button>
                   </div>
-                  {p.id === activeProjectId && <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">activ</span>}
-                  <button onClick={(e) => { e.stopPropagation(); if (p.id !== activeProjectId) deleteProject(p.id); else showToast("Nu poți șterge proiectul activ.", "error"); }}
-                    className="w-7 h-7 rounded-full hover:bg-red-500/20 flex items-center justify-center text-red-400/50 hover:text-red-400 text-xs transition-all">🗑</button>
+                  {/* Versiuni expandate */}
+                  {expandedVersionProjectId === p.id && (
+                    <div className="border-t border-white/5 px-3 pb-2 pt-1 space-y-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] uppercase tracking-wider opacity-40">Versiuni salvate</span>
+                        {p.id === activeProjectId && (
+                          <button onClick={async (e) => { e.stopPropagation(); await saveCurrentProject(true); const vers = await listVersions(p.id); setProjectVersions(vers); }}
+                            className="text-[9px] px-2 py-0.5 rounded border border-white/10 bg-white/5 hover:bg-white/10 transition-all">
+                            + Salvează versiune acum
+                          </button>
+                        )}
+                      </div>
+                      {projectVersions.length === 0 && <div className="text-[9px] opacity-30 py-1">Nicio versiune salvată.</div>}
+                      {projectVersions.map(v => (
+                        <div key={v.key} className="flex items-center gap-2 py-1 border-b border-white/[0.04] last:border-0">
+                          <span className="text-[9px] opacity-50 flex-1 truncate">{v.label}</span>
+                          <span className="text-[8px] opacity-30 shrink-0">{new Date(v.ts).toLocaleDateString("ro-RO")}</span>
+                          <button onClick={(e) => { e.stopPropagation(); restoreProjectVersion(v.data); setShowProjectManager(false); }}
+                            className="text-[8px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-emerald-500/20 hover:text-emerald-400 transition-all shrink-0">
+                            Restaurează
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

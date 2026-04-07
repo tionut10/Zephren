@@ -287,6 +287,518 @@
       "g": 0.53,
       "type": "Lemn/PVC mansardă tripan",
       "price": 550
+    },
+    {
+      "brand": "Rehau",
+      "model": "Intelio 80mm",
+      "u": 1.1,
+      "g": 0.62,
+      "type": "PVC tripan",
+      "price": 290
+    },
+    {
+      "brand": "Rehau",
+      "model": "Agila 90mm",
+      "u": 0.9,
+      "g": 0.5,
+      "type": "PVC quinto",
+      "price": 420
+    },
+    {
+      "brand": "Rehau",
+      "model": "Geneo HS",
+      "u": 0.78,
+      "g": 0.52,
+      "type": "PVC tripan Passivhaus",
+      "price": 450
+    },
+    {
+      "brand": "Veka",
+      "model": "Artline 82",
+      "u": 0.95,
+      "g": 0.53,
+      "type": "PVC tripan",
+      "price": 270
+    },
+    {
+      "brand": "Veka",
+      "model": "MD 82",
+      "u": 1.0,
+      "g": 0.55,
+      "type": "PVC tripan",
+      "price": 245
+    },
+    {
+      "brand": "Veka",
+      "model": "Perfectline",
+      "u": 0.7,
+      "g": 0.5,
+      "type": "PVC quinto",
+      "price": 390
+    },
+    {
+      "brand": "Veka",
+      "model": "Avantech 90",
+      "u": 0.85,
+      "g": 0.51,
+      "type": "PVC tripan",
+      "price": 310
+    },
+    {
+      "brand": "Gealan",
+      "model": "S10000",
+      "u": 0.75,
+      "g": 0.5,
+      "type": "PVC quinto",
+      "price": 410
+    },
+    {
+      "brand": "Gealan",
+      "model": "Futura",
+      "u": 1.1,
+      "g": 0.6,
+      "type": "PVC dublu",
+      "price": 190
+    },
+    {
+      "brand": "Kömmerling",
+      "model": "76 MD (nou)",
+      "u": 1.1,
+      "g": 0.6,
+      "type": "PVC dublu",
+      "price": 175
+    },
+    {
+      "brand": "Kömmerling",
+      "model": "88+ MD",
+      "u": 0.95,
+      "g": 0.53,
+      "type": "PVC tripan",
+      "price": 260
+    },
+    {
+      "brand": "Kömmerling",
+      "model": "Spectral 76",
+      "u": 0.75,
+      "g": 0.5,
+      "type": "PVC quinto",
+      "price": 350
+    },
+    {
+      "brand": "Aluplast",
+      "model": "Ideal 7000 tripan",
+      "u": 0.9,
+      "g": 0.52,
+      "type": "PVC tripan",
+      "price": 280
+    },
+    {
+      "brand": "Aluplast",
+      "model": "Ideal 8000 plus",
+      "u": 0.78,
+      "g": 0.5,
+      "type": "PVC tripan",
+      "price": 320
+    },
+    {
+      "brand": "Deceuninck",
+      "model": "Zendow Neo",
+      "u": 0.85,
+      "g": 0.51,
+      "type": "PVC tripan",
+      "price": 295
+    },
+    {
+      "brand": "Deceuninck",
+      "model": "Elegant 82",
+      "u": 1.0,
+      "g": 0.55,
+      "type": "PVC tripan",
+      "price": 240
+    },
+    {
+      "brand": "WDS",
+      "model": "08",
+      "u": 0.7,
+      "g": 0.48,
+      "type": "PVC quinto",
+      "price": 380
+    },
+    {
+      "brand": "WDS",
+      "model": "Super 70",
+      "u": 1.2,
+      "g": 0.6,
+      "type": "PVC dublu",
+      "price": 165
+    },
+    {
+      "brand": "Alaterm",
+      "model": "70mm",
+      "u": 1.2,
+      "g": 0.62,
+      "type": "PVC dublu",
+      "price": 150
+    },
+    {
+      "brand": "Alaterm",
+      "model": "82mm tripan",
+      "u": 0.95,
+      "g": 0.53,
+      "type": "PVC tripan",
+      "price": 220
+    },
+    {
+      "brand": "Exprof",
+      "model": "58mm",
+      "u": 1.4,
+      "g": 0.63,
+      "type": "PVC dublu",
+      "price": 130
+    },
+    {
+      "brand": "Exprof",
+      "model": "Practica 70",
+      "u": 1.1,
+      "g": 0.6,
+      "type": "PVC dublu",
+      "price": 160
+    },
+    {
+      "brand": "Proplex",
+      "model": "Ultra-S",
+      "u": 0.7,
+      "g": 0.48,
+      "type": "PVC quinto",
+      "price": 370
+    },
+    {
+      "brand": "Proplex",
+      "model": "Premium",
+      "u": 0.9,
+      "g": 0.52,
+      "type": "PVC tripan",
+      "price": 270
+    },
+    {
+      "brand": "Trocal",
+      "model": "76 A+",
+      "u": 0.78,
+      "g": 0.5,
+      "type": "PVC tripan",
+      "price": 315
+    },
+    {
+      "brand": "Trocal",
+      "model": "88 AD",
+      "u": 0.65,
+      "g": 0.47,
+      "type": "PVC quinto",
+      "price": 400
+    },
+    {
+      "brand": "Schüco",
+      "model": "AWS 75 BS",
+      "u": 1.3,
+      "g": 0.6,
+      "type": "Aluminiu dublu RT",
+      "price": 320
+    },
+    {
+      "brand": "Schüco",
+      "model": "AWS 90.SI",
+      "u": 0.9,
+      "g": 0.52,
+      "type": "Aluminiu tripan",
+      "price": 480
+    },
+    {
+      "brand": "Schüco",
+      "model": "AWS 114 BS",
+      "u": 0.7,
+      "g": 0.48,
+      "type": "Aluminiu quinto HI",
+      "price": 650
+    },
+    {
+      "brand": "Reynaers",
+      "model": "CS 86 HI",
+      "u": 0.95,
+      "g": 0.52,
+      "type": "Aluminiu tripan",
+      "price": 460
+    },
+    {
+      "brand": "Reynaers",
+      "model": "ES 50",
+      "u": 1.4,
+      "g": 0.6,
+      "type": "Aluminiu dublu",
+      "price": 290
+    },
+    {
+      "brand": "Reynaers",
+      "model": "ES 77",
+      "u": 1.1,
+      "g": 0.58,
+      "type": "Aluminiu dublu RT",
+      "price": 350
+    },
+    {
+      "brand": "Aluprof",
+      "model": "MB-86 SI HI",
+      "u": 0.85,
+      "g": 0.51,
+      "type": "Aluminiu tripan",
+      "price": 440
+    },
+    {
+      "brand": "Aluprof",
+      "model": "MB-104 Passive plus",
+      "u": 0.6,
+      "g": 0.45,
+      "type": "Aluminiu Passivhaus",
+      "price": 720
+    },
+    {
+      "brand": "Cortizo",
+      "model": "COR 70",
+      "u": 1.3,
+      "g": 0.6,
+      "type": "Aluminiu dublu",
+      "price": 310
+    },
+    {
+      "brand": "Cortizo",
+      "model": "COR 90",
+      "u": 0.95,
+      "g": 0.53,
+      "type": "Aluminiu tripan",
+      "price": 450
+    },
+    {
+      "brand": "Wicona",
+      "model": "WICLINE 75 EVO",
+      "u": 1.1,
+      "g": 0.58,
+      "type": "Aluminiu dublu RT",
+      "price": 340
+    },
+    {
+      "brand": "Wicona",
+      "model": "WICLINE 90",
+      "u": 0.85,
+      "g": 0.51,
+      "type": "Aluminiu tripan",
+      "price": 470
+    },
+    {
+      "brand": "Sapa/Hydro",
+      "model": "HI+ 50",
+      "u": 1.4,
+      "g": 0.6,
+      "type": "Aluminiu dublu",
+      "price": 280
+    },
+    {
+      "brand": "Sapa/Hydro",
+      "model": "HI+ 65",
+      "u": 1.1,
+      "g": 0.58,
+      "type": "Aluminiu tripan RT",
+      "price": 360
+    },
+    {
+      "brand": "Internorm",
+      "model": "HF 310",
+      "u": 0.73,
+      "g": 0.5,
+      "type": "Lemn-aluminiu tripan",
+      "price": 680
+    },
+    {
+      "brand": "Internorm",
+      "model": "KF 410",
+      "u": 0.62,
+      "g": 0.48,
+      "type": "Lemn-aluminiu quinto",
+      "price": 850
+    },
+    {
+      "brand": "Internorm",
+      "model": "HF 210",
+      "u": 0.95,
+      "g": 0.52,
+      "type": "Lemn-aluminiu tripan",
+      "price": 580
+    },
+    {
+      "brand": "Josko",
+      "model": "NIVO",
+      "u": 0.78,
+      "g": 0.5,
+      "type": "Lemn-aluminiu tripan",
+      "price": 640
+    },
+    {
+      "brand": "Josko",
+      "model": "Vabene",
+      "u": 0.65,
+      "g": 0.47,
+      "type": "Lemn-aluminiu quinto",
+      "price": 790
+    },
+    {
+      "brand": "Rationel",
+      "model": "AURA PLUS",
+      "u": 0.9,
+      "g": 0.52,
+      "type": "Lemn-aluminiu tripan",
+      "price": 560
+    },
+    {
+      "brand": "Rationel",
+      "model": "FORMA PLUS",
+      "u": 0.75,
+      "g": 0.5,
+      "type": "Lemn-aluminiu quinto",
+      "price": 680
+    },
+    {
+      "brand": "Variotec",
+      "model": "Passivhaus",
+      "u": 0.6,
+      "g": 0.46,
+      "type": "Lemn-aluminiu quinto",
+      "price": 920
+    },
+    {
+      "brand": "Videx",
+      "model": "Alu-Star 78",
+      "u": 0.85,
+      "g": 0.51,
+      "type": "Lemn-aluminiu tripan",
+      "price": 600
+    },
+    {
+      "brand": "Andersen",
+      "model": "400 Series",
+      "u": 1.4,
+      "g": 0.58,
+      "type": "Lemn dublu",
+      "price": 520
+    },
+    {
+      "brand": "Andersen",
+      "model": "E-Series",
+      "u": 1.0,
+      "g": 0.55,
+      "type": "Lemn-fibră sticlă tripan",
+      "price": 680
+    },
+    {
+      "brand": "FAKRO",
+      "model": "FPP-V",
+      "u": 1.2,
+      "g": 0.63,
+      "type": "Mansardă PVC dublu",
+      "price": 280
+    },
+    {
+      "brand": "FAKRO",
+      "model": "FTT U8 Thermo Plus",
+      "u": 0.73,
+      "g": 0.5,
+      "type": "Mansardă tripan",
+      "price": 520
+    },
+    {
+      "brand": "FAKRO",
+      "model": "FTS U2 Thermo",
+      "u": 0.97,
+      "g": 0.52,
+      "type": "Mansardă tripan",
+      "price": 390
+    },
+    {
+      "brand": "Velux",
+      "model": "GGL",
+      "u": 1.4,
+      "g": 0.63,
+      "type": "Mansardă lemn dublu",
+      "price": 320
+    },
+    {
+      "brand": "Velux",
+      "model": "GGU",
+      "u": 1.4,
+      "g": 0.63,
+      "type": "Mansardă PVC dublu",
+      "price": 310
+    },
+    {
+      "brand": "Velux",
+      "model": "GGL Thermo",
+      "u": 1.0,
+      "g": 0.57,
+      "type": "Mansardă lemn tripan",
+      "price": 480
+    },
+    {
+      "brand": "Velux",
+      "model": "GPL",
+      "u": 1.0,
+      "g": 0.55,
+      "type": "Mansardă colț lemn",
+      "price": 540
+    },
+    {
+      "brand": "Roto",
+      "model": "Q Tronic",
+      "u": 1.1,
+      "g": 0.6,
+      "type": "Mansardă automatizat",
+      "price": 620
+    },
+    {
+      "brand": "Roto",
+      "model": "Designo R7",
+      "u": 0.74,
+      "g": 0.5,
+      "type": "Mansardă lemn-alu tripan",
+      "price": 550
+    },
+    {
+      "brand": "Schüco",
+      "model": "ASS 70 FD.HI",
+      "u": 1.2,
+      "g": 0.62,
+      "type": "Aluminiu glisant",
+      "price": 450
+    },
+    {
+      "brand": "Reynaers",
+      "model": "Hi-Finity 80",
+      "u": 0.8,
+      "g": 0.52,
+      "type": "Aluminiu glisant Passivhaus",
+      "price": 680
+    },
+    {
+      "brand": "Internorm",
+      "model": "HS 330",
+      "u": 0.73,
+      "g": 0.5,
+      "type": "Lemn-alu glisant tripan",
+      "price": 750
+    },
+    {
+      "brand": "Veka",
+      "model": "Softline 82 glisant",
+      "u": 1.1,
+      "g": 0.6,
+      "type": "PVC glisant dublu",
+      "price": 320
     }
   ],
   "heatPumps": [
@@ -761,6 +1273,302 @@
       "type": "Aer-apă",
       "power": 14,
       "price": 11000
+    },
+    {
+      "brand": "Daikin",
+      "model": "Altherma 3 M 6kW",
+      "cop": 4.8,
+      "type": "Aer-apă monoblock",
+      "power": 6,
+      "price": 7200
+    },
+    {
+      "brand": "Daikin",
+      "model": "Altherma 3 H MT 16kW",
+      "cop": 3.5,
+      "type": "Aer-apă HT",
+      "power": 16,
+      "price": 14000
+    },
+    {
+      "brand": "Daikin",
+      "model": "Altherma 3 GEO 8kW",
+      "cop": 5.5,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 18000
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitocal 150-A 10kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 10,
+      "price": 9500
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitocal 200-S 8kW",
+      "cop": 5.2,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 16000
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitocal 252-A 13kW",
+      "cop": 4.1,
+      "type": "Aer-apă HT",
+      "power": 13,
+      "price": 12500
+    },
+    {
+      "brand": "Vaillant",
+      "model": "arotherm plus 7kW",
+      "cop": 4.8,
+      "type": "Aer-apă",
+      "power": 7,
+      "price": 8200
+    },
+    {
+      "brand": "Vaillant",
+      "model": "arotherm plus 15kW",
+      "cop": 4.3,
+      "type": "Aer-apă",
+      "power": 15,
+      "price": 12000
+    },
+    {
+      "brand": "Vaillant",
+      "model": "flexoTHERM 8kW",
+      "cop": 5.3,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 17000
+    },
+    {
+      "brand": "Nibe",
+      "model": "F2040 12kW",
+      "cop": 4.6,
+      "type": "Aer-apă",
+      "power": 12,
+      "price": 13500
+    },
+    {
+      "brand": "Nibe",
+      "model": "F1145 8kW",
+      "cop": 5.0,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 18500
+    },
+    {
+      "brand": "Nibe",
+      "model": "S2125 10kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 10,
+      "price": 10000
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Ecodan PUHZ 12kW",
+      "cop": 4.2,
+      "type": "Aer-apă",
+      "power": 12,
+      "price": 11500
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Ecodan QUHZ 8kW Zubadan",
+      "cop": 3.2,
+      "type": "Aer-apă ultra-low temp",
+      "power": 8,
+      "price": 9800
+    },
+    {
+      "brand": "Stiebel Eltron",
+      "model": "WPL-A 07 HK",
+      "cop": 4.7,
+      "type": "Aer-apă",
+      "power": 7,
+      "price": 7800
+    },
+    {
+      "brand": "Stiebel Eltron",
+      "model": "WPL-A 17 HK",
+      "cop": 4.2,
+      "type": "Aer-apă",
+      "power": 17,
+      "price": 14500
+    },
+    {
+      "brand": "Stiebel Eltron",
+      "model": "WPF 07 E",
+      "cop": 5.1,
+      "type": "Sol-apă",
+      "power": 7,
+      "price": 16800
+    },
+    {
+      "brand": "Thermia",
+      "model": "Diplomat Optimum G3 8kW",
+      "cop": 5.4,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 19000
+    },
+    {
+      "brand": "Thermia",
+      "model": "Atec+ 12kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 12,
+      "price": 13000
+    },
+    {
+      "brand": "Carrier",
+      "model": "AquaForce 8kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 8,
+      "price": 8900
+    },
+    {
+      "brand": "Carrier",
+      "model": "50XC chiller 25kW",
+      "cop": 4.8,
+      "type": "Chiller apă",
+      "power": 25,
+      "price": 28000
+    },
+    {
+      "brand": "Trane",
+      "model": "XR15 10kW",
+      "cop": 4.3,
+      "type": "Aer-apă",
+      "power": 10,
+      "price": 9500
+    },
+    {
+      "brand": "Lennox",
+      "model": "EL16XC1 10kW",
+      "cop": 4.2,
+      "type": "Aer-apă",
+      "power": 10,
+      "price": 9200
+    },
+    {
+      "brand": "Ochsner",
+      "model": "GMLW 11",
+      "cop": 4.9,
+      "type": "Sol-apă",
+      "power": 11,
+      "price": 20000
+    },
+    {
+      "brand": "Ochsner",
+      "model": "GMLS 8",
+      "cop": 5.6,
+      "type": "Sol-apă plus",
+      "power": 8,
+      "price": 22000
+    },
+    {
+      "brand": "Clivet",
+      "model": "ELFOEnergy 8kW",
+      "cop": 4.6,
+      "type": "Aer-apă",
+      "power": 8,
+      "price": 8700
+    },
+    {
+      "brand": "Clivet",
+      "model": "WaterFly 12kW",
+      "cop": 4.3,
+      "type": "Aer-apă",
+      "power": 12,
+      "price": 11000
+    },
+    {
+      "brand": "Ariston",
+      "model": "Nimbus Plus 11kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 11,
+      "price": 9800
+    },
+    {
+      "brand": "Ariston",
+      "model": "Genus One Net 8kW",
+      "cop": 4.7,
+      "type": "Aer-apă",
+      "power": 8,
+      "price": 8400
+    },
+    {
+      "brand": "Airwell",
+      "model": "AWAU-HHT009",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 9,
+      "price": 8200
+    },
+    {
+      "brand": "CTC",
+      "model": "EcoHeat 5",
+      "cop": 5.0,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 17500
+    },
+    {
+      "brand": "Waterkotte",
+      "model": "AI1 Eco",
+      "cop": 5.8,
+      "type": "Sol-apă",
+      "power": 8,
+      "price": 21000
+    },
+    {
+      "brand": "Bosch",
+      "model": "Compress 3000 AWS 8E",
+      "cop": 4.6,
+      "type": "Aer-apă",
+      "power": 8,
+      "price": 7800
+    },
+    {
+      "brand": "Bosch",
+      "model": "Compress 7000i AW 9kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 9,
+      "price": 9200
+    },
+    {
+      "brand": "Midea",
+      "model": "U-Thermal 8kW",
+      "cop": 3.8,
+      "type": "Aer-apă -25°C",
+      "power": 8,
+      "price": 7500
+    },
+    {
+      "brand": "Hitachi",
+      "model": "Yutaki S Combi 8kW",
+      "cop": 4.5,
+      "type": "Aer-apă",
+      "power": 8,
+      "price": 9000
+    },
+    {
+      "brand": "Hitachi",
+      "model": "Yutaki M 14kW",
+      "cop": 4.2,
+      "type": "Aer-apă",
+      "power": 14,
+      "price": 13000
     }
   ],
   "pvPanels": [
@@ -794,8 +1602,7 @@
       "power": 600,
       "efficiency": 23.2,
       "price": 210,
-      "type": "Monocristalin HPBC",
-      "note": "Ultimă generație 2025"
+      "type": "Monocristalin HPBC"
     },
     {
       "brand": "JA Solar",
@@ -827,8 +1634,7 @@
       "power": 600,
       "efficiency": 22.5,
       "price": 190,
-      "type": "Monocristalin TOPCon",
-      "note": "Bifacial"
+      "type": "Monocristalin TOPCon"
     },
     {
       "brand": "Canadian Solar",
@@ -844,8 +1650,7 @@
       "power": 440,
       "efficiency": 22,
       "price": 130,
-      "type": "Monocristalin n-type",
-      "note": "Rezidențial"
+      "type": "Monocristalin n-type"
     },
     {
       "brand": "Trina Solar",
@@ -853,8 +1658,7 @@
       "power": 450,
       "efficiency": 22.3,
       "price": 140,
-      "type": "Monocristalin n-type",
-      "note": "Rezidențial"
+      "type": "Monocristalin n-type"
     },
     {
       "brand": "Trina Solar",
@@ -878,8 +1682,7 @@
       "power": 430,
       "efficiency": 22.6,
       "price": 210,
-      "type": "HJT",
-      "note": "Garanție 25 ani"
+      "type": "HJT"
     },
     {
       "brand": "REC",
@@ -895,8 +1698,7 @@
       "power": 425,
       "efficiency": 24,
       "price": 280,
-      "type": "IBC",
-      "note": "Eficiență maximă"
+      "type": "IBC"
     },
     {
       "brand": "SunPower",
@@ -936,8 +1738,7 @@
       "power": 445,
       "efficiency": 22.2,
       "price": 130,
-      "type": "Monocristalin TOPCon",
-      "note": "Rezidențial"
+      "type": "Monocristalin TOPCon"
     },
     {
       "brand": "Risen Energy",
@@ -961,8 +1762,7 @@
       "power": 400,
       "efficiency": 21.4,
       "price": 155,
-      "type": "Monocristalin TOPCon",
-      "note": "All-black design"
+      "type": "Monocristalin TOPCon"
     },
     {
       "brand": "Meyer Burger",
@@ -970,8 +1770,7 @@
       "power": 390,
       "efficiency": 21,
       "price": 220,
-      "type": "HJT",
-      "note": "Fabricat în UE"
+      "type": "HJT"
     },
     {
       "brand": "Hyundai",
@@ -995,8 +1794,231 @@
       "power": 600,
       "efficiency": 22.6,
       "price": 175,
-      "type": "Monocristalin TOPCon",
-      "note": "Bifacial"
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "LONGi",
+      "model": "Hi-MO X6 580W",
+      "power": 580,
+      "efficiency": 22.8,
+      "price": 170,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "LONGi",
+      "model": "Green 600W bifacial",
+      "power": 600,
+      "efficiency": 23.2,
+      "price": 195,
+      "type": "Bifacial TOPCon"
+    },
+    {
+      "brand": "LONGi",
+      "model": "Hi-MO 5m 540W",
+      "power": 540,
+      "efficiency": 21.3,
+      "price": 145,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "JA Solar",
+      "model": "JAM72S30 555W",
+      "power": 555,
+      "efficiency": 21.5,
+      "price": 148,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "JA Solar",
+      "model": "JAM66D45 590W bifacial",
+      "power": 590,
+      "efficiency": 22.5,
+      "price": 182,
+      "type": "Bifacial TOPCon"
+    },
+    {
+      "brand": "Jinko Solar",
+      "model": "Tiger Neo 620W",
+      "power": 620,
+      "efficiency": 23.0,
+      "price": 190,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Jinko Solar",
+      "model": "Tiger Pro 575W",
+      "power": 575,
+      "efficiency": 21.8,
+      "price": 158,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "Trina Solar",
+      "model": "Vertex S+ 420W",
+      "power": 420,
+      "efficiency": 21.6,
+      "price": 115,
+      "type": "Monocristalin PERC rezidențial"
+    },
+    {
+      "brand": "Trina Solar",
+      "model": "Vertex 600W",
+      "power": 600,
+      "efficiency": 22.8,
+      "price": 185,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Canadian Solar",
+      "model": "HiKu7 595W",
+      "power": 595,
+      "efficiency": 22.5,
+      "price": 178,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Canadian Solar",
+      "model": "HiHero 445W HJT",
+      "power": 445,
+      "efficiency": 22.8,
+      "price": 220,
+      "type": "HJT bifacial"
+    },
+    {
+      "brand": "REC",
+      "model": "Alpha Pure-R 405W",
+      "power": 405,
+      "efficiency": 21.7,
+      "price": 230,
+      "type": "Monocristalin IBC bifacial"
+    },
+    {
+      "brand": "REC",
+      "model": "TwinPeak 5 380W",
+      "power": 380,
+      "efficiency": 20.5,
+      "price": 175,
+      "type": "Monocristalin PERC bifacial"
+    },
+    {
+      "brand": "SunPower",
+      "model": "Maxeon 6 440W",
+      "power": 440,
+      "efficiency": 22.8,
+      "price": 380,
+      "type": "IBC Maxeon"
+    },
+    {
+      "brand": "SunPower",
+      "model": "Performance 6 390W",
+      "power": 390,
+      "efficiency": 20.8,
+      "price": 185,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "Q CELLS",
+      "model": "Q.PEAK DUO ML-G10+ 400W",
+      "power": 400,
+      "efficiency": 21.1,
+      "price": 168,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "Q CELLS",
+      "model": "Q.TRON M 415W",
+      "power": 415,
+      "efficiency": 21.5,
+      "price": 195,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Meyer Burger",
+      "model": "White 390W",
+      "power": 390,
+      "efficiency": 21.5,
+      "price": 290,
+      "type": "HJT EU made"
+    },
+    {
+      "brand": "Meyer Burger",
+      "model": "Black 390W",
+      "power": 390,
+      "efficiency": 21.3,
+      "price": 310,
+      "type": "HJT EU made negru"
+    },
+    {
+      "brand": "Panasonic",
+      "model": "EverVolt HK Black 380W",
+      "power": 380,
+      "efficiency": 22.2,
+      "price": 260,
+      "type": "HJT bifacial"
+    },
+    {
+      "brand": "Sharp",
+      "model": "NU-JD445",
+      "power": 445,
+      "efficiency": 21.9,
+      "price": 175,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Winaico",
+      "model": "WST-430MGX",
+      "power": 430,
+      "efficiency": 21.3,
+      "price": 210,
+      "type": "Monocristalin PERC EU"
+    },
+    {
+      "brand": "Heckert Solar",
+      "model": "NeMo 4.0 108M 405W",
+      "power": 405,
+      "efficiency": 21.0,
+      "price": 195,
+      "type": "Monocristalin PERC EU"
+    },
+    {
+      "brand": "Solaria",
+      "model": "PowerXT-400R-PD",
+      "power": 400,
+      "efficiency": 22.0,
+      "price": 250,
+      "type": "IBC bifacial"
+    },
+    {
+      "brand": "Suntech",
+      "model": "Ultra V 550W",
+      "power": 550,
+      "efficiency": 21.3,
+      "price": 142,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "Yingli Solar",
+      "model": "YLM 400W",
+      "power": 400,
+      "efficiency": 20.5,
+      "price": 135,
+      "type": "Monocristalin PERC"
+    },
+    {
+      "brand": "DAS Solar",
+      "model": "DHM-T54X10 410W TOPCon",
+      "power": 410,
+      "efficiency": 21.2,
+      "price": 165,
+      "type": "Monocristalin TOPCon"
+    },
+    {
+      "brand": "Astronergy",
+      "model": "CHSM 54N(DG)/F 410W",
+      "power": 410,
+      "efficiency": 21.3,
+      "price": 170,
+      "type": "Bifacial TOPCon"
     }
   ],
   "inverters": [
@@ -1295,6 +2317,238 @@
       "efficiency": 96,
       "price": 1800,
       "hybrid": true
+    },
+    {
+      "brand": "Fronius",
+      "model": "Primo 5.0",
+      "power": 5,
+      "efficiency": 97.2,
+      "price": 1450,
+      "hybrid": false
+    },
+    {
+      "brand": "Fronius",
+      "model": "Symo Advanced 15kW",
+      "power": 15,
+      "efficiency": 98.1,
+      "price": 3200,
+      "hybrid": false
+    },
+    {
+      "brand": "Fronius",
+      "model": "Tauro Eco 15kW",
+      "power": 15,
+      "efficiency": 98.2,
+      "price": 3500,
+      "hybrid": true
+    },
+    {
+      "brand": "SMA",
+      "model": "Sunny Boy 5.0",
+      "power": 5,
+      "efficiency": 97.0,
+      "price": 1100,
+      "hybrid": false
+    },
+    {
+      "brand": "SMA",
+      "model": "Sunny Tripower 10 SMART ENERGY",
+      "power": 10,
+      "efficiency": 97.5,
+      "price": 2800,
+      "hybrid": true
+    },
+    {
+      "brand": "SMA",
+      "model": "Sunny Highpower PEAK3 60kW",
+      "power": 60,
+      "efficiency": 98.9,
+      "price": 12000,
+      "hybrid": false
+    },
+    {
+      "brand": "Huawei",
+      "model": "SUN2000-5KTL-M3",
+      "power": 5,
+      "efficiency": 98.6,
+      "price": 950,
+      "hybrid": false
+    },
+    {
+      "brand": "Huawei",
+      "model": "SUN2000-20KTL-M0",
+      "power": 20,
+      "efficiency": 98.5,
+      "price": 2800,
+      "hybrid": false
+    },
+    {
+      "brand": "Huawei",
+      "model": "SUN2000-5KTL-L1",
+      "power": 5,
+      "efficiency": 98.4,
+      "price": 1200,
+      "hybrid": true
+    },
+    {
+      "brand": "SolarEdge",
+      "model": "SE7K",
+      "power": 7,
+      "efficiency": 98.3,
+      "price": 2100,
+      "hybrid": false
+    },
+    {
+      "brand": "SolarEdge",
+      "model": "SE10K-RWS",
+      "power": 10,
+      "efficiency": 98.3,
+      "price": 3200,
+      "hybrid": true
+    },
+    {
+      "brand": "SolarEdge",
+      "model": "SE100K",
+      "power": 100,
+      "efficiency": 99.0,
+      "price": 15000,
+      "hybrid": false
+    },
+    {
+      "brand": "Enphase",
+      "model": "IQ8A microinvertor",
+      "power": 0.366,
+      "efficiency": 97.5,
+      "price": 185,
+      "hybrid": false
+    },
+    {
+      "brand": "Enphase",
+      "model": "IQ8M microinvertor",
+      "power": 0.384,
+      "efficiency": 97.5,
+      "price": 195,
+      "hybrid": false
+    },
+    {
+      "brand": "Delta",
+      "model": "H6 5kW",
+      "power": 5,
+      "efficiency": 97.6,
+      "price": 950,
+      "hybrid": false
+    },
+    {
+      "brand": "Delta",
+      "model": "M50A 50kW",
+      "power": 50,
+      "efficiency": 98.8,
+      "price": 9500,
+      "hybrid": false
+    },
+    {
+      "brand": "Schneider Electric",
+      "model": "Conext RL 5000E",
+      "power": 5,
+      "efficiency": 97.0,
+      "price": 1350,
+      "hybrid": true
+    },
+    {
+      "brand": "Schneider Electric",
+      "model": "XW Pro 6.8kW",
+      "power": 6.8,
+      "efficiency": 96.0,
+      "price": 2800,
+      "hybrid": true
+    },
+    {
+      "brand": "ABB",
+      "model": "PVS-50",
+      "power": 50,
+      "efficiency": 98.7,
+      "price": 9000,
+      "hybrid": false
+    },
+    {
+      "brand": "Sungrow",
+      "model": "SH5.0RT hibrid",
+      "power": 5,
+      "efficiency": 97.7,
+      "price": 1350,
+      "hybrid": true
+    },
+    {
+      "brand": "Sungrow",
+      "model": "SG110CX",
+      "power": 110,
+      "efficiency": 98.9,
+      "price": 16000,
+      "hybrid": false
+    },
+    {
+      "brand": "GoodWe",
+      "model": "GW5000-ET",
+      "power": 5,
+      "efficiency": 97.8,
+      "price": 880,
+      "hybrid": false
+    },
+    {
+      "brand": "GoodWe",
+      "model": "GW5000-EM",
+      "power": 5,
+      "efficiency": 97.5,
+      "price": 1050,
+      "hybrid": true
+    },
+    {
+      "brand": "GoodWe",
+      "model": "GW30KT",
+      "power": 30,
+      "efficiency": 98.6,
+      "price": 6500,
+      "hybrid": false
+    },
+    {
+      "brand": "Growatt",
+      "model": "MIN 5000TL-X",
+      "power": 5,
+      "efficiency": 97.6,
+      "price": 750,
+      "hybrid": false
+    },
+    {
+      "brand": "Growatt",
+      "model": "SPH5000TL BL-UP",
+      "power": 5,
+      "efficiency": 97.3,
+      "price": 1100,
+      "hybrid": true
+    },
+    {
+      "brand": "SOFAR",
+      "model": "HYD 5K-ES",
+      "power": 5,
+      "efficiency": 97.6,
+      "price": 1100,
+      "hybrid": true
+    },
+    {
+      "brand": "KOSTAL",
+      "model": "PLENTICORE plus 10",
+      "power": 10,
+      "efficiency": 98.2,
+      "price": 2200,
+      "hybrid": true
+    },
+    {
+      "brand": "Solax",
+      "model": "X3-Hybrid 10kW",
+      "power": 10,
+      "efficiency": 97.8,
+      "price": 2100,
+      "hybrid": true
     }
   ],
   "batteries": [
@@ -1441,6 +2695,195 @@
       "cycles": 6000,
       "price": 4800,
       "chemistry": "LFP"
+    },
+    {
+      "brand": "BYD",
+      "model": "Battery-Box Premium LVS 4.0",
+      "capacity": 4.0,
+      "power": 4.0,
+      "cycles": 10000,
+      "price": 2800,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "BYD",
+      "model": "Battery-Box Premium HVM 11.0",
+      "capacity": 11.0,
+      "power": 11.0,
+      "cycles": 10000,
+      "price": 6500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Tesla",
+      "model": "Powerwall 3 Plus",
+      "capacity": 13.5,
+      "power": 11.5,
+      "cycles": 5000,
+      "price": 12000,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Sonnen",
+      "model": "eco 8",
+      "capacity": 8.0,
+      "power": 3.3,
+      "cycles": 10000,
+      "price": 9500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Sonnen",
+      "model": "ecoLinx 15",
+      "capacity": 15.0,
+      "power": 8.0,
+      "cycles": 10000,
+      "price": 18000,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Huawei",
+      "model": "LUNA2000-10-S0 HV",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 5800,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Huawei",
+      "model": "LUNA2000-15-S0 HV",
+      "capacity": 15.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 8200,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Pylontech",
+      "model": "US3000C",
+      "capacity": 3.5,
+      "power": 2.5,
+      "cycles": 6000,
+      "price": 1800,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Pylontech",
+      "model": "Force H2 10.65 Plus",
+      "capacity": 10.65,
+      "power": 10.0,
+      "cycles": 6000,
+      "price": 5500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "LG Chem",
+      "model": "RESU10H Prime",
+      "capacity": 9.8,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 6200,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "LG Chem",
+      "model": "RESU16H Prime",
+      "capacity": 16.0,
+      "power": 7.0,
+      "cycles": 6000,
+      "price": 9500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "E3/DC",
+      "model": "S10 E 10kWh",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 8000,
+      "price": 12000,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "SENEC",
+      "model": "Home V3 10kWh",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 8000,
+      "price": 11500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Samsung SDI",
+      "model": "ESS 7.2",
+      "capacity": 7.2,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 5200,
+      "chemistry": "NMC"
+    },
+    {
+      "brand": "Alpha ESS",
+      "model": "Smile5 10kWh",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 5000,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Alpha ESS",
+      "model": "Storion RACK T17",
+      "capacity": 17.0,
+      "power": 17.0,
+      "cycles": 6000,
+      "price": 9500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Sungrow",
+      "model": "SBH48100 10kWh",
+      "capacity": 10.0,
+      "power": 10.0,
+      "cycles": 6000,
+      "price": 5200,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "GoodWe",
+      "model": "Lynx Home F Series 10kWh",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 4800,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Solax",
+      "model": "Triple Power 10.0",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 4500,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "Wattsonic",
+      "model": "WS-H10K",
+      "capacity": 10.0,
+      "power": 5.0,
+      "cycles": 6000,
+      "price": 4200,
+      "chemistry": "LFP"
+    },
+    {
+      "brand": "VARTA",
+      "model": "element backup 6",
+      "capacity": 6.0,
+      "power": 3.0,
+      "cycles": 8000,
+      "price": 7800,
+      "chemistry": "NMC"
     }
   ],
   "boilers": [
@@ -1713,6 +3156,258 @@
       "fuel": "Gaz",
       "type": "Condensare",
       "price": 2200
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitodens 111-W 26kW",
+      "power": 26,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 4200
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitodens 300-W 35kW",
+      "power": 35,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 5500
+    },
+    {
+      "brand": "Vaillant",
+      "model": "ecoTEC exclusive 30kW",
+      "power": 30,
+      "efficiency": 0.99,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 4800
+    },
+    {
+      "brand": "Bosch",
+      "model": "Condens 7000i W 30kW",
+      "power": 30,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 3400
+    },
+    {
+      "brand": "Bosch",
+      "model": "Condens 2500W 24kW",
+      "power": 24,
+      "efficiency": 0.97,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2400
+    },
+    {
+      "brand": "Junkers",
+      "model": "cerapurSmart 24kW",
+      "power": 24,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2800
+    },
+    {
+      "brand": "Baxi",
+      "model": "Luna Duo-Tec MP 24kW",
+      "power": 24,
+      "efficiency": 0.97,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2500
+    },
+    {
+      "brand": "Baxi",
+      "model": "Prime 24kW",
+      "power": 24,
+      "efficiency": 0.97,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2200
+    },
+    {
+      "brand": "Ariston",
+      "model": "Alteas One Net 24kW",
+      "power": 24,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2900
+    },
+    {
+      "brand": "Immergas",
+      "model": "Victrix Zeus 25kW",
+      "power": 25,
+      "efficiency": 0.97,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2400
+    },
+    {
+      "brand": "Buderus",
+      "model": "Logamax plus GB172 24kW",
+      "power": 24,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 3500
+    },
+    {
+      "brand": "De Dietrich",
+      "model": "Naneo PMC-M 24kW",
+      "power": 24,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 3800
+    },
+    {
+      "brand": "Remeha",
+      "model": "Tzerra Ace 28kW",
+      "power": 28,
+      "efficiency": 0.98,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2900
+    },
+    {
+      "brand": "Ferroli",
+      "model": "Bluehelix Tech 25kW",
+      "power": 25,
+      "efficiency": 0.97,
+      "fuel": "Gaz",
+      "type": "Condensare",
+      "price": 2200
+    },
+    {
+      "brand": "Viessmann",
+      "model": "Vitoligno 100-S 25kW",
+      "power": 25,
+      "efficiency": 0.92,
+      "fuel": "Pelete",
+      "type": "Pelete automat",
+      "price": 8500
+    },
+    {
+      "brand": "Vaillant",
+      "model": "ecoFIT sustain 25kW",
+      "power": 25,
+      "efficiency": 0.91,
+      "fuel": "Pelete",
+      "type": "Pelete",
+      "price": 7800
+    },
+    {
+      "brand": "Windhager",
+      "model": "BioWIN2 Touch 22kW",
+      "power": 22,
+      "efficiency": 0.93,
+      "fuel": "Pelete",
+      "type": "Pelete premium",
+      "price": 12000
+    },
+    {
+      "brand": "ETA",
+      "model": "ETA SH-P 20kW",
+      "power": 20,
+      "efficiency": 0.94,
+      "fuel": "Pelete",
+      "type": "Pelete",
+      "price": 9500
+    },
+    {
+      "brand": "Hargassner",
+      "model": "ECO-HK 25kW",
+      "power": 25,
+      "efficiency": 0.92,
+      "fuel": "Pelete/Lemn",
+      "type": "Pelete+Lemn",
+      "price": 11000
+    },
+    {
+      "brand": "Solarfocus",
+      "model": "pelletsclean 25",
+      "power": 25,
+      "efficiency": 0.93,
+      "fuel": "Pelete",
+      "type": "Pelete",
+      "price": 10500
+    },
+    {
+      "brand": "Fröling",
+      "model": "S4 Turbo 25kW",
+      "power": 25,
+      "efficiency": 0.93,
+      "fuel": "Lemn",
+      "type": "Lemn gazeificare",
+      "price": 8000
+    },
+    {
+      "brand": "Fröling",
+      "model": "P4 Pellet 32kW",
+      "power": 32,
+      "efficiency": 0.94,
+      "fuel": "Pelete",
+      "type": "Pelete",
+      "price": 11500
+    },
+    {
+      "brand": "Atmos",
+      "model": "GSX 25",
+      "power": 25,
+      "efficiency": 0.90,
+      "fuel": "Lemn",
+      "type": "Lemn gazeificare",
+      "price": 6500
+    },
+    {
+      "brand": "Herz",
+      "model": "Firematic 20kW",
+      "power": 20,
+      "efficiency": 0.92,
+      "fuel": "Pelete",
+      "type": "Pelete",
+      "price": 9800
+    },
+    {
+      "brand": "Protherm",
+      "model": "Ray 12kW",
+      "power": 12,
+      "efficiency": 1.0,
+      "fuel": "Electric",
+      "type": "Electric",
+      "price": 1800
+    },
+    {
+      "brand": "Protherm",
+      "model": "Ray 24kW",
+      "power": 24,
+      "efficiency": 1.0,
+      "fuel": "Electric",
+      "type": "Electric",
+      "price": 2400
+    },
+    {
+      "brand": "Vaillant",
+      "model": "eloBLOCK 14kW",
+      "power": 14,
+      "efficiency": 1.0,
+      "fuel": "Electric",
+      "type": "Electric",
+      "price": 2200
+    },
+    {
+      "brand": "Ferroli",
+      "model": "LEB 12kW",
+      "power": 12,
+      "efficiency": 1.0,
+      "fuel": "Electric",
+      "type": "Electric",
+      "price": 1500
     }
   ]
 }

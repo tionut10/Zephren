@@ -3,240 +3,1327 @@
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Planșeu intermediar",
     "psi": 0.1,
-    "desc": "Joncțiune perete exterior cu planșeu intermediar",
     "psi_izolat": 0.04,
-    "detail": "Planșeul din beton traversează peretele exterior, creând o punte liniară. Cu izolație continuă pe fațadă se reduce la Ψ≈0,04."
+    "desc": "Joncțiune perete exterior cu planșeu intermediar",
+    "detail": "Planșeul din beton traversează peretele exterior, creând o punte liniară. Cu izolație continuă pe fațadă se reduce la Ψ≈0,04. Ref: ISO 14683:2017 Tabel 1, tip IF."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Planșeu terasă",
     "psi": 0.15,
-    "desc": "Joncțiune perete exterior cu planșeu terasă",
     "psi_izolat": 0.06,
-    "detail": "Atic/cornișă unde planșeul terasă întâlnește peretele. Risc condensare. Cu izolație continuă: Ψ≈0,06."
+    "desc": "Joncțiune perete exterior cu planșeu terasă",
+    "detail": "Atic/cornișă unde planșeul terasă întâlnește peretele. Risc condensare. Cu izolație continuă: Ψ≈0,06. Ref: ISO 14683:2017 Tabel 1, tip RF."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Planșeu peste subsol",
     "psi": 0.2,
-    "desc": "Joncțiune perete exterior cu planșeu peste subsol",
     "psi_izolat": 0.08,
-    "detail": "Zona soclu/CTS. Cea mai frecventă punte termică la blocuri vechi. Izolație perimetrală fundație: Ψ≈0,08."
+    "desc": "Joncțiune perete exterior cu planșeu peste subsol",
+    "detail": "Zona soclu/CTS. Cea mai frecventă punte termică la blocuri vechi. Izolație perimetrală fundație: Ψ≈0,08. Ref: ISO 14683:2017, Mc 001-2022."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Soclu/fundație",
     "psi": 0.25,
-    "desc": "Joncțiune perete exterior cu soclu sau fundație",
     "psi_izolat": 0.1,
-    "detail": "Fundația din beton conduce căldura direct în sol. Izolație XPS perimetral min 60cm adâncime: Ψ≈0,10."
+    "desc": "Joncțiune perete exterior cu soclu sau fundație",
+    "detail": "Fundația din beton conduce căldura direct în sol. Izolație XPS perimetral min 60cm adâncime: Ψ≈0,10. Ref: ISO 14683:2017, C107/4-1997."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Colț exterior",
     "psi": 0.05,
-    "desc": "Colț exterior al clădirii",
     "psi_izolat": 0.02,
-    "detail": "Convergența a două suprafețe exterioare. Suprafața interioară mai mică → răcire. Cu izolație continuă: Ψ≈0,02."
+    "desc": "Colț exterior al clădirii",
+    "detail": "Convergența a două suprafețe exterioare. Suprafața interioară mai mică → răcire. Cu izolație continuă: Ψ≈0,02. Ref: ISO 14683:2017 Tabel 1, tip CO."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Colț interior",
     "psi": -0.05,
-    "desc": "Colț interior al clădirii (favorabil)",
     "psi_izolat": -0.03,
-    "detail": "Suprafața interioară mai mare decât cea exterioară → efect favorabil (Ψ negativ). Reduce pierderea totală."
+    "desc": "Colț interior al clădirii (favorabil)",
+    "detail": "Suprafața interioară mai mare decât cea exterioară → efect favorabil (Ψ negativ). Reduce pierderea totală. Ref: ISO 14683:2017 Tabel 1."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Perete int. portant",
     "psi": 0.05,
-    "desc": "Joncțiune perete exterior cu perete interior portant",
     "psi_izolat": 0.02,
-    "detail": "Peretele interior penetrează izolația exterioară. Cu izolație termică pe prima porțiune (≈50cm) a peretelui interior: Ψ≈0,02."
+    "desc": "Joncțiune perete exterior cu perete interior portant",
+    "detail": "Peretele interior penetrează izolația exterioară. Cu izolație termică pe prima porțiune (≈50cm) a peretelui interior: Ψ≈0,02. Ref: ISO 14683:2017."
   },
   {
     "cat": "Joncțiuni pereți",
     "name": "Perete ext. — Planșeu pe sol",
     "psi": 0.3,
-    "desc": "Joncțiune perete exterior cu placa pe sol",
     "psi_izolat": 0.12,
-    "detail": "Placa de beton pe sol fără ruptură termică la perete. Izolație sub placă + perimetrală: Ψ≈0,12."
+    "desc": "Joncțiune perete exterior cu placa pe sol",
+    "detail": "Placa de beton pe sol fără ruptură termică la perete. Izolație sub placă + perimetrală: Ψ≈0,12. Ref: ISO 14683:2017 Tabel 1, tip GF."
   },
   {
     "cat": "Ferestre",
     "name": "Glaf fereastră — montaj standard",
     "psi": 0.08,
-    "desc": "Perimetrul ferestrei (montaj în zidărie)",
     "psi_izolat": 0.03,
-    "detail": "Tâmplăria montată în planul zidăriei, fără acoperirea ramei cu izolație. Montaj în planul izolației: Ψ≈0,03."
+    "desc": "Perimetrul ferestrei (montaj în zidărie)",
+    "detail": "Tâmplăria montată în planul zidăriei, fără acoperirea ramei cu izolație. Montaj în planul izolației: Ψ≈0,03. Ref: ISO 14683:2017 Tabel 1, tip W."
   },
   {
     "cat": "Ferestre",
     "name": "Glaf fereastră — montaj în izolație",
     "psi": 0.04,
-    "desc": "Perimetrul ferestrei (montaj în planul termoizolației)",
     "psi_izolat": 0.02,
-    "detail": "Tâmplăria pozitionată în dreptul stratului termoizolant → punte redusă. Cu bandă precomprimată: Ψ≈0,02."
+    "desc": "Perimetrul ferestrei (montaj în planul termoizolației)",
+    "detail": "Tâmplăria pozitionată în dreptul stratului termoizolant → punte redusă. Cu bandă precomprimată: Ψ≈0,02. Ref: ISO 14683:2017, PHI atlas."
   },
   {
     "cat": "Ferestre",
     "name": "Glaf fereastră — montaj complet izolat",
     "psi": 0.02,
-    "desc": "Montaj cu console izolate (RAL)",
     "psi_izolat": 0.01,
-    "detail": "Montaj conform RAL cu console portante izolate, bandă interioară/exterioară, revenire izolație: Ψ≈0,01."
+    "desc": "Montaj cu console izolate (RAL)",
+    "detail": "Montaj conform RAL cu console portante izolate, bandă interioară/exterioară, revenire izolație: Ψ≈0,01. Ref: PHI Passive House standard."
   },
   {
     "cat": "Ferestre",
     "name": "Prag ușă exterioară",
     "psi": 0.1,
-    "desc": "Prag ușă la exterior",
     "psi_izolat": 0.05,
-    "detail": "Pragul metalic/beton al ușii exterioare. Cu prag cu ruptură termică: Ψ≈0,05."
+    "desc": "Prag ușă la exterior",
+    "detail": "Pragul metalic/beton al ușii exterioare. Cu prag cu ruptură termică: Ψ≈0,05. Ref: ISO 14683:2017 Tabel 1, tip D."
   },
   {
     "cat": "Ferestre",
     "name": "Pervaz/glaf sub fereastră",
     "psi": 0.06,
-    "desc": "Zona sub glaf (pervaz exterior)",
     "psi_izolat": 0.03,
-    "detail": "Zona de sub fereastră unde se montează radiatorul. Izolația continuă sub glaf: Ψ≈0,03."
+    "desc": "Zona sub glaf (pervaz exterior)",
+    "detail": "Zona de sub fereastră unde se montează radiatorul. Izolația continuă sub glaf: Ψ≈0,03. Ref: Mc 001-2022, C107/4-1997."
   },
   {
     "cat": "Balcoane",
     "name": "Consolă balcon — beton neîntrerupt",
     "psi": 0.7,
-    "desc": "Consolă balcon beton fără ruptură termică",
     "psi_izolat": 0.15,
-    "detail": "CEA MAI GRAVĂ punte termică! Placa de beton a balconului continuă din planșeul interior. Cu ruptoare termice (Schöck Isokorb): Ψ≈0,15."
+    "desc": "Consolă balcon beton fără ruptură termică",
+    "detail": "CEA MAI GRAVĂ punte termică! Placa de beton a balconului continuă din planșeul interior. Cu ruptoare termice (Schöck Isokorb): Ψ≈0,15. Ref: ISO 14683:2017, BR 497."
   },
   {
     "cat": "Balcoane",
     "name": "Consolă balcon — cu ruptoare termice",
     "psi": 0.15,
-    "desc": "Consolă balcon cu ruptoare termice (Isokorb etc.)",
     "psi_izolat": 0.08,
-    "detail": "Ruptoarele termice întrerup transmisia prin placa de beton. Soluție premium: Ψ≈0,08."
+    "desc": "Consolă balcon cu ruptoare termice (Isokorb etc.)",
+    "detail": "Ruptoarele termice întrerup transmisia prin placa de beton. Soluție premium: Ψ≈0,08. Ref: Schöck Isokorb catalog, EN ISO 10211."
   },
   {
     "cat": "Balcoane",
     "name": "Loggie — parapete beton",
     "psi": 0.3,
-    "desc": "Loggie cu parapete din beton",
     "psi_izolat": 0.1,
-    "detail": "Parapetele de beton ale loggiei transmit căldură. Izolație termică pe parapet + sub balcon: Ψ≈0,10."
+    "desc": "Loggie cu parapete din beton",
+    "detail": "Parapetele de beton ale loggiei transmit căldură. Izolație termică pe parapet + sub balcon: Ψ≈0,10. Ref: Mc 001-2022."
   },
   {
     "cat": "Balcoane",
     "name": "Balcon închis (extindere)",
     "psi": 0.4,
-    "desc": "Balcon închis neizolat termic",
     "psi_izolat": 0.12,
-    "detail": "Balcon închis cu tâmplărie dar fără izolație termică pe placa de beton. Izolație completă + tâmplărie performantă: Ψ≈0,12."
+    "desc": "Balcon închis neizolat termic",
+    "detail": "Balcon închis cu tâmplărie dar fără izolație termică pe placa de beton. Izolație completă + tâmplărie performantă: Ψ≈0,12. Ref: Mc 001-2022."
   },
   {
     "cat": "Acoperiș",
     "name": "Cornișă acoperiș — streașină",
     "psi": 0.1,
-    "desc": "Cornișă / streașină acoperiș",
     "psi_izolat": 0.04,
-    "detail": "Zona unde acoperișul se prelungește peste perete. Continuitatea izolației la cornișă: Ψ≈0,04."
+    "desc": "Cornișă / streașină acoperiș",
+    "detail": "Zona unde acoperișul se prelungește peste perete. Continuitatea izolației la cornișă: Ψ≈0,04. Ref: ISO 14683:2017 Tabel 1, tip R."
   },
   {
     "cat": "Acoperiș",
     "name": "Coamă acoperiș",
     "psi": 0.05,
-    "desc": "Coamă acoperiș înclinat",
     "psi_izolat": 0.02,
-    "detail": "Vârful acoperișului unde se întâlnesc cele două pante. Impact redus dacă izolația e continuă."
+    "desc": "Coamă acoperiș înclinat",
+    "detail": "Vârful acoperișului unde se întâlnesc cele două pante. Impact redus dacă izolația e continuă. Ref: ISO 14683:2017."
   },
   {
     "cat": "Acoperiș",
     "name": "Luminatoare / trapă acces pod",
     "psi": 0.15,
-    "desc": "Perimetrul luminatoarelor sau trapei de acces",
     "psi_izolat": 0.06,
-    "detail": "Deschideri în planșeul terasă sau acoperiș. Cu ramă izolată termic: Ψ≈0,06."
+    "desc": "Perimetrul luminatoarelor sau trapei de acces",
+    "detail": "Deschideri în planșeul terasă sau acoperiș. Cu ramă izolată termic: Ψ≈0,06. Ref: ISO 14683:2017, EN ISO 10211."
   },
   {
     "cat": "Acoperiș",
     "name": "Parapetul atic",
     "psi": 0.12,
-    "desc": "Aticul de pe terasă (bloc)",
     "psi_izolat": 0.05,
-    "detail": "Aticul de pe blocuri: beton/zidărie neizolat continuă puntea de la perete la terasă. Cu izolație continuă pe atic: Ψ≈0,05."
+    "desc": "Aticul de pe terasă (bloc)",
+    "detail": "Aticul de pe blocuri: beton/zidărie neizolat continuă puntea de la perete la terasă. Cu izolație continuă pe atic: Ψ≈0,05. Ref: Mc 001-2022."
   },
   {
     "cat": "Acoperiș",
     "name": "Jgheab/streașină metalică",
     "psi": 0.08,
-    "desc": "Suport metalic jgheab streașină",
     "psi_izolat": 0.03,
-    "detail": "Console metalice pentru jgheab penetrează izolația. Cu console din inox sau poliamidă: Ψ≈0,03."
+    "desc": "Suport metalic jgheab streașină",
+    "detail": "Console metalice pentru jgheab penetrează izolația. Cu console din inox sau poliamidă: Ψ≈0,03. Ref: ISO 14683:2017."
   },
   {
     "cat": "Stâlpi/grinzi",
     "name": "Stâlp beton în perete exterior",
     "psi": 0.15,
-    "desc": "Stâlp beton armat în perete exterior",
     "psi_izolat": 0.05,
-    "detail": "Stâlpul de beton are λ=1,74, mult mai mare decât zidăria. Cu izolație continuă pe fațadă acoperind stâlpul: Ψ≈0,05."
+    "desc": "Stâlp beton armat în perete exterior",
+    "detail": "Stâlpul de beton are λ=1,74, mult mai mare decât zidăria. Cu izolație continuă pe fațadă acoperind stâlpul: Ψ≈0,05. Ref: ISO 14683:2017, Mc 001-2022."
   },
   {
     "cat": "Stâlpi/grinzi",
     "name": "Grindă de centură / buiandrug",
     "psi": 0.12,
-    "desc": "Grindă de centură / buiandrug beton",
     "psi_izolat": 0.04,
-    "detail": "Centura de beton la nivel planșeu. Cu izolație continuă care acoperă grinda: Ψ≈0,04."
+    "desc": "Grindă de centură / buiandrug beton",
+    "detail": "Centura de beton la nivel planșeu. Cu izolație continuă care acoperă grinda: Ψ≈0,04. Ref: Mc 001-2022, C107/4-1997."
   },
   {
     "cat": "Stâlpi/grinzi",
     "name": "Stâlp metalic neîntrerupt",
     "psi": 0.2,
-    "desc": "Stâlp metalic neîntrerupt termic",
     "psi_izolat": 0.08,
-    "detail": "Oțelul are λ=58 W/mK — punte termică severă. Cu ruptură termică sau carcasă izolată: Ψ≈0,08."
+    "desc": "Stâlp metalic neîntrerupt termic",
+    "detail": "Oțelul are λ=58 W/mK — punte termică severă. Cu ruptură termică sau carcasă izolată: Ψ≈0,08. Ref: EN ISO 10211, ISO 14683:2017."
   },
   {
     "cat": "Stâlpi/grinzi",
     "name": "Grindă metalică în perete",
     "psi": 0.25,
-    "desc": "Grindă IPE/HEA care penetrează peretele",
     "psi_izolat": 0.1,
-    "detail": "Grinda de oțel penetrează complet anvelopa. Cu capăt izolat și ruptură termică: Ψ≈0,10."
+    "desc": "Grindă IPE/HEA care penetrează peretele",
+    "detail": "Grinda de oțel penetrează complet anvelopa. Cu capăt izolat și ruptură termică: Ψ≈0,10. Ref: EN ISO 10211, ISO 14683:2017."
   },
   {
     "cat": "Instalații",
     "name": "Țeavă neizolată prin perete ext.",
     "psi": 0.15,
-    "desc": "Conducte care traversează peretele exterior",
     "psi_izolat": 0.03,
-    "detail": "Treceri instalații prin perete exterior. Cu manșon izolant și spumă PUR la anulare: Ψ≈0,03."
+    "desc": "Conducte care traversează peretele exterior",
+    "detail": "Treceri instalații prin perete exterior. Cu manșon izolant și spumă PUR la anulare: Ψ≈0,03. Ref: Mc 001-2022."
   },
   {
     "cat": "Instalații",
     "name": "Canal ventilare prin perete",
     "psi": 0.2,
-    "desc": "Canal/tubulătură ventilare prin anvelopă",
     "psi_izolat": 0.06,
-    "detail": "Canalele de ventilare din tablă sau beton penetrează izolația. Cu racord izolat termic: Ψ≈0,06."
+    "desc": "Canal/tubulătură ventilare prin anvelopă",
+    "detail": "Canalele de ventilare din tablă sau beton penetrează izolația. Cu racord izolat termic: Ψ≈0,06. Ref: Mc 001-2022."
   },
   {
     "cat": "Instalații",
     "name": "Coș de fum exterior",
     "psi": 0.3,
-    "desc": "Coș de fum aderent la perete exterior",
     "psi_izolat": 0.1,
-    "detail": "Coșul de fum din beton/zidărie aderent la peretele exterior. Cu izolație pe coș: Ψ≈0,10."
+    "desc": "Coș de fum aderent la perete exterior",
+    "detail": "Coșul de fum din beton/zidărie aderent la peretele exterior. Cu izolație pe coș: Ψ≈0,10. Ref: Mc 001-2022, C107/4-1997."
   },
   {
     "cat": "Instalații",
     "name": "Cutie de jaluzele (casetă roletă)",
     "psi": 0.3,
-    "desc": "Casetă roletă/jaluzea în peretele exterior",
     "psi_izolat": 0.1,
-    "detail": "Caseta de roletă din plastic/aluminiu înlocuiește izolația deasupra ferestrei. Cu casetă izolată termic: Ψ≈0,10."
+    "desc": "Casetă roletă/jaluzea în peretele exterior",
+    "detail": "Caseta de roletă din plastic/aluminiu înlocuiește izolația deasupra ferestrei. Cu casetă izolată termic: Ψ≈0,10. Ref: Mc 001-2022, atlas punți termice BINE."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Radier general — perete exterior",
+    "psi": 0.38,
+    "psi_izolat": 0.12,
+    "desc": "Joncțiune radier general cu perete exterior",
+    "detail": "Radierul din beton de mari dimensiuni conduce masiv spre sol. Fără izolație: Ψ≈0,38. Cu XPS sub radier + perimetral vertical min 80cm: Ψ≈0,12. Ref: ISO 14683:2017, EN ISO 13370."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Fundație bandă — perete exterior izolat perimetral",
+    "psi": 0.2,
+    "psi_izolat": 0.08,
+    "desc": "Fundație bandă cu izolație XPS perimetrală",
+    "detail": "Fundație din beton cu izolație XPS verticală pe exterior, adâncime min 60cm. Reducere semnificativă față de neizolat (Ψ≈0,45). Ref: ISO 14683:2017 Tabel 1, tip GF."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Fundație izolată pe toată suprafața",
+    "psi": 0.15,
+    "psi_izolat": 0.06,
+    "desc": "Fundație cu izolație continuă sub întreaga placă",
+    "detail": "Izolație XPS/EPS sub întreaga suprafață a planșeului pe sol + perimetral. Soluție optimă pentru clădiri passive. Ref: PHI, EN ISO 13370."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Perete subsol — planșeu deasupra subsolului neîncălzit",
+    "psi": 0.2,
+    "psi_izolat": 0.08,
+    "desc": "Joncțiune perete subsol cu planșeu (subsol rece)",
+    "detail": "Planșeul de beton peste subsolul neîncălzit. Zona critică la baza pereților exteriori. Cu izolație pe planșeu/perete subsol: Ψ≈0,08. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Soclu cu trotuar de protecție",
+    "psi": 0.12,
+    "psi_izolat": 0.06,
+    "desc": "Zona soclului cu trotuar din beton/asfalt",
+    "detail": "Trotuarul de protecție poate crea punte suplimentară. Cu izolare verticală + orizontală sub trotuar: Ψ≈0,06. Ref: C107/4-1997, Mc 001-2022."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Planșeu pe sol — izolație sub placă continuă",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Planșeu pe sol cu izolație EPS/XPS sub placă",
+    "detail": "Izolație continuă sub întreaga placă de beton pe sol. Soluție conformă nZEB: Ψ≈0,04. Ref: ISO 14683:2017 Tabel 1, EN ISO 13370."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Planșeu pe sol — izolație perimetrală 60 cm",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Planșeu pe sol cu izolație perimetrală 60 cm",
+    "detail": "Izolație XPS min 60cm adâncime pe perimetru, fără izolație sub întreaga placă. Soluție intermediară. Ref: ISO 14683:2017, EN ISO 13370."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Pivniță neîncălzită — perete parțial subteran",
+    "psi": 0.2,
+    "psi_izolat": 0.08,
+    "desc": "Perete exterior parțial îngropat la pivniță",
+    "detail": "Zona de tranziție perete exterior–sol la clădirile cu pivniță neîncălzită. Cu izolație pe peretele pivniței: Ψ≈0,08. Ref: ISO 14683:2017, EN ISO 13370."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Grinzi de fundație pe piloți",
+    "psi": 0.18,
+    "psi_izolat": 0.07,
+    "desc": "Grindă de fundație pe piloți foranți",
+    "detail": "Grinzile de fundație pe piloți creează punți spre sol. Cu izolație sub grindă și perimetral: Ψ≈0,07. Ref: EN ISO 13370, EN ISO 10211."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Subsol tehnic neîncălzit — planșeu",
+    "psi": 0.14,
+    "psi_izolat": 0.06,
+    "desc": "Planșeu deasupra subsolului tehnic (neîncălzit)",
+    "detail": "Planșeul dintre subsol tehnic și spațiul încălzit. Izolație pe fața inferioară a planșeului: Ψ≈0,06. Ref: Mc 001-2022, ISO 14683:2017."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Perete timber frame — planșeu intermediar fără întrerupere",
+    "psi": 0.06,
+    "psi_izolat": 0.02,
+    "desc": "Perete cadru lemn – planșeu intermediar",
+    "detail": "Stâlpii din lemn (λ≈0,13 W/mK) creează punte redusă față de beton. Dacă izolația continuă acoperă stâlpii exteriori: Ψ≈0,02. Ref: PHI, atlas punți termice austriac."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Perete timber frame — fundație",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Joncțiune perete cadru lemn cu fundație",
+    "detail": "Talpa de jos a cadrului din lemn pe fundație de beton. Cu izolație XPS sub talpă și perimetral: Ψ≈0,05. Ref: PHI, BR 497."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Căpriori — neizolați vs. izolați",
+    "psi": 0.08,
+    "psi_izolat": 0.03,
+    "desc": "Punți termice la căpriori de acoperiș",
+    "detail": "Căpriorii din lemn creează punți liniare în planul izolației de acoperiș. Cu izolație între și sub căpriori (2 straturi): Ψ≈0,03. Ref: PHI, atlas punți termice german."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "CLT perete — CLT planșeu",
+    "psi": 0.06,
+    "psi_izolat": 0.02,
+    "desc": "Joncțiune CLT perete exterior cu CLT planșeu",
+    "detail": "Lemnul masiv CLT (λ≈0,13) conduce mai puțin decât betonul. Cu izolație exterioară continuă pe fațadă: Ψ≈0,02. Ref: PHI, KLH Austria atlas."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Grindă lemn încastrată în perete exterior",
+    "psi": 0.11,
+    "psi_izolat": 0.04,
+    "desc": "Capăt de grindă din lemn în perete exterior",
+    "detail": "Grinda masivă încastrată în zidărie/beton conduce căldura spre exterior. Cu capăt termoizolat sau nișă izolată: Ψ≈0,04. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Acoperiș șarpantă — căpriori 45×200 mm izolați",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Șarpantă cu căpriori izolați complet între și sub",
+    "detail": "Căpriori 45×200mm cu izolație minerală între + izolație sub căpriori (contracăpriori). Soluție performantă: Ψ≈0,01. Ref: PHI Passive House standard."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Perete lemn — atic",
+    "psi": 0.05,
+    "psi_izolat": 0.02,
+    "desc": "Joncțiune perete exterior lemn cu atic",
+    "detail": "Aticul la clădiri cu pereți din lemn. Cu continuitatea învelișului izolant la racordul perete–terasă: Ψ≈0,02. Ref: PHI, atlas german."
+  },
+  {
+    "cat": "Structuri din lemn",
+    "name": "Panouri SIP — joncțiune",
+    "psi": 0.04,
+    "psi_izolat": 0.02,
+    "desc": "Joncțiune panouri SIP (structural insulated panels)",
+    "detail": "Spuma rigidă PUR/EPS din panoul SIP creează punte redusă la rost. Splinele de lemn de la rost: Ψ≈0,02. Ref: PHI, producători SIP."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Panou prefabricat mare — planșeu (neizolat)",
+    "psi": 0.5,
+    "psi_izolat": 0.12,
+    "desc": "Panou prefabricat de mari dimensiuni – planșeu",
+    "detail": "Panoul prefabricat din beton creează punte masivă la planșeu. Fără izolație: Ψ≈0,50. Cu izolație exterioară continuă + chit termic: Ψ≈0,12. Ref: Mc 001-2022, ISO 14683."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Panou prefabricat — colț exterior",
+    "psi": 0.4,
+    "psi_izolat": 0.1,
+    "desc": "Colț exterior din panouri prefabricate beton",
+    "detail": "Panouri de beton la colțul exterior al blocurilor prefabricate. Fără izolație: Ψ≈0,40. Cu ETICS 10cm: Ψ≈0,10. Ref: Mc 001-2022, reabilitare termică."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Planșeu prefabricat cu nervuri",
+    "psi": 0.2,
+    "psi_izolat": 0.08,
+    "desc": "Planșeu prefabricat cu nervuri din beton",
+    "detail": "Nervurile de beton ale planșeului nervurat creează punți multiple. Cu izolație continuă sub planșeu: Ψ≈0,08. Ref: ISO 14683:2017, EN ISO 10211."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Perete sandwich prefabricat — planșeu",
+    "psi": 0.08,
+    "psi_izolat": 0.04,
+    "desc": "Panou sandwich prefabricat cu miez izolant – planșeu",
+    "detail": "Panoul sandwich cu strat de EPS/PUR în miez are punte redusă la joncțiunea cu planșeul. Cu racord termic corect: Ψ≈0,04. Ref: producători panouri (Thermomass, etc.)."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Joncțiune panou cortină + cadru beton",
+    "psi": 0.2,
+    "psi_izolat": 0.07,
+    "desc": "Panou de fațadă cortină fixat pe cadru beton",
+    "detail": "Conexiunea mecanică dintre panoul de fațadă și structura de beton. Cu console izolate și etanșare: Ψ≈0,07. Ref: EN ISO 10211, atlas german punți termice."
+  },
+  {
+    "cat": "Structuri prefabricate",
+    "name": "Prindere panou prefabricat — conector metalic",
+    "psi": 0.15,
+    "psi_izolat": 0.06,
+    "desc": "Conector metalic de prindere panou prefabricat",
+    "detail": "Conectorul metalic traversează stratul de izolație al panoului sandwich. Cu conector din inox sau fibră de sticlă: Ψ≈0,06. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fațadă cortină — planșeu intermediar (neizolat)",
+    "psi": 0.4,
+    "psi_izolat": 0.08,
+    "desc": "Fațadă cortină la nivelul planșeului intermediar",
+    "detail": "Planșeul de beton interacționează cu profilele aluminiu ale cortinei. Fără ecran termic: Ψ≈0,40. Cu izolație la marginea planșeului + barieră termică în profil: Ψ≈0,08. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fațadă cortină — colț exterior",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Colțul exterior al fațadei cortină",
+    "detail": "Colțul fațadei cortină cu profil de aluminiu cu ruptură termică. Fără ruptură: Ψ≈0,10. Cu profil termorupt: Ψ≈0,04. Ref: EN ISO 10211, EN 13947."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fațadă ventilată — consolă prindere metalică",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Consolă metalică de prindere fațadă ventilată",
+    "detail": "Consola metalică de prindere a fațadei ventilate penetrează izolația. Per ml de consolă: Ψ≈0,07. Cu consolă din inox sau aluminiu cu ruptură termică: Ψ≈0,03. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fereastră de mansardă Velux — acoperiș",
+    "psi": 0.16,
+    "psi_izolat": 0.07,
+    "desc": "Perimetrul ferestrei de mansardă în acoperiș",
+    "detail": "Rama ferestrei de mansardă creează punte liniară în planul izolației de acoperiș. Cu guler izolant și montaj în izolație: Ψ≈0,07. Ref: Velux catalog, ISO 14683:2017."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fereastră la subsol — glaf",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Perimetrul ferestrei de subsol",
+    "detail": "Fereastra de subsol montată în perete parțial îngropat. Cu izolație perimetrală și casetă de ghidare: Ψ≈0,04. Ref: ISO 14683:2017, C107/4-1997."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Ușă balcon — prag",
+    "psi": 0.2,
+    "psi_izolat": 0.06,
+    "desc": "Pragul ușii de balcon (glissant/batant)",
+    "detail": "Pragul ușii de balcon cu profil din aluminiu sau PVC. Fără ruptură termică: Ψ≈0,20. Cu prag termorupt și izolație sub prag: Ψ≈0,06. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Fereastră de colț (corner window)",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Fereastră de colț – joncțiunea ramelor",
+    "detail": "Fereastra de colț cu profile de aluminiu sau PVC la 90°. Colțul creează punte liniară suplimentară. Cu profil termorupt: Ψ≈0,05. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Geam fix asamblat în fațadă",
+    "psi": 0.06,
+    "psi_izolat": 0.03,
+    "desc": "Geam fix structural în perete/fațadă",
+    "detail": "Geamul fix fără ramă mobilă, fixat direct în structura de fațadă. Cu garnitură termoizolantă și spumă PUR: Ψ≈0,03. Ref: EN ISO 10211, ISO 14683:2017."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Bandă ETICS la baza ferestrelor",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Racordul ETICS la glaf inferior fereastră",
+    "detail": "Profilul de tablă și banda de racord ETICS sub fereastră. Cu profil de picurare continuu și izolație în racord: Ψ≈0,01. Ref: ETAG 004, Mc 001-2022."
+  },
+  {
+    "cat": "Fațade și ferestre avansate",
+    "name": "Glaf lateral fereastră (stânga/dreapta)",
+    "psi": 0.05,
+    "psi_izolat": 0.02,
+    "desc": "Glaful lateral (stâng sau drept) al ferestrei",
+    "detail": "Fiecare glaf lateral al ferestrei contribuie cu o punte liniară verticală. Cu bandă de racord ETICS și izolație în nișă: Ψ≈0,02. Ref: ISO 14683:2017, RAL montaj ferestre."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Acoperiș verde extensiv — atic izolat",
+    "psi": 0.1,
+    "psi_izolat": 0.05,
+    "desc": "Aticul unui acoperiș verde extensiv",
+    "detail": "Aticul la acoperiș verde extensiv (substrat 8-15cm). Masa termoizolantă a substratului reduce puntea. Cu izolație continuă pe atic: Ψ≈0,05. Ref: FLL ghid acoperișuri verzi."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Acoperiș verde intensiv — atic",
+    "psi": 0.12,
+    "psi_izolat": 0.06,
+    "desc": "Aticul unui acoperiș verde intensiv",
+    "detail": "Aticul la acoperiș verde intensiv (substrat >15cm). Greutatea mai mare necesită atic mai robust, potențial cu mai multă conductivitate. Cu izolație atic: Ψ≈0,06. Ref: FLL."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Mansardă — conexiune perete exterior",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Joncțiunea mansardei cu peretele exterior",
+    "detail": "Zona de la piciorul șarpantei (tălpi căpriori + cosoroabă) pe peretele exterior. Cu izolație continuă și membrane: Ψ≈0,04. Ref: ISO 14683:2017, atlas german."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Mansardă — conexiune cu perete calcan",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Joncțiunea acoperișului cu peretele calcan",
+    "detail": "Peretele calcan al mansardei interacționează cu structura șarpantei. Cu izolație continuă în racord: Ψ≈0,03. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Gaură aerisire pod — perimetru",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Perimetrul golurilor de aerisire la streașină",
+    "detail": "Grilele de aerisire la streașina podului neîncălzit. Cu capac etanș pe perioada iernii și izolație: Ψ≈0,03. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Coamă acoperiș în consolă",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Coamă acoperiș cu streașină în consolă",
+    "detail": "Coama cu streașină extinsă în consolă. Elementele de lemn ale streașinii penetrează planul de izolație. Cu ecrane termoizolante: Ψ≈0,04. Ref: atlas german punți termice."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Trecere conductă prin planșeu terasă",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Conductă tehnică care penetrează terasa",
+    "detail": "Conductele de canalizare, HVAC sau termice care penetrează hidroizolația și termoizolația terasei. Cu manșon etanș și izolație: Ψ≈0,05. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Acoperiș avansat",
+    "name": "Fereastră acoperis plat (dome) — perimetru",
+    "psi": 0.18,
+    "psi_izolat": 0.08,
+    "desc": "Perimetrul cupolei/dome pe acoperiș plat",
+    "detail": "Cadrul cupolei de luminator creează punte liniară de perimetru pe terasa plată. Cu cadru din PVC termorupt și etanșare: Ψ≈0,08. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Consolă metalică balcon (profil HEA penetrant)",
+    "psi": 0.65,
+    "psi_izolat": 0.2,
+    "desc": "Grindă metalică HEA consolă balcon neîntreruptă",
+    "detail": "Profilele metalice HEA/HEB penetrante sunt extrem de conductoare (λ=58 W/mK). Fără izolație: Ψ≈0,65. Cu carcasă izolată și ruptură termică: Ψ≈0,20. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Consolă balcon prefabricată beton",
+    "psi": 0.32,
+    "psi_izolat": 0.1,
+    "desc": "Consolă balcon din beton prefabricat",
+    "detail": "Consolă de beton prefabricat fixată cu conectori la planșeul de beton interior. Fără ruptură: Ψ≈0,32. Cu ruptoare termice Schöck/Halfen: Ψ≈0,10. Ref: BR 497."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Parapet zidărie balcon — exterior",
+    "psi": 0.25,
+    "psi_izolat": 0.09,
+    "desc": "Parapetul de zidărie al balconului",
+    "detail": "Parapetul de zidărie/cărămidă al balconului creează punte la baza sa pe placa de beton. Cu izolație pe parapet și sub consolă: Ψ≈0,09. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Balcon cu izolație sub placă + laterale",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Balcon complet izolat termic pe toate fețele",
+    "detail": "Placa de balcon izolată pe sofita + laterale + parapet. Soluție de reabilitare completă. Ψ≈0,04 dacă ruptoarele termice sunt montate. Ref: Mc 001-2022, PHI."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Balcon suspendat (steel hanger)",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Balcon suspendat cu tiranți metalici din acoperiș",
+    "detail": "Balconul suspendat prin tiranți de oțel ancorați în planșeu/acoperiș. Tiranții subțiri: punte punctuală redusă. Cu tiranți din inox și izolație la penetrare: Ψ≈0,03. Ref: PHI."
+  },
+  {
+    "cat": "Balcoane avansate",
+    "name": "Ruptor termic Schöck Isokorb tip KXT",
+    "psi": 0.11,
+    "psi_izolat": 0.05,
+    "desc": "Ruptoare termice Schöck Isokorb tip KXT",
+    "detail": "Elementele Isokorb KXT pentru console de beton armat. Valoare declarată: Ψ≈0,11 per ml de consolă. Cu soluție completă de izolație pe sofita balconului: Ψ≈0,05. Ref: Schöck catalog."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Diblu metalic de prindere EPS",
+    "psi": 0.003,
+    "psi_izolat": 0.001,
+    "chi": true,
+    "desc": "Diblu metalic cu disc – valoare punctuală χ [W/K]",
+    "detail": "Diblul metalic de prindere a plăcilor EPS/MW în sistemul ETICS. Valoare punctuală χ≈0,003 W/K per diblu. La 6 dibluri/mp și 20cm izolație: ΔU≈0,018 W/m²K. Ref: EN ISO 14683:2017 Anexă, BR 443."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Diblu plastic cu ac metalic",
+    "psi": 0.001,
+    "psi_izolat": 0.0005,
+    "chi": true,
+    "desc": "Diblu plastic EPS cu ac central metalic – χ [W/K]",
+    "detail": "Diblul cu corp plastic și ac central de oțel are χ≈0,001 W/K per diblu. Soluție mult mai bună față de diblul integral metalic. Ref: EN ISO 14683:2017, BR 443."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Rost de dilatare ETICS",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Rost de dilatare în sistemul ETICS",
+    "detail": "Rostul de dilatare în sistemul termoizolant ETICS cu profil de PVC/aluminiu. Cu etanșare corectă și bandă termoizolantă: Ψ≈0,01. Ref: ETAG 004, Mc 001-2022."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Soclu ETICS — interfața cu solul",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Racordul ETICS la soclu/interfața cu terenul",
+    "detail": "Terminarea sistemului ETICS la nivelul soclului. Cu profil de soclu termoizolant, XPS sub trotuar și bordura de piatră: Ψ≈0,05. Ref: ETAG 004, Mc 001-2022."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Pervaz fereastră — profile de racord ETICS",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Profile de racord ETICS la pervaz/glaf fereastră",
+    "detail": "Profilul de glaf cu picurător și banda de îmbinare ETICS la pervazul ferestrei. Soluție standard: Ψ≈0,01. Ref: ETAG 004, RAL montaj ferestre."
+  },
+  {
+    "cat": "Sisteme ETICS",
+    "name": "Colț ETICS (profil de colț)",
+    "psi": 0.015,
+    "psi_izolat": 0.008,
+    "desc": "Profilul de colț exterior în sistemul ETICS",
+    "detail": "Profilul de colț cu plasă din fibră de sticlă în sistemul ETICS. Impact termic redus. Cu colțar termoizolant și strat de EPS: Ψ≈0,008. Ref: ETAG 004."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Ancoră de cavitate metalică (cavity wall tie)",
+    "psi": 0.004,
+    "chi": true,
+    "desc": "Ancoră metalică zidărie cu cavitate – χ [W/K]",
+    "detail": "Ancora metalică din oțel inox care leagă stratele zidăriei duble. χ≈0,004 W/K per ancoră. La 4 ancore/mp: ΔU≈0,016 W/m²K. Ref: EN ISO 14683:2017 Tabel 3, BR 443."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Ancoră de cavitate din plastic (cavity wall tie)",
+    "psi": 0.001,
+    "chi": true,
+    "desc": "Ancoră plastic/fibră sticlă – χ [W/K]",
+    "detail": "Ancora din nylon/fibră de sticlă pentru zidărie cu cavitate. χ≈0,001 W/K per ancoră. Soluție excelentă față de inox. Ref: EN ISO 14683:2017 Tabel 3."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Diblu metalic pentru izolație",
+    "psi": 0.002,
+    "chi": true,
+    "desc": "Diblu metalic de prindere izolație – χ [W/K]",
+    "detail": "Diblul metalic de prindere a plăcilor de izolație. χ≈0,002 W/K per diblu. Valoare tipică pentru oțel inox Ø6mm, L=200mm. Ref: EN ISO 14683:2017, BR 443."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Tijă metalică de prindere panou sandwich",
+    "psi": 0.008,
+    "chi": true,
+    "desc": "Tijă oțel prindere panou sandwich – χ [W/K]",
+    "detail": "Tija metalică de prindere care traversează miezul izolant al panoului sandwich. χ≈0,008 W/K per tijă. Cu tijă din fibră de sticlă: χ≈0,001 W/K. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Conector grindă metalică în beton",
+    "psi": 0.07,
+    "chi": true,
+    "desc": "Conector metalic grindă-beton – χ [W/K]",
+    "detail": "Conectorul metalic (placuță, bolț, profilele metalice) între grinda de oțel și structura de beton. χ≈0,07 W/K per conector. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Elemente punctuale (chi)",
+    "name": "Suport metalic fotovoltaic pe acoperiș",
+    "psi": 0.03,
+    "chi": true,
+    "desc": "Ancoră metalică panou fotovoltaic pe acoperiș – χ [W/K]",
+    "detail": "Suportul metalic de prindere a modulelor FV pe acoperiș, care penetrează hidroizolația și izolația. χ≈0,03 W/K per suport. Cu suport izolat și etanșat: χ≈0,01. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Trecere conductă termică izolată prin perete",
+    "psi": 0.06,
+    "psi_izolat": 0.02,
+    "desc": "Conductă termică izolată care traversează peretele",
+    "detail": "Conducta de distribuție termică cu izolație proprie (manșon armaflex) traversând anvelopa. Cu manșon termoizolant suplimentar și sigilare PUR: Ψ≈0,02. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Trecere cablu electric prin perete exterior",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Cablu sau tub de protecție prin peretele exterior",
+    "detail": "Trecerea cablului sau tubului de protecție prin anvelopă. Impact redus datorită diametrului mic. Cu sigilare cu spumă PUR și manșon etanș: Ψ≈0,01. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Grilă ventilație exterioară metalică",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Grilă metalică de ventilație în peretele exterior",
+    "detail": "Grila metalică (aluminiu/oțel) montată în perete pentru ventilație naturală. Cu cadru termoizolant PVC și sigilare perimetrală: Ψ≈0,05. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Priză aer HVAC prin perete exterior",
+    "psi": 0.1,
+    "psi_izolat": 0.04,
+    "desc": "Orificiu de priză aer proaspăt pentru HVAC/VMC",
+    "detail": "Racordul circular/dreptunghiular al prizei de aer pentru centrala VMC prin peretele exterior. Cu tubulătură izolată + etanșare perimetrală: Ψ≈0,04. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Coș fum inox dublu perete — exterior",
+    "psi": 0.12,
+    "psi_izolat": 0.05,
+    "desc": "Coș inox dublu perete (DW) aderent la fațadă",
+    "detail": "Coșul de fum DW cu izolație proprie adosată fațadei exterioare. Izolația proprie reduce puntea față de coșul clasic. Cu izolație suplimentară la racord: Ψ≈0,05. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Centrală termică — racord perete exterior",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Racorduri de perete ale centralei termice murale",
+    "detail": "Conductele de gaz, evacuare fum și alimentare aer ale centralei murale traversând peretele. Cu izolație individuală per conductă și sigilare: Ψ≈0,03. Ref: Mc 001-2022."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Panou solar termic — ancorare acoperiș",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Ancoră suport colector solar termic pe acoperiș",
+    "detail": "Suportul metalic al colectorului solar termic penetrând învelitoarea și izolația acoperișului. Cu etanșare și manșon termoizolant: Ψ≈0,01. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Instalații avansate",
+    "name": "Colectori fotovoltaici — ancorare acoperiș",
+    "psi": 0.02,
+    "psi_izolat": 0.008,
+    "desc": "Sistem de ancorare module FV pe acoperiș înclinat",
+    "detail": "Șinele și cârligele de prindere ale sistemului FV pe acoperiș cu șindrilă bituminoasă sau țiglă. Cu etanșare și izolație la penetrare: Ψ≈0,008. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Joncțiuni pereți",
+    "name": "Perete exterior — Perete int. neportant (compartimentare)",
+    "psi": 0.02,
+    "psi_izolat": 0.01,
+    "desc": "Joncțiune perete ext. cu perete interior neportant",
+    "detail": "Peretele de compartimentare din zidărie sau gips-carton nu penetrează izolația exterioară decât parțial. Punte redusă. Cu izolație pe primul tronson interior: Ψ≈0,01. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Ferestre",
+    "name": "Fereastră fixă la planșeu (bandă orizontală de geam)",
+    "psi": 0.07,
+    "psi_izolat": 0.03,
+    "desc": "Bandă de geam la nivelul planșeului intermediar",
+    "detail": "Geam fix continuu la nivelul planșeului de beton, montat în cadru de aluminiu. Planșeul creează punte la marginea geamului. Cu profil termorupt și izolație la margine: Ψ≈0,03. Ref: EN ISO 10211."
+  },
+  {
+    "cat": "Acoperiș",
+    "name": "Chepeng acces terasă — perimetru cadru",
+    "psi": 0.18,
+    "psi_izolat": 0.07,
+    "desc": "Perimetrul cadrului chepengului de acces la terasă",
+    "detail": "Cadrul metalic sau PVC al chepengului de acces la terasă. Cadrul penetrează stratul de termoizolație al terasei. Cu cadru termoizolant și racord hidroizolație: Ψ≈0,07. Ref: ISO 14683:2017."
+  },
+  {
+    "cat": "Stâlpi/grinzi",
+    "name": "Buiandrug prefabricat — deasupra ferestrei",
+    "psi": 0.1,
+    "psi_izolat": 0.03,
+    "desc": "Buiandrug prefabricat din beton la golul ferestrei",
+    "detail": "Buiandrugul din beton prefabricat deasupra ferestrei, montat în zidărie. Fără izolație frontală: Ψ≈0,10. Cu izolație ETICS care acoperă buiandrugul: Ψ≈0,03. Ref: Mc 001-2022, C107/4-1997."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete exterior – acoperiș terasă fără atic (racord direct)",
+    "psi": 0.72,
+    "psi_izolat": 0.12,
+    "desc": "Racord perete exterior la planșeu terasă plată fără atic",
+    "detail": "Punte termică la joncțiunea peretele exterior – planșeu terasă plată, fără element de atic. Ψ = 0.72 W/mK fără izolație continuă pe racord; cu termoizolație 12 cm continuă: Ψ = 0.12 W/mK. Sursă: ISO 14683:2017 tip R, DIN 4108-2."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete exterior – acoperiș terasă cu atic termoizolat",
+    "psi": 0.55,
+    "psi_izolat": 0.08,
+    "desc": "Racord perete exterior la planșeu terasă cu atic termoizolat continuu",
+    "detail": "Joncțiunea cu aticul în prelungirea peretelui exterior, izolație continuă pe aticul interior și planșeu. Ψ neizolat = 0.55 W/mK; cu termoizolație 10–14 cm continuă: Ψ = 0.08 W/mK. Sursă: ISO 14683:2017 Anexa C tip R, ASIEPI Good Practice Guidance."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete exterior – planșeu intermediar cu consolă beton neîntrerupt",
+    "psi": 0.85,
+    "psi_izolat": 0.2,
+    "desc": "Planșeu cu placă beton în consolă penetrând termoizolația fațadei",
+    "detail": "Placa de beton se extinde în consolă prin stratul de termoizolație. Ψ = 0.85 W/mK consolă neizolată; cu izolație perimetrală 8 cm sub consolă sau ruptor termic laminar: Ψ = 0.20 W/mK. Sursă: ISO 14683:2017 tip B, DIN 4108 Beiblatt 2."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete exterior – perete interior neportant din gips-carton",
+    "psi": 0.04,
+    "psi_izolat": 0.01,
+    "desc": "Racord perete exterior cu perete despărțitor ușor CW/UW pe structură metalică",
+    "detail": "Perete interior neportant din gips-carton racordat la peretele exterior. Impact mic, generat de profilele metalice de contur. Ψ = 0.04 W/mK; cu vată minerală de garnitură la racord: Ψ = 0.01 W/mK. Sursă: ISO 14683:2017 tip IW, PHPP catalog detalii."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete dublu (cavity wall) – soclu cu fundație",
+    "psi": 0.45,
+    "psi_izolat": 0.15,
+    "desc": "Joncțiunea peretelui dublu cu cavitate la nivelul fundației sau soclului",
+    "detail": "Perete dublu cu cavitate: bridging-ul la nivelul fundației și discontinuitatea izolației la soclu. Ψ = 0.45 W/mK; cu 50 mm EPS sub planșeu pe sol și izolație perimetrală: Ψ = 0.15 W/mK. Sursă: BR 497 UK, SAP 2012 Table K1 tip GF."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete cu structură metalică ușoară (CFS) – planșeu intermediar",
+    "psi": 0.5,
+    "psi_izolat": 0.1,
+    "desc": "Joncțiunea peretelui CFS cu planșeul intermediar, cu sau fără izolație exterioară",
+    "detail": "Pereți din profile metalice ușoare CFS (89–150 mm, λ oțel ≈ 50 W/mK). La nivelul planșeului, trackul metalic creează punte termică. Ψ = 0.50 W/mK fără izolație exterioară; cu 60 mm izolație rigidă exterioară: Ψ = 0.10 W/mK. Sursă: CFSD Report RP19-2, SCI P380."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete lemn (timber frame) – fundație/soclu",
+    "psi": 0.32,
+    "psi_izolat": 0.06,
+    "desc": "Racord perete de lemn cu fundație sau soclu, fără/cu izolație perimetrală",
+    "detail": "La racordul talpii inferioare a cadrului de lemn cu fundația, fără continuitate de termoizolație. Ψ = 0.32 W/mK; cu 80 mm EPS + barieră vânt: Ψ = 0.06 W/mK. Sursă: Accredited Construction Details Scotland 2010, passipedia.org."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete lemn (timber frame) – planșeu intermediar (rim joist)",
+    "psi": 0.18,
+    "psi_izolat": 0.04,
+    "desc": "Racord perete de lemn cu planșeul intermediar prin talpa de planșeu (rim joist)",
+    "detail": "Talpa orizontală la planșeu (rim joist) și grinzile de lemn întrerup stratificația de izolație. Ψ = 0.18 W/mK fără izolație exterioară; cu izolație exterioară continuă 40 mm: Ψ = 0.04 W/mK. Sursă: Accredited Construction Details Scotland, BC Hydro BETB Guide v1.3."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Perete exterior BCA cu stâlp beton (fără izolație fațadă)",
+    "psi": 0.9,
+    "psi_izolat": 0.15,
+    "desc": "Joncțiunea peretelui BCA cu stâlpul de beton armat expus, fără izolație pe fațadă",
+    "detail": "Stâlpul de beton armat (λ ≈ 1.7 W/mK) adiacent zidăriei de BCA (λ ≈ 0.20 W/mK). Ψ = 0.90 W/mK fără izolație; cu ETICS 10 cm EPS pe întreaga fațadă: Ψ = 0.15 W/mK. Sursă: C107/3 România, ISO 14683 tip P."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Joncțiune panou prefabricat mare – planșeu (bloc vechi)",
+    "psi": 0.6,
+    "psi_izolat": 0.2,
+    "desc": "Racord panou prefabricat din beton (tip OB, OM) cu planșeul intermediar la clădiri bloc",
+    "detail": "Panouri prefabricate mari cu rosturi betonate la planșee. Ψ = 0.60 W/mK neizolat; cu ETICS 10 cm: Ψ = 0.20 W/mK. Specifice blocurilor din panouri mari din anii 1960–1990. Sursă: C107/3 România categoria L, ASIEPI TP4."
+  },
+  {
+    "cat": "Joncțiuni pereți – tipuri speciale",
+    "name": "Joncțiune panou prefabricat – colț exterior (bloc)",
+    "psi": 0.3,
+    "psi_izolat": 0.08,
+    "desc": "Colț exterior la clădiri cu panouri prefabricate mari, rosturi verticale neizolate",
+    "detail": "La colțul clădirilor din panouri prefabricate, rostul vertical creează pierderi termice. Ψ = 0.30 W/mK neizolat; cu ETICS 8–10 cm: Ψ = 0.08 W/mK. Sursă: C107/3 România, ISO 14683 tip C."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fereastră de mansardă (tip Velux) – racord cu acoperișul înclinat",
+    "psi": 0.34,
+    "psi_izolat": 0.1,
+    "desc": "Punte termică la perimetrul ferestrei de mansardă montate în acoperișul înclinat",
+    "detail": "Fereastra de acoperiș montată în structura căpriorilor cu garnituri de etanșare. Ψ = 0.34 W/mK montaj neizolat; cu kit de izolație standard și manșon termoizolant: Ψ = 0.10 W/mK. Sursă: DIN 4108 Beiblatt 2 Dachflächenfenster, VELUX technical data."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Ușă balcon – pragul cu punte termică",
+    "psi": 0.28,
+    "psi_izolat": 0.1,
+    "desc": "Pragul ușii de balcon cu punte termică la racordul cu planșeul",
+    "detail": "Continuarea planșeului de beton sau pardoselii sub tocul ușii fără ruptor termic. Ψ = 0.28 W/mK; cu profil special de prag termoizolat sau întreruptor termic de prag: Ψ = 0.10 W/mK. Sursă: ISO 14683:2017 tip W, BR 497 SAP Table K1."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fereastră la subsol (montaj sub cota terenului)",
+    "psi": 0.4,
+    "psi_izolat": 0.12,
+    "desc": "Fereastră montată în peretele subsolului parțial sau total subteran",
+    "detail": "Fereastra de subsol cu contact la sol pe laterale și inferior. Ψ = 0.40 W/mK fără izolație perimetrală; cu izolație pe exteriorul peretelui subsolului: Ψ = 0.12 W/mK. Sursă: ISO 14683, passipedia.org."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fațadă cortină – ancorare la planșeu intermediar (brackets)",
+    "psi": 0.65,
+    "psi_izolat": 0.18,
+    "desc": "Punte termică la nivelul planșeului intermediar al fațadei cortină, la consolele de prindere",
+    "detail": "Consolele metalice ale fațadei cortină penetrează stratul de termoizolație perimetrală. Ψ = 0.65 W/mK pentru ancoraje metalice directe; cu console termorupte sau garnitură termoizolantă: Ψ = 0.18 W/mK. Sursă: Glass Magazine, ASHRAE, ISO 14683."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fațadă cortină – zona spandrel la planșeu",
+    "psi": 0.5,
+    "psi_izolat": 0.14,
+    "desc": "Punte termică la zona spandrel a fațadei cortină, joncțiunea montant–planșeu",
+    "detail": "Zona spandrel îmbină panoul opac cu placa de planșeu; montanții din aluminiu creează punți termice continue. Ψ = 0.50 W/mK; cu spandrel termoizolat și rupturi termice la montanți: Ψ = 0.14 W/mK. Sursă: ASHRAE Buildings XV Paper, Glass Magazine."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fereastră de colț (corner window) – stâlp de colț",
+    "psi": 0.35,
+    "psi_izolat": 0.08,
+    "desc": "Punte termică la stâlpul sau profilul de colț între două ferestre alăturate de colț",
+    "detail": "Fereastra de colț elimină elementul structural opac; profilul de colț metalic creează punte termică. Ψ = 0.35 W/mK profil metalic; cu profil de colț termoizolat sau PVC: Ψ = 0.08 W/mK. Sursă: ISO 14683 tip W, calcule FEM specifice."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Montaj fereastră în planul izolației exterioare (Compacfoam/EPS dur)",
+    "psi": 0.07,
+    "psi_izolat": 0.02,
+    "desc": "Fereastră montată în planul termoizolației exterioare cu suport Compacfoam sau EPS dur",
+    "detail": "Montajul ferestrei în planul izolației cu Compacfoam CF125 (λ=0.038 W/mK) sau EPS dur. Ψ montaj standard (retras în gol): 0.07 W/mK; cu montaj avansat în planul ETICS: Ψ = 0.02 W/mK. Sursă: Compacfoam technical data, DIN 4108 Beiblatt 2 Fenstereinbau."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Fereastră montată adânc în stratul termoizolant (Passivhaus deep)",
+    "psi": 0.03,
+    "psi_izolat": 0.01,
+    "desc": "Fereastră cu tocul în mijlocul sau deasupra stratului de izolație, montaj ultra-performant",
+    "detail": "Tocul ferestrei înconjurat de izolație pe toate laturile. Ψ = 0.03 W/mK cu montaj parțial în izolație; Ψ = 0.01 W/mK cu montaj complet cu Compacfoam + extindere glaf. Sursă: passipedia.org (Ψ_window citat ≈ 0.017 W/mK)."
+  },
+  {
+    "cat": "Ferestre și uși – tipuri speciale",
+    "name": "Glaf metalic exterior (tablă oțel/aluminiu) sub fereastră",
+    "psi": 0.2,
+    "psi_izolat": 0.06,
+    "desc": "Punte termică la glaful metalic exterior de tablă montat sub fereastră",
+    "detail": "Glaful metalic (aluminiu λ ≈ 160 W/mK sau tablă oțel λ ≈ 50 W/mK) cu contact direct la structura zidului. Ψ = 0.20 W/mK; cu glaf din PVC sau pad din EPDM/neopren: Ψ = 0.06 W/mK. Sursă: ISO 14683 tip W, calcule FEM."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Consolă metalică balcon (profil HEA/IPE penetrant)",
+    "psi": 1.2,
+    "psi_izolat": 0.15,
+    "desc": "Grindă metalică HEA/IPE care penetrează peretele exterior și susține balconul",
+    "detail": "Profil metalic structural (λ ≈ 50 W/mK) ce trece complet prin peretele exterior. Ψ = 1.20 W/mK pentru HEA160 fără termoizolație; cu manșon termoizolant + ETICS continuu: Ψ = 0.15 W/mK. Sursă: ISO 14683, passipedia.org."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Consolă balcon prefabricată (conectori din oțel inox/GFRP)",
+    "psi": 0.65,
+    "psi_izolat": 0.25,
+    "desc": "Consolă de balcon prefabricată din beton cu conectori termorupți din inox sau fibră de sticlă",
+    "detail": "Element prefabricat cu conectori din oțel inox (λ = 17 W/mK) sau GFRP. Ψ = 0.65 W/mK cu conectori oțel carbon; cu inox sau GFRP: Ψ = 0.25 W/mK. Comparativ, balcon monolitic neizolat: 0.85 W/mK. Sursă: Leviat Ancon STC catalog, ISO 14683."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Parapet zidărie balcon exterior neîncălzit",
+    "psi": 0.22,
+    "psi_izolat": 0.06,
+    "desc": "Punte termică la racordul parapetului de zidărie al balconului cu placa balconului",
+    "detail": "Parapetul de zidărie (BCA, cărămidă) racordat la placa balconului. Ψ = 0.22 W/mK neizolat; cu izolație pe fața interioară a parapetului: Ψ = 0.06 W/mK. Sursă: ISO 14683 tip B, calcule FEM."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Ruptoare termice Schöck Isokorb tip K (beton-beton, 80 mm)",
+    "psi": 0.85,
+    "psi_izolat": 0.19,
+    "desc": "Element Isokorb tip K pentru balcoane în consolă beton-beton, izolație 80 mm, tije inox",
+    "detail": "Schöck Isokorb tip K: izolație 80 mm, tije de inox. Consolă neizolată de referință: Ψ = 0.85 W/mK. Cu Isokorb K (80 mm): Ψ ≈ 0.19 W/mK. Certificat ETA-06/0134. Sursă: Schöck Isokorb Technical Data, Thermal Bridging Guide 2018."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Ruptoare termice Schöck Isokorb tip KXT (beton-beton, 120 mm, Passivhaus)",
+    "psi": 0.85,
+    "psi_izolat": 0.11,
+    "desc": "Element Isokorb KXT pentru balcoane în consolă, izolație 120 mm, nivel Passivhaus",
+    "detail": "Schöck Isokorb KXT: izolație 120 mm, tije de inox, performanță Passivhaus. Cu element montat: Ψ ≈ 0.11 W/mK (față de 0.19 W/mK tip K). Certificat BBA. Sursă: Schöck Isokorb XT type K datasheet, passipedia.org."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Ruptoare termice Schöck Isokorb tip KS (oțel-beton)",
+    "psi": 0.85,
+    "psi_izolat": 0.15,
+    "desc": "Element Isokorb KS pentru conectarea elementelor metalice la structura de beton",
+    "detail": "Schöck Isokorb KS: conectori pentru profile de oțel la planșeu de beton, balcoane metalice sau structuri hibride metal-beton. Ψ cu element ≈ 0.15 W/mK. Sursă: Schöck USA KS product page, Thermal Bridging Guide."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Ruptoare termice Halfen HIT-HP (80 mm) și HIT-SP (120 mm)",
+    "psi": 0.85,
+    "psi_izolat": 0.15,
+    "desc": "Element Halfen HIT-HP/SP pentru izolarea termică a consolelor de balcon",
+    "detail": "Halfen HIT: bare din inox și fibră de bazalt. HIT-HP (80 mm): Ψ ≈ 0.18 W/mK; HIT-SP (120 mm): Ψ ≈ 0.12–0.15 W/mK. REI 120 certificat. Sursă: Halfen HIT catalog, Leviat NBS Source."
+  },
+  {
+    "cat": "Balcoane și logii – tipuri speciale",
+    "name": "Ruptoare termice Leviat Ancon Isotec (oțel inox, beton-beton)",
+    "psi": 0.85,
+    "psi_izolat": 0.16,
+    "desc": "Ancon Isotec: ruptori termici din oțel inox și nylon pentru console de balcon beton-beton",
+    "detail": "Leviat Ancon Isotec: bare din oțel inox (λ = 17 W/mK) cu pad termic din nylon la interfață. Ψ cu element ≈ 0.16 W/mK. Certificat ETA. Sursă: Leviat Ancon Isotec NBS Source, thermal modeling."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Radier general – racordul cu peretele exterior (cu/fără izolație perimetrală)",
+    "psi": 0.55,
+    "psi_izolat": 0.14,
+    "desc": "Joncțiunea radierului general termoizolat cu peretele exterior la nivelul soclului",
+    "detail": "Radier din beton armat cu izolație sub radier (XPS 10 cm). Ψ = 0.55 W/mK fără izolație perimetrală; cu izolație perimetrală verticală 8 cm XPS + sub radier: Ψ = 0.14 W/mK. Sursă: passipedia.org, ISO 14683 tip F."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Fundație bandă – perete exterior cu izolație sub planșeu pe sol",
+    "psi": 0.42,
+    "psi_izolat": 0.1,
+    "desc": "Fundație continuă la peretele exterior cu izolație sub planșeul pe sol",
+    "detail": "Fundație bandă din beton: izolația sub planșeul pe sol nu acoperă fundația. Ψ = 0.42 W/mK; cu izolație perimetrală + extensie sub sol pe 1 m: Ψ = 0.10 W/mK. Sursă: SAP 2012 Table K1 tip GF, ISO 14683 tip F."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Soclul subsolului parțial (perete subsol ieșit din pământ)",
+    "psi": 0.65,
+    "psi_izolat": 0.18,
+    "desc": "Zona soclului la clădirile cu subsol parțial, porțiunea expusă a peretelui de subsol",
+    "detail": "Peretele de subsol ieșit din pământ (30–80 cm) fără izolație. Ψ = 0.65 W/mK neizolat; cu izolație pe fața exterioară a soclului expus (8–12 cm XPS): Ψ = 0.18 W/mK. Sursă: ISO 14683 tip F, C107/3 România tip D."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Perete subsol – planșeu deasupra subsolului neîncălzit",
+    "psi": 0.48,
+    "psi_izolat": 0.12,
+    "desc": "Joncțiunea planșeului care delimitează subsolul neîncălzit de parterul încălzit",
+    "detail": "Planșeul de deasupra subsolului neîncălzit, izolat pe intrados. La racordul cu peretele exterior punte termică prin grinzi. Ψ = 0.48 W/mK; cu izolație continuă pe intrados extinsă pe peretele subsolului: Ψ = 0.12 W/mK. Sursă: ISO 14683, SAP 2012, C107/3."
+  },
+  {
+    "cat": "Fundații și subsol",
+    "name": "Fundație izolată tip Passivhaus (XPS sub radier + perimetrală în L)",
+    "psi": 0,
+    "psi_izolat": -0.06,
+    "desc": "Fundație complet izolată Passivhaus: XPS sub radier + perimetrală în formă de L",
+    "detail": "XPS 20+ cm sub radier + izolație verticală 10 cm pe exterior + izolație orizontală 100 cm la exterior. Ψ = -0.06 W/mK (efect geometric favorabil, confirmat prin calcul FEM). Sursă: passipedia.org exemplu calcul Ψ = -0.062 W/mK."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Acoperiș verde extensiv – punte termică la atic",
+    "psi": 0.45,
+    "psi_izolat": 0.12,
+    "desc": "Racord acoperiș verde cu aticul, considerând masa suplimentară și umiditatea substratelor",
+    "detail": "Acoperișul verde extensiv (substrat 8–15 cm, λ ≈ 0.5–0.8 W/mK saturat). Puntea termică la atic similară celei standard. Ψ = 0.45 W/mK atic neizolat; cu atic termoizolat complet: Ψ = 0.12 W/mK. Sursă: ISO 14683, calcule comparative."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Mansardă (dormer) – racordul cu peretele exterior al etajului",
+    "psi": 0.38,
+    "psi_izolat": 0.08,
+    "desc": "Joncțiunea peretelui frontal al mansardei cu peretele exterior sau acoperișul înclinat",
+    "detail": "Perete vertical mansardă–perete exterior etaj: căpriorii și talpa penetrează izolația. Ψ = 0.38 W/mK; cu barieră termoizolantă continuă și umplere completă a căpriorilor cu vată: Ψ = 0.08 W/mK. Sursă: DIN 4108 Beiblatt 2 Sparrendach, ISO 14683."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Gaură de aerisire în acoperiș (vent la coamă sau streașină)",
+    "psi": 0.15,
+    "psi_izolat": 0.05,
+    "desc": "Punte termică la elementele de ventilare instalate în învelitoarea acoperișului",
+    "detail": "Ventilele de coamă sau streașine (plastic/aluminiu/tablă galvanizată). Ψ = 0.15 W/mK pentru ventil metalic; cu ventil din plastic termoizolat: Ψ = 0.05 W/mK. Sursă: practici constructive, ISO 10211."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Termoizolație discontinuă vs. continuă la coama acoperișului",
+    "psi": 0.28,
+    "psi_izolat": 0.04,
+    "desc": "Comparație: izolație între căpriori (discontinuă) vs. izolație exterioară continuă la coamă",
+    "detail": "Izolație doar între căpriori: Ψ la coamă = 0.28 W/mK. Cu adaos de izolație rigidă continuă sub/deasupra căpriorilor (sarking board): Ψ = 0.04 W/mK. Standard Passivhaus: izolație continuă obligatorie. Sursă: passipedia.org, DIN 4108, EN 15026."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Acoperiș șarpantă – punte termică repetitivă a căpriorilor neizolați",
+    "psi": 0.12,
+    "psi_izolat": 0.03,
+    "desc": "Punte termică liniară prin căpriorii neizolați în planul acoperișului înclinat (punte repetitivă)",
+    "detail": "Fiecare căprior (λ ≈ 0.13 W/mK) față de izolația din baia (λ ≈ 0.036 W/mK): Ψ per căprior = 0.12 W/mK. Cu izolație rigidă continuă 6 cm pe deasupra structurii: Ψ ≈ 0.03 W/mK. Notă: punte repetitivă, inclusă în U-value. Sursă: ISO 6946, EN 13791."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Perete calcan (median) – racordul cu acoperișul",
+    "psi": 0.3,
+    "psi_izolat": 0.08,
+    "desc": "Joncțiunea peretelui calcan ieșit din planul acoperișului cu termoizolația planului de acoperiș",
+    "detail": "Peretele calcan ieșit din acoperiș: lipsa izolației la racord creează punte termică liniară. Ψ = 0.30 W/mK; cu umplere completă cu vată și barieră termică pe calcan: Ψ = 0.08 W/mK. Sursă: DIN 4108 Beiblatt 2, ISO 14683."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Luminatoare (skylight) – cadru aluminiu în acoperiș plat",
+    "psi": 0.55,
+    "psi_izolat": 0.18,
+    "desc": "Punte termică la perimetrul luminatorului cu cadru metalic montat în acoperiș plat",
+    "detail": "Luminatoare din sticlă/policarbonat cu cadru aluminiu montate în acoperiș plat. Ψ = 0.55 W/mK cadru aluminiu direct; cu cadru cu ruptori termici + garnitură: Ψ = 0.18 W/mK. Sursă: ISO 14683 Skylight type, ASHRAE."
+  },
+  {
+    "cat": "Acoperiș – tipuri speciale",
+    "name": "Atic din zidărie – coronament beton armat (bloc de locuințe)",
+    "psi": 0.48,
+    "psi_izolat": 0.1,
+    "desc": "Puntea termică la coronamentul aticului din zidărie cu capac din beton armat",
+    "detail": "Aticul din zidărie cu coronament beton armat: lipsa izolației pe coronament și pe fața interioară. Ψ = 0.48 W/mK; cu izolație pe fața interioară + coronament termoizolat (EPS sau PIR): Ψ = 0.10 W/mK. Sursă: ISO 14683 tip R, DIN 4108."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Stâlp HEB/HEA din oțel în peretele exterior (structură metalică)",
+    "psi": 1.5,
+    "psi_izolat": 0.25,
+    "desc": "Stâlp structural din oțel inclus în planul peretelui exterior fără termoizolație suficientă",
+    "detail": "Stâlpul de oțel HEB/HEA (λ ≈ 50 W/mK) în grosimea peretelui exterior fără izolație: Ψ = 1.50 W/mK. Cu ETICS 12 cm EPS și izolație locală pe stâlp: Ψ = 0.25 W/mK. Sursă: SCI P380, ISO 14683 tip P."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Nervuri de beton la planșee nervurate (coaste)",
+    "psi": 0.25,
+    "psi_izolat": 0.08,
+    "desc": "Punte termică creată de nervurile de beton ale planșeelor nervurate",
+    "detail": "Planșee nervurate (tip T sau U): nervurile de beton (λ ≈ 1.7 W/mK) alternează cu corpuri de umplutură (λ ≈ 0.03–0.15 W/mK). Ψ per nervură = 0.25 W/mK; cu termoizolație pe intrados: Ψ = 0.08 W/mK. Sursă: ISO 6946, calcule FEM comparative."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Capete de grindă de lemn încastrate în peretele de zidărie",
+    "psi": 0.15,
+    "psi_izolat": 0.04,
+    "desc": "Capătul grinzii de lemn încastrat în peretele exterior: punte termică și risc de condens",
+    "detail": "Grinda de lemn (λ ≈ 0.13 W/mK) încastrată în zidărie/beton: capătul expus la temperatura exterioară. Ψ = 0.15 W/mK per grindă; cu manșon termoizolant și separare de zidărie: Ψ = 0.04 W/mK. Sursă: ISO 10211, practici constructive."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Capete de grindă metalică rezemate pe peretele exterior",
+    "psi": 0.45,
+    "psi_izolat": 0.12,
+    "desc": "Grindă metalică IPE/HEA rezemată sau încastrată parțial în peretele exterior",
+    "detail": "Capătul grinzii metalice (oțel, λ = 50 W/mK) rezemat pe/în peretele exterior. Ψ = 0.45 W/mK; cu pad din poliamidă sau manșon EPS + ETICS exterior: Ψ = 0.12 W/mK. Sursă: SCI P380, ISO 10211."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Panou prefabricat sandwich beton cu conectori GFRP",
+    "psi": 0.12,
+    "psi_izolat": 0.04,
+    "desc": "Conectori din fibră de sticlă GFRP în panoul sandwich: punte termică minimizată",
+    "detail": "Panou sandwich (beton 60–80 mm + EPS/PIR 100–150 mm + beton 120–150 mm) cu conectori GFRP (λ ≈ 0.35–0.40 W/mK). Ψ la joncțiunea cu planșeul: 0.12 W/mK; cu conectori GFRP optimizați: Ψ = 0.04 W/mK. Sursă: Springer IJCSM 2021, PCI sandwich panel guide."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Panou prefabricat sandwich beton cu conectori de oțel (clasic)",
+    "psi": 0.45,
+    "psi_izolat": 0.15,
+    "desc": "Conectori clasici din oțel în panoul sandwich prefabricat: punte termică semnificativă",
+    "detail": "Panouri sandwich cu conectori din oțel carbon (λ = 50 W/mK), φ 4–8 mm. Pierdere R-value: 30–56% față de panou fără conectori. Ψ la planșeu: 0.45 W/mK; cu înlocuire conectori GFRP sau ETICS exterior: Ψ = 0.15 W/mK. Sursă: Springer IJCSM 2021."
+  },
+  {
+    "cat": "Structuri speciale",
+    "name": "Profile de racord ETICS la soclu (drip profile + izolație soclu)",
+    "psi": 0.18,
+    "psi_izolat": 0.05,
+    "desc": "Punte termică la racordul sistemului ETICS cu soclul, la profilul de bordare",
+    "detail": "Profilul de bordare la baza ETICS marchează tranziția izolație fațadă–izolație soclu. Ψ = 0.18 W/mK cu discontinuitate; cu izolație ETICS extinsă sub cota terenului min. 30 cm + XPS soclu: Ψ = 0.05 W/mK. Sursă: DIN 4108 Beiblatt 2, catalog WDVS."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Trecere conductă termică (Cu/OL) prin perete exterior (chi)",
+    "psi": 0,
+    "psi_izolat": 0.03,
+    "chi": true,
+    "desc": "Punte termică punctuală (chi) a conductei metalice de termoficare prin perete exterior",
+    "detail": "Conductă oțel sau cupru φ 20–40 mm prin perete exterior. Chi (χ) = 0.015–0.050 W/K per trecere. Conductă Cu φ 22 mm neizolată: χ ≈ 0.030 W/K; cu manșon termoizolant la trecere (50 mm EPS tubular): χ ≈ 0.005 W/K. Sursă: ISO 10211, EN 1264, calcule FEM."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Trecere cablu electric prin perete exterior (chi)",
+    "psi": 0,
+    "psi_izolat": 0.002,
+    "chi": true,
+    "desc": "Punte termică punctuală (chi) a cablurilor electrice prin peretele exterior",
+    "detail": "Grupuri de cabluri PVC φ 16–25 mm prin perete exterior. χ ≈ 0.002 W/K per trecere; cu dopuri de etanșare termoizolante: χ ≈ 0.001 W/K. Important și pentru etanșeitate la aer (airtightness). Sursă: ISO 10211, practici Passivhaus."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Suport metalic panou solar termic – ancorare pe acoperiș (chi)",
+    "psi": 0,
+    "psi_izolat": 0.025,
+    "chi": true,
+    "desc": "Punte termică punctuală (chi) a suportului metalic al panoului solar penetrând învelitoarea",
+    "detail": "Suportul de montaj (oțel inox, aluminiu) penetrează învelitoarea și eventual izolația acoperișului. Chi per suport: χ = 0.010–0.040 W/K; la 4 suporturi/panou, 1 panou/10 m²: ΔU ≈ 0.004–0.016 W/(m²K). Cu suporturi termoizolate: χ ≈ 0.005–0.010 W/K. Sursă: EOTA TR 025, EN ISO 6946."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Priză de aer exterior HVAC prin perete (chi)",
+    "psi": 0,
+    "psi_izolat": 0.08,
+    "chi": true,
+    "desc": "Punte termică la caseta dreptunghiulară a prizei de aer proaspăt HVAC prin peretele exterior",
+    "detail": "Casetă metalică (oțel zincat) 200×200 mm prin perete exterior. Chi echivalent = 0.05–0.12 W/K; cu izolație locală pe periferia casetei la traversarea izolației + garnitură EPDM: χ ≈ 0.020–0.040 W/K. Sursă: practici constructive Passivhaus, ISO 10211."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Coș de fum exterior din zidărie – racordul cu peretele exterior",
+    "psi": 0.55,
+    "psi_izolat": 0.18,
+    "desc": "Punte termică liniară la racordul coșului de fum exterior din zidărie cu peretele exterior",
+    "detail": "Coșul de fum din zidărie sau inox adosat pe exterior creează punte termică pe toată înălțimea. Ψ = 0.55 W/mK; cu izolație la racord și joncțiune umplută termoizolant: Ψ = 0.18 W/mK. Sursă: practici constructive, calcule FEM."
+  },
+  {
+    "cat": "Instalații – tipuri speciale",
+    "name": "Coș metalic dublu perete penetrant acoperiș/perete (chi)",
+    "psi": 0,
+    "psi_izolat": 0.05,
+    "chi": true,
+    "desc": "Coș metalic izolat (inox dublu perete) penetrând perete sau acoperiș",
+    "detail": "Coș de fum metalic dublu perete (inox + izolație 25 mm) penetrând acoperiș/perete. Chi la penetrare: χ = 0.030–0.080 W/K (Ø100–200 mm); cu manșon termoizolant la trecere + garnitură: χ ≈ 0.010–0.030 W/K. Sursă: ISO 10211, norme instalații."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Perete exterior – fundație din piatră sau beton nearmat (construcție veche)",
+    "psi": 0.8,
+    "psi_izolat": 0.2,
+    "desc": "Racord specific clădirilor vechi cu fundație din piatră nearmate, fără izolație",
+    "detail": "Clădiri vechi cu fundații masive din piatră (λ ≈ 1.5–2.3 W/mK) sau beton nearmat. Ψ = 0.80 W/mK; cu reabilitare: izolație exterioară pe soclu + umplere rost: Ψ = 0.20 W/mK. Sursă: C107/3, practici audit energetic România."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Nișă pentru radiator (cutie încastrată în perete exterior)",
+    "psi": 0.35,
+    "psi_izolat": 0.05,
+    "desc": "Punte termică la nișa din peretele exterior destinată montajului radiatorului",
+    "detail": "Nișa de radiator (adâncime 10–20 cm) subțiază peretele exterior la 10–15 cm. Ψ perimetral = 0.35 W/mK; cu izolație rigidă în spatele nișei (PIR 30 mm): Ψ = 0.05 W/mK. Sursă: passipedia.org, C107/3 practici."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Racord perete exterior cu scara exterioară/treaptă beton",
+    "psi": 0.4,
+    "psi_izolat": 0.1,
+    "desc": "Punte termică la racordul scării exterioare din beton sau metal cu peretele exterior",
+    "detail": "Rampa sau treapta scării exterioare din beton conectată la planșeul parterului. Ψ = 0.40 W/mK fără separare termică; cu ruptoare termice din neopren/EPS la sprijin: Ψ = 0.10 W/mK. Sursă: ISO 14683, practici constructive europene."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Perete exterior cu izolație interioară (izoport) – punți reziduale la planșee",
+    "psi": 0.55,
+    "psi_izolat": 0.12,
+    "desc": "Sistem de izolație interioară la reabilitare: punțile nerezolvate la planșee și stâlpi",
+    "detail": "Izolarea interioară nu rezolvă punțile la planșee și stâlpi. Ψ la planșeu rămâne: 0.55 W/mK; cu acoperire izolație interioară extinsă pe planșeu 50 cm: Ψ = 0.12 W/mK. Atenție: risc condens interstițial. Sursă: DIN 4108-3, C107/3 România."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Grindă de beton cu încastrare adâncă (buiandrug 20–30 cm rezemare)",
+    "psi": 0.65,
+    "psi_izolat": 0.18,
+    "desc": "Buiandrug din beton armat cu rezemare adâncă în zidărie, fără ruptori termici",
+    "detail": "Buiandrug de beton armat cu rezemare 20–30 cm în zidărie pe fiecare latură, fără izolație locală. Ψ = 0.65 W/mK; cu cărămizi termoizolante la capetele buiandrugului + ETICS: Ψ = 0.18 W/mK. Sursă: ISO 14683 tip P, C107/3 tip E."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Perete exterior monolit beton turnat (clădire veche) – planșeu intermediar",
+    "psi": 0.5,
+    "psi_izolat": 0.12,
+    "desc": "Perete monolit de beton turnat fără izolație la racordul cu planșeul intermediar",
+    "detail": "Clădiri din beton monolit (λ ≈ 1.7 W/mK) din anii 1970–1990: la nivelul planșeelor placa continuă prin perete. Ψ = 0.50 W/mK; cu ETICS 10 cm EPS + izolație perimetrală la planșeu: Ψ = 0.12 W/mK. Sursă: C107/3 tip L, practici audit energetic."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Planșeu pe sol cu screed flotant – bandă elastică perimetrală lipsă",
+    "psi": 0.15,
+    "psi_izolat": 0.04,
+    "desc": "Punte termică reziduală la perete exterior când lipsește banda elastică perimetrală a screedului flotant",
+    "detail": "Pardoseala flotantă fără bandă elastică perimetrală continuă la perete: întrerupere a termoizolației. Ψ = 0.15 W/mK; cu bandă elastică continuă min. 10 mm EPS: Ψ = 0.04 W/mK. Sursă: DIN 4109, EN ISO 14683."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Acoperiș invers (inverted roof) – puntea la atic sau perete periferic",
+    "psi": 0.38,
+    "psi_izolat": 0.1,
+    "desc": "Acoperișul cald cu termoizolație deasupra membranei (inverted): puntea la atic sau margine",
+    "detail": "Acoperișul invers (XPS deasupra membranei): membrana la temperatura mediei. Puntea la atic este redusă față de acoperișul convențional. Ψ = 0.38 W/mK atic neizolat; cu atic termoizolat interior: Ψ = 0.10 W/mK. Sursă: ISO 14683, DIN 4108."
+  },
+  {
+    "cat": "Joncțiuni speciale",
+    "name": "Cutie de rulou/jaluzele integrată în sistemul ETICS (cu gol de montaj)",
+    "psi": 0.3,
+    "psi_izolat": 0.08,
+    "desc": "Cutia de rulou sau jaluzele montată în stratul de izolație ETICS sau în grosimea peretelui",
+    "detail": "Cutia de rulou (tablă λ = 50 W/mK, interior neizolat) în stratul de izolație. Ψ = 0.30 W/mK; cu cutie termoizolată intern (polistiren 20 mm) sau cutie preizolată: Ψ = 0.08 W/mK. Sursă: DIN 4108 Beiblatt 2 Rollladenkasten, C107/3 categoria J."
   }
 ]

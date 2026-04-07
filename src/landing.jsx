@@ -241,9 +241,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,10,26,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "0 24px" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "24px" }}>⚡</span>
-            <span style={{ fontSize: "20px", fontWeight: "800", color: "#f59e0b" }}>Zephren</span>
-            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700", marginLeft: "4px" }}>v3.2</span>
+            <img src="/logo.svg" alt="Zephren" style={{ height: "40px", width: "auto" }} />
+            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v3.2</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)", textDecoration: "none" }}>Functionalitati</a>
@@ -269,12 +268,15 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
       {/* ═══ HERO ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "100px 24px 80px", textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "32px" }}>
+          <img src="/logo.svg" alt="Zephren" style={{ width: "min(420px, 85vw)", height: "auto" }} />
+        </div>
         <div style={{ display: "inline-block", padding: "4px 16px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "24px" }}>
           Mc 001-2022 · ISO 52000-1/NA:2023 · EPBD 2024/1275 · Legea 238/2024
         </div>
         <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "24px" }}>
-          Calculator performanta<br />
-          <span style={{ color: "#f59e0b" }}>energetica cladiri</span>
+          Calculator performanță<br />
+          <span style={{ color: "#f59e0b" }}>energetică clădiri</span>
         </h1>
         <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.5)", maxWidth: "640px", margin: "0 auto 40px", lineHeight: 1.6 }}>
           Software profesional pentru auditori energetici. Certificat de performanta energetica conform Mc 001-2022,
