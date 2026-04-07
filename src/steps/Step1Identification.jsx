@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
+import IFCImport from "../components/IFCImport.jsx";
+import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -112,6 +114,8 @@ export default function Step1Identification({
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [geoSuggestion, setGeoSuggestion] = useState(null);
+  const [showIFC, setShowIFC] = useState(false);
+  const [showOCR, setShowOCR] = useState(false);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importPanelOpen, setImportPanelOpen] = useState(false);
@@ -262,6 +266,24 @@ export default function Step1Identification({
     e.target.value = "";
   }, [applyImportedClimate]);
 
+  // ── Handler IFC/BIM import ───────────────────────────────────────────────────
+  const handleIFCApply = useCallback((data) => {
+    if (data.address) updateBuilding("address", data.address);
+    if (data.areaUseful != null) updateBuilding("areaUseful", String(data.areaUseful));
+    if (data.volume != null) updateBuilding("volume", String(data.volume));
+    setShowIFC(false);
+    showToast("Date IFC/BIM aplicate cu succes", "success");
+  }, [updateBuilding, showToast]);
+
+  // ── Handler InvoiceOCR import ────────────────────────────────────────────────
+  const handleOCRApply = useCallback((data) => {
+    try {
+      localStorage.setItem("zephren_measured_consumption", JSON.stringify(data));
+    } catch {}
+    setShowOCR(false);
+    showToast("Date consum din factură salvate", "success");
+  }, [showToast]);
+
   return (
     <div>
       <div className="mb-6">
@@ -318,6 +340,22 @@ export default function Step1Identification({
                   ? <><span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin" /> Geocodare OSM...</>
                   : <><span>🔍</span> Autocompletare adresă (OSM)</>}
               </button>
+
+              {/* Import IFC/BIM și OCR Factură */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setShowIFC(true)}
+                  className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-all"
+                >
+                  <span>📎</span> Import IFC/BIM
+                </button>
+                <button
+                  onClick={() => setShowOCR(true)}
+                  className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 text-xs font-medium transition-all"
+                >
+                  <span>📄</span> OCR Factură
+                </button>
+              </div>
 
               {/* Sugestie footprint clădire */}
               {geoSuggestion && (
@@ -829,6 +867,9 @@ export default function Step1Identification({
           Pasul 2: Anvelopă →
         </button>
       </div>
+
+      {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
+      {showOCR && <InvoiceOCR onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
     </div>
   );
 }

@@ -22,6 +22,8 @@ import { checkPasivhaus } from "../calc/pasivhaus.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
 import { calcBenchmark } from "../calc/benchmark.js";
 import { checkMajorRenovConformity, calcBACSEnergyImpact, BACS_ENERGY_FACTORS } from "../calc/epbd.js";
+import { getNzebEpMax } from "../calc/smart-rehab.js";
+import { NZEB_THRESHOLDS, CLASS_LABELS, CLASS_COLORS } from "../data/energy-classes.js";
 import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
 import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
@@ -37,6 +39,7 @@ import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 
 const TAB_SECTIONS = [
   { id:"benchmark",   icon:"📊", label:"Benchmark" },
+  { id:"nzeb_check",  icon:"🏆", label:"Verificare nZEB" },
   { id:"bacs",        icon:"🤖", label:"BACS" },
   { id:"acm_en15316", icon:"🚿", label:"ACM detaliat" },
   { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale" },
@@ -339,6 +342,41 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     measures: ["Pompă de căldură","PV","Termoizolare"],
     ownerType,
   }), [building, epActual, rehabPackages, ownerType]);
+
+  // ── Verificare nZEB (HG 917/2021, Legea 238/2024) ──
+  const nzebCheck = useMemo(() => {
+    const nzebT = NZEB_THRESHOLDS[cat] || NZEB_THRESHOLDS.AL;
+    const zoneIdx = {"I":0,"II":1,"III":2,"IV":3,"V":4}[zone] ?? 2;
+    const epMax = Array.isArray(nzebT.ep_max) ? nzebT.ep_max[zoneIdx] : nzebT.ep_max;
+    const rerMin = nzebT.rer_min || 30;
+    const rerOnsiteMin = nzebT.rer_onsite_min || 10;
+    const rer = renewSummary?.rer || 0;
+    const rerOnsite = renewSummary?.rer_onsite || renewSummary?.rer || 0;
+    const conform_ep = epActual <= epMax;
+    const conform_rer = rer >= rerMin;
+    const conform_rer_onsite = rerOnsite >= rerOnsiteMin;
+    const isNZEB = conform_ep && conform_rer;
+    const gap_ep = Math.max(0, epActual - epMax);
+    const gap_rer = Math.max(0, rerMin - rer);
+    // Recomandări măsuri pentru atingere nZEB
+    const recs = [];
+    if (!conform_ep) {
+      if (gap_ep > 50) recs.push({ icon:"🧱", text:`Termoizolare intensivă (reducere EP cu min. ${Math.ceil(gap_ep)} kWh/(m²·an))` });
+      else if (gap_ep > 20) recs.push({ icon:"🪟", text:"Înlocuire tâmplărie + termoizolare suplimentară" });
+      else recs.push({ icon:"♨️", text:"Optimizare sisteme (pompă de căldură, recuperare căldură)" });
+    }
+    if (!conform_rer) {
+      recs.push({ icon:"⚡", text:`Creștere RER cu ${(gap_rer).toFixed(0)}% (PV minim ${Math.ceil(Au * 0.04 / 5) * 5} m² sau colectori solari)` });
+    }
+    if (!conform_rer_onsite) {
+      recs.push({ icon:"☀️", text:`RER on-site minim ${rerOnsiteMin}% (Legea 238/2024) — necesită surse locale: PV sau solar termic` });
+    }
+    if (isNZEB) recs.push({ icon:"✅", text:"Clădire conformă nZEB — toate cerințele sunt îndeplinite" });
+    // Progres spre nZEB (0-100%)
+    const progress_ep = epMax > 0 ? Math.min(100, (1 - (epActual - epMax) / epMax) * 100) : 0;
+    const progress_rer = Math.min(100, (rer / rerMin) * 100);
+    return { epActual, epMax, rer, rerMin, rerOnsite, rerOnsiteMin, conform_ep, conform_rer, conform_rer_onsite, isNZEB, gap_ep, gap_rer, recs, progress_ep, progress_rer, nzebT };
+  }, [cat, zone, epActual, renewSummary, Au]);
 
   // ── Hartă termică ──
   const thermalMap = useMemo(() => generateThermalMapSVG({
@@ -698,6 +736,128 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
               </div>
             </div>
           ) : <p className="text-slate-500 text-sm">Date insuficiente pentru benchmark.</p>}
+        </Card>
+      )}
+
+      {/* ═══ VERIFICARE nZEB (HG 917/2021) ═══ */}
+      {activeTab === "nzeb_check" && (
+        <Card className="p-4">
+          <SectionHeader icon="🏆" title="Verificare conformitate nZEB"
+            subtitle="HG 917/2021 + Legea 238/2024 — cerință obligatorie clădiri noi și reabilitare majoră" />
+          {nzebCheck ? (
+            <div className="space-y-4">
+              {/* Status principal */}
+              <div className={cn("rounded-xl p-4 border text-center",
+                nzebCheck.isNZEB
+                  ? "border-green-700/50 bg-green-900/20"
+                  : "border-orange-700/50 bg-orange-900/20"
+              )}>
+                <div className="text-2xl mb-1">{nzebCheck.isNZEB ? "✅" : "⚠️"}</div>
+                <div className={cn("text-lg font-bold", nzebCheck.isNZEB ? "text-green-300" : "text-orange-300")}>
+                  {nzebCheck.isNZEB ? "Conformă nZEB" : "Non-conformă nZEB"}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Zona climatică {zone} — {["RI","RC","RA"].includes(cat) ? "Rezidențial" : "Non-rezidențial"}
+                </div>
+              </div>
+
+              {/* Criterii verificare */}
+              <div className="grid grid-cols-1 gap-3">
+                {/* EP total */}
+                <div className="bg-slate-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-white">Energie primară EP</div>
+                    <ConformBadge ok={nzebCheck.conform_ep} label={nzebCheck.conform_ep ? "Conform" : "Depășit"} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                    <div className="text-center">
+                      <div className="text-lg font-bold font-mono text-amber-400">{nzebCheck.epActual.toFixed(0)}</div>
+                      <div className="text-slate-400">EP actual</div>
+                    </div>
+                    <div className="text-center text-slate-500 self-center">≤</div>
+                    <div className="text-center">
+                      <div className={cn("text-lg font-bold font-mono", nzebCheck.conform_ep ? "text-green-400" : "text-red-400")}>{nzebCheck.epMax}</div>
+                      <div className="text-slate-400">EP<sub>nZEB,max</sub></div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div className="h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (nzebCheck.epMax / Math.max(nzebCheck.epActual, nzebCheck.epMax)) * 100)}%`,
+                               backgroundColor: nzebCheck.conform_ep ? "#22c55e" : "#f97316" }} />
+                  </div>
+                  {!nzebCheck.conform_ep && (
+                    <div className="text-xs text-orange-400 mt-1">
+                      Necesar reducere: <strong>{nzebCheck.gap_ep.toFixed(0)} kWh/(m²·an)</strong>
+                    </div>
+                  )}
+                  <div className="text-[10px] text-slate-500 mt-1">Prag nZEB zona {zone}: {nzebCheck.epMax} kWh/(m²·an) — HG 917/2021</div>
+                </div>
+
+                {/* RER */}
+                <div className="bg-slate-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-white">Energie din surse regenerabile (RER)</div>
+                    <ConformBadge ok={nzebCheck.conform_rer} label={nzebCheck.conform_rer ? "Conform" : "Insuficient"} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                    <div className="text-center">
+                      <div className={cn("text-lg font-bold font-mono", nzebCheck.conform_rer ? "text-green-400" : "text-orange-400")}>{nzebCheck.rer.toFixed(1)}%</div>
+                      <div className="text-slate-400">RER actual</div>
+                    </div>
+                    <div className="text-center text-slate-500 self-center">≥</div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold font-mono text-green-400">{nzebCheck.rerMin}%</div>
+                      <div className="text-slate-400">RER<sub>min</sub></div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div className="h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (nzebCheck.rer / nzebCheck.rerMin) * 100)}%`,
+                               backgroundColor: nzebCheck.conform_rer ? "#22c55e" : "#f97316" }} />
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    RER on-site (Legea 238/2024): {nzebCheck.rerOnsite.toFixed(1)}% / minim {nzebCheck.rerOnsiteMin}%
+                    <ConformBadge ok={nzebCheck.conform_rer_onsite} label="" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Recomandări */}
+              {nzebCheck.recs.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    {nzebCheck.isNZEB ? "Confirmare cerințe" : "Măsuri necesare"}
+                  </div>
+                  {nzebCheck.recs.map((r, i) => (
+                    <div key={i} className={cn("flex items-start gap-2 rounded-lg px-3 py-2 text-xs",
+                      nzebCheck.isNZEB ? "bg-green-900/20 text-green-300" : "bg-amber-900/15 text-amber-200"
+                    )}>
+                      <span className="flex-shrink-0">{r.icon}</span>
+                      <span>{r.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Praguri nZEB per zonă climatică */}
+              <div className="bg-slate-800 rounded-xl p-3">
+                <div className="text-[10px] text-slate-400 mb-2 uppercase tracking-wider">Praguri EP<sub>nZEB,max</sub> — {cat} (kWh/m²·an)</div>
+                <div className="flex gap-1 flex-wrap">
+                  {["I","II","III","IV","V"].map((z, i) => {
+                    const threshold = Array.isArray(nzebCheck.nzebT.ep_max) ? nzebCheck.nzebT.ep_max[i] : nzebCheck.nzebT.ep_max;
+                    return (
+                      <div key={z} className={cn("flex-1 min-w-[60px] text-center py-1.5 rounded-lg text-xs",
+                        z === zone ? "bg-indigo-700/50 text-white font-bold border border-indigo-500/50" : "bg-slate-700 text-slate-400"
+                      )}>
+                        <div className="font-mono">{threshold}</div>
+                        <div className="text-[9px]">Zona {z}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : <p className="text-slate-500 text-sm">Date insuficiente pentru verificare nZEB.</p>}
         </Card>
       )}
 

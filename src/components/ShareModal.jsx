@@ -103,6 +103,25 @@ function extractClientReport(projectState) {
   };
 }
 
+// ── Hash autenticitate CPE (djb2, fără crypto API) ───────────────────────────
+function generateCPEFingerprint(data) {
+  const str = [
+    data.address || "",
+    data.city || "",
+    Math.round(data.ep || 0),
+    data.energyClass || "",
+    new Date().toISOString().split("T")[0],
+  ].join("|");
+
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & 0xffffffff; // 32-bit
+  }
+  const positiveHash = Math.abs(hash);
+  return positiveHash.toString(36).toUpperCase().padStart(8, "0");
+}
+
 export default function ShareModal({ projectState, onClose, showToast }) {
   const [shareTab, setShareTab] = useState("collab"); // "collab" | "client"
   const [shareUrl, setShareUrl] = useState("");
@@ -112,6 +131,7 @@ export default function ShareModal({ projectState, onClose, showToast }) {
   const [urlSize, setUrlSize] = useState(0);
   const [copied, setCopied] = useState(false);
   const [copiedClient, setCopiedClient] = useState(false);
+  const [copiedFingerprint, setCopiedFingerprint] = useState(false);
   const canvasRef = useRef();
 
   useEffect(() => {
@@ -165,8 +185,27 @@ export default function ShareModal({ projectState, onClose, showToast }) {
     }
   }, [clientUrl, showToast]);
 
-  const { building } = projectState;
+  const { building, instSummary, renewSummary, energyClass } = projectState;
   const projectTitle = [building?.address, building?.city].filter(Boolean).join(", ") || "Proiect Zephren";
+
+  // Fingerprint CPE — generat din datele cheie ale raportului
+  const rawFingerprint = generateCPEFingerprint({
+    address: building?.address || "",
+    city: building?.city || "",
+    ep: instSummary?.ep_total_m2 ?? renewSummary?.ep_adjusted_m2 ?? 0,
+    energyClass: energyClass || "",
+  });
+  const cpeCode = `CPE-${rawFingerprint.slice(0, 4)}-${rawFingerprint.slice(4)}`;
+
+  const copyFingerprint = async () => {
+    try {
+      await navigator.clipboard.writeText(cpeCode);
+      setCopiedFingerprint(true);
+      setTimeout(() => setCopiedFingerprint(false), 2000);
+    } catch {
+      showToast("Nu s-a putut copia codul", "error");
+    }
+  };
 
   return (
     <div
@@ -269,6 +308,21 @@ export default function ShareModal({ projectState, onClose, showToast }) {
           ) : (
             <div className="text-center py-4 opacity-40 text-xs">Generare QR...</div>
           )}
+
+          {/* ── Hash autenticitate CPE ── */}
+          <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3 space-y-1.5">
+            <div className="text-[10px] opacity-50 font-medium tracking-wider">COD AUTENTICITATE</div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-base font-bold text-emerald-300 tracking-widest">{cpeCode}</span>
+              <button
+                onClick={copyFingerprint}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all shrink-0 ${copiedFingerprint ? "bg-emerald-500/20 text-emerald-400" : "bg-white/10 hover:bg-white/20"}`}
+              >
+                {copiedFingerprint ? "✓ Copiat" : "Copiază codul"}
+              </button>
+            </div>
+            <div className="text-[10px] opacity-40">Cod autenticitate (verificabil la auditor)</div>
+          </div>
 
           <div className="space-y-2">
             <div className="text-[10px] opacity-50 font-medium">LINK RAPORT CLIENT (read-only)</div>

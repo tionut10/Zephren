@@ -56,29 +56,48 @@ function ClassPill({ cls }) {
 
 const DEFAULT_APT = { nr: "", floor: "mid", corner: false, area: "" };
 
+// Calcul EP per apartament cu alocare pro-rata pe suprafață
+// Metodologie: EP_apt = EP_bloc × corecție_poziție × factor_suprafață
+// factor_suprafață = Au_apt / Au_medie (normalizat față de media apartamentelor)
+function calcEpProRata(epBldg, apartments, aptIndex) {
+  const areas = apartments.map(a => parseFloat(a.area) || 0);
+  const totalArea = areas.reduce((s, a) => s + a, 0);
+  const avgArea = totalArea > 0 ? totalArea / apartments.length : 60;
+  const area = areas[aptIndex] || avgArea;
+  // Factor suprafață: apartamentele mai mici au EP/m² mai mare (pierderi relative mai mari)
+  // Factor 1.0 la suprafața medie, variație ±15% pentru ±50% față de medie
+  const areaFactor = avgArea > 0 ? 1 + (avgArea - area) / avgArea * 0.15 : 1.0;
+  return epBldg * areaFactor;
+}
+
 export default function ApartmentClasses({ epBuildingM2, thresholds, buildingArea, cn, showToast }) {
   const [apartments, setApartments] = useState([
     { ...DEFAULT_APT, nr: "Ap. 1", area: "60" },
     { ...DEFAULT_APT, nr: "Ap. 2", area: "75", floor: "ground_interior" },
   ]);
+  const [showAreaEffect, setShowAreaEffect] = useState(false);
   const [showExport, setShowExport] = useState(false);
 
-  const calcApt = useCallback((apt, epBldg) => {
+  const calcApt = useCallback((apt, epBldg, idx, allApts) => {
     const posKey = apt.floor + (apt.corner ? "_corner" : "_interior");
-    const corr = POSITION_CORRECTION[posKey] ?? 1.0;
-    const epApt = epBldg * corr;
+    const corrPos = POSITION_CORRECTION[posKey] ?? 1.0;
+    const corrArea = showAreaEffect ? calcEpProRata(1.0, allApts, idx) : 1.0;
+    const corrTotal = corrPos * corrArea;
+    const epApt = epBldg * corrTotal;
     return {
       ...apt,
       posKey,
-      correction: corr,
+      correction: corrPos,
+      corrArea,
+      corrTotal,
       epM2: epApt,
       cls: thresholds ? getEpClass(epApt, thresholds) : "—",
     };
-  }, [thresholds]);
+  }, [thresholds, showAreaEffect]);
 
   const results = useMemo(() => {
     if (!epBuildingM2 || epBuildingM2 <= 0) return [];
-    return apartments.map(apt => calcApt(apt, epBuildingM2));
+    return apartments.map((apt, idx) => calcApt(apt, epBuildingM2, idx, apartments));
   }, [apartments, epBuildingM2, calcApt]);
 
   const addRow = () => setApartments(prev => [...prev, { ...DEFAULT_APT, nr: `Ap. ${prev.length + 1}`, area: "60" }]);
@@ -87,9 +106,9 @@ export default function ApartmentClasses({ epBuildingM2, thresholds, buildingAre
 
   const exportCSV = () => {
     if (!results.length) return;
-    const lines = ["Nr,Suprafata (m2),Pozitie,Corectie,EP (kWh/m2an),Clasa"];
+    const lines = ["Nr,Suprafata (m2),Pozitie,Corectie pozitie,Corectie Au,Corectie totala,EP (kWh/m2an),Clasa"];
     results.forEach(r => {
-      lines.push(`${r.nr},${r.area},${POSITION_LABELS[r.posKey] || r.posKey},${r.correction.toFixed(2)},${r.epM2.toFixed(1)},${r.cls}`);
+      lines.push(`${r.nr},${r.area},${POSITION_LABELS[r.posKey] || r.posKey},${r.correction.toFixed(2)},${(r.corrArea||1).toFixed(2)},${(r.corrTotal||r.correction).toFixed(2)},${r.epM2.toFixed(1)},${r.cls}`);
     });
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
@@ -116,6 +135,11 @@ export default function ApartmentClasses({ epBuildingM2, thresholds, buildingAre
           <button onClick={exportCSV} className="text-[10px] px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all">
             CSV ↓
           </button>
+          <button onClick={() => setShowAreaEffect(v => !v)}
+            className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all ${showAreaEffect ? "border-indigo-500/50 bg-indigo-500/15 text-indigo-300" : "border-white/10 bg-white/5 text-white/40"}`}
+            title="Include efect suprafață — apartamentele mai mici au EP/m² mai mare">
+            Efect Au
+          </button>
           <button onClick={addRow} className="text-[10px] px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all">
             + Apartament
           </button>
@@ -130,7 +154,8 @@ export default function ApartmentClasses({ epBuildingM2, thresholds, buildingAre
               <th className="text-left py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Nr.</th>
               <th className="text-left py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Suprafață</th>
               <th className="text-left py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Poziție</th>
-              <th className="text-center py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Corecție</th>
+              <th className="text-center py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Corecție pos.</th>
+              {showAreaEffect && <th className="text-center py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">Cor. Au</th>}
               <th className="text-right py-2 pr-3 text-[10px] uppercase opacity-40 font-normal">EP</th>
               <th className="text-center py-2 text-[10px] uppercase opacity-40 font-normal">Clasă</th>
               <th className="w-6"></th>
@@ -170,6 +195,11 @@ export default function ApartmentClasses({ epBuildingM2, thresholds, buildingAre
                   <td className="py-2 pr-3 text-center">
                     <span className="text-[11px] opacity-60">×{res?.correction.toFixed(2) || "—"}</span>
                   </td>
+                  {showAreaEffect && (
+                    <td className="py-2 pr-3 text-center">
+                      <span className="text-[11px] text-indigo-300">×{res?.corrArea?.toFixed(2) || "1.00"}</span>
+                    </td>
+                  )}
                   <td className="py-2 pr-3 text-right">
                     <span className="font-mono text-[11px]">{res?.epM2.toFixed(1) || "—"}</span>
                     <span className="text-[9px] opacity-40 ml-0.5">kWh/m²</span>
