@@ -4,11 +4,22 @@
 
 ## 🤖 AUTO-SELECT MODEL & EFFORT
 
-La **primul mesaj din orice sesiune**, evaluează promptul și afișează:
+La **fiecare mesaj**, evaluează promptul și afișează **întotdeauna** blocul de sugestie:
 
 ```
-🟢 HAIKU  /  🟡 SONNET medium  /  🔴 OPUS MAX
-Model optim: <model> | Effort: <nivel>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 OPUS MAX  /  🟡 SONNET  /  🟢 HAIKU
+Model recomandat : claude-opus-4-6
+Effort recomandat: high (1M tokens)
+Comandă terminal : co   sau   ca "<prompt>"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Afișează blocul chiar dacă modelul curent e deja corect — utilizatorul vrea să vadă confirmarea.
+Dacă modelul curent din sesiune NU e cel recomandat, adaugă:
+```
+⚠️  Sesiunea curentă rulează pe <model-curent>.
+    Redeschide cu: co / cs / ch  sau  ca "<prompt>"
 ```
 
 ### Reguli de selecție:
@@ -57,16 +68,15 @@ Orice prompt conține:
 
 ## 📌 COMPORTAMENT ÎN SESIUNE
 
-Când modelul curent NU e optim pentru prompt, afișează:
-```
-⚠️ Prompt complex — recomandat OPUS MAX.
-Pornește cu: co (alias) sau claude --model claude-opus-4-6
-```
-
 Când folosești Agent tool → setează `model: "opus"` pentru task-uri complexe.
 
-**În terminal:** alias `co` = `claude --model claude-opus-4-6 --effort high` (1M tokens, effort MAX).
-Funcția `ca()` aplică automat `--effort high` pentru toate prompt-urile detectate ca OPUS.
+### Comenzi rapide terminal
+| Alias | Comandă completă | Când |
+|---|---|---|
+| `co` | `claude --model claude-opus-4-6 --effort high` | OPUS MAX — task complex |
+| `cs` | `claude --model claude-sonnet-4-6` | SONNET — feature/fix |
+| `ch` | `claude --model claude-haiku-4-5-20251001` | HAIKU — întrebare rapidă |
+| `ca "prompt"` | auto-detectează modelul + effort | oricând |
 
 ---
 
