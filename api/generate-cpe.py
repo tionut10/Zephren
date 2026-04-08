@@ -109,7 +109,8 @@ def replace_in_paragraph(para, old_text, new_text, count=0):
 
 
 def replace_in_doc(doc, old_text, new_text, max_count=0):
-    """Replace text across entire document (paragraphs + tables)."""
+    """Replace text across entire document (paragraphs + tables + text boxes)."""
+    from docx.text.paragraph import Paragraph as DocxPara
     total = 0
     remaining = max_count
 
@@ -133,6 +134,20 @@ def replace_in_doc(doc, old_text, new_text, max_count=0):
                         remaining -= n
                         if remaining <= 0:
                             return total
+
+    # Text boxes (w:txbxContent) — scale bars in CPE templates are stored here,
+    # not in regular paragraphs/table cells
+    txbx_tag = qn("w:txbxContent")
+    p_tag = qn("w:p")
+    for txbx_elem in doc.element.body.iter(txbx_tag):
+        for p_elem in txbx_elem.iter(p_tag):
+            para = DocxPara(p_elem, None)
+            n = replace_in_paragraph(para, old_text, new_text, remaining if max_count > 0 else 0)
+            total += n
+            if max_count > 0:
+                remaining -= n
+                if remaining <= 0:
+                    return total
 
     return total
 
