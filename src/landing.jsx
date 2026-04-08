@@ -464,6 +464,85 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             </div>
           ))}
         </div>
+
+        {/* ── Add-on per-raport (utilizatori Free) ── */}
+        <div style={{ maxWidth: "960px", margin: "40px auto 0", padding: "32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}>
+              {lang === "EN" ? "Free plan add-ons" : "Add-on plan Free"}
+            </span>
+            <span style={{ fontSize: "13px", color: textMuted }}>
+              {lang === "EN" ? "Extra CPE reports beyond 3/month" : "Rapoarte CPE suplimentare peste limita de 3/lună"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+            {[
+              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "15", unit: "RON/raport", note: lang === "EN" ? "over 3/month" : "peste 3/lună" },
+              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "120", unit: "RON", note: lang === "EN" ? "≈12 RON/report" : "≈12 RON/raport" },
+              { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "25", unit: "RON/doc", note: "PDF" },
+            ].map(a => (
+              <div key={a.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>{a.label}</div>
+                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "2px" }}>{a.note}</div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <span style={{ fontSize: "20px", fontWeight: "900", color: "#f59e0b" }}>{a.price}</span>
+                  <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>{a.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Metode de plată ── */}
+        <div style={{ maxWidth: "960px", margin: "32px auto 0", padding: "24px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "20px" }}>
+            <div>
+              <div style={{ fontSize: "12px", fontWeight: "700", color: textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>
+                {lang === "EN" ? "Accepted payment methods" : "Metode de plată acceptate"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                {/* Stripe */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "5px 12px", borderRadius: "8px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(99,91,255,0.08)" : "rgba(99,91,255,0.06)" }}>
+                  <svg width="38" height="16" viewBox="0 0 60 25" fill="none"><text x="0" y="18" fontSize="18" fontWeight="700" fill="#635BFF" fontFamily="system-ui">stripe</text></svg>
+                </div>
+                {/* Visa */}
+                <div style={{ display: "flex", alignItems: "center", padding: "5px 12px", borderRadius: "8px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+                  <svg width="38" height="16" viewBox="0 0 60 20" fill="none"><text x="0" y="16" fontSize="17" fontWeight="900" fill="#1A1F71" fontFamily="system-ui,sans-serif" letterSpacing="-1">VISA</text></svg>
+                </div>
+                {/* Mastercard */}
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "8px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+                  <svg width="28" height="18" viewBox="0 0 28 18"><circle cx="10" cy="9" r="9" fill="#EB001B"/><circle cx="18" cy="9" r="9" fill="#F79E1B"/><path d="M14 2.8a9 9 0 010 12.4A9 9 0 0114 2.8z" fill="#FF5F00"/></svg>
+                  <span style={{ fontSize: "10px", fontWeight: "700", color: textMuted }}>Mastercard</span>
+                </div>
+                {/* Google Pay */}
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "8px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: textMuted }}>G Pay</span>
+                </div>
+                {/* Apple Pay */}
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "8px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: textMuted }}>Apple Pay</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#22c55e" opacity=".2"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#22c55e" strokeWidth="1.5"/><path d="M9 12l2 2 4-4" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <span style={{ fontSize: "11px", color: textFaint }}>{lang === "EN" ? "Secure payment via Stripe" : "Plată securizată prin Stripe"}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"} strokeWidth="1.5"/><path d="M2 10h20" stroke={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"} strokeWidth="1.5"/></svg>
+                <span style={{ fontSize: "11px", color: textFaint }}>{lang === "EN" ? "Monthly or annual billing · SmartBill invoice" : "Facturare lunară sau anuală · Factură SmartBill"}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"} strokeWidth="1.5" strokeLinecap="round"/></svg>
+                <span style={{ fontSize: "11px", color: textFaint }}>{lang === "EN" ? "Cancel anytime · No hidden fees" : "Anulare oricând · Fără costuri ascunse"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       {/* ═══ FOOTER ═══ */}
