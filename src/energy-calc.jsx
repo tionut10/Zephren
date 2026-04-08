@@ -44,6 +44,7 @@ import Step5Calculation from "./steps/Step5Calculation";
 import Step6Certificate from "./steps/Step6Certificate";
 import Step7Audit from "./steps/Step7Audit";
 import Step8Advanced from "./steps/Step8Advanced.jsx";
+import ClientInputForm from "./components/ClientInputForm.jsx";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -746,6 +747,7 @@ export default function EnergyCalcApp({ cloud }) {
   const [nzebReportHtml, setNzebReportHtml] = useState(null);
   const [showTour, setShowTour] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showClientForm, setShowClientForm] = useState(false);
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -6553,6 +6555,16 @@ export default function EnergyCalcApp({ cloud }) {
               <div className="text-[10px] opacity-30">W/(m³·K)</div>
             </div>
           )}
+          {/* Formular Date Client */}
+          <button onClick={() => { setShowClientForm(true); setSidebarOpen(false); }}
+            className="w-full mt-4 flex items-center gap-3 px-3 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left">
+            <span className="text-lg">👤</span>
+            <div>
+              <div className="text-xs font-semibold text-amber-300">Formular Client</div>
+              <div className="text-[10px] opacity-50">Date pentru audit</div>
+            </div>
+          </button>
+
           <div className="mt-4 p-2 bg-white/[0.02] rounded-lg">
             <div className="text-[8px] opacity-25 space-y-0.5">
               <div>Ctrl+S — Export proiect</div>
@@ -6564,7 +6576,25 @@ export default function EnergyCalcApp({ cloud }) {
 
         {/* MAIN CONTENT */}
         <main className="flex-1 p-4 sm:p-6 pb-16 lg:pb-6 overflow-y-auto min-w-0">
-          <div key={step} style={{animation:"fadeSlideIn 0.3s ease-out"}}>
+
+          {/* ═══ FORMULAR DATE CLIENT (overlay) ═══ */}
+          {showClientForm && (
+            <div style={{animation:"fadeSlideIn 0.3s ease-out"}}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Formular Date Client</h2>
+                  <p className="text-xs text-white/40 mt-0.5">Completați împreună cu clientul sau trimiteți-i formularul pentru a-l completa</p>
+                </div>
+                <button onClick={() => setShowClientForm(false)}
+                  className="px-4 py-2 bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white rounded-xl text-sm transition-all">
+                  ✕ Închide
+                </button>
+              </div>
+              <ClientInputForm />
+            </div>
+          )}
+
+          <div key={step} style={{animation:"fadeSlideIn 0.3s ease-out"}} className={showClientForm ? "hidden" : ""}>
           <style>{`@keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }`}</style>
           {/* ═══ STEP 1: IDENTIFICARE ═══ */}
           {step === 1 && <Step1Identification

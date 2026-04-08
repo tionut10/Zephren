@@ -28,6 +28,12 @@ import { calcBuildingRooms, ROOM_TYPE_LABELS, ROOM_THETA_INT } from "../calc/en1
 import AuditReport from "../components/AuditReport.jsx";
 import PortfolioDashboard from "../components/PortfolioDashboard.jsx";
 import AuditInvoice from "../components/AuditInvoice.jsx";
+import PVDegradation from "../components/PVDegradation.jsx";
+import CloudSyncPanel from "../components/CloudSyncPanel.jsx";
+import ContractGenerator from "../components/ContractGenerator.jsx";
+import EFacturaExport from "../components/EFacturaExport.jsx";
+import ThermovisionModule from "../components/ThermovisionModule.jsx";
+import TutorialWizard from "../components/TutorialWizard.jsx";
 import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
 import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
@@ -80,6 +86,12 @@ const TAB_SECTIONS = [
   { id:"portofoliu",  icon:"📁", label:"Portofoliu" },
   { id:"facturare",   icon:"🧾", label:"Deviz servicii" },
   { id:"raport_audit",icon:"📋", label:"Raport audit" },
+  { id:"pv_degradare", icon:"📉", label:"Degradare PV" },
+  { id:"contract",     icon:"📝", label:"Contract" },
+  { id:"efactura",     icon:"🏛️", label:"e-Factură ANAF" },
+  { id:"termoviziune", icon:"🔴", label:"Termoviziune" },
+  { id:"cloud_sync",   icon:"☁️", label:"Cloud Sync" },
+  { id:"tutorial",     icon:"🎓", label:"Tutorial" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -184,6 +196,11 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [showAuditReport, setShowAuditReport] = useState(false);
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showContract, setShowContract] = useState(false);
+  const [showEFactura, setShowEFactura] = useState(false);
+  const [showThermovision, setShowThermovision] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [thermovisionPhotos, setThermovisionPhotos] = useState([]);
 
   // ── Climate import state ──
   const [climImportStatus, setClimImportStatus]   = useState(null); // null | "loading" | "ok" | "error"
@@ -3719,10 +3736,85 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
+      {/* ═══ DEGRADARE PV ═══ */}
+      {activeTab === "pv_degradare" && (
+        <Card className="p-4">
+          <SectionHeader icon="📉" title="Simulare degradare sistem fotovoltaic — 25 ani"
+            subtitle="Degradare 0.5%/an (IEC 61724), PR sezonier, NPV cu rată actualizare, simulare cashflow" />
+          <PVDegradation renewSummary={renewSummary} building={building} />
+        </Card>
+      )}
+
+      {/* ═══ CONTRACT ═══ */}
+      {activeTab === "contract" && (
+        <Card className="p-4">
+          <SectionHeader icon="📝" title="Generator contract prestări servicii"
+            subtitle="Contract auto-populat cu date proiect — export PDF cu clauze GDPR" />
+          <button onClick={() => setShowContract(true)}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors text-sm">
+            📝 Generează Contract
+          </button>
+        </Card>
+      )}
+
+      {/* ═══ E-FACTURĂ ═══ */}
+      {activeTab === "efactura" && (
+        <Card className="p-4">
+          <SectionHeader icon="🏛️" title="e-Factură ANAF — XML UBL 2.1"
+            subtitle="Format RO-CIUS obligatoriu B2B din 2024 — generare și descărcare XML" />
+          <button onClick={() => setShowEFactura(true)}
+            className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-lg transition-colors text-sm">
+            🏛️ Generează e-Factură XML
+          </button>
+        </Card>
+      )}
+
+      {/* ═══ TERMOVIZIUNE ═══ */}
+      {activeTab === "termoviziune" && (
+        <Card className="p-4">
+          <SectionHeader icon="🔴" title="Modul termoviziune"
+            subtitle="Upload fotografii IR, adnotare zone pierderi termice, includere în raport" />
+          {thermovisionPhotos.length > 0 && (
+            <div className="mb-3 text-xs text-emerald-400">
+              ✓ {thermovisionPhotos.length} fotografie(ii) salvate cu {thermovisionPhotos.reduce((s,p) => s + (p.annotations?.length||0), 0)} adnotări
+            </div>
+          )}
+          <button onClick={() => setShowThermovision(true)}
+            className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg transition-colors text-sm">
+            🔴 Deschide Modul Termoviziune
+          </button>
+        </Card>
+      )}
+
+      {/* ═══ CLOUD SYNC ═══ */}
+      {activeTab === "cloud_sync" && (
+        <Card className="p-4">
+          <SectionHeader icon="☁️" title="Sincronizare cloud Supabase"
+            subtitle="Salvare și încărcare proiecte în cloud — autentificare, backup automat" />
+          <CloudSyncPanel building={building} instSummary={instSummary} />
+        </Card>
+      )}
+
+      {/* ═══ TUTORIAL ═══ */}
+      {activeTab === "tutorial" && (
+        <Card className="p-4">
+          <SectionHeader icon="🎓" title="Tutorial interactiv"
+            subtitle="Walkthrough pas cu pas cu clădire exemplu predefinită — ideal pentru utilizatori noi" />
+          <button onClick={() => setShowTutorial(true)}
+            className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors text-sm">
+            🎓 Pornește Tutorial
+          </button>
+        </Card>
+      )}
+
       {/* ═══ MODALS ═══ */}
       {showAuditReport && <AuditReport building={building} instSummary={instSummary} renewSummary={renewSummary} opaqueElements={opaqueElements} glazingElements={glazingElements} thermalBridges={thermalBridges} onClose={() => setShowAuditReport(false)} />}
       {showPortfolio && <PortfolioDashboard onClose={() => setShowPortfolio(false)} onOpenProject={() => {}} />}
       {showInvoice && <AuditInvoice building={building} onClose={() => setShowInvoice(false)} />}
+      {showContract && <ContractGenerator building={building} onClose={() => setShowContract(false)} />}
+      {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />}
+      {showThermovision && <ThermovisionModule onClose={() => setShowThermovision(false)} onSave={photos => { setThermovisionPhotos(photos); setShowThermovision(false); }} />}
+      {showTutorial && <TutorialWizard onClose={() => setShowTutorial(false)} onApplyExample={() => setShowTutorial(false)} />}
 
     </div>
   );
