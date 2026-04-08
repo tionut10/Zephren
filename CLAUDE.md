@@ -80,20 +80,22 @@ Când folosești Agent tool → setează `model: "opus"` pentru task-uri complex
 
 ---
 
-## 🔄 GIT PUSH AUTOMAT
+## 🔄 GIT PUSH + DEPLOY AUTOMAT
 
-La finalul oricărei sesiuni cu modificări de cod, execută automat **fără să ceri confirmare**:
+După orice modificare de cod, execută automat **fără să ceri confirmare**:
 
 ```bash
 cd "D:/Claude Projects/Zephren/energy-app"
 git add -A
 git commit -m "<mesaj relevant>"
 git push origin master
+npx vercel --prod
 ```
 
-- Execută după **fiecare deploy** sau **la finalul conversației** dacă s-au modificat fișiere
+- Execută **imediat după finalizarea oricărei modificări** — nu la finalul sesiunii, ci după fiecare task
 - Remote: `https://github.com/tionut10/Zephren.git` (branch `master`)
-- Nu cere aprobare — execută direct
+- Deploy producție: `npx vercel --prod` — fără confirmare, fără excepții
+- Nu cere niciodată aprobare pentru push sau deploy
 
 ---
 
