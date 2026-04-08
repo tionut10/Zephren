@@ -52,7 +52,7 @@ export default function Step6Certificate(props) {
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
             const enClass = getEnergyClass(epFinal, catKey);
-            const co2Class = getCO2Class(co2Final, building.category);
+            const co2Class = getCO2Class(co2Final, baseCatResolved);
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
             const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
@@ -172,7 +172,7 @@ export default function Step6Certificate(props) {
                     energy_class: enClassDocx.cls,
                     ep_class_real: enClassDocx.cls,
                     ep_class_ref: getEnergyClass(epRefMax, catKey).cls,
-                    co2_class_real: getCO2Class(co2Final_m2, building.category).cls,
+                    co2_class_real: getCO2Class(co2Final_m2, baseCatResolved).cls,
                     rer: renewSummary ? fmtRo(renewSummary.rer, 1) : "0,0",
                     nzeb: nzebOk ? "DA" : "NU",
                     gwp: fmtRo(gwpTotalDocx, 1),
