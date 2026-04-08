@@ -1103,7 +1103,7 @@ class handler(BaseHTTPRequestHandler):
                     replace_in_doc(doc, "rata de infiltrații", "Rata infiltrații n50 = " + format_ro(float(n50), 1) + " h⁻¹")
 
             # ═══════════════════════════════════════
-            # 5. FOTO CLĂDIRE — inserare imagine
+            # 5. FOTO CLĂDIRE — inserare imagine în text box
             # ═══════════════════════════════════════
             photo_b64 = body.get("photo")
             if photo_b64 and photo_b64.startswith("data:image"):
@@ -1111,29 +1111,92 @@ class handler(BaseHTTPRequestHandler):
                 match = re.match(r"data:image/(png|jpeg|jpg|webp|gif|bmp);base64,(.+)", photo_b64, re.DOTALL)
                 if match:
                     img_data = base64.b64decode(match.group(2))
-                    img_stream = io.BytesIO(img_data)
                     from docx.oxml.ns import qn as docx_qn
+                    from docx.shared import Emu
 
-                    # Caută paragraful care conține "FOTO" (inclusiv split între runs și text boxes)
-                    foto_p_elem = None
-                    for para in _iter_all_paragraphs(doc, include_txbx=True):
-                        if "FOTO" in para.text:
-                            foto_p_elem = para._p
-                            break
+                    # Dimensiunile frame-ului FOTO din template (EMU): 647700 x 584200
+                    FOTO_W_EMU = 620000   # puțin sub lățimea frame-ului (~1,7 cm)
+                    FOTO_H_EMU = 560000   # puțin sub înălțimea frame-ului (~1,55 cm)
 
-                    if foto_p_elem is not None:
-                        # Golește paragraful
-                        for child in list(foto_p_elem):
-                            foto_p_elem.remove(child)
-                        # Inserează imaginea
-                        run_elem = etree.SubElement(foto_p_elem, docx_qn("w:r"))
+                    # Calculează dimensiunile imaginii păstrând aspect ratio
+                    try:
+                        import struct
+                        raw = img_data
+                        img_w_px, img_h_px = None, None
+                        # PNG: lățime/înălțime la bytes 16-24
+                        if raw[:4] == b'\x89PNG':
+                            img_w_px, img_h_px = struct.unpack('>II', raw[16:24])
+                        # JPEG: cauta SOF marker
+                        elif raw[:2] == b'\xff\xd8':
+                            i = 2
+                            while i < len(raw) - 8:
+                                if raw[i] == 0xff and raw[i+1] in (0xC0, 0xC2):
+                                    img_h_px = struct.unpack('>H', raw[i+5:i+7])[0]
+                                    img_w_px = struct.unpack('>H', raw[i+7:i+9])[0]
+                                    break
+                                seg_len = struct.unpack('>H', raw[i+2:i+4])[0]
+                                i += 2 + seg_len
+                    except Exception:
+                        img_w_px, img_h_px = None, None
+
+                    # Alege dimensiunea finală respectând frame-ul și aspect ratio
+                    if img_w_px and img_h_px and img_w_px > 0 and img_h_px > 0:
+                        ratio = img_w_px / img_h_px
+                        if ratio >= 1:  # landscape sau pătrat → constrâns de lățime
+                            pic_w = FOTO_W_EMU
+                            pic_h = int(FOTO_W_EMU / ratio)
+                            if pic_h > FOTO_H_EMU:  # totuși prea înalt
+                                pic_h = FOTO_H_EMU
+                                pic_w = int(FOTO_H_EMU * ratio)
+                        else:  # portrait → constrâns de înălțime
+                            pic_h = FOTO_H_EMU
+                            pic_w = int(FOTO_H_EMU * ratio)
+                            if pic_w > FOTO_W_EMU:
+                                pic_w = FOTO_W_EMU
+                                pic_h = int(FOTO_W_EMU / ratio)
+                    else:
+                        # Fallback: folosim lățimea frame-ului
+                        pic_w = FOTO_W_EMU
+                        pic_h = None
+
+                    # Găsește TOATE text box-urile care conțin "FOTO" și înlocuiește-le
+                    txbx_tag = qn("w:txbxContent")
+                    p_tag = qn("w:p")
+                    from docx.text.paragraph import Paragraph as DocxPara
+
+                    foto_txbx_list = []
+                    for txbx_elem in doc.element.body.iter(txbx_tag):
+                        for p_elem in txbx_elem.iter(p_tag):
+                            if "FOTO" in (DocxPara(p_elem, None).text or ""):
+                                foto_txbx_list.append(txbx_elem)
+                                break  # un singur text box per găsire
+
+                    for foto_txbx in foto_txbx_list:
+                        # Șterge TOATE paragrafele existente din text box
+                        for p_elem in list(foto_txbx.findall(p_tag)):
+                            foto_txbx.remove(p_elem)
+
+                        # Creează un singur paragraf centrat cu imaginea
+                        new_p = etree.SubElement(foto_txbx, p_tag)
+                        pPr = etree.SubElement(new_p, qn("w:pPr"))
+                        sp = etree.SubElement(pPr, qn("w:spacing"))
+                        sp.set(qn("w:after"), "0")
+                        jc = etree.SubElement(pPr, qn("w:jc"))
+                        jc.set(qn("w:val"), "center")
+                        new_r = etree.SubElement(new_p, qn("w:r"))
+
+                        # Adaugă imaginea via python-docx (calea standard)
+                        img_stream = io.BytesIO(img_data)
+                        img_stream.seek(0)
                         temp_para = doc.add_paragraph()
                         temp_run = temp_para.add_run()
-                        img_stream.seek(0)
-                        temp_run.add_picture(img_stream, width=Inches(1.0))
+                        if pic_h:
+                            temp_run.add_picture(img_stream, width=Emu(pic_w), height=Emu(pic_h))
+                        else:
+                            temp_run.add_picture(img_stream, width=Emu(pic_w))
                         drawing = temp_run._element.find(docx_qn("w:drawing"))
                         if drawing is not None:
-                            run_elem.append(drawing)
+                            new_r.append(drawing)
                         temp_para._element.getparent().remove(temp_para._element)
 
             # ═══════════════════════════════════════
