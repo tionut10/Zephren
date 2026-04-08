@@ -42,7 +42,7 @@ Orice prompt conține:
 #### 🟡 SONNET medium (effort medium)
 Orice prompt conține:
 - `fix`, `bug`, `corecte`, `repara`, `eroare`
-- `feature`, `adaugă`, `modifică`, `actualizez`
+- `feature`, `adaugă`, `modifică`, `actualizez`, `optimizează`, `optimizez`
 - `verifică`, `verifica` (fără "în detaliu")
 - `generează`, `genereaza`, `încearcă`, `incearca`
 - `vreau să`, `vreau sa`
