@@ -248,6 +248,24 @@ _CO2_CLASS_COLORS = {
 }
 
 
+def _text_color_for_bg(hex_color):
+    """Alege alb sau negru pentru text pe baza luminanței relative WCAG a fundalului.
+    Funcționează corect pentru AMBELE palete EP (verde/galben/roșu) și CO2 (albastru/gri)."""
+    try:
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+        # Linearizare sRGB
+        def lin(c):
+            return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+        lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+        # Contrast cu alb: (lum+0.05)/0.05; contrast cu negru: 1.05/(lum+0.05)
+        # Alege culoarea cu contrast mai mare
+        return "FFFFFF" if (lum + 0.05) < 0.5 else "000000"
+    except Exception:
+        return "000000"
+
+
 def _update_shape_color(shape_xml_str, color_info):
     """Update fill color in both DrawingML (a:srgbClr) and VML (fillcolor) representations."""
     result = shape_xml_str
@@ -374,9 +392,8 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         new_content = text_match.group(1)
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         new_content = _update_shape_pos_v(new_content, new_pos)
-        # Set text color: black on light backgrounds (A+, A, B, C), white on dark (D, E, F, G)
-        light_classes = {"A+", "A", "B", "C"}
-        text_color = "000000" if new_class in light_classes else "FFFFFF"
+        # Culoarea textului calculată din luminanța WCAG a fundalului (valabil EP și CO2)
+        text_color = _text_color_for_bg(color["hex"])
         if '<w:color' not in new_content:
             new_content = re.sub(
                 r'(<w:rPr>)([\s\S]*?)(</w:rPr>[\s\S]*?<w:t)',
