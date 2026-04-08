@@ -24,6 +24,10 @@ import { calcBenchmark } from "../calc/benchmark.js";
 import { checkMajorRenovConformity, calcBACSEnergyImpact, BACS_ENERGY_FACTORS } from "../calc/epbd.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { NZEB_THRESHOLDS, CLASS_LABELS, CLASS_COLORS } from "../data/energy-classes.js";
+import { calcBuildingRooms, ROOM_TYPE_LABELS, ROOM_THETA_INT } from "../calc/en12831-rooms.js";
+import AuditReport from "../components/AuditReport.jsx";
+import PortfolioDashboard from "../components/PortfolioDashboard.jsx";
+import AuditInvoice from "../components/AuditInvoice.jsx";
 import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
 import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
@@ -70,6 +74,12 @@ const TAB_SECTIONS = [
   { id:"preturi",     icon:"🏷️", label:"Prețuri materiale" },
   { id:"multi_building", icon:"🏘️", label:"Multi-clădire" },
   { id:"mdlpa",       icon:"🏛️", label:"MDLPA Registru" },
+  { id:"camere",      icon:"🏠", label:"Sarcini per cameră" },
+  { id:"proiect_tehnic", icon:"📐", label:"Verificare proiect" },
+  { id:"sim8760",     icon:"📈", label:"Profil anual" },
+  { id:"portofoliu",  icon:"📁", label:"Portofoliu" },
+  { id:"facturare",   icon:"🧾", label:"Deviz servicii" },
+  { id:"raport_audit",icon:"📋", label:"Raport audit" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -158,6 +168,22 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
 
   // ── Prețuri materiale state ──
   const [pretCategory, setPretCategory] = useState("all");
+
+  // ── Camere EN 12831-3 ──
+  const [rooms, setRooms] = useState([
+    { id:1, name:"Living", type:"living", area:"25", height:"2.7", exposedWalls:"2", floorType:"mid" },
+    { id:2, name:"Dormitor 1", type:"bedroom", area:"16", height:"2.7", exposedWalls:"1", floorType:"mid" },
+    { id:3, name:"Baie", type:"bathroom", area:"5", height:"2.5", exposedWalls:"1", floorType:"mid" },
+    { id:4, name:"Bucătărie", type:"kitchen", area:"12", height:"2.7", exposedWalls:"1", floorType:"mid" },
+  ]);
+  const [roomBldgParams, setRoomBldgParams] = useState({
+    U_wall: "0.40", U_window: "1.40", U_roof: "0.25", U_floor: "0.35", windowPct: "20", n50: "4.0"
+  });
+
+  // ── Modal state ──
+  const [showAuditReport, setShowAuditReport] = useState(false);
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   // ── Climate import state ──
   const [climImportStatus, setClimImportStatus]   = useState(null); // null | "loading" | "ok" | "error"
@@ -325,6 +351,10 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     hpTypeId, climate, Au,
     emissionSystem: systems?.emissionSystem,
   }) : null, [peakLoad, hpTypeId, climate, Au, instSummary, systems]);
+
+  // ── EN 12831-3 sarcini per cameră ──
+  const roomsResult = useMemo(() => calcBuildingRooms(rooms, roomBldgParams, climate),
+    [rooms, roomBldgParams, climate]);
 
   // ── Comparator pachete reabilitare ──
   const rehabPackages = useMemo(() => calcRehabPackages({
@@ -3416,6 +3446,283 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           </div>
         </Card>
       )}
+
+      {/* ═══ SARCINI PER CAMERĂ (EN 12831-3) ═══ */}
+      {activeTab === "camere" && (
+        <Card className="p-4">
+          <SectionHeader icon="🏠" title="Sarcini termice per cameră — EN 12831-3:2017"
+            subtitle="Dimensionare corpuri de încălzire / pardoseală caldă per spațiu" />
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { key:"U_wall", label:"U perete [W/(m²K)]" },
+              { key:"U_window", label:"U fereastră" },
+              { key:"U_roof", label:"U acoperiș" },
+              { key:"U_floor", label:"U planșeu jos" },
+              { key:"windowPct", label:"Vitrare [%]" },
+              { key:"n50", label:"n₅₀ [h⁻¹]" },
+            ].map(({key, label}) => (
+              <div key={key}>
+                <label className="text-[10px] text-slate-400 block mb-0.5">{label}</label>
+                <input type="number" step="0.01" value={roomBldgParams[key]}
+                  onChange={e => setRoomBldgParams(p => ({...p, [key]: e.target.value}))}
+                  className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" />
+              </div>
+            ))}
+          </div>
+          <div className="overflow-x-auto mb-3">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-white/10">
+                  {["Cameră","Tip","Au (m²)","H (m)","Fețe exp.","Nivel","Φ (W)","W/m²","Recomandare"].map(h => (
+                    <th key={h} className="text-left py-1.5 pr-2 text-[10px] text-slate-400 font-normal">{h}</th>
+                  ))}
+                  <th className="w-6"/>
+                </tr>
+              </thead>
+              <tbody>
+                {rooms.map((r, i) => {
+                  const res = roomsResult?.rooms?.[i];
+                  return (
+                    <tr key={r.id} className="border-b border-white/[0.04]">
+                      <td className="py-1.5 pr-2">
+                        <input value={r.name} onChange={e => setRooms(p => p.map((x,j) => j===i ? {...x,name:e.target.value} : x))}
+                          className="w-20 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-white" />
+                      </td>
+                      <td className="py-1.5 pr-2">
+                        <select value={r.type} onChange={e => setRooms(p => p.map((x,j) => j===i ? {...x,type:e.target.value} : x))}
+                          className="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white max-w-[100px]">
+                          {Object.entries(ROOM_TYPE_LABELS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </td>
+                      {["area","height","exposedWalls"].map(field => (
+                        <td key={field} className="py-1.5 pr-2">
+                          <input type="number" step="0.1" value={r[field]}
+                            onChange={e => setRooms(p => p.map((x,j) => j===i ? {...x,[field]:e.target.value} : x))}
+                            className="w-12 bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-xs text-right text-white" />
+                        </td>
+                      ))}
+                      <td className="py-1.5 pr-2">
+                        <select value={r.floorType} onChange={e => setRooms(p => p.map((x,j) => j===i ? {...x,floorType:e.target.value} : x))}
+                          className="bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white">
+                          <option value="mid">Intermediar</option>
+                          <option value="top">Ultimul etaj</option>
+                          <option value="ground">Parter</option>
+                        </select>
+                      </td>
+                      <td className="py-1.5 pr-2 font-mono font-bold" style={{color: res?.phi_total > 2000 ? "#f97316" : res?.phi_total > 1000 ? "#eab308" : "#22c55e"}}>
+                        {res?.phi_total ?? "—"}
+                      </td>
+                      <td className="py-1.5 pr-2 font-mono text-slate-300">{res?.phi_specific ?? "—"}</td>
+                      <td className="py-1.5 pr-2 text-[10px] text-slate-400 max-w-[120px]">{res?.typeRec ?? "—"}</td>
+                      <td className="py-1.5">
+                        <button onClick={() => setRooms(p => p.filter((_,j) => j!==i))}
+                          className="w-5 h-5 rounded hover:bg-red-500/20 text-red-400/40 hover:text-red-400 flex items-center justify-center transition-all">×</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between">
+            <button onClick={() => setRooms(p => [...p, {id:Date.now(), name:`Cameră ${p.length+1}`, type:"other", area:"12", height:"2.7", exposedWalls:"1", floorType:"mid"}])}
+              className="text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all">
+              + Adaugă cameră
+            </button>
+            {roomsResult && (
+              <div className="text-right">
+                <div className="text-sm font-bold text-white">Total: <span className="text-amber-400">{roomsResult.phi_total_kW} kW</span></div>
+                <div className="text-[10px] text-slate-400">{roomsResult.phi_specific_avg} W/m² medie · {roomsResult.totalArea} m² total</div>
+                <div className="text-[10px] text-indigo-300 mt-0.5">{roomsResult.recommendation}</div>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* ═══ VERIFICARE PROIECT TEHNIC ═══ */}
+      {activeTab === "proiect_tehnic" && (
+        <Card className="p-4">
+          <SectionHeader icon="📐" title="Verificare proiect tehnic vs. normative"
+            subtitle="Comparare U-values față de C107/2005 și cerințe nZEB" />
+          {(() => {
+            const isRes = ["RI","RC","RA"].includes(cat);
+            const C107_U = { PE: 0.50, PT: isRes ? 0.40 : 0.35, PP: isRes ? 0.50 : 0.45, PB: 0.40, tamp: isRes ? 1.77 : 1.60 };
+            const NZEB_U = { PE: isRes ? 0.28 : 0.30, PT: isRes ? 0.20 : 0.22, PP: isRes ? 0.25 : 0.28, PB: 0.25, tamp: 1.10 };
+            const elements = [
+              ...(opaqueElements||[]).map(el => {
+                const R = (el.layers||[]).reduce((r,l)=>r+((parseFloat(l.thickness)||0)/1000)/(l.lambda||1),0.17);
+                const U = Math.round(1/Math.max(R,0.05)*1000)/1000;
+                const type = el.type || "PE";
+                return { name:el.name||el.type, type, U, area:parseFloat(el.area)||0, lim_c107:C107_U[type]||0.50, lim_nzeb:NZEB_U[type]||0.28, ok_c107:U<=(C107_U[type]||0.50), ok_nzeb:U<=(NZEB_U[type]||0.28) };
+              }),
+              ...(glazingElements||[]).map(gl => {
+                const U = parseFloat(gl.u)||2.0;
+                return { name:gl.name||gl.orientation, type:"tamp", U, area:parseFloat(gl.area)||0, lim_c107:C107_U.tamp, lim_nzeb:NZEB_U.tamp, ok_c107:U<=C107_U.tamp, ok_nzeb:U<=NZEB_U.tamp };
+              }),
+            ];
+            const conform_c107 = elements.every(e => e.ok_c107);
+            const conform_nzeb = elements.every(e => e.ok_nzeb);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[{label:"C107/2005", ok:conform_c107, sub:"Normativ transmitanță max."}, {label:"Cerință nZEB", ok:conform_nzeb, sub:"Transmitanță maximă nZEB"}].map(({label,ok,sub}) => (
+                    <div key={label} className={cn("rounded-xl p-3 text-center border", ok ? "border-green-700/40 bg-green-900/15" : "border-red-700/40 bg-red-900/15")}>
+                      <div className="text-lg">{ok ? "✅" : "❌"}</div>
+                      <div className={cn("text-sm font-bold", ok ? "text-green-300" : "text-red-300")}>{label}</div>
+                      <div className="text-[10px] text-slate-400">{sub}</div>
+                    </div>
+                  ))}
+                </div>
+                {elements.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          {["Element","Tip","Au (m²)","U calc.","U_max C107","U_max nZEB","C107","nZEB"].map(h => (
+                            <th key={h} className="text-left py-1.5 pr-3 text-[10px] text-slate-400 font-normal">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {elements.map((el, i) => (
+                          <tr key={i} className="border-b border-white/[0.04]">
+                            <td className="py-1.5 pr-3 text-white">{el.name}</td>
+                            <td className="py-1.5 pr-3 text-slate-400">{el.type}</td>
+                            <td className="py-1.5 pr-3 font-mono">{el.area}</td>
+                            <td className="py-1.5 pr-3 font-mono font-bold" style={{color:!el.ok_c107?"#ef4444":!el.ok_nzeb?"#f97316":"#22c55e"}}>{el.U.toFixed(3)}</td>
+                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_c107.toFixed(2)}</td>
+                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_nzeb.toFixed(2)}</td>
+                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_c107} label=""/></td>
+                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_nzeb} label=""/></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă în Pasul 2.</p>}
+                {!conform_c107 && elements.length > 0 && (
+                  <div className="text-xs text-red-300 bg-red-900/15 rounded-lg p-3">✗ Neconform C107: {elements.filter(e=>!e.ok_c107).map(e=>e.name).join(", ")}</div>
+                )}
+                {conform_nzeb && <div className="text-xs text-green-300 bg-green-900/15 rounded-lg p-3">✓ Conform C107 și cerință nZEB.</div>}
+              </div>
+            );
+          })()}
+        </Card>
+      )}
+
+      {/* ═══ PROFIL ANUAL ═══ */}
+      {activeTab === "sim8760" && (
+        <Card className="p-4">
+          <SectionHeader icon="📈" title="Profil energetic anual — distribuție lunară"
+            subtitle="Consum și câștiguri per lună pe baza calculului EN ISO 13790" />
+          {instSummary?.monthly ? (
+            <div className="space-y-4">
+              {(() => {
+                const months = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
+                const qH = instSummary.monthly.map(m => m.qH_nd||0);
+                const qC = instSummary.monthly.map(m => m.qC_nd||0);
+                const qSol = instSummary.monthly.map(m => m.q_sol||0);
+                const maxVal = Math.max(...qH, ...qC, 1);
+                const w=500, h=100, barW=28, gap=13;
+                return (
+                  <div>
+                    <div className="text-xs text-slate-400 mb-2">Nevoi energetice lunare [kWh]</div>
+                    <svg viewBox={`0 ${-h} ${w} ${h+20}`} className="w-full">
+                      {months.map((m,i) => {
+                        const x = i*(barW+gap)+5;
+                        const hH = (qH[i]/maxVal)*(h-8);
+                        const hC = (qC[i]/maxVal)*(h-8);
+                        return (
+                          <g key={m}>
+                            {hH>0&&<rect x={x} y={-hH} width={barW*0.45} height={hH} fill="#f97316" fillOpacity="0.8" rx="2"/>}
+                            {hC>0&&<rect x={x+barW*0.5} y={-hC} width={barW*0.45} height={hC} fill="#6366f1" fillOpacity="0.8" rx="2"/>}
+                            <text x={x+barW/2} y={14} fill="#94a3b8" fontSize="7" textAnchor="middle">{m}</text>
+                          </g>
+                        );
+                      })}
+                      <line x1="0" y1="0" x2={w} y2="0" stroke="white" strokeOpacity="0.1" strokeWidth="1"/>
+                    </svg>
+                    <div className="flex gap-4 mt-1 text-[10px]">
+                      <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-orange-400 inline-block"/>Încălzire</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-indigo-400 inline-block"/>Răcire</span>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      {["Lună","T ext (°C)","Încălzire (kWh)","Răcire (kWh)","Solar (kWh)"].map(h => (
+                        <th key={h} className="text-right py-1.5 px-2 text-[10px] text-slate-400 font-normal first:text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"].map((m,i) => {
+                      const mo = instSummary.monthly[i]||{};
+                      return (
+                        <tr key={m} className="border-b border-white/[0.04]">
+                          <td className="py-1 px-2 text-slate-300">{m}</td>
+                          <td className="py-1 px-2 text-right font-mono text-blue-300">{mo.theta_e??mo.t_ext??climate?.theta_a??"-"}</td>
+                          <td className="py-1 px-2 text-right font-mono text-orange-300">{Math.round(mo.qH_nd||0).toLocaleString()}</td>
+                          <td className="py-1 px-2 text-right font-mono text-indigo-300">{Math.round(mo.qC_nd||0).toLocaleString()}</td>
+                          <td className="py-1 px-2 text-right font-mono text-yellow-300">{Math.round(mo.q_sol||0).toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="border-t border-white/10 font-bold">
+                      <td className="py-1.5 px-2 text-white">TOTAL</td><td/>
+                      <td className="py-1.5 px-2 text-right font-mono text-orange-300">{Math.round(instSummary.monthly.reduce((s,m)=>s+(m.qH_nd||0),0)).toLocaleString()} kWh</td>
+                      <td className="py-1.5 px-2 text-right font-mono text-indigo-300">{Math.round(instSummary.monthly.reduce((s,m)=>s+(m.qC_nd||0),0)).toLocaleString()} kWh</td>
+                      <td className="py-1.5 px-2 text-right font-mono text-yellow-300">{Math.round(instSummary.monthly.reduce((s,m)=>s+(m.q_sol||0),0)).toLocaleString()} kWh</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                {[{label:"Iarnă",months:[11,0,1],color:"#6366f1"},{label:"Primăvară",months:[2,3,4],color:"#22c55e"},{label:"Vară",months:[5,6,7],color:"#f97316"},{label:"Toamnă",months:[8,9,10],color:"#eab308"}].map(s => {
+                  const tH = s.months.reduce((sum,i)=>sum+(instSummary.monthly[i]?.qH_nd||0),0);
+                  const tC = s.months.reduce((sum,i)=>sum+(instSummary.monthly[i]?.qC_nd||0),0);
+                  return (
+                    <div key={s.label} className="bg-slate-800 rounded-lg p-2.5">
+                      <div className="font-medium mb-1" style={{color:s.color}}>{s.label}</div>
+                      <div className="text-orange-300">{Math.round(tH).toLocaleString()} kWh</div>
+                      <div className="text-indigo-300">{Math.round(tC).toLocaleString()} kWh</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : <p className="text-slate-500 text-sm text-center py-8">Completați calculul (Pasul 5) pentru a vizualiza profilul anual.</p>}
+        </Card>
+      )}
+
+      {/* ═══ PORTOFOLIU / DEVIZ / RAPORT ═══ */}
+      {activeTab === "portofoliu" && (
+        <Card className="p-4">
+          <SectionHeader icon="📁" title="Dashboard portofoliu proiecte" subtitle="Vizualizare și management proiecte salvate" />
+          <button onClick={() => setShowPortfolio(true)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors text-sm">📁 Deschide Portofoliu</button>
+        </Card>
+      )}
+      {activeTab === "facturare" && (
+        <Card className="p-4">
+          <SectionHeader icon="🧾" title="Deviz servicii audit energetic" subtitle="Generare deviz/factură proformă pentru serviciile de audit" />
+          <button onClick={() => setShowInvoice(true)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors text-sm">🧾 Deschide Generator Deviz</button>
+        </Card>
+      )}
+      {activeTab === "raport_audit" && (
+        <Card className="p-4">
+          <SectionHeader icon="📋" title="Raport audit energetic complet" subtitle="Document livrat clientului — consum, anvelopă, sisteme, recomandări, deviz" />
+          <button onClick={() => setShowAuditReport(true)} className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-lg transition-colors text-sm">📋 Generează Raport Audit</button>
+        </Card>
+      )}
+
+      {/* ═══ MODALS ═══ */}
+      {showAuditReport && <AuditReport building={building} instSummary={instSummary} renewSummary={renewSummary} opaqueElements={opaqueElements} glazingElements={glazingElements} thermalBridges={thermalBridges} onClose={() => setShowAuditReport(false)} />}
+      {showPortfolio && <PortfolioDashboard onClose={() => setShowPortfolio(false)} onOpenProject={() => {}} />}
+      {showInvoice && <AuditInvoice building={building} onClose={() => setShowInvoice(false)} />}
 
     </div>
   );

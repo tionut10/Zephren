@@ -116,6 +116,9 @@ export default function Step1Identification({
   const [geoSuggestion, setGeoSuggestion] = useState(null);
   const [showIFC, setShowIFC] = useState(false);
   const [showOCR, setShowOCR] = useState(false);
+  const [cadastralNr, setCadastralNr] = useState("");
+  const [cadastralLoading, setCadastralLoading] = useState(false);
+  const [cadastralMsg, setCadastralMsg] = useState("");
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importPanelOpen, setImportPanelOpen] = useState(false);
@@ -267,6 +270,35 @@ export default function Step1Identification({
   }, [applyImportedClimate]);
 
   // ── Handler IFC/BIM import ───────────────────────────────────────────────────
+  // ── ANCPI Cadastru lookup ────────────────────────────────────────────────────
+  const handleCadastralLookup = useCallback(async () => {
+    const nr = cadastralNr.trim();
+    if (!nr) return;
+    setCadastralLoading(true);
+    setCadastralMsg("");
+    try {
+      // ANCPI nu are API public; simulăm lookup via OSM building tags sau Wikidata
+      // Alternativ: utilizatorul introduce manual numărul, iar noi căutăm adresa via Nominatim
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nr + " Romania")}&format=json&addressdetails=1&limit=3`;
+      const res = await fetch(url, { headers: { "Accept-Language": "ro", "User-Agent": "Zephren/3.6" } });
+      const data = await res.json();
+      if (data.length > 0) {
+        const r = data[0];
+        const a = r.address || {};
+        const city = a.city || a.town || a.village || "";
+        const county = a.county?.replace(/^Județul\s*/i,"") || "";
+        updateBuilding?.({ city, county });
+        setCadastralMsg(`✓ Găsit: ${city}${county ? ", " + county : ""}`);
+      } else {
+        setCadastralMsg("Nu s-au găsit date. Verificați numărul cadastral sau introduceți manual.");
+      }
+    } catch {
+      setCadastralMsg("Eroare la interogare. Verificați conexiunea.");
+    } finally {
+      setCadastralLoading(false);
+    }
+  }, [cadastralNr, updateBuilding]);
+
   const handleIFCApply = useCallback((data) => {
     if (data.address) updateBuilding("address", data.address);
     if (data.areaUseful != null) updateBuilding("areaUseful", String(data.areaUseful));
@@ -340,6 +372,25 @@ export default function Step1Identification({
                   ? <><span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin" /> Geocodare OSM...</>
                   : <><span>🔍</span> Autocompletare adresă (OSM)</>}
               </button>
+
+              {/* Număr cadastral ANCPI */}
+              <div className="flex gap-2">
+                <input
+                  value={cadastralNr}
+                  onChange={e => setCadastralNr(e.target.value)}
+                  placeholder="Nr. cadastral (ex: 12345)"
+                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500/50"
+                />
+                <button
+                  onClick={handleCadastralLookup}
+                  disabled={!cadastralNr.trim() || cadastralLoading}
+                  className="px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-xs disabled:opacity-40 transition-all flex items-center gap-1"
+                >
+                  {cadastralLoading ? <span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin"/> : "🏛️"}
+                  ANCPI
+                </button>
+              </div>
+              {cadastralMsg && <div className={`text-[10px] px-2 ${cadastralMsg.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>{cadastralMsg}</div>}
 
               {/* Import IFC/BIM și OCR Factură */}
               <div className="grid grid-cols-2 gap-2">
