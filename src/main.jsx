@@ -64,8 +64,7 @@ function Router() {
     <Suspense fallback={
       <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0a0a1a",color:"#f59e0b",fontFamily:"DM Sans, sans-serif"}}>
         <div style={{textAlign:"center"}}>
-          <div style={{fontSize:"48px",marginBottom:"16px"}}>⚡</div>
-          <div style={{fontSize:"24px",fontWeight:"bold"}}>Zephren</div>
+          <img src="/logo.svg" alt="Zephren" style={{width:"220px",height:"auto",marginBottom:"8px"}} />
           <div style={{fontSize:"12px",opacity:0.5,marginTop:"8px"}}>Se încarcă...</div>
         </div>
       </div>

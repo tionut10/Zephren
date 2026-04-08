@@ -2,46 +2,76 @@
  * planGating.js
  *
  * Feature gating based on user subscription plan.
- * Defines which features are available at each tier (free, pro, business).
- * Synced with TIERS in energy-calc.jsx.
+ * Structura planuri: Free / Standard / Pro / Asociație
+ * Sursa prețuri: SCENARII_MONETIZARE_ZEPHREN v1.0, apr. 2026
  */
 
 export const PLAN_FEATURES = {
   free: {
-    maxProjects: 2,
-    maxCerts: 0,
-    exportDOCX: false,
-    exportXML: false,
-    nzebReport: false,
-    aiAssistant: false,
-    multiUser: false,
-    api: false,
-    watermark: true,
-    brandingCPE: false,
+    maxProjects:  99,
+    maxCerts:     3,      // 3 CPE/lună
+    exportDOCX:   false,  // DOCX cu watermark
+    exportXML:    false,
+    nzebReport:   false,
+    aiAssistant:  false,
+    multiUser:    false,
+    maxUsers:     1,
+    api:          false,
+    watermark:    true,
+    brandingCPE:  false,
+  },
+  standard: {
+    maxProjects:  999,
+    maxCerts:     999,    // CPE nelimitat
+    exportDOCX:   true,   // PDF fără watermark + DOCX
+    exportXML:    false,
+    nzebReport:   true,
+    aiAssistant:  false,
+    multiUser:    false,
+    maxUsers:     1,
+    api:          false,
+    watermark:    false,
+    brandingCPE:  false,
   },
   pro: {
-    maxProjects: 999,
-    maxCerts: 15,
-    exportDOCX: true,
-    exportXML: true,
-    nzebReport: true,
-    aiAssistant: false,
-    multiUser: false,
-    api: false,
-    watermark: false,
-    brandingCPE: false,
+    maxProjects:  999,
+    maxCerts:     999,
+    exportDOCX:   true,
+    exportXML:    true,   // Export XML registru MDLPA
+    nzebReport:   true,
+    aiAssistant:  false,
+    multiUser:    true,
+    maxUsers:     5,
+    api:          true,
+    watermark:    false,
+    brandingCPE:  false,
   },
+  asociatie: {
+    maxProjects:  999,
+    maxCerts:     999,
+    exportDOCX:   true,
+    exportXML:    true,
+    nzebReport:   true,
+    aiAssistant:  true,
+    multiUser:    true,
+    maxUsers:     20,
+    api:          true,
+    watermark:    false,
+    brandingCPE:  true,
+  },
+  // backward compat — mapează vechiul "business" la asociatie
   business: {
-    maxProjects: 999,
-    maxCerts: 999,
-    exportDOCX: true,
-    exportXML: true,
-    nzebReport: true,
-    aiAssistant: true,
-    multiUser: true,
-    api: true,
-    watermark: false,
-    brandingCPE: true,
+    maxProjects:  999,
+    maxCerts:     999,
+    exportDOCX:   true,
+    exportXML:    true,
+    nzebReport:   true,
+    aiAssistant:  true,
+    multiUser:    true,
+    maxUsers:     20,
+    api:          true,
+    watermark:    false,
+    brandingCPE:  true,
   },
 };
 

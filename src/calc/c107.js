@@ -288,13 +288,31 @@ export function getRenovUMax(elementType, category) {
  * }}
  */
 export function checkC107Conformity(opaqueElements = [], glazingElements = [], category, calcOpaqueR) {
-  // Validare categorie
+  // Mapare categorii extinse → categorii C107/2-2005
+  const categoryMap = {
+    'RA': 'RC',  // Rezidențial alte tipuri → RC
+    'ED': 'AL',  // Educație → Alte clădiri
+    'SA': 'AL',  // Sănătate → Alte clădiri
+    'HC': 'AL',  // Hotel/turism → Alte clădiri
+    'HO_LUX': 'AL',
+    'HOSTEL': 'AL',
+    'SP': 'AL',  // Sport → Alte clădiri
+    'CU': 'AL',  // Cultură → Alte clădiri
+    'RE': 'CO',  // Restaurant → Comerț
+    'LB': 'AL',  // Laborator → Alte clădiri
+    'AS_SOC': 'AL',
+  };
+  const mappedCategory = categoryMap[category] ?? category;
+
+  // Validare categorie (după mapare)
   const validCategories = ['RI', 'RC', 'AL', 'BI', 'CO', 'IN'];
-  if (!validCategories.includes(category)) {
+  if (!validCategories.includes(mappedCategory)) {
     throw new Error(
       `checkC107Conformity: categorie invalidă "${category}". Valori acceptate: ${validCategories.join(', ')}`
     );
   }
+  // Folosim categoria mapată pentru restul calculelor
+  category = mappedCategory;
 
   if (typeof calcOpaqueR !== 'function') {
     throw new Error('checkC107Conformity: calcOpaqueR trebuie să fie o funcție');

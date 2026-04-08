@@ -129,3 +129,106 @@ html {
     content: none;
   }
 }
+
+/* ========================================
+   ANIMAȚII & TRANZIȚII RESPONSIVE
+   ======================================== */
+
+@layer components {
+  /* Animație fade-in pentru componente */
+  .animated {
+    animation: fadeInSlide 0.3s ease-in-out;
+  }
+
+  @keyframes fadeInSlide {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Taburi active style */
+  .tab-item {
+    @apply transition-all duration-200;
+  }
+
+  .tab-item--active {
+    @apply border-b-2 border-blue-500 text-blue-600 font-semibold;
+  }
+
+  /* Progress bar animation */
+  .progress-bar-fill {
+    @apply transition-all duration-500;
+  }
+
+  /* Badge status colors */
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  /* Form section styling */
+  .form-section {
+    @apply transition-all duration-300;
+  }
+
+  .form-section--complete {
+    @apply border-green-300 bg-green-50;
+  }
+
+  .form-section--active {
+    @apply border-blue-300 bg-blue-50;
+  }
+
+  /* Field error styling */
+  .field-error {
+    @apply border-red-500;
+  }
+
+  .field-required::after {
+    @apply text-red-500;
+    content: " *";
+  }
+
+  /* Responsive spacing utilities */
+  @media (max-width: 640px) {
+    /* Mobile: Reduced padding */
+    .p-responsive {
+      @apply p-3;
+    }
+    .gap-responsive {
+      @apply gap-3;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1023px) {
+    /* Tablet: Medium padding */
+    .p-responsive {
+      @apply p-4 md:p-5;
+    }
+    .gap-responsive {
+      @apply gap-4;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    /* Desktop: Full padding */
+    .p-responsive {
+      @apply p-6 lg:p-8;
+    }
+    .gap-responsive {
+      @apply gap-6;
+    }
+  }
+}

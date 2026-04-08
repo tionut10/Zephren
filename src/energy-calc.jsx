@@ -483,10 +483,14 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════════
   // TIER SYSTEM — Free / Pro / Business
   // ═══════════════════════════════════════════════════════════════
+  // Prețuri RON; sursa: SCENARII_MONETIZARE_ZEPHREN v1.0, apr. 2026
   const TIERS = {
-    free:     { id:"free",     label:"Free",     price:0,  maxProjects:2, maxCerts:0,  multiUser:false, watermark:true,  nzebReport:false, docxExport:false, brandingCPE:false },
-    pro:      { id:"pro",      label:"Pro",      price:99, maxProjects:999, maxCerts:15, multiUser:false, watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:false },
-    business: { id:"business", label:"Business", price:249,maxProjects:999, maxCerts:999,multiUser:true,  watermark:false, nzebReport:true,  docxExport:true,  brandingCPE:true  },
+    free:      { id:"free",      label:"Free",      price:0,   priceAn:0,    maxProjects:99,  maxCerts:3,   multiUser:false, maxUsers:1,  watermark:true,  nzebReport:false, docxExport:false, exportXML:false, brandingCPE:false, api:false },
+    standard:  { id:"standard",  label:"Standard",  price:149, priceAn:1499, maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:false, brandingCPE:false, api:false },
+    pro:       { id:"pro",       label:"Pro",       price:299, priceAn:2999, maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:5,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:false, api:true  },
+    asociatie: { id:"asociatie", label:"Asociație", price:0,   priceAn:0,    maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:20, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
+    // backward compat
+    business:  { id:"asociatie", label:"Asociație", price:0,   priceAn:0,    maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:20, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
   };
 
   const [userTier, setUserTier] = useState("free");
@@ -5691,16 +5695,37 @@ export default function EnergyCalcApp({ cloud }) {
     if (!showPricingPage) return null;
     const plans = [
       { ...TIERS.free, icon:"🆓", color:"white", border:"border-white/10",
-        headline: lang==="EN"?"Get started":"Începe gratuit",
-        features:["2 proiecte salvate","Preview certificat","Calcul energetic complet","Export PDF cu watermark","Bază de date Mc 001-2022"],
-        missing:["Export PDF/DOCX curat","Raport nZEB","Template-uri MDLPA","Multi-user"] },
+        headline: lang==="EN"?"Get started":"Fără obligații",
+        features: lang==="EN"
+          ? ["3 CPE/month","Full calculator","Climate database","Thermal bridges","DOCX with watermark"]
+          : ["3 CPE/lună","Calculator complet","Bază de date climatică","Punți termice","DOCX cu watermark"],
+        missing: lang==="EN"
+          ? ["Clean PDF/DOCX","nZEB report","MDLPA templates","Multi-user"]
+          : ["PDF/DOCX curat","Raport nZEB","Template-uri MDLPA","Multi-user"] },
+      { ...TIERS.standard, icon:"📋", color:"sky", border:"border-sky-500/30",
+        headline: lang==="EN"?"For individual auditors":"Pentru auditori individuali",
+        priceLabel: "149 RON/lună", priceAnLabel: "1.499 RON/an",
+        features: lang==="EN"
+          ? ["Unlimited CPE","Clean PDF export","MDLPA templates","nZEB report","Monthly webinars","1 user"]
+          : ["CPE nelimitat","Export PDF fără watermark","Template-uri MDLPA","Raport nZEB","Webinare lunare","1 utilizator"],
+        missing: lang==="EN"
+          ? ["XML MDLPA export","API access","Multi-user"]
+          : ["Export XML MDLPA","API REST","Multi-user"] },
       { ...TIERS.pro, icon:"⚡", color:"amber", border:"border-amber-500/50 ring-2 ring-amber-500/20", recommended:true,
         headline: lang==="EN"?"Most popular":"Cel mai popular",
-        features:["Proiecte nelimitate","15 certificate/lună","Export PDF + DOCX curat","Raport conformare nZEB","Template-uri oficiale MDLPA","Suport email"],
-        missing:["Multi-user","Branding personalizat CPE"] },
-      { ...TIERS.business, icon:"🏢", color:"emerald", border:"border-emerald-500/30",
-        headline: lang==="EN"?"For teams":"Pentru echipe",
-        features:["Certificate nelimitate","3 conturi utilizator","Branding personalizat pe CPE","Export direct bază MDLPA","Suport prioritar telefonic","Toate funcțiile Pro incluse"],
+        priceLabel: "299 RON/lună", priceAnLabel: "2.999 RON/an",
+        features: lang==="EN"
+          ? ["All Standard features","XML MDLPA export","API REST access","Up to 5 users","24h priority support","ISO 52016-1 hourly calc","EN 12831 · PNRR · Passivhaus"]
+          : ["Tot din Standard +","Export XML MDLPA","API REST acces","Până la 5 utilizatori","Suport prioritar 24h","Calcul orar ISO 52016-1","EN 12831 · PNRR · Pasivhaus"],
+        missing: lang==="EN"
+          ? ["Custom CPE branding","AI Assistant"]
+          : ["Branding personalizat CPE","AI Assistant"] },
+      { ...TIERS.asociatie, icon:"🏢", color:"emerald", border:"border-emerald-500/30",
+        headline: lang==="EN"?"For associations & firms":"Asociații & birouri",
+        priceLabel: lang==="EN"?"Negotiated":"Negociat", priceAnLabel: null,
+        features: lang==="EN"
+          ? ["Institutional license","Up to 20 users","Custom CPE branding","AI Assistant","Client portfolio","CPE expiry alerts","Dedicated support"]
+          : ["Licență instituțională","Până la 20 utilizatori","Branding personalizat CPE","AI Assistant","Portofoliu clienți","Notificări expirare CPE","Suport dedicat"],
         missing:[] },
     ];
     return (
@@ -5711,34 +5736,39 @@ export default function EnergyCalcApp({ cloud }) {
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3">
-              <span>⚡</span>
-              <span className="text-xs font-bold text-amber-400">Zephren</span>
+              <img src="/logo.svg" alt="Zephren" style={{height:"22px",width:"auto"}} />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold">{lang==="EN"?"Choose your plan":"Alege planul potrivit"}</h2>
             <p className="text-xs sm:text-sm opacity-40 mt-1">{lang==="EN"?"Switch anytime · Cancel anytime":"Poți schimba oricând · Fără obligații"}</p>
           </div>
 
           {/* Quick tier switcher — pill buttons */}
-          <div className="flex items-center justify-center gap-1 bg-white/[0.04] rounded-xl p-1 mb-6 max-w-xs mx-auto">
-            {["free","pro","business"].map(tid => (
+          <div className="flex items-center justify-center gap-1 bg-white/[0.04] rounded-xl p-1 mb-6 max-w-sm mx-auto">
+            {["free","standard","pro","asociatie"].map(tid => (
               <button key={tid} onClick={() => { activateTier(tid); }}
-                className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                  userTier === tid
-                    ? tid === "free" ? "bg-white/15 text-white shadow-lg" : tid === "pro" ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30" : "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
+                className={`flex-1 px-2 py-2 rounded-lg text-[10px] font-bold transition-all ${
+                  userTier === tid || (userTier === "business" && tid === "asociatie")
+                    ? tid === "free" ? "bg-white/15 text-white shadow-lg"
+                    : tid === "standard" ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30"
+                    : tid === "pro" ? "bg-amber-500 text-black shadow-lg shadow-amber-500/30"
+                    : "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                     : "text-white/40 hover:text-white/70 hover:bg-white/5"
                 }`}>
-                {TIERS[tid].label}
+                {TIERS[tid]?.label || tid}
               </button>
             ))}
           </div>
 
           {/* Plan cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
             {plans.map(p => {
-              const isCurrent = p.id === userTier;
-              const colorMap = { amber: { bg:"bg-amber-500/5", ring:"ring-amber-500/30", btn:"bg-amber-500 hover:bg-amber-400 text-black", badge:"bg-amber-500 text-black", check:"text-amber-400" },
-                emerald: { bg:"bg-emerald-500/5", ring:"ring-emerald-500/30", btn:"bg-emerald-500 hover:bg-emerald-400 text-black", badge:"bg-emerald-500 text-black", check:"text-emerald-400" },
-                white: { bg:"bg-white/[0.02]", ring:"ring-white/10", btn:"bg-white/10 hover:bg-white/15 text-white", badge:"bg-white/20 text-white", check:"text-white/60" } };
+              const isCurrent = p.id === userTier || (userTier === "business" && p.id === "asociatie");
+              const colorMap = {
+                amber:   { bg:"bg-amber-500/5",   ring:"ring-amber-500/30",   btn:"bg-amber-500 hover:bg-amber-400 text-black",   badge:"bg-amber-500 text-black",   check:"text-amber-400" },
+                emerald: { bg:"bg-emerald-500/5",  ring:"ring-emerald-500/30", btn:"bg-emerald-500 hover:bg-emerald-400 text-black", badge:"bg-emerald-500 text-black", check:"text-emerald-400" },
+                sky:     { bg:"bg-sky-500/5",      ring:"ring-sky-500/30",     btn:"bg-sky-500 hover:bg-sky-400 text-white",         badge:"bg-sky-500 text-white",     check:"text-sky-400" },
+                white:   { bg:"bg-white/[0.02]",   ring:"ring-white/10",       btn:"bg-white/10 hover:bg-white/15 text-white",       badge:"bg-white/20 text-white",    check:"text-white/60" },
+              };
               const cm = colorMap[p.color] || colorMap.white;
               return (
                 <div key={p.id} className={`relative rounded-2xl border ${p.border} ${cm.bg} p-4 sm:p-5 flex flex-col transition-all ${isCurrent ? "ring-2 "+cm.ring+" scale-[1.02]" : "hover:scale-[1.01]"}`}>
@@ -5754,10 +5784,16 @@ export default function EnergyCalcApp({ cloud }) {
                     <span className="text-3xl">{p.icon}</span>
                     <div className="font-bold text-lg mt-2">{p.label}</div>
                     <div className="mt-1">
-                      {p.price === 0 ? (
+                      {p.price === 0 && p.id === "free" ? (
                         <span className="text-2xl font-black opacity-50">{lang==="EN"?"Free":"Gratuit"}</span>
+                      ) : p.id === "asociatie" ? (
+                        <span className="text-sm font-bold opacity-60">{lang==="EN"?"Negotiated":"Negociat"}</span>
                       ) : (
-                        <div><span className="text-3xl font-black">{p.price}</span><span className="text-sm opacity-50 ml-1">RON/lună</span></div>
+                        <div>
+                          <span className="text-2xl font-black">{p.price}</span>
+                          <span className="text-xs opacity-50 ml-1">RON/lună</span>
+                          {p.priceAn && <div className="text-[10px] opacity-40 mt-0.5">{p.priceAn} RON/an <span className="text-green-400">(-16%)</span></div>}
+                        </div>
                       )}
                     </div>
                     {!p.recommended && <div className="text-[10px] opacity-30 mt-1">{p.headline}</div>}
@@ -5784,6 +5820,10 @@ export default function EnergyCalcApp({ cloud }) {
                     <div className={`text-center text-xs font-bold py-2.5 rounded-xl ${cm.bg} border border-white/10`}>
                       ✓ {lang==="EN"?"Active":"Activ"}
                     </div>
+                  ) : p.id === "asociatie" ? (
+                    <a href="mailto:contact@zephren.ro" className={`block w-full py-2.5 rounded-xl text-xs font-bold text-center transition-all ${cm.btn}`}>
+                      {lang==="EN"?"Contact us":"Contactează-ne"}
+                    </a>
                   ) : (
                     <button onClick={() => activateTier(p.id)}
                       className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${cm.btn}`}>
@@ -6089,14 +6129,17 @@ export default function EnergyCalcApp({ cloud }) {
                   <p className="text-[9px] uppercase tracking-widest opacity-30 hidden sm:block">Performanță Energetică</p>
                   {/* Mini tier switcher — always visible */}
                   <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-                    {["free","pro","business"].map(tid => (
-                      <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid].label} activat`, "success"); }}
+                    {["free","standard","pro","asociatie"].map(tid => (
+                      <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
                         className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all ${
-                          userTier === tid
-                            ? tid === "free" ? "bg-white/15 text-white" : tid === "pro" ? "bg-amber-500 text-black shadow-sm" : "bg-emerald-500 text-black shadow-sm"
+                          userTier === tid || (userTier === "business" && tid === "asociatie")
+                            ? tid === "free" ? "bg-white/15 text-white"
+                            : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
+                            : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
+                            : "bg-emerald-500 text-black shadow-sm"
                             : "text-white/30 hover:text-white/60"
                         }`}>
-                        {tid === "free" ? "FREE" : tid === "pro" ? "⚡PRO" : "🏢BIZ"}
+                        {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
                       </button>
                     ))}
                   </div>
@@ -6632,6 +6675,8 @@ export default function EnergyCalcApp({ cloud }) {
             if (data.photovoltaic?.enabled !== undefined) setPhotovoltaic(p => ({...INITIAL_PV, ...p, ...data.photovoltaic}));
             if (data.heatPump?.enabled !== undefined) setHeatPump(p => ({...INITIAL_HP, ...p, ...data.heatPump}));
             if (data.biomass?.enabled !== undefined) setBiomass(p => ({...INITIAL_BIO, ...p, ...data.biomass}));
+            if (data.battery?.enabled !== undefined) setBattery(p => ({...INITIAL_BATTERY, ...p, ...data.battery}));
+            if (data.otherRenew && Object.keys(data.otherRenew).length) setOtherRenew(p => ({...INITIAL_OTHER, ...p, ...data.otherRenew}));
             showToast("Date importate cu succes în pașii 1–4", "success");
           }}
           importProject={importProject}
