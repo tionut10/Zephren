@@ -3627,7 +3627,7 @@ export default function EnergyCalcApp({ cloud }) {
   useAutoSync({
     heating, setHeating,
     lighting, setLighting,
-    building, setAcm, setLighting,
+    building, setAcm,
     solarThermal, setSolarThermal,
     photovoltaic, setPhotovoltaic,
   });
