@@ -205,7 +205,7 @@ export default function Step6Certificate(props) {
                       var rL = el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0);
                       return {type: el.type, u: rL > 0 ? 1/(rsi+rL+rse) : 0};
                     })),
-                    glazing_max_u: String(Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;}))),
+                    glazing_max_u: String(glazingElements.length > 0 ? Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;})) : 0),
                   },
                 };
 

@@ -108,52 +108,52 @@ def replace_in_paragraph(para, old_text, new_text, count=0):
     return replacements
 
 
+def _iter_all_paragraphs(doc, include_txbx=True):
+    """Generator: yields all Paragraph objects from body, tables, and optionally text boxes."""
+    from docx.text.paragraph import Paragraph as DocxPara
+    for para in doc.paragraphs:
+        yield para
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for para in cell.paragraphs:
+                    yield para
+    if include_txbx:
+        txbx_tag = qn("w:txbxContent")
+        p_tag = qn("w:p")
+        for txbx_elem in doc.element.body.iter(txbx_tag):
+            for p_elem in txbx_elem.iter(p_tag):
+                yield DocxPara(p_elem, None)
+
+
 def replace_in_doc(doc, old_text, new_text, max_count=0):
     """Replace text across entire document (paragraphs + tables + text boxes)."""
-    from docx.text.paragraph import Paragraph as DocxPara
     total = 0
     remaining = max_count
-
-    # Body paragraphs
-    for para in doc.paragraphs:
+    for para in _iter_all_paragraphs(doc, include_txbx=True):
         n = replace_in_paragraph(para, old_text, new_text, remaining if max_count > 0 else 0)
         total += n
         if max_count > 0:
             remaining -= n
             if remaining <= 0:
                 return total
+    return total
 
-    # Table cells
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for para in cell.paragraphs:
-                    n = replace_in_paragraph(para, old_text, new_text, remaining if max_count > 0 else 0)
-                    total += n
-                    if max_count > 0:
-                        remaining -= n
-                        if remaining <= 0:
-                            return total
 
-    # Text boxes (w:txbxContent) — scale bars in CPE templates are stored here,
-    # not in regular paragraphs/table cells
+def replace_in_txbx_only(doc, old_text, new_text):
+    """Replace text ONLY in text boxes (w:txbxContent). Safe for numeric scale bars."""
+    from docx.text.paragraph import Paragraph as DocxPara
+    total = 0
     txbx_tag = qn("w:txbxContent")
     p_tag = qn("w:p")
     for txbx_elem in doc.element.body.iter(txbx_tag):
         for p_elem in txbx_elem.iter(p_tag):
-            para = DocxPara(p_elem, None)
-            n = replace_in_paragraph(para, old_text, new_text, remaining if max_count > 0 else 0)
-            total += n
-            if max_count > 0:
-                remaining -= n
-                if remaining <= 0:
-                    return total
-
+            total += replace_in_paragraph(DocxPara(p_elem, None), old_text, new_text)
     return total
 
 
 def replace_seq(doc, old_text, values):
-    """Replace sequential occurrences of old_text with different values."""
+    """Replace sequential occurrences of old_text with different values (body + tables + text boxes)."""
     idx = [0]
 
     def do_para(para):
@@ -165,37 +165,28 @@ def replace_seq(doc, old_text, values):
             idx[0] += 1
             full = para.text
 
-    for para in doc.paragraphs:
+    for para in _iter_all_paragraphs(doc, include_txbx=True):
         do_para(para)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for para in cell.paragraphs:
-                    do_para(para)
 
 
 # ═══════════════════════════════════════════════════════
 # REPLACE SCALE THRESHOLDS — EP and CO2
 # ═══════════════════════════════════════════════════════
 def replace_scales(doc, category, new_ep_scale, new_co2_scale=None):
-    """Replace the hardcoded EP/CO2 scale values from the template with new values."""
+    """Replace EP/CO2 scale values in text boxes ONLY (safe — no risk of corrupting other numbers)."""
     old_ep = EP_TEMPLATE_SCALES.get(category, EP_TEMPLATE_SCALES["AL"])
 
     for i in range(7):
         if old_ep[i] != new_ep_scale[i]:
-            old_s = str(old_ep[i])
-            new_s = str(new_ep_scale[i])
-            # Replace standalone numbers and numbers in ranges
-            replace_in_doc(doc, old_s, new_s)
+            replace_in_txbx_only(doc, str(old_ep[i]), str(new_ep_scale[i]))
 
-    # CO2 scales — format with comma (Romanian)
     if new_co2_scale:
         old_co2 = CO2_TEMPLATE_SCALES.get(category, CO2_TEMPLATE_SCALES["AL"])
         for i in range(7):
             old_s = format_ro(old_co2[i], 1)
             new_s = format_ro(new_co2_scale[i], 1)
             if old_s != new_s:
-                replace_in_doc(doc, old_s, new_s)
+                replace_in_txbx_only(doc, old_s, new_s)
 
 
 # ═══════════════════════════════════════════════════════
@@ -461,7 +452,12 @@ def compute_checkboxes(data, category):
         opaque_u = json.loads(data.get("opaque_u_values", "[]"))
     except:
         opaque_u = []
-    glaz_max_u = float(data.get("glazing_max_u", "0") or "0")
+    try:
+        glaz_max_u = float(data.get("glazing_max_u", "0") or "0")
+        if glaz_max_u != glaz_max_u or glaz_max_u < 0:  # NaN sau negativ
+            glaz_max_u = 0.0
+    except (ValueError, TypeError):
+        glaz_max_u = 0.0
 
     # ══════════════════════════════
     # ANEXA 1 — RECOMANDĂRI (CB 0-47)
@@ -538,22 +534,29 @@ def compute_checkboxes(data, category):
         cbs.append(cb)
 
     # Zone climatice (CB 112-116 = zone I-V)
-    zone_num = int(data.get("climate_zone_num", "3") or "3")
-    if 1 <= zone_num <= 5:
-        cbs.append(111 + zone_num)
+    try:
+        zone_num = int(data.get("climate_zone_num", "3") or "3")
+    except (ValueError, TypeError):
+        zone_num = 3
+    zone_num = max(1, min(5, zone_num))  # clamp 1-5
+    cbs.append(111 + zone_num)
 
     # Zone eoliene (CB 117-120)
     wind_zone = 1 if zone_num <= 2 else (2 if zone_num <= 4 else 3)
-    if 1 <= wind_zone <= 4:
-        cbs.append(116 + wind_zone)
+    cbs.append(116 + wind_zone)
 
-    # Structura constructivă (CB 127-134)
-    struct_map = {
-        "Zidărie portantă": 127, "Cadre beton armat": 129,
-        "Panouri prefabricate mari": 133, "Structură metalică": 132,
-        "Structură lemn": 131, "Mixtă": 134,
-    }
-    struct_cb = struct_map.get(data.get("structure", ""), None)
+    # Structura constructivă (CB 127-134) — matching parțial (building.structure e string lung)
+    struct_map = [
+        ("Zidărie portantă", 127), ("Cadre beton armat", 129),
+        ("Panouri prefabricate mari", 133), ("Structură metalică", 132),
+        ("Structură lemn", 131), ("Mixtă", 134),
+    ]
+    struct_text = data.get("structure", "")
+    struct_cb = None
+    for key, cb in struct_map:
+        if key in struct_text:
+            struct_cb = cb
+            break
     if struct_cb:
         cbs.append(struct_cb)
 
@@ -1008,7 +1011,13 @@ class handler(BaseHTTPRequestHandler):
                 # Înlocuim texte tip "U pereți exteriori" / "U acoperiș" etc.
                 try:
                     opaque_u = json.loads(data.get("opaque_u_values", "[]"))
-                    glaz_u = float(data.get("glazing_max_u", "0") or "0")
+                    raw_glaz = data.get("glazing_max_u", "0") or "0"
+                    try:
+                        glaz_u = float(raw_glaz)
+                        if glaz_u != glaz_u or glaz_u < 0:
+                            glaz_u = 0.0
+                    except (ValueError, TypeError):
+                        glaz_u = 0.0
                     glaz_g = float(data.get("glazing_g_value", "0") or "0")
 
                     pe_u = [e for e in opaque_u if e.get("type") == "PE"]
@@ -1098,41 +1107,34 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             photo_b64 = body.get("photo")
             if photo_b64 and photo_b64.startswith("data:image"):
-                # Extract base64 data
-                match = re.match(r"data:image/(png|jpeg|jpg);base64,(.+)", photo_b64)
+                # Suport png/jpeg/jpg/webp/gif/bmp
+                match = re.match(r"data:image/(png|jpeg|jpg|webp|gif|bmp);base64,(.+)", photo_b64, re.DOTALL)
                 if match:
                     img_data = base64.b64decode(match.group(2))
                     img_stream = io.BytesIO(img_data)
-                    # Find "FOTO" text and replace with image
-                    body_xml = doc.element.body
-                    foto_found = False
-                    for t_elem in body_xml.iter(qn("w:t")):
-                        if t_elem.text and "FOTO" in t_elem.text:
-                            # Replace the paragraph containing FOTO with an image
-                            p_elem = t_elem.getparent()
-                            while p_elem is not None and p_elem.tag != qn("w:p"):
-                                p_elem = p_elem.getparent()
-                            if p_elem is not None:
-                                # Clear the paragraph
-                                for child in list(p_elem):
-                                    p_elem.remove(child)
-                                # Create a new run with the image
-                                from docx.oxml.ns import qn as docx_qn
-                                run_elem = etree.SubElement(p_elem, docx_qn("w:r"))
-                                # Use python-docx to add inline image
-                                from docx.oxml import OxmlElement
-                                # Simpler: add image to a temporary paragraph
-                                temp_para = doc.add_paragraph()
-                                temp_run = temp_para.add_run()
-                                temp_run.add_picture(img_stream, width=Inches(1.0))
-                                # Move the drawing element to our target paragraph
-                                drawing = temp_run._element.find(docx_qn("w:drawing"))
-                                if drawing is not None:
-                                    run_elem.append(drawing)
-                                # Remove temp paragraph
-                                temp_para._element.getparent().remove(temp_para._element)
-                                foto_found = True
-                                break
+                    from docx.oxml.ns import qn as docx_qn
+
+                    # Caută paragraful care conține "FOTO" (inclusiv split între runs și text boxes)
+                    foto_p_elem = None
+                    for para in _iter_all_paragraphs(doc, include_txbx=True):
+                        if "FOTO" in para.text:
+                            foto_p_elem = para._p
+                            break
+
+                    if foto_p_elem is not None:
+                        # Golește paragraful
+                        for child in list(foto_p_elem):
+                            foto_p_elem.remove(child)
+                        # Inserează imaginea
+                        run_elem = etree.SubElement(foto_p_elem, docx_qn("w:r"))
+                        temp_para = doc.add_paragraph()
+                        temp_run = temp_para.add_run()
+                        img_stream.seek(0)
+                        temp_run.add_picture(img_stream, width=Inches(1.0))
+                        drawing = temp_run._element.find(docx_qn("w:drawing"))
+                        if drawing is not None:
+                            run_elem.append(drawing)
+                        temp_para._element.getparent().remove(temp_para._element)
 
             # ═══════════════════════════════════════
             # 6. STRIP TRAILING EMPTY PARAGRAPHS
