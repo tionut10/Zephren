@@ -13,7 +13,7 @@ Model optim: <model> | Effort: <nivel>
 
 ### Reguli de selecție:
 
-#### 🔴 OPUS MAX (effort high)
+#### 🔴 OPUS MAX — Opus 4.6 · 1M tokens · effort high
 Orice prompt conține:
 - `audit`, `aprofundat`, `complet`, `arhitectur`, `architect`
 - `implementez`, `implementează`, `modul nou`, `integrare`, `integrez`
@@ -64,6 +64,9 @@ Pornește cu: co (alias) sau claude --model claude-opus-4-6
 ```
 
 Când folosești Agent tool → setează `model: "opus"` pentru task-uri complexe.
+
+**În terminal:** alias `co` = `claude --model claude-opus-4-6 --effort high` (1M tokens, effort MAX).
+Funcția `ca()` aplică automat `--effort high` pentru toate prompt-urile detectate ca OPUS.
 
 ---
 
