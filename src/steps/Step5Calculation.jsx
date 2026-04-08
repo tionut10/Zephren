@@ -146,6 +146,49 @@ export default function Step5Calculation(props) {
                   <div className="text-xs opacity-40">kg CO2/(m2·an)</div>
                   <div className="text-xs opacity-30 mt-1">Nota de mediu: {co2Class.score}/100</div>
 
+                  {/* Scală vizuală CO2 — bare SVG */}
+                  <div className="mt-4">
+                    <svg viewBox="0 0 280 120" width="100%" height="115">
+                      {CLASS_LABELS.map(function(cls, i) {
+                        var barW = 55 + i * 20;
+                        var y = i * 14 + 2;
+                        var isA = i === co2Class.idx;
+                        return (
+                          <g key={cls}>
+                            <rect x="5" y={y} width={barW} height="12" fill={CLASS_COLORS[i]} rx="1" opacity={isA ? 1 : 0.35}/>
+                            <text x="10" y={y+9} fontSize="7" fill="white" fontWeight="bold">{cls}</text>
+                            {isA && (<g><polygon points={(barW+8)+","+(y+1)+" "+(barW+20)+","+(y+6)+" "+(barW+8)+","+(y+11)} fill={CLASS_COLORS[i]}/><rect x={barW+20} y={y-1} width="55" height="14" fill={CLASS_COLORS[i]} rx="2"/><text x={barW+47} y={y+9} textAnchor="middle" fontSize="7" fill="white" fontWeight="bold">{co2Final.toFixed(1)}</text></g>)}
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Scala claselor CO2 */}
+                  {(() => {
+                    const co2Grid = CO2_CLASSES_DB[baseCatResolved] || CO2_CLASSES_DB.AL;
+                    return (
+                      <div className="mt-5 px-4">
+                        {CLASS_LABELS.map((cls, i) => {
+                          const isActive = i === co2Class.idx;
+                          const low = i === 0 ? 0 : co2Grid.thresholds[i-1];
+                          const high = i < co2Grid.thresholds.length ? co2Grid.thresholds[i] : "∞";
+                          return (
+                            <div key={cls} className={cn("flex items-center gap-2 py-1 px-2 rounded transition-all text-xs",
+                              isActive ? "bg-white/10 scale-105" : "opacity-50")}>
+                              <div className="w-8 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white"
+                                style={{backgroundColor:CLASS_COLORS[i]}}>{cls}</div>
+                              <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                                {isActive && <div className="h-full rounded-full" style={{backgroundColor:CLASS_COLORS[i], width:"100%"}} />}
+                              </div>
+                              <span className="font-mono text-[10px] w-20 text-right opacity-60">{low} — {high}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
                   {/* nZEB & RER status */}
                   <div className="mt-5 px-4 space-y-2">
                     <div className="flex items-center justify-between bg-white/[0.03] rounded-lg p-3">
