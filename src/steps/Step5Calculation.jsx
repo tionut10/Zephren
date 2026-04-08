@@ -26,9 +26,10 @@ export default function Step5Calculation(props) {
     setStep, goToStep, step,
     // Constants passed as props
     Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClassEPBD, getCO2Class, getNzebEpMax,
+    getEnergyClass, getCO2Class, getNzebEpMax,
     ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
     NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
+    CATEGORY_BASE_MAP,
     BACS_OBLIGATION_THRESHOLD_KW, BACS_CLASSES,
     FUELS, BENCHMARKS,
     financialAnalysis,
@@ -36,16 +37,13 @@ export default function Step5Calculation(props) {
   } = props;
 
             const Au = parseFloat(building.areaUseful) || 0;
-            const catKey = building.category + (
-              ["RI","RC","RA"].includes(building.category)
-                ? (cooling.hasCooling ? "_cool" : "_nocool")
-                : ""
-            );
+            const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
+            const catKey = baseCatResolved + (["RI","RC","RA"].includes(baseCatResolved) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-            const enClass = getEnergyClassEPBD(epFinal, catKey);
-            const co2Class = getCO2Class(co2Final, building.category);
-            const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
+            const enClass = getEnergyClass(epFinal, catKey);
+            const co2Class = getCO2Class(co2Final, baseCatResolved);
+            const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCatResolved];
             const rer = renewSummary?.rer || 0;
 
             // C5 FIX: Bilanț lunar — use monthlyISO when available
@@ -102,7 +100,7 @@ export default function Step5Calculation(props) {
                   <div className="mt-4">
                     <svg viewBox="0 0 280 120" width="100%" height="115">
                       {CLASS_LABELS.map(function(cls, i) {
-                        var barW = 55 + (7-i) * 20;
+                        var barW = 55 + i * 20;
                         var y = i * 14 + 2;
                         var isA = i === enClass.idx;
                         return (
@@ -156,7 +154,7 @@ export default function Step5Calculation(props) {
                     </div>
                     <div className="flex items-center justify-between bg-white/[0.03] rounded-lg p-3">
                       <span className="text-xs opacity-60">Statut nZEB</span>
-                      {(() => { const nz = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL; const ok = rer >= nz.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone); return (
+                      {(() => { const nz = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL; const ok = rer >= nz.rer_min && epFinal < getNzebEpMax(baseCatResolved, selectedClimate?.zone); return (
                       <Badge color={ok ? "green" : "red"}>
                         {ok ? "CONFORM" : "NECONFORM"}
                       </Badge>
@@ -223,7 +221,7 @@ export default function Step5Calculation(props) {
                           <span style={{ color: zebVerification.nzeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.nzeb.epOk ? "✓" : "✗"}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="opacity-50">RER ≥ {NZEB_THRESHOLDS[building.category]?.rer_min || 30}%</span>
+                          <span className="opacity-50">RER ≥ {NZEB_THRESHOLDS[baseCatResolved]?.rer_min || 30}%</span>
                           <span style={{ color: zebVerification.nzeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.nzeb.rerOk ? "✓" : "✗"}</span>
                         </div>
                       </div>
@@ -242,7 +240,7 @@ export default function Step5Calculation(props) {
                           <span style={{ color: zebVerification.zeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.zeb.epOk ? "✓" : "✗"}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="opacity-50">RER ≥ {ZEB_THRESHOLDS[building.category]?.rer_min || 50}%</span>
+                          <span className="opacity-50">RER ≥ {ZEB_THRESHOLDS[baseCatResolved]?.rer_min || 50}%</span>
                           <span style={{ color: zebVerification.zeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.zeb.rerOk ? "✓" : "✗"}</span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -261,7 +259,7 @@ export default function Step5Calculation(props) {
                 <Card title={t("Dashboard sumar",lang)} className="mb-6">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
+                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
                       { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
                       { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
                       { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
@@ -269,7 +267,7 @@ export default function Step5Calculation(props) {
                       <div key={i} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                         <div className="text-[10px] uppercase tracking-wider opacity-40 mb-1">{kpi.label}</div>
                         <div className="text-2xl font-black font-mono" style={{color: kpi.color}}>{kpi.value}</div>
-                        <div className="text-[9px] opacity-25 mt-0.5">{kpi.unit}</div>
+                        <div className="text-[10px] opacity-25 mt-0.5">{kpi.unit}</div>
                       </div>
                     ))}
                   </div>
@@ -277,10 +275,10 @@ export default function Step5Calculation(props) {
                   <div className="flex flex-wrap gap-2 mt-3 justify-center">
                     {(() => {
                       const ep = renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999;
-                      const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+                      const nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
                       const rer = renewSummary?.rer || 0;
-                      const isNZEB = ep <= getNzebEpMax(building.category, selectedClimate?.zone) && rer >= nzeb.rer_min;
-                      const zeb = ZEB_THRESHOLDS[building.category];
+                      const isNZEB = ep <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && rer >= nzeb.rer_min;
+                      const zeb = ZEB_THRESHOLDS[baseCatResolved];
                       const isZEB = zeb && ep <= zeb.ep_max * ZEB_FACTOR && rer >= zeb.rer_min;
                       return <>
                         <Badge color={isNZEB ? "green" : "red"}>{isNZEB ? "✓" : "✗"} nZEB</Badge>
@@ -337,19 +335,19 @@ export default function Step5Calculation(props) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="text-center p-2 rounded bg-white/[0.03]">
                       <div className="text-lg font-bold font-mono" style={{color: gwpDetailed.color}}>{gwpDetailed.gwpPerM2Year}</div>
-                      <div className="text-[9px] opacity-40">kgCO₂eq/(m²·an)</div>
+                      <div className="text-[10px] opacity-40">kgCO₂eq/(m²·an)</div>
                     </div>
                     <div className="text-center p-2 rounded bg-white/[0.03]">
                       <div className="text-lg font-bold font-mono">{gwpDetailed.gwpPerM2}</div>
-                      <div className="text-[9px] opacity-40">kgCO₂eq/m² total</div>
+                      <div className="text-[10px] opacity-40">kgCO₂eq/m² total</div>
                     </div>
                     <div className="text-center p-2 rounded bg-white/[0.03]">
                       <div className="text-lg font-bold font-mono">{(gwpDetailed.totalGWP/1000).toFixed(1)}</div>
-                      <div className="text-[9px] opacity-40">tCO₂eq total</div>
+                      <div className="text-[10px] opacity-40">tCO₂eq total</div>
                     </div>
                     <div className="text-center p-2 rounded bg-white/[0.03]">
                       <div className="text-lg font-bold font-mono">{gwpDetailed.lifetime}</div>
-                      <div className="text-[9px] opacity-40">ani viață</div>
+                      <div className="text-[10px] opacity-40">ani viață</div>
                     </div>
                   </div>
                   {/* Phase breakdown */}
@@ -378,7 +376,7 @@ export default function Step5Calculation(props) {
                       </div>
                     </details>
                   )}
-                  <div className="text-[9px] opacity-20 mt-2">Conform EN 15978. Ref. nZEB: ≤{gwpDetailed.benchmarkNZEB} kgCO₂eq/(m²·an). Faza D (credit reciclare): {gwpDetailed.gwp_D > 0 ? "-"+gwpDetailed.gwp_D+" kgCO₂eq" : "N/A"}.</div>
+                  <div className="text-[10px] opacity-20 mt-2">Conform EN 15978. Ref. nZEB: ≤{gwpDetailed.benchmarkNZEB} kgCO₂eq/(m²·an). Faza D (credit reciclare): {gwpDetailed.gwp_D > 0 ? "-"+gwpDetailed.gwp_D+" kgCO₂eq" : "N/A"}.</div>
                 </Card>
               )}
 
@@ -539,19 +537,19 @@ export default function Step5Calculation(props) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="text-center p-2 rounded-lg bg-white/[0.03]">
                       <div className="text-lg font-bold text-amber-400">{epF.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">Ep clădire</div>
+                      <div className="text-[10px] opacity-40">Ep clădire</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-white/[0.03]">
                       <div className="text-lg font-bold opacity-50">{bm.avgEp}</div>
-                      <div className="text-[9px] opacity-40">Ep medie {bm.label}</div>
+                      <div className="text-[10px] opacity-40">Ep medie {bm.label}</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-white/[0.03]">
                       <div className="text-lg font-bold text-emerald-400">{bm.bestEp}</div>
-                      <div className="text-[9px] opacity-40">Best in class</div>
+                      <div className="text-[10px] opacity-40">Best in class</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-white/[0.03]">
                       <div className={cn("text-lg font-bold", pctVsAvg > 0 ? "text-emerald-400" : "text-red-400")}>{pctVsAvg > 0 ? "-" : "+"}{Math.abs(pctVsAvg)}%</div>
-                      <div className="text-[9px] opacity-40">vs medie</div>
+                      <div className="text-[10px] opacity-40">vs medie</div>
                     </div>
                   </div>
                   {/* Vizual bar benchmark */}
@@ -566,7 +564,7 @@ export default function Step5Calculation(props) {
                     <circle cx={Math.min(395, epF/bm.worstEp*400)} cy="25" r="5" fill="#f59e0b" stroke="#000" strokeWidth="1" />
                     <text x={Math.min(395, epF/bm.worstEp*400)} y="13" textAnchor="middle" fontSize="8" fill="#f59e0b" fontWeight="bold">{epF.toFixed(0)}</text>
                   </svg>
-                  <div className="text-[9px] opacity-30 mt-1">Stoc {bm.label}: {bm.stock} clădiri | An mediu constr.: {bm.avgYear} | {bm.nzebPct}% nZEB</div>
+                  <div className="text-[10px] opacity-30 mt-1">Stoc {bm.label}: {bm.stock} clădiri | An mediu constr.: {bm.avgYear} | {bm.nzebPct}% nZEB</div>
                 </Card>
                 );
               })()}
@@ -636,14 +634,14 @@ export default function Step5Calculation(props) {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {measures.map((m,i) => {
                       const payback = annualCost * m.savePct > 0 ? Math.ceil(m.cost / (annualCost * m.savePct)) : "—";
-                      return <div key={i} className="flex items-center gap-1.5 text-[9px]">
+                      return <div key={i} className="flex items-center gap-1.5 text-[10px]">
                         <div className="w-2 h-2 rounded-full" style={{background:m.color}} />
                         <span className="opacity-60">{m.name}:</span>
                         <span className="font-bold">{payback} ani</span>
                       </div>;
                     })}
                   </div>
-                  <div className="text-[9px] opacity-25 mt-1">NPV cu rată discount 5%/an, prețuri constante {(costKwh).toFixed(2)} RON/kWh</div>
+                  <div className="text-[10px] opacity-25 mt-1">NPV cu rată discount 5%/an, prețuri constante {(costKwh).toFixed(2)} RON/kWh</div>
                 </Card>
                 );
               })()}
@@ -654,14 +652,14 @@ export default function Step5Calculation(props) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {/* nZEB */}
                     {(() => {
-                      var nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
                       var epF = renewSummary.ep_adjusted_m2;
-                      var isN = epF <= getNzebEpMax(building.category, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min;
+                      var isN = epF <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min;
                       return (
                         <div className={cn("p-4 rounded-xl border text-center", isN ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
                           <div className="text-2xl font-black mb-1" style={{color:isN?"#22c55e":"#ef4444"}}>{isN?"✓":"✗"}</div>
                           <div className="text-xs font-bold">nZEB</div>
-                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{getNzebEpMax(building.category, selectedClimate?.zone)} kWh/m²a</div>
+                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{getNzebEpMax(baseCatResolved, selectedClimate?.zone)} kWh/m²a</div>
                           <div className="text-[10px] opacity-50">RER: {renewSummary.rer.toFixed(0)}/{nzeb.rer_min}%</div>
                         </div>
                       );
@@ -669,8 +667,8 @@ export default function Step5Calculation(props) {
                     
                     {/* ZEB readiness */}
                     {(() => {
-                      var nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                      var zebMax = getNzebEpMax(building.category, selectedClimate?.zone) * ZEB_FACTOR;
+                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
+                      var zebMax = getNzebEpMax(baseCatResolved, selectedClimate?.zone) * ZEB_FACTOR;
                       var epF = renewSummary.ep_adjusted_m2;
                       var hasFossil = ["gaz","motorina","carbune"].includes(instSummary.fuel?.id);
                       var isZEB = epF <= zebMax && !hasFossil && renewSummary.rer >= 30;
@@ -680,7 +678,7 @@ export default function Step5Calculation(props) {
                           <div className="text-xs font-bold">{lang==="EN"?"ZEB Ready":"ZEB Ready"}</div>
                           <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{zebMax.toFixed(0)} kWh/m²a</div>
                           <div className="text-[10px] opacity-50">{hasFossil ? (lang==="EN"?"Fossil fuel on-site":"Combustibil fosil on-site") : (lang==="EN"?"No fossil":"Fără fosil")}</div>
-                          <div className="text-[9px] opacity-30 mt-1">EPBD IV Art.11 — 2028/2030</div>
+                          <div className="text-[10px] opacity-30 mt-1">EPBD IV Art.11 — 2028/2030</div>
                         </div>
                       );
                     })()}
@@ -691,7 +689,7 @@ export default function Step5Calculation(props) {
                       <div className="text-xs font-bold">RER L.238/2024</div>
                       <div className="text-[10px] opacity-50 mt-1">On-site: {renewSummary.rerOnSite.toFixed(1)}% / min 10%</div>
                       <div className="text-[10px] opacity-50">Total: {renewSummary.rer.toFixed(1)}% / min 30%</div>
-                      <div className="text-[9px] opacity-30 mt-1">Art.17 L.372/2005 mod. L.238/2024</div>
+                      <div className="text-[10px] opacity-30 mt-1">Art.17 L.372/2005 mod. L.238/2024</div>
                     </div>
                   </div>
                   
@@ -731,7 +729,7 @@ export default function Step5Calculation(props) {
                             = CO₂ operațional ({co2Op.toFixed(1)}) + carbon înglobat ({gwpManual > 0 ? "manual" : "~" + embodiedEst + " est."})
                           </div>
                         </div>
-                        <div className="text-[9px] opacity-30 mt-1">
+                        <div className="text-[10px] opacity-30 mt-1">
                           EPBD IV Art.7 {obligatory ? "— OBLIGATORIU pt. această clădire" : "— opțional (obligatoriu >1000m² din 2028)"} | Estimare conform EN 15978
                         </div>
                       </div>
@@ -875,7 +873,7 @@ export default function Step5Calculation(props) {
                           <span className="text-sm mt-0.5">{preset.icon}</span>
                           <div>
                             <div className="text-[10px] font-semibold leading-tight">{preset.label}</div>
-                            <div className="text-[9px] opacity-40 leading-tight">{preset.sublabel}</div>
+                            <div className="text-[10px] opacity-40 leading-tight">{preset.sublabel}</div>
                           </div>
                         </button>
                       ))}
@@ -885,7 +883,7 @@ export default function Step5Calculation(props) {
                       {Object.entries(energyPrices).map(function(entry) { return (
                         <div key={entry[0]} className="flex items-center gap-1.5">
                           <span className="text-xs">{PRICE_ICONS[entry[0]] || "⚙️"}</span>
-                          <span className="text-[9px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
+                          <span className="text-[10px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
                           <input type="number" value={entry[1]} step="0.01" min="0"
                             onChange={function(e){setEnergyPrices(function(p){var n=Object.assign({},p);n[entry[0]]=parseFloat(e.target.value)||0;return n;});}}
                             className="w-16 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-right"/>
@@ -923,8 +921,8 @@ export default function Step5Calculation(props) {
                             }} />
                           </div>
                           <div className="flex justify-between mt-0.5">
-                            <span className="text-[9px] opacity-30">{Au > 0 ? (u.qf/Au).toFixed(1) : "—"} kWh/(m²·an)</span>
-                            <span className="text-[9px] opacity-30">{instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100).toFixed(0) : 0}%</span>
+                            <span className="text-[10px] opacity-30">{Au > 0 ? (u.qf/Au).toFixed(1) : "—"} kWh/(m²·an)</span>
+                            <span className="text-[10px] opacity-30">{instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100).toFixed(0) : 0}%</span>
                           </div>
                         </div>
                       ))}
@@ -1047,7 +1045,7 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Comparație clădire reală vs. clădire de referință (nZEB)">
                   {(() => {
-                    const epRef = getNzebEpMax(building.category, selectedClimate?.zone) || 148;
+                    const epRef = getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 148;
                     const ratios = [0.45, 0.25, 0.10, 0.08, 0.12];
                     const labels = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
                     const colors = ["#ef4444","#f97316","#3b82f6","#8b5cf6","#eab308"];

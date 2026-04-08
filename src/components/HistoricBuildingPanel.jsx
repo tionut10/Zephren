@@ -52,7 +52,7 @@ function LMIClassSelector({ value, onChange }) {
           }`}
         >
           <div className="font-bold text-base leading-none mb-1">Clasa {cls}</div>
-          <div className="text-[9px] leading-tight opacity-70">{descriptions[cls]}</div>
+          <div className="text-[10px] leading-tight opacity-70">{descriptions[cls]}</div>
         </button>
       ))}
     </div>
@@ -123,9 +123,9 @@ function InsulationOption({ opt, isSelected, onSelect }) {
           <span className={`text-xs font-semibold ${isSelected ? "text-amber-300" : "text-white/80"}`}>
             {opt.material}
           </span>
-          {opt.breathable && <span className="ml-2 text-[9px] text-green-400 border border-green-500/30 rounded px-1">respirabil</span>}
-          {!opt.feasible && <span className="ml-2 text-[9px] text-red-400 border border-red-500/30 rounded px-1">grosime dep.</span>}
-          {opt.target_met && <span className="ml-2 text-[9px] text-green-400 border border-green-500/30 rounded px-1">U atins</span>}
+          {opt.breathable && <span className="ml-2 text-[10px] text-green-400 border border-green-500/30 rounded px-1">respirabil</span>}
+          {!opt.feasible && <span className="ml-2 text-[10px] text-red-400 border border-red-500/30 rounded px-1">grosime dep.</span>}
+          {opt.target_met && <span className="ml-2 text-[10px] text-green-400 border border-green-500/30 rounded px-1">U atins</span>}
         </div>
         <span className="text-[10px] text-amber-400 font-mono flex-shrink-0">
           {opt.U_achieved?.toFixed(3)} W/(m²·K)

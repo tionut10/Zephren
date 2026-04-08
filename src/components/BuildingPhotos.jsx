@@ -50,7 +50,7 @@ function PhotoCard({ photo, index, onDelete, onUpdate, cn }) {
             title="Șterge fotografie">✕</button>
         </div>
         {/* Category badge */}
-        <div className={cn("absolute bottom-2 left-2 text-[9px] px-1.5 py-0.5 rounded font-medium", st.badge)}>
+        <div className={cn("absolute bottom-2 left-2 text-[10px] px-1.5 py-0.5 rounded font-medium", st.badge)}>
           {cat.icon} {cat.label}
         </div>
       </div>
@@ -72,9 +72,9 @@ function PhotoCard({ photo, index, onDelete, onUpdate, cn }) {
           {label ? (
             <div className="text-[10px] font-medium text-slate-200 truncate">{label}</div>
           ) : (
-            <div className="text-[9px] text-slate-500 italic">Fără titlu — click ✎ pentru adnotare</div>
+            <div className="text-[10px] text-slate-500 italic">Fără titlu — click ✎ pentru adnotare</div>
           )}
-          {note && <div className="text-[9px] text-slate-400 mt-0.5 line-clamp-2">{note}</div>}
+          {note && <div className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">{note}</div>}
         </div>
       )}
     </div>

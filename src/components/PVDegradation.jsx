@@ -295,7 +295,7 @@ export default function PVDegradation({ renewSummary, building }) {
             </tbody>
           </table>
         </div>
-        <div className="text-[9px] text-slate-600 mt-2">
+        <div className="text-[10px] text-slate-600 mt-2">
           Notă: Simulare conform IEC 61724. Degradare liniară {degradRate}%/an. NPV calculat cu rată actualizare {discountRate}%.
           Factor emisie CO₂ Romania: 0.315 kg CO₂/kWh (ANRE 2024). {results.payback && `Rândul An ${results.payback} marcat în mov = recuperare investiție.`}
         </div>

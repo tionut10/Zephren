@@ -202,7 +202,7 @@ export default function ApartmentClasses({ epBuildingM2, thresholds, buildingAre
                   )}
                   <td className="py-2 pr-3 text-right">
                     <span className="font-mono text-[11px]">{res?.epM2.toFixed(1) || "—"}</span>
-                    <span className="text-[9px] opacity-40 ml-0.5">kWh/m²</span>
+                    <span className="text-[10px] opacity-40 ml-0.5">kWh/m²</span>
                   </td>
                   <td className="py-2 pr-3 text-center">
                     {res?.cls ? <ClassPill cls={res.cls} /> : <span className="opacity-30">—</span>}

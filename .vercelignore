@@ -1,0 +1,5 @@
+# Exclude funcții API non-critice pentru a rămâne sub limita de 12 (Hobby plan)
+# ANCPI proxy — date simulate, fără cheie API reală
+api/ancpi-proxy.js
+# OCR CPE — funcționalitate opțională, necesită plan plătit Anthropic
+api/ocr-cpe.js

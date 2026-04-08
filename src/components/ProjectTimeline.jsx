@@ -63,7 +63,7 @@ export default function ProjectTimeline({ state, currentStep, onGoToStep, compac
             }`}
           >
             <span className="text-lg leading-none">{s.icon}</span>
-            <span className={`text-[9px] font-medium ${s.active ? "text-amber-300" : s.done ? "text-emerald-400" : "text-white/30"}`}>
+            <span className={`text-[10px] font-medium ${s.active ? "text-amber-300" : s.done ? "text-emerald-400" : "text-white/30"}`}>
               {s.label}
             </span>
             <span className={`text-[8px] ${s.done ? "text-emerald-400" : "text-white/20"}`}>

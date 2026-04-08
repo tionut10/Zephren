@@ -378,7 +378,7 @@ export default function IFCImport({ onImport, onClose }) {
                     onChange={e => setApplyItems(p => ({...p, [key]: e.target.checked}))}
                     className="accent-indigo-500" />
                   {label}
-                  {!available && <Badge className="bg-slate-800 text-slate-600 text-[9px]">indisponibil</Badge>}
+                  {!available && <Badge className="bg-slate-800 text-slate-600 text-[10px]">indisponibil</Badge>}
                 </label>
               ))}
             </div>

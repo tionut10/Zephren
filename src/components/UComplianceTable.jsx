@@ -141,12 +141,12 @@ export default function UComplianceTable({
                     <div className="font-medium opacity-90">{r.name}</div>
                     <div className="opacity-40 text-[10px]">{r.type}</div>
                   </td>
-                  <td className="text-right px-2 opacity-60">{r.area > 0 ? r.area.toFixed(1) : "—"}</td>
-                  <td className="text-right px-2 font-mono font-semibold" style={{ color: isOver ? "#f97316" : "#e5e7eb" }}>
+                  <td className="text-right px-2 opacity-60 tabular-nums">{r.area > 0 ? r.area.toFixed(1) : "—"}</td>
+                  <td className="text-right px-2 font-mono font-semibold tabular-nums" style={{ color: isOver ? "#f97316" : "#e5e7eb" }}>
                     {r.u}
                   </td>
-                  <td className="text-right px-2 opacity-50 font-mono">{r.uNZEB}</td>
-                  <td className="text-right px-2 opacity-40 font-mono">{r.uRenov}</td>
+                  <td className="text-right px-2 opacity-50 font-mono tabular-nums">{r.uNZEB}</td>
+                  <td className="text-right px-2 opacity-40 font-mono tabular-nums">{r.uRenov}</td>
                   <td className="text-center pl-2">
                     <span
                       className="px-1.5 py-0.5 rounded text-[10px] font-medium"

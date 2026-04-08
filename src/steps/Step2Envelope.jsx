@@ -335,15 +335,15 @@ export default function Step2Envelope({
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     <div className="p-2 rounded bg-white/[0.03]">
                       <div className="font-bold font-mono">{glaserResult.maxCumulative.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">Max acum. [g/m²]</div>
+                      <div className="text-[10px] opacity-40">Max acum. [g/m²]</div>
                     </div>
                     <div className="p-2 rounded bg-white/[0.03]">
                       <div className="font-bold font-mono">{glaserResult.winterAccum.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">{t("Condens iarnă [g/m²]",lang)}</div>
+                      <div className="text-[10px] opacity-40">{t("Condens iarnă [g/m²]",lang)}</div>
                     </div>
                     <div className="p-2 rounded bg-white/[0.03]">
                       <div className="font-bold font-mono">{glaserResult.summerEvap.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">{t("Evap. vară [g/m²]",lang)}</div>
+                      <div className="text-[10px] opacity-40">{t("Evap. vară [g/m²]",lang)}</div>
                     </div>
                   </div>
 
@@ -359,12 +359,12 @@ export default function Step2Envelope({
                           <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${m.month}: condens=${(m.condensation||0).toFixed(1)}, evap=${(m.evaporation||0).toFixed(1)} g/m²`}>
                             {condPct > 0 && <div className="w-full rounded-t" style={{ height: `${condPct}%`, backgroundColor: "#ef4444", minHeight: "1px" }} />}
                             {evapPct > 0 && <div className="w-full rounded-t" style={{ height: `${evapPct}%`, backgroundColor: "#22c55e", minHeight: "1px" }} />}
-                            <span className="text-[7px] opacity-30 mt-0.5">{m.month?.slice(0,1)}</span>
+                            <span className="text-[8px] opacity-30 mt-0.5">{m.month?.slice(0,1)}</span>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="flex gap-3 text-[9px] opacity-30 mt-1">
+                    <div className="flex gap-3 text-[10px] opacity-30 mt-1">
                       <span className="flex items-center gap-1"><span className="w-2 h-1.5 rounded bg-red-500 inline-block" /> Condens</span>
                       <span className="flex items-center gap-1"><span className="w-2 h-1.5 rounded bg-green-500 inline-block" /> Evaporare</span>
                     </div>
@@ -374,7 +374,7 @@ export default function Step2Envelope({
                   <details>
                     <summary className="text-[10px] opacity-30 cursor-pointer hover:opacity-50">Tabel lunar detaliat</summary>
                     <div className="overflow-x-auto mt-2">
-                      <table className="w-full text-[9px]">
+                      <table className="w-full text-[10px] tabular-nums">
                         <thead>
                           <tr className="border-b border-white/10">
                             <th className="text-left py-1 px-1 opacity-40">Luna</th>
@@ -425,7 +425,7 @@ export default function Step2Envelope({
                     </div>
                   </div>
                 ))}
-                <div className="text-[9px] opacity-25 mt-1">Cat. I: ≤25°C · Cat. II: ≤26°C · Cat. III: ≤27°C · Cat. IV: &gt;27°C</div>
+                <div className="text-[10px] opacity-25 mt-1">Cat. I: ≤25°C · Cat. II: ≤26°C · Cat. III: ≤27°C · Cat. IV: &gt;27°C</div>
               </div>
             </Card>
           )}
@@ -510,7 +510,7 @@ export default function Step2Envelope({
                   );
                 })()}
               </svg>
-              <div className="text-[9px] opacity-20 mt-1 text-center">Dacă linia de temperatură scade sub punctul de rouă → risc condens interstițial</div>
+              <div className="text-[10px] opacity-20 mt-1 text-center">Dacă linia de temperatură scade sub punctul de rouă → risc condens interstițial</div>
             </Card>
           )}
 

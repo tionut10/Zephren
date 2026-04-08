@@ -50,7 +50,7 @@ export const NORMATIVE = [
 export const NORMATIVE_COUNT = NORMATIVE.length;
 
 // ── Versiune software ─────────────────────────────────────────────────────────
-export const APP_VERSION = "3.4";
+export const APP_VERSION = "3.5";
 
 // ── Statistici hero ──────────────────────────────────────────────────────────
 export const STATS = [
@@ -123,6 +123,16 @@ export const FEATURES = [
     desc: `${TOTAL_PRODUCTS}+ produse: ${PRODUCT_COUNTS.windows} ferestre, ${PRODUCT_COUNTS.heatPumps} pompe căldură, ${PRODUCT_COUNTS.pvPanels} panouri PV, ${PRODUCT_COUNTS.inverters} invertoare, ${PRODUCT_COUNTS.batteries} baterii, ${PRODUCT_COUNTS.boilers} centrale`,
   },
   {
+    icon: "🎓",
+    title: "Tutorial interactiv",
+    desc: "Ghid pas cu pas prin toți cei 8 pași, cu exemplu demo real dintr-un template Quick Fill. Câmpuri cu valori calculate, referințe normative, greșeli frecvente și impact per pas.",
+  },
+  {
+    icon: "⚡",
+    title: "Quick Fill — completare în 60 sec",
+    desc: "Wizard vizual cu 7 ecrane (tip, perioadă, izolație, instalații, ferestre, dimensiuni) — generează automat anvelopa, instalațiile și punțile termice prin inferență din selecții.",
+  },
+  {
     icon: "🔍",
     title: "Audit & reabilitare inteligentă",
     desc: "Scenarii cost-optimă EN 15459-1, deviz estimativ, smart rehab suggestions, comparație multi-scenariu",
@@ -174,6 +184,49 @@ export const V3_FEATURES = [
   { icon: "🔬", title: "EN 12831 · PNRR · Pasivhaus", desc: "Calcul necesar de căldură EN 12831, verificare eligibilitate PNRR, conformitate Pasivhaus 15 kWh/(m²·an)." },
   { icon: "🔄", title: "Comparație multi-scenariu", desc: "Comparație scenarii reabilitare side-by-side: investiție, economie, termen recuperare, clasă energetică rezultată." },
   { icon: "📤", title: "Export complet", desc: "DOCX oficial MDLPA, XML registru electronic, PDF cu QR code, JSON/CSV/XLSX — import drag & drop." },
+  { icon: "📱", title: "Mobile responsive complet", desc: "Header adaptat automat — meniu ⋯ cu toate acțiunile disponibile pe orice dimensiune de ecran. Design optimizat pentru audit pe teren." },
+  { icon: "♿", title: "Accesibilitate & UX audit", desc: "ARIA complet (role, aria-selected, aria-expanded), tabular-nums pe toate valorile numerice, consistență culori dark/light, fonturi lizibile." },
+];
+
+// ── Changelog versiuni ────────────────────────────────────────────────────────
+export const CHANGELOG = [
+  {
+    version: "3.5",
+    date: "Apr 2026",
+    color: "#f59e0b",
+    label: "NOU",
+    items: [
+      { icon: "🎓", text: "Tutorial interactiv cu exemplu demo complet din Quick Fill (casă 1985, Cluj-Napoca)" },
+      { icon: "⚡", text: "Quick Fill — completare automată date clădire în ~60 secunde prin inferență din selecții vizuale" },
+      { icon: "📱", text: "Header mobil complet — meniu ⋯ cu toate acțiunile (export, import, audit, instrumente)" },
+      { icon: "📊", text: "Scala clasă energetică corectată — A+ cea mai scurtă, G cea mai lungă (standard EU)" },
+      { icon: "♿", text: "Audit UI/UX complet — ARIA, tabular-nums, consistență culori, font sizes unificate" },
+    ],
+  },
+  {
+    version: "3.4",
+    date: "Mar 2026",
+    color: "#10b981",
+    label: "",
+    items: [
+      { icon: "📋", text: "Formular Audit Client — 6 secțiuni, colectare date pe teren, export JSON/CSV/Checklist" },
+      { icon: "🗺️", text: "Hartă climatică interactivă — selecție localitate pe SVG, auto-populare date meteo" },
+      { icon: "🔬", text: "EN 12831, Pasivhaus, PNRR, SRI — instrumente avansate în Pasul 8" },
+      { icon: "📜", text: "CPE Anexa 1+2 — recomandări reabilitare conform Mc 001-2022" },
+    ],
+  },
+  {
+    version: "3.3",
+    date: "Ian 2026",
+    color: "#6366f1",
+    label: "",
+    items: [
+      { icon: "🏗️", text: `Catalog ${TOTAL_PRODUCTS}+ produse reale — ferestre, pompe căldură, PV, invertoare, baterii` },
+      { icon: "🔀", text: "Grafic Sankey flux energetic și dashboard sumar cu indicatori cheie" },
+      { icon: "🌍", text: "GWP ciclu viață EN 15978 — emisii CO₂ pe ciclul complet de construcție și operare" },
+      { icon: "💧", text: "Diagramă Glaser vizuală SVG per element constructiv, verificare 12 luni" },
+    ],
+  },
 ];
 
 // ── Planuri de prețuri (sursa: SCENARII_MONETIZARE_ZEPHREN v1.0, apr. 2026) ──

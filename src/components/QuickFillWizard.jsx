@@ -83,7 +83,7 @@ const FLOORS_OPTS = [
 ];
 
 // ── Funcție de inferență date din selecții ─────────────────────────────────────
-function inferData(answers) {
+export function inferData(answers) {
   const { type, period, insulation, heating, ventilation, windows, dimensions, scope } = answers;
 
   const btype = BUILDING_TYPES.find(b => b.id === type) || BUILDING_TYPES[0];
@@ -271,7 +271,7 @@ function OptionCard({ icon, label, sub, selected, onClick, small = false }) {
     >
       <span className={small ? "text-xl" : "text-2xl"}>{icon}</span>
       <span className={`font-semibold leading-tight ${small ? "text-[10px]" : "text-xs"}`}>{label}</span>
-      {sub && <span className={`opacity-40 leading-tight ${small ? "text-[8px]" : "text-[9px]"}`}>{sub}</span>}
+      {sub && <span className={`opacity-40 leading-tight ${small ? "text-[8px]" : "text-[10px]"}`}>{sub}</span>}
     </button>
   );
 }
@@ -526,7 +526,7 @@ export default function QuickFillWizard({ onClose, onApply, showToast }) {
                       <span>{s.icon}</span>
                       <div>
                         <div className="text-xs font-semibold">{s.label}</div>
-                        <div className="text-[9px] opacity-40">{s.sub}</div>
+                        <div className="text-[10px] opacity-40">{s.sub}</div>
                       </div>
                     </button>
                   ))}
@@ -606,7 +606,7 @@ export default function QuickFillWizard({ onClose, onApply, showToast }) {
                 </div>
               </div>
 
-              <div className="text-[9px] opacity-30 text-center">
+              <div className="text-[10px] opacity-30 text-center">
                 Valorile sunt estimate tipice — verificați și ajustați în Pașii 1–4
               </div>
             </div>

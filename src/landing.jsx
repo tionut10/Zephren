@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   FEATURES, V3_FEATURES, PLANS, STATS, PRODUCT_BRANDS,
   NORMATIVE, NORMATIVE_COUNT, TOTAL_PRODUCTS, STEPS_COUNT,
-  APP_VERSION,
+  APP_VERSION, CHANGELOG,
 } from "./data/landingData.js";
 
 // Traduceri pagină principală
@@ -421,6 +421,49 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               <span key={n} style={{ padding: "4px 10px", borderRadius: "6px", background: cardBg, border: `1px solid ${cardBorder}` }}>{n}</span>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══ CHANGELOG / NOUTĂȚI ═══ */}
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 80px" }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
+            {lang === "EN" ? "RELEASE NOTES" : "ISTORICUL VERSIUNILOR"}
+          </div>
+          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{lang === "EN" ? "What's new" : "Ce este nou"}</h2>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "800px", margin: "0 auto" }}>
+          {CHANGELOG.map((release, ri) => (
+            <div key={release.version} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+              {/* Timeline dot + line */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "4px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "11px", fontWeight: "800", color: release.color }}>v{release.version}</span>
+                </div>
+                {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "16px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
+              </div>
+              {/* Card */}
+              <div style={{ flex: 1, padding: "20px 24px", borderRadius: "14px", background: cardBg, border: `1px solid ${release.color}20`, marginBottom: "4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>v{release.version}</span>
+                  {release.label && (
+                    <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "8px", background: `${release.color}25`, color: release.color, border: `1px solid ${release.color}40` }}>
+                      {release.label}
+                    </span>
+                  )}
+                  <span style={{ fontSize: "11px", color: textFaint }}>{release.date}</span>
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {release.items.map((item, i) => (
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: textMuted, lineHeight: 1.5 }}>
+                      <span style={{ fontSize: "15px", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
+                      {item.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

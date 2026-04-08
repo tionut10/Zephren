@@ -45,9 +45,9 @@ export default function Step3Systems({
       <div className="mb-4 flex justify-end">
         <button
           onClick={() => setShowOCR(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium transition-all"
         >
-          <span>📄</span> OCR Factură — import consum
+          <span aria-hidden="true">📄</span> OCR Factură — import consum
         </button>
       </div>
 
@@ -63,7 +63,7 @@ export default function Step3Systems({
           <button key={tab.id} onClick={() => setInstSubTab(tab.id)}
             className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
               instSubTab===tab.id ? "bg-amber-500/15 text-amber-400 border border-amber-500/20" : "hover:bg-white/5 border border-transparent")}>
-            <span>{tab.icon}</span>{tab.label}
+            <span aria-hidden="true">{tab.icon}</span>{tab.label}
           </button>
         ))}
       </div>

@@ -30,16 +30,16 @@ export default function Step6Certificate(props) {
     calcOpaqueR,
     // Constants passed as props
     Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClassEPBD, getCO2Class, getNzebEpMax,
+    getEnergyClass, getCO2Class, getNzebEpMax,
     ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
     NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
+    CATEGORY_BASE_MAP,
     BUILDING_CATEGORIES, ELEMENT_TYPES,
     FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
     VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
     SOLAR_THERMAL_TYPES, PV_TYPES,
     U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING,
     CPE_TEMPLATES,
-    EPBD_AG_ACTIVE, EPBD_AG_THRESHOLDS,
     REHAB_COSTS,
     getURefNZEB,
     bacsClass,
@@ -47,10 +47,11 @@ export default function Step6Certificate(props) {
   } = props;
 
             const Au = parseFloat(building.areaUseful) || 0;
-            const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+            const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
+            const catKey = baseCatResolved + (["RI","RC","RA"].includes(baseCatResolved) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-            const enClass = getEnergyClassEPBD(epFinal, catKey);
+            const enClass = getEnergyClass(epFinal, catKey);
             const co2Class = getCO2Class(co2Final, building.category);
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
@@ -97,25 +98,18 @@ export default function Step6Certificate(props) {
                 const nrCam = building.units || "3";
                 const arieDesf = Aref * 1.15;
 
-                const baseCat = building.category;
-                const epbdT = EPBD_AG_ACTIVE ? (EPBD_AG_THRESHOLDS[baseCat] || EPBD_AG_THRESHOLDS.RI) : null;
+                const baseCat = baseCatResolved; // sub-categorie rezolvată la baza Mc 001-2022
                 const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
                 const epRefMax = getNzebEpMax(baseCat, selectedClimate?.zone) || 148;
 
-                let scaleEP;
-                if (EPBD_AG_ACTIVE && epbdT) {
-                  scaleEP = [Math.round(epbdT.A/2), epbdT.A, epbdT.B, epbdT.C, epbdT.D, epbdT.E, epbdT.F];
-                } else {
-                  const templateCatKeyD = ["RI","RC","RA"].includes(baseCat) ? baseCat + "_cool" : baseCat;
-                  scaleEP = (ENERGY_CLASSES_DB[templateCatKeyD] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
-                }
+                const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
                 const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"};
                 const expiryD = new Date(auditor.date || new Date());
                 expiryD.setFullYear(expiryD.getFullYear() + 10);
                 const nzebDocx = NZEB_THRESHOLDS[baseCat] || NZEB_THRESHOLDS.AL;
                 const nzebOk = epFinal <= epRefMax && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
-                const enClassDocx = getEnergyClassEPBD(epFinal, catKey);
+                const enClassDocx = getEnergyClass(epFinal, catKey);
                 const epTotalReal = Au > 0 ? epFinal * Au : 0;
                 const epTotalRef = Au > 0 ? epRefMax * Au : 0;
                 const gwpVal = parseFloat(building.gwpLifecycle) || 0;
@@ -177,7 +171,7 @@ export default function Step6Certificate(props) {
                     auditor_mdlpa: auditor.mdlpaCode || "",
                     energy_class: enClassDocx.cls,
                     ep_class_real: enClassDocx.cls,
-                    ep_class_ref: getEnergyClassEPBD(epRefMax, catKey).cls,
+                    ep_class_ref: getEnergyClass(epRefMax, catKey).cls,
                     co2_class_real: getCO2Class(co2Final_m2, building.category).cls,
                     rer: renewSummary ? fmtRo(renewSummary.rer, 1) : "0,0",
                     nzeb: nzebOk ? "DA" : "NU",
@@ -1535,7 +1529,7 @@ ${(() => {
                       }}
                         placeholder="ex: CPE-12345/2026" />
                       {auditor.mdlpaCode && auditor.mdlpaCode.length > 3 && (
-                        <div className="text-[9px] mt-0.5 opacity-30 flex items-center gap-2">
+                        <div className="text-[10px] mt-0.5 opacity-30 flex items-center gap-2">
                           <span>Cod: <strong>{auditor.mdlpaCode}</strong></span>
                           <span>•</span>
                           <span>Format așteptat: CPE-XXXXX/AAAA sau numeric</span>
@@ -1570,15 +1564,15 @@ ${(() => {
                             <div className="grid grid-cols-3 gap-2 text-center">
                               <div className="p-2 rounded bg-white/[0.03]">
                                 <div className="text-lg font-bold">{annCost.toFixed(0)} €</div>
-                                <div className="text-[9px] opacity-40">Cost energie/an</div>
+                                <div className="text-[10px] opacity-40">Cost energie/an</div>
                               </div>
                               <div className="p-2 rounded bg-white/[0.03]">
                                 <div className="text-lg font-bold">{epF.toFixed(0)}</div>
-                                <div className="text-[9px] opacity-40">Ep [kWh/m²a]</div>
+                                <div className="text-[10px] opacity-40">Ep [kWh/m²a]</div>
                               </div>
                               <div className="p-2 rounded bg-white/[0.03]">
                                 <div className="text-lg font-bold">{renewSummary.co2_adjusted_m2.toFixed(1)}</div>
-                                <div className="text-[9px] opacity-40">CO₂ [kg/m²a]</div>
+                                <div className="text-[10px] opacity-40">CO₂ [kg/m²a]</div>
                               </div>
                             </div>
                             {gap > 0 && (
@@ -1615,19 +1609,19 @@ ${(() => {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-amber-400">{certCount}</div>
-                        <div className="text-[9px] opacity-40">Certificate luna</div>
+                        <div className="text-[10px] opacity-40">Certificate luna</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-emerald-400">{projectList.length}</div>
-                        <div className="text-[9px] opacity-40">Proiecte salvate</div>
+                        <div className="text-[10px] opacity-40">Proiecte salvate</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold" style={{color:enClass.color}}>{enClass.cls}</div>
-                        <div className="text-[9px] opacity-40">Clasă curentă</div>
+                        <div className="text-[10px] opacity-40">Clasă curentă</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-blue-400">{rer.toFixed(0)}%</div>
-                        <div className="text-[9px] opacity-40">RER</div>
+                        <div className="text-[10px] opacity-40">RER</div>
                       </div>
                     </div>
                   </Card>
@@ -1927,7 +1921,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   }}
                     className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 transition-all text-sm mt-3">
                     <span className="text-lg">📋</span> Raport conformare nZEB (L.238/2024)
-                    {!canNzebReport && <span className="text-[9px] ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
+                    {!canNzebReport && <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
                   </button>
 
                   {/* nZEB Report as downloadable HTML file */}

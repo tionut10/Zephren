@@ -30,7 +30,7 @@ const STRATEGY_ICONS = {
 function ClassBadge({ cls, size = "sm" }) {
   const bg  = CLASS_COLORS_BG[cls] || "#666";
   const dark = CLASS_TEXT_DARK.has(cls);
-  const dim  = size === "lg" ? "w-9 h-9 text-sm" : size === "xs" ? "w-5 h-5 text-[9px]" : "w-7 h-7 text-xs";
+  const dim  = size === "lg" ? "w-9 h-9 text-sm" : size === "xs" ? "w-5 h-5 text-[10px]" : "w-7 h-7 text-xs";
   return (
     <span style={{ background: bg, color: dark ? "#222" : "#fff" }}
       className={`inline-flex items-center justify-center rounded-lg font-bold flex-shrink-0 ${dim}`}>
@@ -421,7 +421,7 @@ export default function PhasedRehabTimeline({ measures = [], building, instSumma
                   {plan.classTrajectory.map((cls, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
                       <ClassBadge cls={cls} size={i === plan.classTrajectory.length - 1 ? "lg" : "sm"} />
-                      <span className="text-[9px] text-white/30">{i === 0 ? "Azi" : `An ${i}`}</span>
+                      <span className="text-[10px] text-white/30">{i === 0 ? "Azi" : `An ${i}`}</span>
                     </div>
                   ))}
                 </div>

@@ -33,9 +33,10 @@ export default function Step7Audit(props) {
     calcOpaqueR, calcSRI,
     // Constants passed as props
     Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClassEPBD, getCO2Class, getNzebEpMax,
+    getEnergyClass, getCO2Class, getNzebEpMax,
     ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
     NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
+    CATEGORY_BASE_MAP,
     BUILDING_CATEGORIES, ELEMENT_TYPES,
     FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
     VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
@@ -49,15 +50,16 @@ export default function Step7Audit(props) {
 
             const Au = parseFloat(building.areaUseful) || 0;
             const V = parseFloat(building.volume) || 0;
-            const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+            const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
+            const catKey = baseCatResolved + (["RI","RC","RA"].includes(baseCatResolved) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-            const enClass = getEnergyClassEPBD(epFinal, catKey);
-            const co2Class = getCO2Class(co2Final, building.category);
+            const enClass = getEnergyClass(epFinal, catKey);
+            const co2Class = getCO2Class(co2Final, baseCatResolved);
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
-            const nzebThresh = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-            const isNZEB = rer >= nzebThresh.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone);
+            const nzebThresh = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
+            const isNZEB = rer >= nzebThresh.rer_min && epFinal < getNzebEpMax(baseCatResolved, selectedClimate?.zone);
 
             // ── Analiza pierderilor prin anvelopa ──
             const envelopeAnalysis = (() => {
@@ -573,23 +575,23 @@ export default function Step7Audit(props) {
                         <div className="text-lg font-bold font-mono" style={{ color: financialAnalysis.npv >= 0 ? "#22c55e" : "#ef4444" }}>
                           {financialAnalysis.npv.toLocaleString("ro-RO")}
                         </div>
-                        <div className="text-[9px] opacity-40">NPV [EUR]</div>
+                        <div className="text-[10px] opacity-40">NPV [EUR]</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">
                           {financialAnalysis.irr !== null ? financialAnalysis.irr.toFixed(1) + "%" : "N/A"}
                         </div>
-                        <div className="text-[9px] opacity-40">IRR</div>
+                        <div className="text-[10px] opacity-40">IRR</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">
                           {financialAnalysis.paybackSimple !== null ? financialAnalysis.paybackSimple.toFixed(1) : "—"}
                         </div>
-                        <div className="text-[9px] opacity-40">Payback simplu [ani]</div>
+                        <div className="text-[10px] opacity-40">Payback simplu [ani]</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">{financialAnalysis.bcRatio.toFixed(2)}</div>
-                        <div className="text-[9px] opacity-40">B/C ratio</div>
+                        <div className="text-[10px] opacity-40">B/C ratio</div>
                       </div>
                     </div>
                     {/* Summary row */}
@@ -623,7 +625,7 @@ export default function Step7Audit(props) {
                             );
                           })}
                         </div>
-                        <div className="flex justify-between text-[9px] opacity-25 mt-1 px-1">
+                        <div className="flex justify-between text-[10px] opacity-25 mt-1 px-1">
                           <span>An 0</span>
                           <span>An {financialAnalysis.cumulativeCF.length - 1}</span>
                         </div>
@@ -708,7 +710,7 @@ export default function Step7Audit(props) {
                       </tbody>
                     </table>
                   </div>
-                  <div className="text-[9px] opacity-20 mt-2 text-center">Scenariile sunt orientative. Consultați un auditor atestat pentru analiza detaliată.</div>
+                  <div className="text-[10px] opacity-20 mt-2 text-center">Scenariile sunt orientative. Consultați un auditor atestat pentru analiza detaliată.</div>
                 </Card>
 
                 {/* ── Prioritizare masuri ── */}
@@ -843,7 +845,7 @@ export default function Step7Audit(props) {
                 const windowImpact = (1.4 - simWindow) * 15; // fiecare 0.1 U reducere ~1.5 kWh/m²
                 const pvImpact = simPV * 1.1; // fiecare m² PV produce ~1.1 kWh/m²·an specific
                 const simEp = Math.max(10, baseEp - insulImpact - windowImpact - pvImpact);
-                const simClass = getEnergyClassEPBD(simEp, catKey);
+                const simClass = getEnergyClass(simEp, catKey);
                 const savings = baseEp - simEp;
                 const savingsEur = savings * Au * 0.12 / 4.97; // ~0.12 EUR/kWh
                 return (
@@ -868,19 +870,19 @@ export default function Step7Audit(props) {
                     <div className="grid grid-cols-4 gap-2">
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold" style={{color:simClass.color}}>{simClass.cls}</div>
-                        <div className="text-[9px] opacity-40">Clasă simulată</div>
+                        <div className="text-[10px] opacity-40">Clasă simulată</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-emerald-400">{simEp.toFixed(0)}</div>
-                        <div className="text-[9px] opacity-40">EP simulat</div>
+                        <div className="text-[10px] opacity-40">EP simulat</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-amber-400">-{savings.toFixed(0)}</div>
-                        <div className="text-[9px] opacity-40">kWh/(m²·an)</div>
+                        <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2.5 text-center">
                         <div className="text-lg font-bold text-emerald-400">~{savingsEur.toFixed(0)}</div>
-                        <div className="text-[9px] opacity-40">EUR/an economii</div>
+                        <div className="text-[10px] opacity-40">EUR/an economii</div>
                       </div>
                     </div>
                   </Card>
@@ -924,7 +926,7 @@ export default function Step7Audit(props) {
                     {RENOVATION_STAGES.map((stage, si) => {
                       const epReductions = [0, 20, 40, 60]; // % reducere EP estimat per etapă
                       const targetEp = Math.max(10, epFinal * (1 - epReductions[si] / 100));
-                      const targetClass = getEnergyClassEPBD(targetEp, catKey);
+                      const targetClass = getEnergyClass(targetEp, catKey);
                       return (
                         <div key={stage.id} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
@@ -973,9 +975,9 @@ export default function Step7Audit(props) {
                   {IEQ_CATEGORIES.map(cat => (
                     <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
                       <div className="text-sm font-bold">{cat.id}</div>
-                      <div className="text-[9px] opacity-40">{cat.tempRange}</div>
-                      <div className="text-[9px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
-                      <div className="text-[9px] opacity-40">{cat.lux} lux</div>
+                      <div className="text-[10px] opacity-40">{cat.tempRange}</div>
+                      <div className="text-[10px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
+                      <div className="text-[10px] opacity-40">{cat.lux} lux</div>
                     </div>
                   ))}
                 </div>
@@ -1482,7 +1484,7 @@ export default function Step7Audit(props) {
                   <strong>Data:</strong> ${auditor.date || new Date().toISOString().slice(0,10)}</p>
                   <h2>1. Performanță energetică</h2>
                   <table><tr><th>Indicator</th><th>Valoare</th><th>Referință nZEB</th><th>Status</th></tr>
-                  <tr><td>EP specific</td><td>${epFinal.toFixed(1)} kWh/(m²·an)</td><td>${getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(1) || "—"}</td><td class="${epFinal <= (getNzebEpMax(building.category,selectedClimate?.zone)||999) ? "ok" : "fail"}">${epFinal <= (getNzebEpMax(building.category,selectedClimate?.zone)||999) ? "✓ Conform" : "✗ Depășit"}</td></tr>
+                  <tr><td>EP specific</td><td>${epFinal.toFixed(1)} kWh/(m²·an)</td><td>${getNzebEpMax(baseCatResolved, selectedClimate?.zone)?.toFixed(1) || "—"}</td><td class="${epFinal <= (getNzebEpMax(baseCatResolved,selectedClimate?.zone)||999) ? "ok" : "fail"}">${epFinal <= (getNzebEpMax(baseCatResolved,selectedClimate?.zone)||999) ? "✓ Conform" : "✗ Depășit"}</td></tr>
                   <tr><td>CO₂</td><td>${co2Final.toFixed(1)} kgCO₂/(m²·an)</td><td>—</td><td>Clasa ${co2Class.cls}</td></tr>
                   <tr><td>RER</td><td>${rer.toFixed(1)}%</td><td>≥ 30%</td><td class="${rer >= 30 ? "ok" : "fail"}">${rer >= 30 ? "✓" : "✗"}</td></tr>
                   <tr><td>Clasă energetică</td><td><strong>${enClass.cls}</strong></td><td>—</td><td>—</td></tr>
@@ -1567,7 +1569,7 @@ export default function Step7Audit(props) {
                   try { return checkAcousticConformity({ opaqueElements, glazingElements, category: building.category, calcOpaqueR }); } catch { return null; }
                 }, [opaqueElements, glazingElements, building, calcOpaqueR]);
 
-                const enClassStr = instSummary ? getEnergyClassEPBD(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")) : "";
+                const enClassStr = instSummary ? getEnergyClass(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")) : "";
 
                 return (
                   <div className="mt-6">

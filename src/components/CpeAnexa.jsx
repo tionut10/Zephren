@@ -190,7 +190,7 @@ export default function CpeAnexa({
                             <td className="py-1 pr-2 opacity-70">{el.name || ELEMENT_LABELS[el.type] || el.type}</td>
                             <td className={`py-1 pr-2 text-right font-mono ${ok ? "text-emerald-400" : "text-red-400"}`}>{fmtRo(uCalc, 3)}</td>
                             <td className="py-1 pr-2 text-right opacity-40">{uRefVal != null ? fmtRo(uRefVal, 2) : "—"}</td>
-                            <td className={`py-1 text-right font-mono text-[9px] ${ok ? "text-emerald-400/60" : "text-red-400"}`}>
+                            <td className={`py-1 text-right font-mono text-[10px] ${ok ? "text-emerald-400/60" : "text-red-400"}`}>
                               {uRefVal != null ? (ok ? "✓" : `+${fmtRo(uCalc - uRefVal, 3)}`) : "—"}
                             </td>
                           </tr>
@@ -205,7 +205,7 @@ export default function CpeAnexa({
                             <td className="py-1 pr-2 opacity-70">{el.name || "Vitraj/Tâmplărie"}</td>
                             <td className={`py-1 pr-2 text-right font-mono ${ok ? "text-emerald-400" : "text-red-400"}`}>{fmtRo(uCalc, 3)}</td>
                             <td className="py-1 pr-2 text-right opacity-40">{fmtRo(uRefGlaz, 2)}</td>
-                            <td className={`py-1 text-right font-mono text-[9px] ${ok ? "text-emerald-400/60" : "text-red-400"}`}>
+                            <td className={`py-1 text-right font-mono text-[10px] ${ok ? "text-emerald-400/60" : "text-red-400"}`}>
                               {ok ? "✓" : `+${fmtRo(uCalc - uRefGlaz, 3)}`}
                             </td>
                           </tr>
@@ -289,7 +289,7 @@ export default function CpeAnexa({
               <div key={item.label} className="text-center p-2 rounded-lg bg-white/[0.03]">
                 <div className="text-[10px] opacity-40 mb-1">{item.label}</div>
                 <div className="text-base font-mono font-bold" style={{ color: item.color }}>{item.value}</div>
-                {item.unit && <div className="text-[9px] opacity-30">{item.unit}</div>}
+                {item.unit && <div className="text-[10px] opacity-30">{item.unit}</div>}
               </div>
             ))}
           </div>
@@ -312,9 +312,9 @@ export default function CpeAnexa({
                 { label: "Iluminat", ep: instSummary.ep_l, color: "#eab308" },
               ].map(u => (
                 <div key={u.label} className="text-center">
-                  <div className="text-[9px] opacity-40">{u.label}</div>
+                  <div className="text-[10px] opacity-40">{u.label}</div>
                   <div className="font-mono" style={{ color: u.color }}>{fmtRo(Au > 0 ? u.ep / Au : 0, 1)}</div>
-                  <div className="text-[9px] opacity-30">kWh/(m²·an)</div>
+                  <div className="text-[10px] opacity-30">kWh/(m²·an)</div>
                 </div>
               ))}
             </div>
@@ -344,13 +344,13 @@ export default function CpeAnexa({
                     <span className="font-medium text-xs">{r.measure}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded" style={{
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
                       backgroundColor: (priorityColor[r.priority] || "#6b7280") + "20",
                       color: priorityColor[r.priority] || "#6b7280",
                     }}>
                       {r.priority}
                     </span>
-                    <span className="text-[9px] text-emerald-400/70">-{r.savings}</span>
+                    <span className="text-[10px] text-emerald-400/70">-{r.savings}</span>
                   </div>
                 </div>
                 <p className="text-[10px] opacity-50">{r.detail}</p>

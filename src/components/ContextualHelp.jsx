@@ -48,13 +48,13 @@ export default function ContextualHelp({ fieldKey, className = "" }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-4 h-4 rounded-full border border-white/20 bg-white/5 hover:bg-amber-500/20 hover:border-amber-500/40 flex items-center justify-center text-[9px] font-bold text-white/40 hover:text-amber-400 transition-all"
+        className="w-4 h-4 rounded-full border border-white/20 bg-white/5 hover:bg-amber-500/20 hover:border-amber-500/40 flex items-center justify-center text-[10px] font-bold text-white/40 hover:text-amber-400 transition-all"
         title="Ajutor normativ"
       >?</button>
       {open && (
         <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-[#0d0f1a] border border-amber-500/20 rounded-xl p-3 shadow-2xl">
           <div className="text-xs text-white/80 leading-relaxed">{help.text}</div>
-          <div className="text-[9px] text-amber-400/60 mt-2 font-mono border-t border-white/[0.05] pt-1.5">{help.norm}</div>
+          <div className="text-[10px] text-amber-400/60 mt-2 font-mono border-t border-white/[0.05] pt-1.5">{help.norm}</div>
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-amber-500/20" />
         </div>
       )}

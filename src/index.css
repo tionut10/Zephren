@@ -157,7 +157,7 @@ html {
   }
 
   .tab-item--active {
-    @apply border-b-2 border-blue-500 text-blue-600 font-semibold;
+    @apply border-b-2 border-amber-500 text-amber-400 font-semibold;
   }
 
   /* Progress bar animation */
@@ -165,17 +165,17 @@ html {
     @apply transition-all duration-500;
   }
 
-  /* Badge status colors */
+  /* Badge status colors — dark theme */
   .badge-success {
-    @apply bg-green-100 text-green-800;
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/20;
   }
 
   .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/20;
   }
 
   .badge-error {
-    @apply bg-red-100 text-red-800;
+    @apply bg-red-500/15 text-red-400 border border-red-500/20;
   }
 
   /* Form section styling */
@@ -184,11 +184,11 @@ html {
   }
 
   .form-section--complete {
-    @apply border-green-300 bg-green-50;
+    @apply border-emerald-500/30 bg-emerald-500/5;
   }
 
   .form-section--active {
-    @apply border-blue-300 bg-blue-50;
+    @apply border-amber-500/30 bg-amber-500/5;
   }
 
   /* Field error styling */

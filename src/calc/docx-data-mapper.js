@@ -22,8 +22,8 @@ export function buildDocxPayload(params) {
     BUILDING_CATEGORIES, ELEMENT_TYPES, FUELS,
     HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
     VENTILATION_TYPES, LIGHTING_TYPES,
-    getEnergyClassEPBD, getCO2Class, getNzebEpMax,
-    CO2_CLASSES_DB,
+    getEnergyClass, getCO2Class, getNzebEpMax,
+    CO2_CLASSES_DB, CATEGORY_BASE_MAP,
   } = params;
 
   // Referință climatică (suport pentru ambele forme de prop)
@@ -34,14 +34,15 @@ export function buildDocxPayload(params) {
   const epF = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
   const co2F = renewSummary?.co2_adjusted_m2 ?? instSummary?.co2_total_m2 ?? 0;
 
-  const baseCat = building?.category || "AL";
+  const rawCat = building?.category || "AL";
+  const baseCat = (CATEGORY_BASE_MAP?.[rawCat]) || rawCat;
   const catKey = baseCat + (["RI","RC","RA"].includes(baseCat)
     ? (cooling?.hasCooling ? "_cool" : "_nocool")
     : "");
 
   // Clasă energetică
-  const enClassObj = getEnergyClassEPBD
-    ? getEnergyClassEPBD(epF, catKey)
+  const enClassObj = getEnergyClass
+    ? getEnergyClass(epF, catKey)
     : { cls: "—", score: 0 };
   const co2ClassObj = getCO2Class
     ? getCO2Class(co2F, baseCat)

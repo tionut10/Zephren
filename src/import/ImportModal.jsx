@@ -565,7 +565,7 @@ export default function ImportModal({
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold"
                     style={{ background: f.color + "20", color: f.color }}
                   >{f.icon}</div>
-                  <div className="text-[9px] font-medium text-center leading-tight">{f.label}</div>
+                  <div className="text-[10px] font-medium text-center leading-tight">{f.label}</div>
                   {f.ai && <div className="text-[8px] opacity-40">AI</div>}
                 </div>
               ))}
@@ -576,7 +576,7 @@ export default function ImportModal({
               {/* Fațadă foto */}
               <label className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/10 cursor-pointer transition-all text-center">
                 <span className="text-lg">🏠</span>
-                <span className="text-[9px] font-medium text-pink-300">Foto fațadă</span>
+                <span className="text-[10px] font-medium text-pink-300">Foto fațadă</span>
                 <span className="text-[8px] opacity-40">Estimare vizuală AI</span>
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) handleFacadeFile(e.target.files[0]); }} />
@@ -585,7 +585,7 @@ export default function ImportModal({
               {/* Factură energie */}
               <label className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer transition-all text-center">
                 <span className="text-lg">⚡</span>
-                <span className="text-[9px] font-medium text-amber-300">Factură energie</span>
+                <span className="text-[10px] font-medium text-amber-300">Factură energie</span>
                 <span className="text-[8px] opacity-40">Gaz / curent / termoficare</span>
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) handleInvoiceFile(e.target.files[0]); }} />
@@ -597,7 +597,7 @@ export default function ImportModal({
                 className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-500/20 bg-slate-500/5 hover:bg-slate-500/10 transition-all text-center"
               >
                 <span className="text-lg">📋</span>
-                <span className="text-[9px] font-medium text-slate-300">Paste text/XML</span>
+                <span className="text-[10px] font-medium text-slate-300">Paste text/XML</span>
                 <span className="text-[8px] opacity-40">Din alte softuri</span>
               </button>
             </div>

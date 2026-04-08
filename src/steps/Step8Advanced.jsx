@@ -34,7 +34,6 @@ import CloudSyncPanel from "../components/CloudSyncPanel.jsx";
 import ContractGenerator from "../components/ContractGenerator.jsx";
 import EFacturaExport from "../components/EFacturaExport.jsx";
 import ThermovisionModule from "../components/ThermovisionModule.jsx";
-import TutorialWizard from "../components/TutorialWizard.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 import CPETracker from "../components/CPETracker.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -132,7 +131,7 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO" }) {
+export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
   const [hpTypeId, setHpTypeId] = useState("AA_STD");
@@ -215,7 +214,6 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [showContract, setShowContract] = useState(false);
   const [showEFactura, setShowEFactura] = useState(false);
   const [showThermovision, setShowThermovision] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
   const [thermovisionPhotos, setThermovisionPhotos] = useState([]);
   const [showOferta, setShowOferta] = useState(false);
 
@@ -914,7 +912,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         z === zone ? "bg-indigo-700/50 text-white font-bold border border-indigo-500/50" : "bg-slate-700 text-slate-400"
                       )}>
                         <div className="font-mono">{threshold}</div>
-                        <div className="text-[9px]">Zona {z}</div>
+                        <div className="text-[10px]">Zona {z}</div>
                       </div>
                     );
                   })}
@@ -1499,27 +1497,27 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                       </div>
                       <div className="grid grid-cols-4 gap-2 text-center">
                         <div>
-                          <div className="text-[9px] text-slate-500">ψ introdus</div>
+                          <div className="text-[10px] text-slate-500">ψ introdus</div>
                           <div className="font-mono text-slate-300">{parseFloat(tb.psi)?.toFixed(3) || "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] text-slate-500">ψ catalog</div>
+                          <div className="text-[10px] text-slate-500">ψ catalog</div>
                           <div className="font-mono text-slate-400">{tb.psi_catalog?.toFixed(3) || "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] text-slate-500">ψ dinamic</div>
+                          <div className="text-[10px] text-slate-500">ψ dinamic</div>
                           <div className={cn("font-mono font-medium",
                             tb.isDynamic && tb.delta_psi < -0.01 ? "text-green-400" :
                             tb.isDynamic && tb.delta_psi > 0.01  ? "text-amber-400" :
                             "text-slate-200")}>{tb.psi_dyn?.toFixed(3) || "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] text-slate-500">ψL dinamic</div>
+                          <div className="text-[10px] text-slate-500">ψL dinamic</div>
                           <div className="font-mono text-slate-200">{tb.psiL_dyn?.toFixed(2) || "—"} W/K</div>
                         </div>
                       </div>
                       {tb.isDynamic && tb.R_ins_used > 0 && (
-                        <div className="text-[9px] text-slate-500 mt-1">
+                        <div className="text-[10px] text-slate-500 mt-1">
                           R_izolație detectat: {tb.R_ins_used} m²·K/W
                           {tb.delta_psi < -0.01 && <span className="text-green-400 ml-1">↓ Izolația reduce ψ</span>}
                           {tb.delta_psi > 0.01  && <span className="text-amber-400 ml-1">↑ Valoare ajustată față de catalog</span>}
@@ -1548,7 +1546,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         <span className="text-amber-400">⚠</span>
                         <div>
                           <div className="text-slate-200">{s.name}</div>
-                          <div className="text-[9px] text-slate-500">{s.reason}</div>
+                          <div className="text-[10px] text-slate-500">{s.reason}</div>
                         </div>
                       </div>
                     ))}
@@ -1862,18 +1860,18 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         </div>
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div>
-                            <div className="text-[9px] text-slate-500">U actual</div>
+                            <div className="text-[10px] text-slate-500">U actual</div>
                             <div className={cn("font-mono font-medium",
                               !check.conform ? "text-red-400" : "text-green-400")}>
                               {check.u_actual?.toFixed(3)} W/(m²·K)
                             </div>
                           </div>
                           <div>
-                            <div className="text-[9px] text-slate-500">U max C107</div>
+                            <div className="text-[10px] text-slate-500">U max C107</div>
                             <div className="font-mono text-slate-300">{check.u_max?.toFixed(3)} W/(m²·K)</div>
                           </div>
                           <div>
-                            <div className="text-[9px] text-slate-500">Marjă</div>
+                            <div className="text-[10px] text-slate-500">Marjă</div>
                             <div className={cn("font-mono font-medium",
                               !check.conform   ? "text-red-400" :
                               isWarning        ? "text-amber-400" :
@@ -2222,7 +2220,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   <div className="grid grid-cols-6 gap-1 mt-1">
                     {pvgisData.monthly.map(m => (
                       <div key={m.month} className="text-center bg-slate-800/40 rounded p-1">
-                        <div className="text-[9px] text-slate-500">L{m.month}</div>
+                        <div className="text-[10px] text-slate-500">L{m.month}</div>
                         <div className="text-[10px] font-mono text-amber-200/80">{m.Gh?.toFixed(0)||"—"}</div>
                       </div>
                     ))}
@@ -3817,7 +3815,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="🎓" title="Tutorial interactiv"
             subtitle="Walkthrough pas cu pas cu clădire exemplu predefinită — ideal pentru utilizatori noi" />
-          <button onClick={() => setShowTutorial(true)}
+          <button onClick={() => onOpenTutorial?.()}
             className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors text-sm">
             🎓 Pornește Tutorial
           </button>
@@ -3897,7 +3895,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {showContract && <ContractGenerator building={building} onClose={() => setShowContract(false)} />}
       {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />}
       {showThermovision && <ThermovisionModule onClose={() => setShowThermovision(false)} onSave={photos => { setThermovisionPhotos(photos); setShowThermovision(false); }} />}
-      {showTutorial && <TutorialWizard onClose={() => setShowTutorial(false)} onApplyExample={() => setShowTutorial(false)} />}
+
       {showOferta && <OfertaReabilitare building={building} instSummary={instSummary} auditor={systems?.auditor} onClose={() => setShowOferta(false)} />}
 
     </div>

@@ -26,21 +26,6 @@ export function getURefNZEB(category, elementType) {
   return ref[elementType] !== undefined ? ref[elementType] : null;
 }
 
-// EPBD 2024/1275 Art.16 — Rescalare A-G
-export const EPBD_AG_ACTIVE = true;
-export const EPBD_AG_THRESHOLDS = {
-  RI: { A: 50, B: 75, C: 100, D: 150, E: 200, F: 300 },
-  RC: { A: 50, B: 75, C: 100, D: 150, E: 200, F: 300 },
-  RA: { A: 50, B: 75, C: 100, D: 150, E: 200, F: 300 },
-  BI: { A: 60, B: 90, C: 120, D: 180, E: 250, F: 350 },
-  ED: { A: 55, B: 80, C: 110, D: 160, E: 220, F: 320 },
-  SA: { A: 80, B: 120, C: 160, D: 240, E: 330, F: 450 },
-  HC: { A: 70, B: 105, C: 140, D: 210, E: 290, F: 400 },
-  CO: { A: 65, B: 95, C: 130, D: 195, E: 270, F: 380 },
-  SP: { A: 55, B: 85, C: 115, D: 170, E: 240, F: 340 },
-  AL: { A: 65, B: 95, C: 130, D: 195, E: 270, F: 380 },
-};
-
 // ZEB (Zero Emission Building) — EPBD 2024/1275 Art.11
 export const ZEB_THRESHOLDS = {
   RI: { ep_max: 50, rer_min: 80 },
@@ -68,20 +53,3 @@ export const BACS_CLASSES = {
 };
 export const BACS_OBLIGATION_THRESHOLD_KW = 290;
 
-export function getEnergyClassEPBD(epKwhM2, categoryKey) {
-  if (!EPBD_AG_ACTIVE) return getEnergyClass(epKwhM2, categoryKey);
-  const cat = categoryKey?.replace(/_cool|_nocool/g, "") || "RI";
-  const t = EPBD_AG_THRESHOLDS[cat] || EPBD_AG_THRESHOLDS.RI;
-  const classes = [
-    { cls: "A", max: t.A }, { cls: "B", max: t.B }, { cls: "C", max: t.C },
-    { cls: "D", max: t.D }, { cls: "E", max: t.E }, { cls: "F", max: t.F },
-    { cls: "G", max: Infinity },
-  ];
-  const colors = { A:"#00a651", B:"#39b54a", C:"#8dc63f", D:"#ffc20e", E:"#f7941d", F:"#f15a24", G:"#ed1c24" };
-  for (const c of classes) {
-    if (epKwhM2 <= c.max) {
-      return { cls: c.cls, color: colors[c.cls], score: Math.max(0, Math.round(100 - epKwhM2 / c.max * 100)) };
-    }
-  }
-  return { cls: "G", color: colors.G, score: 0 };
-}

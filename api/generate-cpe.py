@@ -318,8 +318,8 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
         if h > 150000 and len(letters) > 0 and len(letters[0]) <= 2 and not is_path:
             text_indicators.append((m, letters[0], h, v))
-        elif is_path and -50000 <= h < 300000:
-            # Pentagon shapes have small H (-1270 to 50165 EMU range)
+        elif is_path and -100000 <= h < 700000:
+            # Pentagon/arrow shapes — range extins pentru a include EP pentagon (h≈380365)
             path_indicators.append((m, h, v))
 
     # Clasificare prin ORDINE în document:

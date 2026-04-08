@@ -101,12 +101,12 @@ export default function ChatImport({ onApply, showToast }) {
             <span className="text-base">💬</span>
             <div className="flex-1">
               <div className="text-xs font-bold">Descrie clădirea verbal</div>
-              <div className="text-[9px] opacity-40">Completare automată Pași 1–4</div>
+              <div className="text-[10px] opacity-40">Completare automată Pași 1–4</div>
             </div>
             {lastData && (
               <button
                 onClick={applyLastData}
-                className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-bold transition-all"
+                className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold transition-all"
               >
                 Aplică →
               </button>
@@ -124,7 +124,7 @@ export default function ChatImport({ onApply, showToast }) {
                 }`}>
                   {msg.text}
                   {msg.data && (
-                    <div className="mt-1.5 pt-1.5 border-t border-white/10 text-[9px] opacity-60">
+                    <div className="mt-1.5 pt-1.5 border-t border-white/10 text-[10px] opacity-60">
                       ✓ Date extrase — apasă "Aplică" pentru a completa calculatorul
                     </div>
                   )}
@@ -146,12 +146,12 @@ export default function ChatImport({ onApply, showToast }) {
           {/* Exemple rapide */}
           {messages.length <= 1 && (
             <div className="px-3 pb-2 space-y-1">
-              <div className="text-[9px] opacity-30 mb-1">Exemple rapide:</div>
+              <div className="text-[10px] opacity-30 mb-1">Exemple rapide:</div>
               {EXAMPLES.slice(0, 2).map((ex, i) => (
                 <button
                   key={i}
                   onClick={() => setInput(ex)}
-                  className="w-full text-left text-[9px] rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] px-2 py-1.5 opacity-60 hover:opacity-90 transition-all leading-snug"
+                  className="w-full text-left text-[10px] rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] px-2 py-1.5 opacity-60 hover:opacity-90 transition-all leading-snug"
                 >
                   {ex}
                 </button>

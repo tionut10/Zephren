@@ -124,7 +124,7 @@ export default function Step4Renewables({
                             { label: "Economie auxiliar", val: `${detailed.Q_aux_saved_kWh?.toFixed(0)} kWh/an`, color: "text-amber-400" },
                           ].map((r, i) => (
                             <div key={i} className="bg-white/[0.02] rounded p-2">
-                              <div className="text-[9px] opacity-40">{r.label}</div>
+                              <div className="text-[10px] opacity-40">{r.label}</div>
                               <div className={`text-xs font-bold font-mono ${r.color}`}>{r.val}</div>
                             </div>
                           ))}
