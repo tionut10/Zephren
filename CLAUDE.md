@@ -16,10 +16,13 @@ Model optim: <model> | Effort: <nivel>
 #### 🔴 OPUS MAX (effort high)
 Orice prompt conține:
 - `audit`, `aprofundat`, `complet`, `arhitectur`, `architect`
-- `implementez`, `modul nou`, `integrare`, `integrez`
+- `implementez`, `implementează`, `modul nou`, `integrare`, `integrez`
+- `ținând cont de`, `tinand cont de`, `adaptează`, `adapteaza`
+- `verifică în detaliu`, `verifica in detaliu`
+- `ce mai este util`, `ce ar mai trebui`
 - `BACS EN`, `ACM EN`, `EN 15232`, `EN 15316`, `EN 16798`
 - `IFC`, `BIM`, `OCR facturi`
-- `refactor global`, `state management`, `migrate`, `rewrite`
+- `refactor global`, `state management`, `migrate`, `rewrite`, `rescrie`
 - `security`, `vulnerab`, `GDPR`, `encrypt`, `credential`
 - `data loss`, `backup`, `corrupt`, `disaster`, `recover`
 - `scale`, `memory leak`, `crash`, `1000+`
@@ -29,17 +32,22 @@ Orice prompt conține:
 Orice prompt conține:
 - `fix`, `bug`, `corecte`, `repara`, `eroare`
 - `feature`, `adaugă`, `modifică`, `actualizez`
+- `verifică`, `verifica` (fără "în detaliu")
+- `generează`, `genereaza`, `încearcă`, `incearca`
+- `vreau să`, `vreau sa`
 - `refactor component`, `optimizez`, `cache`
-- `form`, `export`, `validare`, `UI`, `dark mode`
-- `scrie`, `creează`, `generează`, `redactează`
-- `raport`, `document`, `propunere`, `email`
+- `form`, `export`, `validare`, `UI`, `dark mode`, `responsive`, `landing`
+- `scrie`, `creează`, `redactează`, `raport`, `document`, `propunere`, `email`
 - `deploy`, `vercel`, `github`, `build`, `test`
 - `import`, `CSV`, `Excel`, `JSON`, `PDF`
+- `continuă`, `continua` (continuare task în curs)
 
 #### 🟢 HAIKU (effort default)
 Orice prompt conține:
 - `cum`, `ce`, `care`, `explicație`, `de ce`, `unde`
 - `ce înseamnă`, `cum funcționează`, `ce e`
+- `dacă aș`, `daca as`, `dacă am`, `daca am`, `dacă ar`, `daca ar`
+- `da` singur (confirmare scurtă)
 - debugging rapid: `de ce nu`, `parse error`, `NaN`
 - întrebări domeniu fără implementare
 
