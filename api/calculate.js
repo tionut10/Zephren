@@ -138,27 +138,38 @@ export default async function handler(req, res) {
     const totalBeforeRenewable = EP_heat + EP_hotwater + EP_cooling + EP_lighting;
     const rer = totalBeforeRenewable > 0 ? EP_renewable / totalBeforeRenewable : 0;
 
-    // --- Energy class determination (Romanian classification) ---
-    let energyClass;
-    if (buildingType === "residential") {
-      if (ep <= 50) energyClass = "A+";
-      else if (ep <= 100) energyClass = "A";
-      else if (ep <= 150) energyClass = "B";
-      else if (ep <= 200) energyClass = "C";
-      else if (ep <= 250) energyClass = "D";
-      else if (ep <= 350) energyClass = "E";
-      else if (ep <= 450) energyClass = "F";
-      else energyClass = "G";
-    } else {
-      // Non-residential thresholds (higher)
-      if (ep <= 75) energyClass = "A+";
-      else if (ep <= 125) energyClass = "A";
-      else if (ep <= 175) energyClass = "B";
-      else if (ep <= 250) energyClass = "C";
-      else if (ep <= 350) energyClass = "D";
-      else if (ep <= 500) energyClass = "E";
-      else if (ep <= 650) energyClass = "F";
-      else energyClass = "G";
+    // --- Energy class determination (Romanian Mc 001-2022 classification) ---
+    // Synced with src/data/energy-classes.js ENERGY_CLASSES_DB
+    // Map buildingType to category key used by client-side classification
+    const hasCooling = coolingSystem && coolingSystem !== "none";
+    const categoryMap = {
+      residential: hasCooling ? "RI_cool" : "RI_nocool",
+      apartment: hasCooling ? "RC_cool" : "RC_nocool",
+      office: "BI", commercial: "CO", education: "ED",
+      hospital: "SA", hotel: "HC", sport: "SP",
+    };
+    const catKey = categoryMap[buildingType] || "AL";
+
+    // Thresholds per Mc 001-2022 Cap. 5 (A+ through F; above last = G)
+    const CLASS_THRESHOLDS = {
+      RI_cool:   [91,129,257,390,522,652,783],
+      RI_nocool: [78,110,220,340,460,575,690],
+      RC_cool:   [73,101,198,297,396,495,595],
+      RC_nocool: [60,84,168,260,352,440,528],
+      BI: [68,97,193,302,410,511,614],
+      ED: [55,78,157,248,340,425,510],
+      SA: [130,190,380,570,760,950,1140],
+      HC: [85,120,240,370,500,625,750],
+      CO: [75,107,213,330,447,558,670],
+      SP: [70,100,200,310,420,525,630],
+      AL: [68,97,193,302,410,511,614],
+    };
+    const CLASS_LABELS = ["A+","A","B","C","D","E","F","G"];
+
+    const thresholds = CLASS_THRESHOLDS[catKey] || CLASS_THRESHOLDS.AL;
+    let energyClass = "G";
+    for (let i = 0; i < thresholds.length; i++) {
+      if (ep <= thresholds[i]) { energyClass = CLASS_LABELS[i]; break; }
     }
 
     // CO2 emissions (kg CO2/m2/year — simplified)

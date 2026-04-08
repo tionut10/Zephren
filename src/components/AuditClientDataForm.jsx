@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { cn, Card, Input, Select, Badge, Button } from "./ui.jsx";
+import { cn, Card, Input, Badge } from "./ui.jsx";
 import TabNavigation from "./AuditClientDataForm/TabNavigation.jsx";
 import ProgressIndicator from "./AuditClientDataForm/ProgressIndicator.jsx";
 import { SECTIONS, SECTIONS_ARRAY } from "./AuditClientDataForm/utils/sectionConfig.js";
@@ -247,19 +247,19 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                         </label>
 
                         {field.type === "select" ? (
-                          <Select
+                          <select
                             value={value}
                             onChange={e => handleFieldChange(field.id, e.target.value)}
                             className={cn(
-                              "w-full px-3 py-2 border rounded text-sm",
-                              field.required && isEmpty ? "border-red-500" : "border-gray-300"
+                              "w-full px-3 py-2 border rounded text-sm bg-white/5 text-white",
+                              field.required && isEmpty ? "border-red-500" : "border-white/10"
                             )}
                           >
                             <option value="">-- Selectați --</option>
                             {field.options.map(opt => (
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
-                          </Select>
+                          </select>
                         ) : field.type === "textarea" ? (
                           <textarea
                             value={value}

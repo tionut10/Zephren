@@ -613,12 +613,12 @@ export default function Step1Identification({
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={building.basement} onChange={e => updateBuilding("basement",e.target.checked)}
                     className="accent-amber-500 rounded" />
-                  Subsol/demisol
+                  {t("Subsol/demisol",lang)}
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={building.attic} onChange={e => updateBuilding("attic",e.target.checked)}
                     className="accent-amber-500 rounded" />
-                  Mansardă/pod
+                  {t("Mansardă/pod",lang)}
                 </label>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -632,7 +632,7 @@ export default function Step1Identification({
             <div className="space-y-3">
               <button onClick={estimateGeometry}
                 className="w-full py-2 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-400 text-xs hover:bg-amber-500/10 transition-colors">
-                Estimare automată din Au + etaje
+                {t("Estimare automată din Au + etaje", lang)}
               </button>
               <Input label={t("Suprafață utilă încălzită (Au)",lang)} tooltip="Suma suprafețelor utile ale tuturor spațiilor încălzite — Mc 001 Cap.1" value={building.areaUseful} onChange={v => updateBuilding("areaUseful",v)} type="number" unit="m²" min="0" step="0.1" />
               <Input label={t("Volum încălzit (V)",lang)} tooltip="Volumul interior al spațiilor încălzite delimitat de anvelopa termică — m³" value={building.volume} onChange={v => updateBuilding("volume",v)} type="number" unit="m³" min="0" step="0.1" />
@@ -653,7 +653,7 @@ export default function Step1Identification({
 
               {/* Scop CPE — obligatoriu conform Mc 001-2022, subcap 5.1 */}
               <Select label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"} value={building.scopCpe} onChange={v => updateBuilding("scopCpe",v)}
-                options={[{value:"vanzare",label:"Vânzare"},{value:"inchiriere",label:"Închiriere"},{value:"receptie",label:"Recepție clădire nouă"},{value:"informare",label:"Informare proprietar"},{value:"renovare",label:"Renovare majoră"},{value:"alt",label:"Alt scop"}]} />
+                options={[{value:"vanzare",label:t("Vânzare")},{value:"inchiriere",label:t("Închiriere")},{value:"receptie",label:t("Recepție clădire nouă")},{value:"informare",label:t("Informare proprietar")},{value:"renovare",label:t("Renovare majoră")},{value:"alt",label:t("Alt scop")}]} />
 
               {/* n50 verification indicator */}
               {(() => {
@@ -726,11 +726,11 @@ export default function Step1Identification({
 
               {selectedClimate && (
                 <div className="space-y-1 mt-3">
-                  <ResultRow label="Zona climatică" value={selectedClimate.zone} />
+                  <ResultRow label={t("Zona climatică")} value={selectedClimate.zone} />
                   <ResultRow label="Temp. ext. calcul (θe)" value={selectedClimate.theta_e} unit="°C" />
-                  <ResultRow label="Temp. medie anuală (θa)" value={selectedClimate.theta_a} unit="°C" />
+                  <ResultRow label={t("Temp. medie anuală (θa)")} value={selectedClimate.theta_a} unit="°C" />
                   <ResultRow label="Grade-zile (NGZ)" value={selectedClimate.ngz.toLocaleString()} unit="K·zile" />
-                  <ResultRow label="Durata sezon încălzire" value={selectedClimate.season} unit="zile" />
+                  <ResultRow label={t("Durata sezon încălzire")} value={selectedClimate.season} unit="zile" />
                   <ResultRow label="Altitudine" value={selectedClimate.alt} unit="m" />
                 </div>
               )}

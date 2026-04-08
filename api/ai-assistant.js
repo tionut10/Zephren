@@ -8,6 +8,8 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth, requirePlan } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
 
 const SYSTEM_PROMPT = `You are an expert consultant in Romanian building energy performance regulations. You have deep knowledge of:
 
@@ -24,6 +26,15 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  // Auth: require business plan for AI assistant
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+  if (!requirePlan(res, auth.plan, "business")) return;
+
+  // Rate limit: 20 requests/hour per user
+  const limit = checkRateLimit(auth.user.id, 20);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
 

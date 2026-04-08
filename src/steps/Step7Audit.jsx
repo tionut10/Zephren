@@ -1,5 +1,13 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
+import LCCAnalysis from "../components/LCCAnalysis.jsx";
+import MEPSCheck from "../components/MEPSCheck.jsx";
+import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
+import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
+import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
+import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
+import { generateThermalMapSVG } from "../calc/thermal-map.js";
+import { checkAcousticConformity } from "../calc/acoustic.js";
 
 /**
  * Step7Audit — Extracted from energy-calc.jsx lines 12320-13537
@@ -1522,6 +1530,170 @@ export default function Step7Audit(props) {
                   💰 Export Deviz Estimativ
                 </button>
               </div>
+
+              {/* ═══ INSTRUMENTE SUPLIMENTARE (pct. 9-17) ═══ */}
+              {(() => {
+                const [activeTool, setActiveTool] = React.useState(null);
+                const tools = [
+                  { id:"lcc",     icon:"📊", label:"Analiză LCC" },
+                  { id:"meps",    icon:"⚠️",  label:"MEPS Check" },
+                  { id:"oferta",  icon:"📄", label:"Ofertă Reabilitare" },
+                  { id:"consum",  icon:"📈", label:"Consum Real" },
+                  { id:"fond",    icon:"🏗️", label:"Fond Reparații" },
+                  { id:"pnrr",    icon:"💶", label:"Finanțări PNRR" },
+                  { id:"thermal", icon:"🌡️", label:"Hartă Termică" },
+                  { id:"acoustic",icon:"🔊", label:"Acustic" },
+                ];
+                const Au = parseFloat(building?.areaUseful) || 0;
+
+                // Calcule rapide pentru instrumentele inline
+                const maintenanceResult = useMemo(() => {
+                  if (!building) return null;
+                  try { return calcMaintenanceFund({ category: building.category, yearBuilt: parseInt(building.yearBuilt)||1980, Au, quality: "medium" }); } catch { return null; }
+                }, [building, Au]);
+
+                const pnrrResult = useMemo(() => {
+                  if (!instSummary) return null;
+                  try { return calcPNRRFunding({ category: building.category, Au, epBefore: instSummary.ep_total_m2, epAfter: (instSummary.ep_total_m2 || 0) * 0.55, yearBuilt: parseInt(building.yearBuilt)||1980 }); } catch { return null; }
+                }, [building, instSummary, Au]);
+
+                const thermalSVG = useMemo(() => {
+                  if (!opaqueElements?.length) return null;
+                  try { return generateThermalMapSVG({ opaqueElements, glazingElements, thermalBridges }); } catch { return null; }
+                }, [opaqueElements, glazingElements, thermalBridges]);
+
+                const acousticResult = useMemo(() => {
+                  if (!opaqueElements?.length) return null;
+                  try { return checkAcousticConformity({ opaqueElements, glazingElements, category: building.category, calcOpaqueR }); } catch { return null; }
+                }, [opaqueElements, glazingElements, building, calcOpaqueR]);
+
+                const enClassStr = instSummary ? getEnergyClassEPBD(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")) : "";
+
+                return (
+                  <div className="mt-6">
+                    <div className="text-xs font-semibold uppercase tracking-wider opacity-40 mb-3">Instrumente suplimentare</div>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {tools.map(tool => (
+                        <button key={tool.id} onClick={() => setActiveTool(activeTool === tool.id ? null : tool.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                            activeTool === tool.id
+                              ? "border-amber-500/50 bg-amber-500/15 text-amber-300"
+                              : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05] text-white/60 hover:text-white/80"
+                          }`}>
+                          {tool.icon} {tool.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeTool === "lcc" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <LCCAnalysis building={building} instSummary={instSummary} opaqueElements={opaqueElements} />
+                      </div>
+                    )}
+                    {activeTool === "meps" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <MEPSCheck instSummary={instSummary} building={building} energyClass={enClassStr} />
+                      </div>
+                    )}
+                    {activeTool === "oferta" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <OfertaReabilitare building={building} instSummary={instSummary} auditor={auditor} onClose={() => setActiveTool(null)} />
+                      </div>
+                    )}
+                    {activeTool === "consum" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <ConsumReconciliere instSummary={instSummary} building={building} />
+                      </div>
+                    )}
+                    {activeTool === "fond" && maintenanceResult && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-2">
+                        <div className="text-sm font-semibold mb-3">🏗️ Fond Reparații & Întreținere (EN 15459-1)</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div className="bg-white/[0.03] rounded-lg p-3">
+                            <div className="text-[10px] opacity-40">Fond anual recomandat</div>
+                            <div className="text-sm font-bold text-amber-400">{maintenanceResult.annual_fund_RON?.toLocaleString("ro-RO")} RON/an</div>
+                          </div>
+                          <div className="bg-white/[0.03] rounded-lg p-3">
+                            <div className="text-[10px] opacity-40">Fond acumulat 10 ani</div>
+                            <div className="text-sm font-bold text-emerald-400">{maintenanceResult.fund_10y_RON?.toLocaleString("ro-RO")} RON</div>
+                          </div>
+                          <div className="bg-white/[0.03] rounded-lg p-3">
+                            <div className="text-[10px] opacity-40">Cost per m²/an</div>
+                            <div className="text-sm font-bold">{maintenanceResult.cost_per_m2_year?.toFixed(1)} RON/m²</div>
+                          </div>
+                        </div>
+                        {maintenanceResult.components?.length > 0 && (
+                          <div className="mt-3 space-y-1">
+                            {maintenanceResult.components.slice(0,5).map((c,i) => (
+                              <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-white/[0.04]">
+                                <span className="opacity-60">{c.name}</span>
+                                <span className="font-mono">{c.annual_RON?.toLocaleString("ro-RO")} RON/an</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {activeTool === "pnrr" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+                        <div className="text-sm font-semibold mb-2">💶 Finanțări disponibile PNRR / Fond de Mediu</div>
+                        {FUNDING_PROGRAMS.slice(0,5).map((prog, i) => {
+                          const eligible = pnrrResult?.eligible?.includes(prog.id);
+                          return (
+                            <div key={i} className={`flex items-center justify-between p-3 rounded-lg border ${eligible ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/5 bg-white/[0.02]"}`}>
+                              <div>
+                                <div className="text-xs font-semibold">{prog.name}</div>
+                                <div className="text-[10px] opacity-40">{prog.description || ""} · Max: {prog.maxGrant?.toLocaleString("ro-RO")} RON</div>
+                              </div>
+                              <span className={`text-[10px] px-2 py-1 rounded font-bold ${eligible ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-white/30"}`}>
+                                {eligible ? "ELIGIBIL" : "verificați"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {pnrrResult?.total_grant_RON > 0 && (
+                          <div className="text-sm font-bold text-emerald-400 mt-2">Grant total estimat: {pnrrResult.total_grant_RON?.toLocaleString("ro-RO")} RON</div>
+                        )}
+                      </div>
+                    )}
+                    {activeTool === "thermal" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <div className="text-sm font-semibold mb-3">🌡️ Hartă Termică Anvelopă</div>
+                        {thermalSVG ? (
+                          <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: thermalSVG }} />
+                        ) : (
+                          <div className="text-center py-8 opacity-30 text-sm">Adăugați elemente de anvelopă pentru a genera harta termică.</div>
+                        )}
+                      </div>
+                    )}
+                    {activeTool === "acoustic" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-2">
+                        <div className="text-sm font-semibold mb-3">🔊 Conformitate Acustică — C125 / SR EN ISO 717</div>
+                        {acousticResult ? (
+                          <>
+                            <div className={`flex items-center gap-2 text-sm font-bold ${acousticResult.allConform ? "text-emerald-400" : "text-amber-400"}`}>
+                              {acousticResult.allConform ? "✓ Toate elementele conforme acustic" : `⚠ ${acousticResult.nonConformCount} element(e) neconforme`}
+                            </div>
+                            <div className="space-y-1 mt-2">
+                              {acousticResult.checks?.map((c, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-white/[0.04]">
+                                  <span className="opacity-60">{c.name}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-mono">Rw = {c.rw?.toFixed(0)} dB</span>
+                                    <span className={`font-bold ${c.ok ? "text-emerald-400" : "text-red-400"}`}>{c.ok ? "✓" : "✗"} {c.requirement} dB min</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-8 opacity-30 text-sm">Adăugați elemente de anvelopă cu straturi pentru calcul acustic.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">

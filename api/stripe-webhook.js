@@ -11,6 +11,22 @@
 
 export const config = { api: { bodyParser: false } };
 
+// In-memory idempotency guard: track recently processed event IDs.
+// Prevents duplicate processing from Stripe webhook retries.
+const processedEvents = new Set();
+const MAX_PROCESSED = 1000;
+
+function markEventProcessed(eventId) {
+  processedEvents.add(eventId);
+  // Evict oldest entries if set grows too large
+  if (processedEvents.size > MAX_PROCESSED) {
+    const iter = processedEvents.values();
+    for (let i = 0; i < 200; i++) {
+      processedEvents.delete(iter.next().value);
+    }
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -44,6 +60,12 @@ export default async function handler(req, res) {
 
   if (!event || !event.type) {
     return res.status(400).json({ error: "Invalid event" });
+  }
+
+  // Idempotency: skip already-processed events (Stripe retries)
+  if (processedEvents.has(event.id)) {
+    console.log(`[Webhook] Duplicate event ${event.id} — skipped`);
+    return res.status(200).json({ received: true, duplicate: true });
   }
 
   try {
@@ -94,6 +116,7 @@ export default async function handler(req, res) {
         break;
     }
 
+    markEventProcessed(event.id);
     return res.status(200).json({ received: true });
   } catch (err) {
     console.error("[Webhook] Error:", err.message);

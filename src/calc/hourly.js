@@ -4,10 +4,17 @@ export function calcHourlyISO52016(params) {
     return { error: "Necesită date climatice orare 8760h/an (format TMY/EPW)", qH_nd_annual: null, qC_nd_annual: null };
   }
 
-  // 5R1C simplified RC network per ISO 52016-1 §6.5
-  const H_em = H_tr * 0.5; // external mass coupling
-  const H_ms = 9.1 * Au;   // mass-surface coupling (ISO 13790 §12.2.2)
-  const H_is = 3.45 * Au;  // internal surface coupling
+  // 5R1C simplified RC network per ISO 13790 §12.2.2 / ISO 52016-1 §6.5
+  // H_em: coupling between external environment and thermal mass node
+  // Per ISO 13790 Eq. 64: H_em = 1/(1/H_tr - 1/H_ms) — but simplified as:
+  // H_em ≈ Am × h_ms / (1 + Am×h_ms/H_tr) where Am = effective mass area
+  // Conservative: parametrize H_em as function of H_tr and Am
+  const Am = (params.Am || Au * 2.5); // effective mass area [m²], default 2.5×Au (medium mass)
+  const h_ms = 9.1; // mass-surface heat transfer coefficient [W/(m²·K)] — ISO 13790 §12.2.2
+  const H_ms = h_ms * Am;  // mass-surface coupling
+  // External-mass coupling — ISO 13790 Eq. 64 (guard against negative/infinity)
+  const H_em = (H_tr > 0 && H_ms > H_tr) ? 1 / (1 / H_tr - 1 / H_ms) : H_tr;
+  const H_is = 3.45 * Au;  // internal surface coupling — ISO 13790 §12.2.2
 
   const dt = 3600; // 1 hour timestep [s]
   let theta_m_prev = 20; // initial mass temperature
@@ -20,11 +27,17 @@ export function calcHourlyISO52016(params) {
     const Q_i = (Q_int ? Q_int[h] : 0) || (Au * 5); // default 5 W/m² internal gains
     const Q_s = (Q_sol ? Q_sol[h] : 0) || 0;
 
-    // ISO 52016-1 simplified: solve for theta_air given theta_m_prev
-    const phi_total = 0.5 * (Q_i + Q_s);
-    const phi_m = H_em * T_e + phi_total * (H_ms / (H_ms + H_em));
+    // ISO 13790 §C.2: distribute gains between air node and mass node
+    // phi_ia = 0.5 × phi_int (to air node)
+    // phi_st = (1 - Am/At - H_tr_w/(9.1*At)) × 0.5 × phi_int + phi_sol (to surface node)
+    // phi_m = Am/At × 0.5 × phi_int (to mass node)
+    // Simplified: 50% of internal gains to air, 50% to mass; solar gains to surface
+    const phi_ia = 0.5 * Q_i;
+    const phi_st = 0.5 * Q_i + Q_s;
+    const phi_m_gains = Am / (Au * 4.5) * (0.5 * Q_i); // fraction to mass
+    const phi_m = H_em * T_e + phi_m_gains + H_ms / (H_ms + H_em) * phi_st;
     const theta_m = (theta_m_prev * C_m / dt + phi_m) / (C_m / dt + H_ms + H_em);
-    const theta_s = (H_ms * theta_m + phi_total + H_is * theta_int_set_h) / (H_ms + H_is);
+    const theta_s = (H_ms * theta_m + phi_st + H_is * theta_int_set_h) / (H_ms + H_is);
 
     // Heating need
     const phi_HC_nd_h = Math.max(0, (H_tr + H_ve) * (theta_int_set_h - T_e) - Q_i - Q_s);

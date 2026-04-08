@@ -1,5 +1,7 @@
+import { useState, useMemo } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
+import { calcSolarACMDetailed, COLLECTOR_TYPES } from "../calc/solar-acm-detailed.js";
 import {
   HEAT_SOURCES, FUELS,
   SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA,
@@ -44,7 +46,7 @@ export default function Step4Renewables({
           <button key={tab.id} onClick={() => setRenewSubTab(tab.id)}
             className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
               renewSubTab===tab.id ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "hover:bg-white/5 border border-transparent")}>
-            <span>{tab.icon}</span>{tab.label}
+            <span>{tab.icon}</span>{t(tab.label,lang)}
           </button>
         ))}
       </div>
@@ -59,7 +61,7 @@ export default function Step4Renewables({
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={solarThermal.enabled} onChange={e => setSolarThermal(p=>({...p,enabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">Clădirea dispune de panouri solare termice</span>
+                    <span className="font-medium">{t("Clădirea dispune de panouri solare termice",lang)}</span>
                   </label>
 
                   {solarThermal.enabled && (
@@ -72,7 +74,7 @@ export default function Step4Renewables({
                       <Select label={t("Inclinare",lang)} value={solarThermal.tilt} onChange={v => setSolarThermal(p=>({...p,tilt:v}))}
                         options={Object.keys(TILT_FACTORS).map(k=>({value:k,label:`${k}° (factor ${TILT_FACTORS[k]})`}))} />
                       <Select label={t("Utilizare",lang)} value={solarThermal.usage} onChange={v => setSolarThermal(p=>({...p,usage:v}))}
-                        options={[{value:"acm",label:"Doar ACM"},{value:"heating",label:"Doar încălzire"},{value:"both",label:"ACM + Încălzire"}]} />
+                        options={[{value:"acm",label:t("Doar ACM",lang)},{value:"heating",label:t("Doar încălzire",lang)},{value:"both",label:t("ACM + Încălzire",lang)}]} />
                       <Input label={t("Volum stocare",lang)} value={solarThermal.storageVolume} onChange={v => setSolarThermal(p=>({...p,storageVolume:v}))} type="number" unit="litri" placeholder="50-80 l/m2" />
                       <Input label={t("Randament optic (eta_0)",lang)} value={solarThermal.eta0} onChange={v => setSolarThermal(p=>({...p,eta0:v}))} type="number" step="0.01" />
                       <Input label={t("Coeficient pierderi (a1)",lang)} value={solarThermal.a1} onChange={v => setSolarThermal(p=>({...p,a1:v}))} type="number" unit="W/(m2K)" step="0.1" />
@@ -82,13 +84,54 @@ export default function Step4Renewables({
                   {solarThermal.enabled && renewSummary && (
                     <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-4 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs opacity-50">Producție anuală estimată</span>
+                        <span className="text-xs opacity-50">{t("Producție anuală estimată",lang)}</span>
                         <span className="text-lg font-mono font-bold text-emerald-400">
                           {renewSummary.qSolarTh.toFixed(0)} <span className="text-xs opacity-40 font-normal">kWh/an</span>
                         </span>
                       </div>
                     </div>
                   )}
+
+                  {/* Calcul detaliat EN 15316-4-3 */}
+                  {solarThermal.enabled && (() => {
+                    const area = parseFloat(solarThermal.area) || 0;
+                    const vol = parseFloat(solarThermal.storageVolume) || area * 60;
+                    if (area <= 0 || !selectedClimate) return null;
+                    let detailed = null;
+                    try {
+                      detailed = calcSolarACMDetailed({
+                        collectorArea: area,
+                        collectorType: solarThermal.type || "flat",
+                        eta0: parseFloat(solarThermal.eta0) || 0.79,
+                        a1: parseFloat(solarThermal.a1) || 3.5,
+                        storageVolume_L: vol,
+                        orientation: solarThermal.orientation || "S",
+                        tilt: parseFloat(solarThermal.tilt) || 45,
+                        climate: selectedClimate,
+                        category: building?.category || "RI",
+                        nPersons: parseFloat(building?.persons) || 3,
+                      });
+                    } catch { return null; }
+                    if (!detailed) return null;
+                    return (
+                      <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 space-y-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">Detaliu EN 15316-4-3</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            { label: "Acoperire solară", val: `${(detailed.solarFraction * 100).toFixed(0)}%`, color: "text-emerald-400" },
+                            { label: "Iradiere colectată", val: `${detailed.Q_sol_kWh?.toFixed(0)} kWh/an`, color: "" },
+                            { label: "Pierderi sistem", val: `${detailed.Q_loss_kWh?.toFixed(0)} kWh/an`, color: "text-red-400" },
+                            { label: "Economie auxiliar", val: `${detailed.Q_aux_saved_kWh?.toFixed(0)} kWh/an`, color: "text-amber-400" },
+                          ].map((r, i) => (
+                            <div key={i} className="bg-white/[0.02] rounded p-2">
+                              <div className="text-[9px] opacity-40">{r.label}</div>
+                              <div className={`text-xs font-bold font-mono ${r.color}`}>{r.val}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </Card>
             </>
@@ -101,7 +144,7 @@ export default function Step4Renewables({
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={photovoltaic.enabled} onChange={e => setPhotovoltaic(p=>({...p,enabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">Clădirea dispune de instalație fotovoltaică</span>
+                    <span className="font-medium">{t("Clădirea dispune de instalație fotovoltaică",lang)}</span>
                   </label>
 
                   {photovoltaic.enabled && (
@@ -117,14 +160,14 @@ export default function Step4Renewables({
                       <Select label={t("Tip invertor",lang)} value={photovoltaic.inverterType} onChange={v => setPhotovoltaic(p=>({...p,inverterType:v}))}
                         options={PV_INVERTER_ETA.map(s=>({value:s.id,label:`${s.label} (${(s.eta*100).toFixed(0)}%)`}))} />
                       <Select label={t("Utilizare energie",lang)} value={photovoltaic.usage} onChange={v => setPhotovoltaic(p=>({...p,usage:v}))}
-                        options={[{value:"all",label:"Toate utilitățile"},{value:"lighting",label:"Doar iluminat"},{value:"hvac",label:"HVAC + ventilare"},{value:"export",label:"Export în rețea"}]} />
+                        options={[{value:"all",label:t("Toate utilitățile",lang)},{value:"lighting",label:t("Doar iluminat",lang)},{value:"hvac",label:t("HVAC + ventilare",lang)},{value:"export",label:t("Export în rețea",lang)}]} />
                     </div>
                   )}
 
                   {photovoltaic.enabled && renewSummary && (
                     <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-4 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs opacity-50">Producție anuală estimată</span>
+                        <span className="text-xs opacity-50">{t("Producție anuală estimată",lang)}</span>
                         <span className="text-lg font-mono font-bold text-emerald-400">
                           {renewSummary.qPV_kWh.toFixed(0)} <span className="text-xs opacity-40 font-normal">kWh/an</span>
                         </span>
@@ -148,7 +191,7 @@ export default function Step4Renewables({
               <div className="space-y-3">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={battery.enabled} onChange={e => setBattery(p=>({...p,enabled:e.target.checked}))} className="accent-emerald-500" />
-                  <span className="font-medium">Sistem de stocare în baterii (BESS)</span>
+                  <span className="font-medium">{t("Sistem de stocare în baterii (BESS)",lang)}</span>
                 </label>
                 {battery.enabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
@@ -187,7 +230,7 @@ export default function Step4Renewables({
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={heatPump.enabled} onChange={e => setHeatPump(p=>({...p,enabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">Încălzire/ACM prin pompă de căldură</span>
+                    <span className="font-medium">{t("Încălzire/ACM prin pompă de căldură",lang)}</span>
                   </label>
 
                   {heatPump.enabled && (
@@ -200,7 +243,7 @@ export default function Step4Renewables({
                       <Input label={t("SCOP sezonier incalzire",lang)} value={heatPump.scopHeating} onChange={v => setHeatPump(p=>({...p,scopHeating:v}))} type="number" step="0.1"
                         placeholder={`~${(parseFloat(heatPump.cop)*0.85).toFixed(1)}`} />
                       <Select label={t("Acoperire",lang)} value={heatPump.covers} onChange={v => setHeatPump(p=>({...p,covers:v}))}
-                        options={[{value:"heating",label:"Doar încălzire"},{value:"acm",label:"Doar ACM"},{value:"heating_acm",label:"Încălzire + ACM"}]} />
+                        options={[{value:"heating",label:t("Doar încălzire",lang)},{value:"acm",label:t("Doar ACM",lang)},{value:"heating_acm",label:t("Încălzire + ACM",lang)}]} />
                       <Input label={t("Temp. bivalentă",lang)} value={heatPump.bivalentTemp} onChange={v => setHeatPump(p=>({...p,bivalentTemp:v}))} type="number" unit="°C" />
                       <Select label={t("Sursă auxiliară (bivalent)",lang)} value={heatPump.auxSource} onChange={v => setHeatPump(p=>({...p,auxSource:v}))}
                         options={HEAT_SOURCES.filter(s=>!s.isCOP).slice(0,5).map(s=>({value:s.id,label:s.label}))} />
@@ -210,7 +253,7 @@ export default function Step4Renewables({
                   {heatPump.enabled && renewSummary && (
                     <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-4 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs opacity-50">Energie ambientală (regenerabilă)</span>
+                        <span className="text-xs opacity-50">{t("Energie ambientală (regenerabilă)",lang)}</span>
                         <span className="text-lg font-mono font-bold text-emerald-400">
                           {renewSummary.qPC_ren.toFixed(0)} <span className="text-xs opacity-40 font-normal">kWh/an</span>
                         </span>
@@ -247,7 +290,7 @@ export default function Step4Renewables({
                       <Input label={t("Randament cazan",lang)} value={biomass.boilerEta} onChange={v => setBiomass(p=>({...p,boilerEta:v}))} type="number" step="0.01" />
                       <Input label={t("Putere nominală",lang)} value={biomass.power} onChange={v => setBiomass(p=>({...p,power:v}))} type="number" unit="kW" />
                       <Select label={t("Acoperire",lang)} value={biomass.covers} onChange={v => setBiomass(p=>({...p,covers:v}))}
-                        options={[{value:"heating",label:"Doar încălzire"},{value:"acm",label:"Doar ACM"},{value:"heating_acm",label:"Încălzire + ACM"}]} />
+                        options={[{value:"heating",label:t("Doar încălzire",lang)},{value:"acm",label:t("Doar ACM",lang)},{value:"heating_acm",label:t("Încălzire + ACM",lang)}]} />
                       <Input label={t("Consum anual (opțional)",lang)} value={biomass.annualConsumption} onChange={v => setBiomass(p=>({...p,annualConsumption:v}))} type="number" unit="tone/an"
                         placeholder="auto din necesar" className="col-span-2" />
                     </div>
@@ -278,7 +321,7 @@ export default function Step4Renewables({
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={otherRenew.windEnabled} onChange={e => setOtherRenew(p=>({...p,windEnabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">Turbină eoliană</span>
+                    <span className="font-medium">{t("Turbină eoliană",lang)}</span>
                   </label>
                   {otherRenew.windEnabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
@@ -315,7 +358,7 @@ export default function Step4Renewables({
             {renewSummary ? (
               <div className="space-y-4">
                 <div className="text-center py-3">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Rata Energie Regenerabilă (RER)</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Rata Energie Regenerabilă (RER)",lang)}</div>
                   <div className={cn("text-3xl font-bold font-mono",
                     renewSummary.rer >= 30 ? "text-emerald-400" : renewSummary.rer > 10 ? "text-amber-400" : "text-red-400")}>
                     {renewSummary.rer.toFixed(1)}%
@@ -326,7 +369,7 @@ export default function Step4Renewables({
                 <div className="h-px bg-white/[0.06]" />
 
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Producție per sursă</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Producție per sursă",lang)}</div>
                   {[
                     {label:"Solar termic", val:renewSummary.qSolarTh, enabled:solarThermal.enabled, color:"#f59e0b"},
                     {label:"Fotovoltaic", val:renewSummary.qPV_kWh, enabled:photovoltaic.enabled, color:"#3b82f6"},
@@ -338,13 +381,13 @@ export default function Step4Renewables({
                     return (
                       <div key={item.label} className="flex items-center gap-2 py-1.5">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor:item.color}} />
-                        <span className="text-xs opacity-60 flex-1">{item.label}</span>
+                        <span className="text-xs opacity-60 flex-1">{t(item.label,lang)}</span>
                         <span className="text-xs font-mono w-20 text-right">{item.val.toFixed(0)} kWh</span>
                       </div>
                     );
                   })}
                   {!solarThermal.enabled && !photovoltaic.enabled && !heatPump.enabled && !biomass.enabled && !otherRenew.windEnabled && (
-                    <div className="text-xs opacity-30 text-center py-2">Nicio sursă regenerabilă activată</div>
+                    <div className="text-xs opacity-30 text-center py-2">{t("Nicio sursă regenerabilă activată",lang)}</div>
                   )}
                 </div>
 
@@ -358,10 +401,10 @@ export default function Step4Renewables({
                 <div className="h-px bg-white/[0.06]" />
 
                 <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Energie primară ajustată</div>
-                  <ResultRow label="Ep fără regenerabile" value={(instSummary?.ep_total_m2||0).toFixed(1)} unit="kWh/(m²·an)" />
-                  <ResultRow label="Reducere din regenerabile" value={renewSummary.ep_reduction > 0 ? `-${(renewSummary.ep_reduction / (parseFloat(building.areaUseful)||1)).toFixed(1)}` : "0"} unit="kWh/(m²·an)" status="ok" />
-                  <ResultRow label="Ep ajustată" value={renewSummary.ep_adjusted_m2.toFixed(1)} unit="kWh/(m²·an)"
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Energie primară ajustată",lang)}</div>
+                  <ResultRow label={t("Ep fără regenerabile",lang)} value={(instSummary?.ep_total_m2||0).toFixed(1)} unit="kWh/(m²·an)" />
+                  <ResultRow label={t("Reducere din regenerabile",lang)} value={renewSummary.ep_reduction > 0 ? `-${(renewSummary.ep_reduction / (parseFloat(building.areaUseful)||1)).toFixed(1)}` : "0"} unit="kWh/(m²·an)" status="ok" />
+                  <ResultRow label={t("Ep ajustată",lang)} value={renewSummary.ep_adjusted_m2.toFixed(1)} unit="kWh/(m²·an)"
                     status={renewSummary.ep_adjusted_m2 < 120 ? "ok" : renewSummary.ep_adjusted_m2 < 250 ? "warn" : "fail"} />
                 </div>
 
@@ -369,8 +412,8 @@ export default function Step4Renewables({
 
                 <div className="space-y-1">
                   <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">CO2 ajustat</div>
-                  <ResultRow label="CO2 fără regenerabile" value={(instSummary?.co2_total_m2||0).toFixed(1)} unit="kg/(m2an)" />
-                  <ResultRow label="CO2 ajustat" value={renewSummary.co2_adjusted_m2.toFixed(1)} unit="kg/(m2an)" />
+                  <ResultRow label={t("CO2 fără regenerabile",lang)} value={(instSummary?.co2_total_m2||0).toFixed(1)} unit="kg/(m2an)" />
+                  <ResultRow label={t("CO2 ajustat",lang)} value={renewSummary.co2_adjusted_m2.toFixed(1)} unit="kg/(m2an)" />
                 </div>
               </div>
             ) : (

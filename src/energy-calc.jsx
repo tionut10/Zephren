@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { renderAsync } from "docx-preview";
 import ImportModal from "./import/ImportModal.jsx";
 import ChatImport from "./components/ChatImport.jsx";
@@ -29,6 +29,7 @@ import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCC
 import { calcAirInfiltration, calcNaturalLighting } from "./calc/infiltration.js";
 import { calcGroundHeatTransfer } from "./calc/ground.js";
 import { calcACMen15316 } from "./calc/acm-en15316.js";
+import { checkC107Conformity } from "./calc/c107.js";
 
 // ── Extracted data modules (Sprint 3 refactoring) ──
 // Modules below are now the canonical source for these constants.
@@ -57,9 +58,13 @@ import Step3Systems from "./steps/Step3Systems.jsx";
 import Step4Renewables from "./steps/Step4Renewables.jsx";
 import Step5Calculation from "./steps/Step5Calculation";
 import Step6Certificate from "./steps/Step6Certificate";
-import Step7Audit from "./steps/Step7Audit";
-import Step8Advanced from "./steps/Step8Advanced.jsx";
+const Step7Audit = lazy(() => import("./steps/Step7Audit"));
+const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
 import ClientInputForm from "./components/ClientInputForm.jsx";
+import AuditClientDataForm from "./components/AuditClientDataForm.jsx";
+import ProjectTimeline from "./components/ProjectTimeline.jsx";
+import ProjectComparison from "./components/ProjectComparison.jsx";
+import { useKeyboardShortcuts, SHORTCUTS_LIST } from "./hooks/useKeyboardShortcuts.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -477,6 +482,7 @@ const ROMANIA_MAP_POINTS = buildRomaniaMapPoints(CLIMATE_DB, geoToSvg);
 export default function EnergyCalcApp({ cloud }) {
   const [step, setStep] = useState(1);
   const [lang, setLang] = useState("RO");
+  const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState("dark");
 
@@ -739,6 +745,11 @@ export default function EnergyCalcApp({ cloud }) {
   // ─── NEW FEATURE STATES ───
   const [showDashboard, setShowDashboard] = useState(false);
   const [showClimateMap, setShowClimateMap] = useState(false);
+  const [showAuditForm, setShowAuditForm] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [hoveredClimate, setHoveredClimate] = useState(null);
   const [showGlaserDiagram, setShowGlaserDiagram] = useState(false);
   const [showSankey, setShowSankey] = useState(false);
@@ -899,7 +910,7 @@ export default function EnergyCalcApp({ cloud }) {
         if (hist.length > 10) hist = hist.slice(0, 10);
         await window.storage.set("energopro-history", JSON.stringify(hist));
       } catch(eh) { /* history save failed */ }
-      setStorageStatus("Salvat " + new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}));
+      setStorageStatus((lang==="EN"?"Saved":"Salvat") + " " + new Date().toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"}));
     } catch(e) { /* storage unavailable */ }
   }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,step]);
 
@@ -3052,7 +3063,7 @@ export default function EnergyCalcApp({ cloud }) {
     a.download = "Zephren_" + (building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,30) + "_" + new Date().toISOString().slice(0,10) + ".csv";
     a.click();
     URL.revokeObjectURL(url);
-    showToast("CSV exportat cu succes.", "success");
+    showToast(lang==="EN"?"CSV exported successfully.":"CSV exportat cu succes.", "success");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, showToast]);
 
@@ -3204,7 +3215,7 @@ export default function EnergyCalcApp({ cloud }) {
 
       const filename = `Zephren_${(building.address||"proiect").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25)}_${new Date().toISOString().slice(0,10)}.xlsx`;
       XLSX.writeFile(wb, filename);
-      showToast("Excel exportat cu succes.", "success");
+      showToast(lang==="EN"?"Excel exported successfully.":"Excel exportat cu succes.", "success");
     } catch(e) {
       showToast("Eroare export Excel: " + e.message, "error");
     } finally { setExporting(null); }
@@ -3395,12 +3406,12 @@ export default function EnergyCalcApp({ cloud }) {
         const data = JSON.parse(e.target.result);
         // Schema validation: must be an object with at least one known key
         if (typeof data !== "object" || data === null || Array.isArray(data)) {
-          showToast("Format invalid: fișierul nu conține un obiect proiect valid.", "error"); return;
+          showToast(lang==="EN"?"Invalid format: file does not contain a valid project object.":"Format invalid: fișierul nu conține un obiect proiect valid.", "error"); return;
         }
         const knownKeys = ["building","opaqueElements","glazingElements","thermalBridges","heating","acm","cooling","ventilation","lighting","solarThermal","photovoltaic","heatPump","biomass","otherRenew","auditor"];
         const hasAnyKnown = knownKeys.some(k => data[k] !== undefined);
         if (!hasAnyKnown) {
-          showToast("Format invalid: nu conține date de proiect recunoscute.", "error"); return;
+          showToast(lang==="EN"?"Invalid format: no recognized project data found.":"Format invalid: nu conține date de proiect recunoscute.", "error"); return;
         }
         // Validate arrays are actually arrays
         if (data.opaqueElements && !Array.isArray(data.opaqueElements)) { showToast("Eroare: opaqueElements nu este un array valid.", "error"); return; }
@@ -3630,6 +3641,15 @@ export default function EnergyCalcApp({ cloud }) {
     building, setAcm,
     solarThermal, setSolarThermal,
     photovoltaic, setPhotovoltaic,
+  });
+
+  // ── Keyboard shortcuts (pct. 41) ──
+  useKeyboardShortcuts({
+    setStep,
+    undo, redo,
+    exportProject,
+    exportCSV,
+    showToast,
   });
 
   // ─── Opaque element calculations (kept for local use by other parts of component) ───
@@ -4730,7 +4750,7 @@ export default function EnergyCalcApp({ cloud }) {
       // Save
       const filename = `CPE_${(building.address||"certificat").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25)}_${new Date().toISOString().slice(0,10)}.pdf`;
       doc.save(filename);
-      showToast("PDF generat: " + filename, "success");
+      showToast((lang==="EN"?"PDF generated: ":"PDF generat: ") + filename, "success");
     } catch(e) {
       showToast("Eroare generare PDF: " + e.message, "error");
       console.error("PDF export error:", e);
@@ -5460,7 +5480,7 @@ export default function EnergyCalcApp({ cloud }) {
       try {
         const bulk = JSON.parse(e.target.result);
         if (bulk.format !== "zephren-bulk" || !Array.isArray(bulk.projects)) {
-          showToast("Format invalid — nu este un export bulk Zephren.", "error"); return;
+          showToast(lang==="EN"?"Invalid format — not a Zephren bulk export.":"Format invalid — nu este un export bulk Zephren.", "error"); return;
         }
         let imported = 0;
         bulk.projects.forEach(p => {
@@ -5588,6 +5608,214 @@ export default function EnergyCalcApp({ cloud }) {
     showToast("Raport audit generat", "success");
   }, [building, auditor, instSummary, renewSummary, annualEnergyCost, envelopeSummary, airInfiltrationCalc, naturalLightingCalc, gwpDetailed, smartSuggestions, selectedClimate, cooling.hasCooling, showToast]);
 
+  // ═══════════════════════════════════════════════════════════════
+  // RAPORT CONFORMITATE MULTI-NORMATIV PDF
+  // Mc 001-2022 · C107 · BACS EN 15232-1 · EPBD 2024/1275 · nZEB
+  // ═══════════════════════════════════════════════════════════════
+  const exportComplianceReport = useCallback(async () => {
+    if (!instSummary) { showToast("Completați calculul energetic (Pasul 5)", "error"); return; }
+    setExporting("pdf");
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      await import("jspdf-autotable");
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = 210;
+      const margin = 14;
+      const colW = pageW - margin * 2;
+
+      const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
+      const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
+      const rer = renewSummary?.rer || 0;
+      const catKey = building.category + (["RI","RC","RA"].includes(building.category) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+      const enClass = getEnergyClassEPBD(epF, catKey);
+      const Au = parseFloat(building.areaUseful) || 0;
+      const nzebEpMax = getNzebEpMax(building.category, selectedClimate?.zone);
+      const nzebThresh = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+      const isNZEB = epF <= nzebEpMax && rer >= nzebThresh.rer_min;
+      const zebThresh = ZEB_THRESHOLDS[building.category] || ZEB_THRESHOLDS.RI;
+      const isZEB = epF <= zebThresh.ep_max && rer >= zebThresh.rer_min;
+      const bacsOk = ["A","B","C"].includes(bacsClass);
+      const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || building.category;
+
+      // C107 conformitate
+      const c107Result = checkC107Conformity(opaqueElements, glazingElements, building.category, calcOpaqueR);
+      const c107Ok = c107Result?.checks?.every(c => c.ok) ?? false;
+      const c107Pct = c107Result?.checks?.length
+        ? Math.round(c107Result.checks.filter(c => c.ok).length / c107Result.checks.length * 100) : 0;
+
+      // ── Header pagina 1 ────────────────────────────────────────────
+      doc.setFillColor(13, 15, 26);
+      doc.rect(0, 0, 210, 30, "F");
+      doc.setTextColor(245, 158, 11);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("RAPORT DE CONFORMITATE ENERGETICĂ", margin, 12);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 180, 200);
+      doc.text("Multi-normativ: Mc 001-2022 · C107 · BACS EN 15232-1 · EPBD 2024/1275 · nZEB/ZEB", margin, 19);
+      doc.text(`Generat: ${new Date().toLocaleDateString("ro-RO")} | Auditor: ${auditor?.name || "—"} | Atestat: ${auditor?.atestat || "—"}`, margin, 25);
+
+      // ── Date clădire ───────────────────────────────────────────────
+      doc.setTextColor(40, 40, 60);
+      doc.setFillColor(245, 246, 250);
+      doc.rect(margin, 33, colW, 18, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(80, 80, 100);
+      doc.text("CLĂDIRE IDENTIFICATĂ", margin + 3, 39);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(40, 40, 60);
+      doc.text(`Adresă: ${[building.address, building.city, building.county].filter(Boolean).join(", ") || "—"}`, margin + 3, 44);
+      doc.text(`Categorie: ${catLabel} · Suprafață utilă: ${Au.toFixed(0)} m² · An construcție: ${building.yearBuilt || "—"} · Zonă climatică: ${selectedClimate?.zone || "—"}`, margin + 3, 49);
+
+      // ── Tabel verificări ──────────────────────────────────────────
+      const checks = [
+        {
+          normativ: "Mc 001-2022",
+          cerinta: "Clasă energetică A+…G",
+          valoare: `EP = ${epF.toFixed(1)} kWh/(m²·an) → Clasa ${enClass}`,
+          status: ["A+","A","B"].includes(enClass) ? "EXCELENT" : ["C","D"].includes(enClass) ? "SATISFĂCĂTOR" : "NECESITĂ INTERVENȚIE",
+          ok: ["A+","A","B","C"].includes(enClass),
+        },
+        {
+          normativ: "Mc 001-2022",
+          cerinta: "nZEB (Legea 238/2024)",
+          valoare: `EP ≤ ${nzebEpMax} kWh/(m²·an) · RER ≥ ${nzebThresh.rer_min}% | EP=${epF.toFixed(1)}, RER=${rer.toFixed(0)}%`,
+          status: isNZEB ? "CONFORM" : "NECONFORM",
+          ok: isNZEB,
+        },
+        {
+          normativ: "EPBD 2024/1275 Art.11",
+          cerinta: "ZEB (Zero Emission Building)",
+          valoare: `EP ≤ ${zebThresh.ep_max} kWh/(m²·an) · RER ≥ ${zebThresh.rer_min}% | EP=${epF.toFixed(1)}, RER=${rer.toFixed(0)}%`,
+          status: isZEB ? "CONFORM" : "NECONFORM (termen: mai 2026)",
+          ok: isZEB,
+        },
+        {
+          normativ: "C107/2-2005",
+          cerinta: "Rezistențe termice minime anvelopă",
+          valoare: `${c107Result?.checks?.length || 0} elemente verificate · ${c107Pct}% conforme`,
+          status: c107Ok ? "CONFORM" : `NECONFORM (${100 - c107Pct}% elemente sub limită)`,
+          ok: c107Ok,
+        },
+        {
+          normativ: "BACS EN 15232-1",
+          cerinta: "Clasa automatizare ≥ C (EPBD Art.14)",
+          valoare: `Clasa BACS detectată: ${bacsClass}`,
+          status: bacsOk ? "CONFORM" : "NECONFORM — necesită upgrade BACS",
+          ok: bacsOk,
+        },
+        {
+          normativ: "SR EN ISO 52000-1:2017",
+          cerinta: "Factor energie primară electricitate",
+          valoare: `fP(electricitate) = ${FP_ELEC} (SEN România)`,
+          status: "APLICAT",
+          ok: true,
+        },
+        {
+          normativ: "Mc 001-2022 Cap.3",
+          cerinta: "Emisii CO₂ echivalent",
+          valoare: `CO₂ = ${co2F.toFixed(2)} kg/(m²·an)`,
+          status: co2F < 20 ? "PERFORMANT" : co2F < 50 ? "MEDIU" : "RIDICAT",
+          ok: co2F < 50,
+        },
+        ...(envelopeSummary?.avRatio != null ? [{
+          normativ: "Mc 001-2022 Art.4.2",
+          cerinta: "Compact clădire (Av/V ≤ 1.0 rezidențial)",
+          valoare: `Av/V = ${envelopeSummary.avRatio?.toFixed(3) || "—"}`,
+          status: (envelopeSummary.avRatio || 0) <= 1.2 ? "SATISFĂCĂTOR" : "COMPACT REDUS",
+          ok: (envelopeSummary.avRatio || 0) <= 1.2,
+        }] : []),
+      ];
+
+      doc.autoTable({
+        startY: 54,
+        head: [["Normativ", "Cerință", "Valoare calculată", "Status"]],
+        body: checks.map(c => [c.normativ, c.cerinta, c.valoare, c.status]),
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [220, 220, 230], lineWidth: 0.3 },
+        headStyles: { fillColor: [13, 15, 26], textColor: [245, 158, 11], fontStyle: "bold", fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 32, fontStyle: "bold" },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 72 },
+          3: { cellWidth: 28, fontStyle: "bold" },
+        },
+        didParseCell: (data) => {
+          if (data.column.index === 3 && data.section === "body") {
+            const ok = checks[data.row.index]?.ok;
+            data.cell.styles.textColor = ok ? [22, 163, 74] : [220, 38, 38];
+          }
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      // ── Detalii C107 per element ──────────────────────────────────
+      if (c107Result?.checks?.length > 0) {
+        const finalY = doc.lastAutoTable.finalY + 6;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(40, 40, 60);
+        doc.text("Detaliu conformitate C107/2-2005 — elemente anvelopă", margin, finalY);
+        doc.autoTable({
+          startY: finalY + 3,
+          head: [["Element", "Tip", "U calc. [W/(m²·K)]", "U ref. [W/(m²·K)]", "Status"]],
+          body: c107Result.checks.map(c => [
+            c.name || "—",
+            c.type || "—",
+            c.uCalc != null ? c.uCalc.toFixed(3) : "—",
+            c.uRef != null ? c.uRef.toFixed(3) : "—",
+            c.ok ? "✓ CONFORM" : "✗ NECONFORM",
+          ]),
+          styles: { fontSize: 7, cellPadding: 2 },
+          headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 7.5 },
+          columnStyles: { 4: { fontStyle: "bold" } },
+          didParseCell: (data) => {
+            if (data.column.index === 4 && data.section === "body") {
+              data.cell.styles.textColor = c107Result.checks[data.row.index]?.ok ? [22, 163, 74] : [220, 38, 38];
+            }
+          },
+          margin: { left: margin, right: margin },
+        });
+      }
+
+      // ── Concluzie & semnătură ─────────────────────────────────────
+      const endY = doc.lastAutoTable.finalY + 8;
+      const conformCount = checks.filter(c => c.ok).length;
+      const conformPct = Math.round(conformCount / checks.length * 100);
+      doc.setFillColor(conformPct >= 80 ? 240 : 254, conformPct >= 80 ? 253 : 242, conformPct >= 80 ? 244 : 232);
+      doc.rect(margin, endY, colW, 18, "F");
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(conformPct >= 80 ? 22 : 180, conformPct >= 80 ? 163 : 80, conformPct >= 80 ? 74 : 0);
+      doc.text(`CONFORMITATE GLOBALĂ: ${conformCount}/${checks.length} cerințe îndeplinite (${conformPct}%)`, margin + 3, endY + 7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 100, 120);
+      doc.text("Valorile sunt calculate conform metodologiei Mc 001-2022 și normativelor europene în vigoare la data generării.", margin + 3, endY + 12);
+      doc.text(`Auditor: ${auditor?.name || "—"} · Atestat: ${auditor?.atestat || "—"} · Data: ${new Date().toLocaleDateString("ro-RO")}`, margin + 3, endY + 16);
+
+      // ── Footer ────────────────────────────────────────────────────
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(6.5);
+        doc.setTextColor(160, 160, 180);
+        doc.text(`Zephren v3.8 | Raport conformitate multi-normativ | Pag. ${i}/${pageCount}`, pageW / 2, 292, { align: "center" });
+      }
+
+      const addr = (building.address || "cladire").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
+      doc.save(`Conformitate_${addr}_${new Date().toISOString().slice(0,10)}.pdf`);
+      showToast("Raport conformitate generat!", "success");
+    } catch (e) {
+      console.error("Compliance PDF error:", e);
+      showToast("Eroare generare raport conformitate", "error");
+    } finally {
+      setExporting(null);
+    }
+  }, [instSummary, renewSummary, building, selectedClimate, cooling.hasCooling,
+      envelopeSummary, opaqueElements, glazingElements, bacsClass, auditor,
+      getEnergyClassEPBD, getNzebEpMax, calcOpaqueR, showToast]);
 
 
   // ═══════════════════════════════════════════════════════════════
@@ -6126,32 +6354,36 @@ export default function EnergyCalcApp({ cloud }) {
               <h1 className="text-sm sm:text-base font-bold tracking-tight truncate" style={{display:"none"}}>Zephren</h1>
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-[9px] uppercase tracking-widest opacity-30 hidden sm:block">Performanță Energetică</p>
-                  {/* Mini tier switcher — always visible */}
+                  <p className="text-[9px] uppercase tracking-widest opacity-30 hidden lg:block">Performanță Energetică</p>
+                  {/* Mini tier switcher — toate tier-urile la sm+, doar cel activ pe mobile */}
                   <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-                    {["free","standard","pro","asociatie"].map(tid => (
-                      <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
-                        className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all ${
-                          userTier === tid || (userTier === "business" && tid === "asociatie")
-                            ? tid === "free" ? "bg-white/15 text-white"
-                            : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
-                            : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
-                            : "bg-emerald-500 text-black shadow-sm"
-                            : "text-white/30 hover:text-white/60"
-                        }`}>
-                        {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
-                      </button>
-                    ))}
+                    {["free","standard","pro","asociatie"].map(tid => {
+                      const isActive = userTier === tid || (userTier === "business" && tid === "asociatie");
+                      return (
+                        <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
+                          className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all ${isActive ? "" : "hidden sm:block"} ${
+                            isActive
+                              ? tid === "free" ? "bg-white/15 text-white"
+                              : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
+                              : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
+                              : "bg-emerald-500 text-black shadow-sm"
+                              : "text-white/30 hover:text-white/60"
+                          }`}>
+                          {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
+                        </button>
+                      );
+                    })}
                   </div>
                   <button onClick={() => setShowPricingPage(true)} className="text-[9px] opacity-30 hover:opacity-60 transition-all hidden sm:block" title="Detalii planuri">ⓘ</button>
                 </div>
               </div>
             </div>
           </div>
+          {/* Butoane scrollabile (pot ieși din ecran pe ecrane mici) */}
           <div className="flex items-center gap-1 sm:gap-2 justify-end shrink min-w-0 overflow-x-auto no-scrollbar">
             <button onClick={function(){setPrintMode(true);setTimeout(function(){window.print();setPrintMode(false);},500);}} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0">🖨️</button>
             {storageStatus && <span className="text-[8px] opacity-20 hidden lg:inline shrink-0">{storageStatus}</span>}
-            <div className="flex items-center gap-0.5 hidden md:flex shrink-0">
+            <div className="flex items-center gap-0.5 hidden lg:flex shrink-0">
               <button onClick={undo} disabled={undoStack.length===0} title="Undo (Ctrl+Z)"
                 className={cn("text-xs px-1.5 py-1 rounded-l-lg border border-white/10 transition-colors", undoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↶</button>
               <button onClick={redo} disabled={redoStack.length===0} title="Redo (Ctrl+Y)"
@@ -6159,7 +6391,7 @@ export default function EnergyCalcApp({ cloud }) {
             </div>
             <button onClick={() => { refreshProjectList(); setShowProjectManager(true); }}
               className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-amber-500/20 text-amber-400/70 hover:bg-amber-500/10 hover:text-amber-400 transition-all shrink-0">
-              📁<span className="hidden md:inline"> Proiecte</span>
+              📁<span className="hidden lg:inline"> Proiecte</span>
             </button>
             <button onClick={() => setShowResetConfirm(true)}
               className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
@@ -6178,26 +6410,59 @@ export default function EnergyCalcApp({ cloud }) {
               📗 XLSX
             </button>
             <button onClick={() => importFileRef.current?.click()}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:flex shrink-0">
-              📂 Import
+              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden md:flex shrink-0">
+              📂<span className="hidden lg:inline"> Import</span>
             </button>
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
-            <button onClick={() => setShowQuickFill(true)} className="text-xs px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors shrink-0" title="Completare rapidă date clădire">⚡ Quick Fill</button>
-            <button onClick={() => setShowImportWizard(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Import din alte softuri">📥</button>
-            <button onClick={() => setShowShareModal(true)} className="text-xs px-2 py-1 rounded-lg border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-400 transition-colors hidden lg:block shrink-0" title="Partajare link + QR">🔗</button>
-            <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:block shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
+            <button onClick={() => setShowQuickFill(true)} className="text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors hidden sm:flex shrink-0" title="Completare rapidă date clădire">⚡<span className="hidden lg:inline"> Quick Fill</span></button>
+            <button onClick={() => setShowAuditForm(true)} className="text-xs px-2 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold transition-colors hidden md:flex shrink-0" title="Date audit client">📋<span className="hidden lg:inline"> Audit</span></button>
+            <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:flex shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
             {cloud?.isLoggedIn && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/60 hidden xl:block shrink-0">{cloud.user?.name?.split(" ")[0] || cloud.user?.email?.split("@")[0]}</span>}
             {cloud?.isLoggedIn && <button onClick={cloud.logout} className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/5 text-white/30 hidden xl:block shrink-0">Logout</button>}
-            <button onClick={() => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:block shrink-0 ${cloud?.isLoggedIn ? "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title="Echipă & Cloud">👥</button>
-            <button onClick={() => setShowClimateMap(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Hartă climatică">🗺️</button>
-            <button onClick={() => setShowPhotoGallery(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Galerie foto">📷</button>
-            <button onClick={() => setShowProductCatalog(true)} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Catalog produse">🏭</button>
-            <button onClick={() => setShowAIAssistant(!showAIAssistant)} className="text-xs px-2 py-1 rounded-lg border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors hidden lg:block shrink-0 text-amber-400" title="Zephren AI Assistant">🤖</button>
-            <button onClick={function(){setShowTour(true);}} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0" title="Ghid utilizare">?</button>
-            <button onClick={toggleThemeManual} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors shrink-0">{theme==="dark"?"☀":"🌙"}</button>
+          </div>
+          {/* Butoane fixe (nu se scrollează) — dropdown-ul nu e clipat de overflow */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Dropdown "Mai mult" — instrumente secundare */}
+            <div className="relative hidden lg:block">
+              <button
+                onClick={() => setShowMoreMenu(o => !o)}
+                className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"
+                title="Instrumente suplimentare">
+                ⋯
+              </button>
+              {showMoreMenu && (
+                <>
+                  <div className="fixed inset-0 z-[9989]" onClick={() => setShowMoreMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-[9990] bg-[#0d0f1a] border border-white/10 rounded-xl shadow-2xl p-2 min-w-[200px]">
+                    {[
+                      { icon: "📋", label: "Conformitate PDF", action: exportComplianceReport, color: "text-violet-400" },
+                      { icon: "🔗", label: "Partajare + QR", action: () => setShowShareModal(true), color: "text-indigo-400" },
+                      { icon: "📥", label: "Import din alt soft", action: () => setShowImportWizard(true) },
+                      { icon: "👥", label: "Echipă & Cloud", action: () => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }, color: cloud?.isLoggedIn ? "text-emerald-400" : "opacity-40" },
+                      { icon: "🗺️", label: t("Hartă climatică"), action: () => setShowClimateMap(true) },
+                      { icon: "📷", label: "Galerie foto", action: () => setShowPhotoGallery(true) },
+                      { icon: "🏭", label: t("Catalog produse"), action: () => setShowProductCatalog(true) },
+                      { icon: "🤖", label: "AI Assistant", action: () => setShowAIAssistant(o => !o), color: "text-amber-400" },
+                      { icon: "📋", label: "Timeline progres", action: () => setShowTimeline(o => !o) },
+                      { icon: "⚖️", label: "Comparare proiecte", action: () => setShowComparison(true) },
+                      { icon: "⌨️", label: "Scurtături tastatură", action: () => setShowShortcutsHelp(true) },
+                      { icon: "?", label: t("Ghid utilizare"), action: () => setShowTour(true) },
+                    ].map((item, i) => (
+                      <button key={i}
+                        onClick={() => { item.action(); setShowMoreMenu(false); }}
+                        className={cn("w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-left text-xs transition-colors", item.color || "text-white/70")}>
+                        <span className="text-sm">{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <button onClick={toggleThemeManual} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">{theme==="dark"?"☀":"🌙"}</button>
             <button onClick={() => setLang(l => l==="RO"?"EN":"RO")}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors font-medium shrink-0">
+              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors font-medium">
               {lang}
             </button>
             {selectedClimate && (
@@ -6416,7 +6681,7 @@ export default function EnergyCalcApp({ cloud }) {
           }} />}
 
           {/* ═══ STEP 7: AUDIT — RECOMANDĂRI DE REABILITARE ═══ */}
-          {step === 7 && <Step7Audit {...{
+          {step === 7 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">{lang==="EN"?"Loading audit module...":"Se încarcă modulul audit..."}</div>}><Step7Audit {...{
             instSummary, renewSummary, envelopeSummary,
             building, selectedClimate, lang, theme,
             heating, cooling, ventilation, lighting, acm,
@@ -6445,18 +6710,19 @@ export default function EnergyCalcApp({ cloud }) {
             REHAB_COSTS,
             getURefNZEB, setThermalBridges,
             t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
-          }} />}
+          }} /></Suspense>}
 
           {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}
-          {step === 8 && <Step8Advanced {...{
+          {step === 8 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">{lang==="EN"?"Loading advanced module...":"Se încarcă modulul avansat..."}</div>}><Step8Advanced {...{
             building, climate: selectedClimate,
             opaqueElements, glazingElements, thermalBridges,
             instSummary, renewSummary,
+            lang,
             systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem,
               ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
               heating: { etaGen: parseFloat(heating?.etaGen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
             },
-          }} />}
+          }} /></Suspense>}
           </div>
         </main>
       </div>
@@ -7195,6 +7461,81 @@ export default function EnergyCalcApp({ cloud }) {
             </div>
             <div className="text-[10px] opacity-30 text-center pt-1 border-t border-white/5">
               Proiectele se salvează local în browser. Max ~20 proiecte.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PROJECT TIMELINE (pct. 40) ═══ */}
+      {showTimeline && (
+        <div className="fixed top-16 right-4 z-[9980] w-80 shadow-2xl">
+          <ProjectTimeline
+            state={{ building, selectedClimate, opaqueElements, heating, instSummary, auditor, renewSummary }}
+            currentStep={step}
+            onGoToStep={(s) => { setStep(s); setShowTimeline(false); }}
+          />
+        </div>
+      )}
+
+      {/* ═══ PROJECT COMPARISON (pct. 38) ═══ */}
+      {showComparison && (
+        <ProjectComparison
+          currentState={{ building, selectedClimate, opaqueElements, instSummary, renewSummary, annualEnergyCost }}
+          projectList={projectList}
+          onClose={() => setShowComparison(false)}
+        />
+      )}
+
+      {/* ═══ KEYBOARD SHORTCUTS HELP (pct. 41) ═══ */}
+      {showShortcutsHelp && (
+        <div className="fixed inset-0 z-[9992] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.7)"}} onClick={() => setShowShortcutsHelp(false)}>
+          <div className="bg-[#0d0f1a] border border-white/10 rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold">⌨️ Scurtături tastatură</h3>
+              <button onClick={() => setShowShortcutsHelp(false)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm">&times;</button>
+            </div>
+            <div className="space-y-2">
+              {SHORTCUTS_LIST.map((s, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-white/[0.04]">
+                  <span className="opacity-60">{s.desc}</span>
+                  <div className="flex items-center gap-1">
+                    {s.keys.map((k, j) => (
+                      <kbd key={j} className="px-1.5 py-0.5 rounded border border-white/20 bg-white/5 font-mono text-[10px]">{k}</kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AUDIT CLIENT DATA FORM MODAL ═══ */}
+      {showAuditForm && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-2 sm:p-4" style={{background:"rgba(0,0,0,0.85)",backdropFilter:"blur(4px)"}} onClick={() => setShowAuditForm(false)}>
+          <div className="bg-[#0d0f1a] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] sticky top-0 bg-[#0d0f1a] z-10">
+              <div>
+                <h3 className="text-base font-bold">📋 Date Client — Audit Energetic</h3>
+                <p className="text-[10px] opacity-40 mt-0.5">Colectare sistematică date necesare auditului și emiterii CPE</p>
+              </div>
+              <button onClick={() => setShowAuditForm(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
+            </div>
+            <div className="p-4">
+              <AuditClientDataForm
+                onDataChange={(data) => {
+                  // Auto-populate câmpuri din calculator dacă sunt goale
+                  if (data.documentation?.address && !building.address) {
+                    setBuilding(b => ({ ...b, address: data.documentation.address }));
+                  }
+                  if (data.documentation?.city && !building.city) {
+                    setBuilding(b => ({ ...b, city: data.documentation.city }));
+                  }
+                  if (data.documentation?.yearBuilt && !building.yearBuilt) {
+                    setBuilding(b => ({ ...b, yearBuilt: data.documentation.yearBuilt }));
+                  }
+                }}
+              />
             </div>
           </div>
         </div>

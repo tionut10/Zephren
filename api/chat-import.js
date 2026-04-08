@@ -5,6 +5,8 @@
  * Returns: { reply: "Confirmare...", data: { building, heating, ... }, missingFields: [] }
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
 
 const SYSTEM_PROMPT = `Ești un expert în certificarea energetică a clădirilor din România (Mc 001-2022).
 Utilizatorul descrie o clădire în limbaj natural. Tu extragi datele structurate.
@@ -67,6 +69,13 @@ Reguli de inferență pentru România:
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Auth + rate limit
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+  const limit = checkRateLimit(auth.user.id, 20);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
 

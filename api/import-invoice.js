@@ -5,6 +5,8 @@
  * Returns: { data: { supplier, energyType, annualGasKwh, annualElecKwh, ... } }
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { requireAuth } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError, checkFileSize } from "./_middleware/rateLimit.js";
 
 const INVOICE_PROMPT = `Ești un expert în analiza facturilor de energie din România.
 Analizează documentul și extrage datele de consum în format JSON strict.
@@ -39,11 +41,23 @@ RĂSPUNDE DOAR CU JSON.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Auth + rate limit
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+  const limit = checkRateLimit(auth.user.id, 10);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
 
   const { fileType, fileData, mimeType } = req.body || {};
   if (!fileData) return res.status(400).json({ error: "No file data" });
+
+  // Validate file size (max 5 MB decoded)
+  if (!checkFileSize(fileData)) {
+    return res.status(413).json({ error: "Fisierul depaseste limita de 5 MB." });
+  }
 
   try {
     const client = new Anthropic({ apiKey });

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { T } from "../data/translations.js";
 import { fetchPVGISClimate } from "../calc/pvgis.js";
 import { MATERIAL_PRICES_2025, PRICES_UPDATED, PRICES_SOURCE, EUR_TO_RON, getMaterialsByCategory } from "../data/material-prices.js";
 import {
@@ -131,7 +132,8 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems }) {
+export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO" }) {
+  const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
   const [hpTypeId, setHpTypeId] = useState("AA_STD");
   const [collectorType, setCollectorType] = useState("PLAN_SEL");
@@ -705,11 +707,11 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex flex-wrap gap-1.5">
-        {TAB_SECTIONS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
+        {TAB_SECTIONS.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-              activeTab === t.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
-            {t.icon} {t.label}
+              activeTab === tab.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
+            {tab.icon} {tab.id === "conformitate" ? t(tab.label) : tab.label}
           </button>
         ))}
       </div>
@@ -2191,7 +2193,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
-                    Se încarcă...
+                    {t("Se încarcă...")}
                   </>
                 ) : (
                   <><span>🛰️</span> Import PVGIS</>
@@ -2989,7 +2991,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {/* ═══ CONFORMITATE U RENOVARE ═══ */}
       {activeTab === "conformitate" && (
         <Card className="p-4">
-          <SectionHeader icon="✅" title="Conformitate U la renovare majoră"
+          <SectionHeader icon="✅" title={t("Conformitate U la renovare majoră")}
             subtitle="Verificare automată față de U maxim admis Mc 001-2022 Tabel 2.5 (renovare >25% anvelopă)" />
           {uConformity ? (
             <div className="space-y-3">

@@ -7,10 +7,16 @@
  * Returns: { url: string } — redirect the user to this URL
  */
 
+import { requireAuth } from "./_middleware/auth.js";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  // Auth: require authenticated user for checkout
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
@@ -19,7 +25,10 @@ export default async function handler(req, res) {
     });
   }
 
-  const { plan, userId, email } = req.body || {};
+  const { plan } = req.body || {};
+  // Use authenticated user's ID and email (prevents impersonation)
+  const userId = auth.user.id;
+  const email = auth.user.email;
 
   if (!plan || !["pro", "business"].includes(plan)) {
     return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'business'." });

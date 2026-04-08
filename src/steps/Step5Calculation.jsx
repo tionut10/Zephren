@@ -1,5 +1,7 @@
 import React from "react";
 import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
+import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
+import UComplianceTable from "../components/UComplianceTable.jsx";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -14,7 +16,9 @@ export default function Step5Calculation(props) {
     heating, cooling, ventilation, lighting, acm,
     solarThermal, photovoltaic, heatPump, biomass, otherRenew,
     gwpDetailed, bacsCheck, bacsClass, setBacsClass, avValidation,
-    evChargerCalc, solarReadyCheck,
+    evChargerCalc, solarReadyCheck, acmDetailed,
+    opaqueElements, glazingElements, calcOpaqueR,
+    U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, ELEMENT_TYPES,
     energyPrices, setEnergyPrices, useNA2023, setUseNA2023,
     compareRef, setCompareRef, importCompareRef,
     showScenarioCompare, setShowScenarioCompare,
@@ -258,7 +262,7 @@ export default function Step5Calculation(props) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
-                      { label:"Emisii CO₂", value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
+                      { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
                       { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
                       { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
                     ].map((kpi, i) => (
@@ -430,27 +434,9 @@ export default function Step5Calculation(props) {
               {/* ── BILANȚ LUNAR ── */}
               <Card title={t("Bilanț energetic lunar (metoda quasi-staționară)",lang)} className="mb-6">
                 <div className="overflow-x-auto">
-                  <div className="min-w-[700px]">
-                    {/* Bar chart */}
-                    <div className="flex items-end gap-1 h-48 mb-2 px-2">
-                      {monthlyData.map((d,i) => {
-                        const heatPct = maxQ > 0 ? (d.qHeat / maxQ * 100) : 0;
-                        const lossPct = maxQ > 0 ? (d.qLoss / maxQ * 100) : 0;
-                        return (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${d.month}: Pierderi=${d.qLoss.toFixed(0)}, Necesar=${d.qHeat.toFixed(0)} kWh`}>
-                            <div className="w-full flex flex-col items-center justify-end" style={{height:"192px"}}>
-                              <div className="w-full rounded-t" style={{height:`${lossPct}%`, backgroundColor:"rgba(239,68,68,0.15)", minHeight: lossPct > 0 ? "2px" : "0"}} />
-                              <div className="w-full rounded-t -mt-px" style={{height:`${heatPct}%`, backgroundColor:"#ef4444", minHeight: heatPct > 0 ? "2px" : "0"}} />
-                            </div>
-                            <span className="text-[9px] opacity-40 mt-1">{d.month}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center gap-4 text-[10px] opacity-40 px-2">
-                      <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500 inline-block" /> Necesar incalzire</span>
-                      <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500/20 inline-block" /> Pierderi totale</span>
-                    </div>
+                  <div className="min-w-[480px]">
+                    {/* Grafic SVG bilanț lunar */}
+                    <MonthlyEnergyChart monthlyData={monthlyData} Au={Au} lang={lang} />
 
                     {/* Tabel lunar */}
                     <div className="mt-4 overflow-x-auto">
@@ -987,6 +973,75 @@ export default function Step5Calculation(props) {
                   )}
                 </Card>
               </div>
+
+              {/* ── ACM EN 15316 DETALIAT ── */}
+              {acmDetailed && (
+                <Card title="Sistem ACM — Analiză detaliată EN 15316-3/5" className="mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Necesar termic brut</div>
+                      <div className="text-xl font-mono font-bold text-orange-400">{acmDetailed.Q_nd_annual_kWh.toFixed(0)}</div>
+                      <div className="text-[10px] opacity-30">kWh/an</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Eficiență sistem</div>
+                      <div className="text-xl font-mono font-bold" style={{color: acmDetailed.color}}>
+                        {(acmDetailed.eta_system * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-[10px] opacity-30">{acmDetailed.verdict}</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Energie finală sursă</div>
+                      <div className="text-xl font-mono font-bold text-white/70">{acmDetailed.Q_final_kWh.toFixed(0)}</div>
+                      <div className="text-[10px] opacity-30">kWh/an (η_gen={acmDetailed.eta_gen})</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+                    <div className="space-y-1">
+                      <ResultRow label="Pierderi distribuție" value={acmDetailed.Q_dist_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_dist_pct}%)`}
+                        status={acmDetailed.f_dist_pct > 20 ? "fail" : acmDetailed.f_dist_pct > 12 ? "warn" : "ok"} />
+                      <ResultRow label="Pierderi stocare" value={acmDetailed.Q_storage_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_storage_pct}%)`}
+                        status={acmDetailed.f_storage_pct > 15 ? "fail" : acmDetailed.f_storage_pct > 8 ? "warn" : "ok"} />
+                      <ResultRow label="Pierderi standby boiler" value={acmDetailed.q_standby_kWh_day.toFixed(1)} unit="kWh/zi" />
+                    </div>
+                    <div className="space-y-1">
+                      <ResultRow label="Volum boiler estimat" value={acmDetailed.vol_L} unit="L" />
+                      {acmDetailed.solarFraction_pct > 0 && (
+                        <ResultRow label="Contribuție solară" value={`${acmDetailed.solarFraction_pct}%`} unit={`(${acmDetailed.Q_solar_kWh.toFixed(0)} kWh/an)`} status="ok" />
+                      )}
+                      <ResultRow label="Temp. apă caldă / rece" value={`${acmDetailed.tSupply}°C / ${acmDetailed.tCold}°C`} unit="" />
+                    </div>
+                  </div>
+                  {acmDetailed.recommendations.length > 0 && (
+                    <div className="space-y-1">
+                      {acmDetailed.recommendations.map((r, i) => (
+                        <div key={i} className="text-[10px] text-yellow-400/70 flex gap-2">
+                          <span>💡</span><span>{r}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* ── CONFORMITATE U ── */}
+              {U_REF_NZEB_RES && (opaqueElements?.length > 0 || glazingElements?.length > 0) && (
+                <Card title={t("Conformitate U față de referințe nZEB / renovare", lang)} className="mb-6">
+                  <UComplianceTable
+                    opaqueElements={opaqueElements}
+                    glazingElements={glazingElements}
+                    building={building}
+                    calcOpaqueR={calcOpaqueR}
+                    U_REF_NZEB_RES={U_REF_NZEB_RES}
+                    U_REF_NZEB_NRES={U_REF_NZEB_NRES}
+                    U_REF_RENOV_RES={U_REF_RENOV_RES}
+                    U_REF_RENOV_NRES={U_REF_RENOV_NRES}
+                    U_REF_GLAZING={U_REF_GLAZING}
+                    ELEMENT_TYPES={ELEMENT_TYPES}
+                    lang={lang}
+                  />
+                </Card>
+              )}
 
               {/* ── COMPARAȚIE REAL vs. REFERINȚĂ ── */}
               {instSummary && (

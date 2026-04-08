@@ -1,5 +1,6 @@
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
+import UComplianceTable from "../components/UComplianceTable.jsx";
 
 export default function Step2Envelope({
   building, lang, selectedClimate,
@@ -12,6 +13,8 @@ export default function Step2Envelope({
   setEditingBridge, setShowBridgeModal, setShowBridgeCatalog,
   calcOpaqueR, getURefNZEB,
   ELEMENT_TYPES, U_REF_NZEB,
+  avValidation,
+  U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING,
   glaserElementIdx, setGlaserElementIdx, glaserResult,
   summerComfortResults,
   airInfiltrationCalc, naturalLightingCalc,
@@ -47,7 +50,7 @@ export default function Step2Envelope({
             {opaqueElements.length === 0 ? (
               <div className="text-center py-8 opacity-30">
                 <div className="text-3xl mb-2">🏗️</div>
-                <div className="text-xs">Adaugă primul element opac (pereți, planșee, terasă)</div>
+                <div className="text-xs">{t("Adaugă primul element opac (pereți, planșee, terasă)",lang)}</div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -93,7 +96,7 @@ export default function Step2Envelope({
             {glazingElements.length === 0 ? (
               <div className="text-center py-8 opacity-30">
                 <div className="text-3xl mb-2">🪟</div>
-                <div className="text-xs">Adaugă ferestre și uși cu vitraje</div>
+                <div className="text-xs">{t("Adaugă ferestre și uși cu vitraje",lang)}</div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -142,7 +145,7 @@ export default function Step2Envelope({
             {thermalBridges.length === 0 ? (
               <div className="text-center py-8 opacity-30">
                 <div className="text-3xl mb-2">🔗</div>
-                <div className="text-xs">Adaugă punți termice (joncțiuni, console, glafuri)</div>
+                <div className="text-xs">{t("Adaugă punți termice (joncțiuni, console, glafuri)",lang)}</div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -188,35 +191,35 @@ export default function Step2Envelope({
                 <div className="h-px bg-white/[0.06]" />
 
                 <div className="space-y-1">
-                  <ResultRow label="Elemente opace" value={opaqueElements.length} unit="buc" />
-                  <ResultRow label="Elemente vitrate" value={glazingElements.length} unit="buc" />
-                  <ResultRow label="Punți termice" value={thermalBridges.length} unit="buc" />
+                  <ResultRow label={t("Elemente opace",lang)} value={opaqueElements.length} unit="buc" />
+                  <ResultRow label={t("Elemente vitrate",lang)} value={glazingElements.length} unit="buc" />
+                  <ResultRow label={t("Punți termice",lang)} value={thermalBridges.length} unit="buc" />
                 </div>
 
                 <div className="h-px bg-white/[0.06]" />
 
                 <div className="space-y-1">
-                  <ResultRow label="Pierderi transmisie" value={envelopeSummary.totalHeatLoss.toFixed(1)} unit="W/K" />
-                  <ResultRow label="  din care punți termice" value={envelopeSummary.bridgeLoss.toFixed(1)} unit="W/K" />
-                  <ResultRow label="Pierderi ventilare (n=0.5)" value={envelopeSummary.ventLoss.toFixed(1)} unit="W/K" />
+                  <ResultRow label={t("Pierderi transmisie",lang)} value={envelopeSummary.totalHeatLoss.toFixed(1)} unit="W/K" />
+                  <ResultRow label={t("  din care punți termice",lang)} value={envelopeSummary.bridgeLoss.toFixed(1)} unit="W/K" />
+                  <ResultRow label={t("Pierderi ventilare (n=0.5)",lang)} value={envelopeSummary.ventLoss.toFixed(1)} unit="W/K" />
                 </div>
 
                 <div className="h-px bg-white/[0.06]" />
 
                 <div className="space-y-1">
-                  <ResultRow label="Suprafață totală elemente" value={envelopeSummary.totalArea.toFixed(1)} unit="m²" />
-                  <ResultRow label="Volum încălzit" value={envelopeSummary.volume.toFixed(1)} unit="m³" />
+                  <ResultRow label={t("Suprafață totală elemente",lang)} value={envelopeSummary.totalArea.toFixed(1)} unit="m²" />
+                  <ResultRow label={t("Volum încălzit",lang)} value={envelopeSummary.volume.toFixed(1)} unit="m³" />
                 </div>
 
                 {selectedClimate && (
                   <>
                     <div className="h-px bg-white/[0.06]" />
                     <div className="space-y-1">
-                      <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Estimare rapidă</div>
-                      <ResultRow label="Necesar încălzire"
+                      <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Estimare rapidă",lang)}</div>
+                      <ResultRow label={t("Necesar încălzire",lang)}
                         value={((24 * envelopeSummary.G * 0.9 * selectedClimate.ngz / 1000) - 7).toFixed(0)}
                         unit="kWh/(m³·an)" />
-                      <ResultRow label="Necesar specific"
+                      <ResultRow label={t("Necesar specific",lang)}
                         value={(parseFloat(building.areaUseful) > 0
                           ? (((24 * envelopeSummary.G * 0.9 * selectedClimate.ngz / 1000) - 7) * parseFloat(building.volume) / parseFloat(building.areaUseful)).toFixed(0)
                           : "—")}
@@ -227,7 +230,7 @@ export default function Step2Envelope({
 
                 <div className="h-px bg-white/[0.06]" />
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Distribuție pierderi</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Distribuție pierderi",lang)}</div>
                   <div className="flex items-center gap-3">
                     <svg viewBox="0 0 90 90" width="80" height="80" className="shrink-0">
                       {(() => {
@@ -249,7 +252,7 @@ export default function Step2Envelope({
                       })()}
                     </svg>
                     <div className="space-y-1">
-                      {[{l:"Opace",c:"#ef4444"},{l:"Vitraje",c:"#3b82f6"},{l:"Punți",c:"#f97316"},{l:"Ventilare",c:"#8b5cf6"}].map(function(it){ return <div key={it.l} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor:it.c}}/><span className="text-[10px] opacity-60">{it.l}</span></div>; })}
+                      {[{l:"Opace",c:"#ef4444"},{l:"Vitraje",c:"#3b82f6"},{l:"Punți",c:"#f97316"},{l:"Ventilare",c:"#8b5cf6"}].map(function(it){ return <div key={it.l} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor:it.c}}/><span className="text-[10px] opacity-60">{t(it.l,lang)}</span></div>; })}
                     </div>
                   </div>
                 </div>
@@ -272,8 +275,39 @@ export default function Step2Envelope({
             </div>
           </Card>
 
+          {/* Validare A/V */}
+          {avValidation?.msg && (
+            <div className={`text-xs px-3 py-2 rounded-lg border ${
+              avValidation.status === "low" ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
+              : "border-orange-500/30 bg-orange-500/10 text-orange-300"
+            }`}>
+              ⚠️ {avValidation.msg}
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* ── CONFORMITATE U — tabel complet ── */}
+      {(opaqueElements.length > 0 || glazingElements.length > 0) && U_REF_NZEB_RES && (
+        <div className="mt-5">
+          <Card title={t("Conformitate U față de referințe Mc 001-2022", lang)}>
+            <UComplianceTable
+              opaqueElements={opaqueElements}
+              glazingElements={glazingElements}
+              building={building}
+              calcOpaqueR={calcOpaqueR}
+              U_REF_NZEB_RES={U_REF_NZEB_RES}
+              U_REF_NZEB_NRES={U_REF_NZEB_NRES}
+              U_REF_RENOV_RES={U_REF_RENOV_RES}
+              U_REF_RENOV_NRES={U_REF_RENOV_NRES}
+              U_REF_GLAZING={U_REF_GLAZING}
+              ELEMENT_TYPES={ELEMENT_TYPES}
+              lang={lang}
+            />
+          </Card>
+        </div>
+      )}
 
       {/* ── ANALIZE DETALIATE (sub grid, full-width) ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
@@ -305,11 +339,11 @@ export default function Step2Envelope({
                     </div>
                     <div className="p-2 rounded bg-white/[0.03]">
                       <div className="font-bold font-mono">{glaserResult.winterAccum.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">Condens iarnă [g/m²]</div>
+                      <div className="text-[9px] opacity-40">{t("Condens iarnă [g/m²]",lang)}</div>
                     </div>
                     <div className="p-2 rounded bg-white/[0.03]">
                       <div className="font-bold font-mono">{glaserResult.summerEvap.toFixed(0)}</div>
-                      <div className="text-[9px] opacity-40">Evap. vară [g/m²]</div>
+                      <div className="text-[9px] opacity-40">{t("Evap. vară [g/m²]",lang)}</div>
                     </div>
                   </div>
 
@@ -398,7 +432,7 @@ export default function Step2Envelope({
 
           {/* ── DIAGRAMĂ GLASER VIZUALĂ SVG (C1) ── */}
           {glaserResult && opaqueElements[glaserElementIdx] && (
-            <Card title="Diagramă Glaser — Profil temperatură și vapori">
+            <Card title={t("Verificare condens Glaser (ISO 13788)", lang)}>
               <svg viewBox="0 0 400 200" className="w-full" style={{minHeight:"160px"}}>
                 {/* Background */}
                 <rect x="0" y="0" width="400" height="200" fill="transparent" />
@@ -492,9 +526,9 @@ export default function Step2Envelope({
                   <span className="text-xs opacity-60">Clasificare</span>
                   <Badge color={airInfiltrationCalc.n50 <= 3 ? "green" : airInfiltrationCalc.n50 <= 5 ? "amber" : "red"}>{airInfiltrationCalc.classification}</Badge>
                 </div>
-                <ResultRow label="Debit la 50Pa" value={airInfiltrationCalc.q50} unit="m³/h" />
-                <ResultRow label="Infiltrație naturală" value={airInfiltrationCalc.nInfNat} unit="h⁻¹" />
-                <ResultRow label="Pierderi estimate" value={airInfiltrationCalc.lossKW} unit="kW" />
+                <ResultRow label={t("Debit la 50Pa",lang)} value={airInfiltrationCalc.q50} unit="m³/h" />
+                <ResultRow label={t("Infiltrație naturală",lang)} value={airInfiltrationCalc.nInfNat} unit="h⁻¹" />
+                <ResultRow label={t("Pierderi estimate",lang)} value={airInfiltrationCalc.lossKW} unit="kW" />
                 {airInfiltrationCalc.recommendation && (
                   <div className="text-[10px] text-amber-400/70 mt-1 p-2 rounded bg-amber-500/5 border border-amber-500/10">{airInfiltrationCalc.recommendation}</div>
                 )}
@@ -514,9 +548,9 @@ export default function Step2Envelope({
                   <span className="text-xs opacity-60">Clasificare</span>
                   <Badge color={naturalLightingCalc.flz >= 3 ? "green" : naturalLightingCalc.flz >= 2 ? "amber" : "red"}>{naturalLightingCalc.classification}</Badge>
                 </div>
-                <ResultRow label="Raport vitrat/util" value={naturalLightingCalc.ratio} unit="%" />
-                <ResultRow label="Sup. vitrată totală" value={naturalLightingCalc.glazArea} unit="m²" />
-                <ResultRow label="Reducere LENI posibilă" value={naturalLightingCalc.fDaylight} unit="%" status={naturalLightingCalc.fDaylight > 20 ? "ok" : null} />
+                <ResultRow label={t("Raport vitrat/util",lang)} value={naturalLightingCalc.ratio} unit="%" />
+                <ResultRow label={t("Sup. vitrată totală",lang)} value={naturalLightingCalc.glazArea} unit="m²" />
+                <ResultRow label={t("Reducere LENI posibilă",lang)} value={naturalLightingCalc.fDaylight} unit="%" status={naturalLightingCalc.fDaylight > 20 ? "ok" : null} />
               </div>
             </Card>
           )}

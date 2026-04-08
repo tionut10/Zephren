@@ -8,6 +8,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Web Workers bundlați ca module ES (pct. 54 — calc-worker.js)
+  worker: {
+    format: 'es',
+  },
   test: {
     exclude: ["e2e/**", "node_modules/**"],
   },

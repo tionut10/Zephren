@@ -54,11 +54,11 @@ export default function Step3Systems({
       {/* Sub-tabs */}
       <div className="flex gap-1 mb-6 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] overflow-x-auto no-scrollbar">
         {[
-          {id:"heating",label:"Încălzire",icon:"🔥"},
+          {id:"heating",label:t("Încălzire"),icon:"🔥"},
           {id:"acm",label:"ACM",icon:"🚿"},
-          {id:"cooling",label:"Climatizare",icon:"❄️"},
-          {id:"ventilation",label:"Ventilare",icon:"💨"},
-          {id:"lighting",label:"Iluminat",icon:"💡"},
+          {id:"cooling",label:t("Climatizare"),icon:"❄️"},
+          {id:"ventilation",label:t("Ventilare"),icon:"💨"},
+          {id:"lighting",label:t("Iluminat"),icon:"💡"},
         ].map(tab => (
           <button key={tab.id} onClick={() => setInstSubTab(tab.id)}
             className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
@@ -118,12 +118,12 @@ export default function Step3Systems({
               <Card title={t("Regim de funcționare",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Select label={t("Regim",lang)} value={heating.regime} onChange={v => setHeating(p=>({...p,regime:v}))}
-                    options={[{value:"continuu",label:"Continuu 24h"},{value:"intermitent",label:"Intermitent (reducere nocturnă)"},{value:"oprire",label:"Intermitent (oprire nocturnă)"}]} />
+                    options={[{value:"continuu",label:t("Continuu 24h")},{value:"intermitent",label:t("Intermitent (reducere nocturnă)")},{value:"oprire",label:t("Intermitent (oprire nocturnă)")}]} />
                   <Input label={t("Temp. confort (theta_int)",lang)} value={heating.theta_int} onChange={v => setHeating(p=>({...p,theta_int:v}))} type="number" unit="°C" tooltip="Temperatura interioară de calcul — Mc 001 Tabel 1.2: 20°C rezidențial, 18°C depozite, 24°C sănătate" />
                   <Input label={t("Reducere nocturnă",lang)} value={heating.nightReduction} onChange={v => setHeating(p=>({...p,nightReduction:v}))} type="number" unit="°C" />
                   {/* #7 Multi-zonă simplificată */}
                   <div className="col-span-full border-t border-white/5 pt-2 mt-1">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Zone termice adiacente (multi-zonă simplificată)</div>
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Zone termice adiacente (multi-zonă simplificată)")}</div>
                     <div className="grid grid-cols-3 gap-3">
                       <Input label="T scară/hol comun" value={heating.tStaircase || "15"} onChange={v => setHeating(p=>({...p,tStaircase:v}))} type="number" unit="°C" tooltip="Temperatura medie a scării/holului comun neîncălzit (afectează τ perete interior)" />
                       <Input label="T subsol" value={heating.tBasement || "10"} onChange={v => setHeating(p=>({...p,tBasement:v}))} type="number" unit="°C" tooltip="Temperatura medie a subsolului neîncălzit" />
@@ -147,7 +147,7 @@ export default function Step3Systems({
                       placeholder={`auto: ${Math.max(1,Math.round((parseFloat(building.areaUseful)||100)/30))}`} min="1" />
                     <Input label={t("Consum specific",lang)} value={acm.dailyLiters} onChange={v => setAcm(p=>({...p,dailyLiters:v}))} type="number" unit="l/pers/zi" />
                     <div className="bg-white/[0.02] rounded-lg p-3 flex flex-col justify-center">
-                      <span className="text-[10px] opacity-40">Necesar termic ACM</span>
+                      <span className="text-[10px] opacity-40">{t("Necesar termic ACM")}</span>
                       <span className="text-sm font-mono font-medium text-amber-400">
                         {instSummary ? instSummary.qACM_nd.toFixed(0) : "—"} <span className="text-[10px] opacity-40">kWh/an</span>
                       </span>
@@ -163,11 +163,11 @@ export default function Step3Systems({
                   <Input label={t("Lungime conducte distribuție",lang)} value={acm.pipeLength} onChange={v => setAcm(p=>({...p,pipeLength:v}))} type="number" unit="m" />
                   <label className="flex items-center gap-2 text-sm cursor-pointer self-end pb-2">
                     <input type="checkbox" checked={acm.pipeInsulated} onChange={e => setAcm(p=>({...p,pipeInsulated:e.target.checked}))} className="accent-amber-500" />
-                    Conducte izolate termic
+                    {t("Conducte izolate termic")}
                   </label>
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={acm.circRecirculation} onChange={e => setAcm(p=>({...p,circRecirculation:e.target.checked}))} className="accent-amber-500" />
-                    Circuit de recirculare
+                    {t("Circuit de recirculare")}
                   </label>
                   {acm.circRecirculation && (
                     <Input label={t("Ore funcționare recirculare/zi",lang)} value={acm.circHours} onChange={v => setAcm(p=>({...p,circHours:v}))} type="number" unit="h/zi" />
@@ -185,7 +185,7 @@ export default function Step3Systems({
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={cooling.hasCooling} onChange={e => setCooling(p=>({...p,hasCooling:e.target.checked}))}
                       className="accent-amber-500" />
-                    <span className="font-medium">Clădirea dispune de sistem de răcire/climatizare</span>
+                    <span className="font-medium">{t("Clădirea dispune de sistem de răcire/climatizare")}</span>
                   </label>
 
                   {cooling.hasCooling && (
@@ -239,8 +239,8 @@ export default function Step3Systems({
 
                   {ventilation.type === "NAT" && (
                     <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-4">
-                      <div className="text-xs text-amber-400 font-medium mb-1">Ventilare naturală</div>
-                      <div className="text-xs opacity-60">Se consideră rata de ventilare n = 0,5 h-1 (minimul obligatoriu). Nu se consumă energie electrică pentru ventilare, dar nu există recuperare de căldură.</div>
+                      <div className="text-xs text-amber-400 font-medium mb-1">{t("Ventilare naturală")}</div>
+                      <div className="text-xs opacity-60">{lang==="EN"?"Ventilation rate n = 0.5 h⁻¹ (mandatory minimum) is applied. No electrical energy is consumed for ventilation, but there is no heat recovery.":"Se consideră rata de ventilare n = 0,5 h-1 (minimul obligatoriu). Nu se consumă energie electrică pentru ventilare, dar nu există recuperare de căldură."}</div>
                     </div>
                   )}
                 </div>
@@ -267,7 +267,7 @@ export default function Step3Systems({
                   {instSummary && (
                     <div className="bg-white/[0.03] rounded-lg p-4 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs opacity-50">Indicator LENI calculat</span>
+                        <span className="text-xs opacity-50">{t("Indicator LENI calculat", lang)}</span>
                         <span className="text-lg font-mono font-bold text-amber-400">
                           {instSummary.leni.toFixed(1)} <span className="text-xs opacity-40 font-normal">kWh/(m2·an)</span>
                         </span>
@@ -287,7 +287,7 @@ export default function Step3Systems({
               <div className="space-y-4">
                 {/* Energie primară totală */}
                 <div className="text-center py-3">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Energie primară specifică</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Energie primară specifică")}</div>
                   <div className={cn("text-3xl font-bold font-mono",
                     instSummary.ep_total_m2 < 120 ? "text-emerald-400" : instSummary.ep_total_m2 < 250 ? "text-amber-400" : "text-red-400")}>
                     {instSummary.ep_total_m2.toFixed(0)}
@@ -299,7 +299,7 @@ export default function Step3Systems({
 
                 {/* Defalcare energie finală */}
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Energie finală per utilitate</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Energie finală per utilitate")}</div>
                   {[
                     {label:"Încălzire", val:instSummary.qf_h, color:"#ef4444"},
                     {label:"ACM", val:instSummary.qf_w, color:"#f97316"},
@@ -326,15 +326,15 @@ export default function Step3Systems({
 
                 {/* Totale */}
                 <div className="space-y-1">
-                  <ResultRow label="Energie finală totală" value={instSummary.qf_total.toFixed(0)} unit="kWh/an" />
-                  <ResultRow label="Energie finală specifică" value={instSummary.qf_total_m2.toFixed(1)} unit="kWh/(m2·an)" />
+                  <ResultRow label={t("Energie finală totală")} value={instSummary.qf_total.toFixed(0)} unit="kWh/an" />
+                  <ResultRow label={t("Energie finală specifică")} value={instSummary.qf_total_m2.toFixed(1)} unit="kWh/(m2·an)" />
                 </div>
 
                 <div className="h-px bg-white/[0.06]" />
 
                 <div className="space-y-1">
-                  <ResultRow label="Energie primară totală" value={instSummary.ep_total.toFixed(0)} unit="kWh/an" />
-                  <ResultRow label="Energie primară specifică" value={instSummary.ep_total_m2.toFixed(1)} unit="kWh/(m2·an)"
+                  <ResultRow label={t("Energie primară totală")} value={instSummary.ep_total.toFixed(0)} unit="kWh/an" />
+                  <ResultRow label={t("Energie primară specifică")} value={instSummary.ep_total_m2.toFixed(1)} unit="kWh/(m2·an)"
                     status={instSummary.ep_total_m2 < 120 ? "ok" : instSummary.ep_total_m2 < 250 ? "warn" : "fail"} />
                 </div>
 

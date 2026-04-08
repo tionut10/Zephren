@@ -127,12 +127,14 @@ function DataPreview({ data }) {
   if (!data) return null;
   const { building = {}, opaqueElements = [], glazingElements = [], thermalBridges = [],
           heating = {}, acm = {}, cooling = {}, ventilation = {}, lighting = {},
-          solarThermal = {}, photovoltaic = {}, heatPump = {}, biomass = {} } = data;
+          solarThermal = {}, photovoltaic = {}, battery = {}, heatPump = {}, biomass = {},
+          otherRenew = {} } = data;
 
   const buildingFields = Object.entries(building).filter(([, v]) => v && v !== "" && v !== false);
   const hasEnvelope = opaqueElements.length > 0 || glazingElements.length > 0;
   const hasSystems = Object.values(heating).some(v => v) || Object.values(acm).some(v => v);
-  const hasRenew = solarThermal.enabled || photovoltaic.enabled || heatPump.enabled || biomass.enabled;
+  const hasRenew = solarThermal.enabled || photovoltaic.enabled || heatPump.enabled || biomass.enabled
+    || battery.enabled || otherRenew.windEnabled || otherRenew.cogenEnabled;
 
   const sections = [
     { label: "Identificare (Pas 1)", count: buildingFields.length, icon: "📋",
@@ -144,13 +146,19 @@ function DataPreview({ data }) {
       items: [
         heating.source && { k: "Sursă încălzire", v: heating.source },
         acm.source && { k: "Sursă ACM", v: acm.source },
+        cooling.hasCooling && { k: "Răcire", v: cooling.system || "Activ" },
         ventilation.type && { k: "Ventilare", v: ventilation.type },
+        lighting.type && { k: "Iluminat", v: lighting.type },
       ].filter(Boolean) },
     { label: "Regenerabile (Pas 4)", count: hasRenew ? 1 : 0, icon: "☀️",
       items: [
         photovoltaic.enabled && { k: "Fotovoltaic", v: photovoltaic.peakPower ? `${photovoltaic.peakPower} kWp` : "Activ" },
         solarThermal.enabled && { k: "Solar termic", v: solarThermal.area ? `${solarThermal.area} m²` : "Activ" },
         heatPump.enabled && { k: "Pompă căldură", v: heatPump.cop ? `COP ${heatPump.cop}` : "Activ" },
+        biomass.enabled && { k: "Biomasă", v: biomass.type || "Activ" },
+        battery.enabled && { k: "Baterii", v: battery.capacity ? `${battery.capacity} kWh` : "Activ" },
+        otherRenew.windEnabled && { k: "Eolian", v: otherRenew.windCapacity ? `${otherRenew.windCapacity} kW` : "Activ" },
+        otherRenew.cogenEnabled && { k: "Cogenerare", v: "Activ" },
       ].filter(Boolean) },
   ];
 

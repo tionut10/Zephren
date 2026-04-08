@@ -50,7 +50,10 @@ export function calcMonthlyISO13790(params) {
   if (!climate || !Au || !V) return null;
   var days = [31,28,31,30,31,30,31,31,30,31,30,31];
   var mNames = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
-  var H_tr = G_env, H_ve = 0.34 * 0.5 * V * (1 - hrEta);
+  var H_tr = G_env;
+  // Rata de ventilare: parametru configurabil, fallback 0.5 ach (minim igienic)
+  var n_vent = parseFloat(params.n_vent) || 0.5;
+  var H_ve = 0.34 * n_vent * V * (1 - hrEta);
   // H_inf: infiltrații din n50 cu factor protecție vânt configurat (ISO 13789 §8.3)
   var H_inf = 0.34 * n50 * V * e_shield; // W/K
   var Cm = Au * (THERMAL_MASS_CLASS[structure] || 165000); // Mc 001-2022 Tabel 2.20
@@ -100,7 +103,10 @@ export function calcMonthlyISO13790(params) {
     var qH_nd = Math.max(0, Q_loss - eta_H * Q_gain);
     var gamma_C = Q_gain > 0 ? Q_loss/Q_gain : 999;
     var eta_C = calcUtilFactor(gamma_C, a_H);
-    var qC_nd = tExt > 15 ? Math.max(0, Q_gain - eta_C * Q_loss) : 0;
+    // Temperatura de echilibru: sub aceasta, câștigurile nu depășesc pierderile
+    // Calcul dinamic în loc de prag hardcodat (anterior: tExt > 15)
+    var theta_balance = Q_gain > 0 && H_total > 0 ? theta_int - (Q_gain / (H_total * hours / 1000)) : theta_int - 4;
+    var qC_nd = tExt > Math.min(theta_balance, theta_int - 4) ? Math.max(0, Q_gain - eta_C * Q_loss) : 0;
     return {name:name,tExt:tExt,deltaT:deltaT,Q_tr:Q_tr,Q_ve:Q_ve,Q_loss:Q_loss,Q_int:Q_int,Q_sol:Q_sol,Q_gain:Q_gain,gamma_H:gamma_H,eta_H:eta_H,qH_nd:qH_nd,qC_nd:qC_nd};
   });
 }
