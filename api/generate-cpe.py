@@ -1284,12 +1284,35 @@ class handler(BaseHTTPRequestHandler):
                                     try:
                                         img_data = base64.b64decode(ph_url.split(",")[1])
                                         img_stream = io.BytesIO(img_data)
+                                        # Detectează dimensiuni JPEG/PNG fără Pillow
+                                        import struct as _struct
+                                        raw = img_data
+                                        img_w_px, img_h_px = None, None
+                                        if raw[:4] == b'\x89PNG':
+                                            img_w_px, img_h_px = _struct.unpack('>II', raw[16:24])
+                                        elif raw[:2] == b'\xff\xd8':
+                                            ii = 2
+                                            while ii < len(raw) - 8:
+                                                if raw[ii] == 0xff and raw[ii+1] in (0xC0, 0xC2):
+                                                    img_h_px = _struct.unpack('>H', raw[ii+5:ii+7])[0]
+                                                    img_w_px = _struct.unpack('>H', raw[ii+7:ii+9])[0]
+                                                    break
+                                                seg_len = _struct.unpack('>H', raw[ii+2:ii+4])[0]
+                                                ii += 2 + seg_len
+                                        # Calculează height păstrând aspect ratio
+                                        pic_w = Inches(2.8)
+                                        if img_w_px and img_h_px and img_w_px > 0:
+                                            ratio = img_h_px / img_w_px
+                                            pic_h = Inches(2.8 * ratio)
+                                        else:
+                                            pic_h = Inches(2.1)  # fallback 4:3
                                         img_p = cell.paragraphs[0]
                                         img_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                                         img_run = img_p.add_run()
-                                        img_run.add_picture(img_stream, width=Inches(2.8))
-                                    except Exception:
-                                        pass
+                                        img_run.add_picture(img_stream, width=pic_w, height=pic_h)
+                                    except Exception as e:
+                                        import sys
+                                        print(f"[FOTO ERR] {e}", file=sys.stderr)
                                 label = ph.get("label", "")
                                 note = ph.get("note", "")
                                 if label:
@@ -1302,7 +1325,6 @@ class handler(BaseHTTPRequestHandler):
                                     np_.alignment = WD_ALIGN_PARAGRAPH.CENTER
                                     if np_.runs:
                                         np_.runs[0].font.size = Pt(6)
-                                        np_.runs[0].font.color.rgb = None
                         i += 2
 
             # ═══════════════════════════════════════

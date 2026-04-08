@@ -88,30 +88,48 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
 
   const photos = buildingPhotos || [];
 
-  const handleFiles = useCallback((files, category) => {
-    const fileArr = Array.from(files || []);
-    if (!fileArr.length) return;
-    let loaded = 0;
-    fileArr.forEach(file => {
-      if (!file.type.startsWith("image/")) return;
+  // Compresie canvas: max 1024px, 80% JPEG — reduce de la 3-5MB la ~150-300KB
+  const compressImage = useCallback((file) => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        setBuildingPhotos(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          url: reader.result,
-          label: file.name.replace(/\.[^.]+$/, ""),
-          note: "",
-          zone: category,
-          date: new Date().toLocaleDateString("ro-RO"),
-        }]);
-        loaded++;
-        if (loaded === fileArr.length) {
-          showToast(`${loaded} fotografi${loaded === 1 ? "e adăugată" : "i adăugate"}`, "success");
-        }
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1024;
+          let w = img.width, h = img.height;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.80));
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     });
-  }, [setBuildingPhotos, showToast]);
+  }, []);
+
+  const handleFiles = useCallback(async (files, category) => {
+    const fileArr = Array.from(files || []).filter(f => f.type.startsWith("image/"));
+    if (!fileArr.length) return;
+    let loaded = 0;
+    for (const file of fileArr) {
+      const url = await compressImage(file);
+      setBuildingPhotos(prev => [...prev, {
+        id: Date.now() + Math.random(),
+        url,
+        label: file.name.replace(/\.[^.]+$/, ""),
+        note: "",
+        zone: category,
+        date: new Date().toLocaleDateString("ro-RO"),
+      }]);
+      loaded++;
+      if (loaded === fileArr.length) {
+        showToast(`${loaded} fotografi${loaded === 1 ? "e adăugată" : "i adăugate"} (compresate)`, "success");
+      }
+    }
+  }, [compressImage, setBuildingPhotos, showToast]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
