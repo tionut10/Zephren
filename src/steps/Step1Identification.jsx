@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import IFCImport from "../components/IFCImport.jsx";
-import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -115,7 +114,6 @@ export default function Step1Identification({
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [geoSuggestion, setGeoSuggestion] = useState(null);
   const [showIFC, setShowIFC] = useState(false);
-  const [showOCR, setShowOCR] = useState(false);
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
@@ -307,14 +305,6 @@ export default function Step1Identification({
     showToast("Date IFC/BIM aplicate cu succes", "success");
   }, [updateBuilding, showToast]);
 
-  // ── Handler InvoiceOCR import ────────────────────────────────────────────────
-  const handleOCRApply = useCallback((data) => {
-    try {
-      localStorage.setItem("zephren_measured_consumption", JSON.stringify(data));
-    } catch {}
-    setShowOCR(false);
-    showToast("Date consum din factură salvate", "success");
-  }, [showToast]);
 
   return (
     <div>
@@ -392,21 +382,13 @@ export default function Step1Identification({
               </div>
               {cadastralMsg && <div className={`text-[10px] px-2 ${cadastralMsg.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>{cadastralMsg}</div>}
 
-              {/* Import IFC/BIM și OCR Factură */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setShowIFC(true)}
-                  className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-all"
-                >
-                  <span>📎</span> Import IFC/BIM
-                </button>
-                <button
-                  onClick={() => setShowOCR(true)}
-                  className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 text-xs font-medium transition-all"
-                >
-                  <span>📄</span> OCR Factură
-                </button>
-              </div>
+              {/* Import IFC/BIM */}
+              <button
+                onClick={() => setShowIFC(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-all"
+              >
+                <span>📎</span> Import IFC/BIM
+              </button>
 
               {/* Sugestie footprint clădire */}
               {geoSuggestion && (
@@ -920,7 +902,6 @@ export default function Step1Identification({
       </div>
 
       {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
-      {showOCR && <InvoiceOCR onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
+import CpeAnexa from "../components/CpeAnexa.jsx";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -41,6 +42,7 @@ export default function Step6Certificate(props) {
     EPBD_AG_ACTIVE, EPBD_AG_THRESHOLDS,
     REHAB_COSTS,
     getURefNZEB,
+    bacsClass,
     t,
   } = props;
 
@@ -2225,6 +2227,36 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   </div>
                 );
               })()}
+
+              {/* ── CPE ANEXA 1 + ANEXA 2 ── */}
+              {instSummary && (
+                <div className="mt-6">
+                  <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete">
+                    <CpeAnexa
+                      building={building}
+                      heating={heating} cooling={cooling} ventilation={ventilation}
+                      lighting={lighting} acm={acm}
+                      solarThermal={solarThermal} photovoltaic={photovoltaic}
+                      heatPump={heatPump} biomass={biomass}
+                      instSummary={instSummary} renewSummary={renewSummary}
+                      envelopeSummary={envelopeSummary}
+                      opaqueElements={opaqueElements} glazingElements={glazingElements}
+                      selectedClimate={selectedClimate}
+                      auditor={auditor}
+                      enClass={enClass} co2Class={co2Class}
+                      epFinal={epFinal} co2Final={co2Final} rer={rer}
+                      getNzebEpMax={getNzebEpMax}
+                      bacsClass={bacsClass}
+                      BUILDING_CATEGORIES={BUILDING_CATEGORIES} ELEMENT_TYPES={ELEMENT_TYPES}
+                      HEAT_SOURCES={HEAT_SOURCES} ACM_SOURCES={ACM_SOURCES}
+                      COOLING_SYSTEMS={COOLING_SYSTEMS} VENTILATION_TYPES={VENTILATION_TYPES}
+                      LIGHTING_TYPES={LIGHTING_TYPES}
+                      calcOpaqueR={calcOpaqueR}
+                      lang={lang}
+                    />
+                  </Card>
+                </div>
+              )}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">

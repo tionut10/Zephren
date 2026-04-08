@@ -28,6 +28,21 @@ import { calcSmartRehab, getNzebEpMax } from "./calc/smart-rehab.js";
 import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG, EV_CHARGER_RULES, calcEVChargers, checkSolarReady } from "./calc/epbd.js";
 import { calcAirInfiltration, calcNaturalLighting } from "./calc/infiltration.js";
 import { calcGroundHeatTransfer } from "./calc/ground.js";
+import { calcACMen15316 } from "./calc/acm-en15316.js";
+
+// ── Extracted data modules (Sprint 3 refactoring) ──
+// Modules below are now the canonical source for these constants.
+// The inline definitions further down in this file are kept as-is to avoid
+// breaking references within the component. They shadow these imports,
+// which is acceptable during incremental migration.
+// import { calcOpaqueR } from "./calc/opaque.js";  // available but not yet wired in
+// import { generateTMY } from "./calc/weather.js";  // available but local def still used
+
+// ── Hooks (Sprint 4 refactoring) ──
+import { useEnvelopeSummary } from "./hooks/useEnvelopeSummary.js";
+import { useInstallationSummary } from "./hooks/useInstallationSummary.js";
+import { useRenewableSummary } from "./hooks/useRenewableSummary.js";
+import { useAutoSync } from "./hooks/useAutoSync.js";
 
 // ── Component imports ──
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
@@ -720,6 +735,7 @@ export default function EnergyCalcApp({ cloud }) {
   // ─── NEW FEATURE STATES ───
   const [showDashboard, setShowDashboard] = useState(false);
   const [showClimateMap, setShowClimateMap] = useState(false);
+  const [hoveredClimate, setHoveredClimate] = useState(null);
   const [showGlaserDiagram, setShowGlaserDiagram] = useState(false);
   const [showSankey, setShowSankey] = useState(false);
   const [showMultiScenario, setShowMultiScenario] = useState(false);
@@ -3590,7 +3606,29 @@ export default function EnergyCalcApp({ cloud }) {
     return "—";
   }, [building.areaEnvelope, building.volume]);
 
-  // ─── Opaque element calculations ───
+  // ─── Hooks: anvelopă, instalații, regenerabile, auto-sync ───
+  const { envelopeSummary, monthlyISO, hourlyISO } = useEnvelopeSummary({
+    opaqueElements, glazingElements, thermalBridges, building, heating, ventilation, selectedClimate,
+  });
+
+  const instSummary = useInstallationSummary({
+    envelopeSummary, monthlyISO, building, heating, acm, cooling, ventilation, lighting, selectedClimate, useNA2023,
+  });
+
+  const renewSummary = useRenewableSummary({
+    instSummary, building, solarThermal, photovoltaic, heatPump, biomass, otherRenew,
+    selectedClimate, useNA2023, acm, heating,
+  });
+
+  useAutoSync({
+    heating, setHeating,
+    lighting, setLighting,
+    building, setAcm, setLighting,
+    solarThermal, setSolarThermal,
+    photovoltaic, setPhotovoltaic,
+  });
+
+  // ─── Opaque element calculations (kept for local use by other parts of component) ───
   const calcOpaqueR = useCallback((layers, elementType) => {
     const elType = ELEMENT_TYPES.find(t => t.id === elementType);
     if (!elType || !layers.length) return { r_layers:0, r_total:0, u:0 };
@@ -3608,439 +3646,42 @@ export default function EnergyCalcApp({ cloud }) {
     return { r_layers, r_total, u, u_base, deltaU };
   }, []);
 
-  // ─── Total envelope summary ───
-  const envelopeSummary = useMemo(() => {
-    const volume = parseFloat(building.volume) || 0;
-    if (!volume) return null;
-    let totalHeatLoss = 0;
-    let totalArea = 0;
+  // [Moved to useEnvelopeSummary hook — Sprint 4 refactoring]
 
-    opaqueElements.forEach(el => {
-      const area = parseFloat(el.area) || 0;
-      const { u } = calcOpaqueR(el.layers, el.type);
-      const elType = ELEMENT_TYPES.find(t => t.id === el.type);
-      // #7 Multi-zonă: τ dinamic pe baza temperaturilor zonelor adiacente
-      const tIntEnv = parseFloat(heating.theta_int) || 20;
-      const tExtEnv = selectedClimate?.theta_e ?? -15;
-      let tau = elType ? elType.tau : 1;
-      if (tIntEnv !== tExtEnv) {
-        if (el.type === "PB" || el.type === "PS") { tau = (tIntEnv - (parseFloat(heating.tBasement)||10)) / (tIntEnv - tExtEnv); }
-        else if (el.type === "PP") { tau = (tIntEnv - (parseFloat(heating.tAttic)||5)) / (tIntEnv - tExtEnv); }
-        else if (el.type === "PR") { tau = (tIntEnv - (parseFloat(heating.tStaircase)||15)) / (tIntEnv - tExtEnv); }
-      }
-      tau = Math.max(0, Math.min(1, tau));
-      var uEff = u;
-      // #4 ISO 13370 — ground floor types
-      if (el.type === "PL") {
-        // Slab-on-ground: U_bf = 2λ/(π·B'+d_t) · ln(π·B'/d_t + 1)
-        var perim = parseFloat(building.perimeter)||0;
-        var lambda_g = 1.5; // ground thermal conductivity W/(m·K)
-        var d_t = 0.5 + parseFloat(el.layers?.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0) || 0); // d_t = w + Σ(d_i/λ_i)·λ_ground
-        if (perim > 0 && area > 0) {
-          var Bp = area/(0.5*perim);
-          if (Bp < d_t) { uEff = lambda_g / (0.457*Bp + d_t); }
-          else { uEff = 2*lambda_g/(Math.PI*Bp + d_t) * Math.log(Math.PI*Bp/d_t + 1); }
-        }
-      } else if (el.type === "PB") {
-        // Floor over unheated basement — ISO 13370 §9.4
-        // U_bf = 1/(1/U_floor + 1/U_basement_walls × h_basement/perimeter_basement)
-        var Uf = u; // floor U-value
-        var Ubw = 1.5; // basement wall U estimate
-        var hBasement = 2.5; // basement height estimate
-        uEff = Uf * 0.7; // simplified: ~30% reduction from unheated buffer
-      }
-      totalHeatLoss += tau * area * uEff;
-      totalArea += area;
-    });
-
-    glazingElements.forEach(el => {
-      const area = parseFloat(el.area) || 0;
-      const u = parseFloat(el.u) || 0;
-      totalHeatLoss += 1.0 * area * u; // tau=1 for windows
-      totalArea += area;
-    });
-
-    // Punți termice
-    let bridgeLoss = 0;
-    thermalBridges.forEach(b => {
-      bridgeLoss += (parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0);
-    });
-    totalHeatLoss += bridgeLoss;
-
-    // #6 Ventilare — folosim n50 dacă e disponibil, altfel n=0.5 h-1
-    const n50 = parseFloat(building.n50) || 4.0;
-    const e_shield = 0.07; // factor protecție la vânt (clădire semiprotejată)
-    const n_inf = n50 * e_shield; // rata infiltrare din n50
-    const n = Math.max(0.5, n_inf); // minim 0.5 h-1 (ventilare igienică)
-    const ventType = VENTILATION_TYPES.find(v => v.id === ventilation.type);
-    const hrEta = ventType?.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : ventType.hrEta || 0) : 0;
-    const ventLoss = 0.34 * n * volume * (1 - hrEta);
-    const totalLossWithVent = totalHeatLoss + ventLoss;
-
-    const G = volume > 0 ? totalLossWithVent / volume : 0;
-
-    return { totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta };
-  }, [opaqueElements, glazingElements, thermalBridges, building.volume, building.perimeter, building.n50, calcOpaqueR, ventilation.type, ventilation.hrEfficiency, heating.theta_int, heating.tBasement, heating.tAttic, heating.tStaircase, selectedClimate]);
-
-  // ─── Auto-update heating efficiencies when source/emission/distribution/control changes ───
-  useEffect(() => {
-    setHeating(p => {
-      const updates = {};
-      const src = HEAT_SOURCES.find(s => s.id === p.source);
-      if (src) updates.eta_gen = src.eta_gen.toString();
-      const em = EMISSION_SYSTEMS.find(s => s.id === p.emission);
-      if (em) updates.eta_em = em.eta_em.toString();
-      const d = DISTRIBUTION_QUALITY.find(s => s.id === p.distribution);
-      if (d) updates.eta_dist = d.eta_dist.toString();
-      const c = CONTROL_TYPES.find(s => s.id === p.control);
-      if (c) updates.eta_ctrl = c.eta_ctrl.toString();
-      return Object.keys(updates).length > 0 ? {...p, ...updates} : p;
-    });
-  }, [heating.source, heating.emission, heating.distribution, heating.control]);
-
-  // ─── Auto-update lighting ───
-  useEffect(() => {
-    setLighting(p => {
-      const updates = {};
-      const lt = LIGHTING_TYPES.find(t => t.id === p.type);
-      if (lt) updates.pDensity = lt.pDensity.toString();
-      const lc = LIGHTING_CONTROL.find(c => c.id === p.controlType);
-      if (lc) updates.fCtrl = lc.fCtrl.toString();
-      return Object.keys(updates).length > 0 ? {...p, ...updates} : p;
-    });
-  }, [lighting.type, lighting.controlType]);
-
-  // ─── Auto-set default ACM liters and lighting hours by building category ───
-  useEffect(() => {
-    setAcm(p => ({...p, dailyLiters: (ACM_CONSUMPTION[building.category] || 60).toString()}));
-    setLighting(p => ({...p, operatingHours: (LIGHTING_HOURS[building.category] || 2000).toString()}));
-  }, [building.category]);
-
-
-  const monthlyISO = useMemo(() => {
-    if (!envelopeSummary || !selectedClimate) return null;
-    const Au = parseFloat(building.areaUseful) || 0;
-    const V = parseFloat(building.volume) || 0;
-    if (!Au || !V) return null;
-    const vt = VENTILATION_TYPES.find(t => t.id === ventilation.type);
-    const hr = vt && vt.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : vt.hrEta || 0) : 0;
-    return calcMonthlyISO13790({G_env:envelopeSummary.totalHeatLoss, V:V, Au:Au, climate:selectedClimate,
-      theta_int:parseFloat(heating.theta_int)||20, glazingElements:glazingElements, shadingFactor:building.shadingFactor,
-      hrEta:hr, category:building.category, n50:building.n50, structure:building.structure});
-  }, [envelopeSummary, selectedClimate, building, heating.theta_int, glazingElements, ventilation]);
-
-  // ─── ISO 52016-1 Hourly calculation (using generated TMY) ───
-  const hourlyISO = useMemo(() => {
-    if (!envelopeSummary || !selectedClimate?.temp_month || !selectedClimate?.lat) return null;
+  // ─── ACM EN 15316 detaliat ───────────────────────────────────────────────────
+  const acmDetailed = useMemo(() => {
+    if (!instSummary) return null;
     const Au = parseFloat(building.areaUseful) || 0;
     if (!Au) return null;
-    const tmy = generateTMY(selectedClimate.temp_month, selectedClimate.lat);
-    if (!tmy) return null;
-    const V = parseFloat(building.volume) || 0;
-    const H_tr = envelopeSummary.totalHeatLoss || (envelopeSummary.G * V);
-    const n_ach = parseFloat(building.n50) > 0 ? parseFloat(building.n50) / 20 : 0.5;
-    const H_ve = 0.34 * n_ach * V;
-    const C_m = Au * 165000; // medium-heavy construction ~165 kJ/(m²·K) → J/(m²·K)
-    const Q_sol_on_building = tmy.Q_sol_horiz.map(g => g * Au * 0.03); // ~3% of horizontal on useful area
-    return calcHourlyISO52016({
-      T_ext: tmy.T_ext, Au, H_tr, H_ve, C_m,
-      theta_int_set_h: parseFloat(heating.theta_int) || 20,
-      theta_int_set_c: 26,
-      Q_int: null, // uses default 5 W/m²
-      Q_sol: Q_sol_on_building,
-    });
-  }, [envelopeSummary, selectedClimate, building.areaUseful, building.volume, building.n50, heating.theta_int]);
-
-  // ─── Installation summary calculations ───
-  const instSummary = useMemo(() => {
-    const Au = parseFloat(building.areaUseful) || 0;
-    const V = parseFloat(building.volume) || 0;
-    if (!Au || !envelopeSummary) return null;
-
-    // HEATING
-    const src = HEAT_SOURCES.find(s => s.id === heating.source);
-    const fuel = FUELS.find(f => f.id === (src?.fuel || "gaz"));
-    const eta_gen = parseFloat(heating.eta_gen) || 0.85;
-    const eta_em = parseFloat(heating.eta_em) || 0.93;
-    const eta_dist = parseFloat(heating.eta_dist) || 0.95;
-    const eta_ctrl = parseFloat(heating.eta_ctrl) || 0.93;
-    const isCOP = src?.isCOP || false;
-    const eta_total_h = isCOP ? eta_em * eta_dist * eta_ctrl : eta_gen * eta_em * eta_dist * eta_ctrl;
-
-    const ngz = selectedClimate?.ngz || 3170;
-    let qH_nd, qC_nd_calc;
-    if (monthlyISO) { qH_nd = monthlyISO.reduce((s,m) => s+m.qH_nd,0); qC_nd_calc = monthlyISO.reduce((s,m) => s+m.qC_nd,0); }
-    else { const gm = {RI:7,RC:7,RA:7,BI:15,ED:12,SA:10,HC:8,CO:15,SP:10,AL:10}; qH_nd = Math.max(0,(24*envelopeSummary.G*V*0.9*ngz/1000)-(gm[building.category]||7)*Au); qC_nd_calc = 0; }
-    const qH_nd_m2 = Au > 0 ? qH_nd / Au : 0;
-
-    // Energie finală încălzire
-    let qf_h;
-    if (isCOP) {
-      qf_h = qH_nd / (eta_em * eta_dist * eta_ctrl * eta_gen); // COP in loc de eta_gen
-    } else {
-      qf_h = eta_total_h > 0 ? qH_nd / eta_total_h : 0;
-    }
-
-    // ACM
-    const nConsumers = parseFloat(acm.consumers) || (Au > 0 ? Math.max(1, Math.round(Au / 30)) : 2);
-    const dailyL = parseFloat(acm.dailyLiters) || 60;
-    const qACM_nd = nConsumers * dailyL * WATER_TEMP_MONTH.reduce((s,tw,i) => s+[31,28,31,30,31,30,31,31,30,31,30,31][i]*4.186*(55-tw)/3600, 0);
-    const acmSrc = ACM_SOURCES.find(s => s.id === acm.source);
-    let eta_acm = acmSrc?.eta || eta_gen;
-    if (acm.source === "CAZAN_H") eta_acm = eta_gen;
-    const solarFr = acmSrc?.solarFraction || 0;
-    const storageLoss = Math.min(10, Math.max(0, parseFloat(acm.storageLoss) || 2)) / 100; // V3: clamp 0-10%
-    // qf_w = energie finală ACM: necesar net × (1-fracție_solară) × (1+pierderi_boiler) / eficiență
-    // La PC pentru ACM (isCOP=true): eta_acm=COP, se împarte direct (fără storageLoss separat că COP include distribuția)
-    const qf_w = eta_acm > 0
-      ? (acmSrc?.isCOP
-          ? qACM_nd * (1 - solarFr) / eta_acm               // pompă căldură ACM: Q_final = Q_nd / COP
-          : qACM_nd * (1 - solarFr) * (1 + storageLoss) / eta_acm) // cazan/boiler: includ pierderi boiler
+    const nConsumers = instSummary.nConsumers || Math.max(1, Math.round(Au / 30));
+    const zone = selectedClimate?.zone || "III";
+    const acmSourceMap = {
+      CAZAN_H: "ct_gaz", CAZAN_GPL: "ct_gaz", CAZAN_LEMNE: "ct_gaz",
+      BOILER_ELECTRIC: "boiler_electric", TERMOFICARE: "termoficare",
+      POMPA_CALDURA_ACM: "pc",
+    };
+    const acmSrc = acmSourceMap[acm.source] || "ct_gaz";
+    const etaGen = parseFloat(acm.etaAcm) || (acm.source === "CAZAN_H" ? parseFloat(heating.eta_gen) : null) || 0.87;
+    const solarFr = instSummary.qf_w > 0 && instSummary.qACM_nd > 0
+      ? Math.max(0, 1 - (instSummary.qf_w * etaGen) / instSummary.qACM_nd)
       : 0;
-    const acmFuel = acm.source === "CAZAN_H" ? fuel : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
+    return calcACMen15316({
+      category: building.category,
+      nPersons: nConsumers,
+      consumptionLevel: "med",
+      tSupply: 55,
+      climateZone: zone,
+      climate: selectedClimate,
+      hasPipeInsulation: acm.pipeInsulated !== false,
+      hasCirculation: !!acm.circRecirculation,
+      insulationClass: "B",
+      storageVolume_L: parseFloat(acm.storageVolume) || null,
+      acmSource: acmSrc,
+      etaGenerator: etaGen,
+      solarFraction: solarFr,
+    });
+  }, [instSummary, building.areaUseful, building.category, acm, heating.eta_gen, selectedClimate]);
 
-    // COOLING
-    const hasCool = cooling.hasCooling && cooling.system !== "NONE";
-    const coolSys = COOLING_SYSTEMS.find(s => s.id === cooling.system);
-    const coolArea = parseFloat(cooling.cooledArea) || Au;
-    const qC_nd = hasCool ? (qC_nd_calc > 0 ? qC_nd_calc*(coolArea/Au) : coolArea*25) : 0;
-    const eer = parseFloat(cooling.eer) || coolSys?.eer || 3.5;
-    const qf_c = hasCool && eer > 0 ? qC_nd / eer : 0;
-    const coolFuel = coolSys ? FUELS.find(f => f.id === coolSys.fuel) : null;
-
-    // VENTILATION
-    const ventType = VENTILATION_TYPES.find(t => t.id === ventilation.type);
-    const airflow = parseFloat(ventilation.airflow) || (V * 0.5);
-    const sfp = ventType?.sfp || 0;
-    const ventHours = parseFloat(ventilation.operatingHours) || (selectedClimate?.season || 190) * 16;
-    const qf_v = (sfp * (airflow / 3600) * ventHours) / 1000; // kWh/an — airflow m³/h → m³/s for SFP [W/(m³/s)]
-    const hrEta = ventType?.hasHR ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : ventType.hrEta || 0) : 0;
-
-    // LIGHTING (LENI) — improved per EN 15193-1
-    const pDens = parseFloat(lighting.pDensity) || 4.5;
-    const fCtrl = parseFloat(lighting.fCtrl) || 1.0;
-    const lightHours = parseFloat(lighting.operatingHours) || 1800;
-    const natRatio = (parseFloat(lighting.naturalLightRatio) || 30) / 100;
-    // EN 15193-1: LENI = W/1000 * {tD*FO*FD + tN*FO}
-    // FO = occupancy factor (~0.8 for offices, ~0.9 for residential, ~1.0 for hospitals)
-    const foMap = {RI:0.90, RC:0.90, RA:0.90, BI:0.80, ED:0.75, SA:1.00, HC:0.95, CO:0.85, SP:0.70, AL:0.85};
-    const fo = foMap[building.category] || 0.85;
-    // Split hours: daytime ~65%, nighttime ~35% (varies by category)
-    const nightFracMap = {RI:0.30, RC:0.30, RA:0.30, BI:0.10, ED:0.05, SA:0.45, HC:0.40, CO:0.20, SP:0.15, AL:0.25};
-    const nightFrac = nightFracMap[building.category] || 0.25;
-    const tD = lightHours * (1 - nightFrac); // daytime hours
-    const tN = lightHours * nightFrac; // nighttime hours
-    const fD = Math.max(0, 1 - natRatio * 0.65); // daylight dependency factor (natural light reduces daytime need)
-    const leni = pDens * fCtrl * (tD * fo * fD + tN * fo) / 1000; // kWh/(m2·an)
-    const qf_l = leni * Au;
-
-    // TOTAL ENERGIE FINALĂ
-    const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
-    const qf_total_m2 = Au > 0 ? qf_total / Au : 0;
-
-    // ENERGIE PRIMARĂ
-    // B1 FIX: la pompe de căldură, energia ambientală (qH_nd - qf_h) nu se contorizează cu fP_electricitate
-    // ci cu fP_ambient (1.0 per NA:2023, 0 per Mc 001 vechi)
-    let ep_h;
-    if (isCOP) {
-      const fP_elec = fuel?.fP_tot || FP_ELEC;
-      const qAmbient_h = Math.max(0, qH_nd - qf_h);
-      const fP_ambient = useNA2023 ? 1.0 : 0;
-      ep_h = qf_h * fP_elec + qAmbient_h * fP_ambient;
-    } else {
-      ep_h = qf_h * (fuel?.fP_tot || 1.17);
-    }
-    const acmIsCOP = ACM_SOURCES.find(a => a.id === acm.source)?.isCOP || false;
-    let ep_w;
-    if (acmIsCOP) {
-      const fP_elec = acmFuel?.fP_tot || FP_ELEC;
-      const qAmbient_w = Math.max(0, qACM_nd - qf_w);
-      const fP_ambient = useNA2023 ? 1.0 : 0;
-      ep_w = qf_w * fP_elec + qAmbient_w * fP_ambient;
-    } else {
-      ep_w = qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
-    }
-    const ep_c = qf_c * (coolFuel?.fP_tot || FP_ELEC);
-    const ep_v = qf_v * FP_ELEC; // ventilare = electricitate
-    const ep_l = qf_l * FP_ELEC; // iluminat = electricitate
-    const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l;
-    const ep_total_m2 = Au > 0 ? ep_total / Au : 0;
-
-    // CO2
-    const co2_h = qf_h * (fuel?.fCO2 || 0.20);
-    const co2_w = qf_w * (acmFuel?.fCO2 || fuel?.fCO2 || 0.20);
-    const co2_c = qf_c * (coolFuel?.fCO2 || 0.107);
-    const co2_v = qf_v * 0.107;
-    const co2_l = qf_l * 0.107;
-    const co2_total = co2_h + co2_w + co2_c + co2_v + co2_l;
-    const co2_total_m2 = Au > 0 ? co2_total / Au : 0;
-
-    return {
-      qH_nd, qH_nd_m2, eta_total_h, qf_h,
-      qACM_nd, qf_w, nConsumers,
-      qC_nd, qf_c, hasCool,
-      qf_v, hrEta,
-      leni, qf_l,
-      qf_total, qf_total_m2,
-      ep_h, ep_w, ep_c, ep_v, ep_l, ep_total, ep_total_m2,
-      co2_h, co2_w, co2_c, co2_v, co2_l, co2_total, co2_total_m2,
-      fuel, isCOP,
-    };
-  }, [building.areaUseful, building.volume, building.category, envelopeSummary, selectedClimate,
-      heating, acm, cooling, ventilation, lighting, monthlyISO, useNA2023]);
-
-  // ─── Auto-update solar thermal params ───
-  useEffect(() => {
-    const st = SOLAR_THERMAL_TYPES.find(t => t.id === solarThermal.type);
-    if (st) setSolarThermal(p => ({...p, eta0: st.eta0.toString(), a1: st.a1.toString()}));
-  }, [solarThermal.type]);
-
-  // ─── Auto-update PV params ───
-  useEffect(() => {
-    const pv = PV_TYPES.find(t => t.id === photovoltaic.type);
-    if (pv && photovoltaic.area) {
-      const kWp = (parseFloat(photovoltaic.area) || 0) * pv.eta;
-      setPhotovoltaic(p => ({...p, peakPower: kWp.toFixed(2)}));
-    }
-  }, [photovoltaic.type, photovoltaic.area]);
-
-  useEffect(() => {
-    const inv = PV_INVERTER_ETA.find(t => t.id === photovoltaic.inverterType);
-    if (inv) setPhotovoltaic(p => ({...p, inverterEta: inv.eta.toString()}));
-  }, [photovoltaic.inverterType]);
-
-  // ─── Renewable energy summary ───
-  const renewSummary = useMemo(() => {
-    const Au = parseFloat(building.areaUseful) || 0;
-    if (!Au || !selectedClimate || !instSummary) return null;
-
-    // SOLAR THERMAL
-    let qSolarTh = 0;
-    if (solarThermal.enabled) {
-      const area = parseFloat(solarThermal.area) || 0;
-      const eta0 = parseFloat(solarThermal.eta0) || 0.75;
-      const oriF = ORIENT_FACTORS[solarThermal.orientation] || 1;
-      const tiltF = TILT_FACTORS[solarThermal.tilt] || 1;
-      const solarIrrad = selectedClimate.solar[solarThermal.orientation] || selectedClimate.solar.S;
-      // Producție anuală cu eficiență sezoniera conform EN 12975 / SR EN ISO 9806
-      // eta_seasonal = eta0 - a1 * ΔT / G_ref, unde G_ref = iradianță medie în ore de funcționare
-      // România: ~1300-1500 ore/an de funcționare colector (ore cu G > 100 W/m²)
-      // Conversia: solarIrrad [kWh/(m²·an)] / peak_sun_hours → G_ref [kW/m²] × 1000 = [W/m²]
-      const a1 = parseFloat(solarThermal.a1) || 3.5;
-      const deltaT = 40; // K — diferență medie fluidul colectorului față de exterior (EN 12975 §B.1)
-      const peakSunHours = 1400; // ore/an pentru România (medie multi-zonă), corect față de 365*8=2920 greșit
-      const gRef = solarIrrad > 0 ? (solarIrrad / peakSunHours) * 1000 : 300; // W/m² iradianță medie operare
-      const etaSeasonal = Math.max(0.15, eta0 - a1 * deltaT / Math.max(gRef, 100));
-      qSolarTh = area * etaSeasonal * solarIrrad * oriF * tiltF * 0.85;
-    }
-
-    // FOTOVOLTAIC
-    let qPV = 0;
-    let qPV_kWh = 0;
-    if (photovoltaic.enabled) {
-      const area = parseFloat(photovoltaic.area) || 0;
-      const pvType = PV_TYPES.find(t => t.id === photovoltaic.type);
-      const etaPV = pvType?.eta || 0.20;
-      const etaInv = parseFloat(photovoltaic.inverterEta) || 0.95;
-      const oriF = ORIENT_FACTORS[photovoltaic.orientation] || 1;
-      const tiltF = TILT_FACTORS[photovoltaic.tilt] || 1;
-      const solarH = selectedClimate.solar.Oriz || 360;
-      // PR = performance ratio ~0.80
-      qPV_kWh = area * etaPV * etaInv * solarH * oriF * tiltF * 0.80;
-      qPV = qPV_kWh * FP_ELEC; // conversie energie primară (electricitate)
-    }
-
-    // POMPĂ DE CĂLDURĂ (partea regenerabilă = 1 - 1/COP)
-    let qPC_ren = 0;
-    if (heatPump.enabled) {
-      const cop = parseFloat(heatPump.cop) || 3.5;
-      const scop = parseFloat(heatPump.scopHeating) || cop * 0.85;
-      const renFraction = Math.max(0, 1 - 1/scop); // fracțiunea din energie ambientală
-      let qCovered = 0;
-      if (heatPump.covers === "heating") qCovered = instSummary.qH_nd;
-      else if (heatPump.covers === "acm") qCovered = instSummary.qACM_nd;
-      else if (heatPump.covers === "heating_acm") qCovered = instSummary.qH_nd + instSummary.qACM_nd;
-      qPC_ren = qCovered * renFraction;
-    }
-
-    // BIOMASĂ (parte regenerabilă = 80% din energia produsă, fP_ren=0.80)
-    let qBio_ren = 0;
-    let qBio_total = 0;
-    if (biomass.enabled) {
-      const bioType = BIOMASS_TYPES.find(t => t.id === biomass.type);
-      const eta = parseFloat(biomass.boilerEta) || 0.85;
-      if (biomass.annualConsumption) {
-        qBio_total = (parseFloat(biomass.annualConsumption) || 0) * (bioType?.pci || 17.5) * eta / 3.6;
-      } else {
-        qBio_total = biomass.covers === "heating" ? instSummary.qH_nd :
-                     biomass.covers === "acm" ? instSummary.qACM_nd :
-                     instSummary.qH_nd + instSummary.qACM_nd;
-      }
-      qBio_ren = qBio_total * (bioType?.fP_ren || 0.80);
-    }
-
-    // EOLIAN
-    let qWind = 0;
-    if (otherRenew.windEnabled) {
-      qWind = (parseFloat(otherRenew.windProduction) || 0); // kWh/an introdus direct
-    }
-
-    // COGENERARE (parte regenerabilă = proporțional cu eficiența)
-    // Energia electrică CHP reduce consumul din rețea (fP=2.50), termică reduce combustibil (fP per fuel)
-    let qCogen_el = 0;
-    let qCogen_th = 0;
-    let qCogen_ep_reduction = 0;
-    let qCogen_co2_reduction = 0;
-    if (otherRenew.cogenEnabled) {
-      qCogen_el = parseFloat(otherRenew.cogenElectric) || 0;
-      qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
-      const cogenFuelData = FUELS.find(f => f.id === (otherRenew.cogenFuel || "gaz"));
-      // CHP electric replaces grid electricity; thermal replaces boiler heat
-      qCogen_ep_reduction = qCogen_el * FP_ELEC + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
-      qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.205);
-    }
-
-    const totalRenewable = qSolarTh + qPV_kWh + qPC_ren + qBio_ren + qWind + qCogen_el + qCogen_th;
-    const totalRenewable_m2 = Au > 0 ? totalRenewable / Au : 0;
-
-    // RER = Renewable Energy Ratio (toate valorile în energie primară pentru consistență)
-    const fP_elec = FP_ELEC, fP_therm = 1.17;
-    const totalRenewable_ep = qSolarTh * fP_therm + qPV_kWh * fP_elec + qPC_ren * fP_elec + qBio_ren * 1.08 + qWind * fP_elec + qCogen_el * fP_elec + qCogen_th * fP_therm;
-    const epTotal = instSummary.ep_total || 1;
-    const rer = epTotal > 0 ? (totalRenewable_ep / epTotal) * 100 : 0;
-    // L.238/2024: RER decomposition — min 10% on-site + min 20% guarantees of origin
-    const totalOnSite_ep = qSolarTh * fP_therm + qPV_kWh * fP_elec + qPC_ren * fP_elec + qBio_ren * 1.08 + qWind * fP_elec;
-    const rerOnSite = epTotal > 0 ? (totalOnSite_ep / epTotal) * 100 : 0;
-    const rerOnSiteOk = rerOnSite >= 10;
-    const rerTotalOk = rer >= 30;
-
-    // Energie primară ajustată (reducere din regenerabile)
-    // Ambient energy factor depends on useNA2023 toggle
-    // NA:2023 (Tabel A.16): fP=0 pentru energia ambientală a PC
-    // Mc001 original (Tabel 5.17): fP=1.0 pentru energia ambientală
-    const ambientFP = useNA2023 ? 0 : 1.0;
-    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction;
-    const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
-    const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
-
-    // CO2 reduction
-    // Ambient energy CO2=0 regardless of toggle
-    const acmFuelId = acm.source === "CAZAN_H" ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz") : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
-    const solarThCO2Factor = (FUELS.find(f => f.id === acmFuelId) || FUELS[0]).fCO2;
-    const co2_reduction = qSolarTh * solarThCO2Factor + qPV_kWh * 0.107 + qPC_ren * 0 + qWind * 0.107 + qCogen_co2_reduction;
-    const co2_adjusted = Math.max(0, instSummary.co2_total - co2_reduction);
-    const co2_adjusted_m2 = Au > 0 ? co2_adjusted / Au : 0;
-
-    return {
-      qSolarTh, qPV_kWh, qPC_ren, qBio_ren, qBio_total, qWind, qCogen_el, qCogen_th,
-      totalRenewable, totalRenewable_m2, rer, rerOnSite, rerOnSiteOk, rerTotalOk,
-      ep_reduction, ep_adjusted, ep_adjusted_m2,
-      co2_reduction, co2_adjusted, co2_adjusted_m2,
-    };
-  }, [building.areaUseful, selectedClimate, instSummary,
-      solarThermal, photovoltaic, heatPump, biomass, otherRenew, useNA2023]);
-
-  // ═══════════════════════════════════════════════════════════
   // NICE-TO-HAVE: BENCHMARK DATA
   // ═══════════════════════════════════════════════════════════
   const BENCHMARKS = {
@@ -6624,6 +6265,10 @@ export default function EnergyCalcApp({ cloud }) {
             setEditingBridge={setEditingBridge} setShowBridgeModal={setShowBridgeModal} setShowBridgeCatalog={setShowBridgeCatalog}
             calcOpaqueR={calcOpaqueR} getURefNZEB={getURefNZEB}
             ELEMENT_TYPES={ELEMENT_TYPES} U_REF_NZEB={U_REF_NZEB}
+            avValidation={avValidation}
+            U_REF_NZEB_RES={U_REF_NZEB_RES} U_REF_NZEB_NRES={U_REF_NZEB_NRES}
+            U_REF_RENOV_RES={U_REF_RENOV_RES} U_REF_RENOV_NRES={U_REF_RENOV_NRES}
+            U_REF_GLAZING={U_REF_GLAZING}
             glaserElementIdx={glaserElementIdx} setGlaserElementIdx={setGlaserElementIdx} glaserResult={glaserResult}
             summerComfortResults={summerComfortResults}
             airInfiltrationCalc={airInfiltrationCalc} naturalLightingCalc={naturalLightingCalc}
@@ -6643,6 +6288,7 @@ export default function EnergyCalcApp({ cloud }) {
             instSubTab={instSubTab} setInstSubTab={setInstSubTab}
             instSummary={instSummary}
             setStep={setStep} goToStep={goToStep}
+            showToast={showToast}
           />}
 
 
@@ -6670,7 +6316,9 @@ export default function EnergyCalcApp({ cloud }) {
             heating, cooling, ventilation, lighting, acm,
             solarThermal, photovoltaic, heatPump, biomass, otherRenew,
             gwpDetailed, bacsCheck, bacsClass, setBacsClass, avValidation,
-            evChargerCalc, solarReadyCheck,
+            evChargerCalc, solarReadyCheck, acmDetailed,
+            opaqueElements, glazingElements, calcOpaqueR,
+            U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, ELEMENT_TYPES,
             energyPrices, setEnergyPrices, useNA2023, setUseNA2023,
             compareRef, setCompareRef, importCompareRef,
             showScenarioCompare, setShowScenarioCompare,
@@ -6720,6 +6368,7 @@ export default function EnergyCalcApp({ cloud }) {
             EPBD_AG_ACTIVE, EPBD_AG_THRESHOLDS,
             REHAB_COSTS,
             getURefNZEB,
+            bacsClass,
             t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
           }} />}
 
@@ -7069,55 +6718,90 @@ export default function EnergyCalcApp({ cloud }) {
 
       {/* ═══ NEW: CLIMATE MAP MODAL (C9) ═══ */}
       {showClimateMap && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.7)"}} onClick={() => setShowClimateMap(false)}>
-          <div className="bg-[#12141f] border border-white/10 rounded-2xl p-6 max-w-xl w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.75)"}} onClick={() => setShowClimateMap(false)}>
+          <div className="bg-[#0e1018] border border-white/10 rounded-2xl p-5 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold">🗺️ Harta climatică România</h3>
               <button onClick={() => setShowClimateMap(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">&times;</button>
             </div>
-            <svg viewBox="0 0 500 380" className="w-full" style={{minHeight:"340px"}}>
-              {/* Romania border from real geographic coordinates */}
+            <svg viewBox="0 0 500 385" className="w-full" style={{minHeight:"360px"}}>
+              {/* Marea Neagră — fill subtil */}
+              <path d="M489,230 L500,225 L500,385 L418,385 L429,351 Z"
+                fill="rgba(30,64,175,0.09)" stroke="none" />
+              <text fill="rgba(96,165,250,0.28)" fontSize="7.5" fontStyle="italic"
+                transform="rotate(-78,476,305)" x="476" y="305" textAnchor="middle">Marea Neagră</text>
+              {/* Frontiera României — coordonate geografice reale, ~64 puncte */}
               <path d={ROMANIA_BORDER_PATH}
-                fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.20)" strokeWidth="1.5" strokeLinejoin="round" />
-              {/* Carpathian arc (Oradea → Brașov → Vrancea — real trajectory) */}
+                fill="rgba(100,160,220,0.06)" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" strokeLinejoin="round" />
+              {/* Arcul Carpatic (potcoavă: Maramureș → Vrancea → Retezat → Apuseni) */}
               <path d={"M" + [
-                [21.9,47.1],[23.0,47.2],[23.9,46.8],[24.3,46.5],[24.6,46.2],[25.0,45.8],
-                [25.5,45.7],[25.8,45.9],[26.2,46.0],[26.8,46.2],[27.2,46.0],[27.5,45.8]
+                [24.2,47.3],[25.0,47.0],[25.8,46.5],[26.5,46.0],[26.7,45.5],[26.5,45.4],
+                [25.5,45.4],[25.0,45.3],[24.0,45.4],[23.0,45.4],[22.5,45.5],[22.3,46.0],[22.6,46.7],[23.2,47.2]
               ].map(function(c){return geoToSvg(c[1],c[0])}).map(function(p,i){return (i?'L':'')+ p.x.toFixed(0)+','+p.y.toFixed(0)}).join(' ')}
-                fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
-              {/* Danube (southern border: Drobeta → Giurgiu → Galați) */}
+                fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="9" strokeLinecap="round" />
+              {/* Dunărea (frontiera sudică + Clisura) */}
               <path d={"M" + [
-                [22.4,44.4],[23.0,43.9],[24.0,43.8],[25.0,43.7],[25.5,43.7],[26.1,44.0],[27.0,44.0],[27.5,44.0],[28.0,44.0],[28.6,45.4]
+                [22.66,44.63],[22.94,43.98],[23.95,43.80],[24.50,43.78],
+                [24.87,43.75],[25.36,43.65],[25.97,43.90],[26.64,44.08],
+                [27.27,44.10],[27.55,43.85],[28.04,45.46]
               ].map(function(c){return geoToSvg(c[1],c[0])}).map(function(p,i){return (i?'L':'')+ p.x.toFixed(0)+','+p.y.toFixed(0)}).join(' ')}
-                fill="none" stroke="rgba(59,130,246,0.10)" strokeWidth="2.5" strokeLinecap="round" />
-              {/* City dots */}
+                fill="none" stroke="rgba(59,130,246,0.18)" strokeWidth="2.5" strokeLinecap="round" />
+              {/* Puncte orașe */}
               {CLIMATE_DB.map(loc => {
                 const pt = ROMANIA_MAP_POINTS[loc.name];
                 if (!pt) return null;
                 const isSelected = building.locality === loc.name;
+                const isHovered = hoveredClimate === loc.name;
                 return (
-                  <g key={loc.name} onClick={(e) => { e.stopPropagation(); setBuilding(prev => ({...prev, locality: loc.name})); }}
+                  <g key={loc.name}
+                    onClick={(e) => { e.stopPropagation(); setBuilding(prev => ({...prev, locality: loc.name})); }}
+                    onMouseEnter={() => setHoveredClimate(loc.name)}
+                    onMouseLeave={() => setHoveredClimate(null)}
                     className="cursor-pointer">
-                    {isSelected && <circle cx={pt.x} cy={pt.y} r="12" fill="none" stroke={ZONE_COLORS[loc.zone]||"#888"} strokeWidth="1.5" opacity="0.4" />}
-                    <circle cx={pt.x} cy={pt.y} r={isSelected ? 6 : 4} fill={ZONE_COLORS[loc.zone] || "#888"} opacity={isSelected ? 1 : 0.75}
-                      stroke={isSelected ? "#fff" : "rgba(0,0,0,0.3)"} strokeWidth={isSelected ? 2 : 0.5} />
-                    <text x={pt.x} y={pt.y - (isSelected ? 14 : 7)} textAnchor="middle"
-                      fill={isSelected ? "#fff" : "rgba(255,255,255,0.55)"} fontSize={isSelected ? "9" : "6.5"} fontWeight={isSelected ? "bold" : "normal"}
-                      style={{textShadow: "0 1px 3px rgba(0,0,0,0.8)"}}>
+                    {(isSelected || isHovered) && <circle cx={pt.x} cy={pt.y} r="12" fill="none" stroke={ZONE_COLORS[loc.zone]||"#888"} strokeWidth="1.5" opacity={isSelected ? 0.5 : 0.35} />}
+                    <circle cx={pt.x} cy={pt.y} r={isSelected ? 6 : isHovered ? 5.5 : 3.5}
+                      fill={ZONE_COLORS[loc.zone] || "#888"} opacity={isSelected || isHovered ? 1 : 0.75}
+                      stroke={isSelected ? "#fff" : isHovered ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.35)"}
+                      strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 0.5} />
+                    <text x={pt.x} y={pt.y - (isSelected ? 14 : isHovered ? 13 : 6)} textAnchor="middle"
+                      fill={isSelected ? "#fff" : isHovered ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.50)"}
+                      fontSize={isSelected || isHovered ? "8.5" : "6"} fontWeight={isSelected || isHovered ? "bold" : "normal"}
+                      style={{textShadow:"0 1px 3px rgba(0,0,0,0.9)"}}>
                       {loc.name}
                     </text>
                   </g>
                 );
               })}
-              {/* Legend */}
+              {/* Tooltip hover */}
+              {hoveredClimate && (() => {
+                const loc = CLIMATE_DB.find(l => l.name === hoveredClimate);
+                const pt = ROMANIA_MAP_POINTS[hoveredClimate];
+                if (!loc || !pt) return null;
+                const tw = 112, th = 50;
+                const tx = Math.min(Math.max(pt.x - 56, 2), 500 - tw - 2);
+                const ty = pt.y > 210 ? pt.y - th - 14 : pt.y + 14;
+                return (
+                  <g style={{pointerEvents:"none"}}>
+                    <rect x={tx} y={ty} width={tw} height={th} rx="4"
+                      fill="rgba(6,8,18,0.94)" stroke={ZONE_COLORS[loc.zone]||"#888"} strokeWidth="0.9" />
+                    <text x={tx+6} y={ty+13} fill="#fff" fontSize="8.5" fontWeight="bold">{loc.name}</text>
+                    <text x={tx+6} y={ty+24} fill={ZONE_COLORS[loc.zone]} fontSize="7.5">Zona {loc.zone} · θe = {loc.theta_e}°C</text>
+                    <text x={tx+6} y={ty+35} fill="rgba(255,255,255,0.50)" fontSize="7">NGZ {loc.ngz} · Alt. {loc.alt} m</text>
+                    <text x={tx+6} y={ty+46} fill="rgba(255,255,255,0.38)" fontSize="7">Sezon {loc.season} zile · θa = {loc.theta_a}°C</text>
+                  </g>
+                );
+              })()}
+              {/* Legendă zone climatice */}
               {Object.entries(ZONE_COLORS).map(([zone, color], i) => (
                 <g key={zone}>
-                  <circle cx={15} cy={300 + i*14} r="4" fill={color} />
-                  <text x={24} y={303 + i*14} fill="rgba(255,255,255,0.5)" fontSize="7.5">Zona {zone} ({zone==="I"?"θe=−12°C":zone==="II"?"θe=−15°C":zone==="III"?"θe=−18°C":zone==="IV"?"θe=−21°C":"θe=−25°C"})</text>
+                  <circle cx={15} cy={300 + i*15} r="4.5" fill={color} />
+                  <text x={25} y={304 + i*15} fill="rgba(255,255,255,0.50)" fontSize="7.5">
+                    {`Zona ${zone} · θe = ${zone==="I"?"−12":zone==="II"?"−15":zone==="III"?"−18":zone==="IV"?"−21":"−25"}°C`}
+                  </text>
                 </g>
               ))}
             </svg>
-            <div className="text-[10px] opacity-30 text-center mt-2">Click pe o localitate pentru a o selecta. Zona I (cea mai caldă) → Zona V (cea mai rece).</div>
+            <div className="text-[10px] opacity-25 text-center mt-2">Click pe o localitate pentru a o selecta · Hover pentru detalii · Zona I (cea mai caldă) → Zona V (cea mai rece)</div>
           </div>
         </div>
       )}

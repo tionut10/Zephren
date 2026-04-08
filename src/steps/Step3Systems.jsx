@@ -1,5 +1,7 @@
+import { useState, useCallback } from "react";
 import { cn, Select, Input, Card, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
+import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import {
   HEAT_SOURCES, FUELS, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY,
   CONTROL_TYPES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
@@ -16,8 +18,18 @@ export default function Step3Systems({
   instSubTab, setInstSubTab,
   instSummary,
   setStep, goToStep,
+  showToast,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+  const [showOCR, setShowOCR] = useState(false);
+
+  const handleOCRApply = useCallback((data) => {
+    try {
+      localStorage.setItem("zephren_measured_consumption", JSON.stringify(data));
+    } catch {}
+    setShowOCR(false);
+    showToast?.("Date consum din factură salvate", "success");
+  }, [showToast]);
 
   return (
     <div>
@@ -27,6 +39,16 @@ export default function Step3Systems({
           <h2 className="text-xl font-bold">{lang==="EN"?"Building systems":"Instalații"}</h2>
         </div>
         <p className="text-xs opacity-40">Capitolul 3 Mc 001-2022 — Încălzire, ACM, Climatizare, Ventilare, Iluminat</p>
+      </div>
+
+      {/* OCR Factură */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setShowOCR(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 text-xs font-medium transition-all"
+        >
+          <span>📄</span> OCR Factură — import consum
+        </button>
       </div>
 
       {/* Sub-tabs */}
@@ -345,6 +367,8 @@ export default function Step3Systems({
           </Card>
         </div>
       </div>
+
+      {showOCR && <InvoiceOCR onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
 
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
