@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
+import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
@@ -109,6 +110,7 @@ export default function Step1Identification({
   loadTypicalBuilding, showToast,
   goToStep,
   onOpenTutorial,
+  buildingPhotos, setBuildingPhotos,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -881,6 +883,19 @@ export default function Step1Identification({
           Pasul 2: Anvelopă →
         </button>
       </div>
+
+      {/* ── Fotografii clădire ─────────────────────────────────────────────── */}
+      <Card title="📷 Fotografii clădire" className="mt-6">
+        <p className="text-[11px] text-slate-400 mb-4">
+          Adăugați fotografii ale clădirii grupate pe categorii. Vor fi incluse automat în Anexa fotografică a CPE.
+        </p>
+        <BuildingPhotos
+          buildingPhotos={buildingPhotos || []}
+          setBuildingPhotos={setBuildingPhotos}
+          showToast={showToast}
+          cn={cn}
+        />
+      </Card>
 
       {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
     </div>

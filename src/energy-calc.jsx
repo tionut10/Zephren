@@ -6130,6 +6130,7 @@ export default function EnergyCalcApp({ cloud }) {
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
             onOpenTutorial={() => setShowTutorial(true)}
+            buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
           />}
 
 
@@ -6250,6 +6251,7 @@ export default function EnergyCalcApp({ cloud }) {
             REHAB_COSTS,
             getURefNZEB,
             bacsClass,
+            buildingPhotos,
             t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
           }} />}
 

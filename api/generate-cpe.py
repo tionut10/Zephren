@@ -1217,7 +1217,96 @@ class handler(BaseHTTPRequestHandler):
                         temp_para._element.getparent().remove(temp_para._element)
 
             # ═══════════════════════════════════════
-            # 6. STRIP TRAILING EMPTY PARAGRAPHS
+            # 6. ANEXĂ FOTOGRAFII CLĂDIRE
+            # ═══════════════════════════════════════
+            building_photos = body.get("buildingPhotos", [])
+            if building_photos:
+                from docx.shared import Pt, Inches
+                from docx.enum.text import WD_ALIGN_PARAGRAPH
+                from docx.oxml.ns import qn as docx_qn
+                from docx.oxml import OxmlElement
+
+                # Separator pagină nouă
+                doc.add_page_break()
+
+                # Titlu anexă
+                title_p = doc.add_paragraph()
+                title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                title_run = title_p.add_run("ANEXĂ FOTOGRAFICĂ — DOCUMENTARE CLĂDIRE")
+                title_run.bold = True
+                title_run.font.size = Pt(11)
+
+                cat_labels = {
+                    "exterior": "Exterior",
+                    "interior": "Interior",
+                    "ir": "Termoviziune IR",
+                    "instalatii": "Instalații",
+                    "defecte": "Defecte / Degradări",
+                    "altele": "Altele",
+                }
+
+                # Grupare pe categorii
+                grouped = {}
+                for ph in building_photos:
+                    cat = ph.get("zone", "altele")
+                    grouped.setdefault(cat, []).append(ph)
+
+                for cat, photos in grouped.items():
+                    # Subtitlu categorie
+                    cat_p = doc.add_paragraph()
+                    cat_run = cat_p.add_run(f"{cat_labels.get(cat, cat)}  ({len(photos)})")
+                    cat_run.bold = True
+                    cat_run.font.size = Pt(9)
+
+                    # Tabel 2 coloane pentru poze
+                    i = 0
+                    while i < len(photos):
+                        row_photos = photos[i:i+2]
+                        tbl = doc.add_table(rows=1, cols=2)
+                        # Elimină borduri tabel
+                        tbl_pr = tbl._tbl.tblPr
+                        if tbl_pr is None:
+                            tbl_pr = OxmlElement("w:tblPr")
+                            tbl._tbl.insert(0, tbl_pr)
+                        tbl_borders = OxmlElement("w:tblBorders")
+                        for border_name in ("top", "left", "bottom", "right", "insideH", "insideV"):
+                            border_el = OxmlElement(f"w:{border_name}")
+                            border_el.set(docx_qn("w:val"), "none")
+                            tbl_borders.append(border_el)
+                        tbl_pr.append(tbl_borders)
+
+                        for j in range(2):
+                            cell = tbl.rows[0].cells[j]
+                            if j < len(row_photos):
+                                ph = row_photos[j]
+                                ph_url = ph.get("url", "")
+                                if ph_url and "," in ph_url:
+                                    try:
+                                        img_data = base64.b64decode(ph_url.split(",")[1])
+                                        img_stream = io.BytesIO(img_data)
+                                        img_p = cell.paragraphs[0]
+                                        img_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                        img_run = img_p.add_run()
+                                        img_run.add_picture(img_stream, width=Inches(2.8))
+                                    except Exception:
+                                        pass
+                                label = ph.get("label", "")
+                                note = ph.get("note", "")
+                                if label:
+                                    lp = cell.add_paragraph(label)
+                                    lp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                    if lp.runs:
+                                        lp.runs[0].font.size = Pt(7)
+                                if note:
+                                    np_ = cell.add_paragraph(note)
+                                    np_.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                    if np_.runs:
+                                        np_.runs[0].font.size = Pt(6)
+                                        np_.runs[0].font.color.rgb = None
+                        i += 2
+
+            # ═══════════════════════════════════════
+            # 7. STRIP TRAILING EMPTY PARAGRAPHS
             # ═══════════════════════════════════════
             # Elimină paragrafele goale de la finalul documentului
             # (cauzează pagina a 2-a goală în Word/LibreOffice)
@@ -1237,7 +1326,7 @@ class handler(BaseHTTPRequestHandler):
                     body_el.remove(child)
 
             # ═══════════════════════════════════════
-            # 7. SAVE & RETURN
+            # 8. SAVE & RETURN
             # ═══════════════════════════════════════
             buf = io.BytesIO()
             doc.save(buf)

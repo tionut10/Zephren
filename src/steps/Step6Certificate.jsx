@@ -43,6 +43,7 @@ export default function Step6Certificate(props) {
     REHAB_COSTS,
     getURefNZEB,
     bacsClass,
+    buildingPhotos,
     t,
   } = props;
 
@@ -207,6 +208,7 @@ export default function Step6Certificate(props) {
                     })),
                     glazing_max_u: String(glazingElements.length > 0 ? Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;})) : 0),
                   },
+                  buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };
 
                 const resp = await fetch("/api/generate-cpe", {
