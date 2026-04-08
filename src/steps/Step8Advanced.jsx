@@ -34,6 +34,13 @@ import ContractGenerator from "../components/ContractGenerator.jsx";
 import EFacturaExport from "../components/EFacturaExport.jsx";
 import ThermovisionModule from "../components/ThermovisionModule.jsx";
 import TutorialWizard from "../components/TutorialWizard.jsx";
+import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
+import CPETracker from "../components/CPETracker.jsx";
+import LCCAnalysis from "../components/LCCAnalysis.jsx";
+import MonteCarloEP from "../components/MonteCarloEP.jsx";
+import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
+import TeamDashboard from "../components/TeamDashboard.jsx";
+import MEPSCheck from "../components/MEPSCheck.jsx";
 import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
 import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
@@ -92,6 +99,13 @@ const TAB_SECTIONS = [
   { id:"termoviziune", icon:"🔴", label:"Termoviziune" },
   { id:"cloud_sync",   icon:"☁️", label:"Cloud Sync" },
   { id:"tutorial",     icon:"🎓", label:"Tutorial" },
+  { id:"reconciliere", icon:"📊", label:"Reconciliere consum" },
+  { id:"cpe_tracker",  icon:"📅", label:"Tracker CPE" },
+  { id:"lcc",          icon:"💹", label:"LCC per măsură" },
+  { id:"monte_carlo",  icon:"🎲", label:"Monte Carlo EP" },
+  { id:"oferta_reab",  icon:"📄", label:"Ofertă reabilitare" },
+  { id:"team",         icon:"👥", label:"Echipă" },
+  { id:"meps",         icon:"🏛️", label:"MEPS EPBD 2024" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -201,6 +215,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [showThermovision, setShowThermovision] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [thermovisionPhotos, setThermovisionPhotos] = useState([]);
+  const [showOferta, setShowOferta] = useState(false);
 
   // ── Climate import state ──
   const [climImportStatus, setClimImportStatus]   = useState(null); // null | "loading" | "ok" | "error"
@@ -3807,6 +3822,72 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
+      {/* ═══ RECONCILIERE CONSUM ═══ */}
+      {activeTab === "reconciliere" && (
+        <Card className="p-4">
+          <SectionHeader icon="📊" title="Reconciliere consum facturat vs calculat"
+            subtitle="Comparare EP măsurat din facturi cu EP calculat — coeficient corelație R², diagnoze automate" />
+          <ConsumReconciliere instSummary={instSummary} building={building} />
+        </Card>
+      )}
+
+      {/* ═══ TRACKER CPE ═══ */}
+      {activeTab === "cpe_tracker" && (
+        <Card className="p-4">
+          <SectionHeader icon="📅" title="Tracker CPE — Scadențe și valabilitate"
+            subtitle="Registru certificate emise, dată expirare (10 ani), alerte scadență" />
+          <CPETracker building={building} auditor={systems?.auditor} />
+        </Card>
+      )}
+
+      {/* ═══ LCC PER MĂSURĂ ═══ */}
+      {activeTab === "lcc" && (
+        <Card className="p-4">
+          <SectionHeader icon="💹" title="Analiză LCC per măsură de reabilitare"
+            subtitle="Life Cycle Cost Analysis — EN 15459-1, referință cost-optimă 50 kWh/m²·an (Reg. UE 2025/2273)" />
+          <LCCAnalysis building={building} instSummary={instSummary} opaqueElements={opaqueElements} />
+        </Card>
+      )}
+
+      {/* ═══ MONTE CARLO ═══ */}
+      {activeTab === "monte_carlo" && (
+        <Card className="p-4">
+          <SectionHeader icon="🎲" title="Simulare Monte Carlo — Incertitudine EP"
+            subtitle="1000 iterații — interval de încredere 90%, analiză sensitivitate, probabilitate depășire prag nZEB" />
+          <MonteCarloEP instSummary={instSummary} building={building} />
+        </Card>
+      )}
+
+      {/* ═══ OFERTĂ REABILITARE ═══ */}
+      {activeTab === "oferta_reab" && (
+        <Card className="p-4">
+          <SectionHeader icon="📄" title="Ofertă reabilitare pentru client"
+            subtitle="Document complet: situație actuală → scenarii propuse → ROI → finanțare disponibilă" />
+          <button onClick={() => setShowOferta(true)}
+            className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition-colors text-sm">
+            📄 Generează Ofertă Client
+          </button>
+        </Card>
+      )}
+
+      {/* ═══ TEAM DASHBOARD ═══ */}
+      {activeTab === "team" && (
+        <Card className="p-4">
+          <SectionHeader icon="👥" title="Dashboard echipă auditori"
+            subtitle="Management membri echipă, alocare proiecte, workload, jurnal activitate" />
+          <TeamDashboard building={building} />
+        </Card>
+      )}
+
+      {/* ═══ MEPS EPBD 2024 ═══ */}
+      {activeTab === "meps" && (
+        <Card className="p-4">
+          <SectionHeader icon="🏛️" title="MEPS — Standarde Minime Performanță Energetică (EPBD 2024)"
+            subtitle="Conformitate Art. 9 EPBD 2024/1275 — clădiri cu performanță minimă, roadmap renovare 2030/2033" />
+          <MEPSCheck instSummary={instSummary} building={building} energyClass={systems?.energyClass} />
+        </Card>
+      )}
+
       {/* ═══ MODALS ═══ */}
       {showAuditReport && <AuditReport building={building} instSummary={instSummary} renewSummary={renewSummary} opaqueElements={opaqueElements} glazingElements={glazingElements} thermalBridges={thermalBridges} onClose={() => setShowAuditReport(false)} />}
       {showPortfolio && <PortfolioDashboard onClose={() => setShowPortfolio(false)} onOpenProject={() => {}} />}
@@ -3815,6 +3896,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />}
       {showThermovision && <ThermovisionModule onClose={() => setShowThermovision(false)} onSave={photos => { setThermovisionPhotos(photos); setShowThermovision(false); }} />}
       {showTutorial && <TutorialWizard onClose={() => setShowTutorial(false)} onApplyExample={() => setShowTutorial(false)} />}
+      {showOferta && <OfertaReabilitare building={building} instSummary={instSummary} auditor={systems?.auditor} onClose={() => setShowOferta(false)} />}
 
     </div>
   );

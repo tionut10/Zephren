@@ -482,43 +482,15 @@ async function exportDOCX(data, planuri = []) {
   add(blank(80));
   add(fieldRow2("Suprafața totală construită", "arieTotala", "m²", true,    "Suprafața utilă totală", "arieUtila", "m²", false));
   add(blank(60));
-  add(fieldRow2("Număr de niveluri (fără subsol)", "numarEtaje", "", true,  "Înălțimea unui nivel", "inaltimeNivel", "m", false));
+  add(fieldRow2("Număr de niveluri (fără subsol)", "numarEtaje", "", true,  "Număr ocupanți permanenți", "numarOcupanti", "pers.", false));
   add(blank(60));
-  add(fieldRow2("Număr unități locative", "numarApartamente", "buc.", false, "Număr ocupanți permanenți", "numarOcupanti", "pers.", false));
-  add(blank(60));
-  add(...optionsRow("Orientarea fațadei principale (cu cele mai multe ferestre):", "orientareFațadaPrincipala",
-    ["Nord", "Nord-Est", "Est", "Sud-Est", "Sud", "Sud-Vest", "Vest", "Nord-Vest"], true));
-  add(blank(60));
-  add(fieldRow2("Subsol / demisol", "areSubsol", "", false,                 "Pod / mansardă", "arePod", "", false));
+  add(fieldRow2("Există subsol / demisol?", "areSubsol", "", false,          "Există pod / mansardă?", "arePod", "", false));
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 3. ANVELOPA CLĂDIRII
+  // 3. SISTEMUL DE ÎNCĂLZIRE
   // ════════════════════════════════════════
-  add(sectionHeading("3", "Anvelopa clădirii — Pereți, acoperiș și ferestre"));
-  add(blank(80));
-  add(subSection("3.1  Pereți exteriori"));
-  add(fieldRow("Materialul principal al pereților exteriori", "materialPereti", "", true));
-  add(blank(60));
-  add(...optionsRow("Există izolație termică pe pereții exteriori?", "areIzolatiePeretiExteriori", ["Nu", "Da", "Nu știu"]));
-  add(blank(80));
-  add(subSection("3.2  Acoperiș / planșeu superior"));
-  add(...optionsRow("Tipul acoperișului:", "tipAcoperis",
-    ["Terasă necirculabilă", "Terasă circulabilă", "Șarpantă cu țiglă", "Șarpantă cu tablă"], true));
-  add(blank(60));
-  add(...optionsRow("Există izolație termică la acoperiș / pod?", "areIzolatieAcoperis", ["Nu", "Da", "Nu știu"]));
-  add(blank(80));
-  add(subSection("3.3  Ferestre și uși exterioare"));
-  add(...optionsRow("Tipul ferestrelor:", "tipFerestre",
-    ["Simplu vitraj (vechi)", "Dublu vitraj standard", "Dublu vitraj Low-E", "Triplu vitraj", "Mixte"], true));
-  add(blank(60));
-  add(fieldRow2("Materialul ramei ferestrelor", "profilRam", "", false,     "Anul montajului ferestrelor actuale", "anMontajFerestre", "", false));
-  add(blank(160));
-
-  // ════════════════════════════════════════
-  // 4. SISTEMUL DE ÎNCĂLZIRE
-  // ════════════════════════════════════════
-  add(sectionHeading("4", "Sistemul de încălzire"));
+  add(sectionHeading("3", "Sistemul de încălzire"));
   add(blank(80));
   add(infoBox("Dacă dețineți cartea tehnică a cazanului / pompei de căldură, anexați-o. Informațiile se găsesc pe eticheta aparatului."));
   add(blank(80));
@@ -539,9 +511,9 @@ async function exportDOCX(data, planuri = []) {
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 5. APA CALDĂ MENAJERĂ
+  // 4. APA CALDĂ MENAJERĂ
   // ════════════════════════════════════════
-  add(sectionHeading("5", "Prepararea apei calde menajere (ACM)"));
+  add(sectionHeading("4", "Prepararea apei calde menajere (ACM)"));
   add(blank(80));
   add(...optionsRow("Cum este preparată apa caldă menajeră?", "surseACM",
     ["Centrală termică combinată", "Boiler electric", "Boiler gaz (separat)", "Panouri solare termice", "Termoficare", "Instant gaz", "Pompă de căldură ACM"], true));
@@ -550,9 +522,9 @@ async function exportDOCX(data, planuri = []) {
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 6. RĂCIRE ȘI AER CONDIȚIONAT
+  // 5. RĂCIRE ȘI AER CONDIȚIONAT
   // ════════════════════════════════════════
-  add(sectionHeading("6", "Răcire și aer condiționat"));
+  add(sectionHeading("5", "Răcire și aer condiționat"));
   add(blank(80));
   add(...optionsRow("Există sistem de răcire / aer condiționat?", "areRacire",
     ["Nu", "Da — în unele încăperi", "Da — în toată clădirea"], true));
@@ -561,32 +533,9 @@ async function exportDOCX(data, planuri = []) {
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 7. VENTILAȚIE
+  // 6. SURSE DE ENERGIE REGENERABILĂ
   // ════════════════════════════════════════
-  add(sectionHeading("7", "Sistemul de ventilație"));
-  add(blank(80));
-  add(...optionsRow("Tipul de ventilație al clădirii:", "tipVentilatie",
-    ["Naturală (ferestre / fisuri)", "Mecanică fără recuperare de căldură", "Mecanică cu recuperare de căldură (VMC)"], true));
-  add(blank(60));
-  add(fieldRow("Marca și modelul unității de ventilație (VMC)", "marcaVMC", "", false));
-  add(blank(160));
-
-  // ════════════════════════════════════════
-  // 8. ILUMINAT INTERIOR
-  // ════════════════════════════════════════
-  add(sectionHeading("8", "Iluminatul interior"));
-  add(blank(80));
-  add(...optionsRow("Tipul principal de iluminat:", "tipIluminat",
-    ["Becuri cu incandescență (vechi)", "Halogeni", "Fluorescente / neoane", "LED — parțial", "LED — integral"], true));
-  add(blank(60));
-  add(...optionsRow("Sistem de control al iluminatului:", "controlIluminat",
-    ["Nu există", "Senzori de prezență", "Timer programat", "Reglaj după lumina naturală"]));
-  add(blank(160));
-
-  // ════════════════════════════════════════
-  // 9. SURSE DE ENERGIE REGENERABILĂ
-  // ════════════════════════════════════════
-  add(sectionHeading("9", "Surse de energie regenerabilă"));
+  add(sectionHeading("6", "Surse de energie regenerabilă"));
   add(blank(80));
   add(subSection("9.1  Sistem fotovoltaic (panouri pentru producerea electricității)"));
   add(...optionsRow("Există sistem fotovoltaic instalat?", "arePV", ["Nu", "Da"], true));
@@ -606,9 +555,9 @@ async function exportDOCX(data, planuri = []) {
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 10. CONSUMURI ENERGETICE
+  // 7. CONSUMURI ENERGETICE
   // ════════════════════════════════════════
-  add(sectionHeading("10", "Consumuri energetice anuale"));
+  add(sectionHeading("7", "Consumuri energetice anuale"));
   add(blank(80));
   add(infoBox("Valorile se preiau din facturile ultimelor 12 luni. Aceste date permit compararea consumului real cu cel calculat prin bilanțul energetic. Anexați copii ale facturilor dacă este posibil."));
   add(blank(80));
@@ -620,9 +569,9 @@ async function exportDOCX(data, planuri = []) {
   add(blank(160));
 
   // ════════════════════════════════════════
-  // 11. DOCUMENTE DISPONIBILE
+  // 8. DOCUMENTE DISPONIBILE
   // ════════════════════════════════════════
-  add(sectionHeading("11", "Documente disponibile pentru auditor"));
+  add(sectionHeading("8", "Documente disponibile pentru auditor"));
   add(blank(80));
   add(infoBox("Cu cât dispuneți de mai multe documente, cu atât calculul va fi mai precis. Lipsa unui document nu blochează auditul energetic."));
   add(blank(80));
@@ -826,14 +775,11 @@ async function exportDOCX(data, planuri = []) {
 // ─── Date pentru sectiuni ─────────────────────────────────────────────────────
 const SECTIONS_META = [
   { key: "identificare", required: ["numeProprietar", "telefonProprietar", "adresaCompleta", "judet", "localitate", "anConstructie", "tipClădire", "scopulCPE"] },
-  { key: "geometrie",    required: ["arieTotala", "numarEtaje", "orientareFațadaPrincipala"] },
-  { key: "anvelopa",     required: ["materialPereti", "grosimePereti", "tipFerestre"] },
+  { key: "geometrie",    required: ["arieTotala", "numarEtaje"] },
   { key: "incalzire",    required: ["tipSursa", "combustibil"] },
   { key: "acm",          required: ["surseACM"] },
   { key: "racire",       required: ["areRacire"] },
-  { key: "ventilatie",   required: ["tipVentilatie"] },
-  { key: "iluminat",     required: ["tipIluminat"] },
-  { key: "regenerabile", required: ["arePV", "areSolarTermic"] },
+  { key: "regenerabile", required: ["arePV", "areSolarTermicRenew"] },
   { key: "consum",       required: [] },
   { key: "documente",    required: [] },
 ];
@@ -993,15 +939,6 @@ export default function ClientInputForm({ onDataChange }) {
         <Field label="Număr niveluri (fără subsol)" required>
           <FSelect value={data.numarEtaje} onChange={v => set("numarEtaje", v)} options={["Parter (P)","P+1","P+2","P+3","P+4","P+5 sau mai multe"]} />
         </Field>
-        <Field label="Înălțimea unui nivel (m)"
-          hint="De la pardoseală la tavan">
-          <FInput value={data.inaltimeNivel} onChange={v => set("inaltimeNivel", v)} type="number" min={2} max={6} placeholder="ex: 2.8" unit="m" />
-        </Field>
-        <Field label="Orientarea fațadei principale" required
-          hint="Direcția spre care este orientată fațada cu cele mai multe ferestre">
-          <FRadio value={data.orientareFațadaPrincipala} onChange={v => set("orientareFațadaPrincipala", v)}
-            options={["Nord","Nord-Est","Est","Sud-Est","Sud","Sud-Vest","Vest","Nord-Vest"]} />
-        </Field>
         <Field label="Există subsol sau demisol?">
           <FRadio value={data.areSubsol} onChange={v => set("areSubsol", v)}
             options={["Nu","Da — neîncălzit","Da — încălzit / locuit"]} />
@@ -1012,55 +949,7 @@ export default function ClientInputForm({ onDataChange }) {
         </Field>
       </Section>
 
-      {/* 3. ANVELOPA */}
-      <Section icon="🧱" title="Pereți, acoperiș și ferestre" subtitle="Materialele și izolația clădirii">
-        <Field label="Materialul principal al pereților exteriori" required>
-          <FSelect value={data.materialPereti} onChange={v => set("materialPereti", v)} options={[
-            { value: "caramida_plina", label: "Cărămidă plină (veche, înainte de 1990)" },
-            { value: "caramida_goluri", label: "Cărămidă cu goluri / BCA" },
-            { value: "beton", label: "Beton (panou prefabricat / monolit)" },
-            { value: "lemn", label: "Lemn / structură lemn" },
-            { value: "metal", label: "Metal / structură metalică" },
-            { value: "mixt", label: "Mixt / nu știu" },
-          ]} />
-        </Field>
-        <Field label="Există izolație termică pe pereții exteriori?">
-          <FRadio value={data.areIzolatiePeretiExteriori} onChange={v => set("areIzolatiePeretiExteriori", v)}
-            options={["Nu","Da","Nu știu"]} />
-        </Field>
-        <Field label="Tipul acoperișului / planșeului superior" required>
-          <FSelect value={data.tipAcoperis} onChange={v => set("tipAcoperis", v)} options={[
-            { value: "terasa_necirc", label: "Terasă necirculabilă (plată)" },
-            { value: "terasa_circ", label: "Terasă circulabilă" },
-            { value: "sarpanta_tigla", label: "Șarpantă cu țiglă / olane" },
-            { value: "sarpanta_tabla", label: "Șarpantă cu tablă" },
-            { value: "sarpanta_onduline", label: "Șarpantă cu onduline / materiale ușoare" },
-          ]} />
-        </Field>
-        <Field label="Există izolație termică la acoperiș/pod?">
-          <FRadio value={data.areIzolatieAcoperis} onChange={v => set("areIzolatieAcoperis", v)}
-            options={["Nu","Da","Nu știu"]} />
-        </Field>
-        <Field label="Tipul ferestrelor" required>
-          <FSelect value={data.tipFerestre} onChange={v => set("tipFerestre", v)} options={[
-            { value: "simplu_vitraj", label: "Simplu vitraj (geam simplu — vechi)" },
-            { value: "dublu_vechi", label: "Dublu vitraj obișnuit (termopan standard)" },
-            { value: "dublu_lowe", label: "Dublu vitraj cu sticlă low-e (mai nou)" },
-            { value: "triplu", label: "Triplu vitraj" },
-            { value: "mixt", label: "Mix — unele schimbate, altele nu" },
-          ]} />
-        </Field>
-        <Field label="Materialul ramei ferestrelor">
-          <FSelect value={data.profilRam} onChange={v => set("profilRam", v)} options={[
-            "Lemn (vechi)","PVC","Aluminiu fără barieră termică","Aluminiu cu barieră termică","Lemn stratificat","Nu știu"
-          ]} />
-        </Field>
-        <Field label="Anul montajului ferestrelor actuale">
-          <FInput value={data.anMontajFerestre} onChange={v => set("anMontajFerestre", v)} type="number" min={1950} max={2025} placeholder="ex: 2010" />
-        </Field>
-      </Section>
-
-      {/* 4. INCALZIRE */}
+      {/* 3. INCALZIRE */}
       <Section icon="🔥" title="Sistemul de încălzire" subtitle="Cum este încălzită clădirea">
         <Field label="Sursa principală de căldură" required>
           <FSelect value={data.tipSursa} onChange={v => set("tipSursa", v)} options={[
@@ -1158,41 +1047,7 @@ export default function ClientInputForm({ onDataChange }) {
         )}
       </Section>
 
-      {/* 7. VENTILATIE */}
-      <Section icon="💨" title="Ventilație" subtitle="Cum este asigurată circulația aerului">
-        <Field label="Tipul de ventilație al clădirii" required span2>
-          <FSelect value={data.tipVentilatie} onChange={v => set("tipVentilatie", v)} options={[
-            { value: "naturala", label: "Naturală — prin ferestre deschise și fisuri" },
-            { value: "mecanica_fara", label: "Mecanică fără recuperare de căldură (hote, ventilatoare de baie)" },
-            { value: "mecanica_cu", label: "Mecanică cu recuperare de căldură (VMC cu recuperator)" },
-            { value: "nu_stiu", label: "Nu știu" },
-          ]} />
-        </Field>
-        {data.tipVentilatie === "mecanica_cu" && (
-          <Field label="Marca și modelul unității de ventilație">
-            <FInput value={data.marcaVMC} onChange={v => set("marcaVMC", v)} placeholder="ex: Zehnder ComfoAir 200" />
-          </Field>
-        )}
-      </Section>
-
-      {/* 8. ILUMINAT */}
-      <Section icon="💡" title="Iluminat interior" subtitle="Tipul surselor de lumină utilizate">
-        <Field label="Tipul principal de iluminat" required span2>
-          <FSelect value={data.tipIluminat} onChange={v => set("tipIluminat", v)} options={[
-            { value: "becuri_clasice", label: "Becuri clasice cu incandescență (vechi, cu filament)" },
-            { value: "halogeni", label: "Halogeni" },
-            { value: "fluorescente", label: "Fluorescente / neoane" },
-            { value: "led_partial", label: "LED — parțial (unele schimbate)" },
-            { value: "led_total", label: "LED — toată clădirea" },
-          ]} />
-        </Field>
-        <Field label="Există sisteme de control automat al iluminatului?">
-          <FRadio value={data.controlIluminat} onChange={v => set("controlIluminat", v)}
-            options={["Nu","Senzori de prezență","Timer programat","Reglaj după lumina naturală"]} />
-        </Field>
-      </Section>
-
-      {/* 9. REGENERABILE */}
+      {/* 7. REGENERABILE */}
       <Section icon="☀️" title="Surse de energie regenerabilă" subtitle="Panouri fotovoltaice, solare sau alte surse">
         <Field label="Există sistem fotovoltaic (panouri pentru electricitate)?" required span2>
           <FRadio value={data.arePV} onChange={v => set("arePV", v)} options={["Nu","Da"]} />

@@ -70,6 +70,40 @@ export default function AuditReport({
   onClose,
 }) {
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [docxGenerating, setDocxGenerating] = useState(false);
+
+  const generateDOCX = async () => {
+    setDocxGenerating(true);
+    try {
+      const payload = {
+        building, instSummary, renewSummary, auditor,
+        opaqueElements, glazingElements, thermalBridges, energyClass,
+        measuredConsumption: (() => {
+          try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); }
+          catch { return {}; }
+        })(),
+        systems: (() => {
+          try { return JSON.parse(localStorage.getItem("zephren_systems") || "{}"); }
+          catch { return {}; }
+        })(),
+      };
+      const res = await fetch("/api/generate-audit-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("API error " + res.status);
+      const { docx, filename } = await res.json();
+      const bytes = Uint8Array.from(atob(docx), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+      a.download = filename || "raport_audit_energetic.docx"; a.click();
+    } catch (e) {
+      alert("Eroare generare DOCX: " + e.message);
+    } finally {
+      setDocxGenerating(false);
+    }
+  };
 
   // ── Date măsurate din localStorage (salvate de InvoiceOCR) ────────────────
   const measuredRaw = (() => {
@@ -450,6 +484,16 @@ export default function AuditReport({
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             {pdfGenerating ? "Se generează..." : "Generează PDF"}
+          </button>
+          <button
+            onClick={generateDOCX}
+            disabled={docxGenerating}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+            {docxGenerating ? "Se generează..." : "Export DOCX"}
           </button>
           <button
             onClick={onClose}
