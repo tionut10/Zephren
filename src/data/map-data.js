@@ -27,7 +27,23 @@ export function buildRomaniaMapPoints(CLIMATE_DB, geoToSvg) {
   return ROMANIA_MAP_POINTS;
 }
 
-// Romania border SVG path — generated from real geographic coordinates
-// Source: Natural Earth simplified border, ~55 points, Mercator projection
+// Romania border SVG path — traced from real geographic coordinates
+// ~64 points: Northern (Ukraine), Eastern (Prut/Moldova), SE (Delta + Black Sea),
+// Southern (Danube/Bulgaria), SW (Iron Gate/Serbia), Western (Hungary)
 // viewBox calibration: lon [20.2..29.8] -> x [10..490], lat [43.5..48.5] -> y [370..10]
-export const ROMANIA_BORDER_PATH = "M107,17 L145,39 L168,42 L200,50 L230,50 L253,46 L275,52 L300,30 L325,32 L340,37 L365,59 L378,60 L400,75 L410,104 L405,129 L410,147 L405,158 L413,176 L407,194 L405,219 L428,226 L435,244 L455,248 L470,251 L482,273 L453,291 L432,334 L430,352 L429,352 L400,334 L375,335 L355,330 L325,330 L305,335 L275,359 L250,357 L225,357 L200,350 L175,348 L150,345 L135,348 L125,330 L120,305 L105,304 L80,287 L70,276 L57,262 L50,240 L40,227 L38,208 L25,179 L20,165 L38,172 L55,168 L72,143 L85,132 L90,111 L100,89 L107,75 L107,46 L107,17 Z";
+// x = 10 + (lon - 20.2) * 50  |  y = 370 - (lat - 43.5) * 72
+export const ROMANIA_BORDER_PATH =
+  // N border (Ukraine): Halmeu → Sighetu M. → Borșa → Cârlibaba → Siret → Stânca
+  "M154,48 L194,51 L205,52 L228,62 L247,69 L257,66 L269,61 L273,51 L301,49 L326,48 L333,49 L353,48 L369,50 " +
+  // E border (Prut/Moldova): Stânca → Iași → Galați
+  "L358,59 L362,65 L369,77 L370,84 L384,107 L394,119 L402,137 L403,156 L403,167 L403,193 L403,210 L402,229 " +
+  // SE: Delta Dunării (brațul Chilia) + Sulina + Sf. Gheorghe
+  "L428,237 L463,233 L468,244 L489,230 L483,251 L480,269 " +
+  // Litoralul Mării Negre: Gura Portiței → Constanța → Mangalia → Vama Veche
+  "L454,284 L439,308 L432,321 L432,338 L429,347 L429,351 " +
+  // S border (Dunăre/Bulgaria): Ostrov → Giurgiu → Zimnicea → Calafat → Drobeta
+  "L409,346 L364,327 L332,328 L299,341 L268,359 L244,352 L225,350 L197,348 L147,336 L136,325 L133,289 " +
+  // SW: Cazanele Mari / Clisura Dunării (Serbia) → Baziaș
+  "L119,282 L105,286 L98,288 L86,285 " +
+  // V border (Serbia → Ungaria): Baziaș → Timișoara → Oradea → Satu Mare → Halmeu
+  "L82,281 L81,275 L86,258 L94,241 L63,242 L55,242 L46,226 L36,205 L38,178 L66,164 L82,131 L96,106 L107,80 L144,64 L154,48 Z";
