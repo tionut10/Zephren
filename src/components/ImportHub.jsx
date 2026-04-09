@@ -61,6 +61,7 @@ export default function ImportHub({
   const drawingFileRef = useRef(null);
   const csvFileRef     = useRef(null);
   const epwFileRef     = useRef(null);
+  const browseFileRef  = useRef(null); // input universal pentru butonul „Alege fișier"
 
   // ── Drag & drop ────────────────────────────────────────────────────────────
   const routeFile = useCallback((file) => {
@@ -118,6 +119,15 @@ export default function ImportHub({
           </span>
         </div>
 
+        {/* Input universal — declanșat de butonul „Alege fișier" */}
+        <input
+          ref={browseFileRef}
+          type="file"
+          accept=".ifc,.epw,.csv,.txt,image/jpeg,image/png,image/webp,application/pdf"
+          onChange={e => { const f = e.target.files?.[0]; if (f) routeFile(f); e.target.value = ""; }}
+          className="hidden"
+        />
+
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -136,6 +146,12 @@ export default function ImportHub({
             <span className="text-violet-400/70">.epw</span> climă ·{" "}
             <span className="text-slate-400/70">.csv</span> date climatice
           </div>
+          <button
+            onClick={() => browseFileRef.current?.click()}
+            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-[11px] font-medium transition-all"
+          >
+            <span>📂</span> Alege fișier
+          </button>
           {dropInfo && (
             <div className="mt-1.5 text-[10px] text-green-400 font-medium">
               ✓ {dropInfo.label}
