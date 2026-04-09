@@ -5868,68 +5868,118 @@ export default function EnergyCalcApp({ cloud }) {
       </div>
 
       {/* HEADER */}
-      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-4 no-print">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 shrink">
-            <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
-            <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"40px", width:"auto"}} />
-            <div className="min-w-0">
-              <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
-              <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-[10px] uppercase tracking-widest opacity-40 hidden lg:block">Performanță Energetică</p>
-                  {/* Mini tier switcher — toate tier-urile la sm+, doar cel activ pe mobile */}
-                  <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-                    {["free","standard","pro","asociatie"].map(tid => {
-                      const isActive = userTier === tid || (userTier === "business" && tid === "asociatie");
-                      return (
-                        <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${isActive ? "" : "hidden sm:block"} ${
-                            isActive
-                              ? tid === "free" ? "bg-white/15 text-white"
-                              : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
-                              : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
-                              : "bg-emerald-500 text-black shadow-sm"
-                              : "text-white/30 hover:text-white/60"
-                          }`}>
-                          {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button onClick={() => setShowPricingPage(true)} className="text-[10px] opacity-30 hover:opacity-60 transition-all hidden sm:block" title="Detalii planuri">ⓘ</button>
-                </div>
-              </div>
+      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-3 no-print">
+        <div className="max-w-7xl mx-auto flex items-center gap-2">
+
+          {/* ── ZONA 1: IDENTITATE (logo · plan · cloud · echipă) ── */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+            <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"36px", width:"auto"}} />
+            <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
+
+            {/* Plan badges */}
+            <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
+              {["free","standard","pro","asociatie"].map(tid => {
+                const isActive = userTier === tid || (userTier === "business" && tid === "asociatie");
+                return (
+                  <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${isActive ? "" : "hidden sm:block"} ${
+                      isActive
+                        ? tid === "free" ? "bg-white/15 text-white"
+                        : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
+                        : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
+                        : "bg-emerald-500 text-black shadow-sm"
+                        : "text-white/30 hover:text-white/60"
+                    }`}>
+                    {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Cloud + Echipă — zona identitate */}
+            <div className="hidden lg:flex items-center gap-1 pl-2 border-l border-white/[0.08]">
+              <button
+                onClick={saveToCloud}
+                title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}
+                className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border transition-colors ${
+                  cloud?.isLoggedIn
+                    ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400"
+                    : "border-white/10 hover:bg-white/5 text-white/30"
+                }`}>
+                ☁️
+                {cloud?.isLoggedIn && (
+                  <span className="text-[10px] font-medium">
+                    {cloud.user?.name?.split(" ")[0] || cloud.user?.email?.split("@")[0]}
+                  </span>
+                )}
+              </button>
+              {cloud?.isLoggedIn && (
+                <button
+                  onClick={() => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }}
+                  title="Echipă & Cloud"
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors">
+                  👥 <span className="text-[10px]">Echipă</span>
+                </button>
+              )}
             </div>
           </div>
-          {/* Butoane scrollabile (pot ieși din ecran pe ecrane mici) */}
-          <div className="flex items-center gap-1 sm:gap-2 justify-end shrink min-w-0 overflow-x-auto no-scrollbar">
-            <button onClick={function(){setPrintMode(true);setTimeout(function(){window.print();setPrintMode(false);},500);}} className="text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:block shrink-0">🖨️</button>
-            <button onClick={() => setShowTutorial(true)} title="Tutorial interactiv" aria-label="Deschide tutorialul interactiv"
-              className="text-[10px] sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
-              <span aria-hidden="true">🎓</span><span className="hidden sm:inline ml-1">Tutorial</span>
-            </button>
-            {storageStatus && <span className="text-[10px] opacity-40 hidden lg:inline shrink-0">{storageStatus}</span>}
-            <div className="flex items-center gap-0.5 hidden lg:flex shrink-0">
-              <button onClick={undo} disabled={undoStack.length===0} title="Undo (Ctrl+Z)" aria-label="Undo (Ctrl+Z)"
-                className={cn("text-xs px-1.5 py-1 rounded-l-lg border border-white/10 transition-colors", undoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↶</button>
-              <button onClick={redo} disabled={redoStack.length===0} title="Redo (Ctrl+Y)" aria-label="Redo (Ctrl+Y)"
-                className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↷</button>
-            </div>
+
+          {/* Separator 1 */}
+          <div className="hidden lg:block w-px h-5 bg-white/[0.08] shrink-0" />
+
+          {/* ── ZONA 2: NAVIGARE (proiecte · nou) ── */}
+          <div className="hidden lg:flex items-center gap-1 shrink-0">
             <button onClick={() => { refreshProjectList(); setShowProjectManager(true); }}
-              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-amber-500/20 text-amber-400/70 hover:bg-amber-500/10 hover:text-amber-400 transition-all shrink-0">
-              📁<span className="hidden lg:inline"> Proiecte</span>
+              className="text-xs px-2.5 py-1 rounded-lg border border-amber-500/20 text-amber-400/70 hover:bg-amber-500/10 hover:text-amber-400 transition-all">
+              📁 Proiecte
             </button>
             <button onClick={() => setShowResetConfirm(true)}
-              className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
-              {lang==="EN"?"New":"Nou"}
+              className="text-xs px-2.5 py-1 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all">
+              {lang==="EN" ? "New" : "Nou"}
             </button>
+          </div>
+
+          {/* Separator 2 */}
+          <div className="hidden lg:block w-px h-5 bg-white/[0.08] shrink-0" />
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* ── ZONA 3: ACȚIUNI (undo · salvat · quickfill · tutorial · ⋯) ── */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Mobile: Proiecte + Nou */}
+            <button onClick={() => { refreshProjectList(); setShowProjectManager(true); }}
+              className="lg:hidden text-[10px] px-2 py-1 rounded-lg border border-amber-500/20 text-amber-400/70 hover:bg-amber-500/10 transition-all shrink-0">
+              📁
+            </button>
+            <button onClick={() => setShowResetConfirm(true)}
+              className="lg:hidden text-[10px] px-2 py-1 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 transition-all shrink-0">
+              {lang==="EN" ? "New" : "Nou"}
+            </button>
+
+            {storageStatus && <span className="text-[10px] opacity-40 hidden lg:inline shrink-0">{storageStatus}</span>}
+
+            <div className="hidden lg:flex items-center gap-0.5 shrink-0">
+              <button onClick={undo} disabled={undoStack.length===0} title="Undo (Ctrl+Z)"
+                className={cn("text-xs px-1.5 py-1 rounded-l-lg border border-white/10 transition-colors", undoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↶</button>
+              <button onClick={redo} disabled={redoStack.length===0} title="Redo (Ctrl+Y)"
+                className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↷</button>
+            </div>
+
+            <button onClick={() => setShowQuickFill(true)}
+              className="text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors hidden sm:flex shrink-0"
+              title="Completare rapidă date clădire">
+              ⚡<span className="hidden lg:inline"> Quick Fill</span>
+            </button>
+
+            <button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
+              className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
+              🎓<span className="hidden lg:inline ml-1">Tutorial</span>
+            </button>
+
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
-            <button onClick={() => setShowQuickFill(true)} className="text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors hidden sm:flex shrink-0" title="Completare rapidă date clădire">⚡<span className="hidden lg:inline"> Quick Fill</span></button>
-            <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:flex shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
-            {cloud?.isLoggedIn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/60 hidden xl:block shrink-0">{cloud.user?.name?.split(" ")[0] || cloud.user?.email?.split("@")[0]}</span>}
-            {cloud?.isLoggedIn && <button onClick={cloud.logout} className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/5 text-white/30 hidden xl:block shrink-0">Logout</button>}
           </div>
           {/* Butoane fixe (nu se scrollează) — dropdown-ul nu e clipat de overflow */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
