@@ -3,6 +3,7 @@ import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx"
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
+import ImportHub from "../components/ImportHub.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -117,18 +118,14 @@ export default function Step1Identification({
   const [geoSuggestion, setGeoSuggestion] = useState(null);
   const [showIFC, setShowIFC] = useState(false);
   const [drawingLoading, setDrawingLoading] = useState(false);
-  const drawingFileRef = useRef(null);
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
-  const [importPanelOpen, setImportPanelOpen] = useState(false);
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [importStatusMsg, setImportStatusMsg] = useState("");
   const [importedClimateData, setImportedClimateData] = useState(null);
-  const csvFileRef = useRef(null);
-  const epwFileRef = useRef(null);
 
   // ── State localități ────────────────────────────────────────────────────────
   const [localitiesDB, setLocalitiesDB] = useState({ counties: [], localities: [] });
@@ -421,6 +418,31 @@ export default function Step1Identification({
         </div>
       )}
 
+      {/* ── Hub Import centralizat ─────────────────────────────────────────── */}
+      <ImportHub
+        onOpenIFC={() => setShowIFC(true)}
+        drawingLoading={drawingLoading}
+        onDrawingFile={handleDrawingUpload}
+        onGeocode={handleGeocode}
+        geoStatus={geoStatus}
+        cadastralNr={cadastralNr}
+        onCadastralNrChange={setCadastralNr}
+        onCadastralLookup={handleCadastralLookup}
+        cadastralLoading={cadastralLoading}
+        cadastralMsg={cadastralMsg}
+        selectedClimate={selectedClimate}
+        importStatus={importStatus}
+        importStatusMsg={importStatusMsg}
+        importedClimateData={importedClimateData}
+        onOpenMeteoImport={handleOpenMeteoImport}
+        onCSVImport={handleCSVImport}
+        onEPWImport={handleEPWImport}
+        buildingPhotos={buildingPhotos}
+        setBuildingPhotos={setBuildingPhotos}
+        showToast={showToast}
+        cn={cn}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {/* Coloana 1: Adresă & Clasificare */}
         <div className="space-y-5">
@@ -459,62 +481,6 @@ export default function Step1Identification({
                 />
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} />
-
-              {/* Geocodare OSM */}
-              <button
-                onClick={handleGeocode}
-                disabled={geoStatus === "loading"}
-                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-medium transition-all disabled:opacity-50"
-              >
-                {geoStatus === "loading"
-                  ? <><span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin" /> Geocodare OSM...</>
-                  : <><span>🔍</span> Autocompletare adresă (OSM)</>}
-              </button>
-
-              {/* Număr cadastral ANCPI */}
-              <div className="flex gap-2">
-                <input
-                  value={cadastralNr}
-                  onChange={e => setCadastralNr(e.target.value)}
-                  placeholder="Nr. cadastral (ex: 12345)"
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500/50"
-                />
-                <button
-                  onClick={handleCadastralLookup}
-                  disabled={!cadastralNr.trim() || cadastralLoading}
-                  className="px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-xs disabled:opacity-40 transition-all flex items-center gap-1"
-                >
-                  {cadastralLoading ? <span className="w-3 h-3 rounded-full border border-sky-400 border-t-transparent animate-spin"/> : "🏛️"}
-                  ANCPI
-                </button>
-              </div>
-              {cadastralMsg && <div className={`text-[10px] px-2 ${cadastralMsg.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>{cadastralMsg}</div>}
-
-              {/* Import IFC/BIM */}
-              <button
-                onClick={() => setShowIFC(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-all"
-              >
-                <span>📎</span> Import IFC/BIM
-              </button>
-
-              {/* Analiză planșă tehnică cu AI */}
-              <input
-                ref={drawingFileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                onChange={handleDrawingUpload}
-                className="hidden"
-              />
-              <button
-                onClick={() => drawingFileRef.current?.click()}
-                disabled={drawingLoading}
-                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-medium transition-all disabled:opacity-50"
-              >
-                {drawingLoading
-                  ? <><span className="w-3 h-3 rounded-full border border-indigo-400 border-t-transparent animate-spin" /> Se analizează planșa...</>
-                  : <><span>📐</span> Analizează planșă tehnică (AI)</>}
-              </button>
 
               {/* Sugestie footprint clădire */}
               {geoSuggestion && (
@@ -812,105 +778,9 @@ export default function Step1Identification({
                 </div>
               )}
 
-              {/* ── Buton import ERA5/TMY ── */}
-              <button
-                onClick={() => setImportPanelOpen(v => !v)}
-                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 text-xs font-medium transition-all mt-2"
-              >
-                <span>📡</span>
-                {importPanelOpen ? "Ascunde panel import ERA5/TMY" : "Import ERA5/TMY — date climatice externe"}
-              </button>
-
-              {/* ── Panel import inline ── */}
-              {importPanelOpen && (
-                <div className="mt-2 rounded-xl border border-violet-500/20 bg-violet-900/10 p-3 space-y-3">
-                  <div className="text-xs font-semibold text-violet-300 mb-1">📡 Import date climatice externe</div>
-
-                  {/* Opțiunea 1: Open-Meteo ERA5 */}
-                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
-                    <div className="text-xs font-medium text-slate-200">1. Open-Meteo ERA5 (auto)</div>
-                    <div className="text-[10px] text-slate-400">Descarcă medii lunare 2023 pentru coordonatele localității selectate (gratuit, fără API key).</div>
-                    <button
-                      onClick={handleOpenMeteoImport}
-                      disabled={importStatus === "loading" || !selectedClimate}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-medium transition-all"
-                    >
-                      {importStatus === "loading"
-                        ? <><span className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" /> Se descarcă...</>
-                        : <><span>🌍</span> Descarcă date ERA5</>}
-                    </button>
-                    {!selectedClimate && (
-                      <div className="text-[10px] text-amber-400">Selectați mai întâi o localitate din lista de mai sus.</div>
-                    )}
-                  </div>
-
-                  {/* Opțiunea 2: CSV */}
-                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
-                    <div className="text-xs font-medium text-slate-200">2. Import CSV</div>
-                    <div className="text-[10px] text-slate-400">Format: Lună, T_medie, T_min, T_max, GHI (kWh/m²/lună), RH (%), Vânt (m/s) — 12 rânduri.</div>
-                    <input
-                      ref={csvFileRef}
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={handleCSVImport}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => csvFileRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
-                    >
-                      <span>📂</span> Alege fișier CSV
-                    </button>
-                  </div>
-
-                  {/* Opțiunea 3: EPW */}
-                  <div className="bg-slate-800/60 rounded-lg p-2.5 space-y-1.5">
-                    <div className="text-xs font-medium text-slate-200">3. Import EPW (EnergyPlus)</div>
-                    <div className="text-[10px] text-slate-400">Fișier .epw standard EnergyPlus — extrage automat medii lunare.</div>
-                    <input
-                      ref={epwFileRef}
-                      type="file"
-                      accept=".epw"
-                      onChange={handleEPWImport}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => epwFileRef.current?.click()}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
-                    >
-                      <span>📂</span> Alege fișier EPW
-                    </button>
-                  </div>
-
-                  {/* Status import */}
-                  {importStatus === "ok" && importStatusMsg && (
-                    <div className="flex items-start gap-2 rounded-lg bg-green-900/30 border border-green-700/30 p-2 text-xs text-green-300">
-                      <span className="mt-0.5">✓</span>
-                      <div>
-                        <div className="font-medium">{importStatusMsg}</div>
-                        {importedClimateData?.temp_month && (
-                          <div className="text-[10px] text-green-400 mt-0.5">
-                            T medie ian.: {importedClimateData.temp_month[0]}°C · T medie iul.: {importedClimateData.temp_month[6]}°C
-                            {importedClimateData.GHI_month?.length === 12
-                              ? ` · GHI iul.: ${importedClimateData.GHI_month[6]} kWh/m²`
-                              : ""}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {importStatus === "error" && importStatusMsg && (
-                    <div className="flex items-start gap-2 rounded-lg bg-red-900/30 border border-red-700/30 p-2 text-xs text-red-300">
-                      <span className="mt-0.5">✗</span>
-                      <div>{importStatusMsg}</div>
-                    </div>
-                  )}
-
-                  <div className="text-[10px] text-slate-500 italic">
-                    Notă: datele importate sunt afișate informativ. Calculele principale folosesc datele climatice Mc 001-2022 din baza de date internă.
-                  </div>
-                </div>
-              )}
+              <div className="text-[10px] text-slate-500 italic mt-1">
+                Import date climatice externe disponibil în hub-ul de import de mai sus (tab Climă).
+              </div>
             </div>
           </Card>
 
@@ -977,19 +847,6 @@ export default function Step1Identification({
           Pasul 2: Anvelopă →
         </button>
       </div>
-
-      {/* ── Fotografii clădire ─────────────────────────────────────────────── */}
-      <Card title="📷 Fotografii clădire" className="mt-6">
-        <p className="text-[11px] text-slate-400 mb-4">
-          Adăugați fotografii ale clădirii grupate pe categorii. Vor fi incluse automat în Anexa fotografică a CPE.
-        </p>
-        <BuildingPhotos
-          buildingPhotos={buildingPhotos || []}
-          setBuildingPhotos={setBuildingPhotos}
-          showToast={showToast}
-          cn={cn}
-        />
-      </Card>
 
       {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
     </div>
