@@ -388,10 +388,13 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         color_map = _CO2_CLASS_COLORS if is_co2 else _EP_CLASS_COLORS
         color = color_map.get(new_class, color_map.get("B"))
 
-        # 1. Update textbox (letter + position + text color white)
+        # 1. Update textbox (letter + position + fill color + text color)
         new_content = text_match.group(1)
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         new_content = _update_shape_pos_v(new_content, new_pos)
+        # Actualizează și culoarea de fundal a textbox-ului (solidFill) — altfel litera
+        # rămâne colorată cu culoarea implicită din template (nu cu culoarea clasei reale)
+        new_content = _update_shape_color(new_content, color)
         # Culoarea textului calculată din luminanța WCAG a fundalului (valabil EP și CO2)
         text_color = _text_color_for_bg(color["hex"])
         if '<w:color' not in new_content:
@@ -1221,10 +1224,10 @@ class handler(BaseHTTPRequestHandler):
                         temp_para._element.getparent().remove(temp_para._element)
 
             # ═══════════════════════════════════════
-            # 6. ANEXĂ FOTOGRAFII CLĂDIRE
+            # 6. ANEXĂ FOTOGRAFII CLĂDIRE (doar în modul "anexa")
             # ═══════════════════════════════════════
             building_photos = body.get("buildingPhotos", [])
-            if building_photos:
+            if mode == "anexa" and building_photos:
                 from docx.shared import Pt, Inches
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
                 from docx.oxml.ns import qn as docx_qn
@@ -1233,10 +1236,10 @@ class handler(BaseHTTPRequestHandler):
                 # Separator pagină nouă
                 doc.add_page_break()
 
-                # Titlu anexă
+                # Titlu secțiune H (conform structurii oficiale Anexa CPE)
                 title_p = doc.add_paragraph()
                 title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                title_run = title_p.add_run("ANEXĂ FOTOGRAFICĂ — DOCUMENTARE CLĂDIRE")
+                title_run = title_p.add_run("H. DOCUMENTARE FOTOGRAFICĂ A CLĂDIRII")
                 title_run.bold = True
                 title_run.font.size = Pt(11)
 
