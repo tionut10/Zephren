@@ -859,6 +859,73 @@ def _highlight_utility_class_cells(doc, data):
         shd.set(qn("w:color"), "auto")
         shd.set(qn("w:fill"), fill_hex)
 
+    def _text_color_for_bg(fill_hex):
+        """Alb pe fundal închis, negru pe fundal deschis (contrast WCAG)."""
+        r = int(fill_hex[0:2], 16)
+        g = int(fill_hex[2:4], 16)
+        b = int(fill_hex[4:6], 16)
+        lum = 0.299 * r + 0.587 * g + 0.114 * b
+        return "FFFFFF" if lum < 160 else "000000"
+
+    def _format_ro(val):
+        """Formatează număr cu 1 zecimală, virgulă românească."""
+        return "{:.1f}".format(val).replace(".", ",")
+
+    def _set_cell_text(cell, text, fill_hex):
+        """Înlocuiește textul celulei cu valoarea reală, păstrând formatarea."""
+        tc = cell._tc
+        text_color = _text_color_for_bg(fill_hex)
+        # Colectăm proprietățile run-ului existent (dimensiune font etc.)
+        existing_sz = None
+        for p in tc.iter(qn("w:p")):
+            for r in p.iter(qn("w:r")):
+                rPr = r.find(qn("w:rPr"))
+                if rPr is not None:
+                    sz_el = rPr.find(qn("w:sz"))
+                    if sz_el is not None:
+                        existing_sz = sz_el.get(qn("w:val"))
+                break
+            if existing_sz:
+                break
+        # Ștergem toate paragrafele și recreem unul singur centrat
+        for p in list(tc.findall(qn("w:p"))):
+            tc.remove(p)
+        # Paragraph nou
+        p_new = _OxmlElement("w:p")
+        pPr = _OxmlElement("w:pPr")
+        jc = _OxmlElement("w:jc")
+        jc.set(qn("w:val"), "center")
+        pPr.append(jc)
+        sp = _OxmlElement("w:spacing")
+        sp.set(qn("w:before"), "0")
+        sp.set(qn("w:after"), "0")
+        pPr.append(sp)
+        p_new.append(pPr)
+        # Run nou
+        r_new = _OxmlElement("w:r")
+        rPr = _OxmlElement("w:rPr")
+        # Bold
+        b_el = _OxmlElement("w:b")
+        rPr.append(b_el)
+        # Culoare text
+        color_el = _OxmlElement("w:color")
+        color_el.set(qn("w:val"), text_color)
+        rPr.append(color_el)
+        # Dimensiune font (dacă am extras-o)
+        if existing_sz:
+            sz_new = _OxmlElement("w:sz")
+            sz_new.set(qn("w:val"), existing_sz)
+            rPr.append(sz_new)
+            szCs_new = _OxmlElement("w:szCs")
+            szCs_new.set(qn("w:val"), existing_sz)
+            rPr.append(szCs_new)
+        r_new.append(rPr)
+        t_el = _OxmlElement("w:t")
+        t_el.text = text
+        r_new.append(t_el)
+        p_new.append(r_new)
+        tc.append(p_new)
+
     def _parse_range(text):
         """Returnează (lo, hi) din text ca '≤30', '30...42', '>484'."""
         text = text.replace("\xa0", " ").strip()
@@ -929,7 +996,9 @@ def _highlight_utility_class_cells(doc, data):
 
         class_idx = col_idx - 1  # 0=A+, 1=A, ..., 7=G
         if 0 <= class_idx < len(_COL_FILLS):
-            _apply_shading(unique[col_idx], _COL_FILLS[class_idx])
+            fill = _COL_FILLS[class_idx]
+            _apply_shading(unique[col_idx], fill)
+            _set_cell_text(unique[col_idx], _format_ro(ep_val), fill)
 
 
 # ═══════════════════════════════════════════════════════
