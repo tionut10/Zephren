@@ -860,12 +860,17 @@ def _highlight_utility_class_cells(doc, data):
         shd.set(qn("w:fill"), fill_hex)
 
     def _text_color_for_bg(fill_hex):
-        """Alb pe fundal închis, negru pe fundal deschis (contrast WCAG)."""
+        """Negru sau alb — alege culoarea cu contrast WCAG mai mare față de fundal."""
+        def to_lin(c8):
+            v = c8 / 255.0
+            return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
         r = int(fill_hex[0:2], 16)
         g = int(fill_hex[2:4], 16)
         b = int(fill_hex[4:6], 16)
-        lum = 0.299 * r + 0.587 * g + 0.114 * b
-        return "FFFFFF" if lum < 160 else "000000"
+        L = 0.2126 * to_lin(r) + 0.7152 * to_lin(g) + 0.0722 * to_lin(b)
+        # Pragul de echilibru: L=0.179 → contrast alb = contrast negru
+        # Sub prag → alb are contrast mai mare; peste prag → negru are contrast mai mare
+        return "FFFFFF" if L < 0.179 else "000000"
 
     def _format_ro(val):
         """Formatează număr cu 1 zecimală, virgulă românească."""
