@@ -1337,22 +1337,46 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             # 7. STRIP TRAILING EMPTY PARAGRAPHS
             # ═══════════════════════════════════════
-            # Elimină paragrafele goale de la finalul documentului
-            # (cauzează pagina a 2-a goală în Word/LibreOffice)
+            # Elimină conținutul de la finalul documentului care depășește pagina 1
+            # (tabelul de bare cod + paragrafele goale → cauzează pagina 2 goală)
             body_el = doc.element.body
             sect_pr = body_el.find(qn("w:sectPr"))
             if sect_pr is not None:
+                def _get_texts(el):
+                    return [t.text for t in el.iter(qn("w:t")) if t.text and t.text.strip()]
+
+                # Pasul A: elimină paragrafele goale de la final
                 children = list(body_el)
                 sect_idx = children.index(sect_pr)
-                # Parcurge de la finalul documentului spre sectPr
                 for child in reversed(children[:sect_idx]):
                     if child.tag != qn("w:p"):
                         break
-                    # Un paragraf e considerat gol dacă nu conține text
-                    texts = [t.text for t in child.iter(qn("w:t")) if t.text and t.text.strip()]
-                    if texts:
+                    if _get_texts(child):
                         break
                     body_el.remove(child)
+
+                # Pasul B (CPE only): elimină tabelul de bare cod de la final
+                # (placeholder "COD UNIC DE BARE" — barecod-ul real se adaugă de ANRE,
+                # nu de aplicație; prezența lui poate forța o pagina 2 inutilă)
+                if mode == "cpe":
+                    children = list(body_el)
+                    sect_idx = children.index(sect_pr)
+                    for child in reversed(children[:sect_idx]):
+                        if child.tag == qn("w:tbl"):
+                            all_text = " ".join(_get_texts(child))
+                            if "COD" in all_text.upper() and ("BARE" in all_text.upper() or "BARCODE" in all_text.upper() or "BAZA" in all_text.upper()):
+                                body_el.remove(child)
+                        break  # verifică doar ultimul element
+
+                    # Pasul C: elimină din nou paragrafele goale rămase după tabel
+                    children = list(body_el)
+                    sect_idx = children.index(sect_pr)
+                    for child in reversed(children[:sect_idx]):
+                        if child.tag != qn("w:p"):
+                            break
+                        if _get_texts(child):
+                            break
+                        body_el.remove(child)
 
             # ═══════════════════════════════════════
             # 8. SAVE & RETURN
