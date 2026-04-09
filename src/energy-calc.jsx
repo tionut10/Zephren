@@ -5924,14 +5924,9 @@ export default function EnergyCalcApp({ cloud }) {
               className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
               {lang==="EN"?"New":"Nou"}
             </button>
-            <button onClick={exportExcel}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-green-500/20 hover:bg-green-500/10 transition-colors hidden lg:flex shrink-0 text-green-400">
-              📗<span className="hidden lg:inline"> XLSX</span>
-            </button>
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
             <button onClick={() => setShowQuickFill(true)} className="text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors hidden sm:flex shrink-0" title="Completare rapidă date clădire">⚡<span className="hidden lg:inline"> Quick Fill</span></button>
-            <button onClick={() => setShowAuditForm(true)} className="text-xs px-2 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold transition-colors hidden md:flex shrink-0" title="Date audit client">📋<span className="hidden lg:inline"> Audit</span></button>
             <button onClick={saveToCloud} className={`text-xs px-2 py-1 rounded-lg border transition-colors hidden lg:flex shrink-0 ${cloud?.isLoggedIn ? "border-green-500/20 bg-green-500/5 hover:bg-green-500/10 text-green-400" : "border-white/10 hover:bg-white/5 opacity-40"}`} title={cloud?.isLoggedIn ? "Salvează în cloud" : "Autentifică-te pentru cloud"}>☁️</button>
             {cloud?.isLoggedIn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400/60 hidden xl:block shrink-0">{cloud.user?.name?.split(" ")[0] || cloud.user?.email?.split("@")[0]}</span>}
             {cloud?.isLoggedIn && <button onClick={cloud.logout} className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/5 text-white/30 hidden xl:block shrink-0">Logout</button>}
@@ -6001,7 +5996,9 @@ export default function EnergyCalcApp({ cloud }) {
                       {[
                         { icon: "💾", label: "Export JSON", action: exportProject },
                         { icon: "📊", label: "Export CSV", action: exportCSV },
+                        { icon: "📗", label: "Export XLSX", action: exportExcel, color: "text-green-400" },
                         { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
+                        { icon: "📋", label: "Formular Audit", action: () => setShowAuditForm(true), color: "text-sky-300" },
                       ].map((item, i) => (
                         <button key={i}
                           onClick={() => { item.action(); setShowMoreMenu(false); }}
