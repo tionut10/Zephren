@@ -1996,22 +1996,52 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                 </div>
 
-                {/* Preview CPE — renderizare DOCX oficial */}
-                <div className="xl:col-span-2 xl:sticky xl:top-6 xl:self-start">
-                  <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
-                    {!pdfPreviewUrl ? (
-                      <div className="text-center py-16 space-y-4">
-                        <div className="animate-pulse">
-                          <div className="text-4xl mb-3">📜</div>
-                          <div className="text-sm opacity-50">{lang==="EN" ? "Generating PDF preview..." : "Se generează previzualizarea PDF..."}</div>
+                {/* Preview CPE + Anexa preview — coloana 2+3 */}
+                <div className="xl:col-span-2 space-y-5">
+                  <div className="xl:sticky xl:top-6">
+                    <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
+                      {!pdfPreviewUrl ? (
+                        <div className="text-center py-16 space-y-4">
+                          <div className="animate-pulse">
+                            <div className="text-4xl mb-3">📜</div>
+                            <div className="text-sm opacity-50">{lang==="EN" ? "Generating PDF preview..." : "Se generează previzualizarea PDF..."}</div>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg overflow-hidden" style={{height:"85vh"}}>
-                        <iframe src={pdfPreviewUrl} className="w-full h-full border-0" title="CPE Preview PDF" />
-                      </div>
-                    )}
-                  </Card>
+                      ) : (
+                        <div className="bg-white rounded-lg overflow-hidden" style={{height:"85vh"}}>
+                          <iframe src={pdfPreviewUrl} className="w-full h-full border-0" title="CPE Preview PDF" />
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+
+                  {/* Anexa 1 + 2 preview — sub preview CPE */}
+                  {instSummary && (
+                    <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete">
+                      <CpeAnexa
+                        building={building}
+                        heating={heating} cooling={cooling} ventilation={ventilation}
+                        lighting={lighting} acm={acm}
+                        solarThermal={solarThermal} photovoltaic={photovoltaic}
+                        heatPump={heatPump} biomass={biomass}
+                        instSummary={instSummary} renewSummary={renewSummary}
+                        envelopeSummary={envelopeSummary}
+                        opaqueElements={opaqueElements} glazingElements={glazingElements}
+                        selectedClimate={selectedClimate}
+                        auditor={auditor}
+                        enClass={enClass} co2Class={co2Class}
+                        epFinal={epFinal} co2Final={co2Final} rer={rer}
+                        getNzebEpMax={getNzebEpMax}
+                        bacsClass={bacsClass}
+                        BUILDING_CATEGORIES={BUILDING_CATEGORIES} ELEMENT_TYPES={ELEMENT_TYPES}
+                        HEAT_SOURCES={HEAT_SOURCES} ACM_SOURCES={ACM_SOURCES}
+                        COOLING_SYSTEMS={COOLING_SYSTEMS} VENTILATION_TYPES={VENTILATION_TYPES}
+                        LIGHTING_TYPES={LIGHTING_TYPES}
+                        calcOpaqueR={calcOpaqueR}
+                        lang={lang}
+                      />
+                    </Card>
+                  )}
                 </div>
               </div>
 
@@ -2227,36 +2257,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   </div>
                 );
               })()}
-
-              {/* ── CPE ANEXA 1 + ANEXA 2 ── */}
-              {instSummary && (
-                <div className="mt-6">
-                  <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete">
-                    <CpeAnexa
-                      building={building}
-                      heating={heating} cooling={cooling} ventilation={ventilation}
-                      lighting={lighting} acm={acm}
-                      solarThermal={solarThermal} photovoltaic={photovoltaic}
-                      heatPump={heatPump} biomass={biomass}
-                      instSummary={instSummary} renewSummary={renewSummary}
-                      envelopeSummary={envelopeSummary}
-                      opaqueElements={opaqueElements} glazingElements={glazingElements}
-                      selectedClimate={selectedClimate}
-                      auditor={auditor}
-                      enClass={enClass} co2Class={co2Class}
-                      epFinal={epFinal} co2Final={co2Final} rer={rer}
-                      getNzebEpMax={getNzebEpMax}
-                      bacsClass={bacsClass}
-                      BUILDING_CATEGORIES={BUILDING_CATEGORIES} ELEMENT_TYPES={ELEMENT_TYPES}
-                      HEAT_SOURCES={HEAT_SOURCES} ACM_SOURCES={ACM_SOURCES}
-                      COOLING_SYSTEMS={COOLING_SYSTEMS} VENTILATION_TYPES={VENTILATION_TYPES}
-                      LIGHTING_TYPES={LIGHTING_TYPES}
-                      calcOpaqueR={calcOpaqueR}
-                      lang={lang}
-                    />
-                  </Card>
-                </div>
-              )}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
