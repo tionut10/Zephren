@@ -954,10 +954,13 @@ export default function Step6Certificate(props) {
               const sre_bio = renewSummary ? (Au > 0 ? renewSummary.qBio_ren / Au : 0) : 0;
               const sre_total = Au > 0 && renewSummary ? renewSummary.totalRenewable / Au : 0;
 
-              // Scale
-              const scaleColors = ["#00642d","#56aa1c","#c8d200","#ffed00","#f0ab00","#e17000","#d42517","#9c0a13"];
+              // Scale — culori reale extrase pixel-by-pixel din template MDLPA
+              const scaleColors    = ["#009B00","#32C831","#00FF00","#FFFF00","#F39C00","#FF6400","#FE4101","#FE0000"];
+              const co2ScaleColors = ["#0000FE","#3265FF","#009BFF","#9CD2FF","#BEBEBE","#969696","#646464","#333333"];
               const scaleLabels = CLASS_LABELS;
-              const co2Thresholds = (CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL).thresholds;
+              const co2Thresholds = (CO2_CLASSES_DB[baseCatResolved] || CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL).thresholds;
+              // Culoare text contrastantă (WCAG) pentru fundal hex
+              const txtClr = (hex) => { const h = hex.replace('#',''); const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255; return (0.2126*r+0.7152*g+0.0722*b)>0.4?'#000':'#fff'; };
 
               // Systems
               const heatSrc = HEAT_SOURCES.find(s => s.id === heating.source);
@@ -1164,8 +1167,8 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
   <td colspan="7" class="S" style="font-size:8pt;background:#E7E6E6">EMISII CO\u2082<br><span style="font-size:6pt;font-weight:normal">[kgCO\u2082/m\u00b2,an]</span></td>
 </tr>
 <tr>
-  <td colspan="13" style="text-align:center;font-size:6pt;color:#00642d;padding:1px;font-weight:bold">Performan\u021b\u0103 energetic\u0103 ridicat\u0103</td>
-  <td colspan="7" style="text-align:center;font-size:6pt;color:#00642d;padding:1px;font-weight:bold">Nivel de poluare sc\u0103zut</td>
+  <td colspan="13" style="text-align:center;font-size:6pt;color:#009B00;padding:1px;font-weight:bold">Performan\u021b\u0103 energetic\u0103 ridicat\u0103</td>
+  <td colspan="7" style="text-align:center;font-size:6pt;color:#0000FE;padding:1px;font-weight:bold">Nivel de poluare sc\u0103zut</td>
 </tr>
 ${scaleLabels.map((cls, idx) => {
   const t = grid?.thresholds || [];
@@ -1175,20 +1178,21 @@ ${scaleLabels.map((cls, idx) => {
   const isEp = idx === enClass.idx;
   const isCO2 = idx === co2Class.idx;
   const bg = scaleColors[idx];
+  const co2bg = co2ScaleColors[idx];
   const bw = 9 - idx;
   const rw = 13 - bw;
   const cw = Math.max(2, 5 - Math.floor(idx*0.5));
   const crw = 7 - cw;
   return '<tr class="br">' +
-    '<td colspan="' + bw + '" class="bl' + (isEp?' ba':'') + '" style="background:' + bg + '">' + cls + (isEp?'<span class="bm">\u25C0</span>':'') + '</td>' +
+    '<td colspan="' + bw + '" class="bl' + (isEp?' ba':'') + '" style="background:' + bg + ';color:' + txtClr(bg) + '">' + cls + (isEp?'<span class="bm">\u25C0</span>':'') + '</td>' +
     '<td colspan="' + rw + '" class="brng" style="border-left:none">' + rangeStr + (isEp?' <strong style="color:' + bg + '">\u25C0 ' + T.thisBuilding + ' ' + epFinal.toFixed(1) + ' kWh/m\u00b2,an</strong>':'') + '</td>' +
-    '<td colspan="' + cw + '" class="bl' + (isCO2?' ba':'') + '" style="background:' + bg + '">' + cls + (isCO2?'<span class="bm">\u25C0</span>':'') + '</td>' +
-    '<td colspan="' + crw + '" class="brng" style="border-left:none">' + co2Str + (isCO2?' <strong style="color:' + bg + '">\u25C0 ' + co2Final.toFixed(1) + '</strong>':'') + '</td>' +
+    '<td colspan="' + cw + '" class="bl' + (isCO2?' ba':'') + '" style="background:' + co2bg + ';color:' + txtClr(co2bg) + '">' + cls + (isCO2?'<span class="bm">\u25C0</span>':'') + '</td>' +
+    '<td colspan="' + crw + '" class="brng" style="border-left:none">' + co2Str + (isCO2?' <strong style="color:' + co2bg + '">\u25C0 ' + co2Final.toFixed(1) + '</strong>':'') + '</td>' +
   '</tr>';
 }).join("")}
 <tr>
-  <td colspan="13" style="text-align:center;font-size:6pt;color:#9c0a13;padding:1px;font-weight:bold">Performan\u021b\u0103 energetic\u0103 sc\u0103zut\u0103</td>
-  <td colspan="7" style="text-align:center;font-size:6pt;color:#9c0a13;padding:1px;font-weight:bold">Nivel de poluare ridicat</td>
+  <td colspan="13" style="text-align:center;font-size:6pt;color:#FE0000;padding:1px;font-weight:bold">Performan\u021b\u0103 energetic\u0103 sc\u0103zut\u0103</td>
+  <td colspan="7" style="text-align:center;font-size:6pt;color:#333333;padding:1px;font-weight:bold">Nivel de poluare ridicat</td>
 </tr>
 <tr>
   <td colspan="6" class="L" style="font-size:7pt"><strong>Consum specific anual [kWh/m\u00b2,an]:</strong></td>
@@ -1228,7 +1232,7 @@ ${scaleLabels.map((cls, idx) => {
   <td colspan="16" class="S3" style="background:#E7E6E6">Clas\u0103 energetic\u0103 / Consum specific anual de energie primar\u0103 per utilitate [kWh/m\u00b2,an]</td>
 </tr>
 <tr>
-  ${scaleLabels.map((lbl, i) => '<td colspan="2" style="background:' + scaleColors[i] + ';color:#fff;text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + lbl + '</td>').join("")}
+  ${scaleLabels.map((lbl, i) => '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + txtClr(scaleColors[i]) + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + lbl + '</td>').join("")}
 </tr>
 ${[
   { label: T.heating, sys: heatDesc, ep: ep_h_m2, cls: utilClassH },
@@ -1243,7 +1247,7 @@ ${[
     '<td colspan="3" class="L" style="font-size:6.5pt;padding:2px 3px">' + u.sys + '</td>' +
     scaleLabels.map((lbl, i) => {
       if (i === clsIdx) {
-        return '<td colspan="2" style="background:' + scaleColors[i] + ';color:#fff;text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + u.ep.toFixed(1) + '</td>';
+        return '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + txtClr(scaleColors[i]) + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + u.ep.toFixed(1) + '</td>';
       } else {
         return '<td colspan="2" style="border:1px solid #ddd;padding:2px"></td>';
       }

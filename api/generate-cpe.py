@@ -222,29 +222,29 @@ _CO2_CLASS_POS_V = {
 }
 
 
-# Culorile din template-urile CPE MDLPA — aliniate cu scaleColors din HTML preview
-# Aceeași paletă verde→galben→roșu pentru ambele scale EP și CO2
+# Culorile REALE din imaginile de fundal ale template-urilor CPE MDLPA
+# Extrase pixel-by-pixel din template-ul DOCX oficial (image1-16.jpeg)
 _EP_CLASS_COLORS = {
-    "A+": {"vml": "#00642d", "hex": "00642d"},  # verde închis
-    "A":  {"vml": "#56aa1c", "hex": "56aa1c"},  # verde
-    "B":  {"vml": "#c8d200", "hex": "c8d200"},  # galben-verde
-    "C":  {"vml": "#ffed00", "hex": "ffed00"},  # galben auriu
-    "D":  {"vml": "#f0ab00", "hex": "f0ab00"},  # portocaliu
-    "E":  {"vml": "#e17000", "hex": "e17000"},  # portocaliu închis
-    "F":  {"vml": "#d42517", "hex": "d42517"},  # roșu
-    "G":  {"vml": "#9c0a13", "hex": "9c0a13"},  # roșu închis
+    "A+": {"vml": "#009B00", "hex": "009B00"},  # verde închis
+    "A":  {"vml": "#32C831", "hex": "32C831"},  # verde mediu
+    "B":  {"vml": "#00FF00", "hex": "00FF00"},  # verde pur / lime
+    "C":  {"vml": "#FFFF00", "hex": "FFFF00"},  # galben pur
+    "D":  {"vml": "#F39C00", "hex": "F39C00"},  # chihlimbar
+    "E":  {"vml": "#FF6400", "hex": "FF6400"},  # portocaliu
+    "F":  {"vml": "#FE4101", "hex": "FE4101"},  # portocaliu-roșu
+    "G":  {"vml": "#FE0000", "hex": "FE0000"},  # roșu pur
 }
 
-# Aceeași paletă ca EP — template MDLPA folosește același gradient pentru ambele scale
+# Scala CO2 din template MDLPA — albastru (A+ → C) → gri (D → G)
 _CO2_CLASS_COLORS = {
-    "A+": {"vml": "#00642d", "hex": "00642d"},  # verde închis
-    "A":  {"vml": "#56aa1c", "hex": "56aa1c"},  # verde
-    "B":  {"vml": "#c8d200", "hex": "c8d200"},  # galben-verde
-    "C":  {"vml": "#ffed00", "hex": "ffed00"},  # galben auriu
-    "D":  {"vml": "#f0ab00", "hex": "f0ab00"},  # portocaliu
-    "E":  {"vml": "#e17000", "hex": "e17000"},  # portocaliu închis
-    "F":  {"vml": "#d42517", "hex": "d42517"},  # roșu
-    "G":  {"vml": "#9c0a13", "hex": "9c0a13"},  # roșu închis
+    "A+": {"vml": "#0000FE", "hex": "0000FE"},  # albastru închis
+    "A":  {"vml": "#3265FF", "hex": "3265FF"},  # albastru mediu
+    "B":  {"vml": "#009BFF", "hex": "009BFF"},  # albastru deschis
+    "C":  {"vml": "#9CD2FF", "hex": "9CD2FF"},  # albastru foarte deschis
+    "D":  {"vml": "#BEBEBE", "hex": "BEBEBE"},  # gri deschis
+    "E":  {"vml": "#969696", "hex": "969696"},  # gri mediu
+    "F":  {"vml": "#646464", "hex": "646464"},  # gri închis
+    "G":  {"vml": "#333333", "hex": "333333"},  # gri foarte închis
 }
 
 
@@ -432,6 +432,10 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     new_body = etree.fromstring(new_xml)
     parent = body.getparent()
     parent.replace(body, new_body)
+    # Resetează cache-ul intern python-docx (_body) — altfel doc.add_paragraph/table()
+    # adaugă la OLD body (detașat), nu la new_body. Foto și orice conținut adăugat
+    # după această funcție ar fi pierdut la save().
+    doc._Document__body = None
 
 
 # ═══════════════════════════════════════════════════════
