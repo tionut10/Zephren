@@ -5914,14 +5914,12 @@ export default function EnergyCalcApp({ cloud }) {
                   </span>
                 )}
               </button>
-              {cloud?.isLoggedIn && (
-                <button
-                  onClick={() => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }}
-                  title="Echipă & Cloud"
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors">
-                  👥 <span className="text-[10px]">Echipă</span>
-                </button>
-              )}
+              <button
+                onClick={() => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }}
+                title="Echipă & Cloud"
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-white/10 hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors">
+                👥 <span className="text-[10px]">Echipă</span>
+              </button>
             </div>
           </div>
 
