@@ -431,14 +431,39 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     for m, letter, h, v in co2_indicators:
         move_indicator(m, co2_class_real, _CO2_CLASS_POS_V, v, is_co2=True)
 
-    # Parse modified XML back into the document
-    new_body = etree.fromstring(new_xml)
-    parent = body.getparent()
-    parent.replace(body, new_body)
-    # Resetează cache-ul intern python-docx (_body) — altfel doc.add_paragraph/table()
-    # adaugă la OLD body (detașat), nu la new_body. Foto și orice conținut adăugat
-    # după această funcție ar fi pierdut la save().
-    doc._Document__body = None
+    # Aplică modificările IN-PLACE (nu înlocuim tot body-ul) — evită round-trip-ul XML
+    # care poate schimba subtil layout-ul documentului (overflow pagina 2).
+    alt_blocks_orig = [m.group(1) for m in alt_pattern.finditer(body_xml)]
+    alt_blocks_new  = [m.group(1) for m in alt_pattern.finditer(new_xml)]
+
+    MC_NS  = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc_tag = f"{{{MC_NS}}}AlternateContent"
+    body_mc_elems = list(body.iter(mc_tag))
+
+    # Construiește string-ul de declarații xmlns din nsmap-ul body-ului
+    ns_parts = []
+    for prefix, uri in body.nsmap.items():
+        if prefix is None:
+            ns_parts.append(f'xmlns="{uri}"')
+        else:
+            ns_parts.append(f'xmlns:{prefix}="{uri}"')
+    ns_decls = " ".join(ns_parts)
+
+    for i, (orig_str, new_str) in enumerate(zip(alt_blocks_orig, alt_blocks_new)):
+        if orig_str != new_str and i < len(body_mc_elems):
+            old_elem = body_mc_elems[i]
+            parent_el = old_elem.getparent()
+            idx = list(parent_el).index(old_elem)
+            try:
+                wrapper = etree.fromstring(
+                    f'<_wr {ns_decls}>{new_str}</_wr>'.encode("utf-8")
+                )
+                new_mc_elem = wrapper[0]
+                parent_el.remove(old_elem)
+                parent_el.insert(idx, new_mc_elem)
+            except Exception:
+                pass  # Dacă parsing eșuează, păstrăm elementul original
+    # Nu e nevoie de doc._Document__body = None — body-ul nu a fost înlocuit
 
 
 # ═══════════════════════════════════════════════════════
@@ -1337,15 +1362,15 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             # 7. STRIP TRAILING EMPTY PARAGRAPHS
             # ═══════════════════════════════════════
-            # Elimină conținutul de la finalul documentului care depășește pagina 1
-            # (tabelul de bare cod + paragrafele goale → cauzează pagina 2 goală)
+            # Elimină paragrafele goale de la finalul documentului (după tabelul de bare cod)
+            # Tabelul "COD UNIC DE BARE" se păstrează — face parte din modelul oficial CPE
             body_el = doc.element.body
             sect_pr = body_el.find(qn("w:sectPr"))
             if sect_pr is not None:
                 def _get_texts(el):
                     return [t.text for t in el.iter(qn("w:t")) if t.text and t.text.strip()]
 
-                # Pasul A: elimină paragrafele goale de la final
+                # Elimină paragrafele goale de la final (după conținut/tabel bare cod)
                 children = list(body_el)
                 sect_idx = children.index(sect_pr)
                 for child in reversed(children[:sect_idx]):
@@ -1354,29 +1379,6 @@ class handler(BaseHTTPRequestHandler):
                     if _get_texts(child):
                         break
                     body_el.remove(child)
-
-                # Pasul B (CPE only): elimină tabelul de bare cod de la final
-                # (placeholder "COD UNIC DE BARE" — barecod-ul real se adaugă de ANRE,
-                # nu de aplicație; prezența lui poate forța o pagina 2 inutilă)
-                if mode == "cpe":
-                    children = list(body_el)
-                    sect_idx = children.index(sect_pr)
-                    for child in reversed(children[:sect_idx]):
-                        if child.tag == qn("w:tbl"):
-                            all_text = " ".join(_get_texts(child))
-                            if "COD" in all_text.upper() and ("BARE" in all_text.upper() or "BARCODE" in all_text.upper() or "BAZA" in all_text.upper()):
-                                body_el.remove(child)
-                        break  # verifică doar ultimul element
-
-                    # Pasul C: elimină din nou paragrafele goale rămase după tabel
-                    children = list(body_el)
-                    sect_idx = children.index(sect_pr)
-                    for child in reversed(children[:sect_idx]):
-                        if child.tag != qn("w:p"):
-                            break
-                        if _get_texts(child):
-                            break
-                        body_el.remove(child)
 
             # ═══════════════════════════════════════
             # 8. SAVE & RETURN
