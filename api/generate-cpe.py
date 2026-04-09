@@ -1380,6 +1380,39 @@ class handler(BaseHTTPRequestHandler):
                         break
                     body_el.remove(child)
 
+                # ─── CPE: elimină spacing body paragraphs pentru a preveni overflow pagina 2 ──
+                # Înlocuirile de text (firma, adresă, etc.) pot mări celule → tabelele cresc
+                # → conținut depășește pagina 1. Reducem spacing-ul paragrafelor de la nivel body.
+                # Economie: ~11mm (suficient pentru orice date reale de audit)
+                if mode == "cpe":
+                    for child in list(body_el):
+                        if child.tag == qn("w:p"):
+                            pPr = child.find(qn("w:pPr"))
+                            if pPr is None:
+                                continue
+                            sp = pPr.find(qn("w:spacing"))
+                            if sp is None:
+                                continue
+                            for attr in (qn("w:after"), qn("w:before")):
+                                val = sp.get(attr)
+                                if val and int(val) > 0:
+                                    sp.set(attr, "0")
+                        elif child.tag == qn("w:tbl"):
+                            # Reducere spacing în tabelul de bare cod
+                            all_t = " ".join(t.text for t in child.iter(qn("w:t")) if t.text)
+                            if "COD" in all_t.upper() and "BARE" in all_t.upper():
+                                for p in child.iter(qn("w:p")):
+                                    pPr2 = p.find(qn("w:pPr"))
+                                    if pPr2 is None:
+                                        continue
+                                    sp2 = pPr2.find(qn("w:spacing"))
+                                    if sp2 is None:
+                                        continue
+                                    for attr in (qn("w:after"), qn("w:before")):
+                                        val = sp2.get(attr)
+                                        if val and int(val) > 0:
+                                            sp2.set(attr, "0")
+
             # ═══════════════════════════════════════
             # 8. SAVE & RETURN
             # ═══════════════════════════════════════
