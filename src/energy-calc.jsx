@@ -5924,21 +5924,9 @@ export default function EnergyCalcApp({ cloud }) {
               className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all shrink-0">
               {lang==="EN"?"New":"Nou"}
             </button>
-            <button onClick={exportProject}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden md:flex shrink-0">
-              💾<span className="hidden lg:inline"> JSON</span>
-            </button>
-            <button onClick={exportCSV}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden lg:flex shrink-0">
-              📊 CSV
-            </button>
             <button onClick={exportExcel}
               className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-green-500/20 hover:bg-green-500/10 transition-colors hidden lg:flex shrink-0 text-green-400">
-              📗 XLSX
-            </button>
-            <button onClick={() => importFileRef.current?.click()}
-              className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors hidden md:flex shrink-0">
-              📂<span className="hidden lg:inline"> Import</span>
+              📗<span className="hidden lg:inline"> XLSX</span>
             </button>
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
@@ -6005,6 +5993,23 @@ export default function EnergyCalcApp({ cloud }) {
                     {/* Separator vizibil doar dacă secțiunile mobile sunt prezente */}
                     <div className="lg:hidden border-t border-white/[0.06] mb-1 pt-1">
                       <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Instrumente</div>
+                    </div>
+
+                    {/* Export / Import — mereu vizibile (mutate din header) */}
+                    <div className="mb-1 pb-1 border-b border-white/[0.06]">
+                      <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Export / Import</div>
+                      {[
+                        { icon: "💾", label: "Export JSON", action: exportProject },
+                        { icon: "📊", label: "Export CSV", action: exportCSV },
+                        { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
+                      ].map((item, i) => (
+                        <button key={i}
+                          onClick={() => { item.action(); setShowMoreMenu(false); }}
+                          className={cn("w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-left text-xs transition-colors", item.color || "text-white/70")}>
+                          <span className="text-sm w-5 text-center">{item.icon}</span>
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
 
                     {/* Instrumente avansate — mereu vizibile (la toate dimensiunile) */}
