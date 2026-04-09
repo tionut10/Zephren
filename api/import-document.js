@@ -172,6 +172,50 @@ Reguli:
 - Completează orice date tehnice vizibile (U, R, straturi izolație)
 - RĂSPUNDE DOAR CU JSON, FĂRĂ alt text`;
 
+const DRAWING_PROMPT = `Ești un expert în certificarea energetică a clădirilor din România (Mc 001-2022).
+Analizează această planșă tehnică arhitecturală (plan de nivel, secțiune, plan situație, fațadă sau combinație) și extrage toate datele disponibile.
+
+Returnează DOAR JSON strict, fără alt text:
+{
+  "building": {
+    "address": "",
+    "city": "",
+    "county": "",
+    "postal": "",
+    "category": "RI|RC|RA|BI|ED|SA|HC|CO|SP|AL",
+    "structure": "Zidărie portantă|Cadre beton|Structură metalică|Panouri prefabricate|Lemn",
+    "yearBuilt": "",
+    "yearRenov": "",
+    "floors": "",
+    "areaUseful": "",
+    "volume": "",
+    "areaEnvelope": "",
+    "heightFloor": "",
+    "n50": "",
+    "scopCpe": "vanzare|inchiriere|reabilitare|constructie_noua"
+  },
+  "drawingInfo": {
+    "scale": "",
+    "drawingType": "plan_nivel|sectiune|fatada|plan_situatie|altele",
+    "projectName": "",
+    "notes": ""
+  },
+  "confidence": "high|medium|low"
+}
+
+Instrucțiuni de extragere:
+- areaUseful: caută notații Su, Suf, Aut, suprafață utilă, suprafață încălzită — în m²
+- volume: caută V, Vol, volum interior — în m³; dacă nu apare, calculează din amprentă × înălțime × nr. etaje
+- floors: regimul de înălțime (ex: S+P+4E+M, P+2E); caută în titlul planșei sau cartuș
+- heightFloor: înălțimea liberă interioară sau înălțimea de etaj în m (ex: 2.75, 3.00)
+- areaEnvelope: suprafața totală a anvelopei (pereți exteriori + terasă + planșeu inferior)
+- structure: inferă din planșă (pereți structurali → zidărie, stâlpi+grinzi → cadre beton)
+- category: RI=casă unifamilială, RC=bloc, RA=apartament, BI=birouri, ED=școală, SA=sănătate, HC=hotel, CO=comercial
+- scale: scara planșei (ex: 1:100, 1:50)
+- Dacă un câmp nu este vizibil în planșă, lasă-l ""
+
+RĂSPUNDE DOAR CU JSON, FĂRĂ alt text.`;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -245,8 +289,30 @@ export default async function handler(req, res) {
         },
         { type: "text", text: FACADE_PROMPT },
       ];
+    } else if (fileType === "drawing") {
+      // Planșă tehnică arhitecturală (plan de nivel, secțiune, plan situație)
+      const base64Data = fileData.replace(/^data:[^;]+;base64,/, "");
+      const isImage = mimeType && mimeType.startsWith("image/");
+      if (isImage) {
+        messageContent = [
+          {
+            type: "image",
+            source: { type: "base64", media_type: mimeType, data: base64Data },
+          },
+          { type: "text", text: DRAWING_PROMPT },
+        ];
+      } else {
+        // PDF
+        messageContent = [
+          {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: base64Data },
+          },
+          { type: "text", text: DRAWING_PROMPT },
+        ];
+      }
     } else {
-      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image, ifc, facade" });
+      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image, ifc, facade, drawing" });
     }
 
     const response = await client.messages.create({

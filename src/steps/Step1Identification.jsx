@@ -116,6 +116,8 @@ export default function Step1Identification({
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [geoSuggestion, setGeoSuggestion] = useState(null);
   const [showIFC, setShowIFC] = useState(false);
+  const [drawingLoading, setDrawingLoading] = useState(false);
+  const drawingFileRef = useRef(null);
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
@@ -307,6 +309,80 @@ export default function Step1Identification({
     showToast("Date IFC/BIM aplicate cu succes", "success");
   }, [updateBuilding, showToast]);
 
+  // ── Handler upload planșă tehnică ─────────────────────────────────────────────
+  const handleDrawingUpload = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showToast("Planșa depășește limita de 5 MB.", "error");
+      return;
+    }
+
+    setDrawingLoading(true);
+    showToast("Se analizează planșa tehnică...", "info", 8000);
+
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = ev => resolve(ev.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/import-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileType: "drawing",
+          fileData: base64,
+          mimeType: file.type || "image/jpeg",
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.data) {
+        showToast(json.error || "Analiză planșă eșuată.", "error");
+        return;
+      }
+
+      const b = json.data.building || {};
+      let applied = 0;
+      const apply = (key, val) => {
+        if (val && String(val).trim()) { updateBuilding(key, String(val).trim()); applied++; }
+      };
+      apply("address", b.address);
+      apply("city", b.city);
+      apply("county", b.county);
+      apply("postal", b.postal);
+      apply("category", b.category);
+      apply("structure", b.structure);
+      apply("yearBuilt", b.yearBuilt);
+      apply("yearRenov", b.yearRenov);
+      apply("floors", b.floors);
+      apply("areaUseful", b.areaUseful);
+      apply("volume", b.volume);
+      apply("areaEnvelope", b.areaEnvelope);
+      apply("heightFloor", b.heightFloor);
+      apply("n50", b.n50);
+      apply("scopCpe", b.scopCpe);
+
+      const conf = json.data.confidence || "medium";
+      const confLabel = conf === "high" ? "ridicată" : conf === "low" ? "scăzută" : "medie";
+      showToast(
+        `Planșă analizată: ${applied} câmpuri completate (încredere ${confLabel}).`,
+        applied > 0 ? "success" : "info",
+        6000
+      );
+    } catch (err) {
+      showToast("Eroare la analiza planșei: " + err.message, "error");
+    } finally {
+      setDrawingLoading(false);
+    }
+  }, [updateBuilding, showToast]);
+
 
   // Proiect gol = niciun câmp esențial completat
   const isEmptyProject = !building.address && !building.city && !building.areaUseful;
@@ -420,6 +496,24 @@ export default function Step1Identification({
                 className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-all"
               >
                 <span>📎</span> Import IFC/BIM
+              </button>
+
+              {/* Analiză planșă tehnică cu AI */}
+              <input
+                ref={drawingFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={handleDrawingUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => drawingFileRef.current?.click()}
+                disabled={drawingLoading}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {drawingLoading
+                  ? <><span className="w-3 h-3 rounded-full border border-indigo-400 border-t-transparent animate-spin" /> Se analizează planșa...</>
+                  : <><span>📐</span> Analizează planșă tehnică (AI)</>}
               </button>
 
               {/* Sugestie footprint clădire */}
