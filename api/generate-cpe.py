@@ -809,6 +809,130 @@ def format_ro(val, dec=1):
 
 
 # ═══════════════════════════════════════════════════════
+# COLORARE CLASE ENERGETICE PER UTILITATE — tabelul de jos CPE
+# ═══════════════════════════════════════════════════════
+def _highlight_utility_class_cells(doc, data):
+    """Colorează cu culoarea clasei energetice celula din tabelul de jos CPE
+    care conține intervalul corespunzător consumului per utilitate.
+    Culorile corespund scalei EP: A+=verde închis → G=roșu."""
+    import re as _re
+    from docx.oxml import OxmlElement as _OxmlElement
+
+    # EP valori per utilitate (kWh/m²·an) — trimise din frontend
+    def _parse_ro(s):
+        try:
+            return float((s or "0").replace(",", "."))
+        except Exception:
+            return 0.0
+
+    ep_vals = {
+        "incalzire": _parse_ro(data.get("ep_incalzire", "")),
+        "acm":       _parse_ro(data.get("ep_acm", "")),
+        "racire":    _parse_ro(data.get("ep_racire", "")),
+        "ventilare": _parse_ro(data.get("ep_ventilare", "")),
+        "iluminat":  _parse_ro(data.get("ep_iluminat", "")),
+    }
+
+    # Culori per clasă (0=A+, 1=A, ..., 7=G) — identice cu _EP_CLASS_COLORS
+    _COL_FILLS = ["009B00", "32C831", "00FF00", "FFFF00", "F39C00", "FF6400", "FE4101", "FE0000"]
+
+    # Mapare cuvinte-cheie rând → cheie ep
+    _ROW_MAP = [
+        (["ncălzire", "ncalzire", "eating"],  "incalzire"),
+        (["Ap", "caldă", "calda", "ACM"],     "acm"),
+        (["Răcire", "Racire", "ooling"],       "racire"),
+        (["Ventilare", "entilat"],             "ventilare"),
+        (["luminat", "ghting"],                "iluminat"),
+    ]
+
+    def _apply_shading(cell, fill_hex):
+        tc = cell._tc
+        tcPr = tc.find(qn("w:tcPr"))
+        if tcPr is None:
+            tcPr = _OxmlElement("w:tcPr")
+            tc.insert(0, tcPr)
+        shd = tcPr.find(qn("w:shd"))
+        if shd is None:
+            shd = _OxmlElement("w:shd")
+            tcPr.append(shd)
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), fill_hex)
+
+    def _parse_range(text):
+        """Returnează (lo, hi) din text ca '≤30', '30...42', '>484'."""
+        text = text.replace("\xa0", " ").strip()
+        le_m = _re.search(r"[≤<]\s*([\d,\.]+)", text)
+        gt_m = _re.search(r"[>]\s*([\d,\.]+)", text)
+        rng_m = _re.search(r"([\d,\.]+)\s*[.\-–…]+\s*([\d,\.]+)", text)
+        if le_m:
+            return (None, float(le_m.group(1).replace(",", ".")))
+        if rng_m:
+            return (float(rng_m.group(1).replace(",", ".")), float(rng_m.group(2).replace(",", ".")))
+        if gt_m:
+            return (float(gt_m.group(1).replace(",", ".")), None)
+        return None
+
+    def _in_range(v, rng):
+        lo, hi = rng
+        if lo is None: return v <= hi
+        if hi is None: return v > lo
+        return lo <= v <= hi
+
+    # Găsește tabelul cu "Clasă energetică" și utility rows
+    target = None
+    for tbl in doc.tables:
+        txt = " ".join(c.text for r in tbl.rows for c in r.cells)
+        if ("lasă energetic" in txt or "lasa energetic" in txt) and \
+           ("ncălzire" in txt or "ncalzire" in txt or "eating" in txt):
+            target = tbl
+            break
+    if not target:
+        return
+
+    for row in target.rows:
+        cells = row.cells
+        if len(cells) < 3:
+            continue
+        first_text = cells[0].text.strip()
+
+        ep_key = None
+        for keywords, key in _ROW_MAP:
+            if any(kw in first_text for kw in keywords):
+                ep_key = key
+                break
+        if ep_key is None:
+            continue
+
+        ep_val = ep_vals.get(ep_key, 0.0)
+        if ep_val <= 0:
+            continue
+
+        # Deduplifică celulele fuzionate (python-docx returnează duplicate la merge)
+        seen_ids = set()
+        unique = []
+        for c in cells:
+            cid = id(c._tc)
+            if cid not in seen_ids:
+                seen_ids.add(cid)
+                unique.append(c)
+        # unique[0] = coloana etichetă; unique[1..8] = A+ → G
+        col_idx = None
+        for i in range(1, len(unique)):
+            rng = _parse_range(unique[i].text)
+            if rng and _in_range(ep_val, rng):
+                col_idx = i
+                break
+
+        if col_idx is None:
+            continue
+
+        class_idx = col_idx - 1  # 0=A+, 1=A, ..., 7=G
+        if 0 <= class_idx < len(_COL_FILLS):
+            _apply_shading(unique[col_idx], _COL_FILLS[class_idx])
+
+
+# ═══════════════════════════════════════════════════════
 # MAIN HANDLER
 # ═══════════════════════════════════════════════════════
 class handler(BaseHTTPRequestHandler):
@@ -1358,6 +1482,14 @@ class handler(BaseHTTPRequestHandler):
                                     if np_.runs:
                                         np_.runs[0].font.size = Pt(6)
                         i += 2
+
+            # ═══════════════════════════════════════
+            # 6b. COLORARE CELULE CLASE ENERGETICE PER UTILITATE
+            # ═══════════════════════════════════════
+            # Evidențiază cu culoarea clasei celula din tabelul de jos care conține
+            # intervalul în care se încadrează consumul specific al fiecărei utilități
+            if mode == "cpe":
+                _highlight_utility_class_cells(doc, data)
 
             # ═══════════════════════════════════════
             # 7. STRIP TRAILING EMPTY PARAGRAPHS

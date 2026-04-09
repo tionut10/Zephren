@@ -207,6 +207,12 @@ export default function Step6Certificate(props) {
                       return {type: el.type, u: rL > 0 ? 1/(rsi+rL+rse) : 0};
                     })),
                     glazing_max_u: String(glazingElements.length > 0 ? Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;})) : 0),
+                    // EP per utilitate (kWh/m²·an) — pentru colorare celule tabel clase
+                    ep_incalzire: fmtRo(Au > 0 ? (instSummary?.ep_h || 0) / Au : 0, 1),
+                    ep_acm:       fmtRo(Au > 0 ? (instSummary?.ep_w || 0) / Au : 0, 1),
+                    ep_racire:    fmtRo(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, 1),
+                    ep_ventilare: fmtRo(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, 1),
+                    ep_iluminat:  fmtRo(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, 1),
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };
