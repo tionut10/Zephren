@@ -497,6 +497,14 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </li>
                 ))}
               </ul>
+              {!["free", "asociatie"].includes(p.id) && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", background: isDark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "13px" }}>🔒</span>
+                  <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: "600", lineHeight: "1.4" }}>
+                    {lang === "EN" ? "Price locked while subscription is active" : "Prețul rămâne blocat cât abonamentul e activ"}
+                  </span>
+                </div>
+              )}
               {p.id === "asociatie" ? (
                 <a href="mailto:contact@zephren.ro" style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1px solid ${border}`, background: "transparent", color: text, fontSize: "14px", fontWeight: "600", cursor: "pointer", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
                   {T("plan_asociatie_cta", p.cta)}
@@ -508,6 +516,43 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               )}
             </div>
           ))}
+        </div>
+
+        {/* ── Price Lock explicație ── */}
+        <div style={{ maxWidth: "1140px", margin: "32px auto 0", padding: "24px 32px", borderRadius: "16px", background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.2)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
+            <div style={{ fontSize: "28px", lineHeight: 1 }}>🔒</div>
+            <div style={{ flex: 1, minWidth: "220px" }}>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: "#6366f1", marginBottom: "8px" }}>
+                {lang === "EN" ? "Price locked for life — how it works" : "Prețul tău, blocat pe viață — cum funcționează"}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
+                {[
+                  {
+                    icon: "✅",
+                    title: lang === "EN" ? "Subscribe today" : "Te abonezi azi",
+                    desc: lang === "EN" ? "You pay the current price — forever, as long as the subscription is active." : "Plătești prețul de azi — pentru totdeauna, cât abonamentul rămâne activ.",
+                  },
+                  {
+                    icon: "📈",
+                    title: lang === "EN" ? "Prices may increase" : "Prețurile pot crește",
+                    desc: lang === "EN" ? "We will raise prices as we add features. Your locked price is never affected." : "Pe măsură ce adăugăm funcționalități, prețurile vor crește. Prețul tău blocat nu e afectat.",
+                  },
+                  {
+                    icon: "⚠️",
+                    title: lang === "EN" ? "If you cancel" : "Dacă anulezi",
+                    desc: lang === "EN" ? "The price lock is lost. When you reactivate, you pay the current price at that time." : "Beneficiul se pierde. La reactivare, vei fi taxat cu prețul curent din acel moment.",
+                  },
+                ].map(it => (
+                  <div key={it.title} style={{ padding: "14px 16px", borderRadius: "10px", background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.7)", border: `1px solid rgba(99,102,241,0.15)` }}>
+                    <div style={{ fontSize: "16px", marginBottom: "6px" }}>{it.icon}</div>
+                    <div style={{ fontSize: "12px", fontWeight: "700", color: text, marginBottom: "4px" }}>{it.title}</div>
+                    <div style={{ fontSize: "11px", color: textFaint, lineHeight: "1.5" }}>{it.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Ofertă de lansare ── */}
