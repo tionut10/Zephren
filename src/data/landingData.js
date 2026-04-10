@@ -246,6 +246,20 @@ export const PLANS = [
     cta: "Începe gratuit", highlight: false,
   },
   {
+    id: "starter", name: "Starter", price: "999", period: "/an",
+    priceAn: null, discount: null, annualOnly: true,
+    features: [
+      "CPE nelimitat",
+      "Export PDF fără watermark",
+      "Template-uri oficiale MDLPA",
+      "Raport conformare nZEB",
+      "Hartă climatică interactivă",
+      "1 utilizator",
+      "Factură SmartBill inclusă",
+    ],
+    cta: "Activează Starter", highlight: false,
+  },
+  {
     id: "standard", name: "Standard", price: "149", period: "/lună",
     priceAn: "1.499", discount: "~16%",
     features: [
@@ -261,7 +275,7 @@ export const PLANS = [
   },
   {
     id: "pro", name: "Pro", price: "299", period: "/lună",
-    priceAn: "2.999", discount: "~16%",
+    priceAn: "2.499", discount: "~30%",
     features: [
       "Tot din Standard +",
       "Export XML registru MDLPA",
@@ -272,6 +286,20 @@ export const PLANS = [
       "EN 12831 · PNRR · Pasivhaus",
     ],
     cta: "Activează Pro", highlight: true,
+  },
+  {
+    id: "business", name: "Business", price: "449", period: "/lună",
+    priceAn: "3.999", discount: "~26%",
+    features: [
+      "Tot din Pro +",
+      "Până la 10 utilizatori",
+      "Branding personalizat pe rapoarte",
+      "Dashboard statistici birou",
+      "Facturare centralizată",
+      "Suport telefonic dedicat",
+      "White-label disponibil",
+    ],
+    cta: "Activează Business", highlight: false,
   },
   {
     id: "asociatie", name: "Asociație", price: "negociat", period: "",

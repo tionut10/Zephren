@@ -470,27 +470,29 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       {/* ═══ PRICING ═══ */}
       <section id="pricing" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
         <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "48px", color: text }}>{T("price_title", "Planuri si preturi")}</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", maxWidth: "960px", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", maxWidth: "1140px", margin: "0 auto" }}>
           {PLANS.map(p => (
-            <div key={p.id} style={{ padding: "32px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
+            <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "RECOMMENDED" : "RECOMANDAT"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
+              {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ANNUAL ONLY" : "DOAR ANUAL"}</div>}
               {p.id === "asociatie" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ENTERPRISE" : "INSTITUȚIONAL"}</div>}
-              <h3 style={{ fontSize: "20px", fontWeight: "700", color: text }}>{p.name}</h3>
-              <div style={{ margin: "16px 0" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
+              <div style={{ margin: "14px 0" }}>
                 {p.id === "asociatie" ? (
                   <span style={{ fontSize: "20px", fontWeight: "700", color: textMuted }}>{lang === "EN" ? "Negotiated" : "Negociat"}</span>
                 ) : (
                   <>
-                    <span style={{ fontSize: p.price === "0" ? "40px" : "32px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
+                    <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
                     {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
                     {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#22c55e" }}>({p.discount})</span></div>}
+                    {p.annualOnly && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{lang === "EN" ? "annual billing · ~83 RON/month" : "facturare anuală · ~83 RON/lună"}</div>}
                   </>
                 )}
               </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "24px 0" }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                 {p.features.map(f => (
-                  <li key={f} style={{ fontSize: "14px", padding: "6px 0", color: textMuted, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <li key={f} style={{ fontSize: "13px", padding: "5px 0", color: textMuted, display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ color: "#22c55e" }}>✓</span> {f}
                   </li>
                 ))}
@@ -501,15 +503,56 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 </a>
               ) : (
                 <button onClick={() => onStart()} style={{ width: "100%", padding: "12px", borderRadius: "10px", border: p.highlight ? "none" : `1px solid ${border}`, background: p.highlight ? "#f59e0b" : "transparent", color: p.highlight ? "#000" : text, fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
-                  {p.id === "free" ? T("plan_free_cta", p.cta) : p.id === "standard" ? T("plan_standard_cta", p.cta) : T("plan_pro_cta", p.cta)}
+                  {p.cta}
                 </button>
               )}
             </div>
           ))}
         </div>
 
+        {/* ── Ofertă de lansare ── */}
+        <div style={{ maxWidth: "1140px", margin: "40px auto 0", padding: "28px 32px", borderRadius: "16px", background: isDark ? "rgba(99,102,241,0.08)" : "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.25)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", color: "#6366f1" }}>
+              {lang === "EN" ? "Launch offer — first 90 days" : "Ofertă lansare — primele 90 de zile"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
+            {[
+              { plan: "Starter", monthly: null, annual: "799", normalAnnual: "999", saving: "200" },
+              { plan: "Standard", monthly: "99", normalMonthly: "149", annual: "899", normalAnnual: "1.499", saving: "600" },
+            ].map(o => (
+              <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
+                {o.monthly && (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "22px", fontWeight: "900", color: "#6366f1" }}>{o.monthly}</span>
+                    <span style={{ fontSize: "11px", color: textFaint }}>RON/lună</span>
+                    <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalMonthly}</span>
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                  <span style={{ fontSize: o.monthly ? "16px" : "22px", fontWeight: "700", color: o.monthly ? textMuted : "#6366f1" }}>{o.annual}</span>
+                  <span style={{ fontSize: "11px", color: textFaint }}>RON/an</span>
+                  <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalAnnual}</span>
+                </div>
+                <div style={{ fontSize: "11px", color: "#22c55e", marginTop: "6px" }}>
+                  {lang === "EN" ? `Save ${o.saving} RON` : `Economie ${o.saving} RON`}
+                </div>
+              </div>
+            ))}
+            <div style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ fontSize: "12px", color: textFaint, lineHeight: "1.6" }}>
+                {lang === "EN"
+                  ? "Valid for new accounts created within the first 90 days of launch. Applied automatically at checkout."
+                  : "Valabilă pentru conturi noi create în primele 90 de zile de la lansare. Aplicată automat la plată."}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── Add-on per-raport (utilizatori Free) ── */}
-        <div style={{ maxWidth: "960px", margin: "40px auto 0", padding: "32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
+        <div style={{ maxWidth: "1140px", margin: "24px auto 0", padding: "28px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}>
               {lang === "EN" ? "Free plan add-ons" : "Add-on plan Free"}
@@ -532,6 +575,66 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <span style={{ fontSize: "20px", fontWeight: "900", color: "#f59e0b" }}>{a.price}</span>
                   <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>{a.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Credite pay-per-project ── */}
+        <div style={{ maxWidth: "1140px", margin: "24px auto 0", padding: "28px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" }}>
+              {lang === "EN" ? "Pay-per-project credits" : "Credite pay-per-project"}
+            </span>
+            <span style={{ fontSize: "13px", color: textMuted }}>
+              {lang === "EN" ? "No subscription · credits never expire · 1 simple CPE = 1 credit · complex audit = 2–3 credits" : "Fără abonament · creditele nu expiră · 1 CPE simplu = 1 credit · audit complex = 2–3 credite"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
+            {[
+              { label: "Micro", credits: "10", price: "49", perCredit: "4,9" },
+              { label: "Standard", credits: "50", price: "179", perCredit: "3,6" },
+              { label: "Pro", credits: "100", price: "299", perCredit: "3,0" },
+              { label: "Enterprise", credits: "200", price: "499", perCredit: "2,5" },
+            ].map(c => (
+              <div key={c.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+                <div style={{ fontSize: "12px", fontWeight: "700", color: textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.label}</div>
+                <div style={{ fontSize: "11px", color: textMuted, margin: "4px 0 10px" }}>{c.credits} {lang === "EN" ? "credits" : "credite"}</div>
+                <div>
+                  <span style={{ fontSize: "22px", fontWeight: "900", color: "#22c55e" }}>{c.price}</span>
+                  <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>RON</span>
+                </div>
+                <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>~{c.perCredit} RON/{lang === "EN" ? "credit" : "credit"}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Licențe perpetue ── */}
+        <div style={{ maxWidth: "1140px", margin: "24px auto 0", padding: "28px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.2)", color: "#10b981" }}>
+              {lang === "EN" ? "Perpetual licenses" : "Licențe perpetue"}
+            </span>
+            <span style={{ fontSize: "13px", color: textMuted }}>
+              {lang === "EN" ? "One-time payment · optional annual maintenance +149 RON/year (legislative updates)" : "Plată unică · mentenanță anuală opțională +149 RON/an (actualizări legislative)"}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+            {[
+              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "899", maint: "149" },
+              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "1.499", maint: "249" },
+              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "2.999", maint: "449" },
+            ].map(l => (
+              <div key={l.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>{l.label}</div>
+                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "2px" }}>{lang === "EN" ? `maintenance +${l.maint} RON/yr` : `mentenanță +${l.maint} RON/an`}</div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981" }}>{l.price}</span>
+                  <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>RON</span>
                 </div>
               </div>
             ))}
