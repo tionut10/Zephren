@@ -1155,7 +1155,7 @@ class handler(BaseHTTPRequestHandler):
                     replace_in_doc(doc, old, new)
 
             # nZEB status
-            replace_in_doc(doc, "nZEB DA/NU", "nZEB " + data.get("nzeb", "NU"))
+            replace_in_doc(doc, "nZEB DA/NU", "nZEB " + data.get("nzeb_conform", "NU"))
 
             # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
