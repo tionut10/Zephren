@@ -229,7 +229,7 @@ export const CHANGELOG = [
   },
 ];
 
-// ── Planuri de prețuri (sursa: STRATEGIA_PRETURI_ZEPHREN v4.2, apr. 2026) ──
+// ── Planuri de prețuri (sursa: STRATEGIA_PRETURI_ZEPHREN v5.0, apr. 2026) ──
 export const PLANS = [
   {
     id: "free", name: "Free", price: "0", period: "",
@@ -246,9 +246,9 @@ export const PLANS = [
     cta: "Începe gratuit", highlight: false,
   },
   {
-    id: "starter", name: "Starter", price: "99", period: "/lună",
-    priceAn: "1.099", discount: "37% sub AllEnergy",
-    eaPrice: "69", eaAnnual: "799",
+    id: "starter", name: "Starter", price: "149", period: "/lună",
+    priceAn: "1.490", discount: "50% sub AllEnergy",
+    eaPrice: "109", eaAnnual: "990",
     features: [
       "Proiecte CPE nelimitate",
       "Export PDF + Word oficial (Mc 001-2022)",
@@ -260,9 +260,9 @@ export const PLANS = [
     cta: "Activează Starter", highlight: false,
   },
   {
-    id: "professional", name: "Professional", price: "199", period: "/lună",
-    priceAn: "1.299", discount: "26% sub AllEnergy",
-    eaPrice: "149", eaAnnual: "990",
+    id: "professional", name: "Professional", price: "249", period: "/lună",
+    priceAn: "1.690", discount: "nZEB + SRE incluse gratis",
+    eaPrice: "179", eaAnnual: "1.190",
     features: [
       "Tot ce include Starter, plus:",
       "Calcule SRE, nZEB, audit energetic complet",
@@ -276,9 +276,9 @@ export const PLANS = [
     cta: "Activează Professional", highlight: true,
   },
   {
-    id: "business", name: "Business", price: "449", period: "/lună",
-    priceAn: "4.290", discount: null,
-    eaPrice: "349", eaAnnual: "3.290",
+    id: "business", name: "Business", price: "499", period: "/lună",
+    priceAn: "4.490", discount: null,
+    eaPrice: "349", eaAnnual: "3.190",
     features: [
       "Tot ce include Professional, plus:",
       "3 utilizatori (+89 RON/user/lună extra)",
@@ -291,9 +291,9 @@ export const PLANS = [
     cta: "Activează Business", highlight: false,
   },
   {
-    id: "asociatie", name: "Asociație", price: "2.499", period: "/lună",
-    priceAn: "19.990", discount: "90% sub ENERG+",
-    eaPrice: "1.799", eaAnnual: "14.990",
+    id: "asociatie", name: "Asociație", price: "2.999", period: "/lună",
+    priceAn: "23.990", discount: "83% sub ENERG+ echipă",
+    eaPrice: "1.999", eaAnnual: "15.990",
     features: [
       "Până la 25 (S) · 50 (M) · 100 (Pro) utilizatori",
       "Dashboard centralizat echipă",
