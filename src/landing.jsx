@@ -485,7 +485,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   <>
                     <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
                     {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
-                    {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#22c55e" }}>({p.discount})</span></div>}
+                    {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an{p.discount && <span style={{ color: "#22c55e" }}> ({p.discount})</span>}</div>}
                     {p.annualOnly && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{lang === "EN" ? "annual billing · ~83 RON/month" : "facturare anuală · ~83 RON/lună"}</div>}
                   </>
                 )}
