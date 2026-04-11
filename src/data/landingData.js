@@ -261,8 +261,8 @@ export const PLANS = [
   },
   {
     id: "professional", name: "Professional", price: "249", period: "/lună",
-    priceAn: "1.690", discount: "nZEB + SRE incluse gratis",
-    eaPrice: "179", eaAnnual: "1.190",
+    priceAn: "3.490", discount: "nZEB + SRE incluse gratis",
+    eaPrice: "179", eaAnnual: "2.490",
     features: [
       "Tot ce include Starter, plus:",
       "Calcule SRE, nZEB, audit energetic complet",
