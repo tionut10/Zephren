@@ -1175,7 +1175,7 @@ class handler(BaseHTTPRequestHandler):
                     replace_in_doc(doc, old, new)
 
             # nZEB status — bifează checkbox-ul dacă clădirea e nZEB
-            set_nzeb_checkbox(doc, data.get("nzeb_conform", "NU") == "DA")
+            set_nzeb_checkbox(doc, data.get("nzeb", "NU") == "DA")
 
             # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
