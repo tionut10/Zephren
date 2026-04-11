@@ -38,7 +38,7 @@ export default function CpeAnexa({
   const V = parseFloat(building.volume) || 0;
   const catLabel = BUILDING_CATEGORIES?.find(c => c.id === building.category)?.label || building.category;
   const epRefMax = getNzebEpMax ? getNzebEpMax(building.category, selectedClimate?.zone) : 148;
-  const nzebOk = epFinal <= epRefMax && rer >= 20;
+  const nzebOk = epFinal <= epRefMax && rer >= 30;
 
   const fmt = (v, d = 1) => v != null && !isNaN(v) ? parseFloat(v).toFixed(d) : "—";
   const fmtRo = (v, d = 1) => fmt(v, d).replace(".", ",");
@@ -136,6 +136,17 @@ export default function CpeAnexa({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Secțiunea I — Date generale */}
           <div>
+            {/* Badge nZEB prominent */}
+            <div className="mb-3 p-3 rounded-lg border-2" style={{
+              borderColor: nzebOk ? "#22c55e" : "#ef4444",
+              backgroundColor: nzebOk ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
+            }}>
+              <div className="text-[11px] opacity-50 mb-1">Conformitate nZEB</div>
+              <div className="text-2xl font-bold" style={{ color: nzebOk ? "#22c55e" : "#ef4444" }}>
+                {nzebOk ? "DA" : "NU"}
+              </div>
+            </div>
+
             <Section title="I. Date generale clădire">
               <Row label="Adresă" value={[building.address, building.city, building.county].filter(Boolean).join(", ") || "—"} />
               <Row label="Destinație" value={catLabel} />
