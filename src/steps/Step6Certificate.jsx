@@ -1132,7 +1132,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
   <td colspan="7" class="L"><strong>Categoria cl\u0103dirii:</strong> ${catLabel}</td>
   <td colspan="4" class="L"><strong>Anul construirii:</strong> ${building.yearBuilt || "AAAA"}</td>
   <td colspan="3" class="L"><strong>Renov.:</strong> ${building.yearRenov || "\u2014"}</td>
-  <td colspan="6" rowspan="5" class="stmp" style="padding:2px;vertical-align:middle;text-align:center">${auditor.photo ? '<img src="' + auditor.photo + '" style="max-width:100%;max-height:100px;object-fit:contain;display:inline-block;" />' : '<div style="font-size:7pt;color:#999">' + T.photo + '</div>'}</td>
+  <td colspan="6" rowspan="5" class="stmp" style="padding:2px;vertical-align:middle;text-align:center">${auditor.photo ? '<img src="' + auditor.photo + '" style="max-width:100%;max-height:100px;object-fit:contain;display:inline-block;" />' : '<div style="font-size:7pt;color:#999;text-align:center;width:100%">' + T.photo + '</div>'}</td>
 </tr>
 <tr>
   <td colspan="14" class="L"><strong>Adresa cl\u0103dirii:</strong> ${building.address || "\u2014"}, ${building.city || "\u2014"}, jud. ${building.county || "\u2014"}</td>
