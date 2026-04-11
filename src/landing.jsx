@@ -475,12 +475,17 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "RECOMMENDED" : "RECOMANDAT"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
-              {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ANNUAL ONLY" : "DOAR ANUAL"}</div>}
+              {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "PRICE LOCK" : "🔒 PRICE LOCK"}</div>}
               {p.id === "asociatie" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ENTERPRISE" : "INSTITUȚIONAL"}</div>}
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
               <div style={{ margin: "14px 0" }}>
                 {p.id === "asociatie" ? (
-                  <span style={{ fontSize: "20px", fontWeight: "700", color: textMuted }}>{lang === "EN" ? "Negotiated" : "Negociat"}</span>
+                  <>
+                    <span style={{ fontSize: "24px", fontWeight: "900", color: text }}>{p.price}</span>
+                    <span style={{ fontSize: "13px", color: textFaint }}>{" RON/lună"}</span>
+                    {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an{p.discount && <span style={{ color: "#22c55e" }}> ({p.discount})</span>}</div>}
+                    <div style={{ fontSize: "10px", color: textFaint, marginTop: "4px" }}>S · M · Pro — {lang === "EN" ? "see tiers" : "vezi tierele"}</div>
+                  </>
                 ) : (
                   <>
                     <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
