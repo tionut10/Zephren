@@ -152,6 +152,26 @@ def replace_in_txbx_only(doc, old_text, new_text):
     return total
 
 
+def set_nzeb_checkbox(doc, nzeb_ok):
+    """Check (DA) or uncheck (NU) the NZEB FORMCHECKBOX in the document via XML manipulation."""
+    W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    qW = f'{{{W}}}'
+
+    for p in doc.element.body.iter(f'{qW}p'):
+        texts = ''.join(t.text or '' for t in p.iter(f'{qW}t'))
+        if 'NZEB' not in texts:
+            continue
+        for cb in p.iter(f'{qW}checkBox'):
+            existing = cb.find(f'{qW}checked')
+            if nzeb_ok:
+                if existing is None:
+                    etree.SubElement(cb, f'{qW}checked')
+            else:
+                if existing is not None:
+                    cb.remove(existing)
+            return
+
+
 def replace_seq(doc, old_text, values):
     """Replace sequential occurrences of old_text with different values (body + tables + text boxes)."""
     idx = [0]
@@ -1154,8 +1174,8 @@ class handler(BaseHTTPRequestHandler):
                 if new:
                     replace_in_doc(doc, old, new)
 
-            # nZEB status
-            replace_in_doc(doc, "nZEB DA/NU", "nZEB " + data.get("nzeb_conform", "NU"))
+            # nZEB status — bifează checkbox-ul dacă clădirea e nZEB
+            set_nzeb_checkbox(doc, data.get("nzeb_conform", "NU") == "DA")
 
             # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
