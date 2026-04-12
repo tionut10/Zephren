@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useState } from "react";
+import { renderAsync } from "docx-preview";
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
 
@@ -46,6 +47,11 @@ export default function Step6Certificate(props) {
     buildingPhotos,
     t,
   } = props;
+
+            // Preview DOCX local — render cu docx-preview (identic cu fișierul descărcat)
+            const docxPreviewRef = useRef(null);
+            const [docxRendering, setDocxRendering] = useState(false);
+            const [docxRendered, setDocxRendered] = useState(false);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
@@ -1985,50 +1991,50 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                   <button onClick={async function() {
                     try {
+                      setDocxRendering(true);
+                      setDocxRendered(false);
                       showToast("Se generează preview CPE...", "info", 3000);
-
-                      // Încearcă DOCX via API Python + PDF via Gotenberg
                       const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                       const buf = await fetchTemplate(tpl.cpe);
                       const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
-                      if (docxBlob) {
-                        const pdfResp = await fetch("/api/preview-pdf", { method: "POST", body: docxBlob });
-                        if (pdfResp.ok) {
-                          const pdfBlob = await pdfResp.blob();
-                          if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                          const url = URL.createObjectURL(pdfBlob);
-                          setPdfPreviewUrl(url);
-                          showToast("Preview PDF generat", "success", 1500);
-                          return;
+                      if (docxBlob && docxPreviewRef.current) {
+                        const container = docxPreviewRef.current;
+                        container.innerHTML = "";
+                        await renderAsync(docxBlob, container, null, {
+                          className: "docx-preview-content",
+                          inWrapper: true,
+                          ignoreWidth: false,
+                          ignoreHeight: true,
+                          ignoreFonts: false,
+                          breakPages: true,
+                          useBase64URL: true,
+                        });
+                        // Scale to fit container width
+                        const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
+                        if (wrapper && wrapper.offsetWidth > 0) {
+                          const scale = (container.parentElement.clientWidth - 32) / wrapper.offsetWidth;
+                          if (scale < 1) {
+                            wrapper.style.transform = `scale(${scale})`;
+                            wrapper.style.transformOrigin = "top left";
+                            container.style.height = (wrapper.offsetHeight * scale) + "px";
+                          }
                         }
-                      }
-                      // Fallback (API indisponibil sau Gotenberg absent): preview HTML în iframe
-                      const html = generatePDF(false);
-                      if (html) {
-                        const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                        setPdfPreviewUrl(url);
-                        showToast("Preview generat (HTML)", "success", 1500);
+                        setDocxRendered(true);
+                        showToast("Preview generat", "success", 1500);
                       }
                     } catch(e) {
-                      // Fallback final pentru erori neașteptate (ex: fetchTemplate eșuat)
-                      try {
-                        const html = generatePDF(false);
-                        if (html) {
-                          const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-                          const url = URL.createObjectURL(blob);
-                          if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                          setPdfPreviewUrl(url);
-                        }
-                      } catch(e2) {
-                        showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
-                      }
+                      showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
+                      console.error("DOCX preview error:", e);
+                    } finally {
+                      setDocxRendering(false);
                     }
                   }}
                     data-auto-preview="true"
                     className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-all text-sm">
-                    <span className="text-lg">📄</span> {lang==="EN"?"Generate EPC (Print / PDF)":"Generează CPE (Print / PDF)"}
+                    {docxRendering
+                      ? <><span className="animate-spin">⏳</span> {lang==="EN"?"Generating preview...":"Se generează preview..."}</>
+                      : <><span className="text-lg">📄</span> {lang==="EN"?"Generate EPC Preview":"Generează Preview CPE"}</>
+                    }
                   </button>
 
                   {/* Certificate counter */}
@@ -2052,18 +2058,28 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 <div className="xl:col-span-2 space-y-5">
                   <div className="xl:sticky xl:top-6">
                     <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
-                      {!pdfPreviewUrl ? (
-                        <div className="text-center py-16 space-y-4">
-                          <div className="animate-pulse">
-                            <div className="text-4xl mb-3">📜</div>
-                            <div className="text-sm opacity-50">{lang==="EN" ? "Generating PDF preview..." : "Se generează previzualizarea PDF..."}</div>
+                      {/* Container docx-preview — vizibil mereu, conținut apare după render */}
+                      <div
+                        className="bg-white rounded-lg overflow-auto"
+                        style={{minHeight: docxRendered ? undefined : "320px", maxHeight: "85vh", position: "relative"}}
+                      >
+                        {!docxRendered && !docxRendering && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center pointer-events-none">
+                            <div className="text-5xl opacity-30">📜</div>
+                            <div className="text-sm opacity-40">
+                              {lang==="EN" ? "Click \"Generate EPC Preview\" to see the certificate" : "Apasă \"Generează Preview CPE\" pentru a vedea certificatul"}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="bg-white rounded-lg overflow-hidden" style={{height:"85vh"}}>
-                          <iframe src={pdfPreviewUrl} className="w-full h-full border-0" title="CPE Preview PDF" />
-                        </div>
-                      )}
+                        )}
+                        {docxRendering && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-sm opacity-60 animate-pulse">
+                              {lang==="EN" ? "Rendering certificate..." : "Se randează certificatul..."}
+                            </div>
+                          </div>
+                        )}
+                        <div ref={docxPreviewRef} className="docx-preview-wrapper" style={{display: docxRendered ? "block" : "none"}} />
+                      </div>
                     </Card>
                   </div>
 
