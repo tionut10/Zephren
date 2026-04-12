@@ -205,7 +205,7 @@ export function generateImportTemplate() {
     [" • .xlsx / .xls — Excel (recomandat, template-ul acesta)"],
     [" • .csv — tabel CSV cu elemente anvelopă"],
     [" • .json — proiect Zephren exportat anterior"],
-    [" • .xml — ENERG+, DOSET, gbXML (BIM)"],
+    [" • .xml — format XML energetic, DOSET, gbXML (BIM)"],
     [" • .pdf — certificat CPE, raport audit (extracție AI)"],
     [" • .docx — raport Word (extracție AI)"],
     [" • imagine JPG/PNG — CPE scanat (extracție AI)"],

@@ -2748,7 +2748,7 @@ export default function EnergyCalcApp({ cloud }) {
   // (exportExcelFull declared below, after selectedClimate)
 
   // ═══════════════════════════════════════════════════════════
-  // IMPORT ENERG+ XML — Parse ENERG+ format files
+  // IMPORT XML ENERGETIC — Parse format XML energetic (DOSET/gbXML/generic)
   // ═══════════════════════════════════════════════════════════
   const importENERGPlus = useCallback((file) => {
     const reader = new FileReader();
@@ -2759,7 +2759,7 @@ export default function EnergyCalcApp({ cloud }) {
         const getText = (tag) => doc.querySelector(tag)?.textContent?.trim() || "";
         const getNum = (tag) => parseFloat(getText(tag)) || 0;
 
-        // Try to extract building info from common ENERG+ XML structures
+        // Try to extract building info from common XML energetic structures
         const updates = {};
         const addr = getText("Adresa") || getText("adresa") || getText("Address");
         const locality = getText("Localitate") || getText("localitate") || getText("Oras");
@@ -2789,7 +2789,7 @@ export default function EnergyCalcApp({ cloud }) {
           const uVal = parseFloat(node.getAttribute("U") || node.getAttribute("u") || node.querySelector("U")?.textContent) || 0;
           const type = node.getAttribute("tip") || node.getAttribute("type") || "wall_ext";
           if (area > 0) {
-            importedOpaque.push({ name, area: area.toString(), type, orientation: "N", layers: [{ matName: "Import ENERG+", lambda: 0.5, thickness: (uVal > 0 ? Math.round(1000*0.5/((1/uVal)-0.17)) : 200).toString() }] });
+            importedOpaque.push({ name, area: area.toString(), type, orientation: "N", layers: [{ matName: "Import XML", lambda: 0.5, thickness: (uVal > 0 ? Math.round(1000*0.5/((1/uVal)-0.17)) : 200).toString() }] });
           }
         });
 
@@ -2800,9 +2800,9 @@ export default function EnergyCalcApp({ cloud }) {
           setOpaqueElements(prev => [...prev, ...importedOpaque]);
         }
 
-        showToast(`Import ENERG+: ${Object.keys(updates).length} câmpuri + ${importedOpaque.length} elemente`, "success");
+        showToast(`Import XML: ${Object.keys(updates).length} câmpuri + ${importedOpaque.length} elemente`, "success");
       } catch(e) {
-        showToast("Eroare parsare ENERG+ XML: " + e.message, "error");
+        showToast("Eroare parsare XML: " + e.message, "error");
       }
     };
     reader.readAsText(file);
@@ -3079,7 +3079,7 @@ export default function EnergyCalcApp({ cloud }) {
     } else if (file.name.endsWith(".csv")) {
       importCSV(file);
     } else if (file.name.endsWith(".xml") || file.name.endsWith(".gbxml")) {
-      // Detect format: DOSET, ENERG+, or gbXML
+      // Detect format: DOSET, gbXML, or format XML energetic generic
       var reader = new FileReader();
       reader.onload = function(ev) {
         var content = ev.target.result;

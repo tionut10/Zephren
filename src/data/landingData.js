@@ -291,7 +291,7 @@ export const PLANS = [
   },
   {
     id: "professional", name: "Professional", price: "799", period: "/lună",
-    priceAn: "7.999", discount: "27% sub Energ+ · toate funcțiile incluse",
+    priceAn: "7.999", discount: "Toate funcțiile incluse · cel mai bun raport calitate-preț",
     features: [
       "Tot ce include Standard, plus:",
       "Calcule SRE, nZEB, audit energetic complet",

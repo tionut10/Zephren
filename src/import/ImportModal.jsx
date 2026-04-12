@@ -1,6 +1,6 @@
 /**
  * ImportModal — Wizard import date clădire din multiple formate
- * Suportă: JSON, XLSX/XLS, CSV, XML (ENERG+/DOSET/gbXML), PDF, DOCX, imagini
+ * Suportă: JSON, XLSX/XLS, CSV, XML (DOSET/gbXML/format energetic), PDF, DOCX, imagini
  * Afișează previzualizare date extrase înainte de aplicare
  */
 import { useState, useRef, useCallback } from "react";
@@ -12,7 +12,7 @@ const FORMATS = [
   { ext: ".json",       icon: "{ }",  label: "Zephren JSON",     desc: "Proiect Zephren exportat",      color: "#6366f1", ai: false },
   { ext: ".xlsx/.xls",  icon: "XLS",  label: "Excel",            desc: "Template Zephren sau generic",  color: "#22c55e", ai: false },
   { ext: ".csv",        icon: "CSV",  label: "CSV Anvelopă",     desc: "Elemente constructive tabel",   color: "#84cc16", ai: false },
-  { ext: ".xml",        icon: "XML",  label: "XML (ENERG+/BIM)", desc: "ENERG+, DOSET, gbXML",         color: "#eab308", ai: false },
+  { ext: ".xml",        icon: "XML",  label: "XML Energetic",    desc: "DOSET, gbXML, format XML CE",   color: "#eab308", ai: false },
   { ext: ".ifc",        icon: "IFC",  label: "IFC/BIM",          desc: "Revit, ArchiCAD, gbXML (AI)",   color: "#06b6d4", ai: true  },
   { ext: ".pdf",        icon: "PDF",  label: "PDF",              desc: "Certificat CPE sau audit",      color: "#f97316", ai: true  },
   { ext: ".docx",       icon: "DOC",  label: "DOCX",             desc: "Raport Word (extracție AI)",    color: "#ef4444", ai: true  },
@@ -463,7 +463,7 @@ export default function ImportModal({
         setPhase("paste");
       }
     } else if (text.includes("<?xml") || text.includes("<") ) {
-      // XML — auto-detect ENERG+/DOSET/gbXML
+      // XML — auto-detect format energetic/DOSET/gbXML
       setLoadMsg("Parsare XML...");
       const blob = new Blob([text], { type: "text/xml" });
       const file = new File([blob], "pasted.xml", { type: "text/xml" });
@@ -632,12 +632,12 @@ export default function ImportModal({
               <span className="text-sm font-semibold">📋 Lipește conținut din alt soft</span>
             </div>
             <div className="text-[10px] opacity-40 mb-2">
-              Acceptă: JSON Zephren, XML ENERG+/DOSET/gbXML, text liber (descriere clădire)
+              Acceptă: JSON Zephren, XML energetic/DOSET/gbXML, text liber (descriere clădire)
             </div>
             <textarea
               value={pasteText}
               onChange={e => setPasteText(e.target.value)}
-              placeholder={`Lipești orice: XML din ENERG+, JSON, sau descriere liberă...\n\nEx: "Bloc 1980, 4 etaje, 3 camere, cazan gaz condensare, fără izolație, București"`}
+              placeholder={`Lipești orice: XML energetic, JSON, sau descriere liberă...\n\nEx: "Bloc 1980, 4 etaje, 3 camere, cazan gaz condensare, fără izolație, București"`}
               className="w-full h-40 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs font-mono resize-none focus:outline-none focus:border-white/20"
               autoFocus
             />
