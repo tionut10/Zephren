@@ -2010,51 +2010,120 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           experimental: true,
                         });
 
-                        // Stilizare fundal preview
+                        // Stilizare fundal
                         const styleEl = document.createElement('style');
                         styleEl.textContent = `
-                          .docx-preview-content .docx-wrapper {
-                            background: #e8e8e8 !important;
-                            padding: 12px !important;
-                            min-width: 0 !important;
-                          }
-                          .docx-preview-content .docx-wrapper section.page {
-                            position: relative !important;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                            margin-bottom: 12px !important;
-                          }
+                          .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
+                          .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
+                          .cpe-arrow-overlay { position:absolute; z-index:10; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:11px; color:#000; clip-path:polygon(0% 20%, 70% 20%, 70% 0%, 100% 50%, 70% 100%, 70% 80%, 0% 80%); }
                         `;
                         container.appendChild(styleEl);
 
-                        // Scalare: găsim lățimea naturală a paginii și scalăm să încapă în container
-                        await new Promise(r => setTimeout(r, 50)); // lasă browser-ul să randeze
-                        const page = container.querySelector('section.page') || container.querySelector('article.page');
-                        const outerBox = container.closest('.docx-preview-wrapper')?.parentElement || container.parentElement;
-                        const availW = outerBox.clientWidth - 24;
-                        const naturalW = page ? page.scrollWidth : container.scrollWidth;
-                        if (naturalW > 0 && availW > 0 && naturalW > availW) {
-                          const scale = availW / naturalW;
-                          const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
-                          if (wrapper) {
+                        // Așteptăm render complet
+                        await new Promise(r => setTimeout(r, 120));
+
+                        // ── SCALARE RESPONSIVĂ ──
+                        const outerBox = container.closest('.docx-preview-outer') || container.parentElement;
+                        const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
+                        if (wrapper) {
+                          const availW = outerBox.clientWidth - 8;
+                          const natW = wrapper.scrollWidth;
+                          if (natW > availW && availW > 0) {
+                            const sc = availW / natW;
                             wrapper.style.transformOrigin = "top left";
-                            wrapper.style.transform = `scale(${scale})`;
-                            // Ajustăm înălțimea containerului după scalare
-                            container.style.height = Math.ceil(wrapper.offsetHeight * scale) + "px";
+                            wrapper.style.transform = `scale(${sc})`;
+                            container.style.height = Math.ceil(wrapper.scrollHeight * sc) + "px";
                             container.style.overflow = "hidden";
                           }
                         }
 
-                        // Ascunde elementele floating care ies în afara paginii (x < 0)
-                        // Acestea sunt mc:AlternateContent shapes randate greșit de docx-preview
-                        const pages = container.querySelectorAll('section.page, article.page');
-                        pages.forEach(pg => {
-                          const pgLeft = pg.getBoundingClientRect().left;
-                          const stray = pg.querySelectorAll('[style*="position: absolute"]');
-                          stray.forEach(el => {
-                            const elLeft = el.getBoundingClientRect().left - pgLeft;
-                            if (elLeft < -20) el.style.visibility = "hidden";
-                          });
+                        // ── ASCUNDE săgețile randate greșit de docx-preview (relativeFrom="column" nesuportat) ──
+                        container.querySelectorAll('[style*="position: absolute"]').forEach(el => {
+                          const r = el.getBoundingClientRect();
+                          const pr = container.getBoundingClientRect();
+                          if (r.left < pr.left - 5 || r.right > pr.right + 5) {
+                            el.style.visibility = "hidden";
+                          }
                         });
+
+                        // ── INJECTEAZĂ săgeți CSS corecte în coloanele CLĂDIRE REALĂ / REF / CO2 ──
+                        const EP_COLORS = {"A+":"#009B00","A":"#32C831","B":"#00FF00","C":"#FFFF00","D":"#F39C00","E":"#FF6400","F":"#FE4101","G":"#FE0000"};
+                        const CO2_COLORS = {"A+":"#0000FE","A":"#3265FF","B":"#009BFF","C":"#3399CC","D":"#999999","E":"#AAAAAA","F":"#BBBBBB","G":"#333333"};
+                        // Poziție % din înălțimea scalei pentru fiecare clasă (din _CLASS_POS_V EMU)
+                        const CLASS_PCT = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
+                        const CO2_PCT  = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
+
+                        const epReal = enClass?.cls || enClassDocx?.cls || "C";
+                        const epRef  = getEnergyClass(epRefMax, catKey)?.cls || "A";
+                        const co2Cl  = co2Class?.cls || "C";
+
+                        // Găsim celula cu bara de scală EP (conține imagini cu clasele)
+                        // și celulele CLĂDIRE REALĂ / CLĂDIRE DE REFERINȚĂ / CO2 indicator
+                        const allCells = Array.from(container.querySelectorAll('td'));
+                        let realColCell = null, refColCell = null, co2IndCell = null, epScaleCell = null, co2ScaleCell = null;
+
+                        for (const cell of allCells) {
+                          const t = cell.textContent.replace(/\s+/g," ").trim();
+                          if (!realColCell && /CLĂDIRE\s*REALĂ/i.test(t) && t.length < 40) realColCell = cell;
+                          if (!refColCell && /CLĂDIRE\s*(DE\s*)?REFERINȚĂ/i.test(t) && t.length < 60) refColCell = cell;
+                          if (!co2IndCell && /NIVEL DE EMISII/i.test(t) && t.length > 20) co2IndCell = cell;
+                        }
+
+                        // Celula scalei EP = celula lată din stânga, în același tabel ca CLĂDIRE REALĂ
+                        if (realColCell) {
+                          const row = realColCell.closest('tr');
+                          if (row) {
+                            const cells = Array.from(row.cells);
+                            const idx = cells.indexOf(realColCell);
+                            if (idx > 0) epScaleCell = cells[idx - 1];
+                          }
+                        }
+                        if (co2IndCell) {
+                          const row = co2IndCell.closest('tr');
+                          if (row) {
+                            const cells = Array.from(row.cells);
+                            const idx = cells.indexOf(co2IndCell);
+                            if (idx < cells.length - 1) co2ScaleCell = cells[idx + 1] || cells[idx];
+                          }
+                        }
+
+                        // Funcție: injectează o săgeată în coloana dată la poziția clasei
+                        function injectArrow(col, cls, colors, pctMap, isRight=false) {
+                          if (!col || !cls) return;
+                          // Găsim tabelul cu scala (celulele cu benzile colorate) sub header
+                          const tbl = col.closest('table');
+                          if (!tbl) return;
+                          const tblRect = tbl.getBoundingClientRect();
+                          const colRect = col.getBoundingClientRect();
+                          const page = col.closest('section.page') || col.closest('article.page') || container;
+                          const pageRect = page.getBoundingClientRect();
+
+                          // Înălțimea scalei = înălțimea tabelului - rândul header
+                          const headerH = col.offsetHeight;
+                          const scaleH = tblRect.height - headerH;
+                          const pct = pctMap[cls] || 0;
+                          const arrowH = 28;
+                          const arrowW = colRect.width > 10 ? colRect.width - 4 : 70;
+
+                          const topPx = (tblRect.top - pageRect.top) + headerH + (scaleH * pct / 100) - arrowH / 2;
+                          const leftPx = colRect.left - pageRect.left + 2;
+
+                          const arrow = document.createElement('div');
+                          arrow.className = 'cpe-arrow-overlay';
+                          arrow.style.cssText = `
+                            top:${topPx}px; left:${leftPx}px;
+                            width:${arrowW}px; height:${arrowH}px;
+                            background:${colors[cls] || '#888'};
+                            color:${['C','D','A+','A','B'].includes(cls) && colors===EP_COLORS ? '#000':'#fff'};
+                          `;
+                          arrow.textContent = cls;
+                          page.appendChild(arrow);
+                        }
+
+                        injectArrow(realColCell, epReal, EP_COLORS, CLASS_PCT);
+                        injectArrow(refColCell, epRef, EP_COLORS, CLASS_PCT);
+                        if (co2IndCell) injectArrow(co2IndCell, co2Cl, CO2_COLORS, CO2_PCT, true);
+
                         setDocxRendered(true);
                         showToast("Preview generat", "success", 1500);
                       }
@@ -2096,7 +2165,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
                       {/* Container docx-preview — vizibil mereu, conținut apare după render */}
                       <div
-                        className="bg-white rounded-lg overflow-auto"
+                        className="docx-preview-outer bg-gray-200 rounded-lg overflow-auto"
                         style={{minHeight: docxRendered ? undefined : "320px", maxHeight: "85vh", position: "relative"}}
                       >
                         {!docxRendered && !docxRendering && (
