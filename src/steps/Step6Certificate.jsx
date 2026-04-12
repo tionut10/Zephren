@@ -225,7 +225,11 @@ export default function Step6Certificate(props) {
                 });
 
                 if (!resp.ok) {
-                  const err = await resp.json().catch(() => ({ error: "Server error" }));
+                  const contentType = resp.headers.get("content-type") || "";
+                  if (resp.status === 404 && !contentType.includes("json")) {
+                    throw new Error("API indisponibil (404). Reporniți dev server — proxy-ul trebuie să fie activ.");
+                  }
+                  const err = await resp.json().catch(() => ({ error: "Eroare server " + resp.status }));
                   throw new Error(err.error || "Eroare server: " + resp.status);
                 }
 

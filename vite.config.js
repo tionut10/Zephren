@@ -8,6 +8,16 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Proxy /api → producție Vercel în dev local (Python serverless indisponibil local)
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://energy-app-ruby.vercel.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   // Web Workers bundlați ca module ES (pct. 54 — calc-worker.js)
   worker: {
     format: 'es',
