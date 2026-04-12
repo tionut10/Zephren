@@ -5891,7 +5891,7 @@ export default function EnergyCalcApp({ cloud }) {
                 const isActive = userTier === tid || (userTier === "asociatie" && tid === "business");
                 const BADGE = {
                   free:       { label: "FREE", cls: "bg-white/15 text-white" },
-                  starter:    { label: "STR",  cls: "bg-sky-400 text-white shadow-sm" },
+                  starter:    { label: "STA",  cls: "bg-sky-400 text-white shadow-sm" },
                   standard:   { label: "STD",  cls: "bg-sky-500 text-white shadow-sm" },
                   pro:        { label: "⚡PRO", cls: "bg-amber-500 text-black shadow-sm" },
                   business:   { label: "BUS",  cls: "bg-violet-500 text-white shadow-sm" },
