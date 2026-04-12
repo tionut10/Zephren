@@ -1180,8 +1180,10 @@ class handler(BaseHTTPRequestHandler):
                         data.get("sre_other", "0,0"), data.get("sre_total", "0,0")]
             replace_seq(doc, "xxx,x", xxx_vals)
 
-            # FIX: ep_specific/ep_ref sunt acum în xxxx,x; xx,x = doar qf_thermal + qf_electric
-            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0")]
+            # xx,x = [qf_thermal_real, qf_electric_real, qf_thermal_ref, qf_electric_ref]
+            # Ordinea corespunde celor 4 apariții din template: real(t,e) + ref(t,e)
+            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0"),
+                       data.get("qf_thermal_ref", "0,0"), data.get("qf_electric_ref", "0,0")]
             replace_seq(doc, "xx,x", xx_vals)
 
             # FIX GPS: înlocuim placeholder-ul GPS cu marker temp înainte ca nr_units să
