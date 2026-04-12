@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { renderAsync } from "docx-preview";
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
@@ -50,8 +50,20 @@ export default function Step6Certificate(props) {
 
             // Preview DOCX local — render cu docx-preview (identic cu fișierul descărcat)
             const docxPreviewRef = useRef(null);
+            const previewBtnRef = useRef(null);
+            const hasAutoPreviewd = useRef(false);
             const [docxRendering, setDocxRendering] = useState(false);
             const [docxRendered, setDocxRendered] = useState(false);
+
+            // Auto-generare preview la prima deschidere a Pasului 6
+            useEffect(() => {
+              if (!instSummary || hasAutoPreviewd.current) return;
+              hasAutoPreviewd.current = true;
+              const t = setTimeout(() => {
+                previewBtnRef.current?.click();
+              }, 400);
+              return () => clearTimeout(t);
+            }, [instSummary]);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
@@ -2076,8 +2088,15 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           }
                         }
 
-                        // ── ASCUNDE săgețile randate greșit de docx-preview (relativeFrom="column" nesuportat) ──
+                        // ── ASCUNDE toate săgețile indicator randate de docx-preview din template ──
+                        // Ascundem ORICE element absolut-poziționat care conține o literă de clasă [A-G]+?
+                        // (sunt săgețile default din template — le înlocuim cu cele injectate CSS mai jos)
                         container.querySelectorAll('[style*="position: absolute"]').forEach(el => {
+                          const text = el.textContent.trim();
+                          if (/^[A-G]\+?$/.test(text)) {
+                            el.style.visibility = "hidden";
+                            return;
+                          }
                           const r = el.getBoundingClientRect();
                           const pr = container.getBoundingClientRect();
                           if (r.left < pr.left - 5 || r.right > pr.right + 5) {
@@ -2086,8 +2105,10 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         });
 
                         // ── INJECTEAZĂ săgeți CSS corecte în coloanele CLĂDIRE REALĂ / REF / CO2 ──
-                        const EP_COLORS = {"A+":"#009B00","A":"#32C831","B":"#00FF00","C":"#FFFF00","D":"#F39C00","E":"#FF6400","F":"#FE4101","G":"#FE0000"};
-                        const CO2_COLORS = {"A+":"#0000FE","A":"#3265FF","B":"#009BFF","C":"#3399CC","D":"#999999","E":"#AAAAAA","F":"#BBBBBB","G":"#333333"};
+                        const EP_COLORS  = {"A+":"#009B00","A":"#32C831","B":"#00FF00","C":"#FFFF00","D":"#F39C00","E":"#FF6400","F":"#FE4101","G":"#FE0000"};
+                        const CO2_COLORS = {"A+":"#0000FE","A":"#3265FF","B":"#009BFF","C":"#3399CC","D":"#808080","E":"#999999","F":"#AAAAAA","G":"#333333"};
+                        // Culoarea literei: A+=alb, A=alb, B=negru, C=negru, D=negru, E=negru, F=negru, G=alb
+                        const TEXT_COLOR = {"A+":"#fff","A":"#fff","B":"#000","C":"#000","D":"#000","E":"#000","F":"#000","G":"#fff"};
                         // Poziție % din înălțimea scalei pentru fiecare clasă (din _CLASS_POS_V EMU)
                         const CLASS_PCT = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
                         const CO2_PCT  = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
@@ -2153,7 +2174,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             top:${topPx}px; left:${leftPx}px;
                             width:${arrowW}px; height:${arrowH}px;
                             background:${colors[cls] || '#888'};
-                            color:${['C','D','A+','A','B'].includes(cls) && colors===EP_COLORS ? '#000':'#fff'};
+                            color:${TEXT_COLOR[cls] || '#000'};
                           `;
                           arrow.textContent = cls;
                           page.appendChild(arrow);
@@ -2173,6 +2194,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       setDocxRendering(false);
                     }
                   }}
+                    ref={previewBtnRef}
                     data-auto-preview="true"
                     className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-all text-sm">
                     {docxRendering

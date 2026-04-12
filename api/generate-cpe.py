@@ -269,18 +269,41 @@ _CO2_CLASS_COLORS = {
 
 
 def _text_color_for_bg(hex_color):
-    """Alege alb sau negru pentru text pe baza luminanței relative WCAG a fundalului.
-    Funcționează corect pentru AMBELE palete EP (verde/galben/roșu) și CO2 (albastru/gri)."""
+    """Culoarea literei din interiorul săgeții — conform specificației MDLPA:
+    A+=alb, A=alb, B=negru, C=negru, D=negru, E=negru, F=negru, G=alb.
+    Mapare după culoarea de fundal hex a clasei (EP și CO2)."""
+    # Tabel fix hex fundal → culoare text
+    _FIXED = {
+        # EP scale
+        "009B00": "FFFFFF",  # A+ verde închis → alb
+        "32C831": "FFFFFF",  # A  verde mediu  → alb
+        "00FF00": "000000",  # B  verde pur     → negru
+        "FFFF00": "000000",  # C  galben        → negru
+        "F39C00": "000000",  # D  portocaliu    → negru
+        "FF6400": "000000",  # E  portocaliu-roș→ negru
+        "FE4101": "000000",  # F  roșu-portocaliu→ negru
+        "FE0000": "FFFFFF",  # G  roșu          → alb
+        # CO2 scale
+        "0000FE": "FFFFFF",  # A+ albastru închis → alb
+        "3265FF": "FFFFFF",  # A  albastru mediu  → alb
+        "009BFF": "000000",  # B  albastru deschis→ negru
+        "3399CC": "000000",  # C  albastru-gri    → negru
+        "808080": "000000",  # D  gri mediu       → negru
+        "999999": "000000",  # E  gri deschis     → negru
+        "AAAAAA": "000000",  # F  gri foarte deschis→ negru
+        "333333": "FFFFFF",  # G  gri închis      → alb
+    }
+    key = hex_color.upper().lstrip("#")
+    if key in _FIXED:
+        return _FIXED[key]
+    # Fallback WCAG pentru culori neprevăzute
     try:
-        r = int(hex_color[0:2], 16) / 255.0
-        g = int(hex_color[2:4], 16) / 255.0
-        b = int(hex_color[4:6], 16) / 255.0
-        # Linearizare sRGB
+        r = int(key[0:2], 16) / 255.0
+        g = int(key[2:4], 16) / 255.0
+        b = int(key[4:6], 16) / 255.0
         def lin(c):
             return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
         lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
-        # Contrast cu alb: (lum+0.05)/0.05; contrast cu negru: 1.05/(lum+0.05)
-        # Alege culoarea cu contrast mai mare
         return "FFFFFF" if (lum + 0.05) < 0.5 else "000000"
     except Exception:
         return "000000"

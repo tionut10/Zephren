@@ -13,6 +13,22 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
+        "text": "indicatori clasa DOCX — eliminat filtrul h>150000 care excludea shape-urile EP"
+      },
+      {
+        "icon": "🔧",
+        "text": "culori clase energetice unificate — CO2 foloseste aceeasi schema verde-rosu ca EP"
+      },
+      {
+        "icon": "🔧",
+        "text": "proxy /api→Vercel în dev local; mesaj eroare 404 mai clar"
+      },
+      {
+        "icon": "📄",
+        "text": "epRefMax la nivel component + fallback preview fara re-throw din generateDocxCPE"
+      },
+      {
+        "icon": "📄",
         "text": "preview CPE fallback HTML + butoane DOCX active cu upgrade prompt pe free tier"
       },
       {
@@ -26,22 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "CPE: adaugă indicator Clădire de Referință pe scala EP și CO₂; fixează culoarea textului din săgeți să corespu"
-      },
-      {
-        "icon": "✨",
-        "text": "10 template-uri noi clădiri + ROICalculator/CPETracker/AuditInvoice integrate + AuditClientDataForm auto-popul"
-      },
-      {
-        "icon": "🔬",
-        "text": "Normative în normative.json — editare manuală fără cod JS"
-      },
-      {
-        "icon": "🔸",
-        "text": "APP_VERSION dinamic din changelog: badge v0.2.0 se sincronizează automat cu istoricul versiunilor"
-      },
-      {
-        "icon": "✨",
-        "text": "Landing dinamic: secțiune 8 pași reali, features din features.json, export/import auto-derivate, 48 module cal"
       }
     ]
   },
