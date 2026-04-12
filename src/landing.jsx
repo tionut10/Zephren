@@ -614,9 +614,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "15", unit: "RON/raport", note: lang === "EN" ? "over 3/month" : "peste 3/lună" },
-              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "120", unit: "RON", note: lang === "EN" ? "≈12 RON/report" : "≈12 RON/raport" },
-              { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "25", unit: "RON/doc", note: "PDF" },
+              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "29", unit: "RON/raport", note: lang === "EN" ? "over 3/month" : "peste 3/lună" },
+              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "249", unit: "RON", note: lang === "EN" ? "≈24,9 RON/report" : "≈24,9 RON/raport" },
+              { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "49", unit: "RON/doc", note: "PDF" },
             ].map(a => (
               <div key={a.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <div>
@@ -644,10 +644,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { label: "Micro", credits: "10", price: "49", perCredit: "4,9" },
-              { label: "Standard", credits: "50", price: "179", perCredit: "3,6" },
-              { label: "Pro", credits: "100", price: "299", perCredit: "3,0" },
-              { label: "Enterprise", credits: "200", price: "499", perCredit: "2,5" },
+              { label: "Micro", credits: "10", price: "99", perCredit: "9,9" },
+              { label: "Standard", credits: "50", price: "390", perCredit: "7,8" },
+              { label: "Pro", credits: "100", price: "690", perCredit: "6,9" },
+              { label: "Enterprise", credits: "200", price: "1.190", perCredit: "6,0" },
             ].map(c => (
               <div key={c.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.label}</div>
