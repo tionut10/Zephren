@@ -418,6 +418,7 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         # Culoarea textului calculată din luminanța WCAG a fundalului (valabil EP și CO2)
         text_color = _text_color_for_bg(color["hex"])
         if '<w:color' not in new_content:
+            # Adaugă <w:color> în fiecare <w:rPr> care nu-l are
             new_content = re.sub(
                 r'(<w:rPr>)([\s\S]*?)(</w:rPr>[\s\S]*?<w:t)',
                 r'\g<1>\g<2><w:color w:val="' + text_color + r'"/>\g<3>',
@@ -425,7 +426,18 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
                 count=2
             )
         else:
-            new_content = re.sub(r'<w:color w:val="[^"]*"/>', '<w:color w:val="' + text_color + '"/>', new_content)
+            # Înlocuiește TOATE variantele <w:color .../> (inclusiv cu w:themeColor, w:themeShade etc.)
+            new_content = re.sub(r'<w:color\b[^>]*/>', '<w:color w:val="' + text_color + '"/>', new_content)
+
+        # DrawingML text color (a:rPr solidFill) — pentru shape-uri cu text în a:t (nu w:t)
+        if '<a:t>' in new_content or '<a:t ' in new_content:
+            a_fill = '<a:solidFill><a:srgbClr val="' + text_color + '"/></a:solidFill>'
+            # Înlocuiește solidFill din a:rPr (nu din shape fill — cel din a:spPr)
+            new_content = re.sub(
+                r'(<a:rPr\b[^>]*>)([\s\S]*?)(<a:solidFill>[\s\S]*?</a:solidFill>)([\s\S]*?</a:rPr>)',
+                r'\g<1>\g<2>' + a_fill + r'\g<4>',
+                new_content
+            )
         new_xml = new_xml.replace(text_match.group(1), new_content, 1)
 
         # 2. Find and update paired pentagon (path shape right after textbox)
