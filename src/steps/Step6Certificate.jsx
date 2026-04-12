@@ -180,15 +180,15 @@ export default function Step6Certificate(props) {
                     gwp: fmtRo(gwpTotalDocx, 1),
                     // Date instalații + anvelopă (pentru checkbox-uri Anexa)
                     heating_source: heating.source || "",
-                    heating_fuel: heating.fuel || "",
+                    heating_fuel: (HEAT_SOURCES.find(function(s){return s.id===heating.source;})?.fuel) || "",
                     heating_control: heating.control || "",
-                    heating_power: String(heating.nominalPower || 0),
+                    heating_power: String(heating.power || 0),
                     acm_source: acm.source || "",
-                    cooling_source: cooling.source || "",
+                    cooling_source: cooling.system || "",
                     cooling_has: instSummary?.hasCool ? "true" : "false",
                     ventilation_type: ventilation.type || "",
                     lighting_type: lighting.type || "",
-                    lighting_control: lighting.control || "",
+                    lighting_control: lighting.controlType || "",
                     solar_thermal_enabled: solarThermal.enabled ? "true" : "false",
                     pv_enabled: photovoltaic.enabled ? "true" : "false",
                     heat_pump_enabled: heatPump.enabled ? "true" : "false",
@@ -778,7 +778,7 @@ export default function Step6Certificate(props) {
     <Adresa>${esc(building.address)}</Adresa>
     <Localitate>${esc(building.city)}</Localitate>
     <Judet>${esc(building.county)}</Judet>
-    <CodPostal>${esc(building.postalCode)}</CodPostal>
+    <CodPostal>${esc(building.postal)}</CodPostal>
     <AnConstructie>${esc(building.yearBuilt)}</AnConstructie>
     <AnRenovare>${esc(building.yearRenov)}</AnRenovare>
     <RegimInaltime>${esc(building.floors)}</RegimInaltime>
