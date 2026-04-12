@@ -545,14 +545,29 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "RECOMMENDED" : "RECOMANDAT"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
               {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🔒 PRICE LOCK</div>}
-              {p.id === "standard" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>⭐ POPULAR</div>}
+              {p.id === "business" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>👥 ECHIPĂ</div>}
+              {(p.id === "asociatie_s" || p.id === "asociatie_m" || p.id === "asociatie_pro") && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#0ea5e9", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🏛 ASOCIAȚIE</div>}
               {p.id === "enterprise" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>ENTERPRISE</div>}
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
               <div style={{ margin: "14px 0" }}>
-                <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
-                {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
+                {p.price === "Negociat" ? (
+                  <span style={{ fontSize: "22px", fontWeight: "900", color: text }}>Negociat</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
+                    {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
+                  </>
+                )}
                 {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
-                {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#f59e0b" }}>({p.discount})</span></div>}
+                {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#6366f1", fontWeight: "600" }}>({p.discount})</span></div>}
+                {p.eaPrice && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "8px", padding: "5px 9px", borderRadius: "7px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)", width: "fit-content" }}>
+                    <span style={{ fontSize: "10px" }}>🔒</span>
+                    <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: "700" }}>
+                      EA: {p.eaPrice} RON/lună{p.eaAn ? ` · ${p.eaAn} RON/an` : ""}
+                    </span>
+                  </div>
+                )}
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                 {p.features.map(f => (
@@ -561,7 +576,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </li>
                 ))}
               </ul>
-              {p.id !== "free" && (
+              {p.id !== "free" && p.price !== "Negociat" && !p.id.startsWith("asociatie") && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", background: isDark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: "12px" }}>
                   <span style={{ fontSize: "13px" }}>🔒</span>
                   <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: "600", lineHeight: "1.4" }}>
@@ -569,7 +584,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </span>
                 </div>
               )}
-              {p.id === "enterprise" ? (
+              {(p.id === "enterprise" || p.id.startsWith("asociatie")) ? (
                 <a href="mailto:contact@zephren.ro" style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1px solid ${border}`, background: "transparent", color: text, fontSize: "14px", fontWeight: "600", cursor: "pointer", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
                   {T("plan_asociatie_cta", p.cta)}
                 </a>
@@ -628,9 +643,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { plan: "Starter", monthly: "149", normalMonthly: "199", annual: null, normalAnnual: null, saving: "50" },
-              { plan: "Standard", monthly: "349", normalMonthly: "499", annual: null, normalAnnual: null, saving: "150" },
-              { plan: "Professional", monthly: "549", normalMonthly: "799", annual: "5.599", normalAnnual: "7.999", saving: "250" },
+              { plan: "Starter", monthly: "219", normalMonthly: "299", annual: "1.290", normalAnnual: "1.799", saving: "80 RON/lună · 509 RON/an" },
+              { plan: "Professional", monthly: "229", normalMonthly: "309", annual: "3.590", normalAnnual: "4.990", saving: "80 RON/lună · 1.400 RON/an" },
+              { plan: "Business", monthly: "499", normalMonthly: "699", annual: "4.390", normalAnnual: "5.990", saving: "200 RON/lună · 1.600 RON/an" },
             ].map(o => (
               <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
                 <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
@@ -648,8 +663,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalAnnual}</span>
                   </div>
                 )}
-                <div style={{ fontSize: "11px", color: "#22c55e", marginTop: "6px" }}>
-                  {lang === "EN" ? `Save ${o.saving} RON` : `Economie ${o.saving} RON`}
+                <div style={{ fontSize: "11px", color: "#22c55e", marginTop: "6px", fontWeight: "600" }}>
+                  {lang === "EN" ? `Save ${o.saving}` : `Economie ${o.saving}`}
                 </div>
               </div>
             ))}
