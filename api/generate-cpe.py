@@ -1224,8 +1224,7 @@ class handler(BaseHTTPRequestHandler):
                                     if scope_runs:
                                         scope_runs[0].text = scope
 
-            # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN"
-            software = data.get("software", "Zephren v2.0")
+            # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN" (fără punct final)
             program_name = "ZEPHREN"
             def fill_program_field(paragraphs):
                 for para in paragraphs:
@@ -1236,12 +1235,20 @@ class handler(BaseHTTPRequestHandler):
                                 run.text = re.sub(r'\.{4,}', program_name if not inserted else '', run.text)
                                 inserted = True
                             elif "versiunea" in run.text:
-                                run.text = run.text.replace("versiunea", "")
+                                # FIX: elimină "versiunea" + orice punct rămas imediat după
+                                run.text = re.sub(r'versiunea\.?', '', run.text).strip()
             fill_program_field(doc.paragraphs)
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         fill_program_field(cell.paragraphs)
+
+            # Grad auditor — FIX: completare automată din datele de intrare
+            grade_val = data.get("auditor_grade", "")
+            if grade_val:
+                replace_in_doc(doc, "I / II", grade_val)
+                replace_in_doc(doc, "I/II", grade_val)
+                replace_in_doc(doc, "gradul", grade_val)
 
             # Auditor name/company/phone/email
             auditor_replacements = {

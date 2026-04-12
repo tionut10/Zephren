@@ -166,6 +166,7 @@ export default function Step6Certificate(props) {
                     co2_f: fmtRo(co2Grid.thresholds[6],1),
                     auditor_name: auditor.name || "",
                     auditor_atestat: auditor.atestat || "",
+                    auditor_grade: auditor.grade || "",
                     auditor_company: auditor.company || "",
                     auditor_phone: auditor.phone || "",
                     auditor_email: auditor.email || "",
