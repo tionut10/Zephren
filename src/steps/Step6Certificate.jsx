@@ -832,7 +832,7 @@ export default function Step6Certificate(props) {
               showToast("XML MDLPA exportat cu succes", "success");
             };
 
-            const generatePDF = () => {
+            const generatePDF = (showOverlay = true) => {
               try {
               showToast("Generare CPE...", "info", 2000);
               // Build HTML string, then show in inline iframe via srcdoc
@@ -1501,7 +1501,7 @@ ${(() => {
 
 </body></html>`;
               // Show in state-driven overlay iframe via srcdoc
-              setPdfPreviewHtml(htmlContent);
+              if (showOverlay) setPdfPreviewHtml(htmlContent);
               return htmlContent;
               } catch(err) { showToast("Eroare generare CPE: " + err.message, "error", 8000); console.error("generatePDF error:", err); return null; }
             };
@@ -1991,8 +1991,19 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         }
                       }
                     } catch(e) {
-                      // Fallback: HTML preview (nu setăm pdfPreviewHtml care deschide overlay)
-                      showToast("Preview HTML (fallback)", "info", 1500);
+                      // Fallback: HTML preview în iframe (fără overlay)
+                      try {
+                        const html = generatePDF(false);
+                        if (html) {
+                          const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                          const url = URL.createObjectURL(blob);
+                          if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                          setPdfPreviewUrl(url);
+                          showToast("Preview generat (HTML)", "success", 1500);
+                        }
+                      } catch(e2) {
+                        showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
+                      }
                     }
                   }}
                     data-auto-preview="true"
@@ -2121,16 +2132,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               {(() => {
                 const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                 const dataComplete = Au > 0 && instSummary && building.locality && building.category;
-                const canGenerate = canExportDocx && dataComplete;
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
                     <button
-                      disabled={!canGenerate}
+                      disabled={!dataComplete}
                       onClick={async () => {
-                        if (!canGenerate) {
-                          if (!dataComplete) showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error");
-                          return;
-                        }
+                        if (!canExportDocx) { requireUpgrade("Export DOCX CPE necesită plan Standard sau superior"); return; }
+                        if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
                         try {
                           showToast("Se generează CPE DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.cpe);
@@ -2140,25 +2148,28 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !canGenerate
+                        !dataComplete
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
+                          : !canExportDocx
+                            ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                            : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
                       }`}>
                       <div className="flex items-center justify-center gap-2 px-4 py-3">
                         <span className="text-lg">📋</span>
                         <div className="text-left">
-                          <div className="font-medium">{lang==="EN" ? "Generate CPE DOCX" : "Generează CPE DOCX"}</div>
+                          <div className="font-medium flex items-center gap-1.5">
+                            {lang==="EN" ? "Generate CPE DOCX" : "Generează CPE DOCX"}
+                            {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
+                          </div>
                           <div className="text-[10px] opacity-60">{tpl.cpe}</div>
                         </div>
                       </div>
                     </button>
                     <button
-                      disabled={!canGenerate}
+                      disabled={!dataComplete}
                       onClick={async () => {
-                        if (!canGenerate) {
-                          if (!dataComplete) showToast("Completați datele obligatorii", "error");
-                          return;
-                        }
+                        if (!canExportDocx) { requireUpgrade("Export DOCX Anexe necesită plan Standard sau superior"); return; }
+                        if (!dataComplete) { showToast("Completați datele obligatorii", "error"); return; }
                         try {
                           showToast("Se generează Anexa DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.anexa);
@@ -2168,14 +2179,19 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !canGenerate
+                        !dataComplete
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 cursor-pointer"
+                          : !canExportDocx
+                            ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                            : "border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 cursor-pointer"
                       }`}>
                       <div className="flex items-center justify-center gap-2 px-4 py-3">
                         <span className="text-lg">📎</span>
                         <div className="text-left">
-                          <div className="font-medium">{lang==="EN" ? "Generate Annex 1+2 DOCX" : "Generează Anexa 1+2 DOCX"}</div>
+                          <div className="font-medium flex items-center gap-1.5">
+                            {lang==="EN" ? "Generate Annex 1+2 DOCX" : "Generează Anexa 1+2 DOCX"}
+                            {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
+                          </div>
                           <div className="text-[10px] opacity-60">{tpl.anexa}</div>
                         </div>
                       </div>

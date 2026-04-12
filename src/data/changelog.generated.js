@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "10 template-uri noi clădiri + ROICalculator/CPETracker/AuditInvoice integrate + AuditClientDataForm auto-popul"
+      },
+      {
         "icon": "🔬",
         "text": "Normative în normative.json — editare manuală fără cod JS"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🎨",
         "text": "Changelog dinamic pe săptămâni: 4 intrări reale din git (30 mar – 12 apr 2026), UI actualizat cu interval dată"
-      },
-      {
-        "icon": "💰",
-        "text": "Actualizare completă prețuri: Free/Starter/Standard/Professional/Business/Enterprise, ofertă lansare -30%, cre"
       }
     ]
   },
