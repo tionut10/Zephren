@@ -1,9 +1,11 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, lazy, Suspense } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
 import ImportHub from "../components/ImportHub.jsx";
+
+const BuildingTemplateModal = lazy(() => import("../components/BuildingTemplateModal.jsx"));
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -112,6 +114,7 @@ export default function Step1Identification({
   goToStep,
   onOpenTutorial,
   buildingPhotos, setBuildingPhotos,
+  userPlan,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -121,6 +124,7 @@ export default function Step1Identification({
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -532,6 +536,12 @@ export default function Step1Identification({
           </Card>
 
           <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">10 template-uri CPE complete</span>}>
+            {/* Buton șabloane din baza de date tipică */}
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold transition-all">
+              🏗️ Șabloane clădiri tip românești (22+ modele)
+            </button>
             <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
               {/* 10 DEMO-URI COMPLETE — câte unul per template CPE Mc 001-2022 (Ord. MDLPA 16/2023) */}
               <button onClick={() => loadFullDemo()}
@@ -849,6 +859,21 @@ export default function Step1Identification({
       </div>
 
       {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
+
+      {/* Modal Șabloane Clădiri Tip */}
+      {showTemplates && (
+        <Suspense fallback={null}>
+          <BuildingTemplateModal
+            isOpen={showTemplates}
+            onClose={() => setShowTemplates(false)}
+            onApply={(id) => {
+              loadTypicalBuilding(id);
+              showToast("Șablon aplicat cu succes", "success");
+            }}
+            userPlan={userPlan}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

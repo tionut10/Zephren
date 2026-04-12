@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { canAccess } from "../lib/planGating.js";
 import { T } from "../data/translations.js";
 import { fetchPVGISClimate } from "../calc/pvgis.js";
 import { MATERIAL_PRICES_2025, PRICES_UPDATED, PRICES_SOURCE, EUR_TO_RON, getMaterialsByCategory } from "../data/material-prices.js";
@@ -53,6 +54,8 @@ import { calcAirInfiltration, calcNaturalLighting } from "../calc/infiltration.j
 import { glaserCheck, calcGlaserMonthly } from "../calc/glaser.js";
 import { calcRehabCost, REHAB_PRICE_DB } from "../calc/rehab-cost.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
+import GWPReport from "../components/GWPReport.jsx";
+import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 
 const TAB_SECTIONS = [
   { id:"benchmark",   icon:"📊", label:"Benchmark" },
@@ -106,6 +109,7 @@ const TAB_SECTIONS = [
   { id:"oferta_reab",  icon:"📄", label:"Ofertă reabilitare" },
   { id:"team",         icon:"👥", label:"Echipă" },
   { id:"meps",         icon:"🏛️", label:"MEPS EPBD 2024" },
+  { id:"gwp_co2",      icon:"🌿", label:"CO₂ Lifecycle" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -131,7 +135,7 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial }) {
+export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
   const [hpTypeId, setHpTypeId] = useState("AA_STD");
@@ -141,6 +145,14 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [externalNoise, setExternalNoise] = useState(55);
   const [ownerType, setOwnerType] = useState("fizica");
   const [xmlGenerated, setXmlGenerated] = useState(false);
+  const [epAfterRehabInput, setEpAfterRehabInput] = useState("");
+  const [expandedProgram, setExpandedProgram] = useState(null);
+
+  // ── Alerte CPE ──
+  const cpeRegistry = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("zephren_cpe_registry")) || []; } catch { return []; }
+  }, [activeTab]); // re-citește când utilizatorul navighează la tab-ul CPE
+  const { urgentCount, requestPermission, permissionStatus } = useCPEAlerts(cpeRegistry);
 
   // ── Multi-clădire state ──
   const [savedProjects, setSavedProjects] = useState([]);
@@ -398,12 +410,14 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   }), [building, climate, epActual, opaqueElements, glazingElements, Au]);
 
   // ── PNRR ──
+  const epAfterRehabCalc = parseFloat(epAfterRehabInput) || rehabPackages?.packages?.[2]?.epNew;
   const pnrrResult = useMemo(() => calcPNRRFunding({
-    building, epActual, epAfterRehab: rehabPackages?.packages?.[2]?.epNew,
+    building, epActual, epAfterRehab: epAfterRehabCalc,
     investTotal: rehabPackages?.packages?.[2]?.invest || 0,
     measures: ["Pompă de căldură","PV","Termoizolare"],
     ownerType,
-  }), [building, epActual, rehabPackages, ownerType]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [building, epActual, epAfterRehabInput, rehabPackages, ownerType]);
 
   // ── Verificare nZEB (HG 917/2021, Legea 238/2024) ──
   const nzebCheck = useMemo(() => {
@@ -707,9 +721,15 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       <div className="flex flex-wrap gap-1.5">
         {TAB_SECTIONS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+            className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
               activeTab === tab.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
             {tab.icon} {tab.id === "conformitate" ? t(tab.label) : tab.label}
+            {/* Badge alerte CPE */}
+            {tab.id === "cpe_tracker" && urgentCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                {urgentCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -1988,43 +2008,184 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {/* ═══ PNRR / FINANȚARE ═══ */}
       {activeTab === "pnrr" && (
         <Card className="p-4">
-          <SectionHeader icon="💶" title="Calculator finanțare — Casa Verde Plus, PNRR, AFM"
-            subtitle="Eligibilitate și grant estimat pentru programele active 2024-2026 în România" />
-          <div className="mb-4">
-            <label className="text-xs text-slate-400 block mb-1">Tip proprietar</label>
-            <select value={ownerType} onChange={e=>setOwnerType(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white">
-              <option value="fizica">Persoană fizică</option>
-              <option value="juridica">Persoană juridică / Firmă</option>
-              <option value="uat">Autoritate publică (UAT)</option>
-            </select>
+          <SectionHeader icon="💶" title="Tablou finanțări — Casa Verde Plus, PNRR, AFM"
+            subtitle="Eligibilitate și grant estimat pentru programele active 2024–2026 în România" />
+
+          {/* Parametri calcul */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">Tip proprietar</label>
+              <select value={ownerType} onChange={e=>setOwnerType(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white">
+                <option value="fizica">Persoană fizică</option>
+                <option value="juridica">Persoană juridică / Firmă</option>
+                <option value="uat">Autoritate publică (UAT)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">EP actual [kWh/(m²·an)]</label>
+              <div className="px-2 py-1.5 bg-slate-800/60 border border-slate-700 rounded text-sm text-amber-300 font-mono">
+                {epActual ? epActual.toFixed(1) : "—"}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">EP după reabilitare (simulare)</label>
+              <input
+                type="number"
+                value={epAfterRehabInput}
+                onChange={e => setEpAfterRehabInput(e.target.value)}
+                placeholder={epAfterRehabCalc ? Math.round(epAfterRehabCalc) : "ex: 85"}
+                className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500/50"
+              />
+            </div>
           </div>
+
+          {/* Sumar grant maxim */}
+          {pnrrResult && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+              <div className="bg-green-900/20 border border-green-700/30 rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-green-400">{pnrrResult.maxGrant?.toLocaleString()}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">EUR — grant maxim</div>
+              </div>
+              <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-blue-300">{pnrrResult.eligibleCount ?? 0}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">programe eligibile</div>
+              </div>
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-white">{pnrrResult.epReduction_pct != null ? Math.round(pnrrResult.epReduction_pct) + "%" : "—"}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">reducere EP</div>
+              </div>
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-amber-300">{pnrrResult.selfFinancing?.toLocaleString() ?? "—"}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">EUR cofinanțare proprie</div>
+              </div>
+            </div>
+          )}
+
+          {/* Cards programe */}
           {pnrrResult ? (
             <div className="space-y-3">
-              {pnrrResult.bestProgram && (
-                <div className="bg-green-900/20 border border-green-700/40 rounded-xl p-4">
-                  <div className="text-xs text-green-400 font-medium mb-1">CEL MAI BUN PROGRAM ELIGIBIL</div>
-                  <div className="font-bold text-white">{pnrrResult.bestProgram.programName}</div>
-                  <div className="text-2xl font-bold text-green-400 mt-1">{pnrrResult.bestProgram.grantAmount?.toLocaleString()} EUR <span className="text-sm text-slate-400">grant</span></div>
-                  <div className="text-xs text-slate-400">Cofinanțare proprie: {pnrrResult.selfFinancing?.toLocaleString()} EUR ({pnrrResult.bestProgram.grantPct}% grant)</div>
-                  <div className="text-xs text-slate-500 mt-2">{pnrrResult.bestProgram.note}</div>
+              {pnrrResult.results.map(r => {
+                const isExpanded = expandedProgram === r.programId;
+                return (
+                  <div key={r.programId} className={cn("rounded-xl border transition-all",
+                    r.isEligible ? "border-green-700/40 bg-green-900/10" : "border-slate-700 bg-slate-800/30 opacity-70")}>
+                    {/* Header card program */}
+                    <button
+                      className="w-full text-left p-4"
+                      onClick={() => setExpandedProgram(isExpanded ? null : r.programId)}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm text-white">{r.programName}</span>
+                            <ConformBadge ok={r.isEligible} label={r.isEligible ? "Eligibil" : "Neeligibil"} />
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">{r.authority} · {r.legal}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {r.isEligible ? (
+                            <>
+                              <div className="text-lg font-bold text-green-400">{r.grantAmount?.toLocaleString()} EUR</div>
+                              <div className="text-[10px] text-slate-400">{r.grantPct}% grant · max {r.maxGrant?.toLocaleString()} EUR</div>
+                            </>
+                          ) : (
+                            <div className="text-xs text-slate-500">Neeligibil</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1 text-right">{isExpanded ? "▲ Ascunde detalii" : "▼ Detalii"}</div>
+                    </button>
+
+                    {/* Detalii expandate */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 pt-0 border-t border-white/5 space-y-2">
+                        {r.eligible?.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-green-400 font-medium mb-1">Criterii îndeplinite:</div>
+                            {r.eligible.map((m,i) => <div key={i} className="text-xs text-green-300">✓ {m}</div>)}
+                          </div>
+                        )}
+                        {r.ineligible?.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-red-400 font-medium mb-1">Criterii neîndeplinite:</div>
+                            {r.ineligible.map((m,i) => <div key={i} className="text-xs text-red-400">✗ {m}</div>)}
+                          </div>
+                        )}
+                        {r.eligibleMeasures?.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-medium mb-1">Măsuri eligibile:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {r.eligibleMeasures.map((m,i) => <span key={i} className="text-[10px] bg-slate-700 rounded px-1.5 py-0.5 text-slate-300">{m}</span>)}
+                            </div>
+                          </div>
+                        )}
+                        {r.conditions?.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-amber-400 font-medium mb-1">Condiții program:</div>
+                            {r.conditions.map((c,i) => <div key={i} className="text-xs text-amber-300/70">• {c}</div>)}
+                          </div>
+                        )}
+                        {r.note && <div className="text-[10px] text-slate-400 italic">{r.note}</div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {pnrrResult.note && (
+                <div className="text-xs text-amber-300 bg-amber-900/20 border border-amber-700/30 rounded-lg p-3">
+                  ⚠️ {pnrrResult.note}
                 </div>
               )}
-              {pnrrResult.results.map(r => (
-                <div key={r.programId} className={cn("rounded-lg p-3 border",
-                  r.isEligible ? "border-green-800/40 bg-green-900/10" : "border-slate-700 bg-slate-800/40 opacity-60")}>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="font-medium text-sm text-white">{r.programName}</div>
-                    <ConformBadge ok={r.isEligible} label={r.isEligible ? "Eligibil" : "Neeligibil"} />
-                  </div>
-                  <div className="text-xs text-slate-400">{r.authority} | {r.legal}</div>
-                  {r.isEligible && <div className="text-sm text-green-300 mt-1">Grant estimat: {r.grantAmount?.toLocaleString()} EUR ({r.grantPct}%)</div>}
-                  {r.ineligible.map((msg,i) => <div key={i} className="text-xs text-red-400 mt-1">✗ {msg}</div>)}
-                </div>
-              ))}
-              {pnrrResult.note && <div className="text-xs text-amber-300 bg-amber-900/20 rounded p-2">{pnrrResult.note}</div>}
+
+              {/* Export PDF */}
+              <button
+                onClick={async () => {
+                  const { default: jsPDF } = await import("jspdf");
+                  await import("jspdf-autotable");
+                  const doc = new jsPDF();
+                  doc.setFontSize(14);
+                  doc.text("Tablou finanțări disponibile", 14, 18);
+                  doc.setFontSize(9);
+                  doc.setTextColor(120);
+                  doc.text(`Clădire: ${building?.address || "—"} | EP actual: ${epActual ? epActual.toFixed(1) : "—"} kWh/(m²·an)`, 14, 26);
+                  doc.text(`Proprietar: ${ownerType} | Data: ${new Date().toLocaleDateString("ro-RO")}`, 14, 31);
+                  doc.setTextColor(0);
+                  const rows = pnrrResult.results.map(r => [
+                    r.programName,
+                    r.authority,
+                    r.isEligible ? "✓ Eligibil" : "✗ Neeligibil",
+                    r.isEligible ? `${r.grantAmount?.toLocaleString()} EUR` : "—",
+                    `${r.grantPct || 0}%`,
+                  ]);
+                  doc.autoTable({
+                    head: [["Program", "Autoritate", "Eligibilitate", "Grant estimat", "% Grant"]],
+                    body: rows, startY: 38,
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [37, 99, 235] },
+                  });
+                  const finalY = doc.lastAutoTable.finalY + 8;
+                  doc.setFontSize(10);
+                  doc.text(`Grant maxim disponibil: ${pnrrResult.maxGrant?.toLocaleString() || 0} EUR`, 14, finalY);
+                  doc.setFontSize(8); doc.setTextColor(120);
+                  doc.text("Zephren Energy App — estimare orientativă, verificați condițiile oficiale", 14, finalY + 7);
+                  doc.save(`Finantari_${building?.address || "cladire"}_${new Date().toISOString().slice(0,10)}.pdf`);
+                }}
+                className={cn("w-full py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
+                  canAccess(userPlan, "devizPDF")
+                    ? "bg-blue-600 hover:bg-blue-500 text-white"
+                    : "bg-slate-700 text-slate-400 cursor-not-allowed opacity-60"
+                )}
+                disabled={!canAccess(userPlan, "devizPDF")}>
+                📥 Export PDF Listă Finanțări
+                {!canAccess(userPlan, "devizPDF") && <span className="text-[10px] ml-1">(Standard+)</span>}
+              </button>
             </div>
-          ) : null}
+          ) : (
+            <div className="text-center text-slate-500 py-6 text-sm">
+              Completați datele clădirii (Pasul 1) pentru a calcula eligibilitatea
+            </div>
+          )}
         </Card>
       )}
 
@@ -2771,6 +2932,102 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   <p className="text-xs text-slate-500 italic">
                     Prețuri orientative. Solicitați oferte de la antreprenori autorizați.
                   </p>
+
+                  {/* Export butoane */}
+                  <div className="flex gap-2 pt-1">
+                    {/* Export PDF */}
+                    <button
+                      onClick={async () => {
+                        const { default: jsPDF } = await import("jspdf");
+                        await import("jspdf-autotable");
+                        const doc = new jsPDF();
+                        const dateStr = new Date().toLocaleDateString("ro-RO");
+                        // Header
+                        doc.setFontSize(14);
+                        doc.text("Deviz estimativ reabilitare termică", 14, 18);
+                        doc.setFontSize(9); doc.setTextColor(100);
+                        doc.text(`Clădire: ${building?.address || "—"} | Au: ${Au || "—"} m²`, 14, 26);
+                        doc.text(`Data: ${dateStr} | Prețuri orientative 2024-2025 fără TVA`, 14, 31);
+                        doc.setTextColor(0);
+                        // Tabel items
+                        const rows = (devizResult.items || []).map((item, i) => [
+                          i + 1,
+                          item.label,
+                          item.unit || "—",
+                          item.qty != null ? String(item.qty) : "—",
+                          item.priceUnit != null ? item.priceUnit.toFixed(0) : "—",
+                          item.totalEUR != null ? item.totalEUR.toLocaleString("ro-RO", { maximumFractionDigits: 0 }) : "—",
+                        ]);
+                        doc.autoTable({
+                          head: [["Nr.", "Descriere lucrare", "UM", "Cantitate", "P.U. EUR", "Valoare EUR"]],
+                          body: rows, startY: 37,
+                          styles: { fontSize: 8 },
+                          headStyles: { fillColor: [79, 70, 229] },
+                          columnStyles: { 0: { halign: "center", cellWidth: 10 }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
+                        });
+                        const y = doc.lastAutoTable.finalY + 5;
+                        const subtotal = devizResult.totalEUR || 0;
+                        const tva = subtotal * 0.19;
+                        doc.setFontSize(9);
+                        doc.text(`Subtotal (fără TVA): ${subtotal.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 6, { align: "right" });
+                        doc.text(`TVA 19%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
+                        doc.setFontSize(10); doc.setFont(undefined, "bold");
+                        doc.text(`TOTAL cu TVA: ${(subtotal + tva).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 20, { align: "right" });
+                        doc.setFont(undefined, "normal"); doc.setFontSize(7); doc.setTextColor(120);
+                        doc.text("Zephren Energy App — deviz orientativ, verificați cu antreprenori autorizați", 14, y + 30);
+                        // Watermark dacă Free
+                        if (!canAccess(userPlan, "devizPDF")) {
+                          doc.setFontSize(28); doc.setTextColor(180, 180, 180);
+                          doc.text("ORIENTATIV — ZEPHREN FREE", 50, 160, { angle: 45, opacity: 0.3 });
+                        }
+                        doc.save(`Deviz_${building?.address || "cladire"}_${dateStr.replace(/\//g,"-")}.pdf`);
+                      }}
+                      className="flex-1 py-2 rounded-lg text-xs font-medium transition-all bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-1">
+                      📄 Export PDF
+                    </button>
+
+                    {/* Export Excel */}
+                    <button
+                      onClick={async () => {
+                        if (!canAccess(userPlan, "devizExcel")) return;
+                        const XLSX = await import("xlsx");
+                        const dateStr = new Date().toLocaleDateString("ro-RO");
+                        const rows = [
+                          ["Nr.", "Descriere lucrare", "UM", "Cantitate", "Preț unitar EUR", "Valoare EUR"],
+                          ...(devizResult.items || []).map((item, i) => [
+                            i + 1, item.label, item.unit || "", item.qty || "", item.priceUnit?.toFixed(0) || "", item.totalEUR?.toFixed(0) || "",
+                          ]),
+                          [],
+                          ["", "", "", "", "Subtotal (fără TVA) EUR:", devizResult.totalEUR?.toFixed(0) || ""],
+                          ["", "", "", "", "TVA 19%:", ((devizResult.totalEUR || 0) * 0.19).toFixed(0)],
+                          ["", "", "", "", "TOTAL cu TVA EUR:", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
+                        ];
+                        const ws = XLSX.utils.aoa_to_sheet(rows);
+                        ws["!cols"] = [{ wch: 5 }, { wch: 45 }, { wch: 8 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
+                        const wsSumar = XLSX.utils.aoa_to_sheet([
+                          ["Clădire", building?.address || "—"],
+                          ["Suprafață utilă (m²)", Au || "—"],
+                          ["Data deviz", dateStr],
+                          ["Total fără TVA (EUR)", devizResult.totalEUR?.toFixed(0) || ""],
+                          ["TVA 19% (EUR)", ((devizResult.totalEUR || 0) * 0.19).toFixed(0)],
+                          ["Total cu TVA (EUR)", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
+                          ["Cost per m² (EUR/m²)", devizResult.costPerM2?.toFixed(0) || ""],
+                          ["Sursa prețuri", "Zephren — orientativ 2024-2025"],
+                        ]);
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "Deviz");
+                        XLSX.utils.book_append_sheet(wb, wsSumar, "Sumar");
+                        XLSX.writeFile(wb, `Deviz_${building?.address || "cladire"}_${dateStr.replace(/\//g,"-")}.xlsx`);
+                      }}
+                      title={!canAccess(userPlan, "devizExcel") ? "Disponibil din planul Pro" : ""}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+                        canAccess(userPlan, "devizExcel")
+                          ? "bg-green-700 hover:bg-green-600 text-white"
+                          : "bg-slate-700 text-slate-500 cursor-not-allowed"
+                      }`}>
+                      📊 Excel {!canAccess(userPlan, "devizExcel") && <span className="text-[9px]">(Pro+)</span>}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p className="text-slate-500 text-sm">Configurați lucrările din coloana stângă pentru a genera devizul.</p>
@@ -3836,6 +4093,23 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="📅" title="Tracker CPE — Scadențe și valabilitate"
             subtitle="Registru certificate emise, dată expirare (10 ani), alerte scadență" />
+          {/* Banner alerte + buton notificări browser */}
+          {urgentCount > 0 && (
+            <div className="mb-3 flex items-center justify-between gap-3 bg-red-900/20 border border-red-700/40 rounded-lg px-3 py-2">
+              <div className="text-xs text-red-300">
+                ⚠️ <strong>{urgentCount}</strong> {urgentCount === 1 ? "certificat expiră" : "certificate expiră"} în mai puțin de 6 luni
+              </div>
+              {permissionStatus !== "granted" && permissionStatus !== "unsupported" && (
+                <button onClick={requestPermission}
+                  className="shrink-0 text-[10px] px-2 py-1 rounded bg-red-700/50 hover:bg-red-700 text-red-200 transition-all">
+                  🔔 Activează notificări
+                </button>
+              )}
+              {permissionStatus === "granted" && (
+                <span className="text-[10px] text-green-400">🔔 Notificări active</span>
+              )}
+            </div>
+          )}
           <CPETracker building={building} auditor={systems?.auditor} />
         </Card>
       )}
@@ -3885,6 +4159,20 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           <SectionHeader icon="🏛️" title="MEPS — Standarde Minime Performanță Energetică (EPBD 2024)"
             subtitle="Conformitate Art. 9 EPBD 2024/1275 — clădiri cu performanță minimă, roadmap renovare 2030/2033" />
           <MEPSCheck instSummary={instSummary} building={building} energyClass={systems?.energyClass} />
+        </Card>
+      )}
+
+      {/* ═══ CO₂ LIFECYCLE / GREEN DEAL ═══ */}
+      {activeTab === "gwp_co2" && (
+        <Card className="p-4">
+          <SectionHeader icon="🌿" title="Raport CO₂ Lifecycle — EN 15978"
+            subtitle="Emisii încorporate ale anvelopei pe ciclul de viață (module A–D) cu benchmark-uri Green Deal 2030/2050" />
+          <GWPReport
+            opaqueElements={opaqueElements}
+            glazingElements={glazingElements}
+            areaUseful={Au}
+            userPlan={userPlan}
+          />
         </Card>
       )}
 

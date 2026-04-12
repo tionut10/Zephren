@@ -6,6 +6,7 @@ import ReactDOM from "react-dom/client";
 const EnergyCalcApp = lazy(() => import("./energy-calc.jsx"));
 const LandingPage = lazy(() => import("./landing.jsx"));
 const ClientReport = lazy(() => import("./components/ClientReport.jsx"));
+const MobileWizard = lazy(() => import("./components/MobileWizard.jsx"));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -44,9 +45,16 @@ function decodeViewParam() {
   } catch { return null; }
 }
 
+// Detectare mod mobil (?mobile=1 sau /mobile în pathname)
+function isMobileRoute() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("mobile") === "1" || window.location.pathname === "/mobile";
+}
+
 function Router() {
   const viewData = React.useMemo(() => decodeViewParam(), []);
   const [route, setRoute] = useState(() => {
+    if (isMobileRoute()) return "mobile";
     if (viewData) return "view";
     return window.location.hash === "#app" ? "app" : "landing";
   });
@@ -70,7 +78,9 @@ function Router() {
       </div>
     }>
       <ErrorBoundary>
-        {route === "view"
+        {route === "mobile"
+          ? <MobileWizard userPlan="free" />
+          : route === "view"
           ? <ClientReport data={viewData} onOpenApp={goToApp} />
           : route === "app"
             ? <EnergyCalcApp />

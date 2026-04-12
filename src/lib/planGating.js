@@ -19,6 +19,13 @@ export const PLAN_FEATURES = {
     api:          false,
     watermark:    true,
     brandingCPE:  false,
+    // funcționalități noi
+    gwpReport:              false, // Raport CO₂ lifecycle (EN 15978)
+    devizPDF:               false, // Export deviz PDF (cu watermark pe free)
+    devizExcel:             false, // Export deviz Excel
+    buildingTemplatesFull:  false, // Toate șabloanele clădiri (free: doar 3)
+    cpeAlertsExport:        false, // Export CSV alerte CPE
+    mobileWizard:           false, // Wizard mobil colectare date
   },
   standard: {
     maxProjects:  999,
@@ -32,6 +39,13 @@ export const PLAN_FEATURES = {
     api:          false,
     watermark:    false,
     brandingCPE:  false,
+    // funcționalități noi
+    gwpReport:              true,
+    devizPDF:               true,
+    devizExcel:             false,
+    buildingTemplatesFull:  true,
+    cpeAlertsExport:        true,
+    mobileWizard:           true,
   },
   pro: {
     maxProjects:  999,
@@ -45,6 +59,13 @@ export const PLAN_FEATURES = {
     api:          true,
     watermark:    false,
     brandingCPE:  false,
+    // funcționalități noi
+    gwpReport:              true,
+    devizPDF:               true,
+    devizExcel:             true,
+    buildingTemplatesFull:  true,
+    cpeAlertsExport:        true,
+    mobileWizard:           true,
   },
   asociatie: {
     maxProjects:  999,
@@ -58,6 +79,13 @@ export const PLAN_FEATURES = {
     api:          true,
     watermark:    false,
     brandingCPE:  true,
+    // funcționalități noi
+    gwpReport:              true,
+    devizPDF:               true,
+    devizExcel:             true,
+    buildingTemplatesFull:  true,
+    cpeAlertsExport:        true,
+    mobileWizard:           true,
   },
   // backward compat — mapează vechiul "business" la asociatie
   business: {
@@ -72,6 +100,13 @@ export const PLAN_FEATURES = {
     api:          true,
     watermark:    false,
     brandingCPE:  true,
+    // funcționalități noi
+    gwpReport:              true,
+    devizPDF:               true,
+    devizExcel:             true,
+    buildingTemplatesFull:  true,
+    cpeAlertsExport:        true,
+    mobileWizard:           true,
   },
 };
 

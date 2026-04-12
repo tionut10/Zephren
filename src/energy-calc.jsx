@@ -44,6 +44,7 @@ import { useEnvelopeSummary } from "./hooks/useEnvelopeSummary.js";
 import { useInstallationSummary } from "./hooks/useInstallationSummary.js";
 import { useRenewableSummary } from "./hooks/useRenewableSummary.js";
 import { useAutoSync } from "./hooks/useAutoSync.js";
+import { useOfflineMode } from "./hooks/useOfflineMode.js";
 
 // ── Component imports ──
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
@@ -3174,6 +3175,8 @@ export default function EnergyCalcApp({ cloud }) {
     photovoltaic, setPhotovoltaic,
   });
 
+  const { isOnline } = useOfflineMode();
+
   // ── Keyboard shortcuts (pct. 41) ──
   useKeyboardShortcuts({
     setStep,
@@ -6163,6 +6166,14 @@ export default function EnergyCalcApp({ cloud }) {
         {/* MAIN CONTENT */}
         <main className="flex-1 p-4 sm:p-6 pb-16 lg:pb-6 overflow-y-auto min-w-0">
 
+          {/* ═══ BANNER OFFLINE ═══ */}
+          {!isOnline && (
+            <div className="mb-4 flex items-center gap-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl px-4 py-2.5 text-yellow-300 text-xs">
+              <span className="text-base">📡</span>
+              <span>Mod offline — modificările sunt salvate local și se vor sincroniza la reconectare</span>
+            </div>
+          )}
+
           {/* ═══ FORMULAR DATE CLIENT (overlay) ═══ */}
           {showClientForm && (
             <div style={{animation:"fadeSlideIn 0.3s ease-out"}}>
@@ -6195,6 +6206,7 @@ export default function EnergyCalcApp({ cloud }) {
             goToStep={goToStep}
             onOpenTutorial={() => setShowTutorial(true)}
             buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
+            userPlan={userPlan}
           />}
 
 
@@ -6358,6 +6370,7 @@ export default function EnergyCalcApp({ cloud }) {
             opaqueElements, glazingElements, thermalBridges,
             instSummary, renewSummary,
             lang,
+            userPlan,
             systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem,
               ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
               heating: { etaGen: parseFloat(heating?.etaGen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
