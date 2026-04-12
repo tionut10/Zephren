@@ -429,26 +429,27 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{lang === "EN" ? "What's new" : "Ce este nou"}</h2>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "800px", margin: "0 auto" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "860px", margin: "0 auto" }}>
           {CHANGELOG.map((release, ri) => (
             <div key={release.version} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
               {/* Timeline dot + line */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "4px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: "11px", fontWeight: "800", color: release.color }}>v{release.version}</span>
+                <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, gap: "1px" }}>
+                  <span style={{ fontSize: "9px", fontWeight: "800", color: release.color, lineHeight: 1 }}>{release.week}</span>
+                  <span style={{ fontSize: "8px", fontWeight: "600", color: `${release.color}99`, lineHeight: 1 }}>v{release.version}</span>
                 </div>
-                {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "16px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
+                {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "20px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
               </div>
               {/* Card */}
               <div style={{ flex: 1, padding: "20px 24px", borderRadius: "14px", background: cardBg, border: `1px solid ${release.color}20`, marginBottom: "4px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>v{release.version}</span>
+                  <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>{release.week}</span>
+                  <span style={{ fontSize: "12px", color: textFaint }}>— {release.dateRange}</span>
                   {release.label && (
                     <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "8px", background: `${release.color}25`, color: release.color, border: `1px solid ${release.color}40` }}>
                       {release.label}
                     </span>
                   )}
-                  <span style={{ fontSize: "11px", color: textFaint }}>{release.date}</span>
                 </div>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
                   {release.items.map((item, i) => (
