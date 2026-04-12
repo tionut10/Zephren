@@ -569,8 +569,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { plan: "Starter", monthly: null, annual: "799", normalAnnual: "999", saving: "200" },
-              { plan: "Standard", monthly: "99", normalMonthly: "149", annual: "899", normalAnnual: "1.499", saving: "600" },
+              { plan: "Starter", monthly: "219", normalMonthly: "299", annual: "1.290", normalAnnual: "1.799", saving: "509" },
+              { plan: "Professional", monthly: "229", normalMonthly: "309", annual: "3.590", normalAnnual: "4.990", saving: "1.400" },
+              { plan: "Business", monthly: "499", normalMonthly: "699", annual: "4.390", normalAnnual: "5.990", saving: "1.600" },
             ].map(o => (
               <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
                 <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
@@ -668,19 +669,19 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {lang === "EN" ? "Perpetual licenses" : "Licențe perpetue"}
             </span>
             <span style={{ fontSize: "13px", color: textMuted }}>
-              {lang === "EN" ? "One-time payment · optional annual maintenance +149 RON/year (legislative updates)" : "Plată unică · mentenanță anuală opțională +149 RON/an (actualizări legislative)"}
+              {lang === "EN" ? "One-time payment · no recurring fees" : "Plată unică · fără taxe recurente"}
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "899", maint: "149" },
-              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "1.499", maint: "249" },
-              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "2.999", maint: "449" },
+              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "6.490", ea: "4.790" },
+              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "9.990", ea: "7.490" },
+              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "24.990", ea: "17.990" },
             ].map(l => (
               <div key={l.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <div>
                   <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>{l.label}</div>
-                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "2px" }}>{lang === "EN" ? `maintenance +${l.maint} RON/yr` : `mentenanță +${l.maint} RON/an`}</div>
+                  <div style={{ fontSize: "11px", color: "#6366f1", marginTop: "2px" }}>{lang === "EN" ? `EA: ${l.ea} RON 🔒` : `EA: ${l.ea} RON 🔒`}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981" }}>{l.price}</span>
