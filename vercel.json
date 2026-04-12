@@ -4,8 +4,8 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "functions": {
-    "api/preview-docx.js": {
-      "maxDuration": 10
+    "api/preview.js": {
+      "maxDuration": 30
     },
     "api/calculate.js": {
       "maxDuration": 10
@@ -22,20 +22,23 @@
     "api/stripe-webhook.js": {
       "maxDuration": 10
     },
-    "api/generate-cpe.py": {
-      "maxDuration": 30
-    },
-    "api/preview-pdf.js": {
+    "api/generate-document.js": {
       "maxDuration": 30
     },
     "api/import-document.js": {
       "maxDuration": 30
     },
-    "api/chat-import.js": {
+    "api/ocr.js": {
+      "maxDuration": 30
+    },
+    "api/parse-building-data.js": {
       "maxDuration": 15
     },
-    "api/import-invoice.js": {
-      "maxDuration": 30
+    "api/validate-audit-data.js": {
+      "maxDuration": 15
+    },
+    "api/ancpi-proxy.js": {
+      "maxDuration": 10
     }
   }
 }
