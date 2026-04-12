@@ -473,7 +473,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "RECOMMENDED" : "RECOMANDAT"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
               {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🔒 PRICE LOCK</div>}
-              {p.id === "institutional" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ENTERPRISE" : "INSTITUȚIONAL"}</div>}
+              {p.id === "standard" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>⭐ POPULAR</div>}
+              {p.id === "enterprise" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>ENTERPRISE</div>}
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
               <div style={{ margin: "14px 0" }}>
                 <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
@@ -496,7 +497,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </span>
                 </div>
               )}
-              {p.id === "institutional" ? (
+              {p.id === "enterprise" ? (
                 <a href="mailto:contact@zephren.ro" style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1px solid ${border}`, background: "transparent", color: text, fontSize: "14px", fontWeight: "600", cursor: "pointer", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
                   {T("plan_asociatie_cta", p.cta)}
                 </a>
@@ -555,9 +556,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { plan: "Starter", monthly: "169", normalMonthly: "229", annual: "1.090", normalAnnual: "1.490", saving: "400" },
-              { plan: "Professional", monthly: "359", normalMonthly: "489", annual: "4.190", normalAnnual: "5.790", saving: "1.600" },
-              { plan: "Business", monthly: "549", normalMonthly: "759", annual: "5.490", normalAnnual: "7.490", saving: "2.000" },
+              { plan: "Starter", monthly: "149", normalMonthly: "199", annual: null, normalAnnual: null, saving: "50" },
+              { plan: "Standard", monthly: "349", normalMonthly: "499", annual: null, normalAnnual: null, saving: "150" },
+              { plan: "Professional", monthly: "549", normalMonthly: "799", annual: "5.599", normalAnnual: "7.999", saving: "250" },
             ].map(o => (
               <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
                 <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
@@ -568,11 +569,13 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalMonthly}</span>
                   </div>
                 )}
-                <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-                  <span style={{ fontSize: o.monthly ? "16px" : "22px", fontWeight: "700", color: o.monthly ? textMuted : "#6366f1" }}>{o.annual}</span>
-                  <span style={{ fontSize: "11px", color: textFaint }}>RON/an</span>
-                  <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalAnnual}</span>
-                </div>
+                {o.annual && (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                    <span style={{ fontSize: "16px", fontWeight: "700", color: textMuted }}>{o.annual}</span>
+                    <span style={{ fontSize: "11px", color: textFaint }}>RON/an</span>
+                    <span style={{ fontSize: "11px", color: textFaint, textDecoration: "line-through" }}>{o.normalAnnual}</span>
+                  </div>
+                )}
                 <div style={{ fontSize: "11px", color: "#22c55e", marginTop: "6px" }}>
                   {lang === "EN" ? `Save ${o.saving} RON` : `Economie ${o.saving} RON`}
                 </div>
@@ -588,20 +591,15 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
         </div>
 
-        {/* ── Add-on per-raport (utilizatori Free) ── */}
+        {/* ── Pașaport Renovare Clădire ── */}
         <div style={{ maxWidth: "1140px", margin: "24px auto 0", padding: "28px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}>
-              {lang === "EN" ? "Free plan add-ons" : "Add-on plan Free"}
-            </span>
-            <span style={{ fontSize: "13px", color: textMuted }}>
-              {lang === "EN" ? "Extra CPE reports beyond 1/month" : "Rapoarte CPE suplimentare peste limita de 1/lună"}
+              {lang === "EN" ? "Document add-on" : "Document suplimentar"}
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "29", unit: "RON/raport", note: lang === "EN" ? "over 1/month" : "peste 1/lună" },
-              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "249", unit: "RON", note: lang === "EN" ? "≈24,9 RON/report" : "≈24,9 RON/raport" },
               { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "49", unit: "RON/doc", note: "PDF" },
             ].map(a => (
               <div key={a.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
@@ -631,9 +629,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
               { label: "Micro", credits: "10", price: "99", perCredit: "9,9" },
-              { label: "Standard", credits: "50", price: "390", perCredit: "7,8" },
-              { label: "Pro", credits: "100", price: "690", perCredit: "6,9" },
-              { label: "Enterprise", credits: "200", price: "1.190", perCredit: "6,0" },
+              { label: "Standard", credits: "50", price: "399", perCredit: "7,99" },
+              { label: "Pro", credits: "100", price: "699", perCredit: "6,99" },
+              { label: "Enterprise", credits: "200", price: "1.199", perCredit: "6,0" },
             ].map(c => (
               <div key={c.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.label}</div>
@@ -643,36 +641,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>RON</span>
                 </div>
                 <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>~{c.perCredit} RON/{lang === "EN" ? "credit" : "credit"}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Licențe perpetue ── */}
-        <div style={{ maxWidth: "1140px", margin: "24px auto 0", padding: "28px 32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.2)", color: "#10b981" }}>
-              {lang === "EN" ? "Perpetual licenses" : "Licențe perpetue"}
-            </span>
-            <span style={{ fontSize: "13px", color: textMuted }}>
-              {lang === "EN" ? "One-time payment · no recurring fees" : "Plată unică · fără taxe recurente"}
-            </span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-            {[
-              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "5.790", ea: "4.190" },
-              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "11.690", ea: "8.490" },
-              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "28.990", ea: "20.990" },
-            ].map(l => (
-              <div key={l.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>{l.label}</div>
-                  <div style={{ fontSize: "11px", color: "#f59e0b", marginTop: "2px" }}>EA: {l.ea} RON 🔒</div>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981" }}>{l.price}</span>
-                  <span style={{ fontSize: "11px", color: textFaint, marginLeft: "3px" }}>RON</span>
-                </div>
               </div>
             ))}
           </div>
