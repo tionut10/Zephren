@@ -2007,7 +2007,24 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           ignoreFonts: false,
                           breakPages: true,
                           useBase64URL: true,
+                          experimental: true,
                         });
+
+                        // Fix: constrânge elementele absolute (săgeți indicator) în interiorul paginii
+                        // mc:AlternateContent floating shapes sunt randate absolute și ies din pagină
+                        const styleEl = document.createElement('style');
+                        styleEl.textContent = `
+                          .docx-preview-content .docx-wrapper section.page {
+                            position: relative !important;
+                            overflow: hidden !important;
+                          }
+                          .docx-preview-content .docx-wrapper {
+                            background: #f0f0f0;
+                            padding: 20px;
+                          }
+                        `;
+                        container.appendChild(styleEl);
+
                         // Scale to fit container width
                         const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
                         if (wrapper && wrapper.offsetWidth > 0) {
