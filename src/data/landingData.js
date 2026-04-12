@@ -10,6 +10,7 @@ import PRODUCTS from "./products.json";
 import STEPS    from "./steps.json";
 import CLIMATE  from "./climate.json";
 import BRIDGES  from "./thermal-bridges.json";
+export { CHANGELOG } from "./changelog.generated.js";
 
 // ── Statistici produse (calculate din sursa reală) ──────────────────────────
 export const PRODUCT_COUNTS = {
@@ -186,46 +187,6 @@ export const V3_FEATURES = [
   { icon: "📤", title: "Export complet", desc: "DOCX oficial MDLPA, XML registru electronic, PDF cu QR code, JSON/CSV/XLSX — import drag & drop." },
   { icon: "📱", title: "Mobile responsive complet", desc: "Header adaptat automat — meniu ⋯ cu toate acțiunile disponibile pe orice dimensiune de ecran. Design optimizat pentru audit pe teren." },
   { icon: "♿", title: "Accesibilitate & UX audit", desc: "ARIA complet (role, aria-selected, aria-expanded), tabular-nums pe toate valorile numerice, consistență culori dark/light, fonturi lizibile." },
-];
-
-// ── Changelog versiuni ────────────────────────────────────────────────────────
-export const CHANGELOG = [
-  {
-    version: "0.2.0",
-    week: "Săpt. 2",
-    dateRange: "6 – 12 apr 2026",
-    color: "#f59e0b",
-    label: "CURENT",
-    items: [
-      { icon: "🔀", text: "Refactoring major: code split, JSON DB, 115 teste E2E + unitare" },
-      { icon: "📥", text: "7 metode import date: IFC/BIM, OSM geocodare, foto fațadă, chatbot verbal, QR/link, paste XML, facturi energie" },
-      { icon: "⚡", text: "Quick Fill Wizard — completare automată date clădire în ~60 secunde" },
-      { icon: "🔬", text: "BACS EN 15232-1, ACM EN 15316, nZEB check, SRI, Pasivhaus, PNRR, Export XML MDLPA" },
-      { icon: "📷", text: "Fotografii clădire în CPE DOCX (max 6 poze, Anexă), colorare automată celule clase energetice" },
-      { icon: "✅", text: "nZEB badge prominent, clasă CO₂ corectă (Step5↔Step6), săgeată WCAG EP/CO₂" },
-      { icon: "📋", text: "Formular Audit Client — 6 secțiuni, colectare date pe teren, export JSON/CSV/Checklist" },
-      { icon: "🎨", text: "Header redesign (3 zone), ImportHub centralizat Etapa 1, analiză planșă AI" },
-      { icon: "📦", text: `Catalog extins: ${TOTAL_PRODUCTS}+ produse — PV TOPCon/HJT/bifață, pompe căldură geotermă, ferestre VIG` },
-      { icon: "💰", text: "Monetizare: 6 planuri (Free → Enterprise), credite pay-per-project, price-lock, ofertă lansare −30%" },
-    ],
-  },
-  {
-    version: "0.1.0",
-    week: "Săpt. 1",
-    dateRange: "30 mar – 5 apr 2026",
-    color: "#22c55e",
-    label: "LANSARE",
-    items: [
-      { icon: "🚀", text: "Lansare Zephren: calculator CPE complet 8 pași conform Mc 001-2022" },
-      { icon: "🌐", text: "Pagina principală, router lazy loading, asistent AI integrat, documentație API" },
-      { icon: "📄", text: "Generare CPE DOCX server-side via python-docx — culori reale template MDLPA" },
-      { icon: "🗺️", text: "Hartă climatică reală România (Natural Earth) cu tooltip hover și selecție localitate" },
-      { icon: "📊", text: "Export Excel profesional 9 foi + CSV; scale clase energetice A+→G corecte" },
-      { icon: "🔧", text: "Conformitate completă Mc 001-2022, 14 demo-uri reale validate (disertații, proiecte)" },
-      { icon: "📐", text: "Vizualizare 3D izometrică clădire cu ferestre, uși, balcoane, niveluri, busolă" },
-      { icon: "📶", text: "Full-stack: autentificare, cloud sync, PWA offline, grafic radar, deviz estimativ" },
-    ],
-  },
 ];
 
 // ── Planuri de prețuri (actualizat apr. 2026) ──────────────────────────────
