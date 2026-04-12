@@ -327,9 +327,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <button onClick={onStart} style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)" }}>
             {T("hero_cta", "Incepe calculul gratuit →")}
           </button>
-          <a href="https://github.com/tionut10/Zephren" target="_blank" rel="noopener" style={{ fontSize: "16px", padding: "16px 32px", borderRadius: "12px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            GitHub ↗
-          </a>
         </div>
 
         {/* Stats */}
@@ -475,20 +472,14 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "RECOMMENDED" : "RECOMANDAT"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
-              {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ANNUAL ONLY" : "DOAR ANUAL"}</div>}
-              {p.id === "asociatie" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ENTERPRISE" : "INSTITUȚIONAL"}</div>}
+              {p.id === "starter" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#6366f1", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🔒 PRICE LOCK</div>}
+              {p.id === "institutional" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "ENTERPRISE" : "INSTITUȚIONAL"}</div>}
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
               <div style={{ margin: "14px 0" }}>
-                {p.id === "asociatie" ? (
-                  <span style={{ fontSize: "20px", fontWeight: "700", color: textMuted }}>{lang === "EN" ? "Negotiated" : "Negociat"}</span>
-                ) : (
-                  <>
-                    <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
-                    {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
-                    {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#22c55e" }}>({p.discount})</span></div>}
-                    {p.annualOnly && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{lang === "EN" ? "annual billing · ~83 RON/month" : "facturare anuală · ~83 RON/lună"}</div>}
-                  </>
-                )}
+                <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
+                {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
+                {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
+                {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#f59e0b" }}>({p.discount})</span></div>}
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                 {p.features.map(f => (
@@ -497,7 +488,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </li>
                 ))}
               </ul>
-              {!["free", "asociatie"].includes(p.id) && (
+              {p.id !== "free" && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", background: isDark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: "12px" }}>
                   <span style={{ fontSize: "13px" }}>🔒</span>
                   <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: "600", lineHeight: "1.4" }}>
@@ -505,7 +496,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </span>
                 </div>
               )}
-              {p.id === "asociatie" ? (
+              {p.id === "institutional" ? (
                 <a href="mailto:contact@zephren.ro" style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1px solid ${border}`, background: "transparent", color: text, fontSize: "14px", fontWeight: "600", cursor: "pointer", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
                   {T("plan_asociatie_cta", p.cta)}
                 </a>
@@ -564,8 +555,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { plan: "Starter", monthly: null, annual: "799", normalAnnual: "999", saving: "200" },
-              { plan: "Standard", monthly: "99", normalMonthly: "149", annual: "899", normalAnnual: "1.499", saving: "600" },
+              { plan: "Starter", monthly: "169", normalMonthly: "229", annual: "1.090", normalAnnual: "1.490", saving: "400" },
+              { plan: "Professional", monthly: "359", normalMonthly: "489", annual: "4.190", normalAnnual: "5.790", saving: "1.600" },
+              { plan: "Business", monthly: "549", normalMonthly: "759", annual: "5.490", normalAnnual: "7.490", saving: "2.000" },
             ].map(o => (
               <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
                 <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
@@ -603,14 +595,14 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {lang === "EN" ? "Free plan add-ons" : "Add-on plan Free"}
             </span>
             <span style={{ fontSize: "13px", color: textMuted }}>
-              {lang === "EN" ? "Extra CPE reports beyond 3/month" : "Rapoarte CPE suplimentare peste limita de 3/lună"}
+              {lang === "EN" ? "Extra CPE reports beyond 1/month" : "Rapoarte CPE suplimentare peste limita de 1/lună"}
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "15", unit: "RON/raport", note: lang === "EN" ? "over 3/month" : "peste 3/lună" },
-              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "120", unit: "RON", note: lang === "EN" ? "≈12 RON/report" : "≈12 RON/raport" },
-              { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "25", unit: "RON/doc", note: "PDF" },
+              { label: lang === "EN" ? "Extra CPE report" : "Raport CPE suplimentar", price: "29", unit: "RON/raport", note: lang === "EN" ? "over 1/month" : "peste 1/lună" },
+              { label: lang === "EN" ? "Pack 10 reports" : "Pachet 10 rapoarte", price: "249", unit: "RON", note: lang === "EN" ? "≈24,9 RON/report" : "≈24,9 RON/raport" },
+              { label: lang === "EN" ? "Building Renovation Passport" : "Pașaport Renovare Clădire", price: "49", unit: "RON/doc", note: "PDF" },
             ].map(a => (
               <div key={a.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <div>
@@ -638,10 +630,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { label: "Micro", credits: "10", price: "49", perCredit: "4,9" },
-              { label: "Standard", credits: "50", price: "179", perCredit: "3,6" },
-              { label: "Pro", credits: "100", price: "299", perCredit: "3,0" },
-              { label: "Enterprise", credits: "200", price: "499", perCredit: "2,5" },
+              { label: "Micro", credits: "10", price: "99", perCredit: "9,9" },
+              { label: "Standard", credits: "50", price: "390", perCredit: "7,8" },
+              { label: "Pro", credits: "100", price: "690", perCredit: "6,9" },
+              { label: "Enterprise", credits: "200", price: "1.190", perCredit: "6,0" },
             ].map(c => (
               <div key={c.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.label}</div>
@@ -663,19 +655,19 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {lang === "EN" ? "Perpetual licenses" : "Licențe perpetue"}
             </span>
             <span style={{ fontSize: "13px", color: textMuted }}>
-              {lang === "EN" ? "One-time payment · optional annual maintenance +149 RON/year (legislative updates)" : "Plată unică · mentenanță anuală opțională +149 RON/an (actualizări legislative)"}
+              {lang === "EN" ? "One-time payment · no recurring fees" : "Plată unică · fără taxe recurente"}
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "899", maint: "149" },
-              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "1.499", maint: "249" },
-              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "2.999", maint: "449" },
+              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "5.790", ea: "4.190" },
+              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "11.690", ea: "8.490" },
+              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "28.990", ea: "20.990" },
             ].map(l => (
               <div key={l.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <div>
                   <div style={{ fontSize: "13px", fontWeight: "600", color: text }}>{l.label}</div>
-                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "2px" }}>{lang === "EN" ? `maintenance +${l.maint} RON/yr` : `mentenanță +${l.maint} RON/an`}</div>
+                  <div style={{ fontSize: "11px", color: "#f59e0b", marginTop: "2px" }}>EA: {l.ea} RON 🔒</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981" }}>{l.price}</span>
