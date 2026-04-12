@@ -1992,10 +1992,49 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     try {
                       setDocxRendering(true);
                       setDocxRendered(false);
-                      showToast("Se generează preview CPE...", "info", 3000);
+                      showToast("Se generează preview CPE...", "info", 4000);
                       const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                       const buf = await fetchTemplate(tpl.cpe);
                       const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
+
+                      // ── Încearcă Office Online Viewer via Vercel Blob ──
+                      if (docxBlob) {
+                        try {
+                          const previewResp = await fetch("/api/preview-pdf", {
+                            method: "POST",
+                            body: docxBlob,
+                          });
+                          if (previewResp.ok) {
+                            const ct = previewResp.headers.get("content-type") || "";
+                            if (ct.includes("application/pdf")) {
+                              // Gotenberg → PDF direct
+                              const pdfBlob = await previewResp.blob();
+                              if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                              const url = URL.createObjectURL(pdfBlob);
+                              setPdfPreviewUrl(url);
+                              setDocxRendered(true);
+                              setDocxRendering(false);
+                              showToast("Preview PDF generat", "success", 1500);
+                              return;
+                            } else if (ct.includes("application/json")) {
+                              // Vercel Blob → Office Online Viewer
+                              const json = await previewResp.json();
+                              if (json.viewerUrl) {
+                                if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                                setPdfPreviewUrl(json.viewerUrl);
+                                setDocxRendered(true);
+                                setDocxRendering(false);
+                                showToast("Preview generat (Office Online)", "success", 1500);
+                                return;
+                              }
+                            }
+                          }
+                        } catch (apiErr) {
+                          console.warn("preview-pdf API error, falling back to docx-preview:", apiErr.message);
+                        }
+                      }
+
+                      // ── Fallback: docx-preview în browser ──
                       if (docxBlob && docxPreviewRef.current) {
                         const container = docxPreviewRef.current;
                         container.innerHTML = "";
@@ -2163,11 +2202,10 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 <div className="xl:col-span-2 space-y-5">
                   <div className="xl:sticky xl:top-6">
                     <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
-                      {/* Container docx-preview — vizibil mereu, conținut apare după render */}
-                      <div
-                        className="docx-preview-outer bg-gray-200 rounded-lg overflow-auto"
-                        style={{minHeight: docxRendered ? undefined : "320px", maxHeight: "85vh", position: "relative"}}
-                      >
+                      <div className="docx-preview-outer rounded-lg overflow-hidden"
+                        style={{minHeight: docxRendered ? undefined : "320px", height: docxRendered ? "85vh" : undefined, position: "relative", background: "#e8e8e8"}}>
+
+                        {/* Placeholder — niciun preview generat */}
                         {!docxRendered && !docxRendering && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center pointer-events-none">
                             <div className="text-5xl opacity-30">📜</div>
@@ -2176,14 +2214,33 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             </div>
                           </div>
                         )}
+
+                        {/* Loading */}
                         {docxRendering && (
-                          <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                            <div className="text-2xl animate-spin">⏳</div>
                             <div className="text-sm opacity-60 animate-pulse">
-                              {lang==="EN" ? "Rendering certificate..." : "Se randează certificatul..."}
+                              {lang==="EN" ? "Uploading & rendering certificate..." : "Se încarcă și randează certificatul..."}
                             </div>
                           </div>
                         )}
-                        <div ref={docxPreviewRef} className="docx-preview-wrapper" style={{display: docxRendered ? "block" : "none"}} />
+
+                        {/* Office Online Viewer sau PDF direct (pdfPreviewUrl setat) */}
+                        {docxRendered && pdfPreviewUrl && (
+                          <iframe
+                            src={pdfPreviewUrl}
+                            className="w-full h-full border-0"
+                            title="CPE Preview"
+                            style={{display: "block", height: "85vh"}}
+                          />
+                        )}
+
+                        {/* Fallback: docx-preview în browser (fără pdfPreviewUrl) */}
+                        {docxRendered && !pdfPreviewUrl && (
+                          <div className="w-full h-full overflow-auto" style={{maxHeight: "85vh"}}>
+                            <div ref={docxPreviewRef} className="docx-preview-wrapper" />
+                          </div>
+                        )}
                       </div>
                     </Card>
                   </div>
