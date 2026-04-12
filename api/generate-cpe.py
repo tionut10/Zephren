@@ -1243,12 +1243,12 @@ class handler(BaseHTTPRequestHandler):
                     for cell in row.cells:
                         fill_program_field(cell.paragraphs)
 
-            # Grad auditor — FIX: completare automată din datele de intrare
+            # Grad auditor — înlocuiește VALOAREA "I / II", NU eticheta "Gradul"
             grade_val = data.get("auditor_grade", "")
             if grade_val:
                 replace_in_doc(doc, "I / II", grade_val)
                 replace_in_doc(doc, "I/II", grade_val)
-                replace_in_doc(doc, "gradul", grade_val)
+                # FIX: "gradul" este eticheta vizibilă — NU o înlocuim cu valoarea
 
             # Auditor name/company/phone/email
             auditor_replacements = {
@@ -1271,18 +1271,20 @@ class handler(BaseHTTPRequestHandler):
 
             # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
-            # Nr camere (RA) — înlocuiește " x " din "Apartament x camere"
+            # Categoria clădirii — înlocuiește placeholder-ul RA cu label-ul corect
+            # FIX: "Apartament x camere, din bloc" → category_label din dropdown
+            cat_label = data.get("category_label", "")
+            if cat_label:
+                replace_in_doc(doc, "Apartament x camere, din bloc", cat_label)
+                replace_in_doc(doc, "categorie funcțională", cat_label)
+                replace_in_doc(doc, "categorie functionala", cat_label)
+
+            # Nr camere (RA) — înlocuiește " x " rămas (dacă mai există) din "Apartament x camere"
             if category == "RA":
                 replace_in_doc(doc, " x ", " " + data.get("nr_units", "3") + " ")
 
             # FIX GPS: acum că nr_units a înlocuit " x " din template, punem GPS-ul real
             replace_in_doc(doc, "[[GPS]]", gps_val)
-
-            # Category label
-            cat_label = data.get("category_label", "")
-            if cat_label:
-                replace_in_doc(doc, "categorie funcțională", cat_label)
-                replace_in_doc(doc, "categorie functionala", cat_label)
 
             # Location
             replace_in_doc(doc, "localitatea", data.get("city", ""))
