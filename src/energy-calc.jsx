@@ -1466,7 +1466,7 @@ export default function EnergyCalcApp({ cloud }) {
       category: "RA", structure: "Panouri mari prefabricate PAFP (3 straturi BA + PS + BA, blocuri comuniste 1965–1989)",
       yearBuilt: "1978", yearRenov: "",
       floors: "P+8", basement: true, attic: false,
-      units: "1", stairs: "1",
+      units: "3", stairs: "1",
       areaUseful: "65", volume: "176", areaEnvelope: "115",
       heightBuilding: "25.2", heightFloor: "2.70",
       locality: "București",

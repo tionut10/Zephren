@@ -1139,8 +1139,9 @@ class handler(BaseHTTPRequestHandler):
             # "ZZ.LL.AAAA" ÎNAINTE de "AAAA"
 
             # 1. Secvențiale (cele mai lungi pattern-uri primele)
-            ep_total_vals = [data.get("ep_total_real", "0,0"), data.get("ep_total_ref", "0,0")]
-            replace_seq(doc, "xxxx,x", ep_total_vals)
+            # FIX: ep_specific (kWh/m²,an) și ep_ref — nu ep_total_real (kWh/an total)
+            ep_primar_vals = [data.get("ep_specific", "0,0"), data.get("ep_ref", "0,0")]
+            replace_seq(doc, "xxxx,x", ep_primar_vals)
 
             xxx_vals = [data.get("area_ref", "0,0"), data.get("co2_val", "0,0"),
                         data.get("sre_st", "0,0"), data.get("sre_pv", "0,0"),
@@ -1148,13 +1149,18 @@ class handler(BaseHTTPRequestHandler):
                         data.get("sre_other", "0,0"), data.get("sre_total", "0,0")]
             replace_seq(doc, "xxx,x", xxx_vals)
 
-            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0"),
-                       data.get("ep_specific", "0,0"), data.get("ep_ref", "0,0")]
+            # FIX: ep_specific/ep_ref sunt acum în xxxx,x; xx,x = doar qf_thermal + qf_electric
+            xx_vals = [data.get("qf_thermal", "0,0"), data.get("qf_electric", "0,0")]
             replace_seq(doc, "xx,x", xx_vals)
+
+            # FIX GPS: înlocuim placeholder-ul GPS cu marker temp înainte ca nr_units să
+            # corupă " x " (separator coordonate). Înlocuim [[GPS]] la final.
+            gps_val = data.get("gps", "")
+            replace_in_doc(doc, "II,IIII x LL,LLLL", "[[GPS]]")
 
             # 2. Înlocuiri simple (de la cele mai lungi la cele mai scurte)
             ordered_replacements = [
-                ("II,IIII x LL,LLLL", data.get("gps", "")),
+                # GPS este protejat acum cu [[GPS]] — nu mai apare " x " în coordonate
                 ("ZZ.LL.AAAA", data.get("auditor_date", "")),
                 ("ZZ/LL/AAAA", data.get("auditor_date", "").replace(".", "/")),
                 ("XX/XXXXX", data.get("auditor_atestat", "")),
@@ -1258,9 +1264,12 @@ class handler(BaseHTTPRequestHandler):
 
             # (secvențialele xxxx,x / xxx,x / xx,x au fost mutate mai sus, ordinea contează)
 
-            # Nr camere (RA)
+            # Nr camere (RA) — înlocuiește " x " din "Apartament x camere"
             if category == "RA":
                 replace_in_doc(doc, " x ", " " + data.get("nr_units", "3") + " ")
+
+            # FIX GPS: acum că nr_units a înlocuit " x " din template, punem GPS-ul real
+            replace_in_doc(doc, "[[GPS]]", gps_val)
 
             # Category label
             cat_label = data.get("category_label", "")
