@@ -286,6 +286,32 @@ def _text_color_for_bg(hex_color):
         return "000000"
 
 
+def _get_shape_fill_hex(shape_xml):
+    """Extrage culoarea de umplere originală din shape (srgbClr sau VML fillcolor)."""
+    m = re.search(r'<a:solidFill>\s*<a:srgbClr val="([A-Fa-f0-9]{6})"', shape_xml)
+    if m:
+        return m.group(1).upper()
+    m = re.search(r'fillcolor="[#]?([A-Fa-f0-9]{6})"', shape_xml)
+    if m:
+        return m.group(1).upper()
+    return None
+
+
+def _is_co2_shape(shape_xml):
+    """Returnează True dacă shape-ul este pe scala CO2 (culoare albastră dominantă)."""
+    color = _get_shape_fill_hex(shape_xml)
+    if not color:
+        return False
+    try:
+        r = int(color[0:2], 16)
+        g = int(color[2:4], 16)
+        b = int(color[4:6], 16)
+        # Scala CO2 din template MDLPA = albastru dominant (B > 100 și B > R * 1.5)
+        return b > 100 and b > r * 1.5 and b >= g
+    except Exception:
+        return False
+
+
 def _update_shape_color(shape_xml_str, color_info):
     """Update fill color in DrawingML (srgbClr SAU schemeClr) și VML (fillcolor)."""
     result = shape_xml_str
@@ -399,50 +425,35 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     # De aceea, folosim ORDINEA DIN DOCUMENT (XML order) ca fallback — în Word XML,
     # conținutul coloanei stângi apare ÎNAINTEA coloanei drepte.
 
-    # FIX SORT: folosim ORDINEA DIN DOCUMENT (XML order) — NU sortare după h.
-    # Motivul: shape-urile ancorate cu relativeFrom="column" au h_raw relativ la coloana lor,
-    # deci toate capătă același offset +900_000 → sort nesigur → indicatoare amestecate.
-    # În templatele MDLPA ordinea XML este întotdeauna: EP_real → EP_ref → CO2 (stânga→dreapta).
-    text_indicators_doc_order = list(text_indicators)
-
-    # Calculăm abs_h DOAR pentru cazul n==2, pentru a distinge "page"-relative vs "column"
-    def _get_abs_h(indicator):
-        m, letter, h_raw, v = indicator
-        content = m.group(1)
-        rel_match = re.search(r'positionH\s+relativeFrom="([^"]+)"', content)
-        rel = rel_match.group(1) if rel_match else "page"
-        # Offset estimativ per tip de ancorare (doar pentru comparație relativă)
-        if rel == "page":
-            return h_raw
-        elif rel == "margin":
-            return h_raw + 900_000
-        elif rel == "column":
-            # Nu putem distinge coloana → returnăm h_raw pentru a păstra doc order
-            return h_raw
-        return h_raw
-
-    if len(text_indicators_doc_order) >= 3:
-        # Ordinea XML: [0]=EP_real (stânga), [1]=EP_ref (mijloc), [2+]=CO2 (dreapta)
-        ep_indicators = text_indicators_doc_order[:2]
-        co2_indicators = text_indicators_doc_order[2:]
-    elif len(text_indicators_doc_order) == 2:
-        h0_abs = _get_abs_h(text_indicators_doc_order[0])
-        h1_abs = _get_abs_h(text_indicators_doc_order[1])
-        h_diff = abs(h1_abs - h0_abs)
-        if h_diff > 1_500_000:
-            # Scale clar diferite (h absolut mare) — page-relative
-            ep_indicators = text_indicators_doc_order[:1]
-            co2_indicators = text_indicators_doc_order[1:]
-        elif co2_class_real:
-            # h similar (column-relative) → doc order: [0]=EP_real, [1]=CO2
-            ep_indicators = [text_indicators_doc_order[0]]
-            co2_indicators = [text_indicators_doc_order[1]]
+    # CLASIFICARE ROBUSTĂ: detectăm CO2 indicators după culoarea originală din template
+    # Scala CO2 folosește albastru → _is_co2_shape() verifică B dominant (R,G,B channels)
+    # Scala EP folosește verde/galben/portocaliu/roșu → nu e albastru dominant
+    # Această metodă funcționează indiferent de ordinea XML sau ancorarea relativeFrom
+    ep_indicators_raw = []
+    co2_indicators = []
+    for ind in text_indicators:
+        im, letter, ih, iv = ind
+        if _is_co2_shape(im.group(1)):
+            co2_indicators.append(ind)
         else:
-            ep_indicators = text_indicators_doc_order
-            co2_indicators = []
+            ep_indicators_raw.append(ind)
+
+    # Dacă nu am detectat CO2 prin culoare (template cu schemeClr fără fill explicit),
+    # fallback: ultimul indicator (cel mai la dreapta în doc order) = CO2
+    if not co2_indicators and len(ep_indicators_raw) >= 2 and co2_class_real:
+        co2_indicators = [ep_indicators_raw[-1]]
+        ep_indicators_raw = ep_indicators_raw[:-1]
+
+    # Sortează indicatoarele EP după V: V mic = sus pe scală = EP_ref (clădire referință mai eficientă)
+    #                                    V mare = jos pe scală = EP_real (clădire reală)
+    # Această sortare e sigură pt. EP (ambele ancorate în aceeași coloană stângă)
+    ep_indicators_raw.sort(key=lambda x: x[3])  # sort by v
+    if len(ep_indicators_raw) >= 2:
+        ep_ref_ind = ep_indicators_raw[0]   # V mic → EP_ref (mai sus = mai eficient)
+        ep_real_ind = ep_indicators_raw[1]  # V mare → EP_real
+        ep_indicators = [ep_real_ind, ep_ref_ind]  # [0]=real, [1]=ref
     else:
-        ep_indicators = text_indicators_doc_order
-        co2_indicators = []
+        ep_indicators = ep_indicators_raw
 
     # Perechi text-pentagon: pentagonul urmează imediat după textbox
     # Construim o mapare: pentru fiecare text indicator, găsim pentagonul cel mai apropiat (următor)
