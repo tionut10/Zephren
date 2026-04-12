@@ -11,6 +11,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🎨",
+        "text": "Changelog auto-generat din git: script update-changelog.js + prebuild hook, elimină hardcoding"
+      },
+      {
         "icon": "💰",
         "text": "Versionare pre-lansare 0.x.y: v0.1.0 (săpt.1) + v0.2.0 (săpt.2), consolidare changelog pe săptămâni"
       },
@@ -37,10 +41,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "Actualizare planuri și prețuri pagina principală; șterge GitHub din hero"
-      },
-      {
-        "icon": "✨",
-        "text": "Adaugă 150+ variante noi: izolatii PUR/Rockwool/Cork/Aerogel/ETICS, ferestre VIG/triple-glazed/bifață, pompe c"
       }
     ]
   },

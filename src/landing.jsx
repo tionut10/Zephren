@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import {
-  FEATURES, V3_FEATURES, PLANS, STATS, PRODUCT_BRANDS,
+  V3_FEATURES, PLANS, STATS, PRODUCT_BRANDS,
   NORMATIVE, NORMATIVE_COUNT, TOTAL_PRODUCTS, STEPS_COUNT,
   APP_VERSION, CHANGELOG,
+  STEPS_DATA, FEATURES, EXPORTS_DATA, IMPORTS_DATA,
+  CALC_MODULES_COUNT, API_ENDPOINTS_COUNT,
 } from "./data/landingData.js";
 
 // Traduceri pagină principală
@@ -340,20 +342,69 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
-      {/* ═══ FEATURES ═══ */}
+      {/* ═══ CALCULATOR ÎN 8 PAȘI ═══ */}
       <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "16px", color: text }}>{T("feat_title", "Tot ce ai nevoie pentru certificare energetica")}</h2>
-        <p style={{ fontSize: "15px", color: textFaint, textAlign: "center", maxWidth: "600px", margin: "0 auto 48px" }}>
-          {T("feat_sub", `De la identificarea cladirii pana la raportul de audit — ${STEPS_COUNT} pasi, un singur software`)}
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px" }}>
-          {FEATURES.map(f => (
-            <div key={f.title} className="feature-card" style={{ padding: "32px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}`, transition: "all 0.3s ease", cursor: "default" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = borderHover; e.currentTarget.style.boxShadow = "0 8px 32px rgba(245,158,11,0.06)"; }}
+        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "12px", color: "#6366f1", marginBottom: "16px" }}>
+            {lang === "EN" ? "HOW IT WORKS" : "CUM FUNCȚIONEAZĂ"}
+          </div>
+          <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>
+            {lang === "EN" ? "8-step certified calculator" : "Calculator certificare în 8 pași"}
+          </h2>
+          <p style={{ fontSize: "15px", color: textFaint, maxWidth: "600px", margin: "12px auto 0" }}>
+            {lang === "EN"
+              ? `From building identification to the official CPE document — ${STEPS_COUNT} steps, ${CALC_MODULES_COUNT} calculation modules, one platform`
+              : `De la identificarea clădirii până la documentul CPE oficial — ${STEPS_COUNT} pași, ${CALC_MODULES_COUNT} module de calcul, o singură platformă`}
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+          {(STEPS_DATA || []).map((step, i) => (
+            <div key={step.id} style={{ padding: "24px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, position: "relative", transition: "all 0.25s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.transform = "translateY(0)"; }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "rgba(99,102,241,0.15)", border: "1.5px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "11px", fontWeight: "800", color: "#6366f1" }}>{step.id}</span>
+                </div>
+                <span style={{ fontSize: "20px" }}>{step.icon}</span>
+                <h4 style={{ fontSize: "14px", fontWeight: "700", color: text, margin: 0 }}>{step.title}</h4>
+              </div>
+              <p style={{ fontSize: "12px", color: textMuted, lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+              {step.modules && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "12px" }}>
+                  {step.modules.slice(0, 3).map(m => (
+                    <span key={m} style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "rgba(99,102,241,0.08)", color: "#6366f1", border: "1px solid rgba(99,102,241,0.15)", fontFamily: "monospace" }}>{m}</span>
+                  ))}
+                  {step.modules.length > 3 && <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", color: textFaint }}>+{step.modules.length - 3}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ FUNCȚIONALITĂȚI PRINCIPALE ═══ */}
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 80px" }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>
+            {lang === "EN" ? "Everything you need for energy certification" : "Tot ce ai nevoie pentru certificare energetică"}
+          </h2>
+          <p style={{ fontSize: "14px", color: textFaint, maxWidth: "560px", margin: "10px auto 0" }}>
+            {lang === "EN" ? `${CALC_MODULES_COUNT} specialized modules · ${API_ENDPOINTS_COUNT} server-side APIs · auto-updating from code` : `${CALC_MODULES_COUNT} module specializate · ${API_ENDPOINTS_COUNT} API server-side · se actualizează automat din cod`}
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+          {(FEATURES || []).map(f => (
+            <div key={f.id || f.title} style={{ padding: "28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, transition: "all 0.25s ease", cursor: "default" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = borderHover; e.currentTarget.style.boxShadow = "0 8px 24px rgba(245,158,11,0.05)"; }}
               onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.boxShadow = "none"; }}>
-              <div style={{ fontSize: "32px", marginBottom: "16px" }}>{f.icon}</div>
-              <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "8px", color: text }}>{f.title}</h3>
-              <p style={{ fontSize: "14px", color: textMuted, lineHeight: 1.6 }}>{f.desc}</p>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <span style={{ fontSize: "28px", flexShrink: 0, marginTop: "2px" }}>{f.icon}</span>
+                <div>
+                  <h3 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "6px", color: text }}>{f.title}</h3>
+                  <p style={{ fontSize: "13px", color: textMuted, lineHeight: 1.6, margin: 0 }}>{f.desc}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -385,27 +436,47 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
-      {/* ═══ FUNCTIONALITATI v3 ═══ */}
+      {/* ═══ EXPORT & IMPORT ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "16px" }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
             v{APP_VERSION}
           </div>
-          <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>{T("v3_title", "Functionalitati avansate")}</h2>
-          <p style={{ fontSize: "15px", color: textFaint, maxWidth: "600px", margin: "12px auto 0" }}>
-            {T("v3_sub", "Calcule, vizualizari si rapoarte profesionale")}
-          </p>
+          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>
+            {lang === "EN" ? "Export & Import — all formats" : "Export & Import — toate formatele"}
+          </h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
-          {V3_FEATURES.map(item => (
-            <div key={item.title} style={{ padding: "24px", borderRadius: "12px", background: amberCardBg, border: `1px solid rgba(245,158,11,0.08)`, transition: "all 0.3s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              <div style={{ fontSize: "28px", marginBottom: "12px" }}>{item.icon}</div>
-              <h4 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "6px", color: text }}>{item.title}</h4>
-              <p style={{ fontSize: "13px", color: textMuted, lineHeight: 1.5 }}>{item.desc}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          {/* Export */}
+          <div style={{ padding: "28px 32px", borderRadius: "14px", background: amberCardBg, border: "1px solid rgba(245,158,11,0.1)" }}>
+            <div style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
+              📤 {lang === "EN" ? "Export" : "Export"} — {(EXPORTS_DATA || []).length} {lang === "EN" ? "formats" : "formate"}
             </div>
-          ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {(EXPORTS_DATA || []).map(e => (
+                <div key={e.fmt + e.desc} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{e.icon}</span>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#f59e0b", width: "36px", flexShrink: 0 }}>{e.fmt}</span>
+                  <span style={{ fontSize: "12px", color: textMuted }}>{e.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Import */}
+          <div style={{ padding: "28px 32px", borderRadius: "14px", background: isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.03)", border: "1px solid rgba(16,185,129,0.1)" }}>
+            <div style={{ fontSize: "13px", fontWeight: "700", color: "#10b981", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
+              📥 {lang === "EN" ? "Import" : "Import"} — {(IMPORTS_DATA || []).length} {lang === "EN" ? "sources" : "surse"}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {(IMPORTS_DATA || []).map(im => (
+                <div key={im.src} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{im.icon}</span>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#10b981", width: "90px", flexShrink: 0 }}>{im.src}</span>
+                  <span style={{ fontSize: "12px", color: textMuted }}>{im.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

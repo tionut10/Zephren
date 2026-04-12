@@ -6,11 +6,26 @@
  * products.json, steps.json etc. actualizează automat landing-ul.
  */
 
-import PRODUCTS from "./products.json";
-import STEPS    from "./steps.json";
-import CLIMATE  from "./climate.json";
-import BRIDGES  from "./thermal-bridges.json";
+import PRODUCTS  from "./products.json";
+import STEPS     from "./steps.json";
+import CLIMATE   from "./climate.json";
+import BRIDGES   from "./thermal-bridges.json";
+import FEATURES_DATA from "./features.json";
 export { CHANGELOG } from "./changelog.generated.js";
+export {
+  CALC_MODULES_COUNT,
+  API_ENDPOINTS_COUNT,
+  COMPONENTS_COUNT,
+  IMPORT_SOURCES_COUNT,
+  EXPORT_FORMATS_COUNT,
+} from "./program-stats.generated.js";
+
+// ── Date din registrul de funcționalități (features.json) ───
+export const STEPS_DATA    = FEATURES_DATA.steps;
+export const FEATURES      = FEATURES_DATA.main;
+export const EXPORTS_DATA  = FEATURES_DATA.exports;
+export const IMPORTS_DATA  = FEATURES_DATA.imports;
+export const CALC_MODULES  = FEATURES_DATA.calcModules;
 
 // ── Statistici produse (calculate din sursa reală) ──────────────────────────
 export const PRODUCT_COUNTS = {
@@ -53,13 +68,19 @@ export const NORMATIVE_COUNT = NORMATIVE.length;
 // ── Versiune software ─────────────────────────────────────────────────────────
 export const APP_VERSION = "3.5";
 
-// ── Statistici hero ──────────────────────────────────────────────────────────
+// ── Statistici hero (auto-derivate din surse reale) ─────────────────────────
+import {
+  CALC_MODULES_COUNT as _CMC,
+  API_ENDPOINTS_COUNT as _AEC,
+} from "./program-stats.generated.js";
+
 export const STATS = [
-  { value: `${TOTAL_PRODUCTS}+`, label: "Produse în catalog" },
-  { value: String(CLIMATE_COUNT),  label: "Localități climatice" },
-  { value: String(BRIDGES_COUNT),  label: "Punți termice" },
+  { value: `${TOTAL_PRODUCTS}+`,  label: "Produse în catalog" },
+  { value: String(CLIMATE_COUNT), label: "Localități climatice" },
+  { value: String(BRIDGES_COUNT), label: "Punți termice" },
+  { value: String(_CMC),          label: "Module de calcul" },
   { value: String(NORMATIVE_COUNT),label: "Normative integrate" },
-  { value: String(STEPS_COUNT),    label: "Pași calculator" },
+  { value: String(STEPS_COUNT),   label: "Pași calculator" },
 ];
 
 // ── Categorii produse pentru secțiunea catalog ───────────────────────────────
@@ -96,98 +117,10 @@ export const PRODUCT_BRANDS = [
   },
 ];
 
-// ── Features principale ──────────────────────────────────────────────────────
-export const FEATURES = [
-  {
-    icon: "📊",
-    title: "Calcul Mc 001-2022 complet",
-    desc: `Bilanț energetic lunar ISO 13790, ${CLIMATE_COUNT} localități climatice, 5 zone, dashboard sumar cu grafic Sankey, calcul orar ISO 52016-1`,
-  },
-  {
-    icon: "📜",
-    title: "Certificat DOCX oficial MDLPA",
-    desc: "12 template-uri MDLPA completate automat, export XML registru electronic, PDF cu QR code, semnătură digitală",
-  },
-  {
-    icon: "🏗️",
-    title: "Anvelopă & Punți termice",
-    desc: `Materiale constructive extinse, ${BRIDGES_COUNT} punți termice SVG interactive, verificare Glaser ISO 13788, ISO 6946/10077-1/13370`,
-  },
-  {
-    icon: "☀️",
-    title: "Surse regenerabile complete",
-    desc: `PV (${PRODUCT_COUNTS.pvPanels} modele), solar termic, pompe căldură (${PRODUCT_COUNTS.heatPumps} modele), biomasă, eolian, cogenerare — RER automat`,
-  },
-  {
-    icon: "🔋",
-    title: "Catalog produse reale",
-    desc: `${TOTAL_PRODUCTS}+ produse: ${PRODUCT_COUNTS.windows} ferestre, ${PRODUCT_COUNTS.heatPumps} pompe căldură, ${PRODUCT_COUNTS.pvPanels} panouri PV, ${PRODUCT_COUNTS.inverters} invertoare, ${PRODUCT_COUNTS.batteries} baterii, ${PRODUCT_COUNTS.boilers} centrale`,
-  },
-  {
-    icon: "🎓",
-    title: "Tutorial interactiv",
-    desc: "Ghid pas cu pas prin toți cei 8 pași, cu exemplu demo real dintr-un template Quick Fill. Câmpuri cu valori calculate, referințe normative, greșeli frecvente și impact per pas.",
-  },
-  {
-    icon: "⚡",
-    title: "Quick Fill — completare în 60 sec",
-    desc: "Wizard vizual cu 7 ecrane (tip, perioadă, izolație, instalații, ferestre, dimensiuni) — generează automat anvelopa, instalațiile și punțile termice prin inferență din selecții.",
-  },
-  {
-    icon: "🔍",
-    title: "Audit & reabilitare inteligentă",
-    desc: "Scenarii cost-optimă EN 15459-1, deviz estimativ, smart rehab suggestions, comparație multi-scenariu",
-  },
-  {
-    icon: "⚡",
-    title: "nZEB & ZEB conform EPBD",
-    desc: "Legea 238/2024, EPBD 2024/1275, scala A-G, verificare completă nZEB cu RER, GWP ciclu viață EN 15978",
-  },
-  {
-    icon: "🏠",
-    title: "BACS, EV-ready, Solar-ready",
-    desc: "Evaluare automatizare clădire BACS, pregătire stație EV conform EPBD Art.12, verificare solar-ready Art.14",
-  },
-  {
-    icon: "🗺️",
-    title: "Hartă climatică interactivă",
-    desc: `Selectare localitate pe hartă SVG, ${CLIMATE_COUNT} localități, zone climatice I-V vizuale, profil temperatură lunară`,
-  },
-  {
-    icon: "❄️",
-    title: "Confort termic vară C107/7",
-    desc: "Temperatură operativă, analiză per element, conformitate C107/7-2002, recomandări protecție solară",
-  },
-  {
-    icon: "💧",
-    title: "Verificare condensare Glaser",
-    desc: "Diagramă Glaser SVG vizuală per element, verificare lunară 12 luni, presiuni parțiale vs. saturație",
-  },
-  {
-    icon: "📤",
-    title: "Export complet multi-format",
-    desc: "Export DOCX oficial, XML MDLPA, PDF raport, JSON proiect, CSV date, XLSX tabelar — import drag & drop",
-  },
-];
-
-// ── Features v3 detaliate ────────────────────────────────────────────────────
-export const V3_FEATURES = [
-  { icon: "📈", title: "Dashboard sumar", desc: "Vizualizare sintetică cu indicatori cheie: clasă energetică, cost anual, RER, emisii CO₂ — totul într-o singură pagină." },
-  { icon: "🔀", title: "Grafic Sankey", desc: "Flux energetic vizual: surse, conversii și pierderi, de la energie primară la energia utilă, într-un singur grafic interactiv." },
-  { icon: "🌍", title: "GWP ciclu viață EN 15978", desc: "Emisii gaze efect de seră pe ciclul complet de viață: construcție, operare, demoliție — per material și per element." },
-  { icon: "❄️", title: "Confort termic vară C107/7", desc: "Temperatură operativă, analiză per element, conformitate C107/7-2002, recomandări de protecție solară." },
-  { icon: "💧", title: "Diagramă Glaser vizuală", desc: "Diagramă SVG interactivă per element constructiv, verificare condens 12 luni, presiuni parțiale vs. saturație." },
-  { icon: "🏠", title: "BACS / EV / Solar-ready", desc: "Evaluare BACS (automatizare), pregătire EV (EPBD Art.12), solar-ready (Art.14) — verificare conformitate completă." },
-  { icon: "🗺️", title: "Hartă climatică interactivă", desc: `Selectare localitate pe hartă SVG, ${CLIMATE_COUNT} localități, vizualizare zone I-V, auto-populare date meteo.` },
-  { icon: "🧱", title: `Catalog ${TOTAL_PRODUCTS}+ produse reale`, desc: `Ferestre (${PRODUCT_COUNTS.windows}), pompe căldură (${PRODUCT_COUNTS.heatPumps}), PV (${PRODUCT_COUNTS.pvPanels}), invertoare, baterii, centrale.` },
-  { icon: "💡", title: "Smart rehab suggestions", desc: "Recomandări inteligente bazate pe cost-beneficiu: scenariu ușor, mediu, profund, cu investiție și economie anuală." },
-  { icon: "📊", title: "Calcul orar ISO 52016-1", desc: "Simulare orară 8760 ore pe baza datelor TMY generate, validare rezultate lunare, profil termic detaliat." },
-  { icon: "🔬", title: "EN 12831 · PNRR · Pasivhaus", desc: "Calcul necesar de căldură EN 12831, verificare eligibilitate PNRR, conformitate Pasivhaus 15 kWh/(m²·an)." },
-  { icon: "🔄", title: "Comparație multi-scenariu", desc: "Comparație scenarii reabilitare side-by-side: investiție, economie, termen recuperare, clasă energetică rezultată." },
-  { icon: "📤", title: "Export complet", desc: "DOCX oficial MDLPA, XML registru electronic, PDF cu QR code, JSON/CSV/XLSX — import drag & drop." },
-  { icon: "📱", title: "Mobile responsive complet", desc: "Header adaptat automat — meniu ⋯ cu toate acțiunile disponibile pe orice dimensiune de ecran. Design optimizat pentru audit pe teren." },
-  { icon: "♿", title: "Accesibilitate & UX audit", desc: "ARIA complet (role, aria-selected, aria-expanded), tabular-nums pe toate valorile numerice, consistență culori dark/light, fonturi lizibile." },
-];
+// ── V3_FEATURES — generat din features.json (compatibilitate) ───────────────
+export const V3_FEATURES = (FEATURES_DATA.main || []).map(f => ({
+  icon: f.icon, title: f.title, desc: f.desc,
+}));
 
 // ── Planuri de prețuri (actualizat apr. 2026) ──────────────────────────────
 export const PLANS = [

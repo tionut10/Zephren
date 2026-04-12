@@ -1,0 +1,222 @@
+{
+  "steps": [
+    {
+      "id": 1,
+      "icon": "📋",
+      "title": "Identificare clădire",
+      "desc": "Adresă, tip, an construcție, arie utilă, volum. Geocodare automată, contur din OSM, căutare cadastrală ANCPI, fotografii clădire, import climatice ERA5/EPW.",
+      "modules": ["climate-import", "weather"]
+    },
+    {
+      "id": 2,
+      "icon": "🏗️",
+      "title": "Anvelopă termică",
+      "desc": "Pereți, plafoane, pardoseli strat-cu-strat, ferestre cu U și g-value, punți termice SVG interactive. Verificare U vs nZEB/renovare, Glaser ISO 13788, confort vară C107.",
+      "modules": ["opaque", "glaser", "moisture-en15026", "thermal-bridges-dynamic", "summer-comfort", "c107"]
+    },
+    {
+      "id": 3,
+      "icon": "⚙️",
+      "title": "Instalații",
+      "desc": "Încălzire, ACM, răcire, ventilație, iluminat. Lanț eficiență (generare × emisie × distribuție × control). Pompe căldură, cazane condensare, termoficare, recuperare VMC.",
+      "modules": ["acm-en15316", "ventilation-flow", "vmc-hr", "infiltration", "district-heating-individual"]
+    },
+    {
+      "id": 4,
+      "icon": "☀️",
+      "title": "Surse regenerabile",
+      "desc": "Solar termic EN 15316-4-3, fotovoltaic PVGIS, pompe căldură, biomasă, cogenerare CHP, baterii stocare. Calcul RER automat pentru verificare nZEB.",
+      "modules": ["solar-acm-detailed", "gp123", "pvgis", "heat-pump-sizing", "chp-detailed"]
+    },
+    {
+      "id": 5,
+      "icon": "📊",
+      "title": "Calcul energetic",
+      "desc": "Bilanț ISO 13790 lunar + simulare orar 8760h (ISO 52016-1). Clasă energetică A+→G, clasă CO₂, EP primar, verificare nZEB, GWP ciclu viață EN 15978, diagrama Sankey.",
+      "modules": ["iso13790", "hourly", "classification", "epbd", "gwp", "benchmark"]
+    },
+    {
+      "id": 6,
+      "icon": "📄",
+      "title": "Certificat CPE",
+      "desc": "Export DOCX oficial (template MDLPA, python-docx), XML registru electronic EPBD, PDF preview cu QR code. Completare automată toate câmpurile din calculul anterior.",
+      "modules": ["epbd-xml-export", "docx-data-mapper"]
+    },
+    {
+      "id": 7,
+      "icon": "🔍",
+      "title": "Audit & Reabilitare",
+      "desc": "Diagnoza componentelor, recomandări prioritizate, analiză LCC/NPV/IRR 30 ani, scenarii cost-optimă EN 15459, eligibilitate PNRR, fond reparații, calendar faze renovare.",
+      "modules": ["financial", "rehab-cost", "rehab-comparator", "smart-rehab", "pnrr-funding", "phased-rehab", "maintenance-fund", "thermal-map"]
+    },
+    {
+      "id": 8,
+      "icon": "🔬",
+      "title": "Module avansate",
+      "desc": "38+ instrumente specializate: BACS EN 15232, EN 12831 sarcini termice, Pasivhaus, PMV/PPD ISO 7730, analiza Monte Carlo EP, MEPS EPBD 2024, clădiri istorice, portfolio multi-clădiri.",
+      "modules": ["bacs-en15232", "en12831", "en12831-rooms", "pasivhaus", "pmv-ppd", "acoustic", "urban-heat-island", "historic-buildings", "mixed-use-buildings"]
+    }
+  ],
+
+  "main": [
+    {
+      "id": "mc001",
+      "icon": "📊",
+      "title": "Calcul complet Mc 001-2022",
+      "desc": "Bilanț energetic ISO 13790 lunar și orar (8760h ISO 52016-1), 5 zone climatice, grafic Sankey flux, dashboard sumar indicatori cheie.",
+      "category": "calcul"
+    },
+    {
+      "id": "cpe-docx",
+      "icon": "📄",
+      "title": "Certificat CPE oficial MDLPA",
+      "desc": "Template DOCX complet automat (python-docx), export XML registru electronic EPBD, PDF cu QR code, clasificare per apartament.",
+      "category": "export"
+    },
+    {
+      "id": "envelope",
+      "icon": "🏗️",
+      "title": "Anvelopă & Punți termice",
+      "desc": "Compoziție strat-cu-strat, catalog punți termice SVG interactive, verificare Glaser ISO 13788, conformitate U-value nZEB/renovare.",
+      "category": "calcul"
+    },
+    {
+      "id": "nzeb",
+      "icon": "✅",
+      "title": "nZEB & ZEB conform EPBD",
+      "desc": "Legea 238/2024, EPBD 2024/1275, verificare completă RER ≥30%, GWP ciclu viață EN 15978, MEPS 2030 clădiri existente.",
+      "category": "conformitate"
+    },
+    {
+      "id": "renewables",
+      "icon": "☀️",
+      "title": "Surse regenerabile complete",
+      "desc": "Solar termic EN 15316-4-3, PV din PVGIS, pompe căldură (SCOP/COP), biomasă, CHP — calcul RER automat.",
+      "category": "calcul"
+    },
+    {
+      "id": "catalog",
+      "icon": "🏪",
+      "title": "Catalog produse reale 2026",
+      "desc": "Ferestre, pompe căldură, panouri PV, invertoare, baterii, centrale termice — toate cu specificații tehnice reale, actualizate 2026.",
+      "category": "date"
+    },
+    {
+      "id": "quickfill",
+      "icon": "⚡",
+      "title": "Quick Fill — 60 secunde",
+      "desc": "Wizard vizual 6 ecrane: tip clădire, perioadă, izolație, instalații, ferestre, dimensiuni. Generare automată anvelopă + instalații + punți prin inferență.",
+      "category": "ux"
+    },
+    {
+      "id": "import",
+      "icon": "📥",
+      "title": "Import din 7+ surse",
+      "desc": "IFC/BIM, OCR facturi, OSM geocodare, date climatice ERA5/EPW, planșe PDF via Claude AI, XML energetic, CSV — import drag & drop unificat.",
+      "category": "import"
+    },
+    {
+      "id": "audit",
+      "icon": "🔍",
+      "title": "Audit & LCC EN 15459",
+      "desc": "Scenarii cost-optimă, NPV/IRR 30 ani per măsură, deviz estimativ, eligibilitate PNRR, planificare faze renovare multi-an.",
+      "category": "calcul"
+    },
+    {
+      "id": "bacs",
+      "icon": "🏠",
+      "title": "BACS · EV-ready · Solar-ready",
+      "desc": "Evaluare automatizare clădire BACS EN 15232 (clasa A–D), pregătire EV EPBD Art.12, solar-ready Art.14, SRI (Smart Readiness Indicator).",
+      "category": "conformitate"
+    },
+    {
+      "id": "climate-map",
+      "icon": "🗺️",
+      "title": "Hartă climatică interactivă",
+      "desc": "Selecție localitate pe SVG real România (Natural Earth), auto-populare date meteo, zone I–V vizuale, profil lunar temperaturi.",
+      "category": "date"
+    },
+    {
+      "id": "export-multi",
+      "icon": "📤",
+      "title": "Export multi-format complet",
+      "desc": "DOCX oficial, XML MDLPA, PDF+QR, XLSX (9 foi), JSON proiect, CSV anvelopă, e-Factură ANAF, raport audit PDF.",
+      "category": "export"
+    }
+  ],
+
+  "calcModules": {
+    "acm-en15316":              { "title": "ACM EN 15316-4-3", "category": "instalatii" },
+    "acoustic":                 { "title": "Conformitate acustică", "category": "conformitate" },
+    "bacs-en15232":             { "title": "BACS EN 15232", "category": "conformitate" },
+    "benchmark":                { "title": "Benchmark tipologie", "category": "analiza" },
+    "c107":                     { "title": "Confort vară C107/7", "category": "conformitate" },
+    "chp-detailed":             { "title": "Cogenerare CHP", "category": "regenerabile" },
+    "classification":           { "title": "Clasare energetică A+→G", "category": "calcul" },
+    "climate-import":           { "title": "Import climatice ERA5/EPW", "category": "date" },
+    "cooling-hourly":           { "title": "Răcire orară", "category": "calcul" },
+    "district-heating-individual": { "title": "Termoficare individuală", "category": "instalatii" },
+    "docx-data-mapper":         { "title": "Mapare template DOCX", "category": "export" },
+    "en12831-rooms":            { "title": "Sarcini termice per cameră EN 12831", "category": "calcul" },
+    "en12831":                  { "title": "Sarcină termică vârf EN 12831", "category": "calcul" },
+    "epbd-xml-export":          { "title": "Export XML EPBD registru", "category": "export" },
+    "epbd":                     { "title": "Conformitate EPBD 2024", "category": "conformitate" },
+    "financial":                { "title": "Analiză financiară scenarii LCC", "category": "analiza" },
+    "glaser":                   { "title": "Diagramă Glaser condensare ISO 13788", "category": "anvelopa" },
+    "gp123":                    { "title": "Sisteme PV GP 123", "category": "regenerabile" },
+    "grey-water-hr":            { "title": "Recuperare căldură apă gri", "category": "instalatii" },
+    "ground":                   { "title": "Temperatură teren (ground coupling)", "category": "anvelopa" },
+    "gwp":                      { "title": "GWP ciclu viață EN 15978", "category": "mediu" },
+    "heat-pump-sizing":         { "title": "Dimensionare pompă căldură", "category": "instalatii" },
+    "historic-buildings":       { "title": "Clădiri istorice / patrimoniu", "category": "conformitate" },
+    "hourly":                   { "title": "Simulare orară 8760h ISO 52016-1", "category": "calcul" },
+    "infiltration":             { "title": "Infiltrare aer / etanșeitate n50", "category": "anvelopa" },
+    "iso13790":                 { "title": "Bilanț ISO 13790 lunar/sezonier", "category": "calcul" },
+    "maintenance-fund":         { "title": "Fond reparații clădire", "category": "financiar" },
+    "mixed-use-buildings":      { "title": "Clădiri cu utilizare mixtă", "category": "calcul" },
+    "moisture-en15026":         { "title": "Difuzie umiditate EN 15026", "category": "anvelopa" },
+    "night-ventilation":        { "title": "Ventilare nocturnă", "category": "instalatii" },
+    "opaque":                   { "title": "U-value din compoziție straturi", "category": "anvelopa" },
+    "pasivhaus":                { "title": "Conformitate Pasivhaus 15 kWh/(m²·a)", "category": "conformitate" },
+    "phased-rehab":             { "title": "Renovare etapizată multi-an", "category": "analiza" },
+    "pmv-ppd":                  { "title": "Confort termic PMV/PPD ISO 7730", "category": "conformitate" },
+    "pnrr-funding":             { "title": "Eligibilitate PNRR / finanțare UE", "category": "financiar" },
+    "pvgis":                    { "title": "Potențial solar PVGIS API", "category": "regenerabile" },
+    "rehab-comparator":         { "title": "Comparator scenarii renovare", "category": "analiza" },
+    "rehab-cost":               { "title": "Costuri reabilitare per element", "category": "financiar" },
+    "shading-dynamic":          { "title": "Umbrire dinamică (obstacole, jaluzele)", "category": "anvelopa" },
+    "smart-rehab":              { "title": "Recomandări inteligente reabilitare", "category": "analiza" },
+    "solar-acm-detailed":       { "title": "Solar termic ACM EN 15316-4-3", "category": "regenerabile" },
+    "summer-comfort":           { "title": "Confort termic vară C107/7-2002", "category": "conformitate" },
+    "thermal-bridges-dynamic":  { "title": "Punți termice dinamice", "category": "anvelopa" },
+    "thermal-map":              { "title": "Hartă termică SVG clădire", "category": "analiza" },
+    "urban-heat-island":        { "title": "Insulă termică urbană", "category": "mediu" },
+    "ventilation-flow":         { "title": "Debit ventilație (CFM/ACH)", "category": "instalatii" },
+    "vmc-hr":                   { "title": "VMC cu recuperare căldură", "category": "instalatii" },
+    "weather":                  { "title": "Date meteorologice TMY/ERA5", "category": "date" }
+  },
+
+  "exports": [
+    { "fmt": "DOCX", "desc": "Certificat CPE oficial MDLPA", "icon": "📝" },
+    { "fmt": "XML",  "desc": "Registru electronic EPBD / MDLPA", "icon": "📡" },
+    { "fmt": "PDF",  "desc": "Raport CPE + QR code", "icon": "📄" },
+    { "fmt": "XLSX", "desc": "Tabelar Excel 9 foi", "icon": "📊" },
+    { "fmt": "JSON", "desc": "Proiect complet Zephren", "icon": "💾" },
+    { "fmt": "CSV",  "desc": "Anvelopă și instalații", "icon": "📋" },
+    { "fmt": "SVG",  "desc": "Diagrame Sankey, hărți termice", "icon": "🎨" },
+    { "fmt": "XML",  "desc": "e-Factură ANAF", "icon": "🧾" }
+  ],
+
+  "imports": [
+    { "src": "IFC / BIM", "desc": "Revit, ArchiCAD, gbXML — geometrie completă", "icon": "🏗️" },
+    { "src": "PDF / imagine", "desc": "Planșe tehnice via Claude Vision AI", "icon": "🤖" },
+    { "src": "Facturi PDF",  "desc": "OCR consum real energie", "icon": "🧾" },
+    { "src": "XML energetic","desc": "Format DOSET/gbXML/generic", "icon": "📡" },
+    { "src": "CSV anvelopă", "desc": "Elemente constructive tabel", "icon": "📋" },
+    { "src": "EPW / ERA5",   "desc": "Date climatice profesionale", "icon": "🌤️" },
+    { "src": "OSM geocodare","desc": "Adresă → contur + coordonate automat", "icon": "🗺️" },
+    { "src": "PVGIS API",    "desc": "Potențial solar din satelit", "icon": "☀️" },
+    { "src": "ANCPI GIS",    "desc": "Date cadastrale România", "icon": "📐" },
+    { "src": "Chat AI",      "desc": "Import conversațional text liber", "icon": "💬" }
+  ]
+}
