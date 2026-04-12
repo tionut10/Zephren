@@ -463,12 +463,14 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════════
   // Prețuri RON; sursa: SCENARII_MONETIZARE_ZEPHREN v1.0, apr. 2026
   const TIERS = {
-    free:      { id:"free",      label:"Free",      price:0,   priceAn:0,    maxProjects:99,  maxCerts:3,   multiUser:false, maxUsers:1,  watermark:true,  nzebReport:false, docxExport:false, exportXML:false, brandingCPE:false, api:false },
-    standard:  { id:"standard",  label:"Standard",  price:149, priceAn:1499, maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:false, brandingCPE:false, api:false },
-    pro:       { id:"pro",       label:"Pro",       price:299, priceAn:2999, maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:5,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:false, api:true  },
-    asociatie: { id:"asociatie", label:"Asociație", price:0,   priceAn:0,    maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:20, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
+    free:       { id:"free",       label:"Free",       price:0,    priceAn:0,     maxProjects:99,  maxCerts:3,   multiUser:false, maxUsers:1,   watermark:true,  nzebReport:false, docxExport:false, exportXML:false, brandingCPE:false, api:false },
+    starter:    { id:"starter",    label:"Starter",    price:299,  priceAn:1799,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:false, docxExport:true,  exportXML:false, brandingCPE:false, api:false },
+    standard:   { id:"standard",   label:"Standard",   price:349,  priceAn:3490,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:true,  docxExport:true,  exportXML:false, brandingCPE:false, api:false },
+    pro:        { id:"pro",        label:"Pro",        price:309,  priceAn:4990,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:false, api:false },
+    business:   { id:"business",   label:"Business",   price:699,  priceAn:5990,  maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:10,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
+    enterprise: { id:"enterprise", label:"Enterprise", price:0,    priceAn:0,     maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:999, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
     // backward compat
-    business:  { id:"asociatie", label:"Asociație", price:0,   priceAn:0,    maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:20, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
+    asociatie:  { id:"business",   label:"Business",   price:699,  priceAn:5990,  maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:10,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
   };
 
   const [userTier, setUserTier] = useState("free");
@@ -5885,19 +5887,22 @@ export default function EnergyCalcApp({ cloud }) {
 
             {/* Plan badges */}
             <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-              {["free","standard","pro","asociatie"].map(tid => {
-                const isActive = userTier === tid || (userTier === "business" && tid === "asociatie");
+              {["free","starter","standard","pro","business","enterprise"].map(tid => {
+                const isActive = userTier === tid || (userTier === "asociatie" && tid === "business");
+                const BADGE = {
+                  free:       { label: "FREE", cls: "bg-white/15 text-white" },
+                  starter:    { label: "STR",  cls: "bg-sky-400 text-white shadow-sm" },
+                  standard:   { label: "STD",  cls: "bg-sky-500 text-white shadow-sm" },
+                  pro:        { label: "⚡PRO", cls: "bg-amber-500 text-black shadow-sm" },
+                  business:   { label: "BUS",  cls: "bg-violet-500 text-white shadow-sm" },
+                  enterprise: { label: "ENT",  cls: "bg-emerald-500 text-white shadow-sm" },
+                };
                 return (
                   <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
                     className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${isActive ? "" : "hidden sm:block"} ${
-                      isActive
-                        ? tid === "free" ? "bg-white/15 text-white"
-                        : tid === "standard" ? "bg-sky-500 text-white shadow-sm"
-                        : tid === "pro" ? "bg-amber-500 text-black shadow-sm"
-                        : "bg-emerald-500 text-black shadow-sm"
-                        : "text-white/30 hover:text-white/60"
+                      isActive ? BADGE[tid].cls : "text-white/30 hover:text-white/60"
                     }`}>
-                    {tid === "free" ? "FREE" : tid === "standard" ? "STD" : tid === "pro" ? "⚡PRO" : "🏢ASC"}
+                    {BADGE[tid].label}
                   </button>
                 );
               })}
