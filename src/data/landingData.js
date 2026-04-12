@@ -11,7 +11,7 @@ import STEPS     from "./steps.json";
 import CLIMATE   from "./climate.json";
 import BRIDGES   from "./thermal-bridges.json";
 import FEATURES_DATA from "./features.json";
-export { CHANGELOG } from "./changelog.generated.js";
+export { CHANGELOG, APP_VERSION } from "./changelog.generated.js";
 export {
   CALC_MODULES_COUNT,
   API_ENDPOINTS_COUNT,
@@ -65,8 +65,7 @@ export const NORMATIVE = [
 ];
 export const NORMATIVE_COUNT = NORMATIVE.length;
 
-// ── Versiune software ─────────────────────────────────────────────────────────
-export const APP_VERSION = "3.5";
+// APP_VERSION — derivat automat din changelog.generated.js (primul entry = CURENT)
 
 // ── Statistici hero (auto-derivate din surse reale) ─────────────────────────
 import {

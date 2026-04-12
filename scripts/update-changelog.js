@@ -151,10 +151,13 @@ try {
     };
   });
 
+  const currentVersion = changelog[0]?.version ?? "0.1.0";
+
   const output = `// GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
 // Ultima generare: ${new Date().toISOString().slice(0, 10)}
 
+export const APP_VERSION = "${currentVersion}";
 export const CHANGELOG = ${JSON.stringify(changelog, null, 2)};
 `;
 

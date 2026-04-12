@@ -2,6 +2,7 @@
 // Script: scripts/update-changelog.js
 // Ultima generare: 2026-04-12
 
+export const APP_VERSION = "0.2.0";
 export const CHANGELOG = [
   {
     "version": "0.2.0",
@@ -10,6 +11,10 @@ export const CHANGELOG = [
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "✨",
+        "text": "Landing dinamic: secțiune 8 pași reali, features din features.json, export/import auto-derivate, 48 module cal"
+      },
       {
         "icon": "🎨",
         "text": "Changelog auto-generat din git: script update-changelog.js + prebuild hook, elimină hardcoding"
@@ -37,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "Recalcul prețuri −30% vs concurenți: planuri, lansare, perpetue"
-      },
-      {
-        "icon": "💰",
-        "text": "Actualizare planuri și prețuri pagina principală; șterge GitHub din hero"
       }
     ]
   },
