@@ -2,43 +2,5 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "functions": {
-    "api/preview.js": {
-      "maxDuration": 30
-    },
-    "api/calculate.js": {
-      "maxDuration": 10
-    },
-    "api/generate-xml.js": {
-      "maxDuration": 10
-    },
-    "api/ai-assistant.js": {
-      "maxDuration": 30
-    },
-    "api/create-checkout.js": {
-      "maxDuration": 10
-    },
-    "api/stripe-webhook.js": {
-      "maxDuration": 10
-    },
-    "api/generate-document.js": {
-      "maxDuration": 30
-    },
-    "api/import-document.js": {
-      "maxDuration": 30
-    },
-    "api/ocr.js": {
-      "maxDuration": 30
-    },
-    "api/parse-building-data.js": {
-      "maxDuration": 15
-    },
-    "api/validate-audit-data.js": {
-      "maxDuration": 15
-    },
-    "api/ancpi-proxy.js": {
-      "maxDuration": 10
-    }
-  }
+  "installCommand": "npm install"
 }
