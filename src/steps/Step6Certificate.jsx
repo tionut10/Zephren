@@ -966,9 +966,9 @@ export default function Step6Certificate(props) {
               const sre_bio = renewSummary ? (Au > 0 ? renewSummary.qBio_ren / Au : 0) : 0;
               const sre_total = Au > 0 && renewSummary ? renewSummary.totalRenewable / Au : 0;
 
-              // Scale — culori reale extrase pixel-by-pixel din template MDLPA
+              // Scale — culori MDLPA standard (aceeași schemă verde→roșu pentru EP și CO₂)
               const scaleColors    = ["#009B00","#32C831","#00FF00","#FFFF00","#F39C00","#FF6400","#FE4101","#FE0000"];
-              const co2ScaleColors = ["#0000FE","#3265FF","#009BFF","#9CD2FF","#BEBEBE","#969696","#646464","#333333"];
+              const co2ScaleColors = scaleColors; // același standard de culori — clasă C = galben indiferent de indicator
               // Clasele clădirii de referință (nZEB EP max)
               const enRefClass = getEnergyClass(epRefMax, catKey);
               const co2RefFinal = (epFinal > 0) ? co2Final * epRefMax / epFinal : co2Final;

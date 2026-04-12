@@ -19,7 +19,7 @@ export const ENERGY_CLASSES_DB = {
 };
 
 export const CLASS_LABELS = ["A+","A","B","C","D","E","F","G"];
-export const CLASS_COLORS = ["#10b981","#22c55e","#84cc16","#eab308","#f97316","#ef4444","#dc2626","#7f1d1d"];
+export const CLASS_COLORS = ["#009B00","#32C831","#00FF00","#FFFF00","#F39C00","#FF6400","#FE4101","#FE0000"];
 
 // Praguri nZEB per categorie [kWh/(m2·an)] energie primara + RER minim
 // Praguri nZEB conform Mc 001-2022 Tabel 2.10a — diferentiate pe zone climatice I-V
