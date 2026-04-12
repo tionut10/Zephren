@@ -866,6 +866,7 @@ export default function Step6Certificate(props) {
                 pollLow: isEN ? "\u25B2 Low pollution" : "\u25B2 Poluare sc\u0103zut\u0103",
                 pollHigh: isEN ? "\u25BC High pollution" : "\u25BC Poluare ridicat\u0103",
                 thisBuilding: isEN ? "THIS BUILDING:" : "ACEAST\u0102 CL\u0102DIRE:",
+                refBuilding: isEN ? "REF. BUILDING:" : "CL. REFERIN\u021a\u0102:",
                 utility: isEN ? "Utility" : "Utilitate",
                 system: isEN ? "System" : "Sistem",
                 finalEn: isEN ? "Final energy" : "Energie final\u0103",
@@ -963,6 +964,10 @@ export default function Step6Certificate(props) {
               // Scale — culori reale extrase pixel-by-pixel din template MDLPA
               const scaleColors    = ["#009B00","#32C831","#00FF00","#FFFF00","#F39C00","#FF6400","#FE4101","#FE0000"];
               const co2ScaleColors = ["#0000FE","#3265FF","#009BFF","#9CD2FF","#BEBEBE","#969696","#646464","#333333"];
+              // Clasele clădirii de referință (nZEB EP max)
+              const enRefClass = getEnergyClass(epRefMax, catKey);
+              const co2RefFinal = (epFinal > 0) ? co2Final * epRefMax / epFinal : co2Final;
+              const co2RefClass = getCO2Class(co2RefFinal, baseCatResolved);
               const scaleLabels = CLASS_LABELS;
               const co2Thresholds = (CO2_CLASSES_DB[baseCatResolved] || CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL).thresholds;
               // Culoare text contrastantă (WCAG) pentru fundal hex
@@ -1065,7 +1070,7 @@ table.c td,table.c th{border:1px solid #444;padding:2px 4px;font-size:7.5pt;vert
 .bl{color:#fff;font-weight:bold;padding:1px 5px !important;text-align:left;letter-spacing:0.5px}
 .brng{font-size:6.5pt;padding:1px 3px !important;color:#444}
 .ba{outline:2.5px solid #000;outline-offset:-1px;position:relative}
-.bm{position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:#000;font-size:10pt;font-weight:bold}
+.bm{position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:inherit;font-size:10pt;font-weight:bold}
 /* Utility table */
 table.u{width:100%;border-collapse:collapse;margin-bottom:3px}
 table.u td,table.u th{border:1px solid #444;padding:1px 3px;font-size:7pt;text-align:center;vertical-align:middle}
@@ -1182,7 +1187,9 @@ ${scaleLabels.map((cls, idx) => {
   const ct = co2Thresholds;
   const co2Str = idx === 0 ? ("\u2264 " + (ct[0]||"")) : idx < ct.length ? ((ct[idx-1]||"") + " \u2013 " + (ct[idx]||"")) : ("> " + (ct[ct.length-1]||""));
   const isEp = idx === enClass.idx;
+  const isEpRef = idx === enRefClass.idx;
   const isCO2 = idx === co2Class.idx;
+  const isCO2Ref = idx === co2RefClass.idx;
   const bg = scaleColors[idx];
   const co2bg = co2ScaleColors[idx];
   const bw = 9 - idx;
@@ -1191,9 +1198,17 @@ ${scaleLabels.map((cls, idx) => {
   const crw = 7 - cw;
   return '<tr class="br">' +
     '<td colspan="' + bw + '" class="bl' + (isEp?' ba':'') + '" style="background:' + bg + ';color:' + txtClr(bg) + '">' + cls + (isEp?'<span class="bm">\u25C0</span>':'') + '</td>' +
-    '<td colspan="' + rw + '" class="brng" style="border-left:none">' + rangeStr + (isEp?' <strong style="color:' + bg + '">\u25C0 ' + T.thisBuilding + ' ' + epFinal.toFixed(1) + ' kWh/m\u00b2,an</strong>':'') + '</td>' +
+    '<td colspan="' + rw + '" class="brng" style="border-left:none">' + rangeStr +
+      (isEp?' <strong style="color:' + bg + '">\u25C0 ' + T.thisBuilding + ' ' + epFinal.toFixed(1) + ' kWh/m\u00b2,an</strong>':'') +
+      (isEpRef && !isEp?' <span style="color:' + bg + '">&#9668; ' + T.refBuilding + ' ' + epRefMax.toFixed(1) + ' kWh/m\u00b2,an</span>':'') +
+      (isEpRef && isEp?' <span style="color:' + bg + '"> | &#9668; ' + T.refBuilding + ' ' + epRefMax.toFixed(1) + '</span>':'') +
+    '</td>' +
     '<td colspan="' + cw + '" class="bl' + (isCO2?' ba':'') + '" style="background:' + co2bg + ';color:' + txtClr(co2bg) + '">' + cls + (isCO2?'<span class="bm">\u25C0</span>':'') + '</td>' +
-    '<td colspan="' + crw + '" class="brng" style="border-left:none">' + co2Str + (isCO2?' <strong style="color:' + co2bg + '">\u25C0 ' + co2Final.toFixed(1) + '</strong>':'') + '</td>' +
+    '<td colspan="' + crw + '" class="brng" style="border-left:none">' + co2Str +
+      (isCO2?' <strong style="color:' + co2bg + '">\u25C0 ' + T.thisBuilding + ' ' + co2Final.toFixed(1) + ' kgCO\u2082/m\u00b2</strong>':'') +
+      (isCO2Ref && !isCO2?' <span style="color:' + co2bg + '">&#9668; ' + T.refBuilding + ' ' + co2RefFinal.toFixed(1) + '</span>':'') +
+      (isCO2Ref && isCO2?' <span style="color:' + co2bg + '"> | &#9668; ' + T.refBuilding + ' ' + co2RefFinal.toFixed(1) + '</span>':'') +
+    '</td>' +
   '</tr>';
 }).join("")}
 <tr>
