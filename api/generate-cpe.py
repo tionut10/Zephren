@@ -351,7 +351,10 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
     for m in blocks:
         content = m.group(1)
-        letters = re.findall(r'<w:t[^>]*>([A-G]\+?)</w:t>', content)
+        # Caută litera clasei în <w:t> (Word/VML) ȘI în <a:t> (DrawingML)
+        letters_wt = re.findall(r'<w:t[^>]*>([A-G]\+?)</w:t>', content)
+        letters_at = re.findall(r'<a:t[^>]*>([A-G]\+?)</a:t>', content)
+        letters = letters_wt if letters_wt else letters_at
         pos_h = re.search(r'positionH[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
         pos_v = re.search(r'positionV[^>]*>[\s\S]*?posOffset>(-?\d+)<', content)
         if not pos_h or not pos_v:
@@ -366,15 +369,26 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
             # Pentagon/arrow shapes — range extins pentru a include EP pentagon (h≈380365)
             path_indicators.append((m, h, v))
 
-    # Clasificare prin ORDINE în document:
-    # Clădiri: 3 text indicators → EP_real(1), EP_ref(2), CO2(3)
-    # Apartamente: 2 text indicators → EP_real(1), CO2(2)
+    # Clasificare prin POZIȚIE ORIZONTALĂ (h):
+    # Scala EP (stânga) → h mic; Scala CO2 (dreapta) → h mare
+    # Sortăm crescător după h → primii 2 = EP, ultimii = CO2
+    text_indicators.sort(key=lambda x: x[2])  # sort by h (positionH)
+
     if len(text_indicators) >= 3:
+        # Cel mai din dreapta = CO2; primii 2 = EP (real + ref)
         ep_indicators = text_indicators[:2]
         co2_indicators = text_indicators[2:]
     elif len(text_indicators) == 2:
-        ep_indicators = text_indicators[:1]
-        co2_indicators = text_indicators[1:]
+        # Dacă h-urile sunt similare → ambele EP (real + ref), fără CO2 textbox
+        # Dacă h-urile diferă mult → primul EP, al doilea CO2
+        h_diff = text_indicators[1][2] - text_indicators[0][2]
+        if h_diff > 1_000_000:  # > ~27mm → indicatoare pe scale diferite
+            ep_indicators = text_indicators[:1]
+            co2_indicators = text_indicators[1:]
+        else:
+            # Ambele pe scala EP (clădire+ref), CO2 nu a fost detectat
+            ep_indicators = text_indicators
+            co2_indicators = []
     else:
         ep_indicators = text_indicators
         co2_indicators = []
@@ -410,7 +424,10 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
         # 1. Update textbox (letter + position + fill color + text color)
         new_content = text_match.group(1)
+        # Actualizează litera în elementele Word <w:t> (VML fallback)
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
+        # Actualizează litera și în elementele DrawingML <a:t> (Choice primary)
+        new_content = re.sub(r'(<a:t[^>]*>)[A-G]\+?(</a:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         new_content = _update_shape_pos_v(new_content, new_pos)
         # Actualizează și culoarea de fundal a textbox-ului (solidFill) — altfel litera
         # rămâne colorată cu culoarea implicită din template (nu cu culoarea clasei reale)
@@ -1021,12 +1038,31 @@ def _highlight_utility_class_cells(doc, data):
                 seen_ids.add(cid)
                 unique.append(c)
         # unique[0] = coloana etichetă; unique[1..8] = A+ → G
+        # Prioritate: thresholds din date (corecte per categorie/nocool)
+        # Fallback: parsare text template (compatibilitate)
         col_idx = None
-        for i in range(1, len(unique)):
-            rng = _parse_range(unique[i].text)
-            if rng and _in_range(ep_val, rng):
-                col_idx = i
-                break
+        ep_thresholds_data = []
+        try:
+            ep_thresholds_data = [int((data.get(k, "0") or "0")) for k in
+                                  ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+        except Exception:
+            ep_thresholds_data = []
+
+        if any(t > 0 for t in ep_thresholds_data):
+            # Clasificare directă cu pragurile reale (nu range-ul din template)
+            class_idx_direct = len(ep_thresholds_data)  # default: G
+            for i, t in enumerate(ep_thresholds_data):
+                if ep_val <= t:
+                    class_idx_direct = i
+                    break
+            col_idx = class_idx_direct + 1  # unique[0]=label, unique[1]=A+ etc.
+        else:
+            # Fallback: parsare text template
+            for i in range(1, len(unique)):
+                rng = _parse_range(unique[i].text)
+                if rng and _in_range(ep_val, rng):
+                    col_idx = i
+                    break
 
         if col_idx is None:
             continue
@@ -1213,11 +1249,17 @@ class handler(BaseHTTPRequestHandler):
             replace_in_doc(doc, "GWP lifecycle", gwp_text)
 
             # ═══════════════════════════════════════
-            # 2. SCALE EP — înlocuiesc pragurile template cu EPBD
+            # 2. SCALE EP + CO₂ — înlocuiesc pragurile template cu valorile calculate
             # ═══════════════════════════════════════
-            new_ep = [int(data.get(k, 0)) for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+            new_ep = [int(data.get(k, 0) or 0) for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+            try:
+                new_co2 = [float((data.get(k, "0") or "0").replace(",", "."))
+                           for k in ["co2_ap", "co2_a", "co2_b", "co2_c", "co2_d", "co2_e", "co2_f"]]
+            except Exception:
+                new_co2 = []
             if any(v > 0 for v in new_ep):
-                replace_scales(doc, category, new_ep)
+                replace_scales(doc, category, new_ep,
+                               new_co2 if new_co2 and any(v > 0 for v in new_co2) else None)
 
             # ═══════════════════════════════════════
             # 3. CLASS INDICATORS — săgețile pe scale
