@@ -65,6 +65,9 @@ import ClientInputForm from "./components/ClientInputForm.jsx";
 import AuditClientDataForm from "./components/AuditClientDataForm.jsx";
 import ProjectTimeline from "./components/ProjectTimeline.jsx";
 import ProjectComparison from "./components/ProjectComparison.jsx";
+import ROICalculator from "./components/ROICalculator.jsx";
+import CPETracker from "./components/CPETracker.jsx";
+import AuditInvoice from "./components/AuditInvoice.jsx";
 import { useKeyboardShortcuts, SHORTCUTS_LIST } from "./hooks/useKeyboardShortcuts.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
@@ -715,6 +718,9 @@ export default function EnergyCalcApp({ cloud }) {
   const [showDashboard, setShowDashboard] = useState(false);
   const [showClimateMap, setShowClimateMap] = useState(false);
   const [showAuditForm, setShowAuditForm] = useState(false);
+  const [showROICalculator, setShowROICalculator] = useState(false);
+  const [showCPETracker, setShowCPETracker] = useState(false);
+  const [showAuditInvoice, setShowAuditInvoice] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
@@ -6066,6 +6072,9 @@ export default function EnergyCalcApp({ cloud }) {
                       { icon: "🗺️", label: t("Hartă climatică"), action: () => setShowClimateMap(true) },
                       { icon: "📷", label: "Galerie foto", action: () => setShowPhotoGallery(true) },
                       { icon: "🏭", label: t("Catalog produse"), action: () => setShowProductCatalog(true) },
+                      { icon: "💰", label: "Calculator ROI", action: () => setShowROICalculator(true), color: "text-green-400" },
+                      { icon: "🗂️", label: "Gestiune CPE", action: () => setShowCPETracker(true), color: "text-sky-400" },
+                      { icon: "🧾", label: "Factură audit", action: () => setShowAuditInvoice(true), color: "text-amber-400" },
                       { icon: "🤖", label: "AI Assistant", action: () => setShowAIAssistant(o => !o), color: "text-amber-400" },
                       { icon: "📋", label: "Timeline progres", action: () => setShowTimeline(o => !o) },
                       { icon: "⚖️", label: "Comparare proiecte", action: () => setShowComparison(true) },
@@ -7172,18 +7181,121 @@ export default function EnergyCalcApp({ cloud }) {
             <div className="p-4">
               <AuditClientDataForm
                 onDataChange={(data) => {
-                  // Auto-populate câmpuri din calculator dacă sunt goale
-                  if (data.documentation?.address && !building.address) {
-                    setBuilding(b => ({ ...b, address: data.documentation.address }));
+                  // ── Auto-populate câmpuri clădire ──
+                  const bUpdates = {};
+                  if (data.documentation?.buildingAddress && !building.address)
+                    bUpdates.address = data.documentation.buildingAddress;
+                  if (data.documentation?.constructionYear && !building.yearBuilt)
+                    bUpdates.yearBuilt = String(data.documentation.constructionYear);
+                  if (data.envelope?.totalBuildingArea && !building.areaUseful)
+                    bUpdates.areaUseful = String(data.envelope.totalBuildingArea);
+                  if (data.envelope?.buildingVolume && !building.volume)
+                    bUpdates.volume = String(data.envelope.buildingVolume);
+                  if (data.admin?.occupantsNumber && !building.occupants)
+                    bUpdates.occupants = String(data.admin.occupantsNumber);
+                  if (Object.keys(bUpdates).length) setBuilding(b => ({ ...b, ...bUpdates }));
+
+                  // ── Auto-populate sistem încălzire ──
+                  const heatingMap = {
+                    "Cazan gaz": "GAZ_COND", "Cazan petrol": "MOTORINA",
+                    "Pompă de căldură": "HP_AA", "Încălzire electrică": "ELECTRICA",
+                    "Lemn/biomasa": "BIOMASA", "Centralizată": "DISTRICT",
+                  };
+                  if (data.thermal?.heatingSystem && heatingMap[data.thermal.heatingSystem]) {
+                    setHeating(h => ({ ...h, source: heatingMap[data.thermal.heatingSystem] }));
                   }
-                  if (data.documentation?.city && !building.city) {
-                    setBuilding(b => ({ ...b, city: data.documentation.city }));
+                  if (data.thermal?.boilerPower && !heating.power)
+                    setHeating(h => ({ ...h, power: String(data.thermal.boilerPower) }));
+                  if (data.thermal?.boilerEfficiency && !heating.eta)
+                    setHeating(h => ({ ...h, eta: String(data.thermal.boilerEfficiency / 100) }));
+
+                  // ── Auto-populate ventilație ──
+                  const ventMap = { "Naturală": "NAT", "Mecanică cu recuperare": "VMCR", "Mecanică fără recuperare": "VMC" };
+                  if (data.thermal?.ventilationType && ventMap[data.thermal.ventilationType])
+                    setVentilation(v => ({ ...v, type: ventMap[data.thermal.ventilationType] }));
+
+                  // ── Auto-populate iluminat ──
+                  const lightMap = { "LED": "LED", "Fluoreșcente": "FL", "Incandescență": "INC", "Halogeni": "INC", "Mixă": "MIX" };
+                  if (data.electrical?.lightingType && lightMap[data.electrical.lightingType])
+                    setLighting(l => ({ ...l, type: lightMap[data.electrical.lightingType] }));
+
+                  // ── Auto-populate fotovoltaic ──
+                  if (data.electrical?.hasPV === "Da") {
+                    const pvUpdates = { enabled: true };
+                    if (data.electrical.pvInstalledPower) pvUpdates.power = String(data.electrical.pvInstalledPower);
+                    setPhotovoltaic(p => ({ ...p, ...pvUpdates }));
                   }
-                  if (data.documentation?.yearBuilt && !building.yearBuilt) {
-                    setBuilding(b => ({ ...b, yearBuilt: data.documentation.yearBuilt }));
+                  // ── Auto-populate solar termic ──
+                  if (data.electrical?.hasSolarThermal === "Da") {
+                    const stUpdates = { enabled: true };
+                    if (data.electrical.solarThermalArea) stUpdates.area = String(data.electrical.solarThermalArea);
+                    setSolarThermal(s => ({ ...s, ...stUpdates }));
                   }
+
+                  // ── Răcire ──
+                  if (data.thermal?.hasCooling && data.thermal.hasCooling !== "Nu")
+                    setCooling(c => ({ ...c, hasCooling: true }));
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ROI CALCULATOR MODAL ═══ */}
+      {showROICalculator && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-2 sm:p-4" style={{background:"rgba(0,0,0,0.85)",backdropFilter:"blur(4px)"}} onClick={() => setShowROICalculator(false)}>
+          <div className="bg-[#0d0f1a] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] sticky top-0 bg-[#0d0f1a] z-10">
+              <div>
+                <h3 className="text-base font-bold">💰 Calculator ROI — Reabilitare energetică</h3>
+                <p className="text-[10px] opacity-40 mt-0.5">Perioadă recuperare investiție, NPV, VAN</p>
+              </div>
+              <button onClick={() => setShowROICalculator(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
+            </div>
+            <div className="p-4">
+              <ROICalculator
+                building={building}
+                instSummary={instSummary}
+                annualEnergyCost={annualEnergyCost}
+                rehabComparison={rehabComparison}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CPE TRACKER MODAL ═══ */}
+      {showCPETracker && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-2 sm:p-4" style={{background:"rgba(0,0,0,0.85)",backdropFilter:"blur(4px)"}} onClick={() => setShowCPETracker(false)}>
+          <div className="bg-[#0d0f1a] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] sticky top-0 bg-[#0d0f1a] z-10">
+              <div>
+                <h3 className="text-base font-bold">🗂️ Gestiune CPE — Registru certificate</h3>
+                <p className="text-[10px] opacity-40 mt-0.5">Urmărire expirare, notificări, registru personal auditor</p>
+              </div>
+              <button onClick={() => setShowCPETracker(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
+            </div>
+            <div className="p-4">
+              <CPETracker />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AUDIT INVOICE MODAL ═══ */}
+      {showAuditInvoice && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-2 sm:p-4" style={{background:"rgba(0,0,0,0.85)",backdropFilter:"blur(4px)"}} onClick={() => setShowAuditInvoice(false)}>
+          <div className="bg-[#0d0f1a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] sticky top-0 bg-[#0d0f1a] z-10">
+              <div>
+                <h3 className="text-base font-bold">🧾 Factură audit energetic</h3>
+                <p className="text-[10px] opacity-40 mt-0.5">Generare factură/proformă pentru serviciul de audit și CPE</p>
+              </div>
+              <button onClick={() => setShowAuditInvoice(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
+            </div>
+            <div className="p-4">
+              <AuditInvoice building={building} auditor={auditor} onClose={() => setShowAuditInvoice(false)} />
             </div>
           </div>
         </div>

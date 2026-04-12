@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔬",
+        "text": "Normative în normative.json — editare manuală fără cod JS"
+      },
+      {
         "icon": "🔸",
         "text": "APP_VERSION dinamic din changelog: badge v0.2.0 se sincronizează automat cu istoricul versiunilor"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "Actualizare completă prețuri: Free/Starter/Standard/Professional/Business/Enterprise, ofertă lansare -30%, cre"
-      },
-      {
-        "icon": "💰",
-        "text": "Revert prețuri la versiunea inițială din screenshots"
       }
     ]
   },
