@@ -555,9 +555,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
             {[
-              { plan: "Starter", monthly: "169", normalMonthly: "229", annual: "1.090", normalAnnual: "1.490", saving: "400" },
-              { plan: "Professional", monthly: "359", normalMonthly: "489", annual: "4.190", normalAnnual: "5.790", saving: "1.600" },
-              { plan: "Business", monthly: "549", normalMonthly: "759", annual: "5.490", normalAnnual: "7.490", saving: "2.000" },
+              { plan: "Starter", monthly: "149", normalMonthly: "199", annual: "899", normalAnnual: "1.190", saving: "291" },
+              { plan: "Professional", monthly: "189", normalMonthly: "249", annual: "1.490", normalAnnual: "1.990", saving: "500" },
+              { plan: "Business", monthly: "299", normalMonthly: "399", annual: "2.990", normalAnnual: "3.990", saving: "1.000" },
             ].map(o => (
               <div key={o.plan} style={{ padding: "18px 20px", borderRadius: "10px", border: `1px solid rgba(99,102,241,0.2)`, background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)" }}>
                 <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "10px" }}>{o.plan}</div>
@@ -660,9 +660,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             {[
-              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "5.790", ea: "4.190" },
-              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "11.690", ea: "8.490" },
-              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "28.990", ea: "20.990" },
+              { label: lang === "EN" ? "Single-user" : "1 utilizator", price: "4.830", ea: "3.490" },
+              { label: lang === "EN" ? "2 users" : "2 utilizatori", price: "9.660", ea: "6.990" },
+              { label: lang === "EN" ? "Office (5 users)" : "Birou (5 utilizatori)", price: "14.350", ea: "10.350" },
             ].map(l => (
               <div key={l.label} style={{ padding: "16px 20px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                 <div>
