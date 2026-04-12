@@ -86,11 +86,6 @@ export default function Step6Certificate(props) {
                 const co2Final_m2 = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary.co2_total_m2 || 0);
                 const qfFinal_t = Au > 0 ? (instSummary.qf_h + instSummary.qf_w) / Au : 0;
                 const qfFinal_e = Au > 0 ? (instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) / Au : 0;
-                // Energie finală clădire referință — proporțională cu ep_ref / ep_specific
-                const qfTotal = qfFinal_t + qfFinal_e;
-                const qfScale = epFinal > 0 ? epRefMax / epFinal : 1;
-                const qfRef_t = qfFinal_t * qfScale;
-                const qfRef_e = qfFinal_e * qfScale;
 
                 const sre_st = renewSummary && Au > 0 ? renewSummary.qSolarTh / Au : 0;
                 const sre_pv = renewSummary && Au > 0 ? renewSummary.qPV_kWh / Au : 0;
@@ -114,6 +109,10 @@ export default function Step6Certificate(props) {
                 const baseCat = baseCatResolved; // sub-categorie rezolvată la baza Mc 001-2022
                 const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
                 const epRefMax = getNzebEpMax(baseCat, selectedClimate?.zone) || 148;
+                // Energie finală clădire referință — proporțională cu ep_ref / ep_specific
+                const qfScale = epFinal > 0 ? epRefMax / epFinal : 1;
+                const qfRef_t = qfFinal_t * qfScale;
+                const qfRef_e = qfFinal_e * qfScale;
 
                 const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
