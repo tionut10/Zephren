@@ -363,7 +363,9 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         v = int(pos_v.group(1))
         is_path = 'coordsize' in content or '<v:path' in content
 
-        if h > 150000 and len(letters) > 0 and len(letters[0]) <= 2 and not is_path:
+        if len(letters) > 0 and len(letters[0]) <= 2 and not is_path and v > 0:
+            # Inclus indiferent de h — EP shapes au h mic (stânga), CO₂ shapes au h mare (dreapta)
+            # Filtrul anterior h > 150000 excludea greșit shape-urile EP cu h mic
             text_indicators.append((m, letters[0], h, v))
         elif is_path and -100000 <= h < 700000:
             # Pentagon/arrow shapes — range extins pentru a include EP pentagon (h≈380365)
