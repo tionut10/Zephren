@@ -12,6 +12,22 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "preview CPE fallback HTML + butoane DOCX active cu upgrade prompt pe free tier"
+      },
+      {
+        "icon": "📄",
+        "text": "corelare clase energetice CPE — detectare a:t, clasificare h, table highlighting"
+      },
+      {
+        "icon": "📄",
+        "text": "CPE DOCX: fixează culoarea textului din săgețile indicator (w:color cu themeColor + DrawingML a:rPr)"
+      },
+      {
+        "icon": "✨",
+        "text": "CPE: adaugă indicator Clădire de Referință pe scala EP și CO₂; fixează culoarea textului din săgeți să corespu"
+      },
+      {
         "icon": "✨",
         "text": "10 template-uri noi clădiri + ROICalculator/CPETracker/AuditInvoice integrate + AuditClientDataForm auto-popul"
       },
@@ -26,22 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "Landing dinamic: secțiune 8 pași reali, features din features.json, export/import auto-derivate, 48 module cal"
-      },
-      {
-        "icon": "🎨",
-        "text": "Changelog auto-generat din git: script update-changelog.js + prebuild hook, elimină hardcoding"
-      },
-      {
-        "icon": "💰",
-        "text": "Versionare pre-lansare 0.x.y: v0.1.0 (săpt.1) + v0.2.0 (săpt.2), consolidare changelog pe săptămâni"
-      },
-      {
-        "icon": "📥",
-        "text": "Elimină toate referințele la concurenți: ENERG+ → XML energetic/DOSET/gbXML în import, landing, cod"
-      },
-      {
-        "icon": "🎨",
-        "text": "Changelog dinamic pe săptămâni: 4 intrări reale din git (30 mar – 12 apr 2026), UI actualizat cu interval dată"
       }
     ]
   },

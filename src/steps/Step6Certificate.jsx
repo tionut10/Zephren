@@ -57,6 +57,7 @@ export default function Step6Certificate(props) {
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
             const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
+            const epRefMax = getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 148;
 
             // ═══════════════════════════════════════════════════════════
             // GENERARE DOCX CU DOCXTEMPLATER + PIZZIP
@@ -1972,9 +1973,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                   <button onClick={async function() {
                     try {
-                      showToast("Se generează preview PDF...", "info", 3000);
+                      showToast("Se generează preview CPE...", "info", 3000);
 
-                      // Generează DOCX via API + convertește la PDF via Gotenberg
+                      // Încearcă DOCX via API Python + PDF via Gotenberg
                       const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                       const buf = await fetchTemplate(tpl.cpe);
                       const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
@@ -1986,12 +1987,20 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           const url = URL.createObjectURL(pdfBlob);
                           setPdfPreviewUrl(url);
                           showToast("Preview PDF generat", "success", 1500);
-                        } else {
-                          throw new Error("Gotenberg unavailable");
+                          return;
                         }
                       }
+                      // Fallback (API indisponibil sau Gotenberg absent): preview HTML în iframe
+                      const html = generatePDF(false);
+                      if (html) {
+                        const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                        const url = URL.createObjectURL(blob);
+                        if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                        setPdfPreviewUrl(url);
+                        showToast("Preview generat (HTML)", "success", 1500);
+                      }
                     } catch(e) {
-                      // Fallback: HTML preview în iframe (fără overlay)
+                      // Fallback final pentru erori neașteptate (ex: fetchTemplate eșuat)
                       try {
                         const html = generatePDF(false);
                         if (html) {
@@ -1999,7 +2008,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           const url = URL.createObjectURL(blob);
                           if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
                           setPdfPreviewUrl(url);
-                          showToast("Preview generat (HTML)", "success", 1500);
                         }
                       } catch(e2) {
                         showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
