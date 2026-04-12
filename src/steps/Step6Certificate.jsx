@@ -2010,31 +2010,51 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           experimental: true,
                         });
 
-                        // Fix: constrânge elementele absolute (săgeți indicator) în interiorul paginii
-                        // mc:AlternateContent floating shapes sunt randate absolute și ies din pagină
+                        // Stilizare fundal preview
                         const styleEl = document.createElement('style');
                         styleEl.textContent = `
+                          .docx-preview-content .docx-wrapper {
+                            background: #e8e8e8 !important;
+                            padding: 12px !important;
+                            min-width: 0 !important;
+                          }
                           .docx-preview-content .docx-wrapper section.page {
                             position: relative !important;
-                            overflow: hidden !important;
-                          }
-                          .docx-preview-content .docx-wrapper {
-                            background: #f0f0f0;
-                            padding: 20px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                            margin-bottom: 12px !important;
                           }
                         `;
                         container.appendChild(styleEl);
 
-                        // Scale to fit container width
-                        const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
-                        if (wrapper && wrapper.offsetWidth > 0) {
-                          const scale = (container.parentElement.clientWidth - 32) / wrapper.offsetWidth;
-                          if (scale < 1) {
-                            wrapper.style.transform = `scale(${scale})`;
+                        // Scalare: găsim lățimea naturală a paginii și scalăm să încapă în container
+                        await new Promise(r => setTimeout(r, 50)); // lasă browser-ul să randeze
+                        const page = container.querySelector('section.page') || container.querySelector('article.page');
+                        const outerBox = container.closest('.docx-preview-wrapper')?.parentElement || container.parentElement;
+                        const availW = outerBox.clientWidth - 24;
+                        const naturalW = page ? page.scrollWidth : container.scrollWidth;
+                        if (naturalW > 0 && availW > 0 && naturalW > availW) {
+                          const scale = availW / naturalW;
+                          const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
+                          if (wrapper) {
                             wrapper.style.transformOrigin = "top left";
-                            container.style.height = (wrapper.offsetHeight * scale) + "px";
+                            wrapper.style.transform = `scale(${scale})`;
+                            // Ajustăm înălțimea containerului după scalare
+                            container.style.height = Math.ceil(wrapper.offsetHeight * scale) + "px";
+                            container.style.overflow = "hidden";
                           }
                         }
+
+                        // Ascunde elementele floating care ies în afara paginii (x < 0)
+                        // Acestea sunt mc:AlternateContent shapes randate greșit de docx-preview
+                        const pages = container.querySelectorAll('section.page, article.page');
+                        pages.forEach(pg => {
+                          const pgLeft = pg.getBoundingClientRect().left;
+                          const stray = pg.querySelectorAll('[style*="position: absolute"]');
+                          stray.forEach(el => {
+                            const elLeft = el.getBoundingClientRect().left - pgLeft;
+                            if (elLeft < -20) el.style.visibility = "hidden";
+                          });
+                        });
                         setDocxRendered(true);
                         showToast("Preview generat", "success", 1500);
                       }
