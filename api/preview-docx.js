@@ -1,0 +1,47 @@
+/**
+ * DOCX Document Preview Handler
+ * Serves DOCX files with appropriate headers
+ */
+
+import fs from 'fs';
+import path from 'path';
+
+export default async function handler(req, res) {
+  const { file } = req.query;
+
+  if (!file) {
+    return res.status(400).json({
+      error: 'Missing file parameter',
+    });
+  }
+
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'documents', file);
+
+    // Security: prevent directory traversal
+    if (!filePath.startsWith(path.join(process.cwd(), 'public'))) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Read file
+    const fileBuffer = fs.readFileSync(filePath);
+    const mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    // Return file with appropriate headers
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${path.basename(filePath)}"`);
+    res.setHeader('Cache-Control', 'no-cache');
+
+    return res.send(fileBuffer);
+  } catch (error) {
+    console.error('DOCX preview error:', error);
+    return res.status(500).json({
+      error: 'Preview failed',
+      details: error.message,
+    });
+  }
+}
