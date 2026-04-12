@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
-        "text": "culori litere sageti CPE (A/A+/G=alb, B-F=negru) + auto-preview la deschidere Pas 6 + ascundere sageti duplica"
-      },
-      {
-        "icon": "✨",
-        "text": "preview CPE via Vercel Blob + Office Online Viewer (rendering Word-fidel)"
-      },
-      {
-        "icon": "📄",
-        "text": "scalare responsivă + săgeți CSS injectate în preview CPE (CLĂDIRE REALĂ/REF/CO2)"
-      },
-      {
-        "icon": "📄",
-        "text": "scalare corectă docx-preview + ascunde doar elementele floating din afara paginii"
-      },
-      {
-        "icon": "📄",
-        "text": "docx-preview - overflow hidden pe pagini, constrângere săgeți indicator"
+        "text": "indicatori clasa DOCX — eliminat filtrul h>150000 care excludea shape-urile EP"
       },
       {
         "icon": "🔧",
-        "text": "TDZ epRefMax - mut calculul qfRef după declararea const epRefMax"
+        "text": "culori clase energetice unificate — CO2 foloseste aceeasi schema verde-rosu ca EP"
       },
       {
-        "icon": "✨",
-        "text": "preview CPE cu docx-preview (identic cu fișierul descărcat)"
+        "icon": "🔧",
+        "text": "proxy /api→Vercel în dev local; mesaj eroare 404 mai clar"
       },
       {
         "icon": "📄",
-        "text": "completare automată xx,x energie finală clădire referință în CPE"
+        "text": "epRefMax la nivel component + fallback preview fara re-throw din generateDocxCPE"
+      },
+      {
+        "icon": "📄",
+        "text": "preview CPE fallback HTML + butoane DOCX active cu upgrade prompt pe free tier"
+      },
+      {
+        "icon": "📄",
+        "text": "corelare clase energetice CPE — detectare a:t, clasificare h, table highlighting"
+      },
+      {
+        "icon": "📄",
+        "text": "CPE DOCX: fixează culoarea textului din săgețile indicator (w:color cu themeColor + DrawingML a:rPr)"
+      },
+      {
+        "icon": "✨",
+        "text": "CPE: adaugă indicator Clădire de Referință pe scala EP și CO₂; fixează culoarea textului din săgeți să corespu"
       }
     ]
   },
