@@ -373,20 +373,49 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
 
     # Clasificare prin POZIȚIE ORIZONTALĂ (h):
     # Scala EP (stânga) → h mic; Scala CO2 (dreapta) → h mare
-    # Sortăm crescător după h → primii 2 = EP, ultimii = CO2
-    text_indicators.sort(key=lambda x: x[2])  # sort by h (positionH)
+    #
+    # ATENȚIE: positionH poate fi relativ la "column", "margin" sau "page".
+    # Shape-urile ancorate în coloane diferite ale tabelului (EP=stânga, CO₂=dreapta)
+    # pot avea posOffset similare deoarece sunt relative la coloana lor, NU la pagină.
+    # De aceea, folosim ORDINEA DIN DOCUMENT (XML order) ca fallback — în Word XML,
+    # conținutul coloanei stângi apare ÎNAINTEA coloanei drepte.
+
+    # Salvăm ordinea din document înainte de sortare
+    text_indicators_doc_order = list(text_indicators)
+
+    # Normalizăm h: extragem relativeFrom pentru a calcula poziția absolută
+    def _get_abs_h(indicator):
+        """Compute approximate absolute horizontal position from positionH."""
+        m, letter, h_raw, v = indicator
+        content = m.group(1)
+        rel_match = re.search(r'positionH\s+relativeFrom="([^"]+)"', content)
+        rel = rel_match.group(1) if rel_match else "page"
+        if rel == "page":
+            return h_raw
+        elif rel == "margin":
+            return h_raw + 900_000   # ~25mm left margin
+        elif rel == "column":
+            return h_raw + 900_000   # approximate — column-relative
+        return h_raw
+
+    text_indicators.sort(key=lambda x: _get_abs_h(x))
 
     if len(text_indicators) >= 3:
         # Cel mai din dreapta = CO2; primii 2 = EP (real + ref)
         ep_indicators = text_indicators[:2]
         co2_indicators = text_indicators[2:]
     elif len(text_indicators) == 2:
-        # Dacă h-urile sunt similare → ambele EP (real + ref), fără CO2 textbox
-        # Dacă h-urile diferă mult → primul EP, al doilea CO2
-        h_diff = text_indicators[1][2] - text_indicators[0][2]
-        if h_diff > 1_000_000:  # > ~27mm → indicatoare pe scale diferite
+        h0_abs = _get_abs_h(text_indicators[0])
+        h1_abs = _get_abs_h(text_indicators[1])
+        h_diff = h1_abs - h0_abs
+        if h_diff > 1_000_000:  # > ~27mm → indicatoare pe scale diferite (h absolut)
             ep_indicators = text_indicators[:1]
             co2_indicators = text_indicators[1:]
+        elif co2_class_real:
+            # Avem clase diferite EP + CO₂ dar h-urile sunt similare (relativeFrom diferit).
+            # Folosim ordinea din document: primul shape din XML = EP (stânga), al doilea = CO₂ (dreapta).
+            ep_indicators = [text_indicators_doc_order[0]]
+            co2_indicators = [text_indicators_doc_order[1]]
         else:
             # Ambele pe scala EP (clădire+ref), CO2 nu a fost detectat
             ep_indicators = text_indicators
