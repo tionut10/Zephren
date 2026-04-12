@@ -6,10 +6,11 @@
  * products.json, steps.json etc. actualizează automat landing-ul.
  */
 
-import PRODUCTS  from "./products.json";
-import STEPS     from "./steps.json";
-import CLIMATE   from "./climate.json";
-import BRIDGES   from "./thermal-bridges.json";
+import PRODUCTS   from "./products.json";
+import STEPS      from "./steps.json";
+import CLIMATE    from "./climate.json";
+import BRIDGES    from "./thermal-bridges.json";
+import NORMATIVE_RAW from "./normative.json";
 import FEATURES_DATA from "./features.json";
 export { CHANGELOG, APP_VERSION } from "./changelog.generated.js";
 export {
@@ -43,27 +44,9 @@ export const CLIMATE_COUNT  = Array.isArray(CLIMATE) ? CLIMATE.length : 0;
 export const BRIDGES_COUNT  = Array.isArray(BRIDGES) ? BRIDGES.length : 0;
 export const STEPS_COUNT    = Array.isArray(STEPS)   ? STEPS.length   : 0;
 
-// ── Normative integrate (lista manuală — actualizare manuală când se adaugă) ─
-export const NORMATIVE = [
-  "Mc 001-2022",
-  "SR EN ISO 52000-1/NA:2023",
-  "SR EN ISO 13790",
-  "SR EN ISO 52016-1",
-  "SR EN ISO 6946",
-  "SR EN ISO 10077-1",
-  "SR EN ISO 13370",
-  "SR EN ISO 13788",
-  "SR EN ISO 14683",
-  "EN 15193-1",
-  "EN 15459-1",
-  "EN 15978 (GWP)",
-  "I5-2022",
-  "C107/7-2002",
-  "Legea 372/2005 + L.238/2024",
-  "EPBD 2024/1275",
-  "Reg. delegat UE 2025/2273",
-];
-export const NORMATIVE_COUNT = NORMATIVE.length;
+// ── Normative integrate — editează src/data/normative.json ──────────────────
+export const NORMATIVE       = NORMATIVE_RAW;
+export const NORMATIVE_COUNT = NORMATIVE_RAW.length;
 
 // APP_VERSION — derivat automat din changelog.generated.js (primul entry = CURENT)
 

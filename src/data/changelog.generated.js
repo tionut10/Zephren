@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔸",
+        "text": "APP_VERSION dinamic din changelog: badge v0.2.0 se sincronizează automat cu istoricul versiunilor"
+      },
+      {
         "icon": "✨",
         "text": "Landing dinamic: secțiune 8 pași reali, features din features.json, export/import auto-derivate, 48 module cal"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "Revert prețuri la versiunea inițială din screenshots"
-      },
-      {
-        "icon": "💰",
-        "text": "Recalcul prețuri −30% vs concurenți: planuri, lansare, perpetue"
       }
     ]
   },
