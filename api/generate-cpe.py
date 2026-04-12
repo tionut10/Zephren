@@ -287,20 +287,39 @@ def _text_color_for_bg(hex_color):
 
 
 def _update_shape_color(shape_xml_str, color_info):
-    """Update fill color in both DrawingML (a:srgbClr) and VML (fillcolor) representations."""
+    """Update fill color in DrawingML (srgbClr SAU schemeClr) și VML (fillcolor)."""
     result = shape_xml_str
     hex_color = color_info["hex"]
     vml_color = color_info["vml"]
+    explicit_fill = '<a:solidFill><a:srgbClr val="' + hex_color + '"/></a:solidFill>'
 
-    # Update DrawingML solidFill — first srgbClr occurrence (shape fill, not outline)
-    result = re.sub(
+    # FIX 1: înlocuiește srgbClr explicit (culoare fixă)
+    replaced = re.subn(
         r'(<a:solidFill>\s*<a:srgbClr val=")[A-Fa-f0-9]{6}(")',
         r'\g<1>' + hex_color + r'\g<2>',
         result,
         count=1
     )
+    result = replaced[0]
+    srgb_matched = replaced[1] > 0
 
-    # Update VML fillcolor attribute
+    # FIX 2: dacă nu s-a găsit srgbClr, înlocuiește schemeClr (culoare din temă Word)
+    # Acoperă <a:schemeClr val="..."/> (self-closing) și <a:schemeClr ...>...</a:schemeClr>
+    if not srgb_matched:
+        result = re.sub(
+            r'<a:solidFill>\s*<a:schemeClr\b[^/]*/>\s*</a:solidFill>',
+            explicit_fill,
+            result,
+            count=1
+        )
+        result = re.sub(
+            r'<a:solidFill>\s*<a:schemeClr\b[^>]*>[\s\S]*?</a:schemeClr>\s*</a:solidFill>',
+            explicit_fill,
+            result,
+            count=1
+        )
+
+    # VML fillcolor (folosit de Office pentru compatibilitate)
     result = re.sub(
         r'fillcolor="[^"]*"',
         'fillcolor="' + vml_color + '"',
@@ -380,48 +399,49 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     # De aceea, folosim ORDINEA DIN DOCUMENT (XML order) ca fallback — în Word XML,
     # conținutul coloanei stângi apare ÎNAINTEA coloanei drepte.
 
-    # Salvăm ordinea din document înainte de sortare
+    # FIX SORT: folosim ORDINEA DIN DOCUMENT (XML order) — NU sortare după h.
+    # Motivul: shape-urile ancorate cu relativeFrom="column" au h_raw relativ la coloana lor,
+    # deci toate capătă același offset +900_000 → sort nesigur → indicatoare amestecate.
+    # În templatele MDLPA ordinea XML este întotdeauna: EP_real → EP_ref → CO2 (stânga→dreapta).
     text_indicators_doc_order = list(text_indicators)
 
-    # Normalizăm h: extragem relativeFrom pentru a calcula poziția absolută
+    # Calculăm abs_h DOAR pentru cazul n==2, pentru a distinge "page"-relative vs "column"
     def _get_abs_h(indicator):
-        """Compute approximate absolute horizontal position from positionH."""
         m, letter, h_raw, v = indicator
         content = m.group(1)
         rel_match = re.search(r'positionH\s+relativeFrom="([^"]+)"', content)
         rel = rel_match.group(1) if rel_match else "page"
+        # Offset estimativ per tip de ancorare (doar pentru comparație relativă)
         if rel == "page":
             return h_raw
         elif rel == "margin":
-            return h_raw + 900_000   # ~25mm left margin
+            return h_raw + 900_000
         elif rel == "column":
-            return h_raw + 900_000   # approximate — column-relative
+            # Nu putem distinge coloana → returnăm h_raw pentru a păstra doc order
+            return h_raw
         return h_raw
 
-    text_indicators.sort(key=lambda x: _get_abs_h(x))
-
-    if len(text_indicators) >= 3:
-        # Cel mai din dreapta = CO2; primii 2 = EP (real + ref)
-        ep_indicators = text_indicators[:2]
-        co2_indicators = text_indicators[2:]
-    elif len(text_indicators) == 2:
-        h0_abs = _get_abs_h(text_indicators[0])
-        h1_abs = _get_abs_h(text_indicators[1])
-        h_diff = h1_abs - h0_abs
-        if h_diff > 1_000_000:  # > ~27mm → indicatoare pe scale diferite (h absolut)
-            ep_indicators = text_indicators[:1]
-            co2_indicators = text_indicators[1:]
+    if len(text_indicators_doc_order) >= 3:
+        # Ordinea XML: [0]=EP_real (stânga), [1]=EP_ref (mijloc), [2+]=CO2 (dreapta)
+        ep_indicators = text_indicators_doc_order[:2]
+        co2_indicators = text_indicators_doc_order[2:]
+    elif len(text_indicators_doc_order) == 2:
+        h0_abs = _get_abs_h(text_indicators_doc_order[0])
+        h1_abs = _get_abs_h(text_indicators_doc_order[1])
+        h_diff = abs(h1_abs - h0_abs)
+        if h_diff > 1_500_000:
+            # Scale clar diferite (h absolut mare) — page-relative
+            ep_indicators = text_indicators_doc_order[:1]
+            co2_indicators = text_indicators_doc_order[1:]
         elif co2_class_real:
-            # Avem clase diferite EP + CO₂ dar h-urile sunt similare (relativeFrom diferit).
-            # Folosim ordinea din document: primul shape din XML = EP (stânga), al doilea = CO₂ (dreapta).
+            # h similar (column-relative) → doc order: [0]=EP_real, [1]=CO2
             ep_indicators = [text_indicators_doc_order[0]]
             co2_indicators = [text_indicators_doc_order[1]]
         else:
-            # Ambele pe scala EP (clădire+ref), CO2 nu a fost detectat
-            ep_indicators = text_indicators
+            ep_indicators = text_indicators_doc_order
             co2_indicators = []
     else:
-        ep_indicators = text_indicators
+        ep_indicators = text_indicators_doc_order
         co2_indicators = []
 
     # Perechi text-pentagon: pentagonul urmează imediat după textbox
