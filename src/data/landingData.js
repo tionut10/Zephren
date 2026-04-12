@@ -246,9 +246,9 @@ export const PLANS = [
     cta: "Începe gratuit", highlight: false,
   },
   {
-    id: "starter", name: "Starter", price: "299", period: "/lună",
-    priceAn: "1.799", discount: "18% sub AllEnergy",
-    eaPrice: "219", eaAnnual: "1.290",
+    id: "starter", name: "Starter", price: "229", period: "/lună",
+    priceAn: "1.490", discount: "37% sub AllEnergy",
+    eaPrice: "169", eaAnnual: "1.090",
     features: [
       "Proiecte CPE nelimitate",
       "Export PDF + Word oficial (Mc 001-2022)",
@@ -260,9 +260,9 @@ export const PLANS = [
     cta: "Activează Starter", highlight: false,
   },
   {
-    id: "professional", name: "Professional", price: "309", period: "/lună",
-    priceAn: "4.990", discount: "25% sub ENERG+ · nZEB + SRE incluse",
-    eaPrice: "229", eaAnnual: "3.590",
+    id: "professional", name: "Professional", price: "489", period: "/lună",
+    priceAn: "5.790", discount: "30% sub ENERG+ · nZEB + SRE incluse",
+    eaPrice: "359", eaAnnual: "4.190",
     features: [
       "Tot ce include Starter, plus:",
       "Calcule SRE, nZEB, audit energetic complet",
@@ -276,9 +276,9 @@ export const PLANS = [
     cta: "Activează Professional", highlight: true,
   },
   {
-    id: "business", name: "Business", price: "699", period: "/lună",
-    priceAn: "5.990", discount: null,
-    eaPrice: "499", eaAnnual: "4.390",
+    id: "business", name: "Business", price: "759", period: "/lună",
+    priceAn: "7.490", discount: "30% sub 3 licențe individuale",
+    eaPrice: "549", eaAnnual: "5.490",
     features: [
       "Tot ce include Professional, plus:",
       "3 utilizatori (+89 RON/user/lună extra)",
