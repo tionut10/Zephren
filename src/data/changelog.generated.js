@@ -1,47 +1,80 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-12
+// Ultima generare: 2026-04-13
 
-export const APP_VERSION = "0.2.0";
+export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
   {
-    "version": "0.2.0",
-    "week": "Săpt. 2",
-    "dateRange": "6 – 12 apr 2026",
+    "version": "0.3.0",
+    "week": "Săpt. 3",
+    "dateRange": "13 – 19 apr 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "indicatori clasa DOCX — eliminat filtrul h>150000 care excludea shape-urile EP"
-      },
-      {
-        "icon": "🔧",
-        "text": "culori clase energetice unificate — CO2 foloseste aceeasi schema verde-rosu ca EP"
-      },
-      {
-        "icon": "🔧",
-        "text": "proxy /api→Vercel în dev local; mesaj eroare 404 mai clar"
-      },
-      {
-        "icon": "📄",
-        "text": "epRefMax la nivel component + fallback preview fara re-throw din generateDocxCPE"
-      },
-      {
-        "icon": "📄",
-        "text": "preview CPE fallback HTML + butoane DOCX active cu upgrade prompt pe free tier"
-      },
-      {
-        "icon": "📄",
-        "text": "corelare clase energetice CPE — detectare a:t, clasificare h, table highlighting"
-      },
-      {
-        "icon": "📄",
-        "text": "CPE DOCX: fixează culoarea textului din săgețile indicator (w:color cu themeColor + DrawingML a:rPr)"
+        "icon": "💰",
+        "text": "declare userPlan state in EnergyCalcApp to resolve ReferenceError crash"
       },
       {
         "icon": "✨",
-        "text": "CPE: adaugă indicator Clădire de Referință pe scala EP și CO₂; fixează culoarea textului din săgeți să corespu"
+        "text": "7 funcționalități noi — șabloane clădiri, finanțări, deviz exports, CO₂, CPE alerte, offline, wizard mobil"
+      },
+      {
+        "icon": "🔸",
+        "text": "Badge Starter: STR → STA"
+      },
+      {
+        "icon": "✨",
+        "text": "Planuri: înlocuiește ASC cu BUS, adaugă STR/ENT — FREE/STR/STD/PRO/BUS/ENT"
+      },
+      {
+        "icon": "💰",
+        "text": "Revert \"Actualizare planuri prețuri v5.1: Free/Starter 299/Professional 309/Business 699/Asociație S-M-Pro/Ent"
+      },
+      {
+        "icon": "💰",
+        "text": "Actualizare planuri prețuri v5.1: Free/Starter 299/Professional 309/Business 699/Asociație S-M-Pro/Enterprise "
+      }
+    ]
+  },
+  {
+    "version": "0.2.0",
+    "week": "Săpt. 2",
+    "dateRange": "6 – 12 apr 2026",
+    "color": "#6366f1",
+    "label": "",
+    "items": [
+      {
+        "icon": "📄",
+        "text": "culori litere sageti CPE (A/A+/G=alb, B-F=negru) + auto-preview la deschidere Pas 6 + ascundere sageti duplica"
+      },
+      {
+        "icon": "✨",
+        "text": "preview CPE via Vercel Blob + Office Online Viewer (rendering Word-fidel)"
+      },
+      {
+        "icon": "📄",
+        "text": "scalare responsivă + săgeți CSS injectate în preview CPE (CLĂDIRE REALĂ/REF/CO2)"
+      },
+      {
+        "icon": "📄",
+        "text": "scalare corectă docx-preview + ascunde doar elementele floating din afara paginii"
+      },
+      {
+        "icon": "📄",
+        "text": "docx-preview - overflow hidden pe pagini, constrângere săgeți indicator"
+      },
+      {
+        "icon": "🔧",
+        "text": "TDZ epRefMax - mut calculul qfRef după declararea const epRefMax"
+      },
+      {
+        "icon": "✨",
+        "text": "preview CPE cu docx-preview (identic cu fișierul descărcat)"
+      },
+      {
+        "icon": "📄",
+        "text": "completare automată xx,x energie finală clădire referință în CPE"
       }
     ]
   },
@@ -49,7 +82,7 @@ export const CHANGELOG = [
     "version": "0.1.0",
     "week": "Săpt. 1",
     "dateRange": "30 mar – 5 apr 2026",
-    "color": "#6366f1",
+    "color": "#10b981",
     "label": "LANSARE",
     "items": [
       {

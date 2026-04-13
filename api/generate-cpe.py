@@ -18,11 +18,11 @@ EP_TEMPLATE_SCALES = {
     "RC": [73, 101, 198, 297, 396, 495, 595],
     "RA": [73, 101, 198, 297, 396, 495, 595],
     "BI": [68, 97, 193, 302, 410, 511, 614],
-    "ED": [55, 78, 157, 248, 340, 425, 510],
-    "SA": [130, 190, 380, 570, 760, 950, 1140],
-    "HC": [85, 120, 240, 370, 500, 625, 750],
-    "CO": [75, 107, 213, 330, 447, 558, 670],
-    "SP": [70, 100, 200, 310, 420, 525, 630],
+    "ED": [48, 68, 135, 246, 358, 447, 536],
+    "SA": [117, 165, 331, 501, 671, 838, 1005],
+    "HC": [67, 93, 188, 321, 452, 565, 678],
+    "CO": [88, 124, 248, 320, 393, 492, 591],
+    "SP": [75, 104, 206, 350, 494, 617, 741],
     "AL": [68, 97, 193, 302, 410, 511, 614],
 }
 
@@ -31,11 +31,11 @@ CO2_TEMPLATE_SCALES = {
     "RC": [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9],
     "RA": [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9],
     "BI": [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4],
-    "ED": [8.5, 12.0, 24.0, 37.0, 50.0, 62.5, 75.0],
-    "SA": [19.0, 27.0, 54.0, 83.0, 112.0, 140.0, 168.0],
-    "HC": [13.0, 18.5, 37.0, 57.0, 77.0, 96.0, 115.0],
-    "CO": [11.5, 16.4, 32.8, 50.5, 68.5, 85.5, 102.5],
-    "SP": [10.7, 15.3, 30.5, 47.5, 64.5, 80.5, 96.5],
+    "ED": [8.3, 11.6, 23.0, 42.5, 62.2, 77.6, 93.1],
+    "SA": [19.7, 27.8, 55.8, 84.0, 112.3, 140.2, 168.1],
+    "HC": [11.8, 16.4, 33.1, 57.0, 80.6, 100.7, 120.8],
+    "CO": [15.4, 21.6, 43.4, 54.5, 65.7, 82.3, 98.9],
+    "SP": [12.3, 17.0, 33.7, 57.4, 81.2, 101.4, 121.7],
     "AL": [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4],
 }
 
@@ -192,8 +192,139 @@ def replace_seq(doc, old_text, values):
 # ═══════════════════════════════════════════════════════
 # REPLACE SCALE THRESHOLDS — EP and CO2
 # ═══════════════════════════════════════════════════════
+def _is_generic_template(doc):
+    """Detectează dacă template-ul este cel generic (3-CPE) cu placeholder-uri xxx/yyy."""
+    from docx.text.paragraph import Paragraph as DocxPara
+    txbx_tag = qn("w:txbxContent")
+    p_tag = qn("w:p")
+    t_tag = qn("w:t")
+    for txbx_elem in doc.element.body.iter(txbx_tag):
+        for p_elem in txbx_elem.iter(p_tag):
+            texts = ''.join(t.text or '' for t in p_elem.iter(t_tag))
+            if 'xxx' in texts.lower() or 'yyy' in texts.lower():
+                return True
+    return False
+
+
+def _build_ep_intervals(thresholds):
+    """Construiește lista de intervale EP din praguri: ['≤48', '48 … 68', ..., '>536']."""
+    intervals = []
+    intervals.append("≤" + str(thresholds[0]))
+    for i in range(len(thresholds) - 1):
+        intervals.append(str(thresholds[i]) + " … " + str(thresholds[i + 1]))
+    intervals.append(">" + str(thresholds[-1]))
+    return intervals
+
+
+def _build_co2_intervals(thresholds):
+    """Construiește lista de intervale CO2 din praguri: ['≤8,3', '8,3 … 11,6', ..., '> 93,1']."""
+    intervals = []
+    intervals.append("≤" + format_ro(thresholds[0], 1))
+    for i in range(len(thresholds) - 1):
+        intervals.append(format_ro(thresholds[i], 1) + " … " + format_ro(thresholds[i + 1], 1))
+    intervals.append("> " + format_ro(thresholds[-1], 1))
+    return intervals
+
+
+def _replace_generic_placeholders(doc, new_ep_scale, new_co2_scale):
+    """Înlocuiește placeholder-urile xxx/yyy din template-ul generic cu valorile reale.
+
+    Template-ul generic (3-CPE-forma-generala-cladire.docx) conține text boxes cu:
+    EP:  ≤xx, xx … xxx, xxx … xxx (×5), >xxxx
+    CO2: ≤yy, yy … yyy, yyy … yyy (×5), > yyy
+
+    Fiecare apare de 2 ori (clădire reală + clădire referință).
+    Potrivirea se face pe textul COMPLET al paragrafului (nu substring).
+    """
+    from docx.text.paragraph import Paragraph as DocxPara
+    txbx_tag = qn("w:txbxContent")
+    p_tag = qn("w:p")
+    t_tag = qn("w:t")
+
+    ep_intervals = _build_ep_intervals(new_ep_scale)
+    co2_intervals = _build_co2_intervals(new_co2_scale) if new_co2_scale else []
+
+    # Contoare pentru placeholder-urile repetitive (xxx … xxx apare de 10× = 5 clase × 2 dup)
+    ep_xxx_count = [0]   # câte „xxx … xxx" am înlocuit (0-9 → clasele B-F × 2)
+    co2_yyy_count = [0]  # câte „yyy … yyy" am înlocuit
+
+    def _set_para_text(para, new_text):
+        """Înlocuiește tot textul din paragraf cu new_text, păstrând formatarea primului run."""
+        runs = para.runs
+        if not runs:
+            return
+        runs[0].text = new_text
+        for r in runs[1:]:
+            r.text = ""
+
+    for txbx_elem in doc.element.body.iter(txbx_tag):
+        for p_elem in txbx_elem.iter(p_tag):
+            para = DocxPara(p_elem, None)
+            full = para.text.strip()
+            if not full:
+                continue
+
+            # ── EP placeholders (potrivire EXACTĂ pe text complet) ──
+            if full == "\u2264xx" or full == "≤xx":
+                # A+ : ≤{threshold[0]}
+                _set_para_text(para, ep_intervals[0])
+                continue
+
+            if full == "xx \u2026 xxx" or full == "xx … xxx":
+                # A : {threshold[0]} … {threshold[1]}
+                _set_para_text(para, ep_intervals[1])
+                continue
+
+            if full == "xxx \u2026 xxx" or full == "xxx … xxx":
+                # B-F : clasele 2-6, fiecare apare de 2 ori (real + ref)
+                idx = ep_xxx_count[0] // 2  # 0,1→B  2,3→C  4,5→D  6,7→E  8,9→F
+                interval_idx = idx + 2      # ep_intervals[2]=B, [3]=C, etc.
+                if interval_idx < len(ep_intervals) - 1:  # nu depășim (ultimul e >G)
+                    _set_para_text(para, ep_intervals[interval_idx])
+                ep_xxx_count[0] += 1
+                continue
+
+            if full.startswith(">xxx") or full.startswith("> xxx"):
+                # G : >{threshold[6]}
+                _set_para_text(para, ep_intervals[7])
+                continue
+
+            # ── CO2 placeholders ──
+            if not co2_intervals:
+                continue
+
+            if full == "\u2264yy" or full == "≤yy":
+                _set_para_text(para, co2_intervals[0])
+                continue
+
+            if full == "yy \u2026 yyy" or full == "yy … yyy":
+                _set_para_text(para, co2_intervals[1])
+                continue
+
+            if full == "yyy \u2026 yyy" or full == "yyy … yyy":
+                idx = co2_yyy_count[0] // 2
+                interval_idx = idx + 2
+                if interval_idx < len(co2_intervals) - 1:
+                    _set_para_text(para, co2_intervals[interval_idx])
+                co2_yyy_count[0] += 1
+                continue
+
+            if full.startswith("> yyy") or full.startswith(">yyy"):
+                _set_para_text(para, co2_intervals[7])
+                continue
+
+
 def replace_scales(doc, category, new_ep_scale, new_co2_scale=None):
-    """Replace EP/CO2 scale values in text boxes ONLY (safe — no risk of corrupting other numbers)."""
+    """Replace EP/CO2 scale values in text boxes ONLY (safe — no risk of corrupting other numbers).
+    Gestionează atât template-urile specifice (cu valori numerice) cât și template-ul
+    generic (3-CPE cu placeholder-uri xxx/yyy)."""
+
+    # Detectează template generic cu placeholder-uri
+    if _is_generic_template(doc):
+        _replace_generic_placeholders(doc, new_ep_scale, new_co2_scale)
+        return
+
+    # Template specific — find-and-replace valori numerice existente
     old_ep = EP_TEMPLATE_SCALES.get(category, EP_TEMPLATE_SCALES["AL"])
 
     for i in range(7):

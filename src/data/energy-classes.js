@@ -10,11 +10,11 @@ export const ENERGY_CLASSES_DB = {
   RA_cool: { label:"Apartament (cu răcire)", thresholds:[73,101,198,297,396,495,595] },
   RA_nocool: { label:"Apartament (fără răcire)", thresholds:[60,84,168,260,352,440,528] },
   BI: { label:"Birouri", thresholds:[68,97,193,302,410,511,614] },
-  ED: { label:"Educație", thresholds:[55,78,157,248,340,425,510] },
-  SA: { label:"Sănătate", thresholds:[130,190,380,570,760,950,1140] },
-  HC: { label:"Hotel / Cazare", thresholds:[85,120,240,370,500,625,750] },
-  CO: { label:"Comercial", thresholds:[75,107,213,330,447,558,670] },
-  SP: { label:"Sport", thresholds:[70,100,200,310,420,525,630] },
+  ED: { label:"Educație", thresholds:[48,68,135,246,358,447,536] },
+  SA: { label:"Sănătate", thresholds:[117,165,331,501,671,838,1005] },
+  HC: { label:"Hotel / Cazare", thresholds:[67,93,188,321,452,565,678] },
+  CO: { label:"Comercial", thresholds:[88,124,248,320,393,492,591] },
+  SP: { label:"Sport", thresholds:[75,104,206,350,494,617,741] },
   AL: { label:"Altele", thresholds:[68,97,193,302,410,511,614] },
 };
 
@@ -47,11 +47,11 @@ export const CO2_CLASSES_DB = {
   RC: { thresholds: [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9] },
   RA: { thresholds: [12.7, 17.6, 34.6, 52.2, 69.9, 87.4, 104.9] },
   BI: { thresholds: [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4] },
-  ED: { thresholds: [8.5, 12.0, 24.0, 37.0, 50.0, 62.5, 75.0] },
-  SA: { thresholds: [19.0, 27.0, 54.0, 83.0, 112.0, 140.0, 168.0] },
-  HC: { thresholds: [13.0, 18.5, 37.0, 57.0, 77.0, 96.0, 115.0] },
-  CO: { thresholds: [11.5, 16.4, 32.8, 50.5, 68.5, 85.5, 102.5] },
-  SP: { thresholds: [10.7, 15.3, 30.5, 47.5, 64.5, 80.5, 96.5] },
+  ED: { thresholds: [8.3, 11.6, 23.0, 42.5, 62.2, 77.6, 93.1] },
+  SA: { thresholds: [19.7, 27.8, 55.8, 84.0, 112.3, 140.2, 168.1] },
+  HC: { thresholds: [11.8, 16.4, 33.1, 57.0, 80.6, 100.7, 120.8] },
+  CO: { thresholds: [15.4, 21.6, 43.4, 54.5, 65.7, 82.3, 98.9] },
+  SP: { thresholds: [12.3, 17.0, 33.7, 57.4, 81.2, 101.4, 121.7] },
   AL: { thresholds: [10.4, 14.8, 29.7, 46.1, 62.4, 77.8, 93.4] },
 };
 
