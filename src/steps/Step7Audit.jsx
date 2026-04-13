@@ -252,7 +252,7 @@ export default function Step7Audit(props) {
                   <button onClick={() => setStep(6)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 6</button>
                   <h2 className="text-xl font-bold">{lang==="EN"?"Energy Audit — Rehabilitation Recommendations":"Audit Energetic — Recomandări de Reabilitare"}</h2>
                 </div>
-                <p className="text-xs opacity-40">Analiza automata si recomandari conform Mc 001-2022 pentru imbunatatirea performantei energetice</p>
+                <p className="text-xs opacity-40">Analiză automată și recomandări conform Mc 001-2022 pentru îmbunătățirea performanței energetice</p>
               </div>
 
               {(!instSummary || !Au) ? (

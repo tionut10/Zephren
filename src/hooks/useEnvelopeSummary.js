@@ -2,9 +2,7 @@ import { useMemo } from "react";
 import { VENTILATION_TYPES } from "../data/constants.js";
 import { ELEMENT_TYPES } from "../data/building-catalog.js";
 import { calcOpaqueR } from "../calc/opaque.js";
-import { calcMonthlyISO13790 } from "../calc/iso13790.js";
-import { calcHourlyISO52016 } from "../calc/hourly.js";
-import { generateTMY } from "../calc/weather.js";
+import { calcMonthlyISO13790, THERMAL_MASS_CLASS, WIND_SHIELD_FACTOR } from "../calc/iso13790.js";
 
 /**
  * useEnvelopeSummary — calcul anvelopă termică + bilanțuri lunare/orare
@@ -99,8 +97,9 @@ export function useEnvelopeSummary({
     totalHeatLoss += bridgeLoss;
 
     // Ventilare — folosim n50 dacă e disponibil, altfel n=0.5 h-1
+    // e_shield: factor protecție vânt (ISO 13789 §8.3) — configurat din building.windExposure
     const n50 = parseFloat(building.n50) || 4.0;
-    const e_shield = 0.07;
+    const e_shield = WIND_SHIELD_FACTOR[building.windExposure] || 0.07;
     const n_inf = n50 * e_shield;
     const n = Math.max(0.5, n_inf);
     const ventType = VENTILATION_TYPES.find(v => v.id === ventilation.type);
@@ -114,7 +113,7 @@ export function useEnvelopeSummary({
     return { totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta };
   }, [
     opaqueElements, glazingElements, thermalBridges,
-    building.volume, building.perimeter, building.n50,
+    building.volume, building.perimeter, building.n50, building.windExposure,
     ventilation.type, ventilation.hrEfficiency,
     heating.theta_int, heating.tBasement, heating.tAttic, heating.tStaircase,
     selectedClimate,
@@ -143,30 +142,13 @@ export function useEnvelopeSummary({
     building, heating.theta_int, glazingElements, ventilation,
   ]);
 
-  // ─── ISO 52016-1 Hourly calculation (using generated TMY) ───
-  const hourlyISO = useMemo(() => {
-    if (!envelopeSummary || !selectedClimate?.temp_month || !selectedClimate?.lat) return null;
-    const Au = parseFloat(building.areaUseful) || 0;
-    if (!Au) return null;
-    const tmy = generateTMY(selectedClimate.temp_month, selectedClimate.lat);
-    if (!tmy) return null;
-    const V = parseFloat(building.volume) || 0;
-    const H_tr = envelopeSummary.totalHeatLoss || (envelopeSummary.G * V);
-    const n_ach = parseFloat(building.n50) > 0 ? parseFloat(building.n50) / 20 : 0.5;
-    const H_ve = 0.34 * n_ach * V;
-    const C_m = Au * 165000;
-    const Q_sol_on_building = tmy.Q_sol_horiz.map(g => g * Au * 0.03);
-    return calcHourlyISO52016({
-      T_ext: tmy.T_ext, Au, H_tr, H_ve, C_m,
-      theta_int_set_h: parseFloat(heating.theta_int) || 20,
-      theta_int_set_c: 26,
-      Q_int: null,
-      Q_sol: Q_sol_on_building,
-    });
-  }, [
-    envelopeSummary, selectedClimate,
-    building.areaUseful, building.volume, building.n50, heating.theta_int,
-  ]);
+  // ─── ISO 52016-1 Hourly calculation ───
+  // Dezactivat: calcul 8760h nefolosit în UI curent (Step5 nu afișează hourlyISO).
+  // Step8Advanced are propriul calcul orar (calcHourlyThermalLoad).
+  // Reactivează dacă se adaugă grafic orar în Step5, fixând și:
+  //   C_m = Au * (THERMAL_MASS_CLASS[building.structure] || 165000)
+  //   e_shield = WIND_SHIELD_FACTOR[building.windExposure] || 0.07
+  const hourlyISO = null;
 
   return { envelopeSummary, monthlyISO, hourlyISO };
 }
