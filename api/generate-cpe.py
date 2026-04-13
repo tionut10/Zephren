@@ -1553,7 +1553,7 @@ class handler(BaseHTTPRequestHandler):
                                         scope_runs[0].text = scope
 
             # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN v3.x"
-            program_name = data.get("software", "") or "ZEPHREN v3.2"
+            program_name = data.get("software", "") or "ZEPHREN"
             def fill_program_field(paragraphs):
                 for para in paragraphs:
                     if "Program de calcul utilizat" in para.text or "versiunea" in para.text:

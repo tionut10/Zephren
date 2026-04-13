@@ -11,6 +11,7 @@ import MATERIALS_DB from "./data/materials.json";
 import THERMAL_BRIDGES_DB from "./data/thermal-bridges.json";
 import { HEAT_SOURCES, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY, CONTROL_TYPES, FUELS, AMBIENT_ENERGY_FACTOR, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, ACM_CONSUMPTION, LIGHTING_HOURS, SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA, TILT_FACTORS, ORIENT_FACTORS, BIOMASS_TYPES, BATTERY_STORAGE_TYPES } from "./data/constants.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, NZEB_THRESHOLDS, CO2_CLASSES_DB, WATER_TEMP_MONTH } from "./data/energy-classes.js";
+import { APP_VERSION } from "./data/landingData.js";
 import { T } from "./data/translations.js";
 import { PRODUCT_CATALOG, STEPS } from "./data/products.js";
 import { TYPICAL_BUILDINGS, TYPICAL_BUILDINGS_EXTRA } from "./data/typical-buildings.js";
@@ -5887,7 +5888,7 @@ export default function EnergyCalcApp({ cloud }) {
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
             <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"36px", width:"auto"}} />
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2"}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{APP_VERSION}</span>
             <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
 
             {/* Plan badges */}

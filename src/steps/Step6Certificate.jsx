@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { renderAsync } from "docx-preview";
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
+import { APP_VERSION } from "../data/landingData.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -158,7 +159,7 @@ export default function Step6Certificate(props) {
                     gps: fmtRo(latV, 4) + " x " + fmtRo(lngV, 4),
                     regime: regimStr,
                     scope: scopeLabels[building.scopCpe] || "Vânzare",
-                    software: "ZEPHREN v" + (typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2") + "",
+                    software: "ZEPHREN v" + APP_VERSION + "",
                     area_ref: fmtRo(Aref, 1),
                     area_gross: fmtRo(arieDesf, 1),
                     volume: Math.round(Vol).toString(),
@@ -787,7 +788,7 @@ export default function Step6Certificate(props) {
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
     <ScopElaborare>${esc(building.scopCpe || "vanzare")}</ScopElaborare>
-    <ProgramCalcul>ZEPHREN v${typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2"}</ProgramCalcul>
+    <ProgramCalcul>ZEPHREN v${APP_VERSION}</ProgramCalcul>
   </DateIdentificare>
   <Auditor>
     <Nume>${esc(auditor.name)}</Nume>
