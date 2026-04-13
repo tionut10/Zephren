@@ -2,7 +2,7 @@
 // Script: scripts/update-changelog.js
 // Ultima generare: 2026-04-13
 
-export const APP_VERSION = "0.3.0";
+export const APP_VERSION = "3.2.0";
 export const CHANGELOG = [
   {
     "version": "0.3.0",
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "Corectare scale EP/CO₂ conform template-urilor oficiale MDLPA + fix template generic"
+        "icon": "📋",
+        "text": "Audit normativ: rezolvare cele 4 probleme minore identificate"
       },
       {
         "icon": "🔧",
-        "text": "nu mai șterge celulele xxx din scala energetică în highlight_utility_class_cells"
+        "text": "Fix categorie aliniere + adresă duplicată + grad II spațiere"
       },
       {
         "icon": "📄",
-        "text": "culori text scala EP/CO2 + valori utilități în DOCX CPE"
+        "text": "Fix punct rezidual după versiune în Program de calcul CPE"
       },
       {
-        "icon": "✨",
-        "text": "integrare SRI în Step8 și Benchmark Național în Step5"
+        "icon": "🔸",
+        "text": "Versiune unificată din APP_VERSION (changelog) — nu din package.json"
+      },
+      {
+        "icon": "🔸",
+        "text": "Versiunea aplicației (din package.json) afișată peste tot"
       },
       {
         "icon": "🔧",
-        "text": "corectie prag txtClr - A+ (#009B00) primeste text alb"
+        "text": "Fix text roșu global → negru + program calcul ZEPHREN v3.2"
       },
       {
         "icon": "📄",
-        "text": "culoare albă litera A+ în scala energetică CPE HTML"
+        "text": "Fix adresă duplicată în CPE — R2 cu etichetă, R3 doar adresa unității"
       },
       {
-        "icon": "✨",
-        "text": "6 funcționalități noi — benchmark național, ANRE sync, versioning, SRI indicator, MDLPA submit, notificări CPE"
-      },
-      {
-        "icon": "💰",
-        "text": "declare userPlan state in EnergyCalcApp to resolve ReferenceError crash"
+        "icon": "📄",
+        "text": "Fix text roșu în tabelul utilități CPE — forțat negru pe toate celulele"
       }
     ]
   },

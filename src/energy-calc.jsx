@@ -6374,9 +6374,9 @@ export default function EnergyCalcApp({ cloud }) {
             instSummary, renewSummary,
             lang,
             userPlan,
-            systems: { hrEta: parseFloat(ventilation?.hrEta)||0, ventType: ventilation?.type, emissionSystem: heating?.emissionSystem,
+            systems: { hrEta: parseFloat(ventilation?.hrEfficiency)||0, ventType: ventilation?.type, emissionSystem: heating?.emission,
               ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
-              heating: { etaGen: parseFloat(heating?.etaGen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
+              heating: { etaGen: parseFloat(heating?.eta_gen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
             },
             onOpenTutorial: () => setShowTutorial(true),
           }} /></Suspense>}

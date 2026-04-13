@@ -1542,9 +1542,9 @@ ${(() => {
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-1">
                   <button onClick={() => setStep(5)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 5</button>
-                  <h2 className="text-xl font-bold">Certificat de Performanta Energetica (CPE)</h2>
+                  <h2 className="text-xl font-bold">Certificat de Performanță Energetică (CPE)</h2>
                 </div>
-                <p className="text-xs opacity-40">Generare CPE conform Ordinului MDLPA nr. 16/2023 — format oficial cu clasare dubla</p>
+                <p className="text-xs opacity-40">Generare CPE conform Ordinului MDLPA nr. 16/2023 — format oficial cu clasare dublă</p>
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -1579,8 +1579,8 @@ ${(() => {
                         <Input label={t("Telefon",lang)} value={auditor.phone} onChange={v => setAuditor(p=>({...p,phone:v}))} />
                         <Input label={t("Email",lang)} value={auditor.email} onChange={v => setAuditor(p=>({...p,email:v}))} />
                       </div>
-                      <Input label={t("Data elaborarii CPE",lang)} value={auditor.date} onChange={v => setAuditor(p=>({...p,date:v}))} type="date" />
-                      <Input label={t("Cod unic MDLPA (dupa inregistrare)",lang)} value={auditor.mdlpaCode} onChange={v => {
+                      <Input label={t("Data elaborării CPE",lang)} value={auditor.date} onChange={v => setAuditor(p=>({...p,date:v}))} type="date" />
+                      <Input label={t("Cod unic MDLPA (după înregistrare)",lang)} value={auditor.mdlpaCode} onChange={v => {
                         // Format validation: allow digits, letters, dots, dashes
                         const cleaned = v.replace(/[^A-Za-z0-9.\-\/]/g, "").toUpperCase().slice(0, 20);
                         setAuditor(p=>({...p,mdlpaCode:cleaned}));

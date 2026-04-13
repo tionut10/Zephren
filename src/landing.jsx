@@ -97,19 +97,19 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
   const handleLogin = (e) => {
     e.preventDefault();
     if (onLogin) { onLogin({ email, password }); }
-    else { showToast("Autentificare in curand disponibila"); }
+    else { showToast("Autentificare în curând disponibilă"); }
   };
 
   const handleRegister = (e) => {
     e.preventDefault();
     if (password !== confirmPassword) { showToast("Parolele nu se potrivesc"); return; }
     if (onRegister) { onRegister({ name, email, password }); }
-    else { showToast("Inregistrare in curand disponibila"); }
+    else { showToast("Înregistrare în curând disponibilă"); }
   };
 
   const handleGoogle = () => {
     if (onGoogleLogin) { onGoogleLogin(); }
-    else { showToast("Autentificare Google in curand disponibila"); }
+    else { showToast("Autentificare Google în curând disponibilă"); }
   };
 
   const handleForgot = async (e) => {
@@ -146,33 +146,33 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
             <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "24px", textAlign: "center" }}>{TM("login_title", "Autentificare Zephren")}</h3>
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Password" : "Parola"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
+              <input type="password" placeholder={lang === "EN" ? "Password" : "Parolă"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
               <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{lang === "EN" ? "Login" : "Autentificare"}</button>
             </form>
             <button onClick={handleGoogle} style={{ width: "100%", marginTop: "12px", padding: "12px", borderRadius: "8px", border: `1px solid ${modalBorder}`, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: modalText, fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09A6.97 6.97 0 015.47 12c0-.72.13-1.43.37-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.42l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.77 14.97.5 12 .5 7.7.5 3.99 2.97 2.18 6.57l3.66 2.84c.87-2.6 3.3-4.03 6.16-4.03z" fill="#EA4335"/></svg>
-              {TM("login_google", "Continua cu Google")}
+              {TM("login_google", "Continuă cu Google")}
             </button>
             <div style={{ textAlign: "center", fontSize: "12px", color: modalMuted, marginTop: "16px" }}>
               <a href="#" onClick={e => { e.preventDefault(); setMode("forgot"); }} style={{ color: modalMuted, textDecoration: "underline", marginRight: "16px" }}>{TM("login_forgot", "Ai uitat parola?")}</a>
-              {TM("login_no_acc", "Nu ai cont?")} <a href="#" onClick={e => { e.preventDefault(); setMode("register"); }} style={{ color: "#f59e0b", textDecoration: "none" }}>{TM("login_reg", "Inregistrare")}</a>
+              {TM("login_no_acc", "Nu ai cont?")} <a href="#" onClick={e => { e.preventDefault(); setMode("register"); }} style={{ color: "#f59e0b", textDecoration: "none" }}>{TM("login_reg", "Înregistrare")}</a>
             </div>
           </>
         )}
 
         {mode === "register" && (
           <>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "24px", textAlign: "center" }}>{TM("reg_title", "Creaza cont Zephren")}</h3>
+            <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "24px", textAlign: "center" }}>{TM("reg_title", "Creează cont Zephren")}</h3>
             <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input type="text" placeholder={lang === "EN" ? "Full name" : "Nume complet"} value={name} onChange={e => setName(e.target.value)} required style={inputSt} />
               <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Password" : "Parola"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Confirm password" : "Confirma parola"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required style={inputSt} />
-              <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{lang === "EN" ? "Create account" : "Creaza cont"}</button>
+              <input type="password" placeholder={lang === "EN" ? "Password" : "Parolă"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
+              <input type="password" placeholder={lang === "EN" ? "Confirm password" : "Confirmă parola"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required style={inputSt} />
+              <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{lang === "EN" ? "Create account" : "Creează cont"}</button>
             </form>
             <button onClick={handleGoogle} style={{ width: "100%", marginTop: "12px", padding: "12px", borderRadius: "8px", border: `1px solid ${modalBorder}`, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: modalText, fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09A6.97 6.97 0 015.47 12c0-.72.13-1.43.37-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.42l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.77 14.97.5 12 .5 7.7.5 3.99 2.97 2.18 6.57l3.66 2.84c.87-2.6 3.3-4.03 6.16-4.03z" fill="#EA4335"/></svg>
-              {TM("reg_google", "Inregistrare cu Google")}
+              {TM("reg_google", "Înregistrare cu Google")}
             </button>
             <div style={{ textAlign: "center", fontSize: "12px", color: modalMuted, marginTop: "16px" }}>
               {TM("reg_has_acc", "Ai deja cont?")} <a href="#" onClick={e => { e.preventDefault(); setMode("login"); }} style={{ color: "#f59e0b", textDecoration: "none" }}>{TM("reg_login", "Autentificare")}</a>
@@ -182,20 +182,20 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
 
         {mode === "forgot" && (
           <>
-            <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "12px", textAlign: "center" }}>{TM("forgot_title", "Resetare parola")}</h3>
+            <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "12px", textAlign: "center" }}>{TM("forgot_title", "Resetare parolă")}</h3>
             <p style={{ fontSize: "13px", color: modalMuted, textAlign: "center", marginBottom: "20px" }}>{TM("forgot_sub", "Introdu adresa de email pentru a primi un link de resetare.")}</p>
             <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} />
               <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{TM("forgot_btn", "Trimite link de resetare")}</button>
             </form>
             <div style={{ textAlign: "center", fontSize: "12px", color: modalMuted, marginTop: "16px" }}>
-              <a href="#" onClick={e => { e.preventDefault(); setMode("login"); }} style={{ color: "#f59e0b", textDecoration: "none" }}>{TM("forgot_back", "Inapoi la autentificare")}</a>
+              <a href="#" onClick={e => { e.preventDefault(); setMode("login"); }} style={{ color: "#f59e0b", textDecoration: "none" }}>{TM("forgot_back", "Înapoi la autentificare")}</a>
             </div>
           </>
         )}
 
         <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: `1px solid ${modalBorder}`, textAlign: "center", fontSize: "11px", color: modalMuted }}>
-          {TM("login_or_free", "Sau continua fara cont →")} <a href="#" onClick={(e) => { e.preventDefault(); onClose(); onStart(); }} style={{ color: "#f59e0b" }}>{TM("login_open", "Deschide aplicatia")}</a>
+          {TM("login_or_free", "Sau continuă fără cont →")} <a href="#" onClick={(e) => { e.preventDefault(); onClose(); onStart(); }} style={{ color: "#f59e0b" }}>{TM("login_open", "Deschide aplicația")}</a>
         </div>
       </div>
     </div>
@@ -272,9 +272,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
-            <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Functionalitati")}</a>
+            <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
             <a href="#products" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_catalog", "Catalog produse")}</a>
-            <a href="#pricing" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_pricing", "Preturi")}</a>
+            <a href="#pricing" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_pricing", "Prețuri")}</a>
             {/* Toggle limbă */}
             <button onClick={toggleLang} title={lang === "RO" ? "Switch to English" : "Comută în Română"} style={{ fontSize: "12px", fontWeight: "700", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", letterSpacing: "0.5px", transition: "border-color 0.2s" }}>
               {lang === "RO" ? "EN" : "RO"}
@@ -284,7 +284,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {isDark ? "☀️" : "🌙"}
             </button>
             <button onClick={() => setShowLogin(true)} style={{ fontSize: "13px", padding: "8px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer" }}>{T("nav_login", "Autentificare")}</button>
-            <button onClick={onStart} style={{ fontSize: "13px", fontWeight: "600", padding: "8px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicatia →")}</button>
+            <button onClick={onStart} style={{ fontSize: "13px", fontWeight: "600", padding: "8px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {/* Toggle-uri mobile */}
@@ -302,11 +302,11 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       </nav>
       {mobileMenu && (
         <div style={{ background: isDark ? "rgba(10,10,26,0.97)" : "rgba(245,247,250,0.97)", borderBottom: `1px solid ${border}`, padding: "16px 24px", display: "flex", flexDirection: "column", gap: "12px" }} className="nav-mobile-menu">
-          <a href="#features" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_features", "Functionalitati")}</a>
+          <a href="#features" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_features", "Funcționalități")}</a>
           <a href="#products" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_catalog", "Catalog produse")}</a>
-          <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_pricing", "Preturi")}</a>
+          <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_pricing", "Prețuri")}</a>
           <button onClick={() => { setMobileMenu(false); setShowLogin(true); }} style={{ fontSize: "13px", padding: "10px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textAlign: "left" }}>{T("nav_login", "Autentificare")}</button>
-          <button onClick={() => { setMobileMenu(false); onStart(); }} style={{ fontSize: "13px", fontWeight: "600", padding: "10px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicatia →")}</button>
+          <button onClick={() => { setMobileMenu(false); onStart(); }} style={{ fontSize: "13px", fontWeight: "600", padding: "10px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
         </div>
       )}
 
