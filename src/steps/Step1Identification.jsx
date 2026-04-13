@@ -6,6 +6,7 @@ import IFCImport from "../components/IFCImport.jsx";
 import ImportHub from "../components/ImportHub.jsx";
 
 const BuildingTemplateModal = lazy(() => import("../components/BuildingTemplateModal.jsx"));
+import { DEMO_PROJECTS } from "../data/demoProjects.js";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -108,8 +109,7 @@ export default function Step1Identification({
   building, updateBuilding, lang, selectedClimate,
   BUILDING_CATEGORIES, STRUCTURE_TYPES,
   autoDetectLocality, estimateGeometry, avRatio,
-  loadFullDemo, loadFullDemo2, loadFullDemo3, loadFullDemo4, loadFullDemo5,
-  loadFullDemo6, loadFullDemo7, loadFullDemo8, loadFullDemo9, loadFullDemo10,
+  loadDemoByIndex,
   loadTypicalBuilding, showToast,
   goToStep,
   onOpenTutorial,
@@ -413,7 +413,7 @@ export default function Step1Identification({
                 className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-sm">
                 <span aria-hidden="true">🎓</span> {lang === "EN" ? "Start tutorial" : "Pornește tutorialul"}
               </button>
-              <button onClick={loadFullDemo}
+              <button onClick={() => loadDemoByIndex(0)}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 hover:bg-white/5 text-white/50 hover:text-white/80 transition-all">
                 {lang === "EN" ? "Load example directly" : "Încarcă exemplu direct"}
               </button>
@@ -535,124 +535,25 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">10 template-uri CPE complete</span>}>
+          <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">20 template-uri CPE complete</span>}>
             {/* Buton șabloane din baza de date tipică */}
             <button
               onClick={() => setShowTemplates(true)}
               className="w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold transition-all">
               🏗️ Șabloane clădiri tip românești (22+ modele)
             </button>
-            <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
-              {/* 10 DEMO-URI COMPLETE — câte unul per template CPE Mc 001-2022 (Ord. MDLPA 16/2023) */}
-              <button onClick={() => loadFullDemo()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏢</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 4 · Apartament RA — Bloc PAFP P+8 '78 București · VÂNZARE</div>
-                    <div className="opacity-50 mt-0.5">Panel 3 straturi PAFP · gaz condensare 24kW · fără izolație · rosturi panel · Clasă C-D</div>
+            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
+              {DEMO_PROJECTS.map((d, idx) => (
+                <button key={d.id} onClick={() => loadDemoByIndex(idx)}
+                  className="w-full text-left px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-bold text-emerald-300 leading-snug">{d.title}</div>
+                      <div className="opacity-50 mt-0.5 leading-snug">{d.shortDesc}</div>
+                    </div>
                   </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo2()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏠</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 5 · Casă RI — BCA confinat P+1 nZEB 2023 Timișoara · RECEPȚIE</div>
-                    <div className="opacity-50 mt-0.5">BCA 30cm + EPS grafitat 15cm · PC aer-apă 10kW + PV 8kWp + HR 85% · Clasă A nZEB</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo3()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏗️</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 6 · Bloc RC — Diafragme BA P+7 reab. 2018 Iași · LOCUIT</div>
-                    <div className="opacity-50 mt-0.5">Diafragme BA 18cm + EPS 8cm · termoficare SACET + PV 15kWp · Clasă C</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo4()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏬</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 7 · Birouri BI — Cadre oțel fațadă cortină P+4 2022 Brașov · ÎNCHIRIERE</div>
-                    <div className="opacity-50 mt-0.5">Triplu vitraj Low-E U=0,90 · VRF 250kW + PV 50kWp + HR 80% · LED BMS · Clasă A</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo5()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏫</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 8 · Școală SC — Cadre+fâșii prefabricate P+1+M reab. 2021 Cluj-Napoca</div>
-                    <div className="opacity-50 mt-0.5">GVP 38cm + EPS 10cm · gaz condensare 200kW + HR 60% · LED senzori · Clasă B</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo6()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏥</span>
-                  <div>
-                    <div className="font-bold text-amber-300">CPE 9 · Policlinică SA — Cadre BA monolit P+2 1968 Galați · SANITAR</div>
-                    <div className="opacity-50 mt-0.5">Cărămidă 35cm neizolat · termoficare · ventilare mec. fără HR · simplu+dublu vitraj · Clasă D</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo7()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🛒</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 10 · Supermarket SUPER — Sandwich PIR P 2012 Ploiești · COMERȚ</div>
-                    <div className="opacity-50 mt-0.5">PIR 10cm pereți + 15cm acoperiș · VRF + PC + PV 90kWp + HR 70% · LED BMS · Clasă B</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo8()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏨</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 11 · Pensiune HC — GVP P+1+M reab. 2022 Sinaia · TURISM</div>
-                    <div className="opacity-50 mt-0.5">GVP 25cm + EPS 10cm · cazan peleți 40kW + solar termic 6m² · PVC dublu Low-E · Clasă C</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo9()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏋️</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">CPE 12 · Fitness FIT — Oțel+BA P+1 2019 Constanța · SPORT</div>
-                    <div className="opacity-50 mt-0.5">Vată bazaltică 15cm + PIR acoperiș · PC + VRF + PV 30kWp + HR 75% · triplu vitraj · Clasă B</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onClick={() => loadFullDemo10()}
-                className="w-full text-left px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition-all text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🏛️</span>
-                  <div>
-                    <div className="font-bold text-amber-300">CPE General · Cămin CP — Cărămidă plină 2S+P+5E 1962 Oradea · FORMĂ GENERALĂ</div>
-                    <div className="opacity-50 mt-0.5">Cărămidă 38cm neizolat · simplu vitraj lemn · termoficare · fără HR · 200 locuri · Clasă D-E</div>
-                  </div>
-                </div>
-              </button>
+                </button>
+              ))}
             </div>
           </Card>
         </div>

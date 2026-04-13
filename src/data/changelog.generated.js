@@ -2,7 +2,7 @@
 // Script: scripts/update-changelog.js
 // Ultima generare: 2026-04-13
 
-export const APP_VERSION = "3.2.0";
+export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
   {
     "version": "0.3.0",
@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📋",
+        "text": "refactor(audit 4+5): eliminare props drilling + code split complet"
+      },
+      {
+        "icon": "📋",
+        "text": "fix(audit): corecții itemi 1-3+6 — masă termică, e_shield, hourlyISO, diacritice"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(faza4): extrage ~351 linii constante din energy-calc.jsx → data/"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(faza3): stepCompleteness, breadcrumb header, sidebar dots, bottom nav 10px"
+      },
+      {
+        "icon": "🔬",
+        "text": "fix(faza2): battery hook, useNA2023 fix, bacsClass sync, Step7→Step8 nav"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(faza1): diacritice landing mobile + Step6 CPE + systems fields energy-calc"
+      },
+      {
+        "icon": "📋",
         "text": "Audit normativ: rezolvare cele 4 probleme minore identificate"
       },
       {
         "icon": "🔧",
         "text": "Fix categorie aliniere + adresă duplicată + grad II spațiere"
-      },
-      {
-        "icon": "📄",
-        "text": "Fix punct rezidual după versiune în Program de calcul CPE"
-      },
-      {
-        "icon": "🔸",
-        "text": "Versiune unificată din APP_VERSION (changelog) — nu din package.json"
-      },
-      {
-        "icon": "🔸",
-        "text": "Versiunea aplicației (din package.json) afișată peste tot"
-      },
-      {
-        "icon": "🔧",
-        "text": "Fix text roșu global → negru + program calcul ZEPHREN v3.2"
-      },
-      {
-        "icon": "📄",
-        "text": "Fix adresă duplicată în CPE — R2 cu etichetă, R3 doar adresa unității"
-      },
-      {
-        "icon": "📄",
-        "text": "Fix text roșu în tabelul utilități CPE — forțat negru pe toate celulele"
       }
     ]
   },
