@@ -482,13 +482,86 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
       {/* ═══ NORMATIVE ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 80px" }}>
-        <div style={{ padding: "40px", borderRadius: "16px", background: amberCardBg, border: `1px solid rgba(245,158,11,0.1)`, textAlign: "center" }}>
-          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "16px", color: text }}>{T("norm_title", `${NORMATIVE_COUNT} normative integrate`)}</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px", fontSize: "11px", color: textFaint }}>
-            {NORMATIVE.map(n => (
-              <span key={n} style={{ padding: "4px 10px", borderRadius: "6px", background: cardBg, border: `1px solid ${cardBorder}` }}>{n}</span>
-            ))}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
+            {lang === "EN" ? "STANDARDS & REGULATIONS" : "STANDARDE ȘI REGLEMENTĂRI"}
           </div>
+          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{T("norm_title", `${NORMATIVE_COUNT} normative și standarde integrate`)}</h2>
+          <p style={{ color: textMuted, maxWidth: "680px", margin: "12px auto 0", fontSize: "14px", lineHeight: 1.6 }}>
+            {lang === "EN"
+              ? "All calculations are based on the current Romanian and European normative framework for building energy performance."
+              : "Toate calculele sunt fundamentate pe cadrul normativ românesc și european în vigoare pentru performanța energetică a clădirilor."
+            }
+          </p>
+        </div>
+
+        {/* Grupuri normative */}
+        {[
+          {
+            title: lang === "EN" ? "Primary methodology" : "Metodologie principală",
+            icon: "📐",
+            color: "#f59e0b",
+            items: NORMATIVE.filter(n => n.startsWith("Mc ") || n.includes("52000") || n.includes("52003") || n.includes("52010") || n.includes("52016") || n.includes("52018")),
+          },
+          {
+            title: lang === "EN" ? "Building envelope & thermal" : "Anvelopă și termic",
+            icon: "🏗️",
+            color: "#3b82f6",
+            items: NORMATIVE.filter(n => n.includes("12831") || n.includes("13790") || n.includes("6946") || n.includes("10077") || n.includes("13370") || n.includes("13788") || n.includes("14683")),
+          },
+          {
+            title: lang === "EN" ? "Heating systems (EN 15316 series)" : "Sisteme de încălzire (seria EN 15316)",
+            icon: "🔥",
+            color: "#ef4444",
+            items: NORMATIVE.filter(n => n.includes("15316")),
+          },
+          {
+            title: lang === "EN" ? "Indoor climate & lighting" : "Climat interior și iluminat",
+            icon: "💡",
+            color: "#8b5cf6",
+            items: NORMATIVE.filter(n => n.includes("16798") || n.includes("15193") || n.includes("12464")),
+          },
+          {
+            title: lang === "EN" ? "Financial, GWP & lifecycle" : "Financiar, GWP și ciclu de viață",
+            icon: "📊",
+            color: "#10b981",
+            items: NORMATIVE.filter(n => n.includes("15459") || n.includes("15978") || n.includes("I5-2022") || n.includes("C107")),
+          },
+          {
+            title: lang === "EN" ? "European directives & regulations" : "Directive și reglementări europene",
+            icon: "🇪🇺",
+            color: "#0ea5e9",
+            items: NORMATIVE.filter(n => n.includes("EPBD") || n.includes("Reg. delegat") || n.includes("OUG") || n.includes("RED III") || n.includes("ZEB")),
+          },
+          {
+            title: lang === "EN" ? "Romanian legislation & normatives" : "Legislație și normative românești",
+            icon: "🇷🇴",
+            color: "#f97316",
+            items: NORMATIVE.filter(n => n.includes("Legea") || n.includes("NP 048") || n.includes("P 130")),
+          },
+        ].filter(g => g.items.length > 0).map(group => (
+          <div key={group.title} style={{ marginBottom: "20px", padding: "24px 28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+              <span style={{ fontSize: "18px" }}>{group.icon}</span>
+              <span style={{ fontSize: "14px", fontWeight: "700", color: group.color }}>{group.title}</span>
+              <span style={{ fontSize: "11px", color: textFaint, marginLeft: "auto", padding: "2px 8px", borderRadius: "10px", background: `${group.color}15`, border: `1px solid ${group.color}25` }}>{group.items.length}</span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {group.items.map(n => (
+                <span key={n} style={{ padding: "4px 10px", borderRadius: "6px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${cardBorder}`, fontSize: "11px", color: textMuted, lineHeight: 1.4 }}>{n}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Total */}
+        <div style={{ textAlign: "center", marginTop: "24px", padding: "16px", borderRadius: "12px", background: amberCardBg, border: "1px solid rgba(245,158,11,0.15)" }}>
+          <span style={{ fontSize: "13px", color: textMuted }}>
+            {lang === "EN"
+              ? `Total: ${NORMATIVE_COUNT} standards and regulations actively used in calculations`
+              : `Total: ${NORMATIVE_COUNT} standarde și reglementări utilizate activ în calculele energetice`
+            }
+          </span>
         </div>
       </section>
 
