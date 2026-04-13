@@ -1552,8 +1552,8 @@ class handler(BaseHTTPRequestHandler):
                                     if scope_runs:
                                         scope_runs[0].text = scope
 
-            # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN" (fără punct final)
-            program_name = "ZEPHREN"
+            # Program calcul — înlocuiește "................versiunea" cu "ZEPHREN v3.x"
+            program_name = data.get("software", "") or "ZEPHREN v3.2"
             def fill_program_field(paragraphs):
                 for para in paragraphs:
                     if "Program de calcul utilizat" in para.text or "versiunea" in para.text:
@@ -1563,7 +1563,6 @@ class handler(BaseHTTPRequestHandler):
                                 run.text = re.sub(r'\.{4,}', program_name if not inserted else '', run.text)
                                 inserted = True
                             elif "versiunea" in run.text:
-                                # FIX: elimină "versiunea" + orice punct rămas imediat după
                                 run.text = re.sub(r'versiunea\.?', '', run.text).strip()
             fill_program_field(doc.paragraphs)
             for table in doc.tables:
@@ -2013,6 +2012,21 @@ class handler(BaseHTTPRequestHandler):
             # intervalul în care se încadrează consumul specific al fiecărei utilități
             if mode == "cpe":
                 _highlight_utility_class_cells(doc, data)
+
+            # ═══════════════════════════════════════
+            # 6b. TEXT ROȘU → NEGRU pe tot documentul
+            # Template-ul generic are placeholder-uri cu FF0000 (roșu).
+            # După înlocuire, textul trebuie să fie negru.
+            # ═══════════════════════════════════════
+            _w_color_tag = qn("w:color")
+            _w_rPr_tag = qn("w:rPr")
+            _w_val = qn("w:val")
+            for r_el in doc.element.body.iter(qn("w:r")):
+                rPr = r_el.find(_w_rPr_tag)
+                if rPr is not None:
+                    color_el = rPr.find(_w_color_tag)
+                    if color_el is not None and color_el.get(_w_val) == "FF0000":
+                        color_el.set(_w_val, "000000")
 
             # ═══════════════════════════════════════
             # 7. STRIP TRAILING EMPTY PARAGRAPHS
