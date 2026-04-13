@@ -1001,7 +1001,7 @@ export default function Step6Certificate(props) {
               const scaleLabels = CLASS_LABELS;
               const co2Thresholds = (CO2_CLASSES_DB[baseCatResolved] || CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL).thresholds;
               // Culoare text contrastantă (WCAG) pentru fundal hex
-              const txtClr = (hex) => { const h = hex.replace('#',''); const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255; return (0.2126*r+0.7152*g+0.0722*b)>0.35?'#000':'#fff'; };
+              const txtClr = (hex) => { const h = hex.replace('#',''); const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255; return (0.2126*r+0.7152*g+0.0722*b)>0.45?'#000':'#fff'; };
 
               // Systems
               const heatSrc = HEAT_SOURCES.find(s => s.id === heating.source);
