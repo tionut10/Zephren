@@ -1559,11 +1559,14 @@ class handler(BaseHTTPRequestHandler):
                     if "Program de calcul utilizat" in para.text or "versiunea" in para.text:
                         inserted = False
                         for run in para.runs:
-                            if re.search(r'\.{4,}', run.text):
-                                run.text = re.sub(r'\.{4,}', program_name if not inserted else '', run.text)
+                            if re.search(r'\.{2,}', run.text):
+                                run.text = re.sub(r'\.{2,}', program_name if not inserted else '', run.text)
                                 inserted = True
                             elif "versiunea" in run.text:
                                 run.text = re.sub(r'versiunea\.?', '', run.text).strip()
+                            # Curăță puncte reziduale singure (ex: ". " rămas dintr-un run split)
+                            if inserted and run.text.strip() in (".", ". ", "..", "..."):
+                                run.text = ""
             fill_program_field(doc.paragraphs)
             for table in doc.tables:
                 for row in table.rows:
