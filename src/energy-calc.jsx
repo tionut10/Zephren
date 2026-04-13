@@ -32,13 +32,12 @@ import { calcGroundHeatTransfer } from "./calc/ground.js";
 import { calcACMen15316 } from "./calc/acm-en15316.js";
 import { checkC107Conformity } from "./calc/c107.js";
 
-// ── Extracted data modules (Sprint 3 refactoring) ──
-// Modules below are now the canonical source for these constants.
-// The inline definitions further down in this file are kept as-is to avoid
-// breaking references within the component. They shadow these imports,
-// which is acceptable during incremental migration.
-// import { calcOpaqueR } from "./calc/opaque.js";  // available but not yet wired in
-// import { generateTMY } from "./calc/weather.js";  // available but local def still used
+// ── Extracted data modules (Sprint 3 → Faza 4 finalizare) ──
+import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES, CATEGORY_BASE_MAP, buildCatKey } from "./data/building-catalog.js";
+import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
+import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
+import { TIERS } from "./data/tiers.js";
+import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
 
 // ── Hooks (Sprint 4 refactoring) ──
 import { useEnvelopeSummary } from "./hooks/useEnvelopeSummary.js";
@@ -74,209 +73,34 @@ import { useKeyboardShortcuts, SHORTCUTS_LIST } from "./hooks/useKeyboardShortcu
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
-const CONSTRUCTION_SOLUTIONS = [
-  { id:"PE_BCA30_EPS10", name:"Perete BCA 30cm + EPS 10cm", type:"PE",
-    layers:[{material:"Tencuială decorativă",thickness:"5",lambda:0.70,rho:1600,matName:"Tencuială decorativă"},{material:"Polistiren expandat EPS 100",thickness:"100",lambda:0.036,rho:25,matName:"Polistiren expandat EPS 100"},{material:"BCA (beton celular autoclavizat)",thickness:"300",lambda:0.22,rho:600,matName:"BCA (beton celular autoclavizat)"},{material:"Tencuială var-ciment",thickness:"15",lambda:0.87,rho:1800,matName:"Tencuială var-ciment"}] },
-  { id:"PE_GVP25_EPS15", name:"Perete GVP 25cm + EPS 15cm", type:"PE",
-    layers:[{material:"Tencuială decorativă",thickness:"5",lambda:0.70,rho:1600,matName:"Tencuială decorativă"},{material:"Polistiren expandat EPS 100",thickness:"150",lambda:0.036,rho:25,matName:"Polistiren expandat EPS 100"},{material:"Cărămidă cu goluri (GVP)",thickness:"250",lambda:0.46,rho:1200,matName:"Cărămidă cu goluri (GVP)"},{material:"Tencuială var-ciment",thickness:"15",lambda:0.87,rho:1800,matName:"Tencuială var-ciment"}] },
-  { id:"PE_POROTHERM44", name:"Porotherm 44 fără izolație", type:"PE",
-    layers:[{material:"Tencuială decorativă",thickness:"5",lambda:0.70,rho:1600,matName:"Tencuială decorativă"},{material:"Bloc ceramic Porotherm 44",thickness:"440",lambda:0.17,rho:750,matName:"Bloc ceramic Porotherm 44"},{material:"Tencuială var-ciment",thickness:"15",lambda:0.87,rho:1800,matName:"Tencuială var-ciment"}] },
-  { id:"PE_BETON_VATA12", name:"Perete beton + vată 12cm", type:"PE",
-    layers:[{material:"Tencuială decorativă",thickness:"5",lambda:0.70,rho:1600,matName:"Tencuială decorativă"},{material:"Vată minerală bazaltică",thickness:"120",lambda:0.040,rho:100,matName:"Vată minerală bazaltică"},{material:"Beton armat",thickness:"200",lambda:1.74,rho:2400,matName:"Beton armat"},{material:"Gips-carton",thickness:"12",lambda:0.25,rho:900,matName:"Gips-carton"}] },
-  { id:"PT_TERASA_XPS10", name:"Terasă + XPS 10cm", type:"PT",
-    layers:[{material:"Bitum (membrană)",thickness:"10",lambda:0.17,rho:1050,matName:"Bitum (membrană)"},{material:"Polistiren extrudat XPS",thickness:"100",lambda:0.034,rho:35,matName:"Polistiren extrudat XPS"},{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"}] },
-  { id:"PP_POD_VATA25", name:"Pod + vată 25cm", type:"PP",
-    layers:[{material:"Gips-carton",thickness:"12",lambda:0.25,rho:900,matName:"Gips-carton"},{material:"Vată minerală bazaltică",thickness:"250",lambda:0.040,rho:100,matName:"Vată minerală bazaltică"},{material:"OSB",thickness:"18",lambda:0.13,rho:600,matName:"OSB"}] },
-  { id:"PL_SOL_XPS8", name:"Placă sol + XPS 8cm", type:"PL",
-    layers:[{material:"Gresie ceramică",thickness:"10",lambda:1.30,rho:2300,matName:"Gresie ceramică"},{material:"Șapă ciment",thickness:"60",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Polistiren extrudat XPS",thickness:"80",lambda:0.034,rho:35,matName:"Polistiren extrudat XPS"},{material:"Beton armat",thickness:"120",lambda:1.74,rho:2400,matName:"Beton armat"}] },
-  { id:"PB_SUBSOL_EPS5", name:"Planșeu subsol + EPS 5cm", type:"PB",
-    layers:[{material:"Parchet lemn",thickness:"15",lambda:0.18,rho:600,matName:"Parchet lemn"},{material:"Șapă ciment",thickness:"50",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Polistiren expandat EPS 80",thickness:"50",lambda:0.039,rho:20,matName:"Polistiren expandat EPS 80"},{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"}] },
-];
+// ── Constante inline eliminate → importate din data/ (Faza 4) ──
+// CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS → building-catalog.js
+// REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 → rehab-costs.js
+// U_REF_*, ZEB_*, BACS_*, FP_ELEC → u-reference.js
+// BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES → building-catalog.js
+// CATEGORY_BASE_MAP, buildCatKey → building-catalog.js
+// TIERS → tiers.js
+// INITIAL_* → initial-state.js
 
-// Prețuri orientative materiale+manoperă [EUR/m²] pentru estimări reabilitare (actualizat 2025)
-const REHAB_COSTS = {
-  insulWall: {5:28, 8:36, 10:42, 12:50, 15:62, 20:78},
-  insulRoof: {8:25, 10:32, 15:42, 20:55, 25:68},
-  insulBasement: {5:34, 8:45, 10:56, 12:68},
-  windows: {1.40:135, 1.10:200, 0.90:280, 0.70:390},
-  hr70: 3800, hr80: 5500, hr90: 8200,
-  pvPerM2: 180,
-  hpPerKw: 900,
-  solarThPerM2: 380,
-};
 
-const ZONE_COLORS = { I:"#22c55e", II:"#eab308", III:"#f97316", IV:"#ef4444", V:"#7c3aed" };
 
-// Tipuri de elemente vitraje
-const GLAZING_DB = [
-  { name:"Simplu vitraj", u:5.80, g:0.85 },
-  { name:"Dublu vitraj (4-12-4)", u:2.80, g:0.75 },
-  { name:"Dublu vitraj termoizolant", u:1.60, g:0.65 },
-  { name:"Dublu vitraj Low-E", u:1.10, g:0.50 },
-  { name:"Triplu vitraj", u:0.90, g:0.50 },
-  { name:"Triplu vitraj Low-E", u:0.70, g:0.45 },
-  { name:"Triplu vitraj 2×Low-E", u:0.50, g:0.40 },
-];
 
-const FRAME_DB = [
-  { name:"PVC (5 camere)", u:1.30 },
-  { name:"PVC (6-7 camere)", u:1.10 },
-  { name:"Lemn stratificat", u:1.40 },
-  { name:"Aluminiu fără RPT", u:5.00 },
-  { name:"Aluminiu cu RPT", u:2.00 },
-  { name:"Lemn-aluminiu", u:1.20 },
-];
 
-const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
 
-const BUILDING_CATEGORIES = [
-  // ── REZIDENȚIAL ────────────────────────────────────────────────────
-  { id:"RI",        label:"Rezidențial individual (casă unifamilială)",         group:"Rezidențial" },
-  { id:"RC",        label:"Rezidențial colectiv (bloc de locuințe)",            group:"Rezidențial" },
-  { id:"RA",        label:"Apartament în bloc (unitate locativă)",              group:"Rezidențial" },
-  // ── BIROURI & ADMINISTRATIVE ───────────────────────────────────────
-  { id:"BI",        label:"Clădire de birouri",                                group:"Birouri" },
-  { id:"AD",        label:"Clădire administrativă / instituție publică",        group:"Birouri" },
-  { id:"BA_OFF",    label:"Bancă / instituție financiară",                      group:"Birouri" },
-  // ── EDUCAȚIE ──────────────────────────────────────────────────────
-  { id:"ED",        label:"Educație — generic (școală, liceu)",                 group:"Educație" },
-  { id:"GR",        label:"Grădiniță / creșă",                                 group:"Educație" },
-  { id:"SC",        label:"Școală primară / gimnaziu",                          group:"Educație" },
-  { id:"LI",        label:"Liceu / colegiu național",                           group:"Educație" },
-  { id:"UN",        label:"Universitate / facultate",                           group:"Educație" },
-  { id:"CP",        label:"Cămin studențesc / internat",                        group:"Educație" },
-  // ── SĂNĂTATE ──────────────────────────────────────────────────────
-  { id:"SA",        label:"Sănătate — generic",                                 group:"Sănătate" },
-  { id:"SPA_H",     label:"Spital / clinică cu spitalizare continuă (24/7)",    group:"Sănătate" },
-  { id:"CL",        label:"Clinică ambulatorie / policlinică",                  group:"Sănătate" },
-  { id:"ST",        label:"Cabinet medical / stomatologic",                     group:"Sănătate" },
-  { id:"LB_MED",    label:"Laborator medical / analize",                        group:"Sănătate" },
-  { id:"AS_SOC",    label:"Cămin persoane vârstnice / centru social",           group:"Sănătate" },
-  // ── HOTELURI & TURISM ──────────────────────────────────────────────
-  { id:"HC",        label:"Hotel / motel / pensiune",                           group:"Hoteluri" },
-  { id:"HO_LUX",    label:"Hotel de categorie superioară (4–5 stele)",          group:"Hoteluri" },
-  { id:"HOSTEL",    label:"Hostel / cazare budget",                             group:"Hoteluri" },
-  // ── RESTAURANTE & ALIMENTAȚIE ──────────────────────────────────────
-  { id:"REST",      label:"Restaurant",                                         group:"Restaurante" },
-  { id:"BAR",       label:"Bar / cafenea / pub",                                group:"Restaurante" },
-  { id:"CANTINE",   label:"Cantină / restaurant de întreprindere",              group:"Restaurante" },
-  { id:"FAST_F",    label:"Fast-food / alimentație rapidă",                     group:"Restaurante" },
-  // ── COMERȚ ────────────────────────────────────────────────────────
-  { id:"CO",        label:"Comerț — generic (spații comerciale)",               group:"Comerț" },
-  { id:"MAG",       label:"Magazin / boutique (suprafață mică)",                group:"Comerț" },
-  { id:"SUPER",     label:"Supermarket / hipermarket",                          group:"Comerț" },
-  { id:"MALL",      label:"Mall / centru comercial",                            group:"Comerț" },
-  { id:"AG_COM",    label:"Showroom auto / agenție comercială",                 group:"Comerț" },
-  // ── SPORT & RECREERE ───────────────────────────────────────────────
-  { id:"SP",        label:"Sport — generic (sală sport, teren acoperit)",       group:"Sport" },
-  { id:"PSC",       label:"Piscină acoperită / centru acvatic",                 group:"Sport" },
-  { id:"SALA_POL",  label:"Sală polivalentă / arenă sport",                    group:"Sport" },
-  { id:"FIT",       label:"Sală fitness / club sportiv",                        group:"Sport" },
-  { id:"SPA_W",     label:"SPA / wellness / centru de relaxare",               group:"Sport" },
-  // ── CULTURĂ & SPECTACOLE ───────────────────────────────────────────
-  { id:"CIN",       label:"Cinema / cinematograf",                              group:"Cultură" },
-  { id:"TEA",       label:"Teatru / operă / filarmonie",                        group:"Cultură" },
-  { id:"MUZ",       label:"Muzeu / galerie de artă",                            group:"Cultură" },
-  { id:"BIB",       label:"Bibliotecă / arhivă",                                group:"Cultură" },
-  { id:"CC",        label:"Casă de cultură / centru cultural",                  group:"Cultură" },
-  { id:"EXP",       label:"Sală de conferințe / expoziții",                     group:"Cultură" },
-  // ── TRANSPORT ─────────────────────────────────────────────────────
-  { id:"GARA",      label:"Gară / autogară",                                    group:"Transport" },
-  { id:"AER",       label:"Aeroport / terminal",                                group:"Transport" },
-  // ── INDUSTRIE ─────────────────────────────────────────────────────
-  { id:"IU",        label:"Industrie ușoară / atelier de producție",            group:"Industrie" },
-  { id:"HAL",       label:"Hală industrială / producție grea",                  group:"Industrie" },
-  { id:"DEP",       label:"Depozit / logistică",                                group:"Industrie" },
-  { id:"LAB_IND",   label:"Laborator / cercetare & dezvoltare (R&D)",          group:"Industrie" },
-  { id:"FRG",       label:"Cameră frigorifică / depozit frigorific",            group:"Industrie" },
-  // ── PARCĂRI ───────────────────────────────────────────────────────
-  { id:"PRC",       label:"Parcare acoperită / parcare etajată",                group:"Parcări" },
-  { id:"GAR_IND",   label:"Garaj auto (individual sau colectiv)",               group:"Parcări" },
-  // ── CULTE & ALTELE ─────────────────────────────────────────────────
-  { id:"CUL",       label:"Edificiu de cult (biserică, moschee, sinagogă)",     group:"Altele" },
-  { id:"AL",        label:"Altă destinație (specificați în câmpul note)",       group:"Altele" },
-];
 
-// Mapare categorie → template DOCX oficial (fişierele din Mc 001-2022)
-// Categoriile noi moştenesc cel mai apropiat template din normativ
-const _BAZA_CLADIRE = "ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx";
-const _GEN_DOCX = "3-CPE-forma-generala-cladire.docx";
-const CPE_TEMPLATES = {
-  RI:       { cpe:"5-CPE-cladire-locuit-individuala-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire de locuit individuală" },
-  RC:       { cpe:"6-CPE-cladire-locuit-colectiva-INC-ACC-RAC-VENT-IL.docx",  anexa:_BAZA_CLADIRE, label:"Clădire de locuit colectivă" },
-  RA:       { cpe:"4-CPE-apartament-bloc-INC-ACC-RAC-VENT-IL.docx", anexa:"ANEXA-1-si-ANEXA-2-la-CPE-apartament.docx", cpe_general:"2-CPE-forma-generala-apartament.docx", label:"Apartament în bloc" },
-  BI:       { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire de birouri" },
-  AD:       { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire administrativă / instituție publică" },
-  BA_OFF:   { cpe:"7-CPE-cladire-birouri-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Bancă / instituție financiară" },
-  ED:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire pentru educație (generic)" },
-  GR:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Grădiniță / creșă" },
-  SC:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Ścoală primară / gimnaziu" },
-  LI:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Liceu / colegiu" },
-  UN:       { cpe:"8-CPE-cladire-invatamant-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Universitate / facultate" },
-  CP:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cămin studențesc / internat" },
-  SA:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire sistem sanitar (generic)" },
-  SPA_H:    { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Spital / clinică cu spitalizare" },
-  CL:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clinică ambulatorie / policlinică" },
-  ST:       { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Cabinet medical / stomatologic" },
-  LB_MED:   { cpe:"9-CPE-cladire-sanitar-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Laborator medical" },
-  AS_SOC:   { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cămin persoane vârstnice / centru social" },
-  HC:       { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hotel / motel / pensiune" },
-  HO_LUX:   { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hotel de categorie superioară" },
-  HOSTEL:   { cpe:"11-CPE-cladire-turism-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Hostel / cazare budget" },
-  REST:     { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Restaurant" },
-  BAR:      { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Bar / cafenea / pub" },
-  CANTINE:  { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Cantină / restaurant de întreprindere" },
-  FAST_F:   { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Fast-food / alimentație rapidă" },
-  CO:       { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire comerț (generic)" },
-  MAG:      { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Magazin / boutique" },
-  SUPER:    { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Supermarket / hipermarket" },
-  MALL:     { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Mall / centru comercial" },
-  AG_COM:   { cpe:"10-CPE-cladire-comert-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Showroom auto / agenție comercială" },
-  SP:       { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Clădire sport (generic)" },
-  PSC:      { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Piscină acoperită / centru acvatic" },
-  SALA_POL: { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Sală polivalentă / arenă sport" },
-  FIT:      { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"Sală fitness / club sportiv" },
-  SPA_W:    { cpe:"12-CPE-cladire-sport-INC-ACC-RAC-VENT-IL.docx", anexa:_BAZA_CLADIRE, label:"SPA / wellness / centru de relaxare" },
-  CIN:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cinema / cinematograf" },
-  TEA:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Teatru / operă / filarmonie" },
-  MUZ:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Muzeu / galerie de artă" },
-  BIB:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Bibliotecă / arhivă" },
-  CC:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Casă de cultură / centru cultural" },
-  EXP:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Sală de conferințe / expoziții" },
-  GARA:     { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Gară / autogară" },
-  AER:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Aeroport / terminal" },
-  IU:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Industrie uşoară / atelier de producție" },
-  HAL:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Hală industrială / producție grea" },
-  DEP:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Depozit / logistică" },
-  LAB_IND:  { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Laborator / R&D" },
-  FRG:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Cameră frigorifică / depozit frigorific" },
-  PRC:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Parcare acoperită / parcare etajată" },
-  GAR_IND:  { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Garaj auto" },
-  CUL:      { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Edificiu de cult" },
-  AL:       { cpe:_GEN_DOCX, anexa:_BAZA_CLADIRE, label:"Clădire (formă generală)" },
-};
 
-// Mapare sub-categorie → categorie de bază Mc 001-2022 (ENERGY_CLASSES_DB, CO2_CLASSES_DB, NZEB_THRESHOLDS)
-// Sub-categoriile moștenesc pragurile categoriei-mamă din normativ
-export const CATEGORY_BASE_MAP = {
-  AD:"BI", BA_OFF:"BI",
-  GR:"ED", SC:"ED", LI:"ED", UN:"ED", CP:"ED",
-  SPA_H:"SA", CL:"SA", ST:"SA", LB_MED:"SA", AS_SOC:"SA",
-  HO_LUX:"HC", HOSTEL:"HC",
-  REST:"CO", BAR:"CO", CANTINE:"CO", FAST_F:"CO",
-  MAG:"CO", SUPER:"CO", MALL:"CO", AG_COM:"CO",
-  PSC:"SP", SALA_POL:"SP", FIT:"SP", SPA_W:"SP",
-  CIN:"AL", TEA:"AL", MUZ:"AL", BIB:"AL", CC:"AL", EXP:"AL",
-  GARA:"AL", AER:"AL",
-  IU:"AL", HAL:"AL", DEP:"AL", LAB_IND:"AL", FRG:"AL",
-  PRC:"AL", GAR_IND:"AL", CUL:"AL",
-};
 
-// Helper: construiește cheie categorie pentru ENERGY_CLASSES_DB (cu rezolvare sub-categorie)
-function buildCatKey(category, hasCooling) {
-  const base = CATEGORY_BASE_MAP[category] || category;
-  return base + (["RI","RC","RA"].includes(base) ? (hasCooling ? "_cool" : "_nocool") : "");
-}
+
+
+
+
+
+
+
+
+
+
+
 
 async function fetchTemplate(filename) {
   const resp = await fetch("/templates/" + filename);
@@ -284,95 +108,21 @@ async function fetchTemplate(filename) {
   return await resp.arrayBuffer();
 }
 
-const STRUCTURE_TYPES = [
-  // ── ZIDĂRIE PORTANTĂ ──────────────────────────────────────────────────────
-  "Zidărie portantă — cărămidă plină (240 / 290 mm, ante 1980)",
-  "Zidărie portantă — cărămidă cu goluri GVP/GVF (1960–2000)",
-  "Zidărie portantă — BCA (200–300 mm, 1970–prezent)",
-  "Zidărie portantă — BCA cu stâlpișori și centuri BA (zidărie confinată, CR6:2013)",
-  "Zidărie portantă — piatră naturală (ante 1950, clădiri istorice)",
-  "Zidărie portantă — cărămidă tip Porotherm / Thermopan (post-2000)",
-  "Zidărie mixtă — cărămidă + BCA (perete exterior cărămidă, compartimentări BCA)",
-  // ── BETON ARMAT MONOLIT ───────────────────────────────────────────────────
-  "Cadre din beton armat monolit (stâlpi + grinzi + planșee, 1960–prezent)",
-  "Diafragme (pereți structurali) din beton armat monolit (blocuri turn, 1965–1990)",
-  "Sistem dual beton armat — cadre + diafragme (clădiri înalte, seismic)",
-  "Structură monolită cu radier general (subsol + suprastructură BA, post-1990)",
-  // ── PANOURI PREFABRICATE ──────────────────────────────────────────────────
-  "Panouri mari prefabricate PAFP (3 straturi BA + PS + BA, blocuri comuniste 1965–1989)",
-  "Panouri prefabricate 1 strat (BA simplu, prima generație 1960–1975)",
-  "Structură prefabricată — cadre + fâșii prefabricate (școli, spitale tip)",
-  "Construcție modulară prefabricată modernă (sandwich metalic/beton, post-2000)",
-  // ── STRUCTURĂ METALICĂ ────────────────────────────────────────────────────
-  "Structură metalică — cadre oțel cu pereți cortină / panouri sandwich (post-1990)",
-  "Structură ușoară din oțel LSF (Light Steel Frame — case individuale, post-2000)",
-  "Structură mixtă oțel + beton armat compozită (clădiri birouri înalte)",
-  // ── STRUCTURĂ LEMN ────────────────────────────────────────────────────────
-  "Structură lemn — bârne masive (log house / casă din bușteni, tradițional)",
-  "Structură lemn — schelet (platform frame / balloon frame, post-1990)",
-  "Structură lemn masiv stratificat CLT (Cross Laminated Timber, post-2010)",
-  "Structură hibridă lemn + beton (fundații + planșee BA, pereți suprastructură lemn)",
-  // ── STRUCTURI MIXTE ───────────────────────────────────────────────────────
-  "Mixtă — zidărie portantă + planșee BA + coloane/stâlpișori BA (1930–1980)",
-  "Mixtă — cadre BA + elemente metalice (grinzi/ferme oțel)",
-  "Mixtă — pereți portanți zidărie + planșee / șarpantă lemn (interbelică)",
-];
 
-const ELEMENT_TYPES = [
-  { id:"PE", label:"Perete exterior", tau:1.0, rsi:0.13, rse:0.04 },
-  { id:"PR", label:"Perete la rost închis", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PS", label:"Perete subsol (sub CTS)", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PT", label:"Planșeu terasă", tau:1.0, rsi:0.10, rse:0.04 },
-  { id:"PP", label:"Planșeu sub pod neîncălzit", tau:0.9, rsi:0.10, rse:0.10 },
-  { id:"PB", label:"Planșeu peste subsol neîncălzit", tau:0.5, rsi:0.17, rse:0.17 },
-  { id:"PI", label:"Planșeu intermediar", tau:0.0, rsi:0.17, rse:0.17 },
-  { id:"PL", label:"Placă pe sol", tau:0.5, rsi:0.17, rse:0.00 },
-  { id:"SE", label:"Planșeu separator ext. (bow-window)", tau:1.0, rsi:0.17, rse:0.04 },
-];
 
-// Referință U max conform Mc 001-2022
-// Tabel 2.4 — Clădiri REZIDENȚIALE nZEB noi
-const U_REF_NZEB_RES = { PE:0.25, PR:0.67, PS:0.29, PT:0.15, PP:0.15, PB:0.29, PI:null, PL:0.20, SE:0.20 };
-// Tabel 2.7 — Clădiri NEREZIDENȚIALE nZEB noi
-const U_REF_NZEB_NRES = { PE:0.33, PR:0.80, PS:0.35, PT:0.17, PP:0.17, PB:0.35, PI:null, PL:0.22, SE:0.22 };
-// Tabel 2.10a — Renovare majoră clădiri rezidențiale
-const U_REF_RENOV_RES = { PE:0.33, PR:0.90, PS:0.35, PT:0.20, PP:0.20, PB:0.40, PI:null, PL:0.22, SE:0.22 };
-// Tabel 2.10b — Renovare majoră clădiri nerezidențiale
-const U_REF_RENOV_NRES = { PE:0.40, PR:1.00, PS:0.40, PT:0.22, PP:0.22, PB:0.45, PI:null, PL:0.25, SE:0.25 };
-// Ferestre: nZEB rez 1.11, nZEB nerez 1.20, renovare 1.20, uși ext 1.30
-const U_REF_GLAZING = { nzeb_res:1.11, nzeb_nres:1.20, renov:1.20, door:1.30 };
 
-// Helper: get correct U_REF based on building category and context
-function getURefNZEB(category, elementType) {
-  const isRes = ["RI","RC","RA"].includes(category);
-  const ref = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
-  return ref[elementType] !== undefined ? ref[elementType] : null;
-}
-// Legacy alias for backward compat
-const U_REF_NZEB = U_REF_NZEB_RES;
-const U_REF_RENOV = U_REF_RENOV_RES;
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // ZEB (Zero Emission Building) — EPBD 2024/1275 Art.11
 // Praguri estimate bazate pe transpunere (valorile vor fi actualizate)
 // ═══════════════════════════════════════════════════════════════
-const ZEB_THRESHOLDS = {
-  RI: { ep_max: 50, rer_min: 80 },
-  RC: { ep_max: 50, rer_min: 80 },
-  RA: { ep_max: 50, rer_min: 80 },
-  BI: { ep_max: 60, rer_min: 80 },
-  ED: { ep_max: 55, rer_min: 80 },
-  SA: { ep_max: 80, rer_min: 80 },
-  HC: { ep_max: 70, rer_min: 80 },
-  CO: { ep_max: 65, rer_min: 80 },
-  SP: { ep_max: 55, rer_min: 80 },
-  AL: { ep_max: 65, rer_min: 80 },
-};
-const ZEB_FACTOR = 1.0; // Factor aplicat la ep_max ZEB (1.0 = fără ajustare)
 
-// Factor energie primară electricitate din rețea (SEN România)
-// Valoarea corespunde FUELS.electricitate.fP_tot din constants.js
-const FP_ELEC = 2.62;
+
 
 // ═══════════════════════════════════════════════════════════════
 // generateTMY — Sintetizează date orare TMY din medii lunare
@@ -418,33 +168,13 @@ function generateTMY(tempMonth, lat) {
   return { T_ext, Q_sol_horiz };
 }
 
-// Prețuri orientative reabilitare actualizate 2025 [EUR/m²]
-const REHAB_COSTS_2025 = {
-  insulWall: {5:28, 8:36, 10:42, 12:50, 15:62, 20:78},
-  insulRoof: {8:25, 10:32, 15:42, 20:55, 25:68},
-  insulBasement: {5:34, 8:45, 10:56, 12:68},
-  windows: {1.40:135, 1.10:200, 0.90:280, 0.70:390},
-  hr70: 3800, hr80: 5500, hr90: 8200,
-  pvPerM2: 180,
-  pvPerKwp: 1100,
-  hpAerApa: 900,
-  hpSolApa: 1400,
-  solarThPerM2: 380,
-  bmsSimple: 2000, bmsComplex: 8000,
-  evCharger: 1500,
-};
+
 
 // ═══════════════════════════════════════════════════════════════
 // BACS — Building Automation & Control (EPBD Art.14)
 // Obligatoriu pt clădiri nerezidențiale >290kW utilă
 // ═══════════════════════════════════════════════════════════════
-const BACS_CLASSES = {
-  A: { label:"A — Înalt performant", factor:0.70, desc:"Automatizare avansată cu optimizare, monitoring continuu, gestionare avansată energie" },
-  B: { label:"B — Avansat", factor:0.80, desc:"Automatizare pe zone, funcții de programare, monitorizare parțială" },
-  C: { label:"C — Standard", factor:0.90, desc:"Termostare de cameră, programare simplă, fără monitorizare centralizată" },
-  D: { label:"D — Non-eficient", factor:1.00, desc:"Fără automatizare, reglaj manual, fără programare" },
-};
-const BACS_OBLIGATION_THRESHOLD_KW = 290; // kW putere utilă instalată
+
 
 // ── Map helpers (kept here because JSX uses geoToSvg directly) ──
 function geoToSvg(lat, lon) {
@@ -464,16 +194,7 @@ export default function EnergyCalcApp({ cloud }) {
   // TIER SYSTEM — Free / Pro / Business
   // ═══════════════════════════════════════════════════════════════
   // Prețuri RON; sursa: SCENARII_MONETIZARE_ZEPHREN v1.0, apr. 2026
-  const TIERS = {
-    free:       { id:"free",       label:"Free",       price:0,    priceAn:0,     maxProjects:99,  maxCerts:3,   multiUser:false, maxUsers:1,   watermark:true,  nzebReport:false, docxExport:false, exportXML:false, brandingCPE:false, api:false },
-    starter:    { id:"starter",    label:"Starter",    price:299,  priceAn:1799,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:false, docxExport:true,  exportXML:false, brandingCPE:false, api:false },
-    standard:   { id:"standard",   label:"Standard",   price:349,  priceAn:3490,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:true,  docxExport:true,  exportXML:false, brandingCPE:false, api:false },
-    pro:        { id:"pro",        label:"Pro",        price:309,  priceAn:4990,  maxProjects:999, maxCerts:999, multiUser:false, maxUsers:1,   watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:false, api:false },
-    business:   { id:"business",   label:"Business",   price:699,  priceAn:5990,  maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:10,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
-    enterprise: { id:"enterprise", label:"Enterprise", price:0,    priceAn:0,     maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:999, watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
-    // backward compat
-    asociatie:  { id:"business",   label:"Business",   price:699,  priceAn:5990,  maxProjects:999, maxCerts:999, multiUser:true,  maxUsers:10,  watermark:false, nzebReport:true,  docxExport:true,  exportXML:true,  brandingCPE:true,  api:true  },
-  };
+
 
   const [userTier, setUserTier] = useState("free");
   const [projectCount, setProjectCount] = useState(0);
@@ -583,19 +304,7 @@ export default function EnergyCalcApp({ cloud }) {
   };
 
   // ─── STEP 1 STATE ───
-  const INITIAL_BUILDING = {
-    address:"", city:"", county:"", postal:"",
-    category:"RI", structure:"Zidărie portantă",
-    yearBuilt:"", yearRenov:"",
-    floors:"P", basement:false, attic:false,
-    units:"1", stairs:"1",
-    areaUseful:"", volume:"", areaEnvelope:"",
-    heightBuilding:"", heightFloor:"2.80",
-    locality:"",
-    perimeter:"", n50:"4.0", shadingFactor:"0.90",
-    gwpLifecycle:"", solarReady:false,
-    scopCpe:"vanzare", parkingSpaces:"0",
-  };
+  
   const [building, setBuilding] = useState({...INITIAL_BUILDING});
 
   // ─── STEP 2 STATE ───
@@ -615,96 +324,44 @@ export default function EnergyCalcApp({ cloud }) {
   // ─── STEP 3 STATE ───
   const [instSubTab, setInstSubTab] = useState("heating");
 
-  const INITIAL_HEATING = {
-    source:"GAZ_COND", power:"", eta_gen:"0.97",
-    emission:"RAD_OT", eta_em:"0.93",
-    distribution:"BINE_INT", eta_dist:"0.95",
-    control:"TERMO_RAD", eta_ctrl:"0.93",
-    regime:"intermitent", theta_int:"20", nightReduction:"4",
-    tStaircase:"15", tBasement:"10", tAttic:"5",
-  };
+  
   const [heating, setHeating] = useState({...INITIAL_HEATING});
 
-  const INITIAL_ACM = {
-    source:"CAZAN_H", consumers:"", dailyLiters:"60",
-    storageVolume:"", storageLoss:"2.0",
-    pipeLength:"", pipeInsulated:true,
-    circRecirculation:false, circHours:"",
-  };
+  
   const [acm, setAcm] = useState({...INITIAL_ACM});
 
-  const INITIAL_COOLING = {
-    system:"NONE", power:"", eer:"",
-    cooledArea:"", distribution:"BINE_INT",
-    hasCooling:false,
-  };
+  
   const [cooling, setCooling] = useState({...INITIAL_COOLING});
 
-  const INITIAL_VENTILATION = {
-    type:"NAT", airflow:"", fanPower:"",
-    operatingHours:"", hrEfficiency:"",
-  };
+  
   const [ventilation, setVentilation] = useState({...INITIAL_VENTILATION});
 
-  const INITIAL_LIGHTING = {
-    type:"LED", pDensity:"4.5", controlType:"MAN",
-    fCtrl:"1.00", operatingHours:"", naturalLightRatio:"30",
-  };
+  
   const [lighting, setLighting] = useState({...INITIAL_LIGHTING});
 
   // ─── STEP 4 STATE ───
   const [renewSubTab, setRenewSubTab] = useState("solar_th");
 
-  const INITIAL_SOLAR_TH = {
-    enabled:false, type:"PLAN", area:"", orientation:"S", tilt:"35",
-    usage:"acm", storageVolume:"", eta0:"0.75", a1:"3.5",
-  };
+  
   const [solarThermal, setSolarThermal] = useState({...INITIAL_SOLAR_TH});
 
-  const INITIAL_PV = {
-    enabled:false, type:"MONO", area:"", peakPower:"",
-    orientation:"S", tilt:"30", inverterType:"STD",
-    inverterEta:"0.95", usage:"all",
-  };
+  
   const [photovoltaic, setPhotovoltaic] = useState({...INITIAL_PV});
 
-  const INITIAL_HP = {
-    enabled:false, type:"PC_AA", cop:"3.50", scopHeating:"3.00",
-    scopCooling:"", covers:"heating_acm", bivalentTemp:"-5",
-    auxSource:"GAZ_COND", auxEta:"0.97",
-  };
+  
   const [heatPump, setHeatPump] = useState({...INITIAL_HP});
 
-  const INITIAL_BIO = {
-    enabled:false, type:"PELETI", boilerEta:"0.88", power:"",
-    covers:"heating", annualConsumption:"",
-  };
+  
   const [biomass, setBiomass] = useState({...INITIAL_BIO});
 
-  const INITIAL_OTHER = {
-    windEnabled:false, windCapacity:"", windProduction:"",
-    cogenEnabled:false, cogenElectric:"", cogenThermal:"", cogenFuel:"gaz",
-  };
+  
   const [otherRenew, setOtherRenew] = useState({...INITIAL_OTHER});
 
-  const INITIAL_BATTERY = {
-    enabled:false, type:"LFP", capacity:"", power:"", dod:"0.90",
-    selfConsumptionPct:"80",
-  };
+  
   const [battery, setBattery] = useState({...INITIAL_BATTERY});
 
   // ─── STEP 6 STATE ───
-  const INITIAL_AUDITOR = {
-    name:"", atestat:"", grade:"I", company:"",
-    phone:"", email:"", date: new Date().toISOString().slice(0,10),
-    mdlpaCode:"", observations:"", photo:"",
-    // Câmpuri noi CPE conform Mc001-2022 + Legea 238/2024
-    scopCpe:"vanzare", // vanzare | inchiriere | reabilitare | constructie_noua
-    validityYears:"10", // 10 ani standard, 5 ani pentru clasele D-G (EPBD 2024/1275)
-    registruEvidenta:"", // număr în registrul de evidență al auditorului
-    nrCadastral:"", // număr cadastral al clădirii
-    codUnicMDLPA:"", // format: Nr_Data_Nume_Prenume_Serie_Nr_Registru_CPE
-  };
+  
   const [auditor, setAuditor] = useState({...INITIAL_AUDITOR});
 
   // ── Toggle Tabel 5.17 / Tabel A.16 (SR EN ISO 52000-1/NA:2023) ──

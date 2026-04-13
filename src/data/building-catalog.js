@@ -195,3 +195,24 @@ export const ELEMENT_TYPES = [
   { id:"PL", label:"Plac\u0103 pe sol", tau:0.5, rsi:0.17, rse:0.00 },
   { id:"SE", label:"Plan\u0219eu separator ext. (bow-window)", tau:1.0, rsi:0.17, rse:0.04 },
 ];
+
+// Mapare sub-categorie → categorie de bază Mc 001-2022 (ENERGY_CLASSES_DB, CO2_CLASSES_DB, NZEB_THRESHOLDS)
+export const CATEGORY_BASE_MAP = {
+  AD:"BI", BA_OFF:"BI",
+  GR:"ED", SC:"ED", LI:"ED", UN:"ED", CP:"ED",
+  SPA_H:"SA", CL:"SA", ST:"SA", LB_MED:"SA", AS_SOC:"SA",
+  HO_LUX:"HC", HOSTEL:"HC",
+  REST:"CO", BAR:"CO", CANTINE:"CO", FAST_F:"CO",
+  MAG:"CO", SUPER:"CO", MALL:"CO", AG_COM:"CO",
+  PSC:"SP", SALA_POL:"SP", FIT:"SP", SPA_W:"SP",
+  CIN:"AL", TEA:"AL", MUZ:"AL", BIB:"AL", CC:"AL", EXP:"AL",
+  GARA:"AL", AER:"AL",
+  IU:"AL", HAL:"AL", DEP:"AL", LAB_IND:"AL", FRG:"AL",
+  PRC:"AL", GAR_IND:"AL", CUL:"AL",
+};
+
+// Helper: construiește cheie categorie pentru ENERGY_CLASSES_DB (cu rezolvare sub-categorie)
+export function buildCatKey(category, hasCooling) {
+  const base = CATEGORY_BASE_MAP[category] || category;
+  return base + (["RI","RC","RA"].includes(base) ? (hasCooling ? "_cool" : "_nocool") : "");
+}
