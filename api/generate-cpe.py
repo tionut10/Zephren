@@ -1141,10 +1141,10 @@ def _highlight_utility_class_cells(doc, data):
         """Formatează număr cu 1 zecimală, virgulă românească."""
         return "{:.1f}".format(val).replace(".", ",")
 
-    def _set_cell_text(cell, text, fill_hex):
+    def _set_cell_text(cell, text, fill_hex, force_black=False):
         """Înlocuiește textul celulei cu valoarea reală, păstrând formatarea."""
         tc = cell._tc
-        text_color = _text_color_for_bg(fill_hex)
+        text_color = "000000" if force_black else _text_color_for_bg(fill_hex)
         # Colectăm proprietățile run-ului existent (dimensiune font etc.)
         existing_sz = None
         for p in tc.iter(qn("w:p")):
@@ -1344,7 +1344,7 @@ def _highlight_utility_class_cells(doc, data):
                     else:
                         interval_text = ""
                     if interval_text:
-                        _set_cell_text(cell, interval_text, "FFFFFF")
+                        _set_cell_text(cell, interval_text, "FFFFFF", force_black=True)
                         _apply_shading(cell, "FFFFFF")
                     else:
                         _clear_placeholder_cell(cell)
@@ -1388,7 +1388,7 @@ def _highlight_utility_class_cells(doc, data):
         if 0 <= class_idx < len(_COL_FILLS):
             fill = _COL_FILLS[class_idx]
             _apply_shading(unique[col_idx], fill)
-            _set_cell_text(unique[col_idx], _format_ro(ep_val), fill)
+            _set_cell_text(unique[col_idx], _format_ro(ep_val), fill, force_black=True)
 
 
 # ═══════════════════════════════════════════════════════
