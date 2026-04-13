@@ -193,7 +193,15 @@
     "urban-heat-island":        { "title": "Insulă termică urbană", "category": "mediu" },
     "ventilation-flow":         { "title": "Debit ventilație (CFM/ACH)", "category": "instalatii" },
     "vmc-hr":                   { "title": "VMC cu recuperare căldură", "category": "instalatii" },
-    "weather":                  { "title": "Date meteorologice TMY/ERA5", "category": "date" }
+    "weather":                  { "title": "Date meteorologice TMY/ERA5", "category": "date" },
+    "en12464-lighting":         { "title": "Iluminat EN 12464-1 (LENI)", "category": "instalatii" },
+    "en15316-heating":          { "title": "Sisteme încălzire EN 15316 (serie completă)", "category": "instalatii" },
+    "i13-2015":                 { "title": "Normativ I13-2015 (instalații termice)", "category": "instalatii" },
+    "np048-audit":              { "title": "Audit energetic NP 048-2000", "category": "audit" },
+    "p130-monitoring":          { "title": "Monitorizare clădiri P 130-2025", "category": "conformitate" },
+    "solar-radiation":          { "title": "Model radiație solară ISO 52010-1", "category": "regenerabile" },
+    "sri-indicator":            { "title": "Smart Readiness Indicator (SRI)", "category": "conformitate" },
+    "zeb-compliance":           { "title": "Conformitate ZEB + Legea 121/2014", "category": "conformitate" }
   },
 
   "exports": [
