@@ -1503,26 +1503,29 @@ class handler(BaseHTTPRequestHandler):
                 if new:
                     replace_in_doc(doc, old, new)
 
-            # Adresa — nodul conține "adresa" cu puncte
-            for para in doc.paragraphs:
-                if "adresa" in para.text.lower() and "..." in para.text:
-                    for run in para.runs:
-                        if "adresa" in run.text.lower() or "..." in run.text:
-                            run.text = ""
-                    if para.runs:
-                        para.runs[0].text = data.get("address", "")
-                    break
-            # Also check tables
+            # Adresa — completăm cele 2 rânduri din tabelul DATE CLĂDIRE:
+            # R2: "Adresa clădirii: ........" → adresa completă
+            # R3: ".... adresa ...." → identic (sau gol dacă nu e unitate separată)
+            address_val = data.get("address", "")
+            _addr_filled = 0
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
                         for para in cell.paragraphs:
-                            if "adresa" in para.text.lower() and ("..." in para.text or "." * 5 in para.text):
+                            pt = para.text
+                            if ("adresa" in pt.lower() or "Adresa" in pt) and \
+                               ("..." in pt or "." * 5 in pt):
+                                is_label_row = "Adresa" in pt  # R2 = label "Adresa clădirii:"
                                 for run in para.runs:
-                                    if "adresa" in run.text.lower() or "..." in run.text or "." * 5 in run.text:
+                                    if "adresa" in run.text.lower() or "Adresa" in run.text or \
+                                       "..." in run.text or "." * 5 in run.text:
                                         run.text = ""
                                 if para.runs:
-                                    para.runs[0].text = data.get("address", "")
+                                    if is_label_row:
+                                        para.runs[0].text = "Adresa clădirii:  " + address_val
+                                    else:
+                                        para.runs[0].text = address_val
+                                _addr_filled += 1
 
             # Scop CPE — split text "Vânzare/Închiriere/Recepție/Inf"
             scope = data.get("scope", "")
