@@ -3165,7 +3165,7 @@ export default function EnergyCalcApp({ cloud }) {
 
   const renewSummary = useRenewableSummary({
     instSummary, building, solarThermal, photovoltaic, heatPump, biomass, otherRenew,
-    selectedClimate, useNA2023, acm, heating,
+    selectedClimate, useNA2023, acm, heating, battery,
   });
 
   useAutoSync({
@@ -6374,6 +6374,7 @@ export default function EnergyCalcApp({ cloud }) {
             instSummary, renewSummary,
             lang,
             userPlan,
+            bacsClass, setBacsClass,
             systems: { hrEta: parseFloat(ventilation?.hrEfficiency)||0, ventType: ventilation?.type, emissionSystem: heating?.emission,
               ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
               heating: { etaGen: parseFloat(heating?.eta_gen)||0.85, fp: parseFloat(heating?.fp)||1.1 },

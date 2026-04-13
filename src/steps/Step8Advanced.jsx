@@ -137,7 +137,7 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan }) {
+export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan, bacsClass: bacsClassProp, setBacsClass: setBacsClassProp }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
   const [hpTypeId, setHpTypeId] = useState("AA_STD");
@@ -188,8 +188,9 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [xmlValidating, setXmlValidating] = useState(false);
 
   // ── PVGIS API state ──
-  // ── BACS state ──
-  const [bacsClass, setBacsClass] = useState("C");
+  // ── BACS state — sincronizat cu parent (Step5/bacsCheck) ──
+  const bacsClass = bacsClassProp ?? "C";
+  const setBacsClass = setBacsClassProp ?? (() => {});
   // ── ACM EN 15316 state ──
   const [acmPipeInsul, setAcmPipeInsul] = useState(true);
   const [acmCirculation, setAcmCirculation] = useState(false);

@@ -34,6 +34,7 @@ export function useRenewableSummary({
   useNA2023,
   acm,
   heating,
+  battery,
 }) {
   return useMemo(() => {
     const Au = parseFloat(building.areaUseful) || 0;
@@ -133,7 +134,9 @@ export function useRenewableSummary({
     const rerTotalOk = rer >= 30;
 
     // Energie primară ajustată
-    const ambientFP = useNA2023 ? 0 : 1.0;
+    // ambientFP urmează aceeași logică ca în useInstallationSummary:
+    // NA:2023 ON → energia ambientală e inclusă în ep_total → trebuie scăzută și din ep_reduction
+    const ambientFP = useNA2023 ? 1.0 : 0;
     const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction;
     const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
     const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
@@ -147,15 +150,29 @@ export function useRenewableSummary({
     const co2_adjusted = Math.max(0, instSummary.co2_total - co2_reduction);
     const co2_adjusted_m2 = Au > 0 ? co2_adjusted / Au : 0;
 
+    // ── BATERIE (auto-consum PV) ──
+    // Sub Mc 001-2022 / ISO 52000-1 toată producția PV e creditată la valoare completă (net-metering),
+    // deci bateria nu modifică ep_adjusted. Calculăm metricile economice / autonomie.
+    let qBattery_annual = 0;
+    let battSelfConsumptionPct = 35; // % auto-consum fără baterie (tipic România)
+    if (battery?.enabled && photovoltaic.enabled) {
+      const cap = parseFloat(battery.capacity) || 0;
+      const dod = parseFloat(battery.dod) || 0.90;
+      const chargeDays = 250; // zile cu producție semnificativă/an (România)
+      qBattery_annual = Math.min(cap * dod * chargeDays, qPV_kWh * 0.50);
+      battSelfConsumptionPct = parseFloat(battery.selfConsumptionPct) || 80;
+    }
+
     return {
       qSolarTh, qPV_kWh, qPC_ren, qBio_ren, qBio_total, qWind, qCogen_el, qCogen_th,
       totalRenewable, totalRenewable_m2, rer, rerOnSite, rerOnSiteOk, rerTotalOk,
       ep_reduction, ep_adjusted, ep_adjusted_m2,
       co2_reduction, co2_adjusted, co2_adjusted_m2,
+      qBattery_annual, battSelfConsumptionPct,
     };
   }, [
     building.areaUseful, selectedClimate, instSummary,
     solarThermal, photovoltaic, heatPump, biomass, otherRenew, useNA2023,
-    acm, heating,
+    acm, heating, battery,
   ]);
 }

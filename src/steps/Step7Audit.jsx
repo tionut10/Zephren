@@ -1703,7 +1703,10 @@ export default function Step7Audit(props) {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
                   ← Pas 6: Certificat
                 </button>
-                <div className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-sm opacity-30 cursor-default">Pasul final ✓</div>
+                <button onClick={() => setStep(8)}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all text-sm text-amber-400">
+                  Pas 8: Analiză avansată →
+                </button>
               </div>
             </div>
             );
