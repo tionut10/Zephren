@@ -56,15 +56,26 @@ export function glaserCheck(layers, theta_int, theta_ext, phi_int, phi_ext) {
     if (condensing) hasCondensation = true;
     results.push({ interface: k, temp: tK, pv: pvK, ps: psK, condensing: condensing });
   }
-  // Estimate condensation quantity [g/m² per heating season ~180 days]
+  // ── Cantitate condensare conform ISO 13788:2012 §4.4 ──
+  // Flux difuzie vapori: g = δ_a × (Δp / sd) × Δt  [kg/m²]
+  // δ_a = permeabilitatea vaporilor de apă în aer = 2 × 10⁻¹⁰ kg/(m·s·Pa)
+  // sd = grosime echivalentă difuzie = Σ(μ × d) pentru straturile adiacente planului de condensare
+  // Δt = 180 zile × 86400 s/zi = 15.552 × 10⁶ s (sezon de încălzire)
+  var delta_a = 2e-10; // kg/(m·s·Pa) — permeabilitate vapori în aer (ISO 13788 §4.2)
+  var heatingSeasonSeconds = 180 * 86400; // 180 zile sezon încălzire
   var gc = 0;
   for (var ci = 0; ci < results.length; ci++) {
     if (results[ci].condensing) {
-      var excess = results[ci].pv - results[ci].ps;
-      gc += excess * 0.0001 * 180; // simplified g/(m²·season)
+      var excess = results[ci].pv - results[ci].ps; // Pa
+      // sd_local: grosimea de difuzie echivalentă a stratului cel mai subțire adiacent
+      // Simplificare conservatoare: sd_local ≈ sd_total / nr_straturi
+      var sd_local = sdTotal / Math.max(sdLayers.length, 1);
+      // g_c [kg/m²] = δ_a × (Δpv / sd) × Δt; convertit la g/m²
+      var gc_interface = sd_local > 0 ? delta_a * (excess / sd_local) * heatingSeasonSeconds * 1000 : 0;
+      gc += gc_interface;
     }
   }
-  return { results: results, hasCondensation: hasCondensation, gc: Math.round(gc) };
+  return { results: results, hasCondensation: hasCondensation, gc: Math.round(gc), gc_method: "ISO 13788:2012 §4.4" };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -133,7 +144,13 @@ export function calcGlaserMonthly(layers, climate, tInt, rhInt) {
     }
     pvs.push(pvExt);
 
-    // Check condensation at each interface
+    // ── Condensare/evaporare per interfață — ISO 13788:2012 §4.4 ──
+    // Flux difuzie: g = δ_a × (Δp / sd_local) × Δt
+    // δ_a = 2 × 10⁻¹⁰ kg/(m·s·Pa)
+    // Δt per lună = zile × 86400 s
+    var delta_a_m = 2e-10; // kg/(m·s·Pa)
+    var daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31][m];
+    var secondsInMonth = daysInMonth * 86400;
     var interfaces = [];
     var monthCondensation = 0;
     var monthEvaporation = 0;
@@ -142,9 +159,18 @@ export function calcGlaserMonthly(layers, climate, tInt, rhInt) {
       var pvK = pvs[k];
       var psK = pSatMagnus(tK);
       var condensing = pvK > psK * 1.001;
-      var gcRate = condensing ? (pvK - psK) * 0.0002 : -(psK - pvK) * 0.00015;
-      if (condensing) monthCondensation += gcRate * 30; // g/m² per month
-      else monthEvaporation += Math.abs(gcRate) * 30;
+      // sd_local: grosimea de difuzie a stratului adiacent planului de condensare
+      var sd_local = sdTotal / Math.max(layerData.length, 1);
+      // g [g/m²·lună] = δ_a × (Δp / sd) × Δt_lună × 1000 (kg→g)
+      var gcRate_gm2;
+      if (sd_local > 0) {
+        var deltaP = condensing ? (pvK - psK) : (psK - pvK);
+        gcRate_gm2 = delta_a_m * (deltaP / sd_local) * secondsInMonth * 1000;
+      } else {
+        gcRate_gm2 = 0;
+      }
+      if (condensing) monthCondensation += gcRate_gm2;
+      else monthEvaporation += gcRate_gm2;
       interfaces.push({ layer: k, temp: Math.round(tK * 10) / 10, pv: Math.round(pvK), ps: Math.round(psK), condensing: condensing });
     }
 

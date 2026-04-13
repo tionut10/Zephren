@@ -128,43 +128,177 @@ export function calcPeakThermalLoad(params) {
   };
 }
 
-// ─── Sarcină termică de răcire — estimare simplificată (SR EN 15243) ───
+// ═══════════════════════════════════════════════════════════════
+// SARCINĂ TERMICĂ DE RĂCIRE — SR EN 15243:2007 §6 + CIBSE Guide A
+// Metodă: bilanț termic instantaneu la ora de vârf (iulie, 14:00-15:00)
+// Include: câștiguri solare diferențiate pe orientare, câștiguri interne,
+//          transmisie prin anvelopă, ventilare, componentă latentă
+// ═══════════════════════════════════════════════════════════════
+
+// Iradianță solară de vârf pe orientare [W/m²] — luna iulie, 14:00, latitudine ~45°N
+// Sursa: SR EN ISO 52010-1 / PVGIS / CIBSE Guide A Tabel 2.31
+const SOLAR_PEAK_W_M2 = {
+  N:  80,  NE: 150, E:  350, SE: 500,
+  S:  550, SV: 650, V:  600, NV: 200,
+  Oriz: 800,
+};
+
+// Câștiguri interne de vârf [W/m²] per categorie — SR EN 15243 Tabel A.1, CIBSE Guide A Tabel 6.2
+const INTERNAL_GAINS_PEAK = {
+  RI: 5, RC: 5, RA: 5,       // rezidențial: iluminat + electrocasnice + ocupanți
+  BI: 25, AD: 25,             // birouri: 12 W/m² echipamente + 8 W/m² iluminat + 5 W/m² ocupanți
+  ED: 15, SA: 20,             // educație, sănătate
+  HC: 15, CO: 25, SP: 20,    // hotel, comerț, sport
+  AL: 20,
+};
+
+// Factor de amortizare datorat inerției termice — CIBSE Guide A Tabel 6.13
+// Structuri grele absorb ~30-40% din câștigurile instantanee
+const THERMAL_INERTIA_FACTOR = {
+  "Structură metalică": 0.95,       // aproape fără amortizare
+  "Structură lemn": 0.90,
+  "Panouri prefabricate mari": 0.75,
+  "Cadre beton armat": 0.70,
+  "Zidărie portantă": 0.65,        // amortizare semnificativă
+  "Pereți cortină + beton": 0.75,
+  "BCA + cadre beton": 0.70,
+  "Structură mixtă": 0.75,
+};
+
 export function calcPeakCoolingLoad(params) {
-  const { Au, glazingElements, climate, internalGains, ventFlow } = params;
+  const {
+    Au, V,
+    opaqueElements,
+    glazingElements,
+    climate,
+    category,
+    structure,
+    internalGains,  // override câștiguri interne [W/m²]
+    ventFlow,       // debit ventilare [m³/h]
+    hrEta,          // eficiență recuperare (nu aplicabilă vara decât entalpic)
+    occupants,      // nr. ocupanți (opțional)
+    shadingFactor,  // factor umbrire exterior 0-1 (storuri, brise-soleil)
+  } = params;
+
   if (!Au || !climate) return null;
 
-  const tExtSummer = Math.max.apply(null, (climate.temp_month || []).slice(5, 8)) + 5; // +5°C amplitudine de vârf
-  const tIntCool = 26; // setpoint răcire [°C]
+  // ── 1. Temperatura exterioară de calcul vara ──
+  // Mc 001-2022: temperatura medie a celei mai calde luni + amplitudine diurnă / 2
+  // Amplitudine diurnă tipică România: 8-12°C (SR EN ISO 52010-1)
+  const tempSummer = climate.temp_month || [];
+  const tExtMean = Math.max.apply(null, tempSummer.slice(5, 8)); // media lunii celei mai calde
+  const diurnalAmplitude = climate.diurnal_amplitude || 10; // °C, implicit 10K
+  const tExtPeak = tExtMean + diurnalAmplitude / 2; // temperatura de calcul la ora de vârf
+  const tIntCool = 26; // setpoint răcire [°C] — SR EN 16798-1 Cat. II
+  const deltaTc = tExtPeak - tIntCool;
 
-  // Câștiguri solare maxime (luni de vară)
-  let Q_sol_max = 0;
-  const mFracSummer = 0.14; // fracție solară iulie (luna de vârf)
+  // ── 2. Câștiguri solare prin elemente vitrate [W] ──
+  // Formula: Φ_sol = Σ (A_gl × g × (1-f_frame) × I_sol,peak × f_shading)
+  const sf = parseFloat(shadingFactor) || 1.0; // 1.0 = fără umbrire
+  let Q_sol_peak = 0;
+  const solarBreakdown = [];
+
   (glazingElements || []).forEach(gl => {
     const area = parseFloat(gl.area) || 0;
-    const g = parseFloat(gl.g) || 0.5;
+    const g = parseFloat(gl.g) || 0.50;
     const fr = (parseFloat(gl.frameRatio) || 25) / 100;
-    const solarKey = gl.orientation === "Orizontal" ? "Oriz" : (gl.orientation || "S");
-    const solarIrrad = (climate.solar && climate.solar[solarKey]) || 400;
-    Q_sol_max += area * g * (1 - fr) * solarIrrad * mFracSummer * 1000 / (30 * 24); // W estimat
+    const ori = gl.orientation || "S";
+
+    let I_peak;
+    if (ori === "Mixt") {
+      // Distribuție medie pe toate orientările
+      I_peak = Object.values(SOLAR_PEAK_W_M2).reduce((s, v) => s + v, 0) / Object.keys(SOLAR_PEAK_W_M2).length;
+    } else {
+      I_peak = SOLAR_PEAK_W_M2[ori] || SOLAR_PEAK_W_M2["S"];
+    }
+
+    const phi_sol = area * g * (1 - fr) * I_peak * sf;
+    Q_sol_peak += phi_sol;
+    solarBreakdown.push({
+      orientation: ori, area, g, I_peak,
+      phi_sol: Math.round(phi_sol),
+    });
   });
 
-  // Câștiguri interne [W]
-  const Q_int = (internalGains || 6) * Au; // W/m² × Au
+  // ── 3. Câștiguri interne [W] ──
+  const q_int = internalGains || INTERNAL_GAINS_PEAK[category] || 20;
+  const Q_int_peak = q_int * Au;
 
-  // Sarcina de răcire estimată
-  const Q_cooling = Math.max(0, Q_sol_max + Q_int - (ventFlow || 0) * 0.34 * (tExtSummer - tIntCool));
-  const phi_C_m2 = Au > 0 ? Q_cooling / Au : 0;
+  // Câștiguri ocupanți (componentă senzibilă + latentă)
+  // EN 15243: 75 W senzibil + 55 W latent per persoană (activitate sedentară)
+  const nOccupants = occupants || Math.max(1, Math.round(Au / 20)); // estimare: 20 m²/pers
+  const Q_occ_sensible = nOccupants * 75;
+  const Q_occ_latent = nOccupants * 55;
+
+  // ── 4. Pierderi/câștiguri prin transmisie [W] ──
+  // Vara: anvelopa transmite căldură din exterior → interior când tExt > tInt
+  let Q_trans = 0;
+  (opaqueElements || []).forEach(el => {
+    const area = parseFloat(el.area) || 0;
+    const U = el.U ? parseFloat(el.U) : 0.35;
+    Q_trans += area * U * Math.max(0, deltaTc);
+  });
+  (glazingElements || []).forEach(gl => {
+    const area = parseFloat(gl.area) || 0;
+    const U = parseFloat(gl.u) || 2.0;
+    Q_trans += area * U * Math.max(0, deltaTc);
+  });
+
+  // ── 5. Sarcina de ventilare [W] ──
+  const Vdot = ventFlow || (0.5 * (V || Au * 2.8)); // m³/h, implicit 0.5 ach
+  // Componentă senzibilă: 0.34 × V̇ × ΔT
+  const Q_vent_sensible = deltaTc > 0 ? 0.34 * Vdot * deltaTc : 0;
+  // Componentă latentă estimată: ~30% din senzibilă în climat temperat-continental
+  const Q_vent_latent = Q_vent_sensible * 0.30;
+
+  // ── 6. Total câștiguri instantanee [W] ──
+  const Q_gains_total = Q_sol_peak + Q_int_peak + Q_occ_sensible + Q_trans + Q_vent_sensible;
+
+  // ── 7. Factor de amortizare inerție termică ──
+  const f_inertia = THERMAL_INERTIA_FACTOR[structure] || 0.75;
+  const Q_sensible = Q_gains_total * f_inertia;
+  const Q_latent = Q_occ_latent + Q_vent_latent;
+  const Q_cooling_total = Q_sensible + Q_latent;
+
+  // ── 8. Factor de siguranță — EN 15243 recomandă 1.10 ──
+  const sf_cool = 1.10;
+  const phi_C_design = Q_cooling_total * sf_cool;
+  const phi_C_m2 = Au > 0 ? phi_C_design / Au : 0;
+
+  // ── 9. Recomandare sistem ──
+  let coolingSysRec;
+  if (phi_C_design < 2000) coolingSysRec = "Răcire pasivă + ventilare nocturnă + umbrire";
+  else if (phi_C_design < 5000) coolingSysRec = "Split monosplit / multisplit 2-5 kW";
+  else if (phi_C_design < 12000) coolingSysRec = "Pompă căldură reversibilă aer-apă 5-12 kW";
+  else if (phi_C_design < 30000) coolingSysRec = "Sistem VRF multisplit 12-28 kW";
+  else if (phi_C_design < 100000) coolingSysRec = "Chiller răcit cu aer 30-100 kW + fan coil-uri";
+  else coolingSysRec = "Chiller centralizat + distribuție apă răcită. Consultați proiectant HVAC.";
+
+  // ── 10. Raport SHR (Sensible Heat Ratio) ──
+  const SHR = Q_cooling_total > 0 ? Q_sensible / Q_cooling_total : 1;
 
   return {
-    tExtSummer: Math.round(tExtSummer * 10) / 10,
+    tExtPeak: Math.round(tExtPeak * 10) / 10,
+    tExtMean: Math.round(tExtMean * 10) / 10,
     tIntCool,
-    Q_sol_max: Math.round(Q_sol_max),
-    Q_int: Math.round(Q_int),
-    phi_C_total: Math.round(Q_cooling),
+    diurnalAmplitude,
+    deltaTc: Math.round(deltaTc * 10) / 10,
+    Q_sol_peak: Math.round(Q_sol_peak),
+    Q_int_peak: Math.round(Q_int_peak),
+    Q_occ_sensible: Math.round(Q_occ_sensible),
+    Q_occ_latent: Math.round(Q_occ_latent),
+    Q_trans: Math.round(Q_trans),
+    Q_vent_sensible: Math.round(Q_vent_sensible),
+    Q_vent_latent: Math.round(Q_vent_latent),
+    Q_sensible: Math.round(Q_sensible),
+    Q_latent: Math.round(Q_latent),
+    f_inertia,
+    SHR: Math.round(SHR * 100) / 100,
+    phi_C_design: Math.round(phi_C_design),
     phi_C_m2: Math.round(phi_C_m2 * 10) / 10,
-    coolingSysRec: Q_cooling < 5000 ? "Răcire pasivă + umbrire" :
-                   Q_cooling < 15000 ? "Pompă căldură reversibilă 10-12 kW" :
-                   "Sistem VRF sau chiller",
-    method: "Estimare simplificată (SR EN 15243)",
+    safetyFactor: sf_cool,
+    coolingSysRec,
+    solarBreakdown,
+    method: "SR EN 15243:2007 §6 + CIBSE Guide A (bilanț instantaneu la ora de vârf)",
   };
 }
