@@ -1315,12 +1315,41 @@ def _highlight_utility_class_cells(doc, data):
                 seen_ids.add(cid)
                 unique.append(c)
 
-        # Curăță celulele cu text placeholder din template (ex: "Consum vm", "Consum il")
+        # Celule cu placeholder "Consum înc/răc/vm/il" — completăm cu intervalul
+        # per utilitate (nu cel global EP). Folosim pragurile calculate per utilitate.
         _PLACEHOLDER_KEYWORDS = ["Consum ", "consum ", "CONSUM"]
-        for cell in unique[1:]:
+        # Determinăm care utilitate este (1-5) pe baza ep_key
+        _UTIL_KEY_MAP = {"incalzire": "1", "acm": "2", "racire": "3", "ventilare": "4", "iluminat": "5"}
+        _util_k = _UTIL_KEY_MAP.get(ep_key, "")
+        for ci, cell in enumerate(unique[1:], start=1):
             ct = cell.text.strip()
             if any(kw in ct for kw in _PLACEHOLDER_KEYWORDS):
-                _clear_placeholder_cell(cell)
+                # Calculăm pragurile per utilitate (fracție × EP global)
+                if _util_k and any(t > 0 for t in ep_thresholds_data):
+                    _UTIL_FRACS = {
+                        "1": [0.41, 0.41, 0.42, 0.43, 0.43, 0.43, 0.43],
+                        "2": [0.29, 0.29, 0.29, 0.19, 0.18, 0.17, 0.17],
+                        "3": [0.18, 0.18, 0.18, 0.12, 0.12, 0.11, 0.13],
+                        "4": [0.05, 0.05, 0.05, 0.04, 0.04, 0.03, 0.03],
+                        "5": [0.07, 0.07, 0.07, 0.07, 0.08, 0.08, 0.08],
+                    }
+                    fracs = _UTIL_FRACS.get(_util_k, [0.2]*7)
+                    ut = [max(1, round(ep_thresholds_data[i] * fracs[i])) for i in range(7)]
+                    if ci == 1:
+                        interval_text = "\u2264 " + str(ut[0])
+                    elif 2 <= ci <= 7:
+                        interval_text = str(ut[ci - 2]) + "  ...  " + str(ut[ci - 1])
+                    elif ci == 8:
+                        interval_text = ">" + str(ut[6])
+                    else:
+                        interval_text = ""
+                    if interval_text:
+                        _set_cell_text(cell, interval_text, "FFFFFF")
+                        _apply_shading(cell, "FFFFFF")
+                    else:
+                        _clear_placeholder_cell(cell)
+                else:
+                    _clear_placeholder_cell(cell)
 
         ep_val = ep_vals.get(ep_key, 0.0)
         if ep_val <= 0:
@@ -1558,6 +1587,17 @@ class handler(BaseHTTPRequestHandler):
                 replace_in_doc(doc, "Apartament x camere, din bloc", cat_label)
                 replace_in_doc(doc, "categorie funcțională", cat_label)
                 replace_in_doc(doc, "categorie functionala", cat_label)
+                # Template generic: celula conține "Categoria clădirii:...categoria"
+                # replace_in_paragraph e case-sensitive: "categoria" (c mic) potrivește
+                # doar placeholder-ul de la poz 38, NU "Categoria" (C mare) de la poz 0
+                for table in doc.tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            ct = cell.text
+                            if "Categoria" in ct and "categoria" in ct:
+                                for para in cell.paragraphs:
+                                    if "categoria" in para.text:
+                                        replace_in_paragraph(para, "categoria", cat_label, count=1)
 
             # Nr camere (RA) — înlocuiește " x " rămas (dacă mai există) din "Apartament x camere"
             if category == "RA":
@@ -1576,6 +1616,13 @@ class handler(BaseHTTPRequestHandler):
             # GWP lifecycle
             gwp_text = data.get("gwp", "0,0") + " kgCO2eq/m2an"
             replace_in_doc(doc, "GWP lifecycle", gwp_text)
+
+            # Note de subsol CPE — ore supraîncălzire
+            # ("regim" e deja înlocuit de ordered_replacements cu valoarea regime)
+            # ".....................h" → ore supraîncălzire (0 dacă se calculează răcire)
+            has_cool = data.get("cooling_has", "") == "true"
+            overheat_h = "0" if has_cool else (data.get("overheating_hours", "0") or "0")
+            replace_in_doc(doc, ".....................h", overheat_h + " h")
 
             # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
