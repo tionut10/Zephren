@@ -12,28 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "Corectare scale EP/CO₂ conform template-urilor oficiale MDLPA + fix template generic"
+      },
+      {
+        "icon": "🔧",
+        "text": "nu mai șterge celulele xxx din scala energetică în highlight_utility_class_cells"
+      },
+      {
+        "icon": "📄",
+        "text": "culori text scala EP/CO2 + valori utilități în DOCX CPE"
+      },
+      {
+        "icon": "✨",
+        "text": "integrare SRI în Step8 și Benchmark Național în Step5"
+      },
+      {
+        "icon": "🔧",
+        "text": "corectie prag txtClr - A+ (#009B00) primeste text alb"
+      },
+      {
+        "icon": "📄",
+        "text": "culoare albă litera A+ în scala energetică CPE HTML"
+      },
+      {
+        "icon": "✨",
+        "text": "6 funcționalități noi — benchmark național, ANRE sync, versioning, SRI indicator, MDLPA submit, notificări CPE"
+      },
+      {
         "icon": "💰",
         "text": "declare userPlan state in EnergyCalcApp to resolve ReferenceError crash"
-      },
-      {
-        "icon": "✨",
-        "text": "7 funcționalități noi — șabloane clădiri, finanțări, deviz exports, CO₂, CPE alerte, offline, wizard mobil"
-      },
-      {
-        "icon": "🔸",
-        "text": "Badge Starter: STR → STA"
-      },
-      {
-        "icon": "✨",
-        "text": "Planuri: înlocuiește ASC cu BUS, adaugă STR/ENT — FREE/STR/STD/PRO/BUS/ENT"
-      },
-      {
-        "icon": "💰",
-        "text": "Revert \"Actualizare planuri prețuri v5.1: Free/Starter 299/Professional 309/Business 699/Asociație S-M-Pro/Ent"
-      },
-      {
-        "icon": "💰",
-        "text": "Actualizare planuri prețuri v5.1: Free/Starter 299/Professional 309/Business 699/Asociație S-M-Pro/Enterprise "
       }
     ]
   },

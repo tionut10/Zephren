@@ -1240,6 +1240,58 @@ def _highlight_utility_class_cells(doc, data):
         p_empty = _OxmlElement("w:p")
         tc.append(p_empty)
 
+    # ── Detectare template generic (placeholder-uri cXA, cXB în loc de valori numerice) ──
+    _is_generic_util_table = False
+    for row in target.rows:
+        for c in row.cells:
+            if "c1A" in c.text or "c2A" in c.text:
+                _is_generic_util_table = True
+                break
+        if _is_generic_util_table:
+            break
+
+    # ── Completare placeholder-uri cXA...cXB cu intervale calculate ──
+    # Template-ul generic are: ≤ c1A, c1A ... c1B, ..., >c1G
+    # Le înlocuim cu praguri EP per utilitate (proporționale cu scala globală)
+    if _is_generic_util_table:
+        ep_thresholds_data = []
+        try:
+            ep_thresholds_data = [int((data.get(k, "0") or "0")) for k in
+                                  ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+        except Exception:
+            ep_thresholds_data = []
+
+        if any(t > 0 for t in ep_thresholds_data):
+            # Proporții per utilitate (tipice Mc 001-2022)
+            _UTILITY_FRACTIONS = {
+                "1": [0.41, 0.41, 0.42, 0.43, 0.43, 0.43, 0.43],  # încălzire
+                "2": [0.29, 0.29, 0.29, 0.19, 0.18, 0.17, 0.17],  # ACM
+                "3": [0.18, 0.18, 0.18, 0.12, 0.12, 0.11, 0.13],  # răcire
+                "4": [0.05, 0.05, 0.05, 0.04, 0.04, 0.03, 0.03],  # ventilare
+                "5": [0.07, 0.07, 0.07, 0.07, 0.08, 0.08, 0.08],  # iluminat
+            }
+            for util_key in ["1", "2", "3", "4", "5"]:
+                fracs = _UTILITY_FRACTIONS[util_key]
+                util_thresholds = [max(1, round(ep_thresholds_data[i] * fracs[i])) for i in range(7)]
+                # Înlocuiri: ≤ cXA → ≤ val, cXA ... cXB → val ... val, >cXG → >val
+                labels = ["A", "B", "C", "D", "E", "F", "G"]
+                for para in _iter_all_paragraphs(doc, include_txbx=False):
+                    pass  # Skip — lucrăm direct pe celulele tabelului
+
+                for row in target.rows:
+                    for cell in row.cells:
+                        ct = cell.text
+                        # Procesăm orice celulă cu cX (util_key=1-5) — inclusiv cXB, cXC etc.
+                        if f"c{util_key}" not in ct:
+                            continue
+                        # Înlocuim fiecare label cXA → prag[0], cXB → prag[1], ..., cXG → prag[6]
+                        for i, lbl in enumerate(labels):
+                            old_token = f"c{util_key}{lbl}"
+                            if old_token in ct:
+                                for para in cell.paragraphs:
+                                    replace_in_paragraph(para, old_token, str(util_thresholds[i]))
+                                ct = cell.text  # refresh after replacement
+
     for row in target.rows:
         cells = row.cells
         if len(cells) < 3:
@@ -1264,8 +1316,6 @@ def _highlight_utility_class_cells(doc, data):
                 unique.append(c)
 
         # Curăță celulele cu text placeholder din template (ex: "Consum vm", "Consum il")
-        # IMPORTANT: nu atingem celulele cu "xxx" — acestea sunt intervalele scalei energetice
-        # care vor fi completate mai târziu de replace_scales()
         _PLACEHOLDER_KEYWORDS = ["Consum ", "consum ", "CONSUM"]
         for cell in unique[1:]:
             ct = cell.text.strip()
@@ -1335,6 +1385,27 @@ class handler(BaseHTTPRequestHandler):
             category = body.get("category", "AL")
 
             doc = Document(io.BytesIO(tpl_bytes))
+
+            # ═══════════════════════════════════════
+            # 0. SCALE EP + CO₂ — PRIMELE! (înainte de text replacements)
+            # Altfel "xxxx"→volume corupe ">xxxx" din template generic
+            # ═══════════════════════════════════════
+            new_ep = [int(data.get(k, 0) or 0) for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+            try:
+                new_co2 = [float((data.get(k, "0") or "0").replace(",", "."))
+                           for k in ["co2_ap", "co2_a", "co2_b", "co2_c", "co2_d", "co2_e", "co2_f"]]
+            except Exception:
+                new_co2 = []
+            if any(v > 0 for v in new_ep):
+                replace_scales(doc, category, new_ep,
+                               new_co2 if new_co2 and any(v > 0 for v in new_co2) else None)
+
+            # CLASS INDICATORS — săgețile pe scale (tot înainte de text replacements)
+            ep_cls_real = data.get("ep_class_real", "")
+            ep_cls_ref = data.get("ep_class_ref", "")
+            co2_cls_real = data.get("co2_class_real", "")
+            if ep_cls_real:
+                replace_class_indicators(doc, ep_cls_real, ep_cls_ref, co2_cls_real)
 
             # ═══════════════════════════════════════
             # 1. TEXT REPLACEMENTS — mapare directă
@@ -1506,27 +1577,7 @@ class handler(BaseHTTPRequestHandler):
             gwp_text = data.get("gwp", "0,0") + " kgCO2eq/m2an"
             replace_in_doc(doc, "GWP lifecycle", gwp_text)
 
-            # ═══════════════════════════════════════
-            # 2. SCALE EP + CO₂ — înlocuiesc pragurile template cu valorile calculate
-            # ═══════════════════════════════════════
-            new_ep = [int(data.get(k, 0) or 0) for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
-            try:
-                new_co2 = [float((data.get(k, "0") or "0").replace(",", "."))
-                           for k in ["co2_ap", "co2_a", "co2_b", "co2_c", "co2_d", "co2_e", "co2_f"]]
-            except Exception:
-                new_co2 = []
-            if any(v > 0 for v in new_ep):
-                replace_scales(doc, category, new_ep,
-                               new_co2 if new_co2 and any(v > 0 for v in new_co2) else None)
-
-            # ═══════════════════════════════════════
-            # 3. CLASS INDICATORS — săgețile pe scale
-            # ═══════════════════════════════════════
-            ep_cls_real = data.get("ep_class_real", "")
-            ep_cls_ref = data.get("ep_class_ref", "")
-            co2_cls_real = data.get("co2_class_real", "")
-            if ep_cls_real:
-                replace_class_indicators(doc, ep_cls_real, ep_cls_ref, co2_cls_real)
+            # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
             # ═══════════════════════════════════════
             # 4. CHECKBOXES (Anexa)
