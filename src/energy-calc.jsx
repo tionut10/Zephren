@@ -2794,7 +2794,7 @@ export default function EnergyCalcApp({ cloud }) {
   });
 
   const { isOnline } = useOfflineMode();
-  const [userPlan] = useState("free");
+  const userPlan = cloud?.user?.plan || "free";
 
   // ── Keyboard shortcuts (pct. 41) ──
   useKeyboardShortcuts({
