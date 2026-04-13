@@ -7,7 +7,8 @@
  * Referințe:
  * - Regulamentul delegat (UE) 2020/2155 — cadrul metodologic SRI
  * - Regulamentul de punere în aplicare (UE) 2020/2156 — proceduri de calcul
- * - EPBD 2024/1275 Art. 13 — obligativitate SRI clădiri nerezidențiale >290 kW
+ * - EPBD 2024/1275 Art. 15 — obligativitate SRI clădiri nerezidențiale >290 kW HVAC (din 30.06.2027)
+ * - EPBD 2024/1275 Art. 15 alin. 7 — clădiri >70 kW HVAC (din 2029, act delegat Comisie)
  * - EN 15232-1:2017 — complementar BACS
  */
 
@@ -328,6 +329,78 @@ function generateRecommendation(total, domainScores) {
   if (total >= 40) return `Clădirea are automatizare medie (SRI ${Math.round(total)}%). Se recomandă investiții în: ${weakNames}.`;
   if (total >= 20) return `Clădirea are automatizare minimă (SRI ${Math.round(total)}%). Prioritizați modernizarea: ${weakNames}.`;
   return `Clădirea nu dispune de sisteme inteligente (SRI ${Math.round(total)}%). Evaluați un program complet de smart-readiness, începând cu: ${weakNames}.`;
+}
+
+// ── Verificare obligativitate SRI — EPBD 2024/1275 Art. 15 ─────────────────
+
+/**
+ * Verifică dacă SRI este obligatoriu pentru această clădire.
+ * EPBD 2024/1275 Art. 15:
+ *  - Din 30.06.2027: clădiri nerezidențiale cu HVAC >290 kW
+ *  - Din 2029: clădiri nerezidențiale cu HVAC >70 kW (act delegat Comisie)
+ *  - Opțional pentru rezidențiale
+ *
+ * @param {object} params
+ * @param {string} params.category — cod categorie clădire (RI/RC/BI etc.)
+ * @param {number} params.hvacPower — putere instalată HVAC totală [kW]
+ * @param {number} [params.year=2026] — anul evaluării
+ * @returns {{ mandatory, reason, deadline }}
+ */
+export function checkSRIMandatory({ category, hvacPower, year = 2026 }) {
+  const isRes = ["RI", "RC", "RA"].includes(category);
+  const kw = parseFloat(hvacPower) || 0;
+
+  if (isRes) {
+    return {
+      mandatory: false,
+      reason: "SRI este opțional pentru clădiri rezidențiale (EPBD 2024/1275 Art. 15)",
+      deadline: null,
+    };
+  }
+
+  if (kw > 290) {
+    return {
+      mandatory: year >= 2027,
+      reason: kw > 290
+        ? `Clădire nerezidențială cu HVAC ${Math.round(kw)} kW > 290 kW — SRI obligatoriu din 30.06.2027`
+        : null,
+      deadline: "30.06.2027",
+      epbd_ref: "EPBD 2024/1275 Art. 15 alin. 4",
+    };
+  }
+
+  if (kw > 70) {
+    return {
+      mandatory: year >= 2029,
+      reason: `Clădire nerezidențială cu HVAC ${Math.round(kw)} kW > 70 kW — SRI obligatoriu din 2029`,
+      deadline: "31.12.2029",
+      epbd_ref: "EPBD 2024/1275 Art. 15 alin. 7",
+    };
+  }
+
+  return {
+    mandatory: false,
+    reason: `HVAC ${Math.round(kw)} kW ≤ 70 kW — SRI opțional`,
+    deadline: null,
+  };
+}
+
+// ── BACS minim obligatoriu — EPBD 2024/1275 Art. 14 ───────────────────────
+
+/**
+ * Verifică dacă BACS este obligatoriu.
+ * EPBD 2024/1275 Art. 14:
+ *  - Până 31.12.2024: clădiri nerezidențiale cu HVAC >290 kW → BACS minim clasa C
+ *  - Până 31.12.2029: clădiri nerezidențiale cu HVAC >70 kW → BACS minim clasa C
+ */
+export function checkBACSMandatory({ category, hvacPower }) {
+  const isRes = ["RI", "RC", "RA"].includes(category);
+  const kw = parseFloat(hvacPower) || 0;
+
+  if (isRes) return { mandatory: false, minClass: null, reason: "BACS nu e obligatoriu pentru rezidențiale" };
+  if (kw > 290) return { mandatory: true, minClass: "C", reason: `HVAC ${Math.round(kw)} kW > 290 kW — BACS clasa C minim (EPBD Art.14, termen 31.12.2024)`, deadline: "31.12.2024" };
+  if (kw > 70) return { mandatory: true, minClass: "C", reason: `HVAC ${Math.round(kw)} kW > 70 kW — BACS clasa C minim (EPBD Art.14, termen 31.12.2029)`, deadline: "31.12.2029" };
+  return { mandatory: false, minClass: null, reason: `HVAC ${Math.round(kw)} kW ≤ 70 kW — BACS opțional` };
 }
 
 // ── Export date implicite (toate pe nivel 0) ───────────────────────────────

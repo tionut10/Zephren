@@ -238,6 +238,124 @@ export function calcEVChargers(parkingSpots, buildingCategory, isNew, isMajorRen
 }
 
 // ═══════════════════════════════════════════════════════════════
+// OUG 59/2025 RED III — Verificare conformitate clădiri 2030
+// Transpunere Directiva (UE) 2018/2001 Art. 15a
+// ═══════════════════════════════════════════════════════════════
+
+// Praguri RED III Art. 15¹ (OUG 59/2025)
+export const RED_III_TARGETS = {
+  rer_buildings_2030: 49,        // % minim energie regenerabilă sector clădiri
+  waste_heat_max_share: 20,      // % max căldură/frig rezidual(ă) în pondere regenerabilă
+  min_community_members: 5,      // membrii minim comunitate de energie
+  innovative_tech_share: 5,      // % din noua capacitate instalată = tehnologie inovatoare
+  rer_eu_2030: 42.5,             // % obiectiv UE 2030
+  rer_eu_2030_effort: 45,        // % efort suplimentar colectiv
+};
+
+// Tipuri clădiri noi + renovare majoră — cerințe RED III
+export const RED_III_BUILDING_REQ = {
+  new_building: {
+    renewable_required: true,
+    description: "Clădire nouă — obligatoriu energie regenerabilă la fața locului sau din apropiere",
+    condition: "Fezabil economic, tehnic și funcțional (OUG 59/2025 Art. 15¹ alin. 6)",
+  },
+  major_renovation: {
+    renewable_required: true,
+    description: "Renovare majoră — obligatoriu energie regenerabilă la intervenție sisteme",
+    condition: "Fezabil economic, tehnic și funcțional (OUG 59/2025 Art. 15¹ alin. 6)",
+  },
+  public_building: {
+    renewable_required: true,
+    description: "Clădire publică — respectă Legea 121/2014 art. 6 + Legea 372/2005 art. 17",
+    condition: "Obligatoriu + achiziții publice cooperare comunități energie (alin. 10)",
+  },
+};
+
+// Măsuri promovate RED III Art. 15¹ alin. 4-5
+export const RED_III_PROMOTED_MEASURES = [
+  { id: "self_consumption",  label: "Autoconsumul energiei regenerabile",         applicable: true },
+  { id: "energy_community",  label: "Comunități de energie din surse regenerabile", applicable: true },
+  { id: "local_storage",     label: "Stocare locală energie",                     applicable: true },
+  { id: "smart_charging",    label: "Reîncărcare inteligentă vehicule electrice", applicable: true },
+  { id: "bidirectional",     label: "Reîncărcare bidirecțională (V2G/V2H)",      applicable: true },
+  { id: "flexibility",       label: "Servicii flexibilitate (consum dispecerizabil)", applicable: true },
+  { id: "chp_renovation",    label: "Cogenerare + renovări majore",               applicable: true },
+];
+
+/**
+ * Verificare conformitate RED III pentru o clădire
+ * OUG 59/2025 Art. 15¹ — sector clădiri
+ *
+ * @param {object} renewSummary — din useRenewableSummary
+ * @param {object} instSummary — din useInstallationSummary
+ * @param {object} building — date clădire (isNew, isPublic, etc.)
+ * @returns {{ rer_ok, waste_heat_ok, checks[], verdict }}
+ */
+export function checkREDIIICompliance(renewSummary, instSummary, building) {
+  if (!renewSummary || !instSummary) return null;
+
+  const rer = renewSummary.rer || 0;
+  const rerOnSite = renewSummary.rerOnSite || 0;
+  const Au = parseFloat(building?.areaUseful) || 0;
+
+  // Verificare RER 49% sector clădiri
+  const rer_target = RED_III_TARGETS.rer_buildings_2030;
+  const rer_ok = rer >= rer_target;
+
+  // Verificare limită 20% căldură reziduală
+  // (în Zephren cogenerarea este singura sursă de căldură reziduală)
+  const qCogen = (renewSummary.qCogen_th || 0) + (renewSummary.qCogen_el || 0);
+  const totalRen = renewSummary.totalRenewable || 1;
+  const wasteHeatPct = totalRen > 0 ? (qCogen / totalRen) * 100 : 0;
+  const waste_heat_ok = wasteHeatPct <= RED_III_TARGETS.waste_heat_max_share;
+
+  // Verificare surse regenerabile la fața locului (clădire nouă / renovare majoră)
+  const hasOnSiteRenewable = renewSummary.qSolarTh > 0 || renewSummary.qPV_kWh > 0 ||
+    renewSummary.qPC_ren > 0 || renewSummary.qBio_ren > 0 || renewSummary.qWind > 0;
+  const isNew = building?.isNew || false;
+  const isMajorRenov = building?.isMajorRenovation || false;
+  const isPublic = building?.isPublic || false;
+
+  const checks = [];
+  checks.push({
+    id: "rer_49", label: `RER ≥ ${rer_target}% (sector clădiri 2030)`,
+    value: Math.round(rer * 10) / 10, target: rer_target,
+    ok: rer_ok, severity: rer_ok ? "ok" : "warning",
+  });
+  checks.push({
+    id: "waste_heat_20", label: "Căldură reziduală ≤ 20% din pondere regenerabilă",
+    value: Math.round(wasteHeatPct * 10) / 10, target: RED_III_TARGETS.waste_heat_max_share,
+    ok: waste_heat_ok, severity: waste_heat_ok ? "ok" : "warning",
+  });
+  if (isNew || isMajorRenov) {
+    checks.push({
+      id: "onsite_renewable", label: "Energie regenerabilă la fața locului (clădire nouă/renovare majoră)",
+      value: hasOnSiteRenewable ? "DA" : "NU", target: "DA",
+      ok: hasOnSiteRenewable, severity: hasOnSiteRenewable ? "ok" : "error",
+    });
+  }
+  if (isPublic) {
+    checks.push({
+      id: "public_building", label: "Clădire publică — L.121/2014 art.6 + L.372/2005 art.17",
+      value: hasOnSiteRenewable ? "CONFORM" : "VERIFICĂ", target: "CONFORM",
+      ok: hasOnSiteRenewable, severity: hasOnSiteRenewable ? "ok" : "warning",
+    });
+  }
+
+  const allOk = checks.every(c => c.ok);
+  return {
+    checks,
+    rer_ok, waste_heat_ok, hasOnSiteRenewable,
+    allOk,
+    verdict: allOk
+      ? "CONFORM OUG 59/2025 RED III — cerințe sector clădiri îndeplinite"
+      : `ATENȚIE — ${checks.filter(c=>!c.ok).length} cerință(e) RED III neîndeplinite`,
+    color: allOk ? "#22c55e" : "#eab308",
+    method: "OUG 59/2025 (transpunere Directiva UE 2018/2001 RED III) Art. 15¹",
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SOLAR-READY — Verificare pre-instalare solară (EPBD Art.11)
 // ═══════════════════════════════════════════════════════════════
 export function checkSolarReady(building, renewables) {

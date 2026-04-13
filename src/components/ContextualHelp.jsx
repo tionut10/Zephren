@@ -26,7 +26,7 @@ const HELP_TEXTS = {
   // Calcul
   ep:            { text: "Energia primară [kWh/(m²·an)] — indicator principal pentru clasare. Include factori de conversie pentru fiecare sursă de energie (fP_gaz=1.1, fP_elec=2.62).", norm: "Mc 001-2022 Anexa A / SR EN ISO 52000-1:2017" },
   nZEB:          { text: "nZEB (nearly Zero Energy Building) — clădire cu consum aproape zero. Condiții: EP ≤ prag per categorie/zonă + RER ≥ 30% + RER_onsite ≥ 10%.", norm: "Mc 001-2022 Art.2.10 / Legea 238/2024" },
-  sri:           { text: "SRI (Smart Readiness Indicator) — gradul de pregătire a clădirii pentru sisteme inteligente. Scala 0-100%. EPBD Art.8 impune calculul pentru clădiri comerciale.", norm: "EPBD 2024/1275 Art.8 / Reg. delegat 2025/2287" },
+  sri:           { text: "SRI (Smart Readiness Indicator) — gradul de pregătire a clădirii pentru sisteme inteligente. Scala 0-100%. Obligatoriu pt. clădiri nerezidențiale >290 kW HVAC din 2027.", norm: "EPBD 2024/1275 Art.15 / Reg. delegat (UE) 2020/2155 + 2020/2156" },
 };
 
 export default function ContextualHelp({ fieldKey, className = "" }) {
