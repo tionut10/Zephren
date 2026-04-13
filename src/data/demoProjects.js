@@ -11,7 +11,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-1",
-    title: "CPE 4 · Apartament RA — Bloc PAFP București 1978, clasă D",
+    title: "Demo 1 · Apartament RA — Bloc PAFP București 1978, clasă D",
     shortDesc: "Apartament 65 m² în bloc prefabricat PAFP, fără izolație suplimentară",
     building: {
       address: "Bd. Timișoara nr. 52, bl. C3, sc. 1, et. 4, ap. 18",
@@ -183,7 +183,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-2",
-    title: "CPE 4 · Casă RI — nZEB Timișoara 2024, clasă A",
+    title: "Demo 2 · Casă RI — nZEB Timișoara 2024, clasă A",
     shortDesc: "Casă nZEB 160 m², pompă de căldură geotermală, PV 10 kWp",
     building: {
       address: "Str. Crizantemelor nr. 14",
@@ -394,7 +394,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-3",
-    title: "CPE 4 · Bloc RC — Reabilitat Iași 1975/2018, clasă C",
+    title: "Demo 3 · Bloc RC — Reabilitat Iași 1975/2018, clasă C",
     shortDesc: "Bloc P+7 cu 32 apartamente, reabilitat termic 2018, termoficare",
     building: {
       address: "Str. Palat nr. 18, bl. A4",
@@ -577,7 +577,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-4",
-    title: "CPE 4 · Birouri BI — Clasa A Brașov 2022, clasă A",
+    title: "Demo 4 · Birouri BI — Clasa A Brașov 2022, clasă A",
     shortDesc: "Clădire birouri 5400 m², fațadă cortină, VRF, BMS integrat",
     building: {
       address: "Str. Turnului nr. 5, Brașov Business Park",
@@ -779,7 +779,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-5",
-    title: "CPE 4 · Școală ED — Reabilitată Cluj 1972/2021, clasă B",
+    title: "Demo 5 · Școală ED — Reabilitată Cluj 1972/2021, clasă B",
     shortDesc: "Școală P+1+M 1850 m², reabilitare PNRR 2021, ventilație mecanică",
     building: {
       address: "Str. Memorandumului nr. 28",
@@ -962,7 +962,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-6",
-    title: "CPE 4 · Policlinică SA — Galați 1968, clasă D",
+    title: "Demo 6 · Policlinică SA — Galați 1968, clasă D",
     shortDesc: "Policlinică P+2 nereabilitată, 2100 m², termoficare, tâmplărie veche",
     building: {
       address: "Str. Brăilei nr. 63",
@@ -1142,7 +1142,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-7",
-    title: "CPE 4 · Supermarket CO — Ploiești 2012, clasă B",
+    title: "Demo 7 · Supermarket CO — Ploiești 2012, clasă B",
     shortDesc: "Supermarket 1800 m², panouri sandwich PIR, VRF, PV 90 kWp",
     building: {
       address: "Șos. Vestului nr. 12, Retail Park Ploiești",
@@ -1338,7 +1338,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-8",
-    title: "CPE 4 · Pensiune HC — Sinaia 2001/2022, clasă C",
+    title: "Demo 8 · Pensiune HC — Sinaia 2001/2022, clasă C",
     shortDesc: "Pensiune 10 camere 380 m², cazan peleți, panouri solare termice",
     building: {
       address: "Str. Furnica nr. 22",
@@ -1538,7 +1538,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-9",
-    title: "CPE 4 · Sală fitness FIT — Constanța 2019, clasă B",
+    title: "Demo 9 · Sală fitness FIT — Constanța 2019, clasă B",
     shortDesc: "Sală fitness 680 m², pompă de căldură aer-aer, PV 30 kWp",
     building: {
       address: "Bd. Mamaia nr. 245",
@@ -1738,7 +1738,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-10",
-    title: "CPE 4 · Cămin CP — Oradea 1962, clasă E",
+    title: "Demo 10 · Cămin CP — Oradea 1962, clasă E",
     shortDesc: "Cămin studențesc 200 locuri 4200 m², nereabilitat, termoficare",
     building: {
       address: "Str. Universității nr. 1, Campus Universitar",
@@ -1928,7 +1928,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-11",
-    title: "CPE 4 · Casă RI — Lemn tradițional Sibiu 1935, clasă E",
+    title: "Demo 11 · Casă RI — Lemn tradițional Sibiu 1935, clasă E",
     shortDesc: "Casă veche P+1 din bârne lemn 95 m², sobă teracotă, ferestre simplu vitraj",
     building: {
       address: "Str. Turnului nr. 27",
@@ -2107,7 +2107,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-12",
-    title: "CPE 4 · Bloc RC — GVP nereabilitat Craiova 1988, clasă D",
+    title: "Demo 12 · Bloc RC — GVP nereabilitat Craiova 1988, clasă D",
     shortDesc: "Bloc P+4 cu 20 apartamente, GVP 30 cm neizolat, termoficare veche",
     building: {
       address: "Str. Calea București nr. 115, bl. D8",
@@ -2289,7 +2289,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-13",
-    title: "CPE 4 · Birouri BI — Modern Bacău 2015, clasă B",
+    title: "Demo 13 · Birouri BI — Modern Bacău 2015, clasă B",
     shortDesc: "Clădire birouri P+2 1200 m², centrală condensare, ventilație HR 75%",
     building: {
       address: "Str. Energiei nr. 8",
@@ -2485,7 +2485,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-14",
-    title: "CPE 4 · Hotel HC — Reabilitat Constanța 2005/2023, clasă C",
+    title: "Demo 14 · Hotel HC — Reabilitat Constanța 2005/2023, clasă C",
     shortDesc: "Hotel P+6 120 camere 4800 m², reabilitat 2023, chiller + solar termic",
     building: {
       address: "Bd. Mamaia nr. 320",
@@ -2672,7 +2672,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-15",
-    title: "CPE 4 · Hală IN — Industrială Pitești 2018, clasă C",
+    title: "Demo 15 · Hală IN — Industrială Pitești 2018, clasă C",
     shortDesc: "Hală industrială P 3200 m², panouri sandwich PIR, infraroșu gaz, PV 120 kWp",
     building: {
       address: "Str. Industriilor nr. 42, zona Găvana",
@@ -2862,7 +2862,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-16",
-    title: "CPE 4 · Grădiniță GR — nZEB Târgu Mureș 2024, clasă A",
+    title: "Demo 16 · Grădiniță GR — nZEB Târgu Mureș 2024, clasă A",
     shortDesc: "Grădiniță nZEB P 450 m², pompă de căldură geotermală, PV 24 kWp",
     building: {
       address: "Str. Crizantemelor nr. 5",
@@ -3051,7 +3051,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-17",
-    title: "CPE 4 · Spital SPA_H — Reabilitat Suceava 1980/2020, clasă C",
+    title: "Demo 17 · Spital SPA_H — Reabilitat Suceava 1980/2020, clasă C",
     shortDesc: "Spital P+3 6800 m², reabilitat 2020, termoficare CHP, chiller, UTA ERV",
     building: {
       address: "Str. Universității nr. 18",
@@ -3239,7 +3239,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-18",
-    title: "CPE 4 · Primărie AD — Reabilitată Alba Iulia 1920/2019, clasă C",
+    title: "Demo 18 · Primărie AD — Reabilitată Alba Iulia 1920/2019, clasă C",
     shortDesc: "Primărie P+1 850 m², cărămidă plină 50 cm + vată 10 cm, cazan gazeificare lemn",
     building: {
       address: "Str. Cetății nr. 12",
@@ -3430,7 +3430,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-19",
-    title: "CPE 4 · Bloc RC — Premium nZEB Cluj 2025, clasă A",
+    title: "Demo 19 · Bloc RC — Premium nZEB Cluj 2025, clasă A",
     shortDesc: "Bloc premium P+8 48 apt. 4320 m², PC aer-apă, PV 40 kWp, triplu vitraj",
     building: {
       address: "Str. Observatorului nr. 88",
@@ -3641,7 +3641,7 @@ export const DEMO_PROJECTS = [
   // ─────────────────────────────────────────────────────────────────────────────
   {
     id: "demo-20",
-    title: "CPE 4 · Restaurant REST — Reabilitat Sighișoara 1890/2021, clasă C",
+    title: "Demo 20 · Restaurant REST — Reabilitat Sighișoara 1890/2021, clasă C",
     shortDesc: "Restaurant P+1 280 m², piatră + cărămidă 60 cm izolat interior, GPL condensare",
     building: {
       address: "Str. Cetății nr. 4",
