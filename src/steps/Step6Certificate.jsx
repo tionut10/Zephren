@@ -3,6 +3,16 @@ import { renderAsync } from "docx-preview";
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
 import { APP_VERSION } from "../data/landingData.js";
+import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
+import { getEnergyClass, getCO2Class } from "../calc/classification.js";
+import { getNzebEpMax } from "../calc/smart-rehab.js";
+import { calcOpaqueR } from "../calc/opaque.js";
+import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB } from "../data/u-reference.js";
+import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
+import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
+import { REHAB_COSTS } from "../data/rehab-costs.js";
+import { T } from "../data/translations.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -29,25 +39,10 @@ export default function Step6Certificate(props) {
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
     exportPDFNative, exportQuickSheet, fetchTemplate,
-    calcOpaqueR,
-    // Constants passed as props
-    Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClass, getCO2Class, getNzebEpMax,
-    ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-    NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-    CATEGORY_BASE_MAP,
-    BUILDING_CATEGORIES, ELEMENT_TYPES,
-    FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
-    VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
-    SOLAR_THERMAL_TYPES, PV_TYPES,
-    U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING,
-    CPE_TEMPLATES,
-    REHAB_COSTS,
-    getURefNZEB,
     bacsClass,
     buildingPhotos,
-    t,
   } = props;
+  const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
             // Preview DOCX local — render cu docx-preview (identic cu fișierul descărcat)
             const docxPreviewRef = useRef(null);

@@ -8,6 +8,17 @@ import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fu
 import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
 import { generateThermalMapSVG } from "../calc/thermal-map.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
+import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
+import { getEnergyClass, getCO2Class } from "../calc/classification.js";
+import { getNzebEpMax } from "../calc/smart-rehab.js";
+import { calcOpaqueR } from "../calc/opaque.js";
+import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG } from "../calc/epbd.js";
+import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_GLAZING, getURefNZEB } from "../data/u-reference.js";
+import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES } from "../data/building-catalog.js";
+import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL } from "../data/constants.js";
+import { REHAB_COSTS } from "../data/rehab-costs.js";
+import { T } from "../data/translations.js";
 
 /**
  * Step7Audit — Extracted from energy-calc.jsx lines 12320-13537
@@ -30,23 +41,9 @@ export default function Step7Audit(props) {
     buildingPhotos, setBuildingPhotos,
     activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
     generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
-    calcOpaqueR, calcSRI,
-    // Constants passed as props
-    Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClass, getCO2Class, getNzebEpMax,
-    ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-    NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-    CATEGORY_BASE_MAP,
-    BUILDING_CATEGORIES, ELEMENT_TYPES,
-    FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
-    VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
-    U_REF_GLAZING,
-    SRI_DOMAINS, RENOVATION_STAGES, IEQ_CATEGORIES,
-    CHP_TYPES, MCCL_CATALOG,
-    REHAB_COSTS,
-    getURefNZEB, setThermalBridges,
-    t,
+    setThermalBridges,
   } = props;
+  const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const V = parseFloat(building.volume) || 0;

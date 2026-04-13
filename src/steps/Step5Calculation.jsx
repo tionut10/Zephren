@@ -4,6 +4,15 @@ import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
+import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
+import { getEnergyClass, getCO2Class } from "../calc/classification.js";
+import { getNzebEpMax } from "../calc/smart-rehab.js";
+import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { ZEB_THRESHOLDS, ZEB_FACTOR, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "../data/u-reference.js";
+import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
+import { FUELS } from "../data/constants.js";
+import { BENCHMARKS } from "../data/benchmarks.js";
+import { T } from "../data/translations.js";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -26,17 +35,9 @@ export default function Step5Calculation(props) {
     showScenarioCompare, setShowScenarioCompare,
     rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
     setStep, goToStep, step,
-    // Constants passed as props
-    Card, Badge, ResultRow, Select, Input, cn,
-    getEnergyClass, getCO2Class, getNzebEpMax,
-    ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-    NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-    CATEGORY_BASE_MAP,
-    BACS_OBLIGATION_THRESHOLD_KW, BACS_CLASSES,
-    FUELS, BENCHMARKS,
     financialAnalysis,
-    t,
   } = props;
+  const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;

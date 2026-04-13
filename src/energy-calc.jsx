@@ -37,6 +37,7 @@ import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CA
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
 import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
 import { TIERS } from "./data/tiers.js";
+import { BENCHMARKS } from "./data/benchmarks.js";
 import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
 
 // ── Hooks (Sprint 4 refactoring) ──
@@ -52,15 +53,16 @@ import ThermalBridgeCatalog from "./components/ThermalBridgeCatalog.jsx";
 import OpaqueModal from "./components/OpaqueModal.jsx";
 import GlazingModal from "./components/GlazingModal.jsx";
 
-// ── Step imports ──
-import Step1Identification from "./steps/Step1Identification.jsx";
-import Step2Envelope from "./steps/Step2Envelope.jsx";
-import Step3Systems from "./steps/Step3Systems.jsx";
-import Step4Renewables from "./steps/Step4Renewables.jsx";
-import Step5Calculation from "./steps/Step5Calculation";
-import Step6Certificate from "./steps/Step6Certificate";
-const Step7Audit = lazy(() => import("./steps/Step7Audit"));
+// ── Step imports (all lazy-loaded for bundle splitting) ──
+const Step1Identification = lazy(() => import("./steps/Step1Identification.jsx"));
+const Step2Envelope = lazy(() => import("./steps/Step2Envelope.jsx"));
+const Step3Systems = lazy(() => import("./steps/Step3Systems.jsx"));
+const Step4Renewables = lazy(() => import("./steps/Step4Renewables.jsx"));
+const Step5Calculation = lazy(() => import("./steps/Step5Calculation.jsx"));
+const Step6Certificate = lazy(() => import("./steps/Step6Certificate.jsx"));
+const Step7Audit = lazy(() => import("./steps/Step7Audit.jsx"));
 const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
+import BridgeModal from "./components/BridgeModal.jsx";
 import TutorialWizard from "./components/TutorialWizard.jsx";
 import ClientInputForm from "./components/ClientInputForm.jsx";
 import AuditClientDataForm from "./components/AuditClientDataForm.jsx";
@@ -2899,20 +2901,7 @@ export default function EnergyCalcApp({ cloud }) {
     });
   }, [instSummary, building.areaUseful, building.category, acm, heating.eta_gen, selectedClimate]);
 
-  // NICE-TO-HAVE: BENCHMARK DATA
-  // ═══════════════════════════════════════════════════════════
-  const BENCHMARKS = {
-    RI:{label:"Casă individuală",avgEp:180,avgCO2:28,bestEp:65,worstEp:450,stock:"~2.8M",avgYear:1975,nzebPct:3},
-    RC:{label:"Bloc locuințe",avgEp:220,avgCO2:35,bestEp:55,worstEp:500,stock:"~50.000",avgYear:1978,nzebPct:1},
-    RA:{label:"Apartament",avgEp:200,avgCO2:32,bestEp:50,worstEp:480,stock:"~4M",avgYear:1980,nzebPct:2},
-    BI:{label:"Birouri",avgEp:250,avgCO2:30,bestEp:80,worstEp:550,stock:"~15.000",avgYear:1990,nzebPct:5},
-    ED:{label:"Educație",avgEp:200,avgCO2:25,bestEp:70,worstEp:400,stock:"~8.000",avgYear:1970,nzebPct:2},
-    SA:{label:"Sănătate",avgEp:300,avgCO2:40,bestEp:100,worstEp:600,stock:"~1.500",avgYear:1975,nzebPct:1},
-    HC:{label:"Hotel/Cazare",avgEp:270,avgCO2:35,bestEp:90,worstEp:550,stock:"~3.000",avgYear:1985,nzebPct:3},
-    CO:{label:"Comercial",avgEp:260,avgCO2:32,bestEp:85,worstEp:520,stock:"~12.000",avgYear:1995,nzebPct:4},
-    SP:{label:"Sport",avgEp:230,avgCO2:28,bestEp:75,worstEp:480,stock:"~2.000",avgYear:1980,nzebPct:2},
-    AL:{label:"Altele",avgEp:240,avgCO2:30,bestEp:80,worstEp:500,stock:"~5.000",avgYear:1985,nzebPct:3},
-  };
+  // BENCHMARKS → importat din data/benchmarks.js
 
   const avValidation = useMemo(() => {
     const Au = parseFloat(building.areaUseful)||0, V = parseFloat(building.volume)||0, Aenv = parseFloat(building.areaEnvelope)||0;
@@ -5026,63 +5015,7 @@ export default function EnergyCalcApp({ cloud }) {
       getEnergyClass, getNzebEpMax, calcOpaqueR, showToast]);
 
 
-  // ═══════════════════════════════════════════════════════════════
-  // THERMAL BRIDGE MODAL
-  // ═══════════════════════════════════════════════════════════════
-
-  function BridgeModal({ element, onSave, onClose }) {
-    const [el, setEl] = useState(element || { name:"", cat:"", psi:"", length:"", desc:"" });
-    const [bridgeSearch, setBridgeSearch] = useState("");
-    const [showList, setShowList] = useState(false);
-
-    const filtered = bridgeSearch.length > 1
-      ? THERMAL_BRIDGES_DB.filter(b => b.name.toLowerCase().includes(bridgeSearch.toLowerCase()) || b.cat.toLowerCase().includes(bridgeSearch.toLowerCase()))
-      : THERMAL_BRIDGES_DB;
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
-        <div className="bg-[#1a1a2e] border border-white/10 rounded-2xl w-full max-w-lg p-6" onClick={e=>e.stopPropagation()}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold">Punte termică</h3>
-            <button onClick={onClose} className="text-white/40 hover:text-white text-xl">✕</button>
-          </div>
-
-          <div className="mb-4" style={{position:"relative",zIndex:20}}>
-            <Input label={t("Caută tip punte termică",lang)} value={bridgeSearch} onChange={v => { setBridgeSearch(v); setShowList(true); }} placeholder="ex: balcon, fereastră, planșeu..." />
-            {showList && (
-              <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:"4px",background:"#1e1e38",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",maxHeight:"200px",overflowY:"auto",zIndex:30,boxShadow:"0 10px 40px rgba(0,0,0,0.8)"}}>
-                {filtered.map((b, i) => (
-                  <button key={i} onClick={() => { setEl({name:b.name, cat:b.cat, psi:b.psi.toString(), length:el.length, desc:b.desc}); setShowList(false); setBridgeSearch(b.name); }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-white/10 flex justify-between border-b border-white/5">
-                    <span><span className="opacity-40">{b.cat} ›</span> {b.name}</span>
-                    <span className="opacity-50">Ψ = {b.psi}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{position:"relative",zIndex:10}}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <Input label={t("Ψ (coeficient liniar)",lang)} value={el.psi} onChange={v => setEl(p=>({...p,psi:v}))} type="number" unit="W/(m·K)" step="0.01" />
-              <Input label={t("Lungime",lang)} value={el.length} onChange={v => setEl(p=>({...p,length:v}))} type="number" unit="m" min="0" step="0.1" />
-            </div>
-
-          {el.psi && el.length && (
-            <Card title={t("Pierdere liniară",lang)} className="mb-4">
-              <ResultRow label="Ψ × l" value={((parseFloat(el.psi)||0) * (parseFloat(el.length)||0)).toFixed(2)} unit="W/K" />
-            </Card>
-          )}
-
-          <div className="flex gap-3 justify-end">
-            <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-white/10 hover:bg-white/5">Anulează</button>
-            <button onClick={() => { onSave(el); onClose(); }} className="px-6 py-2 text-sm rounded-lg bg-amber-500 text-black font-medium hover:bg-amber-400">Salvează</button>
-          </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // BridgeModal → extras în components/BridgeModal.jsx
 
   // ═══════════════════════════════════════════════════════════════
   // UPGRADE MODAL & PRICING PAGE
@@ -5889,7 +5822,7 @@ export default function EnergyCalcApp({ cloud }) {
           <div key={step} style={{animation:"fadeSlideIn 0.3s ease-out"}} className={showClientForm ? "hidden" : ""}>
           <style>{`@keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }`}</style>
           {/* ═══ STEP 1: IDENTIFICARE ═══ */}
-          {step === 1 && <Step1Identification
+          {step === 1 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă...</div>}><Step1Identification
             building={building} updateBuilding={updateBuilding} lang={lang} selectedClimate={selectedClimate}
             BUILDING_CATEGORIES={BUILDING_CATEGORIES} STRUCTURE_TYPES={STRUCTURE_TYPES}
             autoDetectLocality={autoDetectLocality} estimateGeometry={estimateGeometry} avRatio={avRatio}
@@ -5902,11 +5835,11 @@ export default function EnergyCalcApp({ cloud }) {
             onOpenTutorial={() => setShowTutorial(true)}
             buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
             userPlan={userPlan}
-          />}
+          /></Suspense>}
 
 
           {/* ═══ STEP 2: ANVELOPĂ ═══ */}
-          {step === 2 && <Step2Envelope
+          {step === 2 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă anvelopa...</div>}><Step2Envelope
             building={building} lang={lang} selectedClimate={selectedClimate}
             opaqueElements={opaqueElements} setOpaqueElements={setOpaqueElements}
             glazingElements={glazingElements} setGlazingElements={setGlazingElements}
@@ -5926,11 +5859,11 @@ export default function EnergyCalcApp({ cloud }) {
             airInfiltrationCalc={airInfiltrationCalc} naturalLightingCalc={naturalLightingCalc}
             csvImportRef={csvImportRef} importCSV={importCSV}
             setStep={setStep} goToStep={goToStep}
-          />}
+          /></Suspense>}
 
 
           {/* ═══ STEP 3: INSTALAȚII ═══ */}
-          {step === 3 && <Step3Systems
+          {step === 3 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă instalațiile...</div>}><Step3Systems
             building={building} lang={lang} selectedClimate={selectedClimate}
             heating={heating} setHeating={setHeating}
             acm={acm} setAcm={setAcm}
@@ -5941,11 +5874,11 @@ export default function EnergyCalcApp({ cloud }) {
             instSummary={instSummary}
             setStep={setStep} goToStep={goToStep}
             showToast={showToast}
-          />}
+          /></Suspense>}
 
 
           {/* ═══ STEP 4: REGENERABILE ═══ */}
-          {step === 4 && <Step4Renewables
+          {step === 4 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă regenerabilele...</div>}><Step4Renewables
             building={building} lang={lang} selectedClimate={selectedClimate}
             solarThermal={solarThermal} setSolarThermal={setSolarThermal}
             photovoltaic={photovoltaic} setPhotovoltaic={setPhotovoltaic}
@@ -5957,11 +5890,11 @@ export default function EnergyCalcApp({ cloud }) {
             renewSummary={renewSummary} instSummary={instSummary}
             ORIENTATIONS={ORIENTATIONS} getNzebEpMax={getNzebEpMax}
             setStep={setStep} goToStep={goToStep}
-          />}
+          /></Suspense>}
 
 
           {/* ═══ STEP 5: CALCUL ENERGETIC & CLASARE ═══ */}
-          {step === 5 && <Step5Calculation {...{
+          {step === 5 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă calculul energetic...</div>}><Step5Calculation {...{
             monthlyISO, hourlyISO, instSummary, renewSummary, envelopeSummary,
             glaserResult, zebVerification, annualEnergyCost, monthlyBreakdown,
             summerComfortResults, sankeyData, building, selectedClimate, lang, theme,
@@ -5976,19 +5909,11 @@ export default function EnergyCalcApp({ cloud }) {
             showScenarioCompare, setShowScenarioCompare,
             rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
             setStep, goToStep, step,
-            Card, Badge, ResultRow, Select, Input, cn,
-            getEnergyClass, getCO2Class, getNzebEpMax,
-            ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-            NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-            CATEGORY_BASE_MAP,
-            BACS_OBLIGATION_THRESHOLD_KW, BACS_CLASSES,
-            FUELS, BENCHMARKS,
             financialAnalysis,
-            t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
-          }} />}
+          }} /></Suspense>}
 
           {/* ═══ STEP 6: CERTIFICAT ENERGETIC ═══ */}
-          {step === 6 && <Step6Certificate {...{
+          {step === 6 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă certificatul...</div>}><Step6Certificate {...{
             monthlyISO, instSummary, renewSummary, envelopeSummary,
             building, selectedClimate, lang, theme,
             heating, cooling, ventilation, lighting, acm,
@@ -6007,24 +5932,9 @@ export default function EnergyCalcApp({ cloud }) {
             presentationMode, setPresentationMode,
             financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
             exportPDFNative, exportQuickSheet, fetchTemplate,
-            calcOpaqueR,
-            Card, Badge, ResultRow, Select, Input, cn,
-            getEnergyClass, getCO2Class, getNzebEpMax,
-            ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-            NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-            CATEGORY_BASE_MAP,
-            BUILDING_CATEGORIES, ELEMENT_TYPES,
-            FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
-            VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
-            SOLAR_THERMAL_TYPES, PV_TYPES,
-            U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING,
-            CPE_TEMPLATES,
-            REHAB_COSTS,
-            getURefNZEB,
             bacsClass,
             buildingPhotos,
-            t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
-          }} />}
+          }} /></Suspense>}
 
           {/* ═══ STEP 7: AUDIT — RECOMANDĂRI DE REABILITARE ═══ */}
           {step === 7 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">{lang==="EN"?"Loading audit module...":"Se încarcă modulul audit..."}</div>}><Step7Audit {...{
@@ -6042,21 +5952,7 @@ export default function EnergyCalcApp({ cloud }) {
             buildingPhotos, setBuildingPhotos,
             activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
             generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
-            calcOpaqueR, calcSRI,
-            Card, Badge, ResultRow, Select, Input, cn,
-            getEnergyClass, getCO2Class, getNzebEpMax,
-            ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB,
-            NZEB_THRESHOLDS, ZEB_THRESHOLDS, ZEB_FACTOR,
-            CATEGORY_BASE_MAP,
-            BUILDING_CATEGORIES, ELEMENT_TYPES,
-            FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
-            VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL,
-            U_REF_GLAZING,
-            SRI_DOMAINS, RENOVATION_STAGES, IEQ_CATEGORIES,
-            CHP_TYPES, MCCL_CATALOG,
-            REHAB_COSTS,
-            getURefNZEB, setThermalBridges,
-            t: (key) => lang === "RO" ? key : (T[key]?.EN || key),
+            setThermalBridges,
           }} /></Suspense>}
 
           {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}
@@ -6136,6 +6032,7 @@ export default function EnergyCalcApp({ cloud }) {
       {showBridgeModal && (
         <BridgeModal
           element={editingBridge}
+          lang={lang}
           onSave={el => {
             if (editingBridge && editingBridge._idx !== undefined) {
               setThermalBridges(prev => prev.map((e, i) => i === editingBridge._idx ? el : e));
