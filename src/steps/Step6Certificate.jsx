@@ -1000,8 +1000,8 @@ export default function Step6Certificate(props) {
               const co2RefClass = getCO2Class(co2RefFinal, baseCatResolved);
               const scaleLabels = CLASS_LABELS;
               const co2Thresholds = (CO2_CLASSES_DB[baseCatResolved] || CO2_CLASSES_DB[building.category] || CO2_CLASSES_DB.AL).thresholds;
-              // Culoare text contrastantă (WCAG) pentru fundal hex
-              const txtClr = (hex) => { const h = hex.replace('#',''); const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255; return (0.2126*r+0.7152*g+0.0722*b)>0.45?'#000':'#fff'; };
+              // Culori text fixe per clasă (conform specificației MDLPA): A+=alb, A=alb, B-F=negru, G=alb
+              const SCALE_TEXT_COLORS = ["#fff","#fff","#000","#000","#000","#000","#000","#fff"];
 
               // Systems
               const heatSrc = HEAT_SOURCES.find(s => s.id === heating.source);
@@ -1227,13 +1227,13 @@ ${scaleLabels.map((cls, idx) => {
   const cw = Math.max(2, 5 - Math.floor(idx*0.5));
   const crw = 7 - cw;
   return '<tr class="br">' +
-    '<td colspan="' + bw + '" class="bl' + (isEp?' ba':'') + '" style="background:' + bg + ';color:' + txtClr(bg) + '">' + cls + (isEp?'<span class="bm">\u25C0</span>':'') + '</td>' +
+    '<td colspan="' + bw + '" class="bl' + (isEp?' ba':'') + '" style="background:' + bg + ';color:' + SCALE_TEXT_COLORS[idx] + '">' + cls + (isEp?'<span class="bm">\u25C0</span>':'') + '</td>' +
     '<td colspan="' + rw + '" class="brng" style="border-left:none">' + rangeStr +
       (isEp?' <strong style="color:' + bg + '">\u25C0 ' + T.thisBuilding + ' ' + epFinal.toFixed(1) + ' kWh/m\u00b2,an</strong>':'') +
       (isEpRef && !isEp?' <span style="color:' + bg + '">&#9668; ' + T.refBuilding + ' ' + epRefMax.toFixed(1) + ' kWh/m\u00b2,an</span>':'') +
       (isEpRef && isEp?' <span style="color:' + bg + '"> | &#9668; ' + T.refBuilding + ' ' + epRefMax.toFixed(1) + '</span>':'') +
     '</td>' +
-    '<td colspan="' + cw + '" class="bl' + (isCO2?' ba':'') + '" style="background:' + co2bg + ';color:' + txtClr(co2bg) + '">' + cls + (isCO2?'<span class="bm">\u25C0</span>':'') + '</td>' +
+    '<td colspan="' + cw + '" class="bl' + (isCO2?' ba':'') + '" style="background:' + co2bg + ';color:' + SCALE_TEXT_COLORS[idx] + '">' + cls + (isCO2?'<span class="bm">\u25C0</span>':'') + '</td>' +
     '<td colspan="' + crw + '" class="brng" style="border-left:none">' + co2Str +
       (isCO2?' <strong style="color:' + co2bg + '">\u25C0 ' + T.thisBuilding + ' ' + co2Final.toFixed(1) + ' kgCO\u2082/m\u00b2</strong>':'') +
       (isCO2Ref && !isCO2?' <span style="color:' + co2bg + '">&#9668; ' + T.refBuilding + ' ' + co2RefFinal.toFixed(1) + '</span>':'') +
@@ -1283,7 +1283,7 @@ ${scaleLabels.map((cls, idx) => {
   <td colspan="16" class="S3" style="background:#E7E6E6">Clas\u0103 energetic\u0103 / Consum specific anual de energie primar\u0103 per utilitate [kWh/m\u00b2,an]</td>
 </tr>
 <tr>
-  ${scaleLabels.map((lbl, i) => '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + txtClr(scaleColors[i]) + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + lbl + '</td>').join("")}
+  ${scaleLabels.map((lbl, i) => '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + SCALE_TEXT_COLORS[i] + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + lbl + '</td>').join("")}
 </tr>
 ${[
   { label: T.heating, sys: heatDesc, ep: ep_h_m2, cls: utilClassH },
@@ -1298,7 +1298,7 @@ ${[
     '<td colspan="3" class="L" style="font-size:6.5pt;padding:2px 3px">' + u.sys + '</td>' +
     scaleLabels.map((lbl, i) => {
       if (i === clsIdx) {
-        return '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + txtClr(scaleColors[i]) + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + u.ep.toFixed(1) + '</td>';
+        return '<td colspan="2" style="background:' + scaleColors[i] + ';color:' + SCALE_TEXT_COLORS[i] + ';text-align:center;font-size:7pt;font-weight:bold;padding:2px">' + u.ep.toFixed(1) + '</td>';
       } else {
         return '<td colspan="2" style="border:1px solid #ddd;padding:2px"></td>';
       }

@@ -1096,6 +1096,19 @@ def _highlight_utility_class_cells(doc, data):
     if not target:
         return
 
+    def _clear_placeholder_cell(cell):
+        """Șterge colorarea și textul placeholder dintr-o celulă din template."""
+        tc = cell._tc
+        tcPr = tc.find(qn("w:tcPr"))
+        if tcPr is not None:
+            shd = tcPr.find(qn("w:shd"))
+            if shd is not None:
+                tcPr.remove(shd)
+        for p in list(tc.findall(qn("w:p"))):
+            tc.remove(p)
+        p_empty = _OxmlElement("w:p")
+        tc.append(p_empty)
+
     for row in target.rows:
         cells = row.cells
         if len(cells) < 3:
@@ -1110,10 +1123,6 @@ def _highlight_utility_class_cells(doc, data):
         if ep_key is None:
             continue
 
-        ep_val = ep_vals.get(ep_key, 0.0)
-        if ep_val <= 0:
-            continue
-
         # Deduplifică celulele fuzionate (python-docx returnează duplicate la merge)
         seen_ids = set()
         unique = []
@@ -1122,6 +1131,16 @@ def _highlight_utility_class_cells(doc, data):
             if cid not in seen_ids:
                 seen_ids.add(cid)
                 unique.append(c)
+
+        # Curăță celulele cu text placeholder din template (ex: "Consum vm", "Consum il")
+        for cell in unique[1:]:
+            ct = cell.text.strip()
+            if ct and not _parse_range(ct):
+                _clear_placeholder_cell(cell)
+
+        ep_val = ep_vals.get(ep_key, 0.0)
+        if ep_val <= 0:
+            continue
         # unique[0] = coloana etichetă; unique[1..8] = A+ → G
         # Prioritate: thresholds din date (corecte per categorie/nocool)
         # Fallback: parsare text template (compatibilitate)
