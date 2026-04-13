@@ -408,3 +408,57 @@ function getRecommendations({ pmv, ta, tr, va, rh, met, clo, ppd }) {
 
   return recs;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// METODA ADAPTIVĂ DE CONFORT — SR EN 16798-1:2019/NA:2019 Annex B2
+// Pentru clădiri fără răcire mecanică activă (free-running)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Temperatura de confort adaptivă conform EN 16798-1 Annex B2
+ * Se aplică doar clădirilor fără sistem de răcire activ (free-running).
+ *
+ * θ_comfort = 0.33 × θ_rm + 18.8
+ *
+ * @param {number} theta_rm — temperatura medie rulantă exterioară [°C]
+ *   (media ponderată exponențial a temperaturilor zilnice din ultimele 7 zile)
+ *   Simplificat: media lunară a temperaturii exterioare
+ * @returns {{ theta_comfort, limits: { I, II, III } }}
+ */
+export function calcAdaptiveComfort(theta_rm) {
+  // Domeniu valid: 10°C ≤ θ_rm ≤ 33°C (EN 16798-1 Fig.B.2)
+  const rm = Math.max(10, Math.min(33, theta_rm));
+  const theta_comfort = 0.33 * rm + 18.8;
+
+  // Limite acceptabilitate per categorie [°C deasupra/dedesubt θ_comfort]
+  // EN 16798-1:2019 Tabel B.3
+  return {
+    theta_rm: rm,
+    theta_comfort: Math.round(theta_comfort * 10) / 10,
+    limits: {
+      I:   { upper: Math.round((theta_comfort + 2) * 10) / 10, lower: Math.round((theta_comfort - 3) * 10) / 10 },
+      II:  { upper: Math.round((theta_comfort + 3) * 10) / 10, lower: Math.round((theta_comfort - 4) * 10) / 10 },
+      III: { upper: Math.round((theta_comfort + 4) * 10) / 10, lower: Math.round((theta_comfort - 5) * 10) / 10 },
+    },
+    method: "SR EN 16798-1:2019/NA:2019 Annex B2 — metoda adaptivă",
+  };
+}
+
+/**
+ * Evaluare confort adaptiv pe o lună dată
+ * @param {number} theta_op — temperatura operativă interioară [°C]
+ * @param {number} theta_rm — temperatura medie rulantă exterioară [°C]
+ * @returns {{ ok, category, theta_comfort, theta_op, delta }}
+ */
+export function evalAdaptiveComfort(theta_op, theta_rm) {
+  const { theta_comfort, limits } = calcAdaptiveComfort(theta_rm);
+  const delta = Math.round((theta_op - theta_comfort) * 10) / 10;
+
+  let category = "IV";
+  let ok = false;
+  if (theta_op >= limits.I.lower && theta_op <= limits.I.upper) { category = "I"; ok = true; }
+  else if (theta_op >= limits.II.lower && theta_op <= limits.II.upper) { category = "II"; ok = true; }
+  else if (theta_op >= limits.III.lower && theta_op <= limits.III.upper) { category = "III"; ok = true; }
+
+  return { ok, category, theta_comfort, theta_op, delta, limits };
+}

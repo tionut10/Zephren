@@ -136,32 +136,55 @@ export function useInstallationSummary({
     const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
     const qf_total_m2 = Au > 0 ? qf_total / Au : 0;
 
-    // ── ENERGIE PRIMARĂ ──
+    // ── ENERGIE PRIMARĂ — descompunere fP_nren / fP_ren conform ISO 52000-1/NA:2023 ──
     // Pompe de căldură: energia ambientală (qH_nd - qf_h) cu fP_ambient
-    let ep_h;
+    let ep_h, ep_nren_h, ep_ren_h;
     if (isCOP) {
       const fP_elec = fuel?.fP_tot || FP_ELEC;
+      const fP_nren_elec = fuel?.fP_nren ?? 2.62;
+      const fP_ren_elec = fuel?.fP_ren ?? 0.0;
       const qAmbient_h = Math.max(0, qH_nd - qf_h);
       const fP_ambient = useNA2023 ? 1.0 : 0;
       ep_h = qf_h * fP_elec + qAmbient_h * fP_ambient;
+      ep_nren_h = qf_h * fP_nren_elec;
+      ep_ren_h = qf_h * fP_ren_elec + qAmbient_h * (useNA2023 ? 1.0 : 0);
     } else {
       ep_h = qf_h * (fuel?.fP_tot || 1.17);
+      ep_nren_h = qf_h * (fuel?.fP_nren ?? 1.10);
+      ep_ren_h = qf_h * (fuel?.fP_ren ?? 0.07);
     }
     const acmIsCOP = ACM_SOURCES.find(a => a.id === acm.source)?.isCOP || false;
-    let ep_w;
+    let ep_w, ep_nren_w, ep_ren_w;
     if (acmIsCOP) {
       const fP_elec = acmFuel?.fP_tot || FP_ELEC;
+      const fP_nren_elec = acmFuel?.fP_nren ?? 2.62;
+      const fP_ren_elec = acmFuel?.fP_ren ?? 0.0;
       const qAmbient_w = Math.max(0, qACM_nd - qf_w);
       const fP_ambient = useNA2023 ? 1.0 : 0;
       ep_w = qf_w * fP_elec + qAmbient_w * fP_ambient;
+      ep_nren_w = qf_w * fP_nren_elec;
+      ep_ren_w = qf_w * fP_ren_elec + qAmbient_w * (useNA2023 ? 1.0 : 0);
     } else {
       ep_w = qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
+      ep_nren_w = qf_w * (acmFuel?.fP_nren ?? fuel?.fP_nren ?? 1.10);
+      ep_ren_w = qf_w * (acmFuel?.fP_ren ?? fuel?.fP_ren ?? 0.07);
     }
     const ep_c = qf_c * (coolFuel?.fP_tot || FP_ELEC);
+    const ep_nren_c = qf_c * (coolFuel?.fP_nren ?? 2.62);
+    const ep_ren_c = qf_c * (coolFuel?.fP_ren ?? 0.0);
     const ep_v = qf_v * FP_ELEC;
+    const ep_nren_v = qf_v * 2.62;
+    const ep_ren_v = qf_v * 0.0;
     const ep_l = qf_l * FP_ELEC;
+    const ep_nren_l = qf_l * 2.62;
+    const ep_ren_l = qf_l * 0.0;
+
     const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l;
     const ep_total_m2 = Au > 0 ? ep_total / Au : 0;
+    const ep_nren_total = ep_nren_h + ep_nren_w + ep_nren_c + ep_nren_v + ep_nren_l;
+    const ep_ren_total = ep_ren_h + ep_ren_w + ep_ren_c + ep_ren_v + ep_ren_l;
+    const ep_nren_m2 = Au > 0 ? ep_nren_total / Au : 0;
+    const ep_ren_m2 = Au > 0 ? ep_ren_total / Au : 0;
 
     // ── CO2 ──
     const co2_h = qf_h * (fuel?.fCO2 || 0.20);
@@ -180,6 +203,8 @@ export function useInstallationSummary({
       leni, qf_l,
       qf_total, qf_total_m2,
       ep_h, ep_w, ep_c, ep_v, ep_l, ep_total, ep_total_m2,
+      ep_nren_h, ep_nren_w, ep_nren_c, ep_nren_v, ep_nren_l, ep_nren_total, ep_nren_m2,
+      ep_ren_h, ep_ren_w, ep_ren_c, ep_ren_v, ep_ren_l, ep_ren_total, ep_ren_m2,
       co2_h, co2_w, co2_c, co2_v, co2_l, co2_total, co2_total_m2,
       fuel, isCOP,
     };

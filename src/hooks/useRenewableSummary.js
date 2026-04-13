@@ -150,11 +150,18 @@ export function useRenewableSummary({
     const co2_adjusted = Math.max(0, instSummary.co2_total - co2_reduction);
     const co2_adjusted_m2 = Au > 0 ? co2_adjusted / Au : 0;
 
+    // ── CREDIT EXPORT — ISO 52000-1/NA:2023 §11.7 ──
+    // Energia exportată în rețea se creditează cu un factor kexp (0 ≤ kexp ≤ 1)
+    // România: net-metering → kexp = 1.0 (prosumatori Legea 238/2024)
+    const kexp = 1.0;
+    const selfConsumptionBase = 0.35; // 35% auto-consum fără baterie (tipic România)
+    const qPV_selfConsumed = qPV_kWh * selfConsumptionBase;
+    const qPV_exported = qPV_kWh * (1 - selfConsumptionBase);
+    const qPV_credit = qPV_selfConsumed + qPV_exported * kexp;
+
     // ── BATERIE (auto-consum PV) ──
-    // Sub Mc 001-2022 / ISO 52000-1 toată producția PV e creditată la valoare completă (net-metering),
-    // deci bateria nu modifică ep_adjusted. Calculăm metricile economice / autonomie.
     let qBattery_annual = 0;
-    let battSelfConsumptionPct = 35; // % auto-consum fără baterie (tipic România)
+    let battSelfConsumptionPct = Math.round(selfConsumptionBase * 100);
     if (battery?.enabled && photovoltaic.enabled) {
       const cap = parseFloat(battery.capacity) || 0;
       const dod = parseFloat(battery.dod) || 0.90;
@@ -164,7 +171,8 @@ export function useRenewableSummary({
     }
 
     return {
-      qSolarTh, qPV_kWh, qPC_ren, qBio_ren, qBio_total, qWind, qCogen_el, qCogen_th,
+      qSolarTh, qPV_kWh, qPV_credit, qPV_selfConsumed, qPV_exported, kexp,
+      qPC_ren, qBio_ren, qBio_total, qWind, qCogen_el, qCogen_th,
       totalRenewable, totalRenewable_m2, rer, rerOnSite, rerOnSiteOk, rerTotalOk,
       ep_reduction, ep_adjusted, ep_adjusted_m2,
       co2_reduction, co2_adjusted, co2_adjusted_m2,

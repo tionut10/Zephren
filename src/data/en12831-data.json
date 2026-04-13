@@ -14,5 +14,35 @@
   "SAFETY_FACTOR": {
     "rezidential": 1.1,
     "nerezidential": 1.05
+  },
+
+  "_comment_C91_2024": "Tabelele A17/A18 din SR EN 12831-1:2017/NA:2022, corectate prin C91:2024",
+
+  "GROUND_TEMP_CORR": {
+    "_comment": "Tabel A17 — Factori corectie temperatura sol per zona climatica (C91:2024)",
+    "fg1": 1.45,
+    "fg2": {
+      "I":   0.29,
+      "II":  0.32,
+      "III": 0.35,
+      "IV":  0.37,
+      "V":   0.40
+    }
+  },
+
+  "GROUND_WATER_FACTOR": {
+    "_comment": "Tabel A18 — Factor influenta apa freatica Gw (C91:2024)",
+    "0_1m":    1.15,
+    "1_3m":    1.10,
+    "over_3m": 1.00
+  },
+
+  "THETA_ME_ANNUAL": {
+    "_comment": "Temperatura medie anuala exterioara per zona climatica [°C] — NA:2022 Tab.A17",
+    "I":   11.5,
+    "II":  10.5,
+    "III":  9.5,
+    "IV":   8.0,
+    "V":    5.5
   }
 }

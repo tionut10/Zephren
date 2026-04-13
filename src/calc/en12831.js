@@ -7,6 +7,9 @@ import _en12831Data from "../data/en12831-data.json";
 
 export const THETA_INT_DESIGN = _en12831Data.THETA_INT_DESIGN;
 export const SAFETY_FACTOR = _en12831Data.SAFETY_FACTOR;
+export const GROUND_TEMP_CORR = _en12831Data.GROUND_TEMP_CORR;
+export const GROUND_WATER_FACTOR = _en12831Data.GROUND_WATER_FACTOR;
+export const THETA_ME_ANNUAL = _en12831Data.THETA_ME_ANNUAL;
 
 // Corecție altitudine — presiune atmosferică mai mică → densitate aer mai mică
 function altitudeCorrection(alt) {
@@ -43,8 +46,17 @@ export function calcPeakThermalLoad(params) {
   const altCorr = altitudeCorrection(alt);
   const isRes = ["RI","RC","RA"].includes(category || "RI");
 
+  // ─── C91:2024 — factori corectie sol ───
+  const climateZone = climate.zone || "III";
+  const fg1 = GROUND_TEMP_CORR.fg1;
+  const fg2 = GROUND_TEMP_CORR.fg2[climateZone] || 0.35;
+  const thetaMeAnnual = THETA_ME_ANNUAL[climateZone] || 9.5;
+  const gwDepth = params.groundWaterDepth || "over_3m";
+  const Gw = GROUND_WATER_FACTOR[gwDepth] || 1.0;
+
   // ─── 1. Pierderi prin transmisie H_T [W/K] ───
   let H_T = 0;
+  let H_T_ground = 0;
   const elementLoads = [];
 
   (opaqueElements || []).forEach(el => {
@@ -57,9 +69,17 @@ export function calcPeakThermalLoad(params) {
       U = 1 / Math.max(R, 0.05);
     }
     const tau = el.tau !== undefined ? el.tau : 1.0;
-    const load = area * U * tau; // W/K
-    H_T += load;
-    elementLoads.push({ name: el.name || el.type, area, U: Math.round(U*100)/100, tau, load_WK: Math.round(load*10)/10 });
+    // SR EN 12831-1 §6.6.2 + NA:2022/C91:2024 Tab.A17/A18: planșeu pe sol
+    if (el.type === "PL" || el.type === "PB") {
+      // Φ_ground = fg1 × fg2 × (A × U × Gw) × (θ_int - θ_me,an)
+      const load_ground = fg1 * fg2 * area * U * Gw;
+      H_T_ground += load_ground;
+      elementLoads.push({ name: el.name || el.type, area, U: Math.round(U*100)/100, tau, load_WK: Math.round(load_ground*10)/10, ground: true, fg1, fg2, Gw });
+    } else {
+      const load = area * U * tau; // W/K
+      H_T += load;
+      elementLoads.push({ name: el.name || el.type, area, U: Math.round(U*100)/100, tau, load_WK: Math.round(load*10)/10 });
+    }
   });
 
   (glazingElements || []).forEach(gl => {
@@ -89,8 +109,13 @@ export function calcPeakThermalLoad(params) {
   const H_V = H_V_raw * (1 - (hrEta || 0)); // cu recuperare căldură
 
   // ─── 3. Sarcină termică de vârf Φ_H_design [W] ───
-  const H_total = H_T + H_V; // W/K
-  const phi_H_design_raw = H_total * deltaT; // W — la temperatura de calcul
+  // Pierderi elemente normale: H_T × (θ_int - θ_ext)
+  // Pierderi sol C91:2024: H_T_ground × (θ_int - θ_me,annual) — deltaT diferit
+  const deltaTground = tInt - thetaMeAnnual;
+  const phi_T_normal = H_T * deltaT;
+  const phi_T_ground = H_T_ground * deltaTground;
+  const H_total = H_T + H_T_ground + H_V; // W/K (pentru afișare)
+  const phi_H_design_raw = phi_T_normal + phi_T_ground + H_V * deltaT; // W
 
   // Factor de siguranță
   const sf = isRes ? SAFETY_FACTOR.rezidential : SAFETY_FACTOR.nerezidential;
@@ -124,7 +149,9 @@ export function calcPeakThermalLoad(params) {
     safetyFactor: sf,
     systemRecommendation: systemRec,
     elementLoads,
-    method: "SR EN 12831-1:2017 (metodă simplificată)",
+    H_T_ground: Math.round(H_T_ground * 10) / 10,
+    fg1, fg2, Gw, thetaMeAnnual,
+    method: "SR EN 12831-1:2017/NA:2022 + C91:2024 (metodă simplificată)",
   };
 }
 

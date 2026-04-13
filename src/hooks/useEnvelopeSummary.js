@@ -3,6 +3,7 @@ import { VENTILATION_TYPES } from "../data/constants.js";
 import { ELEMENT_TYPES } from "../data/building-catalog.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcMonthlyISO13790, THERMAL_MASS_CLASS, WIND_SHIELD_FACTOR } from "../calc/iso13790.js";
+import { calcHourlyISO52016 } from "../calc/hourly.js";
 
 /**
  * useEnvelopeSummary — calcul anvelopă termică + bilanțuri lunare/orare
@@ -110,7 +111,11 @@ export function useEnvelopeSummary({
     const totalLossWithVent = totalHeatLoss + ventLoss;
     const G = volume > 0 ? totalLossWithVent / volume : 0;
 
-    return { totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta };
+    // ─── ISO 52018-1 — H'tr,adj per suprafață anvelopă [W/(m²·K)] ───
+    const A_envelope = totalArea > 0 ? totalArea : 1;
+    const H_tr_adj_per_A = totalHeatLoss / A_envelope;
+
+    return { totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A };
   }, [
     opaqueElements, glazingElements, thermalBridges,
     building.volume, building.perimeter, building.n50, building.windExposure,
@@ -142,13 +147,37 @@ export function useEnvelopeSummary({
     building, heating.theta_int, glazingElements, ventilation,
   ]);
 
-  // ─── ISO 52016-1 Hourly calculation ───
-  // Dezactivat: calcul 8760h nefolosit în UI curent (Step5 nu afișează hourlyISO).
-  // Step8Advanced are propriul calcul orar (calcHourlyThermalLoad).
-  // Reactivează dacă se adaugă grafic orar în Step5, fixând și:
-  //   C_m = Au * (THERMAL_MASS_CLASS[building.structure] || 165000)
-  //   e_shield = WIND_SHIELD_FACTOR[building.windExposure] || 0.07
-  const hourlyISO = null;
+  // ─── ISO 52016-1:2017/NA:2023 — Calcul orar 5R1C ───
+  const hourlyISO = useMemo(() => {
+    if (!envelopeSummary || !selectedClimate) return null;
+    const Au = parseFloat(building.areaUseful) || 0;
+    const V = parseFloat(building.volume) || 0;
+    if (!Au || !V) return null;
+
+    // Date climatice orare — necesare T_ext[8760]
+    const T_ext = selectedClimate.hourlyTemp || null;
+    if (!T_ext || T_ext.length !== 8760) return null; // date orare indisponibile
+
+    const C_m = Au * (THERMAL_MASS_CLASS[building.structure] || 165000);
+    const vt = VENTILATION_TYPES.find(t => t.id === ventilation.type);
+    const hr = vt?.hasHR
+      ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : vt.hrEta || 0)
+      : 0;
+    const H_ve_raw = 0.34 * Math.max(0.5, (parseFloat(building.n50) || 4) *
+      (WIND_SHIELD_FACTOR[building.windExposure] || 0.07)) * V;
+    const H_ve = H_ve_raw * (1 - hr);
+
+    return calcHourlyISO52016({
+      T_ext,
+      Au,
+      H_tr: envelopeSummary.totalHeatLoss,
+      H_ve,
+      C_m,
+      theta_int_set_h: parseFloat(heating.theta_int) || 20,
+      theta_int_set_c: 26,
+      Am: Au * 2.5,
+    });
+  }, [envelopeSummary, selectedClimate, building, heating.theta_int, ventilation]);
 
   return { envelopeSummary, monthlyISO, hourlyISO };
 }

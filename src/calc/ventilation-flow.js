@@ -127,6 +127,87 @@ export function calcVentilationFlow(params) {
              `Debit insuficient — CO₂ estimat ${Math.round(co2_steady)} ppm (limită: ${co2Limit} ppm)`,
     recommendation: n_air < 0.5 ? "Creșteți debitul de ventilare sau treceți la sistem mecanic controlat." :
                     !co2Conform ? "Creșteți debitele sau instalați controlul ventilării pe CO₂." : null,
-    method: "SR EN 16798-1:2019 — metoda combinată (persoană + suprafață)",
+    method: "SR EN 16798-1:2019/NA:2019 — metoda combinată (persoană + suprafață)",
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TVOC — Compuși Organici Volatili Totali (SR EN 16798-1 Annex B3)
+// ═══════════════════════════════════════════════════════════════
+
+// Limite TVOC per categorie IEQ [µg/m³] — EN 16798-1 Tabel B.7
+const TVOC_LIMITS = {
+  I:    200,  // Calitate superioară — sensibili, spitale, grădinițe
+  II:   300,  // Calitate normală — birouri, școli, rezidențial nou
+  III:  500,  // Calitate moderată — rezidențial existent, renovări
+  IV:  1000,  // Calitate minimă — depozite, garaje ventilate
+};
+
+// Rate de emisie TVOC tipice per sursă [µg/(m²·h)] — EN 16798-1 Tabel B.8 + BREEAM
+const TVOC_EMISSION_RATES = {
+  "mobilier_nou":       200,   // mobilier nou, PAL, MDF
+  "pardoseala_PVC":     150,   // pardoseli PVC, linoleum
+  "pardoseala_lemn":     30,   // parchet lăcuit
+  "vopsea_proaspata":   500,   // primele 28 zile
+  "vopsea_veche":        20,   // după 6 luni
+  "izolatie_EPS":        10,   // polistiren expandat
+  "covor_sintetic":     120,   // covoare sintetice noi
+  "beton_simplu":         5,   // materiale minerale
+};
+
+/**
+ * Estimare concentrație TVOC și conformitate
+ * SR EN 16798-1:2019/NA:2019 Annex B3
+ *
+ * C_TVOC = (Σ emisii × Au) / (q_ventilare × 3600) + C_exterior
+ *
+ * @param {object} params
+ * @param {number} params.Au — suprafață utilă [m²]
+ * @param {number} params.q_vent_m3h — debit ventilare [m³/h]
+ * @param {string[]} params.sources — surse prezente (chei din TVOC_EMISSION_RATES)
+ * @param {string} params.ieqCategory — categorie IEQ țintă (I/II/III/IV)
+ * @param {number} [params.tvocExterior=50] — TVOC exterior [µg/m³]
+ * @returns {{ tvoc_estimated, tvoc_limit, conform, category, sources_detail }}
+ */
+export function calcTVOC({ Au, q_vent_m3h, sources, ieqCategory = "II", tvocExterior = 50 }) {
+  if (!Au || !q_vent_m3h) return null;
+
+  // Suma emisiilor interne
+  let totalEmission = 0; // µg/h
+  const sourcesDetail = [];
+
+  (sources || ["vopsea_veche", "pardoseala_lemn"]).forEach(src => {
+    const rate = TVOC_EMISSION_RATES[src] || 0;
+    const emission = rate * Au;
+    totalEmission += emission;
+    sourcesDetail.push({ source: src, rate, emission_ugh: Math.round(emission) });
+  });
+
+  // Concentrație la echilibru: C = E / Q + C_ext
+  const q_m3s = q_vent_m3h / 3600;
+  const tvoc_estimated = q_m3s > 0
+    ? Math.round(totalEmission / (q_m3s * 1e6) + tvocExterior)
+    : 9999;
+  const tvoc_limit = TVOC_LIMITS[ieqCategory] || 300;
+  const conform = tvoc_estimated <= tvoc_limit;
+
+  // Debit minim necesar pentru conformitate TVOC
+  const q_min_tvoc_m3h = totalEmission > 0
+    ? Math.round(totalEmission / ((tvoc_limit - tvocExterior) * 1e6 / 3600) * 10) / 10
+    : 0;
+
+  return {
+    tvoc_estimated,
+    tvoc_limit,
+    conform,
+    category: ieqCategory,
+    q_min_tvoc_m3h,
+    sources_detail: sourcesDetail,
+    verdict: conform
+      ? `TVOC ≤ ${tvoc_limit} µg/m³ — conform Cat. ${ieqCategory}`
+      : `TVOC ${tvoc_estimated} µg/m³ > ${tvoc_limit} µg/m³ — creșteți ventilarea sau reduceți sursele`,
+    method: "SR EN 16798-1:2019/NA:2019 Annex B3",
+  };
+}
+
+export { TVOC_LIMITS, TVOC_EMISSION_RATES };
