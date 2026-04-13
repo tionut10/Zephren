@@ -1390,6 +1390,22 @@ def _highlight_utility_class_cells(doc, data):
             _apply_shading(unique[col_idx], fill)
             _set_cell_text(unique[col_idx], _format_ro(ep_val), fill, force_black=True)
 
+    # ── Forțăm text negru pe TOATE celulele din tabelul de utilități ──
+    # Template-ul generic are culoare roșie (FF0000) hardcodată pe placeholder-uri
+    for row in target.rows:
+        for cell in row.cells:
+            tc = cell._tc
+            for r_el in tc.iter(qn("w:r")):
+                rPr = r_el.find(qn("w:rPr"))
+                if rPr is not None:
+                    color_el = rPr.find(qn("w:color"))
+                    if color_el is not None:
+                        color_el.set(qn("w:val"), "000000")
+                    else:
+                        c_new = _OxmlElement("w:color")
+                        c_new.set(qn("w:val"), "000000")
+                        rPr.append(c_new)
+
 
 # ═══════════════════════════════════════════════════════
 # MAIN HANDLER
