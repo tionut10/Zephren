@@ -1512,7 +1512,7 @@ ${(() => {
 
 <!-- Note legislative -->
 <div style="font-size:6pt;color:#666;margin-top:4px;line-height:1.4;padding:3px;border:1px solid #ddd;background:#fafafa">
-  <strong>Cadru legislativ:</strong> L.372/2005 (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023), C107/0-7, NP048, SR EN ISO 52000-1:2017/NA:2023, SR EN ISO 13790, Dir. UE 2024/1275 (EPBD IV).<br>
+  <strong>Cadru legislativ:</strong> L.372/2005 (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023), C107/0-7, NP048, SR EN ISO 52000-1:2017/NA:2023, SR EN ISO 52003-1:2017/NA:2023, SR EN ISO 52016-1:2017/NA:2023, SR EN ISO 13790, SR EN 12831-1:2017/NA:2022, SR EN 16798-1:2019/NA:2019, Dir. UE 2024/1275 (EPBD IV).<br>
   * Valori calculate. Certificatul este valabil 10 ani. Nu garanteaz\u0103 consumul real.
 </div>
 
@@ -1955,7 +1955,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 <h2>7. Cadru legislativ aplicabil</h2>
 <div class="note" style="line-height:1.6">
 <strong>Legislație națională:</strong> Legea 372/2005 privind performanța energetică a clădirilor (mod. Legea 238/2024 + OUG 59/2025 RED III); Mc 001-2022 (Ord. MDLPA 16/2023); C107/2005 + Ord. 2641/2017; I5-2022 (ventilare și climatizare); SR 4839:2014 (date climatice).<br>
-<strong>Legislație europeană:</strong> Directiva UE 2024/1275 (EPBD IV) — termen transpunere 29 mai 2026; Reg. Delegat UE 2025/2273 (republicare metodologie cost-optimă, referință 50 kWh/m²·an); SR EN ISO 52000-1:2017/NA:2023; SR EN ISO 52016-1:2017; SR EN ISO 13790; I5-2022 (ventilare).<br>
+<strong>Legislație europeană:</strong> Directiva UE 2024/1275 (EPBD IV) — termen transpunere 29 mai 2026; Reg. Delegat UE 2025/2273 (republicare metodologie cost-optimă, referință 50 kWh/m²·an); SR EN ISO 52000-1:2017/NA:2023; SR EN ISO 52003-1:2017/NA:2023; SR EN ISO 52010-1:2017/NA:2023; SR EN ISO 52016-1:2017/NA:2023; SR EN ISO 52018-1:2018/NA:2023; SR EN 12831-1:2017/NA:2022 (+C91:2024); SR EN 16798-1:2019/NA:2019; SR EN ISO 13790; I5-2022 (ventilare).<br>
 <strong>Praguri nZEB categoria ${building.category}:</strong> Ep < ${getNzebEpMax(building.category, selectedClimate?.zone)} kWh/m²·an, RER ≥ ${nzeb.rer_min}%, RER on-site ≥ ${NZEB_THRESHOLDS[building.category]?.rer_onsite_min || 10}%.<br>
 <strong>Notă:</strong> Acest raport este generat automat și are caracter orientativ. Nu înlocuiește raportul de audit energetic elaborat de un auditor atestat MDLPA.
 </div>

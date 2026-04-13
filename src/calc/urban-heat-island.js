@@ -4,7 +4,7 @@
  * - ASHRAE 55:2020 — Condiții de mediu termic pentru ocupanți
  * - ISO 15743:2008 — Ergonomia mediului termic
  * - SR EN ISO 15927-4:2005 — Date climatice orare (corecție locală)
- * - SR EN ISO 52010-1:2017 — Date climatice externe (conversie)
+ * - SR EN ISO 52010-1:2017/NA:2023 — Date climatice externe (conversie)
  * - Oke, T.R. (1982) — „The energetic basis of UHI" Q.J.R.Met.Soc.
  *
  * Principiu: în zonele urbane dense, temperatura exterioară este

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// DEBIT VENTILARE IGIENIC — SR EN 16798-1:2019 (înlocuiește EN 15251)
+// DEBIT VENTILARE IGIENIC — SR EN 16798-1:2019/NA:2019 (înlocuiește EN 15251)
 // Metode: per persoană, per suprafață, per zonă
 // Categorii calitate aer interior: I (superioară), II (normală), III (moderată), IV (minimă)
 // ═══════════════════════════════════════════════════════════════

@@ -4,7 +4,7 @@
  * Referințe normative:
  *   - ISO 7730:2005  Ergonomics of the thermal environment
  *   - ASHRAE 55-2020 Thermal Environmental Conditions for Human Occupancy
- *   - SR EN 16798-1:2019  Tabel B.2 — Categorii IEQ pentru clădiri fără sistem de răcire
+ *   - SR EN 16798-1:2019/NA:2019  Tabel B.2 — Categorii IEQ pentru clădiri fără sistem de răcire
  *
  * Exporturi: calcPMV, calcOperativeTemp, calcMRT, PMV_ACTIVITY, PMV_CLOTHING
  */

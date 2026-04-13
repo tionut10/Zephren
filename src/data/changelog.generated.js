@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔀",
+        "text": "20 exemple demo variate din demoProjects.js + loader generic"
+      },
+      {
+        "icon": "💰",
+        "text": "userPlan citit din cloud.user.plan în loc de hardcodat free"
+      },
+      {
+        "icon": "📥",
+        "text": "fix(audit-cleanup): eliminare imports neutilizate + diacritice landing"
+      },
+      {
         "icon": "📋",
         "text": "refactor(audit 4+5): eliminare props drilling + code split complet"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔬",
         "text": "fix(faza2): battery hook, useNA2023 fix, bacsClass sync, Step7→Step8 nav"
-      },
-      {
-        "icon": "📄",
-        "text": "fix(faza1): diacritice landing mobile + Step6 CPE + systems fields energy-calc"
-      },
-      {
-        "icon": "📋",
-        "text": "Audit normativ: rezolvare cele 4 probleme minore identificate"
-      },
-      {
-        "icon": "🔧",
-        "text": "Fix categorie aliniere + adresă duplicată + grad II spațiere"
       }
     ]
   },

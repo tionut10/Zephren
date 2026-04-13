@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// CALCUL SARCINĂ FRIGORIFICĂ ORARĂ — SR EN ISO 52016-1 simplificat
+// CALCUL SARCINĂ FRIGORIFICĂ ORARĂ — SR EN ISO 52016-1:2017/NA:2023 simplificat
 // Metodă hibridă: ISO 52016-1 §6.5 (transfer termic) +
 //                 CIBSE Guide A cap.5 (câștiguri solare pe orientări)
 // Orientări: N, NE, E, SE, S, SV, V, NV, Orizontal

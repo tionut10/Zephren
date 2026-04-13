@@ -1,10 +1,10 @@
 /**
  * VMC cu Recuperare de Căldură — calcul performanță și economii
  * Referințe:
- * - SR EN 16798-3:2017 — Ventilare clădiri nerezidențiale
+ * - SR EN 16798-1:2019/NA:2019 / SR EN 16798-3:2017 — Ventilare clădiri
  * - SR EN 13779:2007 — Ventilare clădiri nerezidențiale (SFP)
  * - I5-2022 — Normativ instalații de ventilare și climatizare
- * - SR EN ISO 52016-1:2017 — Calcul energie ventilare
+ * - SR EN ISO 52016-1:2017/NA:2023 — Calcul energie ventilare
  * - SR EN 308:1997 — Schimbătoare de căldură aer-aer (test η)
  */
 

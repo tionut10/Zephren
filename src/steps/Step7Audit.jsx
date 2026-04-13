@@ -745,7 +745,7 @@ export default function Step7Audit(props) {
                   <div className="text-xs font-medium opacity-50 mb-2">Nota privind auditul energetic</div>
                   <div className="text-[10px] opacity-35 space-y-1.5">
                     <div>Acest raport de audit este generat automat pe baza datelor introduse si serveste ca instrument orientativ de predimensionare. Nu inlocuieste auditul energetic detaliat realizat de un auditor energetic atestat MDLPA conform Legii 372/2005 modificata prin Legea 238/2024. Factori conversie conform SR EN ISO 52000-1:2017/NA:2023 (fP electricitate=2.62, fCO2 electricitate=0.107, fP energie ambientala=0).</div>
-                    <div>Recomandari bazate pe: Mc 001-2022 (Ordinul MDLPA 16/2023), C107/2005, SR EN ISO 13790, Directiva UE 2024/1275 (EPBD IV), Legea 238/2024, si valorile de referinta din normativele romanesti.</div>
+                    <div>Recomandari bazate pe: Mc 001-2022 (Ordinul MDLPA 16/2023), C107/2005, SR EN ISO 13790, SR EN ISO 52016-1:2017/NA:2023, SR EN 12831-1:2017/NA:2022 (+C91:2024), SR EN 16798-1:2019/NA:2019, Directiva UE 2024/1275 (EPBD IV), Legea 238/2024, si valorile de referinta din normativele romanesti.</div>
                     <div>Costurile orientative sunt estimate la nivelul anului 2025 si nu includ TVA, proiectare, avize sau alte costuri conexe.</div>
                     <div>Directiva UE 2024/1275 (EPBD IV, termen transpunere mai 2026) va introduce: clădiri cu emisii zero (ZEB) obligatoriu din 2028/2030, scală armonizată A-G (fără A+), pașaport renovare, jurnal digital al clădirii, și standarde minime de performanță energetică (MEPS).</div>
                   </div>
@@ -967,7 +967,7 @@ export default function Step7Audit(props) {
               </Card>
 
               {/* ── IEQ — Calitate aer interior ── */}
-              <Card title="IEQ — Calitate aer interior (EN 16798-1)" className="mb-4">
+              <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {IEQ_CATEGORIES.map(cat => (
                     <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
@@ -978,7 +978,7 @@ export default function Step7Audit(props) {
                     </div>
                   ))}
                 </div>
-                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform EN 16798-1</div>
+                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform SR EN 16798-1:2019/NA:2019</div>
               </Card>
 
               {/* ── CHP — Cogenerare ── */}

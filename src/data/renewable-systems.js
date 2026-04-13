@@ -1,7 +1,7 @@
 /**
  * renewable-systems.js — Sisteme regenerabile și surse de energie
  * Extrase din cercetare: ZEPHREN_RESEARCH_PARAMETRI_CONSTRUCTIVI.md
- * Standarde: EN 15316, EN 15232-1, EN 16798, EN 12464
+ * Standarde: EN 15316, EN 15232-1, SR EN 16798-1:2019/NA:2019, EN 12464
  * Data: 10 aprilie 2026
  */
 

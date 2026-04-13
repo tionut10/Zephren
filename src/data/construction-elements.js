@@ -2,7 +2,7 @@
  * construction-elements.js — Bază de date constructive și energetice
  * Extrage din cercetare aprofundată: ZEPHREN_RESEARCH_PARAMETRI_CONSTRUCTIVI.md
  * Conține elemente opace, vitrate, punți termice, și sisteme energetice
- * Standarde: EN 15316, EN 15232, EN 16798, EN 12464, ISO 6946, EN 13370
+ * Standarde: EN 15316, EN 15232, SR EN 16798-1:2019/NA:2019, EN 12464, ISO 6946, EN 13370, SR EN 12831-1:2017/NA:2022
  * Data: 10 aprilie 2026
  */
 

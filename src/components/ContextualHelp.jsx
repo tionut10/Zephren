@@ -11,15 +11,15 @@ const HELP_TEXTS = {
   volume:        { text: "Volumul interior net (Vi) al spațiului încălzit. Se calculează: lungime × lățime × înălțime medie per nivel.", norm: "Mc 001-2022 Art.3.1.3" },
   floors:        { text: "Numărul de niveluri supraterane (P+1, P+2E etc.). Influențează suprafața anvelopei și sarcina termică.", norm: "Mc 001-2022 Cap.4" },
   // Climă
-  climateZone:   { text: "Zona climatică determină temperatura de calcul exterior și gradul-zilele de încălzire (GZI). România: zona I (Dobrogea, litoralul) → zona V (munte).", norm: "SR EN ISO 52010-1 / C107-2002 Anexa A" },
+  climateZone:   { text: "Zona climatică determină temperatura de calcul exterior și gradul-zilele de încălzire (GZI). România: zona I (Dobrogea, litoralul) → zona V (munte).", norm: "SR EN ISO 52010-1:2017/NA:2023 / C107-2002 Anexa A" },
   // Anvelopă
   uValue:        { text: "Coeficientul de transfer termic U [W/(m²K)]. Cu cât valoarea e mai mică, cu atât elementul e mai izolat. NZEB impune U≤0.22 pentru pereți exteriori.", norm: "SR EN ISO 6946:2017 / Mc 001-2022 Tab.2.5" },
-  thermalMass:   { text: "Masa termică (MC) exprimă capacitatea clădirii de a stoca căldură. Clădirile grele (beton, cărămidă) au inerție termică mai bună → confort mai bun vara.", norm: "SR EN ISO 52016-1:2017 Tab.12" },
+  thermalMass:   { text: "Masa termică (MC) exprimă capacitatea clădirii de a stoca căldură. Clădirile grele (beton, cărămidă) au inerție termică mai bună → confort mai bun vara.", norm: "SR EN ISO 52016-1:2017/NA:2023 Tab.12" },
   psiValue:      { text: "Coeficientul linear de transfer termic Ψ [W/(mK)] al punților termice. Valori tipice: colț perete-planșeu 0.08, fereastră-zidărie 0.04.", norm: "SR EN ISO 14683:2017 Tab.A.1" },
   // Sisteme
   etaGen:        { text: "Randamentul generatorului de căldură (%) la putere nominală. Cazane condensare: 105-109%. Cazane clasice: 85-92%. Pompe căldură: COP 3-5.", norm: "Mc 001-2022 Tab.3.2 / EN 15316-4" },
   cop:           { text: "COP (Coefficient of Performance) — raportul căldură produsă / energie electrică consumată. SCOP (sezonier) este mai relevant pentru calcul anual.", norm: "EN 14825 / Mc 001-2022 Tab.3.8" },
-  hrEta:         { text: "Eficiența recuperatorului de căldură din VMC. EN 16798 impune η≥75% pentru clădiri NZEB. SFP (factor putere specifică) ≤ 0.45 W/(m³/h).", norm: "SR EN 16798-3:2017 / EN 13141-7" },
+  hrEta:         { text: "Eficiența recuperatorului de căldură din VMC. EN 16798 impune η≥75% pentru clădiri NZEB. SFP (factor putere specifică) ≤ 0.45 W/(m³/h).", norm: "SR EN 16798-1:2019/NA:2019 / SR EN 16798-3:2017 / EN 13141-7" },
   // Regenerabile
   pvPeak:        { text: "Puterea de vârf a instalației PV [kWp]. 1 kWp necesită ~6-8 m² suprafață (panouri standard 400W). Randament sistem tipic: 75-85%.", norm: "EN 15316-4-6 / PVGIS JRC EU" },
   solarArea:     { text: "Suprafața colectoarelor solare termice [m²]. Regula de baz: 1-1.5 m² per persoană pentru ACM. Factor de umbrire și orientare reduc producția.", norm: "SR EN 15316-4-3:2017 / GP 123-2004" },

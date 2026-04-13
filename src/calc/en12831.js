@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// SARCINĂ TERMICĂ DE VÂRF — SR EN 12831-1:2017 (metoda simplificată)
+// SARCINĂ TERMICĂ DE VÂRF — SR EN 12831-1:2017/NA:2022 + C91:2024 (metoda simplificată)
 // Utilizat pentru dimensionarea instalațiilor de încălzire/răcire
 // ═══════════════════════════════════════════════════════════════
 
@@ -136,7 +136,7 @@ export function calcPeakThermalLoad(params) {
 // ═══════════════════════════════════════════════════════════════
 
 // Iradianță solară de vârf pe orientare [W/m²] — luna iulie, 14:00, latitudine ~45°N
-// Sursa: SR EN ISO 52010-1 / PVGIS / CIBSE Guide A Tabel 2.31
+// Sursa: SR EN ISO 52010-1:2017/NA:2023 / PVGIS / CIBSE Guide A Tabel 2.31
 const SOLAR_PEAK_W_M2 = {
   N:  80,  NE: 150, E:  350, SE: 500,
   S:  550, SV: 650, V:  600, NV: 200,
@@ -184,12 +184,12 @@ export function calcPeakCoolingLoad(params) {
 
   // ── 1. Temperatura exterioară de calcul vara ──
   // Mc 001-2022: temperatura medie a celei mai calde luni + amplitudine diurnă / 2
-  // Amplitudine diurnă tipică România: 8-12°C (SR EN ISO 52010-1)
+  // Amplitudine diurnă tipică România: 8-12°C (SR EN ISO 52010-1:2017/NA:2023)
   const tempSummer = climate.temp_month || [];
   const tExtMean = Math.max.apply(null, tempSummer.slice(5, 8)); // media lunii celei mai calde
   const diurnalAmplitude = climate.diurnal_amplitude || 10; // °C, implicit 10K
   const tExtPeak = tExtMean + diurnalAmplitude / 2; // temperatura de calcul la ora de vârf
-  const tIntCool = 26; // setpoint răcire [°C] — SR EN 16798-1 Cat. II
+  const tIntCool = 26; // setpoint răcire [°C] — SR EN 16798-1:2019/NA:2019 Cat. II
   const deltaTc = tExtPeak - tIntCool;
 
   // ── 2. Câștiguri solare prin elemente vitrate [W] ──

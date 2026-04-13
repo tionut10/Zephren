@@ -1,9 +1,9 @@
 /**
  * Shading Dinamic de la Clădiri Vecine — factor de umbrire pe fațadă
  * Referințe:
- * - SR EN ISO 52010-1:2017 — Radiație solară pe suprafețe ale clădirilor
+ * - SR EN ISO 52010-1:2017/NA:2023 — Radiație solară pe suprafețe ale clădirilor
  * - SR EN ISO 13790:2009 — Performanță energetică, metoda de calcul
- * - SR EN ISO 52016-1:2017 — Necesarul de energie, bilanț termic
+ * - SR EN ISO 52016-1:2017/NA:2023 — Necesarul de energie, bilanț termic
  * - SR EN 13363-1:2003 — Dispozitive protecție solară
  *
  * Principiu: clădirile vecine generează umbră pe fațada analizată,

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// CONFORT TERMIC VARĂ — C107/7-2002, SR EN ISO 7730, SR EN 16798-1
+// CONFORT TERMIC VARĂ — C107/7-2002, SR EN ISO 7730, SR EN 16798-1:2019/NA:2019
 // ═══════════════════════════════════════════════════════════════
 
 export function calcSummerComfort(layers, climate, orientation) {

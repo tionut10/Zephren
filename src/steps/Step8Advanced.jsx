@@ -1273,7 +1273,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {/* ═══ VENTILARE ═══ */}
       {activeTab === "ventilare" && (
         <Card className="p-4">
-          <SectionHeader icon="💨" title="Debit ventilare igienic — SR EN 16798-1:2019"
+          <SectionHeader icon="💨" title="Debit ventilare igienic — SR EN 16798-1:2019/NA:2019"
             subtitle="Verificare calitate aer interior, calcul CO₂ estimat și conformitate debit" />
           <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -1730,7 +1730,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {activeTab === "confort_pmv" && (
         <Card className="p-4">
           <SectionHeader icon="🌡️" title="Confort termic — PMV/PPD (ISO 7730:2005)"
-            subtitle="ASHRAE 55:2020 + SR EN 16798-1:2019 — Predicted Mean Vote / Predicted Percentage of Dissatisfied" />
+            subtitle="ASHRAE 55:2020 + SR EN 16798-1:2019/NA:2019 — Predicted Mean Vote / Predicted Percentage of Dissatisfied" />
           <div className="grid grid-cols-1 gap-4 mb-4">
             {/* Clo */}
             <div>
@@ -3050,7 +3050,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {/* ═══ RĂCIRE ORARĂ ═══ */}
       {activeTab === "racire_orara" && (
         <Card className="p-4">
-          <SectionHeader icon="❄️" title="Sarcină frigorifică detaliată — ISO 52016-1"
+          <SectionHeader icon="❄️" title="Sarcină frigorifică detaliată — ISO 52016-1/NA:2023"
             subtitle="Distribuție orară și per orientare a câștigurilor solare + interne + transmisie" />
           {coolingHourly ? (
             <div className="space-y-4">

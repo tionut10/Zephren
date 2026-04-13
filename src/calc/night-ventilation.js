@@ -1,10 +1,10 @@
 /**
  * Ventilație Nocturnă (Free-Cooling) — calcul economii răcire pasivă
  * Referințe:
- * - SR EN 16798-1:2019 — Parametri mediu interior (condiții confort)
+ * - SR EN 16798-1:2019/NA:2019 — Parametri mediu interior (condiții confort)
  * - SR EN 15251:2007 — Condiții mediu interior (clasificare)
  * - SR EN ISO 13790:2009 — Performanță energetică, bilanț termic
- * - SR EN ISO 52016-1:2017 — Calcul necesarului de energie răcire
+ * - SR EN ISO 52016-1:2017/NA:2023 — Calcul necesarului de energie răcire
  *
  * Principiu: aerul exterior nocturn (mai rece) ventilează clădirea
  * și elimină căldura stocată în masa termică, reducând necesarul
