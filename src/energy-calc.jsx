@@ -3281,6 +3281,21 @@ export default function EnergyCalcApp({ cloud }) {
     });
   }, [instSummary, selectedClimate, building.areaUseful]);
 
+  // ─── Completare per pas (0–1) pentru indicatori vizuali ───
+  const stepCompleteness = useMemo(() => {
+    const Au = parseFloat(building.areaUseful) || 0;
+    const Vol = parseFloat(building.volume) || 0;
+    const s1 = [building.locality, Au > 0, Vol > 0, building.category].filter(Boolean).length / 4;
+    const s2 = Math.min(1, (opaqueElements.length > 0 ? 0.5 : 0) + (glazingElements.length > 0 ? 0.5 : 0));
+    const s3 = heating.source ? 1 : 0;
+    const s4 = 1; // optional
+    const s5 = instSummary ? 1 : 0;
+    const s6 = auditor.name ? 1 : 0;
+    const s7 = 1;
+    const s8 = 1;
+    return [s1, s2, s3, s4, s5, s6, s7, s8];
+  }, [building, opaqueElements, glazingElements, heating, instSummary, auditor]);
+
   // ─── Data completion progress ───
   const dataProgress = useMemo(() => {
     var score = 0, total = 10;
@@ -5958,8 +5973,19 @@ export default function EnergyCalcApp({ cloud }) {
           {/* Separator 2 */}
           <div className="hidden lg:block w-px h-5 bg-white/[0.08] shrink-0" />
 
-          {/* Spacer */}
-          <div className="flex-1" />
+          {/* Spacer + breadcrumb desktop */}
+          <div className="flex-1 hidden lg:flex items-center justify-center">
+            <div className="flex items-center gap-1.5 text-xs opacity-40">
+              {STEPS.map((s, i) => (
+                <span key={s.id} className="flex items-center gap-1">
+                  {i > 0 && <span className="opacity-30">›</span>}
+                  <span className={cn("transition-all", step === s.id && "opacity-100 text-amber-400 font-semibold")}>
+                    {s.id === step ? s.label : s.id}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
 
           {/* ── ZONA 3: ACȚIUNI (undo · salvat · quickfill · tutorial · ⋯) ── */}
           <div className="flex items-center gap-1 sm:gap-1.5">
@@ -6121,7 +6147,10 @@ export default function EnergyCalcApp({ cloud }) {
         {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />}
         <nav aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2">✕</button>
-          {STEPS.map(s => (
+          {STEPS.map((s, i) => {
+            const pct = stepCompleteness[i] ?? 0;
+            const dotColor = pct >= 1 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(255,255,255,0.15)";
+            return (
             <button key={s.id} onClick={() => { if(!s.locked){setStep(s.id);setSidebarOpen(false);} }}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-3 rounded-xl mb-1 text-left transition-all",
@@ -6129,13 +6158,19 @@ export default function EnergyCalcApp({ cloud }) {
                 s.locked && "opacity-25 cursor-not-allowed"
               )}>
               <span className="text-lg">{s.icon}</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold">{s.id}. {lang==="EN" && s.labelEN ? s.labelEN : s.label}</div>
                 <div className="text-[10px] opacity-40">{lang==="EN" && s.descEN ? s.descEN : s.desc}</div>
               </div>
-              {step === s.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500" />}
+              <div className="ml-auto flex flex-col items-center gap-1 shrink-0">
+                {step === s.id
+                  ? <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  : <div className="w-1.5 h-1.5 rounded-full" style={{background: dotColor}} />
+                }
+              </div>
             </button>
-          ))}
+            );
+          })}
 
           {/* Envelope summary mini-panel */}
           {envelopeSummary && envelopeSummary.G > 0 && (
@@ -6917,18 +6952,26 @@ export default function EnergyCalcApp({ cloud }) {
       {/* ═══ MOBILE BOTTOM NAVIGATION BAR ═══ */}
       <div className="fixed bottom-0 left-0 right-0 z-[9990] lg:hidden" style={{background:theme==="dark"?"rgba(10,10,26,0.95)":"rgba(245,247,250,0.95)",backdropFilter:"blur(12px)",borderTop:theme==="dark"?"1px solid rgba(255,255,255,0.08)":"1px solid rgba(0,0,0,0.1)"}}>
         <div className="flex items-stretch overflow-x-auto" style={{scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-          {STEPS.map(s => (
+          {STEPS.map((s, i) => {
+            const pct = stepCompleteness[i] ?? 0;
+            const isActive = step === s.id;
+            return (
             <button key={s.id} onClick={() => { setStep(s.id); setSidebarOpen(false); }}
-              className="flex flex-col items-center justify-center flex-shrink-0 py-1.5 transition-all"
-              style={{width: (100/STEPS.length)+"%", minWidth: "52px", opacity: step === s.id ? 1 : 0.45}}>
+              className="flex flex-col items-center justify-center flex-shrink-0 py-2 transition-all relative"
+              style={{width: (100/STEPS.length)+"%", minWidth: "52px", opacity: isActive ? 1 : 0.5}}>
+              {/* dot completare */}
+              {pct >= 1 && !isActive && (
+                <div className="absolute top-1 right-1/4 w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              )}
               <span className="text-base leading-none">{s.icon}</span>
-              <span className="text-[8px] mt-0.5 font-medium leading-tight truncate w-full text-center px-0.5"
-                style={{color: step === s.id ? "#f59e0b" : "inherit"}}>
+              <span className="text-[10px] mt-0.5 font-medium leading-tight truncate w-full text-center px-0.5"
+                style={{color: isActive ? "#f59e0b" : "inherit"}}>
                 {lang==="EN" ? (s.labelEN||s.label) : s.label}
               </span>
-              {step === s.id && <div className="w-4 h-0.5 rounded-full bg-amber-500 mt-0.5" />}
+              {isActive && <div className="w-4 h-0.5 rounded-full bg-amber-500 mt-0.5" />}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
       {/* Bottom nav spacer for mobile content */}
