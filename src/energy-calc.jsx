@@ -23,7 +23,6 @@ import { glaserCheck, pSatMagnus, calcGlaserMonthly } from "./calc/glaser.js";
 import { getEnergyClass, getCO2Class } from "./calc/classification.js";
 import { calcFinancialAnalysis } from "./calc/financial.js";
 import { calcSummerComfort } from "./calc/summer-comfort.js";
-import { calcHourlyISO52016 } from "./calc/hourly.js";
 import { calcGWPDetailed } from "./calc/gwp.js";
 import { calcSmartRehab, getNzebEpMax } from "./calc/smart-rehab.js";
 import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG, EV_CHARGER_RULES, calcEVChargers, checkSolarReady } from "./calc/epbd.js";
@@ -126,49 +125,8 @@ async function fetchTemplate(filename) {
 
 
 
-// ═══════════════════════════════════════════════════════════════
-// generateTMY — Sintetizează date orare TMY din medii lunare
-// Generează 8760 ore de temperatură exterioară și radiație solară
-// folosind interpolare sinusoidală din datele climatice lunare
-// ═══════════════════════════════════════════════════════════════
-function generateTMY(tempMonth, lat) {
-  if (!tempMonth || tempMonth.length < 12) return null;
-  const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const totalHours = 8760;
-  const T_ext = new Array(totalHours);
-  const Q_sol_horiz = new Array(totalHours);
-  const absLat = Math.abs(lat || 45);
-
-  // Solar declination amplitude for latitude
-  const solarDecl = 23.45 * Math.PI / 180;
-
-  let h = 0;
-  for (let m = 0; m < 12; m++) {
-    const days = monthDays[m];
-    const tAvg = tempMonth[m];
-    // Daily amplitude ~5-8°C depending on climate
-    const dailyAmp = 4 + 2 * Math.cos((m - 6) * Math.PI / 6);
-    // Monthly solar radiation (W/m²) on horizontal — simplified model
-    const dayOfYear = monthDays.slice(0, m).reduce((s, d) => s + d, 0) + days / 2;
-    const decl = solarDecl * Math.sin(2 * Math.PI * (284 + dayOfYear) / 365);
-    const latRad = absLat * Math.PI / 180;
-    const maxAlt = Math.PI / 2 - latRad + decl;
-    const peakIrr = Math.max(0, 1000 * Math.sin(maxAlt) * 0.7); // Clear-sky peak W/m²
-
-    for (let d = 0; d < days; d++) {
-      for (let hr = 0; hr < 24; hr++) {
-        // Temperature: sinusoidal daily cycle, min at 5am, max at 15pm
-        T_ext[h] = tAvg + dailyAmp * Math.cos((hr - 15) * Math.PI / 12);
-        // Solar on horizontal: simplified bell curve 6am-18pm
-        const hourAngle = (hr - 12) * Math.PI / 12;
-        const sinAlt = Math.max(0, Math.sin(maxAlt) * Math.cos(hourAngle));
-        Q_sol_horiz[h] = sinAlt > 0.05 ? peakIrr * sinAlt * 0.001 : 0; // kW/m²
-        h++;
-      }
-    }
-  }
-  return { T_ext, Q_sol_horiz };
-}
+// generateTMY și calcHourlyISO52016 → dezactivate (hourlyISO=null în useEnvelopeSummary)
+// Reactivează în calc/weather.js + calc/hourly.js dacă se adaugă grafic orar în Step5
 
 
 

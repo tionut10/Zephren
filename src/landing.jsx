@@ -323,7 +323,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <span style={{ color: "#f59e0b" }}>{T("hero_title2", "energetică clădiri")}</span>
         </h1>
         <p style={{ fontSize: "18px", color: textMuted, maxWidth: "640px", margin: "0 auto 40px", lineHeight: 1.6 }}>
-          {T("hero_sub", `Software profesional pentru auditori energetici. Certificat de performanta energetica conform Mc 001-2022, cu ${TOTAL_PRODUCTS}+ produse reale, ${STEPS_COUNT} pași de calcul, verificare nZEB/ZEB.`)}
+          {T("hero_sub", `Software profesional pentru auditori energetici. Certificat de performanță energetică conform Mc 001-2022, cu ${TOTAL_PRODUCTS}+ produse reale, ${STEPS_COUNT} pași de calcul, verificare nZEB/ZEB.`)}
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={onStart} style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)" }}>
@@ -775,7 +775,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
         </div>
         <p style={{ fontSize: "12px", color: textFaint, maxWidth: "500px", margin: "0 auto" }}>
-          {T("footer_copy", "Software profesional pentru auditori energetici atestati MDLPA. Calculator performanta energetica conform Mc 001-2022.")}
+          {T("footer_copy", "Software profesional pentru auditori energetici atestați MDLPA. Calculator performanță energetică conform Mc 001-2022.")}
         </p>
         <p style={{ fontSize: "11px", color: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.25)", marginTop: "16px" }}>© {new Date().getFullYear()} Zephren. Toate drepturile rezervate.</p>
       </footer>
