@@ -1133,9 +1133,12 @@ def _highlight_utility_class_cells(doc, data):
                 unique.append(c)
 
         # Curăță celulele cu text placeholder din template (ex: "Consum vm", "Consum il")
+        # IMPORTANT: nu atingem celulele cu "xxx" — acestea sunt intervalele scalei energetice
+        # care vor fi completate mai târziu de replace_scales()
+        _PLACEHOLDER_KEYWORDS = ["Consum ", "consum ", "CONSUM"]
         for cell in unique[1:]:
             ct = cell.text.strip()
-            if ct and not _parse_range(ct):
+            if any(kw in ct for kw in _PLACEHOLDER_KEYWORDS):
                 _clear_placeholder_cell(cell)
 
         ep_val = ep_vals.get(ep_key, 0.0)
