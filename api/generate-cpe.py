@@ -1505,7 +1505,7 @@ class handler(BaseHTTPRequestHandler):
 
             # Adresa — completăm cele 2 rânduri din tabelul DATE CLĂDIRE:
             # R2: "Adresa clădirii: ........" → adresa completă
-            # R3: ".... adresa ...." → identic (sau gol dacă nu e unitate separată)
+            # R3: ".... adresa ...." → aceeași adresă (unitatea de clădire certificată)
             address_val = data.get("address", "")
             _addr_filled = 0
             for table in doc.tables:
@@ -1515,16 +1515,18 @@ class handler(BaseHTTPRequestHandler):
                             pt = para.text
                             if ("adresa" in pt.lower() or "Adresa" in pt) and \
                                ("..." in pt or "." * 5 in pt):
-                                is_label_row = "Adresa" in pt  # R2 = label "Adresa clădirii:"
+                                is_label_row = "Adresa" in pt  # R2 = eticheta "Adresa clădirii:"
                                 for run in para.runs:
                                     if "adresa" in run.text.lower() or "Adresa" in run.text or \
                                        "..." in run.text or "." * 5 in run.text:
                                         run.text = ""
                                 if para.runs:
                                     if is_label_row:
-                                        para.runs[0].text = "Adresa clădirii:  " + address_val
-                                    else:
-                                        para.runs[0].text = address_val
+                                        # R2: etichetă + adresă
+                                        para.runs[0].text = "Adresa:  " + address_val
+                                    elif _addr_filled == 1:
+                                        # R3: lăsăm gol (aceeași unitate = aceeași adresă)
+                                        para.runs[0].text = ""
                                 _addr_filled += 1
 
             # Scop CPE — split text "Vânzare/Închiriere/Recepție/Inf"
@@ -1576,8 +1578,10 @@ class handler(BaseHTTPRequestHandler):
             # Grad auditor — înlocuiește VALOAREA "I / II", NU eticheta "Gradul"
             grade_val = data.get("auditor_grade", "")
             if grade_val:
-                replace_in_doc(doc, "I / II", grade_val)
-                replace_in_doc(doc, "I/II", grade_val)
+                # Spațiere vizibilă pentru grad II (altfel "II" e greu de citit)
+                display_grade = "I I" if grade_val == "II" else grade_val
+                replace_in_doc(doc, "I / II", display_grade)
+                replace_in_doc(doc, "I/II", display_grade)
                 # FIX: "gradul" este eticheta vizibilă — NU o înlocuim cu valoarea
 
             # Auditor name/company/phone/email
@@ -1619,6 +1623,10 @@ class handler(BaseHTTPRequestHandler):
                                 for para in cell.paragraphs:
                                     if "categoria" in para.text:
                                         replace_in_paragraph(para, "categoria", cat_label, count=1)
+                                        # Reducem spațiile excesive dintre etichetă și valoare
+                                        for run in para.runs:
+                                            if "Categoria" in run.text and "   " in run.text:
+                                                run.text = run.text.rstrip() + "  "
 
             # Nr camere (RA) — înlocuiește " x " rămas (dacă mai există) din "Apartament x camere"
             if category == "RA":
