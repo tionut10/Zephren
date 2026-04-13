@@ -2,6 +2,8 @@ import React from "react";
 import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
 import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
+import BenchmarkNational from "../components/BenchmarkNational.jsx";
+import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -1435,6 +1437,17 @@ export default function Step5Calculation(props) {
                   <div className="text-center py-6 opacity-30 text-xs">Completează pașii 1-4 pentru comparație scenarii</div>
                 )}
               </Card>
+
+              {/* ═══ BENCHMARK NAȚIONAL ═══ */}
+              {epFinal > 0 && (
+                <Card className="p-4">
+                  <BenchmarkNational
+                    epValue={epFinal}
+                    buildingType={categoryToBenchmarkType(building.category)}
+                    countyCode={countyNameToCode(building.county) || "B"}
+                  />
+                </Card>
+              )}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">

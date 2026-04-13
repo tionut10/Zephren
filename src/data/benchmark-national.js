@@ -215,3 +215,35 @@ export function benchmarkBuilding(ep_value, building_type, county_code) {
 
   return { vs_national, vs_county, percentile, label, nat_ep };
 }
+
+// ── Mapare nume județ → cod (pentru integrare cu building.county din Step1) ──
+
+export function countyNameToCode(name) {
+  if (!name) return null;
+  const norm = name.trim().toLowerCase()
+    .replace(/ș/g, "s").replace(/ț/g, "t").replace(/ă/g, "a").replace(/â/g, "a").replace(/î/g, "i");
+  for (const [code, data] of Object.entries(COUNTY_AVERAGES)) {
+    const dataNorm = data.label.toLowerCase()
+      .replace(/ș/g, "s").replace(/ț/g, "t").replace(/ă/g, "a").replace(/â/g, "a").replace(/î/g, "i");
+    if (dataNorm === norm) return code;
+  }
+  // Fallback: caută parțial
+  for (const [code, data] of Object.entries(COUNTY_AVERAGES)) {
+    const dataNorm = data.label.toLowerCase()
+      .replace(/ș/g, "s").replace(/ț/g, "t").replace(/ă/g, "a").replace(/â/g, "a").replace(/î/g, "i");
+    if (dataNorm.startsWith(norm) || norm.startsWith(dataNorm)) return code;
+  }
+  return null;
+}
+
+// ── Mapare categorie clădire Mc 001 → tip benchmark ────────────────────────
+
+export function categoryToBenchmarkType(category) {
+  const map = {
+    RI: "rezidential_bloc", RC: "rezidential_casa", RA: "rezidential_bloc",
+    BI: "birouri", CO: "comercial", ED: "educational",
+    SA: "spital", HC: "hotelier", SP: "industrial_usor",
+    AL: "rezidential_bloc",
+  };
+  return map[category] || "rezidential_bloc";
+}

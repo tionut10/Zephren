@@ -55,12 +55,14 @@ import { glaserCheck, calcGlaserMonthly } from "../calc/glaser.js";
 import { calcRehabCost, REHAB_PRICE_DB } from "../calc/rehab-cost.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 import GWPReport from "../components/GWPReport.jsx";
+import SRICalculator from "../components/SRICalculator.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 
 const TAB_SECTIONS = [
   { id:"benchmark",   icon:"📊", label:"Benchmark" },
   { id:"nzeb_check",  icon:"🏆", label:"Verificare nZEB" },
   { id:"bacs",        icon:"🤖", label:"BACS" },
+  { id:"sri",         icon:"🧠", label:"SRI Indicator" },
   { id:"acm_en15316", icon:"🚿", label:"ACM detaliat" },
   { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale" },
   { id:"en12831",     icon:"🔥", label:"Sarcină vârf" },
@@ -1033,6 +1035,13 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
               </div>
             </div>
           )}
+        </Card>
+      )}
+
+      {/* ═══ SRI — SMART READINESS INDICATOR ═══ */}
+      {activeTab === "sri" && (
+        <Card className="p-4">
+          <SRICalculator />
         </Card>
       )}
 
