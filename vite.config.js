@@ -1,12 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync } from "fs";
 
-// Post-split: neutraliseRefreshDev and fixHookTDZ are no longer needed.
-// The monolithic energy-calc.jsx (14K+ lines, 80+ hooks) has been split into
-// ~30 modules. React Fast Refresh works correctly with smaller files.
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [react(), tailwindcss()],
   // Proxy /api → producție Vercel în dev local (Python serverless indisponibil local)
   server: {

@@ -5887,6 +5887,7 @@ export default function EnergyCalcApp({ cloud }) {
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
             <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"36px", width:"auto"}} />
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2"}</span>
             <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
 
             {/* Plan badges */}

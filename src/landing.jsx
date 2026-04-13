@@ -269,7 +269,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <img src="/logo.svg" alt="Zephren" style={{ height: "40px", width: "auto" }} />
-            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
+            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Functionalitati")}</a>
@@ -772,7 +772,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <footer style={{ borderTop: `1px solid ${border}`, padding: "40px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "12px" }}>
           <img src="/logo.svg" alt="Zephren" style={{ height: "32px", width: "auto" }} />
-          <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
+          <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "3.2"}</span>
         </div>
         <p style={{ fontSize: "12px", color: textFaint, maxWidth: "500px", margin: "0 auto" }}>
           {T("footer_copy", "Software profesional pentru auditori energetici atestati MDLPA. Calculator performanta energetica conform Mc 001-2022.")}
