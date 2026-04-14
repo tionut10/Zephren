@@ -12,6 +12,26 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "feat(envelope): SmartEnvelopeHub scafolding + progress tracker"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(cpe): Anexa 1+2 PDF oficial conform Ord. MDLPA 16/2023"
+      },
+      {
+        "icon": "🔸",
+        "text": "a11y: WCAG 2.1 AA — focus ring, tablist/tab/tabpanel, drop zone ARIA (SmartDataHub)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(Step1): SmartDataHub — consolidare metode introducere date"
+      },
+      {
+        "icon": "🔧",
+        "text": "închide dropdown autocomplete după selecție adresă"
+      },
+      {
         "icon": "🔧",
         "text": "corectare texte factor conversie energie ambientală"
       },
@@ -22,26 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔬",
         "text": "Fix duplicat EPBD în normative.json — unificare ZEB cu EPBD 2024/1275"
-      },
-      {
-        "icon": "🔬",
-        "text": "Secțiune normative pe pagina principală — 40 standarde grupate pe 7 categorii"
-      },
-      {
-        "icon": "🔬",
-        "text": "Implementare 5 normative opționale: EN 15316 series, EN 12464-1, ZEB, L.121/2014, P 130-2025"
-      },
-      {
-        "icon": "🔬",
-        "text": "Implementare normative lipsă: OUG 59/2025 RED III, SRI EPBD Art.15, NP 048"
-      },
-      {
-        "icon": "🔬",
-        "text": "Implementare completă lipsuri normative Lista Anexelor Naționale 04.04.2025"
-      },
-      {
-        "icon": "🔸",
-        "text": "Actualizare referințe anexe naționale conform Lista ASRO 04.04.2025"
       }
     ]
   },
