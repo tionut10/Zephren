@@ -18,17 +18,16 @@
 
 export const FLAGS = Object.freeze({
   /**
-   * SmartEnvelopeHub — refactor Step 2 Anvelopă (aprobat 14.04.2026).
-   * Default OFF până la finalul Sesiunii 4. Când este ON, componenta
-   * SmartEnvelopeHub se montează în Step2Envelope deasupra grid-ului
-   * clasic. Codul legacy rămâne intact până în S4.
+   * SmartEnvelopeHub — refactor Step 2 Anvelopă (S4 GA, 14.04.2026).
+   * Default ON. Când este OFF (?envelopeHub=0), se afișează grid-ul
+   * clasic legacy ca fallback pentru auditori care preferă interfața veche.
    */
   SMART_ENVELOPE_HUB: "envelopeHub",
 });
 
 // Valorile implicite la momentul build-ului — editați aici când un flag devine GA.
 const DEFAULTS = Object.freeze({
-  [FLAGS.SMART_ENVELOPE_HUB]: false,
+  [FLAGS.SMART_ENVELOPE_HUB]: true,
 });
 
 // Querystring parsat o singură dată la load (SSR-safe guard).

@@ -1,43 +1,34 @@
 /**
- * RampGuided (anvelopă) — SCAFFOLD S2.
+ * RampGuided (anvelopă) — COMPLET S4.
  *
- * Conținut complet în Sesiunea 4:
- *   ├─ Wizard "Adaugă perete în 3 pași" (D5) — ÎNLOCUIEȘTE OpaqueModal ca default
- *   │   Pas 1: Tip element (PE/PT/PP/PL/PB) + orientare + arie
- *   │   Pas 2: Straturi — selector material din bibliotecă (materials.json)
- *   │   Pas 3: Preview U + opțiune "Editor avansat straturi" (OpaqueModal pentru experți)
- *   ├─ Wizard "Adaugă vitraj în 3 pași" — simplificat peste GlazingModal
- *   ├─ Wizard "Adaugă punți termice" — catalog + quick-pick + aplicare bulk
- *   ├─ Chat AI contextual — "ce pereți am uitat?", "verifică-mi anvelopa"
- *   ├─ Tutorial interactiv anvelopă — 5 pași cu clădire exemplu
- *   └─ Analiză A/V + volum încălzit — sugestii geometrie
+ * Completare ghidată pas cu pas. 5 acțiuni active:
+ *   ├─ 🧱 Wizard perete în 3 pași (D5) — WizardOpaque
+ *   ├─ 🪟 Wizard vitraj în 3 pași     — WizardGlazing
+ *   ├─ 🔗 Wizard punți termice        — WizardBridges (quick-picks + bulk)
+ *   ├─ 💬 Asistent anvelopă            — EnvelopeAssistant (chat local heuristic)
+ *   └─ 🎓 Tutorial interactiv          — TutorialEnvelope (5 pași)
  *
- * Stare S2: placeholder-uri + buton către OpaqueModal existent.
+ * + Shortcut „Editor clasic element opac" → OpaqueModal existent (experți).
  */
 
-function PlaceholderAction({ icon, title, description, sessionTag = "S4" }) {
-  return (
-    <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-violet-500/15 bg-violet-500/[0.02] text-left opacity-50 cursor-not-allowed">
-      <span className="text-xl shrink-0">{icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs font-semibold text-violet-200/80 flex items-center gap-2">
-          {title}
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300/80 font-normal">
-            {sessionTag}
-          </span>
-        </div>
-        <div className="text-[10px] text-violet-100/50 mt-0.5 leading-snug">{description}</div>
-      </div>
-      <span className="text-violet-300/40 text-xs shrink-0">🔒</span>
-    </div>
-  );
-}
+import { useState } from "react";
+import WizardOpaque from "./WizardOpaque.jsx";
+import WizardGlazing from "./WizardGlazing.jsx";
+import WizardBridges from "./WizardBridges.jsx";
+import EnvelopeAssistant from "./EnvelopeAssistant.jsx";
+import TutorialEnvelope from "./TutorialEnvelope.jsx";
 
-function ActiveAction({ icon, title, description, onClick }) {
+function ActiveAction({ icon, title, description, onClick, accent = "violet" }) {
+  const accentMap = {
+    violet:  { border: "border-violet-500/25",  bg: "bg-violet-500/5",  hover: "hover:bg-violet-500/10",  text: "text-violet-300"  },
+    indigo:  { border: "border-indigo-500/25",  bg: "bg-indigo-500/5",  hover: "hover:bg-indigo-500/10",  text: "text-indigo-300"  },
+    emerald: { border: "border-emerald-500/25", bg: "bg-emerald-500/5", hover: "hover:bg-emerald-500/10", text: "text-emerald-300" },
+  };
+  const c = accentMap[accent] || accentMap.violet;
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-violet-500/25 bg-violet-500/5 hover:bg-violet-500/10 text-violet-300 text-left transition-all group"
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border ${c.border} ${c.bg} ${c.hover} ${c.text} text-left transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60`}
     >
       <span className="text-xl shrink-0">{icon}</span>
       <div className="flex-1 min-w-0">
@@ -50,66 +41,178 @@ function ActiveAction({ icon, title, description, onClick }) {
 }
 
 export default function RampGuided({
+  // State (read-only)
   building,
-  opaqueElements,
-  glazingElements,
-  thermalBridges,
-  onOpenWizard,
-  onOpenChat,
+  opaqueElements = [],
+  glazingElements = [],
+  thermalBridges = [],
+  envelopeSummary,
+  calcOpaqueR,
+
+  // Handlers pentru wizard-uri (cablate în SmartEnvelopeHub)
+  onSaveOpaqueFromWizard,        // (el) => append la opaqueElements
+  onSaveGlazingFromWizard,       // (el) => append la glazingElements
+  onAddBridgesBulk,              // (bridges[]) => append la thermalBridges
+
+  // Fallback-uri
   setEditingOpaque,
   setShowOpaqueModal,
+  setShowBridgeCatalog,          // deschide ThermalBridgeCatalog extins
+  onLoadDemoTutorial,            // tutorial final → încarcă demo
+  onSwitchRamp,                  // (rampId) → schimbă tab curent în Hub
+
   showToast,
 }) {
+  const [showWizardOpaque, setShowWizardOpaque] = useState(false);
+  const [showWizardGlazing, setShowWizardGlazing] = useState(false);
+  const [showWizardBridges, setShowWizardBridges] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Handler: salvare element opac din wizard
+  const handleSaveOpaque = (element) => {
+    onSaveOpaqueFromWizard?.(element);
+    showToast?.(`✓ Element „${element.name}" adăugat`, "success");
+  };
+
+  // Handler: salvare vitraj din wizard
+  const handleSaveGlazing = (element) => {
+    onSaveGlazingFromWizard?.(element);
+    showToast?.(`✓ Vitraj „${element.name}" adăugat`, "success");
+  };
+
+  // Handler: deschide editor avansat (OpaqueModal) din wizard pas 3
+  const handleOpenAdvanced = (prePopulated) => {
+    setShowWizardOpaque(false);
+    setEditingOpaque?.(prePopulated || null);
+    setShowOpaqueModal?.(true);
+  };
+
+  // Handler: bulk add punți
+  const handleAddBridgesBulk = (bridges) => {
+    onAddBridgesBulk?.(bridges);
+    showToast?.(`✓ ${bridges.length} punți adăugate`, "success");
+  };
+
+  // Handler: link "Acționează" din chat
+  const handleChatAction = (kind) => {
+    if (kind === "opaque")             setShowWizardOpaque(true);
+    else if (kind === "glazing")       setShowWizardGlazing(true);
+    else if (kind === "bridges")       setShowWizardBridges(true);
+    else if (kind === "instant")       onSwitchRamp?.("instant");
+    else if (kind === "scroll-compliance") {
+      // Scroll la tabelul de conformitate (rendered în Step2Envelope)
+      const el = document.querySelector('[data-compliance-table]');
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="text-[11px] text-violet-200/70 mb-2">
-        🧭 Completare ghidată pas cu pas — wizard-uri + chat AI.
+        🧭 Completare ghidată pas cu pas — wizard-uri + asistent local + tutorial.
       </div>
 
-      {/* TODO S4: Wizard 3 pași pereți (D5) */}
-      <PlaceholderAction
+      {/* Wizard perete (D5) */}
+      <ActiveAction
         icon="🧱"
         title="Wizard: adaugă perete în 3 pași"
-        description="Pas 1: tip + orientare. Pas 2: straturi cu selector materials.json. Pas 3: preview U + opțiune editor avansat."
+        description="Pas 1: tip + orientare. Pas 2: straturi cu preset-uri populare. Pas 3: preview U + editor avansat."
+        onClick={() => setShowWizardOpaque(true)}
       />
 
-      {/* TODO S4: Wizard 3 pași vitraje */}
-      <PlaceholderAction
+      {/* Wizard vitraj */}
+      <ActiveAction
         icon="🪟"
         title="Wizard: adaugă vitraj în 3 pași"
-        description="Tip ramă + U/g din catalog + cadru % + ramă dimensiune."
+        description="Selector vizual vitraj + ramă + fracție. Calcul U cu ψ_spacer (ISO 10077-1)."
+        onClick={() => setShowWizardGlazing(true)}
       />
 
-      {/* TODO S4: Wizard punți termice */}
-      <PlaceholderAction
+      {/* Wizard punți */}
+      <ActiveAction
         icon="🔗"
-        title="Wizard: identifică punți din geometrie"
-        description="Calculator automat lungimi joncțiuni din dimensiuni clădire + catalog 165 SVG."
+        title="Wizard: identifică punți termice"
+        description="6 categorii × top 4 quick-picks. Lungimi sugerate din geometrie. Aplicare bulk."
+        onClick={() => setShowWizardBridges(true)}
       />
 
-      {/* TODO S4: Chat AI contextual */}
-      <PlaceholderAction
+      {/* Asistent anvelopă */}
+      <ActiveAction
         icon="💬"
-        title="Chat AI — verifică anvelopa"
-        description="„Ce pereți am uitat?” · „Verifică-mi conformitatea U” · „Pot îmbunătăți G-ul?”"
+        title="Asistent anvelopă"
+        description='„Ce elemente am uitat?" · „Verifică-mi conformitatea U" · „Pot îmbunătăți G-ul?"'
+        onClick={() => setShowAssistant(true)}
+        accent="indigo"
       />
 
-      {/* TODO S4: Tutorial interactiv */}
-      <PlaceholderAction
+      {/* Tutorial interactiv */}
+      <ActiveAction
         icon="🎓"
         title="Tutorial interactiv anvelopă"
-        description="5 pași cu clădire exemplu precompletată — învață fluxul fără să pierzi proiectul curent."
+        description="5 pași despre elemente, straturi, punți, conformitate — ideal pentru începători."
+        onClick={() => setShowTutorial(true)}
+        accent="emerald"
       />
 
-      {/* Shortcut către OpaqueModal existent (funcțional din S2) */}
+      {/* Shortcut către OpaqueModal existent */}
       <div className="pt-2 mt-2 border-t border-white/[0.06]">
         <ActiveAction
           icon="✍️"
           title="Editor clasic element opac (OpaqueModal)"
-          description="Formularul avansat actual — control total pe straturi. Rămâne disponibil pentru experți."
+          description="Formular avansat actual — control total pe straturi. Accesibil și din Pas 3 al wizard-ului."
           onClick={() => { setEditingOpaque?.(null); setShowOpaqueModal?.(true); }}
         />
       </div>
+
+      {/* ── Overlay wizards/modals ─────────────────────────────────────── */}
+      {showWizardOpaque && (
+        <WizardOpaque
+          onSave={handleSaveOpaque}
+          onClose={() => setShowWizardOpaque(false)}
+          onOpenAdvanced={handleOpenAdvanced}
+          calcOpaqueR={calcOpaqueR}
+          buildingCategory={building?.category}
+        />
+      )}
+
+      {showWizardGlazing && (
+        <WizardGlazing
+          onSave={handleSaveGlazing}
+          onClose={() => setShowWizardGlazing(false)}
+          buildingCategory={building?.category}
+        />
+      )}
+
+      {showWizardBridges && (
+        <WizardBridges
+          onAddBulk={handleAddBridgesBulk}
+          onClose={() => setShowWizardBridges(false)}
+          onOpenCatalog={() => setShowBridgeCatalog?.(true)}
+          building={building}
+          existingBridges={thermalBridges}
+        />
+      )}
+
+      {showAssistant && (
+        <EnvelopeAssistant
+          onClose={() => setShowAssistant(false)}
+          onActionLink={handleChatAction}
+          building={building}
+          opaqueElements={opaqueElements}
+          glazingElements={glazingElements}
+          thermalBridges={thermalBridges}
+          envelopeSummary={envelopeSummary}
+          calcOpaqueR={calcOpaqueR}
+        />
+      )}
+
+      {showTutorial && (
+        <TutorialEnvelope
+          onClose={() => setShowTutorial(false)}
+          onLoadDemo={onLoadDemoTutorial}
+        />
+      )}
     </div>
   );
 }

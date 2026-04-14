@@ -21,7 +21,7 @@ export default function Step2Envelope({
   airInfiltrationCalc, naturalLightingCalc,
   csvImportRef, importCSV,
   setStep, goToStep,
-  // SmartEnvelopeHub (S3 — feature flag controlled)
+  // SmartEnvelopeHub (S4 GA — feature flag controlled; default ON, ?envelopeHub=0 → legacy grid)
   envelopeHubEnabled = false,
   applyEnvelopeTemplate,
   applyDemoEnvelopeOnly,
@@ -29,6 +29,7 @@ export default function Step2Envelope({
   apply4WallsFromGeom,
   onOpenJSONImport,
   onOpenIFC,
+  onLoadDemoTutorial,
   showToast,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
@@ -52,9 +53,7 @@ export default function Step2Envelope({
 
       </div>
 
-      {/* SmartEnvelopeHub — S3 test harness (feature flag: ?envelopeHub=1).
-          Legacy grid-ul rămâne intact dedesubt, se montează mereu. În S4 Hub-ul
-          înlocuiește grid-ul clasic complet. */}
+      {/* SmartEnvelopeHub — S4 GA (default ON; ?envelopeHub=0 → legacy grid fallback). */}
       {envelopeHubEnabled && (
         <SmartEnvelopeHub
           building={building}
@@ -66,7 +65,7 @@ export default function Step2Envelope({
           ELEMENT_TYPES={ELEMENT_TYPES}
           lang={lang}
           selectedClimate={selectedClimate}
-          // CRUD callback-uri modale existente
+          // CRUD callback-uri modale existente (edit + catalog)
           setEditingOpaque={setEditingOpaque}
           setShowOpaqueModal={setShowOpaqueModal}
           setEditingGlazing={setEditingGlazing}
@@ -74,24 +73,29 @@ export default function Step2Envelope({
           setEditingBridge={setEditingBridge}
           setShowBridgeModal={setShowBridgeModal}
           setShowBridgeCatalog={setShowBridgeCatalog}
+          // State mutators (S4 — necesar pentru ElementsList CRUD + wizard save)
+          setOpaqueElements={setOpaqueElements}
+          setGlazingElements={setGlazingElements}
+          setThermalBridges={setThermalBridges}
           // RampInstant
           applyEnvelopeTemplate={applyEnvelopeTemplate}
           applyDemoEnvelopeOnly={applyDemoEnvelopeOnly}
           applyStandardBridgesPackHandler={applyStandardBridgesPackHandler}
           apply4WallsFromGeom={apply4WallsFromGeom}
-          // RampFile — state mutators + callback-uri import
-          setGlazingElements={setGlazingElements}
-          setThermalBridges={setThermalBridges}
+          // RampFile — import
           onOpenIFC={onOpenIFC}
           onCSVImport={(e) => { if (e?.target?.files?.[0]) importCSV(e.target.files[0]); }}
           onOpenJSONImport={onOpenJSONImport}
+          // RampGuided — S4 tutorial demo loader
+          onLoadDemoTutorial={onLoadDemoTutorial}
           t={t}
           showToast={showToast}
         />
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-        {/* Elemente opace */}
+        {/* Elemente opace + vitrate + punți — grid LEGACY (doar când Hub OFF, flag false) */}
+        {!envelopeHubEnabled && (
         <div className="xl:col-span-2 space-y-5">
           <Card title={t("Elemente opace",lang)} badge={<button onClick={() => { setEditingOpaque(null); setShowOpaqueModal(true); }}
             className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30">+ Adaugă</button>}>
@@ -221,10 +225,13 @@ export default function Step2Envelope({
             )}
           </Card>
         </div>
+        )}
 
-        {/* Right panel: Summary */}
-        <div className="space-y-5">
-          <Card title={t("Sumar anvelopă",lang)} className="sticky top-6">
+        {/* Right panel: Summary. Când Hub e ON, ocupă 3 coloane (grid intern 2+1). */}
+        <div className={envelopeHubEnabled
+          ? "xl:col-span-3 grid grid-cols-1 xl:grid-cols-3 gap-5"
+          : "space-y-5"}>
+          <Card title={t("Sumar anvelopă",lang)} className={envelopeHubEnabled ? "xl:col-span-2" : "sticky top-6"}>
             {envelopeSummary && envelopeSummary.G > 0 ? (
               <div className="space-y-4">
                 <div className="text-center py-4">
@@ -323,12 +330,15 @@ export default function Step2Envelope({
             </div>
           </Card>
 
-          {/* Validare A/V */}
+          {/* Validare A/V — span complet când Hub ON, inline când Hub OFF */}
           {avValidation?.msg && (
-            <div className={`text-xs px-3 py-2 rounded-lg border ${
-              avValidation.status === "low" ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
-              : "border-orange-500/30 bg-orange-500/10 text-orange-300"
-            }`}>
+            <div className={cn(
+              `text-xs px-3 py-2 rounded-lg border ${
+                avValidation.status === "low" ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
+                : "border-orange-500/30 bg-orange-500/10 text-orange-300"
+              }`,
+              envelopeHubEnabled && "xl:col-span-3"
+            )}>
               ⚠️ {avValidation.msg}
             </div>
           )}
@@ -336,9 +346,9 @@ export default function Step2Envelope({
         </div>
       </div>
 
-      {/* ── CONFORMITATE U — tabel complet ── */}
+      {/* ── CONFORMITATE U — tabel complet (data-compliance-table pt. scroll din asistent) ── */}
       {(opaqueElements.length > 0 || glazingElements.length > 0) && U_REF_NZEB_RES && (
-        <div className="mt-5">
+        <div className="mt-5" data-compliance-table>
           <Card title={t("Conformitate U față de referințe Mc 001-2022", lang)}>
             <UComplianceTable
               opaqueElements={opaqueElements}

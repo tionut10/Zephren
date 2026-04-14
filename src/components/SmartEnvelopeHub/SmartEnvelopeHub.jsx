@@ -27,6 +27,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import RampInstant from "./RampInstant.jsx";
 import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
+import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
 import { computeEnvelopeHint } from "./utils/envelopeHints.js";
@@ -153,7 +154,8 @@ export default function SmartEnvelopeHub({
   applyStandardBridgesPackHandler,
   apply4WallsFromGeom,
 
-  // ── State mutators pentru RampFile CSV vitraje/punți (S3) ────────────────
+  // ── State mutators (S4 — acum și setOpaqueElements pentru ElementsList CRUD) ──
+  setOpaqueElements,
   setGlazingElements,
   setThermalBridges,
 
@@ -163,9 +165,8 @@ export default function SmartEnvelopeHub({
   onOpenJSONImport,
   onGbxmlImport,               // nou în S3 (wrapper peste IFCImport existent)
 
-  // ── Callback-uri RampGuided (TODO S4: wizard 3 pași + chat AI) ────────────
-  onOpenWizard,
-  onOpenChat,
+  // ── Callback-uri RampGuided S4 ────────────────────────────────────────────
+  onLoadDemoTutorial,          // tutorial final → demo preload
 
   // ── Utils ──────────────────────────────────────────────────────────────────
   t = (key) => key,
@@ -278,6 +279,70 @@ export default function SmartEnvelopeHub({
     else if (contextHint.action === "bridges") applyStandardBridgesPackHandler?.();
     else if (contextHint.action === "guided")  setActiveRamp("guided");
   }, [contextHint, applyStandardBridgesPackHandler]);
+
+  // ── Handler-e CRUD pentru ElementsList (S4) ─────────────────────────────────
+  const handleAddOpaque = useCallback(() => {
+    setEditingOpaque?.(null);
+    setShowOpaqueModal?.(true);
+  }, [setEditingOpaque, setShowOpaqueModal]);
+
+  const handleEditOpaque = useCallback((el, idx) => {
+    setEditingOpaque?.({ ...el, _idx: idx });
+    setShowOpaqueModal?.(true);
+  }, [setEditingOpaque, setShowOpaqueModal]);
+
+  const handleDeleteOpaque = useCallback((idx) => {
+    setOpaqueElements?.(prev => prev.filter((_, i) => i !== idx));
+  }, [setOpaqueElements]);
+
+  const handleAddGlazing = useCallback(() => {
+    setEditingGlazing?.(null);
+    setShowGlazingModal?.(true);
+  }, [setEditingGlazing, setShowGlazingModal]);
+
+  const handleEditGlazing = useCallback((el, idx) => {
+    setEditingGlazing?.({ ...el, _idx: idx });
+    setShowGlazingModal?.(true);
+  }, [setEditingGlazing, setShowGlazingModal]);
+
+  const handleDeleteGlazing = useCallback((idx) => {
+    setGlazingElements?.(prev => prev.filter((_, i) => i !== idx));
+  }, [setGlazingElements]);
+
+  const handleAddBridge = useCallback(() => {
+    setEditingBridge?.(null);
+    setShowBridgeModal?.(true);
+  }, [setEditingBridge, setShowBridgeModal]);
+
+  const handleEditBridge = useCallback((b, idx) => {
+    setEditingBridge?.({ ...b, _idx: idx });
+    setShowBridgeModal?.(true);
+  }, [setEditingBridge, setShowBridgeModal]);
+
+  const handleDeleteBridge = useCallback((idx) => {
+    setThermalBridges?.(prev => prev.filter((_, i) => i !== idx));
+  }, [setThermalBridges]);
+
+  const handleOpenBridgeCatalog = useCallback(() => {
+    setShowBridgeCatalog?.(true);
+  }, [setShowBridgeCatalog]);
+
+  // ── Handler-e RampGuided — direct append în state (fără OpaqueModal) ───────
+  const handleSaveOpaqueFromWizard = useCallback((element) => {
+    setOpaqueElements?.(prev => [...prev, { ...element }]);
+  }, [setOpaqueElements]);
+
+  const handleSaveGlazingFromWizard = useCallback((element) => {
+    setGlazingElements?.(prev => [...prev, { ...element }]);
+  }, [setGlazingElements]);
+
+  const handleAddBridgesBulk = useCallback((bridges) => {
+    setThermalBridges?.(prev => [...prev, ...bridges]);
+  }, [setThermalBridges]);
+
+  const handleSwitchRamp = useCallback((rampId) => {
+    setActiveRamp(rampId);
+  }, []);
 
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] overflow-hidden">
@@ -492,14 +557,42 @@ export default function SmartEnvelopeHub({
             opaqueElements={opaqueElements}
             glazingElements={glazingElements}
             thermalBridges={thermalBridges}
-            onOpenWizard={onOpenWizard}
-            onOpenChat={onOpenChat}
+            envelopeSummary={envelopeSummary}
+            calcOpaqueR={calcOpaqueR}
+            // S4 handler-e
+            onSaveOpaqueFromWizard={handleSaveOpaqueFromWizard}
+            onSaveGlazingFromWizard={handleSaveGlazingFromWizard}
+            onAddBridgesBulk={handleAddBridgesBulk}
+            onLoadDemoTutorial={onLoadDemoTutorial}
+            onSwitchRamp={handleSwitchRamp}
+            // Fallback-uri
             setEditingOpaque={setEditingOpaque}
             setShowOpaqueModal={setShowOpaqueModal}
+            setShowBridgeCatalog={setShowBridgeCatalog}
             showToast={showToast}
           />
         </div>
       )}
+
+      {/* ── ElementsList — 3 secțiuni CRUD (înlocuiește grid legacy Step2) ──────── */}
+      <ElementsList
+        opaqueElements={opaqueElements}
+        glazingElements={glazingElements}
+        thermalBridges={thermalBridges}
+        building={building}
+        calcOpaqueR={calcOpaqueR}
+        ELEMENT_TYPES={ELEMENT_TYPES}
+        onAddOpaque={handleAddOpaque}
+        onEditOpaque={handleEditOpaque}
+        onDeleteOpaque={handleDeleteOpaque}
+        onAddGlazing={handleAddGlazing}
+        onEditGlazing={handleEditGlazing}
+        onDeleteGlazing={handleDeleteGlazing}
+        onAddBridge={handleAddBridge}
+        onEditBridge={handleEditBridge}
+        onDeleteBridge={handleDeleteBridge}
+        onOpenBridgeCatalog={handleOpenBridgeCatalog}
+      />
 
       {/* ── Progress tracker detaliat (ce lipsește din 10 gate-uri) ──────── */}
       <div className="px-4 pb-3">

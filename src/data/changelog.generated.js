@@ -12,6 +12,14 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🎨",
+        "text": "regenerate changelog + program stats (build artifacts)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope-S3): RampInstant+RampFile complete, utils, bug fix D2/D3"
+      },
+      {
         "icon": "✨",
         "text": "feat(envelope): SmartEnvelopeHub scafolding + progress tracker"
       },
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔧",
         "text": "corectare texte factor conversie energie ambientală"
-      },
-      {
-        "icon": "✨",
-        "text": "Adaugă 8 module noi în features.json (detectate la build Vercel)"
-      },
-      {
-        "icon": "🔬",
-        "text": "Fix duplicat EPBD în normative.json — unificare ZEB cu EPBD 2024/1275"
       }
     ]
   },
