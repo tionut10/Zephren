@@ -567,28 +567,40 @@ export default function Step7Audit(props) {
                 {financialAnalysis && (
                   <Card title="Analiză financiară reabilitare (EN 15459-1)" className="border-emerald-500/20">
                     {/* KPI boxes */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono" style={{ color: financialAnalysis.npv >= 0 ? "#22c55e" : "#ef4444" }}>
                           {financialAnalysis.npv.toLocaleString("ro-RO")}
                         </div>
-                        <div className="text-[10px] opacity-40">NPV [EUR]</div>
+                        <div className="text-[10px] opacity-40">VAN [EUR]</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
-                        <div className="text-lg font-bold font-mono">
-                          {financialAnalysis.irr !== null ? financialAnalysis.irr.toFixed(1) + "%" : "N/A"}
+                        <div className="text-lg font-bold font-mono" style={{ color: "#22c55e" }}>
+                          {financialAnalysis.investCost > 0 ? (financialAnalysis.annualSaving / financialAnalysis.investCost * 100).toFixed(1) + "%" : "—"}
                         </div>
-                        <div className="text-[10px] opacity-40">IRR</div>
+                        <div className="text-[10px] opacity-40">ROI [%/an]</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">
                           {financialAnalysis.paybackSimple !== null ? financialAnalysis.paybackSimple.toFixed(1) : "—"}
                         </div>
-                        <div className="text-[10px] opacity-40">Payback simplu [ani]</div>
+                        <div className="text-[10px] opacity-40">Perioadă recuperare [ani]</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-white/[0.03] text-center">
+                        <div className="text-lg font-bold font-mono">
+                          {financialAnalysis.irr !== null ? financialAnalysis.irr.toFixed(1) + "%" : "N/A"}
+                        </div>
+                        <div className="text-[10px] opacity-40">RIR (IRR)</div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-white/[0.03] text-center">
+                        <div className="text-lg font-bold font-mono">
+                          {financialAnalysis.paybackDiscounted !== null ? financialAnalysis.paybackDiscounted : "—"}
+                        </div>
+                        <div className="text-[10px] opacity-40">Recuperare actualizată [ani]</div>
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">{financialAnalysis.bcRatio.toFixed(2)}</div>
-                        <div className="text-[10px] opacity-40">B/C ratio</div>
+                        <div className="text-[10px] opacity-40">Raport B/C</div>
                       </div>
                     </div>
                     {/* Summary row */}
