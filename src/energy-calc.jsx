@@ -716,85 +716,38 @@ export default function EnergyCalcApp({ cloud }) {
 
   // Cloud sync functions
   const saveToCloud = useCallback(async () => {
-    if (!cloud?.isLoggedIn) { showToast("Autentifică-te pentru a salva în cloud.", "info"); return; }
-    const data = getProjectData();
-    const payload = { ...data, meta: { name: building.address || "Proiect", date: new Date().toISOString().slice(0,10) } };
-    const result = await cloud.saveProject(payload);
-    if (result.error) showToast("Eroare cloud: " + result.error, "error");
-    else showToast("Salvat în cloud!", "success");
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.saveToCloud({ cloud, getProjectData, buildingAddress: building.address, showToast });
   }, [cloud, getProjectData, building.address, showToast]);
 
   const loadFromCloud = useCallback(async (projectId) => {
-    if (!cloud?.isLoggedIn) return;
-    const result = await cloud.loadProject(projectId);
-    if (result.error) { showToast("Eroare: " + result.error, "error"); return; }
-    if (result.data) { loadProjectData(result.data); showToast("Proiect încărcat din cloud.", "success"); }
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.loadFromCloud({ cloud, projectId, loadProjectData, showToast });
   }, [cloud, loadProjectData, showToast]);
 
-  // Team management functions
   const loadTeamData = useCallback(async () => {
-    if (!cloud?.isLoggedIn) return;
-    setTeamLoading(true);
-    try {
-      const sb = (await import("./lib/supabase.js")).supabase;
-      // Check if user is in any team
-      const { data: memberships } = await sb.from("team_members").select("team_id, role").eq("user_id", cloud.user.id);
-      if (memberships && memberships.length > 0) {
-        const teamId = memberships[0].team_id;
-        const { data: team } = await sb.from("teams").select("id, name, plan").eq("id", teamId).single();
-        const { data: members } = await sb.from("team_members").select("user_id, role, joined_at").eq("team_id", teamId);
-        const { data: invitations } = await sb.from("team_invitations").select("id, email, role, status, created_at").eq("team_id", teamId).eq("status", "pending");
-        // Get profile names for members
-        const memberProfiles = [];
-        for (const m of (members || [])) {
-          const { data: p } = await sb.from("profiles").select("name, email").eq("id", m.user_id).single();
-          memberProfiles.push({ ...m, name: p?.name || p?.email || m.user_id, email: p?.email || "" });
-        }
-        setTeamData({ id: teamId, name: team?.name || "Echipa", plan: team?.plan || "business", myRole: memberships[0].role, members: memberProfiles, invitations: invitations || [] });
-      } else {
-        setTeamData(null);
-      }
-    } catch (e) { console.error("Team load error:", e); }
-    setTeamLoading(false);
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.loadTeamData({ cloud, setTeamLoading, setTeamData });
   }, [cloud]);
 
   const createTeam = useCallback(async (teamName) => {
-    if (!cloud?.isLoggedIn) { showToast("Autentifică-te pentru a crea o echipă.", "info"); return; }
-    try {
-      const sb = (await import("./lib/supabase.js")).supabase;
-      const { data: team, error } = await sb.from("teams").insert({ name: teamName, owner_id: cloud.user.id, plan: "business" }).select("id").single();
-      if (error) { showToast("Eroare: " + error.message, "error"); return; }
-      await sb.from("team_members").insert({ team_id: team.id, user_id: cloud.user.id, role: "owner", invited_by: cloud.user.id });
-      showToast("Echipă creată: " + teamName, "success");
-      await loadTeamData();
-    } catch (e) { showToast("Eroare creare echipă: " + e.message, "error"); }
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.createTeam({ cloud, teamName, reloadTeamData: loadTeamData, showToast });
   }, [cloud, loadTeamData, showToast]);
 
   const inviteTeamMember = useCallback(async (email, role) => {
-    if (!cloud?.isLoggedIn || !teamData) return;
-    try {
-      const sb = (await import("./lib/supabase.js")).supabase;
-      const { error } = await sb.from("team_invitations").insert({ team_id: teamData.id, email, role: role || "member", invited_by: cloud.user.id });
-      if (error) { showToast("Eroare: " + error.message, "error"); return; }
-      showToast("Invitație trimisă la " + email, "success");
-      await loadTeamData();
-    } catch (e) { showToast("Eroare invitație: " + e.message, "error"); }
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.inviteTeamMember({ cloud, teamData, email, role, reloadTeamData: loadTeamData, showToast });
   }, [cloud, teamData, loadTeamData, showToast]);
 
   const removeTeamMember = useCallback(async (userId) => {
-    if (!cloud?.isLoggedIn || !teamData) return;
-    try {
-      const sb = (await import("./lib/supabase.js")).supabase;
-      await sb.from("team_members").delete().eq("team_id", teamData.id).eq("user_id", userId);
-      showToast("Membru eliminat.", "info");
-      await loadTeamData();
-    } catch (e) { showToast("Eroare: " + e.message, "error"); }
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.removeTeamMember({ cloud, teamData, userId, reloadTeamData: loadTeamData, showToast });
   }, [cloud, teamData, loadTeamData, showToast]);
 
   const loadCloudProjects = useCallback(async () => {
-    if (!cloud?.isLoggedIn) return;
-    const projects = await cloud.listProjects();
-    setCloudProjects(projects);
+    const m = await import("./handlers/cloudHandlers.js");
+    return m.loadCloudProjects({ cloud, setCloudProjects });
   }, [cloud]);
 
   // Load project list on mount
