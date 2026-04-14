@@ -22,6 +22,7 @@ import { calcUtilFactor, calcMonthlyISO13790, THERMAL_MASS_CLASS } from "./calc/
 import { glaserCheck, pSatMagnus, calcGlaserMonthly } from "./calc/glaser.js";
 import { getEnergyClass, getCO2Class } from "./calc/classification.js";
 import { calcFinancialAnalysis } from "./calc/financial.js";
+import { calcRehabCost, EUR_RON } from "./calc/rehab-cost.js";
 import { calcSummerComfort } from "./calc/summer-comfort.js";
 import { calcGWPDetailed } from "./calc/gwp.js";
 import { calcSmartRehab, getNzebEpMax } from "./calc/smart-rehab.js";
@@ -2341,6 +2342,42 @@ export default function EnergyCalcApp({ cloud }) {
       note: "Prețuri 2025: gaz plafonat 0.31 lei/kWh, elec. ~1.10 lei/kWh",
     };
   }, [instSummary]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // COST ESTIMATIV REABILITARE — calcRehabCost (deviz orientativ RON)
+  // ═══════════════════════════════════════════════════════════════
+  const rehabCostEstimate = useMemo(() => {
+    const Au = parseFloat(building.areaUseful) || 0;
+    if (!Au || !opaqueElements.length) return null;
+    const ri = rehabScenarioInputs;
+    const wallArea = opaqueElements.filter(e => e.type === "PE").reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+    const roofArea = opaqueElements.filter(e => ["PP","PT"].includes(e.type)).reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+    const floorArea = opaqueElements.filter(e => ["PB","PL"].includes(e.type)).reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+    const windowArea = glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+    if (!wallArea && !roofArea && !windowArea) return null;
+    return calcRehabCost({
+      wallArea,
+      roofArea,
+      floorArea,
+      windowArea,
+      wallInsulType: "eps",
+      wallInsulThick: parseInt(ri.insulWallThickness) || 12,
+      roofInsulType: "eps",
+      roofInsulThick: parseInt(ri.insulRoofThickness) || 15,
+      replaceWindows: ri.replaceWindows,
+      windowType: "2g",
+      addHP: ri.addHP,
+      hpType: "aw",
+      hpPower: 10,
+      addVMC: ri.addHR,
+      Au,
+      addSolar: ri.addSolarTh,
+      solarArea: parseFloat(ri.solarThArea) || 0,
+      addPV: ri.addPV,
+      pvKwp: parseFloat(ri.pvArea) ? parseFloat(ri.pvArea) * 0.20 : 0,
+      contingency: 0.15,
+    });
+  }, [building.areaUseful, opaqueElements, glazingElements, rehabScenarioInputs]);
 
   // ═══════════════════════════════════════════════════════════════
   // NEW: BACS verification (A5)
@@ -4947,7 +4984,7 @@ export default function EnergyCalcApp({ cloud }) {
             showScenarioCompare, setShowScenarioCompare,
             rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
             setStep, goToStep, step,
-            financialAnalysis,
+            financialAnalysis, rehabCostEstimate,
           }} /></Suspense>}
 
           {/* ═══ STEP 6: CERTIFICAT ENERGETIC ═══ */}

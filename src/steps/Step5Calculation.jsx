@@ -35,7 +35,7 @@ export default function Step5Calculation(props) {
     showScenarioCompare, setShowScenarioCompare,
     rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
     setStep, goToStep, step,
-    financialAnalysis,
+    financialAnalysis, rehabCostEstimate,
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
@@ -207,6 +207,12 @@ export default function Step5Calculation(props) {
                       ); })()}
                     </div>
                     <div className="flex items-center justify-between bg-white/[0.03] rounded-lg p-3">
+                      <span className="text-xs opacity-60">ZEB (EPBD 2024/1275)</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${rer >= 30 ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" : "bg-white/5 text-white/40 border-white/10"}`}>
+                        ZEB: {rer >= 30 ? "DA" : "NU"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/[0.03] rounded-lg p-3">
                       <span className="text-xs opacity-60">Grilă aplicată</span>
                       <span className="text-xs font-medium">{grid?.label || catKey}</span>
                     </div>
@@ -246,6 +252,65 @@ export default function Step5Calculation(props) {
                       })}
                     </div>
                   </div>
+                </Card>
+              )}
+
+              {/* ── COST ESTIMATIV REABILITARE ── */}
+              {rehabCostEstimate && (
+                <Card title="Cost estimativ reabilitare termică" className="mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-center">
+                      <div className="text-2xl font-black font-mono text-amber-400">{rehabCostEstimate.total_lei.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">lei (total cu neprevăzut {(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_eur.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">EUR (fără TVA)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_per_m2.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">EUR/m² util</div>
+                    </div>
+                  </div>
+                  {/* Detaliu pe categorii */}
+                  {rehabCostEstimate.items.length > 0 && (
+                    <div className="space-y-1.5">
+                      {rehabCostEstimate.items.map((item, i) => {
+                        const pct = rehabCostEstimate.subtotal_eur > 0 ? (item.total_eur / rehabCostEstimate.subtotal_eur * 100) : 0;
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-xs">
+                            <span className="opacity-50 truncate w-52 shrink-0">{item.label}</span>
+                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#f59e0b", minWidth: pct > 0 ? "2px" : "0" }} />
+                            </div>
+                            <span className="font-mono opacity-60 w-20 text-right shrink-0">{item.total_eur.toLocaleString("ro-RO")} €</span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                        <span className="opacity-40">Neprevăzut ({(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</span>
+                        <span className="font-mono opacity-50">{rehabCostEstimate.contingency_eur.toLocaleString("ro-RO")} €</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Finanțare eligibilă */}
+                  {(rehabCostEstimate.fundingEligible.pnrr_max > 0 || rehabCostEstimate.fundingEligible.casa_verde_max > 0 || rehabCostEstimate.fundingEligible.afm_max > 0) && (
+                    <div className="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+                      <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Finanțare eligibilă orientativă</div>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        {rehabCostEstimate.fundingEligible.pnrr_max > 0 && (
+                          <span className="text-emerald-400">PNRR: max {rehabCostEstimate.fundingEligible.pnrr_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                        {rehabCostEstimate.fundingEligible.casa_verde_max > 0 && (
+                          <span className="text-emerald-400">Casa Verde: max {rehabCostEstimate.fundingEligible.casa_verde_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                        {rehabCostEstimate.fundingEligible.afm_max > 0 && (
+                          <span className="text-emerald-400">AFM: max {rehabCostEstimate.fundingEligible.afm_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 text-[10px] opacity-25">{rehabCostEstimate.meta.note}</div>
                 </Card>
               )}
 
