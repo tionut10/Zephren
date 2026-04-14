@@ -52,6 +52,7 @@ import { useInstallationSummary } from "./hooks/useInstallationSummary.js";
 import { useRenewableSummary } from "./hooks/useRenewableSummary.js";
 import { useAutoSync } from "./hooks/useAutoSync.js";
 import { useOfflineMode } from "./hooks/useOfflineMode.js";
+import { useProjectHistory } from "./hooks/useProjectHistory.js";
 
 // ── Component imports ──
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
@@ -413,72 +414,33 @@ export default function EnergyCalcApp({ cloud }) {
   }, []);
 
   // ═══════════════════════════════════════════════════════════
-  // NICE-TO-HAVE: UNDO/REDO SYSTEM
+  // UNDO/REDO + VERSIONING → extras în useProjectHistory hook (S5.4)
   // ═══════════════════════════════════════════════════════════
-  const [undoStack, setUndoStack] = useState([]);
-  const [redoStack, setRedoStack] = useState([]);
-  const maxUndoLevels = 20;
+  const getFullSnapshot = useCallback(() => ({
+    building, opaqueElements, glazingElements, thermalBridges,
+    heating, acm, cooling, ventilation, lighting,
+    solarThermal, photovoltaic, heatPump, biomass, otherRenew, battery,
+    auditor, useNA2023, finAnalysisInputs,
+  }), [building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, battery, auditor, useNA2023, finAnalysisInputs]);
 
-  const pushUndo = useCallback(() => {
-    const snapshot = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,useNA2023,finAnalysisInputs});
-    setUndoStack(prev => {
-      const next = [...prev, snapshot];
-      return next.length > maxUndoLevels ? next.slice(-maxUndoLevels) : next;
-    });
-    setRedoStack([]);
-  }, [building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor,useNA2023,finAnalysisInputs]);
-
-  const undo = useCallback(() => {
-    if (undoStack.length === 0) return;
-    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor});
-    setRedoStack(prev => [...prev, current]);
-    let prev;
-    try { prev = JSON.parse(undoStack[undoStack.length - 1]); } catch { showToast("Eroare undo — date corupte", "error", 2000); return; }
-    setUndoStack(s => s.slice(0, -1));
-    if (prev.building) setBuilding(p => ({...INITIAL_BUILDING, ...prev.building}));
-    if (prev.opaqueElements) setOpaqueElements(prev.opaqueElements);
-    if (prev.glazingElements) setGlazingElements(prev.glazingElements);
-    if (prev.thermalBridges) setThermalBridges(prev.thermalBridges);
-    if (prev.heating) setHeating(p => ({...INITIAL_HEATING, ...prev.heating}));
-    if (prev.acm) setAcm(p => ({...INITIAL_ACM, ...prev.acm}));
-    if (prev.cooling) setCooling(p => ({...INITIAL_COOLING, ...prev.cooling}));
-    if (prev.ventilation) setVentilation(p => ({...INITIAL_VENTILATION, ...prev.ventilation}));
-    if (prev.lighting) setLighting(p => ({...INITIAL_LIGHTING, ...prev.lighting}));
-    if (prev.solarThermal) setSolarThermal(p => ({...INITIAL_SOLAR_TH, ...prev.solarThermal}));
-    if (prev.photovoltaic) setPhotovoltaic(p => ({...INITIAL_PV, ...prev.photovoltaic}));
-    if (prev.heatPump) setHeatPump(p => ({...INITIAL_HP, ...prev.heatPump}));
-    if (prev.biomass) setBiomass(p => ({...INITIAL_BIO, ...prev.biomass}));
-    if (prev.otherRenew) setOtherRenew(p => ({...INITIAL_OTHER, ...prev.otherRenew}));
-    if (prev.battery) setBattery(p => ({...INITIAL_BATTERY, ...prev.battery}));
-    if (prev.auditor) setAuditor(p => ({...INITIAL_AUDITOR, ...prev.auditor}));
-    showToast("Undo aplicat", "info", 1500);
-  }, [undoStack, building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, showToast]);
-
-  const redo = useCallback(() => {
-    if (redoStack.length === 0) return;
-    const current = JSON.stringify({building,opaqueElements,glazingElements,thermalBridges,heating,acm,cooling,ventilation,lighting,solarThermal,photovoltaic,heatPump,biomass,otherRenew,battery,auditor});
-    setUndoStack(prev => [...prev, current]);
-    let next;
-    try { next = JSON.parse(redoStack[redoStack.length - 1]); } catch { showToast("Eroare redo — date corupte", "error", 2000); return; }
-    setRedoStack(s => s.slice(0, -1));
-    if (next.building) setBuilding(p => ({...INITIAL_BUILDING, ...next.building}));
-    if (next.opaqueElements) setOpaqueElements(next.opaqueElements);
-    if (next.glazingElements) setGlazingElements(next.glazingElements);
-    if (next.thermalBridges) setThermalBridges(next.thermalBridges);
-    if (next.heating) setHeating(p => ({...INITIAL_HEATING, ...next.heating}));
-    if (next.acm) setAcm(p => ({...INITIAL_ACM, ...next.acm}));
-    if (next.cooling) setCooling(p => ({...INITIAL_COOLING, ...next.cooling}));
-    if (next.ventilation) setVentilation(p => ({...INITIAL_VENTILATION, ...next.ventilation}));
-    if (next.lighting) setLighting(p => ({...INITIAL_LIGHTING, ...next.lighting}));
-    if (next.solarThermal) setSolarThermal(p => ({...INITIAL_SOLAR_TH, ...next.solarThermal}));
-    if (next.photovoltaic) setPhotovoltaic(p => ({...INITIAL_PV, ...next.photovoltaic}));
-    if (next.heatPump) setHeatPump(p => ({...INITIAL_HP, ...next.heatPump}));
-    if (next.biomass) setBiomass(p => ({...INITIAL_BIO, ...next.biomass}));
-    if (next.otherRenew) setOtherRenew(p => ({...INITIAL_OTHER, ...next.otherRenew}));
-    if (next.battery) setBattery(p => ({...INITIAL_BATTERY, ...next.battery}));
-    if (next.auditor) setAuditor(p => ({...INITIAL_AUDITOR, ...next.auditor}));
-    showToast("Redo aplicat", "info", 1500);
-  }, [redoStack, building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, otherRenew, auditor, showToast]);
+  const applyFullSnapshot = useCallback((d) => {
+    if (d.building) setBuilding(p => ({ ...INITIAL_BUILDING, ...d.building }));
+    if (d.opaqueElements) setOpaqueElements(d.opaqueElements);
+    if (d.glazingElements) setGlazingElements(d.glazingElements);
+    if (d.thermalBridges) setThermalBridges(d.thermalBridges);
+    if (d.heating) setHeating(p => ({ ...INITIAL_HEATING, ...d.heating }));
+    if (d.acm) setAcm(p => ({ ...INITIAL_ACM, ...d.acm }));
+    if (d.cooling) setCooling(p => ({ ...INITIAL_COOLING, ...d.cooling }));
+    if (d.ventilation) setVentilation(p => ({ ...INITIAL_VENTILATION, ...d.ventilation }));
+    if (d.lighting) setLighting(p => ({ ...INITIAL_LIGHTING, ...d.lighting }));
+    if (d.solarThermal) setSolarThermal(p => ({ ...INITIAL_SOLAR_TH, ...d.solarThermal }));
+    if (d.photovoltaic) setPhotovoltaic(p => ({ ...INITIAL_PV, ...d.photovoltaic }));
+    if (d.heatPump) setHeatPump(p => ({ ...INITIAL_HP, ...d.heatPump }));
+    if (d.biomass) setBiomass(p => ({ ...INITIAL_BIO, ...d.biomass }));
+    if (d.otherRenew) setOtherRenew(p => ({ ...INITIAL_OTHER, ...d.otherRenew }));
+    if (d.battery) setBattery(p => ({ ...INITIAL_BATTERY, ...d.battery }));
+    if (d.auditor) setAuditor(p => ({ ...INITIAL_AUDITOR, ...d.auditor }));
+  }, []);
 
   // ═══════════════════════════════════════════════════════════
   // NICE-TO-HAVE: AUTO DARK/LIGHT THEME DETECTION
@@ -616,47 +578,16 @@ export default function EnergyCalcApp({ cloud }) {
     } catch(e) {}
   }, []);
 
-  // ── Versioning ──────────────────────────────────────────────────────────────
-  const saveVersion = useCallback(async (projectId, label) => {
-    if (typeof window === "undefined" || !window.storage) return;
-    const data = getProjectData();
-    const ts = Date.now();
-    const key = "ep-ver:" + projectId + ":" + ts;
-    const payload = { ...data, meta: { label: label || "Versiune " + new Date(ts).toLocaleString("ro-RO"), ts, projectId } };
-    try {
-      await window.storage.set(key, JSON.stringify(payload));
-      const res = await window.storage.list("ep-ver:" + projectId + ":");
-      if (res && res.keys && res.keys.length > 10) {
-        const sorted = [...res.keys].sort();
-        for (const old of sorted.slice(0, sorted.length - 10)) { await window.storage.delete(old); }
-      }
-    } catch(e) {}
-  }, [getProjectData]);
-
-  const listVersions = useCallback(async (projectId) => {
-    if (typeof window === "undefined" || !window.storage) return [];
-    try {
-      const res = await window.storage.list("ep-ver:" + projectId + ":");
-      if (!res || !res.keys) return [];
-      const versions = [];
-      for (const key of res.keys) {
-        try {
-          const r = await window.storage.get(key);
-          if (r && r.value) {
-            const d = JSON.parse(r.value);
-            versions.push({ key, ts: d.meta?.ts || 0, label: d.meta?.label || "—", data: d });
-          }
-        } catch(e) {}
-      }
-      return versions.sort((a, b) => b.ts - a.ts);
-    } catch(e) { return []; }
-  }, []);
-
-  const restoreProjectVersion = useCallback(async (versionData) => {
-    loadProjectData(versionData);
-    showToast("Versiune restaurată: " + (versionData.meta?.label || "—"), "success");
-    setExpandedVersionProjectId(null);
-  }, [loadProjectData, showToast]);
+  // ── Undo/Redo + Versioning → useProjectHistory hook (S5.4) ──
+  const {
+    undoStack, redoStack,
+    pushUndo, undo, redo,
+    saveVersion, listVersions, restoreProjectVersion,
+  } = useProjectHistory({
+    getFullSnapshot, applyFullSnapshot,
+    getProjectData, loadProjectData,
+    showToast, setExpandedVersionProjectId,
+  });
 
   const saveProjectAs = useCallback(async (name) => {
     if (typeof window === "undefined" || !window.storage) return;
