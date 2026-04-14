@@ -10,7 +10,7 @@ describe("Calcul R/U element opac — ISO 6946:2017", () => {
       { thickness: 15, lambda: 0.87 },
     ], "PE");
     expect(r.u).toBeLessThan(0.30);
-    expect(r.deltaU).toBe(0.04); // are izolație → corecție ΔU
+    expect(r.deltaU).toBe(0.064); // ISO 6946:2017 Annex F exact: default fastener M10 oțel, 6/m², EPS 100mm
   });
 
   it("Perete fără izolație → U > 1.0", () => {

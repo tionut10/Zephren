@@ -47,13 +47,12 @@ export default function InvoiceOCR({ onApply, onClose }) {
     reader.onload = async (ev) => {
       try {
         const fileData = ev.target.result; // data URL base64
-        const fileType = file.type === "application/pdf" ? "pdf" : "image";
 
-        const resp = await fetch("/api/import-invoice", {
+        const resp = await fetch("/api/import-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            fileType,
+            fileType: "invoice",
             fileData,
             mimeType: file.type || "image/jpeg",
           }),

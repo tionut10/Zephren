@@ -216,6 +216,37 @@ Instrucțiuni de extragere:
 
 RĂSPUNDE DOAR CU JSON, FĂRĂ alt text.`;
 
+const INVOICE_PROMPT = `Ești un expert în analiza facturilor de energie din România.
+Analizează documentul și extrage datele de consum în format JSON strict.
+
+Returnează DOAR JSON:
+{
+  "supplier": "numele furnizorului (ex: E.ON, CEZ, Engie, DIGI, Electrica)",
+  "energyType": "gaz|electricitate|termoficare|mix",
+  "annualGasM3": "",
+  "annualGasKwh": "",
+  "annualElecKwh": "",
+  "annualHeatGcal": "",
+  "annualHeatKwh": "",
+  "periodStart": "YYYY-MM",
+  "periodEnd": "YYYY-MM",
+  "address": "",
+  "city": "",
+  "tariffGas": "",
+  "tariffElec": "",
+  "totalCostLei": "",
+  "monthlyValues": [],
+  "notes": "observații utile (contor, nr. contract, etc.)"
+}
+
+Conversii:
+- 1 m³ gaz natural ≈ 10.55 kWh (putere calorifică inferioară standard România)
+- 1 Gcal = 1163 kWh
+- Dacă există valori lunare, calculează totalul anual și pune în annualGasKwh/annualElecKwh
+- Dacă sunt mai puțin de 12 luni, extrapolează pro-rata la 12 luni
+
+RĂSPUNDE DOAR CU JSON.`;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -311,8 +342,23 @@ export default async function handler(req, res) {
           { type: "text", text: DRAWING_PROMPT },
         ];
       }
+    } else if (fileType === "invoice") {
+      // Factură energie (gaz, electricitate, termoficare) — PDF sau imagine
+      const base64Data = fileData.replace(/^data:[^;]+;base64,/, "");
+      const isImage = mimeType && mimeType.startsWith("image/");
+      if (isImage) {
+        messageContent = [
+          { type: "image", source: { type: "base64", media_type: mimeType, data: base64Data } },
+          { type: "text", text: INVOICE_PROMPT },
+        ];
+      } else {
+        messageContent = [
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+          { type: "text", text: INVOICE_PROMPT },
+        ];
+      }
     } else {
-      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image, ifc, facade, drawing" });
+      return res.status(400).json({ error: "fileType invalid. Acceptat: pdf, docx_text, image, ifc, facade, drawing, invoice" });
     }
 
     const response = await client.messages.create({

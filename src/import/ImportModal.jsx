@@ -422,10 +422,10 @@ export default function ImportModal({
     try {
       const base64 = await readAsBase64(file);
       const fmt = file.name.toLowerCase().endsWith(".pdf") ? "pdf" : "image";
-      const res = await fetch("/api/import-invoice", {
+      const res = await fetch("/api/import-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileType: fmt, fileData: base64, mimeType: file.type }),
+        body: JSON.stringify({ fileType: "invoice", fileData: base64, mimeType: file.type }),
       });
       if (!res.ok) throw new Error("API error " + res.status);
       const { data, error } = await res.json();

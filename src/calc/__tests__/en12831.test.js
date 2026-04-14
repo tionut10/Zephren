@@ -203,7 +203,7 @@ describe("calcPeakCoolingLoad", () => {
 
   it("phi_C_m2 = phi_C_total / Au (cu toleranță)", () => {
     const res = calcPeakCoolingLoad(paramsRacire);
-    expect(res.phi_C_m2).toBeCloseTo(res.phi_C_total / 100, 0);
+    expect(res.phi_C_m2).toBeCloseTo(res.phi_C_design / 100, 0);
   });
 
   it("tIntCool = 26°C (setpoint standard răcire)", () => {

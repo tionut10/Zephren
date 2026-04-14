@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "feat(envelope-S4): RampGuided complet + replace grid + GA"
+      },
+      {
         "icon": "🎨",
         "text": "regenerate changelog + program stats (build artifacts)"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔧",
         "text": "închide dropdown autocomplete după selecție adresă"
-      },
-      {
-        "icon": "🔧",
-        "text": "corectare texte factor conversie energie ambientală"
       }
     ]
   },
