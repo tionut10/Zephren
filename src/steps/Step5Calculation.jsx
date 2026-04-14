@@ -1152,12 +1152,12 @@ export default function Step5Calculation(props) {
               <div className="flex items-center gap-3 mb-3 bg-white/[0.03] border border-white/10 rounded-xl p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={useNA2023} onChange={e => setUseNA2023(e.target.checked)} className="accent-amber-500" />
-                  <span className="text-xs font-medium">SR EN ISO 52000-1/NA:2023 (Tabel A.16)</span>
+                  <span className="text-xs font-medium">fP energie ambientală = 1.00 (Mc001-2022 Tabel 5.17)</span>
                 </label>
                 <div className="text-[10px] opacity-40 flex-1">
                   {useNA2023
-                    ? "Factor energie ambientală = 1.0 — pompele de căldură beneficiază de recunoașterea energiei ambientale ca sursă regenerabilă (recomandat OAER)"
-                    : "Mc 001-2022 original (Tabel 5.17) — factorul pentru energia ambientală = 0, pompele de căldură sunt dezavantajate"}
+                    ? "Factor energie ambientală = 1.00 — conform Mc 001-2022 Tabel 5.17 (obligatoriu, confirmat MDLPA nr. 50843/09.03.2026). Energia ambientală a pompelor de căldură recunoscută ca sursă regenerabilă."
+                    : "Factor energie ambientală = 0 — valoare eronată din SR EN ISO 52000-1/NA:2023 Tabel A.16 (în curs de corectare de către ASRO). Nerecomandat — contrazice Mc 001-2022."}
                 </div>
               </div>
 
