@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🧪",
+        "text": "test(SmartEnvelopeHub): 183 teste unitare Vitest pentru S1-S4"
+      },
+      {
+        "icon": "📥",
+        "text": "elimină referința import-invoice.js din vercel.json"
+      },
+      {
+        "icon": "📥",
+        "text": "merge import-invoice in import-document + fix 4 teste pre-existente"
+      },
+      {
         "icon": "✨",
         "text": "feat(envelope-S4): RampGuided complet + replace grid + GA"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "feat(cpe): Anexa 1+2 PDF oficial conform Ord. MDLPA 16/2023"
-      },
-      {
-        "icon": "🔸",
-        "text": "a11y: WCAG 2.1 AA — focus ring, tablist/tab/tabpanel, drop zone ARIA (SmartDataHub)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(Step1): SmartDataHub — consolidare metode introducere date"
-      },
-      {
-        "icon": "🔧",
-        "text": "închide dropdown autocomplete după selecție adresă"
       }
     ]
   },
