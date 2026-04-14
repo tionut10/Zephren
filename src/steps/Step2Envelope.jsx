@@ -1,6 +1,7 @@
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
+import SmartEnvelopeHub from "../components/SmartEnvelopeHub/SmartEnvelopeHub.jsx";
 
 export default function Step2Envelope({
   building, lang, selectedClimate,
@@ -20,6 +21,15 @@ export default function Step2Envelope({
   airInfiltrationCalc, naturalLightingCalc,
   csvImportRef, importCSV,
   setStep, goToStep,
+  // SmartEnvelopeHub (S3 — feature flag controlled)
+  envelopeHubEnabled = false,
+  applyEnvelopeTemplate,
+  applyDemoEnvelopeOnly,
+  applyStandardBridgesPackHandler,
+  apply4WallsFromGeom,
+  onOpenJSONImport,
+  onOpenIFC,
+  showToast,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
@@ -41,6 +51,44 @@ export default function Step2Envelope({
             </div>
 
       </div>
+
+      {/* SmartEnvelopeHub — S3 test harness (feature flag: ?envelopeHub=1).
+          Legacy grid-ul rămâne intact dedesubt, se montează mereu. În S4 Hub-ul
+          înlocuiește grid-ul clasic complet. */}
+      {envelopeHubEnabled && (
+        <SmartEnvelopeHub
+          building={building}
+          opaqueElements={opaqueElements}
+          glazingElements={glazingElements}
+          thermalBridges={thermalBridges}
+          envelopeSummary={envelopeSummary}
+          calcOpaqueR={calcOpaqueR}
+          ELEMENT_TYPES={ELEMENT_TYPES}
+          lang={lang}
+          selectedClimate={selectedClimate}
+          // CRUD callback-uri modale existente
+          setEditingOpaque={setEditingOpaque}
+          setShowOpaqueModal={setShowOpaqueModal}
+          setEditingGlazing={setEditingGlazing}
+          setShowGlazingModal={setShowGlazingModal}
+          setEditingBridge={setEditingBridge}
+          setShowBridgeModal={setShowBridgeModal}
+          setShowBridgeCatalog={setShowBridgeCatalog}
+          // RampInstant
+          applyEnvelopeTemplate={applyEnvelopeTemplate}
+          applyDemoEnvelopeOnly={applyDemoEnvelopeOnly}
+          applyStandardBridgesPackHandler={applyStandardBridgesPackHandler}
+          apply4WallsFromGeom={apply4WallsFromGeom}
+          // RampFile — state mutators + callback-uri import
+          setGlazingElements={setGlazingElements}
+          setThermalBridges={setThermalBridges}
+          onOpenIFC={onOpenIFC}
+          onCSVImport={(e) => { if (e?.target?.files?.[0]) importCSV(e.target.files[0]); }}
+          onOpenJSONImport={onOpenJSONImport}
+          t={t}
+          showToast={showToast}
+        />
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Elemente opace */}

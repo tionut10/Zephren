@@ -29,6 +29,7 @@ import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
+import { computeEnvelopeHint } from "./utils/envelopeHints.js";
 
 // ── Detectare tip fișier pentru drop zone universal ─────────────────────────
 function detectEnvelopeFileType(file) {
@@ -145,11 +146,18 @@ export default function SmartEnvelopeHub({
   setShowBridgeModal,
   setShowBridgeCatalog,
 
-  // ── Callback-uri RampInstant (TODO S3: șabloane, demo, pachet punți) ──────
+  // ── Callback-uri RampInstant (S3 — handler-ele vin din energy-calc) ──────
   loadDemoByIndex,
-  applyStandardBridgesPack,    // → utils/applyStandardBridgesPack.js (S3)
+  applyEnvelopeTemplate,
+  applyDemoEnvelopeOnly,
+  applyStandardBridgesPackHandler,
+  apply4WallsFromGeom,
 
-  // ── Callback-uri RampFile (TODO S3: import IFC/gbXML, CSV pereți) ──────────
+  // ── State mutators pentru RampFile CSV vitraje/punți (S3) ────────────────
+  setGlazingElements,
+  setThermalBridges,
+
+  // ── Callback-uri RampFile (import IFC/gbXML, CSV pereți, JSON) ───────────
   onOpenIFC,
   onCSVImport,
   onOpenJSONImport,
@@ -252,26 +260,24 @@ export default function SmartEnvelopeHub({
     return () => window.removeEventListener("keydown", onKey);
   }, [setEditingOpaque, setShowOpaqueModal, setEditingGlazing, setShowGlazingModal, setEditingBridge, setShowBridgeModal]);
 
-  // ── Hint contextual (next-best-action) ─────────────────────────────────────
-  const contextHint = useMemo(() => {
-    if (opaqueElements.length === 0 && glazingElements.length === 0 && thermalBridges.length === 0) {
-      return { icon: "💡", text: "Începe cu un demo de anvelopă sau un șablon — RampInstant (amber).", action: "instant" };
-    }
-    if (opaqueElements.length >= 3 && thermalBridges.length === 0) {
-      return { icon: "🔗", text: "Ai 3+ pereți — poți aplica pachetul standard de 5 punți termice.", action: "bridges" };
-    }
-    if (opaqueElements.length > 0 && progress.pct < 50) {
-      return { icon: "🧭", text: "Câmpuri importante lipsesc — deschide wizard-ul ghidat pentru completare asistată.", action: "guided" };
-    }
-    return null;
-  }, [opaqueElements.length, glazingElements.length, thermalBridges.length, progress.pct]);
+  // ── Hint contextual (next-best-action) — delegat la utils/envelopeHints.js ──
+  const contextHint = useMemo(
+    () => computeEnvelopeHint({
+      opaqueElements,
+      glazingElements,
+      thermalBridges,
+      building,
+      progress,
+    }),
+    [opaqueElements, glazingElements, thermalBridges, building, progress]
+  );
 
   const handleHintAction = useCallback(() => {
     if (!contextHint) return;
     if (contextHint.action === "instant")  setActiveRamp("instant");
-    else if (contextHint.action === "bridges") applyStandardBridgesPack?.();
+    else if (contextHint.action === "bridges") applyStandardBridgesPackHandler?.();
     else if (contextHint.action === "guided")  setActiveRamp("guided");
-  }, [contextHint, applyStandardBridgesPack]);
+  }, [contextHint, applyStandardBridgesPackHandler]);
 
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] overflow-hidden">
@@ -367,19 +373,29 @@ export default function SmartEnvelopeHub({
           )}
         </div>
 
-        {/* Context hint (next-best-action) */}
-        {contextHint && !dropInfo && (
-          <div className="mt-2 flex items-center gap-2 rounded-lg bg-indigo-500/[0.06] border border-indigo-500/15 px-3 py-2">
-            <span className="text-sm">{contextHint.icon}</span>
-            <span className="text-[11px] text-indigo-200/80 flex-1">{contextHint.text}</span>
-            <button
-              onClick={handleHintAction}
-              className="text-[10px] font-semibold text-indigo-300 hover:text-indigo-200 underline decoration-dotted underline-offset-2"
-            >
-              acționează →
-            </button>
-          </div>
-        )}
+        {/* Context hint (next-best-action) — tone-aware styling */}
+        {contextHint && !dropInfo && (() => {
+          const toneMap = {
+            indigo:  { bg: "bg-indigo-500/[0.06]",  border: "border-indigo-500/15",  text: "text-indigo-200/80",  btn: "text-indigo-300 hover:text-indigo-200"   },
+            amber:   { bg: "bg-amber-500/[0.07]",   border: "border-amber-500/20",   text: "text-amber-200/90",   btn: "text-amber-300 hover:text-amber-200"     },
+            emerald: { bg: "bg-emerald-500/[0.07]", border: "border-emerald-500/20", text: "text-emerald-200/90", btn: "text-emerald-300 hover:text-emerald-200" },
+          };
+          const c = toneMap[contextHint.tone] || toneMap.indigo;
+          return (
+            <div className={`mt-2 flex items-center gap-2 rounded-lg ${c.bg} border ${c.border} px-3 py-2`}>
+              <span className="text-sm" aria-hidden="true">{contextHint.icon}</span>
+              <span className={`text-[11px] ${c.text} flex-1`}>{contextHint.text}</span>
+              {contextHint.action && (
+                <button
+                  onClick={handleHintAction}
+                  className={`text-[10px] font-semibold ${c.btn} underline decoration-dotted underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded px-1`}
+                >
+                  acționează →
+                </button>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── 3 cartele rampă ──────────────────────────────────────────────── */}
@@ -430,7 +446,10 @@ export default function SmartEnvelopeHub({
             glazingElements={glazingElements}
             thermalBridges={thermalBridges}
             loadDemoByIndex={loadDemoByIndex}
-            applyStandardBridgesPack={applyStandardBridgesPack}
+            applyEnvelopeTemplate={applyEnvelopeTemplate}
+            applyDemoEnvelopeOnly={applyDemoEnvelopeOnly}
+            applyStandardBridgesPackHandler={applyStandardBridgesPackHandler}
+            apply4WallsFromGeom={apply4WallsFromGeom}
             setEditingOpaque={setEditingOpaque}
             setShowOpaqueModal={setShowOpaqueModal}
             setEditingGlazing={setEditingGlazing}
@@ -454,6 +473,8 @@ export default function SmartEnvelopeHub({
             onGbxmlImport={onGbxmlImport}
             onCSVImport={onCSVImport}
             onOpenJSONImport={onOpenJSONImport}
+            setGlazingElements={setGlazingElements}
+            setThermalBridges={setThermalBridges}
             showToast={showToast}
           />
         </div>

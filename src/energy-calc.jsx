@@ -39,6 +39,11 @@ import { TIERS } from "./data/tiers.js";
 import { BENCHMARKS } from "./data/benchmarks.js";
 import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
 import { DEMO_PROJECTS } from "./data/demoProjects.js";
+import { normalizeGlazingList } from "./components/SmartEnvelopeHub/utils/normalizeGlazing.js";
+import { ENVELOPE_TEMPLATES, extractEnvelopeFromTemplate } from "./components/SmartEnvelopeHub/utils/envelopeTemplates.js";
+import { applyStandardBridgesPack as buildStandardBridgesPack } from "./components/SmartEnvelopeHub/utils/applyStandardBridgesPack.js";
+import { generateElementsFromGeometry, canGenerateFromGeometry } from "./components/SmartEnvelopeHub/utils/geometryToAreas.js";
+import { isFeatureEnabled, FLAGS } from "./config/featureFlags.js";
 
 // ── Hooks (Sprint 4 refactoring) ──
 import { useEnvelopeSummary } from "./hooks/useEnvelopeSummary.js";
@@ -1080,13 +1085,21 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════
   // GENERIC DEMO LOADER — 20 exemple complete din demoProjects.js
   // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // SmartEnvelopeHub — feature flag check (S3 test harness, S4 GA)
+  // ═══════════════════════════════════════════════════════════
+  const envelopeHubEnabled = useMemo(() => isFeatureEnabled(FLAGS.SMART_ENVELOPE_HUB), []);
+
   const loadDemoByIndex = useCallback((idx) => {
     const d = DEMO_PROJECTS[idx];
     if (!d) return;
     pushUndo();
     setBuilding(d.building);
     setOpaqueElements(d.opaqueElements);
-    setGlazingElements(d.glazingElements);
+    // Fix D2 (envelope_hub_design.md, 14.04.2026): normalizăm câmpul vitrajelor
+    // la load — demo-urile folosesc `type`, GlazingModal folosește `glazingType`.
+    // Copiem `type → glazingType` dacă lipsește, păstrând compatibilitatea sursă.
+    setGlazingElements(normalizeGlazingList(d.glazingElements));
     setThermalBridges(d.thermalBridges);
     setHeating(d.heating);
     setAcm(d.acm);
@@ -1107,6 +1120,82 @@ export default function EnergyCalcApp({ cloud }) {
     showToast(`Demo ${idx + 1} încărcat — ${d.shortDesc}`, "success", 5000);
   }, [pushUndo, showToast]);
 
+
+  // ═══════════════════════════════════════════════════════════
+  // SmartEnvelopeHub — handler-uri pentru RampInstant (S3)
+  // Aplicare NON-destructivă: doar anvelopa se schimbă, restul proiectului intact.
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Aplică un șablon de anvelopă (8 tipologii derivate din demo-urile 1-20).
+   * Copiază doar { opaque, glazing, bridges } din demo-ul referit, păstrând
+   * intacte building, instalații, regenerabile, auditor.
+   */
+  const applyEnvelopeTemplate = useCallback((templateId) => {
+    const tpl = ENVELOPE_TEMPLATES.find(t => t.id === templateId);
+    if (!tpl) { showToast("Șablon anvelopă necunoscut: " + templateId, "error"); return; }
+    const env = extractEnvelopeFromTemplate(tpl, DEMO_PROJECTS);
+    if (!env) { showToast("Nu am putut extrage anvelopa din șablon", "error"); return; }
+    pushUndo();
+    setOpaqueElements(env.opaqueElements);
+    setGlazingElements(normalizeGlazingList(env.glazingElements));
+    setThermalBridges(env.thermalBridges);
+    showToast(`Șablon aplicat: ${tpl.title} — ${env.opaqueElements.length} pereți, ${env.glazingElements.length} vitraje, ${env.thermalBridges.length} punți`, "success", 5000);
+  }, [pushUndo, showToast]);
+
+  /**
+   * Aplică anvelopa (doar {opaque, glazing, bridges}) dintr-un demo ales
+   * dintre cele 20, păstrând building + instalații curente. (decizia D6)
+   */
+  const applyDemoEnvelopeOnly = useCallback((demoIdx) => {
+    const d = DEMO_PROJECTS[demoIdx];
+    if (!d) { showToast("Demo inexistent: " + demoIdx, "error"); return; }
+    pushUndo();
+    const opaque  = (d.opaqueElements  || []).map(el => ({ ...el, layers: (el.layers || []).map(l => ({ ...l })) }));
+    const glazing = normalizeGlazingList((d.glazingElements || []).map(el => ({ ...el })));
+    const bridges = (d.thermalBridges  || []).map(b => ({ ...b }));
+    setOpaqueElements(opaque);
+    setGlazingElements(glazing);
+    setThermalBridges(bridges);
+    showToast(`Anvelopă din Demo ${demoIdx + 1} aplicată — ${opaque.length} pereți, ${glazing.length} vitraje, ${bridges.length} punți`, "success", 5000);
+  }, [pushUndo, showToast]);
+
+  /**
+   * Generează 5 punți standard din geometrie (decizia D1) — cu warning.
+   * User-ul are deja confirmarea din UI (RampInstant cere confirmation).
+   */
+  const applyStandardBridgesPackHandler = useCallback(() => {
+    pushUndo();
+    const pack = buildStandardBridgesPack(building, glazingElements);
+    setThermalBridges(prev => {
+      // Evită duplicate: filtrează pack-ul cu tipuri care nu există deja.
+      const existingTypes = new Set((prev || []).map(b => b.type));
+      const newOnes = pack.filter(b => !existingTypes.has(b.type));
+      return [...(prev || []), ...newOnes];
+    });
+    showToast(`${pack.length} punți standard adăugate (estimare orientativă)`, "success", 6000);
+  }, [building, glazingElements, pushUndo, showToast]);
+
+  /**
+   * Generează 4 pereți N/S/E/V + acoperiș + planșeu pe sol din geometria Step 1.
+   */
+  const apply4WallsFromGeom = useCallback(() => {
+    const check = canGenerateFromGeometry(building);
+    if (!check.ok) { showToast(check.reason, "error"); return; }
+    const elements = generateElementsFromGeometry(building);
+    if (!elements || elements.length === 0) {
+      showToast("Nu s-au putut genera elementele (geometrie invalidă)", "error");
+      return;
+    }
+    pushUndo();
+    setOpaqueElements(prev => {
+      // Nu înlocui ce există — append la sfârșit.
+      const newNames = new Set((prev || []).map(el => el.name));
+      const toAdd = elements.filter(el => !newNames.has(el.name));
+      return [...(prev || []), ...toAdd];
+    });
+    showToast(`${elements.length} elemente opace generate din geometria Step 1 (completează straturile)`, "success", 6000);
+  }, [building, pushUndo, showToast]);
 
 
   // ═══════════════════════════════════════════════════════════
@@ -1557,7 +1646,8 @@ export default function EnergyCalcApp({ cloud }) {
         // All checks pass — apply data
         if (data.building) setBuilding(prev => ({...INITIAL_BUILDING, ...data.building}));
         if (data.opaqueElements) setOpaqueElements(data.opaqueElements);
-        if (data.glazingElements) setGlazingElements(data.glazingElements);
+        // Fix D2: normalize și la import JSON (în caz că fișierul e din demo/export vechi).
+        if (data.glazingElements) setGlazingElements(normalizeGlazingList(data.glazingElements));
         if (data.thermalBridges) setThermalBridges(data.thermalBridges);
         if (data.heating) setHeating(prev => ({...INITIAL_HEATING, ...data.heating}));
         if (data.acm) setAcm(prev => ({...INITIAL_ACM, ...data.acm}));
@@ -4797,6 +4887,15 @@ export default function EnergyCalcApp({ cloud }) {
             airInfiltrationCalc={airInfiltrationCalc} naturalLightingCalc={naturalLightingCalc}
             csvImportRef={csvImportRef} importCSV={importCSV}
             setStep={setStep} goToStep={goToStep}
+            // SmartEnvelopeHub (S3 — feature flag controled)
+            envelopeHubEnabled={envelopeHubEnabled}
+            applyEnvelopeTemplate={applyEnvelopeTemplate}
+            applyDemoEnvelopeOnly={applyDemoEnvelopeOnly}
+            applyStandardBridgesPackHandler={applyStandardBridgesPackHandler}
+            apply4WallsFromGeom={apply4WallsFromGeom}
+            onOpenJSONImport={importProject}
+            onOpenIFC={() => setShowImportWizard(true)}
+            showToast={showToast}
           /></Suspense>}
 
 

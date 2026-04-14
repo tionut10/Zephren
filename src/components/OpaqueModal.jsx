@@ -64,11 +64,28 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
       return {...prev, layers};
     });
 
+    // Fix D3 (envelope_hub_design.md, 14.04.2026):
+    // selectMaterial propaga doar {material, lambda, rho, matName} — aruncând
+    // câmpurile mu (permeabilitate vapori, critic pentru Glaser), cp (căldură
+    // specifică, pentru inerție termică) și src (normativă sursă). Rezolvăm
+    // printr-un singur setEl atomic care propagă TOATE câmpurile utile din
+    // materials.json. Non-destructiv: valorile lipsă rămân 0/"".
     const selectMaterial = (idx, mat) => {
-      updateLayer(idx, "material", mat.name);
-      updateLayer(idx, "lambda", mat.lambda);
-      updateLayer(idx, "rho", mat.rho);
-      updateLayer(idx, "matName", mat.name);
+      setEl(prev => {
+        const layers = [...prev.layers];
+        layers[idx] = {
+          ...layers[idx],
+          material: mat.name,
+          matName:  mat.name,
+          lambda:   mat.lambda,
+          rho:      mat.rho,
+          // câmpuri propagate de la D3:
+          mu:       mat.mu !== undefined ? mat.mu : (layers[idx].mu || 0),
+          cp:       mat.cp !== undefined ? mat.cp : (layers[idx].cp || 0),
+          src:      mat.src || layers[idx].src || "",
+        };
+        return { ...prev, layers };
+      });
       setActiveLayerIdx(null);
       setMatSearch("");
     };
