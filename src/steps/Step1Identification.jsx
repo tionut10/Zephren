@@ -1,12 +1,9 @@
-import { useState, useCallback, useMemo, useRef, lazy, Suspense } from "react";
-import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
+import { useState, useCallback, useMemo } from "react";
+import { Select, Input, Card, Badge, ResultRow, cn } from "../components/ui.jsx";
 import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
-import ImportHub from "../components/ImportHub.jsx";
-
-const BuildingTemplateModal = lazy(() => import("../components/BuildingTemplateModal.jsx"));
-import { DEMO_PROJECTS } from "../data/demoProjects.js";
+import SmartDataHub from "../components/SmartDataHub/SmartDataHub.jsx";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -113,6 +110,9 @@ export default function Step1Identification({
   loadTypicalBuilding, showToast,
   goToStep,
   onOpenTutorial,
+  onOpenQuickFill,
+  onOpenChat,
+  onOpenJSONImport,
   buildingPhotos, setBuildingPhotos,
   userPlan,
 }) {
@@ -124,7 +124,6 @@ export default function Step1Identification({
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
-  const [showTemplates, setShowTemplates] = useState(false);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -395,38 +394,14 @@ export default function Step1Identification({
         <p className="text-xs opacity-40">Date generale necesare conform Cap. 1 Mc 001-2022</p>
       </div>
 
-      {/* Card bun-venit — vizibil doar pe proiect nou/gol */}
-      {isEmptyProject && onOpenTutorial && (
-        <div className="mb-5 rounded-xl border border-purple-500/25 bg-purple-500/8 p-4 flex items-start gap-4">
-          <span className="text-3xl shrink-0 mt-0.5" aria-hidden="true">🎓</span>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-white text-sm mb-0.5">
-              {lang === "EN" ? "First time in Zephren?" : "Prima dată în Zephren?"}
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed mb-3">
-              {lang === "EN"
-                ? "Start the interactive tutorial — step-by-step walkthrough with a pre-filled example building. Duration: ~5 min."
-                : "Pornește tutorialul interactiv — ghid pas cu pas cu o clădire exemplu precompletată. Durată: ~5 min."}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={onOpenTutorial}
-                className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-sm">
-                <span aria-hidden="true">🎓</span> {lang === "EN" ? "Start tutorial" : "Pornește tutorialul"}
-              </button>
-              <button onClick={() => loadDemoByIndex(0)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/10 hover:bg-white/5 text-white/50 hover:text-white/80 transition-all">
-                {lang === "EN" ? "Load example directly" : "Încarcă exemplu direct"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Hub Import centralizat ─────────────────────────────────────────── */}
-      <ImportHub
-        onOpenIFC={() => setShowIFC(true)}
-        drawingLoading={drawingLoading}
-        onDrawingFile={handleDrawingUpload}
+      {/* ── Smart Data Hub — toate metodele de introducere date centralizate ── */}
+      <SmartDataHub
+        building={building}
+        isEmptyProject={isEmptyProject}
+        onOpenTutorial={onOpenTutorial}
+        loadDemoByIndex={loadDemoByIndex}
+        loadTypicalBuilding={loadTypicalBuilding}
+        userPlan={userPlan}
         onGeocode={handleGeocode}
         geoStatus={geoStatus}
         cadastralNr={cadastralNr}
@@ -439,15 +414,18 @@ export default function Step1Identification({
         importStatusMsg={importStatusMsg}
         importedClimateData={importedClimateData}
         onOpenMeteoImport={handleOpenMeteoImport}
+        drawingLoading={drawingLoading}
+        onDrawingFile={handleDrawingUpload}
+        onOpenIFC={() => setShowIFC(true)}
         onCSVImport={handleCSVImport}
         onEPWImport={handleEPWImport}
-        buildingPhotos={buildingPhotos}
-        setBuildingPhotos={setBuildingPhotos}
+        onOpenJSONImport={onOpenJSONImport}
+        onOpenQuickFill={onOpenQuickFill}
+        onOpenChat={onOpenChat}
         showToast={showToast}
-        cn={cn}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {/* Coloana 1: Adresă & Clasificare */}
         <div className="space-y-5">
           <Card title={t("Adresa clădirii",lang)}>
@@ -535,27 +513,6 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          <Card title={t("Clădiri tip românești",lang)} badge={<span className="text-[10px] opacity-30">20 template-uri CPE complete</span>}>
-            {/* Buton șabloane din baza de date tipică */}
-            <button
-              onClick={() => setShowTemplates(true)}
-              className="w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold transition-all">
-              🏗️ Șabloane clădiri tip românești (22+ modele)
-            </button>
-            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1" style={{scrollbarWidth:"thin"}}>
-              {DEMO_PROJECTS.map((d, idx) => (
-                <button key={d.id} onClick={() => loadDemoByIndex(idx)}
-                  className="w-full text-left px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all text-xs">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <div className="font-bold text-emerald-300 leading-snug">{d.title}</div>
-                      <div className="opacity-50 mt-0.5 leading-snug">{d.shortDesc}</div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </Card>
         </div>
 
         {/* Coloana 2: Geometrie */}
@@ -750,6 +707,21 @@ export default function Step1Identification({
         </div>
       </div>
 
+      {/* ── Documentare vizuală (fotografii clădire) ─────────────────────── */}
+      <div className="mt-6">
+        <Card title={t("Documentare vizuală", lang)} badge={<span className="text-[10px] opacity-40">incluse în Anexa fotografică CPE</span>}>
+          <p className="text-[11px] text-slate-400 mb-3">
+            Fotografii grupate pe categorii — utile pentru Anexa fotografică din CPE și pentru raportul de audit energetic.
+          </p>
+          <BuildingPhotos
+            buildingPhotos={buildingPhotos || []}
+            setBuildingPhotos={setBuildingPhotos}
+            showToast={showToast}
+            cn={cn}
+          />
+        </Card>
+      </div>
+
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
         <div />
@@ -760,21 +732,6 @@ export default function Step1Identification({
       </div>
 
       {showIFC && <IFCImport onApply={handleIFCApply} onClose={() => setShowIFC(false)} />}
-
-      {/* Modal Șabloane Clădiri Tip */}
-      {showTemplates && (
-        <Suspense fallback={null}>
-          <BuildingTemplateModal
-            isOpen={showTemplates}
-            onClose={() => setShowTemplates(false)}
-            onApply={(id) => {
-              loadTypicalBuilding(id);
-              showToast("Șablon aplicat cu succes", "success");
-            }}
-            userPlan={userPlan}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

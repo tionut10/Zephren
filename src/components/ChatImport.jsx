@@ -12,8 +12,15 @@ const EXAMPLES = [
   "Birouri P+3 Brașov, VRF Daikin, LED, HR 80%, fațadă cortină, 2500m²",
 ];
 
-export default function ChatImport({ onApply, showToast }) {
-  const [open, setOpen] = useState(false);
+export default function ChatImport({ onApply, showToast, isOpen, onOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  // Controlled dacă isOpen e definit; altfel folosește starea internă
+  const open = isOpen !== undefined ? isOpen : internalOpen;
+  const setOpen = useCallback((valOrFn) => {
+    const newVal = typeof valOrFn === "function" ? valOrFn(open) : valOrFn;
+    if (onOpenChange) onOpenChange(newVal);
+    else setInternalOpen(newVal);
+  }, [onOpenChange, open]);
   const [messages, setMessages] = useState([
     { role: "assistant", text: "Descrie clădirea în câteva cuvinte — adresă, tip, an, instalații, scopul CPE. Extrag automat datele pentru Pașii 1–4." }
   ]);

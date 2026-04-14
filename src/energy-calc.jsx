@@ -383,6 +383,7 @@ export default function EnergyCalcApp({ cloud }) {
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showQuickFill, setShowQuickFill] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
@@ -4540,12 +4541,6 @@ export default function EnergyCalcApp({ cloud }) {
                 className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↷</button>
             </div>
 
-            <button onClick={() => setShowQuickFill(true)}
-              className="text-xs px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold transition-colors hidden sm:flex shrink-0"
-              title="Completare rapidă date clădire">
-              ⚡<span className="hidden lg:inline"> Quick Fill</span>
-            </button>
-
             <button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
               className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
               🎓<span className="hidden lg:inline ml-1">Tutorial</span>
@@ -4617,6 +4612,7 @@ export default function EnergyCalcApp({ cloud }) {
                     <div className="mb-1 pb-1 border-b border-white/[0.06]">
                       <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Export / Import</div>
                       {[
+                        { icon: "⚡", label: "Quick Fill clădire", action: () => setShowQuickFill(true), color: "text-amber-300" },
                         { icon: "💾", label: "Export JSON", action: exportProject },
                         { icon: "📊", label: "Export CSV", action: exportCSV },
                         { icon: "📗", label: "Export XLSX", action: exportExcel, color: "text-green-400" },
@@ -4772,6 +4768,9 @@ export default function EnergyCalcApp({ cloud }) {
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
             onOpenTutorial={() => setShowTutorial(true)}
+            onOpenQuickFill={() => setShowQuickFill(true)}
+            onOpenChat={() => setShowChat(true)}
+            onOpenJSONImport={importProject}
             buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
             userPlan={userPlan}
           /></Suspense>}
@@ -5197,6 +5196,8 @@ export default function EnergyCalcApp({ cloud }) {
 
       {/* ═══ ChatImport — buton flotant + chat panel ═══ */}
       <ChatImport
+        isOpen={showChat}
+        onOpenChange={setShowChat}
         onApply={(data) => {
           pushUndo();
           if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));

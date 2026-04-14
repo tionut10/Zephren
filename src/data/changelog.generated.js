@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-13
+// Ultima generare: 2026-04-14
 
 export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🔀",
-        "text": "20 exemple demo variate din demoProjects.js + loader generic"
-      },
-      {
-        "icon": "💰",
-        "text": "userPlan citit din cloud.user.plan în loc de hardcodat free"
-      },
-      {
-        "icon": "📥",
-        "text": "fix(audit-cleanup): eliminare imports neutilizate + diacritice landing"
-      },
-      {
-        "icon": "📋",
-        "text": "refactor(audit 4+5): eliminare props drilling + code split complet"
-      },
-      {
-        "icon": "📋",
-        "text": "fix(audit): corecții itemi 1-3+6 — masă termică, e_shield, hourlyISO, diacritice"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(faza4): extrage ~351 linii constante din energy-calc.jsx → data/"
+        "icon": "🔧",
+        "text": "corectare texte factor conversie energie ambientală"
       },
       {
         "icon": "✨",
-        "text": "feat(faza3): stepCompleteness, breadcrumb header, sidebar dots, bottom nav 10px"
+        "text": "Adaugă 8 module noi în features.json (detectate la build Vercel)"
       },
       {
         "icon": "🔬",
-        "text": "fix(faza2): battery hook, useNA2023 fix, bacsClass sync, Step7→Step8 nav"
+        "text": "Fix duplicat EPBD în normative.json — unificare ZEB cu EPBD 2024/1275"
+      },
+      {
+        "icon": "🔬",
+        "text": "Secțiune normative pe pagina principală — 40 standarde grupate pe 7 categorii"
+      },
+      {
+        "icon": "🔬",
+        "text": "Implementare 5 normative opționale: EN 15316 series, EN 12464-1, ZEB, L.121/2014, P 130-2025"
+      },
+      {
+        "icon": "🔬",
+        "text": "Implementare normative lipsă: OUG 59/2025 RED III, SRI EPBD Art.15, NP 048"
+      },
+      {
+        "icon": "🔬",
+        "text": "Implementare completă lipsuri normative Lista Anexelor Naționale 04.04.2025"
+      },
+      {
+        "icon": "🔸",
+        "text": "Actualizare referințe anexe naționale conform Lista ASRO 04.04.2025"
       }
     ]
   },
