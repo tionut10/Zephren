@@ -39,6 +39,7 @@ export default function AutocompleteInput({
   const listRef = useRef(null);
   const timerRef = useRef(null);
   const mouseDownRef = useRef(false);
+  const justSelectedRef = useRef(false);
   // Ref stabil pentru suggestions — evită recrearea filterLocal la fiecare render
   const suggestionsRef = useRef(suggestions);
   useEffect(() => { suggestionsRef.current = suggestions; }, [suggestions]);
@@ -61,6 +62,12 @@ export default function AutocompleteInput({
 
   // Actualizează sugestiile când se schimbă valoarea
   useEffect(() => {
+    // Nu redeschide dropdown-ul dacă tocmai s-a selectat o sugestie
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
+
     const q = value?.trim() || "";
     if (!q || q.length < 1) {
       setItems([]);
@@ -102,9 +109,11 @@ export default function AutocompleteInput({
 
   const handleSelect = (item) => {
     const val = typeof item === "string" ? item : item.value || item.label;
+    justSelectedRef.current = true;
     onChange?.(val);
     onSelect?.(item);
     setOpen(false);
+    setItems([]);
     setActiveIdx(-1);
   };
 
