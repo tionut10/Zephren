@@ -16,54 +16,12 @@
  */
 
 import { useState, useMemo } from "react";
-import THERMAL_BRIDGES_DB from "../../data/thermal-bridges.json";
 import { cn, Input } from "../ui.jsx";
-
-// ── Categorii principale (top 6) ─────────────────────────────────────────────
-const MAIN_CATEGORIES = [
-  { id: "Joncțiuni pereți", icon: "🧱", label: "Joncțiuni pereți",
-    hint: "Planșee, colțuri, socluri, subsol" },
-  { id: "Ferestre",         icon: "🪟", label: "Ferestre & glafuri",
-    hint: "Perimetrul tâmplăriei, praguri, pervazuri" },
-  { id: "Balcoane",         icon: "🏛", label: "Balcoane & logii",
-    hint: "Console, parapeți, ruptoare termice" },
-  { id: "Acoperiș",         icon: "🏠", label: "Acoperiș & cornișe",
-    hint: "Coame, streașini, luminatoare, atice" },
-  { id: "Stâlpi/grinzi",    icon: "📏", label: "Stâlpi & grinzi",
-    hint: "Structură beton/metalică în perete" },
-  { id: "Instalații",       icon: "⚙️", label: "Instalații",
-    hint: "Țevi, canale, coșuri, casete rolete" },
-];
-
-// ── Quick-picks per categorie (top 4 cele mai frecvente) ─────────────────────
-// IDs extrase din thermal-bridges.json pe baza popularității în audit.
-function getQuickPicks(catId) {
-  const all = THERMAL_BRIDGES_DB.filter(b => b.cat === catId);
-  return all.slice(0, 4); // top 4 din fiecare
-}
-
-// ── Estimare lungime sugerată din building ───────────────────────────────────
-// Returnează valori indicative (m) pentru lungimi tipice pe baza geometriei.
-function suggestLength(bridgeName, building) {
-  const perim = 4 * Math.sqrt(parseFloat(building?.areaUseful) || 100); // estimare perimetru
-  if (bridgeName.includes("Planșeu intermediar"))   return (perim * 0.8).toFixed(1);
-  if (bridgeName.includes("Planșeu terasă"))        return perim.toFixed(1);
-  if (bridgeName.includes("Planșeu peste subsol"))  return perim.toFixed(1);
-  if (bridgeName.includes("Soclu"))                 return perim.toFixed(1);
-  if (bridgeName.includes("Colț"))                  return "10";
-  if (bridgeName.includes("Glaf"))                  return "24";  // ~6 ferestre × 4m
-  if (bridgeName.includes("Prag"))                  return "4";
-  if (bridgeName.includes("Consolă"))               return "8";
-  if (bridgeName.includes("Cornișă"))               return perim.toFixed(1);
-  if (bridgeName.includes("Coamă"))                 return (perim * 0.4).toFixed(1);
-  if (bridgeName.includes("Atic"))                  return perim.toFixed(1);
-  if (bridgeName.includes("Stâlp"))                 return "12";  // 4 stâlpi × 3m
-  if (bridgeName.includes("Grindă"))                return "6";
-  if (bridgeName.includes("Țeavă") || bridgeName.includes("Canal")) return "2";
-  if (bridgeName.includes("Coș"))                   return "8";
-  if (bridgeName.includes("Roletă"))                return "6";
-  return "5";
-}
+import {
+  MAIN_CATEGORIES,
+  getQuickPicks,
+  suggestLength,
+} from "./utils/bridgesCalc.js";
 
 // ── Component principal ──────────────────────────────────────────────────────
 export default function WizardBridges({
