@@ -13,6 +13,7 @@ import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } 
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
 import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
+import { generateCPEAnexe } from "../lib/report-generators.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -2481,6 +2482,53 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         <div className="text-left">
                           <div className="font-medium">Fișă sintetică client</div>
                           <div className="text-[10px] opacity-60">1 pagină rezumativă client-friendly</div>
+                        </div>
+                      </div>
+                    </button>
+                    {/* ─── Card 7: CPE Anexa 1+2 PDF oficial (Ord. MDLPA 16/2023) ─── */}
+                    <button
+                      disabled={!dataComplete}
+                      onClick={async () => {
+                        if (!canExportDocx) { requireUpgrade("Export CPE oficial Anexe PDF necesită plan Standard sau superior"); return; }
+                        if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
+                        try {
+                          showToast("Se generează CPE Anexa 1+2 PDF oficial...", "info", 2500);
+                          await generateCPEAnexe({
+                            building, selectedClimate, auditor,
+                            heating, cooling, ventilation, lighting, acm,
+                            solarThermal, photovoltaic, heatPump, biomass,
+                            instSummary, renewSummary, envelopeSummary,
+                            opaqueElements, glazingElements,
+                            epFinal, co2Final, rer,
+                            getNzebEpMax, bacsClass,
+                            HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
+                            VENTILATION_TYPES, LIGHTING_TYPES, BUILDING_CATEGORIES,
+                            calcOpaqueR,
+                            rehabScenarios: props.rehabScenarioInputs,
+                            financialAnalysis,
+                            download: true,
+                          });
+                          incrementCertCount?.();
+                          showToast("✓ CPE Anexa 1+2 PDF generat cu succes", "success", 3000);
+                        } catch(e) {
+                          showToast("Eroare la generare PDF: " + e.message, "error", 5000);
+                        }
+                      }}
+                      className={`w-full rounded-xl border transition-all text-sm ${
+                        !dataComplete
+                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                          : !canExportDocx
+                            ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                            : "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 cursor-pointer"
+                      }`}>
+                      <div className="flex items-center justify-center gap-2 px-4 py-3">
+                        <span className="text-lg">📘</span>
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-1.5">
+                            {lang==="EN" ? "CPE Annex 1+2 (official PDF)" : "Anexa 1+2 PDF oficial"}
+                            {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
+                          </div>
+                          <div className="text-[10px] opacity-60">Ord. MDLPA 16/2023 — format oficial</div>
                         </div>
                       </div>
                     </button>

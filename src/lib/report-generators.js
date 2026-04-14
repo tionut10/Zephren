@@ -16,10 +16,23 @@ const COL_ERR = [220, 38, 38];
 const COL_OK  = [22, 163, 74];
 
 // ── Utilitar: inițializare jsPDF ──────────────────────────────
+// jspdf-autotable v5 nu mai patch-ează automat prototipul jsPDF — apelul
+// `doc.autoTable(...)` eșuează cu "is not a function". Folosim fallback
+// pe default export `autoTable(doc, options)` și atașăm manual la instanță.
 async function initDoc() {
   const { default: jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
-  return new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const autoTableMod = await import("jspdf-autotable");
+  const autoTableFn = autoTableMod.default || autoTableMod.autoTable || autoTableMod;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  // Idempotent: dacă pluginul a patch-at deja prototipul, păstrăm varianta nativă
+  if (typeof doc.autoTable !== "function" && typeof autoTableFn === "function") {
+    doc.autoTable = function (opts) {
+      const result = autoTableFn(doc, opts);
+      if (!doc.lastAutoTable && result) doc.lastAutoTable = result;
+      return doc.lastAutoTable;
+    };
+  }
+  return doc;
 }
 
 // ── Utilitar: header pagini ───────────────────────────────────
@@ -1111,5 +1124,788 @@ export async function generateGWPReport({
     return finalize(doc, filename, download);
   } catch (e) {
     throw new Error(`generateGWPReport: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 8. CPE ANEXA 1 + ANEXA 2 — Ord. MDLPA 16/2023 (format oficial PDF)
+// ═══════════════════════════════════════════════════════════════
+// Anexa 1: Date generale + tehnice + instalații + indicator energetic
+// Anexa 2: Recomandări prioritizate pentru îmbunătățirea performanței
+//
+// Conformitate: Mc 001-2022, Ord. MDLPA 16/2023 art. 7-12
+// Referințe U: Tabel 2.4 (rezidențial nZEB) / Tabel 2.7 (nerezidențial nZEB)
+// Font: Helvetica (WinAnsi) — suportă diacritice românești ă â î ș ț
+// ═══════════════════════════════════════════════════════════════
+
+// ── Format numeric românesc ───────────────────────────────────
+function fmtRo(v, d = 1) {
+  if (v == null || isNaN(v)) return "—";
+  const n = parseFloat(v);
+  if (!isFinite(n)) return "—";
+  return n.toFixed(d).replace(".", ",");
+}
+
+// ── Clasare energetică EP → etichetă + culoare ────────────────
+function epToClass(ep) {
+  if (ep == null || isNaN(ep)) return { label: "—", color: [136, 136, 136] };
+  if (ep <= 50)  return { label: "A+", color: [21, 128, 61]  };
+  if (ep <= 100) return { label: "A",  color: [34, 197, 94]  };
+  if (ep <= 150) return { label: "B",  color: [132, 204, 22] };
+  if (ep <= 200) return { label: "C",  color: [234, 179, 8]  };
+  if (ep <= 300) return { label: "D",  color: [249, 115, 22] };
+  if (ep <= 400) return { label: "E",  color: [239, 68, 68]  };
+  if (ep <= 500) return { label: "F",  color: [127, 29, 29]  };
+  return { label: "G", color: [68, 0, 0] };
+}
+
+// ── Referințe U Mc 001-2022 Tabel 2.4 (rez) / 2.7 (nerez) ────
+const U_REF_RES  = { PE:0.25, PR:0.67, PS:0.29, PT:0.15, PP:0.15, PB:0.29, PL:0.20, SE:0.20 };
+const U_REF_NRES = { PE:0.33, PR:0.80, PS:0.35, PT:0.17, PP:0.17, PB:0.35, PL:0.22, SE:0.22 };
+const U_REF_GLAZ = { res: 1.11, nres: 1.20 };
+const ELEMENT_LABELS = {
+  PE:"Perete exterior", PR:"Perete la rost", PS:"Perete subsol",
+  PT:"Planșeu terasă", PP:"Planșeu pod neîncălzit", PB:"Planșeu subsol neîncălzit",
+  PL:"Placă pe sol", SE:"Planșeu bow-window",
+};
+
+// ── Lookup sigur în listă de categorii id/label ──────────────
+function lbl(list, id, fallback) {
+  if (!list || !id) return fallback || id || "—";
+  const item = list.find(x => x.id === id);
+  return item?.label || fallback || id;
+}
+
+// ── Aspect paginare: asigură spațiu minim sau trece pe pagina nouă
+function ensureSpace(doc, y, needed, title, audName, today) {
+  const hPage = doc.internal.pageSize.getHeight();
+  if (y + needed > hPage - 18) {
+    doc.addPage();
+    addPageHeader(doc, title, audName, today);
+    return 26;
+  }
+  return y;
+}
+
+// ── Randare Anexa 1 pe un doc deja inițializat ────────────────
+function _renderAnexa1(doc, startPageNum, opts) {
+  const {
+    building, selectedClimate, auditor,
+    heating, cooling, ventilation, lighting, acm,
+    solarThermal, photovoltaic, heatPump, biomass,
+    instSummary, renewSummary, envelopeSummary,
+    opaqueElements, glazingElements,
+    epFinal, co2Final, rer,
+    getNzebEpMax, bacsClass,
+    HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES,
+    BUILDING_CATEGORIES,
+    calcOpaqueR,
+  } = opts;
+
+  const w = doc.internal.pageSize.getWidth();
+  const title = "CPE — ANEXA 1 (Date generale și tehnice)";
+  const audName = auditor?.name || "";
+  const today = dateRO();
+  let page = startPageNum || 1;
+
+  const Au = parseFloat(building?.areaUseful) || 0;
+  const V = parseFloat(building?.volume) || 0;
+  const Aenv = parseFloat(building?.areaEnvelope) || 0;
+  const catLabel = lbl(BUILDING_CATEGORIES, building?.category, building?.category);
+  const epRefMax = getNzebEpMax ? getNzebEpMax(building?.category, selectedClimate?.zone) : 148;
+  const nzebOk = (epFinal || 0) <= epRefMax && (rer || 0) >= 30;
+  const cls = epToClass(epFinal);
+  const co2Cls = epToClass(co2Final);
+  const isRes = ["RI", "RC", "RA"].includes(building?.category);
+
+  // ══════ PAGINA 1: Identificare + Clasă energetică ══════
+  addPageHeader(doc, title, audName, today);
+  let y = 26;
+
+  // Titlu mare
+  doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+  doc.text("CERTIFICAT DE PERFORMANȚĂ ENERGETICĂ", w / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(10); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_A);
+  doc.text("ANEXA 1 — Date generale și tehnice", w / 2, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(7); doc.setTextColor(...COL_G);
+  doc.text("Conform Mc 001-2022 și Ordinul MDLPA nr. 16/2023", w / 2, y, { align: "center" });
+  y += 10;
+
+  // ── Badge clasă energetică (zona centrală mare) ──
+  const badgeW = 55, badgeH = 35;
+  const badgeX = w / 2 - badgeW / 2;
+  doc.setFillColor(...cls.color);
+  doc.roundedRect(badgeX, y, badgeW, badgeH, 4, 4, "F");
+  doc.setFontSize(32); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+  doc.text(cls.label, w / 2, y + 22, { align: "center" });
+  doc.setFontSize(7); doc.setFont(undefined, "normal");
+  doc.text("CLASA ENERGETICĂ", w / 2, y + 30, { align: "center" });
+
+  // ── Valori numerice lângă badge ──
+  doc.setTextColor(...COL_H); doc.setFont(undefined, "bold");
+  doc.setFontSize(9);
+  doc.text(`EP specific: ${fmtRo(epFinal, 1)} kWh/(m²·an)`, badgeX + badgeW + 8, y + 8);
+  doc.text(`EP referință nZEB: ${fmtRo(epRefMax, 1)} kWh/(m²·an)`, badgeX + badgeW + 8, y + 14);
+  doc.text(`Emisii CO₂: ${fmtRo(co2Final, 1)} kg/(m²·an)  |  Clasa: ${co2Cls.label}`, badgeX + badgeW + 8, y + 20);
+  doc.text(`RER (regenerabil): ${fmtRo(rer, 1)} %`, badgeX + badgeW + 8, y + 26);
+  doc.setFont(undefined, "bold"); doc.setFontSize(10);
+  doc.setTextColor(...(nzebOk ? COL_OK : COL_ERR));
+  doc.text(`Conformitate nZEB: ${nzebOk ? "DA ✓" : "NU ✗"}`, badgeX + badgeW + 8, y + 33);
+  doc.setTextColor(...COL_H);
+  y += badgeH + 10;
+
+  // ── Secțiunea I: Date generale clădire ──
+  y = sectionTitle(doc, "I. DATE GENERALE CLĂDIRE", y);
+  y = autoTable(doc, {
+    startY: y,
+    columnStyles: { 0: { cellWidth: 65, fontStyle: "bold" } },
+    body: [
+      ["Adresă", [building?.address, building?.city, building?.county && `jud. ${building.county}`, building?.postal].filter(Boolean).join(", ") || "—"],
+      ["Destinație", catLabel],
+      ["Categorie (cod)", building?.category || "—"],
+      ["Structură constructivă", building?.structure || "—"],
+      ["An construcție", building?.yearBuilt || "—"],
+      ["An ultima renovare", building?.yearRenov || "—"],
+      ["Regim înălțime", building?.floors || "—"],
+      ["Număr unități/apartamente", building?.units || "—"],
+      ["Număr scări", building?.stairs || "—"],
+      ["Scop certificare", (building?.scopCpe || "Vânzare")[0].toUpperCase() + (building?.scopCpe || "ânzare").slice(1)],
+      ["Localitate climatică", selectedClimate?.name || building?.city || "—"],
+      ["Zona climatică", selectedClimate?.zone ? `Zona ${selectedClimate.zone}` : "—"],
+      ["Temperatură exterioară calcul θe", selectedClimate?.theta_e != null ? `${selectedClimate.theta_e} °C` : "—"],
+      ["Grade-zile încălzire GZ", selectedClimate?.gz || "—"],
+    ],
+  });
+
+  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 52000-1", page);
+
+  // ══════ PAGINA 2: Geometrie + U-values ══════
+  doc.addPage(); page++;
+  addPageHeader(doc, title, audName, today);
+  y = 26;
+
+  // ── Secțiunea II: Date tehnice geometrie ──
+  y = sectionTitle(doc, "II. DATE TEHNICE — GEOMETRIE ȘI ANVELOPĂ", y);
+  y = autoTable(doc, {
+    startY: y,
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Arie utilă de referință", fmtRo(Au, 2), "m²"],
+      ["Volum încălzit V", fmtRo(V, 2), "m³"],
+      ["Arie anvelopă exterioară Aenv", fmtRo(Aenv, 2), "m²"],
+      ["Raport A/V", V > 0 ? fmtRo(Aenv / V, 3) : "—", "m⁻¹"],
+      ["Perimetru fundație P", fmtRo(building?.perimeter, 2), "m"],
+      ["Înălțime etaj curent", fmtRo(building?.heightFloor, 2), "m"],
+      ["Test permeabilitate la 50 Pa (n50)", fmtRo(building?.n50, 2), "h⁻¹"],
+      ["Coeficient global pierderi G", envelopeSummary?.G != null ? fmtRo(envelopeSummary.G, 3) : "—", "W/(m³·K)"],
+      ["Coef. transfer termic prin transmisie H_T", envelopeSummary?.Ht != null ? fmtRo(envelopeSummary.Ht, 2) : "—", "W/K"],
+      ["Coef. transfer termic prin ventilare H_V", instSummary?.Hv != null ? fmtRo(instSummary.Hv, 2) : "—", "W/K"],
+      ["Număr schimburi aer infiltrații n_inf", instSummary?.n_inf != null ? fmtRo(instSummary.n_inf, 3) : "—", "h⁻¹"],
+      ["Constantă de timp termică τ", instSummary?.tau != null ? fmtRo(instSummary.tau, 1) : "—", "h"],
+    ],
+  });
+
+  // ── Secțiunea II.b: Tabel U per element (calculat vs referință) ──
+  if ((opaqueElements?.length || 0) > 0 || (glazingElements?.length || 0) > 0) {
+    y = ensureSpace(doc, y, 60, title, audName, today);
+    y = sectionTitle(doc, `II.b. COEFICIENȚI U — VERIFICARE FAȚĂ DE REFERINȚĂ (Tabel ${isRes ? "2.4" : "2.7"} Mc 001-2022)`, y);
+    const uRef = isRes ? U_REF_RES : U_REF_NRES;
+    const uRefGlaz = isRes ? U_REF_GLAZ.res : U_REF_GLAZ.nres;
+
+    const elRows = [];
+    (opaqueElements || []).forEach(el => {
+      const r = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : null;
+      const uCalc = r?.u || parseFloat(el.U) || 0;
+      const uRefVal = uRef[el.type];
+      const ok = uRefVal == null || uCalc <= uRefVal;
+      elRows.push([
+        el.type || "—",
+        el.name || ELEMENT_LABELS[el.type] || el.type || "—",
+        fmtRo(el.area, 2),
+        fmtRo(uCalc, 3),
+        uRefVal != null ? fmtRo(uRefVal, 2) : "—",
+        uRefVal != null ? (ok ? "✓ Conform" : `✗ +${fmtRo(uCalc - uRefVal, 3)}`) : "—",
+      ]);
+    });
+    (glazingElements || []).forEach(el => {
+      const uCalc = parseFloat(el.u) || parseFloat(el.U) || 0;
+      const ok = uCalc <= uRefGlaz;
+      elRows.push([
+        "VM",
+        el.name || el.type || "Vitraj/Tâmplărie",
+        fmtRo(el.area, 2),
+        fmtRo(uCalc, 3),
+        fmtRo(uRefGlaz, 2),
+        ok ? "✓ Conform" : `✗ +${fmtRo(uCalc - uRefGlaz, 3)}`,
+      ]);
+    });
+
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Cod", "Denumire element", "A [m²]", "U calc [W/m²K]", "U ref [W/m²K]", "Verificare"]],
+      body: elRows.length ? elRows : [["—", "Nu sunt elemente introduse", "—", "—", "—", "—"]],
+      columnStyles: {
+        0: { halign: "center", cellWidth: 14, fontStyle: "bold" },
+        2: { halign: "right", cellWidth: 20 },
+        3: { halign: "right", cellWidth: 28 },
+        4: { halign: "right", cellWidth: 28 },
+        5: { halign: "center", cellWidth: 30 },
+      },
+      didParseCell: (hook) => {
+        if (hook.column.index === 5 && hook.section === "body") {
+          const txt = String(hook.cell.raw || "");
+          if (txt.startsWith("✓")) hook.cell.styles.textColor = COL_OK;
+          else if (txt.startsWith("✗")) hook.cell.styles.textColor = COL_ERR;
+        }
+      },
+    });
+  }
+
+  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 6946", page);
+
+  // ══════ PAGINA 3: Instalații ══════
+  doc.addPage(); page++;
+  addPageHeader(doc, title, audName, today);
+  y = 26;
+
+  y = sectionTitle(doc, "III. INSTALAȚII TEHNICE", y);
+
+  // Încălzire
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.a. Instalație încălzire", "", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Sursă de energie", lbl(HEAT_SOURCES, heating?.source, heating?.source), ""],
+      ["Randament generare η_gen", heating?.eta_gen || "—", "—"],
+      ["Randament emitere η_em", heating?.eta_em || "—", "—"],
+      ["Randament distribuție η_d", heating?.eta_dist || heating?.eta_d || "—", "—"],
+      ["Temperatură setpoint θ_int", `${heating?.theta_int || 20} °C`, ""],
+      ["Sistem control", heating?.control || "termostat simplu", ""],
+    ],
+  });
+
+  // ACM
+  y = ensureSpace(doc, y, 45, title, audName, today);
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.b. Preparare apă caldă menajeră", "", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Sursă ACM", lbl(ACM_SOURCES, acm?.source, acm?.source), ""],
+      ["Consum specific zilnic", fmtRo(acm?.dailyLiters, 0), "L/zi"],
+      ["Temperatură ACM", `${acm?.theta_acm || 60} °C`, ""],
+      ["Randament global ACM", acm?.eta || "—", "—"],
+      ["Solar termic (fracție)", solarThermal?.enabled ? `${fmtRo(solarThermal?.fraction, 0)} %` : "Nu există", ""],
+    ],
+  });
+
+  // Răcire
+  y = ensureSpace(doc, y, 40, title, audName, today);
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.c. Climatizare / răcire", "", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Sistem răcire", cooling?.hasCooling ? lbl(COOLING_SYSTEMS, cooling?.system, cooling?.system) : "Nu există", ""],
+      ...(cooling?.hasCooling ? [
+        ["EER", cooling?.eer || "—", "—"],
+        ["SEER", cooling?.seer || "—", "—"],
+        ["Temperatură setpoint", `${cooling?.theta_set || 26} °C`, ""],
+      ] : []),
+    ],
+  });
+
+  // Ventilare
+  y = ensureSpace(doc, y, 35, title, audName, today);
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.d. Ventilare", "", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Tip ventilare", lbl(VENTILATION_TYPES, ventilation?.type, ventilation?.type), ""],
+      ["Rată de schimb aer", fmtRo(ventilation?.ach, 2), "h⁻¹"],
+      ...(ventilation?.hrEfficiency ? [["Eficiență recuperare căldură", `${ventilation.hrEfficiency}`, "%"]] : []),
+    ],
+  });
+
+  // Iluminat
+  y = ensureSpace(doc, y, 35, title, audName, today);
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.e. Iluminat artificial", "", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    body: [
+      ["Tip iluminat", lbl(LIGHTING_TYPES, lighting?.type, lighting?.type), ""],
+      ["Densitate putere instalată", fmtRo(lighting?.pDensity, 1), "W/m²"],
+      ["LENI (Lighting Energy Numeric Indicator)", fmtRo(instSummary?.leni, 1), "kWh/(m²·an)"],
+      ["Control iluminat", lighting?.control || "manual", ""],
+    ],
+  });
+
+  // Regenerabile
+  y = ensureSpace(doc, y, 50, title, audName, today);
+  const renewRows = [];
+  if (solarThermal?.enabled) renewRows.push(["Solar termic", `${fmtRo(solarThermal.area, 1)} m² — η₀=${solarThermal.eta0 || "—"}`]);
+  if (photovoltaic?.enabled) renewRows.push(["Fotovoltaic", `${fmtRo(photovoltaic.area, 1)} m² / ${fmtRo(photovoltaic.peakPower, 2)} kWp`]);
+  if (heatPump?.enabled)     renewRows.push(["Pompă de căldură", `COP=${heatPump.cop || "—"} / SCOP=${heatPump.scopHeating || "—"}`]);
+  if (biomass?.enabled)      renewRows.push(["Biomasă", biomass.type || "lemn/peleți"]);
+  if (renewRows.length === 0) renewRows.push(["Regenerabile", "Nu există surse regenerabile locale"]);
+  y = autoTable(doc, {
+    startY: y,
+    head: [["III.f. Surse de energie regenerabilă", ""]],
+    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" } },
+    body: renewRows,
+  });
+
+  // BACS & SRI
+  if (bacsClass) {
+    const bacsFactors = { A: 0.80, B: 0.93, C: 1.00, D: 1.10 };
+    const bacsLabels = {
+      A: "Clasă A — Înalt performantă (HP-BACS cu buclă continuă de control)",
+      B: "Clasă B — Avansată (funcții de monitorizare continuă)",
+      C: "Clasă C — Standard (referință EN 15232-1)",
+      D: "Clasă D — Nonautomatizată (fără BACS)",
+    };
+    y = ensureSpace(doc, y, 30, title, audName, today);
+    y = autoTable(doc, {
+      startY: y,
+      head: [["III.g. Automatizare BACS (EN 15232-1)", ""]],
+      columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" } },
+      body: [
+        ["Clasa BACS determinată", `${bacsClass} — factor ${bacsFactors[bacsClass] || "—"}`],
+        ["Descriere", bacsLabels[bacsClass] || "—"],
+      ],
+    });
+  }
+
+  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | EN 15232-1 | SR EN 15193", page);
+
+  // ══════ PAGINA 4: Indicator energetic + date auditor ══════
+  doc.addPage(); page++;
+  addPageHeader(doc, title, audName, today);
+  y = 26;
+
+  y = sectionTitle(doc, "IV. INDICATOR DE PERFORMANȚĂ ENERGETICĂ", y);
+
+  // Tabel consumuri finale + EP per utilitate
+  y = autoTable(doc, {
+    startY: y,
+    head: [["Utilitate", "Q_final [kWh/an]", "EP [kWh/(m²·an)]", "CO₂ [kg/(m²·an)]"]],
+    body: [
+      ["Încălzire",   fmtRo(instSummary?.qf_h, 0), fmtRo(instSummary?.ep_h, 1), fmtRo(instSummary?.co2_h, 2)],
+      ["Apă caldă",   fmtRo(instSummary?.qf_w, 0), fmtRo(instSummary?.ep_w, 1), fmtRo(instSummary?.co2_w, 2)],
+      ["Răcire",      fmtRo(instSummary?.qf_c, 0), fmtRo(instSummary?.ep_c, 1), fmtRo(instSummary?.co2_c, 2)],
+      ["Ventilare",   fmtRo(instSummary?.qf_v, 0), fmtRo(instSummary?.ep_v, 1), fmtRo(instSummary?.co2_v, 2)],
+      ["Iluminat",    fmtRo(instSummary?.qf_l, 0), fmtRo(instSummary?.ep_l, 1), fmtRo(instSummary?.co2_l, 2)],
+    ],
+    foot: [[
+      "TOTAL",
+      fmtRo(instSummary?.qf_total, 0),
+      fmtRo(instSummary?.ep_total_m2, 1),
+      fmtRo(instSummary?.co2_total_m2, 2),
+    ]],
+    footStyles: { fillColor: COL_H, textColor: COL_A, fontStyle: "bold" },
+    columnStyles: {
+      1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
+    },
+  });
+
+  // Tabel conformitate
+  y = autoTable(doc, {
+    startY: y,
+    head: [["Indicator de conformitate", "Valoare", "Referință", "Verificare"]],
+    body: [
+      ["EP specific final (cu SRE ajustat)", fmtRo(epFinal, 1) + " kWh/(m²·an)", fmtRo(epRefMax, 1) + " (nZEB)", epFinal <= epRefMax ? "✓ CONFORM" : "✗ NECONFORM"],
+      ["Clasa energetică EP", cls.label, "Cls A (nZEB)", ["A+", "A"].includes(cls.label) ? "✓ CONFORM" : "✗ DE MAJORAT"],
+      ["Rata de energie regenerabilă RER", fmtRo(rer, 1) + " %", "≥ 30 % (nZEB)", (rer || 0) >= 30 ? "✓ CONFORM" : "✗ NECONFORM"],
+      ["Emisii CO₂ specifice", fmtRo(co2Final, 1) + " kg/(m²·an)", "—", "—"],
+      ["Conformitate globală nZEB", nzebOk ? "DA" : "NU", "Mc 001-2022 §2.4", nzebOk ? "✓ CONFORM" : "✗ NECONFORM"],
+    ],
+    columnStyles: {
+      0: { cellWidth: 75, fontStyle: "bold" },
+      3: { halign: "center", cellWidth: 32 },
+    },
+    didParseCell: (hook) => {
+      if (hook.column.index === 3 && hook.section === "body") {
+        const txt = String(hook.cell.raw || "");
+        if (txt.includes("✓")) hook.cell.styles.textColor = COL_OK;
+        else if (txt.includes("✗")) hook.cell.styles.textColor = COL_ERR;
+      }
+    },
+  });
+
+  // Date auditor
+  y = ensureSpace(doc, y, 40, title, audName, today);
+  y = sectionTitle(doc, "V. DATE IDENTIFICARE AUDITOR ENERGETIC", y);
+  y = autoTable(doc, {
+    startY: y,
+    columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
+    body: [
+      ["Nume și prenume auditor", auditor?.name || "—"],
+      ["Atestat nr. (serie/număr)", auditor?.atestat || "—"],
+      ["Grad atestare", `Grad ${auditor?.grade || "—"}`],
+      ["Firma / Organizație", auditor?.company || "—"],
+      ["Contact", [auditor?.phone, auditor?.email].filter(Boolean).join(" · ") || "—"],
+      ["Cod unic MDLPA (registru)", auditor?.codUnicMDLPA || auditor?.mdlpaCode || "—"],
+      ["Valabilitate certificat", `${auditor?.validityYears || 10} ani de la data emiterii`],
+      ["Data elaborării", auditor?.date ? new Date(auditor.date).toLocaleDateString("ro-RO") : dateRO()],
+    ],
+  });
+
+  // Zonă semnătură/ștampilă (placeholder cu chenar)
+  y += 5;
+  y = ensureSpace(doc, y, 30, title, audName, today);
+  const sigBoxW = 80, sigBoxH = 22;
+  doc.setDrawColor(200); doc.setLineWidth(0.3);
+  doc.rect(10, y, sigBoxW, sigBoxH);
+  doc.rect(w - 10 - sigBoxW, y, sigBoxW, sigBoxH);
+  doc.setFontSize(7); doc.setTextColor(...COL_G);
+  doc.text("Semnătură auditor", 10 + sigBoxW / 2, y + sigBoxH + 3, { align: "center" });
+  doc.text("Ștampilă profesională", w - 10 - sigBoxW / 2, y + sigBoxH + 3, { align: "center" });
+
+  // Încearcă încorporare foto/ștampilă dacă e data URL
+  if (auditor?.photo && typeof auditor.photo === "string" && auditor.photo.startsWith("data:image/")) {
+    try {
+      const fmt = auditor.photo.includes("jpeg") || auditor.photo.includes("jpg") ? "JPEG" : "PNG";
+      doc.addImage(auditor.photo, fmt, w - 10 - sigBoxW + 5, y + 2, sigBoxW - 10, sigBoxH - 4, undefined, "FAST");
+    } catch { /* ignore bad image */ }
+  }
+
+  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 52000-1", page);
+
+  return page; // pentru wrapper — ultima pagină utilizată
+}
+
+// ── Randare Anexa 2 pe un doc deja inițializat ────────────────
+function _renderAnexa2(doc, startPageNum, opts) {
+  const {
+    building, auditor, envelopeSummary, glazingElements, opaqueElements,
+    instSummary, heating, solarThermal, photovoltaic, calcOpaqueR,
+    rehabScenarios, financialAnalysis,
+  } = opts;
+
+  const w = doc.internal.pageSize.getWidth();
+  const title = "CPE — ANEXA 2 (Recomandări de îmbunătățire)";
+  const audName = auditor?.name || "";
+  const today = dateRO();
+  let page = startPageNum || 1;
+
+  addPageHeader(doc, title, audName, today);
+  let y = 26;
+
+  doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+  doc.text("ANEXA 2 — RECOMANDĂRI DE ÎMBUNĂTĂȚIRE", w / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+  doc.text("Măsuri prioritizate pentru reducerea consumului energetic și a emisiilor CO₂", w / 2, y, { align: "center" });
+  y += 4;
+  doc.setFontSize(7);
+  doc.text(`${building?.address || ""} · ${building?.city || ""} · ${auditor?.date ? new Date(auditor.date).toLocaleDateString("ro-RO") : dateRO()}`, w / 2, y, { align: "center" });
+  y += 10;
+
+  // ── Preambul normativ ──
+  y = sectionTitle(doc, "1. CADRU NORMATIV", y);
+  doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+  const preamblu = [
+    "Recomandările de mai jos sunt elaborate în conformitate cu Mc 001-2022 și Ord. MDLPA 16/2023,",
+    "având drept scop atingerea sau apropierea de nivelul de performanță nZEB (Mc 001-2022 §2.4).",
+    "Măsurile sunt prioritizate pe trei nivele (înaltă / medie / scăzută) în funcție de impactul estimat",
+    "asupra indicelui EP specific și de raportul cost/beneficiu estimat.",
+  ];
+  preamblu.forEach(ln => { doc.text(ln, 10, y); y += 4; });
+  y += 4;
+
+  // ── Generare măsuri din analiză ──
+  const measures = [];
+  // A1 — Termoizolare pereți exteriori (G ridicat)
+  if (envelopeSummary?.G > 0.8) {
+    measures.push({
+      code: "A1", priority: "Înaltă",
+      title: "Termoizolare pereți exteriori (sistem ETICS)",
+      detail: `Coeficientul G = ${fmtRo(envelopeSummary.G, 3)} W/(m³·K) depășește pragul 0.8 W/(m³·K). Se recomandă aplicarea unui sistem ETICS (External Thermal Insulation Composite System) cu EPS grafitat sau vată minerală, grosime 10-15 cm, conform SR EN 13499 / SR EN 13500.`,
+      savings: "15-25 % consum încălzire",
+      costRef: "180-250 RON/m²",
+      payback: "8-12 ani",
+    });
+  }
+  // A2 — Tâmplărie
+  if ((glazingElements || []).some(g => parseFloat(g.u) > 2.5)) {
+    measures.push({
+      code: "A2", priority: "Înaltă",
+      title: "Înlocuire tâmplărie exterioară cu sisteme performante",
+      detail: "Există vitraje cu U > 2.5 W/(m²·K). Se recomandă înlocuirea cu tâmplărie PVC sau aluminiu cu rupere de punte termică, echipată cu geam termoizolant cu strat Low-E (U_w ≤ 1.1 W/(m²·K)), conform SR EN 14351-1.",
+      savings: "8-15 % consum încălzire",
+      costRef: "450-750 RON/m²",
+      payback: "10-15 ani",
+    });
+  }
+  // A3 — Planșeu superior
+  if ((opaqueElements || []).some(el => {
+    const r = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : null;
+    return r && r.u > 0.5 && ["PT", "PP"].includes(el.type);
+  })) {
+    measures.push({
+      code: "A3", priority: "Medie",
+      title: "Termoizolare planșeu superior (terasă sau pod neîncălzit)",
+      detail: "Termoizolația existentă la planșeul superior este insuficientă (U > 0.5 W/(m²·K)). Recomandare: aplicare strat nou de vată minerală sau XPS ≥ 20 cm, cu asigurarea barierei de vapori corespunzătoare (SR EN ISO 6946).",
+      savings: "8-12 % consum încălzire",
+      costRef: "90-140 RON/m²",
+      payback: "6-10 ani",
+    });
+  }
+  // B1 — Înlocuire cazan cu pompă de căldură
+  if (heating?.source && String(heating.source).toUpperCase().includes("GAZ")) {
+    measures.push({
+      code: "B1", priority: "Medie",
+      title: "Înlocuire sursă încălzire cu pompă de căldură",
+      detail: "Sursa actuală (cazan cu combustibil fosil) are randament inferior pompelor de căldură moderne. Recomandare: instalare pompă de căldură aer-apă cu SCOP ≥ 3.0 (SR EN 14825), cu rezervor tampon și integrare cu ACM.",
+      savings: "20-40 % energie primară",
+      costRef: "18.000-35.000 RON",
+      payback: "8-14 ani",
+    });
+  }
+  // B2 — Solar termic
+  if (!solarThermal?.enabled) {
+    measures.push({
+      code: "B2", priority: "Medie",
+      title: "Instalare colectoare solare termice pentru ACM",
+      detail: "Nu există sistem solar termic. Recomandare: instalare 4-8 m² colectoare plane sau cu tuburi vidate, orientare sud ±30°, înclinație 30-45°. Fracție solară estimată: 40-60 % din consumul anual ACM.",
+      savings: "5-10 % energie primară totală",
+      costRef: "7.000-14.000 RON",
+      payback: "8-12 ani",
+    });
+  }
+  // C1 — Fotovoltaic
+  if (!photovoltaic?.enabled) {
+    measures.push({
+      code: "C1", priority: "Scăzută",
+      title: "Instalare sistem fotovoltaic pentru autoconsum",
+      detail: "Sistem PV de 3-5 kWp, orientare sud ±30°, pentru producere locală energie electrică. Acoperă tipic 30-50 % din consumul electric anual al unei clădiri rezidențiale. Eligibil pentru scheme suport (Casa Verde Fotovoltaice).",
+      savings: "8-15 % emisii CO₂",
+      costRef: "15.000-25.000 RON",
+      payback: "7-10 ani",
+    });
+  }
+  // D1 — Iluminat
+  if ((instSummary?.leni || 0) > 15) {
+    measures.push({
+      code: "D1", priority: "Medie",
+      title: "Modernizare sistem iluminat — LED + control inteligent",
+      detail: `LENI actual = ${fmtRo(instSummary?.leni, 1)} kWh/(m²·an) — ridicat. Înlocuire corpuri luminoase cu LED (eficacitate ≥ 100 lm/W), integrare senzori prezență și reglaj luminozitate conform SR EN 15193-1.`,
+      savings: "5-10 % consum electric",
+      costRef: "50-120 RON/m²",
+      payback: "3-6 ani",
+    });
+  }
+
+  // ── Dacă nu sunt recomandări (performanță bună) ──
+  if (measures.length === 0) {
+    y = sectionTitle(doc, "2. CONCLUZIE", y);
+    doc.setFillColor(...COL_OK);
+    doc.roundedRect(10, y, w - 20, 14, 3, 3, "F");
+    doc.setFontSize(10); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text("✓ Performanța energetică este satisfăcătoare.", w / 2, y + 6, { align: "center" });
+    doc.setFontSize(8); doc.setFont(undefined, "normal");
+    doc.text("Nu sunt necesare măsuri prioritare de îmbunătățire.", w / 2, y + 11, { align: "center" });
+    y += 22;
+  } else {
+    // ── Tabel sintetic măsuri ──
+    y = sectionTitle(doc, "2. TABEL SINTETIC MĂSURI RECOMANDATE", y);
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Cod", "Denumire măsură", "Prioritate", "Economie est.", "Cost ref.", "Payback"]],
+      body: measures.map(m => [m.code, m.title, m.priority, m.savings, m.costRef, m.payback]),
+      columnStyles: {
+        0: { halign: "center", cellWidth: 14, fontStyle: "bold" },
+        2: { halign: "center", cellWidth: 22 },
+        3: { cellWidth: 38 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 22, halign: "center" },
+      },
+      didParseCell: (hook) => {
+        if (hook.column.index === 2 && hook.section === "body") {
+          const txt = String(hook.cell.raw || "");
+          if (txt === "Înaltă")  hook.cell.styles.textColor = COL_ERR;
+          else if (txt === "Medie")  hook.cell.styles.textColor = [217, 119, 6];
+          else if (txt === "Scăzută") hook.cell.styles.textColor = COL_OK;
+        }
+      },
+    });
+
+    // ── Fișe detaliate per măsură ──
+    y = ensureSpace(doc, y, 10, title, audName, today);
+    y = sectionTitle(doc, "3. FIȘE DETALIATE ALE MĂSURILOR", y);
+    const priColor = { "Înaltă": COL_ERR, "Medie": [217, 119, 6], "Scăzută": COL_OK };
+    measures.forEach((m) => {
+      y = ensureSpace(doc, y, 38, title, audName, today);
+      // Bar colorat cu cod + titlu
+      doc.setFillColor(...(priColor[m.priority] || COL_G));
+      doc.rect(10, y, 6, 6, "F");
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+      doc.text(`${m.code} — ${m.title}`, 18, y + 4.5);
+      doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+      doc.text(`Prioritate: ${m.priority}`, w - 10, y + 4.5, { align: "right" });
+      y += 8;
+
+      // Descriere (wrap la ~100 caractere)
+      doc.setFontSize(8); doc.setTextColor(...COL_G);
+      const lines = doc.splitTextToSize(m.detail, w - 22);
+      doc.text(lines, 10, y);
+      y += lines.length * 3.8 + 1;
+
+      // Sumar economic (mini-tabel inline)
+      y = autoTable(doc, {
+        startY: y,
+        body: [[
+          `Economie estimată: ${m.savings}`,
+          `Cost orientativ: ${m.costRef}`,
+          `Payback: ${m.payback}`,
+        ]],
+        theme: "plain",
+        styles: { fontSize: 7, textColor: COL_H, cellPadding: 1 },
+        columnStyles: {
+          0: { cellWidth: "wrap" }, 1: { cellWidth: "wrap" }, 2: { cellWidth: "wrap" },
+        },
+      });
+      y += 2;
+      doc.setDrawColor(230); doc.setLineWidth(0.2);
+      doc.line(10, y, w - 10, y);
+      y += 4;
+    });
+  }
+
+  // ── Scenarii de reabilitare (dacă există din Step 7) ──
+  if (rehabScenarios && (Array.isArray(rehabScenarios) ? rehabScenarios.length : Object.keys(rehabScenarios).length)) {
+    y = ensureSpace(doc, y, 50, title, audName, today);
+    y = sectionTitle(doc, "4. SCENARII DE REABILITARE (Step 7 — audit)", y);
+    const scenArr = Array.isArray(rehabScenarios)
+      ? rehabScenarios
+      : Object.entries(rehabScenarios).map(([id, s]) => ({ id, ...s }));
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Scenariu", "Cost investiție [RON]", "Economie anuală [RON]", "Payback simplu [ani]"]],
+      body: scenArr.map(s => [
+        s.label || s.id || "—",
+        fmtRo(s.totalCost, 0),
+        fmtRo(s.annualCostSaving, 0),
+        fmtRo(s.payback, 1),
+      ]),
+      columnStyles: {
+        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "center" },
+      },
+    });
+  }
+
+  // ── Analiză financiară (dacă există) ──
+  if (financialAnalysis && financialAnalysis.NPV != null) {
+    y = ensureSpace(doc, y, 35, title, audName, today);
+    y = sectionTitle(doc, "5. ANALIZĂ FINANCIARĂ (VNA / IRR)", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" } },
+      body: [
+        ["Valoare Netă Actualizată (VNA)", `${fmtRo(financialAnalysis.NPV, 0)} RON`],
+        ["Rata internă de rentabilitate (IRR)", `${fmtRo(financialAnalysis.IRR, 2)} %`],
+        ["Payback simplu", `${fmtRo(financialAnalysis.paybackSimple, 1)} ani`],
+        ["Payback actualizat", `${fmtRo(financialAnalysis.paybackDiscounted, 1)} ani`],
+        ["Rata de actualizare aplicată", `${fmtRo(financialAnalysis.discountRate, 2)} %`],
+        ["Perioada de analiză", `${financialAnalysis.period || "—"} ani`],
+      ],
+    });
+  }
+
+  // ── Concluzii + semnătură auditor ──
+  y = ensureSpace(doc, y, 50, title, audName, today);
+  y = sectionTitle(doc, "6. CONCLUZII ȘI SEMNĂTURĂ AUDITOR", y);
+  doc.setFontSize(8); doc.setTextColor(...COL_G);
+  const concText = measures.length > 0
+    ? `Se recomandă implementarea etapizată a măsurilor de mai sus, începând cu cele de prioritate înaltă (A1, A2), urmate de cele cu payback scurt. Ordinea optimă depinde de bugetul disponibil și de eligibilitatea pentru scheme de finanțare (PNRR, Casa Verde, Programul Național de Reabilitare Termică).`
+    : `Performanța energetică a clădirii este satisfăcătoare conform criteriilor Mc 001-2022. Se recomandă monitorizarea periodică a consumurilor și întreținerea preventivă a instalațiilor pentru menținerea performanței.`;
+  const concLines = doc.splitTextToSize(concText, w - 20);
+  doc.text(concLines, 10, y);
+  y += concLines.length * 3.8 + 5;
+
+  y = auditorBlock(doc, auditor, y);
+
+  // Zonă semnătură
+  y = ensureSpace(doc, y, 28, title, audName, today);
+  const sigW = 80, sigH = 22;
+  doc.setDrawColor(200); doc.setLineWidth(0.3);
+  doc.rect(10, y, sigW, sigH);
+  doc.rect(w - 10 - sigW, y, sigW, sigH);
+  doc.setFontSize(7); doc.setTextColor(...COL_G);
+  doc.text("Semnătură auditor", 10 + sigW / 2, y + sigH + 3, { align: "center" });
+  doc.text("Ștampilă profesională", w - 10 - sigW / 2, y + sigH + 3, { align: "center" });
+  if (auditor?.photo && typeof auditor.photo === "string" && auditor.photo.startsWith("data:image/")) {
+    try {
+      const fmt = auditor.photo.includes("jpeg") || auditor.photo.includes("jpg") ? "JPEG" : "PNG";
+      doc.addImage(auditor.photo, fmt, w - 10 - sigW + 5, y + 2, sigW - 10, sigH - 4, undefined, "FAST");
+    } catch { /* ignore */ }
+  }
+
+  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | EPBD 2024/1275", page);
+
+  return page;
+}
+
+/**
+ * CPE Anexa 1 — Date generale și tehnice (PDF oficial).
+ * Document de 4 pagini A4 conform Ord. MDLPA 16/2023 art. 7-10.
+ *
+ * Așteaptă toate propsurile folosite de componenta <CpeAnexa />.
+ * Vezi `src/components/CpeAnexa.jsx` pentru semnătura completă.
+ *
+ * @returns {Promise<Blob|null>} — Blob dacă `download=false`, null altfel
+ */
+export async function generateCPEAnexa1(opts) {
+  try {
+    const doc = await initDoc();
+    _renderAnexa1(doc, 1, opts);
+    const addr = (opts?.building?.address || "anexa1").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
+    const filename = `CPE_Anexa1_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, opts?.download);
+  } catch (e) {
+    throw new Error(`generateCPEAnexa1: ${e.message}`);
+  }
+}
+
+/**
+ * CPE Anexa 2 — Recomandări de îmbunătățire (PDF oficial).
+ * Măsuri prioritizate conform Mc 001-2022 + analiză financiară dacă e disponibilă.
+ *
+ * @returns {Promise<Blob|null>}
+ */
+export async function generateCPEAnexa2(opts) {
+  try {
+    const doc = await initDoc();
+    _renderAnexa2(doc, 1, opts);
+    const addr = (opts?.building?.address || "anexa2").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
+    const filename = `CPE_Anexa2_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, opts?.download);
+  } catch (e) {
+    throw new Error(`generateCPEAnexa2: ${e.message}`);
+  }
+}
+
+/**
+ * CPE Anexa 1 + Anexa 2 — PDF combinat (recomandat pentru livrare oficială).
+ * Paginație continuă: Anexa 1 (pag. 1-4) + Anexa 2 (pag. 5+).
+ *
+ * @returns {Promise<Blob|null>}
+ */
+export async function generateCPEAnexe(opts) {
+  try {
+    const doc = await initDoc();
+    const lastPage = _renderAnexa1(doc, 1, opts);
+    doc.addPage();
+    _renderAnexa2(doc, lastPage + 1, opts);
+    const addr = (opts?.building?.address || "anexe").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
+    const filename = `CPE_Anexa1+2_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, opts?.download);
+  } catch (e) {
+    throw new Error(`generateCPEAnexe: ${e.message}`);
   }
 }
