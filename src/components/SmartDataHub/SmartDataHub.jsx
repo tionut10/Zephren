@@ -60,15 +60,19 @@ function computeProgress(building) {
 // ── Cartelă rampă (click → expandare) ─────────────────────────────────────────
 function RampCard({ id, icon, title, subtitle, accent, active, onToggle }) {
   const accentMap = {
-    amber:  { border: "border-amber-500/30",  bg: "bg-amber-500/5",  text: "text-amber-300",  hover: "hover:bg-amber-500/10"  },
-    sky:    { border: "border-sky-500/30",    bg: "bg-sky-500/5",    text: "text-sky-300",    hover: "hover:bg-sky-500/10"    },
-    violet: { border: "border-violet-500/30", bg: "bg-violet-500/5", text: "text-violet-300", hover: "hover:bg-violet-500/10" },
+    amber:  { border: "border-amber-500/30",  bg: "bg-amber-500/5",  text: "text-amber-300",  hover: "hover:bg-amber-500/10",  ring: "focus-visible:ring-amber-400/60"  },
+    sky:    { border: "border-sky-500/30",    bg: "bg-sky-500/5",    text: "text-sky-300",    hover: "hover:bg-sky-500/10",    ring: "focus-visible:ring-sky-400/60"    },
+    violet: { border: "border-violet-500/30", bg: "bg-violet-500/5", text: "text-violet-300", hover: "hover:bg-violet-500/10", ring: "focus-visible:ring-violet-400/60" },
   };
   const c = accentMap[accent] || accentMap.sky;
   return (
     <button
+      id={`ramp-tab-${id}`}
+      role="tab"
+      aria-selected={active}
+      aria-controls={`ramp-panel-${id}`}
       onClick={onToggle}
-      className={`flex-1 flex flex-col items-start gap-1 rounded-xl border-2 transition-all p-3 text-left ${
+      className={`flex-1 flex flex-col items-start gap-1 rounded-xl border-2 transition-all p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${c.ring} ${
         active
           ? `${c.border} ${c.bg} ${c.text} shadow-md`
           : `border-white/10 bg-white/[0.02] ${c.hover} text-white/80`
@@ -267,20 +271,25 @@ export default function SmartDataHub({
           className="hidden"
         />
         <div
+          role="region"
+          aria-label="Zonă drag și drop fișiere"
+          aria-describedby="drop-zone-filetypes"
+          tabIndex={0}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          className={`rounded-xl border-2 border-dashed py-3 px-3 text-center transition-all select-none ${
+          onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); browseFileRef.current?.click(); } }}
+          className={`rounded-xl border-2 border-dashed py-3 px-3 text-center transition-all select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${
             dragOver
               ? "border-indigo-400/70 bg-indigo-500/10 scale-[1.005]"
               : "border-white/10 bg-white/[0.015] hover:border-white/20"
           }`}
         >
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="text-xl">🎯</div>
+            <div className="text-xl" aria-hidden="true">🎯</div>
             <div className="text-left">
               <div className="text-xs font-medium text-slate-300">Trage orice fișier aici</div>
-              <div className="text-[10px] text-slate-500">
+              <div id="drop-zone-filetypes" className="text-[10px] text-slate-500">
                 <span className="text-emerald-400/70">.ifc</span> ·{" "}
                 <span className="text-indigo-400/70">.pdf/.jpg/.png</span> ·{" "}
                 <span className="text-violet-400/70">.epw</span> ·{" "}
@@ -290,9 +299,10 @@ export default function SmartDataHub({
             </div>
             <button
               onClick={() => browseFileRef.current?.click()}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-[11px] font-medium transition-all"
+              aria-label="Alege fișier de pe disc"
+              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-[11px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             >
-              <span>📂</span> Alege fișier
+              <span aria-hidden="true">📂</span> Alege fișier
             </button>
           </div>
           {dropInfo && (
@@ -319,7 +329,7 @@ export default function SmartDataHub({
 
       {/* ── 3 Rampe — cartele ────────────────────────────────────────────────── */}
       <div className="px-4 pb-4 pt-1">
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2" role="tablist" aria-label="Metode introducere date clădire">
           <RampCard
             id="instant"
             icon="⚡"
@@ -351,7 +361,7 @@ export default function SmartDataHub({
 
         {/* Conținut rampă activă */}
         {activeRamp === "instant" && (
-          <div className="mt-3">
+          <div id="ramp-panel-instant" role="tabpanel" aria-labelledby="ramp-tab-instant" className="mt-3">
             <RampInstant
               building={building}
               loadDemoByIndex={loadDemoByIndex}
@@ -374,7 +384,7 @@ export default function SmartDataHub({
           </div>
         )}
         {activeRamp === "file" && (
-          <div className="mt-3">
+          <div id="ramp-panel-file" role="tabpanel" aria-labelledby="ramp-tab-file" className="mt-3">
             <RampFile
               drawingLoading={drawingLoading}
               onDrawingFile={onDrawingFile}
@@ -389,7 +399,7 @@ export default function SmartDataHub({
           </div>
         )}
         {activeRamp === "guided" && (
-          <div className="mt-3">
+          <div id="ramp-panel-guided" role="tabpanel" aria-labelledby="ramp-tab-guided" className="mt-3">
             <RampGuided
               onOpenQuickFill={onOpenQuickFill}
               onOpenChat={onOpenChat}
