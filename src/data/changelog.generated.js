@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "actualizare simboluri grade AE Ici/AE IIci conform Ord. 348/2026"
+      },
+      {
+        "icon": "📥",
+        "text": "TDZ error — mut importIFC/importInvoiceOCR înainte de handleDrop"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(S7.6+S7.7): invoice OCR via ocr-cpe mode switch + EN 16798 IAQ/comfort"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(S7.5): IFC native parser integration in handleDrop (+4 tests)"
+      },
+      {
+        "icon": "📄",
+        "text": "test+docs(S7.3+S7.4): E2E export flow spec + Supabase schema.sql + backend README"
+      },
+      {
+        "icon": "✨",
+        "text": "test(S7.1): add unit tests for export/import/cloud handlers (+50 tests)"
+      },
+      {
         "icon": "📥",
         "text": "refactor(S6.2+S6.3): lazy-load modals + import/share components (TARGET < 500 kB ATINS)"
       },
       {
         "icon": "🔀",
         "text": "refactor(S6.1): lazy-load 7 secondary components with Suspense"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(S5.4): extract undo/redo + versioning to src/hooks/useProjectHistory.js"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(S5.3): extract cloud sync handlers to src/handlers/cloudHandlers.js (lazy)"
-      },
-      {
-        "icon": "📥",
-        "text": "refactor(S5.2): extract 9 import handlers to src/handlers/importHandlers.js (lazy)"
-      },
-      {
-        "icon": "📄",
-        "text": "refactor(S5.1): extract 12 export handlers to src/handlers/exportHandlers.js (lazy)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(Step7): indicatori financiari cu etichete românești"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(Step5): ZEB badge + card cost estimativ reabilitare"
       }
     ]
   },

@@ -29,6 +29,7 @@ import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
+import ThermalVizButton from "./ThermalViz/ThermalVizButton.jsx";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
 import { computeEnvelopeHint } from "./utils/envelopeHints.js";
 
@@ -349,7 +350,7 @@ export default function SmartEnvelopeHub({
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="px-4 pt-4 pb-3 border-b border-white/[0.06]">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="text-base">🏗️</span>
             <span className="font-semibold text-sm text-white">Anvelopă termică</span>
@@ -357,7 +358,21 @@ export default function SmartEnvelopeHub({
               completează rapid sau importă
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ThermalVizButton
+              variant="compact"
+              opaqueElements={opaqueElements}
+              glazingElements={glazingElements}
+              thermalBridges={thermalBridges}
+              building={building}
+              climate={{
+                T_int: parseFloat(building?.theta_int) || 20,
+                T_ext: Array.isArray(selectedClimate?.temp_month) && selectedClimate.temp_month.length > 0
+                  ? Math.min(...selectedClimate.temp_month)
+                  : -15,
+              }}
+              calcOpaqueR={calcOpaqueR}
+            />
             <span className="text-[10px] text-slate-400">
               Step 2: <span className={
                 progress.pct >= 80 ? "text-green-400 font-semibold"
