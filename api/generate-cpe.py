@@ -579,21 +579,27 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
     # De aceea, folosim ORDINEA DIN DOCUMENT (XML order) ca fallback — în Word XML,
     # conținutul coloanei stângi apare ÎNAINTEA coloanei drepte.
 
-    # CLASIFICARE ROBUSTĂ: detectăm CO2 indicators după culoarea originală din template
-    # Scala CO2 folosește albastru → _is_co2_shape() verifică B dominant (R,G,B channels)
-    # Scala EP folosește verde/galben/portocaliu/roșu → nu e albastru dominant
-    # Această metodă funcționează indiferent de ordinea XML sau ancorarea relativeFrom
+    # CLASIFICARE ROBUSTĂ: detectăm CO2 indicators după POZIȚIA VERTICALĂ (V)
+    # Scala EP și scala CO2 au același spacing (466725 EMU) dar offset diferit de 13335 EMU:
+    #   EP:  A=510540, B=977265  |  CO2: A=497205, B=963930
+    # Calculăm distanța la fiecare scală și alegem cea mai apropiată.
+    # Metoda e fiabilă chiar și când shape-urile nu au fill explicit (noFill).
+    def _closest_scale_co2(v):
+        """Return True dacă V se potrivește mai bine scalei CO2 decât scalei EP."""
+        ep_min  = min(abs(v - vv) for vv in _CLASS_POS_V.values())
+        co2_min = min(abs(v - vv) for vv in _CO2_CLASS_POS_V.values())
+        return co2_min < ep_min
+
     ep_indicators_raw = []
     co2_indicators = []
     for ind in text_indicators:
         im, letter, ih, iv = ind
-        if _is_co2_shape(im.group(1)):
+        if _closest_scale_co2(iv):
             co2_indicators.append(ind)
         else:
             ep_indicators_raw.append(ind)
 
-    # Dacă nu am detectat CO2 prin culoare (template cu schemeClr fără fill explicit),
-    # fallback: ultimul indicator (cel mai la dreapta în doc order) = CO2
+    # Fallback (dacă detecția V nu separă corect): ultimul indicator (cel mai jos) = CO2
     if not co2_indicators and len(ep_indicators_raw) >= 2 and co2_class_real:
         co2_indicators = [ep_indicators_raw[-1]]
         ep_indicators_raw = ep_indicators_raw[:-1]
@@ -651,12 +657,12 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         # Culoarea textului calculată din luminanța WCAG a fundalului (valabil EP și CO2)
         text_color = _text_color_for_bg(color["hex"])
         if '<w:color' not in new_content:
-            # Adaugă <w:color> în fiecare <w:rPr> care nu-l are
+            # Injectează <w:color> DOAR în rPr-ul run-ului (cel imediat înainte de <w:t>)
+            # Regex: </w:rPr>\s*<w:t  → rPr-ul de run, nu cel din <w:pPr> (paragraf default)
             new_content = re.sub(
-                r'(<w:rPr>)([\s\S]*?)(</w:rPr>[\s\S]*?<w:t)',
+                r'(<w:rPr>)([\s\S]*?)(</w:rPr>\s*<w:t)',
                 r'\g<1>\g<2><w:color w:val="' + text_color + r'"/>\g<3>',
-                new_content,
-                count=2
+                new_content
             )
         else:
             # Înlocuiește TOATE variantele <w:color .../> (inclusiv cu w:themeColor, w:themeShade etc.)
