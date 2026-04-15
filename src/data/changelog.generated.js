@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🔧",
-        "text": "actualizare simboluri grade AE Ici/AE IIci conform Ord. 348/2026"
-      },
-      {
-        "icon": "📥",
-        "text": "TDZ error — mut importIFC/importInvoiceOCR înainte de handleDrop"
+        "icon": "✨",
+        "text": "buton Raport conformare nZEB PDF oficial în Step6 (UI)"
       },
       {
         "icon": "✨",
-        "text": "feat(S7.6+S7.7): invoice OCR via ocr-cpe mode switch + EN 16798 IAQ/comfort"
+        "text": "raport conformare nZEB conform art. 6 Ord. 348/2026 + Mc 001-2022"
       },
       {
         "icon": "✨",
-        "text": "feat(S7.5): IFC native parser integration in handleDrop (+4 tests)"
+        "text": "Registru de Evidență auditor (Anexa 6) — export .xlsx conform Ord. MDLPA 348/2026"
       },
       {
         "icon": "📄",
-        "text": "test+docs(S7.3+S7.4): E2E export flow spec + Supabase schema.sql + backend README"
+        "text": "fix(cpe): corectează detectarea indicatorului CO2 și culoarea textului"
       },
       {
         "icon": "✨",
-        "text": "test(S7.1): add unit tests for export/import/cloud handlers (+50 tests)"
+        "text": "adăugare câmpuri coordonate geografice (lat/long) conform Anexa 6, Ord. 348/2026"
       },
       {
-        "icon": "📥",
-        "text": "refactor(S6.2+S6.3): lazy-load modals + import/share components (TARGET < 500 kB ATINS)"
+        "icon": "✨",
+        "text": "integrare mapping Anexa 6 în AuditClientDataForm și ClientReport"
       },
       {
-        "icon": "🔀",
-        "text": "refactor(S6.1): lazy-load 7 secondary components with Suspense"
+        "icon": "✨",
+        "text": "adăugare mapping categorii clădiri → nomenclator Anexa 6, Ord. 348/2026"
+      },
+      {
+        "icon": "📄",
+        "text": "text A+ vizibil în săgeata CPE — padding-right:30% aliniază cu clip-path 70%"
       }
     ]
   },
