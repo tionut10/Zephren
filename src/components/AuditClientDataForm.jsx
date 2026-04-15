@@ -3,7 +3,7 @@ import { cn, Card, Input, Badge } from "./ui.jsx";
 import TabNavigation from "./AuditClientDataForm/TabNavigation.jsx";
 import ProgressIndicator from "./AuditClientDataForm/ProgressIndicator.jsx";
 import { SECTIONS, SECTIONS_ARRAY } from "./AuditClientDataForm/utils/sectionConfig.js";
-import { exportToJSON, exportToCSV, downloadChecklist } from "./AuditClientDataForm/utils/exportUtils.js";
+import { exportToJSON, exportToCSV, downloadChecklist, exportRegistruAnex6 } from "./AuditClientDataForm/utils/exportUtils.js";
 import { calculateFormCompletion } from "./AuditClientDataForm/utils/validationUtils.js";
 import { saveToStorage, loadFromStorage } from "./AuditClientDataForm/utils/storageUtils.js";
 
@@ -131,6 +131,13 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                 className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
               >
                 ✓ Check
+              </button>
+              <button
+                onClick={() => exportRegistruAnex6(formData)}
+                className="px-3 py-2 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700 transition whitespace-nowrap"
+                title="Export registru conform Anexa 6, Ord. MDLPA 348/2026"
+              >
+                📋 Anexa 6
               </button>
               <button
                 onClick={clearForm}

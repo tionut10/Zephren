@@ -2,6 +2,7 @@
  * sectionConfig.js - Configurație secțiuni formular audit energetic
  * 6 secțiuni cu câmpuri și validare
  */
+import { ANEXA6_CATEGORIES } from "../../../data/anexa6-mapping.js";
 
 export const SECTIONS = {
   documentation: {
@@ -20,6 +21,11 @@ export const SECTIONS = {
       { id: "buildingAuthority", label: "Autorizație de construire (nr/anul)", type: "text" },
       { id: "technicalBook", label: "Cartă tehnică disponibilă?", type: "select", options: ["Da", "Nu", "Parțial"] },
       { id: "planArchitectural", label: "Planuri arhitecturale disponibile?", type: "select", options: ["Parter+niveluri", "Doar parter", "Doar secțiuni", "Nu"] },
+      { id: "buildingTipAnex6", label: "Tip clădire Anexa 6 (Ord. 348/2026)", type: "select", options: ["Rezidențial", "Nerezidențial"] },
+      { id: "buildingSubtipAnex6", label: "Subtip clădire Anexa 6", type: "select", options: [
+        ...ANEXA6_CATEGORIES.rezidential.map(s => `Rezidențial – ${s}`),
+        ...ANEXA6_CATEGORIES.nerezidential.map(s => `Nerezidențial – ${s}`),
+      ]},
     ]
   },
   envelope: {

@@ -3,6 +3,7 @@
  * Afișează rezultatele certificării fără acces la datele de intrare.
  * Activat prin URL ?view=<base64>
  */
+import { getCategoryLabel } from "../data/anexa6-mapping.js";
 
 const CLASS_COLORS = {
   "A+": "#00A550", "A": "#4CB848", "B": "#BDD630",
@@ -58,6 +59,7 @@ export default function ClientReport({ data, onOpenApp }) {
   const co2Final = r?.co2 ?? s?.co2 ?? null;
   const rer = r?.rer ?? null;
   const adresa = [b?.addr, b?.city].filter(Boolean).join(", ") || "Clădire necunoscută";
+  const categorieAnex6 = b?.cat ? getCategoryLabel(b.cat) : null;
 
   const utilities = s ? Object.entries(UTILITY_LABELS).map(([key, label]) => ({
     label, value: s[key] || 0, color: UTILITY_COLORS[key],
@@ -88,6 +90,11 @@ export default function ClientReport({ data, onOpenApp }) {
           </div>
           <h1 style={{ fontSize: "22px", fontWeight: "800", margin: 0 }}>{adresa}</h1>
           {b?.year && <div style={{ fontSize: "13px", opacity: 0.5, marginTop: "4px" }}>An construcție: {b.year} · Au: {b.au} m²</div>}
+          {categorieAnex6 && (
+            <div style={{ fontSize: "11px", opacity: 0.45, marginTop: "4px" }}>
+              Anexa 6 (Ord. 348/2026): {categorieAnex6.tip} – {categorieAnex6.subtip}
+            </div>
+          )}
         </div>
 
         {/* Clasă energetică */}

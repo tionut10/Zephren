@@ -2,6 +2,7 @@
  * exportUtils.js - Funcții export date audit energetic
  * JSON, CSV, TXT Checklist
  */
+import { getCategoryLabel } from "../../../data/anexa6-mapping.js";
 
 /**
  * Formatează data curentă pentru nume fișier
@@ -182,4 +183,56 @@ export function generateDetailedReport(formData, completionStatus, SECTIONS) {
   report += `Procent: ${Math.round((completedFields / totalFields) * 100)}%\n`;
 
   return report;
+}
+
+/**
+ * Export registru conform Anexa 6, Ord. MDLPA 348/2026
+ * Generează CSV cu structura oficială pentru înregistrare CPE
+ * @param {object} formData - Datele din formular audit
+ * @param {string} [internalCategory] - Codul categorie intern opțional (RI, RC etc.)
+ */
+export function exportRegistruAnex6(formData, internalCategory = null) {
+  // Determină clasificarea Anexa 6
+  let tip = formData.buildingTipAnex6 || "";
+  let subtip = "";
+
+  if (formData.buildingSubtipAnex6) {
+    // Extrage subtipul din formatul "Rezidențial – unifamilial"
+    const parts = formData.buildingSubtipAnex6.split(" – ");
+    subtip = parts.length > 1 ? parts[1] : formData.buildingSubtipAnex6;
+    if (!tip && parts.length > 1) tip = parts[0];
+  }
+
+  // Fallback: mapare din codul intern dacă câmpurile Anexa 6 lipsesc
+  if (!tip && internalCategory) {
+    const mapped = getCategoryLabel(internalCategory);
+    tip = mapped.tip;
+    subtip = mapped.subtip;
+  }
+
+  const record = {
+    "Data export": new Date().toLocaleDateString("ro-RO"),
+    "Auditor": formData.auditorName || "",
+    "Nr. înregistrare auditor": formData.auditorRegistry || "",
+    "Proprietar": formData.ownerName || "",
+    "Adresă clădire": formData.buildingAddress || "",
+    "An construcție": formData.constructionYear || "",
+    "Arie utilă (m²)": formData.usefulArea || formData.totalBuildingArea || "",
+    "Tip Anexa 6 (Ord. 348/2026)": tip,
+    "Subtip Anexa 6 (Ord. 348/2026)": subtip,
+    "Data inspecție": formData.inspectionDate || "",
+    "Tip audit": formData.auditType || "",
+  };
+
+  const headers = Object.keys(record);
+  const values = headers.map(h => `"${String(record[h]).replace(/"/g, '""')}"`);
+  const csv = [headers.join(","), values.join(",")].join("\n");
+
+  const element = document.createElement("a");
+  element.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
+  element.setAttribute("download", `registru-anexa6-${getTimestamp()}.csv`);
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
 }
