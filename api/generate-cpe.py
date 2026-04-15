@@ -467,7 +467,7 @@ def _is_co2_shape(shape_xml):
 
 
 def _update_shape_color(shape_xml_str, color_info):
-    """Update fill color in DrawingML (srgbClr SAU schemeClr) și VML (fillcolor)."""
+    """Update fill color in DrawingML (srgbClr SAU schemeClr SAU noFill) și VML (fillcolor)."""
     result = shape_xml_str
     hex_color = color_info["hex"]
     vml_color = color_info["vml"]
@@ -486,26 +486,40 @@ def _update_shape_color(shape_xml_str, color_info):
     # FIX 2: dacă nu s-a găsit srgbClr, înlocuiește schemeClr (culoare din temă Word)
     # Acoperă <a:schemeClr val="..."/> (self-closing) și <a:schemeClr ...>...</a:schemeClr>
     if not srgb_matched:
-        result = re.sub(
+        result, n1 = re.subn(
             r'<a:solidFill>\s*<a:schemeClr\b[^/]*/>\s*</a:solidFill>',
             explicit_fill,
             result,
             count=1
         )
+        if n1 == 0:
+            result = re.sub(
+                r'<a:solidFill>\s*<a:schemeClr\b[^>]*>[\s\S]*?</a:schemeClr>\s*</a:solidFill>',
+                explicit_fill,
+                result,
+                count=1
+            )
+
+    # FIX 3: înlocuiește <a:noFill/> cu solidFill — indicatoarele din template au noFill
+    # (fundal transparent) dar trebuie să afișeze culoarea clasei indiferent de fundal
+    result = re.sub(r'<a:noFill\s*/>', explicit_fill, result, count=1)
+
+    # VML fillcolor (folosit de Office pentru compatibilitate)
+    # Dacă nu există atribut fillcolor, adăugăm unul în <v:shape
+    if re.search(r'fillcolor="[^"]*"', result):
         result = re.sub(
-            r'<a:solidFill>\s*<a:schemeClr\b[^>]*>[\s\S]*?</a:schemeClr>\s*</a:solidFill>',
-            explicit_fill,
+            r'fillcolor="[^"]*"',
+            'fillcolor="' + vml_color + '"',
             result,
             count=1
         )
-
-    # VML fillcolor (folosit de Office pentru compatibilitate)
-    result = re.sub(
-        r'fillcolor="[^"]*"',
-        'fillcolor="' + vml_color + '"',
-        result,
-        count=1
-    )
+    else:
+        result = re.sub(
+            r'(<v:shape\b)',
+            r'\1 fillcolor="' + vml_color + '"',
+            result,
+            count=1
+        )
 
     return result
 
