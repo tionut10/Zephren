@@ -16,6 +16,9 @@ export const INITIAL_BUILDING = {
   perimeter:"", n50:"4.0", shadingFactor:"0.90",
   gwpLifecycle:"", solarReady:false,
   scopCpe:"vanzare", parkingSpaces:"0",
+  // Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026
+  latitude:"",   // grad zecimal WGS84, ex: "44.4268"
+  longitude:"",  // grad zecimal WGS84, ex: "26.1025"
 };
 
 // ─── STEP 3: INSTALAȚII ───

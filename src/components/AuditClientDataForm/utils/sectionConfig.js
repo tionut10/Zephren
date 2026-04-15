@@ -26,6 +26,9 @@ export const SECTIONS = {
         ...ANEXA6_CATEGORIES.rezidential.map(s => `Rezidențial – ${s}`),
         ...ANEXA6_CATEGORIES.nerezidential.map(s => `Nerezidențial – ${s}`),
       ]},
+      // Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026
+      { id: "latitude",  label: "Latitudine",  type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 44.4268)" },
+      { id: "longitude", label: "Longitudine", type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 26.1025)" },
     ]
   },
   envelope: {

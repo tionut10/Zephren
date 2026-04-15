@@ -700,6 +700,23 @@ export default function ClientInputForm({ onDataChange }) {
         <Field label="Adresă completă (stradă, număr)" required span2>
           <FInput value={data.adresaCompleta} onChange={v => set("adresaCompleta", v)} placeholder="ex: Str. Florilor nr. 12, ap. 3" />
         </Field>
+        {/* Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026 */}
+        {/* TODO: auto-populare din geocodare — ancpi-proxy.js nu returnează
+            coordonate în prezent (API ANCPI fără acces public la date spațiale).
+            Alternativă: integrare Nominatim/OpenStreetMap pe baza adresei complete. */}
+        <div className="md:col-span-2">
+          <p className="text-xs font-medium text-white/30 uppercase tracking-wider pb-1 border-b border-white/[0.06]">
+            Coordonate geografice (Anexa 6 MDLPA)
+          </p>
+        </div>
+        <Field label="Latitudine" hint="Opțional — completat automat dacă este disponibil din geocodare">
+          <FInput value={data.latitude} onChange={v => set("latitude", v)} type="number"
+            min={-90} max={90} placeholder="44.4268" unit="°N" />
+        </Field>
+        <Field label="Longitudine" hint="Opțional — completat automat dacă este disponibil din geocodare">
+          <FInput value={data.longitude} onChange={v => set("longitude", v)} type="number"
+            min={-180} max={180} placeholder="26.1025" unit="°E" />
+        </Field>
         <Field label="Tipul clădirii" required>
           <FSelect value={data.tipClădire} onChange={v => set("tipClădire", v)} options={[
             { value: "casa_unifamiliala", label: "Casă unifamilială (casă individuală)" },
