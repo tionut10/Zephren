@@ -363,7 +363,68 @@ export function importCompareRef(ctx) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. IMPORT IFC — format BIM IFC 2x3 / IFC4 (Revit, ArchiCAD, etc.)
+// 9. IMPORT INVOICE OCR — factură energie/gaz/termoficare (S7.6)
+// Folosește /api/ocr-cpe cu mode=invoice (multi-purpose endpoint).
+// Extrage consum și actualizează în state.energyPrices + setează an referință.
+// ═══════════════════════════════════════════════════════════════════════════
+export async function importInvoiceOCR(ctx) {
+  const { file, setEnergyPrices, setBuilding, showToast, onInvoiceData } = ctx;
+  try {
+    showToast("Se analizează factura cu AI...", "info", 5000);
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const mediaType = file.type || "image/jpeg";
+    const resp = await fetch("/api/ocr-cpe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: base64, mediaType, mode: "invoice" }),
+    });
+    if (!resp.ok) throw new Error("OCR API error: " + resp.status);
+    const result = await resp.json();
+    if (!result.data) {
+      showToast("Nu s-au putut extrage date din factură.", "error");
+      return;
+    }
+    const d = result.data;
+
+    // ── Auto-populate energyPrices ──
+    if (setEnergyPrices && d.avgPrice_leiPerKwh) {
+      const priceNum = parseFloat(d.avgPrice_leiPerKwh);
+      if (priceNum > 0) {
+        const key = d.energyType === "gaz" ? "gas"
+          : d.energyType === "electric" ? "electric"
+            : d.energyType === "termoficare" ? "district"
+              : "other";
+        setEnergyPrices(prev => ({ ...prev, [key]: priceNum }));
+      }
+    }
+
+    // ── Auto-populate adresă clădire dacă nu e setată ──
+    if (setBuilding && d.clientAddress) {
+      setBuilding(p => p.address ? p : { ...p, address: d.clientAddress });
+    }
+
+    // ── Callback pentru aplicație: poate folosi datele pentru comparație calcul ──
+    if (onInvoiceData) onInvoiceData(d);
+
+    const summary = [
+      d.supplier ? `Furnizor: ${d.supplier}` : null,
+      d.consumption_kWh ? `Consum: ${d.consumption_kWh} kWh` : null,
+      d.totalCost_lei ? `Cost: ${d.totalCost_lei} lei` : null,
+      d.periodStart && d.periodEnd ? `Perioadă: ${d.periodStart} → ${d.periodEnd}` : null,
+    ].filter(Boolean).join(" · ");
+    showToast("Factură procesată: " + (summary || "date extrase"), "success", 6000);
+  } catch (e) {
+    showToast("Eroare OCR factură: " + e.message, "error");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. IMPORT IFC — format BIM IFC 2x3 / IFC4 (Revit, ArchiCAD, etc.)
 // ═══════════════════════════════════════════════════════════════════════════
 export function importIFC(ctx) {
   const { file, setBuilding, setOpaqueElements, setGlazingElements, showToast } = ctx;

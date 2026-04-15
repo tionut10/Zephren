@@ -1995,6 +1995,17 @@ export default function EnergyCalcApp({ cloud }) {
     return m.importIFC({ file, setBuilding, setOpaqueElements, setGlazingElements, showToast });
   }, [showToast]);
 
+  const importInvoiceOCR = useCallback(async (file) => {
+    const m = await import("./handlers/importHandlers.js");
+    return m.importInvoiceOCR({
+      file, setEnergyPrices, setBuilding, showToast,
+      onInvoiceData: (data) => {
+        // Callback optional — aplicația poate arăta un modal cu comparație calcul vs. factură
+        console.info("[OCR Invoice]", data);
+      },
+    });
+  }, [showToast]);
+
   // ═══════════════════════════════════════════════════════════
   // E2: AUTO-COMPLETARE LOCALITATE DIN ADRESĂ
   // ═══════════════════════════════════════════════════════════
