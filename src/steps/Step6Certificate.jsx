@@ -1153,7 +1153,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
   <td colspan="2" class="L"></td>
   <td colspan="5" class="L"><strong>Certificat atestare:</strong> ${auditor.atestat || "XX/XXXXX"}</td>
   <td colspan="2" class="L"><strong>gradul</strong></td>
-  <td colspan="3" class="Vs"><strong>${auditor.grade || "I / II"}</strong></td>
+  <td colspan="3" class="Vs"><strong>${auditor.grade || "AE Ici / AE IIci"}</strong></td>
 </tr>
 </table>
 
@@ -1552,7 +1552,7 @@ ${(() => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input label={t("Nr. atestat MLPAT/MDLPA",lang)} value={auditor.atestat} onChange={v => setAuditor(p=>({...p,atestat:v}))} placeholder="12345" />
                         <Select label={t("Grad atestat",lang)} value={auditor.grade} onChange={v => setAuditor(p=>({...p,grade:v}))}
-                          options={[{value:"I",label:"Gradul I"},{value:"II",label:"Gradul II"},{value:"III",label:"Gradul III"}]} />
+                          options={[{value:"AE Ici",label:"AE Ici — Grad I"},{value:"AE IIci",label:"AE IIci — Grad II"}]} />
                       </div>
                       <Input label={t("Firma / PFA",lang)} value={auditor.company} onChange={v => setAuditor(p=>({...p,company:v}))} />
                       {tier.brandingCPE && (
