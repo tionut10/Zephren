@@ -13,7 +13,7 @@ import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } 
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
 import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
-import { generateCPEAnexe } from "../lib/report-generators.js";
+import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -1996,6 +1996,51 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       <span>💾</span> Descarcă raport nZEB (.html → Print to PDF)
                     </button>
                   )}
+
+                  {/* ───────────────────────────────────────────────────────────────
+                      RAPORT DE CONFORMARE nZEB — PDF OFICIAL
+                      Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026
+                      Conținut-cadru Mc 001-2022 §2.4 + Legea 238/2024 Art.6
+                      Emis de auditor energetic Grad I (AE Ici)
+                  ─────────────────────────────────────────────────────────────── */}
+                  <button onClick={async function() {
+                    if (!canNzebReport) { requireUpgrade("Raport conformare nZEB necesită plan Starter+"); return; }
+                    if (!instSummary || !renewSummary) { showToast("Completați pașii 1-5 pentru raport conformare nZEB.", "error"); return; }
+                    if (!selectedClimate?.zone) { showToast("Selectați o localitate climatică (Pasul 1).", "error"); return; }
+                    try {
+                      showToast("Se generează raportul de conformare nZEB (PDF oficial)...", "info", 3500);
+                      const projectPhase = building?.scopCpe === "renovare" ? "renovare" : (building?.yearBuilt && parseInt(building.yearBuilt) >= new Date().getFullYear() ? "proiectare" : "audit");
+                      await generateNZEBConformanceReport({
+                        building, selectedClimate, instSummary, renewSummary, envelopeSummary,
+                        opaqueElements, glazingElements,
+                        heating, cooling, ventilation, lighting, acm,
+                        solarThermal, photovoltaic, heatPump, biomass,
+                        auditor, projectPhase,
+                        download: true,
+                      });
+                      showToast("✓ Raport de conformare nZEB generat cu succes (PDF oficial)", "success", 3500);
+                    } catch (e) {
+                      showToast("Eroare la generarea raportului: " + e.message, "error", 6000);
+                    }
+                  }}
+                    className="w-full flex items-start gap-3 px-5 py-3.5 rounded-xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-emerald-500/5 text-amber-300 hover:from-amber-500/15 hover:to-emerald-500/10 hover:border-amber-500/50 transition-all mt-3 group">
+                    <span className="text-2xl shrink-0 group-hover:scale-110 transition-transform">📜</span>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="text-sm font-bold text-amber-200 flex items-center gap-2 flex-wrap">
+                        Raport conformare nZEB — PDF oficial
+                        {!canNzebReport && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
+                        {auditor?.grade && String(auditor.grade).trim().toUpperCase() !== "I" && String(auditor.grade).trim() !== "1" && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300" title="Raport rezervat auditorilor Grad I (AE Ici)">⚠ Grad I necesar</span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-white/50 mt-0.5">
+                        Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026 · conținut-cadru Mc 001-2022 · 4-5 pagini A4
+                      </div>
+                      <div className="text-[10px] text-white/35 mt-0.5">
+                        Verdict EP/RER/RER on-site · recomandări prioritizate · declarație auditor · semnătură
+                      </div>
+                    </div>
+                  </button>
 
                   <button onClick={async function() {
                     try {
