@@ -2029,7 +2029,11 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       <div className="text-sm font-bold text-amber-200 flex items-center gap-2 flex-wrap">
                         Raport conformare nZEB — PDF oficial
                         {!canNzebReport && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
-                        {auditor?.grade && String(auditor.grade).trim().toUpperCase() !== "I" && String(auditor.grade).trim() !== "1" && (
+                        {auditor?.grade && (() => {
+                          const g = String(auditor.grade).trim().toUpperCase();
+                          const isGradeOne = g === "I" || g === "1" || g.includes("AE ICI") || g.includes("GRAD I");
+                          return !isGradeOne;
+                        })() && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300" title="Raport rezervat auditorilor Grad I (AE Ici)">⚠ Grad I necesar</span>
                         )}
                       </div>
