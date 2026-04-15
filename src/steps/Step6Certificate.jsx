@@ -2063,7 +2063,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         styleEl.textContent = `
                           .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
                           .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
-                          .cpe-arrow-overlay { position:absolute; z-index:10; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:11px; color:#000; clip-path:polygon(0% 20%, 70% 20%, 70% 0%, 100% 50%, 70% 100%, 70% 80%, 0% 80%); }
+                          .cpe-arrow-overlay { position:absolute; z-index:10; display:flex; align-items:center; justify-content:center; padding-right:30%; font-weight:bold; font-size:11px; color:#000; clip-path:polygon(0% 20%, 70% 20%, 70% 0%, 100% 50%, 70% 100%, 70% 80%, 0% 80%); }
                         `;
                         container.appendChild(styleEl);
 
