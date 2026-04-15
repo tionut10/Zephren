@@ -8,10 +8,13 @@
  *
  * Focus trap, ESC close, overlay click close.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Building3D from "./views/Building3D.jsx";
+import WallSection from "./views/WallSection.jsx";
+import BridgeIsotherms from "./views/BridgeIsotherms.jsx";
 import ColorModeToggle, { getSavedColorMode } from "./components/ColorModeToggle.jsx";
 import HeatLegend from "./components/HeatLegend.jsx";
+import ExportPngButton from "./components/ExportPngButton.jsx";
 
 const TABS = [
   { id: "building", icon: "🏠", label: "Clădire 3D", hint: "Schemă generală + heatmap" },
@@ -33,6 +36,14 @@ export default function ThermalVizModal({
   const [colorMode, setColorMode] = useState(() => getSavedColorMode());
   const [selectedElement, setSelectedElement] = useState(null);
   const [selectedBridge, setSelectedBridge] = useState(null);
+  const [selectedOpaqueIdx, setSelectedOpaqueIdx] = useState(0);
+  const [selectedBridgeIdx, setSelectedBridgeIdx] = useState(0);
+
+  // Ref pe container-ul view-ului activ pentru export PNG
+  const viewContainerRef = useRef(null);
+
+  // Doar opacele cu straturi pot fi secționate
+  const viableOpaques = opaqueElements.filter(e => Array.isArray(e.layers) && e.layers.length > 0);
 
   // Close on ESC
   useEffect(() => {
@@ -52,13 +63,40 @@ export default function ThermalVizModal({
 
   const handleSelectElement = useCallback((rect) => {
     setSelectedElement(rect);
-    // Când avem view B implementat: setActiveTab("section")
-  }, []);
+    // Doar opace cu layers — caută indexul în viableOpaques
+    if (rect?.kind === "opaque" && rect?.element && Array.isArray(rect.element.layers) && rect.element.layers.length > 0) {
+      const idx = viableOpaques.findIndex(e =>
+        e === rect.element || e.name === rect.element.name
+      );
+      if (idx >= 0) {
+        setSelectedOpaqueIdx(idx);
+        setActiveTab("section");
+      }
+    }
+  }, [viableOpaques]);
 
   const handleSelectBridge = useCallback((edge) => {
     setSelectedBridge(edge);
-    // Când avem view C implementat: setActiveTab("bridges")
-  }, []);
+    if (edge?.bridge) {
+      const idx = thermalBridges.findIndex(b => b === edge.bridge || b.name === edge.bridge.name);
+      if (idx >= 0) setSelectedBridgeIdx(idx);
+    }
+    setActiveTab("bridges");
+  }, [thermalBridges]);
+
+  // ── Export PNG: caută SVG în view-ul activ sau capturează DOM-ul (3D) ──────
+  const getExportTarget = useCallback(() => {
+    const root = viewContainerRef.current;
+    if (!root) return null;
+    if (activeTab === "building") {
+      // Cutie 3D CSS — folosim html2canvas pe întreg container-ul
+      return root;
+    }
+    // Section/bridges — selectăm SVG-ul vederii
+    return root.querySelector("svg");
+  }, [activeTab]);
+
+  const exportLabel = activeTab === "building" ? "Export 3D" : "Export PNG";
 
   if (!isOpen) return null;
 
@@ -84,6 +122,12 @@ export default function ThermalVizModal({
             </div>
           </div>
           <ColorModeToggle mode={colorMode} onChange={setColorMode} />
+          <ExportPngButton
+            getTarget={getExportTarget}
+            viewName={activeTab}
+            projectName={building?.name}
+            label={exportLabel}
+          />
           <button
             onClick={onClose}
             aria-label="Închide vizualizarea"
@@ -117,7 +161,7 @@ export default function ThermalVizModal({
         {/* Body: vederea activă + legendă laterală */}
         <div className="flex-1 flex overflow-hidden">
           {/* View principală */}
-          <div className="flex-1 min-w-0 relative">
+          <div ref={viewContainerRef} className="flex-1 min-w-0 relative">
             {activeTab === "building" && (
               <Building3D
                 opaqueElements={opaqueElements}
@@ -133,20 +177,21 @@ export default function ThermalVizModal({
             )}
 
             {activeTab === "section" && (
-              <PlaceholderView
-                icon="🧱"
-                title="Secțiune prin perete — Faza 2"
-                message="Această vedere va fi adăugată în etapa următoare. Va afișa straturile peretelui cu gradient de temperatură și curba T prin perete (interior → exterior)."
-                selectedName={selectedElement?.element?.name}
+              <WallSection
+                opaqueElements={opaqueElements}
+                selectedElementIdx={selectedOpaqueIdx}
+                onSelectIdx={setSelectedOpaqueIdx}
+                climate={climate}
+                colorMode={colorMode}
               />
             )}
 
             {activeTab === "bridges" && (
-              <PlaceholderView
-                icon="🔗"
-                title="Izoterme punți termice — Faza 3"
-                message="Această vedere va fi adăugată în etapa finală. Va afișa joncțiunea cu backdrop SVG din catalog și overlay izoterme schematice."
-                selectedName={selectedBridge?.bridge?.name}
+              <BridgeIsotherms
+                thermalBridges={thermalBridges}
+                selectedBridgeIdx={selectedBridgeIdx}
+                onSelectIdx={setSelectedBridgeIdx}
+                climate={climate}
               />
             )}
           </div>
@@ -161,28 +206,10 @@ export default function ThermalVizModal({
               <p>• Schema e parametrică (cutie dreptunghiulară), nu plan arhitectural real.</p>
             </div>
             <div className="border-t border-white/[0.06] pt-3 text-[10px] text-white/40 italic">
-              Faza 1 (3D clădire) · Faza 2-3 în curs.
+              Toate cele 3 faze finalizate · Export PNG disponibil pentru raport.
             </div>
           </aside>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Placeholder pentru view-urile Faza 2/3 ───────────────────────────────────
-function PlaceholderView({ icon, title, message, selectedName }) {
-  return (
-    <div className="h-full flex items-center justify-center p-6">
-      <div className="text-center max-w-md">
-        <div className="text-5xl mb-3" aria-hidden="true">{icon}</div>
-        <div className="text-base font-semibold text-white/90 mb-2">{title}</div>
-        <div className="text-xs text-white/60 leading-relaxed">{message}</div>
-        {selectedName && (
-          <div className="mt-4 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-            Element selectat: <span className="font-semibold">{selectedName}</span>
-          </div>
-        )}
       </div>
     </div>
   );
