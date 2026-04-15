@@ -4,6 +4,8 @@
  */
 
 import MATERIALS_DB from "../../../data/materials.json";
+import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../../../data/u-reference.js";
+export { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB };
 
 // ── Tipuri elemente (subset cu cele 5 tipice) ────────────────────────────────
 export const ELEMENT_TYPES_WIZARD = [
@@ -104,22 +106,6 @@ export const LAYER_PRESETS = {
     },
   ],
 };
-
-// ── U_REF nZEB (identic cu OpaqueModal) ──────────────────────────────────────
-export const U_REF_NZEB_RES  = { PE: 0.25, PT: 0.15, PP: 0.15, PB: 0.29, PL: 0.20 };
-export const U_REF_NZEB_NRES = { PE: 0.33, PT: 0.17, PP: 0.17, PB: 0.35, PL: 0.22 };
-
-/**
- * Returnează U_ref nZEB pentru un tip element și categorie clădire.
- * @param {string} category - Categoria clădirii (RI, RC, RA = rezidențial)
- * @param {string} type     - Tipul elementului (PE, PT, PP, PL, PB)
- * @returns {number|null}
- */
-export function getURefNZEB(category, type) {
-  const isRes = ["RI", "RC", "RA"].includes(category);
-  const ref = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
-  return ref[type] ?? null;
-}
 
 /**
  * Construiește un strat din materials.json pe baza numelui — propagă TOATE câmpurile.

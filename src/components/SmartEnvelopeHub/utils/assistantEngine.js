@@ -6,12 +6,13 @@
  */
 
 import { computeEnvelopeProgress } from "../EnvelopeProgress.js";
+import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB } from "../../../data/u-reference.js";
 
-// ── U_REF tables (Mc 001-2022) ────────────────────────────────────────────────
-export const U_REF_NZEB_RES  = { PE: 0.25, PR: 0.67, PS: 0.29, PT: 0.15, PP: 0.15, PB: 0.29, PL: 0.20, SE: 0.20 };
-export const U_REF_NZEB_NRES = { PE: 0.33, PR: 0.80, PS: 0.35, PT: 0.17, PP: 0.17, PB: 0.35, PL: 0.22, SE: 0.22 };
-export const U_REF_GLAZING_RES  = 1.11;
-export const U_REF_GLAZING_NRES = 1.20;
+// ── Re-export constante canonice (consumate de EnvelopeAssistant + teste) ─────
+export { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB };
+// Alias-uri scalare pentru compatibilitate cu testele existente
+export const U_REF_GLAZING_RES  = U_REF_GLAZING.nzeb_res;
+export const U_REF_GLAZING_NRES = U_REF_GLAZING.nzeb_nres;
 
 // ── Preset prompts ────────────────────────────────────────────────────────────
 export const PRESET_PROMPTS = [
@@ -20,15 +21,6 @@ export const PRESET_PROMPTS = [
   { id: "improve-g",   icon: "📈", text: "Pot îmbunătăți G-ul?" },
   { id: "analyze-all", icon: "🧭", text: "Analizează-mi anvelopa" },
 ];
-
-/**
- * Returnează U_ref nZEB pentru un element opac.
- */
-export function getURefNZEB(category, type) {
-  const isRes = ["RI", "RC", "RA"].includes(category);
-  const ref = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
-  return ref[type] ?? null;
-}
 
 /**
  * Verifică dacă categoria de clădire este rezidențială.
@@ -118,7 +110,7 @@ export function generateResponse(intent, ctx) {
     });
 
     const nonCompGlazing = [];
-    const uRefGlazing = isResidential(cat) ? U_REF_GLAZING_RES : U_REF_GLAZING_NRES;
+    const uRefGlazing = isResidential(cat) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
     (glazingElements || []).forEach(el => {
       const u = parseFloat(el.u);
       if (Number.isFinite(u) && u > uRefGlazing) {

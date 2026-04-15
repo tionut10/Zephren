@@ -3,6 +3,7 @@ import MATERIALS_DB from "../data/materials.json";
 import { glaserCheck } from "../calc/glaser.js";
 import { T } from "../data/translations.js";
 import { cn, Select, Input, Card, ResultRow } from "./ui.jsx";
+import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../data/u-reference.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -21,16 +22,6 @@ const ELEMENT_TYPES = [
 ];
 
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
-
-// U_REF tables from Mc 001-2022
-const U_REF_NZEB_RES = { PE:0.25, PR:0.67, PS:0.29, PT:0.15, PP:0.15, PB:0.29, PI:null, PL:0.20, SE:0.20 };
-const U_REF_NZEB_NRES = { PE:0.33, PR:0.80, PS:0.35, PT:0.17, PP:0.17, PB:0.35, PI:null, PL:0.22, SE:0.22 };
-
-function getURefNZEB(category, elementType) {
-  const isRes = ["RI","RC","RA"].includes(category);
-  const ref = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
-  return ref[elementType] !== undefined ? ref[elementType] : null;
-}
 
 /**
  * OpaqueModal — editor for opaque building elements (walls, slabs, etc.)

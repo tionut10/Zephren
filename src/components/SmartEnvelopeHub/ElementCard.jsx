@@ -16,22 +16,7 @@
  */
 
 import { cn } from "../ui.jsx";
-
-// ── U_REF tables — consistent cu OpaqueModal/GlazingModal ────────────────────
-const U_REF_NZEB_RES  = { PE: 0.25, PR: 0.67, PS: 0.29, PT: 0.15, PP: 0.15, PB: 0.29, PL: 0.20, SE: 0.20, PI: null };
-const U_REF_NZEB_NRES = { PE: 0.33, PR: 0.80, PS: 0.35, PT: 0.17, PP: 0.17, PB: 0.35, PL: 0.22, SE: 0.22, PI: null };
-const U_REF_GLAZING_RES  = 1.11;
-const U_REF_GLAZING_NRES = 1.20;
-
-function getURefOpaque(category, type) {
-  const isRes = ["RI", "RC", "RA"].includes(category);
-  const ref = isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES;
-  return ref[type] ?? null;
-}
-
-function getURefGlazing(category) {
-  return ["RI", "RC", "RA"].includes(category) ? U_REF_GLAZING_RES : U_REF_GLAZING_NRES;
-}
+import { U_REF_GLAZING, getURefNZEB } from "../../data/u-reference.js";
 
 function getStatus(u, uRef) {
   if (!Number.isFinite(u) || u <= 0 || !uRef) return null;
@@ -73,10 +58,10 @@ export default function ElementCard({
         u = r.u || 0;
       } catch { u = 0; }
     }
-    uRef = getURefOpaque(buildingCategory, element.type);
+    uRef = getURefNZEB(buildingCategory, element.type);
   } else {
     u = parseFloat(element.u) || 0;
-    uRef = getURefGlazing(buildingCategory);
+    uRef = ["RI", "RC", "RA"].includes(buildingCategory) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
   }
 
   const status = getStatus(u, uRef);

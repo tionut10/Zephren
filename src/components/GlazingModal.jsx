@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { T } from "../data/translations.js";
 import { Select, Input, Card, ResultRow } from "./ui.jsx";
+import { U_REF_GLAZING } from "../data/u-reference.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -24,9 +25,6 @@ const FRAME_DB = [
 ];
 
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
-
-// Ferestre: nZEB rez 1.11, nZEB nerez 1.20, renovare 1.20, uși ext 1.30
-const U_REF_GLAZING = { nzeb_res:1.11, nzeb_nres:1.20, renov:1.20, door:1.30 };
 
 /**
  * GlazingModal — editor for glazing elements (windows, glass doors)

@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "Fix 4 useEffect critice (memory leak + keyboard bug + localStorage blocking)"
+      },
+      {
         "icon": "📄",
         "text": "indicatoare clasă energetică CPE — noFill→solidFill pentru culoare și litera A+"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "fix(cpe): corectează detectarea indicatorului CO2 și culoarea textului"
-      },
-      {
-        "icon": "✨",
-        "text": "adăugare câmpuri coordonate geografice (lat/long) conform Anexa 6, Ord. 348/2026"
       }
     ]
   },

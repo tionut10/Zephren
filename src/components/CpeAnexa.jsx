@@ -1,4 +1,5 @@
 import React from "react";
+import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
@@ -7,10 +8,6 @@ import React from "react";
  * Anexa 1: Date generale + tehnice + instalații + indicator energetic
  * Anexa 2: Recomandări de îmbunătățire a performanței energetice
  */
-// Referință U max conform Mc 001-2022 (Tabel 2.4 rez nZEB / Tabel 2.7 nerez nZEB)
-const U_REF_RES  = { PE:0.25, PR:0.67, PS:0.29, PT:0.15, PP:0.15, PB:0.29, PL:0.20, SE:0.20 };
-const U_REF_NRES = { PE:0.33, PR:0.80, PS:0.35, PT:0.17, PP:0.17, PB:0.35, PL:0.22, SE:0.22 };
-const U_REF_GLAZ = { res:1.11, nres:1.20 };
 
 const ELEMENT_LABELS = {
   PE:"Perete exterior", PR:"Perete la rost", PS:"Perete subsol",
@@ -175,7 +172,7 @@ export default function CpeAnexa({
           {opaqueElements?.length > 0 && calcOpaqueR && (() => {
             const isRes = ["RI","RC","RA"].includes(building.category);
             const uRef = isRes ? U_REF_RES : U_REF_NRES;
-            const uRefGlaz = isRes ? U_REF_GLAZ.res : U_REF_GLAZ.nres;
+            const uRefGlaz = isRes ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
             return (
               <Section title="II.b. Coeficienți U per element (Mc 001-2022 Tabel 2.4/2.7)">
                 <div className="overflow-x-auto">
