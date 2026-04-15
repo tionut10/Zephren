@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-14
+// Ultima generare: 2026-04-15
 
 export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🧪",
-        "text": "test(SmartEnvelopeHub): 183 teste unitare Vitest pentru S1-S4"
+        "icon": "📥",
+        "text": "refactor(S6.2+S6.3): lazy-load modals + import/share components (TARGET < 500 kB ATINS)"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(S6.1): lazy-load 7 secondary components with Suspense"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(S5.4): extract undo/redo + versioning to src/hooks/useProjectHistory.js"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(S5.3): extract cloud sync handlers to src/handlers/cloudHandlers.js (lazy)"
       },
       {
         "icon": "📥",
-        "text": "elimină referința import-invoice.js din vercel.json"
+        "text": "refactor(S5.2): extract 9 import handlers to src/handlers/importHandlers.js (lazy)"
       },
       {
-        "icon": "📥",
-        "text": "merge import-invoice in import-document + fix 4 teste pre-existente"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(envelope-S4): RampGuided complet + replace grid + GA"
-      },
-      {
-        "icon": "🎨",
-        "text": "regenerate changelog + program stats (build artifacts)"
+        "icon": "📄",
+        "text": "refactor(S5.1): extract 12 export handlers to src/handlers/exportHandlers.js (lazy)"
       },
       {
         "icon": "✨",
-        "text": "feat(envelope-S3): RampInstant+RampFile complete, utils, bug fix D2/D3"
+        "text": "feat(Step7): indicatori financiari cu etichete românești"
       },
       {
         "icon": "✨",
-        "text": "feat(envelope): SmartEnvelopeHub scafolding + progress tracker"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(cpe): Anexa 1+2 PDF oficial conform Ord. MDLPA 16/2023"
+        "text": "feat(Step5): ZEB badge + card cost estimativ reabilitare"
       }
     ]
   },
