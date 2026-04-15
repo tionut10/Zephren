@@ -71,13 +71,14 @@ const Step7Audit = lazy(() => import("./steps/Step7Audit.jsx"));
 const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
 import BridgeModal from "./components/BridgeModal.jsx";
 import TutorialWizard from "./components/TutorialWizard.jsx";
-import ClientInputForm from "./components/ClientInputForm.jsx";
-import AuditClientDataForm from "./components/AuditClientDataForm.jsx";
-import ProjectTimeline from "./components/ProjectTimeline.jsx";
-import ProjectComparison from "./components/ProjectComparison.jsx";
-import ROICalculator from "./components/ROICalculator.jsx";
-import CPETracker from "./components/CPETracker.jsx";
-import AuditInvoice from "./components/AuditInvoice.jsx";
+// ── Secondary components — lazy loaded (S6.1) ──
+const ClientInputForm = lazy(() => import("./components/ClientInputForm.jsx"));
+const AuditClientDataForm = lazy(() => import("./components/AuditClientDataForm.jsx"));
+const ProjectTimeline = lazy(() => import("./components/ProjectTimeline.jsx"));
+const ProjectComparison = lazy(() => import("./components/ProjectComparison.jsx"));
+const ROICalculator = lazy(() => import("./components/ROICalculator.jsx"));
+const CPETracker = lazy(() => import("./components/CPETracker.jsx"));
+const AuditInvoice = lazy(() => import("./components/AuditInvoice.jsx"));
 import { useKeyboardShortcuts, SHORTCUTS_LIST } from "./hooks/useKeyboardShortcuts.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
@@ -2822,7 +2823,9 @@ export default function EnergyCalcApp({ cloud }) {
                   ✕ Închide
                 </button>
               </div>
-              <ClientInputForm />
+              <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă formularul...</div>}>
+                <ClientInputForm />
+              </Suspense>
             </div>
           )}
 
@@ -3764,21 +3767,25 @@ export default function EnergyCalcApp({ cloud }) {
       {/* ═══ PROJECT TIMELINE (pct. 40) ═══ */}
       {showTimeline && (
         <div className="fixed top-16 right-4 z-[9980] w-80 shadow-2xl">
-          <ProjectTimeline
-            state={{ building, selectedClimate, opaqueElements, heating, instSummary, auditor, renewSummary }}
-            currentStep={step}
-            onGoToStep={(s) => { setStep(s); setShowTimeline(false); }}
-          />
+          <Suspense fallback={null}>
+            <ProjectTimeline
+              state={{ building, selectedClimate, opaqueElements, heating, instSummary, auditor, renewSummary }}
+              currentStep={step}
+              onGoToStep={(s) => { setStep(s); setShowTimeline(false); }}
+            />
+          </Suspense>
         </div>
       )}
 
       {/* ═══ PROJECT COMPARISON (pct. 38) ═══ */}
       {showComparison && (
-        <ProjectComparison
-          currentState={{ building, selectedClimate, opaqueElements, instSummary, renewSummary, annualEnergyCost }}
-          projectList={projectList}
-          onClose={() => setShowComparison(false)}
-        />
+        <Suspense fallback={null}>
+          <ProjectComparison
+            currentState={{ building, selectedClimate, opaqueElements, instSummary, renewSummary, annualEnergyCost }}
+            projectList={projectList}
+            onClose={() => setShowComparison(false)}
+          />
+        </Suspense>
       )}
 
       {/* ═══ KEYBOARD SHORTCUTS HELP (pct. 41) ═══ */}
@@ -3817,6 +3824,7 @@ export default function EnergyCalcApp({ cloud }) {
               <button onClick={() => setShowAuditForm(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
             </div>
             <div className="p-4">
+              <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă formularul audit...</div>}>
               <AuditClientDataForm
                 onDataChange={(data) => {
                   // ── Auto-populate câmpuri clădire ──
@@ -3875,6 +3883,7 @@ export default function EnergyCalcApp({ cloud }) {
                     setCooling(c => ({ ...c, hasCooling: true }));
                 }}
               />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -3892,12 +3901,14 @@ export default function EnergyCalcApp({ cloud }) {
               <button onClick={() => setShowROICalculator(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
             </div>
             <div className="p-4">
-              <ROICalculator
-                building={building}
-                instSummary={instSummary}
-                annualEnergyCost={annualEnergyCost}
-                rehabComparison={rehabComparison}
-              />
+              <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă calculator ROI...</div>}>
+                <ROICalculator
+                  building={building}
+                  instSummary={instSummary}
+                  annualEnergyCost={annualEnergyCost}
+                  rehabComparison={rehabComparison}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -3915,7 +3926,9 @@ export default function EnergyCalcApp({ cloud }) {
               <button onClick={() => setShowCPETracker(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
             </div>
             <div className="p-4">
-              <CPETracker />
+              <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă registru CPE...</div>}>
+                <CPETracker />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -3933,7 +3946,9 @@ export default function EnergyCalcApp({ cloud }) {
               <button onClick={() => setShowAuditInvoice(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg">&times;</button>
             </div>
             <div className="p-4">
-              <AuditInvoice building={building} auditor={auditor} onClose={() => setShowAuditInvoice(false)} />
+              <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă factura...</div>}>
+                <AuditInvoice building={building} auditor={auditor} onClose={() => setShowAuditInvoice(false)} />
+              </Suspense>
             </div>
           </div>
         </div>
