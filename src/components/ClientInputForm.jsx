@@ -611,12 +611,18 @@ export default function ClientInputForm({ onDataChange }) {
   const set = (key, val) => setData(prev => ({ ...prev, [key]: val }));
 
   useEffect(() => {
-    localStorage.setItem("clientFormData", JSON.stringify(data));
-    onDataChange?.(data);
-  }, [data]);
+    const id = setTimeout(() => {
+      localStorage.setItem("clientFormData", JSON.stringify(data));
+      onDataChange?.(data);
+    }, 500);
+    return () => clearTimeout(id);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    localStorage.setItem("clientFormPlanuri", JSON.stringify(planuri));
+    const id = setTimeout(() => {
+      localStorage.setItem("clientFormPlanuri", JSON.stringify(planuri));
+    }, 500);
+    return () => clearTimeout(id);
   }, [planuri]);
 
   const addPlanuri = (files) => {

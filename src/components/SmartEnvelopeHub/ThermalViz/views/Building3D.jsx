@@ -280,7 +280,7 @@ export default function Building3D({
   useEffect(() => {
     const onKey = (e) => {
       if (!sceneRef.current || !sceneRef.current.contains(document.activeElement)) {
-        // Doar când scena e focalizată, nu capturăm globalul
+        return; // Doar când scena e focalizată, nu capturăm globalul
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || e.target.isContentEditable) return;

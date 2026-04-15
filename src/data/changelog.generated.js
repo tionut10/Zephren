@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "indicatoare clasă energetică CPE — noFill→solidFill pentru culoare și litera A+"
+      },
+      {
+        "icon": "📋",
+        "text": "corectare verificare grad AE Ici în Step6Certificate — badge '⚠ Grad I necesar' nu mai apare pentru auditori G"
+      },
+      {
+        "icon": "✨",
+        "text": "regenerare stats auto (+nzeb-check module, 58 calc, 60 components)"
+      },
+      {
         "icon": "✨",
         "text": "buton Raport conformare nZEB PDF oficial în Step6 (UI)"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "adăugare câmpuri coordonate geografice (lat/long) conform Anexa 6, Ord. 348/2026"
-      },
-      {
-        "icon": "✨",
-        "text": "integrare mapping Anexa 6 în AuditClientDataForm și ClientReport"
-      },
-      {
-        "icon": "✨",
-        "text": "adăugare mapping categorii clădiri → nomenclator Anexa 6, Ord. 348/2026"
-      },
-      {
-        "icon": "📄",
-        "text": "text A+ vizibil în săgeata CPE — padding-right:30% aliniază cu clip-path 70%"
       }
     ]
   },

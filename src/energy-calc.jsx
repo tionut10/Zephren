@@ -728,14 +728,16 @@ export default function EnergyCalcApp({ cloud }) {
   // Auto-generate PDF preview when entering Step 6
   const autoPreviewTriggered = useRef(false);
   useEffect(() => {
+    let timerId;
     if (step === 6 && !autoPreviewTriggered.current && !pdfPreviewUrl) {
       autoPreviewTriggered.current = true;
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         const btn = document.querySelector('[data-auto-preview]');
         if (btn) btn.click();
       }, 500);
     }
     if (step !== 6) autoPreviewTriggered.current = false;
+    return () => { if (timerId) clearTimeout(timerId); };
   }, [step, pdfPreviewUrl]);
 
   // Render DOCX preview when blob changes
@@ -1205,8 +1207,9 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════
   // CPE EXPIRATION NOTIFICATION (C6)
   // ═══════════════════════════════════════════════════════════
+  const cpeNotifiedRef = useRef(false);
   useEffect(() => {
-    if (!auditor.date) return;
+    if (!auditor.date || cpeNotifiedRef.current) return;
     const cpeDate = new Date(auditor.date);
     const validityYears = parseInt(auditor.validityYears) || 10;
     const expirationDate = new Date(cpeDate.getTime() + validityYears * 365.25 * 24 * 60 * 60 * 1000);
@@ -1214,13 +1217,11 @@ export default function EnergyCalcApp({ cloud }) {
     if (daysLeft > 0 && daysLeft <= 365) {
       // Notify if CPE expires within 1 year
       if ("Notification" in window && Notification.permission === "granted") {
-        // Only show once per session
-        if (!window._cpeNotified) {
-          window._cpeNotified = true;
-          setTimeout(() => {
-            showToast(`CPE expiră în ${daysLeft} zile (${expirationDate.toLocaleDateString("ro-RO")})`, daysLeft <= 90 ? "error" : "info", 8000);
-          }, 3000);
-        }
+        cpeNotifiedRef.current = true;
+        const timerId = setTimeout(() => {
+          showToast(`CPE expiră în ${daysLeft} zile (${expirationDate.toLocaleDateString("ro-RO")})`, daysLeft <= 90 ? "error" : "info", 8000);
+        }, 3000);
+        return () => clearTimeout(timerId);
       }
     }
   }, [auditor.date, auditor.validityYears, showToast]);
