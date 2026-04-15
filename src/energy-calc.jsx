@@ -1165,6 +1165,21 @@ export default function EnergyCalcApp({ cloud }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showToast]);
 
+  // S7.5 — importIFC definit AICI (înainte de handleDrop) pentru a evita TDZ
+  const importIFC = useCallback(async (file) => {
+    const m = await import("./handlers/importHandlers.js");
+    return m.importIFC({ file, setBuilding, setOpaqueElements, setGlazingElements, showToast });
+  }, [showToast]);
+
+  // S7.6 — importInvoiceOCR: nu e folosit în handleDrop, dar îl țin grupat cu restul importurilor
+  const importInvoiceOCR = useCallback(async (file) => {
+    const m = await import("./handlers/importHandlers.js");
+    return m.importInvoiceOCR({
+      file, setEnergyPrices, setBuilding, showToast,
+      onInvoiceData: (data) => { console.info("[OCR Invoice]", data); },
+    });
+  }, [showToast]);
+
   // ═══════════════════════════════════════════════════════════
   // KEYBOARD SHORTCUTS (placed after exportProject/undo/redo declarations)
   // ═══════════════════════════════════════════════════════════
@@ -1990,21 +2005,7 @@ export default function EnergyCalcApp({ cloud }) {
     return m.importBulkProjects({ file, lang, showToast });
   }, [lang, showToast]);
 
-  const importIFC = useCallback(async (file) => {
-    const m = await import("./handlers/importHandlers.js");
-    return m.importIFC({ file, setBuilding, setOpaqueElements, setGlazingElements, showToast });
-  }, [showToast]);
-
-  const importInvoiceOCR = useCallback(async (file) => {
-    const m = await import("./handlers/importHandlers.js");
-    return m.importInvoiceOCR({
-      file, setEnergyPrices, setBuilding, showToast,
-      onInvoiceData: (data) => {
-        // Callback optional — aplicația poate arăta un modal cu comparație calcul vs. factură
-        console.info("[OCR Invoice]", data);
-      },
-    });
-  }, [showToast]);
+  // (importIFC + importInvoiceOCR mutate mai sus înainte de handleDrop — evită TDZ)
 
   // ═══════════════════════════════════════════════════════════
   // E2: AUTO-COMPLETARE LOCALITATE DIN ADRESĂ
