@@ -86,7 +86,7 @@ export const INITIAL_BATTERY = {
 
 // ─── STEP 6: AUDITOR ───
 export const INITIAL_AUDITOR = {
-  name:"", atestat:"", grade:"I", company:"",
+  name:"", atestat:"", grade:"AE Ici", company:"",
   phone:"", email:"", date: new Date().toISOString().slice(0,10),
   mdlpaCode:"", observations:"", photo:"",
   scopCpe:"vanzare",

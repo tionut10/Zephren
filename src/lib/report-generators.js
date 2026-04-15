@@ -563,7 +563,7 @@ export async function generatePNRRReport({
     y = auditorBlock(doc, auditor, y);
 
     doc.setFontSize(7); doc.setTextColor(...COL_G);
-    doc.text("Acest document a fost generat automat de Zephren și trebuie semnat de auditor energetic atestat MDLPA (Grad I sau II).", 10, y + 3);
+    doc.text("Acest document a fost generat automat de Zephren și trebuie semnat de auditor energetic atestat MDLPA (AE Ici sau AE IIci).", 10, y + 3);
     doc.text("Se completează conform cerințelor AFM / ghidului solicitantului PNRR C5 în vigoare la data depunerii dosarului.", 10, y + 7);
 
     addPageFooter(doc, "PNRR C5-I2/I3 | Mc 001-2022 | EPBD 2024/1275 | HG 1369/2022", page);

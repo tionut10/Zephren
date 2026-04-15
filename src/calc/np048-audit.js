@@ -160,10 +160,10 @@ export function calcAuditProgress(completedSteps = {}) {
  * Legea 372/2005 + L.238/2024 + Ordinul MDLPA 2217/2023
  */
 export const AUDITOR_REQUIREMENTS = {
-  certification: "Atestat MDLPA — auditor energetic gradul I sau II",
+  certification: "Atestat MDLPA — auditor energetic AE Ici sau AE IIci",
   grades: {
-    I:  "Grad I — toate categoriile de clădiri",
-    II: "Grad II — clădiri rezidențiale și mici comerciale (≤ 1000 m²)",
+    "AE Ici":  "Grad I — toate categoriile de clădiri (rezidențial + nerezidențial): CPE, audit energetic, raport nZEB",
+    "AE IIci": "Grad II — exclusiv rezidențial (unifamilial, bloc, apartament): CPE pentru construire/vânzare/închiriere",
   },
   obligations: [
     "Vizită obligatorie la amplasament (NP 048 Etapa 1)",
