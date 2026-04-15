@@ -19,6 +19,13 @@ export const INITIAL_BUILDING = {
   // Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026
   latitude:"",   // grad zecimal WGS84, ex: "44.4268"
   longitude:"",  // grad zecimal WGS84, ex: "26.1025"
+  // Date proprietar/administrator — Anexa 6, col. G
+  owner:"",
+  // Date post-renovare — Anexa 6, col. P-S (dacă e cazul)
+  energyClassAfterRenov:"",      // clasa energetică după renovare (A+..G)
+  emissionClassAfterRenov:"",    // clasa emisii după renovare (A+..G)
+  energySavings:"",              // economii energie realizate (kWh/m²·an)
+  co2Reduction:"",               // reducere emisii CO₂ (kgCO₂/m²·an)
 };
 
 // ─── STEP 3: INSTALAȚII ───
@@ -97,4 +104,9 @@ export const INITIAL_AUDITOR = {
   registruEvidenta:"",
   nrCadastral:"",
   codUnicMDLPA:"",
+  // Câmpuri specifice Registrului de Evidență (Anexa 6, Ord. MDLPA 348/2026)
+  specialty:"construcții și instalații",  // specialitate: "construcții" / "instalații" / "construcții și instalații"
+  dataExpirareDrept:"",                    // data expirării dreptului de practică (ISO: YYYY-MM-DD)
+  dataTransmitereMDLPA:"",                 // data transmiterii informațiilor în baza de date MDLPA (ISO)
+  cpeNumber:"",                            // nr. înregistrare CPE (ex: "CPE-12345")
 };

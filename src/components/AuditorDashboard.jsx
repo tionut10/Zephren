@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { cn, Card, Badge } from "./ui.jsx";
+import { exportRegistruEvidenta } from "../lib/registru-evidenta-export.js";
 
 const CLASS_ORDER = ["A+", "A", "B", "C", "D", "E", "F", "G"];
 const CLASS_COLORS = {
@@ -129,8 +130,9 @@ function MonthlyChart({ data }) {
   );
 }
 
-export default function AuditorDashboard({ projectList: projectListProp, certCount }) {
+export default function AuditorDashboard({ projectList: projectListProp, certCount, auditor }) {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [registruLoading, setRegistruLoading] = useState(false);
 
   const projects = useMemo(() => {
     if (projectListProp && projectListProp.length > 0) return projectListProp;
@@ -257,8 +259,101 @@ export default function AuditorDashboard({ projectList: projectListProp, certCou
 
   const totalProj = projects.length;
 
+  // ─── REGISTRU DE EVIDENȚĂ — Anexa 6, Ord. MDLPA 348/2026 ───
+  async function exportRegistru() {
+    if (totalProj === 0) {
+      alert("Nu există proiecte pentru Registrul de Evidență.");
+      return;
+    }
+    setRegistruLoading(true);
+    try {
+      exportRegistruEvidenta(projects, auditor || {}, { download: true });
+    } catch (err) {
+      alert("Eroare la generarea Registrului: " + err.message);
+      console.error("[AuditorDashboard] registru export error:", err);
+    } finally {
+      setRegistruLoading(false);
+    }
+  }
+
+  // Data expirării dreptului de practică (ISO → DD.MM.YYYY)
+  const dataExpirareFmt = auditor?.dataExpirareDrept
+    ? (() => {
+        try {
+          const d = new Date(auditor.dataExpirareDrept);
+          if (isNaN(d.getTime())) return auditor.dataExpirareDrept;
+          return d.toLocaleDateString("ro-RO", {
+            day: "2-digit", month: "2-digit", year: "numeric",
+          });
+        } catch (_) { return auditor.dataExpirareDrept; }
+      })()
+    : null;
+
+  // Zile rămase până la expirare (pentru semaforizare)
+  const daysUntilExpiry = (() => {
+    if (!auditor?.dataExpirareDrept) return null;
+    const d = new Date(auditor.dataExpirareDrept);
+    if (isNaN(d.getTime())) return null;
+    const diff = Math.floor((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return diff;
+  })();
+
+  const expiryStatus =
+    daysUntilExpiry == null ? { color: "text-white/40", label: "neconfigurat" } :
+    daysUntilExpiry < 0     ? { color: "text-red-400",   label: "expirat!" } :
+    daysUntilExpiry < 90    ? { color: "text-amber-400", label: `${daysUntilExpiry} zile rămase` } :
+    daysUntilExpiry < 365   ? { color: "text-sky-400",   label: `${daysUntilExpiry} zile rămase` } :
+                              { color: "text-emerald-400", label: "valabil" };
+
   return (
     <div className="space-y-5">
+      {/* ═══ REGISTRU DE EVIDENȚĂ — card prioritar pentru MDLPA ═══ */}
+      <Card
+        title="Registru de Evidență — Anexa 6, Ord. MDLPA 348/2026"
+        badge={<Badge color="amber">Obligatoriu MDLPA</Badge>}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          {/* Număr CPE-uri înregistrate */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+            <div className="text-3xl font-bold text-amber-400">{totalProj}</div>
+            <div className="text-xs text-white/60 mt-1">CPE-uri înregistrate în registru</div>
+          </div>
+
+          {/* Expirarea dreptului de practică */}
+          <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+            <div className={cn("text-base font-semibold", expiryStatus.color)}>
+              {dataExpirareFmt || "—"}
+            </div>
+            <div className="text-xs text-white/60 mt-1">
+              Drept de practică · <span className={expiryStatus.color}>{expiryStatus.label}</span>
+            </div>
+          </div>
+
+          {/* Buton export */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={exportRegistru}
+              disabled={registruLoading || totalProj === 0}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {registruLoading ? (
+                <span className="w-4 h-4 border-2 border-emerald-400/40 border-t-emerald-400 rounded-full animate-spin" />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              )}
+              Export Registru Evidență (.xlsx)
+            </button>
+            <p className="text-[10px] text-white/40 text-center leading-relaxed">
+              Pentru depunerea la MDLPA — art. 31 alin. 2 lit. c
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
