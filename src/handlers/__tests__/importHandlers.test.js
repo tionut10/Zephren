@@ -8,6 +8,7 @@ import {
   importCSV,
   importCompareRef,
   importBulkProjects,
+  importIFC,
 } from "../importHandlers.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -307,6 +308,66 @@ describe("importCompareRef", () => {
     importCompareRef(ctx);
     await vi.runAllTimersAsync();
     expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("nu conține date"), "error");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// importIFC — format BIM IFC 2x3/IFC4 (STEP ASCII)
+// ═══════════════════════════════════════════════════════════════════════════
+describe("importIFC", () => {
+  it("respinge file cu extensie greșită", () => {
+    const ctx = {
+      file: { name: "test.txt", size: 100, _content: "" },
+      setBuilding: vi.fn(), setOpaqueElements: vi.fn(), setGlazingElements: vi.fn(),
+      showToast: vi.fn(),
+    };
+    importIFC(ctx);
+    expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("extensia .ifc"), "error");
+  });
+
+  it("respinge file > 50 MB", () => {
+    const ctx = {
+      file: { name: "huge.ifc", size: 60 * 1024 * 1024, _content: "" },
+      setBuilding: vi.fn(), setOpaqueElements: vi.fn(), setGlazingElements: vi.fn(),
+      showToast: vi.fn(),
+    };
+    importIFC(ctx);
+    expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("50 MB"), "error");
+  });
+
+  it("procesează IFC minimal cu pereți și ferestre", async () => {
+    const ifcText = `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition'),'2;1');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#100 = IFCPROJECT('abc','Owner','Project Test',$,$,$,$,(#110),#200);
+#101 = IFCBUILDING('def','Owner','Building Test',$,$,$,$,$,.ELEMENT.,$,$,$);
+#110 = IFCBUILDINGSTOREY('ghi','Owner','Parter',$,$,$,$,$,.ELEMENT.,0.0);
+#200 = IFCWALL('xyz','Owner','Perete 1',$,$,$,$,$,.STANDARD.);
+#201 = IFCWINDOW('win','Owner','Fereastră 1',$,$,$,$,$,1.2,1.5);
+ENDSEC;
+END-ISO-10303-21;`;
+    const ctx = {
+      file: { name: "test.ifc", size: ifcText.length, _content: ifcText },
+      setBuilding: vi.fn(), setOpaqueElements: vi.fn(), setGlazingElements: vi.fn(),
+      showToast: vi.fn(),
+    };
+    importIFC(ctx);
+    await vi.runAllTimersAsync();
+    expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("Import IFC"), "success", 5000);
+  });
+
+  it("raportează eroare la IFC gol fără elemente recunoscute", async () => {
+    const ctx = {
+      file: { name: "empty.ifc", size: 10, _content: "ISO-10303-21;\nEND-ISO-10303-21;" },
+      setBuilding: vi.fn(), setOpaqueElements: vi.fn(), setGlazingElements: vi.fn(),
+      showToast: vi.fn(),
+    };
+    importIFC(ctx);
+    await vi.runAllTimersAsync();
+    expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("nu conține elemente"), "error");
   });
 });
 

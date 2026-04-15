@@ -1223,6 +1223,8 @@ export default function EnergyCalcApp({ cloud }) {
       importProject(file);
     } else if (file.name.endsWith(".csv")) {
       importCSV(file);
+    } else if (file.name.endsWith(".ifc")) {
+      importIFC(file);
     } else if (file.name.endsWith(".xml") || file.name.endsWith(".gbxml")) {
       // Detect format: DOSET, gbXML, or format XML energetic generic
       var reader = new FileReader();
@@ -1244,7 +1246,7 @@ export default function EnergyCalcApp({ cloud }) {
     } else {
       showToast("Format nesuportat. Acceptă: .json, .csv, .xml, .xlsx, .pdf, .docx, imagini", "error");
     }
-  }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus, importOCR]);
+  }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus, importOCR, importIFC]);
 
   // ─── Climate auto-selection ───
   const selectedClimate = useMemo(() =>
@@ -1987,6 +1989,11 @@ export default function EnergyCalcApp({ cloud }) {
     const m = await import("./handlers/importHandlers.js");
     return m.importBulkProjects({ file, lang, showToast });
   }, [lang, showToast]);
+
+  const importIFC = useCallback(async (file) => {
+    const m = await import("./handlers/importHandlers.js");
+    return m.importIFC({ file, setBuilding, setOpaqueElements, setGlazingElements, showToast });
+  }, [showToast]);
 
   // ═══════════════════════════════════════════════════════════
   // E2: AUTO-COMPLETARE LOCALITATE DIN ADRESĂ

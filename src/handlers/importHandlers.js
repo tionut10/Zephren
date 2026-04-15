@@ -12,6 +12,7 @@ import {
 } from "../data/initial-state.js";
 import { ELEMENT_TYPES } from "../data/building-catalog.js";
 import { normalizeGlazingList } from "../components/SmartEnvelopeHub/utils/normalizeGlazing.js";
+import { parseIFC, mapIFCToZephren } from "../lib/ifc-parser.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. RESET PROJECT — restaurează starea inițială
@@ -362,7 +363,66 @@ export function importCompareRef(ctx) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. IMPORT BULK PROJECTS — arhivă JSON multi-proiect
+// 9. IMPORT IFC — format BIM IFC 2x3 / IFC4 (Revit, ArchiCAD, etc.)
+// ═══════════════════════════════════════════════════════════════════════════
+export function importIFC(ctx) {
+  const { file, setBuilding, setOpaqueElements, setGlazingElements, showToast } = ctx;
+  if (!file.name.toLowerCase().endsWith(".ifc")) {
+    showToast("Fișier IFC invalid — trebuie să aibă extensia .ifc", "error");
+    return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    showToast("Fișierul IFC depășește 50 MB. Exportă doar structura arhitecturală.", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const parsed = parseIFC(ev.target.result);
+      if (!parsed.buildingData.nWalls && !parsed.buildingData.nSpaces && !parsed.buildingData.nWindows) {
+        showToast("Fișierul IFC nu conține elemente recunoscute (pereți/spații/ferestre).", "error");
+        return;
+      }
+      const mapped = mapIFCToZephren(parsed);
+      const bUpdates = {};
+      if (mapped.address) bUpdates.address = mapped.address;
+      if (mapped.areaUseful) bUpdates.areaUseful = mapped.areaUseful;
+      if (mapped.volume) bUpdates.volume = mapped.volume;
+      if (mapped.nStories) bUpdates.floors = String(mapped.nStories);
+      if (Object.keys(bUpdates).length > 0) setBuilding(p => ({ ...p, ...bUpdates }));
+
+      if (mapped.suggestedElements?.length) {
+        // Adaugă elemente opace cu layer placeholder (user ajustează ulterior straturi)
+        const opaqueNew = mapped.suggestedElements.map(e => ({
+          ...e,
+          orientation: "N",
+          layers: [{ matName: "BCA 25cm", lambda: 0.3, thickness: "250" }],
+        }));
+        setOpaqueElements(prev => [...prev, ...opaqueNew]);
+      }
+      if (mapped.suggestedGlazing?.length) {
+        const glazingNew = mapped.suggestedGlazing.map(g => ({
+          ...g,
+          u: "1.8", g: "0.6", orientation: "S", frameRatio: "25",
+        }));
+        setGlazingElements(prev => [...prev, ...glazingNew]);
+      }
+
+      showToast(
+        `Import IFC: ${mapped.suggestedElements?.length || 0} elemente opace + ` +
+        `${mapped.suggestedGlazing?.length || 0} vitraje + ${parsed.buildingData.nStories} etaje`,
+        "success", 5000
+      );
+    } catch (e) {
+      showToast("Eroare parsare IFC: " + e.message, "error");
+    }
+  };
+  reader.onerror = () => showToast("Nu s-a putut citi fișierul IFC.", "error");
+  reader.readAsText(file, "UTF-8");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. IMPORT BULK PROJECTS — arhivă JSON multi-proiect
 // ═══════════════════════════════════════════════════════════════════════════
 export function importBulkProjects(ctx) {
   const { file, lang, showToast } = ctx;
