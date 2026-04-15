@@ -1909,3 +1909,424 @@ export async function generateCPEAnexe(opts) {
     throw new Error(`generateCPEAnexe: ${e.message}`);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// RAPORT DE CONFORMARE nZEB
+// Conform art. 6 alin. (1) lit. c) din Ord. MDLPA 348/2026 +
+// conținut-cadru Mc 001-2022 §2.4 + Legea 238/2024 Art.6
+//
+// Raportul atestă încadrarea clădirii în categoria celor cu
+// consum de energie aproape egal cu zero (nZEB) și este atribut
+// exclusiv al auditorului energetic Grad I (AE Ici).
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Raport de conformare nZEB — document oficial pentru clădiri
+ * în fază de proiectare sau după renovare majoră.
+ *
+ * @param {object} opts
+ *   @param {object} opts.building       Date clădire (cf. state energy-calc)
+ *   @param {object} opts.selectedClimate Date climatice localitate
+ *   @param {object} opts.instSummary    Rezultat calcul instalații
+ *   @param {object} opts.renewSummary   Rezultat bilanț regenerabile
+ *   @param {object} opts.envelopeSummary Sumar anvelopă (G, Ht, Hv)
+ *   @param {array}  opts.opaqueElements Elemente opace (pentru listă scurtă)
+ *   @param {array}  opts.glazingElements Elemente vitrate
+ *   @param {object} opts.heating        Config încălzire
+ *   @param {object} opts.cooling        Config răcire
+ *   @param {object} opts.ventilation    Config ventilare
+ *   @param {object} opts.lighting       Config iluminat
+ *   @param {object} opts.acm            Config ACM
+ *   @param {object} opts.solarThermal   Config solar termic
+ *   @param {object} opts.photovoltaic   Config PV
+ *   @param {object} opts.heatPump       Config pompă de căldură
+ *   @param {object} opts.biomass        Config biomasă
+ *   @param {object} opts.auditor        Auditor { name, atestat, grade, company, ... }
+ *   @param {string} [opts.projectPhase] "proiectare" | "audit" | "renovare"
+ *   @param {boolean} [opts.download=true]
+ * @returns {Promise<Blob|null>}
+ */
+export async function generateNZEBConformanceReport(opts) {
+  try {
+    const {
+      building, selectedClimate, instSummary, renewSummary, envelopeSummary,
+      opaqueElements = [], glazingElements = [],
+      heating, cooling, ventilation, lighting, acm,
+      solarThermal, photovoltaic, heatPump, biomass,
+      auditor, projectPhase = "proiectare",
+      download = true,
+    } = opts || {};
+
+    // Import dinamic modulul de verificare nZEB
+    const { checkNZEBCompliance } = await import("../calc/nzeb-check.js");
+    const compliance = checkNZEBCompliance({
+      building, climate: selectedClimate,
+      renewSummary, instSummary, auditor, projectPhase,
+    });
+
+    if (!compliance) {
+      throw new Error("Date insuficiente pentru verificarea nZEB (verificați categoria clădirii, zona climatică și rezultatele calculului energetic)");
+    }
+
+    const doc = await initDoc();
+    const w = doc.internal.pageSize.getWidth();
+    const title = "RAPORT DE CONFORMARE nZEB";
+    const audName = auditor?.name || "";
+    const today = dateRO();
+    let page = 1;
+
+    const Au = parseFloat(building?.areaUseful) || 0;
+    const V = parseFloat(building?.volume) || 0;
+    const Aenv = parseFloat(building?.areaEnvelope) || 0;
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINA 1 — COPERTĂ + IDENTIFICARE CLĂDIRE + VERDICT
+    // ═══════════════════════════════════════════════════════════
+    addPageHeader(doc, title, audName, today);
+    let y = 26;
+
+    // Titlu mare
+    doc.setFontSize(16); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text("RAPORT DE CONFORMARE nZEB", w / 2, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(10); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_A);
+    doc.text("Clădire cu consum de energie aproape egal cu zero", w / 2, y, { align: "center" });
+    y += 5;
+    doc.setFontSize(8); doc.setTextColor(...COL_G);
+    doc.text("Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026  •  Mc 001-2022 §2.4  •  Legea 238/2024 Art.6", w / 2, y, { align: "center" });
+    y += 10;
+
+    // ── Badge VERDICT mare (central) ──
+    const verdictW = 120, verdictH = 32;
+    const verdictX = w / 2 - verdictW / 2;
+    const verdictColor = compliance.compliant ? COL_OK : COL_ERR;
+    doc.setFillColor(...verdictColor);
+    doc.roundedRect(verdictX, y, verdictW, verdictH, 3, 3, "F");
+    doc.setFontSize(20); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text(compliance.verdictShort, w / 2, y + 14, { align: "center" });
+    doc.setFontSize(9); doc.setFont(undefined, "normal");
+    doc.text(
+      compliance.compliant
+        ? "Clădirea SE ÎNCADREAZĂ în categoria nZEB"
+        : "Clădirea NU SE ÎNCADREAZĂ în categoria nZEB",
+      w / 2, y + 24, { align: "center" }
+    );
+    y += verdictH + 10;
+
+    // ── Auditor + validare competență ──
+    doc.setTextColor(...COL_H);
+    if (!compliance.auditorValid) {
+      doc.setFillColor(255, 243, 205); // warning amber light
+      doc.roundedRect(10, y, w - 20, 15, 2, 2, "F");
+      doc.setFontSize(8); doc.setTextColor(146, 64, 14);
+      doc.text("⚠ " + compliance.auditorNote, 13, y + 6, { maxWidth: w - 26 });
+      y += 18;
+    }
+
+    // ── Secțiunea I: Date identificare clădire ──
+    y = sectionTitle(doc, "I. IDENTIFICARE CLĂDIRE", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
+      body: [
+        ["Denumire / adresă", [building?.address, building?.city, building?.county && `jud. ${building.county}`].filter(Boolean).join(", ") || "—"],
+        ["Destinație / categorie", `${compliance.categoryLabel} (cod ${building?.category || "—"})`],
+        ["Fază proiect", projectPhase === "proiectare" ? "Proiectare — clădire nouă" : projectPhase === "renovare" ? "Renovare majoră" : "Evaluare în exploatare"],
+        ["An construcție", building?.yearBuilt || "—"],
+        ["Regim înălțime", building?.floors || "—"],
+        ["Suprafață utilă Au", `${Au.toFixed(1)} m²`],
+        ["Volum util V", `${V.toFixed(1)} m³`],
+        ["Suprafață anvelopă Aenv", Aenv ? `${Aenv.toFixed(1)} m²` : "—"],
+        ["Raport Aenv/V", Aenv && V ? `${(Aenv / V).toFixed(3)} m⁻¹` : "—"],
+        ["Localitate climatică", selectedClimate?.name || building?.city || "—"],
+        ["Zona climatică Mc 001", selectedClimate?.zone ? `Zona ${selectedClimate.zone}` : "—"],
+        ["Temperatură exterioară calcul θₑ", selectedClimate?.theta_e != null ? `${selectedClimate.theta_e} °C` : "—"],
+      ],
+    });
+
+    // Auditor
+    y = sectionTitle(doc, "II. AUDITOR ENERGETIC (GRAD I)", y);
+    y = auditorBlock(doc, auditor, y);
+
+    addPageFooter(doc, "Mc 001-2022 | Legea 238/2024 | Ord. MDLPA 348/2026 Art.6", page);
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINA 2 — INDICATORI ENERGETICI CALCULAȚI
+    // ═══════════════════════════════════════════════════════════
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "III. INDICATORI ENERGETICI CALCULAȚI", y);
+
+    // Tabel consumuri specifice pe destinație
+    const epH = instSummary?.ep_h_m2 || 0;
+    const epC = instSummary?.ep_c_m2 || 0;
+    const epW = instSummary?.ep_w_m2 || 0;
+    const epV = instSummary?.ep_v_m2 || 0;
+    const epL = instSummary?.ep_l_m2 || 0;
+    const epTotal = instSummary?.ep_total_m2 || 0;
+    const epRenew = renewSummary?.ep_renew_m2 || 0;
+    const epFinal = renewSummary?.ep_adjusted_m2 || epTotal;
+
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Destinație consum", "EP [kWh/(m²·an)]", "Pondere [%]"]],
+      body: [
+        ["Încălzire spații", epH.toFixed(1), epTotal ? ((epH / epTotal) * 100).toFixed(1) : "—"],
+        ["Răcire spații", epC.toFixed(1), epTotal ? ((epC / epTotal) * 100).toFixed(1) : "—"],
+        ["Preparare apă caldă menajeră (ACM)", epW.toFixed(1), epTotal ? ((epW / epTotal) * 100).toFixed(1) : "—"],
+        ["Ventilare mecanică", epV.toFixed(1), epTotal ? ((epV / epTotal) * 100).toFixed(1) : "—"],
+        ["Iluminat (nerezidențial)", epL.toFixed(1), epTotal ? ((epL / epTotal) * 100).toFixed(1) : "—"],
+        [{ content: "EP total (înainte de regenerabile)", styles: { fontStyle: "bold" } }, { content: epTotal.toFixed(1), styles: { fontStyle: "bold" } }, "100.0"],
+        [{ content: "Aport surse regenerabile (-)", styles: { textColor: [22, 163, 74] } }, { content: `-${epRenew.toFixed(1)}`, styles: { textColor: [22, 163, 74] } }, "—"],
+        [{ content: "EP specific final (cu regenerabile)", styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, { content: epFinal.toFixed(1), styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, "—"],
+      ],
+    });
+
+    // Indicatori globali
+    y = sectionTitle(doc, "IV. INDICATORI GLOBALI ANVELOPĂ ȘI INSTALAȚII", y);
+    const rer = compliance.rer;
+    const rerOnsite = compliance.rerOnsite;
+    const co2Final = renewSummary?.co2_adjusted_m2 || instSummary?.co2_total_m2 || 0;
+
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 80, fontStyle: "bold" } },
+      body: [
+        ["Coeficient global pierderi termice G", envelopeSummary?.G != null ? `${envelopeSummary.G.toFixed(3)} W/(m³·K)` : "—"],
+        ["Pierderi prin transmisie Ht", envelopeSummary?.Ht != null ? `${envelopeSummary.Ht.toFixed(1)} W/K` : "—"],
+        ["Pierderi prin ventilare Hv", envelopeSummary?.Hv != null ? `${envelopeSummary.Hv.toFixed(1)} W/K` : "—"],
+        ["Număr elemente opace", `${opaqueElements.length}`],
+        ["Număr elemente vitrate", `${glazingElements.length}`],
+        ["Energie primară totală EP", `${epFinal.toFixed(1)} kWh/(m²·an)`],
+        ["Emisii CO₂ specifice", `${co2Final.toFixed(1)} kg CO₂/(m²·an)`],
+        ["Pondere surse regenerabile RER (total)", `${rer.toFixed(1)} %`],
+        ["Pondere surse regenerabile la fața locului", `${rerOnsite.toFixed(1)} %`],
+      ],
+    });
+
+    addPageFooter(doc, "Mc 001-2022 §5 Bilanț energetic global", page);
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINA 3 — VERIFICARE CONFORMARE nZEB (CORE)
+    // ═══════════════════════════════════════════════════════════
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "V. VERIFICAREA CERINȚELOR MINIME nZEB", y);
+
+    doc.setFontSize(8); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+    doc.text(
+      "Conform art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026, raportul de conformare nZEB verifică încadrarea",
+      10, y
+    );
+    y += 4;
+    doc.text(
+      "clădirii în pragurile Mc 001-2022 Tabel 2.10a (EP) și Legea 238/2024 Art.6 (RER total + on-site).",
+      10, y
+    );
+    y += 6;
+    doc.setFont(undefined, "normal"); doc.setTextColor(...COL_H);
+
+    // Tabel verificări — 3 criterii cu verdict colorat
+    const checkRows = compliance.checks.map(c => [
+      c.label,
+      `${c.value} ${c.unit || ""}`.trim(),
+      `${c.target} ${c.unit || ""}`.trim(),
+      c.ok ? "✓ CONFORM" : "✗ NECONFORM",
+    ]);
+
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Criteriu", "Valoare calculată", "Prag minim/maxim", "Verdict"]],
+      body: checkRows,
+      didParseCell: function (data) {
+        if (data.column.index === 3 && data.cell.section === "body") {
+          const text = data.cell.raw;
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.textColor = String(text).includes("✓") ? COL_OK : COL_ERR;
+          data.cell.styles.halign = "center";
+        }
+      },
+    });
+
+    // Verdict final central — mare, vizibil
+    y += 4;
+    const finalVerdictH = 24;
+    const finalVerdictColor = compliance.compliant ? COL_OK : COL_ERR;
+    doc.setFillColor(...finalVerdictColor);
+    doc.roundedRect(10, y, w - 20, finalVerdictH, 3, 3, "F");
+    doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text(
+      compliance.compliant
+        ? "✓ CLĂDIREA SE ÎNCADREAZĂ ÎN CATEGORIA nZEB"
+        : "✗ CLĂDIREA NU SE ÎNCADREAZĂ ÎN CATEGORIA nZEB",
+      w / 2, y + 10, { align: "center" }
+    );
+    doc.setFontSize(9); doc.setFont(undefined, "normal");
+    const verdictDetail = compliance.compliant
+      ? `EP = ${compliance.ep} ≤ ${compliance.epMax} kWh/(m²·an)  •  RER = ${compliance.rer}% ≥ ${compliance.rerMin}%  •  RER on-site = ${compliance.rerOnsite}% ≥ ${compliance.rerOnsiteMin}%`
+      : `${compliance.gaps.length} criteriu(i) neîndeplinite — vezi Secțiunea VI pentru recomandări`;
+    doc.text(verdictDetail, w / 2, y + 18, { align: "center" });
+    y += finalVerdictH + 8;
+
+    // Gap-uri identificate (dacă există)
+    if (compliance.gaps.length > 0) {
+      doc.setTextColor(...COL_H);
+      y = sectionTitle(doc, "Gap-uri identificate", y);
+      doc.setFontSize(9); doc.setTextColor(...COL_G);
+      compliance.gaps.forEach((g, i) => {
+        y = ensureSpace(doc, y, 10, title, audName, today);
+        doc.setFont(undefined, "bold"); doc.setTextColor(...COL_ERR);
+        doc.text(`${i + 1}.`, 12, y);
+        doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+        const lines = doc.splitTextToSize(g, w - 30);
+        doc.text(lines, 18, y);
+        y += lines.length * 4 + 2;
+      });
+    }
+
+    addPageFooter(doc, "Mc 001-2022 Tabel 2.10a | Legea 238/2024 Art.6", page);
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINA 4 — RECOMANDĂRI (dacă NECONFORM)
+    // ═══════════════════════════════════════════════════════════
+    if (!compliance.compliant && compliance.recommendations.length > 0) {
+      doc.addPage(); page++;
+      addPageHeader(doc, title, audName, today);
+      y = 26;
+
+      y = sectionTitle(doc, "VI. RECOMANDĂRI PENTRU ATINGEREA nZEB", y);
+      doc.setFontSize(8); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+      doc.text(
+        "Măsurile sunt prioritizate după impactul estimat asupra EP / RER. Implementarea integrată este recomandată",
+        10, y
+      );
+      y += 4;
+      doc.text(
+        "pentru maximizarea efectului asupra pragurilor nZEB (Mc 001-2022 §6 + Anexa K).",
+        10, y
+      );
+      y += 6;
+
+      const recSorted = [...compliance.recommendations].sort((a, b) => a.priority - b.priority);
+      y = autoTable(doc, {
+        startY: y,
+        head: [["Prio", "Măsură", "Descriere tehnică", "Impact"]],
+        body: recSorted.map(r => [
+          `P${r.priority}`,
+          r.title,
+          r.description,
+          r.impactEP || r.impactRER || "—",
+        ]),
+        columnStyles: {
+          0: { cellWidth: 10, halign: "center", fontStyle: "bold" },
+          1: { cellWidth: 45, fontStyle: "bold" },
+          2: { cellWidth: 105 },
+          3: { cellWidth: 25, halign: "center" },
+        },
+        didParseCell: function (data) {
+          if (data.column.index === 0 && data.cell.section === "body") {
+            const p = parseInt(String(data.cell.raw).replace("P", ""));
+            const colors = { 1: [220, 38, 38], 2: [245, 158, 11], 3: [34, 197, 94] };
+            const c = colors[p] || COL_G;
+            data.cell.styles.textColor = c;
+          }
+        },
+      });
+
+      y += 4;
+      // Notă importantă
+      doc.setFillColor(254, 249, 195); // yellow-100
+      doc.roundedRect(10, y, w - 20, 18, 2, 2, "F");
+      doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(133, 77, 14);
+      doc.text("NOTĂ", 13, y + 5);
+      doc.setFont(undefined, "normal");
+      doc.text(
+        "Impactul efectiv depinde de implementarea concretă, calitatea execuției, comportamentul ocupanților",
+        13, y + 10
+      );
+      doc.text(
+        "și interacțiunea între măsuri. Se recomandă reevaluarea cu Mc 001-2022 după fiecare intervenție majoră.",
+        13, y + 14
+      );
+
+      addPageFooter(doc, "Mc 001-2022 §6 + Anexa K | Recomandări reabilitare", page);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINĂ FINALĂ — REFERINȚE NORMATIVE + SEMNĂTURĂ
+    // ═══════════════════════════════════════════════════════════
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "VII. REFERINȚE NORMATIVE", y);
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Document", "Articol / Capitol", "Relevanță"]],
+      body: compliance.references.map(r => [r.doc, r.article, r.text]),
+      columnStyles: {
+        0: { cellWidth: 40, fontStyle: "bold" },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 110 },
+      },
+    });
+
+    y = sectionTitle(doc, "VIII. DECLARAȚIA AUDITORULUI ENERGETIC", y);
+    doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_H);
+    const declaratie = compliance.compliant
+      ? "Subsemnatul, auditor energetic atestat Grad I, declar pe propria răspundere că, pe baza calculelor efectuate conform metodologiei Mc 001-2022 și a cerințelor Legii 238/2024 și Legii 372/2005, clădirea descrisă în prezentul raport ÎNDEPLINEȘTE cerințele minime de conformare pentru încadrarea în categoria clădirilor cu consum de energie aproape egal cu zero (nZEB)."
+      : "Subsemnatul, auditor energetic atestat Grad I, declar pe propria răspundere că, pe baza calculelor efectuate conform metodologiei Mc 001-2022 și a cerințelor Legii 238/2024 și Legii 372/2005, clădirea descrisă în prezentul raport NU ÎNDEPLINEȘTE integral cerințele minime de conformare nZEB. Se propun măsurile din Secțiunea VI pentru atingerea pragurilor impuse de normativ.";
+    const declLines = doc.splitTextToSize(declaratie, w - 20);
+    doc.text(declLines, 10, y);
+    y += declLines.length * 4 + 8;
+
+    // Caseta semnătură
+    const boxW = 80, boxH = 40;
+    const boxX1 = 15;
+    const boxX2 = w - boxW - 15;
+    doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
+    doc.roundedRect(boxX1, y, boxW, boxH, 2, 2);
+    doc.roundedRect(boxX2, y, boxW, boxH, 2, 2);
+
+    doc.setFontSize(7); doc.setTextColor(...COL_G);
+    doc.text("AUDITOR ENERGETIC GRAD I (AE Ici)", boxX1 + 2, y + 4);
+    doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text(auditor?.name || "—", boxX1 + 2, y + 10);
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(`Nr. atestat: ${auditor?.atestat || "—"}`, boxX1 + 2, y + 15);
+    doc.text(`Grad: ${auditor?.grade || "—"}`, boxX1 + 2, y + 19);
+    doc.text("Semnătură + ștampilă", boxX1 + 2, y + boxH - 3);
+
+    doc.setFontSize(7);
+    doc.text("DATA ȘI LOCUL", boxX2 + 2, y + 4);
+    doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text(today, boxX2 + 2, y + 10);
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(building?.city || "—", boxX2 + 2, y + 15);
+    y += boxH + 6;
+
+    // Footer legal
+    doc.setFontSize(6); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+    doc.text(
+      "Prezentul raport a fost întocmit în conformitate cu art. 6 alin. (1) lit. c) din Ord. MDLPA 348/2026",
+      10, y
+    );
+    y += 3;
+    doc.text(
+      "și reprezintă atestarea tehnică a conformării clădirii cu cerințele minime de performanță energetică nZEB.",
+      10, y
+    );
+
+    addPageFooter(doc, "Ord. MDLPA 348/2026 Art.6 | Legea 372/2005 R2", page);
+
+    const addr = (building?.address || "raport-nzeb").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25);
+    const filename = `Raport_Conformare_nZEB_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, download);
+  } catch (e) {
+    throw new Error(`generateNZEBConformanceReport: ${e.message}`);
+  }
+}
