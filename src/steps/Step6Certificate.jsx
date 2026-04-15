@@ -2106,9 +2106,10 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         const CO2_COLORS = {"A+":"#0000FE","A":"#3265FF","B":"#009BFF","C":"#3399CC","D":"#808080","E":"#999999","F":"#AAAAAA","G":"#333333"};
                         // Culoarea literei: A+=alb, A=alb, B=negru, C=negru, D=negru, E=negru, F=negru, G=alb
                         const TEXT_COLOR = {"A+":"#fff","A":"#fff","B":"#000","C":"#000","D":"#000","E":"#000","F":"#000","G":"#fff"};
-                        // Poziție % din înălțimea scalei pentru fiecare clasă (din _CLASS_POS_V EMU)
-                        const CLASS_PCT = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
-                        const CO2_PCT  = {"A+":0,"A":14.3,"B":28.6,"C":43.1,"D":57.1,"E":71.4,"F":85.7,"G":100};
+                        // Poziție % centrată în banda fiecărei clase: (i+0.5)/8*100
+                        // A+ band=0-12.5% → centru 6.25%, A band=12.5-25% → 18.75% etc.
+                        const CLASS_PCT = {"A+":6.25,"A":18.75,"B":31.25,"C":43.75,"D":56.25,"E":68.75,"F":81.25,"G":93.75};
+                        const CO2_PCT   = {"A+":6.25,"A":18.75,"B":31.25,"C":43.75,"D":56.25,"E":68.75,"F":81.25,"G":93.75};
 
                         const epReal = enClass?.cls || enClassDocx?.cls || "C";
                         const epRef  = getEnergyClass(epRefMax, catKey)?.cls || "A";
@@ -2147,7 +2148,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         // Funcție: injectează o săgeată în coloana dată la poziția clasei
                         function injectArrow(col, cls, colors, pctMap, isRight=false) {
                           if (!col || !cls) return;
-                          // Găsim tabelul cu scala (celulele cu benzile colorate) sub header
                           const tbl = col.closest('table');
                           if (!tbl) return;
                           const tblRect = tbl.getBoundingClientRect();
@@ -2155,14 +2155,16 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           const page = col.closest('section.page') || col.closest('article.page') || container;
                           const pageRect = page.getBoundingClientRect();
 
-                          // Înălțimea scalei = înălțimea tabelului - rândul header
-                          const headerH = col.offsetHeight;
-                          const scaleH = tblRect.height - headerH;
+                          // scaleTop = bottom edge-ul rândului header (unde începe scala A+→G)
+                          const headerRow = col.closest('tr');
+                          const headerRowRect = headerRow ? headerRow.getBoundingClientRect() : col.getBoundingClientRect();
+                          const scaleTop = headerRowRect.bottom - pageRect.top;
+                          const scaleH = (tblRect.bottom - pageRect.top) - scaleTop;
                           const pct = pctMap[cls] || 0;
                           const arrowH = 28;
                           const arrowW = colRect.width > 10 ? colRect.width - 4 : 70;
 
-                          const topPx = (tblRect.top - pageRect.top) + headerH + (scaleH * pct / 100) - arrowH / 2;
+                          const topPx = scaleTop + (scaleH * pct / 100) - arrowH / 2;
                           const leftPx = colRect.left - pageRect.left + 2;
 
                           const arrow = document.createElement('div');
