@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { renderAsync } from "docx-preview";
-import ImportModal from "./import/ImportModal.jsx";
-import ChatImport from "./components/ChatImport.jsx";
-import ShareModal, { decodeShareableData } from "./components/ShareModal.jsx";
-import QuickFillWizard from "./components/QuickFillWizard.jsx";
+import ChatImport from "./components/ChatImport.jsx"; // static — floating button render at mount
+// ── Import/share modals — lazy loaded (S6.3) ──
+const ImportModal = lazy(() => import("./import/ImportModal.jsx"));
+const ShareModal = lazy(() => import("./components/ShareModal.jsx"));
+const QuickFillWizard = lazy(() => import("./components/QuickFillWizard.jsx"));
+// decodeShareableData rămâne dynamic-imported în useEffect (S6.3)
 
 // ── Data imports ──
 import CLIMATE_DB from "./data/climate.json";
@@ -56,9 +58,10 @@ import { useProjectHistory } from "./hooks/useProjectHistory.js";
 
 // ── Component imports ──
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
-import ThermalBridgeCatalog from "./components/ThermalBridgeCatalog.jsx";
-import OpaqueModal from "./components/OpaqueModal.jsx";
-import GlazingModal from "./components/GlazingModal.jsx";
+// ── Envelope modals — lazy loaded (S6.2) ──
+const ThermalBridgeCatalog = lazy(() => import("./components/ThermalBridgeCatalog.jsx"));
+const OpaqueModal = lazy(() => import("./components/OpaqueModal.jsx"));
+const GlazingModal = lazy(() => import("./components/GlazingModal.jsx"));
 
 // ── Step imports (all lazy-loaded for bundle splitting) ──
 const Step1Identification = lazy(() => import("./steps/Step1Identification.jsx"));
@@ -69,8 +72,8 @@ const Step5Calculation = lazy(() => import("./steps/Step5Calculation.jsx"));
 const Step6Certificate = lazy(() => import("./steps/Step6Certificate.jsx"));
 const Step7Audit = lazy(() => import("./steps/Step7Audit.jsx"));
 const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
-import BridgeModal from "./components/BridgeModal.jsx";
-import TutorialWizard from "./components/TutorialWizard.jsx";
+const BridgeModal = lazy(() => import("./components/BridgeModal.jsx"));
+const TutorialWizard = lazy(() => import("./components/TutorialWizard.jsx"));
 // ── Secondary components — lazy loaded (S6.1) ──
 const ClientInputForm = lazy(() => import("./components/ClientInputForm.jsx"));
 const AuditClientDataForm = lazy(() => import("./components/AuditClientDataForm.jsx"));
@@ -687,12 +690,15 @@ export default function EnergyCalcApp({ cloud }) {
 
   useEffect(function() { loadFromStorage(); }, []);
 
-  // Auto-import din URL ?import=<base64> (ShareModal)
+  // Auto-import din URL ?import=<base64> (ShareModal). decodeShareableData e
+  // lazy (partea S6.3): doar când e nevoie de decodare, se face dynamic import.
   useEffect(function() {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("import");
     if (!encoded) return;
+    (async () => {
     try {
+      const { decodeShareableData } = await import("./components/ShareModal.jsx");
       const compressed = JSON.parse(decodeURIComponent(escape(atob(encoded))));
       const data = decodeShareableData(compressed);
       if (!data) return;
@@ -716,6 +722,7 @@ export default function EnergyCalcApp({ cloud }) {
     } catch (e) {
       console.warn("URL import failed:", e);
     }
+    })();
   }, []); // eslint-disable-line
 
   // Auto-generate PDF preview when entering Step 6
@@ -2995,73 +3002,81 @@ export default function EnergyCalcApp({ cloud }) {
 
       {/* TUTORIAL MODAL */}
       {showTutorial && (
-        <TutorialWizard
-          onClose={() => setShowTutorial(false)}
-          onApplyExample={(data) => {
-              pushUndo();
-              if (data?.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
-              if (data?.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
-              if (data?.glazingElements?.length) setGlazingElements(data.glazingElements);
-              if (data?.thermalBridges?.length) setThermalBridges(data.thermalBridges);
-              if (data?.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
-              if (data?.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
-              if (data?.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
-              if (data?.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
-              setShowTutorial(false);
-              setStep(1);
-              showToast("Exemplu demo aplicat — casă 1985, Cluj-Napoca ✓");
-            }}
-        />
+        <Suspense fallback={null}>
+          <TutorialWizard
+            onClose={() => setShowTutorial(false)}
+            onApplyExample={(data) => {
+                pushUndo();
+                if (data?.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+                if (data?.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
+                if (data?.glazingElements?.length) setGlazingElements(data.glazingElements);
+                if (data?.thermalBridges?.length) setThermalBridges(data.thermalBridges);
+                if (data?.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+                if (data?.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+                if (data?.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+                if (data?.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+                setShowTutorial(false);
+                setStep(1);
+                showToast("Exemplu demo aplicat — casă 1985, Cluj-Napoca ✓");
+              }}
+          />
+        </Suspense>
       )}
 
       {/* MODALS */}
       {showOpaqueModal && (
-        <OpaqueModal
-          element={editingOpaque}
-          onSave={el => {
-            if (editingOpaque && editingOpaque._idx !== undefined) {
-              setOpaqueElements(prev => prev.map((e, i) => i === editingOpaque._idx ? el : e));
-            } else {
-              setOpaqueElements(prev => [...prev, el]);
-            }
-          }}
-          onClose={() => { setShowOpaqueModal(false); setEditingOpaque(null); }}
-          lang={lang}
-          buildingCategory={building.category}
-          heating={heating}
-          selectedClimate={selectedClimate}
-          calcOpaqueR={calcOpaqueR}
-          constructionSolutions={CONSTRUCTION_SOLUTIONS}
-        />
+        <Suspense fallback={null}>
+          <OpaqueModal
+            element={editingOpaque}
+            onSave={el => {
+              if (editingOpaque && editingOpaque._idx !== undefined) {
+                setOpaqueElements(prev => prev.map((e, i) => i === editingOpaque._idx ? el : e));
+              } else {
+                setOpaqueElements(prev => [...prev, el]);
+              }
+            }}
+            onClose={() => { setShowOpaqueModal(false); setEditingOpaque(null); }}
+            lang={lang}
+            buildingCategory={building.category}
+            heating={heating}
+            selectedClimate={selectedClimate}
+            calcOpaqueR={calcOpaqueR}
+            constructionSolutions={CONSTRUCTION_SOLUTIONS}
+          />
+        </Suspense>
       )}
 
       {showGlazingModal && (
-        <GlazingModal
-          element={editingGlazing}
-          onSave={el => {
-            if (editingGlazing && editingGlazing._idx !== undefined) {
-              setGlazingElements(prev => prev.map((e, i) => i === editingGlazing._idx ? el : e));
-            } else {
-              setGlazingElements(prev => [...prev, el]);
-            }
-          }}
-          onClose={() => { setShowGlazingModal(false); setEditingGlazing(null); }}
-        />
+        <Suspense fallback={null}>
+          <GlazingModal
+            element={editingGlazing}
+            onSave={el => {
+              if (editingGlazing && editingGlazing._idx !== undefined) {
+                setGlazingElements(prev => prev.map((e, i) => i === editingGlazing._idx ? el : e));
+              } else {
+                setGlazingElements(prev => [...prev, el]);
+              }
+            }}
+            onClose={() => { setShowGlazingModal(false); setEditingGlazing(null); }}
+          />
+        </Suspense>
       )}
 
       {showBridgeModal && (
-        <BridgeModal
-          element={editingBridge}
-          lang={lang}
-          onSave={el => {
-            if (editingBridge && editingBridge._idx !== undefined) {
-              setThermalBridges(prev => prev.map((e, i) => i === editingBridge._idx ? el : e));
-            } else {
-              setThermalBridges(prev => [...prev, el]);
-            }
-          }}
-          onClose={() => { setShowBridgeModal(false); setEditingBridge(null); }}
-        />
+        <Suspense fallback={null}>
+          <BridgeModal
+            element={editingBridge}
+            lang={lang}
+            onSave={el => {
+              if (editingBridge && editingBridge._idx !== undefined) {
+                setThermalBridges(prev => prev.map((e, i) => i === editingBridge._idx ? el : e));
+              } else {
+                setThermalBridges(prev => [...prev, el]);
+              }
+            }}
+            onClose={() => { setShowBridgeModal(false); setEditingBridge(null); }}
+          />
+        </Suspense>
       )}
 
       {/* #20 Mod prezentare ecran complet */}
@@ -3212,6 +3227,7 @@ export default function EnergyCalcApp({ cloud }) {
 
       {/* #8 Import din alte softuri */}
       {showImportWizard && (
+        <Suspense fallback={null}>
         <ImportModal
           onClose={() => setShowImportWizard(false)}
           onApply={(data) => {
@@ -3241,39 +3257,44 @@ export default function EnergyCalcApp({ cloud }) {
           importOCR={importOCR}
           showToast={showToast}
         />
+        </Suspense>
       )}
 
       {showBridgeCatalog && (
-        <ThermalBridgeCatalog
-          onSelect={(bridge) => {
-            setThermalBridges(prev => [...prev, {
-              name: bridge.name,
-              type: bridge.cat,
-              psi: String(bridge.psi),
-              length: "",
-            }]);
-          }}
-          onClose={() => setShowBridgeCatalog(false)}
-        />
+        <Suspense fallback={null}>
+          <ThermalBridgeCatalog
+            onSelect={(bridge) => {
+              setThermalBridges(prev => [...prev, {
+                name: bridge.name,
+                type: bridge.cat,
+                psi: String(bridge.psi),
+                length: "",
+              }]);
+            }}
+            onClose={() => setShowBridgeCatalog(false)}
+          />
+        </Suspense>
       )}
 
       {/* ═══ QuickFill Wizard ═══ */}
       {showQuickFill && (
-        <QuickFillWizard
-          onClose={() => setShowQuickFill(false)}
-          onApply={(data) => {
-            pushUndo();
-            if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
-            if (data.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
-            if (data.glazingElements?.length) setGlazingElements(data.glazingElements);
-            if (data.thermalBridges?.length) setThermalBridges(data.thermalBridges);
-            if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
-            if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
-            if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
-            if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
-          }}
-          showToast={showToast}
-        />
+        <Suspense fallback={null}>
+          <QuickFillWizard
+            onClose={() => setShowQuickFill(false)}
+            onApply={(data) => {
+              pushUndo();
+              if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));
+              if (data.opaqueElements?.length) setOpaqueElements(data.opaqueElements);
+              if (data.glazingElements?.length) setGlazingElements(data.glazingElements);
+              if (data.thermalBridges?.length) setThermalBridges(data.thermalBridges);
+              if (data.heating && Object.keys(data.heating).length) setHeating(p => ({...INITIAL_HEATING, ...p, ...data.heating}));
+              if (data.acm && Object.keys(data.acm).length) setAcm(p => ({...INITIAL_ACM, ...p, ...data.acm}));
+              if (data.ventilation && Object.keys(data.ventilation).length) setVentilation(p => ({...INITIAL_VENTILATION, ...p, ...data.ventilation}));
+              if (data.lighting && Object.keys(data.lighting).length) setLighting(p => ({...INITIAL_LIGHTING, ...p, ...data.lighting}));
+            }}
+            showToast={showToast}
+          />
+        </Suspense>
       )}
 
       {/* ═══ ChatImport — buton flotant + chat panel ═══ */}
@@ -3307,11 +3328,13 @@ export default function EnergyCalcApp({ cloud }) {
         const ec = getEnergyClass(epFinal, catKey)?.cls || null;
         const cc = getCO2Class(co2Final, building.category)?.cls || null;
         return (
-          <ShareModal
-            projectState={{ building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, instSummary, renewSummary, energyClass: ec, co2Class: cc }}
-            onClose={() => setShowShareModal(false)}
-            showToast={showToast}
-          />
+          <Suspense fallback={null}>
+            <ShareModal
+              projectState={{ building, opaqueElements, glazingElements, thermalBridges, heating, acm, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, biomass, instSummary, renewSummary, energyClass: ec, co2Class: cc }}
+              onClose={() => setShowShareModal(false)}
+              showToast={showToast}
+            />
+          </Suspense>
         );
       })()}
 
