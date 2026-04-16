@@ -40,9 +40,19 @@ export const INITIAL_HEATING = {
 
 export const INITIAL_ACM = {
   source:"CAZAN_H", consumers:"", dailyLiters:"60",
+  consumptionLevel:"med",        // low / med / high — Mc 001 Tab.10 + GEx
+  tSupply:"55",                  // temperatură setată boiler [°C] — min 60 pentru Legionella boilere >400L
   storageVolume:"", storageLoss:"2.0",
+  insulationClass:"B",           // A / B / C — clasa ErP boiler (EN 50440)
   pipeLength:"", pipeInsulated:true,
+  pipeInsulationThickness:"20mm", // fara / 20mm / 30mm / 50mm — EN 15316-3 Tab.7
+  pipeDiameter:"22",             // mm — diametru nominal conductă
   circRecirculation:false, circHours:"",
+  circPumpType:"standard",       // veche_neregulata / standard / variabila / iee_sub_023 — EN 15316-3 Tab.10
+  // Legionella — HG 1425/2006 + Ord. MS 1002/2015 + VDI 6023 (Sprint 3)
+  hasLegionella:false,           // tratament termic periodic activ
+  legionellaFreq:"weekly",       // weekly / daily / none
+  legionellaT:"70",              // temperatură șoc termic [°C]
 };
 
 export const INITIAL_COOLING = {

@@ -42,7 +42,8 @@ import MonteCarloEP from "../components/MonteCarloEP.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
 import TeamDashboard from "../components/TeamDashboard.jsx";
 import MEPSCheck from "../components/MEPSCheck.jsx";
-import { calcACMen15316, ACM_CONSUMPTION_SPECIFIC } from "../calc/acm-en15316.js";
+// ACM: calcul delegat complet către useInstallationSummary → calcACMen15316 (sursa unică de adevăr).
+// Step 8 afișează rezultatul, NU recalculează (eliminat apelul duplicat — Sprint 1 Task 1.5).
 import { calcBoreholeSizing, GROUND_TYPES } from "../calc/heat-pump-sizing.js";
 import { calcFinancialScenarios } from "../calc/financial.js";
 import { checkGP123, SOLAR_PEAK_HOURS } from "../calc/gp123.js";
@@ -191,11 +192,12 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   // ── BACS state — sincronizat cu parent (Step5/bacsCheck) ──
   const bacsClass = bacsClassProp ?? "C";
   const setBacsClass = setBacsClassProp ?? (() => {});
-  // ── ACM EN 15316 state ──
-  const [acmPipeInsul, setAcmPipeInsul] = useState(true);
-  const [acmCirculation, setAcmCirculation] = useState(false);
-  const [acmInsulClass, setAcmInsulClass] = useState("B");
-  const [acmConsuLevel, setAcmConsuLevel] = useState("med");
+  // ── ACM state — citit direct din systems.acm (Step 3) — sursa unică ──
+  // Eliminat state local (Sprint 1 Task 1.5): previne divergența între Step 3 și Step 8
+  const acmPipeInsul = (systems?.acm?.pipeInsulationThickness || (systems?.acm?.pipeInsulated === false ? "fara" : "20mm")) !== "fara";
+  const acmCirculation = !!systems?.acm?.circRecirculation;
+  const acmInsulClass = systems?.acm?.insulationClass || "B";
+  const acmConsuLevel = systems?.acm?.consumptionLevel || "med";
   // ── IEQ categoria ventilare ──
   const [ieqCategory, setIeqCategory] = useState("II");
   // ── Borehole sonde geotermale state ──
@@ -332,21 +334,9 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     instSummary?.qf_w || 0,
   ), [bacsClass, cat, instSummary]);
 
-  // ── ACM EN 15316 ──
-  const acmEN15316 = useMemo(() => calcACMen15316({
-    category: cat,
-    nPersons: nPersons ? parseInt(nPersons) : Math.ceil(Au / 30),
-    consumptionLevel: acmConsuLevel,
-    tSupply: 55,
-    climateZone: zone,
-    climate,
-    hasPipeInsulation: acmPipeInsul,
-    hasCirculation: acmCirculation,
-    insulationClass: acmInsulClass,
-    acmSource: systems?.acm?.source || "ct_gaz",
-    etaGenerator: parseFloat(systems?.heating?.eta_gen) || 0.87,
-    solarFraction: renewSummary?.solarThermalFraction || 0,
-  }), [cat, nPersons, Au, acmConsuLevel, zone, climate, acmPipeInsul, acmCirculation, acmInsulClass, systems, renewSummary]);
+  // ── ACM EN 15316 — passthrough din instSummary (sursa unică Sprint 1) ──
+  // Hook-ul useInstallationSummary apelează calcACMen15316 cu valorile actuale din UI Step 3.
+  const acmEN15316 = instSummary?.acmDetailed || null;
 
   // ── Benchmark ──
   const benchmark = useMemo(() => calcBenchmark({
@@ -1051,31 +1041,34 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="🚿" title="ACM detaliat — SR EN 15316-3/5:2017"
             subtitle="Pierderi distribuție, stocare și circulație. Eficiență sistem preparare apă caldă menajeră." />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div>
-              <div className="text-xs text-slate-400 mb-1">Nivel consum ACM</div>
-              <div className="flex gap-1">
-                {[["low","Scăzut"],["med","Mediu"],["high","Ridicat"]].map(([v,lbl]) => (
-                  <button key={v} onClick={() => setAcmConsuLevel(v)}
-                    className={cn("flex-1 py-1.5 rounded text-xs font-medium border transition-all",
-                      acmConsuLevel === v ? "bg-indigo-700 border-indigo-500 text-white" : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500")}>
-                    {lbl}
-                  </button>
-                ))}
-              </div>
+          {/* Configurare ACM — sincronizată cu Step 3 (sursa unică Sprint 1) */}
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-medium text-slate-300">Configurație ACM (citită din Pasul 3)</div>
+              <span className="text-[10px] text-slate-500">Editați în Pasul 3 → sub-tab ACM</span>
             </div>
-            <div>
-              <div className="text-xs text-slate-400 mb-1">Conductă distribuție</div>
-              <div className="flex gap-1">
-                <button onClick={() => setAcmPipeInsul(true)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", acmPipeInsul ? "bg-green-900/30 border-green-600 text-green-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Izolată</button>
-                <button onClick={() => setAcmPipeInsul(false)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", !acmPipeInsul ? "bg-red-900/30 border-red-600 text-red-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Neizolată</button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div className="bg-slate-900/50 rounded px-2 py-1.5">
+                <div className="text-slate-500 text-[10px]">Nivel consum</div>
+                <div className="text-slate-200 font-medium">
+                  {{ low:"Scăzut", med:"Mediu", high:"Ridicat" }[acmConsuLevel] || acmConsuLevel}
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400 mb-1">Pompă circulație</div>
-              <div className="flex gap-1">
-                <button onClick={() => setAcmCirculation(false)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", !acmCirculation ? "bg-green-900/30 border-green-600 text-green-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Nu</button>
-                <button onClick={() => setAcmCirculation(true)} className={cn("flex-1 py-1.5 rounded text-xs border transition-all", acmCirculation ? "bg-amber-900/30 border-amber-600 text-amber-300" : "bg-slate-800 border-slate-700 text-slate-400")}>Da</button>
+              <div className="bg-slate-900/50 rounded px-2 py-1.5">
+                <div className="text-slate-500 text-[10px]">Conductă</div>
+                <div className={acmPipeInsul ? "text-green-300 font-medium" : "text-red-300 font-medium"}>
+                  {acmPipeInsul ? "Izolată" : "Neizolată"}
+                </div>
+              </div>
+              <div className="bg-slate-900/50 rounded px-2 py-1.5">
+                <div className="text-slate-500 text-[10px]">Circulație</div>
+                <div className={acmCirculation ? "text-amber-300 font-medium" : "text-slate-200 font-medium"}>
+                  {acmCirculation ? "Da" : "Nu"}
+                </div>
+              </div>
+              <div className="bg-slate-900/50 rounded px-2 py-1.5">
+                <div className="text-slate-500 text-[10px]">Clasa boiler</div>
+                <div className="text-slate-200 font-medium">{acmInsulClass}</div>
               </div>
             </div>
           </div>

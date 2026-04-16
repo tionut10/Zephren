@@ -5,6 +5,20 @@ import {
 } from "../data/constants.js";
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
 import { FP_ELEC } from "../data/u-reference.js";
+import { calcACMen15316 } from "../calc/acm-en15316.js";
+
+// Mapare acm.source (ACM_SOURCES) → acmSource enum din calcACMen15316
+// Acoperă toate cele 18 surse din constants.js
+const ACM_SOURCE_TO_ENGINE = {
+  CAZAN_H: "ct_gaz",
+  BOILER_G: "ct_gaz", BOILER_G_COND: "ct_gaz", BOILER_GPL: "ct_gaz",
+  INSTANT_G: "ct_gaz", COGEN_ACM: "ct_gaz", CENTRALIZAT_BLOC: "ct_gaz",
+  BOILER_BIOMASA: "ct_gaz", SOLAR_GAZ: "ct_gaz",
+  BOILER_E: "boiler_electric", BOILER_E_NOAPTE: "boiler_electric",
+  INSTANT_E: "boiler_electric", SOLAR_AUX: "boiler_electric",
+  PC_ACM: "pc", PC_ACM_ERV: "pc", DESUPERHEATER: "pc", SOLAR_PC: "pc",
+  TERMO_ACM: "termoficare",
+};
 
 /**
  * useInstallationSummary — calcul energie finală și primară per instalație
@@ -76,23 +90,54 @@ export function useInstallationSummary({
       qf_h = eta_total_h > 0 ? qH_nd / eta_total_h : 0;
     }
 
-    // ── ACM ──
+    // ── ACM — delegare completă către calcACMen15316 (EN 15316-3/5/4-3) ──
     const nConsumers = parseFloat(acm.consumers) || (Au > 0 ? Math.max(1, Math.round(Au / 30)) : 2);
-    const dailyL = parseFloat(acm.dailyLiters) || 60;
-    const qACM_nd = nConsumers * dailyL * WATER_TEMP_MONTH.reduce((s, tw, i) =>
-      s + [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][i] * 4.186 * (55 - tw) / 3600, 0
-    );
+    const dailyL = parseFloat(acm.dailyLiters) || 0; // 0 → folosește tabelul ACM_CONSUMPTION_SPECIFIC
     const acmSrc = ACM_SOURCES.find(s => s.id === acm.source);
-    let eta_acm = acmSrc?.eta || eta_gen;
-    if (acm.source === "CAZAN_H") eta_acm = eta_gen;
+    const isCOPacm = acmSrc?.isCOP || false;
+    const isCazanH = acm.source === "CAZAN_H";
+    // eta/COP: pentru CAZAN_H → eta încălzire; altfel valoarea din ACM_SOURCES
+    const eta_acm = isCazanH ? eta_gen : (acmSrc?.eta || eta_gen);
+    const acmEngineKey = ACM_SOURCE_TO_ENGINE[acm.source] || "ct_gaz";
     const solarFr = acmSrc?.solarFraction || 0;
-    const storageLoss = Math.min(10, Math.max(0, parseFloat(acm.storageLoss) || 2)) / 100;
-    const qf_w = eta_acm > 0
-      ? (acmSrc?.isCOP
-          ? qACM_nd * (1 - solarFr) / eta_acm
-          : qACM_nd * (1 - solarFr) * (1 + storageLoss) / eta_acm)
-      : 0;
-    const acmFuel = acm.source === "CAZAN_H"
+    const pipeThickness = acm.pipeInsulationThickness || (acm.pipeInsulated === false ? "fara" : "20mm");
+    const hasPipeInsulation = pipeThickness !== "fara";
+
+    // Parsare storageVolume: 0 explicit (fără stocare) vs. gol (folosește default)
+    const storageRaw = acm.storageVolume;
+    const storageVolume_L = storageRaw === "0" || storageRaw === 0
+      ? 0
+      : (parseFloat(storageRaw) || null);
+
+    const acmDetailed = calcACMen15316({
+      category: building.category,
+      nPersons: nConsumers,
+      consumptionLevel: acm.consumptionLevel || "med",
+      tSupply: parseFloat(acm.tSupply) || 55,
+      climateZone: selectedClimate?.zone || "III",
+      climate: selectedClimate,
+      hasPipeInsulation,
+      hasCirculation: !!acm.circRecirculation,
+      insulationClass: acm.insulationClass || "B",
+      pipeLength_m: parseFloat(acm.pipeLength) || null,
+      pipeDiameter_mm: parseFloat(acm.pipeDiameter) || 22,
+      storageVolume_L,
+      acmSource: acmEngineKey,
+      etaGenerator: isCOPacm ? null : eta_acm,
+      copACM: isCOPacm ? eta_acm : null,
+      solarFraction: solarFr,
+      dailyLitersOverride: dailyL > 0 ? dailyL : null,
+      // Sprint 3 — pompă circulație + Legionella
+      circPumpType: acm.circPumpType || "standard",
+      circHours_per_day: parseFloat(acm.circHours) || null,
+      hasLegionella: !!acm.hasLegionella,
+      legionellaFreq: acm.legionellaFreq || (acm.hasLegionella ? "weekly" : "none"),
+      legionellaT: parseFloat(acm.legionellaT) || 70,
+    });
+
+    const qACM_nd = acmDetailed?.Q_nd_annual_kWh || 0;
+    const qf_w = acmDetailed?.Q_final_kWh || 0;
+    const acmFuel = isCazanH
       ? fuel
       : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
 
@@ -132,8 +177,11 @@ export function useInstallationSummary({
     const leni = pDens * fCtrl * (tD * fo * fD + tN * fo) / 1000;
     const qf_l = leni * Au;
 
+    // ── Auxiliar electric pompă circulație ACM (Sprint 3) ──
+    const W_aux_acm_kWh = acmDetailed?.W_circ_pump_kWh || 0;
+
     // ── TOTAL ENERGIE FINALĂ ──
-    const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
+    const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l + W_aux_acm_kWh;
     const qf_total_m2 = Au > 0 ? qf_total / Au : 0;
 
     // ── ENERGIE PRIMARĂ — descompunere fP_nren / fP_ren conform ISO 52000-1/NA:2023 ──
@@ -153,9 +201,8 @@ export function useInstallationSummary({
       ep_nren_h = qf_h * (fuel?.fP_nren ?? 1.10);
       ep_ren_h = qf_h * (fuel?.fP_ren ?? 0.07);
     }
-    const acmIsCOP = ACM_SOURCES.find(a => a.id === acm.source)?.isCOP || false;
     let ep_w, ep_nren_w, ep_ren_w;
-    if (acmIsCOP) {
+    if (isCOPacm) {
       const fP_elec = acmFuel?.fP_tot || FP_ELEC;
       const fP_nren_elec = acmFuel?.fP_nren ?? 2.62;
       const fP_ren_elec = acmFuel?.fP_ren ?? 0.0;
@@ -179,10 +226,15 @@ export function useInstallationSummary({
     const ep_nren_l = qf_l * 2.62;
     const ep_ren_l = qf_l * 0.0;
 
-    const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l;
+    // Auxiliar pompă ACM — întotdeauna electric (indiferent de combustibil ACM)
+    const ep_aux_acm = W_aux_acm_kWh * FP_ELEC;
+    const ep_nren_aux_acm = W_aux_acm_kWh * 2.62;
+    const ep_ren_aux_acm = 0;
+
+    const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l + ep_aux_acm;
     const ep_total_m2 = Au > 0 ? ep_total / Au : 0;
-    const ep_nren_total = ep_nren_h + ep_nren_w + ep_nren_c + ep_nren_v + ep_nren_l;
-    const ep_ren_total = ep_ren_h + ep_ren_w + ep_ren_c + ep_ren_v + ep_ren_l;
+    const ep_nren_total = ep_nren_h + ep_nren_w + ep_nren_c + ep_nren_v + ep_nren_l + ep_nren_aux_acm;
+    const ep_ren_total = ep_ren_h + ep_ren_w + ep_ren_c + ep_ren_v + ep_ren_l + ep_ren_aux_acm;
     const ep_nren_m2 = Au > 0 ? ep_nren_total / Au : 0;
     const ep_ren_m2 = Au > 0 ? ep_ren_total / Au : 0;
 
@@ -192,7 +244,8 @@ export function useInstallationSummary({
     const co2_c = qf_c * (coolFuel?.fCO2 || 0.107);
     const co2_v = qf_v * 0.107;
     const co2_l = qf_l * 0.107;
-    const co2_total = co2_h + co2_w + co2_c + co2_v + co2_l;
+    const co2_aux_acm = W_aux_acm_kWh * 0.107;
+    const co2_total = co2_h + co2_w + co2_c + co2_v + co2_l + co2_aux_acm;
     const co2_total_m2 = Au > 0 ? co2_total / Au : 0;
 
     return {
@@ -207,6 +260,10 @@ export function useInstallationSummary({
       ep_ren_h, ep_ren_w, ep_ren_c, ep_ren_v, ep_ren_l, ep_ren_total, ep_ren_m2,
       co2_h, co2_w, co2_c, co2_v, co2_l, co2_total, co2_total_m2,
       fuel, isCOP,
+      // ACM detaliat EN 15316 — sursă unică de adevăr pentru Step 3, 5, 6, 8, CPE
+      acmDetailed, isCOPacm, acmFuel,
+      // Sprint 3 — auxiliar pompă circulație ACM (electric)
+      W_aux_acm_kWh, ep_aux_acm, co2_aux_acm,
     };
   }, [
     building.areaUseful, building.volume, building.category,

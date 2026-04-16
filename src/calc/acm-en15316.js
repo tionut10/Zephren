@@ -3,7 +3,18 @@
 //                SR EN 15316-5:2017 (stocare ACM)
 //                SR EN 15316-4-3:2017 (generare solar)
 // Pierderi distribuție, stocare, circulație, acoperire solară
+// Sprint 3 (2026-04-16): + Legionella + aux electric pompă circulație
 // ═══════════════════════════════════════════════════════════════
+
+import { calcLegionellaOverhead } from "./acm-legionella.js";
+
+// Eficiență pompă circulație ACM [W specific per kW termic] — EN 15316-3 Tab.10
+export const ACM_PUMP_W_SPECIFIC = {
+  veche_neregulata: 0.80,  // IEE E — neregulată, mereu pornită
+  standard:         0.50,  // IEE D-C — regulată treptat
+  variabila:        0.30,  // IEE B — turație variabilă
+  iee_sub_023:      0.20,  // IEE A+ — max eficiență
+};
 
 // Consum specific ACM [L/zi·persoană] — SR EN 15316-3 Tab.B.1 + Mc 001-2022
 export const ACM_CONSUMPTION_SPECIFIC = {
@@ -87,6 +98,16 @@ export function calcACMen15316(params) {
 
     // Solar termic (dacă există)
     solarFraction,     // fracție solară anuală [0-1] (din solar-acm-detailed.js)
+
+    // Override consum (dacă user introduce manual dailyLiters, îl respectăm peste tabel)
+    dailyLitersOverride, // L/persoană/zi — override din UI (null → folosește ACM_CONSUMPTION_SPECIFIC)
+
+    // Sprint 3 — pompă circulație ACM (dacă hasCirculation) + Legionella
+    circPumpType,      // "veche_neregulata" | "standard" | "variabila" | "iee_sub_023"
+    circHours_per_day, // ore/zi recirculare (default 16 dacă hasCirculation, 0 altfel)
+    hasLegionella,     // tratament termic periodic activ
+    legionellaFreq,    // "weekly" | "daily"
+    legionellaT,       // temperatură șoc termic (default 70°C)
   } = params;
 
   if (!nPersons || nPersons <= 0) return null;
@@ -95,7 +116,9 @@ export function calcACMen15316(params) {
   const zone = climateZone || "III";
   const tCold = T_COLD_BY_ZONE[zone] || 10;
   const consumSpec = ACM_CONSUMPTION_SPECIFIC[category] || ACM_CONSUMPTION_SPECIFIC.AL;
-  const q_specific_L = consumSpec[consumptionLevel || "med"];
+  const q_specific_L = dailyLitersOverride && dailyLitersOverride > 0
+    ? parseFloat(dailyLitersOverride)
+    : consumSpec[consumptionLevel || "med"];
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const monthNames = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -136,18 +159,51 @@ export function calcACMen15316(params) {
   const Q_dist_kWh = Math.max(Q_nd_annual_kWh * f_dist, Q_dist_pipe_kWh);
 
   // ─── 3. PIERDERI STOCARE ───────────────────────────────────
-  const vol_L = storageVolume_L || nPersons * 50; // 50L/persoană default
-  const q_standby = calcStorageStandbyLoss(vol_L, insulationClass || "B");
+  // storageVolume_L === 0 → explicit "fără stocare" (ex: combi instant, schimbător placi)
+  // null / undefined / NaN → folosește default 50 L/persoană
+  const hasNoStorage = storageVolume_L === 0;
+  const vol_L = hasNoStorage ? 0 : (storageVolume_L > 0 ? storageVolume_L : nPersons * 50);
+  const q_standby = vol_L > 0 ? calcStorageStandbyLoss(vol_L, insulationClass || "B") : 0;
   const Q_storage_kWh = q_standby * 365;
 
-  // ─── 4. NECESARUL LA GENERATOR ────────────────────────────
-  // Q_gen = Q_nd + Q_dist + Q_storage (energy in = demand + all losses)
+  // ─── 4. LEGIONELLA — supliment energetic tratament termic ─
+  // Q_legionella = DOAR energia tratamentelor termice periodice.
+  // Pierderile standby la T_set > 50°C sunt deja contabilizate în Q_storage_kWh.
+  const insulF = insulationClass === "A" ? 0.45 : insulationClass === "B" ? 0.70 : 1.00;
+  const legionella = calcLegionellaOverhead({
+    volume_L: vol_L,
+    T_set: tSup,
+    category,
+    hasTreatment: !!hasLegionella,
+    treatmentFreq: legionellaFreq || (hasLegionella ? "weekly" : "none"),
+    T_treatment: parseFloat(legionellaT) || 70,
+    insulFactor: insulF,
+  });
+  const Q_legionella_kWh = legionella.overhead_treatment_kWh || 0;
+
+  // ─── 5. AUXILIAR ELECTRIC — pompă recirculație ACM ─────────
+  // W_circ = w_specific × Q_flow_termic × circHours × 365 [kWh/an]
+  // Q_flow_termic ≈ Q_nd / (circHours × 365) × factor siguranță 1.3
+  let W_circ_pump_kWh = 0;
+  if (hasCirculation) {
+    const hoursPerDay = circHours_per_day != null
+      ? Math.max(0, Math.min(24, parseFloat(circHours_per_day)))
+      : 16; // default 16h/zi dacă nu e specificat
+    const w_spec = ACM_PUMP_W_SPECIFIC[circPumpType] || ACM_PUMP_W_SPECIFIC.standard;
+    const annualHours = hoursPerDay * 365;
+    // Debit echivalent termic [kW]: cerere totală medie pe orele de funcționare + marjă distribuție
+    const Q_flow_kW = annualHours > 0 ? (Q_nd_annual_kWh + Q_dist_kWh) / annualHours : 0;
+    W_circ_pump_kWh = w_spec * Q_flow_kW * annualHours;
+  }
+
+  // ─── 6. NECESARUL LA GENERATOR ────────────────────────────
+  // Q_gen = Q_nd + Q_dist + Q_storage + Q_legionella (energy in = demand + all losses)
   const solarF = solarFraction || 0;
-  const Q_gen_before_solar = Q_nd_annual_kWh + Q_dist_kWh + Q_storage_kWh;
+  const Q_gen_before_solar = Q_nd_annual_kWh + Q_dist_kWh + Q_storage_kWh + Q_legionella_kWh;
   const Q_solar_contribution = Q_gen_before_solar * solarF;
   const Q_gen_needed = Q_gen_before_solar * (1 - solarF);
 
-  // ─── 5. ENERGIE FINALĂ LA SURSĂ ───────────────────────────
+  // ─── 7. ENERGIE FINALĂ LA SURSĂ ───────────────────────────
   let Q_final_kWh, eta_gen;
   if (acmSource === "boiler_electric") {
     eta_gen = 0.95;
@@ -167,12 +223,13 @@ export function calcACMen15316(params) {
     Q_final_kWh = Q_gen_needed / eta_gen;
   }
 
-  // ─── 6. EFICIENȚĂ SISTEM ──────────────────────────────────
+  // ─── 8. EFICIENȚĂ SISTEM ──────────────────────────────────
   const eta_system = Q_nd_annual_kWh / Q_final_kWh; // eficiență globală
   const f_dist_actual = Q_dist_kWh / Q_gen_before_solar;
   const f_storage_actual = Q_storage_kWh / Q_gen_before_solar;
+  const f_legionella_actual = Q_gen_before_solar > 0 ? Q_legionella_kWh / Q_gen_before_solar : 0;
 
-  // ─── 7. RECOMANDĂRI ───────────────────────────────────────
+  // ─── 9. RECOMANDĂRI ───────────────────────────────────────
   const recommendations = [];
   if (f_dist_actual > 0.20) recommendations.push(`Pierderi distribuție ridicate (${Math.round(f_dist_actual*100)}%) — izolați conductele și eliminați circulația nocturnă.`);
   if (f_storage_actual > 0.15) recommendations.push(`Pierderi stocare ridicate (${Math.round(f_storage_actual*100)}%) — înlocuiți boilerul cu clasă energetică A sau reduceți volumul.`);
@@ -190,9 +247,17 @@ export function calcACMen15316(params) {
     // Pierderi
     Q_dist_kWh: Math.round(Q_dist_kWh),
     Q_storage_kWh: Math.round(Q_storage_kWh),
+    Q_legionella_kWh: Math.round(Q_legionella_kWh),
     f_dist_pct: Math.round(f_dist_actual * 100),
     f_storage_pct: Math.round(f_storage_actual * 100),
+    f_legionella_pct: Math.round(f_legionella_actual * 100),
     q_standby_kWh_day: Math.round(q_standby * 10) / 10,
+
+    // Auxiliar electric pompă circulație
+    W_circ_pump_kWh: Math.round(W_circ_pump_kWh),
+
+    // Legionella
+    legionella,
 
     // Solar
     solarFraction_pct: Math.round(solarF * 100),

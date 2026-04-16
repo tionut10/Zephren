@@ -142,10 +142,21 @@ export default function Step3Systems({
                 <div className="space-y-3">
                   <Select label={t("Sursa ACM",lang)} value={acm.source} onChange={v => setAcm(p=>({...p,source:v}))}
                     options={ACM_SOURCES.map(s=>({value:s.id,label:s.label}))} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select label={t("Nivel de consum",lang)} value={acm.consumptionLevel || "med"} onChange={v => setAcm(p=>({...p,consumptionLevel:v}))}
+                      options={[
+                        {value:"low",  label:t("Scăzut (utilizare redusă)")},
+                        {value:"med",  label:t("Mediu (uzual)")},
+                        {value:"high", label:t("Ridicat (utilizare intensivă)")},
+                      ]} />
+                    <Input label={t("Temperatură ACM setată",lang)} value={acm.tSupply} onChange={v => setAcm(p=>({...p,tSupply:v}))} type="number" unit="°C" min="40" max="70" step="1"
+                      tooltip="T_set boiler. Min 60°C obligatoriu pentru boilere >400L în clădiri publice (Ord. MS 1002/2015 — Legionella)" />
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Input label={t("Nr. consumatori echivalenți",lang)} value={acm.consumers} onChange={v => setAcm(p=>({...p,consumers:v}))} type="number"
                       placeholder={`auto: ${Math.max(1,Math.round((parseFloat(building.areaUseful)||100)/30))}`} min="1" />
-                    <Input label={t("Consum specific",lang)} value={acm.dailyLiters} onChange={v => setAcm(p=>({...p,dailyLiters:v}))} type="number" unit="l/pers/zi" />
+                    <Input label={t("Consum specific",lang)} value={acm.dailyLiters} onChange={v => setAcm(p=>({...p,dailyLiters:v}))} type="number" unit="l/pers/zi"
+                      tooltip="Mc 001 Tab.10 + GEx 009-013: rezidențial 45-80, birouri 5-12, spital 60-150 L/pat, hotel 70-150 L/cameră" />
                     <div className="bg-white/[0.02] rounded-lg p-3 flex flex-col justify-center">
                       <span className="text-[10px] opacity-40">{t("Necesar termic ACM")}</span>
                       <span className="text-sm font-mono font-medium text-amber-400">
@@ -156,21 +167,96 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              <Card title={t("Stocare și distribuție ACM",lang)}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input label={t("Volum vas stocare",lang)} value={acm.storageVolume} onChange={v => setAcm(p=>({...p,storageVolume:v}))} type="number" unit="litri" placeholder="0 = fără vas" />
-                  <Input label={t("Pierderi stocare",lang)} value={acm.storageLoss} onChange={v => setAcm(p=>({...p,storageLoss:v}))} type="number" unit="%" step="0.1" />
-                  <Input label={t("Lungime conducte distribuție",lang)} value={acm.pipeLength} onChange={v => setAcm(p=>({...p,pipeLength:v}))} type="number" unit="m" />
-                  <label className="flex items-center gap-2 text-sm cursor-pointer self-end pb-2">
-                    <input type="checkbox" checked={acm.pipeInsulated} onChange={e => setAcm(p=>({...p,pipeInsulated:e.target.checked}))} className="accent-amber-500" />
-                    {t("Conducte izolate termic")}
-                  </label>
+              <Card title={t("Stocare ACM",lang)}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Input label={t("Volum vas stocare",lang)} value={acm.storageVolume} onChange={v => setAcm(p=>({...p,storageVolume:v}))} type="number" unit="litri" placeholder="0 = fără vas"
+                    tooltip="Volum boiler acumulator. 0 pentru sisteme instant (combi, schimb placi)" />
+                  <Select label={t("Clasa energetică boiler",lang)} value={acm.insulationClass || "B"} onChange={v => setAcm(p=>({...p,insulationClass:v}))}
+                    options={[
+                      {value:"A", label:t("Clasa A — premium (−55% pierderi)")},
+                      {value:"B", label:t("Clasa B — standard")},
+                      {value:"C", label:t("Clasa C — slab izolat")},
+                    ]}
+                    tooltip="ErP Reg. 812/2013 (etichetare ACM). Clasa A: izolație PU rigid 50mm+ (q_standby ~1.3 kWh/24h pentru 200L)" />
+                  <Input label={t("Pierderi stocare",lang)} value={acm.storageLoss} onChange={v => setAcm(p=>({...p,storageLoss:v}))} type="number" unit="%" step="0.1"
+                    tooltip="Fracție pierderi stocare (0-25%). Lăsați gol pentru calcul automat EN 50440 bazat pe volum + clasă" />
+                </div>
+              </Card>
+
+              <Card title={t("Protecție anti-Legionella (HG 1425/2006 + Ord. MS 1002/2015)",lang)}>
+                <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={!!acm.hasLegionella} onChange={e => setAcm(p=>({...p,hasLegionella:e.target.checked}))} className="accent-amber-500" />
+                    <span className="font-medium">{t("Tratament termic periodic activ")}</span>
+                    <span className="text-[10px] opacity-40">(supliment energetic 3-5%/an)</span>
+                  </label>
+                  {acm.hasLegionella && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Select label={t("Frecvență tratament",lang)} value={acm.legionellaFreq || "weekly"} onChange={v => setAcm(p=>({...p,legionellaFreq:v}))}
+                        options={[
+                          {value:"weekly", label:t("Săptămânal (VDI 6023 standard)")},
+                          {value:"daily",  label:t("Zilnic (risc ridicat)")},
+                        ]} />
+                      <Input label={t("Temperatură șoc termic",lang)} value={acm.legionellaT || "70"} onChange={v => setAcm(p=>({...p,legionellaT:v}))} type="number" unit="°C" min="60" max="80" step="1"
+                        tooltip="Minim 70°C timp de 3 min pentru distrugere Legionella" />
+                    </div>
+                  )}
+                  {/* Banner avertizare — clădire risc ridicat, fără măsuri */}
+                  {instSummary?.acmDetailed?.legionella?.warnings?.length > 0 && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs">
+                      <div className="font-medium text-red-400 mb-1">⚠ Risc Legionella detectat</div>
+                      {instSummary.acmDetailed.legionella.warnings.map((w, i) => (
+                        <div key={i} className="text-red-300/80 leading-relaxed">• {w}</div>
+                      ))}
+                    </div>
+                  )}
+                  {instSummary?.acmDetailed?.legionella?.recommendations?.length > 0 && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs">
+                      <div className="font-medium text-amber-400 mb-1">💡 Recomandări</div>
+                      {instSummary.acmDetailed.legionella.recommendations.map((r, i) => (
+                        <div key={i} className="text-amber-300/80 leading-relaxed">• {r}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card title={t("Distribuție ACM",lang)}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input label={t("Lungime conducte distribuție",lang)} value={acm.pipeLength} onChange={v => setAcm(p=>({...p,pipeLength:v}))} type="number" unit="m"
+                    tooltip="Lungime totală rețea ACM (tur + retur pentru recirculare). Estimare: 5-8m apartament, 20-40m casă, 40-100m bloc" />
+                  <Input label={t("Diametru conducte",lang)} value={acm.pipeDiameter || "22"} onChange={v => setAcm(p=>({...p,pipeDiameter:v}))} type="number" unit="mm" min="10" max="100" step="1"
+                    tooltip="Diametru nominal (DN) — tipic 22mm residential, 28-35mm bloc, 42mm+ centralizat" />
+                  <Select label={t("Izolație conducte",lang)} value={acm.pipeInsulationThickness || "20mm"} onChange={v => setAcm(p=>({
+                    ...p,
+                    pipeInsulationThickness:v,
+                    pipeInsulated: v !== "fara",
+                  }))}
+                    options={[
+                      {value:"fara",  label:t("Fără izolație (pierderi maxime)")},
+                      {value:"20mm", label:t("20 mm standard")},
+                      {value:"30mm", label:t("30 mm îmbunătățit")},
+                      {value:"50mm", label:t("50 mm+ superior (low-loss)")},
+                    ]}
+                    tooltip="Grosime izolație λ=0.035 W/(m·K). EN 15316-3 Tab.7" />
+                  <label className="flex items-center gap-2 text-sm cursor-pointer self-end pb-2">
                     <input type="checkbox" checked={acm.circRecirculation} onChange={e => setAcm(p=>({...p,circRecirculation:e.target.checked}))} className="accent-amber-500" />
                     {t("Circuit de recirculare")}
+                    <span className="text-[10px] opacity-30 ml-1">(pierderi +8-15%)</span>
                   </label>
                   {acm.circRecirculation && (
-                    <Input label={t("Ore funcționare recirculare/zi",lang)} value={acm.circHours} onChange={v => setAcm(p=>({...p,circHours:v}))} type="number" unit="h/zi" />
+                    <>
+                      <Input label={t("Ore funcționare recirculare/zi",lang)} value={acm.circHours} onChange={v => setAcm(p=>({...p,circHours:v}))} type="number" unit="h/zi" min="0" max="24"
+                        placeholder="24 = permanent, 16 = programat" />
+                      <Select label={t("Tip pompă circulație",lang)} value={acm.circPumpType || "standard"} onChange={v => setAcm(p=>({...p,circPumpType:v}))}
+                        options={[
+                          {value:"veche_neregulata", label:t("Veche, neregulată (IEE E)")},
+                          {value:"standard",         label:t("Standard (IEE D-C)")},
+                          {value:"variabila",        label:t("Cu turație variabilă (IEE B)")},
+                          {value:"iee_sub_023",      label:t("IEE A+ (<0.23, max eficiență)")},
+                        ]}
+                        tooltip="EN 15316-3 Tab.10 + Reg. UE 641/2009 (ecodesign pompe)" />
+                    </>
                   )}
                 </div>
               </Card>

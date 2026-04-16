@@ -31,7 +31,6 @@ import { calcSmartRehab, getNzebEpMax } from "./calc/smart-rehab.js";
 import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG, EV_CHARGER_RULES, calcEVChargers, checkSolarReady } from "./calc/epbd.js";
 import { calcAirInfiltration, calcNaturalLighting } from "./calc/infiltration.js";
 import { calcGroundHeatTransfer } from "./calc/ground.js";
-import { calcACMen15316 } from "./calc/acm-en15316.js";
 import { checkC107Conformity } from "./calc/c107.js";
 
 // ── Extracted data modules (Sprint 3 → Faza 4 finalizare) ──
@@ -1361,39 +1360,11 @@ export default function EnergyCalcApp({ cloud }) {
 
   // [Moved to useEnvelopeSummary hook — Sprint 4 refactoring]
 
-  // ─── ACM EN 15316 detaliat ───────────────────────────────────────────────────
-  const acmDetailed = useMemo(() => {
-    if (!instSummary) return null;
-    const Au = parseFloat(building.areaUseful) || 0;
-    if (!Au) return null;
-    const nConsumers = instSummary.nConsumers || Math.max(1, Math.round(Au / 30));
-    const zone = selectedClimate?.zone || "III";
-    const acmSourceMap = {
-      CAZAN_H: "ct_gaz", CAZAN_GPL: "ct_gaz", CAZAN_LEMNE: "ct_gaz",
-      BOILER_ELECTRIC: "boiler_electric", TERMOFICARE: "termoficare",
-      POMPA_CALDURA_ACM: "pc",
-    };
-    const acmSrc = acmSourceMap[acm.source] || "ct_gaz";
-    const etaGen = parseFloat(acm.etaAcm) || (acm.source === "CAZAN_H" ? parseFloat(heating.eta_gen) : null) || 0.87;
-    const solarFr = instSummary.qf_w > 0 && instSummary.qACM_nd > 0
-      ? Math.max(0, 1 - (instSummary.qf_w * etaGen) / instSummary.qACM_nd)
-      : 0;
-    return calcACMen15316({
-      category: building.category,
-      nPersons: nConsumers,
-      consumptionLevel: "med",
-      tSupply: 55,
-      climateZone: zone,
-      climate: selectedClimate,
-      hasPipeInsulation: acm.pipeInsulated !== false,
-      hasCirculation: !!acm.circRecirculation,
-      insulationClass: "B",
-      storageVolume_L: parseFloat(acm.storageVolume) || null,
-      acmSource: acmSrc,
-      etaGenerator: etaGen,
-      solarFraction: solarFr,
-    });
-  }, [instSummary, building.areaUseful, building.category, acm, heating.eta_gen, selectedClimate]);
+  // ─── ACM EN 15316 detaliat — passthrough din instSummary (sursă unică) ──────
+  // Elimină recalculul duplicat cu logica circulară solarFr (pre-Sprint 1 ACM).
+  // Hook-ul useInstallationSummary apelează deja calcACMen15316 cu toți parametrii
+  // UI — aici doar expunem rezultatul pentru consumatorii downstream (Step8, raport).
+  const acmDetailed = instSummary?.acmDetailed || null;
 
   // BENCHMARKS → importat din data/benchmarks.js
 
