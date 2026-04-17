@@ -9,6 +9,9 @@
  * Principiu: aerul exterior nocturn (mai rece) ventilează clădirea
  * și elimină căldura stocată în masa termică, reducând necesarul
  * de răcire mecanică.
+ *
+ * @roadmap Sprint 2 Ventilație (AUDIT_10 §8.2 #9) — integrare în motor răcire
+ * @status ORPHAN — momentan apelat doar din teste; integrare planificată post-Sprint 1
  */
 
 // ── Constante fizice și de confort ──────────────────────────────

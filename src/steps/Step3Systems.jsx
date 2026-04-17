@@ -302,7 +302,28 @@ export default function Step3Systems({
           )}
 
           {/* ── VENTILARE ── */}
-          {instSubTab === "ventilation" && (
+          {instSubTab === "ventilation" && (() => {
+            // Validări input ventilație — Sprint 1 fix (17 apr 2026)
+            // Conform Mc 001-2022 Partea III + EN 16798-3 + EN 308
+            const ventErrors = [];
+            const airflowNum = parseFloat(ventilation.airflow);
+            const fanPowerNum = parseFloat(ventilation.fanPower);
+            const hrNum = parseFloat(ventilation.hrEfficiency);
+            const hoursNum = parseFloat(ventilation.operatingHours);
+            if (ventilation.airflow && (airflowNum <= 0 || airflowNum > 100000)) {
+              ventErrors.push("Debit aer: trebuie în intervalul 0 – 100 000 m³/h (EN 16798-3).");
+            }
+            if (ventilation.fanPower && (fanPowerNum < 0 || fanPowerNum > 50000)) {
+              ventErrors.push("Putere ventilator: trebuie între 0 și 50 000 W (sanity check).");
+            }
+            if (ventilation.hrEfficiency && (hrNum < 0 || hrNum > 95)) {
+              ventErrors.push("Randament recuperare: trebuie între 0 și 95 % (EN 308 — limită fizică realistă).");
+            }
+            if (ventilation.operatingHours && (hoursNum < 0 || hoursNum > 8760)) {
+              ventErrors.push("Ore funcționare: trebuie între 0 și 8760 h/an (= 365 zile × 24 h).");
+            }
+            const hasErrors = ventErrors.length > 0;
+            return (
             <>
               <Card title={t("Sistem de ventilare",lang)}>
                 <div className="space-y-3">
@@ -312,16 +333,33 @@ export default function Step3Systems({
                   }} options={VENTILATION_TYPES.map(s=>({value:s.id,label:s.label}))} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Debit aer proaspăt",lang)} value={ventilation.airflow} onChange={v => setVentilation(p=>({...p,airflow:v}))} type="number" unit="m3/h"
-                      placeholder={`auto: ${((parseFloat(building.volume)||100)*0.5).toFixed(0)}`} />
+                      min="0" max="100000" step="1"
+                      placeholder={`auto: ${((parseFloat(building.volume)||100)*0.5).toFixed(0)}`}
+                      tooltip="Interval valid: 0 – 100 000 m³/h. EN 16798-3 — debit aer proaspăt conform categoriei IDA." />
                     <Input label={t("Putere ventilator",lang)} value={ventilation.fanPower} onChange={v => setVentilation(p=>({...p,fanPower:v}))} type="number" unit="W"
-                      disabled={ventilation.type==="NAT"} />
+                      min="0" max="50000" step="1"
+                      disabled={ventilation.type==="NAT"}
+                      tooltip="Putere electrică nominală ventilator (W). Când e completat, are prioritate față de SFP din catalog." />
                     <Input label={t("Ore funcționare/an",lang)} value={ventilation.operatingHours} onChange={v => setVentilation(p=>({...p,operatingHours:v}))} type="number" unit="h/an"
-                      placeholder={`auto: ${((selectedClimate?.season||190)*16)}`}
-                      disabled={ventilation.type==="NAT"} />
+                      min="0" max="8760" step="1"
+                      placeholder={`auto: 8760 (funcționare continuă)`}
+                      disabled={ventilation.type==="NAT"}
+                      tooltip="Ore funcționare efectivă ventilator. Maxim 8760 h/an. Default Mc 001: funcționare continuă pentru CMV." />
                     {VENTILATION_TYPES.find(t=>t.id===ventilation.type)?.hasHR && (
-                      <Input label={t("Randament recuperare",lang)} value={ventilation.hrEfficiency} onChange={v => setVentilation(p=>({...p,hrEfficiency:v}))} type="number" unit="%" step="1" />
+                      <Input label={t("Randament recuperare",lang)} value={ventilation.hrEfficiency} onChange={v => setVentilation(p=>({...p,hrEfficiency:v}))} type="number" unit="%" step="1"
+                        min="0" max="95"
+                        tooltip="Randament schimbător de căldură. Interval valid: 0 – 95 % (EN 308). Passivhaus ≥ 75 %." />
                     )}
                   </div>
+
+                  {hasErrors && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs space-y-1">
+                      <div className="font-medium text-red-400 mb-1">⚠ Valori în afara intervalului admis</div>
+                      {ventErrors.map((e, i) => (
+                        <div key={i} className="text-red-300/80 leading-relaxed">• {e}</div>
+                      ))}
+                    </div>
+                  )}
 
                   {ventilation.type === "NAT" && (
                     <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-4">
@@ -332,7 +370,8 @@ export default function Step3Systems({
                 </div>
               </Card>
             </>
-          )}
+            );
+          })()}
 
           {/* ── ILUMINAT ── */}
           {instSubTab === "lighting" && (

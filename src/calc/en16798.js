@@ -3,6 +3,10 @@
 // Module: calcul calitate aer interior, categorii confort, debite ventilare.
 // Referință: EN 16798-1:2019 Annex B, tabelele B.1, B.2, B.3, B.4, B.5, B.6
 // Transpunere naționala: standard român SR EN 16798-1:2020
+//
+// @roadmap Sprint 2 Ventilație (AUDIT_10 §8.2 #7,#8): integrare IDA categories în UI Step3
+// @status ORPHAN (parțial) — momentan folosit în teste + Step8Advanced; auto-completare debit
+//         pe baza categoriei IDA urmează în Sprint 2
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**

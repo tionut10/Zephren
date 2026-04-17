@@ -133,6 +133,8 @@ export function calcVentilationFlow(params) {
 
 // ═══════════════════════════════════════════════════════════════
 // TVOC — Compuși Organici Volatili Totali (SR EN 16798-1 Annex B3)
+// @roadmap Sprint 3 Ventilație (AUDIT_10 §8.2 #10) — card TVOC în UI Step3
+// @status ORPHAN — momentan nu e apelat din niciun UI
 // ═══════════════════════════════════════════════════════════════
 
 // Limite TVOC per categorie IEQ [µg/m³] — EN 16798-1 Tabel B.7

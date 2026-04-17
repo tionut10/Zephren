@@ -152,14 +152,32 @@ export function useInstallationSummary({
     const qf_c = hasCool && eer > 0 ? qC_nd / eer : 0;
     const coolFuel = coolSys ? FUELS.find(f => f.id === coolSys.fuel) : null;
 
-    // ── VENTILARE ──
+    // ── VENTILARE — EN 16798-3 / Mc 001-2022 Partea III ──
+    // SFP în VENTILATION_TYPES e în kW/(m³/s): P_fan [W] = sfp × (m³/s) × 1000
+    // Fix Sprint 1 (17 apr 2026): elimin `/1000` eronat care subestima qf_v cu factor 1000×
     const ventType = VENTILATION_TYPES.find(t => t.id === ventilation.type);
-    const airflow = parseFloat(ventilation.airflow) || (V * 0.5);
-    const sfp = ventType?.sfp || 0;
-    const ventHours = parseFloat(ventilation.operatingHours) || (selectedClimate?.season || 190) * 16;
-    const qf_v = (sfp * (airflow / 3600) * ventHours) / 1000;
+    const airflowRaw = parseFloat(ventilation.airflow);
+    // Clamp airflow: respinge negative/NaN; aplică fallback igienic 0.5 h⁻¹ × V (Mc 001 min locuințe)
+    const airflow = (isFinite(airflowRaw) && airflowRaw > 0) ? airflowRaw : (V * 0.5); // m³/h
+    const sfp = ventType?.sfp || 0;   // kW/(m³/s)
+    // Default ventHours: 8760 h/an pentru sisteme mecanice (funcționare continuă);
+    // doar ventilația naturală depinde de sezonul de încălzire
+    const isNat = ventilation.type === "NAT" || sfp === 0;
+    const ventHoursRaw = parseFloat(ventilation.operatingHours);
+    const ventHours = (isFinite(ventHoursRaw) && ventHoursRaw >= 0 && ventHoursRaw <= 8760)
+      ? ventHoursRaw
+      : (isNat ? 0 : 8760);
+    // Sursa de adevăr pentru P_fan: fanPower (W) din UI dacă e valid, altfel derivat din SFP × debit
+    const fanPowerRaw = parseFloat(ventilation.fanPower);
+    const P_fan_W = (isFinite(fanPowerRaw) && fanPowerRaw > 0)
+      ? fanPowerRaw
+      : sfp * (airflow / 3600) * 1000; // kW/(m³/s) × m³/s × 1000 = W
+    const qf_v = P_fan_W * ventHours / 1000; // W × h / 1000 = kWh/an
+    // η_rec clamped la [0, 0.95] — recuperator real nu depășește 95% (EN 308 / Passivhaus)
+    const hrRaw = ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : null;
+    const hrClamped = (hrRaw !== null && isFinite(hrRaw)) ? Math.max(0, Math.min(0.95, hrRaw)) : null;
     const hrEta = ventType?.hasHR
-      ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : ventType.hrEta || 0)
+      ? (hrClamped !== null ? hrClamped : ventType.hrEta || 0)
       : 0;
 
     // ── ILUMINAT (LENI) — EN 15193-1 ──

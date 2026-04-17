@@ -38,7 +38,7 @@ export function calcFrostProtectionThreshold(theta_int, eta_hr) {
  * @param {number} params.V — volum [m³]
  * @param {number} params.n_vent — rata schimb aer ventilare [h⁻¹]
  * @param {number} params.eta_hr — eficiență recuperare termică [0–1]
- * @param {number} params.sfp — Specific Fan Power [W/(m³/s)]
+ * @param {number} params.sfp — Specific Fan Power [kW/(m³/s)] (formă stocată în VENTILATION_TYPES)
  * @param {number} params.theta_int — temperatură interioară [°C]
  * @param {number} params.theta_e_mean — temperatură medie anuală [°C]
  * @param {number} params.HDD — grade-zile încălzire [°C·zile]
@@ -52,7 +52,7 @@ export function calcVMCHR({
   V = 250,
   n_vent = 0.5,
   eta_hr = 0,
-  sfp = 1.0,           // W/(m³/h) — conform VENTILATION_TYPES
+  sfp = 1.0,           // kW/(m³/s) — conform VENTILATION_TYPES (Fix Sprint 1: era eronat W/(m³/h))
   theta_int = 20,
   theta_e_mean = 10,   // temp medie anuală
   HDD = 2800,          // grade-zile încălzire
@@ -85,15 +85,15 @@ export function calcVMCHR({
   const E_saved_primary_kWh = E_saved_thermal_kWh * fp_heating;
 
   // ── Energie electrică ventilator ──
-  // E_fan = SFP [W/(m³/h)] * q [m³/h] * t_op [h] / 1e6 → MWh... mai bine:
-  // SFP din VENTILATION_TYPES e în W/(m³/h), deci:
-  // P_fan [W] = SFP_W_m3h × q_m3h
+  // SFP din VENTILATION_TYPES e în kW/(m³/s), deci:
+  // P_fan [W] = SFP [kW/(m³/s)] × q [m³/s] × 1000
   // E_fan [kWh] = P_fan × t_op / 1000
-  const P_fan_W = sfp * q_vent_m3h;
+  // Fix Sprint 1 (17 apr 2026): corectat din supoziția eronată W/(m³/h)
+  const P_fan_W = sfp * q_vent_m3s * 1000;
   const E_fan_kWh = P_fan_W * t_op_h / 1000;
 
-  // Energie fan ref naturală (fără ventilator, sau extracție simplă)
-  const P_fan_ref_W = 0.10 * q_vent_m3h; // extracție simplă ~0.10 W/(m³/h)
+  // Energie fan ref naturală (fără ventilator, sau extracție simplă SFP ≈ 0.36 kW/(m³/s))
+  const P_fan_ref_W = 0.36 * q_vent_m3s * 1000; // extracție simplă ~360 W/(m³/s)
   const E_fan_ref_kWh = P_fan_ref_W * t_op_h / 1000;
   const E_fan_extra_kWh = Math.max(0, E_fan_kWh - E_fan_ref_kWh);
 
@@ -104,8 +104,8 @@ export function calcVMCHR({
   const E_saved_per_m2 = Au > 0 ? Math.round(E_saved_thermal_kWh / Au * 10) / 10 : 0;
   const E_net_per_m2 = Au > 0 ? Math.round(E_net_primary_kWh / Au * 10) / 10 : 0;
 
-  // ── SFP în W/(m³/s) pentru clasificare ──
-  const sfp_W_m3s = q_vent_m3s > 0 ? P_fan_W / q_vent_m3s : sfp * 3600;
+  // ── SFP în W/(m³/s) pentru clasificare (conversie din kW/(m³/s)) ──
+  const sfp_W_m3s = q_vent_m3s > 0 ? P_fan_W / q_vent_m3s : sfp * 1000;
   const sfpClass = getSFPClass(sfp_W_m3s);
 
   // ── Temperatura minimă fără îngheț ──

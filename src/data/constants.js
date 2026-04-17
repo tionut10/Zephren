@@ -286,7 +286,9 @@ export const COOLING_SYSTEMS = [
 ];
 
 // Tipuri ventilare conform I5-2022 (Ord. MDLPA 2023) + Mc 001-2022 Cap. 3 + EN 13779
-// SFP conform EN 13779 Tabel B.5 + I5-2022 Tabel 6.1 (W/(m³/s))
+// SFP stocat în kW/(m³/s) — echivalent cu Wh/m³ — conform SR EN 13779 Tab.B.5 + I5-2022 Tab.6.1
+// Exemplu: sfp=1.40 kW/(m³/s) = 1400 W/(m³/s) ≈ SFP4 pentru recuperator 80%
+// P_fan [W] = sfp × (debit [m³/h] / 3600) × 1000
 // hrEta = eficiența recuperare termică sensibilă (fracție 0–1) conform EN 308
 export const VENTILATION_TYPES = [
   // ── NATURALĂ ──────────────────────────────────────────────────────────────
