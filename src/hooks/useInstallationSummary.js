@@ -11,6 +11,9 @@ import { calcSolarACMDetailed } from "../calc/solar-acm-detailed.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 import { calcNightVentilation } from "../calc/night-ventilation.js";
+// Sprint 5 (17 apr 2026) — migrare EN 15232 → SR EN ISO 52120-1:2022
+// Aplicare f_BAC pe qf_X raw înainte de totalizare (AUDIT_13 P4 — Q_final)
+import { applyBACSFactor, getBACSFactors, getBACSCategoryFromCode } from "../calc/bacs-iso52120.js";
 
 // Mapare categorie clădire → tip câștiguri interne CIBSE (cooling-hourly.js)
 // Sprint 3a (17 apr 2026) — pentru integrarea motorului orar
@@ -80,6 +83,10 @@ export function useInstallationSummary({
   selectedClimate,
   solarThermal,
   useNA2023,
+  // Sprint 5 (17 apr 2026) — Clasa BACS conform ISO 52120-1:2022.
+  // Default "C" = referință (factor 1.00 pe toate sistemele, impact zero).
+  // Valori valide: "A" | "B" | "C" | "D". Alte valori → fallback C.
+  bacsClass = "C",
 }) {
   return useMemo(() => {
     const Au = parseFloat(building.areaUseful) || 0;
@@ -224,7 +231,8 @@ export function useInstallationSummary({
     });
 
     const qACM_nd = acmDetailed?.Q_nd_annual_kWh || 0;
-    const qf_w = acmDetailed?.Q_final_kWh || 0;
+    // Sprint 5: `let` pentru a permite reatribuire după aplicarea f_BAC (ISO 52120)
+    let qf_w = acmDetailed?.Q_final_kWh || 0;
     const acmFuel = isCazanH
       ? fuel
       : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
@@ -363,7 +371,8 @@ export function useInstallationSummary({
     const qf_c_aux_total = qf_c_aux_pumps + qf_c_aux_fans;
 
     // Total energie finală răcire = compresor + auxiliare
-    const qf_c = qf_c_compressor + qf_c_aux_total;
+    // Sprint 5: `let` pentru a permite reatribuire după f_BAC (ISO 52120)
+    let qf_c = qf_c_compressor + qf_c_aux_total;
     const coolFuel = coolSys ? FUELS.find(f => f.id === coolSys.fuel) : null;
 
     // ── VENTILARE — EN 16798-3 / Mc 001-2022 Partea III ──
@@ -386,7 +395,8 @@ export function useInstallationSummary({
     const P_fan_W = (isFinite(fanPowerRaw) && fanPowerRaw > 0)
       ? fanPowerRaw
       : sfp * (airflow / 3600) * 1000; // kW/(m³/s) × m³/s × 1000 = W
-    const qf_v = P_fan_W * ventHours / 1000; // W × h / 1000 = kWh/an
+    // Sprint 5: `let` pentru a permite reatribuire după f_BAC (ISO 52120)
+    let qf_v = P_fan_W * ventHours / 1000; // W × h / 1000 = kWh/an
     // η_rec clamped la [0, 0.95] — recuperator real nu depășește 95% (EN 308 / Passivhaus)
     const hrRaw = ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : null;
     const hrClamped = (hrRaw !== null && isFinite(hrRaw)) ? Math.max(0, Math.min(0.95, hrRaw)) : null;
@@ -417,7 +427,8 @@ export function useInstallationSummary({
       pStandby: (isFinite(pStbRaw) && pStbRaw >= 0 && pStbRaw <= 2) ? pStbRaw : undefined,
     });
     const leni = leniResult.LENI;
-    const qf_l = leniResult.qf_l;
+    // Sprint 5: `let` pentru a permite reatribuire după f_BAC (ISO 52120)
+    let qf_l = leniResult.qf_l;
     const leniMax = leniResult.LENI_max;
     const leniStatus = leniResult.status;
     const W_L = leniResult.W_L;
@@ -428,7 +439,38 @@ export function useInstallationSummary({
     // ── Auxiliar electric pompă circulație ACM (Sprint 3) ──
     const W_aux_acm_kWh = acmDetailed?.W_circ_pump_kWh || 0;
 
-    // ── TOTAL ENERGIE FINALĂ ──
+    // ── Sprint 5 (17 apr 2026) — APLICARE f_BAC conform SR EN ISO 52120-1:2022 ──
+    // AUDIT_13 §4.3 P4 CRITIC: până acum clasa BACS A/B/C/D producea IDENTIC
+    // același EP în motorul principal. Aplicăm acum factorii f_BAC pe qf_X raw
+    // înainte de totalizare și calcul energie primară.
+    //
+    // Formula ISO 52120-1:2022 §5.2:
+    //   Q_corr = Q_raw × f_BAC(categorie, clasă, utilizare)
+    // unde utilizare ∈ {heating, cooling, dhw, ventilation, lighting}.
+    //
+    // Ordinea aplicării: după randamente (qf_h = Q_need/η_total) — echivalent
+    // matematic cu aplicarea pe Q_need (scalar × scalar).
+    const bacsCat = getBACSCategoryFromCode(building.category);
+    const bacsFactors = getBACSFactors(bacsCat, bacsClass);
+
+    // Salvăm valorile raw pentru breakdown UI + rapoarte
+    const qf_h_raw = qf_h;
+    const qf_w_raw = qf_w;
+    const qf_c_raw = qf_c;
+    const qf_v_raw = qf_v;
+    const qf_l_raw = qf_l;
+
+    // Reatribuim la valorile BACS-corectate
+    qf_h = applyBACSFactor(qf_h_raw, "heating", bacsCat, bacsClass);
+    qf_w = applyBACSFactor(qf_w_raw, "dhw", bacsCat, bacsClass);
+    qf_c = applyBACSFactor(qf_c_raw, "cooling", bacsCat, bacsClass);
+    qf_v = applyBACSFactor(qf_v_raw, "ventilation", bacsCat, bacsClass);
+    qf_l = applyBACSFactor(qf_l_raw, "lighting", bacsCat, bacsClass);
+
+    const qf_bacs_savings_total = (qf_h_raw + qf_w_raw + qf_c_raw + qf_v_raw + qf_l_raw)
+      - (qf_h + qf_w + qf_c + qf_v + qf_l);
+
+    // ── TOTAL ENERGIE FINALĂ (cu f_BAC aplicat) ──
     const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l + W_aux_acm_kWh;
     const qf_total_m2 = Au > 0 ? qf_total / Au : 0;
 
@@ -540,11 +582,41 @@ export function useInstallationSummary({
         detail: solarDetail,              // rezultat calcSolarACMDetailed (null dacă fallback)
         appliesToACM: stAppliesToACM,
       },
+      // Sprint 5 — breakdown BACS (SR EN ISO 52120-1:2022)
+      bacs: {
+        class: bacsClass,
+        category: bacsCat,
+        factors: bacsFactors,
+        raw: {
+          qf_h: qf_h_raw,
+          qf_w: qf_w_raw,
+          qf_c: qf_c_raw,
+          qf_v: qf_v_raw,
+          qf_l: qf_l_raw,
+          total: qf_h_raw + qf_w_raw + qf_c_raw + qf_v_raw + qf_l_raw,
+        },
+        corrected: {
+          qf_h, qf_w, qf_c, qf_v, qf_l,
+          total: qf_h + qf_w + qf_c + qf_v + qf_l,
+        },
+        savings: {
+          heating: qf_h_raw - qf_h,
+          dhw: qf_w_raw - qf_w,
+          cooling: qf_c_raw - qf_c,
+          ventilation: qf_v_raw - qf_v,
+          lighting: qf_l_raw - qf_l,
+          total: qf_bacs_savings_total,
+          totalPct: (qf_h_raw + qf_w_raw + qf_c_raw + qf_v_raw + qf_l_raw) > 0
+            ? Math.round(qf_bacs_savings_total / (qf_h_raw + qf_w_raw + qf_c_raw + qf_v_raw + qf_l_raw) * 1000) / 10
+            : 0,
+        },
+        reference: "SR EN ISO 52120-1:2022 §5.2 + Anexa B",
+      },
     };
   }, [
     building.areaUseful, building.volume, building.category,
     envelopeSummary, selectedClimate,
     heating, acm, cooling, ventilation, lighting, monthlyISO, useNA2023,
-    solarThermal,
+    solarThermal, bacsClass,
   ]);
 }

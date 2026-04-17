@@ -5,7 +5,9 @@ import {
   SRI_CLASS_LABELS,
   calculateSRI,
   getDefaultSelections,
+  checkSRIMandatory,
 } from "../calc/sri-indicator.js";
+import { sriScoreToBACSClass, sriScoreLevel, ISO_52120_REFERENCE } from "../calc/bacs-iso52120.js";
 
 const CLASS_RING = {
   A: "ring-emerald-500/50 text-emerald-400",
@@ -23,15 +25,26 @@ const SCORE_BAR_COLOR = (score) => {
   return "bg-red-500";
 };
 
-export default function SRICalculator({ onResult }) {
+export default function SRICalculator({ onResult, category, hvacPower }) {
   const [selections, setSelections] = useState(getDefaultSelections);
   const [expandedDomain, setExpandedDomain] = useState(null);
 
   const result = useMemo(() => {
     const r = calculateSRI(selections);
+    // Mapare automată scor SRI → clasa BACS recomandată (ISO 52120-1:2022 §7.3)
+    r.bacsRecommended = sriScoreToBACSClass(r.total);
+    r.sriLevel = sriScoreLevel(r.total);
     onResult?.(r);
     return r;
   }, [selections, onResult]);
+
+  // Verificare obligativitate SRI — EPBD 2024/1275 Art. 15 (corectat: NU Art. 13)
+  const mandatoryCheck = useMemo(
+    () => (category && hvacPower != null
+      ? checkSRIMandatory({ category, hvacPower })
+      : null),
+    [category, hvacPower]
+  );
 
   function handleSelect(serviceId, levelIdx) {
     setSelections(prev => ({ ...prev, [serviceId]: levelIdx }));
@@ -44,6 +57,24 @@ export default function SRICalculator({ onResult }) {
       <h3 className="text-sm font-semibold text-amber-300 uppercase tracking-wider">
         Smart Readiness Indicator (SRI) — Regulament UE 2020/2155
       </h3>
+
+      {/* Avertizare obligativitate EPBD Art. 15 */}
+      {mandatoryCheck && mandatoryCheck.mandatory && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-200">
+          <div className="font-semibold mb-1">⚠️ SRI obligatoriu — {mandatoryCheck.epbd_ref || "EPBD 2024/1275 Art. 15"}</div>
+          <div className="text-xs text-red-200/80">{mandatoryCheck.reason}</div>
+          {mandatoryCheck.deadline && (
+            <div className="text-xs text-red-300 mt-1">Termen: <strong>{mandatoryCheck.deadline}</strong></div>
+          )}
+        </div>
+      )}
+      {mandatoryCheck && !mandatoryCheck.mandatory && mandatoryCheck.deadline && (
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-amber-200/80">
+          <div className="font-semibold">ℹ️ SRI va deveni obligatoriu</div>
+          <div>{mandatoryCheck.reason}</div>
+          <div className="text-amber-300/70 mt-1">Termen: {mandatoryCheck.deadline}</div>
+        </div>
+      )}
 
       {/* Scor global + Clasă */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -82,9 +113,17 @@ export default function SRICalculator({ onResult }) {
         </div>
       </div>
 
-      {/* Recomandare */}
-      <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3 text-sm text-amber-200/80">
-        {result.recommendation}
+      {/* Recomandare + Mapare BACS */}
+      <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3 text-sm text-amber-200/80 space-y-2">
+        <div>{result.recommendation}</div>
+        <div className="pt-2 border-t border-amber-500/10 text-xs flex flex-wrap items-center gap-3">
+          <span className="text-white/40">Clasa BACS echivalentă (ISO 52120-1:2022 §7.3):</span>
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 font-mono font-bold text-amber-100">
+            {result.sriLevel?.bacs || "—"}
+          </span>
+          <span className="text-white/50">{result.sriLevel?.level}</span>
+          <span className="text-white/30">· {result.sriLevel?.desc}</span>
+        </div>
       </div>
 
       {/* Evaluare per domeniu */}
@@ -162,8 +201,9 @@ export default function SRICalculator({ onResult }) {
       </div>
 
       <p className="text-xs text-white/20 text-right">
-        SRI conform Regulamentul delegat (UE) 2020/2155 · Metoda B (simplificată) · 9 domenii, 16 servicii ·
-        EPBD 2024/1275 Art.13 — obligatoriu nerezidențiale &gt;290 kW
+        SRI conform Regulamentul delegat (UE) 2020/2155 · Metoda B (simplificată) · 9 domenii, ~42 servicii ·
+        EPBD 2024/1275 <strong>Art. 15</strong> — obligatoriu nerezidențiale &gt;290 kW HVAC din 30.06.2027 ·
+        Factori f_BAC: {ISO_52120_REFERENCE}
       </p>
     </div>
   );

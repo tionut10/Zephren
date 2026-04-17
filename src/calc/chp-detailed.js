@@ -7,11 +7,18 @@
  * - SR EN ISO 52000-1:2017 — Factori de energie primară
  * - Mc 001-2022 — Metodologia de calcul certificare energetică (România)
  *
+ * Sprint 6 (17 apr 2026): aliniere constante cu FUELS (constants.js) și FP_ELEC (u-reference.js)
+ *   - FP_ELEC_GRID: 2.50 → 2.62 (Mc 001-2022 valoare oficială)
+ *   - CHP_FUEL_FACTORS: derivate din FUELS (gaz=1.17/0.202, biogaz=0.00+1.00/0.025, hidrogen=0.00+1.00/0.000, motorina=1.10/0.263, gpl=1.15/0.227)
+ *
  * Principiu: cogenerarea produce simultan energie electrică și termică
  * dintr-un singur combustibil, cu eficiență totală 85-92%, reducând
  * consumul de energie primară și emisiile de CO₂ față de producerea
  * separată.
  */
+
+import { FUELS } from "../data/constants.js";
+import { FP_ELEC } from "../data/u-reference.js";
 
 // ── Catalog tipuri CHP ──────────────────────────────────────────
 // Parametri tipici conform EN 50465 + date producători
@@ -48,45 +55,38 @@ export const CHP_TYPES_CATALOG = {
   },
 };
 
-// ── Factori combustibil conform EN ISO 52000-1 + Mc 001 ────────
+// ── Factori combustibil derivați din FUELS (constants.js) ────────
+// Sprint 6: eliminare hardcodări locale, sursă unică de adevăr Mc 001-2022
+// CHP → FUELS id mapping: natural_gas→gaz, biogas→biogas, lpg→gpl, hydrogen→hidrogen, diesel→motorina
+function fuelFromConstants(fuelId, label, price_ron_kWh) {
+  const f = FUELS.find(x => x.id === fuelId);
+  if (!f) {
+    // fallback protector — nu ar trebui atins dacă FUELS e corect definit
+    return { label, fp: 1.17, co2_kg_kWh: 0.202, price_ron_kWh };
+  }
+  return {
+    label: label || f.label,
+    fp: f.fP_tot,              // factor energie primară total (nren + ren)
+    fp_nren: f.fP_nren,
+    fp_ren: f.fP_ren,
+    co2_kg_kWh: f.fCO2,
+    price_ron_kWh: price_ron_kWh ?? f.price_lei_kwh,
+  };
+}
+
 export const CHP_FUEL_FACTORS = {
-  natural_gas: {
-    label: "Gaz natural",
-    fp: 1.17,            // factor energie primară neregenerabilă
-    co2_kg_kWh: 0.205,   // emisie CO₂ [kg/kWh PCI]
-    price_ron_kWh: 0.30,  // preț orientativ [RON/kWh]
-  },
-  biogas: {
-    label: "Biogaz",
-    fp: 0.50,
-    co2_kg_kWh: 0.035,
-    price_ron_kWh: 0.20,
-  },
-  lpg: {
-    label: "GPL (gaz petrolier lichefiat)",
-    fp: 1.20,
-    co2_kg_kWh: 0.230,
-    price_ron_kWh: 0.35,
-  },
-  hydrogen: {
-    label: "Hidrogen",
-    fp: 0.40,
-    co2_kg_kWh: 0.0,
-    price_ron_kWh: 0.60,
-  },
-  diesel: {
-    label: "Motorină",
-    fp: 1.19,
-    co2_kg_kWh: 0.267,
-    price_ron_kWh: 0.50,
-  },
+  natural_gas: fuelFromConstants("gaz",      "Gaz natural",                   0.31),
+  biogas:      fuelFromConstants("biogas",   "Biogaz",                        0.42),
+  lpg:         fuelFromConstants("gpl",      "GPL (gaz petrolier lichefiat)", 0.52),
+  hydrogen:    fuelFromConstants("hidrogen", "Hidrogen verde",                1.20),
+  diesel:      fuelFromConstants("motorina", "Motorină",                      0.75),
 };
 
 // ── Factori referință producere separată ─────────────────────────
 // Conform Directiva 2012/27/UE Anexa II
 const REF_ETA_ELEC = 0.40; // eficiență referință centrală electrică
 const REF_ETA_TH  = 0.90;  // eficiență referință centrală termică
-const FP_ELEC_GRID = 2.50; // factor energie primară rețea electrică
+const FP_ELEC_GRID = FP_ELEC; // = 2.62 (Mc 001-2022, u-reference.js) — Sprint 6 aliniat
 const PRICE_ELEC_RON_KWH = 1.40; // preț electricitate [RON/kWh]
 
 /**
@@ -247,6 +247,6 @@ export function calcCHP({
     recommendations,
     chpType,
     fuelType,
-    reference: "SR EN 15316-4-4:2017 + Directiva 2012/27/UE",
+    reference: "SR EN 15316-4-4:2017 + Directiva 2012/27/UE + Mc 001-2022",
   };
 }

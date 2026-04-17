@@ -120,7 +120,12 @@ export const INITIAL_BIO = {
 
 export const INITIAL_OTHER = {
   windEnabled:false, windCapacity:"", windProduction:"",
+  // Cogenerare — Sprint 6: extensie pentru calcCHP() detaliat (PES, CO₂, payback)
   cogenEnabled:false, cogenElectric:"", cogenThermal:"", cogenFuel:"gaz",
+  cogenType:"mini_ice", cogenPowerEl:"", cogenHours:"5000",
+  // L.238/2024 Art.6 — Proximitate 30 km GPS (Sprint 6)
+  // Regenerabile produse în rază ≤30 km GPS de clădire contează la RER total (dar nu la on-site)
+  proximityEnabled:false, proximityDistanceKm:"", proximityProduction:"", proximitySource:"solar",
 };
 
 export const INITIAL_BATTERY = {

@@ -13,7 +13,11 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🧪",
-        "text": "Sprint 9a: fix Răcire partea 1 — Tab A.16 gated + 7 teste regresie"
+        "text": "Sprint 9b: fix Răcire — profile orare ISO 52016-1 + free cooling EN 16798-9"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint 5+6: BACS ISO 52120-1:2022 + Regenerabile RER + nZEB L.238/2024"
       },
       {
         "icon": "🎨",

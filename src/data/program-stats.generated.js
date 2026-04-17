@@ -10,4 +10,4 @@ export const EXPORT_FORMATS_COUNT= 8;
 export const STEPS_REAL_COUNT    = 8;
 export const FEATURES_COUNT      = 12;
 
-export const NEW_MODULES = ["acm-legionella","acm-validation","en15193-lighting","en16798","free-cooling","nzeb-check"];
+export const NEW_MODULES = ["acm-legionella","acm-validation","bacs-iso52120","en15193-lighting","en16798","free-cooling","nzeb-check"];

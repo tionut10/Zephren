@@ -9,6 +9,8 @@ import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
 import { ZEB_THRESHOLDS, ZEB_FACTOR, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "../data/u-reference.js";
+// Sprint 5 (17 apr 2026) — SR EN ISO 52120-1:2022
+import { BACS_CLASS_LABELS } from "../calc/bacs-iso52120.js";
 import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
 import { FUELS } from "../data/constants.js";
 import { BENCHMARKS } from "../data/benchmarks.js";
@@ -491,16 +493,150 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ═══ NEW: BACS CHECK (A5) ═══ */}
-              {bacsCheck && bacsCheck.isRequired && (
-                <Card title="BACS — Automatizare clădire (EPBD Art.14)" className="mb-6" badge={<Badge color={bacsClass !== "D" ? "green" : "red"}>{bacsCheck.label}</Badge>}>
-                  <div className="space-y-2">
-                    <div className="text-xs opacity-60">Putere instalată: {heating.power || "—"} kW (prag obligatoriu: {BACS_OBLIGATION_THRESHOLD_KW} kW)</div>
-                    <Select label="Clasa BACS" value={bacsClass} onChange={setBacsClass}
-                      options={Object.entries(BACS_CLASSES).map(([k,v]) => ({value:k, label:v.label}))} />
-                    <div className="text-[10px] opacity-40">{bacsCheck.desc}</div>
-                    <ResultRow label="Factor corecție BACS" value={bacsCheck.factor} />
-                    {bacsCheck.recommendation && <div className="text-[10px] text-red-400/70 p-2 rounded bg-red-500/5 border border-red-500/10">{bacsCheck.recommendation}</div>}
+              {/* ═══ BACS — SR EN ISO 52120-1:2022 (A5) — Sprint 5 ═══ */}
+              {bacsCheck && bacsCheck.isApplicable && (
+                <Card
+                  title="BACS — Automatizare clădire (SR EN ISO 52120-1:2022)"
+                  className="mb-6"
+                  badge={
+                    <Badge color={
+                      bacsCheck.warningLevel === "error" ? "red" :
+                      bacsCheck.warningLevel === "warning" ? "amber" :
+                      bacsClass === "D" ? "red" :
+                      bacsClass === "C" ? "amber" : "green"
+                    }>{bacsCheck.isoLabels?.shortLabel || bacsClass}</Badge>
+                  }
+                >
+                  <div className="space-y-3">
+                    {/* Banner TERMEN EXPIRAT — roșu (Sprint 5 P8) */}
+                    {bacsCheck.deadlineExpired && (
+                      <div className="p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-red-200 text-xs space-y-1">
+                        <div className="font-bold uppercase tracking-wide">🛑 Termen legal DEPĂȘIT</div>
+                        <div>{bacsCheck.reason}</div>
+                        <div className="text-red-300/80">{bacsCheck.epbdRef}</div>
+                      </div>
+                    )}
+                    {/* Banner termen viitor (warning) */}
+                    {!bacsCheck.deadlineExpired && bacsCheck.mandatory && bacsCheck.deadline && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+                        <div className="font-semibold">⚠️ BACS obligatoriu</div>
+                        <div>{bacsCheck.reason}</div>
+                        <div className="text-amber-300/80">Termen: {bacsCheck.deadline} · {bacsCheck.epbdRef}</div>
+                      </div>
+                    )}
+
+                    {/* Date clădire pentru verificare prag */}
+                    <div className="text-xs opacity-60">
+                      Putere HVAC instalată: <strong className="text-white/80">{heating.power || "—"} kW</strong>
+                      {" · "}Categorie: <strong className="text-white/80">{building.category}</strong>
+                      {" · "}Tipologie ISO 52120: <strong className="text-white/80">{bacsCheck.category}</strong>
+                    </div>
+
+                    {/* Selector clasă BACS (4 butoane) */}
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-white/40 mb-2">Clasa BACS</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {["A","B","C","D"].map(k => {
+                          const info = BACS_CLASS_LABELS[k];
+                          const isSel = bacsClass === k;
+                          const isBelowMin = bacsCheck.minClass &&
+                            ({A:4,B:3,C:2,D:1}[k] < {A:4,B:3,C:2,D:1}[bacsCheck.minClass]);
+                          return (
+                            <button key={k} type="button" onClick={() => setBacsClass(k)}
+                              className={cn(
+                                "p-2 rounded-lg border text-left transition-all",
+                                isSel
+                                  ? "bg-amber-500/15 border-amber-500/40 ring-2 ring-amber-500/30"
+                                  : "bg-white/[0.02] border-white/10 hover:bg-white/5"
+                              )}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-black" style={{color: info?.color}}>{info?.shortLabel}</span>
+                                {isBelowMin && <span className="text-[9px] text-red-400">sub prag</span>}
+                              </div>
+                              <div className="text-[10px] font-semibold" style={{color: info?.color}}>{info?.economyPct}</div>
+                              <div className="text-[10px] text-white/40 mt-1 leading-tight">{info?.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Breakdown factori per sistem — ISO 52120 Anexa B */}
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-white/50 hover:text-white/70">
+                        Factori f_BAC per sistem (ISO 52120 Anexa B, categoria {bacsCheck.category})
+                      </summary>
+                      <div className="mt-2 grid grid-cols-5 gap-2 text-center">
+                        {["heating","cooling","dhw","ventilation","lighting"].map(u => {
+                          const f = bacsCheck.factors?.[u];
+                          const label = {heating:"Încălzire", cooling:"Răcire", dhw:"ACM", ventilation:"Vent.", lighting:"Iluminat"}[u];
+                          return (
+                            <div key={u} className="p-2 rounded bg-white/[0.02] border border-white/5">
+                              <div className="text-[10px] text-white/40">{label}</div>
+                              <div className={cn("text-sm font-mono font-bold",
+                                f == null ? "text-white/30" :
+                                f < 1 ? "text-emerald-400" :
+                                f > 1 ? "text-red-400" : "text-white/60")}>
+                                {f == null ? "—" : f.toFixed(2)}
+                              </div>
+                              <div className="text-[9px] text-white/30">
+                                {f == null ? "N/A" : (Math.abs((1 - f) * 100)).toFixed(0) + "%"}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+
+                    {/* Breakdown impact BACS pe qf raw vs. corectat */}
+                    {instSummary?.bacs && (
+                      <details className="text-xs">
+                        <summary className="cursor-pointer text-white/50 hover:text-white/70">
+                          Impact BACS pe energie finală (kWh/an)
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                          {["heating","dhw","cooling","ventilation","lighting"].map(key => {
+                            const mapKey = { heating:"qf_h", dhw:"qf_w", cooling:"qf_c", ventilation:"qf_v", lighting:"qf_l" }[key];
+                            const label = { heating:"Încălzire", dhw:"ACM", cooling:"Răcire", ventilation:"Ventilare", lighting:"Iluminat" }[key];
+                            const rawVal = instSummary.bacs.raw?.[mapKey] || 0;
+                            const corrVal = instSummary.bacs.corrected?.[mapKey] || 0;
+                            const delta = rawVal - corrVal;
+                            const pct = rawVal > 0 ? (delta/rawVal*100).toFixed(1) : "0.0";
+                            return (
+                              <div key={key} className="grid grid-cols-4 gap-2 py-1 border-b border-white/5">
+                                <span className="text-white/50">{label}</span>
+                                <span className="text-right font-mono text-white/40">{rawVal.toFixed(0)}</span>
+                                <span className="text-right font-mono text-white/70">{corrVal.toFixed(0)}</span>
+                                <span className={cn("text-right font-mono",
+                                  delta > 0 ? "text-emerald-400" : delta < 0 ? "text-red-400" : "text-white/30")}>
+                                  {delta > 0 ? "−" : delta < 0 ? "+" : ""}{Math.abs(delta).toFixed(0)} ({pct}%)
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="grid grid-cols-4 gap-2 pt-2 font-semibold">
+                            <span className="text-white/60">TOTAL economie</span>
+                            <span className="text-right text-white/40">—</span>
+                            <span className="text-right text-white/40">—</span>
+                            <span className={cn("text-right font-mono",
+                              instSummary.bacs.savings.total > 0 ? "text-emerald-400" :
+                              instSummary.bacs.savings.total < 0 ? "text-red-400" : "text-white/30")}>
+                              {instSummary.bacs.savings.total > 0 ? "−" : instSummary.bacs.savings.total < 0 ? "+" : ""}
+                              {Math.abs(instSummary.bacs.savings.total).toFixed(0)} kWh ({instSummary.bacs.savings.totalPct}%)
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-white/30 pt-2">
+                            Coloanele: Raw (fără BACS) · Corectat (cu f_BAC) · Economie · Procent
+                          </div>
+                        </div>
+                      </details>
+                    )}
+
+                    {bacsCheck.recommendation && (
+                      <div className="text-xs text-red-400/90 p-2 rounded bg-red-500/5 border border-red-500/20">
+                        🔴 {bacsCheck.recommendation}
+                      </div>
+                    )}
                   </div>
                 </Card>
               )}

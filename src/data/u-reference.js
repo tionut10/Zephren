@@ -78,11 +78,12 @@ export function getFPElecTot(useNA2023) {
 }
 
 // BACS — Building Automation & Control (EPBD Art.14)
-export const BACS_CLASSES = {
-  A: { label:"A — Înalt performant", factor:0.70, desc:"Automatizare avansată cu optimizare, monitoring continuu" },
-  B: { label:"B — Avansat", factor:0.80, desc:"Automatizare pe zone, funcții de programare" },
-  C: { label:"C — Standard", factor:0.90, desc:"Termostare de cameră, programare simplă" },
-  D: { label:"D — Non-eficient", factor:1.00, desc:"Fără automatizare, reglaj manual" },
-};
-export const BACS_OBLIGATION_THRESHOLD_KW = 290;
+// Sprint 5 (17 apr 2026): migrare EN 15232 → SR EN ISO 52120-1:2022.
+// Sursă canonică: `src/calc/bacs-iso52120.js` (factori per categorie × sistem).
+// Re-export aici pentru compatibilitate cu codul existent care importă
+// BACS_CLASSES / BACS_OBLIGATION_THRESHOLD_KW din u-reference.js.
+export {
+  BACS_CLASSES,
+  BACS_OBLIGATION_THRESHOLD_KW,
+} from "../calc/bacs-iso52120.js";
 
