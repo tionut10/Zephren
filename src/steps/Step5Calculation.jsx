@@ -1112,6 +1112,10 @@ export default function Step5Calculation(props) {
                       <ResultRow label="Pierderi stocare" value={acmDetailed.Q_storage_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_storage_pct}%)`}
                         status={acmDetailed.f_storage_pct > 15 ? "fail" : acmDetailed.f_storage_pct > 8 ? "warn" : "ok"} />
                       <ResultRow label="Pierderi standby boiler" value={acmDetailed.q_standby_kWh_day.toFixed(1)} unit="kWh/zi" />
+                      {acmDetailed.Q_legionella_kWh > 0 && (
+                        <ResultRow label="Supliment Legionella (tratament)" value={acmDetailed.Q_legionella_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_legionella_pct}%)`}
+                          status={acmDetailed.f_legionella_pct > 10 ? "warn" : "ok"} />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <ResultRow label="Volum boiler estimat" value={acmDetailed.vol_L} unit="L" />
@@ -1120,6 +1124,65 @@ export default function Step5Calculation(props) {
                       )}
                       <ResultRow label="Temp. apă caldă / rece" value={`${acmDetailed.tSupply}°C / ${acmDetailed.tCold}°C`} unit="" />
                     </div>
+                  </div>
+
+                  {/* Sprint 4b — Breakdown energetic ACM (brut → economie solar → net → final) */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 mb-4">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">Breakdown energetic ACM (EN 15316)</div>
+                    <div className="space-y-1 text-xs font-mono">
+                      <div className="flex justify-between opacity-70">
+                        <span>Q_nd necesar termic util</span>
+                        <span>{acmDetailed.Q_nd_annual_kWh} kWh/an</span>
+                      </div>
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>+ pierderi distribuție</span>
+                        <span>+ {acmDetailed.Q_dist_kWh}</span>
+                      </div>
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>+ pierderi stocare</span>
+                        <span>+ {acmDetailed.Q_storage_kWh}</span>
+                      </div>
+                      {acmDetailed.Q_legionella_kWh > 0 && (
+                        <div className="flex justify-between opacity-60 pl-3">
+                          <span>+ supliment Legionella</span>
+                          <span>+ {acmDetailed.Q_legionella_kWh}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
+                        <span>= Q_gen_brut (fără solar)</span>
+                        <span>{(acmDetailed.Q_nd_annual_kWh + acmDetailed.Q_dist_kWh + acmDetailed.Q_storage_kWh + acmDetailed.Q_legionella_kWh).toFixed(0)} kWh/an</span>
+                      </div>
+                      {acmDetailed.Q_solar_kWh > 0 && (
+                        <>
+                          <div className="flex justify-between text-emerald-400 pl-3">
+                            <span>− economie solar termic ({acmDetailed.solarFraction_pct}%)</span>
+                            <span>− {acmDetailed.Q_solar_kWh}</span>
+                          </div>
+                          <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
+                            <span>= Q_gen_net (dup\u0103 solar)</span>
+                            <span>{acmDetailed.Q_gen_needed_kWh} kWh/an</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>÷ η_gen = {acmDetailed.eta_gen}</span>
+                        <span></span>
+                      </div>
+                      <div className="flex justify-between font-semibold text-white/90 border-t border-white/[0.12] pt-1 mt-1">
+                        <span>= Q_final energie furnizată</span>
+                        <span>{acmDetailed.Q_final_kWh} kWh/an</span>
+                      </div>
+                    </div>
+                    {instSummary?.acmSolar?.source && instSummary.acmSolar.source !== "none" && (
+                      <div className="mt-2 pt-2 border-t border-white/[0.06] text-[10px] opacity-60 flex items-center gap-2">
+                        <span>Sursă f_sol:</span>
+                        <span className={instSummary.acmSolar.source === "step8_calc" ? "text-emerald-300 font-mono" : "text-amber-300 font-mono"}>
+                          {instSummary.acmSolar.source === "step8_calc"
+                            ? "✓ calculată EN 15316-4-3 (Step 4 Regenerabile)"
+                            : "⚠ implicită (constantă ACM_SOURCES — activați Step 4 pentru calcul real)"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   {acmDetailed.recommendations.length > 0 && (
                     <div className="space-y-1">

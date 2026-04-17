@@ -1312,7 +1312,7 @@ export default function EnergyCalcApp({ cloud }) {
   });
 
   const instSummary = useInstallationSummary({
-    envelopeSummary, monthlyISO, building, heating, acm, cooling, ventilation, lighting, selectedClimate, useNA2023,
+    envelopeSummary, monthlyISO, building, heating, acm, cooling, ventilation, lighting, selectedClimate, solarThermal, useNA2023,
   });
 
   const renewSummary = useRenewableSummary({

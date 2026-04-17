@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { cn, Select, Input, Card, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import InvoiceOCR from "../components/InvoiceOCR.jsx";
@@ -8,6 +8,7 @@ import {
   LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
   COOLING_EMISSION_EFFICIENCY, COOLING_DISTRIBUTION_EFFICIENCY, COOLING_CONTROL_EFFICIENCY,
 } from "../data/constants.js";
+import { validateACMInputs, summarizeValidation } from "../calc/acm-validation.js";
 
 export default function Step3Systems({
   building, lang, selectedClimate,
@@ -136,8 +137,14 @@ export default function Step3Systems({
             </>
           )}
 
-          {/* ── ACM ── */}
-          {instSubTab === "acm" && (
+          {/* ── ACM ── Sprint 4b (17 apr 2026): validări complete + cuplaj solar Step 8 ── */}
+          {instSubTab === "acm" && (() => {
+            const acmValidation = validateACMInputs(acm, {
+              category: building.category,
+              areaUseful: parseFloat(building.areaUseful) || 0,
+            });
+            const acmSummary = summarizeValidation(acmValidation);
+            return (
             <>
               <Card title={t("Preparare apă caldă de consum",lang)}>
                 <div className="space-y-3">
@@ -269,8 +276,94 @@ export default function Step3Systems({
                   )}
                 </div>
               </Card>
+
+              {/* Sprint 4b — cuplaj solar Step 8 → ACM (EN 15316-4-3) indicator */}
+              {instSummary?.acmSolar?.appliesToACM && (
+                <Card title={t("Cuplaj panouri solare termice (Step 4 Regenerabile)",lang)}>
+                  <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="opacity-60">{t("Fracție solară aplicată ACM")}</span>
+                      <span className="font-mono font-bold text-emerald-400 text-base">
+                        {instSummary.acmSolar.fraction_pct}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] opacity-50">
+                      <span>{t("Sursă valoare")}</span>
+                      <span className="font-mono">
+                        {instSummary.acmSolar.source === "step8_calc"
+                          ? "✓ calculată din Step 4 (area + orientare + climă)"
+                          : "⚠ implicită (constantă ACM_SOURCES)"}
+                      </span>
+                    </div>
+                    {instSummary.acmSolar.detail && (
+                      <div className="mt-2 pt-2 border-t border-white/[0.06] grid grid-cols-3 gap-2">
+                        <div>
+                          <div className="text-[10px] opacity-40">{t("Producție utilă")}</div>
+                          <div className="font-mono text-amber-300">{instSummary.acmSolar.detail.totalSolarYield_kwh} kWh/an</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] opacity-40">{t("Cerere ACM")}</div>
+                          <div className="font-mono opacity-70">{instSummary.acmSolar.detail.totalDemand_kwh} kWh/an</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] opacity-40">{t("Stagnare vara")}</div>
+                          <div className={cn("font-mono", instSummary.acmSolar.detail.stagnRisk ? "text-red-400" : "opacity-70")}>
+                            {instSummary.acmSolar.detail.stagnHoursAnnual || 0} h/an
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Sprint 4b — panou validări input ACM (error / warning / info) */}
+              {(acmValidation.errors.length > 0 || acmValidation.warnings.length > 0 || acmValidation.info.length > 0) && (
+                <Card title={t("Validări intrări ACM",lang)}>
+                  <div className="flex items-center justify-between mb-2 text-xs">
+                    <span className="opacity-50">{t("Stare configurație")}</span>
+                    <span className="font-mono font-semibold" style={{color: acmSummary.color}}>
+                      {acmSummary.label}
+                    </span>
+                  </div>
+                  {acmValidation.errors.length > 0 && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs space-y-1 mb-2">
+                      <div className="font-medium text-red-400">🛑 {t("Erori blocante")}</div>
+                      {acmValidation.errors.map((e, i) => (
+                        <div key={i} className="text-red-300/80 leading-relaxed">
+                          • <span className="font-mono text-[10px] opacity-60">[{e.field}]</span> {e.message}
+                          {e.reference && <span className="text-[10px] opacity-40 ml-2">({e.reference})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {acmValidation.warnings.length > 0 && (
+                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-3 text-xs space-y-1 mb-2">
+                      <div className="font-medium text-amber-400">⚠ {t("Avertizări")}</div>
+                      {acmValidation.warnings.map((w, i) => (
+                        <div key={i} className="text-amber-300/80 leading-relaxed">
+                          • <span className="font-mono text-[10px] opacity-60">[{w.field}]</span> {w.message}
+                          {w.reference && <span className="text-[10px] opacity-40 ml-2">({w.reference})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {acmValidation.info.length > 0 && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs space-y-1">
+                      <div className="font-medium text-blue-400">💡 {t("Recomandări")}</div>
+                      {acmValidation.info.map((inf, i) => (
+                        <div key={i} className="text-blue-300/80 leading-relaxed">
+                          • <span className="font-mono text-[10px] opacity-60">[{inf.field}]</span> {inf.message}
+                          {inf.reference && <span className="text-[10px] opacity-40 ml-2">({inf.reference})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )}
             </>
-          )}
+            );
+          })()}
 
           {/* ── CLIMATIZARE ── Sprint 3a (17 apr 2026): SEER + η separate + calc orar */}
           {instSubTab === "cooling" && (() => {

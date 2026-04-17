@@ -7,6 +7,7 @@ import {
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
 import { FP_ELEC } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
+import { calcSolarACMDetailed } from "../calc/solar-acm-detailed.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 import { calcNightVentilation } from "../calc/night-ventilation.js";
@@ -62,6 +63,7 @@ const COMBI_SUMMER_FACTOR = 0.87;  // η efectivă vară = η nominal iarnă × 
  * @param {object} params.ventilation      — parametri ventilare
  * @param {object} params.lighting         — parametri iluminat
  * @param {object} params.selectedClimate  — date climatice
+ * @param {object} params.solarThermal     — parametri solar termic (Step 4 Renewables) — Sprint 4b (17 apr 2026): cuplaj real ACM
  * @param {boolean} params.useNA2023       — factor energie ambientală (NA:2023 vs Mc001 vechi)
  *
  * @returns {object|null} instSummary
@@ -76,6 +78,7 @@ export function useInstallationSummary({
   ventilation,
   lighting,
   selectedClimate,
+  solarThermal,
   useNA2023,
 }) {
   return useMemo(() => {
@@ -130,7 +133,61 @@ export function useInstallationSummary({
       ? eta_gen * COMBI_SUMMER_FACTOR
       : (acmSrc?.eta || eta_gen);
     const acmEngineKey = ACM_SOURCE_TO_ENGINE[acm.source] || "ct_gaz";
-    const solarFr = acmSrc?.solarFraction || 0;
+
+    // ── Sprint 4b (17 apr 2026) — CUPLAJ REAL SOLAR STEP 8 → ACM (EN 15316-4-3) ──
+    // AUDIT_08 §2.5 + SPRINT_04a §„Rămas pentru Sprint 4b": `acmSrc.solarFraction` era
+    // CONSTANT (0.50 / 0.55 hardcoded din ACM_SOURCES). Step 8 Renewables calculează
+    // acoperirea reală prin `calcSolarACMDetailed()` pe baza:
+    //   • area colector, orientare, înclinare
+    //   • tip colector (eta0, a1, a2 din COLLECTOR_TYPES)
+    //   • climă (iradianță lunară + T_ambient)
+    //   • volum stocare + nPersons + T_livrare
+    // Dacă Step 8 are panouri active pe ACM, folosim f_sol CALCULAT. Altfel fallback
+    // la constanta ACM_SOURCES (sau 0 dacă sursa nu are solar).
+    let solarFr = 0;              // fracție solară finală [0-1]
+    let solarSource = "none";     // "step8_calc" | "acm_source_const" | "none"
+    let solarDetail = null;       // obiect returnat de calcSolarACMDetailed (pentru UI)
+    const stEnabled = !!solarThermal?.enabled;
+    const stArea = parseFloat(solarThermal?.area) || 0;
+    const stUsage = solarThermal?.usage || "acm";
+    const stAppliesToACM = stEnabled && stArea > 0 && (stUsage === "acm" || stUsage === "acm+heating" || stUsage === "mixt");
+
+    if (stAppliesToACM && selectedClimate) {
+      // Map tip "PLAN" (state legacy) → "PLAN_SEL" (cheie reală COLLECTOR_TYPES)
+      const typeMap = { PLAN: "PLAN_SEL", PLAN_BASIC: "PLAN_BASIC", PLAN_SEL: "PLAN_SEL",
+                        TUBURI: "TUBURI_HEAT_PIPE", TUBURI_HEAT_PIPE: "TUBURI_HEAT_PIPE",
+                        TUBURI_U_PIPE: "TUBURI_U_PIPE", flat: "PLAN_SEL" };
+      const collectorType = typeMap[solarThermal?.type] || "PLAN_SEL";
+      try {
+        solarDetail = calcSolarACMDetailed({
+          collectorType,
+          collectorArea: stArea,
+          orientation: solarThermal?.orientation || "S",
+          tiltDeg: parseFloat(solarThermal?.tilt) || 35,
+          climate: selectedClimate,
+          nPersons: parseFloat(acm.consumers) || (Au > 0 ? Math.max(1, Math.round(Au / 30)) : 2),
+          acmDemandPerPerson: parseFloat(acm.dailyLiters) || 60,
+          storageVolume: parseFloat(solarThermal?.storageVolume) || (stArea * 60),
+          tSupplyACM: parseFloat(acm.tSupply) || 55,
+          tCold: null, // motorul folosește default pe zonă
+        });
+        if (solarDetail && typeof solarDetail.fSolarAnnual === "number") {
+          // fSolarAnnual vine 0-100 → convertește la 0-1 + cap la 0.85 (limită fizică anuală)
+          solarFr = Math.min(0.85, Math.max(0, solarDetail.fSolarAnnual / 100));
+          solarSource = "step8_calc";
+        }
+      } catch (_e) {
+        solarFr = 0;
+        solarDetail = null;
+      }
+    }
+
+    // Fallback: constanta din ACM_SOURCES (SOLAR_AUX/SOLAR_GAZ/SOLAR_PC)
+    if (solarSource === "none" && acmSrc?.solarFraction) {
+      solarFr = acmSrc.solarFraction;
+      solarSource = "acm_source_const";
+    }
+
     const pipeThickness = acm.pipeInsulationThickness || (acm.pipeInsulated === false ? "fara" : "20mm");
     const hasPipeInsulation = pipeThickness !== "fara";
 
@@ -465,10 +522,19 @@ export function useInstallationSummary({
       acmDetailed, isCOPacm, acmFuel,
       // Sprint 3 — auxiliar pompă circulație ACM (electric)
       W_aux_acm_kWh, ep_aux_acm, co2_aux_acm,
+      // Sprint 4b — cuplaj solar real Step 8 → ACM (EN 15316-4-3)
+      acmSolar: {
+        fraction: solarFr,                // 0-1 — fracție aplicată în motor
+        fraction_pct: Math.round(solarFr * 100),
+        source: solarSource,              // "step8_calc" | "acm_source_const" | "none"
+        detail: solarDetail,              // rezultat calcSolarACMDetailed (null dacă fallback)
+        appliesToACM: stAppliesToACM,
+      },
     };
   }, [
     building.areaUseful, building.volume, building.category,
     envelopeSummary, selectedClimate,
     heating, acm, cooling, ventilation, lighting, monthlyISO, useNA2023,
+    solarThermal,
   ]);
 }
