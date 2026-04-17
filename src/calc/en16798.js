@@ -10,14 +10,16 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Tabel B.1 — Categorii concentrație CO₂ interior deasupra concentrației ext.
- * Δ = CO₂_int − CO₂_ext (concentrații în ppm)
+ * Tabel A.6.2 (SR EN 16798-1:2019/NA:2019) — Categorii concentrație CO₂ interior
+ * deasupra concentrației exterioare (Δ = CO₂_int − CO₂_ext) în ppm
+ * Valori conform Anexei Naționale România (NA:2019), verificate din PDF ASRO.
+ * Sprint 0 (17.04.2026): corectat de la 550/800/1350 → 400/600/1000 conform NA
  */
 export const CO2_CATEGORIES = {
-  I:   { deltaMax: 550,  label: "Excelent (categoria I)",     description: "Performanță înaltă, sensibilitate ridicată" },
-  II:  { deltaMax: 800,  label: "Normal (categoria II)",      description: "Normal pentru clădiri noi/renovate" },
-  III: { deltaMax: 1350, label: "Acceptabil (categoria III)", description: "Acceptabil pentru clădiri existente" },
-  IV:  { deltaMax: Infinity, label: "Sub standard (categoria IV)", description: "Nu îndeplinește minim EN 16798" },
+  I:   { deltaMax: 400,  label: "Excelent (categoria I — IDA 1)",  description: "Performanță înaltă, sensibilitate ridicată (≤400 ppm Δ)" },
+  II:  { deltaMax: 600,  label: "Normal (categoria II — IDA 2)",   description: "Normal pentru clădiri noi/renovate (400–600 ppm Δ)" },
+  III: { deltaMax: 1000, label: "Acceptabil (categoria III — IDA 3)", description: "Acceptabil pentru clădiri existente (600–1000 ppm Δ)" },
+  IV:  { deltaMax: Infinity, label: "Sub standard (categoria IV — IDA 4)", description: "Nu îndeplinește minim EN 16798 (>1000 ppm Δ)" },
 };
 
 /**

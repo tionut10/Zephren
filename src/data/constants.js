@@ -225,6 +225,62 @@ export const AMBIENT_ENERGY_FACTOR = {
   na2023:         { fP_nren: 0.0, fP_ren: 0.0, fP_tot: 0.0, fCO2: 0.0, label: "SR EN ISO 52000-1/NA:2023 (Tabel A.16)" },
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FACTORI ENERGIE PRIMARĂ — SR EN ISO 52000-1:2017/NA:2023 Tabel A.16
+// Valori verificate din PDF (Licență ASRO TUNARU IONUȚ, Factură 148552 / 17.04.2026)
+// CRITIC: electricitate fP_nren = 2,00 (vs 2,62 în Mc001-2022 Tabel 5.17!)
+// ═══════════════════════════════════════════════════════════════════════════
+export const PE_FACTORS_TAB_A16_NA_2023 = {
+  // Combustibili gazoși convenționali
+  gaz_natural:       { fP_nren: 1.17, fP_ren: 0.00, fP_tot: 1.17, fCO2: 0.202, label: "Gaz natural" },
+  gnl:               { fP_nren: 1.17, fP_ren: 0.00, fP_tot: 1.17, fCO2: 0.202, label: "GNL (gaz natural lichefiat)" },
+  gpl:               { fP_nren: 1.15, fP_ren: 0.00, fP_tot: 1.15, fCO2: 0.227, label: "GPL (gaz petrolier lichefiat)" },
+  // Combustibili lichizi
+  motorina:          { fP_nren: 1.23, fP_ren: 0.00, fP_tot: 1.23, fCO2: 0.263, label: "Motorină / combustibil lichid" },
+  pacura:            { fP_nren: 1.10, fP_ren: 0.00, fP_tot: 1.10, fCO2: 0.300, label: "Păcură" },
+  // Combustibili solizi convenționali
+  carbune_huila:     { fP_nren: 1.20, fP_ren: 0.00, fP_tot: 1.20, fCO2: 0.341, label: "Huile (cărbune)" },
+  lignit:            { fP_nren: 1.30, fP_ren: 0.00, fP_tot: 1.30, fCO2: 0.364, label: "Lignit" },
+  // Biomasă
+  lemn_foc_necertif: { fP_nren: 1.20, fP_ren: 0.00, fP_tot: 1.20, fCO2: 0.018, label: "Lemne de foc (fără certificare / nesustenabile)" },
+  lemn_foc_certif:   { fP_nren: 0.18, fP_ren: 0.90, fP_tot: 1.08, fCO2: 0.018, label: "Lemne de foc (certificate, sustenabile)" },
+  biomasa_brichete:  { fP_nren: 0.28, fP_ren: 0.80, fP_tot: 1.08, fCO2: 0.039, label: "Biomasă — brichete/pelete (certificate)" },
+  deseuri:           { fP_nren: 0.05, fP_ren: 1.00, fP_tot: 1.05, fCO2: 0.050, label: "Deșeuri (produse certificate)" },
+  biogaz:            { fP_nren: 0.40, fP_ren: 1.00, fP_tot: 1.40, fCO2: 0.025, label: "Biogaz" },
+  biocombustibil_lic:{ fP_nren: 0.50, fP_ren: 1.00, fP_tot: 1.50, fCO2: 0.027, label: "Biocombustibil lichid" },
+  // Energie termică din surse regenerabile
+  solar_termic:      { fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie termică panouri solare termice" },
+  // Energie ambientală (pompă de căldură aerotermal/geotermal/hidrotermal)
+  // fP_nren = 0 și fP_ren = 0 pentru calcul EP (energie recuperată din mediu)
+  // fP_ren = 1,00 pentru CONTORIZARE CA ENERGIE DIN SURSE REGENERABILE (RES)
+  energie_ambientala:{ fP_nren: 0.00, fP_ren: 0.00, fP_tot: 0.00, fCO2: 0.000, label: "Energie termică mediu (aerotermal/geotermal/hidrotermal)" },
+  energie_amb_rer:   { fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie termică mediu — contorizat ca RES" },
+  // Termoficare
+  termoficare:       { fP_nren: 0.92, fP_ren: 0.00, fP_tot: 0.92, fCO2: 0.220, label: "Termoficare (cogenerare la distanță)" },
+  // ELECTRICITATE — DIFERENȚĂ MAJORĂ față de Mc001 Tabel 5.17!
+  // Tab 5.17: fP_nren=2,62 / Tab A.16/NA:2023: fP_nren=2,00 fP_ren=0,50
+  electricitate_sen: { fP_nren: 2.00, fP_ren: 0.50, fP_tot: 2.50, fCO2: 0.107, label: "Electricitate din SEN" },
+  electricitate_fv_direct:{ fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Electricitate FV/eolian la față locului — consumată direct" },
+  electricitate_fv_export:{ fP_nren: 2.00, fP_ren: 0.50, fP_tot: 2.50, fCO2: 0.000, label: "Electricitate FV/eolian exportată în SEN" },
+};
+
+// Factori vechi Mc 001-2022 Tabel 5.17 — păstrați pentru audit retroactiv și comparare
+// Sursă: Mc 001-2022 Anexa 2 (în vigoare până la actualizare MDLPA)
+export const PE_FACTORS_TAB_5_17_LEGACY = {
+  gaz_natural:       { fP_nren: 1.17, fP_ren: 0.00, fP_tot: 1.17, fCO2: 0.202, label: "Gaz natural (Tab 5.17)" },
+  gpl:               { fP_nren: 1.15, fP_ren: 0.00, fP_tot: 1.15, fCO2: 0.227, label: "GPL (Tab 5.17)" },
+  motorina:          { fP_nren: 1.10, fP_ren: 0.00, fP_tot: 1.10, fCO2: 0.263, label: "Motorină (Tab 5.17)" },
+  biomasa:           { fP_nren: 0.28, fP_ren: 0.80, fP_tot: 1.08, fCO2: 0.039, label: "Biomasă (Tab 5.17)" },
+  lemn_foc:          { fP_nren: 0.09, fP_ren: 1.00, fP_tot: 1.09, fCO2: 0.018, label: "Lemne de foc (Tab 5.17)" },
+  termoficare:       { fP_nren: 0.92, fP_ren: 0.00, fP_tot: 0.92, fCO2: 0.220, label: "Termoficare (Tab 5.17)" },
+  electricitate:     { fP_nren: 2.62, fP_ren: 0.00, fP_tot: 2.62, fCO2: 0.107, label: "Electricitate SEN (Tab 5.17 — Mc001-2022)" },
+  energie_ambientala:{ fP_nren: 1.00, fP_ren: 0.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie ambientală PC (Tab 5.17 — vechi)" },
+};
+
+// Default activ: Tab A.16 (NA:2023) — valori oficiale ASRO confirmate din PDF
+// Migrare completă FUELS array → PE_FACTORS_TAB_A16_NA_2023: planificată Sprint 11
+export const DEFAULT_PE_FACTORS = PE_FACTORS_TAB_A16_NA_2023;
+
 export const ACM_SOURCES = [
   { id:"CAZAN_H",       label:"Același cazan cu încălzirea (prioritate termică)",      eta:null,  fuel:"gaz" },
   { id:"BOILER_E",      label:"Boiler electric rezistiv (cu acumulare)",               eta:0.95,  fuel:"electricitate" },
