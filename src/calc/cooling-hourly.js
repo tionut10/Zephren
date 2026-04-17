@@ -4,6 +4,7 @@
 //                 CIBSE Guide A cap.5 (câștiguri solare pe orientări)
 // Orientări: N, NE, E, SE, S, SV, V, NV, Orizontal
 // ═══════════════════════════════════════════════════════════════
+import { INTERNAL_GAINS_PROFILES, COOLING_TYPE_TO_GAINS_PROFILE } from "../data/constants.js";
 
 // ---------------------------------------------------------------
 // DATE INTERNE DE REFERINȚĂ — Câștiguri interne per destinație
@@ -251,8 +252,14 @@ export function calcCoolingHourly({
     });
 
     // ── Câștiguri interne per lună [kWh] ────────────────────────────
-    // Profil orar de ocupare × câștig total
-    const avgOccupancyFactor = gainProfile.occupancy_h.reduce((a, b) => a + b, 0) / 24;
+    // Sprint 9b — profil orar weekday/weekend (ISO 52016-1 Tab. A.30)
+    // Fallback la occupancy_h legacy (single-profile) când profil extins indisponibil.
+    const gainsProfileKey = COOLING_TYPE_TO_GAINS_PROFILE[internalGainsType] || internalGainsType;
+    const extProfile = INTERNAL_GAINS_PROFILES[gainsProfileKey];
+    const avgOccupancyFactor = extProfile
+      ? (5 * extProfile.weekday.reduce((a, b) => a + b, 0) / 24
+         + 2 * extProfile.weekend.reduce((a, b) => a + b, 0) / 24) / 7
+      : gainProfile.occupancy_h.reduce((a, b) => a + b, 0) / 24;
     const Q_internal_month_kWh = (Q_int_W * avgOccupancyFactor * hours) / 1000;
 
     // ── Transfer termic per lună [kWh] ───────────────────────────────
@@ -296,11 +303,12 @@ export function calcCoolingHourly({
 
     // ── Sarcina de vârf [kW] — estimată din luna de vârf ────────────
     // Metodă: sarcina orară maximă în ziua de design (T_e = T_e_max + 5°C)
+    // Sprint 9b — folosește profilul extins weekday (vârf realist pentru birouri/școli)
     const T_e_design = T_e_mean + 5; // temperatură de calcul design (mai conservatoare)
     const Q_peak_h   = calcPeakHour({
       T_e_design, theta_int_cool,
       H_tr, H_ve,
-      Q_int_W, gainProfile,
+      Q_int_W, gainProfile, extProfile,
       glazingElements, m, shadingExternal,
     });
 
@@ -359,6 +367,9 @@ export function calcCoolingHourly({
       H_tr_W_K:     Math.round(H_tr * 10) / 10,
       H_ve_W_K:     Math.round(H_ve * 10) / 10,
       internalGainsType,
+      // Sprint 9b — meta profil orar extins (weekday/weekend) dacă disponibil
+      gainsProfileKey: COOLING_TYPE_TO_GAINS_PROFILE[internalGainsType] || internalGainsType,
+      gainsProfileExtended: Boolean(INTERNAL_GAINS_PROFILES[COOLING_TYPE_TO_GAINS_PROFILE[internalGainsType] || internalGainsType]),
     },
   };
 }
@@ -399,7 +410,7 @@ function calcPeakHour(p) {
   const {
     T_e_design, theta_int_cool,
     H_tr, H_ve,
-    Q_int_W, gainProfile,
+    Q_int_W, gainProfile, extProfile,
     glazingElements, m, shadingExternal,
   } = p;
 
@@ -407,8 +418,11 @@ function calcPeakHour(p) {
   let peak_hour = 14;
 
   for (let h = 0; h < 24; h++) {
-    // Câștig intern orar [W]
-    const occFactor = gainProfile.occupancy_h[h] || 0;
+    // Câștig intern orar [W] — Sprint 9b: profil weekday din INTERNAL_GAINS_PROFILES
+    // (weekday = scenariul de vârf tipic pentru birouri/școli/comerț; spitale 24/24)
+    const occFactor = extProfile
+      ? (extProfile.weekday[h] ?? 0)
+      : (gainProfile.occupancy_h[h] || 0);
     const Q_int_h   = Q_int_W * occFactor;
 
     // Câștig solar orar [W] per toate elementele vitrate

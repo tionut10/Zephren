@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🧪",
+        "text": "Sprint 9a: fix Răcire partea 1 — Tab A.16 gated + 7 teste regresie"
+      },
+      {
+        "icon": "🎨",
+        "text": "Sprint 4b: fix ACM partea 2 — cuplaj solar real + validari + UI breakdown"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint 4a: fix ACM partea 1 - storageLoss eliminat + categorii + combi vara"
+      },
+      {
         "icon": "🔧",
         "text": "Sprint 3b: fix racire partea 2 - W_aux + free cooling + override aporturi"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📋",
         "text": "[Audit] Faza 11 — Step 7 Iluminat (LENI) finalizat, score 62%"
-      },
-      {
-        "icon": "🔬",
-        "text": "refactor(ACM): unificare motor EN 15316 + Legionella + aux pompă — Sprint 1+3"
-      },
-      {
-        "icon": "🔬",
-        "text": "Consolidare U_REF_NZEB — eliminare 6 duplicate (sursă canonică u-reference.js)"
-      },
-      {
-        "icon": "🔧",
-        "text": "Fix 4 useEffect critice (memory leak + keyboard bug + localStorage blocking)"
       }
     ]
   },

@@ -592,3 +592,52 @@ export const BATTERY_STORAGE_TYPES = [
   { id:"FLYWHEEL",     label:"Volant de inerție (Flywheel — stocare cinetică, UPS)",     efficiency:0.90, selfDischarge:5.000, cycles:100000 },
   { id:"THERMAL_TES",  label:"Stocare termică (boiler electric + TES, apă caldă 55–90°C)", efficiency:0.92, selfDischarge:0.500, cycles:50000 },
 ];
+
+// ── PROFILE ORARE APORTURI INTERNE — Sprint 9b (17 apr 2026) ─────────────────
+// Conform SR EN ISO 52016-1:2017 Anexa A.30 + CIBSE Guide A Tab. 6.5.
+// Factori de ocupare relativi [0,1] per oră (0..23), separați weekday vs. weekend.
+// Se multiplică cu aportul intern maxim (W/m² din COOLING_INTERNAL_GAINS) pentru
+// a obține profilul orar Q_int_hourly[h] folosit în calculul de vârf CIBSE.
+// ──────────────────────────────────────────────────────────────────────────────
+export const INTERNAL_GAINS_PROFILES = {
+  rezidential: {
+    label: "Rezidențial (apartament + casă individuală)",
+    weekday: [0.2,0.2,0.2,0.2,0.2,0.3,0.5,0.4,0.3,0.2,0.2,0.3,0.5,0.4,0.3,0.3,0.5,0.8,1.0,0.9,0.7,0.5,0.3,0.2],
+    weekend: [0.3,0.2,0.2,0.2,0.2,0.2,0.3,0.4,0.5,0.5,0.5,0.5,0.6,0.5,0.5,0.5,0.7,0.8,1.0,0.9,0.7,0.5,0.4,0.3],
+  },
+  birouri: {
+    label: "Birouri (8-18 activ, ocupare scăzută weekend)",
+    weekday: [0.05,0.05,0.05,0.05,0.05,0.05,0.1,0.3,0.8,1.0,1.0,1.0,0.7,1.0,1.0,1.0,0.9,0.5,0.2,0.1,0.05,0.05,0.05,0.05],
+    weekend: Array(24).fill(0.05),
+  },
+  scoli: {
+    label: "Școli / educație (8-16 program, pauză 12-14)",
+    weekday: [0.05,0.05,0.05,0.05,0.05,0.05,0.1,0.3,0.8,0.9,0.9,0.5,0.3,0.9,0.9,0.5,0.2,0.1,0.05,0.05,0.05,0.05,0.05,0.05],
+    weekend: Array(24).fill(0.05),
+  },
+  comercial: {
+    label: "Comerț / retail (9-21 activ, weekend similar)",
+    weekday: [0.1,0.1,0.1,0.1,0.1,0.1,0.2,0.4,0.8,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9,0.7,0.5,0.3,0.2,0.1],
+    weekend: [0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.3,0.5,0.8,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.8,0.6,0.4,0.3,0.2,0.1],
+  },
+  hotel: {
+    label: "Hotel / cazare (ocupare dimineață + seară)",
+    weekday: [0.6,0.5,0.5,0.5,0.5,0.6,0.8,0.9,0.7,0.4,0.3,0.3,0.4,0.3,0.3,0.3,0.4,0.5,0.7,0.9,1.0,1.0,0.9,0.7],
+    weekend: [0.7,0.6,0.5,0.5,0.5,0.6,0.7,0.8,0.7,0.5,0.4,0.4,0.5,0.4,0.4,0.4,0.5,0.6,0.8,1.0,1.0,1.0,0.9,0.8],
+  },
+  spitale: {
+    label: "Spitale / sănătate (24/24, ocupare ridicată)",
+    weekday: [0.7,0.7,0.7,0.7,0.7,0.7,0.9,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.9,0.9,0.8,0.8,0.8,0.8,0.7],
+    weekend: [0.7,0.7,0.7,0.7,0.7,0.7,0.8,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.9,0.8,0.8,0.8,0.8,0.7],
+  },
+};
+
+// Mapare tipologie COOLING_INTERNAL_GAINS (engleză) → INTERNAL_GAINS_PROFILES (română)
+export const COOLING_TYPE_TO_GAINS_PROFILE = {
+  residential: "rezidential",
+  office:      "birouri",
+  school:      "scoli",
+  retail:      "comercial",
+  hospital:    "spitale",
+  // hotel nu are echivalent în COOLING_INTERNAL_GAINS — se folosește direct cheia "hotel"
+};
