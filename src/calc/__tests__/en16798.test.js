@@ -16,23 +16,23 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 // calcIAQCategory — Table B.1 (CO₂ delta thresholds)
 // ═══════════════════════════════════════════════════════════════════════════
-describe("calcIAQCategory — CO₂ category thresholds (EN 16798-1 Table B.1)", () => {
-  it("CO₂ = 850 ppm (ext 420) → delta 430 → categoria I (≤550)", () => {
-    const r = calcIAQCategory(850, 420);
+describe("calcIAQCategory — CO₂ category thresholds (NA:2019 Tab A.6.2: I≤400, II≤600, III≤1000)", () => {
+  it("CO₂ = 800 ppm (ext 420) → delta 380 → categoria I (≤400 NA:2019)", () => {
+    const r = calcIAQCategory(800, 420);
     expect(r.category).toBe("I");
-    expect(r.delta).toBe(430);
+    expect(r.delta).toBe(380);
   });
 
-  it("CO₂ = 1100 ppm (ext 420) → delta 680 → categoria II (≤800)", () => {
-    expect(calcIAQCategory(1100, 420).category).toBe("II");
+  it("CO₂ = 1000 ppm (ext 420) → delta 580 → categoria II (≤600 NA:2019)", () => {
+    expect(calcIAQCategory(1000, 420).category).toBe("II");
   });
 
-  it("CO₂ = 1600 ppm (ext 420) → delta 1180 → categoria III (≤1350)", () => {
-    expect(calcIAQCategory(1600, 420).category).toBe("III");
+  it("CO₂ = 1100 ppm (ext 420) → delta 680 → categoria III (≤1000 NA:2019)", () => {
+    expect(calcIAQCategory(1100, 420).category).toBe("III");
   });
 
-  it("CO₂ = 2500 ppm (ext 420) → delta 2080 → categoria IV (>1350)", () => {
-    expect(calcIAQCategory(2500, 420).category).toBe("IV");
+  it("CO₂ = 1600 ppm (ext 420) → delta 1180 → categoria IV (>1000 NA:2019)", () => {
+    expect(calcIAQCategory(1600, 420).category).toBe("IV");
   });
 
   it("Pentru CO₂ invalid (0 sau negativ) → cat IV cu mesaj eroare", () => {
