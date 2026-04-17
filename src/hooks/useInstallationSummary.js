@@ -5,7 +5,7 @@ import {
   COOLING_HOURS_BY_ZONE, COOLING_HOURS_DEFAULT,
 } from "../data/constants.js";
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
-import { FP_ELEC } from "../data/u-reference.js";
+import { FP_ELEC, getFPElecNren, getFPElecRen, getFPElecTot } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
 import { calcSolarACMDetailed } from "../calc/solar-acm-detailed.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
@@ -464,9 +464,19 @@ export function useInstallationSummary({
       ep_nren_w = qf_w * (acmFuel?.fP_nren ?? fuel?.fP_nren ?? 1.10);
       ep_ren_w = qf_w * (acmFuel?.fP_ren ?? fuel?.fP_ren ?? 0.07);
     }
-    const ep_c = qf_c * (coolFuel?.fP_tot || FP_ELEC);
-    const ep_nren_c = qf_c * (coolFuel?.fP_nren ?? 2.62);
-    const ep_ren_c = qf_c * (coolFuel?.fP_ren ?? 0.0);
+    // Sprint 9a (17 apr 2026) — Răcire: gating Tab A.16 NA:2023 pe flag useNA2023
+    // Combustibili electrici → helpers centralizați (2.62 Mc001 / 2.50 NA:2023).
+    // Non-electrici (termoficare ABSORB_ABR / DISTRICT_COOL) păstrează valorile FUELS.
+    const coolIsElectric = (coolFuel?.id === "electricitate");
+    const ep_c = qf_c * (coolIsElectric
+      ? getFPElecTot(useNA2023)
+      : (coolFuel?.fP_tot || FP_ELEC));
+    const ep_nren_c = qf_c * (coolIsElectric
+      ? getFPElecNren(useNA2023)
+      : (coolFuel?.fP_nren ?? 2.62));
+    const ep_ren_c = qf_c * (coolIsElectric
+      ? getFPElecRen(useNA2023)
+      : (coolFuel?.fP_ren ?? 0.0));
     const ep_v = qf_v * FP_ELEC;
     const ep_nren_v = qf_v * 2.62;
     const ep_ren_v = qf_v * 0.0;

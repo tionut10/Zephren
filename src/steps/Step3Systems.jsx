@@ -523,6 +523,34 @@ export default function Step3Systems({
                         <div className="text-[11px] opacity-50 mt-2 leading-relaxed">
                           E<sub>aux</sub> = (P<sub>pompe</sub> + P<sub>ventilatoare</sub>) × t<sub>operare</sub> — se adaugă la consumul compresorului.
                         </div>
+
+                        {/* Sprint 9b — breakdown tabel compresor / auxiliare / free cooling */}
+                        {instSummary && instSummary.qf_c != null && instSummary.qf_c > 0 && (
+                          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] border-t border-amber-500/20 pt-2">
+                            <div className="bg-amber-500/5 rounded p-2">
+                              <div className="opacity-60">Compresor</div>
+                              <div className="font-mono font-medium">{Math.round(instSummary.qf_c_compressor || 0)} kWh</div>
+                            </div>
+                            <div className="bg-amber-500/5 rounded p-2">
+                              <div className="opacity-60">Pompe</div>
+                              <div className="font-mono font-medium">{Math.round(instSummary.qf_c_aux_pumps || 0)} kWh</div>
+                            </div>
+                            <div className="bg-amber-500/5 rounded p-2">
+                              <div className="opacity-60">Ventilatoare</div>
+                              <div className="font-mono font-medium">{Math.round(instSummary.qf_c_aux_fans || 0)} kWh</div>
+                            </div>
+                            <div className="bg-amber-500/10 rounded p-2 border border-amber-500/30">
+                              <div className="opacity-80 font-medium">Total răcire</div>
+                              <div className="font-mono font-semibold text-amber-300">{Math.round(instSummary.qf_c)} kWh</div>
+                            </div>
+                            {instSummary.Q_night_vent_reduction > 0 && (
+                              <div className="col-span-2 sm:col-span-4 bg-emerald-500/10 rounded p-2 border border-emerald-500/30 flex justify-between items-center">
+                                <span className="opacity-80">Free cooling nocturn evitat (EN 16798-9)</span>
+                                <span className="font-mono font-semibold text-emerald-300">−{Math.round(instSummary.Q_night_vent_reduction)} kWh Q<sub>NC</sub></span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Sprint 3b — FREE COOLING NOCTURN (EN 16798-9 + EN ISO 13790 §12.2) */}
