@@ -1412,16 +1412,16 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ── TOGGLE NA:2023 ── */}
+              {/* ── TOGGLE NA:2023 (Sprint 11 — extins la factor electricitate global) ── */}
               <div className="flex items-center gap-3 mb-3 bg-white/[0.03] border border-white/10 rounded-xl p-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={useNA2023} onChange={e => setUseNA2023(e.target.checked)} className="accent-amber-500" />
-                  <span className="text-xs font-medium">fP energie ambientală = 1.00 (Mc001-2022 Tabel 5.17)</span>
+                  <span className="text-xs font-medium">Factori NA:2023 (Tab A.16) — electricitate + energie ambientală</span>
                 </label>
                 <div className="text-[10px] opacity-40 flex-1">
                   {useNA2023
-                    ? "Factor energie ambientală = 1.00 — conform Mc 001-2022 Tabel 5.17 (obligatoriu, confirmat MDLPA nr. 50843/09.03.2026). Energia ambientală a pompelor de căldură recunoscută ca sursă regenerabilă."
-                    : "Factor energie ambientală = 0 — valoare eronată din SR EN ISO 52000-1/NA:2023 Tabel A.16 (în curs de corectare de către ASRO). Nerecomandat — contrazice Mc 001-2022."}
+                    ? "ON (recomandat): electricitate fP_nren=2.00 + fP_ren=0.50 (Tab A.16, valoare ASRO autoritară) • energie ambientală PC = 1.00 (corecție OAER confirmată MDLPA nr. 50843/09.03.2026)."
+                    : "OFF (legacy Mc001-2022 Tab 5.17): electricitate fP_nren=2.62 (fP_ren=0) • energie ambientală PC = 0. Păstrat pentru paritate cu CPE-uri emise înainte de Sprint 11."}
                 </div>
               </div>
 

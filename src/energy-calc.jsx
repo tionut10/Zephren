@@ -35,8 +35,7 @@ import { checkC107Conformity } from "./calc/c107.js";
 
 // ── Extracted data modules (Sprint 3 → Faza 4 finalizare) ──
 import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES, CATEGORY_BASE_MAP, buildCatKey } from "./data/building-catalog.js";
-import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
-// Sprint 5 (17 apr 2026) — SR EN ISO 52120-1:2022
+import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, getFPElecTot, CO2_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
 import { checkBACSMandatoryISO, BACS_CLASS_LABELS, getBACSCategoryFromCode, getBACSFactors } from "./calc/bacs-iso52120.js";
 import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
 import { TIERS } from "./data/tiers.js";
@@ -1471,6 +1470,8 @@ export default function EnergyCalcApp({ cloud }) {
     const etaH = instSummary.eta_total_h || 0.80;
     const fuel = instSummary.fuel;
     const fP = fuel?.fP_tot || 1.17;
+    // Sprint 11 — factor electricitate NA:2023 gated pe toggle
+    const fP_elec_m = getFPElecTot(useNA2023);
     // C5 FIX: use monthlyISO data when available instead of simplified recalculation
     return months.map((name, i) => {
       const tExt = selectedClimate.temp_month[i];
@@ -1490,10 +1491,10 @@ export default function EnergyCalcApp({ cloud }) {
       const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
       const acmFuel = acm.source === "CAZAN_H" ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz") : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
       const fP_acm = (FUELS.find(f => f.id === acmFuel) || FUELS[0]).fP_tot;
-      const ep = qf_h * fP + qf_w * fP_acm + qf_c * FP_ELEC + qf_v * FP_ELEC + qf_l * FP_ELEC;
+      const ep = qf_h * fP + qf_w * fP_acm + qf_c * fP_elec_m + qf_v * fP_elec_m + qf_l * fP_elec_m;
       return { name, tExt, deltaT, qf_h, qf_w, qf_c, qf_v, qf_l, qf_total, ep, daysInMonth: daysInMonth[i] };
     });
-  }, [instSummary, selectedClimate, envelopeSummary, building.areaUseful, building.volume, building.category, heating.theta_int, monthlyISO, cooling.eer]);
+  }, [instSummary, selectedClimate, envelopeSummary, building.areaUseful, building.volume, building.category, heating.theta_int, monthlyISO, cooling.eer, acm.source, heating.source, useNA2023]);
 
   // ═══════════════════════════════════════════════════════════
   // FEATURE: COMPARAȚIE SCENARII (actual vs reabilitat)
@@ -1594,10 +1595,12 @@ export default function EnergyCalcApp({ cloud }) {
     const newG = V > 0 ? (newHT + newVentLoss) / V : 0;
     const gains = { RI:7, RC:7, RA:7, BI:15, ED:12, SA:10, HC:8, CO:15, SP:10, AL:10 }[building.category] || 7;
     const newQH = Math.max(0, (24 * newG * V * 0.9 * ngz / 1000) - gains * Au);
+    // Sprint 11 — factor electricitate gated pe useNA2023 (Tab A.16 2.50 / Tab 5.17 2.62)
+    const fP_elec_scenario = getFPElecTot(useNA2023);
     let newQfH, newFuelFpH, newFuelCO2H;
     if (ri.addHP) {
       const cop = parseFloat(ri.hpCOP) || 4.0;
-      newQfH = newQH / cop; newFuelFpH = FP_ELEC; newFuelCO2H = 0.107;
+      newQfH = newQH / cop; newFuelFpH = fP_elec_scenario; newFuelCO2H = CO2_ELEC;
     } else {
       const etaH = instSummary.eta_total_h || 0.80;
       newQfH = etaH > 0 ? newQH / etaH : 0;
@@ -1611,14 +1614,14 @@ export default function EnergyCalcApp({ cloud }) {
       : instSummary.qf_v;
     const newQfL = instSummary.qf_l;
     const newQfTotal = newQfH + newQfW + newQfC + newQfV + newQfL;
-    const acmFp = ri.addHP ? FP_ELEC : (instSummary.fuel?.fP_tot || 1.17);
-    const newEp = newQfH * newFuelFpH + newQfW * acmFp + newQfC * FP_ELEC + newQfV * FP_ELEC + newQfL * FP_ELEC;
+    const acmFp = ri.addHP ? fP_elec_scenario : (instSummary.fuel?.fP_tot || 1.17);
+    const newEp = newQfH * newFuelFpH + newQfW * acmFp + newQfC * fP_elec_scenario + newQfV * fP_elec_scenario + newQfL * fP_elec_scenario;
     let renewEp = 0;
-    if (ri.addPV) { renewEp += (parseFloat(ri.pvArea)||0) * 0.21 * 0.97 * (selectedClimate?.solar?.Oriz||330) * 0.80 * FP_ELEC; }
+    if (ri.addPV) { renewEp += (parseFloat(ri.pvArea)||0) * 0.21 * 0.97 * (selectedClimate?.solar?.Oriz||330) * 0.80 * fP_elec_scenario; }
     if (ri.addSolarTh) { renewEp += (parseFloat(ri.solarThArea)||0) * 0.75 * (selectedClimate?.solar?.S||390) * 0.85; }
     const newEpM2 = Au > 0 ? Math.max(0, newEp - renewEp) / Au : 0;
     const newClass = getEnergyClass(newEpM2, catKey);
-    const newCO2M2 = Au > 0 ? (newQfH * newFuelCO2H + newQfW * (ri.addHP?0.107:(instSummary.fuel?.fCO2||0.20)) + (newQfC+newQfV+newQfL)*0.107) / Au : 0;
+    const newCO2M2 = Au > 0 ? (newQfH * newFuelCO2H + newQfW * (ri.addHP?CO2_ELEC:(instSummary.fuel?.fCO2||0.20)) + (newQfC+newQfV+newQfL)*CO2_ELEC) / Au : 0;
     const epOrig = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
     const co2Orig = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary.co2_total_m2 || 0);
     return {
@@ -1626,7 +1629,7 @@ export default function EnergyCalcApp({ cloud }) {
       rehab: { ep: newEpM2, co2: newCO2M2, cls: newClass, qfTotal: newQfTotal },
       savings: { epPct: epOrig>0?((epOrig-newEpM2)/epOrig*100):0, co2Pct: co2Orig>0?((co2Orig-newCO2M2)/co2Orig*100):0, qfSaved: instSummary.qf_total - newQfTotal },
     };
-  }, [instSummary, envelopeSummary, building, cooling, selectedClimate, rehabScenarioInputs, opaqueElements, glazingElements, renewSummary, calcOpaqueR]);
+  }, [instSummary, envelopeSummary, building, cooling, selectedClimate, rehabScenarioInputs, opaqueElements, glazingElements, renewSummary, calcOpaqueR, ventilation.type, useNA2023]);
 
   // ═══════════════════════════════════════════════════════════════
   // CALCUL CONDENS GLASER — per element opac selectat
@@ -2057,12 +2060,12 @@ export default function EnergyCalcApp({ cloud }) {
     return m.exportComplianceReport({
       instSummary, renewSummary, building, selectedClimate, cooling,
       envelopeSummary, opaqueElements, glazingElements, bacsClass, auditor,
-      showToast, setExporting, calcOpaqueR,
+      showToast, setExporting, calcOpaqueR, useNA2023,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instSummary, renewSummary, building, selectedClimate, cooling.hasCooling,
       envelopeSummary, opaqueElements, glazingElements, bacsClass, auditor,
-      getEnergyClass, getNzebEpMax, calcOpaqueR, showToast]);
+      getEnergyClass, getNzebEpMax, calcOpaqueR, showToast, useNA2023]);
 
 
   // BridgeModal → extras în components/BridgeModal.jsx

@@ -24,7 +24,7 @@ const HELP_TEXTS = {
   pvPeak:        { text: "Puterea de vârf a instalației PV [kWp]. 1 kWp necesită ~6-8 m² suprafață (panouri standard 400W). Randament sistem tipic: 75-85%.", norm: "EN 15316-4-6 / PVGIS JRC EU" },
   solarArea:     { text: "Suprafața colectoarelor solare termice [m²]. Regula de baz: 1-1.5 m² per persoană pentru ACM. Factor de umbrire și orientare reduc producția.", norm: "SR EN 15316-4-3:2017 / GP 123-2004" },
   // Calcul
-  ep:            { text: "Energia primară [kWh/(m²·an)] — indicator principal pentru clasare. Include factori de conversie pentru fiecare sursă de energie (fP_gaz=1.1, fP_elec=2.62).", norm: "Mc 001-2022 Anexa A / SR EN ISO 52000-1:2017" },
+  ep:            { text: "Energia primară [kWh/(m²·an)] — indicator principal pentru clasare. Factori conversie: fP_gaz=1.17, fP_elec=2.00 (NA:2023 Tab A.16) sau 2.62 (legacy Tab 5.17) — gated pe toggle în Pasul 5.", norm: "SR EN ISO 52000-1:2017/NA:2023 Tab A.16 (Sprint 11)" },
   nZEB:          { text: "nZEB (nearly Zero Energy Building) — clădire cu consum aproape zero. Condiții: EP ≤ prag per categorie/zonă + RER ≥ 30% + RER_onsite ≥ 10%.", norm: "Mc 001-2022 Art.2.10 / Legea 238/2024" },
   sri:           { text: "SRI (Smart Readiness Indicator) — gradul de pregătire a clădirii pentru sisteme inteligente. Scala 0-100%. Obligatoriu pt. clădiri nerezidențiale >290 kW HVAC din 2027.", norm: "EPBD 2024/1275 Art.15 / Reg. delegat (UE) 2020/2155 + 2020/2156" },
 };

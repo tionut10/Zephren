@@ -465,9 +465,9 @@ export function calcElectricHeating(Q_dist, type = "convector_electric") {
     eta: sys.eta,
     Q_dist_kWh: Math.round(Q_dist),
     W_electric_kWh: Math.round(W_electric),
-    // Factor energie primară electric (din normative.json / Mc 001-2022)
-    note: "fP_nren = 2.62 pentru electricitate din rețea (Mc 001-2022)",
-    reference: "SR EN 15316-4-8:2017",
+    // Factor energie primară electric aplicat în hook-uri (useInstallationSummary / useRenewableSummary)
+    note: "fP_nren electricitate: 2.00 (NA:2023 Tab A.16 — implicit) sau 2.62 (Tab 5.17 legacy — toggle)",
+    reference: "SR EN 15316-4-8:2017 + SR EN ISO 52000-1/NA:2023",
   };
 }
 

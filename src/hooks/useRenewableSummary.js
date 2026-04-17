@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { FUELS, ACM_SOURCES, HEAT_SOURCES, SOLAR_THERMAL_TYPES, PV_TYPES, BIOMASS_TYPES, ORIENT_FACTORS, TILT_FACTORS } from "../data/constants.js";
-import { FP_ELEC } from "../data/u-reference.js";
+import { getFPElecTot, CO2_ELEC } from "../data/u-reference.js";
 
 /**
  * useRenewableSummary — calcul fracție regenerabilă și RER
@@ -55,6 +55,9 @@ export function useRenewableSummary({
     const Au = parseFloat(building.areaUseful) || 0;
     if (!Au || !selectedClimate || !instSummary) return null;
 
+    // Sprint 11 — factor electricitate gated pe useNA2023 (Tab A.16 2.50 / Tab 5.17 2.62)
+    const fP_elec = getFPElecTot(useNA2023);
+
     // ── SOLAR TERMIC ──
     let qSolarTh = 0;
     if (solarThermal.enabled) {
@@ -83,7 +86,7 @@ export function useRenewableSummary({
       const tiltF = TILT_FACTORS[photovoltaic.tilt] || 1;
       const solarH = selectedClimate.solar.Oriz || 360;
       qPV_kWh = area * etaPV * etaInv * solarH * oriF * tiltF * 0.80;
-      qPV = qPV_kWh * FP_ELEC;
+      qPV = qPV_kWh * fP_elec;
     }
     const pv_peak_kWp = parseFloat(photovoltaic.peakPower) || 0;
 
@@ -136,8 +139,8 @@ export function useRenewableSummary({
     if (otherRenew.cogenEnabled) {
       qCogen_el = parseFloat(otherRenew.cogenElectric) || 0;
       qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
-      qCogen_ep_reduction = qCogen_el * FP_ELEC + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
-      qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.202);
+      qCogen_ep_reduction = qCogen_el * fP_elec + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
+      qCogen_co2_reduction = qCogen_el * CO2_ELEC + qCogen_th * (cogenFuelData?.fCO2 || 0.202);
     }
 
     // ── PROXIMITATE 30 km GPS (L.238/2024 Art.6) ──
@@ -187,7 +190,7 @@ export function useRenewableSummary({
     // ambientFP urmează aceeași logică ca în useInstallationSummary:
     // NA:2023 ON → energia ambientală e inclusă în ep_total → trebuie scăzută și din ep_reduction
     const ambientFP = useNA2023 ? 1.0 : 0;
-    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction + qProximity * FP_REN;
+    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * fP_elec + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * fP_elec + qCogen_ep_reduction + qProximity * FP_REN;
     const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
     const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
 
@@ -196,7 +199,7 @@ export function useRenewableSummary({
       ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz")
       : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
     const solarThCO2Factor = (FUELS.find(f => f.id === acmFuelId) || FUELS[0]).fCO2;
-    const co2_reduction = qSolarTh * solarThCO2Factor + qPV_kWh * 0.107 + qPC_ren * 0 + qWind * 0.107 + qCogen_co2_reduction;
+    const co2_reduction = qSolarTh * solarThCO2Factor + qPV_kWh * CO2_ELEC + qPC_ren * 0 + qWind * CO2_ELEC + qCogen_co2_reduction;
     const co2_adjusted = Math.max(0, instSummary.co2_total - co2_reduction);
     const co2_adjusted_m2 = Au > 0 ? co2_adjusted / Au : 0;
 
