@@ -70,6 +70,16 @@ export const INITIAL_COOLING = {
   eta_dist:"0.95",                  // η distribuție răcire
   controlType:"termostat_prop",
   eta_ctrl:"0.96",                  // η control răcire
+  // Sprint 3b (17 apr 2026) — auxiliare electrice răcire (EN 15316-4-2)
+  P_aux_pumps:"",                   // kW pompe circuit apă rece (chiller apă / PC reversibilă hidronică)
+  P_aux_fans:"",                    // kW ventilatoare fan-coil / ventilator condensator (chiller aer)
+  t_cooling_hours:"",               // ore operare răcire anual — gol → default pe zonă climatică
+  // Sprint 3b — free cooling nocturn (EN 16798-9 + EN ISO 13790 §12.2)
+  hasNightVent:false,               // checkbox activare ventilație nocturnă
+  n_night:"2.0",                    // h⁻¹ — rată schimb aer nocturn (tipic 1.5–3.0)
+  comfortCategory:"II",             // I / II / III / IV — EN 16798-1 (ΔT_min fezabilitate)
+  // Sprint 3b — override tipologie aporturi (implicit: mapCategoryToGains din category)
+  internalGainsOverride:"",         // "" = auto, altfel: office/retail/residential/school/hospital
 };
 
 export const INITIAL_VENTILATION = {

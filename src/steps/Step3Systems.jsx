@@ -277,6 +277,11 @@ export default function Step3Systems({
             const etaDistNum = parseFloat(cooling.eta_dist);
             const etaCtrlNum = parseFloat(cooling.eta_ctrl);
             const setpointNum = parseFloat(cooling.setpoint);
+            // Sprint 3b — validări noi W_aux + night vent
+            const pAuxPumpsNum = parseFloat(cooling.P_aux_pumps);
+            const pAuxFansNum = parseFloat(cooling.P_aux_fans);
+            const tCoolHoursNum = parseFloat(cooling.t_cooling_hours);
+            const nNightNum = parseFloat(cooling.n_night);
             if (cooling.eer && (eerNum <= 0 || eerNum > 20)) {
               coolErrors.push("EER nominal: trebuie în intervalul 0 – 20 (valori tipice 2.5–6.0 pentru split/chiller).");
             }
@@ -300,6 +305,18 @@ export default function Step3Systems({
             }
             if (cooling.setpoint && (setpointNum < 20 || setpointNum > 30)) {
               coolErrors.push("Setpoint răcire: trebuie în intervalul 20 – 30 °C (EN 16798-1 cat. I–IV).");
+            }
+            if (cooling.P_aux_pumps && (pAuxPumpsNum < 0 || pAuxPumpsNum > 500)) {
+              coolErrors.push("Putere pompe circuit rece: trebuie între 0 și 500 kW (sanity check EN 15316-4-2).");
+            }
+            if (cooling.P_aux_fans && (pAuxFansNum < 0 || pAuxFansNum > 500)) {
+              coolErrors.push("Putere ventilatoare fan-coil/condensator: trebuie între 0 și 500 kW.");
+            }
+            if (cooling.t_cooling_hours && (tCoolHoursNum < 0 || tCoolHoursNum > 8760)) {
+              coolErrors.push("Ore operare răcire: trebuie între 0 și 8760 h/an.");
+            }
+            if (cooling.n_night && (nNightNum < 0 || nNightNum > 10)) {
+              coolErrors.push("Rată ventilație nocturnă: trebuie între 0 și 10 h⁻¹ (tipic 1.5–3.0).");
             }
             const hasErrors = coolErrors.length > 0;
             const coolSysSelected = COOLING_SYSTEMS.find(s => s.id === cooling.system);
@@ -385,12 +402,124 @@ export default function Step3Systems({
                         </div>
                       </div>
 
+                      {/* Sprint 3b — AUXILIARE ELECTRICE RĂCIRE (EN 15316-4-2) */}
+                      <div className="mt-3">
+                        <div className="text-xs font-medium text-amber-400 mb-2">AUXILIARE ELECTRICE — SR EN 15316-4-2:2017</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Input label="Pompe circuit apă rece" value={cooling.P_aux_pumps} onChange={v => setCooling(p=>({...p,P_aux_pumps:v}))}
+                            type="number" unit="kW" min="0" max="500" step="0.01"
+                            placeholder="0 = fără pompe (split aer-aer)"
+                            tooltip="Putere electrică TOTALĂ pompe circulație agent rece (chiller apă, PC hidronică, fan-coils). Tipic 0.5-3% din putere frigorifică." />
+                          <Input label="Ventilatoare fan-coil / condensator" value={cooling.P_aux_fans} onChange={v => setCooling(p=>({...p,P_aux_fans:v}))}
+                            type="number" unit="kW" min="0" max="500" step="0.01"
+                            placeholder="0 = fără (chiller apă)"
+                            tooltip="Putere electrică TOTALĂ ventilatoare fan-coil-uri + ventilator condensator chiller aer-aer. Tipic 3-8% din putere frigorifică." />
+                          <Input label="Ore operare răcire" value={cooling.t_cooling_hours} onChange={v => setCooling(p=>({...p,t_cooling_hours:v}))}
+                            type="number" unit="h/an" min="0" max="8760" step="10"
+                            placeholder={instSummary ? `auto: ${instSummary.t_cooling_hours} h (${building.category || "?"} × zona ${selectedClimate?.zone || "III"})` : "auto"}
+                            tooltip="Ore efective funcționare chiller/PC. Gol → default Mc 001 Tab. 9.3 per categorie × zonă climatică." />
+                        </div>
+                        <div className="text-[11px] opacity-50 mt-2 leading-relaxed">
+                          E<sub>aux</sub> = (P<sub>pompe</sub> + P<sub>ventilatoare</sub>) × t<sub>operare</sub> — se adaugă la consumul compresorului.
+                        </div>
+                      </div>
+
+                      {/* Sprint 3b — FREE COOLING NOCTURN (EN 16798-9 + EN ISO 13790 §12.2) */}
+                      <div className="mt-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 space-y-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={!!cooling.hasNightVent}
+                            onChange={e => setCooling(p=>({...p,hasNightVent:e.target.checked}))}
+                            className="accent-emerald-500" />
+                          <span className="font-medium text-emerald-300">Free cooling nocturn (ventilație pasivă de noapte)</span>
+                          <span className="text-[10px] opacity-40">(economie 20–40% răcire pentru birouri/școli cu masă termică)</span>
+                        </label>
+                        {cooling.hasNightVent && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            <Input label={t("Rată schimb aer nocturn",lang)} value={cooling.n_night} onChange={v => setCooling(p=>({...p,n_night:v}))}
+                              type="number" unit="h⁻¹" step="0.1" min="0" max="10"
+                              placeholder="2.0 (EN 16798-1 cat. II)"
+                              tooltip="Rata de ventilație naturală/mecanică pe timp de noapte (22:00–06:00). Tipic 1.5–3.0 h⁻¹." />
+                            <Select label={t("Categorie confort",lang)} value={cooling.comfortCategory || "II"} onChange={v => setCooling(p=>({...p,comfortCategory:v}))}
+                              options={[
+                                { value:"I",   label:"Cat. I — Confort ridicat (ΔT ≥ 3K, n ≥ 2.0)" },
+                                { value:"II",  label:"Cat. II — Confort normal (ΔT ≥ 3K, n ≥ 1.5)" },
+                                { value:"III", label:"Cat. III — Confort moderat (ΔT ≥ 2K, n ≥ 1.0)" },
+                                { value:"IV",  label:"Cat. IV — Confort minim (ΔT ≥ 2K, n ≥ 0.8)" },
+                              ]} />
+                          </div>
+                        )}
+                        {cooling.hasNightVent && instSummary?.nightVentResult && (
+                          <div className="text-[11px] leading-relaxed pt-1 border-t border-emerald-500/10">
+                            <span className="opacity-60">Fezabilitate:</span>{" "}
+                            <span className={cn("font-medium", instSummary.nightVentResult.feasible ? "text-emerald-400" : "text-orange-400")}>
+                              {instSummary.nightVentResult.feasible ? "✓ da" : "✗ nu (ΔT insuficient)"}
+                            </span>{" "}
+                            · <span className="opacity-60">ΔT:</span> <span className="font-mono">{instSummary.nightVentResult.delta_T}K</span>
+                            {instSummary.nightVentResult.feasible && (
+                              <>
+                                {" · "}<span className="opacity-60">Reducere Q<sub>NC</sub>:</span>{" "}
+                                <span className="font-mono text-emerald-400">{Math.round(instSummary.Q_night_vent_reduction)} kWh/an</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sprint 3b — OVERRIDE TIPOLOGIE APORTURI INTERNE (Mc 001 Tab. 9.2 + CIBSE) */}
+                      <div className="mt-3">
+                        <Select label={t("Tipologie aporturi interne (pentru calcul orar)",lang)}
+                          value={cooling.internalGainsOverride || ""} onChange={v => setCooling(p=>({...p,internalGainsOverride:v}))}
+                          options={[
+                            { value:"",            label:`Auto (din categoria clădirii: ${building.category || "?"} → ${instSummary?.internalGainsType || "office"})` },
+                            { value:"office",      label:"Birouri (35 W/m², ocupare 8-18)" },
+                            { value:"retail",      label:"Comerț / retail (40 W/m², ocupare 9-21)" },
+                            { value:"residential", label:"Rezidențial (15 W/m², ocupare seară+noapte)" },
+                            { value:"school",      label:"Școală / educație (35 W/m², ocupare 8-16)" },
+                            { value:"hospital",    label:"Spital / sănătate (50 W/m², ocupare 24/24)" },
+                          ]}
+                        />
+                        <div className="text-[11px] opacity-50 mt-1 leading-relaxed">
+                          Influențează profilul orar al aporturilor interne (persoane + echipamente + iluminat) folosit în calculul orar CIBSE.
+                        </div>
+                      </div>
+
                       {hasErrors && (
                         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs space-y-1 mt-3">
                           <div className="font-medium text-red-400 mb-1">⚠ Valori în afara intervalului admis</div>
                           {coolErrors.map((e, i) => (
                             <div key={i} className="text-red-300/80 leading-relaxed">• {e}</div>
                           ))}
+                        </div>
+                      )}
+
+                      {/* Sprint 3b — BREAKDOWN consum răcire (compresor vs. auxiliare) */}
+                      {instSummary?.hasCool && (
+                        <div className="mt-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3">
+                          <div className="text-xs font-medium text-blue-300 mb-2">Defalcare consum răcire (kWh/an)</div>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex justify-between">
+                              <span className="opacity-60">Compresor chiller/PC</span>
+                              <span className="font-mono">{Math.round(instSummary.qf_c_compressor || 0)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="opacity-60">Pompe circuit apă rece</span>
+                              <span className="font-mono">{Math.round(instSummary.qf_c_aux_pumps || 0)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="opacity-60">Ventilatoare fan-coil/condensator</span>
+                              <span className="font-mono">{Math.round(instSummary.qf_c_aux_fans || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-t border-blue-500/20 pt-1 mt-1 font-medium">
+                              <span>TOTAL răcire</span>
+                              <span className="font-mono text-blue-300">{Math.round(instSummary.qf_c || 0)}</span>
+                            </div>
+                            {instSummary.Q_night_vent_reduction > 0 && (
+                              <div className="flex justify-between text-emerald-400 pt-1">
+                                <span>↓ Evitat prin free cooling</span>
+                                <span className="font-mono">−{Math.round(instSummary.Q_night_vent_reduction)} (necesar termic)</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 

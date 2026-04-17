@@ -336,6 +336,41 @@ export const COOLING_CONTROL_EFFICIENCY = [
   { id:"bacs_clasa_a",       label:"BACS Clasa A (high-performance — optimizare AI)",eta:1.05 },
 ];
 
+// Sprint 3b (17 apr 2026) — Ore tipice operare răcire anual per zonă climatică × categorie
+// Conform Mc 001-2022 Partea III Tab. 9.3 + experiență auditori RO
+// Sezon de răcire RO: 15 mai – 15 septembrie (~120 zile)
+// Ore efective chiller/PC = zile sezon × (ore ocupare × factor utilizare)
+// Zone climatice Mc 001: I (Timișoara-Oradea) / II (Cluj-Iași) / III (București) / IV (Constanța) / V (Dobrogea-sud)
+export const COOLING_HOURS_BY_ZONE = {
+  // Rezidențial (funcționare intermitentă, seara + noapte + weekend)
+  RI: { I:600, II:800, III:1000, IV:1200, V:1400 },
+  RC: { I:600, II:800, III:1000, IV:1200, V:1400 },
+  RA: { I:600, II:800, III:1000, IV:1200, V:1400 },
+  // Birouri (8-10h/zi lucrătoare × ~90 zile răcire)
+  BI: { I:800, II:1000, III:1200, IV:1500, V:1800 },
+  AD: { I:800, II:1000, III:1200, IV:1500, V:1800 },
+  // Comerț / retail (12h/zi × 120 zile)
+  CO: { I:1200, II:1400, III:1700, IV:2000, V:2300 },
+  MAG: { I:1200, II:1400, III:1700, IV:2000, V:2300 },
+  MALL: { I:1500, II:1800, III:2100, IV:2400, V:2700 },
+  // Educație (8h/zi × 100 zile, pauze vară)
+  SC: { I:400, II:500, III:600, IV:700, V:800 },
+  ED: { I:400, II:500, III:600, IV:700, V:800 },
+  // Sănătate (24/24 × sezon răcire)
+  SA: { I:2000, II:2400, III:2800, IV:3200, V:3600 },
+  SPA_H: { I:2000, II:2400, III:2800, IV:3200, V:3600 },
+  // Hotel (12-14h/zi × 120 zile)
+  HC: { I:1000, II:1200, III:1500, IV:1800, V:2100 },
+  HO_LUX: { I:1200, II:1500, III:1800, IV:2100, V:2400 },
+  // Sport / Altele
+  SP: { I:700, II:900, III:1100, IV:1300, V:1500 },
+  AL: { I:800, II:1000, III:1200, IV:1400, V:1600 },
+  AER: { I:2000, II:2200, III:2500, IV:2800, V:3100 },
+};
+
+// Default fallback când categoria sau zona lipsesc
+export const COOLING_HOURS_DEFAULT = 1200;
+
 // Tipuri ventilare conform I5-2022 (Ord. MDLPA 2023) + Mc 001-2022 Cap. 3 + EN 13779
 // SFP stocat în kW/(m³/s) — echivalent cu Wh/m³ — conform SR EN 13779 Tab.B.5 + I5-2022 Tab.6.1
 // Exemplu: sfp=1.40 kW/(m³/s) = 1400 W/(m³/s) ≈ SFP4 pentru recuperator 80%

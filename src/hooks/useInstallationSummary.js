@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import {
   HEAT_SOURCES, FUELS, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
   LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
+  COOLING_HOURS_BY_ZONE, COOLING_HOURS_DEFAULT,
 } from "../data/constants.js";
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
 import { FP_ELEC } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
+import { calcNightVentilation } from "../calc/night-ventilation.js";
 
 // Mapare categorie clădire → tip câștiguri interne CIBSE (cooling-hourly.js)
 // Sprint 3a (17 apr 2026) — pentru integrarea motorului orar
@@ -157,14 +159,19 @@ export function useInstallationSummary({
       ? fuel
       : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
 
-    // ── COOLING — Sprint 3a (17 apr 2026) ──
-    // Fix-uri aplicate:
-    //   #1 Integrare cooling-hourly.js (era orfan — apelat doar din Step8Advanced)
-    //   #2 SEER separat de EER (EN 14825) — eer_nominal ≠ seer_sezonier
-    //   #3 η_em × η_dist × η_ctrl separate răcire (EN 15316-2) — paritate cu încălzirea
+    // ── COOLING — Sprint 3a (17 apr 2026) + Sprint 3b (17 apr 2026) ──
+    // S3a: #1 cooling-hourly integrat + #2 SEER ≠ EER (EN 14825) + #3 η_em/η_dist/η_ctrl separate (EN 15316-2)
+    // S3b: #4 W_aux (pompe + ventilatoare EN 15316-4-2) + #5/#6 free cooling nocturn (EN 16798-9) +
+    //      #7 override tipologie aporturi interne (CIBSE + Mc 001 Tab. 9.2)
     const hasCool = cooling.hasCooling && cooling.system !== "NONE";
     const coolSys = COOLING_SYSTEMS.find(s => s.id === cooling.system);
     const coolArea = parseFloat(cooling.cooledArea) || Au;
+
+    // #7 — Override tipologie aporturi (prioritate UI > auto din category)
+    const gainsOverride = cooling.internalGainsOverride;
+    const internalGainsType = (gainsOverride && gainsOverride !== "")
+      ? gainsOverride
+      : mapCategoryToGains(building.category);
 
     // #1 — Sursă primară Q_NC: cooling-hourly.js (dacă flag activ + envelope complet)
     //      Fallback 1: monthlyISO lunar (iso13790.js)
@@ -182,7 +189,7 @@ export function useInstallationSummary({
           opaqueElements: envelopeSummary.opaqueElements,
           climate: selectedClimate || {},
           theta_int_cool: parseFloat(cooling.setpoint) || 26,
-          internalGainsType: mapCategoryToGains(building.category),
+          internalGainsType,
           shadingExternal: parseFloat(cooling.shadingExternal) || 0.7,
         });
         qC_nd_hourly = (coolingHourlyResult && coolingHourlyResult.Q_annual_kWh > 0)
@@ -192,11 +199,63 @@ export function useInstallationSummary({
         qC_nd_hourly = null;
       }
     }
-    const qC_nd = hasCool
+    const qC_nd_raw = hasCool
       ? (qC_nd_hourly != null
         ? qC_nd_hourly
         : (qC_nd_calc > 0 ? qC_nd_calc * (coolArea / Au) : coolArea * 25))
       : 0;
+
+    // #5+#6 — Free cooling nocturn (reducere Q_NC conform EN 16798-9 + EN ISO 13790 §12.2)
+    //         Integrează calcNightVentilation (167 LOC) cu factor masă termică + fezabilitate ΔT
+    //         Cap reducere la 40% din qC_nd (limită fizică realistă EN 16798-9)
+    let nightVentResult = null;
+    let Q_night_vent_reduction = 0;
+    if (hasCool && cooling.hasNightVent && qC_nd_raw > 0) {
+      // Derivare masă termică din structură clădire (Mc 001 Tab. 2.20)
+      // THERMAL_MASS_CLASS dă J/(m²·K) — night-ventilation.js așteaptă kJ/(m²·K)
+      const structureMass_J = {
+        "Structură metalică": 80000, "Structură lemn": 80000,
+        "Panouri prefabricate mari": 165000, "Cadre beton armat": 165000,
+        "Zidărie portantă": 260000, "Pereți cortină + beton": 165000,
+        "BCA + cadre beton": 165000, "Structură mixtă": 165000,
+      }[building.structure || "Structură mixtă"] || 165000;
+      const thermalMass_kJ = structureMass_J / 1000;
+      // Zile sezon răcire per zonă climatică Mc 001
+      const zoneKey = selectedClimate?.zone || "III";
+      const seasonDaysMap = { I:100, II:110, III:120, IV:130, V:140 };
+      const days_cooling_season = seasonDaysMap[zoneKey] || 120;
+      // Temperatură nocturnă medie: media lunilor iulie-august minus 4K (răcirea nopții)
+      const tempMonth = selectedClimate?.temp_month;
+      const tJul = (Array.isArray(tempMonth) && tempMonth.length === 12) ? tempMonth[6] : 23;
+      const tAug = (Array.isArray(tempMonth) && tempMonth.length === 12) ? tempMonth[7] : 23;
+      const theta_ext_night_avg = Math.max(10, (tJul + tAug) / 2 - 4);
+      // HDD răcire (Cooling Degree Days bază 18°C) — sumă lunară pentru sezon iunie-august
+      const HDD_cool = Array.isArray(tempMonth) && tempMonth.length === 12
+        ? [5, 6, 7].reduce((s, m) => s + Math.max(0, (tempMonth[m] - 18) * 30), 0)
+        : 150;
+      try {
+        nightVentResult = calcNightVentilation({
+          Au: coolArea,
+          V,
+          n_night: parseFloat(cooling.n_night) || 2.0,
+          theta_int_day: parseFloat(cooling.setpoint) || 26,
+          theta_ext_night_avg,
+          HDD_cool,
+          days_cooling_season,
+          comfortCategory: cooling.comfortCategory || "II",
+          thermalMass: thermalMass_kJ,
+        });
+        // Cap reducere la 40% din qC_nd (EN 16798-9: economie realistă 20-40%)
+        const max_reduction = qC_nd_raw * 0.40;
+        Q_night_vent_reduction = nightVentResult.feasible
+          ? Math.min(max_reduction, nightVentResult.Q_free_cooling_kWh)
+          : 0;
+      } catch (_e) {
+        nightVentResult = null;
+        Q_night_vent_reduction = 0;
+      }
+    }
+    const qC_nd = Math.max(0, qC_nd_raw - Q_night_vent_reduction);
 
     // #2 — SEER (EN 14825) prioritate UI > catalog > fallback EER × 1.8
     const eerRaw = parseFloat(cooling.eer);
@@ -212,10 +271,29 @@ export function useInstallationSummary({
     const eta_ctrl_c = parseFloat(cooling.eta_ctrl) || 0.96; // default termostat proporțional
     const eta_total_c = eta_em_c * eta_dist_c * eta_ctrl_c;
 
-    // Formula consum final: qf_c = Q_NC / (SEER × η_em × η_dist × η_ctrl)
-    const qf_c = hasCool && seer > 0 && eta_total_c > 0
+    // Consum COMPRESOR (chiller/PC) — formula S3a: qf_c_comp = Q_NC / (SEER × η_em × η_dist × η_ctrl)
+    const qf_c_compressor = hasCool && seer > 0 && eta_total_c > 0
       ? qC_nd / (seer * eta_total_c)
       : 0;
+
+    // #4 — Consum AUXILIAR electric răcire (EN 15316-4-2)
+    //      Pompe circuit apă rece (chiller apă / PC hidronică) + ventilatoare fan-coil / condensator
+    //      E_aux_i = P_aux_i × t_operare (kW × h = kWh/an)
+    //      t_operare default: COOLING_HOURS_BY_ZONE[categorie][zona] (Mc 001 + practică RO)
+    const P_aux_pumps_kW = Math.max(0, parseFloat(cooling.P_aux_pumps) || 0);
+    const P_aux_fans_kW = Math.max(0, parseFloat(cooling.P_aux_fans) || 0);
+    const t_cool_override = parseFloat(cooling.t_cooling_hours);
+    const zoneK = selectedClimate?.zone || "III";
+    const t_cooling_hours = (isFinite(t_cool_override) && t_cool_override > 0 && t_cool_override <= 8760)
+      ? t_cool_override
+      : ((COOLING_HOURS_BY_ZONE[building.category] && COOLING_HOURS_BY_ZONE[building.category][zoneK])
+        || COOLING_HOURS_DEFAULT);
+    const qf_c_aux_pumps = hasCool ? P_aux_pumps_kW * t_cooling_hours : 0;
+    const qf_c_aux_fans = hasCool ? P_aux_fans_kW * t_cooling_hours : 0;
+    const qf_c_aux_total = qf_c_aux_pumps + qf_c_aux_fans;
+
+    // Total energie finală răcire = compresor + auxiliare
+    const qf_c = qf_c_compressor + qf_c_aux_total;
     const coolFuel = coolSys ? FUELS.find(f => f.id === coolSys.fuel) : null;
 
     // ── VENTILARE — EN 16798-3 / Mc 001-2022 Partea III ──
@@ -352,6 +430,16 @@ export function useInstallationSummary({
       qH_nd, qH_nd_m2, eta_total_h, qf_h,
       qACM_nd, qf_w, nConsumers,
       qC_nd, qf_c, hasCool,
+      // Sprint 3b — breakdown compresor vs. auxiliare (UI afișează defalcare)
+      qC_nd_raw,                    // Q_NC înainte de free cooling
+      Q_night_vent_reduction,       // reducere aplicată din night vent (kWh/an)
+      qf_c_compressor,              // consum compresor chiller/PC
+      qf_c_aux_pumps,               // pompe circuit apă rece
+      qf_c_aux_fans,                // ventilatoare fan-coil / condensator
+      qf_c_aux_total,               // total auxiliare
+      t_cooling_hours,              // ore operare răcire (efective sau default zonă × categorie)
+      nightVentResult,              // rezultat complet calcNightVentilation (null dacă dezactivat)
+      internalGainsType,            // tipologie aplicată (auto sau override)
       qf_v, hrEta,
       leni, qf_l, leniMax, leniStatus, W_L, W_P, W_em, W_standby,
       qf_total, qf_total_m2,
