@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔬",
+        "text": "Sprint 5: migrare BACS EN 15232-1:2017 -> SR EN ISO 52120-1:2022"
+      },
+      {
         "icon": "🎨",
         "text": "Sprint 4b: fix ACM partea 2 — cuplaj solar real + validari + UI breakdown"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📋",
         "text": "[Audit] Faza 11 — Step 7 Iluminat (LENI) finalizat, score 62%"
-      },
-      {
-        "icon": "🔬",
-        "text": "refactor(ACM): unificare motor EN 15316 + Legionella + aux pompă — Sprint 1+3"
       }
     ]
   },

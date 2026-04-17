@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import { calcSolarACMDetailed, COLLECTOR_TYPES } from "../calc/solar-acm-detailed.js";
+import { calcCHP, CHP_TYPES_CATALOG } from "../calc/chp-detailed.js";
 import {
   HEAT_SOURCES, FUELS,
   SOLAR_THERMAL_TYPES, PV_TYPES, PV_INVERTER_ETA,
@@ -336,14 +337,101 @@ export default function Step4Renewables({
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="checkbox" checked={otherRenew.cogenEnabled} onChange={e => setOtherRenew(p=>({...p,cogenEnabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">Sistem de cogenerare</span>
+                    <span className="font-medium">Sistem de cogenerare (SR EN 15316-4-4 + Dir. 2012/27/UE)</span>
                   </label>
                   {otherRenew.cogenEnabled && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                      <Input label={t("Producție electrică anuală",lang)} value={otherRenew.cogenElectric} onChange={v => setOtherRenew(p=>({...p,cogenElectric:v}))} type="number" unit="kWh/an" />
-                      <Input label={t("Producție termică anuală",lang)} value={otherRenew.cogenThermal} onChange={v => setOtherRenew(p=>({...p,cogenThermal:v}))} type="number" unit="kWh/an" />
-                      <Select label={t("Combustibil CHP",lang)} value={otherRenew.cogenFuel} onChange={v => setOtherRenew(p=>({...p,cogenFuel:v}))}
-                        options={FUELS.slice(0,4).map(f=>({value:f.id,label:f.label}))} />
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Select label={t("Tip CHP",lang)} value={otherRenew.cogenType || "mini_ice"} onChange={v => setOtherRenew(p=>({...p,cogenType:v}))}
+                          options={Object.entries(CHP_TYPES_CATALOG).map(([id,c])=>({value:id,label:c.label}))} />
+                        <Select label={t("Combustibil CHP",lang)} value={otherRenew.cogenFuel} onChange={v => setOtherRenew(p=>({...p,cogenFuel:v}))}
+                          options={FUELS.filter(f=>["gaz","biogas","hidrogen","gpl","motorina"].includes(f.id)).map(f=>({value:f.id,label:f.label}))} />
+                        <Input label={t("Putere electrică",lang)} value={otherRenew.cogenPowerEl} onChange={v => setOtherRenew(p=>({...p,cogenPowerEl:v}))} type="number" unit="kW" step="0.5" />
+                        <Input label={t("Ore funcționare/an",lang)} value={otherRenew.cogenHours || "5000"} onChange={v => setOtherRenew(p=>({...p,cogenHours:v}))} type="number" unit="h/an" step="100" />
+                        <Input label={t("Producție electrică anuală",lang)} value={otherRenew.cogenElectric} onChange={v => setOtherRenew(p=>({...p,cogenElectric:v}))} type="number" unit="kWh/an" />
+                        <Input label={t("Producție termică anuală",lang)} value={otherRenew.cogenThermal} onChange={v => setOtherRenew(p=>({...p,cogenThermal:v}))} type="number" unit="kWh/an" />
+                      </div>
+
+                      {/* Calcul detaliat PES + CO₂ + payback conform Dir. 2012/27/UE */}
+                      {otherRenew.cogenEnabled && parseFloat(otherRenew.cogenPowerEl) > 0 && (() => {
+                        const fuelIdMap = { gaz:"natural_gas", biogas:"biogas", gpl:"lpg", hidrogen:"hydrogen", motorina:"diesel" };
+                        const chpFuelKey = fuelIdMap[otherRenew.cogenFuel] || "natural_gas";
+                        let chp = null;
+                        try {
+                          chp = calcCHP({
+                            powerElec_kW: parseFloat(otherRenew.cogenPowerEl) || 5,
+                            operatingHours: parseFloat(otherRenew.cogenHours) || 5000,
+                            fuelType: chpFuelKey,
+                            chpType: otherRenew.cogenType || "mini_ice",
+                            heatDemand_kWh: (instSummary?.qH_nd || 0) + (instSummary?.qACM_nd || 0),
+                            elecDemand_kWh: 10_000,
+                          });
+                        } catch { return null; }
+                        if (!chp) return null;
+                        return (
+                          <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 space-y-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">Detaliu EN 15316-4-4 + Dir. 2012/27/UE Anexa II</div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {[
+                                { label:"Electric produs", val:`${chp.Q_elec_kWh.toLocaleString("ro-RO")} kWh/an`, color:"text-amber-400" },
+                                { label:"Termic produs", val:`${chp.Q_heat_kWh.toLocaleString("ro-RO")} kWh/an`, color:"text-red-400" },
+                                { label:"Eficiență totală", val:`${(chp.efficiency_total*100).toFixed(0)}%`, color:chp.efficiency_total>=0.80?"text-emerald-400":"text-amber-400" },
+                                { label:"PES", val:`${chp.PES_pct}%`, color:chp.PES_pct>=10?"text-emerald-400":"text-red-400" },
+                                { label:"Acop. termic", val:`${chp.heat_coverage_pct}%`, color:"" },
+                                { label:"CO₂ evitat", val:`${(chp.co2_saved_kg/1000).toFixed(1)} t/an`, color:"text-emerald-400" },
+                                { label:"Ep economisită", val:`${chp.ep_saved_kWh.toLocaleString("ro-RO")} kWh/an`, color:"text-blue-400" },
+                                { label:"Payback", val: chp.financial.payback_years ? `${chp.financial.payback_years} ani` : ">25 ani", color:"" },
+                              ].map((r,i)=>(
+                                <div key={i} className="bg-white/[0.02] rounded p-2">
+                                  <div className="text-[10px] opacity-40">{r.label}</div>
+                                  <div className={`text-xs font-bold font-mono ${r.color}`}>{r.val}</div>
+                                </div>
+                              ))}
+                            </div>
+                            {chp.recommendations && chp.recommendations.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {chp.recommendations.map((rec,i)=>(
+                                  <div key={i} className="text-[10px] text-amber-300 opacity-80">• {rec}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
+              </Card>
+
+              {/* ── PROXIMITATE 30 km GPS (L.238/2024 Art.6) ── */}
+              <Card title={t("Regenerabile în proximitate (≤30 km GPS)",lang)}>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={otherRenew.proximityEnabled || false} onChange={e => setOtherRenew(p=>({...p,proximityEnabled:e.target.checked}))} className="accent-emerald-500" />
+                    <span className="font-medium">Sursă regenerabilă externă (parc PV/eolian regional)</span>
+                  </label>
+                  <div className="text-[10px] opacity-50">
+                    <strong>Legea 238/2024 Art.6:</strong> regenerabilul &quot;local&quot; include sursele produse în rază maximă ≤30 km GPS de clădire (parcuri PV, eoliene comunitare, cogenerare cartier). Contează la <em>RER total</em> (≥30%) dar <strong>NU la RER on-site</strong> (≥10% obligatoriu pe clădire).
+                  </div>
+                  {otherRenew.proximityEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                      <Select label={t("Tip sursă",lang)} value={otherRenew.proximitySource || "solar"} onChange={v => setOtherRenew(p=>({...p,proximitySource:v}))}
+                        options={[
+                          {value:"solar",label:"Parc fotovoltaic"},
+                          {value:"wind",label:"Parc eolian"},
+                          {value:"biomass",label:"Centrală biomasă"},
+                          {value:"chp_bio",label:"CHP biogaz"},
+                          {value:"dh_renewable",label:"Termoficare regenerabilă"},
+                        ]} />
+                      <Input label={t("Distanță GPS",lang)} value={otherRenew.proximityDistanceKm} onChange={v => setOtherRenew(p=>({...p,proximityDistanceKm:v}))} type="number" unit="km" step="0.5" min="0" max="30"
+                        placeholder="≤30 km obligatoriu" />
+                      <Input label={t("Producție atribuită",lang)} value={otherRenew.proximityProduction} onChange={v => setOtherRenew(p=>({...p,proximityProduction:v}))} type="number" unit="kWh/an"
+                        placeholder="kWh garanție origine" />
+                    </div>
+                  )}
+                  {otherRenew.proximityEnabled && parseFloat(otherRenew.proximityDistanceKm) > 30 && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-2 mt-2 text-[10px] text-red-300">
+                      ⚠ Distanța {otherRenew.proximityDistanceKm} km depășește pragul L.238/2024 (max 30 km). Sursa NU va fi contabilizată în RER.
                     </div>
                   )}
                 </div>
@@ -424,25 +512,50 @@ export default function Step4Renewables({
             )}
           </Card>
 
-          {/* nZEB check */}
+          {/* nZEB check — Sprint 6: extins cu RER on-site ≥10% (L.238/2024 Art.6) */}
           {renewSummary && (() => {
             const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-            const isNzeb = renewSummary.rer >= nzeb.rer_min && renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone);
+            const epMax = getNzebEpMax(building.category, selectedClimate?.zone);
+            const rerTotalOk = renewSummary.rer >= nzeb.rer_min;
+            const rerOnSiteOk = renewSummary.rerOnSite >= (nzeb.rer_onsite_min || 10);
+            const epOk = renewSummary.ep_adjusted_m2 < epMax;
+            const isNzeb = rerTotalOk && rerOnSiteOk && epOk;
             return (
-            <Card title={t("Verificare nZEB",lang)} className={isNzeb ? "border-emerald-500/20" : "border-red-500/20"}>
+            <Card title={t("Verificare nZEB (L.238/2024 Art.6)",lang)} className={isNzeb ? "border-emerald-500/20" : "border-red-500/20"}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs opacity-60">RER &ge; {nzeb.rer_min}%</span>
-                  <span className={cn("text-xs font-medium", renewSummary.rer >= nzeb.rer_min ? "text-emerald-400" : "text-red-400")}>
-                    {renewSummary.rer >= nzeb.rer_min ? "DA" : "NU"} ({renewSummary.rer.toFixed(1)}%)
+                  <span className="text-xs opacity-60">RER total &ge; {nzeb.rer_min}%</span>
+                  <span className={cn("text-xs font-medium", rerTotalOk ? "text-emerald-400" : "text-red-400")}>
+                    {rerTotalOk ? "DA" : "NU"} ({renewSummary.rer.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs opacity-60">Ep &lt; {getNzebEpMax(building.category, selectedClimate?.zone)} kWh/(m²an)</span>
-                  <span className={cn("text-xs font-medium", renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone) ? "text-emerald-400" : "text-red-400")}>
-                    {renewSummary.ep_adjusted_m2 < getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU"} ({renewSummary.ep_adjusted_m2.toFixed(1)})
+                  <span className="text-xs opacity-60">RER on-site &ge; {nzeb.rer_onsite_min || 10}% <span className="opacity-40">(L.238/2024)</span></span>
+                  <span className={cn("text-xs font-medium", rerOnSiteOk ? "text-emerald-400" : "text-red-400")}>
+                    {rerOnSiteOk ? "DA" : "NU"} ({renewSummary.rerOnSite.toFixed(1)}%)
                   </span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs opacity-60">Ep &lt; {epMax} kWh/(m²an)</span>
+                  <span className={cn("text-xs font-medium", epOk ? "text-emerald-400" : "text-red-400")}>
+                    {epOk ? "DA" : "NU"} ({renewSummary.ep_adjusted_m2.toFixed(1)})
+                  </span>
+                </div>
+                {renewSummary.proximityValid && renewSummary.qProximity > 0 && (
+                  <div className="text-[10px] opacity-50 pt-1 border-t border-white/5">
+                    ℹ Include {renewSummary.qProximity.toFixed(0)} kWh/an din proximitate ({renewSummary.proximityDistanceKm} km GPS) — contribuie la RER total, nu la on-site.
+                  </div>
+                )}
+                {!rerOnSiteOk && rerTotalOk && (
+                  <div className="text-[10px] text-amber-300 pt-1 border-t border-white/5">
+                    ⚠ RER total OK, dar RER on-site sub 10% — L.238/2024 cere minim 10% pe clădire (nu doar proximitate). Adăugați PV/solar termic pe clădire.
+                  </div>
+                )}
+                {renewSummary.pc_spf_compliant === false && (
+                  <div className="text-[10px] text-amber-300 pt-1 border-t border-white/5">
+                    ⚠ PC cu SCOP &lt; 2.5 — fracția regenerabilă nu se contabilizează (RED II Anexa VII, Dir. UE 2018/2001).
+                  </div>
+                )}
                 <div className="flex items-center justify-between pt-1 border-t border-white/5">
                   <span className="text-xs font-medium">Statut nZEB</span>
                   <Badge color={isNzeb ? "green" : "red"}>

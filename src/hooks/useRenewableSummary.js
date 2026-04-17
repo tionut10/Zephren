@@ -5,7 +5,9 @@ import { FP_ELEC } from "../data/u-reference.js";
 /**
  * useRenewableSummary — calcul fracție regenerabilă și RER
  * Extras din energy-calc.jsx Sprint 4 refactoring.
- * Conform L. 372/2005 (rev. 2024), EN 15316-4-3, EN ISO 9806, Directiva RED III.
+ * Sprint 6 (17 apr 2026): fix formula RER conform SR EN ISO 52000-1 §11.5 — folosește fP_ren (1.0)
+ * în loc de fP convențional (2.62 / 1.17), clamp 100%, prag SPF≥2.5 RED II, proximitate 30 km L.238/2024.
+ * Conform L. 372/2005 (rev. 2024), L. 238/2024, EN 15316-4-3, EN ISO 9806, SR EN ISO 52000-1:2017.
  *
  * @param {object} params
  * @param {object} params.instSummary     — rezultat din useInstallationSummary
@@ -14,7 +16,7 @@ import { FP_ELEC } from "../data/u-reference.js";
  * @param {object} params.photovoltaic    — parametri fotovoltaic
  * @param {object} params.heatPump        — parametri pompă de căldură regenerabilă
  * @param {object} params.biomass         — parametri biomasă
- * @param {object} params.otherRenew      — eolian + cogenerare
+ * @param {object} params.otherRenew      — eolian + cogenerare + proximitate 30 km
  * @param {object} params.selectedClimate — date climatice
  * @param {boolean} params.useNA2023      — factor energie ambientală
  * @param {object} params.acm             — parametri ACM (pentru identificare combustibil)
@@ -22,6 +24,19 @@ import { FP_ELEC } from "../data/u-reference.js";
  *
  * @returns {object|null} renewSummary
  */
+
+// ── Constante normative ────────────────────────────────────────────
+// Factor energie primară pentru surse regenerabile (Tabel 5.17 Mc 001-2022 / Tabel A.16 NA:2023)
+// Pentru TOATE sursele regenerabile locale (solar, PV, biomasă, eolian) fP_ren = 1.0
+const FP_REN = 1.0;
+
+// Prag SPF minim RED II (Dir. UE 2018/2001 Anexa VII + Decizia UE 2013/114/UE)
+// Pompele de căldură cu SPF < 2.5 NU se contabilizează ca sursă regenerabilă
+const SPF_MIN_RED_II = 2.5;
+
+// Distanța maximă GPS pentru regenerabile în proximitate (L.238/2024 Art.6)
+const PROXIMITY_MAX_KM = 30;
+
 export function useRenewableSummary({
   instSummary,
   building,
@@ -70,13 +85,17 @@ export function useRenewableSummary({
       qPV_kWh = area * etaPV * etaInv * solarH * oriF * tiltF * 0.80;
       qPV = qPV_kWh * FP_ELEC;
     }
+    const pv_peak_kWp = parseFloat(photovoltaic.peakPower) || 0;
 
-    // ── POMPĂ DE CĂLDURĂ (fracțiunea regenerabilă = 1 - 1/SCOP) ──
+    // ── POMPĂ DE CĂLDURĂ (fracțiunea regenerabilă = 1 - 1/SCOP, dacă SCOP ≥ 2.5 RED II) ──
     let qPC_ren = 0;
+    let pc_spf_compliant = true;
     if (heatPump.enabled) {
       const cop = parseFloat(heatPump.cop) || 3.5;
       const scop = parseFloat(heatPump.scopHeating) || cop * 0.85;
-      const renFraction = Math.max(0, 1 - 1 / scop);
+      // Prag RED II: sub SPF 2.5 fracția regenerabilă = 0 (Dir. UE 2018/2001 Anexa VII)
+      pc_spf_compliant = scop >= SPF_MIN_RED_II;
+      const renFraction = pc_spf_compliant ? Math.max(0, 1 - 1 / scop) : 0;
       let qCovered = 0;
       if (heatPump.covers === "heating") qCovered = instSummary.qH_nd;
       else if (heatPump.covers === "acm") qCovered = instSummary.qACM_nd;
@@ -111,37 +130,68 @@ export function useRenewableSummary({
     let qCogen_th = 0;
     let qCogen_ep_reduction = 0;
     let qCogen_co2_reduction = 0;
+    const cogenFuelData = FUELS.find(f => f.id === (otherRenew.cogenFuel || "gaz"));
+    // Cogenerare e regenerabilă doar dacă combustibilul e regenerabil (biogaz/hidrogen verde/biomasă)
+    const cogenIsRenewable = cogenFuelData && (cogenFuelData.fP_ren >= 0.9);
     if (otherRenew.cogenEnabled) {
       qCogen_el = parseFloat(otherRenew.cogenElectric) || 0;
       qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
-      const cogenFuelData = FUELS.find(f => f.id === (otherRenew.cogenFuel || "gaz"));
       qCogen_ep_reduction = qCogen_el * FP_ELEC + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
-      qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.205);
+      qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.202);
     }
 
-    const totalRenewable = qSolarTh + qPV_kWh + qPC_ren + qBio_ren + qWind + qCogen_el + qCogen_th;
+    // ── PROXIMITATE 30 km GPS (L.238/2024 Art.6) ──
+    // Regenerabile produse în rază ≤30 km GPS contează la RER total, dar NU la RER on-site
+    const proximityEnabled = !!otherRenew.proximityEnabled;
+    const proximityDistanceKm = parseFloat(otherRenew.proximityDistanceKm) || 0;
+    const proximityValid = proximityEnabled && proximityDistanceKm > 0 && proximityDistanceKm <= PROXIMITY_MAX_KM;
+    const qProximity = proximityValid ? (parseFloat(otherRenew.proximityProduction) || 0) : 0;
+
+    const totalRenewable = qSolarTh + qPV_kWh + qPC_ren + qBio_ren + qWind
+      + (cogenIsRenewable ? (qCogen_el + qCogen_th) : 0)
+      + qProximity;
     const totalRenewable_m2 = Au > 0 ? totalRenewable / Au : 0;
 
-    // RER — Renewable Energy Ratio (energie primară)
-    const fP_therm = 1.17;
-    const totalRenewable_ep = qSolarTh * fP_therm + qPV_kWh * FP_ELEC + qPC_ren * FP_ELEC + qBio_ren * 1.08 + qWind * FP_ELEC + qCogen_el * FP_ELEC + qCogen_th * fP_therm;
+    // ── RER — Renewable Energy Ratio (SR EN ISO 52000-1 §11.5) ──
+    // Formula corectă: folosește fP_ren (= 1.0 pentru surse regenerabile), NU fP convențional
+    // Sprint 6 fix: înainte se folosea FP_ELEC (2.62) și 1.17 → valori RER 150–350% eronate
+    // NA:2023 (fP_ambient=0) vs Mc 001 (fP_ambient=1.0): default Mc 001 original per MDLPA 50843/09.03.2026
+    const fP_ren_ambient = useNA2023 ? FP_REN : 0;  // useNA2023=true → Mc 001 (=1.0), false → A.16 (=0)
+    const totalRenewable_ep =
+        qSolarTh   * FP_REN
+      + qPV_kWh    * FP_REN
+      + qPC_ren    * fP_ren_ambient
+      + qBio_ren   * FP_REN
+      + qWind      * FP_REN
+      + (cogenIsRenewable ? (qCogen_el * FP_REN + qCogen_th * FP_REN) : 0)
+      + qProximity * FP_REN;
+
     const epTotal = instSummary.ep_total || 1;
-    const rer = epTotal > 0 ? (totalRenewable_ep / epTotal) * 100 : 0;
-    // L.238/2024: RER decomposition
-    const totalOnSite_ep = qSolarTh * fP_therm + qPV_kWh * FP_ELEC + qPC_ren * FP_ELEC + qBio_ren * 1.08 + qWind * FP_ELEC;
-    const rerOnSite = epTotal > 0 ? (totalOnSite_ep / epTotal) * 100 : 0;
+    // Clamp RER la 100% (ISO 52000-1 §11.5 — raport fizic)
+    const rer = Math.min(100, epTotal > 0 ? (totalRenewable_ep / epTotal) * 100 : 0);
+
+    // ── L.238/2024 Art.6 — decompoziție RER on-site vs total ──
+    // On-site = strict pe clădire (solar, PV, PC, biomasă, eolian) — EXCLUDE proximitate 30 km și cogen extern
+    const totalOnSite_ep =
+        qSolarTh   * FP_REN
+      + qPV_kWh    * FP_REN
+      + qPC_ren    * fP_ren_ambient
+      + qBio_ren   * FP_REN
+      + qWind      * FP_REN
+      + (cogenIsRenewable ? (qCogen_el * FP_REN + qCogen_th * FP_REN) : 0);
+    const rerOnSite = Math.min(100, epTotal > 0 ? (totalOnSite_ep / epTotal) * 100 : 0);
     const rerOnSiteOk = rerOnSite >= 10;
     const rerTotalOk = rer >= 30;
 
-    // Energie primară ajustată
+    // ── Energie primară ajustată ──
     // ambientFP urmează aceeași logică ca în useInstallationSummary:
     // NA:2023 ON → energia ambientală e inclusă în ep_total → trebuie scăzută și din ep_reduction
     const ambientFP = useNA2023 ? 1.0 : 0;
-    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction;
+    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction + qProximity * FP_REN;
     const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
     const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
 
-    // CO2 redus
+    // ── CO2 redus ──
     const acmFuelId = acm.source === "CAZAN_H"
       ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz")
       : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
@@ -173,6 +223,14 @@ export function useRenewableSummary({
     return {
       qSolarTh, qPV_kWh, qPV_credit, qPV_selfConsumed, qPV_exported, kexp,
       qPC_ren, qBio_ren, qBio_total, qWind, qCogen_el, qCogen_th,
+      cogenIsRenewable,
+      // L.238/2024 Art.6 — proximitate 30 km
+      qProximity, proximityValid, proximityDistanceKm,
+      // Sprint 6 — expose PV params pentru PVDegradation.jsx
+      pv_annual_kWh: qPV_kWh,
+      pv_peak_kWp,
+      // RED II — prag SPF
+      pc_spf_compliant,
       totalRenewable, totalRenewable_m2, rer, rerOnSite, rerOnSiteOk, rerTotalOk,
       ep_reduction, ep_adjusted, ep_adjusted_m2,
       co2_reduction, co2_adjusted, co2_adjusted_m2,
