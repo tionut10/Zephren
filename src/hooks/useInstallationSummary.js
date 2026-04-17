@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import {
   HEAT_SOURCES, FUELS, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
-  LIGHTING_TYPES, LIGHTING_CONTROL,
+  LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
 } from "../data/constants.js";
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
 import { FP_ELEC } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
+import { calcLENI } from "../calc/en15193-lighting.js";
 
 // Mapare acm.source (ACM_SOURCES) → acmSource enum din calcACMen15316
 // Acoperă toate cele 18 surse din constants.js
@@ -180,20 +181,36 @@ export function useInstallationSummary({
       ? (hrClamped !== null ? hrClamped : ventType.hrEta || 0)
       : 0;
 
-    // ── ILUMINAT (LENI) — EN 15193-1 ──
-    const pDens = parseFloat(lighting.pDensity) || 4.5;
-    const fCtrl = parseFloat(lighting.fCtrl) || 1.0;
-    const lightHours = parseFloat(lighting.operatingHours) || 1800;
-    const natRatio = (parseFloat(lighting.naturalLightRatio) || 30) / 100;
-    const foMap = { RI: 0.90, RC: 0.90, RA: 0.90, BI: 0.80, ED: 0.75, SA: 1.00, HC: 0.95, CO: 0.85, SP: 0.70, AL: 0.85 };
-    const fo = foMap[building.category] || 0.85;
-    const nightFracMap = { RI: 0.30, RC: 0.30, RA: 0.30, BI: 0.10, ED: 0.05, SA: 0.45, HC: 0.40, CO: 0.20, SP: 0.15, AL: 0.25 };
-    const nightFrac = nightFracMap[building.category] || 0.25;
-    const tD = lightHours * (1 - nightFrac);
-    const tN = lightHours * nightFrac;
-    const fD = Math.max(0, 1 - natRatio * 0.65);
-    const leni = pDens * fCtrl * (tD * fo * fD + tN * fo) / 1000;
-    const qf_l = leni * Au;
+    // ── ILUMINAT (LENI) — EN 15193-1 + Mc 001-2022 Partea IV ──
+    // Delegare completă la calcLENI() (src/calc/en15193-lighting.js) — sursă unică de adevăr.
+    // Fix Sprint 2 (17 apr 2026):
+    //   #1 W_P inclus (W_em iluminat urgență 8760h + W_standby drivere)
+    //   #2 Default `operatingHours` din LIGHTING_HOURS per categorie
+    //   #3 F_d și F_c DOAR pe termenul diurn (nu există daylight noaptea)
+    const lightHoursRaw = parseFloat(lighting.operatingHours);
+    const lightHours = (isFinite(lightHoursRaw) && lightHoursRaw > 0 && lightHoursRaw <= 8760)
+      ? lightHoursRaw
+      : (LIGHTING_HOURS[building.category] || 1800);
+    const pEmRaw = parseFloat(lighting.pEmergency);
+    const pStbRaw = parseFloat(lighting.pStandby);
+    const leniResult = calcLENI({
+      category: building.category,
+      area: Au,
+      pDensity: parseFloat(lighting.pDensity) || 4.5,
+      fCtrl: parseFloat(lighting.fCtrl) || 1.0,
+      operatingHours: lightHours,
+      naturalLightRatio: (parseFloat(lighting.naturalLightRatio) || 30) / 100,
+      pEmergency: (isFinite(pEmRaw) && pEmRaw >= 0 && pEmRaw <= 5) ? pEmRaw : undefined,
+      pStandby: (isFinite(pStbRaw) && pStbRaw >= 0 && pStbRaw <= 2) ? pStbRaw : undefined,
+    });
+    const leni = leniResult.LENI;
+    const qf_l = leniResult.qf_l;
+    const leniMax = leniResult.LENI_max;
+    const leniStatus = leniResult.status;
+    const W_L = leniResult.W_L;
+    const W_P = leniResult.W_P;
+    const W_em = leniResult.W_em;
+    const W_standby = leniResult.W_standby;
 
     // ── Auxiliar electric pompă circulație ACM (Sprint 3) ──
     const W_aux_acm_kWh = acmDetailed?.W_circ_pump_kWh || 0;
@@ -271,7 +288,7 @@ export function useInstallationSummary({
       qACM_nd, qf_w, nConsumers,
       qC_nd, qf_c, hasCool,
       qf_v, hrEta,
-      leni, qf_l,
+      leni, qf_l, leniMax, leniStatus, W_L, W_P, W_em, W_standby,
       qf_total, qf_total_m2,
       ep_h, ep_w, ep_c, ep_v, ep_l, ep_total, ep_total_m2,
       ep_nren_h, ep_nren_w, ep_nren_c, ep_nren_v, ep_nren_l, ep_nren_total, ep_nren_m2,

@@ -5,7 +5,7 @@ import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import {
   HEAT_SOURCES, FUELS, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY,
   CONTROL_TYPES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
-  LIGHTING_TYPES, LIGHTING_CONTROL,
+  LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
 } from "../data/constants.js";
 
 export default function Step3Systems({
@@ -374,35 +374,119 @@ export default function Step3Systems({
           })()}
 
           {/* ── ILUMINAT ── */}
-          {instSubTab === "lighting" && (
+          {instSubTab === "lighting" && (() => {
+            // Validări input iluminat — Sprint 2 fix (17 apr 2026)
+            // Conform Mc 001-2022 Partea IV + EN 15193-1 + EN 12464-1
+            const lightErrors = [];
+            const pDensNum = parseFloat(lighting.pDensity);
+            const fCtrlNum = parseFloat(lighting.fCtrl);
+            const fDNum = parseFloat(lighting.naturalLightRatio);
+            const hoursNum = parseFloat(lighting.operatingHours);
+            const pEmNum = parseFloat(lighting.pEmergency);
+            const pStbNum = parseFloat(lighting.pStandby);
+            if (lighting.pDensity && (pDensNum <= 0 || pDensNum > 50)) {
+              lightErrors.push("Densitate putere: trebuie în intervalul 0 – 50 W/m² (EN 15193-1).");
+            }
+            if (lighting.fCtrl && (fCtrlNum < 0.3 || fCtrlNum > 1.0)) {
+              lightErrors.push("Factor control F_C: trebuie în intervalul 0.3 – 1.0 (EN 15193-1 Tab. B.6).");
+            }
+            if (lighting.naturalLightRatio && (fDNum < 0 || fDNum > 80)) {
+              lightErrors.push("Raport lumină naturală: trebuie între 0 și 80 %.");
+            }
+            if (lighting.operatingHours && (hoursNum <= 0 || hoursNum > 8760)) {
+              lightErrors.push("Ore funcționare: trebuie între 0 și 8760 h/an.");
+            }
+            if (lighting.pEmergency && (pEmNum < 0 || pEmNum > 5)) {
+              lightErrors.push("Iluminat urgență: trebuie între 0 și 5 W/m² (EN 1838).");
+            }
+            if (lighting.pStandby && (pStbNum < 0 || pStbNum > 2)) {
+              lightErrors.push("Standby drivere/senzori: trebuie între 0 și 2 W/m² (EN 15193-1 Annex B).");
+            }
+            const hasLightErrors = lightErrors.length > 0;
+            const isRes = ["RI","RC","RA"].includes(building.category);
+            return (
             <>
               <Card title={t("Iluminat artificial (LENI)",lang)}>
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Select label={t("Tip sursă de lumină predominantă",lang)} value={lighting.type} onChange={v => setLighting(p=>({...p,type:v}))}
+                    <Select label={t("Tip sursă de lumină predominantă",lang)} value={lighting.type} onChange={v => {
+                      const lt = LIGHTING_TYPES.find(t=>t.id===v);
+                      setLighting(p=>({...p, type:v, pDensity: lt?.pDensity?.toString() || p.pDensity}));
+                    }}
                       options={LIGHTING_TYPES.map(s=>({value:s.id,label:`${s.label} (${s.efficacy} lm/W)`}))} />
-                    <Input label={t("Densitate putere instalată",lang)} value={lighting.pDensity} onChange={v => setLighting(p=>({...p,pDensity:v}))} type="number" unit="W/m2" step="0.1" />
-                    <Select label={t("Sistem de control",lang)} value={lighting.controlType} onChange={v => setLighting(p=>({...p,controlType:v}))}
+                    <Input label={t("Densitate putere instalată",lang)} value={lighting.pDensity} onChange={v => setLighting(p=>({...p,pDensity:v}))} type="number" unit="W/m2" step="0.1" min="0" max="50"
+                      tooltip="EN 15193-1: tipic rezidențial 3–8 W/m², birouri 8–12 W/m², industrial 10–20 W/m²" />
+                    <Select label={t("Sistem de control",lang)} value={lighting.controlType} onChange={v => {
+                      const ctrl = LIGHTING_CONTROL.find(c=>c.id===v);
+                      setLighting(p=>({...p, controlType:v, fCtrl: ctrl?.fCtrl?.toString() || p.fCtrl}));
+                    }}
                       options={LIGHTING_CONTROL.map(s=>({value:s.id,label:s.label}))} />
-                    <Input label={t("Factor control (F_C)",lang)} value={lighting.fCtrl} onChange={v => setLighting(p=>({...p,fCtrl:v}))} type="number" step="0.01" />
-                    <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" />
-                    <Input label={t("Raport lumină naturală",lang)} value={lighting.naturalLightRatio} onChange={v => setLighting(p=>({...p,naturalLightRatio:v}))} type="number" unit="%" min="0" max="80" />
+                    <Input label={t("Factor control (F_C)",lang)} value={lighting.fCtrl} onChange={v => setLighting(p=>({...p,fCtrl:v}))} type="number" step="0.01" min="0.3" max="1.0"
+                      tooltip="EN 15193-1 Tab. B.6: manual 1.00, PIR 0.80, DALI 0.45, auto integral 0.40" />
+                    <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" min="0" max="8760"
+                      placeholder={`auto: ${LIGHTING_HOURS[building.category] || 1800} h/an (${building.category || "—"})`}
+                      tooltip="Gol → default categorie (Mc 001-2022 Anexa). Rezidențial 1800h, birouri 2500h, spital 3500h, supermarket 5000h." />
+                    <Input label={t("Raport lumină naturală",lang)} value={lighting.naturalLightRatio} onChange={v => setLighting(p=>({...p,naturalLightRatio:v}))} type="number" unit="%" min="0" max="80"
+                      tooltip="Factor F_d aplicat DOAR pe termenul diurn (Sprint 2 fix: nu există daylight noaptea)." />
                   </div>
 
+                  {/* ── Sprint 2: W_P (energie parazită) EN 15193-1 Annex B ── */}
+                  <div className="border-t border-white/5 pt-3 mt-2">
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Energie parazită (W_P) — EN 15193-1 Annex B")}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Input label={t("Iluminat de urgență")} value={lighting.pEmergency} onChange={v => setLighting(p=>({...p,pEmergency:v}))} type="number" unit="W/m2" step="0.1" min="0" max="5"
+                        placeholder={`auto: ${isRes ? "0" : "1.0"} W/m² (${isRes ? "rezidențial" : "clădire publică"})`}
+                        tooltip="EN 1838: iluminat siguranță permanent (8760h). Rezidențial default 0, non-rezidențial 1.0 W/m²." />
+                      <Input label={t("Standby drivere / senzori")} value={lighting.pStandby} onChange={v => setLighting(p=>({...p,pStandby:v}))} type="number" unit="W/m2" step="0.1" min="0" max="2"
+                        placeholder="auto: 0.3 W/m²"
+                        tooltip="Consum drivere LED + senzori când iluminat principal OFF × (8760 − ore funcționare)." />
+                    </div>
+                  </div>
+
+                  {hasLightErrors && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs space-y-1">
+                      <div className="font-medium text-red-400 mb-1">⚠ Valori în afara intervalului admis</div>
+                      {lightErrors.map((e, i) => (
+                        <div key={i} className="text-red-300/80 leading-relaxed">• {e}</div>
+                      ))}
+                    </div>
+                  )}
+
                   {instSummary && (
-                    <div className="bg-white/[0.03] rounded-lg p-4 mt-2">
+                    <div className="bg-white/[0.03] rounded-lg p-4 mt-2 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs opacity-50">{t("Indicator LENI calculat", lang)}</span>
-                        <span className="text-lg font-mono font-bold text-amber-400">
+                        <span className={cn("text-lg font-mono font-bold",
+                          instSummary.leniStatus === "excelent" ? "text-emerald-400" :
+                          instSummary.leniStatus === "conform" ? "text-amber-400" : "text-red-400")}>
                           {instSummary.leni.toFixed(1)} <span className="text-xs opacity-40 font-normal">kWh/(m2·an)</span>
                         </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-[11px] opacity-60 border-t border-white/5 pt-2">
+                        <div>W_L <span className="font-mono text-amber-300/80">{instSummary.W_L.toFixed(1)}</span></div>
+                        <div>W_em <span className="font-mono text-amber-300/80">{instSummary.W_em.toFixed(2)}</span></div>
+                        <div>W_sb <span className="font-mono text-amber-300/80">{instSummary.W_standby.toFixed(2)}</span></div>
+                      </div>
+                      <div className="text-[11px] opacity-50">
+                        LENI_max categorie {building.category || "—"}: <span className="font-mono">{instSummary.leniMax} kWh/(m²·an)</span> — EN 15193-1 Tab. NA.1
+                      </div>
+                    </div>
+                  )}
+
+                  {instSummary?.leniStatus === "neconform" && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs">
+                      <div className="font-medium text-red-400 mb-1">⚠ NECONFORM — LENI depășește limita</div>
+                      <div className="text-red-300/80 leading-relaxed">
+                        LENI calculat {instSummary.leni.toFixed(1)} kWh/(m²·an) &gt; LENI_max {instSummary.leniMax} kWh/(m²·an) conform EN 15193-1 + Mc 001-2022 Partea IV.
+                        Reduceți puterea instalată, adăugați control automat sau mărește raportul lumină naturală.
                       </div>
                     </div>
                   )}
                 </div>
               </Card>
             </>
-          )}
+            );
+          })()}
         </div>
 
         {/* ── RIGHT PANEL: SUMAR ENERGIE ── */}

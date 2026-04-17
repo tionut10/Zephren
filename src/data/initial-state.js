@@ -69,6 +69,9 @@ export const INITIAL_VENTILATION = {
 export const INITIAL_LIGHTING = {
   type:"LED", pDensity:"4.5", controlType:"MAN",
   fCtrl:"1.00", operatingHours:"", naturalLightRatio:"30",
+  // Sprint 2 (17 apr 2026) — W_P (energie parazită) EN 15193-1 Annex B
+  // gol → default categorie: rezidențial 0, altele 1.0 W/m² urgență + 0.3 W/m² standby
+  pEmergency:"", pStandby:"",
 };
 
 // ─── STEP 4: REGENERABILE ───
