@@ -7,6 +7,21 @@ import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
 import { FP_ELEC } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
+import { calcCoolingHourly } from "../calc/cooling-hourly.js";
+
+// Mapare categorie clădire → tip câștiguri interne CIBSE (cooling-hourly.js)
+// Sprint 3a (17 apr 2026) — pentru integrarea motorului orar
+function mapCategoryToGains(category) {
+  const MAP = {
+    RI:"residential", RC:"residential", RA:"residential",
+    BI:"office", AD:"office", HO_LUX:"office",
+    CO:"retail", MAG:"retail", MALL:"retail", SUPER:"retail",
+    SC:"school", ED:"school",
+    SA:"hospital", HC:"hospital", SPA_H:"hospital",
+    SP:"office", AL:"office", AER:"office",
+  };
+  return MAP[category] || "office";
+}
 
 // Mapare acm.source (ACM_SOURCES) → acmSource enum din calcACMen15316
 // Acoperă toate cele 18 surse din constants.js
@@ -142,15 +157,65 @@ export function useInstallationSummary({
       ? fuel
       : FUELS.find(f => f.id === (acmSrc?.fuel || "electricitate"));
 
-    // ── COOLING ──
+    // ── COOLING — Sprint 3a (17 apr 2026) ──
+    // Fix-uri aplicate:
+    //   #1 Integrare cooling-hourly.js (era orfan — apelat doar din Step8Advanced)
+    //   #2 SEER separat de EER (EN 14825) — eer_nominal ≠ seer_sezonier
+    //   #3 η_em × η_dist × η_ctrl separate răcire (EN 15316-2) — paritate cu încălzirea
     const hasCool = cooling.hasCooling && cooling.system !== "NONE";
     const coolSys = COOLING_SYSTEMS.find(s => s.id === cooling.system);
     const coolArea = parseFloat(cooling.cooledArea) || Au;
+
+    // #1 — Sursă primară Q_NC: cooling-hourly.js (dacă flag activ + envelope complet)
+    //      Fallback 1: monthlyISO lunar (iso13790.js)
+    //      Fallback 2: coolArea × 25 kWh/m²·an (ultim safety, avertizat)
+    let qC_nd_hourly = null;
+    let coolingHourlyResult = null;
+    const useHourlyCool = hasCool && cooling.useHourly !== false
+      && Array.isArray(envelopeSummary?.glazingElements)
+      && Array.isArray(envelopeSummary?.opaqueElements);
+    if (useHourlyCool) {
+      try {
+        coolingHourlyResult = calcCoolingHourly({
+          Au: coolArea, V,
+          glazingElements: envelopeSummary.glazingElements,
+          opaqueElements: envelopeSummary.opaqueElements,
+          climate: selectedClimate || {},
+          theta_int_cool: parseFloat(cooling.setpoint) || 26,
+          internalGainsType: mapCategoryToGains(building.category),
+          shadingExternal: parseFloat(cooling.shadingExternal) || 0.7,
+        });
+        qC_nd_hourly = (coolingHourlyResult && coolingHourlyResult.Q_annual_kWh > 0)
+          ? coolingHourlyResult.Q_annual_kWh
+          : null;
+      } catch (_e) {
+        qC_nd_hourly = null;
+      }
+    }
     const qC_nd = hasCool
-      ? (qC_nd_calc > 0 ? qC_nd_calc * (coolArea / Au) : coolArea * 25)
+      ? (qC_nd_hourly != null
+        ? qC_nd_hourly
+        : (qC_nd_calc > 0 ? qC_nd_calc * (coolArea / Au) : coolArea * 25))
       : 0;
-    const eer = parseFloat(cooling.eer) || coolSys?.eer || 3.5;
-    const qf_c = hasCool && eer > 0 ? qC_nd / eer : 0;
+
+    // #2 — SEER (EN 14825) prioritate UI > catalog > fallback EER × 1.8
+    const eerRaw = parseFloat(cooling.eer);
+    const seerRaw = parseFloat(cooling.seer);
+    const eer = (isFinite(eerRaw) && eerRaw > 0) ? eerRaw : (coolSys?.eer || 3.5);
+    const seer = (isFinite(seerRaw) && seerRaw > 0)
+      ? seerRaw
+      : ((coolSys && coolSys.seer > 0) ? coolSys.seer : eer * 1.8);
+
+    // #3 — Randamente separate răcire (EN 15316-2) — paritate cu încălzire
+    const eta_em_c = parseFloat(cooling.eta_em) || 0.97;    // default fan coil
+    const eta_dist_c = parseFloat(cooling.eta_dist) || 0.95; // default apă rece izolat interior
+    const eta_ctrl_c = parseFloat(cooling.eta_ctrl) || 0.96; // default termostat proporțional
+    const eta_total_c = eta_em_c * eta_dist_c * eta_ctrl_c;
+
+    // Formula consum final: qf_c = Q_NC / (SEER × η_em × η_dist × η_ctrl)
+    const qf_c = hasCool && seer > 0 && eta_total_c > 0
+      ? qC_nd / (seer * eta_total_c)
+      : 0;
     const coolFuel = coolSys ? FUELS.find(f => f.id === coolSys.fuel) : null;
 
     // ── VENTILARE — EN 16798-3 / Mc 001-2022 Partea III ──

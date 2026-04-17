@@ -59,6 +59,17 @@ export const INITIAL_COOLING = {
   system:"NONE", power:"", eer:"",
   cooledArea:"", distribution:"BINE_INT",
   hasCooling:false,
+  // Sprint 3a (17 apr 2026) — EN 14825 + EN 15316-2 + EN 16798-9
+  seer:"",                          // SEER sezonier — gol → EER_nominal × 1.8 (fallback grosier)
+  setpoint:"26",                    // °C setpoint răcire (EN 16798-1 cat. II)
+  shadingExternal:"0.70",           // factor umbrire externă global (0–1)
+  useHourly:true,                   // true → calc orar cooling-hourly.js (precizie); false → lunar ISO 13790
+  emissionType:"fan_coil",          // cheie COOLING_EMISSION_EFFICIENCY
+  eta_em:"0.97",                    // η emisie răcire
+  distributionType:"apa_rece_izolat_int",
+  eta_dist:"0.95",                  // η distribuție răcire
+  controlType:"termostat_prop",
+  eta_ctrl:"0.96",                  // η control răcire
 };
 
 export const INITIAL_VENTILATION = {

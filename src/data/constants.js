@@ -246,43 +246,94 @@ export const ACM_SOURCES = [
   { id:"BOILER_BIOMASA",label:"Boiler biomasă / peleți dedicat ACM",                 eta:0.85,  fuel:"biomasa" },
 ];
 
+// COOLING_SYSTEMS — catalog 25 tipologii răcire
+// EER = Energy Efficiency Ratio (sarcină nominală, punct A EN 14511 / ISO 5151)
+// SEER = Seasonal EER (sezonier EN 14825 — pentru calcul consum anual corect)
+// Sprint 3a (17 apr 2026): adăugată coloană `seer` conform Reg. UE 2016/2281 Anexa II
 export const COOLING_SYSTEMS = [
   // ── APARATE SPLIT ─────────────────────────────────────────────────────────
-  { id:"SPLIT",        label:"Split monosplit fix",                                   eer:3.20, fuel:"electricitate", cat:"Split" },
-  { id:"SPLIT_MULTI",  label:"Multisplit (o unitate ext. — mai multe int.)",          eer:3.50, fuel:"electricitate", cat:"Split" },
-  { id:"SPLIT_INV",    label:"Split inverter (monosplit sau multisplit inverter)",     eer:4.00, fuel:"electricitate", cat:"Split" },
+  { id:"SPLIT",        label:"Split monosplit fix",                                   eer:3.20, seer:5.40, fuel:"electricitate", cat:"Split" },
+  { id:"SPLIT_MULTI",  label:"Multisplit (o unitate ext. — mai multe int.)",          eer:3.50, seer:5.80, fuel:"electricitate", cat:"Split" },
+  { id:"SPLIT_INV",    label:"Split inverter (monosplit sau multisplit inverter)",     eer:4.00, seer:6.10, fuel:"electricitate", cat:"Split" },
   // ── VRF / VRV ─────────────────────────────────────────────────────────────
-  { id:"VRF",          label:"Sistem VRF/VRV 2 pipe (doar răcire sau doar încălzire)",eer:4.50, fuel:"electricitate", cat:"VRF" },
-  { id:"VRF_3P",       label:"Sistem VRF/VRV 3 pipe cu recuperare (simultan încălzire + răcire)", eer:5.00, fuel:"electricitate", cat:"VRF" },
+  { id:"VRF",          label:"Sistem VRF/VRV 2 pipe (doar răcire sau doar încălzire)",eer:4.50, seer:6.50, fuel:"electricitate", cat:"VRF" },
+  { id:"VRF_3P",       label:"Sistem VRF/VRV 3 pipe cu recuperare (simultan încălzire + răcire)", eer:5.00, seer:7.00, fuel:"electricitate", cat:"VRF" },
   // ── CHILLERE RĂCITE CU AER ────────────────────────────────────────────────
-  { id:"CHILLER_A",    label:"Chiller răcit cu aer — compresor scroll",               eer:3.00, fuel:"electricitate", cat:"Chiller" },
-  { id:"CHILLER_A_SCR",label:"Chiller răcit cu aer — compresor cu șurub (screw)",    eer:3.20, fuel:"electricitate", cat:"Chiller" },
+  { id:"CHILLER_A",    label:"Chiller răcit cu aer — compresor scroll",               eer:3.00, seer:4.40, fuel:"electricitate", cat:"Chiller" },
+  { id:"CHILLER_A_SCR",label:"Chiller răcit cu aer — compresor cu șurub (screw)",    eer:3.20, seer:4.70, fuel:"electricitate", cat:"Chiller" },
   // ── CHILLERE RĂCITE CU APĂ ────────────────────────────────────────────────
-  { id:"CHILLER_W",    label:"Chiller răcit cu apă + turn de răcire (water-cooled)",  eer:5.00, fuel:"electricitate", cat:"Chiller" },
-  { id:"CHILLER_W_CTR",label:"Chiller răcit cu apă — compresor centrifugal (mare)",  eer:6.00, fuel:"electricitate", cat:"Chiller" },
-  // ── MAȘINI CU ABSORBȚIE ───────────────────────────────────────────────────
-  { id:"ABSORB",       label:"Mașină cu absorbție — un efect (gaz / LiBr-H₂O)",     eer:0.70, fuel:"gaz",           cat:"Absorbție" },
-  { id:"ABSORB_2E",    label:"Mașină cu absorbție — dublu efect (gaz)",              eer:1.20, fuel:"gaz",           cat:"Absorbție" },
-  { id:"ABSORB_ABR",   label:"Mașină cu absorbție acționată cu abur / căldură reziduală", eer:0.80, fuel:"termoficare", cat:"Absorbție" },
+  { id:"CHILLER_W",    label:"Chiller răcit cu apă + turn de răcire (water-cooled)",  eer:5.00, seer:6.25, fuel:"electricitate", cat:"Chiller" },
+  { id:"CHILLER_W_CTR",label:"Chiller răcit cu apă — compresor centrifugal (mare)",  eer:6.00, seer:7.50, fuel:"electricitate", cat:"Chiller" },
+  // ── MAȘINI CU ABSORBȚIE (SEER ≈ EER — nu există bin-method EN 14825 pt. termic) ─
+  { id:"ABSORB",       label:"Mașină cu absorbție — un efect (gaz / LiBr-H₂O)",     eer:0.70, seer:0.70, fuel:"gaz",           cat:"Absorbție" },
+  { id:"ABSORB_2E",    label:"Mașină cu absorbție — dublu efect (gaz)",              eer:1.20, seer:1.20, fuel:"gaz",           cat:"Absorbție" },
+  { id:"ABSORB_ABR",   label:"Mașină cu absorbție acționată cu abur / căldură reziduală", eer:0.80, seer:0.80, fuel:"termoficare", cat:"Absorbție" },
   // ── POMPE DE CĂLDURĂ REVERSIBILE ─────────────────────────────────────────
-  { id:"PC_REV",       label:"Pompă de căldură reversibilă aer-apă",                 eer:3.50, fuel:"electricitate", cat:"PC reversibilă" },
-  { id:"PC_REV_SA",    label:"Pompă de căldură reversibilă sol-apă (geotermală)",    eer:5.00, fuel:"electricitate", cat:"PC reversibilă" },
-  { id:"PC_REV_AA",    label:"Pompă de căldură reversibilă apă-apă (acvifer/râu)",   eer:5.50, fuel:"electricitate", cat:"PC reversibilă" },
-  // ── FREE-COOLING ──────────────────────────────────────────────────────────
-  { id:"FREE_COOL_AER",label:"Free-cooling cu aer exterior (economizor aer-aer)",    eer:8.00, fuel:"electricitate", cat:"Free-cooling" },
-  { id:"FREE_COOL_APA",label:"Free-cooling cu apă (economizor hidraulic + chiller)", eer:10.00,fuel:"electricitate", cat:"Free-cooling" },
-  { id:"GEO_RACIRE",   label:"Răcire geotermală pasivă (fără compresor, sol-apă)",   eer:15.00,fuel:"electricitate", cat:"Geotermală" },
+  { id:"PC_REV",       label:"Pompă de căldură reversibilă aer-apă",                 eer:3.50, seer:6.00, fuel:"electricitate", cat:"PC reversibilă" },
+  { id:"PC_REV_SA",    label:"Pompă de căldură reversibilă sol-apă (geotermală)",    eer:5.00, seer:7.50, fuel:"electricitate", cat:"PC reversibilă" },
+  { id:"PC_REV_AA",    label:"Pompă de căldură reversibilă apă-apă (acvifer/râu)",   eer:5.50, seer:8.20, fuel:"electricitate", cat:"PC reversibilă" },
+  // ── FREE-COOLING (SEER ≈ EER — exploatare directă sezonieră constantă) ───
+  { id:"FREE_COOL_AER",label:"Free-cooling cu aer exterior (economizor aer-aer)",    eer:8.00, seer:8.00, fuel:"electricitate", cat:"Free-cooling" },
+  { id:"FREE_COOL_APA",label:"Free-cooling cu apă (economizor hidraulic + chiller)", eer:10.00,seer:10.00,fuel:"electricitate", cat:"Free-cooling" },
+  { id:"GEO_RACIRE",   label:"Răcire geotermală pasivă (fără compresor, sol-apă)",   eer:15.00,seer:15.00,fuel:"electricitate", cat:"Geotermală" },
   // ── GRINZI RĂCITE ─────────────────────────────────────────────────────────
-  { id:"BEAM_ACT",     label:"Grinzi active răcite (active chilled beams)",           eer:5.50, fuel:"electricitate", cat:"Chilled beams" },
-  { id:"BEAM_PAS",     label:"Grinzi pasive răcite (passive chilled beams)",          eer:5.00, fuel:"electricitate", cat:"Chilled beams" },
-  { id:"FCU_CHILL",    label:"Fan coil-uri cu chiller central (apă răcită)",          eer:4.50, fuel:"electricitate", cat:"Fan coil" },
+  { id:"BEAM_ACT",     label:"Grinzi active răcite (active chilled beams)",           eer:5.50, seer:6.00, fuel:"electricitate", cat:"Chilled beams" },
+  { id:"BEAM_PAS",     label:"Grinzi pasive răcite (passive chilled beams)",          eer:5.00, seer:5.00, fuel:"electricitate", cat:"Chilled beams" },
+  { id:"FCU_CHILL",    label:"Fan coil-uri cu chiller central (apă răcită)",          eer:4.50, seer:5.80, fuel:"electricitate", cat:"Fan coil" },
   // ── RĂCIRE ADIABATICĂ ─────────────────────────────────────────────────────
-  { id:"ADIAB_DIR",    label:"Răcire adiabatică directă (evaporativă directă)",       eer:12.00,fuel:"electricitate", cat:"Adiabatică" },
-  { id:"ADIAB_IND",    label:"Răcire adiabatică indirectă (evaporativă indirectă)",   eer:8.00, fuel:"electricitate", cat:"Adiabatică" },
+  { id:"ADIAB_DIR",    label:"Răcire adiabatică directă (evaporativă directă)",       eer:12.00,seer:12.00,fuel:"electricitate", cat:"Adiabatică" },
+  { id:"ADIAB_IND",    label:"Răcire adiabatică indirectă (evaporativă indirectă)",   eer:8.00, seer:8.00, fuel:"electricitate", cat:"Adiabatică" },
   // ── DISTRICT COOLING ──────────────────────────────────────────────────────
-  { id:"DISTRICT_COOL",label:"District cooling (rețea urbană apă răcită)",            eer:6.00, fuel:"termoficare",  cat:"District" },
+  { id:"DISTRICT_COOL",label:"District cooling (rețea urbană apă răcită)",            eer:6.00, seer:6.00, fuel:"termoficare",  cat:"District" },
   // ── FĂRĂ RĂCIRE ───────────────────────────────────────────────────────────
-  { id:"NONE",         label:"Fără sistem de răcire activ",                           eer:0,    fuel:null,           cat:"Fără răcire" },
+  { id:"NONE",         label:"Fără sistem de răcire activ",                           eer:0,    seer:0,    fuel:null,           cat:"Fără răcire" },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RANDAMENTE RĂCIRE — EN 15316-2:2017 + EN 16798-9 (Sprint 3a, 17 apr 2026)
+// Q_NC_final = Q_NC_calculat / (η_em × η_dist × η_ctrl × SEER)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Randament emisie răcire η_em — SR EN 15316-2 Tab.7 + SR EN 16798-9 Anexa C
+export const COOLING_EMISSION_EFFICIENCY = [
+  { id:"fan_coil",         label:"Ventiloconvector 4 țevi (fan coil)",              eta:0.97 },
+  { id:"fan_coil_2t",      label:"Ventiloconvector 2 țevi",                          eta:0.96 },
+  { id:"split_mural",      label:"Split mural / unitate interioară VRF",             eta:0.95 },
+  { id:"casetta",          label:"Casetta (tavan aparent/fals, difuzie 360°)",       eta:0.96 },
+  { id:"plafon_radiant",   label:"Plafon radiant răcire (cooling ceiling)",          eta:0.98 },
+  { id:"pardoseala_rad",   label:"Pardoseală radiantă răcire",                       eta:0.97 },
+  { id:"grinzi_active",    label:"Grinzi active răcite (active chilled beams)",      eta:0.96 },
+  { id:"grinzi_pasive",    label:"Grinzi pasive răcite",                             eta:0.95 },
+  { id:"difuzoare_canal",  label:"Difuzoare canal cu grile",                         eta:0.94 },
+  { id:"doas",             label:"DOAS — sistem aer proaspăt dedicat",               eta:0.95 },
+];
+
+// Randament distribuție răcire η_dist — SR EN 15316-3 Tab.7 + EN 16798-9
+// Valori funcție de izolație conducte + tip agent + poziție (interior/exterior zonă)
+export const COOLING_DISTRIBUTION_EFFICIENCY = [
+  { id:"agent_frig",         label:"Agent frigorific direct (VRF / split)",         eta:0.98 },
+  { id:"apa_rece_izolat_int",label:"Apă rece, izolat ≥20 mm, conducte interioare",  eta:0.95 },
+  { id:"apa_rece_izolat_ext",label:"Apă rece, izolat ≥20 mm, conducte exterioare",  eta:0.92 },
+  { id:"apa_rece_mediu",     label:"Apă rece, izolație medie (10–15 mm)",           eta:0.92 },
+  { id:"apa_rece_slab",      label:"Apă rece, izolație slabă (<10 mm)",             eta:0.88 },
+  { id:"apa_rece_neizolat",  label:"Apă rece, conducte neizolate",                  eta:0.85 },
+  { id:"aer_tratat_izolat",  label:"Aer tratat, canale izolate",                     eta:0.94 },
+  { id:"aer_tratat_slab",    label:"Aer tratat, canale puțin izolate",               eta:0.90 },
+  { id:"aer_tratat_neizolat",label:"Aer tratat, canale neizolate",                   eta:0.85 },
+];
+
+// Randament control răcire η_ctrl — SR EN 15232-1:2017 / ISO 52120-1:2022 Tab.3
+// Valori >1.00 pentru BACS clasa A/B reflectă optimizare (reducere setpoint dinamic)
+export const COOLING_CONTROL_EFFICIENCY = [
+  { id:"manual",             label:"Reglare manuală (on/off utilizator)",            eta:0.88 },
+  { id:"termostat_onoff",    label:"Termostat central ON/OFF",                       eta:0.92 },
+  { id:"termostat_zona",     label:"Termostat pe zonă (on/off)",                     eta:0.94 },
+  { id:"termostat_prop",     label:"Termostat proporțional P/PI",                    eta:0.96 },
+  { id:"termostat_pid",      label:"Termostat PID + senzor CO₂/prezență",            eta:0.98 },
+  { id:"bacs_clasa_d",       label:"BACS Clasa D (non-eficient — EPBD deprecated)",  eta:0.90 },
+  { id:"bacs_clasa_c",       label:"BACS Clasa C (standard ISO 52120-1 — bază)",     eta:1.00 },
+  { id:"bacs_clasa_b",       label:"BACS Clasa B (avansat — setpoint dinamic)",      eta:1.02 },
+  { id:"bacs_clasa_a",       label:"BACS Clasa A (high-performance — optimizare AI)",eta:1.05 },
 ];
 
 // Tipuri ventilare conform I5-2022 (Ord. MDLPA 2023) + Mc 001-2022 Cap. 3 + EN 13779

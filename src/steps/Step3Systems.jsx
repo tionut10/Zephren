@@ -6,6 +6,7 @@ import {
   HEAT_SOURCES, FUELS, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY,
   CONTROL_TYPES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
   LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
+  COOLING_EMISSION_EFFICIENCY, COOLING_DISTRIBUTION_EFFICIENCY, COOLING_CONTROL_EFFICIENCY,
 } from "../data/constants.js";
 
 export default function Step3Systems({
@@ -263,8 +264,47 @@ export default function Step3Systems({
             </>
           )}
 
-          {/* ── CLIMATIZARE ── */}
-          {instSubTab === "cooling" && (
+          {/* ── CLIMATIZARE ── Sprint 3a (17 apr 2026): SEER + η separate + calc orar */}
+          {instSubTab === "cooling" && (() => {
+            // Validări input Climatizare — Sprint 3a
+            const coolErrors = [];
+            const eerNum = parseFloat(cooling.eer);
+            const seerNum = parseFloat(cooling.seer);
+            const powerNum = parseFloat(cooling.power);
+            const areaNum = parseFloat(cooling.cooledArea);
+            const Au = parseFloat(building.areaUseful) || 0;
+            const etaEmNum = parseFloat(cooling.eta_em);
+            const etaDistNum = parseFloat(cooling.eta_dist);
+            const etaCtrlNum = parseFloat(cooling.eta_ctrl);
+            const setpointNum = parseFloat(cooling.setpoint);
+            if (cooling.eer && (eerNum <= 0 || eerNum > 20)) {
+              coolErrors.push("EER nominal: trebuie în intervalul 0 – 20 (valori tipice 2.5–6.0 pentru split/chiller).");
+            }
+            if (cooling.seer && (seerNum <= 0 || seerNum > 20)) {
+              coolErrors.push("SEER sezonier: trebuie în intervalul 0 – 20 (EN 14825 — valori tipice 4.0–9.0).");
+            }
+            if (cooling.power && powerNum < 0) {
+              coolErrors.push("Putere frigorifică: trebuie ≥ 0 kW (sanity check).");
+            }
+            if (cooling.cooledArea && Au > 0 && (areaNum < 0 || areaNum > Au)) {
+              coolErrors.push(`Suprafață răcită: trebuie în intervalul 0 – ${Au} m² (maximum = Au).`);
+            }
+            if (cooling.eta_em && (etaEmNum < 0.7 || etaEmNum > 1.0)) {
+              coolErrors.push("η emisie răcire: trebuie în intervalul 0.70 – 1.00 (EN 15316-2).");
+            }
+            if (cooling.eta_dist && (etaDistNum < 0.7 || etaDistNum > 1.0)) {
+              coolErrors.push("η distribuție răcire: trebuie în intervalul 0.70 – 1.00 (EN 15316-3).");
+            }
+            if (cooling.eta_ctrl && (etaCtrlNum < 0.7 || etaCtrlNum > 1.10)) {
+              coolErrors.push("η control răcire: trebuie în intervalul 0.70 – 1.10 (EN 15232-1 BACS A poate >1).");
+            }
+            if (cooling.setpoint && (setpointNum < 20 || setpointNum > 30)) {
+              coolErrors.push("Setpoint răcire: trebuie în intervalul 20 – 30 °C (EN 16798-1 cat. I–IV).");
+            }
+            const hasErrors = coolErrors.length > 0;
+            const coolSysSelected = COOLING_SYSTEMS.find(s => s.id === cooling.system);
+            const autoSeer = coolSysSelected ? coolSysSelected.seer : 0;
+            return (
             <>
               <Card title={t("Sistem de răcire",lang)}>
                 <div className="space-y-3">
@@ -275,19 +315,91 @@ export default function Step3Systems({
                   </label>
 
                   {cooling.hasCooling && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                      <Select label={t("Tip sistem",lang)} value={cooling.system} onChange={v => {
-                        const sys = COOLING_SYSTEMS.find(s=>s.id===v);
-                        setCooling(p=>({...p,system:v,eer:sys?.eer.toString()||""}));
-                      }} options={COOLING_SYSTEMS.filter(s=>s.id!=="NONE").map(s=>({value:s.id,label:s.label}))} />
-                      <Input label={t("EER/COP răcire",lang)} value={cooling.eer || (COOLING_SYSTEMS.find(s=>s.id===cooling.system)?.eer||"").toString()}
-                        onChange={v => setCooling(p=>({...p,eer:v}))} type="number" step="0.1" />
-                      <Input label={t("Putere frigorifică",lang)} value={cooling.power} onChange={v => setCooling(p=>({...p,power:v}))} type="number" unit="kW" />
-                      <Input label={t("Suprafață răcită",lang)} value={cooling.cooledArea} onChange={v => setCooling(p=>({...p,cooledArea:v}))} type="number" unit="m²"
-                        placeholder={`${building.areaUseful || "= Au"}`} />
-                      <Select label={t("Distribuție răcire",lang)} value={cooling.distribution} onChange={v => setCooling(p=>({...p,distribution:v}))}
-                        options={DISTRIBUTION_QUALITY.slice(0,4).map(s=>({value:s.id,label:s.label}))} />
-                    </div>
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Select label={t("Tip sistem",lang)} value={cooling.system} onChange={v => {
+                          const sys = COOLING_SYSTEMS.find(s=>s.id===v);
+                          setCooling(p=>({...p,
+                            system:v,
+                            eer:sys?.eer.toString()||"",
+                            seer:sys?.seer && sys.seer > 0 ? sys.seer.toString() : "",
+                          }));
+                        }} options={COOLING_SYSTEMS.filter(s=>s.id!=="NONE").map(s=>({value:s.id,label:s.label}))} />
+                        <Input label={t("EER nominal",lang)} value={cooling.eer || (coolSysSelected?.eer||"").toString()}
+                          onChange={v => setCooling(p=>({...p,eer:v}))} type="number" step="0.1" min="0" max="20"
+                          tooltip="EER = Energy Efficiency Ratio la sarcina nominală (ISO 5151 / EN 14511, punct A = 27/35 °C). Valoare etichetă echipament." />
+                        <Input label={t("SEER sezonier",lang)} value={cooling.seer}
+                          onChange={v => setCooling(p=>({...p,seer:v}))} type="number" step="0.1" min="0" max="20"
+                          placeholder={autoSeer > 0 ? `auto: ${autoSeer} (catalog)` : (eerNum > 0 ? `auto: ${(eerNum * 1.8).toFixed(1)} (EER × 1.8)` : "auto")}
+                          tooltip="SEER = Seasonal EER (EN 14825). Pentru calcul anual corect folosește SEER (tipic 1.5–1.7× EER). Gol → catalog → EER × 1.8." />
+                        <Input label={t("Putere frigorifică",lang)} value={cooling.power} onChange={v => setCooling(p=>({...p,power:v}))} type="number" unit="kW" min="0" />
+                        <Input label={t("Suprafață răcită",lang)} value={cooling.cooledArea} onChange={v => setCooling(p=>({...p,cooledArea:v}))} type="number" unit="m²"
+                          min="0" max={Au || undefined}
+                          placeholder={`${building.areaUseful || "= Au"}`} />
+                        <Input label={t("Setpoint răcire",lang)} value={cooling.setpoint || "26"} onChange={v => setCooling(p=>({...p,setpoint:v}))} type="number" unit="°C"
+                          min="20" max="30" step="0.5"
+                          tooltip="Temperatura interioară de confort vara. EN 16798-1: cat. I = 24.5°C, II = 26°C, III = 27°C, IV = 28°C." />
+                      </div>
+
+                      {/* Metoda de calcul + avertizare SEER ≠ EER */}
+                      <div className="mt-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 space-y-2">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input type="checkbox" checked={cooling.useHourly !== false}
+                            onChange={e => setCooling(p=>({...p,useHourly:e.target.checked}))}
+                            className="accent-blue-500" />
+                          <span className="font-medium text-blue-300">Metoda orară (precizie ridicată) — SR EN ISO 52016-1 + CIBSE Guide A</span>
+                        </label>
+                        <div className="text-[11px] opacity-60 leading-relaxed">
+                          ✓ Activ: calcul pe 8760 h cu 9 orientări + PVGIS + profil orar ocupare + sarcina de vârf.<br/>
+                          ✗ Inactiv: metoda lunară ISO 13790 (mai rapid, mai puțin precis pentru clădiri cu sarcini variabile).
+                        </div>
+                      </div>
+
+                      {/* η RANDAMENTE RĂCIRE — EN 15316-2 (paritate cu încălzire) */}
+                      <div className="mt-3">
+                        <div className="text-xs font-medium text-amber-400 mb-2">RANDAMENTE SEPARATE — SR EN 15316-2:2017</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Select label={t("Tip emisie răcire",lang)} value={cooling.emissionType || "fan_coil"} onChange={v => {
+                            const em = COOLING_EMISSION_EFFICIENCY.find(e=>e.id===v);
+                            setCooling(p=>({...p,emissionType:v,eta_em:em?.eta.toString()||"0.97"}));
+                          }} options={COOLING_EMISSION_EFFICIENCY.map(e=>({value:e.id,label:`${e.label} (η=${e.eta})`}))} />
+                          <Input label="η emisie" value={cooling.eta_em || "0.97"} onChange={v => setCooling(p=>({...p,eta_em:v}))}
+                            type="number" step="0.01" min="0.70" max="1.00"
+                            tooltip="Randament emisie răcire (0.70–1.00). Conform EN 15316-2 Tab.7." />
+
+                          <Select label={t("Tip distribuție răcire",lang)} value={cooling.distributionType || "apa_rece_izolat_int"} onChange={v => {
+                            const di = COOLING_DISTRIBUTION_EFFICIENCY.find(d=>d.id===v);
+                            setCooling(p=>({...p,distributionType:v,eta_dist:di?.eta.toString()||"0.95"}));
+                          }} options={COOLING_DISTRIBUTION_EFFICIENCY.map(d=>({value:d.id,label:`${d.label} (η=${d.eta})`}))} />
+                          <Input label="η distribuție" value={cooling.eta_dist || "0.95"} onChange={v => setCooling(p=>({...p,eta_dist:v}))}
+                            type="number" step="0.01" min="0.70" max="1.00"
+                            tooltip="Randament distribuție răcire (0.70–1.00). Conform EN 15316-3 Tab.7." />
+
+                          <Select label={t("Reglare răcire",lang)} value={cooling.controlType || "termostat_prop"} onChange={v => {
+                            const ct = COOLING_CONTROL_EFFICIENCY.find(c=>c.id===v);
+                            setCooling(p=>({...p,controlType:v,eta_ctrl:ct?.eta.toString()||"0.96"}));
+                          }} options={COOLING_CONTROL_EFFICIENCY.map(c=>({value:c.id,label:`${c.label} (η=${c.eta})`}))} />
+                          <Input label="η control" value={cooling.eta_ctrl || "0.96"} onChange={v => setCooling(p=>({...p,eta_ctrl:v}))}
+                            type="number" step="0.01" min="0.70" max="1.10"
+                            tooltip="Randament control răcire (0.70–1.10). BACS clasa A/B poate >1.00 (EN 15232-1 / ISO 52120-1)." />
+                        </div>
+                      </div>
+
+                      {hasErrors && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs space-y-1 mt-3">
+                          <div className="font-medium text-red-400 mb-1">⚠ Valori în afara intervalului admis</div>
+                          {coolErrors.map((e, i) => (
+                            <div key={i} className="text-red-300/80 leading-relaxed">• {e}</div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Distribuție legacy — păstrat pentru compatibilitate */}
+                      <div className="mt-3">
+                        <Select label={t("Calitate izolație distribuție (legacy)",lang)} value={cooling.distribution} onChange={v => setCooling(p=>({...p,distribution:v}))}
+                          options={DISTRIBUTION_QUALITY.slice(0,4).map(s=>({value:s.id,label:s.label}))} />
+                      </div>
+                    </>
                   )}
 
                   {!cooling.hasCooling && (
@@ -299,7 +411,8 @@ export default function Step3Systems({
                 </div>
               </Card>
             </>
-          )}
+            );
+          })()}
 
           {/* ── VENTILARE ── */}
           {instSubTab === "ventilation" && (() => {

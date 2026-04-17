@@ -115,7 +115,11 @@ export function useEnvelopeSummary({
     const A_envelope = totalArea > 0 ? totalArea : 1;
     const H_tr_adj_per_A = totalHeatLoss / A_envelope;
 
-    return { totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A };
+    // Sprint 3a (17 apr 2026) — expus opaqueElements/glazingElements pentru cooling-hourly.js
+    return {
+      totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A,
+      opaqueElements, glazingElements,
+    };
   }, [
     opaqueElements, glazingElements, thermalBridges,
     building.volume, building.perimeter, building.n50, building.windExposure,
