@@ -86,7 +86,9 @@ export const CHP_FUEL_FACTORS = {
 // Conform Directiva 2012/27/UE Anexa II
 const REF_ETA_ELEC = 0.40; // eficiență referință centrală electrică
 const REF_ETA_TH  = 0.90;  // eficiență referință centrală termică
-const FP_ELEC_GRID = 2.50; // factor energie primară rețea electrică
+// FP_ELEC_GRID — fP_tot electricitate conform SR EN ISO 52000-1/NA:2023 Tab A.16
+// Tab A.16: fP_nren=2.00 + fP_ren=0.50 = fP_tot=2.50 (Sprint 11 — verificat)
+const FP_ELEC_GRID = 2.50;
 const PRICE_ELEC_RON_KWH = 1.40; // preț electricitate [RON/kWh]
 
 /**

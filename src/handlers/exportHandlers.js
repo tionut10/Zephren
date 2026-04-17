@@ -14,7 +14,7 @@ import {
   BUILDING_CATEGORIES, ELEMENT_TYPES, buildCatKey,
 } from "../data/building-catalog.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
-import { ZEB_THRESHOLDS, FP_ELEC } from "../data/u-reference.js";
+import { ZEB_THRESHOLDS, FP_ELEC, getFPElecTot, getFPElecNren, getFPElecRen } from "../data/u-reference.js";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { checkC107Conformity } from "../calc/c107.js";
@@ -1641,7 +1641,7 @@ export async function exportComplianceReport(ctx) {
   const {
     instSummary, renewSummary, building, selectedClimate, cooling,
     envelopeSummary, opaqueElements, glazingElements, bacsClass, auditor,
-    showToast, setExporting, calcOpaqueR,
+    showToast, setExporting, calcOpaqueR, useNA2023,
   } = ctx;
   if (!instSummary) { showToast("Completați calculul energetic (Pasul 5)", "error"); return; }
   setExporting("pdf");
@@ -1733,10 +1733,12 @@ export async function exportComplianceReport(ctx) {
         ok: bacsOk,
       },
       {
-        normativ: "SR EN ISO 52000-1:2017",
+        normativ: useNA2023 ? "SR EN ISO 52000-1:2017/NA:2023 Tab A.16" : "Mc 001-2022 Tab 5.17",
         cerinta: "Factor energie primară electricitate",
-        valoare: `fP(electricitate) = ${FP_ELEC} (SEN România)`,
-        status: "APLICAT",
+        valoare: useNA2023
+          ? `fP_nren=${getFPElecNren(true)} + fP_ren=${getFPElecRen(true)} → fP_tot=${getFPElecTot(true)} (Tab A.16)`
+          : `fP(electricitate) = ${FP_ELEC} (Tab 5.17 legacy)`,
+        status: useNA2023 ? "APLICAT (NA:2023)" : "APLICAT (legacy)",
         ok: true,
       },
       {

@@ -41,8 +41,50 @@ export const ZEB_THRESHOLDS = {
 };
 export const ZEB_FACTOR = 1.0;
 
-// Factor energie primară electricitate din rețea SEN România
+// ═══════════════════════════════════════════════════════════════════════════
+// FACTORI ENERGIE PRIMARĂ ELECTRICITATE — SEN România
+// ═══════════════════════════════════════════════════════════════════════════
+// Mc 001-2022 Tabel 5.17 (legacy):         fP_nren = 2.62, fP_ren = 0.00 → fP_tot = 2.62
+// SR EN ISO 52000-1:2017/NA:2023 Tab A.16: fP_nren = 2.00, fP_ren = 0.50 → fP_tot = 2.50
+//
+// Sprint 11 (17 apr 2026) — migrare globală Tab A.16 (NA:2023) gated pe flag `useNA2023`
+// Licență ASRO TUNARU IONUȚ / Factură 148552 — valori confirmate din PDF original
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Legacy — păstrat pentru compatibilitate retroactivă (flag useNA2023 = false)
 export const FP_ELEC = 2.62;
+
+// NA:2023 Tab A.16 — valori autoritare SR EN ISO 52000-1/NA:2023
+export const FP_ELEC_NA2023_NREN = 2.00;
+export const FP_ELEC_NA2023_REN = 0.50;
+export const FP_ELEC_NA2023_TOT = 2.50;
+
+// CO2 electricitate — neafectat de migrare (Tab A.16 păstrează 0.107 kg/kWh)
+export const CO2_ELEC = 0.107;
+
+/**
+ * Factor electricitate fP_nren (nerecuperabilă) gated pe useNA2023.
+ * @param {boolean} useNA2023 — true: Tab A.16 (2.00), false: Tab 5.17 (2.62)
+ */
+export function getFPElecNren(useNA2023) {
+  return useNA2023 ? FP_ELEC_NA2023_NREN : 2.62;
+}
+
+/**
+ * Factor electricitate fP_ren (recuperabilă) gated pe useNA2023.
+ * @param {boolean} useNA2023 — true: 0.50 (NA:2023 recunoaște partea RES din mix SEN), false: 0
+ */
+export function getFPElecRen(useNA2023) {
+  return useNA2023 ? FP_ELEC_NA2023_REN : 0.00;
+}
+
+/**
+ * Factor electricitate fP_tot = fP_nren + fP_ren.
+ * @param {boolean} useNA2023
+ */
+export function getFPElecTot(useNA2023) {
+  return useNA2023 ? FP_ELEC_NA2023_TOT : FP_ELEC;
+}
 
 // BACS — Building Automation & Control (EPBD Art.14)
 export const BACS_CLASSES = {

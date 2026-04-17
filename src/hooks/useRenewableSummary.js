@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { FUELS, ACM_SOURCES, HEAT_SOURCES, SOLAR_THERMAL_TYPES, PV_TYPES, BIOMASS_TYPES, ORIENT_FACTORS, TILT_FACTORS } from "../data/constants.js";
-import { FP_ELEC } from "../data/u-reference.js";
+import { getFPElecTot, CO2_ELEC } from "../data/u-reference.js";
 
 /**
  * useRenewableSummary — calcul fracție regenerabilă și RER
@@ -40,6 +40,9 @@ export function useRenewableSummary({
     const Au = parseFloat(building.areaUseful) || 0;
     if (!Au || !selectedClimate || !instSummary) return null;
 
+    // Sprint 11 — factor electricitate gated pe useNA2023 (Tab A.16 2.50 / Tab 5.17 2.62)
+    const fP_elec = getFPElecTot(useNA2023);
+
     // ── SOLAR TERMIC ──
     let qSolarTh = 0;
     if (solarThermal.enabled) {
@@ -68,7 +71,7 @@ export function useRenewableSummary({
       const tiltF = TILT_FACTORS[photovoltaic.tilt] || 1;
       const solarH = selectedClimate.solar.Oriz || 360;
       qPV_kWh = area * etaPV * etaInv * solarH * oriF * tiltF * 0.80;
-      qPV = qPV_kWh * FP_ELEC;
+      qPV = qPV_kWh * fP_elec;
     }
 
     // ── POMPĂ DE CĂLDURĂ (fracțiunea regenerabilă = 1 - 1/SCOP) ──
@@ -115,8 +118,8 @@ export function useRenewableSummary({
       qCogen_el = parseFloat(otherRenew.cogenElectric) || 0;
       qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
       const cogenFuelData = FUELS.find(f => f.id === (otherRenew.cogenFuel || "gaz"));
-      qCogen_ep_reduction = qCogen_el * FP_ELEC + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
-      qCogen_co2_reduction = qCogen_el * 0.107 + qCogen_th * (cogenFuelData?.fCO2 || 0.205);
+      qCogen_ep_reduction = qCogen_el * fP_elec + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
+      qCogen_co2_reduction = qCogen_el * CO2_ELEC + qCogen_th * (cogenFuelData?.fCO2 || 0.205);
     }
 
     const totalRenewable = qSolarTh + qPV_kWh + qPC_ren + qBio_ren + qWind + qCogen_el + qCogen_th;
@@ -124,11 +127,11 @@ export function useRenewableSummary({
 
     // RER — Renewable Energy Ratio (energie primară)
     const fP_therm = 1.17;
-    const totalRenewable_ep = qSolarTh * fP_therm + qPV_kWh * FP_ELEC + qPC_ren * FP_ELEC + qBio_ren * 1.08 + qWind * FP_ELEC + qCogen_el * FP_ELEC + qCogen_th * fP_therm;
+    const totalRenewable_ep = qSolarTh * fP_therm + qPV_kWh * fP_elec + qPC_ren * fP_elec + qBio_ren * 1.08 + qWind * fP_elec + qCogen_el * fP_elec + qCogen_th * fP_therm;
     const epTotal = instSummary.ep_total || 1;
     const rer = epTotal > 0 ? (totalRenewable_ep / epTotal) * 100 : 0;
     // L.238/2024: RER decomposition
-    const totalOnSite_ep = qSolarTh * fP_therm + qPV_kWh * FP_ELEC + qPC_ren * FP_ELEC + qBio_ren * 1.08 + qWind * FP_ELEC;
+    const totalOnSite_ep = qSolarTh * fP_therm + qPV_kWh * fP_elec + qPC_ren * fP_elec + qBio_ren * 1.08 + qWind * fP_elec;
     const rerOnSite = epTotal > 0 ? (totalOnSite_ep / epTotal) * 100 : 0;
     const rerOnSiteOk = rerOnSite >= 10;
     const rerTotalOk = rer >= 30;
@@ -137,7 +140,7 @@ export function useRenewableSummary({
     // ambientFP urmează aceeași logică ca în useInstallationSummary:
     // NA:2023 ON → energia ambientală e inclusă în ep_total → trebuie scăzută și din ep_reduction
     const ambientFP = useNA2023 ? 1.0 : 0;
-    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * FP_ELEC + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * FP_ELEC + qCogen_ep_reduction;
+    const ep_reduction = qSolarTh * 1.0 + qPV_kWh * fP_elec + qPC_ren * ambientFP + qBio_ren * 1.0 + qWind * fP_elec + qCogen_ep_reduction;
     const ep_adjusted = Math.max(0, instSummary.ep_total - ep_reduction);
     const ep_adjusted_m2 = Au > 0 ? ep_adjusted / Au : 0;
 
@@ -146,7 +149,7 @@ export function useRenewableSummary({
       ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz")
       : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
     const solarThCO2Factor = (FUELS.find(f => f.id === acmFuelId) || FUELS[0]).fCO2;
-    const co2_reduction = qSolarTh * solarThCO2Factor + qPV_kWh * 0.107 + qPC_ren * 0 + qWind * 0.107 + qCogen_co2_reduction;
+    const co2_reduction = qSolarTh * solarThCO2Factor + qPV_kWh * CO2_ELEC + qPC_ren * 0 + qWind * CO2_ELEC + qCogen_co2_reduction;
     const co2_adjusted = Math.max(0, instSummary.co2_total - co2_reduction);
     const co2_adjusted_m2 = Au > 0 ? co2_adjusted / Au : 0;
 

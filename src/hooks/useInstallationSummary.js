@@ -5,7 +5,7 @@ import {
   COOLING_HOURS_BY_ZONE, COOLING_HOURS_DEFAULT,
 } from "../data/constants.js";
 import { WATER_TEMP_MONTH } from "../data/energy-classes.js";
-import { FP_ELEC } from "../data/u-reference.js";
+import { getFPElecNren, getFPElecRen, getFPElecTot, CO2_ELEC } from "../data/u-reference.js";
 import { calcACMen15316 } from "../calc/acm-en15316.js";
 import { calcSolarACMDetailed } from "../calc/solar-acm-detailed.js";
 import { calcLENI } from "../calc/en15193-lighting.js";
@@ -433,17 +433,20 @@ export function useInstallationSummary({
     const qf_total_m2 = Au > 0 ? qf_total / Au : 0;
 
     // ── ENERGIE PRIMARĂ — descompunere fP_nren / fP_ren conform ISO 52000-1/NA:2023 ──
-    // Pompe de căldură: energia ambientală (qH_nd - qf_h) cu fP_ambient
+    // Sprint 11 (17 apr 2026) — Tab A.16 NA:2023 gated pe useNA2023:
+    //   true  → fP_nren=2.00, fP_ren=0.50, fP_tot=2.50  (autoritar ASRO)
+    //   false → fP_nren=2.62, fP_ren=0.00, fP_tot=2.62  (Tab 5.17 Mc001 legacy)
+    // Pompe de căldură: energia ambientală (qH_nd - qf_h) cu fP_ambient (NA:2023 corecție OAER)
+    const fP_elec_nren = getFPElecNren(useNA2023);
+    const fP_elec_ren = getFPElecRen(useNA2023);
+    const fP_elec_tot = getFPElecTot(useNA2023);
     let ep_h, ep_nren_h, ep_ren_h;
     if (isCOP) {
-      const fP_elec = fuel?.fP_tot || FP_ELEC;
-      const fP_nren_elec = fuel?.fP_nren ?? 2.62;
-      const fP_ren_elec = fuel?.fP_ren ?? 0.0;
       const qAmbient_h = Math.max(0, qH_nd - qf_h);
       const fP_ambient = useNA2023 ? 1.0 : 0;
-      ep_h = qf_h * fP_elec + qAmbient_h * fP_ambient;
-      ep_nren_h = qf_h * fP_nren_elec;
-      ep_ren_h = qf_h * fP_ren_elec + qAmbient_h * (useNA2023 ? 1.0 : 0);
+      ep_h = qf_h * fP_elec_tot + qAmbient_h * fP_ambient;
+      ep_nren_h = qf_h * fP_elec_nren;
+      ep_ren_h = qf_h * fP_elec_ren + qAmbient_h * (useNA2023 ? 1.0 : 0);
     } else {
       ep_h = qf_h * (fuel?.fP_tot || 1.17);
       ep_nren_h = qf_h * (fuel?.fP_nren ?? 1.10);
@@ -451,33 +454,33 @@ export function useInstallationSummary({
     }
     let ep_w, ep_nren_w, ep_ren_w;
     if (isCOPacm) {
-      const fP_elec = acmFuel?.fP_tot || FP_ELEC;
-      const fP_nren_elec = acmFuel?.fP_nren ?? 2.62;
-      const fP_ren_elec = acmFuel?.fP_ren ?? 0.0;
       const qAmbient_w = Math.max(0, qACM_nd - qf_w);
       const fP_ambient = useNA2023 ? 1.0 : 0;
-      ep_w = qf_w * fP_elec + qAmbient_w * fP_ambient;
-      ep_nren_w = qf_w * fP_nren_elec;
-      ep_ren_w = qf_w * fP_ren_elec + qAmbient_w * (useNA2023 ? 1.0 : 0);
+      ep_w = qf_w * fP_elec_tot + qAmbient_w * fP_ambient;
+      ep_nren_w = qf_w * fP_elec_nren;
+      ep_ren_w = qf_w * fP_elec_ren + qAmbient_w * (useNA2023 ? 1.0 : 0);
     } else {
       ep_w = qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
       ep_nren_w = qf_w * (acmFuel?.fP_nren ?? fuel?.fP_nren ?? 1.10);
       ep_ren_w = qf_w * (acmFuel?.fP_ren ?? fuel?.fP_ren ?? 0.07);
     }
-    const ep_c = qf_c * (coolFuel?.fP_tot || FP_ELEC);
-    const ep_nren_c = qf_c * (coolFuel?.fP_nren ?? 2.62);
-    const ep_ren_c = qf_c * (coolFuel?.fP_ren ?? 0.0);
-    const ep_v = qf_v * FP_ELEC;
-    const ep_nren_v = qf_v * 2.62;
-    const ep_ren_v = qf_v * 0.0;
-    const ep_l = qf_l * FP_ELEC;
-    const ep_nren_l = qf_l * 2.62;
-    const ep_ren_l = qf_l * 0.0;
+    // Răcire — mereu electric (chiller/PC). coolFuel păstrat pentru non-electrice (rarisim).
+    const coolIsElec = !coolFuel || coolFuel.id === "electricitate";
+    const ep_c = coolIsElec ? qf_c * fP_elec_tot : qf_c * (coolFuel?.fP_tot || fP_elec_tot);
+    const ep_nren_c = coolIsElec ? qf_c * fP_elec_nren : qf_c * (coolFuel?.fP_nren ?? fP_elec_nren);
+    const ep_ren_c = coolIsElec ? qf_c * fP_elec_ren : qf_c * (coolFuel?.fP_ren ?? fP_elec_ren);
+    // Ventilație, iluminat, aux ACM — întotdeauna electric SEN
+    const ep_v = qf_v * fP_elec_tot;
+    const ep_nren_v = qf_v * fP_elec_nren;
+    const ep_ren_v = qf_v * fP_elec_ren;
+    const ep_l = qf_l * fP_elec_tot;
+    const ep_nren_l = qf_l * fP_elec_nren;
+    const ep_ren_l = qf_l * fP_elec_ren;
 
     // Auxiliar pompă ACM — întotdeauna electric (indiferent de combustibil ACM)
-    const ep_aux_acm = W_aux_acm_kWh * FP_ELEC;
-    const ep_nren_aux_acm = W_aux_acm_kWh * 2.62;
-    const ep_ren_aux_acm = 0;
+    const ep_aux_acm = W_aux_acm_kWh * fP_elec_tot;
+    const ep_nren_aux_acm = W_aux_acm_kWh * fP_elec_nren;
+    const ep_ren_aux_acm = W_aux_acm_kWh * fP_elec_ren;
 
     const ep_total = ep_h + ep_w + ep_c + ep_v + ep_l + ep_aux_acm;
     const ep_total_m2 = Au > 0 ? ep_total / Au : 0;
@@ -487,12 +490,13 @@ export function useInstallationSummary({
     const ep_ren_m2 = Au > 0 ? ep_ren_total / Au : 0;
 
     // ── CO2 ──
+    // Factor CO2 electricitate SEN = 0.107 kg/kWh (identic Tab 5.17 și Tab A.16)
     const co2_h = qf_h * (fuel?.fCO2 || 0.20);
     const co2_w = qf_w * (acmFuel?.fCO2 || fuel?.fCO2 || 0.20);
-    const co2_c = qf_c * (coolFuel?.fCO2 || 0.107);
-    const co2_v = qf_v * 0.107;
-    const co2_l = qf_l * 0.107;
-    const co2_aux_acm = W_aux_acm_kWh * 0.107;
+    const co2_c = qf_c * (coolFuel?.fCO2 || CO2_ELEC);
+    const co2_v = qf_v * CO2_ELEC;
+    const co2_l = qf_l * CO2_ELEC;
+    const co2_aux_acm = W_aux_acm_kWh * CO2_ELEC;
     const co2_total = co2_h + co2_w + co2_c + co2_v + co2_l + co2_aux_acm;
     const co2_total_m2 = Au > 0 ? co2_total / Au : 0;
 
