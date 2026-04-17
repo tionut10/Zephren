@@ -36,6 +36,8 @@ import { checkC107Conformity } from "./calc/c107.js";
 // ── Extracted data modules (Sprint 3 → Faza 4 finalizare) ──
 import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES, CATEGORY_BASE_MAP, buildCatKey } from "./data/building-catalog.js";
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
+// Sprint 5 (17 apr 2026) — SR EN ISO 52120-1:2022
+import { checkBACSMandatoryISO, BACS_CLASS_LABELS, getBACSCategoryFromCode, getBACSFactors } from "./calc/bacs-iso52120.js";
 import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
 import { TIERS } from "./data/tiers.js";
 import { BENCHMARKS } from "./data/benchmarks.js";
@@ -1313,6 +1315,7 @@ export default function EnergyCalcApp({ cloud }) {
 
   const instSummary = useInstallationSummary({
     envelopeSummary, monthlyISO, building, heating, acm, cooling, ventilation, lighting, selectedClimate, solarThermal, useNA2023,
+    bacsClass, // Sprint 5 — aplicare f_BAC conform SR EN ISO 52120-1:2022
   });
 
   const renewSummary = useRenewableSummary({
@@ -1791,15 +1794,51 @@ export default function EnergyCalcApp({ cloud }) {
   }, [building.areaUseful, opaqueElements, glazingElements, rehabScenarioInputs]);
 
   // ═══════════════════════════════════════════════════════════════
-  // NEW: BACS verification (A5)
+  // NEW: BACS verification (A5) — Sprint 5 (17 apr 2026) upgrade ISO 52120
   // ═══════════════════════════════════════════════════════════════
   const bacsCheck = useMemo(() => {
     const power = parseFloat(heating.power) || 0;
-    const isRequired = power >= BACS_OBLIGATION_THRESHOLD_KW && !["RI","RA"].includes(building.category);
+    // Apelăm checker-ul EPBD Art. 14 + L. 238/2024 cu detectare termen expirat
+    const mandatoryInfo = checkBACSMandatoryISO({
+      category: building.category,
+      hvacPower: power,
+      isNew: building.isNew === true || building.constructionPeriod === "new",
+    });
+    // Afișăm cardul BACS pentru ORICE clădire (nu doar >290 kW) — Sprint 5 P7
+    const isRequired = mandatoryInfo.mandatory;
+    const isApplicable = true;
     const cls = BACS_CLASSES[bacsClass];
-    return { isRequired, bacsClass, factor: cls?.factor || 1, label: cls?.label || "—", desc: cls?.desc || "",
-      recommendation: isRequired && bacsClass === "D" ? "Obligatoriu upgrade la clasa C sau mai bun (EPBD Art.14)" : null };
-  }, [heating.power, building.category, bacsClass]);
+    const isoLabels = BACS_CLASS_LABELS[bacsClass] || BACS_CLASS_LABELS.C;
+    const bacsCat = getBACSCategoryFromCode(building.category);
+    const factors = getBACSFactors(bacsCat, bacsClass);
+    // Non-compliance: obligatoriu + clasă sub prag minim
+    const minClassOrder = { A: 4, B: 3, C: 2, D: 1 };
+    const currentRank = minClassOrder[bacsClass] || 0;
+    const minRank = mandatoryInfo.minClass ? minClassOrder[mandatoryInfo.minClass] : 0;
+    const isNonCompliant = isRequired && currentRank < minRank;
+    return {
+      isRequired,
+      isApplicable,
+      bacsClass,
+      factor: cls?.factor || 1,
+      label: cls?.label || "—",
+      desc: cls?.desc || "",
+      isoLabels,
+      factors,                   // Factori per sistem (heating/cooling/dhw/vent/lighting)
+      category: bacsCat,         // categorie ISO 52120 mapată
+      mandatory: isRequired,
+      minClass: mandatoryInfo.minClass,
+      deadline: mandatoryInfo.deadline,
+      deadlineExpired: mandatoryInfo.deadlineExpired,
+      warningLevel: mandatoryInfo.warningLevel, // "none"|"info"|"warning"|"error"
+      epbdRef: mandatoryInfo.epbdRef,
+      reason: mandatoryInfo.reason,
+      isNonCompliant,
+      recommendation: isNonCompliant
+        ? `Obligatoriu upgrade la clasa ${mandatoryInfo.minClass} sau mai bun (${mandatoryInfo.epbdRef})`
+        : null,
+    };
+  }, [heating.power, building.category, building.isNew, building.constructionPeriod, bacsClass]);
 
   // ═══════════════════════════════════════════════════════════════
   // NEW: EV Charger calculation (A6)

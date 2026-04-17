@@ -1,15 +1,17 @@
 /**
  * sri-indicator.js — Smart Readiness Indicator (SRI)
  *
- * Conform Regulamentul delegat (UE) 2020/2155 + Regulamentul de punere în aplicare 2020/2156
+ * Conform Regulamentul delegat (UE) 2020/2155 + Regulamentul de punere în aplicare 2020/2156.
  * Metodologie simplificată (Metoda B) cu evaluare pe 9 domenii tehnice și 3 criterii de impact.
+ * Sprint 5 (17 apr 2026): extins de la 17 la ~42 servicii (5-10 per domeniu) pentru
+ * aliniere cu ISO 52120-1:2022 §7 + Reg. 2020/2155 Anexa I (evaluare detaliată).
  *
  * Referințe:
  * - Regulamentul delegat (UE) 2020/2155 — cadrul metodologic SRI
  * - Regulamentul de punere în aplicare (UE) 2020/2156 — proceduri de calcul
  * - EPBD 2024/1275 Art. 15 — obligativitate SRI clădiri nerezidențiale >290 kW HVAC (din 30.06.2027)
  * - EPBD 2024/1275 Art. 15 alin. 7 — clădiri >70 kW HVAC (din 2029, act delegat Comisie)
- * - EN 15232-1:2017 — complementar BACS
+ * - SR EN ISO 52120-1:2022 — complementar BACS (Tab. 1 — 32 funcții BACS extinse)
  */
 
 // ── 9 Domenii tehnice SRI ──────────────────────────────────────────────────
@@ -35,11 +37,29 @@ export const SRI_DOMAINS = [
         { level: 3, label: "OTC + optimizare pornire/oprire", score: 75 },
         { level: 4, label: "Predicție meteo + învățare automată (MPC)", score: 100 },
       ]},
-      { id: "H3", name: "Control distribuție căldură", levels: [
+      { id: "H3", name: "Control distribuție căldură (pompe)", levels: [
         { level: 0, label: "Fără control pompe", score: 0 },
         { level: 1, label: "Pompe viteză constantă cu programare", score: 33 },
         { level: 2, label: "Pompe viteză variabilă (presiune diferențială)", score: 66 },
         { level: 3, label: "Pompe variabile + optimizare debit per zonă", score: 100 },
+      ]},
+      { id: "H4", name: "Funcționare intermitentă (setback)", levels: [
+        { level: 0, label: "Funcționare continuă fără programare", score: 0 },
+        { level: 1, label: "Programare simplă zi/noapte", score: 33 },
+        { level: 2, label: "Programare avansată pe zone cu setback", score: 66 },
+        { level: 3, label: "Setback adaptiv cu senzori ocupare + pre-heat optim", score: 100 },
+      ]},
+      { id: "H5", name: "Secvențiere multi-generatoare", levels: [
+        { level: 0, label: "Un singur generator sau secvențiere manuală", score: 0 },
+        { level: 1, label: "Secvențiere simplă pe priorități fixe", score: 33 },
+        { level: 2, label: "Secvențiere cu optimizare randament", score: 66 },
+        { level: 3, label: "Optimizare cost energie + emisii + disponibilitate SER", score: 100 },
+      ]},
+      { id: "H6", name: "Control emitere cu senzori prezență", levels: [
+        { level: 0, label: "Setpoint fix pe tot programul", score: 0 },
+        { level: 1, label: "Setback nocturn pe program", score: 25 },
+        { level: 2, label: "Senzori prezență (reduce setpoint când neocupat)", score: 60 },
+        { level: 3, label: "Senzori prezență + CO₂ + învățare ocupanți", score: 100 },
       ]},
     ],
   },
@@ -56,11 +76,27 @@ export const SRI_DOMAINS = [
         { level: 3, label: "Control individual + programare", score: 75 },
         { level: 4, label: "Control predictiv cu senzori ocupare", score: 100 },
       ]},
-      { id: "C2", name: "Control generare frig", levels: [
+      { id: "C2", name: "Control generare frig (chiller)", levels: [
         { level: 0, label: "Manual", score: 0 },
         { level: 1, label: "Programare simplă", score: 33 },
         { level: 2, label: "Compensare pe temperatură exterioară", score: 66 },
         { level: 3, label: "Optimizare continuă + free-cooling automat", score: 100 },
+      ]},
+      { id: "C3", name: "Control distribuție (pompe apă rece)", levels: [
+        { level: 0, label: "Pompe viteză constantă", score: 0 },
+        { level: 1, label: "Pompe VFD pe cerere primară", score: 50 },
+        { level: 2, label: "Control diferențial presiune + ΔT", score: 100 },
+      ]},
+      { id: "C4", name: "Free-cooling / economizer", levels: [
+        { level: 0, label: "Nedisponibil", score: 0 },
+        { level: 1, label: "Free-cooling aer (economizer) pe setpoint fix", score: 40 },
+        { level: 2, label: "Free-cooling + optimizare entalpie", score: 70 },
+        { level: 3, label: "Free-cooling hidraulic (towers) + aer + noapte", score: 100 },
+      ]},
+      { id: "C5", name: "Control umiditate / dehumidificare", levels: [
+        { level: 0, label: "Fără control umiditate", score: 0 },
+        { level: 1, label: "Dehumidificare ON/OFF pe prag", score: 50 },
+        { level: 2, label: "Control entalpie + setpoint dinamic (EN 16798)", score: 100 },
       ]},
     ],
   },
@@ -80,6 +116,18 @@ export const SRI_DOMAINS = [
         { level: 0, label: "Recirculare continuă sau fără recirculare", score: 0 },
         { level: 1, label: "Recirculare pe program (timer)", score: 50 },
         { level: 2, label: "Recirculare pe cerere (senzor/buton)", score: 100 },
+      ]},
+      { id: "W3", name: "Tratament anti-Legionella", levels: [
+        { level: 0, label: "Fără tratament / manual sporadic", score: 0 },
+        { level: 1, label: "Șoc termic programat săptămânal (60 °C)", score: 50 },
+        { level: 2, label: "Șoc termic săptămânal + monitorizare temperatură automat", score: 80 },
+        { level: 3, label: "Tratament optimizat + logging + alertare anomalii", score: 100 },
+      ]},
+      { id: "W4", name: "Integrare solar termic / PC pentru ACM", levels: [
+        { level: 0, label: "Fără sursă alternativă", score: 0 },
+        { level: 1, label: "Solar termic cu control manual", score: 33 },
+        { level: 2, label: "Solar + control prioritar (auxiliar oprit când solar > 50%)", score: 66 },
+        { level: 3, label: "Integrare solar + PC + PV cu optimizare continuă", score: 100 },
       ]},
     ],
   },
@@ -102,6 +150,22 @@ export const SRI_DOMAINS = [
         { level: 2, label: "Recuperare performantă (η 65-80%) + bypass", score: 66 },
         { level: 3, label: "Recuperare entalpică (η > 80%) + bypass + antigel", score: 100 },
       ]},
+      { id: "V3", name: "Free-cooling nocturn (night purge)", levels: [
+        { level: 0, label: "Neimplementat", score: 0 },
+        { level: 1, label: "Manual (ferestre seara)", score: 25 },
+        { level: 2, label: "Automatic pe setpoint T_ext < T_int", score: 60 },
+        { level: 3, label: "Automatic cu optimizare masă termică + predicție meteo", score: 100 },
+      ]},
+      { id: "V4", name: "Control umiditate aer insuflat", levels: [
+        { level: 0, label: "Fără control", score: 0 },
+        { level: 1, label: "Umidificare/dehumidificare ON/OFF pe prag", score: 50 },
+        { level: 2, label: "Control continuu + integrare cu HVAC + EN 16798-1", score: 100 },
+      ]},
+      { id: "V5", name: "Filtru aer inteligent (PM2.5/PM10)", levels: [
+        { level: 0, label: "Filtru G4 fără monitorizare", score: 0 },
+        { level: 1, label: "Filtru F7 cu schimb programat", score: 40 },
+        { level: 2, label: "Senzori PM2.5 + adaptare debit automat", score: 100 },
+      ]},
     ],
   },
   {
@@ -110,12 +174,33 @@ export const SRI_DOMAINS = [
     icon: "💡",
     weight: 0.10,
     services: [
-      { id: "L1", name: "Control iluminat", levels: [
+      { id: "L1", name: "Control ON/OFF iluminat", levels: [
         { level: 0, label: "Întrerupător manual ON/OFF", score: 0 },
         { level: 1, label: "Senzor prezență ON/OFF", score: 25 },
         { level: 2, label: "Dimming manual sau programat", score: 50 },
         { level: 3, label: "Dimming automat pe lumină naturală (daylight)", score: 75 },
         { level: 4, label: "Control personalizat per zonă + circadian", score: 100 },
+      ]},
+      { id: "L2", name: "Dimming daylight-harvesting", levels: [
+        { level: 0, label: "Nu există dimming pe lumină naturală", score: 0 },
+        { level: 1, label: "Zonare manuală (rânduri lângă fereastră)", score: 33 },
+        { level: 2, label: "Dimming automat pe senzor lux per zonă", score: 66 },
+        { level: 3, label: "Dimming + comutare jaluzele coordonat cu HVAC", score: 100 },
+      ]},
+      { id: "L3", name: "Ritm circadian / tunable white", levels: [
+        { level: 0, label: "Temperatura culoare fixă", score: 0 },
+        { level: 1, label: "2 scene (zi/noapte) manuale", score: 40 },
+        { level: 2, label: "Tunable white automat (CCT 2700-6500 K pe oră)", score: 100 },
+      ]},
+      { id: "L4", name: "Iluminat urgență + mentenanță", levels: [
+        { level: 0, label: "Iluminat urgență neetestat", score: 0 },
+        { level: 1, label: "Test anual manual conform EN 1838", score: 50 },
+        { level: 2, label: "Auto-test periodic + logging + alarme baterii", score: 100 },
+      ]},
+      { id: "L5", name: "Task tuning / setpoint lumen", levels: [
+        { level: 0, label: "Lumen constant (100% putere)", score: 0 },
+        { level: 1, label: "Reducere manuală 20% (task tuning)", score: 50 },
+        { level: 2, label: "Dimming automat la nivel lumen cerut (EN 12464-1)", score: 100 },
       ]},
     ],
   },
@@ -138,6 +223,11 @@ export const SRI_DOMAINS = [
         { level: 2, label: "Ferestre motorizate cu senzor CO₂", score: 66 },
         { level: 3, label: "Control integrat cu HVAC + calitate aer", score: 100 },
       ]},
+      { id: "DE3", name: "Monitorizare performanță anvelopă", levels: [
+        { level: 0, label: "Fără monitorizare U/termografie", score: 0 },
+        { level: 1, label: "Inspecție termografică periodică (la 5 ani)", score: 50 },
+        { level: 2, label: "Monitorizare continuă punți termice + umiditate", score: 100 },
+      ]},
     ],
   },
   {
@@ -159,6 +249,23 @@ export const SRI_DOMAINS = [
         { level: 2, label: "Baterie + optimizare autoconsum", score: 66 },
         { level: 3, label: "V2G / demand-response / piață energie", score: 100 },
       ]},
+      { id: "E3", name: "Optimizare autoconsum PV", levels: [
+        { level: 0, label: "Fără PV sau injecție totală în rețea", score: 0 },
+        { level: 1, label: "PV cu monitorizare producție", score: 33 },
+        { level: 2, label: "Autoconsum prioritar + deviere surplus spre ACM", score: 66 },
+        { level: 3, label: "Optimizare cu prognoză PV + tarif dinamic + stocare", score: 100 },
+      ]},
+      { id: "E4", name: "Demand response / piață energie", levels: [
+        { level: 0, label: "Fără participare DR", score: 0 },
+        { level: 1, label: "Pregătit DR (API disponibil, inactiv)", score: 33 },
+        { level: 2, label: "Participare DR pe un sistem (HVAC sau baterie)", score: 66 },
+        { level: 3, label: "Participare DR multi-sistem + agregator piață", score: 100 },
+      ]},
+      { id: "E5", name: "Tariffare dinamică / time-of-use", levels: [
+        { level: 0, label: "Tarif fix", score: 0 },
+        { level: 1, label: "Tarif dual (zi/noapte) cu programare simplă", score: 50 },
+        { level: 2, label: "Tarif spot orar + planificare automată consum", score: 100 },
+      ]},
     ],
   },
   {
@@ -173,6 +280,16 @@ export const SRI_DOMAINS = [
         { level: 2, label: "Stație de încărcare simplă (mod 3)", score: 50 },
         { level: 3, label: "Stație inteligentă cu programare + tarifare", score: 75 },
         { level: 4, label: "V2G / load balancing / integrare PV", score: 100 },
+      ]},
+      { id: "EV2", name: "V2G / V2B bidirecțional", levels: [
+        { level: 0, label: "Încărcare unidirecțională", score: 0 },
+        { level: 1, label: "V2H (vehicul → casă)", score: 50 },
+        { level: 2, label: "V2G complet (vehicul → rețea + agregator)", score: 100 },
+      ]},
+      { id: "EV3", name: "Load balancing + integrare PV", levels: [
+        { level: 0, label: "Încărcare pe putere maximă fără gestionare", score: 0 },
+        { level: 1, label: "Limitare putere pe circuit electric", score: 33 },
+        { level: 2, label: "Load balancing dinamic + prioritate surplus PV", score: 100 },
       ]},
     ],
   },
@@ -195,6 +312,29 @@ export const SRI_DOMAINS = [
         { level: 2, label: "Dashboard online per utilizator", score: 50 },
         { level: 3, label: "Aplicație mobilă cu recomandări personalizate", score: 75 },
         { level: 4, label: "Gamificare + comparare între ocupanți + recompense", score: 100 },
+      ]},
+      { id: "M3", name: "Fault detection & diagnostics (FDD)", levels: [
+        { level: 0, label: "Fără detectare defecte automate", score: 0 },
+        { level: 1, label: "Alarme pe praguri fixe", score: 33 },
+        { level: 2, label: "FDD pe reguli per sistem + raportare", score: 66 },
+        { level: 3, label: "FDD predictivă ML + prioritizare mentenanță", score: 100 },
+      ]},
+      { id: "M4", name: "Benchmarking consum vs. comparabile", levels: [
+        { level: 0, label: "Fără benchmarking", score: 0 },
+        { level: 1, label: "Comparație an/an internă", score: 40 },
+        { level: 2, label: "Benchmark public (ENERGY STAR, CRREM, local)", score: 100 },
+      ]},
+      { id: "M5", name: "Raportare energie + CO₂ periodică", levels: [
+        { level: 0, label: "Fără raportare", score: 0 },
+        { level: 1, label: "Raport anual manual (facturi)", score: 33 },
+        { level: 2, label: "Raport lunar automat + CO₂ EF", score: 66 },
+        { level: 3, label: "Raportare continuă + certificare ISO 50001 / EMAS", score: 100 },
+      ]},
+      { id: "M6", name: "Optimizare predictivă ML / MPC", levels: [
+        { level: 0, label: "Nu există", score: 0 },
+        { level: 1, label: "Reguli euristice pe un sistem (ex. pornire cazan)", score: 33 },
+        { level: 2, label: "MPC pe HVAC cu model termic simplificat", score: 66 },
+        { level: 3, label: "MPC multi-sistem cu ML adaptativ + digital twin", score: 100 },
       ]},
     ],
   },

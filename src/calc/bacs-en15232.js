@@ -1,14 +1,38 @@
 /**
- * bacs-en15232.js — Evaluare detaliată BACS conform EN 15232-1:2017 / EN 52120-1:2022
+ * bacs-en15232.js — @deprecated Evaluare detaliată BACS (EN 15232-1:2017)
  *
- * Building Automation and Control Systems — evaluare pe 15 funcții individuale
- * cu clasă globală A-D și estimare economii energetice.
+ * @deprecated Sprint 5 (17 apr 2026) — EN 15232-1:2017 a fost arhivat aprilie
+ * 2022 și înlocuit de SR EN ISO 52120-1:2022. Folosește `bacs-iso52120.js`
+ * pentru factori f_BAC, evaluare obligativitate EPBD Art. 14 și mapare SRI.
  *
- * Referințe:
- * - EN 15232-1:2017 — Energy performance of buildings — Part 1: Impact of BACS and TBM
- * - EN 52120-1:2022 — BACS detailed functionality list
- * - EPBD 2024/1275 Art.14 — Obligativitate BACS clădiri nerezidențiale >290kW
+ * Acest modul rămâne DOAR pentru compatibilitate retroactivă cu:
+ *   - `__tests__/bacs-en15232.test.js` (teste de regresie pe BACS_FUNCTIONS)
+ *   - eventuale rapoarte vechi care invocă `evaluateBACS()`
+ *
+ * Pentru calcule noi folosește:
+ *   - `applyBACSFactor(Q_raw, utility, category, bacsClass)` — ISO 52120 Anexa B
+ *   - `calcBACSImpact(raw, category, bacsClass)` — breakdown per sistem
+ *   - `checkBACSMandatoryISO({ category, hvacPower })` — verificare EPBD Art. 14
+ *
+ * Referințe istorice:
+ * - EN 15232-1:2017 — ARHIVAT aprilie 2022 (înlocuit ISO 52120)
+ * - SR EN ISO 52120-1:2022 — standard în vigoare (ASRO iulie 2022)
+ * - EPBD 2024/1275 Art.14 — Obligativitate BACS clădiri nerezidențiale >290 kW
  */
+
+// Re-export factori ISO 52120 pentru codul care încă importă din acest fișier
+export {
+  BACS_FACTORS_ISO52120,
+  BACS_CLASS_LABELS,
+  applyBACSFactor,
+  calcBACSImpact,
+  getBACSFactors,
+  getBACSCategoryFromCode,
+  checkBACSMandatoryISO,
+  sriScoreToBACSClass,
+  sriScoreLevel,
+  ISO_52120_REFERENCE,
+} from "./bacs-iso52120.js";
 
 // 15 funcții BACS evaluate individual — fiecare cu clasă A-D
 // Clasele corespund nivelului de automatizare per funcție
@@ -215,6 +239,6 @@ export function evaluateBACS(evaluation, isResidential = false) {
     recommendations: weakFunctions.map(f =>
       `${f.name}: upgrade de la ${f.class} la ${f.score === 1 ? "C" : "B"} — ${BACS_FUNCTIONS.find(bf => bf.id === f.id)?.levels[f.score === 1 ? "C" : "B"] || ""}`
     ),
-    reference: "EN 15232-1:2017 + EN 52120-1:2022",
+    reference: "SR EN ISO 52120-1:2022 (înlocuiește EN 15232-1:2017 arhivat)",
   };
 }
