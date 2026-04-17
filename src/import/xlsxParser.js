@@ -312,8 +312,6 @@ function parseSheetInstalatii(sheet) {
       result.acm.dailyLiters = val;
     } else if (key.includes("volum boiler") || key.includes("storage volume acm") || (key.includes("volum") && key.includes("stocare") && !key.includes("solar") && !key.includes("baterie"))) {
       result.acm.storageVolume = val;
-    } else if (key.includes("pierderi stocare") || key.includes("storage loss")) {
-      result.acm.storageLoss = val;
     } else if (key.includes("lungime conducte acm") || key.includes("pipe length")) {
       result.acm.pipeLength = val;
     } else if (key.includes("conducte izolate") || key.includes("pipe insulated")) {

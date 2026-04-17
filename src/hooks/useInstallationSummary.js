@@ -38,6 +38,15 @@ const ACM_SOURCE_TO_ENGINE = {
   TERMO_ACM: "termoficare",
 };
 
+// Sprint 4a (17 apr 2026) — Bug A6 AUDIT_08 §1.2.1:
+// Cazan combi (CAZAN_H) în regim ACM vară ciclează 15-25 min ON / 2-3h OFF,
+// randamentul efectiv scade 10-15% față de nominal încălzire iarnă:
+//   - Pierderi standby crescute (cazan cald, nu produce)
+//   - Pierderi ciclare (fiecare pornire: 2-3% preîncălzire schimbător)
+//   - Flacără la stins (gaz rezidual)
+// Sursă: EN 15316-4-1 Tab.5 + ErP Reg. 811/2013 (etichetare combi) + experiență RO.
+const COMBI_SUMMER_FACTOR = 0.87;  // η efectivă vară = η nominal iarnă × 0.87
+
 /**
  * useInstallationSummary — calcul energie finală și primară per instalație
  * Extras din energy-calc.jsx Sprint 4 refactoring.
@@ -114,8 +123,12 @@ export function useInstallationSummary({
     const acmSrc = ACM_SOURCES.find(s => s.id === acm.source);
     const isCOPacm = acmSrc?.isCOP || false;
     const isCazanH = acm.source === "CAZAN_H";
-    // eta/COP: pentru CAZAN_H → eta încălzire; altfel valoarea din ACM_SOURCES
-    const eta_acm = isCazanH ? eta_gen : (acmSrc?.eta || eta_gen);
+    // eta/COP: pentru CAZAN_H → eta încălzire × COMBI_SUMMER_FACTOR (ciclare vară);
+    //          altfel valoarea din ACM_SOURCES.
+    // Sprint 4a — Bug A6 AUDIT_08: combi vara are η efectivă -13% față de iarnă.
+    const eta_acm = isCazanH
+      ? eta_gen * COMBI_SUMMER_FACTOR
+      : (acmSrc?.eta || eta_gen);
     const acmEngineKey = ACM_SOURCE_TO_ENGINE[acm.source] || "ct_gaz";
     const solarFr = acmSrc?.solarFraction || 0;
     const pipeThickness = acm.pipeInsulationThickness || (acm.pipeInsulated === false ? "fara" : "20mm");

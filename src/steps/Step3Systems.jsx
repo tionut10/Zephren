@@ -169,9 +169,9 @@ export default function Step3Systems({
               </Card>
 
               <Card title={t("Stocare ACM",lang)}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label={t("Volum vas stocare",lang)} value={acm.storageVolume} onChange={v => setAcm(p=>({...p,storageVolume:v}))} type="number" unit="litri" placeholder="0 = fără vas"
-                    tooltip="Volum boiler acumulator. 0 pentru sisteme instant (combi, schimb placi)" />
+                    tooltip="Volum boiler acumulator. 0 pentru sisteme instant (combi, schimb placi). Pierderile se calculează automat EN 50440 din volum × clasă izolație." />
                   <Select label={t("Clasa energetică boiler",lang)} value={acm.insulationClass || "B"} onChange={v => setAcm(p=>({...p,insulationClass:v}))}
                     options={[
                       {value:"A", label:t("Clasa A — premium (−55% pierderi)")},
@@ -179,9 +179,17 @@ export default function Step3Systems({
                       {value:"C", label:t("Clasa C — slab izolat")},
                     ]}
                     tooltip="ErP Reg. 812/2013 (etichetare ACM). Clasa A: izolație PU rigid 50mm+ (q_standby ~1.3 kWh/24h pentru 200L)" />
-                  <Input label={t("Pierderi stocare",lang)} value={acm.storageLoss} onChange={v => setAcm(p=>({...p,storageLoss:v}))} type="number" unit="%" step="0.1"
-                    tooltip="Fracție pierderi stocare (0-25%). Lăsați gol pentru calcul automat EN 50440 bazat pe volum + clasă" />
                 </div>
+                {/* Sprint 4a: afișare live pierderi stocare calculate automat (EN 50440) */}
+                {instSummary?.acmDetailed?.Q_storage_kWh > 0 && (
+                  <div className="mt-3 bg-white/[0.02] rounded-lg p-3 flex items-center justify-between text-xs">
+                    <span className="opacity-50">Pierderi stocare (calc. automat EN 50440)</span>
+                    <span className="font-mono font-medium text-amber-300">
+                      {instSummary.acmDetailed.Q_storage_kWh} kWh/an
+                      <span className="opacity-40 ml-2">({instSummary.acmDetailed.f_storage_pct}% din Q_gen)</span>
+                    </span>
+                  </div>
+                )}
               </Card>
 
               <Card title={t("Protecție anti-Legionella (HG 1425/2006 + Ord. MS 1002/2015)",lang)}>

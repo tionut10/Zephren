@@ -916,7 +916,7 @@ export default function EnergyCalcApp({ cloud }) {
     setAcm({
       source: isNew ? "PC_ACM" : "CAZAN_H",
       consumers: tpl.building?.units || "1", dailyLiters: (ACM_CONSUMPTION[cat] || 50).toString(),
-      storageVolume: "", storageLoss: "2.0", pipeLength: "", pipeInsulated: isNew || isRenov,
+      storageVolume: "", pipeLength: "", pipeInsulated: isNew || isRenov,
       circRecirculation: ["RC","HC","SA"].includes(cat), circHours: ["RC","HC","SA"].includes(cat) ? "12" : "",
     });
 

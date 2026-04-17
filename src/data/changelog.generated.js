@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-15
+// Ultima generare: 2026-04-17
 
 export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🔧",
-        "text": "Fix 4 useEffect critice (memory leak + keyboard bug + localStorage blocking)"
+        "text": "Sprint 3b: fix racire partea 2 - W_aux + free cooling + override aporturi"
       },
       {
-        "icon": "📄",
-        "text": "indicatoare clasă energetică CPE — noFill→solidFill pentru culoare și litera A+"
+        "icon": "🔧",
+        "text": "Sprint 3a: fix racire partea 1 - cooling-hourly integrat + SEER + eta separate"
+      },
+      {
+        "icon": "🔧",
+        "text": "Sprint 2: fix iluminat LENI — W_P integrat + ore per categorie + F_c pe tD"
+      },
+      {
+        "icon": "🔧",
+        "text": "Sprint 1: fix ventilatie qf_v dimensional + validari + motoare orfane"
       },
       {
         "icon": "📋",
-        "text": "corectare verificare grad AE Ici în Step6Certificate — badge '⚠ Grad I necesar' nu mai apare pentru auditori G"
+        "text": "[Audit] Faza 11 — Step 7 Iluminat (LENI) finalizat, score 62%"
       },
       {
-        "icon": "✨",
-        "text": "regenerare stats auto (+nzeb-check module, 58 calc, 60 components)"
+        "icon": "🔬",
+        "text": "refactor(ACM): unificare motor EN 15316 + Legionella + aux pompă — Sprint 1+3"
       },
       {
-        "icon": "✨",
-        "text": "buton Raport conformare nZEB PDF oficial în Step6 (UI)"
+        "icon": "🔬",
+        "text": "Consolidare U_REF_NZEB — eliminare 6 duplicate (sursă canonică u-reference.js)"
       },
       {
-        "icon": "✨",
-        "text": "raport conformare nZEB conform art. 6 Ord. 348/2026 + Mc 001-2022"
-      },
-      {
-        "icon": "✨",
-        "text": "Registru de Evidență auditor (Anexa 6) — export .xlsx conform Ord. MDLPA 348/2026"
-      },
-      {
-        "icon": "📄",
-        "text": "fix(cpe): corectează detectarea indicatorului CO2 și culoarea textului"
+        "icon": "🔧",
+        "text": "Fix 4 useEffect critice (memory leak + keyboard bug + localStorage blocking)"
       }
     ]
   },

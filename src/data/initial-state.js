@@ -42,7 +42,7 @@ export const INITIAL_ACM = {
   source:"CAZAN_H", consumers:"", dailyLiters:"60",
   consumptionLevel:"med",        // low / med / high — Mc 001 Tab.10 + GEx
   tSupply:"55",                  // temperatură setată boiler [°C] — min 60 pentru Legionella boilere >400L
-  storageVolume:"", storageLoss:"2.0",
+  storageVolume:"",              // Sprint 4a: storageLoss eliminat — calcul automat EN 50440 din insulationClass + volum
   insulationClass:"B",           // A / B / C — clasa ErP boiler (EN 50440)
   pipeLength:"", pipeInsulated:true,
   pipeInsulationThickness:"20mm", // fara / 20mm / 30mm / 50mm — EN 15316-3 Tab.7

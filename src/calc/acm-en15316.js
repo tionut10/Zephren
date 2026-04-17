@@ -16,17 +16,88 @@ export const ACM_PUMP_W_SPECIFIC = {
   iee_sub_023:      0.20,  // IEE A+ — max eficiență
 };
 
-// Consum specific ACM [L/zi·persoană] — SR EN 15316-3 Tab.B.1 + Mc 001-2022
+// Consum specific ACM [L/zi·persoană] — SR EN 15316-3 Tab.B.1 + Mc 001-2022 Anexă
+// Sprint 4a (17 apr 2026) — extindere conform AUDIT_08 §1.4 + GEx 009-013 MDLPA:
+//   + GR/CR (creșă/grădiniță cu cantină), CL/ST (clinică/stomatologie),
+//   + DZ (dializă — critic sanitar), SPL (spălătorie ind.), FRM (fermă),
+//   + TAB (tabără copii / cabană turism), HO_LUX (hotel 5*), HOSTEL, REST,
+//   + SPA_H/W (spa umed/medical), CP (cămine).
 export const ACM_CONSUMPTION_SPECIFIC = {
-  RI:  { low: 45, med: 60,  high: 80  }, // casă individuală
+  // ── REZIDENȚIAL ──
+  RI:  { low: 45, med: 60,  high: 80  }, // casă individuală [L/pers·zi]
   RC:  { low: 40, med: 55,  high: 70  }, // bloc rezidențial
   RA:  { low: 40, med: 55,  high: 70  }, // apartament
-  BI:  { low: 5,  med: 8,   high: 12  }, // birouri (L/persoană·zi)
-  ED:  { low: 6,  med: 10,  high: 15  }, // educație
-  SA:  { low: 60, med: 90,  high: 150 }, // spital (L/pat·zi)
-  HC:  { low: 70, med: 100, high: 150 }, // hotel (L/cameră·zi)
-  CO:  { low: 3,  med: 5,   high: 8   }, // comerț
-  SP:  { low: 20, med: 35,  high: 60  }, // sport (L/pers·ședință)
+
+  // ── BIROURI & ADMINISTRATIVE ──
+  BI:  { low: 5,  med: 8,   high: 12  }, // birouri [L/pers·zi]
+  AD:  { low: 5,  med: 8,   high: 12  }, // administrativ
+  BA_OFF: { low: 8, med: 12, high: 18 }, // bancă/oficiu public (cu dușuri personal)
+
+  // ── EDUCAȚIE ── Mc 001 Anexă + GEx 011
+  ED:  { low: 6,  med: 10,  high: 15  }, // educație generic [L/elev·zi]
+  GR:  { low: 15, med: 25,  high: 35  }, // grădiniță cu cantină+dușuri [L/copil·zi]
+  CR:  { low: 20, med: 30,  high: 45  }, // creșă (bebeluși, igienă intensă) [L/copil·zi]
+  SC:  { low: 6,  med: 10,  high: 15  }, // școală (fără internat) [L/elev·zi]
+  LI:  { low: 6,  med: 10,  high: 15  }, // liceu
+  UN:  { low: 8,  med: 12,  high: 18  }, // universitate (laboratoare + sport)
+  CP:  { low: 35, med: 50,  high: 75  }, // cămine studențești [L/student·zi]
+
+  // ── SĂNĂTATE ── GEx 012 MDLPA (spitale)
+  SA:  { low: 60, med: 90,  high: 150 }, // spital [L/pat·zi]
+  SPA_H: { low: 70, med: 100, high: 160 }, // spital specializat (chirurgie, maternitate)
+  CL:  { low: 20, med: 35,  high: 55  }, // clinică ambulatoriu [L/pacient·zi]
+  ST:  { low: 20, med: 30,  high: 45  }, // clinică stomatologică [L/scaun·zi]
+  LB_MED: { low: 15, med: 25, high: 40 }, // laborator medical
+  AS_SOC: { low: 45, med: 70, high: 100 }, // centru asistență socială rezidențial
+  DZ:  { low: 100, med: 200, high: 300 }, // centru dializă [L/pacient·ședință] — critic sanitar
+
+  // ── HOTELURI & TURISM ── GEx 011 MDLPA (hoteluri)
+  HC:  { low: 70, med: 100, high: 150 }, // hotel 3* [L/cameră·zi]
+  HO_LUX: { low: 100, med: 130, high: 200 }, // hotel 4-5* (spa+piscină) [L/cameră·zi]
+  HOSTEL: { low: 30, med: 50, high: 80 }, // hostel / pensiune agroturistică
+  TAB:  { low: 60, med: 80,  high: 120 }, // tabără copii / cabană turism (dușuri comune) [L/pers·zi]
+
+  // ── RESTAURANTE & ALIMENTAȚIE ──
+  REST: { low: 8, med: 12,  high: 18  }, // restaurant [L/masă]
+  BAR: { low: 4,  med: 6,   high: 10  }, // bar / cafenea
+  CANTINE: { low: 10, med: 15, high: 25 }, // cantină (ocupare mare)
+  FAST_F: { low: 4, med: 8, high: 12   }, // fast-food
+
+  // ── COMERȚ ──
+  CO:  { low: 3,  med: 5,   high: 8   }, // magazin mic [L/angajat·zi]
+  MAG: { low: 3,  med: 5,   high: 8   },
+  SUPER: { low: 5, med: 8, high: 12   }, // supermarket (pregătire alimente)
+  MALL: { low: 4, med: 7, high: 10    },
+
+  // ── SPORT & RECREERE ── dușuri intensiv
+  SP:  { low: 20, med: 35,  high: 60  }, // sport generic [L/pers·ședință]
+  PSC: { low: 50, med: 75,  high: 120 }, // piscină (dușuri+filtrare) [L/înotător·zi]
+  SALA_POL: { low: 15, med: 25, high: 40 }, // sală polivalentă
+  FIT: { low: 25, med: 40,  high: 65  }, // fitness / aerobic
+  SPA_W: { low: 60, med: 100, high: 180 }, // spa wellness (saună+jacuzzi+dușuri) [L/client·zi]
+
+  // ── CULTURĂ & SPECTACOLE ── consum mic (doar WC personal)
+  CIN: { low: 3,  med: 5,   high: 8   }, // cinema [L/spectator·zi]
+  TEA: { low: 3,  med: 5,   high: 8   },
+  MUZ: { low: 3,  med: 5,   high: 8   },
+  BIB: { low: 5,  med: 8,   high: 12  },
+  CC:  { low: 5,  med: 10,  high: 15  }, // centru cultural
+  EXP: { low: 4,  med: 8,   high: 12  },
+
+  // ── TRANSPORT ── călătorii tranzit
+  GARA: { low: 2, med: 4,   high: 6   }, // gară feroviară [L/pasager·zi]
+  AER:  { low: 3, med: 6,   high: 10  }, // aeroport (dușuri pasageri business)
+
+  // ── INDUSTRIE & SPECIALE ──
+  IU:  { low: 15, med: 30,  high: 50  }, // industrie ușoară [L/angajat·zi]
+  HAL: { low: 20, med: 35,  high: 60  }, // hale producție
+  DEP: { low: 3,  med: 5,   high: 10  }, // depozit
+  LAB_IND: { low: 20, med: 35, high: 55 }, // laborator industrial
+  FRG: { low: 3,  med: 5,   high: 10  }, // frigorifice
+  SPL: { low: 40, med: 80,  high: 150 }, // spălătorie industrială [L/kg rufe]
+  FRM: { low: 30, med: 45,  high: 60  }, // fermă muls mecanizat [L/animal·zi]
+
+  // ── FALLBACK ──
   AL:  { low: 20, med: 35,  high: 50  },
 };
 
