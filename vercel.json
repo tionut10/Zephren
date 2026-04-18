@@ -22,7 +22,7 @@
     "api/stripe-webhook.js": {
       "maxDuration": 10
     },
-    "api/generate-cpe.py": {
+    "api/generate-document.py": {
       "maxDuration": 30
     },
     "api/preview-pdf.js": {
