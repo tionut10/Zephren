@@ -3,8 +3,22 @@
  * Creates a Stripe Checkout session for Pro or Business plan.
  * Requires STRIPE_SECRET_KEY env var (server-side only).
  *
- * Body: { plan: "pro" | "business", userId?: string, email?: string }
+ * Body:
+ *   { plan: "pro" | "business",
+ *     clientType: "company" | "individual" | "eu",
+ *     cui?:      string   // B2B RO (format "RO12345678" sau doar cifre)
+ *     company?:  string   // B2B RO & UE — denumire firmă
+ *     fullName?: string   // B2C PF — nume complet
+ *     address?:  string
+ *     city?:     string
+ *     vatEU?:    string   // B2B UE — VAT number (ex: DE123456789)
+ *     country?:  string   // default "RO"
+ *   }
+ *
  * Returns: { url: string } — redirect the user to this URL
+ *
+ * Metadata pusă în sesiunea Stripe → citită de stripe-webhook.js → SmartBill
+ * pentru emitere automată factură fiscală (P0-1+P0-2, 18 apr 2026).
  */
 
 import { requireAuth } from "./_middleware/auth.js";
@@ -25,13 +39,31 @@ export default async function handler(req, res) {
     });
   }
 
-  const { plan } = req.body || {};
+  const { plan, clientType, cui, company, fullName, address, city, vatEU, country } = req.body || {};
   // Use authenticated user's ID and email (prevents impersonation)
   const userId = auth.user.id;
   const email = auth.user.email;
 
   if (!plan || !["pro", "business"].includes(plan)) {
     return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'business'." });
+  }
+
+  // P0-2 (18 apr 2026) — validare minimă metadata fiscală pentru factură SmartBill.
+  //   B2B RO: cui + company obligatorii
+  //   B2C:    fullName obligatoriu
+  //   B2B UE: vatEU + company + country obligatorii
+  const ct = (clientType || "individual").toLowerCase();
+  if (!["company", "individual", "eu"].includes(ct)) {
+    return res.status(400).json({ error: "clientType invalid. Acceptat: company | individual | eu" });
+  }
+  if (ct === "company" && (!cui || !company)) {
+    return res.status(400).json({ error: "Pentru persoană juridică RO este obligatoriu CUI + denumire firmă." });
+  }
+  if (ct === "eu" && (!vatEU || !company || !country)) {
+    return res.status(400).json({ error: "Pentru client UE este obligatoriu VAT number + denumire + țară." });
+  }
+  if (ct === "individual" && !fullName) {
+    return res.status(400).json({ error: "Pentru persoană fizică este obligatoriu numele complet." });
   }
 
   // Price configuration — replace with real Stripe Price IDs in production
@@ -68,6 +100,15 @@ export default async function handler(req, res) {
         ...(email ? { "customer_email": email } : {}),
         ...(userId ? { "metadata[userId]": userId } : {}),
         "metadata[plan]": plan,
+        // P0-2 — metadata fiscală pentru SmartBill (stripe-webhook citește meta)
+        "metadata[clientType]": ct,
+        ...(cui      ? { "metadata[cui]": String(cui).trim() }           : {}),
+        ...(company  ? { "metadata[company]": String(company).trim() }   : {}),
+        ...(fullName ? { "metadata[fullName]": String(fullName).trim() } : {}),
+        ...(address  ? { "metadata[address]": String(address).trim() }   : {}),
+        ...(city     ? { "metadata[city]": String(city).trim() }         : {}),
+        ...(vatEU    ? { "metadata[vatEU]": String(vatEU).trim() }       : {}),
+        ...(country  ? { "metadata[country]": String(country).trim() }   : { "metadata[country]": "RO" }),
       }),
     });
 
