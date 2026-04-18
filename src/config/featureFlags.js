@@ -23,11 +23,20 @@ export const FLAGS = Object.freeze({
    * clasic legacy ca fallback pentru auditori care preferă interfața veche.
    */
   SMART_ENVELOPE_HUB: "envelopeHub",
+
+  /**
+   * EPBD_2024_THRESHOLDS — rescalare A–G conform EPBD 2024/1275 Art. 19 (P1-3).
+   * Default OFF (ord. 16/2023 rămâne scala curentă până la transpunere oficială RO).
+   * Activare: `?useEPBD2024Thresholds=1` sau localStorage după publicarea valorilor MDLPA.
+   * Termen transpunere: 29 mai 2026.
+   */
+  EPBD_2024_THRESHOLDS: "useEPBD2024Thresholds",
 });
 
 // Valorile implicite la momentul build-ului — editați aici când un flag devine GA.
 const DEFAULTS = Object.freeze({
   [FLAGS.SMART_ENVELOPE_HUB]: true,
+  [FLAGS.EPBD_2024_THRESHOLDS]: false,
 });
 
 // Querystring parsat o singură dată la load (SSR-safe guard).
