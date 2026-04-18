@@ -46,7 +46,7 @@ function mkScenariu() {
 
 const SCENARIO_COLORS = ["bg-amber-500/20 border-amber-500/40 text-amber-300", "bg-green-500/20 border-green-500/40 text-green-300", "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"];
 
-export default function OfertaReabilitare({ building, instSummary, auditor, onClose }) {
+export default function OfertaReabilitare({ building, instSummary, auditor, passport = null, onClose }) {
   const ep = instSummary?.ep_total_m2 ?? 0;
   const co2 = instSummary?.co2_total_m2 ?? 0;
   const au = building?.areaUseful ?? 0;
@@ -100,6 +100,18 @@ export default function OfertaReabilitare({ building, instSummary, auditor, onCl
       const M = 15;
       let y = 18;
       const W = 210;
+
+      // QR pașaport renovare (EPBD 2024 Art. 12), dacă e disponibil
+      let qrDataURL = null;
+      if (passport?.passportId) {
+        try {
+          const { generatePassportQR } = await import("../lib/qr-passport.js");
+          const qr = await generatePassportQR(passport.passportId, { size: 120 });
+          qrDataURL = qr.dataURL;
+        } catch (err) {
+          console.warn("QR pașaport nu a putut fi generat:", err);
+        }
+      }
 
       // Header bar
       doc.setFillColor(20, 20, 35);
@@ -222,6 +234,19 @@ export default function OfertaReabilitare({ building, instSummary, auditor, onCl
       y += 5;
       doc.setFont("helvetica", "normal");
       doc.text(`Data: ${TODAY_RO}`, M, y);
+
+      // QR pașaport renovare (EPBD 2024/1275 Art. 12) — jos-dreapta
+      if (qrDataURL && passport?.passportId) {
+        try {
+          doc.addImage(qrDataURL, "PNG", W - M - 24, 258, 22, 22);
+          doc.setFontSize(6);
+          doc.setTextColor(120, 120, 140);
+          doc.text("Pașaport renovare EPBD", W - M - 24, 283);
+          doc.text(`ID: ${passport.passportId.slice(0, 8)}…`, W - M - 24, 286);
+        } catch {
+          /* ignore embed failures */
+        }
+      }
 
       doc.save(`Oferta_Reabilitare_${nr}.pdf`);
     } catch {

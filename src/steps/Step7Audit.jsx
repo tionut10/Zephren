@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from "react";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
-import MEPSCheck from "../components/MEPSCheck.jsx";
+import CostOptimalCurve from "../components/CostOptimalCurve.jsx";
+import MEPSCheck, { getMepsStatus } from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
+import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
 import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
@@ -1546,14 +1548,16 @@ export default function Step7Audit(props) {
               {(() => {
                 const [activeTool, setActiveTool] = React.useState(null);
                 const tools = [
-                  { id:"lcc",     icon:"📊", label:"Analiză LCC" },
-                  { id:"meps",    icon:"⚠️",  label:"MEPS Check" },
-                  { id:"oferta",  icon:"📄", label:"Ofertă Reabilitare" },
-                  { id:"consum",  icon:"📈", label:"Consum Real" },
-                  { id:"fond",    icon:"🏗️", label:"Fond Reparații" },
-                  { id:"pnrr",    icon:"💶", label:"Finanțări PNRR" },
-                  { id:"thermal", icon:"🌡️", label:"Hartă Termică" },
-                  { id:"acoustic",icon:"🔊", label:"Acustic" },
+                  { id:"lcc",       icon:"📊", label:"Analiză LCC" },
+                  { id:"costOptimal", icon:"🎯", label:"Curbă Cost-Optimal" },
+                  { id:"meps",      icon:"⚠️",  label:"MEPS Check" },
+                  { id:"passport",  icon:"🆔", label:"Pașaport Renovare EPBD" },
+                  { id:"oferta",    icon:"📄", label:"Ofertă Reabilitare" },
+                  { id:"consum",    icon:"📈", label:"Consum Real" },
+                  { id:"fond",      icon:"🏗️", label:"Fond Reparații" },
+                  { id:"pnrr",      icon:"💶", label:"Finanțări PNRR" },
+                  { id:"thermal",   icon:"🌡️", label:"Hartă Termică" },
+                  { id:"acoustic",  icon:"🔊", label:"Acustic" },
                 ];
                 const Au = parseFloat(building?.areaUseful) || 0;
 
@@ -1580,6 +1584,27 @@ export default function Step7Audit(props) {
 
                 const enClassStr = instSummary ? getEnergyClass(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")) : "";
 
+                // Context MEPS pentru pașaport + PhasedRehab
+                const mepsContext = instSummary
+                  ? getMepsStatus(enClassStr, instSummary.ep_total_m2, building?.category || "default")
+                  : null;
+                const financialSummary = pnrrResult
+                  ? {
+                      totalInvest_RON: pnrrResult.total_invest_RON || 0,
+                      npv: pnrrResult.npv_30y || 0,
+                      irr: pnrrResult.irr_pct || 0,
+                      paybackSimple: pnrrResult.payback_years || 0,
+                      paybackDiscounted: pnrrResult.payback_actualized_years || 0,
+                      perspective: "financial",
+                    }
+                  : null;
+                const fundingEligible = pnrrResult
+                  ? {
+                      maxGrantCombined: pnrrResult.total_grant_RON || 0,
+                      programs: pnrrResult.eligible || [],
+                    }
+                  : null;
+
                 return (
                   <div className="mt-6">
                     <div className="text-xs font-semibold uppercase tracking-wider opacity-40 mb-3">Instrumente suplimentare</div>
@@ -1601,6 +1626,16 @@ export default function Step7Audit(props) {
                         <LCCAnalysis building={building} instSummary={instSummary} opaqueElements={opaqueElements} />
                       </div>
                     )}
+                    {activeTool === "costOptimal" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <CostOptimalCurve
+                          building={building}
+                          instSummary={instSummary}
+                          auditor={auditor}
+                          onClose={() => setActiveTool(null)}
+                        />
+                      </div>
+                    )}
                     {activeTool === "meps" && (
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                         <MEPSCheck instSummary={instSummary} building={building} energyClass={enClassStr} />
@@ -1610,6 +1645,19 @@ export default function Step7Audit(props) {
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                         <OfertaReabilitare building={building} instSummary={instSummary} auditor={auditor} onClose={() => setActiveTool(null)} />
                       </div>
+                    )}
+                    {activeTool === "passport" && (
+                      <RenovationPassport
+                        building={{ ...building, energyClass: enClassStr }}
+                        instSummary={{ ...instSummary, energyClass: enClassStr }}
+                        renewSummary={renewSummary}
+                        climate={climate}
+                        auditor={auditor}
+                        mepsStatus={mepsContext}
+                        financialSummary={financialSummary}
+                        fundingEligible={fundingEligible}
+                        onClose={() => setActiveTool(null)}
+                      />
                     )}
                     {activeTool === "consum" && (
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">

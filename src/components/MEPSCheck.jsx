@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { cn } from "./ui.jsx";
 
-const MEPS_THRESHOLDS = {
+export const MEPS_THRESHOLDS = {
   RI: { class2030: "F", class2033: "E", ep2030: 250, ep2033: 200 },
   RC: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160 },
   BI: { class2030: "F", class2033: "E", ep2030: 180, ep2033: 150 },
   ED: { class2030: "F", class2033: "E", ep2030: 160, ep2033: 130 },
   default: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160 },
 };
+
+export function getMepsThresholdsFor(category) {
+  return MEPS_THRESHOLDS[category] || MEPS_THRESHOLDS.default;
+}
 
 const CLASS_ORDER = ["A++", "A+", "A", "B", "C", "D", "E", "F", "G"];
 
@@ -23,7 +27,7 @@ function classWorseOrEqual(cls, threshold) {
   return ci !== -1 && ti !== -1 && ci >= ti;
 }
 
-function getMepsStatus(energyClass, epTotal, category) {
+export function getMepsStatus(energyClass, epTotal, category) {
   const thresholds = MEPS_THRESHOLDS[category] || MEPS_THRESHOLDS.default;
   const nonConform2030 =
     classWorseOrEqual(energyClass, thresholds.class2030) ||

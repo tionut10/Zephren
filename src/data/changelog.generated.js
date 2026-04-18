@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔬",
+        "text": "Sprint 13: polishing post-Faza 15 — U_lin ACM + aH + Worker semnătură"
+      },
+      {
         "icon": "🔸",
         "text": "Sprint 12: regresie + validare integrată pre-Faza 15"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔧",
         "text": "Sprint 8: fix Consum real — GZE + factor c + defalcare + bug lemn"
-      },
-      {
-        "icon": "🚀",
-        "text": "Sprint 11: migrare globala electricitate Tab A.16 NA:2023 (fP_nren 2.62 -> 2.00)"
       }
     ]
   },
