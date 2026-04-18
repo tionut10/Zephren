@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
-// DEVIZ ESTIMATIV REABILITARE TERMICĂ — Prețuri unitare orientative RO 2024-2025
-// Surse: MDLPA, URBANISM, oferte contractori, piața materialelor Q1 2025
-// Curs de referință: 1 EUR = 4.97 RON (BNR medie 2025)
+// DEVIZ ESTIMATIV REABILITARE TERMICĂ — Prețuri unitare orientative RO 2024-2026
+// Surse: HG 907/2016 + MDLPA + oferte contractori + piața Q1 2026
+// Curs EUR/RON: dinamic via getEurRonSync() din rehab-prices.js
 // ═══════════════════════════════════════════════════════════════
+import { getEurRonSync } from '../data/rehab-prices.js';
 
 // ---------------------------------------------------------------
 // BAZA DE DATE PREȚURI UNITARE [EUR]
@@ -128,8 +129,8 @@ export const REHAB_PRICE_DB = {
 // CONSTANTE AUXILIARE
 // ---------------------------------------------------------------
 
-/** Curs valutar de referință EUR → RON (BNR medie 2025) */
-export const EUR_RON = 4.97;
+/** Curs valutar EUR → RON: dinamic via getEurRonSync() (BNR cache / fallback 4.97) */
+export const EUR_RON = getEurRonSync();
 
 /** Manoperă fixă per m² pentru sistem ETICS (include schele, grunduire, placare) */
 const ETICS_FIXED_EUR_M2 = 18;
@@ -144,9 +145,9 @@ const ROOF_FIXED_EUR_M2 = 14;
 const FUNDING_LIMITS = {
   /** PNRR Component 5-I3: renovare profundă rezidențial, grant max 80% */
   pnrr_max: 30000,
-  /** Casa Verde Plus — pompă căldură / PV / solar termic, grant max 90% */
-  casa_verde_max: 20000,
-  /** AFM — termoizolare anvelopă clădiri rezidențiale, grant max 50% */
+  /** Casa Verde Plus Ghid 2024: PC standalone 30k + PV addon 10k + solar 3k = 43k max */
+  casa_verde_max: 30000,
+  /** AFM termoizolare OUG 20/2013: 50% din costul anvelopei, max 15.000 EUR */
   afm_max: 15000,
 };
 
