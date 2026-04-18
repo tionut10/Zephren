@@ -5,11 +5,21 @@ export const SRI_DOMAINS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// ECONOMIE ENERGETICĂ BACS — EN 15232-1:2017 Tabel 6
-// Factor reducere consum față de clasa C (referință):
-// Clasa A: -25–40%, Clasa B: -10–25%, Clasa C: 0%, Clasa D: +10–50%
+// ECONOMIE ENERGETICĂ BACS — EN 15232-1:2017 Tabel 6 [LEGACY]
+//
+// ⚠️ DEPRECATED (Sprint 13, 18 apr 2026):
+//   Acest tabel a fost înlocuit de `BACS_FACTORS_ISO52120` din `bacs-iso52120.js`
+//   (10 tipologii × 4 clase × 5 sisteme = 200 factori, conform SR EN ISO 52120-1:2022).
+//   L.238/2024 (transpunere EPBD IV) a făcut ISO 52120 obligatoriu, înlocuind
+//   EN 15232-1:2017. Utilizarea recomandată: `applyBACSFactor()` din bacs-iso52120.js.
+//
+//   Tabelul legacy e PĂSTRAT PENTRU:
+//   (a) retrocompatibilitate UI Step8Advanced.jsx (până la migrare integrală S14+)
+//   (b) teste unitare existente (epbd.test.js) ce verifică contractul legacy
+//
+//   Nu-l folosi pentru calcule noi — migrează la `applyBACSFactor(Q_raw, utility, categoryCode, bacsClass)`.
 // ═══════════════════════════════════════════════════════════════
-export const BACS_ENERGY_FACTORS = {
+export const BACS_ENERGY_FACTORS = Object.freeze({
   residential: {
     A: { heating: 0.67, cooling: 0.70, ventilation: 0.73, lighting: 0.75, acm: 0.80 },
     B: { heating: 0.83, cooling: 0.86, ventilation: 0.87, lighting: 0.90, acm: 0.92 },
@@ -22,7 +32,7 @@ export const BACS_ENERGY_FACTORS = {
     C: { heating: 1.00, cooling: 1.00, ventilation: 1.00, lighting: 1.00, acm: 1.00 },
     D: { heating: 1.30, cooling: 1.45, ventilation: 1.30, lighting: 1.20, acm: 1.15 },
   },
-};
+});
 
 export function calcBACSEnergyImpact(bacsClass, category, qH_total, qC_total, qV_total, qL_total, qACM_total) {
   const isRes = ["RI","RC","RA"].includes(category);
@@ -164,13 +174,17 @@ export const CHP_TYPES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// IEQ — Indoor Environmental Quality (EN 16798-1)
+// IEQ — Indoor Environmental Quality (EN 16798-1 / NA:2019)
+// Sprint 13 (18 apr 2026): sincronizare `co2Max` cu valorile corecte NA:2019
+// (400 / 600 / 1000 ppm Δ față de aer exterior) — aliniate cu `CO2_CATEGORIES`
+// din `en16798.js` post-Sprint 0. Valorile vechi (550/800/1350) erau din
+// EN 16798-1:2007 (pre-actualizare NA) și au fost eliminate pentru consistență.
 // ═══════════════════════════════════════════════════════════════
 export const IEQ_CATEGORIES = [
-  { id:"I",  label:"Categoria I (înaltă)", tempRange:"21-23°C", co2Max:550, lux:500 },
-  { id:"II", label:"Categoria II (normală)", tempRange:"20-24°C", co2Max:800, lux:300 },
-  { id:"III",label:"Categoria III (acceptabilă)", tempRange:"19-25°C", co2Max:1350, lux:200 },
-  { id:"IV", label:"Categoria IV (tolerabilă)", tempRange:"18-26°C", co2Max:1800, lux:100 },
+  { id:"I",  label:"Categoria I (înaltă)",       tempRange:"21-23°C", co2Max:400,  lux:500 },
+  { id:"II", label:"Categoria II (normală)",     tempRange:"20-24°C", co2Max:600,  lux:300 },
+  { id:"III",label:"Categoria III (acceptabilă)",tempRange:"19-25°C", co2Max:1000, lux:200 },
+  { id:"IV", label:"Categoria IV (tolerabilă)",  tempRange:"18-26°C", co2Max:1800, lux:100 }, // păstrat ca fallback "sub-standard"
 ];
 
 // ═══════════════════════════════════════════════════════════════

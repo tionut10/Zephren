@@ -97,8 +97,12 @@ export function useCalcWorker() {
   /**
    * Rulează un calcul pe worker sau sincron (fallback).
    *
+   * Sprint 13 (18 apr 2026): FIX semnătură — contractul este `payload = params obiect unic`,
+   * respectând exact ce acceptă calcMonthlyISO13790(params) și calcHourlyISO52016(params).
+   * Anterior codul desfășura 11/9 args poziționale care produceau `null` la rulare.
+   *
    * @param {'CALC_ISO13790' | 'CALC_HOURLY'} type — tipul de calcul
-   * @param {object} payload — parametrii calculului
+   * @param {object} payload — parametrii calculului (obiect pentru calcMonthlyISO13790 sau calcHourlyISO52016)
    * @returns {Promise<any>} rezultatul calculului
    */
   const runCalc = useCallback(
@@ -113,19 +117,9 @@ export function useCalcWorker() {
         try {
           let result;
           if (type === 'CALC_ISO13790') {
-            const { building, climate, opaqueElements, glazingElements,
-                    thermalBridges, ventilation, heating, cooling, lighting, renewables, options } = payload;
-            result = calcMonthlyISO13790(
-              building, climate, opaqueElements, glazingElements,
-              thermalBridges, ventilation, heating, cooling, lighting, renewables, options,
-            );
+            result = calcMonthlyISO13790(payload);
           } else if (type === 'CALC_HOURLY') {
-            const { building, climate, opaqueElements, glazingElements,
-                    thermalBridges, ventilation, heating, cooling, options } = payload;
-            result = calcHourlyISO52016(
-              building, climate, opaqueElements, glazingElements,
-              thermalBridges, ventilation, heating, cooling, options,
-            );
+            result = calcHourlyISO52016(payload);
           } else {
             throw new Error(`Tip necunoscut: ${type}`);
           }
