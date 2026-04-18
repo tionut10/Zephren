@@ -1,17 +1,28 @@
 /**
- * Vercel Serverless Function — DOCX to PDF/Viewer
+ * Vercel Serverless Function — Preview document (DOCX → PDF sau Viewer).
  *
- * 1. Dacă GOTENBERG_URL e configurat → convertește DOCX→PDF via LibreOffice (preferat
- *    din punct de vedere GDPR — date rămân în UE, nu la Microsoft US).
- * 2. Altfel → uploadează DOCX pe Vercel Blob cu filename randomUUID (Sprint 20) și
- *    returnează JSON cu viewerUrl Office Online.
- *    ⚠️ Atenție GDPR: Office Online = transfer date personale către Microsoft US —
- *    necesită DPA semnat sau menționare explicită în Privacy Policy.
+ * Consolidare P0-01 (Sprint 19, 19 apr 2026):
+ *   Înlocuiește `preview-docx.js` + `preview-pdf.js` (cod duplicat). Eliberează 1 slot
+ *   Vercel Hobby (12/12 → 11/12) pentru viitoare endpoint-uri (SmartBill webhook,
+ *   MDLPA submit, analyze-drawing split, etc.). Ref: AUDIT_21 §P0-01.
+ *
+ * Contract identic cu endpoint-urile anterioare:
+ *   - POST body = DOCX binary stream (max 10 MB)
+ *   - Răspuns:
+ *       a) `application/pdf` — dacă GOTENBERG_URL configurat (preferat GDPR, date
+ *          rămân în UE prin LibreOffice)
+ *       b) `application/json` — `{ viewerUrl, blobUrl, _gdprWarning }` pentru Office
+ *          Online Viewer (fallback). ⚠️ GDPR: transfer DOCX la Microsoft US —
+ *          necesită DPA semnat sau menționare în Privacy Policy.
  *
  * Sprint 20 (18 apr 2026):
  *   - auth + rate-limit + CORS allowlist
  *   - filename randomUUID (nu mai e ghicibil timestamp)
  *   - size limit streaming 10 MB
+ *
+ * P0-4 (18 apr 2026):
+ *   - TTL 1 oră pe headerul Cache-Control al Vercel Blob (reduce fereastra de
+ *     expunere a datelor personale la Microsoft Office Online).
  */
 import { requireAuth } from "./_middleware/auth.js";
 import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";

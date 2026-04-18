@@ -2215,7 +2215,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       // ── Încearcă Office Online Viewer via Vercel Blob ──
                       if (docxBlob) {
                         try {
-                          const previewResp = await fetch("/api/preview-pdf", {
+                          const previewResp = await fetch("/api/preview-document", {
                             method: "POST",
                             body: docxBlob,
                           });
@@ -2245,7 +2245,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             }
                           }
                         } catch (apiErr) {
-                          console.warn("preview-pdf API error, falling back to docx-preview:", apiErr.message);
+                          console.warn("preview-document API error, falling back to docx-preview:", apiErr.message);
                         }
                       }
 

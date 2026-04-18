@@ -25,8 +25,8 @@
     }
   ],
   "functions": {
-    "api/preview-docx.js": {
-      "maxDuration": 10
+    "api/preview-document.js": {
+      "maxDuration": 30
     },
     "api/calculate.js": {
       "maxDuration": 10
@@ -44,9 +44,6 @@
       "maxDuration": 10
     },
     "api/generate-document.py": {
-      "maxDuration": 30
-    },
-    "api/preview-pdf.js": {
       "maxDuration": 30
     },
     "api/import-document.js": {
