@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { calcPhasedRehabPlan, PHASING_STRATEGIES } from "../calc/phased-rehab.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { findMepsMilestone } from "../calc/renovation-passport.js";
 
 // ──────────────────────────────────────────────
 // Constante UI
@@ -50,15 +51,29 @@ function InputGroup({ label, children, hint }) {
 }
 
 // ── Grafic EP trajectory (SVG inline)
-function EPTrajectoryChart({ epTrajectory, nzebThreshold, classTrajectory }) {
+function EPTrajectoryChart({
+  epTrajectory,
+  nzebThreshold,
+  classTrajectory,
+  meps2030Ep,
+  meps2033Ep,
+  meps2030YearReached,
+  meps2033YearReached,
+}) {
   if (!epTrajectory || epTrajectory.length < 2) return null;
 
-  const W = 560, H = 140;
+  const W = 560, H = 160;
   const PAD = { top: 16, right: 20, bottom: 36, left: 52 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const maxEP = Math.max(...epTrajectory, nzebThreshold * 1.1);
+  const maxCandidates = [
+    ...epTrajectory,
+    nzebThreshold * 1.1,
+    meps2030Ep || 0,
+    meps2033Ep || 0,
+  ].filter(Number.isFinite);
+  const maxEP = Math.max(...maxCandidates);
   const minEP = 0;
   const scaleY = (v) => PAD.top + chartH - ((v - minEP) / (maxEP - minEP)) * chartH;
   const scaleX = (i) => PAD.left + (i / (epTrajectory.length - 1)) * chartW;
@@ -95,6 +110,34 @@ function EPTrajectoryChart({ epTrajectory, nzebThreshold, classTrajectory }) {
           </g>
         )}
 
+        {/* Linie MEPS 2030 (EPBD 2024 Art. 9) */}
+        {meps2030Ep && (
+          <g>
+            <line
+              x1={PAD.left} x2={W - PAD.right}
+              y1={scaleY(meps2030Ep)} y2={scaleY(meps2030Ep)}
+              stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,3"
+            />
+            <text x={W - PAD.right + 2} y={scaleY(meps2030Ep) - 3} fontSize={8} fill="#ef4444">
+              MEPS 2030 ({Math.round(meps2030Ep)})
+            </text>
+          </g>
+        )}
+
+        {/* Linie MEPS 2033 */}
+        {meps2033Ep && (
+          <g>
+            <line
+              x1={PAD.left} x2={W - PAD.right}
+              y1={scaleY(meps2033Ep)} y2={scaleY(meps2033Ep)}
+              stroke="#f97316" strokeWidth={1.5} strokeDasharray="3,3"
+            />
+            <text x={W - PAD.right + 2} y={scaleY(meps2033Ep) - 3} fontSize={8} fill="#f97316">
+              MEPS 2033 ({Math.round(meps2033Ep)})
+            </text>
+          </g>
+        )}
+
         {/* Fill area */}
         <polygon points={fillPoints} fill="#f59e0b" fillOpacity={0.07} />
 
@@ -121,6 +164,54 @@ function EPTrajectoryChart({ epTrajectory, nzebThreshold, classTrajectory }) {
             </g>
           );
         })}
+
+        {/* Marker an atingere MEPS 2030 */}
+        {meps2030YearReached != null && epTrajectory[meps2030YearReached] != null && (
+          <g>
+            <circle
+              cx={scaleX(meps2030YearReached)}
+              cy={scaleY(epTrajectory[meps2030YearReached])}
+              r={9}
+              fill="none"
+              stroke="#ef4444"
+              strokeWidth={2}
+            />
+            <text
+              x={scaleX(meps2030YearReached)}
+              y={scaleY(epTrajectory[meps2030YearReached]) - 14}
+              textAnchor="middle"
+              fontSize={8}
+              fill="#ef4444"
+              fontWeight="bold"
+            >
+              ✓ MEPS 2030
+            </text>
+          </g>
+        )}
+
+        {/* Marker an atingere MEPS 2033 */}
+        {meps2033YearReached != null && epTrajectory[meps2033YearReached] != null && (
+          <g>
+            <circle
+              cx={scaleX(meps2033YearReached)}
+              cy={scaleY(epTrajectory[meps2033YearReached])}
+              r={9}
+              fill="none"
+              stroke="#f97316"
+              strokeWidth={2}
+            />
+            <text
+              x={scaleX(meps2033YearReached)}
+              y={scaleY(epTrajectory[meps2033YearReached]) - 14}
+              textAnchor="middle"
+              fontSize={8}
+              fill="#f97316"
+              fontWeight="bold"
+            >
+              ✓ MEPS 2033
+            </text>
+          </g>
+        )}
 
         {/* Axă Y label */}
         <text
@@ -198,7 +289,7 @@ function PhasesTimeline({ phases, epInitial }) {
 // ──────────────────────────────────────────────
 // Componenta principală
 // ──────────────────────────────────────────────
-export default function PhasedRehabTimeline({ measures = [], building, instSummary, onClose }) {
+export default function PhasedRehabTimeline({ measures = [], building, instSummary, mepsContext = null, onClose, onPlanReady }) {
   const [annualBudget, setAnnualBudget] = useState(50000);
   const [strategy, setStrategy]         = useState("balanced");
   const [energyPrice, setEnergyPrice]   = useState(0.40);
@@ -216,6 +307,31 @@ export default function PhasedRehabTimeline({ measures = [], building, instSumma
       category, areaUseful, energyPrice
     );
   }, [measures, annualBudget, strategy, epInitial, category, areaUseful, energyPrice]);
+
+  const meps2030Ep = mepsContext?.thresholds?.ep2030 ?? null;
+  const meps2033Ep = mepsContext?.thresholds?.ep2033 ?? null;
+  const meps2030YearReached = useMemo(
+    () => findMepsMilestone(plan?.phases, meps2030Ep),
+    [plan, meps2030Ep]
+  );
+  const meps2033YearReached = useMemo(
+    () => findMepsMilestone(plan?.phases, meps2033Ep),
+    [plan, meps2033Ep]
+  );
+
+  // Expose planul rezultat + strategie + parametrii către părinte (pentru pașaport)
+  useMemo(() => {
+    if (plan && typeof onPlanReady === "function") {
+      onPlanReady({
+        ...plan,
+        strategy,
+        annualBudget,
+        energyPrice,
+        meps2030YearReached,
+        meps2033YearReached,
+      });
+    }
+  }, [plan, strategy, annualBudget, energyPrice, meps2030YearReached, meps2033YearReached, onPlanReady]);
 
   // Export PDF (async jsPDF)
   const handleExportPDF = useCallback(async () => {
@@ -409,8 +525,57 @@ export default function PhasedRehabTimeline({ measures = [], building, instSumma
                   epTrajectory={plan.epTrajectory}
                   nzebThreshold={nzebThreshold}
                   classTrajectory={plan.classTrajectory}
+                  meps2030Ep={meps2030Ep}
+                  meps2033Ep={meps2033Ep}
+                  meps2030YearReached={meps2030YearReached}
+                  meps2033YearReached={meps2033YearReached}
                 />
               </div>
+
+              {/* Conformitate MEPS — EPBD 2024/1275 Art. 9 */}
+              {mepsContext && (meps2030Ep || meps2033Ep) && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                  <h3 className="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-3">
+                    Conformitate MEPS — EPBD 2024/1275 Art. 9
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {meps2030Ep && (
+                      <div>
+                        <div className="text-xs text-white/40">
+                          MEPS 2030 (EP ≤ {Math.round(meps2030Ep)} kWh/m²·an)
+                        </div>
+                        <div
+                          className={
+                            "text-base font-bold mt-0.5 " +
+                            (meps2030YearReached != null ? "text-green-400" : "text-red-400")
+                          }
+                        >
+                          {meps2030YearReached != null
+                            ? `✓ Atins în anul ${meps2030YearReached} al planului`
+                            : "✗ NU este atins în perioada planificată"}
+                        </div>
+                      </div>
+                    )}
+                    {meps2033Ep && (
+                      <div>
+                        <div className="text-xs text-white/40">
+                          MEPS 2033 (EP ≤ {Math.round(meps2033Ep)} kWh/m²·an)
+                        </div>
+                        <div
+                          className={
+                            "text-base font-bold mt-0.5 " +
+                            (meps2033YearReached != null ? "text-green-400" : "text-amber-400")
+                          }
+                        >
+                          {meps2033YearReached != null
+                            ? `✓ Atins în anul ${meps2033YearReached} al planului`
+                            : "⚠ Extindeți planul sau adăugați măsuri suplimentare"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Clasă per an — badges */}
               <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
