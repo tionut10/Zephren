@@ -7,67 +7,70 @@ const OWNER_TYPES = [
   { value: "firma",       label: "Firmă / Spațiu comercial" },
 ];
 
-// Măsuri de reabilitare implicite (pot fi suprascrise din props)
+// Prețuri orientative Q1 2026 (RON, fără TVA, manoperă inclusă)
+// Sursa: src/data/rehab-prices.js × curs EUR/RON 4.97
+// costPerM2: RON/m²  |  costFixed: RON/set
+// Actualizat: 2026-04-18
 const DEFAULT_MEASURES = [
   {
     id: "izolatie_ext",
-    name: "Izolație exterior 12 cm EPS",
-    costPerM2: 120,
+    name: "Izolație exterior 10 cm EPS",
+    costPerM2: 209,      // 42 EUR/m² × 4.97 (rehab-prices: wall_eps_10cm mid)
     areaFactor: "envelope",
     savingsPct: 0.22,
     co2FactorKg: 18,
-    desc: "Termosistem exterior cu polistiren expandat, include tencuială și finisaj.",
+    desc: "Termosistem exterior cu polistiren expandat 10 cm, include tencuială și finisaj decorativ.",
   },
   {
     id: "izolatie_pod",
-    name: "Izolație pod 25 cm vată minerală",
-    costPerM2: 55,
+    name: "Izolație pod / acoperiș 25 cm vată minerală",
+    costPerM2: 338,      // 68 EUR/m² × 4.97 (rehab-prices: roof_mw_25cm mid)
     areaFactor: "roof",
     savingsPct: 0.10,
     co2FactorKg: 7,
-    desc: "Izolație terică la nivelul planșeului podului, acces ușor, costuri reduse.",
+    desc: "Izolație termică la nivelul planșeului podului cu vată minerală suflată, acces ușor.",
   },
   {
     id: "ferestre_pvc",
-    name: "Ferestre PVC tripan",
-    costPerM2: 350,
+    name: "Ferestre PVC triplu vitraj Low-E (U≤0.9 W/m²K)",
+    costPerM2: 1392,     // 280 EUR/m² × 4.97 (rehab-prices: windows_u090 mid)
     areaFactor: "windows",
     savingsPct: 0.12,
     co2FactorKg: 10,
-    desc: "Înlocuire ferestre vechi cu tâmplărie PVC cu sticlă termoizolantă triplă.",
+    desc: "Înlocuire ferestre vechi cu tâmplărie PVC triplu vitraj Low-E + Argon, U≤0.9 W/m²K.",
   },
   {
     id: "centrala_cond",
-    name: "Centrală termică în condensație",
-    costFixed: 8500,
+    name: "Centrală termică în condensație 24 kW",
+    costFixed: 8698,     // 1.750 EUR × 4.97 (rehab-prices: boiler_cond_24kw mid)
     savingsPct: 0.15,
     co2FactorKg: 12,
-    desc: "Înlocuire cazan vechi cu centrală în condensație, randament >95%.",
+    desc: "Înlocuire cazan vechi cu centrală în condensație 24 kW, randament >98%, instalare inclusă.",
   },
   {
     id: "panouri_solare",
-    name: "Panouri solare termice ACM",
-    costFixed: 9000,
+    name: "Panouri solare termice ACM (4 m² + boiler 200 L)",
+    costFixed: 9940,     // 2.000 EUR × 4.97 (rehab-prices: solar_thermal_4m2 mid)
     savingsPct: 0.08,
     co2FactorKg: 6,
-    desc: "Sistem solar termic pentru apă caldă menajeră, 2-3 colectoare.",
+    desc: "Sistem solar termic complet pentru apă caldă menajeră, 2 colectoare tuburi vidate + boiler bivalent.",
   },
   {
     id: "izolatie_planseu",
-    name: "Izolație planșeu peste subsol",
-    costPerM2: 70,
+    name: "Izolație planșeu peste subsol (XPS 10 cm)",
+    costPerM2: 159,      // 32 EUR/m² × 4.97 (rehab-prices: basement_xps_10cm mid)
     areaFactor: "floor",
     savingsPct: 0.06,
     co2FactorKg: 4,
-    desc: "Izolație termică la nivelul planșeului peste spațiu neîncălzit.",
+    desc: "Izolație termică XPS 10 cm aplicată pe tavan subsol / demisol neîncălzit, dibluri incluse.",
   },
   {
     id: "pompa_caldura",
-    name: "Pompă de căldură aer-apă",
-    costFixed: 22000,
+    name: "Pompă de căldură aer-apă 8 kW",
+    costFixed: 32305,    // 6.500 EUR × 4.97 (rehab-prices: hp_aw_8kw mid)
     savingsPct: 0.35,
     co2FactorKg: 40,
-    desc: "Sistem de încălzire cu pompă de căldură, COP 3.5-4.5, înlocuiește complet cazanul.",
+    desc: "Sistem de încălzire + ACM cu pompă de căldură aer-apă 8 kW, COP ≥ 3.2, boiler tampon inclus.",
   },
 ];
 
