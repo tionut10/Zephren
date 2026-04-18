@@ -733,7 +733,7 @@ async function fileToDataURL(file) {
   });
 }
 
-export function Capitol8_Anexe({ attachments = {}, onAttachmentsChange, showToast }) {
+export function Capitol8_Anexe({ attachments = {}, onAttachmentsChange, showToast, passportInfo = null }) {
   const totalBytes = useMemo(() => {
     let total = 0;
     Object.values(attachments).forEach((files) => {
@@ -863,6 +863,38 @@ export function Capitol8_Anexe({ attachments = {}, onAttachmentsChange, showToas
           );
         })}
       </div>
+
+      {/* Sprint 17 — Anexa G: Pașaport renovare asociat (EPBD 2024/1275 Art. 12) */}
+      {passportInfo?.passportId && (
+        <div className="mt-3 p-3 rounded-lg border border-violet-500/30 bg-violet-500/5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-violet-300">
+              🆔 Anexa G — Pașaport renovare asociat
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+              EPBD 2024/1275 Art. 12
+            </span>
+          </div>
+          <div className="text-[10px] opacity-60">
+            Pașaportul de renovare generat din acest audit este încorporat automat ca Anexa G în raportul PDF.
+            Include trajectory EP multi-an, cross-ref MEPS 2030/2033 și referință la planul etapizat.
+          </div>
+          <div>
+            <div className="text-[9px] opacity-40 mb-1">UUID pașaport:</div>
+            <code className="text-[10px] font-mono break-all block p-1.5 rounded bg-black/30 border border-white/5">
+              {passportInfo.passportId}
+            </code>
+          </div>
+          {passportInfo.url && (
+            <div className="text-[9px]">
+              <span className="opacity-50">URL verificare: </span>
+              <a href={passportInfo.url} target="_blank" rel="noopener noreferrer" className="text-violet-300 hover:text-violet-200 underline">
+                {passportInfo.url}
+              </a>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="text-[10px] opacity-40 italic">
         Anexele vor fi încorporate în raportul PDF generat. Limită totală 50 MB

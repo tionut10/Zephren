@@ -912,12 +912,17 @@ export default function AuditReport({
           />
         </Card>
 
-        {/* ── Secțiunea 8 — Anexe upload (Sprint 16) ────────────────────── */}
+        {/* ── Secțiunea 8 — Anexe upload (Sprint 16) + Anexa G Pașaport (Sprint 17) ────── */}
         <Card className="p-4">
           <Capitol8_Anexe
             attachments={attachments}
             onAttachmentsChange={setAttachments}
             showToast={showToast}
+            passportInfo={building?.passportUUID ? {
+              passportId: building.passportUUID,
+              url: building.passportURL || `https://zephren.ro/passport/${building.passportUUID}`,
+              timestamp: building.passportTimestamp,
+            } : null}
           />
         </Card>
 

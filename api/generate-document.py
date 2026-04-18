@@ -2139,7 +2139,20 @@ class handler(BaseHTTPRequestHandler):
             if qr_url:
                 insert_qr_code(doc, qr_url, cpe_code)
 
+            # Sprint 17 — QR code suplimentar pentru pașaport renovare (EPBD 2024/1275 Art. 12)
+            # Plasat în placeholder {{QR_PASSPORT}} dedicat (dacă există în template).
+            passport_qr_url = data.get("passport_qr_url", "")
+            if passport_qr_url:
+                try:
+                    qr_pass_bytes = generate_qr_png(passport_qr_url, scale=4, border=2)
+                    if qr_pass_bytes:
+                        for ph in ("{{QR_PASSPORT}}", "{{QR_PASAPORT}}"):
+                            _replace_placeholder_with_image(doc, ph, qr_pass_bytes, width_cm=2.2)
+                except Exception as e_qrp:
+                    print(f"[passport_qr] {e_qrp}", flush=True)
+
             # Sprint 15 — Cadastru + CF + identificare juridică (placeholder-uri opționale)
+            # Sprint 17 — extensie cu pașaport renovare UUID + URL
             for ph_key, val in [
                 ("{{NR_CADASTRAL}}", data.get("cadastral_number", "")),
                 ("{{CARTE_FUNCIARA}}", data.get("land_book", "")),
@@ -2147,6 +2160,8 @@ class handler(BaseHTTPRequestHandler):
                 ("{{NR_APARTAMENTE}}", data.get("n_apartments", "")),
                 ("{{VALIDITY_YEARS}}", str(data.get("validity_years", ""))),
                 ("{{VALIDITY_LABEL}}", data.get("validity_label", "")),
+                ("{{PASSPORT_UUID}}", data.get("passport_uuid", "")),
+                ("{{PASSPORT_URL}}", data.get("passport_url", "")),
             ]:
                 if val:
                     replace_in_doc(doc, ph_key, val)

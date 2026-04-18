@@ -12,6 +12,10 @@ import {
   projectToAnexa6Row,
   validateAnexa6Row,
 } from "../lib/registru-evidenta-export.js";
+import {
+  exportRegistruDOCX,
+  exportRegistruPDF,
+} from "../lib/registru-docx-pdf.js";
 
 // Încarcă proiecte din localStorage (suport pentru ambele scheme de chei)
 function loadProjectsFromStorage() {
@@ -60,14 +64,20 @@ export default function RegistruEvidentaPanel({
 
   const hasWarnings = rows.some((r) => r.missing.length > 0);
 
-  async function handleDownload() {
+  async function handleDownload(format = "xlsx") {
     if (projects.length === 0) {
       alert("Nu există CPE-uri înregistrate în proiectele tale.");
       return;
     }
     setDownloading(true);
     try {
-      exportRegistruEvidenta(projects, auditor, { download: true });
+      if (format === "docx") {
+        await exportRegistruDOCX(projects, auditor, { download: true });
+      } else if (format === "pdf") {
+        await exportRegistruPDF(projects, auditor, { download: true });
+      } else {
+        exportRegistruEvidenta(projects, auditor, { download: true });
+      }
       const now = new Date();
       setLastExportDate(now);
       if (onExportComplete) onExportComplete(now);
@@ -232,22 +242,36 @@ export default function RegistruEvidentaPanel({
             <span className="text-amber-400/80">⚠ Completează datele auditorului în Pasul 7 înainte de export.</span>
           )}
         </div>
-        <button
-          onClick={handleDownload}
-          disabled={downloading || rows.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-        >
-          {downloading ? (
-            <span className="w-4 h-4 border-2 border-emerald-400/40 border-t-emerald-400 rounded-full animate-spin" />
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          )}
-          {downloading ? "Se generează…" : "Descarcă Registru (.xlsx)"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => handleDownload("xlsx")}
+            disabled={downloading || rows.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            {downloading ? (
+              <span className="w-4 h-4 border-2 border-emerald-400/40 border-t-emerald-400 rounded-full animate-spin" />
+            ) : (
+              <span>📊</span>
+            )}
+            {downloading ? "Se generează…" : "Descarcă (.xlsx)"}
+          </button>
+          <button
+            onClick={() => handleDownload("docx")}
+            disabled={downloading || rows.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            title="DOCX A4 portret pentru imprimare"
+          >
+            <span>📝</span> Descarcă (.docx)
+          </button>
+          <button
+            onClick={() => handleDownload("pdf")}
+            disabled={downloading || rows.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            title="PDF A4 portret pentru imprimare"
+          >
+            <span>📄</span> Descarcă (.pdf)
+          </button>
+        </div>
       </div>
     </div>
   );

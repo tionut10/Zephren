@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
+        "text": "sprint-16: Anexa 2 bloc multi-apartament + Raport audit Mc 001 P.IV complet"
+      },
+      {
+        "icon": "📄",
         "text": "sprint-15: EPBD 2024 valabilitate + cadastru/CF + semnătură + QR DOCX"
       },
       {
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔸",
         "text": "Sprint 12: regresie + validare integrată pre-Faza 15"
-      },
-      {
-        "icon": "🔬",
-        "text": "Sprint 10b: sentinel regresie extins pentru cele 4 bug-uri ACM"
       }
     ]
   },

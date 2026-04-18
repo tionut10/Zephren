@@ -114,6 +114,7 @@ export default function RenovationPassport({
   financialSummary = null,
   fundingEligible = null,
   onClose,
+  onPassportChange,  // Sprint 17: notifică parentul când UUID-ul se schimbă
 }) {
   const buildingId = useMemo(
     () => (building?.address || "default").replace(/\s+/g, "_").slice(0, 100),
@@ -159,10 +160,17 @@ export default function RenovationPassport({
   const [exportMsg, setExportMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Auto-save la fiecare modificare
+  // Auto-save la fiecare modificare + notify parent (Sprint 17 — integrare CPE/raport audit)
   useEffect(() => {
     savePassportToStorage(buildingId, passport);
-  }, [buildingId, passport]);
+    if (typeof onPassportChange === "function") {
+      onPassportChange({
+        passportId: passport.passportId,
+        timestamp: passport.timestamp,
+        url: `https://zephren.ro/passport/${passport.passportId}`,
+      });
+    }
+  }, [buildingId, passport, onPassportChange]);
 
   // Generate QR pe passportId
   useEffect(() => {

@@ -26,6 +26,9 @@ export default async function handler(req, res) {
       systems,        // { heating, cooling, hotWater, ventilation, lighting }
       issuedDate,     // ISO date string
       cpeCode,        // Sprint 14: cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
+      sri,            // Sprint 17: { total, class, impact:{energy_efficiency,flexibility,comfort}, domains[] }
+      passportUUID,   // Sprint 17: UUID pașaport renovare asociat (EPBD 2024/1275 Art. 12)
+      bacsClass,      // Sprint 17: clasa BACS ISO 52120-1:2022 (A/B/C/D)
     } = body;
 
     if (!building || !results) {
@@ -109,6 +112,21 @@ export default async function handler(req, res) {
       <Regenerabile unit="kWh/m2/an">${e(results.breakdown?.renewable)}</Regenerabile>
     </Defalcare>
   </RezultateCalcul>
+
+  <Automatizare>
+    <ClasaBACS standard="SR EN ISO 52120-1:2022">${e(bacsClass || "")}</ClasaBACS>
+    ${sri ? `<SRI standard="Reg. UE 2020/2155">
+      <Scor>${e(typeof sri.total === "number" ? sri.total.toFixed(1) : sri.total)}</Scor>
+      <Clasa>${e(sri.class || "")}</Clasa>
+      <Eficienta>${e(sri.impact?.energy_efficiency?.score ?? "")}</Eficienta>
+      <Flexibilitate>${e(sri.impact?.flexibility?.score ?? "")}</Flexibilitate>
+      <Confort>${e(sri.impact?.comfort?.score ?? "")}</Confort>
+    </SRI>` : ""}
+  </Automatizare>
+  ${passportUUID ? `<PasaportRenovare standard="EPBD 2024/1275 Art. 12">
+    <UUID>${e(passportUUID)}</UUID>
+    <URL>https://zephren.ro/passport/${e(passportUUID)}</URL>
+  </PasaportRenovare>` : ""}
 </CertificatPerformantaEnergetica>`;
 
     res.setHeader("Content-Type", "application/xml; charset=utf-8");

@@ -1974,6 +1974,17 @@ export default function EnergyCalcApp({ cloud }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [building, auditor, instSummary, renewSummary, annualEnergyCost, selectedClimate, cooling.hasCooling, showToast]);
 
+  const exportPDFArchival = useCallback(async () => {
+    const m = await import("./handlers/exportHandlers.js");
+    return m.exportPDFNative({
+      building, auditor, instSummary, renewSummary, annualEnergyCost,
+      selectedClimate, cooling,
+      showToast, setExporting, lang,
+      archival: true,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [building, auditor, instSummary, renewSummary, annualEnergyCost, selectedClimate, cooling.hasCooling, showToast]);
+
   // ═══════════════════════════════════════════════════════════
   // B4b: FIȘĂ SINTETICĂ 1 PAGINĂ PDF (client-friendly)
   // ═══════════════════════════════════════════════════════════
@@ -2991,7 +3002,7 @@ export default function EnergyCalcApp({ cloud }) {
             canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
             presentationMode, setPresentationMode,
             financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-            exportPDFNative, exportQuickSheet, fetchTemplate,
+            exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
             bacsClass,
             buildingPhotos,
           }} /></Suspense>}
@@ -3013,6 +3024,7 @@ export default function EnergyCalcApp({ cloud }) {
             activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
             generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
             setThermalBridges,
+            setBuilding,
           }} /></Suspense>}
 
           {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}

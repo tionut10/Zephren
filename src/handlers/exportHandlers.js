@@ -817,9 +817,23 @@ export async function exportPDFNative(ctx) {
     doc.setFontSize(7); doc.setTextColor(150);
     doc.text(`Generat cu Zephren v3.1 | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w / 2, 285, { align: "center" });
 
-    const filename = `CPE_${(building.address || "certificat").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(filename);
-    showToast((lang === "EN" ? "PDF generated: " : "PDF generat: ") + filename, "success");
+    const baseName = `CPE_${(building.address || "certificat").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}`;
+    const filename = `${baseName}.pdf`;
+
+    if (ctx.archival) {
+      const { exportAsPDFA } = await import("../lib/pdfa-export.js");
+      await exportAsPDFA(doc.output("blob"), {
+        title: `CPE ${auditor?.cpeCode || ""}`,
+        author: auditor?.name || "Auditor energetic",
+        subject: "Certificat de Performanță Energetică — Mc 001-2022",
+        cpeCode: auditor?.cpeCode || "",
+        auditor: auditor?.name || "",
+      }, `${baseName}_PDFA.pdf`);
+      showToast("PDF/A arhivare generat: " + baseName + "_PDFA.pdf", "success");
+    } else {
+      doc.save(filename);
+      showToast((lang === "EN" ? "PDF generated: " : "PDF generat: ") + filename, "success");
+    }
   } catch (e) {
     showToast("Eroare generare PDF: " + e.message, "error");
     console.error("PDF export error:", e);

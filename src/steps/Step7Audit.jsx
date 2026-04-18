@@ -44,6 +44,7 @@ export default function Step7Audit(props) {
     activeScenario, loadScenarioPreset, SCENARIO_PRESETS,
     generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
     setThermalBridges,
+    setBuilding,  // Sprint 17: pentru a stoca passportUUID pe building
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
@@ -1657,6 +1658,18 @@ export default function Step7Audit(props) {
                         financialSummary={financialSummary}
                         fundingEligible={fundingEligible}
                         onClose={() => setActiveTool(null)}
+                        onPassportChange={(info) => {
+                          // Sprint 17: propagăm UUID-ul pașaportului către building,
+                          // pentru a fi referențiat în CPE XML/DOCX și în raportul de audit.
+                          if (typeof setBuilding === "function" && info?.passportId) {
+                            setBuilding(prev => ({
+                              ...prev,
+                              passportUUID: info.passportId,
+                              passportURL: info.url,
+                              passportTimestamp: info.timestamp,
+                            }));
+                          }
+                        }}
                       />
                     )}
                     {activeTool === "consum" && (

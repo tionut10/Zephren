@@ -2,6 +2,8 @@ import React from "react";
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
 import { calcPenalties } from "../calc/penalties.js";
+import { computeAutoSRI } from "../calc/sri-auto-map.js";
+import { SRI_CLASS_LABELS } from "../calc/sri-indicator.js";
 import AnexaBloc from "./AnexaBloc.jsx";
 
 /**
@@ -319,24 +321,29 @@ export default function CpeAnexa({
                 {!solarThermal?.enabled && !photovoltaic?.enabled && !heatPump?.enabled && !biomass?.enabled &&
                   <Row label="Regenerabile" value="Nu există surse regenerabile locale" />}
 
-                {/* BACS & SRI */}
+                {/* BACS & SRI — conform SR EN ISO 52120-1:2022 + Reg. UE 2020/2155 */}
                 {bacsClass && (() => {
                   const bacsLabels = { A:"Clasă A — Înalt performantă", B:"Clasă B — Avansată", C:"Clasă C — Standard (referință)", D:"Clasă D — Nonautomatizată" };
                   const bacsFactors = { A:0.80, B:0.93, C:1.00, D:1.10 };
                   const bacsColor = { A:"text-emerald-400", B:"text-lime-400", C:"text-yellow-400", D:"text-red-400" };
-                  // TODO Sprint 17 (Task 3) — migrare SRI la EN ISO 52120-1:2022 cu 9 domenii × 4 niveluri.
-                  // Calcul curent simplificat (hardcoded per control type) rămâne până la noul motor SRI.
-                  const sriVal = heating?.control === "pid" || heating?.control === "bacs_a" ? 60 :
-                                 heating?.control === "termostat" ? 30 : 10;
+                  const sriColor = { A:"text-emerald-400", B:"text-lime-400", C:"text-yellow-400", D:"text-orange-400", E:"text-red-400" };
+                  const sri = computeAutoSRI({ building, heating, cooling, ventilation, lighting, acm, solarThermal, photovoltaic, heatPump, bacsClass });
+                  const sriVal = sri.total;
+                  const sriClass = sri.class;
+                  const sriLabel = SRI_CLASS_LABELS[sriClass]?.label || "";
                   return (
                     <>
                       <div className="text-[10px] opacity-40 font-medium mt-2">AUTOMATIZARE & SRI</div>
-                      <Row label="Clasă BACS (EN 15232-1)" value={
+                      <Row label="Clasă BACS (ISO 52120-1:2022)" value={
                         <span className={bacsColor[bacsClass] || ""}>{bacsClass} — factor {bacsFactors[bacsClass]}</span>
                       } />
                       <Row label={lang === "EN" ? "BACS description" : "Descriere BACS"} value={bacsLabels[bacsClass] || bacsClass} />
-                      <Row label="Indice SRI (Smart Readiness)" value={`${sriVal}%`}
-                        status={sriVal >= 50 ? "ok" : sriVal >= 25 ? "warn" : "fail"} />
+                      <Row label="Indice SRI (Reg. UE 2020/2155)"
+                        value={<span className={sriColor[sriClass] || ""}>{sriVal.toFixed(1)}% — clasă {sriClass} ({sriLabel})</span>}
+                        status={sriVal >= 60 ? "ok" : sriVal >= 40 ? "warn" : "fail"} />
+                      <Row label="SRI — Eficiență energetică" value={`${sri.impact.energy_efficiency.score.toFixed(1)}%`} />
+                      <Row label="SRI — Flexibilitate rețea" value={`${sri.impact.flexibility.score.toFixed(1)}%`} />
+                      <Row label="SRI — Confort" value={`${sri.impact.comfort.score.toFixed(1)}%`} />
                     </>
                   );
                 })()}

@@ -43,7 +43,7 @@ export default function Step6Certificate(props) {
     canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-    exportPDFNative, exportQuickSheet, fetchTemplate,
+    exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
     bacsClass,
     buildingPhotos,
   } = props;
@@ -217,6 +217,10 @@ export default function Step6Certificate(props) {
                     // Sprint 15 — Identificare juridică
                     cadastral_number: building.cadastralNumber || "",
                     land_book: building.landBook || "",
+                    // Sprint 17 — Pașaport renovare (EPBD 2024/1275 Art. 12)
+                    passport_uuid: building.passportUUID || "",
+                    passport_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
+                    passport_qr_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
                     area_built: building.areaBuilt || "",
                     n_apartments: building.nApartments || "1",
                     // Sprint 14 — Penalizări Mc 001-2022 Partea III §8.10 (serializate)
@@ -1714,6 +1718,29 @@ ${(() => {
                           </div>
                         )}
                       </div>
+
+                      {/* Sprint 17 — Pașaport renovare asociat (EPBD 2024/1275 Art. 12) */}
+                      {building?.passportUUID && (
+                        <div className="mt-3 p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-[11px] font-medium opacity-70">🆔 Pașaport renovare asociat</div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">EPBD 2024 Art. 12</span>
+                          </div>
+                          <div className="text-[9px] opacity-40 mb-1">UUID:</div>
+                          <div className="text-[10px] font-mono break-all p-2 rounded bg-black/30 border border-white/5">
+                            {building.passportUUID}
+                          </div>
+                          {building.passportURL && (
+                            <div className="text-[9px] mt-2 flex items-center gap-1">
+                              <span className="opacity-50">URL verificare:</span>
+                              <a href={building.passportURL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline truncate">
+                                {building.passportURL}
+                              </a>
+                            </div>
+                          )}
+                          <div className="text-[9px] opacity-40 mt-1">Link integrat în CPE DOCX + XML + QR code suplimentar.</div>
+                        </div>
+                      )}
                     </div>
                   </Card>
 
@@ -2647,6 +2674,23 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         <div className="text-left">
                           <div className="font-medium">Export PDF cu QR</div>
                           <div className="text-[10px] opacity-60">Certificat complet cu QR code</div>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={exportPDFArchival}
+                      disabled={!instSummary}
+                      className={`w-full rounded-xl border transition-all text-sm ${
+                        !instSummary
+                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                          : "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 cursor-pointer"
+                      }`}
+                      title="PDF/A-1b — format arhivare pe termen lung (ISO 19005-1)">
+                      <div className="flex items-center justify-center gap-2 px-4 py-3">
+                        <span className="text-lg">🗂️</span>
+                        <div className="text-left">
+                          <div className="font-medium">PDF/A Arhivare</div>
+                          <div className="text-[10px] opacity-60">ISO 19005-1 + XMP metadata</div>
                         </div>
                       </div>
                     </button>
