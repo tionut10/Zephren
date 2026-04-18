@@ -1,80 +1,116 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync, unlinkSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { randomBytes } from 'crypto';
-
-const TEMP_DIR = '/tmp/cpe-preview';
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
-
-function cleanOldFiles() {
-  try {
-    if (!existsSync(TEMP_DIR)) return;
-    const now = Date.now();
-    for (const file of readdirSync(TEMP_DIR)) {
-      const filePath = join(TEMP_DIR, file);
-      try {
-        const stat = statSync(filePath);
-        if (now - stat.mtimeMs > MAX_AGE_MS) unlinkSync(filePath);
-      } catch (e) { /* ignore */ }
-    }
-  } catch (e) { /* ignore */ }
-}
-
-export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  // GET — serve a previously uploaded file
-  if (req.method === 'GET') {
-    const { id } = req.query;
-    if (!id || !/^[a-f0-9]+$/.test(id)) return res.status(400).json({ error: 'Invalid ID' });
-
-    const filePath = join(TEMP_DIR, id + '.docx');
-    if (!existsSync(filePath)) return res.status(404).json({ error: 'File not found or expired' });
-
-    const buffer = readFileSync(filePath);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `inline; filename="CPE_preview.docx"`);
-    res.setHeader('Cache-Control', 'public, max-age=300');
-    return res.status(200).send(buffer);
-  }
-
-  // POST — upload a DOCX blob
-  if (req.method === 'POST') {
-    try {
-      cleanOldFiles();
-      if (!existsSync(TEMP_DIR)) mkdirSync(TEMP_DIR, { recursive: true });
-
-      // Read raw body
-      const chunks = [];
-      for await (const chunk of req) chunks.push(chunk);
-      const buffer = Buffer.concat(chunks);
-
-      if (buffer.length < 100) return res.status(400).json({ error: 'Empty file' });
-      if (buffer.length > 5 * 1024 * 1024) return res.status(413).json({ error: 'File too large (max 5MB)' });
-
-      const id = randomBytes(16).toString('hex');
-      const filePath = join(TEMP_DIR, id + '.docx');
-      writeFileSync(filePath, buffer);
-
-      // Build public URL
-      const protocol = req.headers['x-forwarded-proto'] || 'https';
-      const host = req.headers['x-forwarded-host'] || req.headers.host;
-      const publicUrl = `${protocol}://${host}/api/preview-docx?id=${id}`;
-
-      return res.status(200).json({ url: publicUrl, id, expiresIn: '5 minutes' });
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
-    }
-  }
-
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+/**
+ * Vercel Serverless Function — DOCX to PDF/Viewer
+ *
+ * 1. Dacă GOTENBERG_URL e configurat → convertește DOCX→PDF via LibreOffice (preferat
+ *    din punct de vedere GDPR — date rămân în UE, nu la Microsoft US).
+ * 2. Altfel → uploadează DOCX pe Vercel Blob cu filename randomUUID (Sprint 20) și
+ *    returnează JSON cu viewerUrl Office Online.
+ *    ⚠️ Atenție GDPR: Office Online = transfer date personale către Microsoft US —
+ *    necesită DPA semnat sau menționare explicită în Privacy Policy.
+ *
+ * Sprint 20 (18 apr 2026):
+ *   - auth + rate-limit + CORS allowlist
+ *   - filename randomUUID (nu mai e ghicibil timestamp)
+ *   - size limit streaming 10 MB
+ */
+import { requireAuth } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
+import { applyCors } from "./_middleware/cors.js";
+import { randomUUID } from "crypto";
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
 };
+
+export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Auth + rate-limit (Sprint 20)
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
+  const limit = checkRateLimit(auth.user.id, 30);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
+
+  // Citim body-ul cu limită streaming (max 10 MB)
+  const chunks = [];
+  let totalSize = 0;
+  const MAX_SIZE = 10 * 1024 * 1024;
+  for await (const chunk of req) {
+    totalSize += chunk.length;
+    if (totalSize > MAX_SIZE) {
+      return res.status(413).json({ error: "File too large (max 10 MB)" });
+    }
+    chunks.push(chunk);
+  }
+  const docxBuffer = Buffer.concat(chunks);
+
+  if (docxBuffer.length === 0) {
+    return res.status(400).json({ error: "Empty body" });
+  }
+
+  // ── Calea 1: Gotenberg (dacă e configurat) — preferat GDPR ──
+  const gotenbergUrl = process.env.GOTENBERG_URL;
+  if (gotenbergUrl) {
+    try {
+      const boundary = "----GotenbergBoundary" + Date.now();
+      const header = `--${boundary}\r\nContent-Disposition: form-data; name="files"; filename="document.docx"\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n`;
+      const footer = `\r\n--${boundary}--\r\n`;
+      const body = Buffer.concat([Buffer.from(header, "utf-8"), docxBuffer, Buffer.from(footer, "utf-8")]);
+
+      const pdfResp = await fetch(gotenbergUrl + "/forms/libreoffice/convert", {
+        method: "POST",
+        headers: {
+          "Content-Type": `multipart/form-data; boundary=${boundary}`,
+          "Content-Length": String(body.length),
+        },
+        body: body,
+      });
+
+      if (pdfResp.ok) {
+        const pdfBuffer = Buffer.from(await pdfResp.arrayBuffer());
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Length", String(pdfBuffer.length));
+        res.setHeader("Cache-Control", "no-store");
+        return res.status(200).send(pdfBuffer);
+      }
+    } catch (err) {
+      console.error("Gotenberg error:", err.message);
+    }
+  }
+
+  // ── Calea 2: Vercel Blob → Office Online Viewer ──
+  // ⚠️ SPRINT 20 NOTE: această cale transferă DOCX la Microsoft (US). Datele conținute
+  //   (nume, adresă, telefon, cadastru client) ajung la Microsoft Office Online. Obligație
+  //   GDPR: DPA semnat cu Microsoft SAU dezactivare această cale în producție și folosire
+  //   exclusiv Gotenberg (GOTENBERG_URL configurat).
+  try {
+    const { put } = await import("@vercel/blob");
+
+    // Sprint 20: filename randomUUID — NU mai e ghicibil `cpe-preview-${Date.now()}.docx`
+    const filename = `cpe-preview-${randomUUID()}.docx`;
+
+    const blob = await put(filename, docxBuffer, {
+      access: "public",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      addRandomSuffix: true, // protecție suplimentară
+    });
+
+    const viewerUrl =
+      "https://view.officeapps.live.com/op/embed.aspx?src=" +
+      encodeURIComponent(blob.url);
+
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({
+      viewerUrl,
+      blobUrl: blob.url,
+      _gdprWarning: "DOCX transferat la Microsoft Office Online (US). Pentru GDPR compliance folosiți GOTENBERG_URL.",
+    });
+  } catch (blobErr) {
+    console.error("Blob upload error:", blobErr.message);
+    return res.status(500).json({ error: "Preview unavailable: " + blobErr.message });
+  }
+}

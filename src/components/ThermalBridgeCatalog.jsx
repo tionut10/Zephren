@@ -1,5 +1,6 @@
 import { useState } from "react";
 import THERMAL_BRIDGES_DB from "../data/thermal-bridges.json";
+import { sanitizeSvg } from "../lib/sanitize-html.js";
 
 export default function ThermalBridgeCatalog({ onSelect, onClose }) {
   const [selectedCat, setSelectedCat] = useState("Joncțiuni pereți");
@@ -168,7 +169,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
               <div key={i} onClick={() => setSelectedBridge(selectedBridge === i ? null : i)}
                 style={{borderRadius:"12px",border:selectedBridge===i?"1px solid rgba(245,158,11,0.4)":"1px solid rgba(255,255,255,0.06)",padding:"16px",cursor:"pointer",background:selectedBridge===i?"rgba(245,158,11,0.05)":"rgba(255,255,255,0.02)"}}>
                 <div style={{borderRadius:"8px",overflow:"hidden",marginBottom:"12px",background:"rgba(255,255,255,0.03)",padding:"8px"}}
-                  dangerouslySetInnerHTML={{ __html: drawIllustration(bridge).replace(/<script[\s\S]*?<\/script>/gi,"").replace(/on\w+\s*=/gi,"data-blocked=") }} />
+                  dangerouslySetInnerHTML={{ __html: sanitizeSvg(drawIllustration(bridge)) }} />
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"12px"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:"13px",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{bridge.name}</div>

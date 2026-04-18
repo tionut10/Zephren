@@ -93,22 +93,96 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
     setTimeout(() => setToast(""), 3000);
   };
 
-  const handleLogin = (e) => {
+  // Sprint 20 (18 apr 2026) — cablare Supabase auth ca fallback cand props lipsesc.
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function getSupabaseClient() {
+    const { createClient } = await import("@supabase/supabase-js");
+    return createClient(
+      import.meta.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
+      import.meta.env.VITE_SUPABASE_ANON_KEY || "placeholder"
+    );
+  }
+
+  // Validare complexitate parolă (minim 8 caractere, cel puțin o literă + o cifră)
+  function validatePasswordStrength(pwd) {
+    if (!pwd || pwd.length < 8) return "Parola trebuie să aibă cel puțin 8 caractere.";
+    if (!/[A-Za-z]/.test(pwd)) return "Parola trebuie să conțină cel puțin o literă.";
+    if (!/[0-9]/.test(pwd))    return "Parola trebuie să conțină cel puțin o cifră.";
+    return null;
+  }
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (onLogin) { onLogin({ email, password }); }
-    else { showToast("Autentificare în curând disponibilă"); }
+    if (loading) return;
+    if (onLogin) { onLogin({ email, password }); return; }
+    setLoading(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showToast("Autentificare reușită. Se deschide aplicația…");
+      setTimeout(() => { if (onStart) onStart(); else window.location.hash = "#app"; }, 600);
+    } catch (err) {
+      const msg = err?.message || "Eroare autentificare";
+      showToast(msg.includes("Invalid login") ? "Email sau parolă incorecte." : msg);
+    } finally { setLoading(false); }
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+    if (loading) return;
     if (password !== confirmPassword) { showToast("Parolele nu se potrivesc"); return; }
-    if (onRegister) { onRegister({ name, email, password }); }
-    else { showToast("Înregistrare în curând disponibilă"); }
+    const pwdErr = validatePasswordStrength(password);
+    if (pwdErr) { showToast(pwdErr); return; }
+    if (!consentAccepted) { showToast("Acceptați Politica de confidențialitate și Termenii pentru a continua."); return; }
+    if (onRegister) { onRegister({ name, email, password }); return; }
+    setLoading(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            consent_privacy_at: nowIso,
+            consent_terms_at: nowIso,
+            privacy_version: "1.0",
+            terms_version: "1.0",
+          },
+          emailRedirectTo: window.location.origin + "/#app",
+        },
+      });
+      if (error) throw error;
+      showToast("Cont creat. Verifică emailul pentru confirmare.");
+    } catch (err) {
+      showToast("Eroare: " + (err?.message || "Înregistrare eșuată"));
+    } finally { setLoading(false); }
   };
 
-  const handleGoogle = () => {
-    if (onGoogleLogin) { onGoogleLogin(); }
-    else { showToast("Autentificare Google în curând disponibilă"); }
+  const handleGoogle = async () => {
+    if (loading) return;
+    if (onGoogleLogin) { onGoogleLogin(); return; }
+    if (mode === "register" && !consentAccepted) {
+      showToast("Acceptați Politica de confidențialitate și Termenii pentru a continua.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const supabase = await getSupabaseClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/#app" },
+      });
+      if (error) throw error;
+      // redirect automat — toast pentru feedback
+      showToast("Redirecționare la Google…");
+    } catch (err) {
+      showToast("Eroare: " + (err?.message || "Autentificare Google eșuată"));
+    } finally { setLoading(false); }
   };
 
   const handleForgot = async (e) => {
@@ -144,9 +218,25 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
           <>
             <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "24px", textAlign: "center" }}>{TM("login_title", "Autentificare Zephren")}</h3>
             <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Password" : "Parolă"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
-              <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{lang === "EN" ? "Login" : "Autentificare"}</button>
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} autoComplete="email" />
+              <input type="password" placeholder={lang === "EN" ? "Password" : "Parolă"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} autoComplete="current-password" />
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: loading ? "rgba(245,158,11,0.4)" : "#f59e0b",
+                  color: "#000",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  marginTop: "4px",
+                }}
+              >
+                {loading ? "Se autentifică…" : (lang === "EN" ? "Login" : "Autentificare")}
+              </button>
             </form>
             <button onClick={handleGoogle} style={{ width: "100%", marginTop: "12px", padding: "12px", borderRadius: "8px", border: `1px solid ${modalBorder}`, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: modalText, fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09A6.97 6.97 0 015.47 12c0-.72.13-1.43.37-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.42l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.77 14.97.5 12 .5 7.7.5 3.99 2.97 2.18 6.57l3.66 2.84c.87-2.6 3.3-4.03 6.16-4.03z" fill="#EA4335"/></svg>
@@ -165,9 +255,40 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
             <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input type="text" placeholder={lang === "EN" ? "Full name" : "Nume complet"} value={name} onChange={e => setName(e.target.value)} required style={inputSt} />
               <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Password" : "Parolă"} value={password} onChange={e => setPassword(e.target.value)} required style={inputSt} />
-              <input type="password" placeholder={lang === "EN" ? "Confirm password" : "Confirmă parola"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required style={inputSt} />
-              <button type="submit" style={{ padding: "12px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", fontWeight: "600", fontSize: "14px", cursor: "pointer", marginTop: "4px" }}>{lang === "EN" ? "Create account" : "Creează cont"}</button>
+              <input type="password" placeholder={lang === "EN" ? "Password (min 8, literă + cifră)" : "Parolă (min 8, literă + cifră)"} value={password} onChange={e => setPassword(e.target.value)} required minLength={8} style={inputSt} />
+              <input type="password" placeholder={lang === "EN" ? "Confirm password" : "Confirmă parola"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={8} style={inputSt} />
+              {/* Sprint 20 — GDPR consent (Art. 6-7 Regulamentul UE 2016/679) */}
+              <label style={{ display: "flex", gap: "8px", fontSize: "12px", color: modalMuted, alignItems: "flex-start", marginTop: "4px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={consentAccepted}
+                  onChange={e => setConsentAccepted(e.target.checked)}
+                  required
+                  style={{ marginTop: "2px", accentColor: "#f59e0b" }}
+                />
+                <span>
+                  {lang === "EN"
+                    ? <>Accept the <a href="/privacy" target="_blank" rel="noopener" style={{ color: "#f59e0b" }}>Privacy Policy</a> and <a href="/terms" target="_blank" rel="noopener" style={{ color: "#f59e0b" }}>Terms</a> (GDPR Art. 6-7).</>
+                    : <>Accept <a href="/privacy" target="_blank" rel="noopener" style={{ color: "#f59e0b" }}>Politica de confidențialitate</a> și <a href="/terms" target="_blank" rel="noopener" style={{ color: "#f59e0b" }}>Termenii de utilizare</a> (GDPR Art. 6-7).</>}
+                </span>
+              </label>
+              <button
+                type="submit"
+                disabled={loading || !consentAccepted}
+                style={{
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: (loading || !consentAccepted) ? "rgba(245,158,11,0.4)" : "#f59e0b",
+                  color: "#000",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: (loading || !consentAccepted) ? "not-allowed" : "pointer",
+                  marginTop: "4px",
+                }}
+              >
+                {loading ? "Se creează contul…" : (lang === "EN" ? "Create account" : "Creează cont")}
+              </button>
             </form>
             <button onClick={handleGoogle} style={{ width: "100%", marginTop: "12px", padding: "12px", borderRadius: "8px", border: `1px solid ${modalBorder}`, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: modalText, fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09A6.97 6.97 0 015.47 12c0-.72.13-1.43.37-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.42l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.77 14.97.5 12 .5 7.7.5 3.99 2.97 2.18 6.57l3.66 2.84c.87-2.6 3.3-4.03 6.16-4.03z" fill="#EA4335"/></svg>

@@ -387,18 +387,26 @@ export async function fetchSolarPotential(lat, lon) {
     throw new Error("Coordonatele lat/lon sunt obligatorii pentru Solar API.");
   }
 
-  const apiKey = typeof import.meta !== "undefined"
-    ? import.meta.env?.VITE_GOOGLE_SOLAR_API_KEY
-    : process.env.VITE_GOOGLE_SOLAR_API_KEY;
-
-  // STUB dacă nu există API key configurat
-  if (!apiKey) {
-    return _solarStub(lat, lon);
+  // Sprint 20 (18 apr 2026) — Securitate:
+  //   API key NU mai e citit client-side (expunere în bundle public).
+  //   Orice variabilă VITE_* e publică (Vite inline în `dist/assets/*.js`).
+  //   Varianta corectă: proxy server-side (`api/solar-proxy.js`), dar suntem la limita
+  //   Hobby plan Vercel (12/12 funcții). Până la upgrade Pro, folosim exclusiv stubul.
+  //   La upgrade plan:
+  //     1. Creează `api/solar-proxy.js` cu `requireAuth` + `checkRateLimit` + `GOOGLE_SOLAR_API_KEY` (fără prefix VITE_)
+  //     2. Înlocuiește stub-ul cu fetch către `/api/solar-proxy?lat=...&lon=...`.
+  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_GOOGLE_SOLAR_API_KEY) {
+    console.warn(
+      "[fetchSolarPotential] VITE_GOOGLE_SOLAR_API_KEY detectat în env client-side — " +
+      "NU se folosește (securitate). Configurați proxy server-side după upgrade plan Vercel."
+    );
   }
+  return _solarStub(lat, lon);
 
+  // eslint-disable-next-line no-unreachable
   const url =
     `https://solar.googleapis.com/v1/buildingInsights:findClosest` +
-    `?location.latitude=${lat}&location.longitude=${lon}&key=${apiKey}`;
+    `?location.latitude=${lat}&location.longitude=${lon}&key=EXPUNERE_BLOCATA`;
 
   let res;
   try {

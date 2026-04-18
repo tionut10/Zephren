@@ -7,7 +7,16 @@
  *   if (!user) return; // 401 already sent
  */
 
-const PLAN_HIERARCHY = { free: 0, pro: 1, business: 2 };
+// Sprint 20 (18 apr 2026) — extindere de la 3 la 6 planuri conform planGating.js.
+// `business` rămâne alias pentru `asociatie` (backward compat din `planGating.js`).
+const PLAN_HIERARCHY = {
+  free:       0,
+  starter:    1,
+  standard:   2,
+  pro:        3,
+  asociatie:  4,
+  business:   4,
+};
 
 /**
  * Verify Bearer token via Supabase GoTrue /auth/v1/user endpoint.

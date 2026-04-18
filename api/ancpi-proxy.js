@@ -145,20 +145,20 @@ async function fetchFromANCPI(nrCadastral, apiKey) {
 }
 
 // ── Handler principal ─────────────────────────────────────────────────────────
-export default async function handler(req, res) {
-  // Setează CORS headers (permite apeluri din browser)
-  res.setHeader("Access-Control-Allow-Origin",  "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+import { applyCors } from "./_middleware/cors.js";
+import { requireAuth } from "./_middleware/auth.js";
 
-  // Preflight OPTIONS
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
+export default async function handler(req, res) {
+  // Sprint 20: CORS allowlist explicit (înlocuiește `*`)
+  if (applyCors(req, res)) return;
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+
+  // Sprint 20: require auth (oricum API ANCPI e sensibil — nu expunem anonim)
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
 
   // ── Rate limiting ──────────────────────────────────────────────────────────
   cleanupRateLimitStore();

@@ -5,11 +5,42 @@
  *
  * Events handled:
  * - checkout.session.completed → activate plan
+ * - customer.subscription.updated → update plan (upgrade/downgrade mid-cycle) — Sprint 20
  * - customer.subscription.deleted → revert to free
- * - customer.subscription.updated → update plan
  */
 
 export const config = { api: { bodyParser: false } };
+
+// Sprint 20 (18 apr 2026) — mapare Stripe Price ID → plan intern.
+// Configurați ID-urile exacte în env vars: STRIPE_PRICE_STARTER, STRIPE_PRICE_STANDARD etc.
+function derivePlanFromPriceId(priceId) {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRICE_STARTER)    return "starter";
+  if (priceId === process.env.STRIPE_PRICE_STANDARD)   return "standard";
+  if (priceId === process.env.STRIPE_PRICE_PRO)        return "pro";
+  if (priceId === process.env.STRIPE_PRICE_ASOCIATIE)  return "asociatie";
+  if (priceId === process.env.STRIPE_PRICE_BUSINESS)   return "business";
+  return null;
+}
+
+async function patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan) {
+  if (!userId || !plan || !supabaseUrl || !supabaseServiceKey) return false;
+  const resp = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}`, {
+    method: "PATCH",
+    headers: {
+      apikey: supabaseServiceKey,
+      Authorization: `Bearer ${supabaseServiceKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ plan }),
+  });
+  if (!resp.ok) {
+    console.error(`[Webhook] PATCH plan failed: ${resp.status} — user ${userId} plan ${plan}`);
+    return false;
+  }
+  return true;
+}
 
 // In-memory idempotency guard: track recently processed event IDs.
 // Prevents duplicate processing from Stripe webhook retries.
@@ -74,40 +105,36 @@ export default async function handler(req, res) {
         const session = event.data?.object;
         const userId = session?.metadata?.userId;
         const plan = session?.metadata?.plan;
+        const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan);
+        if (ok) console.log(`[Webhook] User ${userId} upgraded to ${plan}`);
+        break;
+      }
 
-        if (userId && plan && supabaseUrl && supabaseServiceKey) {
-          await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}`, {
-            method: "PATCH",
-            headers: {
-              apikey: supabaseServiceKey,
-              Authorization: `Bearer ${supabaseServiceKey}`,
-              "Content-Type": "application/json",
-              Prefer: "return=minimal",
-            },
-            body: JSON.stringify({ plan }),
-          });
-          console.log(`[Webhook] User ${userId} upgraded to ${plan}`);
+      // Sprint 20 — upgrade/downgrade mid-cycle (Stripe billing portal, plan change).
+      case "customer.subscription.updated": {
+        const sub = event.data?.object;
+        const userId = sub?.metadata?.userId;
+        const priceId = sub?.items?.data?.[0]?.price?.id;
+        const newPlan = derivePlanFromPriceId(priceId);
+        if (!userId || !newPlan) {
+          console.warn("[Webhook] subscription.updated — cannot derive plan", { userId, priceId });
+          break;
         }
+        // Revert to free if the subscription is canceled or past_due
+        const status = sub?.status;
+        const effectivePlan = (status === "canceled" || status === "unpaid" || status === "incomplete_expired")
+          ? "free"
+          : newPlan;
+        const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, effectivePlan);
+        if (ok) console.log(`[Webhook] User ${userId} plan updated to ${effectivePlan} (status=${status})`);
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data?.object;
         const userId = sub?.metadata?.userId;
-
-        if (userId && supabaseUrl && supabaseServiceKey) {
-          await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}`, {
-            method: "PATCH",
-            headers: {
-              apikey: supabaseServiceKey,
-              Authorization: `Bearer ${supabaseServiceKey}`,
-              "Content-Type": "application/json",
-              Prefer: "return=minimal",
-            },
-            body: JSON.stringify({ plan: "free" }),
-          });
-          console.log(`[Webhook] User ${userId} reverted to free`);
-        }
+        const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, "free");
+        if (ok) console.log(`[Webhook] User ${userId} reverted to free`);
         break;
       }
 

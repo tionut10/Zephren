@@ -4,12 +4,33 @@
  * Receives building data and returns energy calculation results.
  * This keeps calculation logic server-side so it can be updated
  * independently of the client bundle.
+ *
+ * Sprint 20 (18 apr 2026) — auth + rate-limit + CORS allowlist.
  */
+import { requireAuth } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
+import { applyCors } from "./_middleware/cors.js";
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
   // Only allow POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // Auth: require authenticated user (Sprint 20)
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
+  // Rate limit: 60 calcule/h per user (calcul e ieftin dar previne scraping)
+  const limit = checkRateLimit(auth.user.id, 60);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
+
+  // Size limit body (max 256 KB JSON)
+  const contentLength = parseInt(req.headers["content-length"] || "0", 10);
+  if (contentLength > 256 * 1024) {
+    return res.status(413).json({ error: "Request body too large (max 256 KB)" });
   }
 
   try {

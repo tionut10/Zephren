@@ -7,6 +7,10 @@ const EnergyCalcApp = lazy(() => import("./energy-calc.jsx"));
 const LandingPage = lazy(() => import("./landing.jsx"));
 const ClientReport = lazy(() => import("./components/ClientReport.jsx"));
 const MobileWizard = lazy(() => import("./components/MobileWizard.jsx"));
+// Sprint 20 — pagini legale GDPR + banner cookies
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy.jsx"));
+const TermsOfService = lazy(() => import("./components/TermsOfService.jsx"));
+const CookieBanner = lazy(() => import("./components/CookieBanner.jsx"));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -51,21 +55,34 @@ function isMobileRoute() {
   return params.get("mobile") === "1" || window.location.pathname === "/mobile";
 }
 
+// Sprint 20 — detectare rute legale din pathname + hash
+function computeInitialRoute(viewData) {
+  if (isMobileRoute()) return "mobile";
+  if (viewData) return "view";
+  const p = window.location.pathname;
+  if (p === "/privacy" || p === "/privacy/") return "privacy";
+  if (p === "/terms"   || p === "/terms/")   return "terms";
+  const h = window.location.hash;
+  if (h === "#privacy") return "privacy";
+  if (h === "#terms")   return "terms";
+  return h === "#app" ? "app" : "landing";
+}
+
 function Router() {
   const viewData = React.useMemo(() => decodeViewParam(), []);
-  const [route, setRoute] = useState(() => {
-    if (isMobileRoute()) return "mobile";
-    if (viewData) return "view";
-    return window.location.hash === "#app" ? "app" : "landing";
-  });
+  const [route, setRoute] = useState(() => computeInitialRoute(viewData));
 
   const goToApp = () => { window.location.hash = "#app"; setRoute("app"); };
 
   React.useEffect(() => {
     if (viewData) return; // nu schimba ruta dacă suntem în mod view
-    const handler = () => setRoute(window.location.hash === "#app" ? "app" : "landing");
+    const handler = () => setRoute(computeInitialRoute(null));
     window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
+    window.addEventListener("popstate", handler);
+    return () => {
+      window.removeEventListener("hashchange", handler);
+      window.removeEventListener("popstate", handler);
+    };
   }, [viewData]);
 
   return (
@@ -82,11 +99,17 @@ function Router() {
           ? <MobileWizard userPlan="free" />
           : route === "view"
           ? <ClientReport data={viewData} onOpenApp={goToApp} />
+          : route === "privacy"
+          ? <PrivacyPolicy />
+          : route === "terms"
+          ? <TermsOfService />
           : route === "app"
             ? <EnergyCalcApp />
             : <LandingPage onStart={goToApp} />
         }
       </ErrorBoundary>
+      {/* Sprint 20 — Cookie banner (GDPR Art. 7 + Legea 506/2004) */}
+      {(route === "landing" || route === "privacy" || route === "terms") && <CookieBanner />}
     </Suspense>
   );
 }

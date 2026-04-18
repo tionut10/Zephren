@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔸",
+        "text": "sprint-18: UX a11y + validare + sidebar + Step8 categorii (Bloc A-F)"
+      },
+      {
+        "icon": "📄",
+        "text": "vercel.json generate-cpe.py → generate-document.py (Sprint 14 rename)"
+      },
+      {
+        "icon": "📄",
+        "text": "sprint-17: MDLPA submit + PDF/A + SRI auto-map + Pașaport integrat + Registru DOCX/PDF"
+      },
+      {
         "icon": "📄",
         "text": "sprint-16: Anexa 2 bloc multi-apartament + Raport audit Mc 001 P.IV complet"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔬",
         "text": "Sprint 15: curba cost-optimal Pareto + 3 perspective economice + EN 15459-1 complet"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint 14: Costuri unitare + Finanțare RO 2026"
-      },
-      {
-        "icon": "🔬",
-        "text": "Sprint 13: polishing post-Faza 15 — U_lin ACM + aH + Worker semnătură"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint 12: regresie + validare integrată pre-Faza 15"
       }
     ]
   },

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { cn } from "../components/ui.jsx";
+import { sanitizeSvg } from "../lib/sanitize-html.js";
 
 const pad = (n, w = 3) => String(n).padStart(w, "0");
 const isoDate = (d) => d.toISOString().slice(0, 10);
@@ -371,7 +372,7 @@ export default function EFacturaExport({ building, auditor, invoice, onClose }) 
             <pre
               className="flex-1 overflow-auto p-3 text-[11px] leading-relaxed font-mono text-slate-300 bg-[#0e1018]"
               style={{ scrollbarWidth: "thin" }}
-              dangerouslySetInnerHTML={{ __html: highlightXml(xmlStr) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeSvg(highlightXml(xmlStr)) }}
             />
           </div>
         </div>

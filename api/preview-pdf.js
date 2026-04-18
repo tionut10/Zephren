@@ -1,34 +1,54 @@
 /**
- * Vercel Serverless Function — DOCX to PDF/Viewer
+ * Vercel Serverless Function — DOCX to PDF preview (alias pentru preview-docx).
  *
- * 1. Dacă GOTENBERG_URL e configurat → convertește DOCX→PDF via LibreOffice și returnează PDF.
- * 2. Altfel → uploadează DOCX pe Vercel Blob (URL public) și returnează JSON cu
- *    viewerUrl = https://view.officeapps.live.com/op/embed.aspx?src=...
- *    Acesta randează DOCX exact ca Microsoft Word (inclusiv forme floating).
+ * Istoric: conținut identic cu preview-docx.js. Sprint 20 aliniază comportamentul:
+ *   - auth + rate-limit + CORS allowlist
+ *   - filename randomUUID (nu mai e ghicibil timestamp)
+ *   - size limit streaming 10 MB
+ *   - avertisment GDPR pentru calea Office Online
+ *
+ * Pentru PDF real generat server-side (fără transfer Microsoft), configurează
+ * GOTENBERG_URL env var pe Vercel — request-ul va fi convertit prin Railway.
  */
+import { requireAuth } from "./_middleware/auth.js";
+import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
+import { applyCors } from "./_middleware/cors.js";
+import { randomUUID } from "crypto";
 
 export const config = {
   api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (applyCors(req, res)) return;
 
-  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // Citim body-ul
+  // Auth + rate-limit (Sprint 20)
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+
+  const limit = checkRateLimit(auth.user.id, 30);
+  if (!limit.allowed) return sendRateLimitError(res, limit);
+
+  // Streaming read cu limită
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let totalSize = 0;
+  const MAX_SIZE = 10 * 1024 * 1024;
+  for await (const chunk of req) {
+    totalSize += chunk.length;
+    if (totalSize > MAX_SIZE) {
+      return res.status(413).json({ error: "File too large (max 10 MB)" });
+    }
+    chunks.push(chunk);
+  }
   const docxBuffer = Buffer.concat(chunks);
 
   if (docxBuffer.length === 0) {
     return res.status(400).json({ error: "Empty body" });
   }
 
-  // ── Calea 1: Gotenberg (dacă e configurat) ──
+  // ── Calea 1: Gotenberg (preferat GDPR) ──
   const gotenbergUrl = process.env.GOTENBERG_URL;
   if (gotenbergUrl) {
     try {
@@ -59,16 +79,16 @@ export default async function handler(req, res) {
   }
 
   // ── Calea 2: Vercel Blob → Office Online Viewer ──
+  // ⚠️ Sprint 20: transfer GDPR către Microsoft US. Folosiți GOTENBERG_URL pentru UE-only.
   try {
     const { put } = await import("@vercel/blob");
 
-    // Filename unic per sesiune (înlocuiește fișierul vechi la fiecare preview)
-    const filename = `cpe-preview-${Date.now()}.docx`;
+    const filename = `cpe-preview-${randomUUID()}.docx`;
 
     const blob = await put(filename, docxBuffer, {
       access: "public",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      addRandomSuffix: false,
+      addRandomSuffix: true,
     });
 
     const viewerUrl =
@@ -77,7 +97,11 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Cache-Control", "no-store");
-    return res.status(200).json({ viewerUrl, blobUrl: blob.url });
+    return res.status(200).json({
+      viewerUrl,
+      blobUrl: blob.url,
+      _gdprWarning: "DOCX transferat la Microsoft Office Online (US). Pentru GDPR compliance folosiți GOTENBERG_URL.",
+    });
   } catch (blobErr) {
     console.error("Blob upload error:", blobErr.message);
     return res.status(500).json({ error: "Preview unavailable: " + blobErr.message });

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { sanitizeSvg } from "../lib/sanitize-html.js";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
 import CostOptimalCurve from "../components/CostOptimalCurve.jsx";
@@ -1732,7 +1733,7 @@ export default function Step7Audit(props) {
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                         <div className="text-sm font-semibold mb-3">🌡️ Hartă Termică Anvelopă</div>
                         {thermalSVG ? (
-                          <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: thermalSVG }} />
+                          <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: sanitizeSvg(thermalSVG) }} />
                         ) : (
                           <div className="text-center py-8 opacity-30 text-sm">Adăugați elemente de anvelopă pentru a genera harta termică.</div>
                         )}

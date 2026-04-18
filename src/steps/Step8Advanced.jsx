@@ -11,6 +11,7 @@ import {
   validateClimateData,
 } from "../calc/climate-import.js";
 import { cn, Card, Badge, ResultRow } from "../components/ui.jsx";
+import { sanitizeSvg } from "../lib/sanitize-html.js";
 import { calcPeakThermalLoad, calcPeakCoolingLoad } from "../calc/en12831.js";
 import { calcVentilationFlow, VENT_PER_PERSON } from "../calc/ventilation-flow.js";
 import { generateEPBDXML, downloadXML } from "../calc/epbd-xml-export.js";
@@ -2853,7 +2854,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
             subtitle="Vizualizare flux termic per element — albastru (pierderi mici) → roșu (pierderi mari)" />
           {thermalMap?.svg ? (
             <div className="space-y-4">
-              <div dangerouslySetInnerHTML={{ __html: thermalMap.svg }} className="rounded-lg overflow-hidden" />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(thermalMap.svg) }} className="rounded-lg overflow-hidden" />
               <div className="text-xs text-slate-400">Flux maxim: {thermalMap.maxFlux} W/m² la ΔT = {Math.abs((building?.theta_int||20)-(climate?.theta_e||-15))}°C</div>
               {tbHeatmap?.length > 0 && (
                 <div>
