@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "./ui.jsx";
+import { getExpiryDate, getValidityYears } from "../utils/cpe-validity.js";
 
 const LS_KEY = "zephren_cpe_alert_system";
 
@@ -15,19 +16,16 @@ const CLASS_COLORS = {
   "G":  "bg-rose-600/20 text-rose-300 border-rose-600/30",
 };
 
-function expiryDate(issueDate) {
-  if (!issueDate) return null;
-  const d = new Date(issueDate);
-  d.setFullYear(d.getFullYear() + 10);
-  return d;
+function expiryDate(issueDate, energyClass) {
+  return getExpiryDate(issueDate, energyClass);
 }
 
 function monthsUntil(date) {
   return (date - new Date()) / (1000 * 60 * 60 * 24 * 30.44);
 }
 
-function getAlertStatus(issueDate) {
-  const exp = expiryDate(issueDate);
+function getAlertStatus(issueDate, energyClass) {
+  const exp = expiryDate(issueDate, energyClass);
   if (!exp) return { label: "—", color: "text-white/40", urgency: 99 };
   const months = monthsUntil(exp);
   if (months < 0)   return { label: "EXPIRAT",  color: "text-red-400",    badge: "bg-red-500/25 text-red-300 border border-red-500/40",       urgency: 0 };
@@ -43,8 +41,8 @@ function fmtDate(iso) {
   return `${d}.${m}.${y}`;
 }
 
-function fmtExpiry(issueDate) {
-  const exp = expiryDate(issueDate);
+function fmtExpiry(issueDate, energyClass) {
+  const exp = expiryDate(issueDate, energyClass);
   if (!exp) return "—";
   return fmtDate(exp.toISOString().slice(0, 10));
 }
@@ -103,10 +101,11 @@ export default function CPEAlertSystem({ cpeList: cpeListProp = [], onAddCPE, on
   }
 
   function exportCSV() {
-    const header = ["Adresă", "Proprietar", "Clasă", "Data emitere", "Data expirare", "Status", "Reînnoit"];
+    const header = ["Adresă", "Proprietar", "Clasă", "Data emitere", "Data expirare", "Valabilitate (ani)", "Status", "Reînnoit"];
     const rows = list.map(r => [
       r.address, r.owner || "", r.energyClass, fmtDate(r.issueDate),
-      fmtExpiry(r.issueDate), getAlertStatus(r.issueDate).label, r.renewed ? "Da" : "Nu",
+      fmtExpiry(r.issueDate, r.energyClass), getValidityYears(r.energyClass),
+      getAlertStatus(r.issueDate, r.energyClass).label, r.renewed ? "Da" : "Nu",
     ]);
     const csv = [header, ...rows].map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -118,12 +117,13 @@ export default function CPEAlertSystem({ cpeList: cpeListProp = [], onAddCPE, on
   }
 
   const withStatus = useMemo(() =>
-    list.map(r => ({ ...r, _status: getAlertStatus(r.issueDate) })),
+    list.map(r => ({ ...r, _status: getAlertStatus(r.issueDate, r.energyClass) })),
   [list]);
 
   const filtered = useMemo(() => {
     return withStatus.filter(r => {
-      const months = expiryDate(r.issueDate) ? monthsUntil(expiryDate(r.issueDate)) : 0;
+      const exp = expiryDate(r.issueDate, r.energyClass);
+      const months = exp ? monthsUntil(exp) : 0;
       if (filter === "expirate") return months < 0;
       if (filter === "sub1an")   return months < 12;
       if (filter === "sub2ani")  return months < 24;
@@ -135,7 +135,10 @@ export default function CPEAlertSystem({ cpeList: cpeListProp = [], onAddCPE, on
     return [...filtered].sort((a, b) => {
       let va, vb;
       if (sortKey === "urgency")    { va = a._status.urgency; vb = b._status.urgency; }
-      else if (sortKey === "expiry") { va = expiryDate(a.issueDate)?.getTime() || 0; vb = expiryDate(b.issueDate)?.getTime() || 0; }
+      else if (sortKey === "expiry") {
+        va = expiryDate(a.issueDate, a.energyClass)?.getTime() || 0;
+        vb = expiryDate(b.issueDate, b.energyClass)?.getTime() || 0;
+      }
       else if (sortKey === "address") { va = a.address; vb = b.address; }
       else { va = a.issueDate; vb = b.issueDate; }
       if (typeof va === "string") return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -300,7 +303,10 @@ export default function CPEAlertSystem({ cpeList: cpeListProp = [], onAddCPE, on
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-white/60 whitespace-nowrap">{fmtDate(r.issueDate)}</td>
-                    <td className="px-3 py-2.5 text-white/60 whitespace-nowrap">{fmtExpiry(r.issueDate)}</td>
+                    <td className="px-3 py-2.5 text-white/60 whitespace-nowrap" title={`valabil ${getValidityYears(r.energyClass)} ani (EPBD 2024 Art. 17)`}>
+                      {fmtExpiry(r.issueDate, r.energyClass)}
+                      <span className="ml-1 text-[9px] opacity-40">({getValidityYears(r.energyClass)}a)</span>
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1">
                         {!r.renewed && (
@@ -324,7 +330,7 @@ export default function CPEAlertSystem({ cpeList: cpeListProp = [], onAddCPE, on
       )}
 
       <p className="text-xs text-white/25 text-right">
-        Valabilitate CPE: 10 ani (HG 917/2021, Art. 9) · {list.length} certificate monitorizate · sortare automată după urgență
+        Valabilitate: 10 ani clase A+..C / 5 ani clase D..G (EPBD 2024/1275 Art. 17) · {list.length} certificate monitorizate · sortare automată după urgență
       </p>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "./ui.jsx";
+import { getExpiryDate, getValidityYears, getNotificationIntervals } from "../utils/cpe-validity.js";
 
 /**
  * CPENotificationManager — Gestionare notificări expirare CPE către proprietari
@@ -31,7 +32,7 @@ Certificatul de performanță energetică (CPE) al imobilului situat la adresa:
 
 emis la data de {{data_emitere}} expiră la {{data_expirare}} ({{interval}}).
 
-Conform HG 917/2021, Art. 9, certificatul are o valabilitate de 10 ani. Pentru reînnoire, este necesară o nouă evaluare energetică de către un auditor atestat.
+Conform Directivei UE 2024/1275 (EPBD IV) Art. 17, valabilitatea CPE este de {{valabilitate_ani}} ani pentru clasa energetică {{clasa}} a clădirii dumneavoastră. Pentru reînnoire, este necesară o nouă evaluare energetică de către un auditor atestat.
 
 Vă recomandăm să planificați reînnoirea din timp pentru a evita orice inconveniență legală sau financiară.
 
@@ -50,11 +51,8 @@ const SEND_METHODS = [
   { id: "whatsapp", label: "WhatsApp",     icon: "💬", available: false },
 ];
 
-function expiryDate(issueDate) {
-  if (!issueDate) return null;
-  const d = new Date(issueDate);
-  d.setFullYear(d.getFullYear() + 10);
-  return d;
+function expiryDate(issueDate, energyClass) {
+  return getExpiryDate(issueDate, energyClass);
 }
 
 function monthsUntil(date) {
@@ -86,18 +84,28 @@ export default function CPENotificationManager({
 
     cpeList.forEach(cpe => {
       if (!cpe.issueDate || cpe.renewed) return;
-      const exp = expiryDate(cpe.issueDate);
+      const exp = expiryDate(cpe.issueDate, cpe.energyClass);
       if (!exp) return;
 
       const months = monthsUntil(exp);
 
-      NOTIFICATION_INTERVALS.forEach(interval => {
+      // Sprint 15 (EPBD 2024 Art. 17) — intervale diferențiate pe clasa energetică:
+      // 10 ani (A+..C) → intervale standard 12/6/3/1/exp
+      // 5 ani (D..G)   → intervale proporționale 30/18/6/1/exp
+      const classIntervals = getNotificationIntervals(cpe.energyClass);
+
+      classIntervals.forEach(interval => {
         if (!enabledIntervals.includes(interval.id)) return;
 
-        // Verifică dacă notificarea trebuie trimisă
+        // Pentru fiecare interval, calculăm fereastra în care notificarea trebuie trimisă:
+        // fereastra = (următorul interval mai mic .. intervalul curent]
+        const sorted = [...classIntervals].sort((a, b) => a.months - b.months);
+        const idx = sorted.findIndex(i => i.id === interval.id);
+        const lowerBound = idx > 0 ? sorted[idx - 1].months : 0;
+
         const shouldNotify =
           (interval.months === 0 && months <= 0) ||
-          (interval.months > 0 && months <= interval.months && months > (interval.months === 12 ? 6 : interval.months === 6 ? 3 : interval.months === 3 ? 1 : 0));
+          (interval.months > 0 && months <= interval.months && months > lowerBound);
 
         if (!shouldNotify) return;
 
@@ -123,13 +131,15 @@ export default function CPENotificationManager({
 
   // Generează email din template
   function renderTemplate(cpe, interval) {
-    const exp = expiryDate(cpe.issueDate);
+    const exp = expiryDate(cpe.issueDate, cpe.energyClass);
     const replacements = {
       "{{proprietar}}":         cpe.owner || "Proprietar",
       "{{adresa}}":             cpe.address || "—",
       "{{data_emitere}}":       formatDate(cpe.issueDate),
       "{{data_expirare}}":      exp ? formatDate(exp.toISOString().slice(0, 10)) : "—",
       "{{interval}}":           interval.label,
+      "{{clasa}}":              cpe.energyClass || "—",
+      "{{valabilitate_ani}}":   String(getValidityYears(cpe.energyClass)),
       "{{auditor_nume}}":       auditorInfo.name || "—",
       "{{auditor_legitimatie}}": auditorInfo.license_number || "—",
     };
@@ -354,7 +364,7 @@ export default function CPENotificationManager({
               className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono leading-relaxed focus:outline-none focus:border-amber-500/50 transition-all resize-y" />
           </div>
           <div className="text-xs text-white/25">
-            Variabile: {"{{proprietar}}"}, {"{{adresa}}"}, {"{{data_emitere}}"}, {"{{data_expirare}}"}, {"{{interval}}"}, {"{{auditor_nume}}"}, {"{{auditor_legitimatie}}"}
+            Variabile: {"{{proprietar}}"}, {"{{adresa}}"}, {"{{data_emitere}}"}, {"{{data_expirare}}"}, {"{{interval}}"}, {"{{clasa}}"}, {"{{valabilitate_ani}}"}, {"{{auditor_nume}}"}, {"{{auditor_legitimatie}}"}
           </div>
           <button onClick={() => setTemplate(DEFAULT_TEMPLATE)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-white/40 hover:bg-white/10 transition-all">
@@ -380,7 +390,7 @@ export default function CPENotificationManager({
       )}
 
       <p className="text-xs text-white/20 text-right">
-        HG 917/2021 Art. 9 — CPE valid 10 ani · Email via mailto / EmailJS / Supabase Edge · SMS în dezvoltare
+        EPBD 2024/1275 Art. 17 — CPE valid 10 ani (clase A+..C) / 5 ani (clase D..G) · Email via mailto / EmailJS / Supabase Edge · SMS în dezvoltare
       </p>
     </div>
   );

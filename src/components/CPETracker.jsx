@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "./ui.jsx";
+import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 
 const LS_KEY = "zephren_cpe_registry";
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -30,11 +31,8 @@ function ClassBadge({ cls }) {
   );
 }
 
-function expiryDate(issueDate) {
-  if (!issueDate) return null;
-  const d = new Date(issueDate);
-  d.setFullYear(d.getFullYear() + 10);
-  return d;
+function expiryDate(issueDate, energyClass) {
+  return getExpiryDate(issueDate, energyClass);
 }
 
 function monthsUntil(date) {
@@ -43,8 +41,8 @@ function monthsUntil(date) {
   return diff;
 }
 
-function getStatus(issueDate) {
-  const exp = expiryDate(issueDate);
+function getStatus(issueDate, energyClass) {
+  const exp = expiryDate(issueDate, energyClass);
   if (!exp) return { label: "—", color: "text-white/40", badge: "bg-white/10 text-white/40" };
   const months = monthsUntil(exp);
   if (months < 0) return { label: "Expirat", color: "text-red-400", badge: "bg-red-500/20 text-red-300 border border-red-500/30" };
@@ -58,8 +56,8 @@ function fmtDate(iso) {
   return `${d}.${m}.${y}`;
 }
 
-function fmtExpiry(issueDate) {
-  const exp = expiryDate(issueDate);
+function fmtExpiry(issueDate, energyClass) {
+  const exp = expiryDate(issueDate, energyClass);
   if (!exp) return "—";
   return fmtDate(exp.toISOString().slice(0, 10));
 }
@@ -124,10 +122,11 @@ export default function CPETracker({ building = {}, auditor = {} }) {
   }
 
   function handleExportCSV() {
-    const header = ["ID", "Adresă", "Categorie", "Au (m²)", "Clasă", "Data emitere", "Data expirare", "Nr. certificat", "Auditor", "Note", "Status"];
+    const header = ["ID", "Adresă", "Categorie", "Au (m²)", "Clasă", "Data emitere", "Data expirare", "Valabilitate (ani)", "Nr. certificat", "Auditor", "Note", "Status"];
     const rows = registry.map(r => [
       r.id, r.address, r.category, r.au, r.energyClass, fmtDate(r.issueDate),
-      fmtExpiry(r.issueDate), r.certNr, r.auditorName, r.notes, getStatus(r.issueDate).label,
+      fmtExpiry(r.issueDate, r.energyClass), getValidityYears(r.energyClass),
+      r.certNr, r.auditorName, r.notes, getStatus(r.issueDate, r.energyClass).label,
     ]);
     const csv = [header, ...rows].map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -139,7 +138,8 @@ export default function CPETracker({ building = {}, auditor = {} }) {
 
   const filtered = useMemo(() => {
     return registry.filter(r => {
-      const months = expiryDate(r.issueDate) ? monthsUntil(expiryDate(r.issueDate)) : 0;
+      const exp = expiryDate(r.issueDate, r.energyClass);
+      const months = exp ? monthsUntil(exp) : 0;
       if (filter === "active") return months >= 6;
       if (filter === "expirate") return months < 0;
       if (filter === "curand") return months >= 0 && months < 6;
@@ -152,7 +152,10 @@ export default function CPETracker({ building = {}, auditor = {} }) {
       let va, vb;
       if (sortKey === "address") { va = a.address; vb = b.address; }
       else if (sortKey === "energyClass") { va = ENERGY_CLASSES.indexOf(a.energyClass); vb = ENERGY_CLASSES.indexOf(b.energyClass); }
-      else if (sortKey === "expiry") { va = expiryDate(a.issueDate)?.getTime() || 0; vb = expiryDate(b.issueDate)?.getTime() || 0; }
+      else if (sortKey === "expiry") {
+        va = expiryDate(a.issueDate, a.energyClass)?.getTime() || 0;
+        vb = expiryDate(b.issueDate, b.energyClass)?.getTime() || 0;
+      }
       else { va = a.issueDate; vb = b.issueDate; }
       if (va < vb) return sortDir === "asc" ? -1 : 1;
       if (va > vb) return sortDir === "asc" ? 1 : -1;
@@ -162,8 +165,16 @@ export default function CPETracker({ building = {}, auditor = {} }) {
 
   const stats = useMemo(() => {
     const total = registry.length;
-    const expired = registry.filter(r => monthsUntil(expiryDate(r.issueDate)) < 0).length;
-    const soon = registry.filter(r => { const m = monthsUntil(expiryDate(r.issueDate)); return m >= 0 && m < 6; }).length;
+    const expired = registry.filter(r => {
+      const exp = expiryDate(r.issueDate, r.energyClass);
+      return exp && monthsUntil(exp) < 0;
+    }).length;
+    const soon = registry.filter(r => {
+      const exp = expiryDate(r.issueDate, r.energyClass);
+      if (!exp) return false;
+      const m = monthsUntil(exp);
+      return m >= 0 && m < 6;
+    }).length;
     const active = total - expired;
     return { total, active, expired, soon, activePct: total ? Math.round((active / total) * 100) : 0 };
   }, [registry]);
@@ -320,8 +331,10 @@ export default function CPETracker({ building = {}, auditor = {} }) {
             </thead>
             <tbody>
               {sorted.map(r => {
-                const status = getStatus(r.issueDate);
-                const months = expiryDate(r.issueDate) ? monthsUntil(expiryDate(r.issueDate)) : 99;
+                const status = getStatus(r.issueDate, r.energyClass);
+                const exp = expiryDate(r.issueDate, r.energyClass);
+                const months = exp ? monthsUntil(exp) : 99;
+                const validYears = getValidityYears(r.energyClass);
                 const rowCls = months < 0
                   ? "bg-red-950/20 border-b border-red-900/20 hover:bg-red-950/30"
                   : months < 6
@@ -334,7 +347,10 @@ export default function CPETracker({ building = {}, auditor = {} }) {
                     <td className="px-3 py-2.5 text-white/60">{r.au || "—"}</td>
                     <td className="px-3 py-2.5"><ClassBadge cls={r.energyClass} /></td>
                     <td className="px-3 py-2.5 text-white/60 whitespace-nowrap">{fmtDate(r.issueDate)}</td>
-                    <td className="px-3 py-2.5 text-white/60 whitespace-nowrap">{fmtExpiry(r.issueDate)}</td>
+                    <td className="px-3 py-2.5 text-white/60 whitespace-nowrap" title={`valabil ${validYears} ani (EPBD 2024 Art. 17)`}>
+                      {fmtExpiry(r.issueDate, r.energyClass)}
+                      <span className="ml-1 text-[9px] opacity-40">({validYears}a)</span>
+                    </td>
                     <td className="px-3 py-2.5">
                       <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap", status.badge)}>
                         {status.label}
@@ -358,7 +374,7 @@ export default function CPETracker({ building = {}, auditor = {} }) {
       )}
 
       <p className="text-xs text-white/25 text-right">
-        Valabilitate CPE: 10 ani (HG 917/2021, Art. 9) · {registry.length} înregistrări salvate local
+        Valabilitate CPE: 10 ani clase A+..C / 5 ani clase D..G (EPBD 2024/1275 Art. 17) · {registry.length} înregistrări salvate local
       </p>
     </div>
   );

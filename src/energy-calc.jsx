@@ -3883,19 +3883,43 @@ export default function EnergyCalcApp({ cloud }) {
               <Suspense fallback={<div className="py-20 text-center opacity-40 text-sm">Se încarcă formularul audit...</div>}>
               <AuditClientDataForm
                 onDataChange={(data) => {
+                  // Sprint 15 — FIX integrare AuditClientDataForm → Step7Audit.
+                  // formData este FLAT ({ [fieldId]: value }), nu nested pe secțiuni.
+                  // Înainte de Sprint 15, handler-ul folosea data.documentation.X (nested) →
+                  // totul era undefined și nimic nu se propaga. Acum citim flat.
+                  if (!data || typeof data !== "object") return;
+
                   // ── Auto-populate câmpuri clădire ──
                   const bUpdates = {};
-                  if (data.documentation?.buildingAddress && !building.address)
-                    bUpdates.address = data.documentation.buildingAddress;
-                  if (data.documentation?.constructionYear && !building.yearBuilt)
-                    bUpdates.yearBuilt = String(data.documentation.constructionYear);
-                  if (data.envelope?.totalBuildingArea && !building.areaUseful)
-                    bUpdates.areaUseful = String(data.envelope.totalBuildingArea);
-                  if (data.envelope?.buildingVolume && !building.volume)
-                    bUpdates.volume = String(data.envelope.buildingVolume);
-                  if (data.admin?.occupantsNumber && !building.occupants)
-                    bUpdates.occupants = String(data.admin.occupantsNumber);
+                  // Identificare
+                  if (data.buildingAddress && !building.address) bUpdates.address = data.buildingAddress;
+                  if (data.constructionYear && !building.yearBuilt) bUpdates.yearBuilt = String(data.constructionYear);
+                  if (data.latitude) bUpdates.latitude = String(data.latitude);
+                  if (data.longitude) bUpdates.longitude = String(data.longitude);
+                  if (data.ownerName && !building.owner) bUpdates.owner = data.ownerName;
+                  // Sprint 15 — identificare juridică
+                  if (data.cadastralNumber && !building.cadastralNumber) bUpdates.cadastralNumber = data.cadastralNumber;
+                  if (data.landBook && !building.landBook) bUpdates.landBook = data.landBook;
+                  if (data.areaBuilt && !building.areaBuilt) bUpdates.areaBuilt = String(data.areaBuilt);
+                  if (data.nApartments && (!building.nApartments || building.nApartments === "1")) bUpdates.nApartments = String(data.nApartments);
+                  // Anvelopă
+                  if (data.totalBuildingArea && !building.areaUseful) bUpdates.areaUseful = String(data.totalBuildingArea);
+                  if (data.usefulArea && !building.areaUseful) bUpdates.areaUseful = String(data.usefulArea);
+                  if (data.buildingVolume && !building.volume) bUpdates.volume = String(data.buildingVolume);
+                  // Administrativ
+                  if (data.occupantsNumber && !building.occupants) bUpdates.occupants = String(data.occupantsNumber);
                   if (Object.keys(bUpdates).length) setBuilding(b => ({ ...b, ...bUpdates }));
+
+                  // ── Auto-populate auditor (Sprint 15) ──
+                  const aUpdates = {};
+                  if (data.auditorName && !auditor.name) aUpdates.name = data.auditorName;
+                  if (data.auditorRegistry && !auditor.atestat) aUpdates.atestat = data.auditorRegistry;
+                  if (data.auditorCompany && !auditor.company) aUpdates.company = data.auditorCompany;
+                  if (data.signatureDataURL) aUpdates.signatureDataURL = data.signatureDataURL;
+                  if (data.stampDataURL) aUpdates.stampDataURL = data.stampDataURL;
+                  if (Object.keys(aUpdates).length && typeof setAuditor === "function") {
+                    setAuditor(a => ({ ...a, ...aUpdates }));
+                  }
 
                   // ── Auto-populate sistem încălzire ──
                   const heatingMap = {
@@ -3903,39 +3927,39 @@ export default function EnergyCalcApp({ cloud }) {
                     "Pompă de căldură": "HP_AA", "Încălzire electrică": "ELECTRICA",
                     "Lemn/biomasa": "BIOMASA", "Centralizată": "DISTRICT",
                   };
-                  if (data.thermal?.heatingSystem && heatingMap[data.thermal.heatingSystem]) {
-                    setHeating(h => ({ ...h, source: heatingMap[data.thermal.heatingSystem] }));
+                  if (data.heatingSystem && heatingMap[data.heatingSystem]) {
+                    setHeating(h => ({ ...h, source: heatingMap[data.heatingSystem] }));
                   }
-                  if (data.thermal?.boilerPower && !heating.power)
-                    setHeating(h => ({ ...h, power: String(data.thermal.boilerPower) }));
-                  if (data.thermal?.boilerEfficiency && !heating.eta)
-                    setHeating(h => ({ ...h, eta: String(data.thermal.boilerEfficiency / 100) }));
+                  if (data.boilerPower && !heating.power)
+                    setHeating(h => ({ ...h, power: String(data.boilerPower) }));
+                  if (data.boilerEfficiency && !heating.eta_gen)
+                    setHeating(h => ({ ...h, eta_gen: String(data.boilerEfficiency / 100) }));
 
                   // ── Auto-populate ventilație ──
                   const ventMap = { "Naturală": "NAT", "Mecanică cu recuperare": "VMCR", "Mecanică fără recuperare": "VMC" };
-                  if (data.thermal?.ventilationType && ventMap[data.thermal.ventilationType])
-                    setVentilation(v => ({ ...v, type: ventMap[data.thermal.ventilationType] }));
+                  if (data.ventilationType && ventMap[data.ventilationType])
+                    setVentilation(v => ({ ...v, type: ventMap[data.ventilationType] }));
 
                   // ── Auto-populate iluminat ──
                   const lightMap = { "LED": "LED", "Fluoreșcente": "FL", "Incandescență": "INC", "Halogeni": "INC", "Mixă": "MIX" };
-                  if (data.electrical?.lightingType && lightMap[data.electrical.lightingType])
-                    setLighting(l => ({ ...l, type: lightMap[data.electrical.lightingType] }));
+                  if (data.lightingType && lightMap[data.lightingType])
+                    setLighting(l => ({ ...l, type: lightMap[data.lightingType] }));
 
                   // ── Auto-populate fotovoltaic ──
-                  if (data.electrical?.hasPV === "Da") {
+                  if (data.hasPV === "Da") {
                     const pvUpdates = { enabled: true };
-                    if (data.electrical.pvInstalledPower) pvUpdates.power = String(data.electrical.pvInstalledPower);
+                    if (data.pvInstalledPower) pvUpdates.peakPower = String(data.pvInstalledPower);
                     setPhotovoltaic(p => ({ ...p, ...pvUpdates }));
                   }
                   // ── Auto-populate solar termic ──
-                  if (data.electrical?.hasSolarThermal === "Da") {
+                  if (data.hasSolarThermal === "Da") {
                     const stUpdates = { enabled: true };
-                    if (data.electrical.solarThermalArea) stUpdates.area = String(data.electrical.solarThermalArea);
+                    if (data.solarThermalArea) stUpdates.area = String(data.solarThermalArea);
                     setSolarThermal(s => ({ ...s, ...stUpdates }));
                   }
 
                   // ── Răcire ──
-                  if (data.thermal?.hasCooling && data.thermal.hasCooling !== "Nu")
+                  if (data.hasCooling && data.hasCooling !== "Nu")
                     setCooling(c => ({ ...c, hasCooling: true }));
                 }}
               />

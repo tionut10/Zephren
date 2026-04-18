@@ -21,6 +21,21 @@ export const INITIAL_BUILDING = {
   longitude:"",  // grad zecimal WGS84, ex: "26.1025"
   // Date proprietar/administrator — Anexa 6, col. G
   owner:"",
+  // ── Sprint 15 (18 apr 2026) — Identificare juridică Ord. MDLPA 16/2023 Anexa 1 ──
+  cadastralNumber:"",    // Nr. cadastral ANCPI (ex: "123456-A")
+  landBook:"",           // Carte Funciară (ex: "CF nr. 123456 București Sect. 3")
+  areaBuilt:"",          // Suprafață construită desfășurată Acd [m²] — distinct de areaUseful
+  areaHeated:"",         // Suprafață încălzită efectivă [m²] — poate diferi de Au
+  nApartments:"1",       // Număr apartamente (pentru bloc / RC / RA)
+  apartmentNo:"",        // Număr apartament individual (pentru RA)
+  staircase:"",          // Scara (ex: "A", "B")
+  floor:"",              // Etaj (pentru apartament)
+  // ── Sprint 15 — EPBD 2024 indicatori noi ──
+  evChargingPoints:"0",  // Nr. puncte de încărcare EV instalate (EPBD 2024 Art. 14)
+  evChargingPrepared:"0", // Nr. locuri parcare pregătite EV (precablare) — L.238/2024
+  co2MaxPpm:"",          // CO₂ indoor (ppm) — IAQ (EN 16798-1)
+  pm25Avg:"",            // PM2.5 (μg/m³) — IAQ (WHO 2021)
+  scaleVersion:"2023",   // "2023" = A+..G actual | "2030_zeb" = rescalare ZEB=A (EPBD 2030)
   // Date post-renovare — Anexa 6, col. P-S (dacă e cazul)
   energyClassAfterRenov:"",      // clasa energetică după renovare (A+..G)
   emissionClassAfterRenov:"",    // clasa emisii după renovare (A+..G)
@@ -151,4 +166,7 @@ export const INITIAL_AUDITOR = {
   // Sprint 14 — cod unic CPE generat (format Ord. MDLPA 16/2023 + L.238/2024)
   cpeCode:"",                              // codul unic final: {mdlpa}_{data}_{Nume}_{Prenume}_{serie}_{nr}_{idx}_CPE_{hash8}
   registryIndex:"1",                       // index în registrul local al auditorului (incremental)
+  // Sprint 15 — Semnătură + ștampilă auditor (PNG dataURL cu transparență, max ~300KB)
+  signatureDataURL:"",                     // dataURL PNG semnătură (dimensiune optimă 400x150)
+  stampDataURL:"",                         // dataURL PNG ștampilă (dimensiune optimă 150x150)
 };

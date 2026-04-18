@@ -17,9 +17,17 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import json, io, base64, re, copy
 from docx import Document
-from docx.shared import Inches, Emu, Pt
+from docx.shared import Inches, Emu, Pt, Cm
 from docx.enum.section import WD_ORIENT
 from lxml import etree
+
+# ── Sprint 15 — segno pentru QR scanabil (pure Python, ~200 KB) ──
+try:
+    import segno  # type: ignore
+    _SEGNO_AVAILABLE = True
+except ImportError:  # pragma: no cover — dev fallback
+    segno = None
+    _SEGNO_AVAILABLE = False
 
 
 # ═══════════════════════════════════════════════════════
@@ -172,6 +180,137 @@ def _iter_all_paragraphs(doc, include_txbx=True):
         for txbx_elem in doc.element.body.iter(txbx_tag):
             for p_elem in txbx_elem.iter(p_tag):
                 yield DocxPara(p_elem, None)
+
+
+# ═══════════════════════════════════════════════════════
+# Sprint 15 — Semnătură + Ștampilă + QR helper (injecție imagini)
+# ═══════════════════════════════════════════════════════
+
+def _iter_paragraphs_for_placeholder(doc):
+    """Iterator peste paragrafe + celule de tabel — pentru căutarea placeholder-urilor
+    în întregul document (inclusiv tabele)."""
+    for p in doc.paragraphs:
+        yield p
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    yield p
+
+
+def _replace_placeholder_with_image(doc, placeholder, img_bytes, width_cm=4.0):
+    """Găsește placeholder în text și îl înlocuiește cu o imagine PNG embed.
+
+    Întoarce numărul de înlocuiri efectuate. Șterge textul placeholder-ului și
+    adaugă imaginea în același paragraf. Ordinea textului rămas este păstrată.
+    """
+    if not img_bytes or not placeholder:
+        return 0
+    count = 0
+    for p in _iter_paragraphs_for_placeholder(doc):
+        if placeholder not in p.text:
+            continue
+        # Găsim run-ul care conține placeholder-ul și îl curățăm
+        for run in p.runs:
+            if placeholder in run.text:
+                # Împărțim textul în [before][placeholder][after]
+                before, _, after = run.text.partition(placeholder)
+                run.text = before
+                # Inserăm imaginea ca run nou (după run-ul curent)
+                img_run = p.add_run()
+                try:
+                    img_run.add_picture(io.BytesIO(img_bytes), width=Cm(width_cm))
+                    count += 1
+                except Exception:
+                    # Imaginea invalidă — lasă placeholder șters fără imagine
+                    pass
+                if after:
+                    p.add_run(after)
+                break  # O singură injecție per paragraf (prima apariție)
+    return count
+
+
+def insert_signature_stamp(doc, signature_b64, stamp_b64):
+    """Înlocuiește placeholder-urile {{SEMNATURA}} / {{STAMPILA}} cu imaginile PNG.
+
+    Sprint 15 — Ord. MDLPA 16/2023 + uzanță juridică CPE autentificat.
+
+    Semnătură: 5 cm lățime, ștampilă: 3 cm lățime. Dacă template-ul nu are
+    placeholder, imaginile sunt adăugate la finalul documentului (ca ultimă soluție).
+    """
+    sig_count = 0
+    stamp_count = 0
+
+    if signature_b64:
+        try:
+            sig_bytes = base64.b64decode(signature_b64)
+            for ph in ["{{SEMNATURA}}", "{{SIGNATURE}}", "[[SIGNATURE]]", "{SEMNATURA}"]:
+                sig_count += _replace_placeholder_with_image(doc, ph, sig_bytes, width_cm=5.0)
+        except Exception:
+            pass
+
+    if stamp_b64:
+        try:
+            stamp_bytes = base64.b64decode(stamp_b64)
+            for ph in ["{{STAMPILA}}", "{{STAMP}}", "[[STAMP]]", "{STAMPILA}"]:
+                stamp_count += _replace_placeholder_with_image(doc, ph, stamp_bytes, width_cm=3.0)
+        except Exception:
+            pass
+
+    # Fallback: dacă template-ul nu are placeholder-uri pentru semnătură/ștampilă,
+    # adăugăm un paragraf final „Autentificat" cu ambele imagini — garantează
+    # că imaginile ajung în DOCX indiferent de starea template-ului.
+    if (signature_b64 or stamp_b64) and sig_count == 0 and stamp_count == 0:
+        try:
+            p = doc.add_paragraph()
+            p.add_run("Semnătură auditor / Ștampilă: ")
+            if signature_b64:
+                sig_bytes = base64.b64decode(signature_b64)
+                p.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
+                p.add_run("  ")
+            if stamp_b64:
+                stamp_bytes = base64.b64decode(stamp_b64)
+                p.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
+        except Exception:
+            pass
+
+    return {"signature": sig_count, "stamp": stamp_count}
+
+
+def generate_qr_png(url, scale=5, border=2):
+    """Generează un PNG QR scanabil pentru URL-ul dat.
+
+    Folosește segno (pure Python, ~200 KB — NU qrcode+Pillow ~10 MB).
+    Error correction M = ~15% rezistență la degradare.
+    """
+    if not _SEGNO_AVAILABLE or not url:
+        return None
+    try:
+        qr = segno.make(url, error="m")
+        buf = io.BytesIO()
+        qr.save(buf, kind="png", scale=scale, border=border)
+        return buf.getvalue()
+    except Exception:
+        return None
+
+
+def insert_qr_code(doc, verify_url, cpe_code=""):
+    """Inserează QR code scanabil pentru URL verificare.
+
+    Sprint 15 — autentificare vizuală CPE. URL-ul: https://zephren.ro/verify/{cpeCode}
+
+    Placeholder-uri suportate: {{QR_CODE}}, {{QR}}, [[QR_CODE]]
+    Dacă template-ul nu are placeholder, QR nu se inserează (evită glitching DOCX).
+    """
+    if not verify_url:
+        return 0
+    qr_bytes = generate_qr_png(verify_url)
+    if not qr_bytes:
+        return 0
+    count = 0
+    for ph in ["{{QR_CODE}}", "{{QR}}", "[[QR_CODE]]", "{QR_CODE}"]:
+        count += _replace_placeholder_with_image(doc, ph, qr_bytes, width_cm=2.5)
+    return count
 
 
 def replace_in_doc(doc, old_text, new_text, max_count=0):
@@ -1698,6 +1837,45 @@ class handler(BaseHTTPRequestHandler):
             sig.add_run(f"Atestat nr.: {auditor.get('atestat', '—')}\n")
             sig.add_run(f"Data: {auditor.get('date', '—')}")
 
+            # Sprint 15 — embed semnătură + ștampilă dacă există
+            sig_b64 = auditor.get("signatureDataURL", "") or ""
+            stamp_b64 = auditor.get("stampDataURL", "") or ""
+            if sig_b64 and "," in sig_b64:
+                sig_b64 = sig_b64.split(",", 1)[1]
+            if stamp_b64 and "," in stamp_b64:
+                stamp_b64 = stamp_b64.split(",", 1)[1]
+            if sig_b64 or stamp_b64:
+                p_imgs = doc.add_paragraph()
+                p_imgs.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                if sig_b64:
+                    try:
+                        p_imgs.add_run().add_picture(
+                            io.BytesIO(base64.b64decode(sig_b64)), width=Cm(5.0)
+                        )
+                        p_imgs.add_run("  ")
+                    except Exception:
+                        pass
+                if stamp_b64:
+                    try:
+                        p_imgs.add_run().add_picture(
+                            io.BytesIO(base64.b64decode(stamp_b64)), width=Cm(3.0)
+                        )
+                    except Exception:
+                        pass
+
+            # Sprint 15 — QR code pentru verificare (dacă auditor.cpeCode există)
+            cpe_code_audit = auditor.get("cpeCode") or auditor.get("mdlpaCode") or ""
+            if cpe_code_audit:
+                qr_bytes = generate_qr_png(f"https://zephren.ro/verify/{cpe_code_audit}")
+                if qr_bytes:
+                    p_qr = doc.add_paragraph()
+                    p_qr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                    try:
+                        p_qr.add_run().add_picture(io.BytesIO(qr_bytes), width=Cm(2.5))
+                        p_qr.add_run(f"\nVerificare: zephren.ro/verify/{cpe_code_audit}")
+                    except Exception:
+                        pass
+
             buf = io.BytesIO()
             doc.save(buf)
             docx_bytes = buf.getvalue()
@@ -1946,6 +2124,32 @@ class handler(BaseHTTPRequestHandler):
             if cpe_code:
                 for placeholder in ["[[CPE_CODE]]", "{{CPE_CODE}}", "CodUnicCPE"]:
                     replace_in_doc(doc, placeholder, cpe_code)
+
+            # ═══════════════════════════════════════
+            # Sprint 15 — Semnătură + ștampilă + QR code (Ord. MDLPA 16/2023)
+            # Plasat DUPĂ text replacements (pentru ca placeholder-urile să existe
+            # încă în document). Imaginile înlocuiesc placeholder-ele text cu PNG.
+            # ═══════════════════════════════════════
+            signature_b64 = data.get("signature_png_b64", "")
+            stamp_b64 = data.get("stamp_png_b64", "")
+            if signature_b64 or stamp_b64:
+                insert_signature_stamp(doc, signature_b64, stamp_b64)
+
+            qr_url = data.get("qr_verify_url", "")
+            if qr_url:
+                insert_qr_code(doc, qr_url, cpe_code)
+
+            # Sprint 15 — Cadastru + CF + identificare juridică (placeholder-uri opționale)
+            for ph_key, val in [
+                ("{{NR_CADASTRAL}}", data.get("cadastral_number", "")),
+                ("{{CARTE_FUNCIARA}}", data.get("land_book", "")),
+                ("{{ARIE_CONSTRUITA}}", data.get("area_built", "")),
+                ("{{NR_APARTAMENTE}}", data.get("n_apartments", "")),
+                ("{{VALIDITY_YEARS}}", str(data.get("validity_years", ""))),
+                ("{{VALIDITY_LABEL}}", data.get("validity_label", "")),
+            ]:
+                if val:
+                    replace_in_doc(doc, ph_key, val)
 
             # nZEB status — bifează checkbox-ul dacă clădirea e nZEB
             set_nzeb_checkbox(doc, data.get("nzeb", "NU") == "DA")

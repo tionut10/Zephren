@@ -4,6 +4,7 @@
  * Activat prin URL ?view=<base64>
  */
 import { getCategoryLabel } from "../data/anexa6-mapping.js";
+import { getExpiryDate, getValidityYears } from "../utils/cpe-validity.js";
 
 const CLASS_COLORS = {
   "A+": "#00A550", "A": "#4CB848", "B": "#BDD630",
@@ -54,12 +55,27 @@ export default function ClientReport({ data, onOpenApp }) {
     );
   }
 
-  const { b, s, r, ec, cc } = data;
+  const { b, s, r, ec, cc, aud } = data;
   const epFinal = r?.ep ?? s?.ep ?? null;
   const co2Final = r?.co2 ?? s?.co2 ?? null;
   const rer = r?.rer ?? null;
   const adresa = [b?.addr, b?.city].filter(Boolean).join(", ") || "Clădire necunoscută";
   const categorieAnex6 = b?.cat ? getCategoryLabel(b.cat) : null;
+
+  // Sprint 15 — date emitere (din payload aud, dacă există)
+  const auditorName = aud?.n || null;
+  const auditorAtestat = aud?.a || null;
+  const mdlpaCode = aud?.m || aud?.c || null;
+  const issueDate = aud?.d || null;
+  const validityYears = ec ? getValidityYears(ec) : 10;
+  const expiryDate = issueDate && ec ? getExpiryDate(issueDate, ec) : null;
+  const fmtDateRO = (iso) => {
+    if (!iso) return "—";
+    try {
+      const d = iso instanceof Date ? iso : new Date(iso);
+      return d.toLocaleDateString("ro-RO");
+    } catch { return "—"; }
+  };
 
   const utilities = s ? Object.entries(UTILITY_LABELS).map(([key, label]) => ({
     label, value: s[key] || 0, color: UTILITY_COLORS[key],
@@ -138,7 +154,7 @@ export default function ClientReport({ data, onOpenApp }) {
             <div style={{ fontSize: "11px", opacity: 0.4, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
               Defalcare energie finală
             </div>
-            <div style={{ space: "12px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {utilities.map(u => (
                 <div key={u.label} style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
                   <div style={{ fontSize: "11px", width: "72px", opacity: 0.7 }}>{u.label}</div>
@@ -148,6 +164,45 @@ export default function ClientReport({ data, onOpenApp }) {
                   <div style={{ fontSize: "11px", width: "64px", textAlign: "right", opacity: 0.8 }}>{u.value.toFixed(0)} kWh/an</div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sprint 15 — Card Emitere (auditor + dată + cod MDLPA + valabilitate) */}
+        {(auditorName || mdlpaCode || issueDate) && (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "20px", marginBottom: "20px" }}>
+            <div style={{ fontSize: "11px", opacity: 0.4, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
+              Emitere certificat
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
+              {auditorName && (
+                <div>
+                  <div style={{ fontSize: "10px", opacity: 0.45, marginBottom: "4px" }}>Auditor energetic</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600 }}>{auditorName}</div>
+                  {auditorAtestat && <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "2px" }}>Atestat: {auditorAtestat}</div>}
+                </div>
+              )}
+              {issueDate && (
+                <div>
+                  <div style={{ fontSize: "10px", opacity: 0.45, marginBottom: "4px" }}>Data emitere</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600 }}>{fmtDateRO(issueDate)}</div>
+                </div>
+              )}
+              {expiryDate && (
+                <div>
+                  <div style={{ fontSize: "10px", opacity: 0.45, marginBottom: "4px" }}>Valabil până la</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#f59e0b" }}>{fmtDateRO(expiryDate)}</div>
+                  <div style={{ fontSize: "10px", opacity: 0.5, marginTop: "2px" }}>
+                    {validityYears} ani · EPBD 2024 Art. 17 (clasa {ec || "—"})
+                  </div>
+                </div>
+              )}
+              {mdlpaCode && (
+                <div>
+                  <div style={{ fontSize: "10px", opacity: 0.45, marginBottom: "4px" }}>Cod unic MDLPA</div>
+                  <div style={{ fontSize: "11px", fontFamily: "monospace", wordBreak: "break-all" }}>{mdlpaCode}</div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -15,6 +15,8 @@ import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
 import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
+import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
+import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import { calcPenalties } from "../calc/penalties.js";
 
 /**
@@ -128,11 +130,12 @@ export default function Step6Certificate(props) {
                 const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
                 const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"};
-                const expiryD = new Date(auditor.date || new Date());
-                expiryD.setFullYear(expiryD.getFullYear() + 10);
                 const nzebDocx = NZEB_THRESHOLDS[baseCat] || NZEB_THRESHOLDS.AL;
                 const nzebOk = epFinal <= epRefMax && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
                 const enClassDocx = getEnergyClass(epFinal, catKey);
+                // Sprint 15 — valabilitate EPBD 2024 Art. 17: 10 ani A+..C / 5 ani D..G
+                const expiryD = getExpiryDate(auditor.date || new Date(), enClassDocx) || new Date();
+                const validYearsDocx = getValidityYears(enClassDocx);
                 const epTotalReal = Au > 0 ? epFinal * Au : 0;
                 const epTotalRef = Au > 0 ? epRefMax * Au : 0;
                 const gwpVal = parseFloat(building.gwpLifecycle) || 0;
@@ -153,6 +156,8 @@ export default function Step6Certificate(props) {
                   data: {
                     year: yearStr,
                     expiry: expiryD.toLocaleDateString("ro-RO"),
+                    validity_years: validYearsDocx,
+                    validity_label: `valabil ${validYearsDocx} ani (EPBD 2024 Art. 17)`,
                     address: fullAddress,
                     gps: fmtRo(latV, 4) + " x " + fmtRo(lngV, 4),
                     regime: regimStr,
@@ -198,6 +203,22 @@ export default function Step6Certificate(props) {
                     // Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
                     cpe_code: auditor.cpeCode || "",
                     registry_index: auditor.registryIndex || "1",
+                    // Sprint 15 — Semnătură + ștampilă (PNG base64 dataURL, fără prefix)
+                    signature_png_b64: auditor.signatureDataURL ? (auditor.signatureDataURL.split(",")[1] || "") : "",
+                    stamp_png_b64: auditor.stampDataURL ? (auditor.stampDataURL.split(",")[1] || "") : "",
+                    // Sprint 15 — QR code URL verificare (va genera QR pe server)
+                    qr_verify_url: auditor.cpeCode ? `https://zephren.ro/verify/${auditor.cpeCode}` : "",
+                    // Sprint 15 — EPBD 2024 indicatori
+                    ev_charging_points: building.evChargingPoints || "0",
+                    ev_charging_prepared: building.evChargingPrepared || "0",
+                    co2_max_ppm: building.co2MaxPpm || "",
+                    pm25_avg: building.pm25Avg || "",
+                    scale_version: building.scaleVersion || "2023",
+                    // Sprint 15 — Identificare juridică
+                    cadastral_number: building.cadastralNumber || "",
+                    land_book: building.landBook || "",
+                    area_built: building.areaBuilt || "",
+                    n_apartments: building.nApartments || "1",
                     // Sprint 14 — Penalizări Mc 001-2022 Partea III §8.10 (serializate)
                     penalties_summary: (() => {
                       try {
@@ -813,7 +834,10 @@ export default function Step6Certificate(props) {
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
               const fmtD = (d) => d ? d.split("-").reverse().join(".") : "";
               const validDate = auditor.date ? fmtD(auditor.date) : new Date().toISOString().slice(0,10).split("-").reverse().join(".");
-              const expDate = auditor.date ? (() => { const d = new Date(auditor.date); d.setFullYear(d.getFullYear()+10); return d.toISOString().slice(0,10).split("-").reverse().join("."); })() : "";
+              // Sprint 15 — valabilitate diferențiată EPBD 2024 Art. 17 (10 ani A+..C / 5 ani D..G)
+              const expDateObj = getExpiryDate(auditor.date || new Date(), enClass?.cls);
+              const expDate = expDateObj ? expDateObj.toISOString().slice(0,10).split("-").reverse().join(".") : "";
+              const validityYearsXml = getValidityYears(enClass?.cls);
 
               const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
@@ -821,6 +845,8 @@ export default function Step6Certificate(props) {
     <CodUnic>${esc(auditor.mdlpaCode)}</CodUnic>
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
+    <ValabilitateAni>${validityYearsXml}</ValabilitateAni>
+    <NormativValabilitate>EPBD 2024/1275 Art. 17</NormativValabilitate>
     <ScopElaborare>${esc(building.scopCpe || "vanzare")}</ScopElaborare>
     <ProgramCalcul>ZEPHREN v${APP_VERSION}</ProgramCalcul>
   </DateIdentificare>
@@ -1055,12 +1081,12 @@ export default function Step6Certificate(props) {
               const nzebOk = rer >= nzeb.rer_min && epFinal < getNzebEpMax(building.category, selectedClimate?.zone);
               const nzebLabel = nzebOk ? "DA" : "NU";
 
-              // Dates
+              // Dates — Sprint 15 — EPBD 2024 Art. 17 diferențiere 10/5 ani
               const validDate = new Date(auditor.date);
-              const expiryDate = new Date(validDate);
-              expiryDate.setFullYear(expiryDate.getFullYear() + 10);
+              const expiryDate = getExpiryDate(auditor.date, enClass?.cls) || new Date(validDate);
               const expiryStr = expiryDate.toLocaleDateString("ro-RO");
               const dateNow = new Date().toLocaleDateString("ro-RO");
+              const validYearsPreview = getValidityYears(enClass?.cls);
 
               // Envelope
               const envG = envelopeSummary?.G?.toFixed(3) || "\u2014";
@@ -1181,7 +1207,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <tr>
   <td colspan="4" class="L"><strong>CPE num\u0103rul</strong></td>
   <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">${auditor.mdlpaCode || ".................."}</td>
-  <td colspan="2" class="L" style="text-align:right"><strong>valabil 10 ani</strong></td>
+  <td colspan="2" class="L" style="text-align:right"><strong>valabil ${validYearsPreview} ani</strong><br><span style="font-size:5pt;color:#888">EPBD 2024 Art. 17 · clasa ${enClass?.cls || "—"}</span></td>
   <td colspan="5" class="L"><strong>Nume &amp; prenume auditor energetic</strong></td>
   <td colspan="5" class="L">${auditor.name || "________________"}</td>
 </tr>
@@ -1352,7 +1378,7 @@ ${[
   <div style="flex:1;line-height:1.5">
     <strong>Auditor energetic:</strong> ${auditor.name || "________"}<br>
     <strong>Firma:</strong> ${auditor.company || "________"} | <strong>Tel:</strong> ${auditor.phone || "____"} | <strong>Email:</strong> ${auditor.email || "________"}<br>
-    <strong>Data elabor\u0103rii:</strong> ${auditor.date || dateNow} | <strong>Valabil 10 ani, p\u00e2n\u0103 la:</strong> ${expiryStr}
+    <strong>Data elabor\u0103rii:</strong> ${auditor.date || dateNow} | <strong>Valabil ${validYearsPreview} ani (EPBD 2024 Art. 17, clasa ${enClass?.cls || "—"}), p\u00e2n\u0103 la:</strong> ${expiryStr}
   </div>
   <div style="text-align:center;width:120px">
     <div style="font-size:5.5pt;color:#999">${T.signature}</div>
@@ -1552,7 +1578,7 @@ ${(() => {
 <!-- Note legislative -->
 <div style="font-size:6pt;color:#666;margin-top:4px;line-height:1.4;padding:3px;border:1px solid #ddd;background:#fafafa">
   <strong>Cadru legislativ:</strong> L.372/2005 (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023), C107/0-7, NP048, SR EN ISO 52000-1:2017/NA:2023, SR EN ISO 52003-1:2017/NA:2023, SR EN ISO 52016-1:2017/NA:2023, SR EN ISO 13790, SR EN 12831-1:2017/NA:2022, SR EN 16798-1:2019/NA:2019, Dir. UE 2024/1275 (EPBD IV).<br>
-  * Valori calculate. Certificatul este valabil 10 ani. Nu garanteaz\u0103 consumul real.
+  * Valori calculate. Valabilitate CPE: 10 ani clase A+..C / 5 ani clase D..G (EPBD 2024/1275 Art. 17) — prezent CPE ${validYearsPreview} ani. Nu garanteaz\u0103 consumul real.
 </div>
 
 <!-- Semn\u0103turi finale -->
@@ -1689,6 +1715,11 @@ ${(() => {
                         )}
                       </div>
                     </div>
+                  </Card>
+
+                  {/* Sprint 15 — Semnătură + ștampilă auditor (PNG cu transparență) */}
+                  <Card title={t("Semnătură & ștampilă",lang)}>
+                    <AuditorSignatureStampUpload auditor={auditor} setAuditor={setAuditor} />
                   </Card>
 
                   {/* MDLPA Registry info */}

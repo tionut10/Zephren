@@ -29,6 +29,11 @@ export const SECTIONS = {
       // Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026
       { id: "latitude",  label: "Latitudine",  type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 44.4268)" },
       { id: "longitude", label: "Longitudine", type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 26.1025)" },
+      // Sprint 15 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1)
+      { id: "cadastralNumber", label: "Nr. cadastral ANCPI", type: "text", placeholder: "123456-A", hint: "Format ANCPI: 5-6 cifre, opțional litera corpului" },
+      { id: "landBook", label: "Carte Funciară", type: "text", placeholder: "CF nr. 123456 București Sector 3", hint: "Nr. CF + localitate + sector/sat" },
+      { id: "areaBuilt", label: "Arie construită desfășurată Acd (m²)", type: "number", min: 0, hint: "Distinct de arie utilă (Au) — Ord. MDLPA 16/2023" },
+      { id: "nApartments", label: "Număr apartamente (pentru bloc)", type: "number", min: 1, hint: "Obligatoriu pentru bloc RC — Anexa 2 CPE multi-apartament" },
     ]
   },
   envelope: {
