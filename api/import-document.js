@@ -216,36 +216,84 @@ Instrucțiuni de extragere:
 
 RĂSPUNDE DOAR CU JSON, FĂRĂ alt text.`;
 
-const INVOICE_PROMPT = `Ești un expert în analiza facturilor de energie din România.
-Analizează documentul și extrage datele de consum în format JSON strict.
+const INVOICE_PROMPT = `Ești un expert în analiza facturilor de energie din România, specializat pe furnizorii: Enel Energie Muntenia, E.ON Energie România, Electrica Furnizare, OMV Petrom Gas, Engie România, Premier Energy, CEZ Vânzare, Nova Power & Gas, Restart Energy, TransEnergo, Hidroelectrica, Nuclearelectrica și distribuitori termoficare locali (Termoelectrica București, CET Iași, Colterm Timișoara, Veolia Cluj, etc.).
 
-Returnează DOAR JSON:
+Analizează factura (PDF scanat sau fotografie) și extrage DATE STRUCTURATE în JSON strict.
+
+Returnează DOAR JSON (fără text înainte sau după), cu structura exactă:
 {
-  "supplier": "numele furnizorului (ex: E.ON, CEZ, Engie, DIGI, Electrica)",
+  "supplier": "numele exact al furnizorului (ex: 'E.ON Energie România SA', 'Enel Energie Muntenia')",
+  "supplier_type": "distribuitor|furnizor|mixt",
   "energyType": "gaz|electricitate|termoficare|mix",
-  "annualGasM3": "",
-  "annualGasKwh": "",
-  "annualElecKwh": "",
-  "annualHeatGcal": "",
-  "annualHeatKwh": "",
+  "period_start": "YYYY-MM-DD (începutul perioadei facturate)",
+  "period_end":   "YYYY-MM-DD (sfârșitul perioadei facturate)",
   "periodStart": "YYYY-MM",
-  "periodEnd": "YYYY-MM",
-  "address": "",
-  "city": "",
-  "tariffGas": "",
-  "tariffElec": "",
-  "totalCostLei": "",
-  "monthlyValues": [],
-  "notes": "observații utile (contor, nr. contract, etc.)"
+  "periodEnd":   "YYYY-MM",
+  "consumption_kwh":  "consum total kWh pe perioada facturată (număr)",
+  "consumption_m3":   "consum gaz m³ pe perioada facturată (număr — doar gaz)",
+  "annualGasM3":      "total 12 luni m³ — dacă factură multi-lună sau anuală",
+  "annualGasKwh":     "total 12 luni gaz în kWh",
+  "annualElecKwh":    "total 12 luni electricitate kWh",
+  "annualHeatGcal":   "total 12 luni termoficare Gcal",
+  "annualHeatKwh":    "total 12 luni termoficare kWh",
+  "address": "adresa locului de consum (stradă, nr., bloc, ap.)",
+  "city": "localitatea",
+  "county": "județul (fără prefix 'Județul')",
+  "postal_code": "cod poștal (6 cifre)",
+  "tariff_kwh":  "preț unitar per kWh în lei (doar număr, ex: 1.42)",
+  "tariffGas":   "preț per m³ sau per kWh gaz — specifică în notes",
+  "tariffElec":  "preț per kWh electricitate în lei",
+  "meter_id":    "număr contor (serie, cod contor — extrage exact ce apare)",
+  "contract_number": "număr contract furnizare",
+  "amount_ron":  "suma totală facturată în RON (cu TVA)",
+  "amount_ron_no_vat": "suma fără TVA",
+  "totalCostLei":      "alias pentru amount_ron (compatibilitate UI)",
+  "vat_percent": "cota TVA aplicată (5 sau 19)",
+  "monthlyValues": [
+    { "month": "YYYY-MM", "kwh": 0, "cost_ron": 0, "m3": 0 }
+  ],
+  "notes": "observații utile (nr. aviz, tarif reglementat/concurență, bonusuri, penalități, index vechi/nou contor)"
 }
 
-Conversii:
-- 1 m³ gaz natural ≈ 10.55 kWh (putere calorifică inferioară standard România)
-- 1 Gcal = 1163 kWh
-- Dacă există valori lunare, calculează totalul anual și pune în annualGasKwh/annualElecKwh
-- Dacă sunt mai puțin de 12 luni, extrapolează pro-rata la 12 luni
+Reguli de extragere specifice furnizori RO:
 
-RĂSPUNDE DOAR CU JSON.`;
+1. **ENERGIE ELECTRICĂ** (Enel/E.ON/Electrica/Nova/Restart/Hidro/Nuclear/CEZ):
+   - Caută tabelul "Consum energie electrică" sau "Detaliere consum" cu index vechi/nou contor.
+   - consumption_kwh = (index nou - index vechi) × coeficient (dacă există trifazat cu coef. de transformare).
+   - Tarifele: "tarif reglementat" (PR/CPC) vs. "piața concurențială" — notează în notes.
+   - Distincție **Distribuitor** (rețea, componentă "distribuție" pe factură) vs. **Furnizor** (contractul tău direct).
+
+2. **GAZE NATURALE** (Engie / E.ON Gaz / Premier Energy / OMV Petrom / Distrigaz):
+   - consumption_m3 = (index nou - index vechi).
+   - consumption_kwh = consumption_m3 × PCI (adesea 10.5–11.0 kWh/m³ — verifică "putere calorifică" pe factură).
+   - Factorul de corecție temperatură și presiune poate fi aplicat — dacă vezi "volum corectat" folosește acea valoare.
+
+3. **TERMOFICARE** (Termoelectrica București / CET Iași / Colterm / Veolia Cluj):
+   - Unitate primară Gcal. consumption_kwh = Gcal × 1163.
+   - Factură fracționată: apă caldă menajeră (ACM) + încălzire separat → însumează în annualHeatKwh, specifică în notes.
+
+4. **CONVERSII OBLIGATORII**:
+   - 1 m³ gaz natural ≈ PCI indicat pe factură (default 10.55 kWh dacă lipsește).
+   - 1 Gcal = 1163 kWh exact.
+   - 1 MWh = 1000 kWh.
+
+5. **PERIOADĂ & EXTRAPOLARE**:
+   - Factură monolună → completează doar consumption_kwh/consumption_m3 (NU annual*).
+   - Factură cu sumarul anual (12 luni) → completează annual*Kwh.
+   - Factură parțială (ex: 6 luni) → annual* = consumption × (12 / nr_luni_facturate) + notează extrapolare în notes.
+   - Dacă vezi detaliere lunară în tabel, populează monthlyValues cu fiecare rând.
+
+6. **IDENTIFICARE CONTOR**:
+   - meter_id = seria contorului (ex: "SEN123456", "NR00985421"), NU numărul de instalație.
+   - Contor separat pentru gaz și electricitate — dacă factură mixtă, ia contorul corespunzător energyType-ului dominant.
+
+7. **ADRESĂ**:
+   - Extrage "Loc de consum" (sau "Adresă locație") — NU adresa de facturare.
+   - Localitate + județ din antetul adresei.
+
+Câmpuri pe care NU le ai → lasă "" sau 0. NU inventa.
+
+RĂSPUNDE DOAR CU JSON, FĂRĂ text descriptiv, FĂRĂ markdown, FĂRĂ backticks.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
