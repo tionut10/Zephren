@@ -2,13 +2,22 @@ import React from "react";
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
 import { calcPenalties } from "../calc/penalties.js";
+import AnexaBloc from "./AnexaBloc.jsx";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
  * Conform Mc 001-2022 / Ordinul MDLPA nr. 2641/2017 (modificat 2024)
  *
  * Anexa 1: Date generale + tehnice + instalații + indicator energetic
- * Anexa 2: Recomandări de îmbunătățire a performanței energetice
+ * Anexa 2: Recomandări de îmbunătățire a performanței energetice (apartament)
+ *          SAU tabel multi-apartament cu clase individuale (bloc, Sprint 16)
+ *
+ * Prop `annexType`:
+ *   - "apartment" (default) → Anexa 2 = recomandări îmbunătățire
+ *   - "building"            → Anexa 2 = tabel multi-apartament (AnexaBloc)
+ *
+ * Auto-detectare (dacă annexType lipsește): dacă building.apartments.length > 1
+ * și category ∈ {RC, RA, BC}, se comportă ca "building".
  */
 
 const ELEMENT_LABELS = {
@@ -32,7 +41,14 @@ export default function CpeAnexa({
   HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES,
   calcOpaqueR,
   lang,
+  // ── Sprint 16 — Anexa 2 bloc multi-apartament ──
+  annexType,          // "apartment" | "building" | undefined (auto)
+  categoryKey,        // ex: "RC_cool", "RA_nocool" — pentru clasificare apt
 }) {
+  // Auto-detectare annexType dacă nu e furnizat explicit
+  const aptCount = Array.isArray(building?.apartments) ? building.apartments.length : 0;
+  const isBuildingCategory = ["RC", "RA", "BC"].includes(building?.category);
+  const resolvedAnnexType = annexType || (aptCount > 1 && isBuildingCategory ? "building" : "apartment");
   const Au = parseFloat(building.areaUseful) || 0;
   const V = parseFloat(building.volume) || 0;
   const catLabel = BUILDING_CATEGORIES?.find(c => c.id === building.category)?.label || building.category;
@@ -453,6 +469,19 @@ export default function CpeAnexa({
       </div>
 
       {/* ═══════ ANEXA 2 ═══════ */}
+      {/* Sprint 16 — comutare apartment vs. building */}
+      {resolvedAnnexType === "building" ? (
+        <AnexaBloc
+          building={building}
+          apartments={building?.apartments || []}
+          commonSystems={building?.commonSystems || {}}
+          epBuildingM2={parseFloat(epFinal) || 0}
+          co2BuildingM2={parseFloat(co2Final) || 0}
+          categoryKey={categoryKey}
+          auditor={auditor}
+          selectedClimate={selectedClimate}
+        />
+      ) : (
       <div>
         <h3 className="text-sm font-bold mb-4 text-amber-400">ANEXA 2 — Recomandări de îmbunătățire</h3>
 
@@ -498,6 +527,7 @@ export default function CpeAnexa({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

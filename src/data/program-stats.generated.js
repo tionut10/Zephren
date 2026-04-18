@@ -4,7 +4,7 @@
 
 export const CALC_MODULES_COUNT  = 67;
 export const API_ENDPOINTS_COUNT = 9;
-export const COMPONENTS_COUNT    = 62;
+export const COMPONENTS_COUNT    = 66;
 export const IMPORT_SOURCES_COUNT= 10;
 export const EXPORT_FORMATS_COUNT= 8;
 export const STEPS_REAL_COUNT    = 8;

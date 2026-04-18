@@ -4,9 +4,23 @@
  * Include 6 secțiuni + export PDF cu jsPDF
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import { cn, Card, Badge } from "./ui.jsx";
+import {
+  Capitol4_Conformitate,
+  Capitol7_Concluzii,
+  Capitol8_Anexe,
+  generateConclusionsText,
+} from "./AuditReportChapters.jsx";
+import { getMepsStatus } from "./MEPSCheck.jsx";
+import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import {
+  setupRomanianFont,
+  makeTextWriter,
+  buildPdfOutline,
+  drawTocPage,
+} from "../utils/pdf-fonts.js";
 
 // ─── Constante clase energetice ───────────────────────────────────────────────
 const CLASS_COLORS = {
@@ -71,6 +85,14 @@ export default function AuditReport({
 }) {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [docxGenerating, setDocxGenerating] = useState(false);
+  // Sprint 16 — Cap. 7 text concluzii (editabil) + Cap. 8 anexe (uploaded files)
+  const [conclusionsText, setConclusionsText] = useState("");
+  const [attachments, setAttachments] = useState({});
+
+  const showToast = (msg, level) => {
+    if (level === "error") console.warn("[AuditReport]", msg);
+    else console.log("[AuditReport]", msg);
+  };
 
   const generateDOCX = async () => {
     setDocxGenerating(true);
@@ -187,6 +209,23 @@ export default function AuditReport({
   const annualSavingEUR = totalSavingKWh * 0.08;
   const paybackYears = annualSavingEUR > 0 ? (totalCostEUR / annualSavingEUR).toFixed(1) : "—";
 
+  // ── Sprint 16 — Context Cap. 4/7 ─────────────────────────────────────────
+  const epFinal = instSummary?.ep_total_m2 || 0;
+  const rer = renewSummary?.rer;
+  const rerOnsite = renewSummary?.rer_onsite;
+  const category = building?.category || "RI";
+  const zone = building?.climateZone || 2;
+  const nzebOk = useMemo(() => {
+    const thr = NZEB_THRESHOLDS[category] || NZEB_THRESHOLDS.AL;
+    const epMax = thr?.ep_max?.[(zone || 2) - 1] || 148;
+    const rerMin = thr?.rer_min ?? 30;
+    return epFinal > 0 && epFinal <= epMax && (parseFloat(rer) || 0) >= rerMin;
+  }, [epFinal, rer, category, zone]);
+  const mepsStatus = useMemo(
+    () => getMepsStatus(energyClass, epFinal, category),
+    [energyClass, epFinal, category]
+  );
+
   // ── Pierderi anvelopă estimat ─────────────────────────────────────────────
   const totalEnvLoss = (() => {
     const opaqueLoss = (opaqueElements || []).reduce((sum, el) => {
@@ -199,7 +238,7 @@ export default function AuditReport({
   })();
 
   // ── Funcție export PDF ────────────────────────────────────────────────────
-  const generatePDF = () => {
+  const generatePDF = async () => {
     setPdfGenerating(true);
     try {
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -207,6 +246,14 @@ export default function AuditReport({
       const margin = 15;
       const colW = w - 2 * margin;
       let y = 20;
+
+      // Sprint 16 — setup font Roboto (diacritice) cu fallback transliterare
+      const fontOk = await setupRomanianFont(doc);
+      const writeText = makeTextWriter(doc, fontOk);
+      const baseFont = fontOk ? "Roboto" : "helvetica";
+
+      // Secțiuni înregistrate pentru TOC + outline PDF
+      const tocEntries = [];
 
       const addPageIfNeeded = (needed = 10) => {
         if (y + needed > 275) {
@@ -218,44 +265,50 @@ export default function AuditReport({
       const sectionTitle = (title) => {
         addPageIfNeeded(12);
         doc.setFontSize(11);
-        doc.setFont("helvetica", "bold");
+        doc.setFont(baseFont, "bold");
         doc.setTextColor(40, 40, 40);
-        doc.text(title, margin, y);
+        writeText(title, margin, y);
         doc.setDrawColor(180, 180, 180);
         doc.line(margin, y + 2, w - margin, y + 2);
+        // Înregistrează pentru TOC (pagina curentă)
+        tocEntries.push({
+          title,
+          page: doc.internal.getNumberOfPages(),
+          level: 0,
+        });
         y += 8;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         doc.setFontSize(9);
         doc.setTextColor(60, 60, 60);
       };
 
       const row = (label, value, indent = 0) => {
         addPageIfNeeded(6);
-        doc.setFont("helvetica", "bold");
-        doc.text(label, margin + indent, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(String(value ?? "—"), margin + indent + 55, y);
+        doc.setFont(baseFont, "bold");
+        writeText(label, margin + indent, y);
+        doc.setFont(baseFont, "normal");
+        writeText(String(value ?? "—"), margin + indent + 55, y);
         y += 5.5;
       };
 
       // ── Header ──────────────────────────────────────────────────────────
       doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setTextColor(20, 20, 60);
-      doc.text("RAPORT AUDIT ENERGETIC", w / 2, y, { align: "center" });
+      writeText("RAPORT AUDIT ENERGETIC", w / 2, y, { align: "center" });
       y += 8;
 
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       doc.setTextColor(80, 80, 80);
       const addrLine = [building?.address, building?.city].filter(Boolean).join(", ");
       if (addrLine) {
-        doc.text(addrLine, w / 2, y, { align: "center" });
+        writeText(addrLine, w / 2, y, { align: "center" });
         y += 6;
       }
 
       doc.setFontSize(8);
-      doc.text(`Data audit: ${auditor?.auditDate || new Date().toLocaleDateString("ro-RO")}`, w / 2, y, { align: "center" });
+      writeText(`Data audit: ${auditor?.auditDate || new Date().toLocaleDateString("ro-RO")}`, w / 2, y, { align: "center" });
       y += 12;
 
       // ── Secțiunea 1 — Date generale ──────────────────────────────────────
@@ -273,63 +326,63 @@ export default function AuditReport({
       y += 4;
 
       // ── Secțiunea 2 — Consum calculat vs. măsurat ────────────────────────
-      sectionTitle("2. CONSUM ENERGETIC CALCULAT vs. MĂSURAT");
+      sectionTitle("2. CONSUM ENERGETIC CALCULAT vs. MASURAT");
       if (consumptionRows.length > 0) {
         // header tabel
-        doc.setFont("helvetica", "bold");
-        doc.text("Purtător energie", margin, y);
-        doc.text("Calculat (kWh/an)", margin + 50, y);
-        doc.text("Măsurat (kWh/an)", margin + 90, y);
-        doc.text("Deviație %", margin + 135, y);
+        doc.setFont(baseFont, "bold");
+        writeText("Purtător energie", margin, y);
+        writeText("Calculat (kWh/an)", margin + 50, y);
+        writeText("Măsurat (kWh/an)", margin + 90, y);
+        writeText("Deviație %", margin + 135, y);
         y += 5;
         doc.setDrawColor(200, 200, 200);
         doc.line(margin, y, w - margin, y);
         y += 3;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
 
         consumptionRows.forEach(r => {
           addPageIfNeeded(6);
           const dev = r.calc && r.meas
             ? Math.abs(r.calc - r.meas) / r.calc * 100
             : null;
-          doc.text(r.label, margin, y);
-          doc.text(r.calc != null ? String(r.calc) : "—", margin + 50, y);
-          doc.text(r.meas != null ? String(r.meas) : "—", margin + 90, y);
+          writeText(r.label, margin, y);
+          writeText(r.calc != null ? String(r.calc) : "—", margin + 50, y);
+          writeText(r.meas != null ? String(r.meas) : "—", margin + 90, y);
           if (dev !== null) {
-            doc.text(`${dev.toFixed(1)}%`, margin + 135, y);
+            writeText(`${dev.toFixed(1)}%`, margin + 135, y);
           } else {
-            doc.text("—", margin + 135, y);
+            writeText("—", margin + 135, y);
           }
           y += 5.5;
         });
       } else {
-        doc.text("Date de consum insuficiente.", margin, y);
+        writeText("Date de consum insuficiente.", margin, y);
         y += 6;
       }
       y += 4;
 
       // ── Secțiunea 3 — Anvelopă termică ───────────────────────────────────
-      sectionTitle("3. ANVELOPĂ TERMICĂ");
+      sectionTitle("3. ANVELOPA TERMICA");
       if (opaqueElements && opaqueElements.length > 0) {
-        doc.setFont("helvetica", "bold");
-        doc.text("Elemente opace:", margin, y);
+        doc.setFont(baseFont, "bold");
+        writeText("Elemente opace:", margin, y);
         y += 5;
-        doc.text("Tip/Denumire", margin + 2, y);
-        doc.text("Suprafață (m²)", margin + 55, y);
-        doc.text("U calculat (W/m²K)", margin + 95, y);
-        doc.text("Obs.", margin + 148, y);
+        writeText("Tip/Denumire", margin + 2, y);
+        writeText("Suprafață (m²)", margin + 55, y);
+        writeText("U calculat (W/m²K)", margin + 95, y);
+        writeText("Obs.", margin + 148, y);
         y += 4;
         doc.setDrawColor(200, 200, 200);
         doc.line(margin, y, w - margin, y);
         y += 3;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         opaqueElements.forEach(el => {
           addPageIfNeeded(6);
           const u = calcU(el).toFixed(3);
-          doc.text(el.name || el.type || "—", margin + 2, y);
-          doc.text(String(el.area || "—"), margin + 55, y);
-          doc.text(u, margin + 95, y);
-          doc.text(el.notes || "", margin + 148, y);
+          writeText(el.name || el.type || "—", margin + 2, y);
+          writeText(String(el.area || "—"), margin + 55, y);
+          writeText(u, margin + 95, y);
+          writeText(el.notes || "", margin + 148, y);
           y += 5.5;
         });
         y += 3;
@@ -337,34 +390,34 @@ export default function AuditReport({
 
       if (glazingElements && glazingElements.length > 0) {
         addPageIfNeeded(8);
-        doc.setFont("helvetica", "bold");
-        doc.text("Elemente vitrate:", margin, y);
+        doc.setFont(baseFont, "bold");
+        writeText("Elemente vitrate:", margin, y);
         y += 5;
-        doc.text("Orientare/Denumire", margin + 2, y);
-        doc.text("Suprafață (m²)", margin + 60, y);
-        doc.text("U (W/m²K)", margin + 100, y);
-        doc.text("g (—)", margin + 135, y);
+        writeText("Orientare/Denumire", margin + 2, y);
+        writeText("Suprafață (m²)", margin + 60, y);
+        writeText("U (W/m²K)", margin + 100, y);
+        writeText("g (—)", margin + 135, y);
         y += 4;
         doc.setDrawColor(200, 200, 200);
         doc.line(margin, y, w - margin, y);
         y += 3;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         glazingElements.forEach(gl => {
           addPageIfNeeded(6);
-          doc.text(gl.name || gl.orientation || "—", margin + 2, y);
-          doc.text(String(gl.area || "—"), margin + 60, y);
-          doc.text(String(gl.u || "—"), margin + 100, y);
-          doc.text(String(gl.g || "—"), margin + 135, y);
+          writeText(gl.name || gl.orientation || "—", margin + 2, y);
+          writeText(String(gl.area || "—"), margin + 60, y);
+          writeText(String(gl.u || "—"), margin + 100, y);
+          writeText(String(gl.g || "—"), margin + 135, y);
           y += 5.5;
         });
         y += 3;
       }
 
       if (totalEnvLoss > 0) {
-        doc.setFont("helvetica", "bold");
-        doc.text(`Total pierderi anvelopă estimat: `, margin, y);
-        doc.setFont("helvetica", "normal");
-        doc.text(`~${totalEnvLoss.toLocaleString("ro-RO")} kWh/an`, margin + 65, y);
+        doc.setFont(baseFont, "bold");
+        writeText(`Total pierderi anvelopă estimat: `, margin, y);
+        doc.setFont(baseFont, "normal");
+        writeText(`~${totalEnvLoss.toLocaleString("ro-RO")} kWh/an`, margin + 65, y);
         y += 6;
       }
       y += 2;
@@ -378,40 +431,40 @@ export default function AuditReport({
       row("ACM:", instSummary?.acmSource || "—");
       row("Iluminat:", instSummary?.lightingType || "—");
       addPageIfNeeded(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("Clasă energetică finală:", margin, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(energyClass || "—", margin + 55, y);
+      doc.setFont(baseFont, "bold");
+      writeText("Clasă energetică finală:", margin, y);
+      doc.setFont(baseFont, "normal");
+      writeText(energyClass || "—", margin + 55, y);
       if (instSummary?.ep_total_m2) {
-        doc.text(`  (${instSummary.ep_total_m2.toFixed(1)} kWh/m²·an EP)`, margin + 65, y);
+        writeText(`  (${instSummary.ep_total_m2.toFixed(1)} kWh/m²·an EP)`, margin + 65, y);
       }
       y += 8;
 
       // ── Secțiunea 5 — Recomandări ────────────────────────────────────────
-      sectionTitle("5. RECOMANDĂRI PRIORITIZATE");
+      sectionTitle("5. RECOMANDARI PRIORITIZATE");
       if (recs.length > 0) {
-        doc.setFont("helvetica", "bold");
-        doc.text("Prioritate", margin, y);
-        doc.text("Măsură", margin + 28, y);
-        doc.text("Economie estimată", margin + 110, y);
-        doc.text("Cost estimat", margin + 152, y);
+        doc.setFont(baseFont, "bold");
+        writeText("Prioritate", margin, y);
+        writeText("Măsură", margin + 28, y);
+        writeText("Economie estimată", margin + 110, y);
+        writeText("Cost estimat", margin + 152, y);
         y += 4;
         doc.setDrawColor(200, 200, 200);
         doc.line(margin, y, w - margin, y);
         y += 3;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         recs.forEach(r => {
           addPageIfNeeded(7);
           const pLabel = r.priority === "HIGH" ? "Ridicată" : r.priority === "MED" ? "Medie" : "Scăzută";
-          doc.text(pLabel, margin, y);
+          writeText(pLabel, margin, y);
           const measureLines = doc.splitTextToSize(r.measure, 75);
-          doc.text(measureLines, margin + 28, y);
-          doc.text(r.saving || "—", margin + 110, y);
-          doc.text(r.cost || "—", margin + 152, y);
+          writeText(measureLines, margin + 28, y);
+          writeText(r.saving || "—", margin + 110, y);
+          writeText(r.cost || "—", margin + 152, y);
           y += Math.max(measureLines.length * 4.5, 6);
         });
       } else {
-        doc.text("Nu s-au identificat recomandări semnificative.", margin, y);
+        writeText("Nu s-au identificat recomandări semnificative.", margin, y);
         y += 6;
       }
       y += 4;
@@ -429,8 +482,57 @@ export default function AuditReport({
         "Valorile de economie sunt estimate pe baza condițiilor climatice standard.",
         colW
       );
-      doc.text(disclaimer, margin, y);
+      writeText(disclaimer, margin, y);
       y += disclaimer.length * 4 + 6;
+
+      // ── Secțiunea 7 — Concluzii (Sprint 16) ──────────────────────────────
+      sectionTitle("7. CONCLUZII");
+      doc.setFontSize(9);
+      doc.setFont(baseFont, "normal");
+      doc.setTextColor(40, 40, 40);
+      const textToPrint = conclusionsText ||
+        generateConclusionsText({ energyClass, epFinal, rer, nzebOk, mepsStatus, recs, building });
+      const conclusionsLines = doc.splitTextToSize(textToPrint, colW);
+      conclusionsLines.forEach((line) => {
+        addPageIfNeeded(5);
+        writeText(line, margin, y);
+        y += 5;
+      });
+      y += 4;
+
+      // ── Secțiunea 8 — Anexe (doar listă, fișierele rămân separate) ───────
+      sectionTitle("8. ANEXE RAPORT");
+      const anexaLabels = {
+        plans: "A. Planuri clădire",
+        facade: "B. Fotografii fațade",
+        interior: "C. Fotografii interior",
+        basement: "D. Fotografii subsol/terasă/pod",
+        thermography: "E. Termografie IR",
+        blowerDoor: "F. Raport blower-door (n50)",
+        prevCPE: "G. Copie CPE anterior",
+        auditorCert: "H. Copie atestat auditor",
+      };
+      Object.entries(attachments || {}).forEach(([key, files]) => {
+        if (!files?.length) return;
+        addPageIfNeeded(6);
+        doc.setFont(baseFont, "bold");
+        writeText(`${anexaLabels[key] || key}:`, margin, y);
+        doc.setFont(baseFont, "normal");
+        writeText(`${files.length} fișier${files.length > 1 ? "e" : ""}`, margin + 70, y);
+        y += 5.5;
+        files.forEach((f) => {
+          addPageIfNeeded(4);
+          writeText(`   • ${f.name} (${Math.round((f.size || 0) / 1024)} KB)`, margin + 5, y);
+          y += 4.5;
+        });
+      });
+      if (!Object.values(attachments || {}).some((v) => v?.length)) {
+        writeText("Nu există anexe atașate raportului.", margin, y);
+        y += 6;
+      }
+
+      // ── TOC navigabil (Sprint 16 Task 6) ─────────────────────────────────
+      buildPdfOutline(doc, tocEntries);
 
       // ── Footer ────────────────────────────────────────────────────────────
       const pageCount = doc.getNumberOfPages();
@@ -438,7 +540,7 @@ export default function AuditReport({
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(160, 160, 160);
-        doc.text(
+        writeText(
           `Raport Audit Energetic · Generat cu Zephren · Pagina ${i}/${pageCount}`,
           w / 2,
           290,
@@ -706,6 +808,20 @@ export default function AuditReport({
           )}
         </Card>
 
+        {/* ── Secțiunea 4 — Conformitate normativă (Sprint 16) ─────────── */}
+        <Card className="p-4">
+          <Capitol4_Conformitate
+            building={building}
+            instSummary={instSummary}
+            opaqueElements={opaqueElements}
+            glazingElements={glazingElements}
+            epFinal={epFinal}
+            rer={rer}
+            rerOnsite={rerOnsite}
+            energyClass={energyClass}
+          />
+        </Card>
+
         {/* ── Secțiunea 5 — Recomandări ────────────────────────────────── */}
         <Card className="p-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider opacity-50 mb-3">
@@ -779,6 +895,30 @@ export default function AuditReport({
             Prețuri orientative — necesită ofertare de la furnizori autorizați.
             Economia anuală este estimată la 0,08 EUR/kWh (preț orientativ electricitate).
           </p>
+        </Card>
+
+        {/* ── Secțiunea 7 — Concluzii (Sprint 16) ───────────────────────── */}
+        <Card className="p-4">
+          <Capitol7_Concluzii
+            energyClass={energyClass}
+            epFinal={epFinal}
+            rer={rer}
+            nzebOk={nzebOk}
+            mepsStatus={mepsStatus}
+            recs={recs}
+            building={building}
+            initialText={conclusionsText}
+            onTextChange={setConclusionsText}
+          />
+        </Card>
+
+        {/* ── Secțiunea 8 — Anexe upload (Sprint 16) ────────────────────── */}
+        <Card className="p-4">
+          <Capitol8_Anexe
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            showToast={showToast}
+          />
         </Card>
 
       </div>{/* /scroll */}

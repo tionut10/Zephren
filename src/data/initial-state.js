@@ -41,6 +41,16 @@ export const INITIAL_BUILDING = {
   emissionClassAfterRenov:"",    // clasa emisii după renovare (A+..G)
   energySavings:"",              // economii energie realizate (kWh/m²·an)
   co2Reduction:"",               // reducere emisii CO₂ (kgCO₂/m²·an)
+  // ── Sprint 16 (18 apr 2026) — Multi-apartament pentru Anexa 2 (bloc) ──
+  // Activ doar pentru category ∈ {RC, RA} (bloc rezidențial) sau BC (bloc cu spații mixte).
+  apartments: [],                // array de { id, number, staircase, floor, areaUseful, orientation[], occupants, corner, topFloor, allocatedCommonPct, internalEP }
+  commonSystems: {               // sisteme comune clădire (pentru alocare consum comun)
+    elevator:          { installed: false, powerKW: "", hoursYear: "3500" },
+    stairsLighting:    { installed: false, powerKW: "", hoursYear: "8760" },
+    centralHeating:    { installed: false, fuel: "gaz_cond" },  // sursă centralizată bloc
+    commonVentilation: { installed: false, powerKW: "", hoursYear: "8760" },
+    pumpGroup:         { installed: false, powerKW: "", hoursYear: "8760" },  // grup pompe ACM/recirculare
+  },
 };
 
 // ─── STEP 3: INSTALAȚII ───

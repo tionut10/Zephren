@@ -12,6 +12,14 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "sprint-15: EPBD 2024 valabilitate + cadastru/CF + semnătură + QR DOCX"
+      },
+      {
+        "icon": "📄",
+        "text": "sprint-14: format DOCX A4 + cod unic CPE MDLPA + penalizări p0-p11"
+      },
+      {
         "icon": "🔸",
         "text": "Sprint 16: Pașaport Renovare EPBD 2024/1275 Art. 12 (termen legal 29 mai 2026)"
       },
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔬",
         "text": "Sprint 10b: sentinel regresie extins pentru cele 4 bug-uri ACM"
-      },
-      {
-        "icon": "🔬",
-        "text": "sentinel regresie pentru en15316-heating + acm-en15316"
-      },
-      {
-        "icon": "🧪",
-        "text": "fix(test): actualizare praguri CO₂ EN 16798 NA:2019 (I≤400/II≤600/III≤1000) — corecție Sprint 0"
       }
     ]
   },
