@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
+import CostOptimalCurve from "../components/CostOptimalCurve.jsx";
 import MEPSCheck from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
@@ -1547,6 +1548,7 @@ export default function Step7Audit(props) {
                 const [activeTool, setActiveTool] = React.useState(null);
                 const tools = [
                   { id:"lcc",     icon:"📊", label:"Analiză LCC" },
+                  { id:"costOptimal", icon:"🎯", label:"Curbă Cost-Optimal" },
                   { id:"meps",    icon:"⚠️",  label:"MEPS Check" },
                   { id:"oferta",  icon:"📄", label:"Ofertă Reabilitare" },
                   { id:"consum",  icon:"📈", label:"Consum Real" },
@@ -1599,6 +1601,16 @@ export default function Step7Audit(props) {
                     {activeTool === "lcc" && (
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                         <LCCAnalysis building={building} instSummary={instSummary} opaqueElements={opaqueElements} />
+                      </div>
+                    )}
+                    {activeTool === "costOptimal" && (
+                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                        <CostOptimalCurve
+                          building={building}
+                          instSummary={instSummary}
+                          auditor={auditor}
+                          onClose={() => setActiveTool(null)}
+                        />
                       </div>
                     )}
                     {activeTool === "meps" && (
