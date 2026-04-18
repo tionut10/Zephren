@@ -277,6 +277,29 @@ export default function EnergyCalcApp({ cloud }) {
     showToast(`Plan ${TIERS[newTier]?.label} activat (mod demo)`, "success");
   };
 
+  // P1-1 (18 apr 2026) — Deschide sesiune Stripe Billing Portal (gestionare abonament).
+  const openBillingPortal = async () => {
+    try {
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "portal",
+          returnUrl: window.location.origin + "/#app?billing=portal_return",
+        }),
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        if (url) { window.location.href = url; return; }
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Billing Portal indisponibil în acest moment.", "error");
+      }
+    } catch (e) {
+      showToast("Eroare la conectarea cu Stripe. Verificați rețeaua.", "error");
+    }
+  };
+
   const incrementCertCount = async () => {
     const nc = certCount + 1;
     setCertCount(nc);
@@ -2229,6 +2252,19 @@ export default function EnergyCalcApp({ cloud }) {
             </div>
             <h2 className="text-xl sm:text-2xl font-bold">{lang==="EN"?"Choose your plan":"Alege planul potrivit"}</h2>
             <p className="text-xs sm:text-sm opacity-40 mt-1">{lang==="EN"?"Switch anytime · Cancel anytime":"Poți schimba oricând · Fără obligații"}</p>
+
+            {/* P1-1 (18 apr 2026) — Buton Gestionează abonament (Stripe Billing Portal)
+                Vizibil doar pentru utilizatorii cu plan plătit activ. */}
+            {userTier && userTier !== "free" && (
+              <button
+                type="button"
+                onClick={openBillingPortal}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] border border-white/10 hover:bg-white/[0.10] hover:border-white/20 text-xs font-medium text-white/80 hover:text-white transition-all"
+              >
+                <span aria-hidden="true">⚙️</span>
+                {lang==="EN" ? "Manage subscription" : "Gestionează abonament"}
+              </button>
+            )}
           </div>
 
           {/* Quick tier switcher — pill buttons */}
