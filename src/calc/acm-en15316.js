@@ -130,16 +130,77 @@ function calcStorageStandbyLoss(volumeL, insulationClass) {
 }
 
 // ── Pierderi sistem circulație ──────────────────────────────────
-function calcCirculationLoss(pipeLength_m, pipeDiameter_mm, hasInsulation, deltaT_K) {
-  // Pierdere linie circulație [W/m] per EN ISO 12241 simplificat
-  const lambda_pipe = 0.035; // izolație EPE/AF (λ = 35 mW/(m·K))
-  const r_ins = hasInsulation ? (pipeDiameter_mm / 2 + 30) / 1000 : (pipeDiameter_mm / 2) / 1000; // raza exterioară cu izolație
-  const r_pipe = (pipeDiameter_mm / 2) / 1000;
-  const U_lin = hasInsulation
-    ? 2 * Math.PI * lambda_pipe / Math.log(r_ins / r_pipe) // W/(m·K) cu izolație
-    : 15; // W/(m·K) fără izolație (aproximare)
-  const q_lin = U_lin * deltaT_K; // W/m
-  return q_lin * pipeLength_m; // W → convertit la kWh/an în calcul final
+// Coeficient transfer termic liniar U_lin [W/(m·K)] — SR EN 15316-3:2017 Anexa B + Tab.B.2
+// Sprint 13 (18 apr 2026): FIX bug `U_lin = 15` pentru conductă neizolată (factor ~33×
+// supraevaluat). Valoarea fizic corectă este 0.45 W/(m·K) (conductă nudă DN15-DN32, ΔT ~30 K).
+// Pentru conducte IZOLATE păstrăm formula analitică EN ISO 12241 (λ/radii, implicit 30 mm EPE),
+// care este deja corectă și produce rezultate calibrate. Tabelul U_LIN_CONDUCTA_EN15316 este
+// disponibil pentru UI viitor (dropdown grad izolație) — referință EN 15316-3 Tab.B.2.
+export const U_LIN_CONDUCTA_EN15316 = Object.freeze({
+  neizolat:             0.45, // W/(m·K) — conductă nudă DN15-DN32 (medie, EN 15316-3 §B.2) [FIX S13]
+  // Izolat standard (≈ 20 mm EPE, zona rezidențial comun)
+  izolat_standard_d15:  0.22,
+  izolat_standard_d20:  0.25,
+  izolat_standard_d25:  0.30,
+  izolat_standard_d32:  0.35,
+  // Izolat bun (≈ 30 mm AF, recomandat nZEB/renovare)
+  izolat_bun_d15:       0.15,
+  izolat_bun_d20:       0.17,
+  izolat_bun_d25:       0.20,
+  izolat_bun_d32:       0.24,
+  // Izolat înalt (≥ 50 mm AF, premium)
+  izolat_inalt_d20:     0.12,
+  izolat_inalt_d25:     0.14,
+  izolat_inalt_d32:     0.16,
+});
+
+/**
+ * Selectare U_lin [W/(m·K)] conform configurare conductă ACM.
+ * Conform SR EN 15316-3:2017 Tab.B.2.
+ * @param {object} cfg
+ * @param {boolean} cfg.hasInsulation        — conductă izolată?
+ * @param {number}  cfg.pipeDiameter_mm      — diametru nominal [mm]
+ * @param {string}  [cfg.insulationGrade]    — "standard" | "bun" | "inalt" (fallback "standard")
+ * @returns {number} U_lin [W/(m·K)]
+ */
+export function selectULin(cfg = {}) {
+  const { hasInsulation, pipeDiameter_mm, insulationGrade } = cfg;
+  if (!hasInsulation) return U_LIN_CONDUCTA_EN15316.neizolat;
+
+  const grade = (insulationGrade === "bun" || insulationGrade === "inalt") ? insulationGrade : "standard";
+  const d = Number(pipeDiameter_mm) || 22;
+
+  // Selectare DN aproximat — mapare d → DN din tabel
+  let dnKey;
+  if (d <= 17) dnKey = "d15";
+  else if (d <= 22) dnKey = "d20";
+  else if (d <= 28) dnKey = "d25";
+  else dnKey = "d32";
+
+  const key = `izolat_${grade}_${dnKey}`;
+  return U_LIN_CONDUCTA_EN15316[key] ?? U_LIN_CONDUCTA_EN15316.izolat_standard_d20;
+}
+
+function calcCirculationLoss(pipeLength_m, pipeDiameter_mm, hasInsulation, deltaT_K, insulationGrade) {
+  // Sprint 13: FIX bug neizolat (15 → 0.45). Două metode per situație:
+  //   - neizolat: U_lin tabular 0.45 W/(m·K) [FIX — era hardcodat 15, factor 33× supraevaluat]
+  //   - izolat + grad specificat: U_lin tabular din Tab.B.2 (UI viitor)
+  //   - izolat + fără grad: formula analitică EN ISO 12241 (λ/radii, 30 mm EPE implicit) — păstrată
+  //     pentru continuitate numerică cu baseline-ul S1-S12 (tests calibrate pe această formulă)
+  let U_lin;
+  if (!hasInsulation) {
+    U_lin = U_LIN_CONDUCTA_EN15316.neizolat; // 0.45 W/(m·K) — fix
+  } else if (insulationGrade === "bun" || insulationGrade === "inalt" || insulationGrade === "standard") {
+    U_lin = selectULin({ hasInsulation, pipeDiameter_mm, insulationGrade });
+  } else {
+    // Default analitic pentru izolat: EN ISO 12241 cu 30 mm EPE (λ=0.035) — aprox 0.13-0.18 W/(m·K)
+    const lambda_pipe = 0.035;
+    const r_ins  = (pipeDiameter_mm / 2 + 30) / 1000;
+    const r_pipe = (pipeDiameter_mm / 2) / 1000;
+    U_lin = 2 * Math.PI * lambda_pipe / Math.log(r_ins / r_pipe);
+  }
+  const q_lin = U_lin * deltaT_K;   // W/m
+  return q_lin * pipeLength_m;       // W (multiplicat cu ore în calcul final → kWh/an)
 }
 
 // ── CALCUL PRINCIPAL ACM EN 15316 ──────────────────────────────

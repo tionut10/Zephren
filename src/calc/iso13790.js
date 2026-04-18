@@ -27,6 +27,24 @@ export const WIND_SHIELD_FACTOR = {
   expus:    0.15,  // câmp deschis, litoral, deal
 };
 
+// ── Constanta de referință τ_H,0 pentru factor utilizare a_H ─────
+// Sprint 13 (18 apr 2026): diferențiere rezidențial vs. nerezidențial conform SR EN ISO 52016-1:2017/NA:2023 §A.34
+//   Rezidențial (RI, RC, RA, CP): τ_H,0 = 15 h (ocupare continuă, masă termică validă pe 24/24)
+//   Nerezidențial (BI, ED, SA, HC, CO, SP, AL etc.): τ_H,0 = 30 h (ocupare intermitentă, inerție amplificată)
+// Formula: a_H = 1.0 + τ / τ_H,0  (unde τ = Cm / H_total este constanta de timp a clădirii [h])
+export const TAU_H0_REZIDENTIAL = 15;    // h
+export const TAU_H0_NEREZIDENTIAL = 30;  // h
+const CATEGORIES_REZIDENTIALE = new Set(["RI", "RC", "RA", "CP"]);
+
+/**
+ * Returnează τ_H,0 [h] conform categorie clădire (ISO 52016-1/NA:2023 §A.34).
+ * @param {string} category — cod categorie Mc 001 (RI, RC, RA, BI, ED, SA, etc.)
+ * @returns {number} τ_H,0 [h] — 15h rezidențial, 30h nerezidențial
+ */
+export function getTauH0(category) {
+  return CATEGORIES_REZIDENTIALE.has(category) ? TAU_H0_REZIDENTIAL : TAU_H0_NEREZIDENTIAL;
+}
+
 // Fracții solare lunare calculate din temperatura medie lunară (proporționale cu radiația pe orizont)
 // Metoda: fracție ≈ grad zi solar per lună / total; calibrat pe date PVGIS România
 function calcMonthlyRadFraction(climate) {
@@ -59,7 +77,9 @@ export function calcMonthlyISO13790(params) {
   var Cm = Au * (THERMAL_MASS_CLASS[structure] || 165000); // Mc 001-2022 Tabel 2.20
   var H_total = H_tr + H_ve + H_inf;
   var tau = H_total > 0 ? Cm / (H_total * 3600) : 50;
-  var a_H = 1 + tau / 15;
+  // Sprint 13: τ_H,0 variabil per categorie (NA:2023 §A.34) — 15h rezidențial, 30h nerezidențial
+  var tauH0 = getTauH0(category);
+  var a_H = 1 + tau / tauH0;
   var qIntMap = {RI:4,RC:4,RA:4,BI:8,ED:6,SA:5,HC:4.5,CO:8,SP:5,AL:5};
   var phi_int = (qIntMap[category] || 4) * Au;
   // Fracții solare lunare calculate din date climatice (nu fixe)

@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-17
+// Ultima generare: 2026-04-18
 
 export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
@@ -12,40 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔸",
+        "text": "Sprint 12: regresie + validare integrată pre-Faza 15"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint 10b: sentinel regresie extins pentru cele 4 bug-uri ACM"
+      },
+      {
+        "icon": "🔬",
+        "text": "sentinel regresie pentru en15316-heating + acm-en15316"
+      },
+      {
         "icon": "🧪",
-        "text": "Sprint 9b: fix Răcire — profile orare ISO 52016-1 + free cooling EN 16798-9"
+        "text": "fix(test): actualizare praguri CO₂ EN 16798 NA:2019 (I≤400/II≤600/III≤1000) — corecție Sprint 0"
       },
       {
-        "icon": "🔬",
-        "text": "Sprint 5+6: BACS ISO 52120-1:2022 + Regenerabile RER + nZEB L.238/2024"
+        "icon": "✨",
+        "text": "Sprint 9b: fix Răcire partea 2 — profile orare + free cooling module + breakdown UI"
       },
       {
-        "icon": "🎨",
-        "text": "Sprint 4b: fix ACM partea 2 — cuplaj solar real + validari + UI breakdown"
-      },
-      {
-        "icon": "🔬",
-        "text": "Sprint 4a: fix ACM partea 1 - storageLoss eliminat + categorii + combi vara"
+        "icon": "🧪",
+        "text": "Sprint 9a: fix Răcire partea 1 — Tab A.16 gated + 7 teste regresie"
       },
       {
         "icon": "🔧",
-        "text": "Sprint 3b: fix racire partea 2 - W_aux + free cooling + override aporturi"
+        "text": "Sprint 8: fix Consum real — GZE + factor c + defalcare + bug lemn"
       },
       {
-        "icon": "🔧",
-        "text": "Sprint 3a: fix racire partea 1 - cooling-hourly integrat + SEER + eta separate"
-      },
-      {
-        "icon": "🔧",
-        "text": "Sprint 2: fix iluminat LENI — W_P integrat + ore per categorie + F_c pe tD"
-      },
-      {
-        "icon": "🔧",
-        "text": "Sprint 1: fix ventilatie qf_v dimensional + validari + motoare orfane"
-      },
-      {
-        "icon": "📋",
-        "text": "[Audit] Faza 11 — Step 7 Iluminat (LENI) finalizat, score 62%"
+        "icon": "🚀",
+        "text": "Sprint 11: migrare globala electricitate Tab A.16 NA:2023 (fP_nren 2.62 -> 2.00)"
       }
     ]
   },
