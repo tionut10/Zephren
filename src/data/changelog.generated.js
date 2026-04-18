@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🔸",
-        "text": "sprint-18: UX a11y + validare + sidebar + Step8 categorii (Bloc A-F)"
+        "text": "P1-3: EPBD rescalare A-G — sistem versioning praguri"
       },
       {
-        "icon": "📄",
-        "text": "vercel.json generate-cpe.py → generate-document.py (Sprint 14 rename)"
-      },
-      {
-        "icon": "📄",
-        "text": "sprint-17: MDLPA submit + PDF/A + SRI auto-map + Pașaport integrat + Registru DOCX/PDF"
-      },
-      {
-        "icon": "📄",
-        "text": "sprint-16: Anexa 2 bloc multi-apartament + Raport audit Mc 001 P.IV complet"
-      },
-      {
-        "icon": "📄",
-        "text": "sprint-15: EPBD 2024 valabilitate + cadastru/CF + semnătură + QR DOCX"
-      },
-      {
-        "icon": "📄",
-        "text": "sprint-14: format DOCX A4 + cod unic CPE MDLPA + penalizări p0-p11"
+        "icon": "📥",
+        "text": "P1-2: OCR facturi Claude Vision — prompt specializat distribuitori RO"
       },
       {
         "icon": "🔸",
-        "text": "Sprint 16: Pașaport Renovare EPBD 2024/1275 Art. 12 (termen legal 29 mai 2026)"
+        "text": "P1-1: Stripe Customer Portal în create-checkout.js (fără fișier nou)"
       },
       {
-        "icon": "🔬",
-        "text": "Sprint 15: curba cost-optimal Pareto + 3 perspective economice + EN 15459-1 complet"
+        "icon": "📋",
+        "text": "P0-5: checklist migrare GDPR pas-cu-pas pentru Supabase Dashboard"
+      },
+      {
+        "icon": "📄",
+        "text": "P0-4: TTL 1 oră pe Vercel Blob în preview-docx.js"
+      },
+      {
+        "icon": "🔸",
+        "text": "P0-3: banner ANCPI date simulate + flux ancpi-proxy"
+      },
+      {
+        "icon": "🎨",
+        "text": "P0-2: metadata CUI/VAT + clientType în create-checkout.js"
+      },
+      {
+        "icon": "🔸",
+        "text": "P0-1: integrare SmartBill în stripe-webhook.js"
       }
     ]
   },
