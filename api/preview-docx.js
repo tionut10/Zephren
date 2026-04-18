@@ -92,10 +92,16 @@ export default async function handler(req, res) {
     // Sprint 20: filename randomUUID — NU mai e ghicibil `cpe-preview-${Date.now()}.docx`
     const filename = `cpe-preview-${randomUUID()}.docx`;
 
+    // P0-4 (18 apr 2026) — TTL 1 oră pe CDN (default Vercel Blob = 24h).
+    // Reduce fereastra de expunere a datelor personale la Microsoft Office Online.
+    // Notă: `cacheControlMaxAge` setează max-age pe headerul Cache-Control al CDN-ului —
+    // fișierul rămâne în storage până la ștergere explicită (cleanup job recomandat).
+    const BLOB_TTL_SECONDS = 3600; // 1 oră
     const blob = await put(filename, docxBuffer, {
       access: "public",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       addRandomSuffix: true, // protecție suplimentară
+      cacheControlMaxAge: BLOB_TTL_SECONDS,
     });
 
     const viewerUrl =
