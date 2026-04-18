@@ -1,5 +1,7 @@
 import React from "react";
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
+import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { calcPenalties } from "../calc/penalties.js";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
@@ -35,7 +37,47 @@ export default function CpeAnexa({
   const V = parseFloat(building.volume) || 0;
   const catLabel = BUILDING_CATEGORIES?.find(c => c.id === building.category)?.label || building.category;
   const epRefMax = getNzebEpMax ? getNzebEpMax(building.category, selectedClimate?.zone) : 148;
-  const nzebOk = epFinal <= epRefMax && rer >= 30;
+  // Sprint 14 Task 5: parametrizare RER prag din NZEB_THRESHOLDS (în loc de hardcoded 30)
+  const rerMinRequired = NZEB_THRESHOLDS?.[building.category]?.rer_min ?? 30;
+  const nzebOk = epFinal <= epRefMax && rer >= rerMinRequired;
+
+  // ═══════════════════════════════════════════════════════
+  // Sprint 14 — Penalizări p0-p11 (Mc 001-2022 Partea III §8.10)
+  // ═══════════════════════════════════════════════════════
+  const penaltiesInput = {
+    envelope: {
+      opaque: opaqueElements?.map((el) => {
+        const r = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : null;
+        return { type: el.type, area: parseFloat(el.area) || 0, u: r?.u || 0 };
+      }) || [],
+      glazing: glazingElements?.map((el) => ({ u: parseFloat(el.u) || 0 })) || [],
+      bridges: [], // TODO Sprint 15: pull from thermalBridges
+    },
+    instSummary: {
+      heating: {
+        eta_gen: parseFloat(heating?.eta_gen) || 0,
+        eta_dist: parseFloat(heating?.eta_dist) || 0,
+        controls: heating?.control || "",
+      },
+      dhw: {
+        eta_dhw: parseFloat(acm?.eta_dhw ?? acm?.eta_gen) || 0,
+        storage: {
+          volume: parseFloat(acm?.storageVolume) || 0,
+          standing_loss: parseFloat(acm?.standingLoss) || 0,
+        },
+      },
+      lighting: { leni: parseFloat(instSummary?.leni) || 0 },
+      bacs: bacsClass || "D",
+    },
+    ventilation: {
+      type: ventilation?.type || "",
+      hrEfficiency: parseFloat(ventilation?.hrEfficiency) || 0,
+    },
+    building: { category: building.category },
+    renewables: { rer: parseFloat(rer) || 0 },
+  };
+  const penalties = calcPenalties(penaltiesInput);
+  const epWithPenalties = (parseFloat(epFinal) || 0) * penalties.summary.ep_multiplier;
 
   const fmt = (v, d = 1) => v != null && !isNaN(v) ? parseFloat(v).toFixed(d) : "—";
   const fmtRo = (v, d = 1) => fmt(v, d).replace(".", ",");
@@ -88,7 +130,7 @@ export default function CpeAnexa({
     }
   }
   if (instSummary) {
-    if (instSummary.isCOP === false && heating?.source?.includes("GAZE")) {
+    if (instSummary.isCOP === false && ["gaz_conv", "gaz_cond", "centrala_gpl"].includes(heating?.source)) {
       recommendations.push({
         code: "B1", priority: "medie",
         measure: "Înlocuire cazan cu pompă de căldură",
@@ -266,6 +308,8 @@ export default function CpeAnexa({
                   const bacsLabels = { A:"Clasă A — Înalt performantă", B:"Clasă B — Avansată", C:"Clasă C — Standard (referință)", D:"Clasă D — Nonautomatizată" };
                   const bacsFactors = { A:0.80, B:0.93, C:1.00, D:1.10 };
                   const bacsColor = { A:"text-emerald-400", B:"text-lime-400", C:"text-yellow-400", D:"text-red-400" };
+                  // TODO Sprint 17 (Task 3) — migrare SRI la EN ISO 52120-1:2022 cu 9 domenii × 4 niveluri.
+                  // Calcul curent simplificat (hardcoded per control type) rămâne până la noul motor SRI.
                   const sriVal = heating?.control === "pid" || heating?.control === "bacs_a" ? 60 :
                                  heating?.control === "termostat" ? 30 : 10;
                   return (
@@ -327,6 +371,84 @@ export default function CpeAnexa({
               ))}
             </div>
           )}
+        </Section>
+
+        {/* Sprint 14 — Penalizări p0-p11 (Mc 001-2022 Partea III §8.10) */}
+        <Section title="V. Penalizări — utilizare irațională energie (Mc 001-2022 §8.10)">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[10px] border-collapse">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-1 opacity-40 font-normal pr-2">Cod</th>
+                  <th className="text-left py-1 opacity-40 font-normal pr-2">Indicator</th>
+                  <th className="text-right py-1 opacity-40 font-normal pr-2">Valoare</th>
+                  <th className="text-right py-1 opacity-40 font-normal pr-2">ΔEP [%]</th>
+                  <th className="text-left py-1 opacity-40 font-normal">Status / Motiv</th>
+                </tr>
+              </thead>
+              <tbody>
+                {["p0","p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11"].map((key) => {
+                  const p = penalties[key];
+                  if (!p) return null;
+                  const labels = {
+                    p0: "Anvelopa subizolată",
+                    p1: "Ferestre slabe",
+                    p2: "Punți termice",
+                    p3: "Cazan ineficient",
+                    p4: "Distribuție neoptimă",
+                    p5: "Reglare inadecvată",
+                    p6: "ACM ineficient",
+                    p7: "Stocaj neizolat",
+                    p8: "Ventilație fără HR",
+                    p9: "Iluminat ineficient",
+                    p10: "Lipsă BACS",
+                    p11: "Lipsă regenerabile",
+                  };
+                  return (
+                    <tr key={key} className="border-b border-white/[0.04]">
+                      <td className="py-1 pr-2 font-mono text-amber-400/70">{key}</td>
+                      <td className="py-1 pr-2 opacity-70">{labels[key]}</td>
+                      <td className="py-1 pr-2 text-right font-mono opacity-60">{String(p.value)}</td>
+                      <td className={`py-1 pr-2 text-right font-mono ${p.applied ? "text-red-400" : "text-emerald-400/60"}`}>
+                        {p.applied ? `+${p.delta_EP_pct}%` : "0%"}
+                      </td>
+                      <td className={`py-1 text-[9px] ${p.applied ? "text-red-400/70" : "text-emerald-400/50"}`}>
+                        {p.applied ? "✗" : "✓"} {p.reason}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Sumar penalizări + EP majorat */}
+          <div className="mt-3 p-3 rounded-lg border-2" style={{
+            borderColor: penalties.summary.count_applied === 0 ? "#22c55e40" : penalties.summary.total_delta_pct >= 20 ? "#ef444440" : "#eab30840",
+            backgroundColor: penalties.summary.count_applied === 0 ? "rgba(34,197,94,0.05)" : penalties.summary.total_delta_pct >= 20 ? "rgba(239,68,68,0.05)" : "rgba(234,179,8,0.05)",
+          }}>
+            <div className="flex items-baseline justify-between mb-2">
+              <div className="text-[11px] opacity-60">
+                <strong>{penalties.summary.count_applied}</strong> din 12 penalizări aplicate —
+                majorare EP: <strong>+{penalties.summary.total_delta_pct.toFixed(1)}%</strong>
+              </div>
+              <div className="text-[10px] opacity-40">
+                Formula: EP_total = EP_base × (1 + ΣΔ/100)
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-[11px]">
+              <div>
+                <div className="opacity-40">EP bază (fără penalizări)</div>
+                <div className="font-mono text-base">{fmtRo(epFinal, 1)} <span className="opacity-40 text-[10px]">kWh/(m²·an)</span></div>
+              </div>
+              <div>
+                <div className="opacity-40">EP majorat cu penalizări</div>
+                <div className={`font-mono text-base ${penalties.summary.count_applied === 0 ? "text-emerald-400" : "text-amber-400"}`}>
+                  {fmtRo(epWithPenalties, 1)} <span className="opacity-40 text-[10px]">kWh/(m²·an)</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </Section>
       </div>
 

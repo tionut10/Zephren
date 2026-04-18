@@ -1,13 +1,61 @@
 """
-Vercel Python Serverless Function — Generare CPE DOCX cu python-docx.
-Primește template DOCX (base64) + date JSON, returnează DOCX completat.
-Lucrează direct pe template-urile originale MDLPA fără pre-procesare.
+Vercel Python Serverless Function — Generare documente DOCX consolidat (Sprint 14).
+
+Endpoint unic pentru toate tipurile de documente:
+  ?type=cpe     → Anexa 1 simplă (blob DOCX)
+  ?type=anexa   → Anexa 1+2 extins (blob DOCX)
+  ?type=audit   → Raport audit energetic (JSON {docx: base64, filename})
+  ?type=anexa1  → Alias cpe (variantă PDF)
+  ?type=anexa2  → Alias anexa (variantă PDF)
+
+Retro-compat: dacă nu se trimite ?type=, se folosește body.mode.
+
+Aplică enforce_a4_portrait() pentru toate documentele generate —
+Ord. MDLPA 16/2023 cere strict A4 portret + Calibri 11pt.
 """
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 import json, io, base64, re, copy
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Emu, Pt
+from docx.enum.section import WD_ORIENT
 from lxml import etree
+
+
+# ═══════════════════════════════════════════════════════
+# A4 PORTRAIT ENFORCEMENT — Ord. MDLPA 16/2023 Anexa 1
+# ═══════════════════════════════════════════════════════
+# A4: 11906 × 16838 DXA (1 DXA = 1/1440 inch = 635 EMU)
+A4_WIDTH_EMU = 11906 * 635     # 21.0 cm
+A4_HEIGHT_EMU = 16838 * 635    # 29.7 cm
+A4_MARGIN_EMU = 1417 * 635     # 2.5 cm
+
+
+def enforce_a4_portrait(doc):
+    """Forțează toate secțiunile la A4 portret + margini 2.5 cm + Calibri 11pt.
+
+    Previne regresia în care template-ul moștenește format legacy (Letter,
+    Legal, landscape). Ord. MDLPA 16/2023 Anexa 1 cere strict A4 portret
+    pentru CPE tipărit.
+    """
+    for section in doc.sections:
+        section.page_width = Emu(A4_WIDTH_EMU)
+        section.page_height = Emu(A4_HEIGHT_EMU)
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.top_margin = Emu(A4_MARGIN_EMU)
+        section.bottom_margin = Emu(A4_MARGIN_EMU)
+        section.left_margin = Emu(A4_MARGIN_EMU)
+        section.right_margin = Emu(A4_MARGIN_EMU)
+    try:
+        if "Normal" in doc.styles:
+            normal = doc.styles["Normal"]
+            if normal.font.name is None:
+                normal.font.name = "Calibri"
+            if normal.font.size is None:
+                normal.font.size = Pt(11)
+    except Exception:
+        pass
+    return doc
 
 # ═══════════════════════════════════════════════════════
 # CONSTANTE — scalele EP și CO2 din template-uri (Mc 001-2022)
@@ -1438,18 +1486,286 @@ class handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
+    # ═══════════════════════════════════════════════════════
+    # AUDIT REPORT — raport audit energetic Mc 001-2022 Partea IV
+    # (Sprint 14 — schelet; Sprint 16 extinde cap. 4/7/8)
+    # ═══════════════════════════════════════════════════════
+    def _handle_audit_report(self, body):
+        """Generează raport audit DOCX de la zero (fără template).
+
+        Întoarce JSON {docx: base64, filename} — contract așteptat de
+        AuditReport.jsx:90-97.
+        """
+        try:
+            from docx.shared import Pt as _Pt, Cm as _Cm
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+            building = body.get("building", {}) or {}
+            inst = body.get("instSummary", {}) or {}
+            renew = body.get("renewSummary", {}) or {}
+            auditor = body.get("auditor", {}) or {}
+            en_class = body.get("energyClass", {}) or {}
+            opaque = body.get("opaqueElements", []) or []
+            glazing = body.get("glazingElements", []) or []
+            bridges = body.get("thermalBridges", []) or []
+            measured = body.get("measuredConsumption", {}) or {}
+
+            doc = Document()
+            enforce_a4_portrait(doc)
+
+            # ── Antet ──────────────────────────────────
+            title = doc.add_paragraph()
+            title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            r = title.add_run("RAPORT AUDIT ENERGETIC")
+            r.bold = True
+            r.font.size = _Pt(16)
+
+            sub = doc.add_paragraph()
+            sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            rs = sub.add_run("Mc 001-2022, Partea IV — Ord. MDLPA 16/2023")
+            rs.font.size = _Pt(10)
+            rs.italic = True
+
+            doc.add_paragraph()
+
+            # ── Capitol 1. Date identificare ───────────
+            h1 = doc.add_paragraph()
+            rh1 = h1.add_run("1. Date de identificare a clădirii")
+            rh1.bold = True
+            rh1.font.size = _Pt(13)
+
+            tbl = doc.add_table(rows=0, cols=2)
+            tbl.style = "Light Grid Accent 1"
+            def _row(k, v):
+                row = tbl.add_row().cells
+                row[0].text = k
+                row[1].text = str(v) if v not in (None, "", []) else "—"
+            _row("Adresă", building.get("address", ""))
+            _row("Localitate", building.get("city", ""))
+            _row("Județ", building.get("county", ""))
+            _row("An construcție", building.get("yearBuilt", ""))
+            _row("Categorie funcțională", building.get("category", ""))
+            _row("Arie utilă de referință Au", f"{building.get('areaUseful', '') or '—'} m²")
+            _row("Volum încălzit V", f"{building.get('volume', '') or '—'} m³")
+            _row("Număr apartamente", building.get("units", ""))
+
+            doc.add_paragraph()
+
+            # ── Capitol 2. Auditor energetic ───────────
+            h2 = doc.add_paragraph()
+            rh2 = h2.add_run("2. Auditor energetic")
+            rh2.bold = True
+            rh2.font.size = _Pt(13)
+
+            tbl2 = doc.add_table(rows=0, cols=2)
+            tbl2.style = "Light Grid Accent 1"
+            def _row2(k, v):
+                row = tbl2.add_row().cells
+                row[0].text = k
+                row[1].text = str(v) if v not in (None, "", []) else "—"
+            _row2("Nume prenume", auditor.get("name", ""))
+            _row2("Firmă/PFA", auditor.get("company", ""))
+            _row2("Atestat nr.", auditor.get("atestat", ""))
+            _row2("Gradul", auditor.get("grade", ""))
+            _row2("Telefon", auditor.get("phone", ""))
+            _row2("Email", auditor.get("email", ""))
+            _row2("Data", auditor.get("date", ""))
+            _row2("Cod unic MDLPA", auditor.get("mdlpaCode", ""))
+
+            doc.add_paragraph()
+
+            # ── Capitol 3. Performanță energetică ──────
+            h3 = doc.add_paragraph()
+            rh3 = h3.add_run("3. Indicatori performanță energetică calculați")
+            rh3.bold = True
+            rh3.font.size = _Pt(13)
+
+            tbl3 = doc.add_table(rows=0, cols=2)
+            tbl3.style = "Light Grid Accent 1"
+            def _row3(k, v):
+                row = tbl3.add_row().cells
+                row[0].text = k
+                row[1].text = str(v) if v not in (None, "", []) else "—"
+            _row3("Clasă energetică EP", en_class.get("cls", "—"))
+            _row3("EP total [kWh/(m²·an)]",
+                  f"{renew.get('ep_adjusted_m2', inst.get('ep_total_m2', '—'))}")
+            _row3("CO₂ specific [kg/(m²·an)]",
+                  f"{renew.get('co2_adjusted_m2', inst.get('co2_total_m2', '—'))}")
+            _row3("RER [%]", f"{renew.get('rer', '—')}")
+            _row3("Qf total [kWh/an]", f"{inst.get('qf_total', '—')}")
+            _row3("LENI [kWh/(m²·an)]", f"{inst.get('leni', '—')}")
+
+            doc.add_paragraph()
+
+            # ── Capitol 4. Conformitate (Sprint 16 extinde) ──
+            h4 = doc.add_paragraph()
+            rh4 = h4.add_run("4. Evaluare conformitate normativă")
+            rh4.bold = True
+            rh4.font.size = _Pt(13)
+            p4 = doc.add_paragraph()
+            p4.add_run("Verificare transmitanțe termice U vs. C 107-2005, "
+                       "consum primar Q_p vs. Ord. 16/2023, "
+                       "conformitate nZEB conform L.238/2024 Art. 6. "
+                       "Detaliere în Sprint 16.").italic = True
+
+            doc.add_paragraph()
+
+            # ── Capitol 5. Anvelopa opacă + vitrată ────
+            if opaque:
+                h5 = doc.add_paragraph()
+                rh5 = h5.add_run("5. Anvelopa termică — elemente opace")
+                rh5.bold = True
+                rh5.font.size = _Pt(13)
+
+                tbl5 = doc.add_table(rows=1, cols=4)
+                tbl5.style = "Light Grid Accent 1"
+                hdr = tbl5.rows[0].cells
+                hdr[0].text = "Element"
+                hdr[1].text = "Denumire"
+                hdr[2].text = "Arie [m²]"
+                hdr[3].text = "U [W/(m²·K)]"
+                for el in opaque:
+                    cells = tbl5.add_row().cells
+                    cells[0].text = str(el.get("type", ""))
+                    cells[1].text = str(el.get("name", ""))
+                    cells[2].text = str(el.get("area", ""))
+                    cells[3].text = str(el.get("u", "") or "—")
+
+            if glazing:
+                doc.add_paragraph()
+                h5b = doc.add_paragraph()
+                rh5b = h5b.add_run("5.b Anvelopa termică — elemente vitrate")
+                rh5b.bold = True
+                rh5b.font.size = _Pt(13)
+
+                tbl5b = doc.add_table(rows=1, cols=3)
+                tbl5b.style = "Light Grid Accent 1"
+                hdr = tbl5b.rows[0].cells
+                hdr[0].text = "Denumire"
+                hdr[1].text = "Arie [m²]"
+                hdr[2].text = "U [W/(m²·K)]"
+                for el in glazing:
+                    cells = tbl5b.add_row().cells
+                    cells[0].text = str(el.get("name", ""))
+                    cells[1].text = str(el.get("area", ""))
+                    cells[2].text = str(el.get("u", "") or "—")
+
+            doc.add_paragraph()
+
+            # ── Capitol 6. Consum măsurat vs. calculat ──
+            if measured:
+                h6 = doc.add_paragraph()
+                rh6 = h6.add_run("6. Consum măsurat vs. calculat")
+                rh6.bold = True
+                rh6.font.size = _Pt(13)
+
+                tbl6 = doc.add_table(rows=1, cols=3)
+                tbl6.style = "Light Grid Accent 1"
+                hdr = tbl6.rows[0].cells
+                hdr[0].text = "Utilitate"
+                hdr[1].text = "Măsurat [kWh/an]"
+                hdr[2].text = "Calculat [kWh/an]"
+                for util_key, util_label in [
+                    ("heating", "Încălzire"),
+                    ("cooling", "Răcire"),
+                    ("acm", "ACM"),
+                    ("lighting", "Iluminat"),
+                ]:
+                    cells = tbl6.add_row().cells
+                    cells[0].text = util_label
+                    cells[1].text = str(measured.get(util_key, "—"))
+                    calc_key = f"qf_{util_key[0]}"
+                    cells[2].text = str(inst.get(calc_key, "—"))
+
+            doc.add_paragraph()
+
+            # ── Capitol 7. Concluzii (Sprint 16 extinde) ──
+            h7 = doc.add_paragraph()
+            rh7 = h7.add_run("7. Concluzii și recomandări")
+            rh7.bold = True
+            rh7.font.size = _Pt(13)
+            p7 = doc.add_paragraph()
+            p7.add_run("Măsurile de reabilitare și estimarea economiilor sunt "
+                       "detaliate în Anexa 2 a CPE asociat și vor fi extinse "
+                       "în Sprint 16 (auto-generate + editor text).").italic = True
+
+            # ── Semnătură ──────────────────────────────
+            doc.add_paragraph()
+            doc.add_paragraph()
+            sig = doc.add_paragraph()
+            sig.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            sig.add_run(f"Auditor energetic: {auditor.get('name', '—')}\n")
+            sig.add_run(f"Atestat nr.: {auditor.get('atestat', '—')}\n")
+            sig.add_run(f"Data: {auditor.get('date', '—')}")
+
+            buf = io.BytesIO()
+            doc.save(buf)
+            docx_bytes = buf.getvalue()
+            docx_b64 = base64.b64encode(docx_bytes).decode("ascii")
+
+            addr_slug = re.sub(r"[^A-Za-z0-9]+", "_",
+                               (building.get("address", "") or "cladire"))[:40]
+            filename = f"raport_audit_{addr_slug or 'cladire'}.docx"
+
+            response = json.dumps({"docx": docx_b64, "filename": filename})
+            self.send_response(200)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response.encode("utf-8"))
+        except Exception as e:
+            import traceback
+            err_body = json.dumps({
+                "error": str(e),
+                "trace": traceback.format_exc()[-2000:],
+            })
+            self.send_response(500)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(err_body.encode("utf-8"))
+
     def do_POST(self):
         try:
             content_length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(content_length)
             body = json.loads(raw)
 
+            # ═══════════════════════════════════════
+            # Routing pe ?type= query (Sprint 14 consolidation)
+            # Fallback retro-compat: body.mode
+            # ═══════════════════════════════════════
+            parsed_url = urlparse(self.path)
+            qs = parse_qs(parsed_url.query or "")
+            doc_type = (qs.get("type", [""])[0] or "").lower()
+
+            # ── Ramură separată: raport audit energetic ──────────────
+            # Întoarce JSON {docx: base64, filename} — flux diferit de CPE,
+            # generează DOCX de la zero (fără template MDLPA).
+            if doc_type == "audit":
+                return self._handle_audit_report(body)
+
+            # ── Alias-uri anexa1/anexa2 pentru variantele PDF ────────
+            if doc_type in ("anexa1", "cpe", ""):
+                effective_mode = body.get("mode", "cpe") if doc_type == "" else "cpe"
+            elif doc_type in ("anexa", "anexa2"):
+                effective_mode = "anexa"
+            else:
+                # type necunoscut → fallback la body.mode
+                effective_mode = body.get("mode", "cpe")
+
             tpl_bytes = base64.b64decode(body["template"])
             data = body.get("data", {})
-            mode = body.get("mode", "cpe")
+            mode = effective_mode
             category = body.get("category", "AL")
 
             doc = Document(io.BytesIO(tpl_bytes))
+
+            # ═══════════════════════════════════════
+            # A4 ENFORCEMENT — forțat pentru orice template (Sprint 14)
+            # ═══════════════════════════════════════
+            enforce_a4_portrait(doc)
 
             # ═══════════════════════════════════════
             # 0. SCALE EP + CO₂ — PRIMELE! (înainte de text replacements)
@@ -1619,6 +1935,17 @@ class handler(BaseHTTPRequestHandler):
             for old, new in auditor_replacements.items():
                 if new:
                     replace_in_doc(doc, old, new)
+
+            # ═══════════════════════════════════════
+            # Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
+            # Placeholder-uri multiple pentru compatibilitate cu template-uri diferite.
+            # Dacă template-ul nu are placeholder, codul rămâne în XML (metadata)
+            # și se afișează în UI + XML export via generate-xml.js <CodUnicCPE>.
+            # ═══════════════════════════════════════
+            cpe_code = data.get("cpe_code", "")
+            if cpe_code:
+                for placeholder in ["[[CPE_CODE]]", "{{CPE_CODE}}", "CodUnicCPE"]:
+                    replace_in_doc(doc, placeholder, cpe_code)
 
             # nZEB status — bifează checkbox-ul dacă clădirea e nZEB
             set_nzeb_checkbox(doc, data.get("nzeb", "NU") == "DA")

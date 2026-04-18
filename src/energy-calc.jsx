@@ -3235,8 +3235,8 @@ export default function EnergyCalcApp({ cloud }) {
                 <div className="opacity-50">Calcul energetic complet. Trimite datele clădirii, returnează Ep, CO₂, clasă, RER.</div>
               </div>
               <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
-                <div className="text-amber-400 mb-1">POST /api/generate-cpe</div>
-                <div className="opacity-50">Generează certificat DOCX completat automat. Returnează blob.</div>
+                <div className="text-amber-400 mb-1">POST /api/generate-document?type=cpe|anexa|audit</div>
+                <div className="opacity-50">Endpoint unic DOCX: certificat, anexă extinsă sau raport audit. A4 portret forțat.</div>
               </div>
               <div className="bg-white/[0.03] rounded-lg p-3 font-mono text-[10px]">
                 <div className="text-amber-400 mb-1">GET /api/materials</div>

@@ -87,7 +87,7 @@ export default function AuditReport({
           catch { return {}; }
         })(),
       };
-      const res = await fetch("/api/generate-audit-report", {
+      const res = await fetch("/api/generate-document?type=audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -20,11 +20,12 @@ export default async function handler(req, res) {
     const {
       building,       // { name, address, county, locality, cadastral, yearBuilt, ... }
       owner,          // { name, cnp_cui, address }
-      auditor,        // { name, attestation, company }
+      auditor,        // { name, attestation, company, cpeCode, mdlpaCode, registryIndex }
       results,        // { ep, energyClass, co2, rer, breakdown }
       envelope,       // { walls_u, roof_u, floor_u, windows_u }
       systems,        // { heating, cooling, hotWater, ventilation, lighting }
       issuedDate,     // ISO date string
+      cpeCode,        // Sprint 14: cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
     } = body;
 
     if (!building || !results) {
@@ -44,12 +45,15 @@ export default async function handler(req, res) {
     const e = escapeXml;
     const date = issuedDate || new Date().toISOString().split("T")[0];
 
+    const cpeCodeFinal = cpeCode || auditor?.cpeCode || "";
+
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CertificatPerformantaEnergetica xmlns="urn:mdlpa:certificat-energetic:v1">
   <Antet>
     <DataEmitere>${e(date)}</DataEmitere>
     <Scop>Certificat de performanta energetica</Scop>
     <Legislatie>Mc 001-2022, Legea 238/2024</Legislatie>
+    <CodUnicCPE>${e(cpeCodeFinal)}</CodUnicCPE>
   </Antet>
 
   <Cladire>

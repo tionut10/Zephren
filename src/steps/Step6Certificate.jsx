@@ -14,6 +14,8 @@ import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, L
 import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
 import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
+import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
+import { calcPenalties } from "../calc/penalties.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -193,6 +195,42 @@ export default function Step6Certificate(props) {
                     auditor_email: auditor.email || "",
                     auditor_date: auditor.date ? auditor.date.split("-").reverse().join(".") : "",
                     auditor_mdlpa: auditor.mdlpaCode || "",
+                    // Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
+                    cpe_code: auditor.cpeCode || "",
+                    registry_index: auditor.registryIndex || "1",
+                    // Sprint 14 — Penalizări Mc 001-2022 Partea III §8.10 (serializate)
+                    penalties_summary: (() => {
+                      try {
+                        const pen = calcPenalties({
+                          envelope: {
+                            opaque: opaqueElements?.map((el) => {
+                              if (!el.layers || el.layers.length === 0) return { type: el.type, area: parseFloat(el.area) || 0, u: 0 };
+                              const elType = ELEMENT_TYPES.find((t) => t.id === el.type);
+                              const rsi = elType ? elType.rsi : 0.13;
+                              const rse = elType ? elType.rse : 0.04;
+                              const rL = el.layers.reduce((s, l) => {
+                                const d = (parseFloat(l.thickness) || 0) / 1000;
+                                return s + (d > 0 && l.lambda > 0 ? d / l.lambda : 0);
+                              }, 0);
+                              const u = rL > 0 ? 1 / (rsi + rL + rse) : 0;
+                              return { type: el.type, area: parseFloat(el.area) || 0, u };
+                            }) || [],
+                            glazing: glazingElements?.map((el) => ({ u: parseFloat(el.u) || 0 })) || [],
+                            bridges: [],
+                          },
+                          instSummary: {
+                            heating: { eta_gen: parseFloat(heating?.eta_gen) || 0, eta_dist: parseFloat(heating?.eta_dist) || 0, controls: heating?.control || "" },
+                            dhw: { eta_dhw: parseFloat(acm?.eta_dhw ?? acm?.eta_gen) || 0, storage: { volume: parseFloat(acm?.storageVolume) || 0, standing_loss: parseFloat(acm?.standingLoss) || 0 } },
+                            lighting: { leni: parseFloat(instSummary?.leni) || 0 },
+                            bacs: "C",
+                          },
+                          ventilation: { type: ventilation?.type || "", hrEfficiency: parseFloat(ventilation?.hrEfficiency) || 0 },
+                          building: { category: building.category },
+                          renewables: { rer: renewSummary?.rer || 0 },
+                        });
+                        return JSON.stringify(pen.summary);
+                      } catch { return ""; }
+                    })(),
                     energy_class: enClassDocx.cls,
                     ep_class_real: enClassDocx.cls,
                     ep_class_ref: getEnergyClass(epRefMax, catKey).cls,
@@ -240,7 +278,7 @@ export default function Step6Certificate(props) {
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };
 
-                const resp = await fetch("/api/generate-cpe", {
+                const resp = await fetch(`/api/generate-document?type=${mode === "anexa" ? "anexa" : "cpe"}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(payload),
@@ -1589,6 +1627,67 @@ ${(() => {
                           <span>Format așteptat: CPE-XXXXX/AAAA sau numeric</span>
                         </div>
                       )}
+                      {/* Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024) */}
+                      <div className="mt-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-[11px] font-medium opacity-70">Cod unic CPE</div>
+                          <button
+                            type="button"
+                            className="text-[10px] px-2 py-1 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={!auditor.name || !auditor.mdlpaCode || !auditor.date}
+                            title={!auditor.name || !auditor.mdlpaCode || !auditor.date
+                              ? "Completează nume, cod MDLPA și dată mai întâi"
+                              : "Generează automat"}
+                            onClick={() => {
+                              try {
+                                const nameParts = String(auditor.name || "").trim().split(/\s+/);
+                                const lastName = nameParts[0] || "";
+                                const firstName = nameParts.slice(1).join(" ") || "";
+                                const code = generateCPECode({
+                                  auditor: {
+                                    lastName,
+                                    firstName,
+                                    atestat: auditor.atestat || "NONE",
+                                    mdlpaCode: auditor.mdlpaCode,
+                                  },
+                                  building,
+                                  date: auditor.date,
+                                  registryIndex: parseInt(auditor.registryIndex || "1", 10) || 1,
+                                });
+                                setAuditor(p => ({ ...p, cpeCode: code }));
+                              } catch (e) {
+                                alert("Eroare generare cod CPE: " + e.message);
+                              }
+                            }}
+                          >
+                            🔄 Generează automat
+                          </button>
+                        </div>
+                        <Input
+                          label={t("Index registru local", lang)}
+                          value={auditor.registryIndex || "1"}
+                          onChange={v => {
+                            const cleaned = v.replace(/[^0-9]/g, "").slice(0, 6) || "1";
+                            setAuditor(p => ({ ...p, registryIndex: cleaned }));
+                          }}
+                          placeholder="1"
+                        />
+                        {auditor.cpeCode && (
+                          <div className="mt-2">
+                            <div className="text-[9px] opacity-40 mb-1">Cod generat:</div>
+                            <div className="text-[10px] font-mono break-all p-2 rounded bg-black/30 border border-white/5">
+                              {auditor.cpeCode}
+                            </div>
+                            <div className="text-[9px] mt-1 flex items-center gap-1">
+                              {validateCPECode(auditor.cpeCode) ? (
+                                <span className="text-emerald-400/80">✓ Format valid (Ord. MDLPA 16/2023)</span>
+                              ) : (
+                                <span className="text-amber-400/80">⚠ Format nestandard — verifică manual</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Card>
 

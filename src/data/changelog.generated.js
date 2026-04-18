@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔸",
+        "text": "Sprint 16: Pașaport Renovare EPBD 2024/1275 Art. 12 (termen legal 29 mai 2026)"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint 15: curba cost-optimal Pareto + 3 perspective economice + EN 15459-1 complet"
+      },
+      {
+        "icon": "🔸",
+        "text": "Sprint 14: Costuri unitare + Finanțare RO 2026"
+      },
+      {
         "icon": "🔬",
         "text": "Sprint 13: polishing post-Faza 15 — U_lin ACM + aH + Worker semnătură"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🧪",
         "text": "fix(test): actualizare praguri CO₂ EN 16798 NA:2019 (I≤400/II≤600/III≤1000) — corecție Sprint 0"
-      },
-      {
-        "icon": "✨",
-        "text": "Sprint 9b: fix Răcire partea 2 — profile orare + free cooling module + breakdown UI"
-      },
-      {
-        "icon": "🧪",
-        "text": "Sprint 9a: fix Răcire partea 1 — Tab A.16 gated + 7 teste regresie"
-      },
-      {
-        "icon": "🔧",
-        "text": "Sprint 8: fix Consum real — GZE + factor c + defalcare + bug lemn"
       }
     ]
   },

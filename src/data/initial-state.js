@@ -148,4 +148,7 @@ export const INITIAL_AUDITOR = {
   dataExpirareDrept:"",                    // data expirării dreptului de practică (ISO: YYYY-MM-DD)
   dataTransmitereMDLPA:"",                 // data transmiterii informațiilor în baza de date MDLPA (ISO)
   cpeNumber:"",                            // nr. înregistrare CPE (ex: "CPE-12345")
+  // Sprint 14 — cod unic CPE generat (format Ord. MDLPA 16/2023 + L.238/2024)
+  cpeCode:"",                              // codul unic final: {mdlpa}_{data}_{Nume}_{Prenume}_{serie}_{nr}_{idx}_CPE_{hash8}
+  registryIndex:"1",                       // index în registrul local al auditorului (incremental)
 };
