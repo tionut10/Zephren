@@ -57,6 +57,9 @@ export default function RampInstant({
   onCadastralLookup,
   cadastralLoading,
   cadastralMsg,
+  cadastralSimulated,
+  cadastralBannerDismissed,
+  onCadastralBannerDismiss,
   selectedClimate,
   importStatus,
   importStatusMsg,
@@ -172,6 +175,38 @@ export default function RampInstant({
         {cadastralMsg && (
           <div className={`text-[10px] px-1 ${cadastralMsg.startsWith("✓") ? "text-green-400" : "text-amber-400"}`}>
             {cadastralMsg}
+          </div>
+        )}
+        {/* P0-3 (18 apr 2026) — banner date simulate când ANCPI_API_KEY lipsește */}
+        {cadastralSimulated && !cadastralBannerDismissed && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2"
+          >
+            <span className="text-amber-400 text-sm leading-tight shrink-0" aria-hidden="true">⚠️</span>
+            <div className="flex-1 text-[11px] text-amber-200/90 leading-snug">
+              <strong className="font-semibold">Date cadastrale simulate</strong> — ANCPI_API_KEY neconfigurat în server.
+              Verificați manual la{" "}
+              <a
+                href="https://geoportal.ancpi.ro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-amber-100"
+              >
+                geoportal.ancpi.ro
+              </a>
+              {" "}sau introduceți datele manual în câmpurile de mai jos.
+            </div>
+            {typeof onCadastralBannerDismiss === "function" && (
+              <button
+                type="button"
+                onClick={onCadastralBannerDismiss}
+                aria-label="Închide avertismentul"
+                className="text-amber-400/60 hover:text-amber-300 shrink-0 text-sm leading-none px-1"
+              >
+                ✕
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -105,6 +105,9 @@ export default function SmartDataHub({
   onCadastralLookup,
   cadastralLoading,
   cadastralMsg,
+  cadastralSimulated,
+  cadastralBannerDismissed,
+  onCadastralBannerDismiss,
   selectedClimate,
   importStatus,
   importStatusMsg,
@@ -374,6 +377,9 @@ export default function SmartDataHub({
               onCadastralLookup={onCadastralLookup}
               cadastralLoading={cadastralLoading}
               cadastralMsg={cadastralMsg}
+              cadastralSimulated={cadastralSimulated}
+              cadastralBannerDismissed={cadastralBannerDismissed}
+              onCadastralBannerDismiss={onCadastralBannerDismiss}
               selectedClimate={selectedClimate}
               importStatus={importStatus}
               importStatusMsg={importStatusMsg}

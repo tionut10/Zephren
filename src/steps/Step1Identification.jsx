@@ -13,6 +13,7 @@ import {
   openMeteoToClimateData,
   validateClimateData,
 } from "../calc/climate-import.js";
+import { fetchCadastralData } from "../lib/external-apis.js";
 
 // ── Lazy-load localități România ───────────────────────────────────────────────
 let _localitiesCache = null;
@@ -143,6 +144,9 @@ export default function Step1Identification({
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
+  // P0-3 (18 apr 2026) — banner date simulate când ANCPI_API_KEY lipsește
+  const [cadastralSimulated, setCadastralSimulated] = useState(false);
+  const [cadastralBannerDismissed, setCadastralBannerDismissed] = useState(false);
   // Sprint 18 UX — validare + banner
   const [showValidationBanner, setShowValidationBanner] = useState(false);
   const validationErrors = useMemo(() => validateStep1Critical(building, lang), [building, lang]);
@@ -302,9 +306,31 @@ export default function Step1Identification({
     if (!nr) return;
     setCadastralLoading(true);
     setCadastralMsg("");
+    setCadastralSimulated(false);
+    setCadastralBannerDismissed(false);
     try {
-      // ANCPI nu are API public; simulăm lookup via OSM building tags sau Wikidata
-      // Alternativ: utilizatorul introduce manual numărul, iar noi căutăm adresa via Nominatim
+      // P0-3: încearcă proxy-ul ANCPI server-side (foloseste ANCPI_API_KEY dacă e setat).
+      // Dacă răspunsul are _simulated: true → setăm flag pentru banner.
+      const ancpi = await fetchCadastralData(nr);
+      if (ancpi && !ancpi.error) {
+        const simulated = !!ancpi._simulated;
+        setCadastralSimulated(simulated);
+        const addr = ancpi.address || "";
+        const city = ancpi.city && ancpi.city !== "—" ? ancpi.city : "";
+        const county = ancpi.county && ancpi.county !== "—" ? ancpi.county : "";
+        if (city || county) updateBuilding?.({ city, county });
+        setCadastralMsg(simulated
+          ? `Găsit (simulat): ${addr}${city ? " · " + city : ""}`
+          : `✓ Găsit: ${addr}${city ? " · " + city : ""}`
+        );
+        return;
+      }
+    } catch {
+      // Proxy indisponibil → fallback Nominatim mai jos
+    }
+
+    // Fallback secundar — Nominatim (OSM)
+    try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nr + " Romania")}&format=json&addressdetails=1&limit=3`;
       const res = await fetch(url, { headers: { "Accept-Language": "ro", "User-Agent": "Zephren/3.6" } });
       const data = await res.json();
@@ -314,7 +340,8 @@ export default function Step1Identification({
         const city = a.city || a.town || a.village || "";
         const county = a.county?.replace(/^Județul\s*/i,"") || "";
         updateBuilding?.({ city, county });
-        setCadastralMsg(`✓ Găsit: ${city}${county ? ", " + county : ""}`);
+        setCadastralSimulated(true); // Nominatim nu e ANCPI oficial
+        setCadastralMsg(`Găsit (OSM fallback): ${city}${county ? ", " + county : ""}`);
       } else {
         setCadastralMsg("Nu s-au găsit date. Verificați numărul cadastral sau introduceți manual.");
       }
@@ -433,6 +460,9 @@ export default function Step1Identification({
         onCadastralLookup={handleCadastralLookup}
         cadastralLoading={cadastralLoading}
         cadastralMsg={cadastralMsg}
+        cadastralSimulated={cadastralSimulated}
+        cadastralBannerDismissed={cadastralBannerDismissed}
+        onCadastralBannerDismiss={() => setCadastralBannerDismissed(true)}
         selectedClimate={selectedClimate}
         importStatus={importStatus}
         importStatusMsg={importStatusMsg}
