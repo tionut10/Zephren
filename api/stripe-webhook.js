@@ -1,15 +1,108 @@
 /**
  * POST /api/stripe-webhook
- * Handles Stripe webhook events to update user plan in Supabase.
+ * Handles Stripe webhook events to update user plan in Supabase + emite factură SmartBill.
  * Requires STRIPE_WEBHOOK_SECRET and Supabase admin credentials.
  *
  * Events handled:
- * - checkout.session.completed → activate plan
+ * - checkout.session.completed → activate plan + emite factură SmartBill (B2B RO/B2C/B2B UE)
  * - customer.subscription.updated → update plan (upgrade/downgrade mid-cycle) — Sprint 20
  * - customer.subscription.deleted → revert to free
+ *
+ * Env vars suplimentare necesare pentru SmartBill (Sprint P0-1, 18 apr 2026):
+ *   SMARTBILL_EMAIL  — email cont SmartBill (ex: contact@zephren.com)
+ *   SMARTBILL_TOKEN  — token API generat din Settings → API SmartBill
+ *   SMARTBILL_CUI    — CUI firmă emitentă ZEPHREN SRL (format "RO12345678")
  */
 
 export const config = { api: { bodyParser: false } };
+
+// ══════════════════════════════════════════════════════════════════════════
+// SmartBill — emitere automată factură fiscală (P0-1, 18 apr 2026)
+//   B2B România    → TVA 19% + eFactura ANAF automat
+//   B2C PF         → TVA 19% (fără eFactura — ANAF cere CUI)
+//   B2B UE         → TVA 0% reverse charge + D390 VIES
+// ══════════════════════════════════════════════════════════════════════════
+function getMonthYear(date = new Date()) {
+  const months = ["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie",
+                  "Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+async function createSmartBillInvoice(session) {
+  const sbEmail = process.env.SMARTBILL_EMAIL;
+  const sbToken = process.env.SMARTBILL_TOKEN;
+  const sbCui   = process.env.SMARTBILL_CUI;
+
+  if (!sbEmail || !sbToken || !sbCui) {
+    console.warn("[SmartBill] Credentials missing — skip invoice generation");
+    return;
+  }
+
+  const meta = session.metadata || {};
+  const isCompany = !!meta.cui;
+  const isEU = !!meta.vatEU;
+
+  const client = isCompany
+    ? { name: meta.company || "—", vatCode: meta.cui, address: meta.address || "—",
+        city: meta.city || "—", country: "Romania" }
+    : isEU
+    ? { name: meta.company || meta.fullName || "—", vatCode: meta.vatEU,
+        country: meta.country || "—", address: meta.address || "—" }
+    : { name: meta.fullName || session.customer_details?.name || "Persoană fizică",
+        address: meta.address || "—", city: meta.city || "—",
+        country: "Romania", isTaxPayer: false };
+
+  const amountTotal = (session.amount_total || 0) / 100;
+  const priceNoVat = isEU ? amountTotal : amountTotal / 1.19;
+  const vatPercent = isEU ? 0 : 19;
+
+  const body = {
+    companyVatCode: sbCui,
+    client,
+    issueDate: new Date().toISOString().split("T")[0],
+    seriesName: process.env.SMARTBILL_SERIES || "ZEP",
+    currency: session.currency?.toUpperCase() || "RON",
+    products: [{
+      name: `Abonament Zephren ${meta.plan || "—"} — ${getMonthYear()}`,
+      code: `ZEP-${(meta.plan || "PLAN").toUpperCase()}-M`,
+      isService: true,
+      quantity: 1,
+      price: Number(priceNoVat.toFixed(2)),
+      currency: session.currency?.toUpperCase() || "RON",
+      vatName: vatPercent === 0 ? "Scutit" : "Normala",
+      vatPercentage: vatPercent,
+      ...(isEU && { vatExemptReason: "Taxare inversă art.196 Directiva TVA" }),
+    }],
+    sendEmail: true,
+    isDraft: false,
+  };
+
+  const auth = Buffer.from(`${sbEmail}:${sbToken}`).toString("base64");
+
+  try {
+    const res = await fetch("https://ws.smartbill.ro/SBORO/api/invoice", {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.error(`[SmartBill] HTTP ${res.status} — ${errText.slice(0, 300)}`);
+      // Plata e confirmată — nu arunci excepție, doar loghezi.
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    console.log(`[SmartBill] Factură emisă: ${data.number || data.series || "OK"} pentru ${client.name}`);
+  } catch (err) {
+    console.error("[SmartBill] Request error:", err.message);
+  }
+}
 
 // Sprint 20 (18 apr 2026) — mapare Stripe Price ID → plan intern.
 // Configurați ID-urile exacte în env vars: STRIPE_PRICE_STARTER, STRIPE_PRICE_STANDARD etc.
@@ -107,6 +200,9 @@ export default async function handler(req, res) {
         const plan = session?.metadata?.plan;
         const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan);
         if (ok) console.log(`[Webhook] User ${userId} upgraded to ${plan}`);
+        // P0-1 (18 apr 2026) — emitere factură SmartBill + eFactura ANAF
+        // Rulează în paralel cu răspunsul Stripe; erorile sunt logate, nu aruncate.
+        await createSmartBillInvoice(session);
         break;
       }
 
