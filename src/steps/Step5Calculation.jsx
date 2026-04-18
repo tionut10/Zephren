@@ -78,8 +78,32 @@ export default function Step5Calculation(props) {
             const annualCool = monthlyData.reduce((s,d) => s + d.qCool, 0);
             const maxQ = Math.max(...monthlyData.map(d => Math.max(d.qLoss, d.qHeat)));
 
+            // Sprint 18 UX — verificare date minime pentru Step 5
+            const _missingCritical = [];
+            if (!Au || Au <= 0) _missingCritical.push(lang==="EN"?"usable area (Step 1)":"suprafață utilă (Pasul 1)");
+            if (!building.category) _missingCritical.push(lang==="EN"?"building category (Step 1)":"categorie clădire (Pasul 1)");
+            if (!(opaqueElements?.length > 0) && !(glazingElements?.length > 0) && !envelopeSummary?.G)
+              _missingCritical.push(lang==="EN"?"thermal envelope (Step 2)":"anvelopă termică (Pasul 2)");
+            const _hasMissingCritical = _missingCritical.length > 0;
+
             return (
             <div>
+              {/* Sprint 18 UX — banner date lipsă */}
+              {_hasMissingCritical && (
+                <div role="alert" className="mb-4 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs">
+                  <div className="font-semibold mb-1"><span aria-hidden="true">⚠ </span>
+                    {lang==="EN"
+                      ? "Incomplete input data — displayed results are NOT valid for an Energy Performance Certificate."
+                      : "Date de intrare incomplete — rezultatele afișate NU sunt valide pentru un Certificat de Performanță Energetică."}
+                  </div>
+                  <div className="opacity-80">
+                    {lang==="EN" ? "Missing: " : "Lipsește: "}{_missingCritical.join(", ")}.{" "}
+                    <button onClick={() => setStep?.(1)} className="text-red-200 underline hover:text-white">
+                      {lang==="EN" ? "Complete Step 1 →" : "Completați Pasul 1 →"}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-1">
                   <button onClick={() => setStep(4)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 4</button>

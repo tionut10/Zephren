@@ -259,8 +259,8 @@ export default function Step7Audit(props) {
                 <Card title={t("Date insuficiente",lang)}>
                   <div className="text-center py-8 opacity-40">
                     <div className="text-3xl mb-3">⚠️</div>
-                    <div className="text-sm">Completeaza pasii 1–6 pentru a genera recomandari de reabilitare</div>
-                    <div className="text-xs mt-2">Sunt necesare: suprafata utila, anvelopa, instalatii si calcul energetic</div>
+                    <div className="text-sm">Completează pașii 1–6 pentru a genera recomandări de reabilitare</div>
+                    <div className="text-xs mt-2">Sunt necesare: suprafața utilă, anvelopa, instalații și calcul energetic</div>
                   </div>
                 </Card>
               ) : (

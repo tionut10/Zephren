@@ -30,6 +30,8 @@ export default function AutocompleteInput({
   maxItems = 8,
   disabled = false,
   onFocusCapture,
+  autoComplete,
+  ariaLabel,
 }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -156,6 +158,8 @@ export default function AutocompleteInput({
           value={value}
           disabled={disabled}
           placeholder={placeholder}
+          autoComplete={autoComplete}
+          aria-label={ariaLabel || label}
           onChange={(e) => onChange?.(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => {

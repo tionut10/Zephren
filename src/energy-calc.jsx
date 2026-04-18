@@ -162,6 +162,14 @@ export default function EnergyCalcApp({ cloud }) {
   const [theme, setTheme] = useState("dark");
   const [showTutorial, setShowTutorial] = useState(false);
 
+  // Sprint 18 UX — închide sidebar la tasta Escape (mobile/tablet)
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setSidebarOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
+
   // ═══════════════════════════════════════════════════════════════
   // TIER SYSTEM — Free / Pro / Business
   // ═══════════════════════════════════════════════════════════════
@@ -1395,19 +1403,67 @@ export default function EnergyCalcApp({ cloud }) {
   }, [instSummary, selectedClimate, building.areaUseful]);
 
   // ─── Completare per pas (0–1) pentru indicatori vizuali ───
+  // Sprint 18 UX — fiecare pas are acum checks granulare, nu mai e fix
   const stepCompleteness = useMemo(() => {
     const Au = parseFloat(building.areaUseful) || 0;
     const Vol = parseFloat(building.volume) || 0;
-    const s1 = [building.locality, Au > 0, Vol > 0, building.category].filter(Boolean).length / 4;
-    const s2 = Math.min(1, (opaqueElements.length > 0 ? 0.5 : 0) + (glazingElements.length > 0 ? 0.5 : 0));
-    const s3 = heating.source ? 1 : 0;
-    const s4 = 1; // optional
-    const s5 = instSummary ? 1 : 0;
-    const s6 = auditor.name ? 1 : 0;
-    const s7 = 1;
+    const yr = parseInt(building.yearBuilt) || 0;
+
+    // Step 1 — 6 checks (localitate, Au, V, categorie, an, regim)
+    const c1 = [
+      !!building.locality || !!building.city,
+      Au > 0,
+      Vol > 0,
+      !!building.category,
+      yr >= 1800 && yr <= 2030,
+      !!building.floors && String(building.floors).trim().length > 0,
+    ];
+    const s1 = c1.filter(Boolean).length / c1.length;
+
+    // Step 2 — 3 checks (opace, vitrate, sumar G)
+    const c2 = [
+      opaqueElements.length > 0,
+      glazingElements.length > 0,
+      !!(envelopeSummary && envelopeSummary.G > 0),
+    ];
+    const s2 = c2.filter(Boolean).length / c2.length;
+
+    // Step 3 — 3 checks (sursă încălzire, ACM, ventilație)
+    const c3 = [
+      !!heating.source,
+      !!acm.source,
+      !!ventilation.type,
+    ];
+    const s3 = c3.filter(Boolean).length / c3.length;
+
+    // Step 4 — opțional, 1 dacă măcar o sursă activă; altfel 0.5 (parțial) — vizual neutru
+    const hasRenew = !!(photovoltaic?.enabled || solarThermal?.enabled || heatPump?.enabled || biomass?.enabled);
+    const s4 = hasRenew ? 1 : 0.5;
+
+    // Step 5 — calcul finalizat (instSummary + renewSummary)
+    const c5 = [!!instSummary, !!(instSummary && instSummary.ep_total_m2 > 0)];
+    const s5 = c5.filter(Boolean).length / c5.length;
+
+    // Step 6 — auditor + cod unic opțional
+    const c6 = [
+      !!auditor.name,
+      !!(auditor.certNumber || auditor.cert_no || auditor.attestationNo),
+      !!instSummary,
+    ];
+    const s6 = c6.filter(Boolean).length / c6.length;
+
+    // Step 7 — audit: consum real introdus sau auditor finalizat
+    const c7 = [
+      !!auditor.name,
+      !!(auditor.auditDate || auditor.dataAudit),
+    ];
+    const s7 = c7.filter(Boolean).length / c7.length;
+
+    // Step 8 — mereu 100% (instrumente opționale)
     const s8 = 1;
+
     return [s1, s2, s3, s4, s5, s6, s7, s8];
-  }, [building, opaqueElements, glazingElements, heating, instSummary, auditor]);
+  }, [building, opaqueElements, glazingElements, heating, acm, ventilation, photovoltaic, solarThermal, heatPump, biomass, instSummary, envelopeSummary, auditor]);
 
   // ─── Data completion progress ───
   const dataProgress = useMemo(() => {
@@ -2549,13 +2605,29 @@ export default function EnergyCalcApp({ cloud }) {
         </div>
       </div>
 
+      {/* Sprint 18 UX — Skip links pentru navigare a11y keyboard */}
+      <a href="#main-content"
+         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[99999] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:font-semibold focus:text-sm focus:shadow-lg">
+        {lang==="EN" ? "Skip to main content" : "Sari la conținut principal"}
+      </a>
+      <a href="#sidebar-nav"
+         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-56 focus:z-[99999] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:font-semibold focus:text-sm focus:shadow-lg">
+        {lang==="EN" ? "Skip to step navigation" : "Sari la navigare pași"}
+      </a>
+
       {/* HEADER */}
       <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-3 no-print">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
 
           {/* ── ZONA 1: IDENTITATE (logo · plan · cloud · echipă) ── */}
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => setSidebarOpen(o=>!o)} className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+            <button onClick={() => setSidebarOpen(o=>!o)}
+              aria-label={sidebarOpen ? "Închide navigare pași" : "Deschide navigare pași"}
+              aria-expanded={sidebarOpen}
+              aria-controls="sidebar-nav"
+              className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
             <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"36px", width:"auto"}} />
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{APP_VERSION}</span>
             <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
@@ -2653,18 +2725,20 @@ export default function EnergyCalcApp({ cloud }) {
               {lang==="EN" ? "New" : "Nou"}
             </button>
 
-            {storageStatus && <span className="text-[10px] opacity-40 hidden lg:inline shrink-0">{storageStatus}</span>}
+            {storageStatus && <span role="status" aria-live="polite" aria-atomic="true" className="text-[10px] opacity-40 hidden lg:inline shrink-0">{storageStatus}</span>}
 
             <div className="hidden lg:flex items-center gap-0.5 shrink-0">
-              <button onClick={undo} disabled={undoStack.length===0} title="Undo (Ctrl+Z)"
-                className={cn("text-xs px-1.5 py-1 rounded-l-lg border border-white/10 transition-colors", undoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↶</button>
-              <button onClick={redo} disabled={redoStack.length===0} title="Redo (Ctrl+Y)"
-                className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}>↷</button>
+              <button onClick={undo} disabled={undoStack.length===0} title="Undo (Ctrl+Z)" aria-label="Anulează ultima acțiune (Ctrl+Z)"
+                className={cn("text-xs px-1.5 py-1 rounded-l-lg border border-white/10 transition-colors", undoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}><span aria-hidden="true">↶</span></button>
+              <button onClick={redo} disabled={redoStack.length===0} title="Redo (Ctrl+Y)" aria-label="Reface acțiunea (Ctrl+Y)"
+                className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}><span aria-hidden="true">↷</span></button>
             </div>
 
             <button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
+              aria-label="Deschide tutorialul interactiv"
+              aria-haspopup="dialog"
               className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
-              🎓<span className="hidden lg:inline ml-1">Tutorial</span>
+              <span aria-hidden="true">🎓</span><span className="hidden lg:inline ml-1">Tutorial</span>
             </button>
 
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
@@ -2778,8 +2852,9 @@ export default function EnergyCalcApp({ cloud }) {
                 </>
               )}
             </div>
-            <button onClick={toggleThemeManual} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">{theme==="dark"?"☀":"🌙"}</button>
+            <button onClick={toggleThemeManual} aria-label={theme==="dark"?"Comută la mod luminos":"Comută la mod întunecat"} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"><span aria-hidden="true">{theme==="dark"?"☀":"🌙"}</span></button>
             <button onClick={() => setLang(l => l==="RO"?"EN":"RO")}
+              aria-label={lang==="RO"?"Switch to English":"Comută la limba română"}
               className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors font-medium">
               {lang}
             </button>
@@ -2793,9 +2868,9 @@ export default function EnergyCalcApp({ cloud }) {
       </header>
 
       <div className="max-w-7xl mx-auto flex gap-0 min-h-[calc(100vh-73px)] relative">
-        {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-        <nav aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2">✕</button>
+        {sidebarOpen && <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        <nav id="sidebar-nav" aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 max-w-[min(280px,70vw)] lg:max-w-none shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
+          <button onClick={() => setSidebarOpen(false)} aria-label="Închide meniul lateral" className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2"><span aria-hidden="true">✕</span></button>
           {STEPS.map((s, i) => {
             const pct = stepCompleteness[i] ?? 0;
             const dotColor = pct >= 1 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(255,255,255,0.15)";
@@ -2833,25 +2908,26 @@ export default function EnergyCalcApp({ cloud }) {
           )}
           {/* Formular Date Client */}
           <button onClick={() => { setShowClientForm(true); setSidebarOpen(false); }}
+            aria-label={lang==="EN"?"Open client data form":"Deschide formular date client"}
             className="w-full mt-4 flex items-center gap-3 px-3 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left">
-            <span className="text-lg">👤</span>
+            <span className="text-lg" aria-hidden="true">👤</span>
             <div>
-              <div className="text-xs font-semibold text-amber-300">Formular Client</div>
-              <div className="text-[10px] opacity-50">Date pentru audit</div>
+              <div className="text-xs font-semibold text-amber-300">{lang==="EN"?"Client form":"Formular Client"}</div>
+              <div className="text-[10px] opacity-50">{lang==="EN"?"Audit data":"Date pentru audit"}</div>
             </div>
           </button>
 
           <div className="mt-4 p-2 bg-white/[0.02] rounded-lg">
             <div className="text-[8px] opacity-25 space-y-0.5">
-              <div>Ctrl+S — Export proiect</div>
-              <div>Alt+← → — Navigare pași</div>
-              <div>Drag &amp; drop — Import fișier</div>
+              <div>{lang==="EN"?"Ctrl+S — Export project":"Ctrl+S — Export proiect"}</div>
+              <div>{lang==="EN"?"Alt+← → — Navigate steps":"Alt+← → — Navigare pași"}</div>
+              <div>{lang==="EN"?"Drag & drop — Import file":"Drag & drop — Import fișier"}</div>
             </div>
           </div>
         </nav>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 p-4 sm:p-6 pb-16 lg:pb-6 overflow-y-auto min-w-0">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 pb-16 lg:pb-6 overflow-y-auto min-w-0">
 
           {/* ═══ BANNER OFFLINE ═══ */}
           {!isOnline && (

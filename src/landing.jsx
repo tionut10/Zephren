@@ -61,7 +61,6 @@ const inputStyle = {
   background: "rgba(255,255,255,0.05)",
   color: "#fff",
   fontSize: "14px",
-  outline: "none",
   width: "100%",
   boxSizing: "border-box",
 };
@@ -280,8 +279,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {lang === "RO" ? "EN" : "RO"}
             </button>
             {/* Toggle luminozitate */}
-            <button onClick={toggleTheme} title={isDark ? "Mod luminos" : "Mod întunecat"} style={{ fontSize: "14px", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", transition: "border-color 0.2s" }}>
-              {isDark ? "☀️" : "🌙"}
+            <button onClick={toggleTheme} aria-label={isDark ? "Comută la mod luminos" : "Comută la mod întunecat"} title={isDark ? "Mod luminos" : "Mod întunecat"} style={{ fontSize: "14px", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", transition: "border-color 0.2s" }}>
+              <span aria-hidden="true">{isDark ? "☀️" : "🌙"}</span>
             </button>
             <button onClick={() => setShowLogin(true)} style={{ fontSize: "13px", padding: "8px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer" }}>{T("nav_login", "Autentificare")}</button>
             <button onClick={onStart} style={{ fontSize: "13px", fontWeight: "600", padding: "8px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
@@ -291,11 +290,11 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <button onClick={toggleLang} className="nav-mobile" title={lang === "RO" ? "Switch to English" : "Comută în Română"} style={{ display: "none", fontSize: "11px", fontWeight: "700", padding: "5px 8px", borderRadius: "6px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer" }}>
               {lang === "RO" ? "EN" : "RO"}
             </button>
-            <button onClick={toggleTheme} className="nav-mobile" style={{ display: "none", fontSize: "14px", padding: "5px 8px", borderRadius: "6px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer" }}>
-              {isDark ? "☀️" : "🌙"}
+            <button onClick={toggleTheme} aria-label={isDark ? "Comută la mod luminos" : "Comută la mod întunecat"} className="nav-mobile" style={{ display: "none", fontSize: "14px", padding: "5px 8px", borderRadius: "6px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer" }}>
+              <span aria-hidden="true">{isDark ? "☀️" : "🌙"}</span>
             </button>
-            <button className="nav-mobile" onClick={() => setMobileMenu(!mobileMenu)} style={{ display: "none", background: "none", border: "none", color: text, fontSize: "24px", cursor: "pointer", padding: "4px" }}>
-              {mobileMenu ? "✕" : "☰"}
+            <button className="nav-mobile" onClick={() => setMobileMenu(!mobileMenu)} aria-label={mobileMenu ? "Închide meniu mobil" : "Deschide meniu mobil"} aria-expanded={mobileMenu} style={{ display: "none", background: "none", border: "none", color: text, fontSize: "24px", cursor: "pointer", padding: "4px" }}>
+              <span aria-hidden="true">{mobileMenu ? "✕" : "☰"}</span>
             </button>
           </div>
         </div>
@@ -327,7 +326,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={onStart} style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)" }}>
-            {T("hero_cta", "Incepe calculul gratuit →")}
+            {T("hero_cta", "Începe calculul gratuit →")}
           </button>
         </div>
 

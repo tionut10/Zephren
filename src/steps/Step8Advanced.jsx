@@ -59,60 +59,61 @@ import GWPReport from "../components/GWPReport.jsx";
 import SRICalculator from "../components/SRICalculator.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 
+// Sprint 18 UX — Categorii module avansate pentru filtrare + search
 const TAB_SECTIONS = [
-  { id:"benchmark",   icon:"📊", label:"Benchmark" },
-  { id:"nzeb_check",  icon:"🏆", label:"Verificare nZEB" },
-  { id:"bacs",        icon:"🤖", label:"BACS" },
-  { id:"sri",         icon:"🧠", label:"SRI Indicator" },
-  { id:"acm_en15316", icon:"🚿", label:"ACM detaliat" },
-  { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale" },
-  { id:"en12831",     icon:"🔥", label:"Sarcină vârf" },
-  { id:"ventilare",   icon:"💨", label:"Ventilare" },
-  { id:"vmc_hr",      icon:"🔄", label:"VMC-HR" },
-  { id:"infiltratii", icon:"💨", label:"Infiltrații n50" },
-  { id:"iluminat_nat",icon:"☀️", label:"Iluminat natural" },
-  { id:"confort_pmv", icon:"🌡️", label:"Confort PMV" },
-  { id:"c107",        icon:"📐", label:"C107 Conformitate" },
-  { id:"tb_dinamic",  icon:"🔗", label:"Punți termice" },
-  { id:"pompa",       icon:"♨️", label:"Pompă căldură" },
-  { id:"rehab",       icon:"🏗️", label:"Pachete reabilitare" },
-  { id:"pnrr",        icon:"💶", label:"Finanțare" },
-  { id:"fond_rep",    icon:"🔧", label:"Fond reparații" },
-  { id:"solar_acm",   icon:"☀️", label:"Solar termic" },
-  { id:"gp123",       icon:"⚡", label:"GP 123 Fotovoltaic" },
-  { id:"glaser",        icon:"💧", label:"Condens Glaser" },
-  { id:"rehab_compare", icon:"📊", label:"Comparativ rehab" },
-  { id:"thermal_map", icon:"🌡️", label:"Hartă termică" },
-  { id:"deviz",         icon:"💰", label:"Deviz reabilitare" },
-  { id:"racire_orara",  icon:"❄️", label:"Răcire orară" },
-  { id:"pasivhaus",   icon:"🏠", label:"Pasivhaus" },
-  { id:"acustic",     icon:"🔊", label:"Acustic" },
-  { id:"conformitate",icon:"✅", label:"Conformitate U" },
-  { id:"xml_export",  icon:"📥", label:"Export XML" },
-  { id:"climate_import", icon:"📡", label:"Import climă" },
-  { id:"preturi",     icon:"🏷️", label:"Prețuri materiale" },
-  { id:"multi_building", icon:"🏘️", label:"Multi-clădire" },
-  { id:"mdlpa",       icon:"🏛️", label:"MDLPA Registru" },
-  { id:"camere",      icon:"🏠", label:"Sarcini per cameră" },
-  { id:"proiect_tehnic", icon:"📐", label:"Verificare proiect" },
-  { id:"sim8760",     icon:"📈", label:"Profil anual" },
-  { id:"portofoliu",  icon:"📁", label:"Portofoliu" },
-  { id:"facturare",   icon:"🧾", label:"Deviz servicii" },
-  { id:"raport_audit",icon:"📋", label:"Raport audit" },
-  { id:"pv_degradare", icon:"📉", label:"Degradare PV" },
-  { id:"contract",     icon:"📝", label:"Contract" },
-  { id:"efactura",     icon:"🏛️", label:"e-Factură ANAF" },
-  { id:"termoviziune", icon:"🔴", label:"Termoviziune" },
-  { id:"cloud_sync",   icon:"☁️", label:"Cloud Sync" },
-  { id:"tutorial",     icon:"🎓", label:"Tutorial" },
-  { id:"reconciliere", icon:"📊", label:"Reconciliere consum" },
-  { id:"cpe_tracker",  icon:"📅", label:"Tracker CPE" },
-  { id:"lcc",          icon:"💹", label:"LCC per măsură" },
-  { id:"monte_carlo",  icon:"🎲", label:"Monte Carlo EP" },
-  { id:"oferta_reab",  icon:"📄", label:"Ofertă reabilitare" },
-  { id:"team",         icon:"👥", label:"Echipă" },
-  { id:"meps",         icon:"🏛️", label:"MEPS EPBD 2024" },
-  { id:"gwp_co2",      icon:"🌿", label:"CO₂ Lifecycle" },
+  { id:"benchmark",   icon:"📊", label:"Benchmark",             category:"calcul" },
+  { id:"nzeb_check",  icon:"🏆", label:"Verificare nZEB",        category:"calcul" },
+  { id:"bacs",        icon:"🤖", label:"BACS",                   category:"analiza" },
+  { id:"sri",         icon:"🧠", label:"SRI Indicator",          category:"analiza" },
+  { id:"acm_en15316", icon:"🚿", label:"ACM detaliat",           category:"calcul" },
+  { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale",       category:"calcul" },
+  { id:"en12831",     icon:"🔥", label:"Sarcină vârf",           category:"calcul" },
+  { id:"ventilare",   icon:"💨", label:"Ventilare",              category:"calcul" },
+  { id:"vmc_hr",      icon:"🔄", label:"VMC-HR",                 category:"calcul" },
+  { id:"infiltratii", icon:"💨", label:"Infiltrații n50",        category:"calcul" },
+  { id:"iluminat_nat",icon:"☀️", label:"Iluminat natural",       category:"calcul" },
+  { id:"confort_pmv", icon:"🌡️", label:"Confort PMV",            category:"calcul" },
+  { id:"c107",        icon:"📐", label:"C107 Conformitate",      category:"calcul" },
+  { id:"tb_dinamic",  icon:"🔗", label:"Punți termice",          category:"calcul" },
+  { id:"pompa",       icon:"♨️", label:"Pompă căldură",          category:"calcul" },
+  { id:"rehab",       icon:"🏗️", label:"Pachete reabilitare",    category:"analiza" },
+  { id:"pnrr",        icon:"💶", label:"Finanțare",              category:"documente" },
+  { id:"fond_rep",    icon:"🔧", label:"Fond reparații",         category:"analiza" },
+  { id:"solar_acm",   icon:"☀️", label:"Solar termic",           category:"calcul" },
+  { id:"gp123",       icon:"⚡", label:"GP 123 Fotovoltaic",     category:"calcul" },
+  { id:"glaser",        icon:"💧", label:"Condens Glaser",       category:"calcul" },
+  { id:"rehab_compare", icon:"📊", label:"Comparativ rehab",     category:"analiza" },
+  { id:"thermal_map", icon:"🌡️", label:"Hartă termică",          category:"analiza" },
+  { id:"deviz",         icon:"💰", label:"Deviz reabilitare",    category:"analiza" },
+  { id:"racire_orara",  icon:"❄️", label:"Răcire orară",         category:"calcul" },
+  { id:"pasivhaus",   icon:"🏠", label:"Pasivhaus",              category:"calcul" },
+  { id:"acustic",     icon:"🔊", label:"Acustic",                category:"calcul" },
+  { id:"conformitate",icon:"✅", label:"Conformitate U",         category:"calcul" },
+  { id:"xml_export",  icon:"📥", label:"Export XML",             category:"export" },
+  { id:"climate_import", icon:"📡", label:"Import climă",        category:"import" },
+  { id:"preturi",     icon:"🏷️", label:"Prețuri materiale",      category:"import" },
+  { id:"multi_building", icon:"🏘️", label:"Multi-clădire",       category:"cloud" },
+  { id:"mdlpa",       icon:"🏛️", label:"MDLPA Registru",         category:"documente" },
+  { id:"camere",      icon:"🏠", label:"Sarcini per cameră",     category:"calcul" },
+  { id:"proiect_tehnic", icon:"📐", label:"Verificare proiect",  category:"analiza" },
+  { id:"sim8760",     icon:"📈", label:"Profil anual",           category:"calcul" },
+  { id:"portofoliu",  icon:"📁", label:"Portofoliu",             category:"cloud" },
+  { id:"facturare",   icon:"🧾", label:"Deviz servicii",         category:"export" },
+  { id:"raport_audit",icon:"📋", label:"Raport audit",           category:"documente" },
+  { id:"pv_degradare", icon:"📉", label:"Degradare PV",          category:"analiza" },
+  { id:"contract",     icon:"📝", label:"Contract",              category:"documente" },
+  { id:"efactura",     icon:"🏛️", label:"e-Factură ANAF",        category:"export" },
+  { id:"termoviziune", icon:"🔴", label:"Termoviziune",          category:"analiza" },
+  { id:"cloud_sync",   icon:"☁️", label:"Cloud Sync",            category:"cloud" },
+  { id:"tutorial",     icon:"🎓", label:"Tutorial",              category:"cloud" },
+  { id:"reconciliere", icon:"📊", label:"Reconciliere consum",   category:"analiza" },
+  { id:"cpe_tracker",  icon:"📅", label:"Tracker CPE",           category:"documente" },
+  { id:"lcc",          icon:"💹", label:"LCC per măsură",        category:"analiza" },
+  { id:"monte_carlo",  icon:"🎲", label:"Monte Carlo EP",        category:"analiza" },
+  { id:"oferta_reab",  icon:"📄", label:"Ofertă reabilitare",    category:"documente" },
+  { id:"team",         icon:"👥", label:"Echipă",                category:"cloud" },
+  { id:"meps",         icon:"🏛️", label:"MEPS EPBD 2024",        category:"calcul" },
+  { id:"gwp_co2",      icon:"🌿", label:"CO₂ Lifecycle",         category:"calcul" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -138,9 +139,41 @@ function ColorBar({ value, max, color }) {
   );
 }
 
+// Sprint 18 UX — Categorii pentru filtrarea celor 50+ module avansate
+const CATEGORIES_RO = [
+  { id: "all",       label: "Toate" },
+  { id: "calcul",    label: "Calcul avansat" },
+  { id: "analiza",   label: "Analiză & Simulare" },
+  { id: "export",    label: "Export & Rapoarte" },
+  { id: "import",    label: "Import date" },
+  { id: "documente", label: "Documente legale" },
+  { id: "cloud",     label: "Cloud & Echipă" },
+];
+const CATEGORIES_EN = [
+  { id: "all",       label: "All" },
+  { id: "calcul",    label: "Calculations" },
+  { id: "analiza",   label: "Analysis" },
+  { id: "export",    label: "Export" },
+  { id: "import",    label: "Import" },
+  { id: "documente", label: "Documents" },
+  { id: "cloud",     label: "Cloud & Team" },
+];
+
 export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan, bacsClass: bacsClassProp, setBacsClass: setBacsClassProp }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
+  // Sprint 18 UX — search + filtrare categorii
+  const [moduleSearch, setModuleSearch] = useState("");
+  const [moduleCategory, setModuleCategory] = useState("all");
+  const categoriesList = lang === "EN" ? CATEGORIES_EN : CATEGORIES_RO;
+  const filteredTabs = useMemo(() => {
+    const q = moduleSearch.trim().toLowerCase();
+    return TAB_SECTIONS.filter(tab => {
+      const matchSearch = !q || tab.label.toLowerCase().includes(q) || tab.id.toLowerCase().includes(q);
+      const matchCat = moduleCategory === "all" || tab.category === moduleCategory;
+      return matchSearch && matchCat;
+    });
+  }, [moduleSearch, moduleCategory]);
   const [hpTypeId, setHpTypeId] = useState("AA_STD");
   const [collectorType, setCollectorType] = useState("PLAN_SEL");
   const [nPersons, setNPersons] = useState("");
@@ -710,9 +743,34 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
 
   return (
     <div className="space-y-4">
-      {/* Tabs */}
+      {/* Sprint 18 UX — Heading + Search + Category Pills (Bloc E3 + D3) */}
+      <div>
+        <h2 className="text-lg font-bold mb-3">{lang==="EN" ? "Advanced modules" : "Module avansate"}</h2>
+        <input
+          type="search"
+          value={moduleSearch}
+          onChange={e => setModuleSearch(e.target.value)}
+          placeholder={lang==="EN" ? "Search modules..." : "Caută module..."}
+          aria-label={lang==="EN" ? "Search advanced modules" : "Caută module avansate"}
+          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm mb-3 focus:border-indigo-400/50 focus:ring-1 focus:ring-indigo-400/30"
+        />
+        <div className="flex flex-wrap gap-2 mb-3" role="group" aria-label={lang==="EN" ? "Module categories" : "Categorii module"}>
+          {categoriesList.map(cat => (
+            <button key={cat.id} onClick={() => setModuleCategory(cat.id)}
+              aria-pressed={moduleCategory === cat.id}
+              className={cn("px-3 py-1 rounded-full text-[11px] font-medium transition-all border",
+                moduleCategory === cat.id
+                  ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
+                  : "bg-transparent text-slate-400 border-white/10 hover:bg-white/5")}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs — filtrate prin search + categorie */}
       <div className="flex flex-wrap gap-1.5">
-        {TAB_SECTIONS.map(tab => (
+        {filteredTabs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
               activeTab === tab.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
@@ -725,6 +783,11 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
             )}
           </button>
         ))}
+        {filteredTabs.length === 0 && (
+          <p className="text-xs text-slate-500 italic px-2 py-3">
+            {lang==="EN" ? "No modules found." : "Niciun modul găsit."}
+          </p>
+        )}
       </div>
 
       {/* ═══ BENCHMARK ═══ */}

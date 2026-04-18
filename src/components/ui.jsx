@@ -51,20 +51,22 @@ export function Select({ label, value, onChange, options, placeholder, className
   );
 }
 
-export function Input({ label, value, onChange, type="text", unit, placeholder, min, max, step, className="", disabled=false, tooltip="", error="" }) {
+export function Input({ label, value, onChange, type="text", unit, placeholder, min, max, step, className="", disabled=false, tooltip="", error="", autoComplete, ariaLabel }) {
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}{tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip}>ⓘ</span>}</label>}
       <div className="relative">
         <input type={type} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
           min={min} max={max} step={step} disabled={disabled}
+          autoComplete={autoComplete}
+          aria-label={ariaLabel || (label ? undefined : placeholder)}
           aria-invalid={error ? "true" : undefined}
           className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
             unit && "pr-12", disabled && "opacity-40 cursor-not-allowed",
             error && "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30")} />
         {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40">{unit}</span>}
       </div>
-      {error && <span className="text-xs text-red-400 mt-0.5">{error}</span>}
+      {error && <span role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5">{error}</span>}
     </div>
   );
 }

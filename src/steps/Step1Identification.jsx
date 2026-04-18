@@ -102,6 +102,25 @@ async function getBuildingFootprint(lat, lon) {
   };
 }
 
+// ── Validare câmpuri critice Step 1 (Sprint 18 UX) ───────────────────────────
+function validateStep1Critical(b, lang) {
+  const L = (ro, en) => lang === "EN" ? en : ro;
+  const errs = {};
+  const Au = parseFloat(b.areaUseful);
+  if (!Au || Au <= 0)
+    errs.areaUseful = L("Suprafața utilă trebuie să fie > 0 m²", "Usable area must be > 0 m²");
+  const yr = parseInt(b.yearBuilt);
+  if (!yr || yr < 1800 || yr > 2030)
+    errs.yearBuilt = L("An construcție invalid (1800–2030)", "Invalid year built (1800–2030)");
+  if (!b.city || !String(b.city).trim())
+    errs.city = L("Localitatea este obligatorie", "City is required");
+  if (!b.category)
+    errs.category = L("Selectați categoria clădirii", "Select building category");
+  if (!b.floors || !String(b.floors).trim())
+    errs.floors = L("Regimul de înălțime este obligatoriu (ex: P+4E)", "Height regime is required (e.g. P+4E)");
+  return errs;
+}
+
 export default function Step1Identification({
   building, updateBuilding, lang, selectedClimate,
   BUILDING_CATEGORIES, STRUCTURE_TYPES,
@@ -124,6 +143,11 @@ export default function Step1Identification({
   const [cadastralNr, setCadastralNr] = useState("");
   const [cadastralLoading, setCadastralLoading] = useState(false);
   const [cadastralMsg, setCadastralMsg] = useState("");
+  // Sprint 18 UX — validare + banner
+  const [showValidationBanner, setShowValidationBanner] = useState(false);
+  const validationErrors = useMemo(() => validateStep1Critical(building, lang), [building, lang]);
+  const hasErrors = Object.keys(validationErrors).length > 0;
+  const fieldErr = (key) => showValidationBanner ? validationErrors[key] || "" : "";
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -439,18 +463,27 @@ export default function Step1Identification({
                 debounce={400}
                 placeholder="Str. Exemplu, nr. 10"
                 maxItems={7}
+                autoComplete="street-address"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <AutocompleteInput
-                  label={t("Localitate",lang)}
-                  value={building.city}
-                  onChange={v => { updateBuilding("city", v); autoDetectLocality(v); }}
-                  onSelect={handleCitySelect}
-                  suggestions={citySuggestions}
-                  onFocusCapture={ensureLocalitiesLoaded}
-                  placeholder="Cluj-Napoca"
-                  maxItems={8}
-                />
+                <div>
+                  <AutocompleteInput
+                    label={t("Localitate",lang)}
+                    value={building.city}
+                    onChange={v => { updateBuilding("city", v); autoDetectLocality(v); }}
+                    onSelect={handleCitySelect}
+                    suggestions={citySuggestions}
+                    onFocusCapture={ensureLocalitiesLoaded}
+                    placeholder="Cluj-Napoca"
+                    maxItems={8}
+                    autoComplete="address-level2"
+                  />
+                  {fieldErr("city") && (
+                    <p role="alert" aria-live="assertive" className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span>{fieldErr("city")}
+                    </p>
+                  )}
+                </div>
                 <AutocompleteInput
                   label={t("Județ",lang)}
                   value={building.county}
@@ -460,9 +493,10 @@ export default function Step1Identification({
                   onFocusCapture={ensureLocalitiesLoaded}
                   placeholder="Cluj"
                   maxItems={8}
+                  autoComplete="address-level1"
                 />
               </div>
-              <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} />
+              <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} autoComplete="postal-code" />
 
               {/* Sugestie footprint clădire */}
               {geoSuggestion && (
@@ -502,12 +536,19 @@ export default function Step1Identification({
 
           <Card title={t("Clasificare",lang)}>
             <div className="space-y-3">
-              <Select label={t("Categorie funcțională",lang)} value={building.category} onChange={v => updateBuilding("category",v)}
-                options={BUILDING_CATEGORIES.map(c=>({value:c.id,label:c.label}))} />
+              <div>
+                <Select label={t("Categorie funcțională",lang)} value={building.category} onChange={v => updateBuilding("category",v)}
+                  options={BUILDING_CATEGORIES.map(c=>({value:c.id,label:c.label}))} />
+                {fieldErr("category") && (
+                  <p role="alert" aria-live="assertive" className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                    <span aria-hidden="true">⚠</span>{fieldErr("category")}
+                  </p>
+                )}
+              </div>
               <Select label={t("Tip structură",lang)} value={building.structure} onChange={v => updateBuilding("structure",v)}
                 options={STRUCTURE_TYPES} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label={t("An construcție",lang)} value={building.yearBuilt} onChange={v => updateBuilding("yearBuilt",v)} type="number" placeholder="1975" />
+                <Input label={t("An construcție",lang)} value={building.yearBuilt} onChange={v => updateBuilding("yearBuilt",v)} type="number" placeholder="1975" error={fieldErr("yearBuilt")} />
                 <Input label={t("An renovare",lang)} value={building.yearRenov} onChange={v => updateBuilding("yearRenov",v)} type="number" placeholder="—" />
               </div>
             </div>
@@ -579,7 +620,7 @@ export default function Step1Identification({
         <div className="space-y-5">
           <Card title={t("Geometrie",lang)}>
             <div className="space-y-3">
-              <Input label={t("Regim de înălțime",lang)} value={building.floors} onChange={v => updateBuilding("floors",v)} placeholder="P+4E, S+P+2E+M" />
+              <Input label={t("Regim de înălțime",lang)} value={building.floors} onChange={v => updateBuilding("floors",v)} placeholder="P+4E, S+P+2E+M" error={fieldErr("floors")} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={building.basement} onChange={e => updateBuilding("basement",e.target.checked)}
@@ -605,7 +646,7 @@ export default function Step1Identification({
                 className="w-full py-2 rounded-lg border border-amber-500/20 bg-amber-500/5 text-amber-400 text-xs hover:bg-amber-500/10 transition-colors">
                 {t("Estimare automată din Au + etaje", lang)}
               </button>
-              <Input label={t("Suprafață utilă încălzită (Au)",lang)} tooltip="Suma suprafețelor utile ale tuturor spațiilor încălzite — Mc 001 Cap.1" value={building.areaUseful} onChange={v => updateBuilding("areaUseful",v)} type="number" unit="m²" min="0" step="0.1" />
+              <Input label={t("Suprafață utilă încălzită (Au)",lang)} tooltip="Suma suprafețelor utile ale tuturor spațiilor încălzite — Mc 001 Cap.1" value={building.areaUseful} onChange={v => updateBuilding("areaUseful",v)} type="number" unit="m²" min="0" step="0.1" error={fieldErr("areaUseful")} />
               <Input label={t("Volum încălzit (V)",lang)} tooltip="Volumul interior al spațiilor încălzite delimitat de anvelopa termică — m³" value={building.volume} onChange={v => updateBuilding("volume",v)} type="number" unit="m³" min="0" step="0.1" />
               <Input label={t("Suprafață anvelopă (Aenv)",lang)} value={building.areaEnvelope} onChange={v => updateBuilding("areaEnvelope",v)} type="number" unit="m²" min="0" step="0.1" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -865,12 +906,33 @@ export default function Step1Identification({
         </Card>
       </div>
 
+      {/* Banner avertisment validare (Sprint 18 UX) */}
+      {showValidationBanner && hasErrors && (
+        <div role="alert" className="mt-6 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs flex justify-between items-start gap-3">
+          <span className="leading-relaxed">
+            <span aria-hidden="true">⚠ </span>
+            {lang==="EN"
+              ? "Incomplete fields detected. Calculation may be inaccurate or the certificate invalid. Complete the fields marked in red."
+              : "Câmpuri incomplete detectate. Calculul poate fi inexact sau certificatul invalid. Completați câmpurile marcate cu roșu."}
+          </span>
+          <button onClick={() => setShowValidationBanner(false)} aria-label={lang==="EN"?"Close warning":"Închide avertisment"}
+            className="text-amber-400 hover:text-amber-300 text-base shrink-0 leading-none">✕</button>
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
         <div />
-        <button onClick={() => goToStep(2, 1)}
+        <button onClick={() => {
+            if (hasErrors) {
+              setShowValidationBanner(true);
+              showToast?.(lang==="EN" ? "Incomplete fields — please complete the highlighted ones." : "Câmpuri incomplete — completați cele evidențiate.", "warning", 5000);
+              return;
+            }
+            goToStep(2, 1);
+          }}
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all text-sm">
-          Pasul 2: Anvelopă →
+          {lang==="EN" ? "Step 2: Envelope →" : "Pasul 2: Anvelopă →"}
         </button>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "../components/ui.jsx";
 import { inferData } from "./QuickFillWizard.jsx";
 
@@ -238,10 +238,41 @@ export default function TutorialWizard({ onClose, onApplyExample }) {
   const current = STEPS[step];
   const progress = Math.round(((step + 1) / total) * 100);
   const c = COLOR_MAP[current.color];
+  const dialogRef = useRef(null);
+
+  // Sprint 18 UX — focus trap + ESC + autofocus on open
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () => Array.from(dialog.querySelectorAll(focusableSelector));
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key !== "Tab") return;
+      const list = getFocusable();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    };
+    dialog.addEventListener("keydown", onKey);
+    return () => dialog.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="relative w-full max-w-3xl rounded-2xl bg-slate-900 shadow-2xl border border-slate-700 flex flex-col max-h-[90vh]">
+      <div ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tutorial-title"
+        aria-describedby="tutorial-desc"
+        className="relative w-full max-w-3xl rounded-2xl bg-slate-900 shadow-2xl border border-slate-700 flex flex-col max-h-[90vh]">
 
         {/* Progress bar */}
         <div className="h-1 rounded-t-2xl bg-slate-800 overflow-hidden shrink-0">
@@ -256,8 +287,8 @@ export default function TutorialWizard({ onClose, onApplyExample }) {
               <div className="text-[10px] font-semibold uppercase tracking-widest text-amber-400">
                 Pas {step + 1} din {total} — Tutorial interactiv
               </div>
-              <h2 className="text-base font-bold text-white leading-tight">{current.title}</h2>
-              <p className="text-[10px] text-slate-400">{current.subtitle}</p>
+              <h2 id="tutorial-title" className="text-base font-bold text-white leading-tight">{current.title}</h2>
+              <p id="tutorial-desc" className="text-[10px] text-slate-400">{current.subtitle}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-700" aria-label="Închide tutorialul">
