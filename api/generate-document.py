@@ -2058,12 +2058,30 @@ class handler(BaseHTTPRequestHandler):
                 ("yyy,y", data.get("area_gross", "")),
                 ("AAAA", data.get("year", "____")),
                 ("xxxx", data.get("volume", "")),
-                ("regim", data.get("regime", "")),
+                # Eliminat: ("regim", ...) — replace prea agresiv corupea fraza
+                # "în regim liber" din nota *** (ore depășire confort) → "în P+1+M liber".
+                # Placeholder-ul "regim" standalone se înlocuiește mai jos cu verificare
+                # strictă (paragraf cu textul EXACT "regim", după strip).
             ]
 
             for old, new in ordered_replacements:
                 if new:
                     replace_in_doc(doc, old, new)
+
+            # Fix dedicat pentru "regim" standalone — înlocuiesc DOAR paragrafele
+            # unde textul e exact "regim" (placeholder pentru valoarea regime P+1+M etc.),
+            # NU și fraza "în regim liber" din nota *** despre ore confort termic.
+            regime_val = data.get("regime", "")
+            if regime_val:
+                for _para in _iter_all_paragraphs(doc, include_txbx=True):
+                    if _para.text.strip() == "regim":
+                        # Șterge toate run-urile și pune valoarea în primul
+                        for _run in _para.runs:
+                            _run.text = ""
+                        if _para.runs:
+                            _para.runs[0].text = regime_val
+                        else:
+                            _para.add_run(regime_val)
 
             # Adresa — completăm cele 2 rânduri din tabelul DATE CLĂDIRE:
             # R2: "Adresa clădirii: ........" → adresa completă
