@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "✨",
-        "text": "feat(api): consolidează preview-docx+preview-pdf în preview-document"
-      },
-      {
-        "icon": "🔸",
-        "text": "chore(dev): activează --host pentru npm run dev (acces LAN)"
-      },
-      {
-        "icon": "🔸",
-        "text": "actualizare fișiere auto-generate (changelog + program-stats)"
-      },
-      {
-        "icon": "🔸",
-        "text": "P1-3: EPBD rescalare A-G — sistem versioning praguri"
-      },
-      {
-        "icon": "📥",
-        "text": "P1-2: OCR facturi Claude Vision — prompt specializat distribuitori RO"
-      },
-      {
-        "icon": "🔸",
-        "text": "P1-1: Stripe Customer Portal în create-checkout.js (fără fișier nou)"
-      },
-      {
-        "icon": "📋",
-        "text": "P0-5: checklist migrare GDPR pas-cu-pas pentru Supabase Dashboard"
+        "icon": "📄",
+        "text": "fix(cpe): păstrează size 16pt pentru săgeți mobile (vizibil) + cx extend A+"
       },
       {
         "icon": "📄",
-        "text": "P0-4: TTL 1 oră pe Vercel Blob în preview-docx.js"
+        "text": "fix(cpe): uniformizare font săgeți mobile cu scala statică (Arial 9pt centrat)"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(step6): skip iframe Google Maps în DEV (blocat de Claude Preview MCP)"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(cpe): elimină dubla suprapunere textbox/pentagon pe săgețile clasei"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(cpe): 2 bug-uri CPE DOCX — margini + clipping 'A+'"
+      },
+      {
+        "icon": "✨",
+        "text": "fix(csp): adaugă blob: la frame-src — PDF preview via iframe"
+      },
+      {
+        "icon": "🚀",
+        "text": "security: șterge .env.vcheck committed accidental (conținea OIDC token temporar)"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(api): PUBLIC_API_MODE acceptă orice valoare truthy (robustețe)"
       }
     ]
   },
