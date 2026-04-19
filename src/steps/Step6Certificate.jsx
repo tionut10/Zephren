@@ -396,6 +396,50 @@ export default function Step6Certificate(props) {
                     ep_racire:    fmtRo(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, 1),
                     ep_ventilare: fmtRo(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, 1),
                     ep_iluminat:  fmtRo(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, 1),
+                    // ── Etapa 7 (20 apr 2026) — câmpuri Anexa 2 detaliate ──
+                    // Completare automată câmpuri lipsă din audit Anexa (gap-uri identificate
+                    // 20 apr 2026): EER, putere frigorifică, ventilare HR, putere iluminat,
+                    // energie regenerabilă exportată, nr. apartamente.
+                    cooling_power_kw: cooling?.power ? fmtRo(parseFloat(cooling.power), 1) : "",
+                    cooling_eer:      cooling?.eer ? fmtRo(parseFloat(cooling.eer), 2) : "",
+                    cooling_seer:     cooling?.seer ? fmtRo(parseFloat(cooling.seer), 2) : "",
+                    cooled_area_m2:   cooling?.cooledArea ? fmtRo(parseFloat(cooling.cooledArea), 1) : "",
+                    ventilation_hr_efficiency_pct: ventilation?.hrEfficiency
+                      ? fmtRo(parseFloat(ventilation.hrEfficiency) * (parseFloat(ventilation.hrEfficiency) <= 1 ? 100 : 1), 0)
+                      : "",
+                    ventilation_type_label: (() => {
+                      const map = {
+                        natural_neorg: "Naturală neorganizată",
+                        natural_org:   "Naturală organizată",
+                        mecanica:      "Mecanică",
+                        mecanica_hr:   "Mecanică cu recuperare căldură",
+                        UTA:           "Unitate de tratare aer (UTA)",
+                        VMC:           "Ventilație mecanică controlată (VMC)",
+                      };
+                      return map[ventilation?.type] || ventilation?.type || "";
+                    })(),
+                    ventilation_has_hr: (ventilation?.type && (ventilation.type.includes("hr") || ventilation.type.includes("HR") || ventilation.type === "UTA"))
+                      ? "Da" : "Nu",
+                    lighting_power_kw: (() => {
+                      // Putere iluminat: din W_P × Au sau qf_l / ore funcționare standard
+                      const wp = parseFloat(lighting?.totalPowerInstalled) || 0;
+                      if (wp > 0) return fmtRo(wp / 1000, 2);  // W → kW
+                      // Fallback: leni × Au / 8760h → kW mediu
+                      const leni = parseFloat(instSummary?.leni) || 0;
+                      if (leni > 0 && Au > 0) return fmtRo(leni * Au / 8760, 2);
+                      return "";
+                    })(),
+                    pv_kwh_year:        renewSummary?.qPV_kWh ? fmtRo(renewSummary.qPV_kWh, 0) : "",
+                    solar_th_kwh_year:  renewSummary?.qSolarTh ? fmtRo(renewSummary.qSolarTh, 0) : "",
+                    wind_kwh_year:      renewSummary?.qWind ? fmtRo(renewSummary.qWind, 0) : "",
+                    glazing_area_total_m2: glazingElements?.length
+                      ? fmtRo(glazingElements.reduce((s, g) => s + (parseFloat(g.area) || 0), 0), 1)
+                      : "",
+                    n_apartments_count: (() => {
+                      const fromArr = (building?.apartments || []).length;
+                      if (fromArr > 0) return String(fromArr);
+                      return building?.units || "";
+                    })(),
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };

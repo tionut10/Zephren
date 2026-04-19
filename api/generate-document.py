@@ -3553,6 +3553,117 @@ class handler(BaseHTTPRequestHandler):
                     replace_in_doc(doc, "n50 =", "n50 = " + format_ro(float(n50), 1) + " h⁻¹")
                     replace_in_doc(doc, "rata de infiltrații", "Rata infiltrații n50 = " + format_ro(float(n50), 1) + " h⁻¹")
 
+                # ═══════════════════════════════════════════════════════
+                # Etapa 7 (20 apr 2026) — completare Anexa 2 detaliată
+                # Gap-uri identificate în audit: EER, putere frigorifică, ventilare HR,
+                # putere iluminat, energie regenerabilă exportată, nr. apartamente.
+                # Folosesc replacement chirurgical pe paragrafe identificate cu eticheta
+                # semantică (evit bug-ul "201520152015" — fără replace_in_doc global pe puncte).
+                # ═══════════════════════════════════════════════════════
+
+                def _fill_para_blank(label_match, value, suffix=""):
+                    """Înlocuiește spații/non-breaking-space după eticheta din paragraf cu valoarea.
+
+                    Caută paragraful care START cu label_match. Dacă valoarea există,
+                    extinde paragraful cu " <value><suffix>" la final.
+                    Idempotent: dacă valoarea e deja în text, nu duplică.
+                    """
+                    if not value:
+                        return False
+                    val_str = str(value).strip()
+                    if not val_str:
+                        return False
+                    for p in doc.paragraphs:
+                        pt = p.text
+                        if label_match not in pt:
+                            continue
+                        # Skip dacă valoarea apare deja (idempotent)
+                        if val_str in pt:
+                            return True
+                        # Adaug valoarea ca run nou la finalul paragrafului
+                        if p.runs:
+                            run = p.add_run(f" {val_str}{suffix}")
+                            run.font.size = p.runs[0].font.size
+                            run.font.name = p.runs[0].font.name
+                        else:
+                            p.add_run(f" {val_str}{suffix}")
+                        return True
+                    return False
+
+                # ── Răcire/climatizare ─────────────────────────────────
+                cooling_eer = data.get("cooling_eer", "")
+                if cooling_eer:
+                    _fill_para_blank("coeficientului de performanţă EER", f"EER = {cooling_eer}")
+                cooling_seer = data.get("cooling_seer", "")
+                if cooling_seer:
+                    # Adaug SEER lângă EER în același paragraf (informativ, EN 14825)
+                    for p in doc.paragraphs:
+                        if "EER al sursei de răcire" in p.text and f"SEER = {cooling_seer}" not in p.text:
+                            p.add_run(f"   |   SEER = {cooling_seer}")
+                            break
+                cooling_power = data.get("cooling_power_kw", "")
+                if cooling_power:
+                    # Para 336 — Necesarul de frig pentru răcire (putere frigorifică)
+                    _fill_para_blank("Necesarul de frig pentru răcire", cooling_power, " kW")
+                    # Para 338 — Puterea frigorifică totală instalată
+                    _fill_para_blank("Puterea frigorifică totală instalată", cooling_power, " kW")
+                cooled_area = data.get("cooled_area_m2", "")
+                if cooled_area:
+                    _fill_para_blank("Volumul de referință al zonei climatizate", cooled_area, " m²")
+
+                # ── Ventilare ──────────────────────────────────────────
+                vent_hr = data.get("ventilation_has_hr", "")
+                if vent_hr:
+                    _fill_para_blank("Există recuperator de căldură", vent_hr)
+                vent_hr_eff = data.get("ventilation_hr_efficiency_pct", "")
+                if vent_hr_eff:
+                    _fill_para_blank("Eficiență declarată pe durata verii/iernii", f"{vent_hr_eff}% / {vent_hr_eff}%")
+                vent_label = data.get("ventilation_type_label", "")
+                if vent_label:
+                    # Para 354 "Cu 2 circuite, echilibrată | Alt tip:" — adaug eticheta tip
+                    for p in doc.paragraphs:
+                        if "Alt tip:" in p.text and "Cu 2 circuite" in p.text and vent_label not in p.text:
+                            p.add_run(f" {vent_label}")
+                            break
+
+                # ── Iluminat ───────────────────────────────────────────
+                light_power = data.get("lighting_power_kw", "")
+                if light_power:
+                    _fill_para_blank("Puterea electrică totală necesară a sistemului de iluminat", light_power, " kW")
+                    _fill_para_blank("Puterea electrică instalată totală a sistemului de iluminat", light_power, " kW")
+
+                # ── Regenerabile (energie exportată on-site) ───────────
+                solar_th = data.get("solar_th_kwh_year", "")
+                if solar_th and solar_th != "0":
+                    _fill_para_blank("Energia termică exportată", solar_th, " kWh/an")
+                pv_kwh = data.get("pv_kwh_year", "")
+                if pv_kwh and pv_kwh != "0":
+                    _fill_para_blank("Energia electrică exportată", pv_kwh, " kWh/an")
+                wind_kwh = data.get("wind_kwh_year", "")
+                if wind_kwh and wind_kwh != "0":
+                    # Para 414 are placeholder cu puncte — chirurgical, doar în paragraful eolian
+                    for p in doc.paragraphs:
+                        if "Număr centrale eoliene" in p.text and "............" in p.text:
+                            replace_in_paragraph(p, "............................", f"  ({wind_kwh} kWh/an produși)", count=1)
+                            break
+
+                # ── Nr. apartamente / unități ──────────────────────────
+                n_apt = data.get("n_apartments_count", "")
+                if n_apt:
+                    _fill_para_blank(
+                        "Numărul & tipul apartamentelor/unităților de clădire/zonelor termice",
+                        f" Total: {n_apt} unități"
+                    )
+
+                # ── Aria ferestre totală (info suplimentar) ────────────
+                glaz_area = data.get("glazing_area_total_m2", "")
+                if glaz_area:
+                    # Adaug ca info suplimentar la paragraful U tâmplărie (dacă există)
+                    for p in doc.paragraphs:
+                        if "U tâmplărie" in p.text and "Arie totală ferestre" not in p.text:
+                            p.add_run(f"   |   Arie totală ferestre: {glaz_area} m²")
+                            break
+
             # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine în text box
             # ═══════════════════════════════════════
