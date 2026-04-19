@@ -2284,24 +2284,35 @@ class handler(BaseHTTPRequestHandler):
             # pseudo-aliniere tab — după replace cu valori reale, rezultă indent vizual mare.
             # Colapsez spațiile multiple → 1 spațiu DOAR pe aceste 4 labels.
             _LEFT_ALIGN_LABELS = [
+                # Coloana stângă DATE CLĂDIRE
                 "Categoria clădirii:",
                 "Adresa:",
                 "Coordonate GPS (lat x long):",
                 "Regim de înălțime:",
+                # Coloana dreaptă DATE CLĂDIRE
+                "Anul construirii/renovării majore:",
+                "Aria de referință a pardoselii:",
+                "Aria utilă / desfășurată:",
+                "Volumul interior de referință:",
             ]
+            from docx.enum.text import WD_ALIGN_PARAGRAPH as _WD_ALIGN
             for _para in _iter_all_paragraphs(doc, include_txbx=True):
                 _pt = _para.text
+                # 1) Colapsează spații după ":" pentru labels din tabelul DATE CLĂDIRE
                 for _lbl in _LEFT_ALIGN_LABELS:
                     if _pt.startswith(_lbl) and "  " in _pt[len(_lbl):]:
-                        # Colapsează spațiile multiple DUPĂ ":" într-un singur spațiu
                         _new_text = _lbl + " " + _pt[len(_lbl):].lstrip()
-                        # Rescrie prin run-uri (păstrează formatarea primei runs)
                         if _para.runs:
                             _first = _para.runs[0]
                             _first.text = _new_text
                             for _r in _para.runs[1:]:
                                 _r.text = ""
                         break
+                # 2) Aliniere stânga pentru celulele cu "m²" (template are center —
+                #    rămâneau la dreapta coloanei, depărtate de valori). User request:
+                #    'și la cele din dreapta, inclusiv metrii pătrați m²'
+                if _pt.strip() in ("m2", "m²"):
+                    _para.alignment = _WD_ALIGN.LEFT
 
             # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
