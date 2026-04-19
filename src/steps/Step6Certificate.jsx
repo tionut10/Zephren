@@ -15,6 +15,7 @@ import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
 import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
+import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import { calcPenalties } from "../calc/penalties.js";
@@ -2213,10 +2214,21 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
 
                       // ── Încearcă Office Online Viewer via Vercel Blob ──
-                      if (docxBlob) {
+                      // Endpoint require Bearer token Supabase (auth.js requireAuth).
+                      // Dacă user nu e logat sau Supabase lipsește env → sărim direct la fallback.
+                      let authToken = null;
+                      try {
+                        if (supabase) {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          authToken = session?.access_token || null;
+                        }
+                      } catch { /* ignore, cade pe fallback */ }
+
+                      if (docxBlob && authToken) {
                         try {
                           const previewResp = await fetch("/api/preview-document", {
                             method: "POST",
+                            headers: { Authorization: `Bearer ${authToken}` },
                             body: docxBlob,
                           });
                           if (previewResp.ok) {
@@ -2269,7 +2281,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         styleEl.textContent = `
                           .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
                           .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
-                          .cpe-arrow-overlay { position:absolute; z-index:10; display:flex; align-items:center; justify-content:center; padding-right:30%; font-weight:bold; font-size:11px; color:#000; clip-path:polygon(0% 20%, 70% 20%, 70% 0%, 100% 50%, 70% 100%, 70% 80%, 0% 80%); }
                         `;
                         container.appendChild(styleEl);
 
@@ -2291,103 +2302,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           }
                         }
 
-                        // ── ASCUNDE toate săgețile indicator randate de docx-preview din template ──
-                        // Ascundem ORICE element absolut-poziționat care conține o literă de clasă [A-G]+?
-                        // (sunt săgețile default din template — le înlocuim cu cele injectate CSS mai jos)
-                        container.querySelectorAll('[style*="position: absolute"]').forEach(el => {
-                          const text = el.textContent.trim();
-                          if (/^[A-G]\+?$/.test(text)) {
-                            el.style.visibility = "hidden";
-                            return;
-                          }
-                          const r = el.getBoundingClientRect();
-                          const pr = container.getBoundingClientRect();
-                          if (r.left < pr.left - 5 || r.right > pr.right + 5) {
-                            el.style.visibility = "hidden";
-                          }
-                        });
-
-                        // ── INJECTEAZĂ săgeți CSS corecte în coloanele CLĂDIRE REALĂ / REF / CO2 ──
-                        const EP_COLORS  = {"A+":"#009B00","A":"#32C831","B":"#00FF00","C":"#FFFF00","D":"#F39C00","E":"#FF6400","F":"#FE4101","G":"#FE0000"};
-                        const CO2_COLORS = {"A+":"#0000FE","A":"#3265FF","B":"#009BFF","C":"#3399CC","D":"#808080","E":"#999999","F":"#AAAAAA","G":"#333333"};
-                        // Culoarea literei: A+=alb, A=alb, B=negru, C=negru, D=negru, E=negru, F=negru, G=alb
-                        const TEXT_COLOR = {"A+":"#fff","A":"#fff","B":"#000","C":"#000","D":"#000","E":"#000","F":"#000","G":"#fff"};
-                        // Poziție % centrată în banda fiecărei clase: (i+0.5)/8*100
-                        // A+ band=0-12.5% → centru 6.25%, A band=12.5-25% → 18.75% etc.
-                        const CLASS_PCT = {"A+":6.25,"A":18.75,"B":31.25,"C":43.75,"D":56.25,"E":68.75,"F":81.25,"G":93.75};
-                        const CO2_PCT   = {"A+":6.25,"A":18.75,"B":31.25,"C":43.75,"D":56.25,"E":68.75,"F":81.25,"G":93.75};
-
-                        const epReal = enClass?.cls || enClassDocx?.cls || "C";
-                        const epRef  = getEnergyClass(epRefMax, catKey)?.cls || "A";
-                        const co2Cl  = co2Class?.cls || "C";
-
-                        // Găsim celula cu bara de scală EP (conține imagini cu clasele)
-                        // și celulele CLĂDIRE REALĂ / CLĂDIRE DE REFERINȚĂ / CO2 indicator
-                        const allCells = Array.from(container.querySelectorAll('td'));
-                        let realColCell = null, refColCell = null, co2IndCell = null, epScaleCell = null, co2ScaleCell = null;
-
-                        for (const cell of allCells) {
-                          const t = cell.textContent.replace(/\s+/g," ").trim();
-                          if (!realColCell && /CLĂDIRE\s*REALĂ/i.test(t) && t.length < 40) realColCell = cell;
-                          if (!refColCell && /CLĂDIRE\s*(DE\s*)?REFERINȚĂ/i.test(t) && t.length < 60) refColCell = cell;
-                          if (!co2IndCell && /NIVEL DE EMISII/i.test(t) && t.length > 20) co2IndCell = cell;
-                        }
-
-                        // Celula scalei EP = celula lată din stânga, în același tabel ca CLĂDIRE REALĂ
-                        if (realColCell) {
-                          const row = realColCell.closest('tr');
-                          if (row) {
-                            const cells = Array.from(row.cells);
-                            const idx = cells.indexOf(realColCell);
-                            if (idx > 0) epScaleCell = cells[idx - 1];
-                          }
-                        }
-                        if (co2IndCell) {
-                          const row = co2IndCell.closest('tr');
-                          if (row) {
-                            const cells = Array.from(row.cells);
-                            const idx = cells.indexOf(co2IndCell);
-                            if (idx < cells.length - 1) co2ScaleCell = cells[idx + 1] || cells[idx];
-                          }
-                        }
-
-                        // Funcție: injectează o săgeată în coloana dată la poziția clasei
-                        function injectArrow(col, cls, colors, pctMap, isRight=false) {
-                          if (!col || !cls) return;
-                          const tbl = col.closest('table');
-                          if (!tbl) return;
-                          const tblRect = tbl.getBoundingClientRect();
-                          const colRect = col.getBoundingClientRect();
-                          const page = col.closest('section.page') || col.closest('article.page') || container;
-                          const pageRect = page.getBoundingClientRect();
-
-                          // scaleTop = bottom edge-ul rândului header (unde începe scala A+→G)
-                          const headerRow = col.closest('tr');
-                          const headerRowRect = headerRow ? headerRow.getBoundingClientRect() : col.getBoundingClientRect();
-                          const scaleTop = headerRowRect.bottom - pageRect.top;
-                          const scaleH = (tblRect.bottom - pageRect.top) - scaleTop;
-                          const pct = pctMap[cls] || 0;
-                          const arrowH = 28;
-                          const arrowW = colRect.width > 10 ? colRect.width - 4 : 70;
-
-                          const topPx = scaleTop + (scaleH * pct / 100) - arrowH / 2;
-                          const leftPx = colRect.left - pageRect.left + 2;
-
-                          const arrow = document.createElement('div');
-                          arrow.className = 'cpe-arrow-overlay';
-                          arrow.style.cssText = `
-                            top:${topPx}px; left:${leftPx}px;
-                            width:${arrowW}px; height:${arrowH}px;
-                            background:${colors[cls] || '#888'};
-                            color:${TEXT_COLOR[cls] || '#000'};
-                          `;
-                          arrow.textContent = cls;
-                          page.appendChild(arrow);
-                        }
-
-                        injectArrow(realColCell, epReal, EP_COLORS, CLASS_PCT);
-                        injectArrow(refColCell, epRef, EP_COLORS, CLASS_PCT);
-                        if (co2IndCell) injectArrow(co2IndCell, co2Cl, CO2_COLORS, CO2_PCT, true);
+                        // Săgețile EP / REF / CO2 sunt randate nativ din template-ul DOCX.
+                        // Nu mai facem overlay JS — calculul de poziții era incompatibil cu
+                        // transform:scale aplicat pe wrapper (rect-uri post-scalare + dublă scalare).
 
                         setDocxRendered(true);
                         showToast("Preview generat", "success", 1500);
