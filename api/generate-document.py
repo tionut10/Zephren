@@ -2068,20 +2068,13 @@ class handler(BaseHTTPRequestHandler):
                 if new:
                     replace_in_doc(doc, old, new)
 
-            # Fix dedicat pentru "regim" standalone — înlocuiesc DOAR paragrafele
-            # unde textul e exact "regim" (placeholder pentru valoarea regime P+1+M etc.),
-            # NU și fraza "în regim liber" din nota *** despre ore confort termic.
+            # Fix dedicat pentru placeholder "regim înălțime" — text unic în template
+            # MDLPA (2 cuvinte separate, apare DOAR pe rândul "Regim de înălțime:").
+            # Evită coruperea frazei "în regim liber" din nota *** care folosește doar
+            # cuvântul "regim" izolat, fără "înălțime" imediat după.
             regime_val = data.get("regime", "")
             if regime_val:
-                for _para in _iter_all_paragraphs(doc, include_txbx=True):
-                    if _para.text.strip() == "regim":
-                        # Șterge toate run-urile și pune valoarea în primul
-                        for _run in _para.runs:
-                            _run.text = ""
-                        if _para.runs:
-                            _para.runs[0].text = regime_val
-                        else:
-                            _para.add_run(regime_val)
+                replace_in_doc(doc, "regim înălțime", regime_val)
 
             # Adresa — completăm cele 2 rânduri din tabelul DATE CLĂDIRE:
             # R2: "Adresa clădirii: ........" → adresa completă
