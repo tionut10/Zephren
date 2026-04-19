@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-18
+// Ultima generare: 2026-04-19
 
 export const APP_VERSION = "0.3.0";
 export const CHANGELOG = [
@@ -11,6 +11,18 @@ export const CHANGELOG = [
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "✨",
+        "text": "feat(api): consolidează preview-docx+preview-pdf în preview-document"
+      },
+      {
+        "icon": "🔸",
+        "text": "chore(dev): activează --host pentru npm run dev (acces LAN)"
+      },
+      {
+        "icon": "🔸",
+        "text": "actualizare fișiere auto-generate (changelog + program-stats)"
+      },
       {
         "icon": "🔸",
         "text": "P1-3: EPBD rescalare A-G — sistem versioning praguri"
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "P0-4: TTL 1 oră pe Vercel Blob în preview-docx.js"
-      },
-      {
-        "icon": "🔸",
-        "text": "P0-3: banner ANCPI date simulate + flux ancpi-proxy"
-      },
-      {
-        "icon": "🎨",
-        "text": "P0-2: metadata CUI/VAT + clientType în create-checkout.js"
-      },
-      {
-        "icon": "🔸",
-        "text": "P0-1: integrare SmartBill în stripe-webhook.js"
       }
     ]
   },
