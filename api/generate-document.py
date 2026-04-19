@@ -39,21 +39,26 @@ A4_HEIGHT_EMU = 16838 * 635    # 29.7 cm
 A4_MARGIN_EMU = 1417 * 635     # 2.5 cm
 
 
-def enforce_a4_portrait(doc):
+def enforce_a4_portrait(doc, preserve_margins=False):
     """Forțează toate secțiunile la A4 portret + margini 2.5 cm + Calibri 11pt.
 
     Previne regresia în care template-ul moștenește format legacy (Letter,
     Legal, landscape). Ord. MDLPA 16/2023 Anexa 1 cere strict A4 portret
     pentru CPE tipărit.
+
+    preserve_margins=True — pentru template-urile oficiale MDLPA CPE (margini
+    top/bottom 5mm, left/right 17.5mm) care încap conținutul pe o singură
+    pagină A4. Ord. MDLPA 16/2023 NU impune margini fixe — doar A4 portret.
     """
     for section in doc.sections:
         section.page_width = Emu(A4_WIDTH_EMU)
         section.page_height = Emu(A4_HEIGHT_EMU)
         section.orientation = WD_ORIENT.PORTRAIT
-        section.top_margin = Emu(A4_MARGIN_EMU)
-        section.bottom_margin = Emu(A4_MARGIN_EMU)
-        section.left_margin = Emu(A4_MARGIN_EMU)
-        section.right_margin = Emu(A4_MARGIN_EMU)
+        if not preserve_margins:
+            section.top_margin = Emu(A4_MARGIN_EMU)
+            section.bottom_margin = Emu(A4_MARGIN_EMU)
+            section.left_margin = Emu(A4_MARGIN_EMU)
+            section.right_margin = Emu(A4_MARGIN_EMU)
     try:
         if "Normal" in doc.styles:
             normal = doc.styles["Normal"]
@@ -851,6 +856,29 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         # Actualizează litera și în elementele DrawingML <a:t> (Choice primary)
         new_content = re.sub(r'(<a:t[^>]*>)[A-G]\+?(</a:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
+        # FIX A+ clipping — textbox-ul template (cx=293370, ~23pt) cu padding 91440×2 =
+        # 14.4pt + font 16pt lasă doar 8.6pt utili → "+" e tăiat. Mărire cx cu 45% și
+        # eliminare padding intern când clasa are 2 caractere.
+        if len(new_class) > 1:
+            new_content = re.sub(
+                r'(<wp:extent cx=")(\d+)("\s+cy=")',
+                lambda m: m.group(1) + str(int(int(m.group(2)) * 1.45)) + m.group(3),
+                new_content
+            )
+            new_content = re.sub(
+                r'(<a:ext cx=")(\d+)("\s+cy=")',
+                lambda m: m.group(1) + str(int(int(m.group(2)) * 1.45)) + m.group(3),
+                new_content
+            )
+            # VML width extend (fallback)
+            new_content = re.sub(
+                r'(width:\s*)([\d.]+)(pt)',
+                lambda m: m.group(1) + str(round(float(m.group(2)) * 1.45, 1)) + m.group(3),
+                new_content
+            )
+            # Reduce padding intern pentru mai mult spațiu util
+            new_content = re.sub(r'lIns="\d+"', 'lIns="0"', new_content)
+            new_content = re.sub(r'rIns="\d+"', 'rIns="0"', new_content)
         new_content = _update_shape_pos_v(new_content, new_pos)
         # Actualizează și culoarea de fundal a textbox-ului (solidFill) — altfel litera
         # rămâne colorată cu culoarea implicită din template (nu cu culoarea clasei reale)
@@ -1941,9 +1969,11 @@ class handler(BaseHTTPRequestHandler):
             doc = Document(io.BytesIO(tpl_bytes))
 
             # ═══════════════════════════════════════
-            # A4 ENFORCEMENT — forțat pentru orice template (Sprint 14)
+            # A4 ENFORCEMENT — păstrează marginile template-ului MDLPA (5mm top/bot,
+            # 17.5mm left/right) care încap CPE-ul pe 1 pagină A4. Altfel marginile
+            # default Word (25mm) împing conținutul pe pagina 2.
             # ═══════════════════════════════════════
-            enforce_a4_portrait(doc)
+            enforce_a4_portrait(doc, preserve_margins=True)
 
             # ═══════════════════════════════════════
             # 0. SCALE EP + CO₂ — PRIMELE! (înainte de text replacements)
