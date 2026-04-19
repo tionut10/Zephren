@@ -1619,6 +1619,406 @@ def compute_checkboxes(data, category):
 
 
 # ═══════════════════════════════════════════════════════
+# Etapa 3 (19 apr 2026) — DYNAMIC CHECKBOX MAPPING (BUG-11 fix)
+# ═══════════════════════════════════════════════════════
+# Probleme cu maparea statică din compute_checkboxes():
+#   - Indicii hardcodate (ex. CB[150] = "sobă") sunt fragili: dacă MDLPA
+#     adaugă/elimină un checkbox în template, toți indicii ulteriori se mută
+#   - Template clădire (308 cb) ≠ Template apartament (244 cb) → același index
+#     numeric reprezintă lucruri diferite în cele două template-uri
+#   - Imposibil de menținut între versiuni MDLPA
+#
+# Soluția — mapping semantic dinamic la runtime:
+#   1. Definim CHECKBOX_KEYWORD_MAP: SEMANTIC_KEY → list_de_keywords
+#   2. La generare, scanăm template-ul și pentru fiecare checkbox extragem
+#      contextul textual (paragraf curent + prev + section header)
+#   3. build_checkbox_index(doc) → dict {SEMANTIC_KEY: xml_index_in_doc}
+#   4. compute_checkbox_keys(data, category) → list[SEMANTIC_KEY] activ
+#   5. toggle_checkboxes_by_keys(doc, keys) → folosește indexul dinamic
+#
+# Strategie graduală: vechiul compute_checkboxes() rămâne (pentru backward compat
+# pe template-ul clădire) + noul compute_checkbox_keys() se aplică ÎN PLUS cu
+# semantic matching (idempotent — checkbox deja bifat nu se rebifează diferit).
+# ═══════════════════════════════════════════════════════
+
+def _normalize_text(s):
+    """Normalizează text pentru match: lowercase, fără diacritice, spații colapsate."""
+    import unicodedata
+    if s is None:
+        return ""
+    s = str(s).lower().strip()
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = " ".join(s.split())  # collapse whitespace
+    return s
+
+
+def _get_checkbox_context(cb_elem, doc=None):
+    """Extrage contextul textual al unui checkbox: paragraf curent + prev + section header.
+
+    Section header = ultimul paragraf bold/major dintr-o serie de paragrafe goale
+    sau cu text care pare label de secțiune (ex. "Existența instalației de încălzire").
+
+    Returnează un string concatenat normalizat, gata pentru substring matching.
+    """
+    p = cb_elem
+    while p is not None and not p.tag.endswith("}p"):
+        p = p.getparent()
+    if p is None:
+        return ""
+
+    parts = []
+    # Paragraful curent
+    curr_text = "".join(t.text or "" for t in p.iter(qn("w:t")))
+    parts.append(curr_text)
+
+    # Paragraful anterior
+    prev = p.getprevious()
+    if prev is not None and prev.tag.endswith("}p"):
+        prev_text = "".join(t.text or "" for t in prev.iter(qn("w:t")))
+        parts.append(prev_text)
+
+    # Section header — urc 5 paragrafe în sus căutând un label declarativ
+    # (de obicei "Existența instalației...", "Tipul...", "Sursa...")
+    header = prev
+    SECTION_HEADER_HINTS = (
+        "existen", "tipul", "sursa", "tip ", "starea", "structura",
+        "categori", "zone climat", "zone eolien", "soluții", "solutii",
+        "estimarea", "tipul cl", "anvelopa",
+    )
+    for _ in range(5):
+        if header is None:
+            break
+        header = header.getprevious()
+        if header is None or not header.tag.endswith("}p"):
+            continue
+        h_text = "".join(t.text or "" for t in header.iter(qn("w:t")))
+        h_norm = _normalize_text(h_text)
+        if any(h_norm.startswith(hint) for hint in SECTION_HEADER_HINTS) and len(h_norm) > 5:
+            parts.append(h_text)
+            break
+
+    # Cell context — dacă e într-un tabel, ia toate paragrafele din celulă
+    cell = p.getparent()
+    while cell is not None and not cell.tag.endswith("}tc"):
+        cell = cell.getparent()
+    if cell is not None:
+        cell_text = "".join(t.text or "" for t in cell.iter(qn("w:t")))
+        # Adaugă doar dacă e diferit de curr_text (evită dublare)
+        if _normalize_text(cell_text) != _normalize_text(curr_text):
+            parts.append(cell_text)
+
+    return _normalize_text(" | ".join(parts))
+
+
+# ─── CHECKBOX_KEYWORD_MAP ───────────────────────────────────────────────────
+# Cheie semantică → listă de keywords (toate trebuie să apară în context).
+# Keywords-urile sunt normalizate (lowercase fără diacritice) la match.
+# Pentru fiecare semantic key se selectează PRIMUL checkbox al cărui context
+# match-uiește toate keywords (ordine de apariție în template).
+
+CHECKBOX_KEYWORD_MAP = {
+    # ── Anexa 1 — Recomandări anvelopă (CB ~0-8) ──
+    "REC_PE_INSULATE":      ["sporirea rezisten", "pereti", "exteriori"],
+    "REC_PB_INSULATE":      ["placii peste subsol"],
+    "REC_PT_INSULATE":      ["sporirea rezisten", "terasei"],
+    "REC_PL_INSULATE":      ["planseelor in contact"],
+    "REC_SARPANTA":         ["sarpantei peste mansarda"],
+    "REC_GLAZING":          ["inlocuirea tamplariei"],
+    "REC_GRILES_VENT":      ["grilelor de ventilare higroreglabile"],
+    "REC_SHADING":          ["dispozitive de umbrire"],
+
+    # ── Anexa 1 — Recomandări instalații (CB ~9-30) ──
+    "REC_HEAT_PIPES":       ["schimbarea conductelor", "agentului termic pentru incalzire"],
+    "REC_DHW_PIPES":        ["schimbarea conductelor", "apei calde de consum"],
+    "REC_HEAT_INSULATE":    ["refacerea izolatiei", "agentului termic pentru incalzire"],
+    "REC_DHW_INSULATE":     ["refacerea izolatiei", "apei calde de consum"],
+    "REC_THERM_VALVES":     ["robinetelor cu termostat"],
+    "REC_BAL_VALVES":       ["vanelor automate de echilibare"],
+    "REC_AIR_QUALITY":      ["calitatii aerului interior", "ventilare"],
+    "REC_FLOW_METERS":      ["debitmetrelor"],
+    "REC_HEAT_METERS":      ["contoarelor de caldura"],
+    "REC_LOW_FLOW":         ["armaturilor sanitare cu consum redus"],
+    "REC_DHW_RECIRC":       ["recirculare a apei calde de consum"],
+    "REC_AUTOMATION":       ["sistem minim de automatizare"],
+    "REC_HEAT_EQUIP":       ["echipamentelor din centrala termica"],
+    "REC_VENT_EQUIP":       ["centrala de climatizare", "uzate"],
+    "REC_LIGHT_LED":        ["corpurilor de iluminat", "surse economice"],
+    "REC_PRESENCE_SENS":    ["senzorilor de prezenta"],
+    "REC_RENEWABLES":       ["surselor regenerabile"],
+    "REC_HEAT_RECOVERY":    ["recuperare a energiei termice"],
+
+    # ── Anexa 2 — Tip clădire (CB 65-67) ──
+    "BLDG_EXISTING":        ["tipul cladirii", "existenta"],
+    "BLDG_NEW":             ["tipul cladirii", "noua finalizata"],
+    "BLDG_UNFINISHED":      ["existenta nefinalizata"],
+
+    # ── Anexa 2 — Categoria clădirii (CB 68-111) ──
+    "CAT_RES_INDIV":        ["casa individuala"],
+    "CAT_RES_INSIRUITA":    ["casa insiruita"],
+    "CAT_RES_BLOC":         ["bloc de locuinte"],
+    "CAT_RES_CAMIN":        ["camin / internat"],
+    "CAT_EDU_GRADINITA":    ["cladire de invatamant", "gradinita"],
+    "CAT_EDU_SCOALA":       ["scoala /liceu/colegiu"],
+    "CAT_EDU_UNIV":         ["invatamant superior"],
+    "CAT_OFFICE":           ["cladire de birouri", "birouri"],
+    "CAT_HOSPITAL":         ["cladire pentru sanatate", "spital"],
+    "CAT_HOTEL":            ["cladire pentru turism", "hotel/motel"],
+    "CAT_SPORT":            ["cladire pentru sport"],
+    "CAT_COMMERCE_SMALL":   ["cladire pentru comert", "magazin comercial mic"],
+    "CAT_COMMERCE_BIG":     ["magazin mare"],
+    "CAT_OTHER":            ["alte tipuri de cladiri"],
+
+    # ── Anexa 2 — Existență instalații (CB ~135, 176, 202, 256, 272) ──
+    "HEAT_EXISTS_OK":       ["existenta instalatiei de incalzire", "da, functionala"],
+    "HEAT_EXISTS_NONE":     ["nu", "sistem virtual de incalzire electrica"],
+    "DHW_EXISTS_OK":        ["existenta instalatiei de apa calda", "da, functionala"],
+    "DHW_EXISTS_NONE":      ["sistem virtual de preparare acc"],
+    "COOL_EXISTS_OK":       ["existenta instalatiei de racire", "da, functionala"],
+    "COOL_EXISTS_NONE":     ["se ignora consumul de energie pentru racire"],
+    "VENT_EXISTS_OK":       ["existenta instalatiei de ventilare mecanica", "da, functionala"],
+    "VENT_EXISTS_NONE":     ["se ignora consumul de energie electrica pentru cladiri rezidentiale"],
+    "LIGHT_EXISTS_OK":      ["existenta instalatiei de iluminat", "da, functionala"],
+    "LIGHT_EXISTS_NONE":    ["sistem virtual de iluminat"],
+
+    # ── Anexa 2 — Tip ventilare (CB ~259-271) ──
+    "VENT_NATURAL_NEORG":   ["exclusiv naturala neorganizata"],
+    "VENT_NATURAL_ORG":     ["naturala organizata"],
+    "VENT_MECHANICAL":      ["mecanica"],
+    "VENT_HR_YES":          ["recuperator de caldura", "da nu"],
+
+    # ── Anexa 2 — Tip iluminat (CB ~281-285) ──
+    "LIGHT_FLUORESCENT":    ["tipul sistemului de iluminat", "fluorescent"],
+    "LIGHT_LED":            ["led mixt"],
+    "LIGHT_STATE_GOOD":     ["starea retelei electrice", "buna"],
+
+    # ── Anexa 2 — Regenerabile (CB 288-307) ──
+    # Perechi YES/NO cu CONTEXT IDENTIC ("Există Nu există" în același paragraf):
+    # folosim format tuple (keywords, occurrence_idx) — al N-lea match conform ordinii.
+    "RENEW_SOLAR_TH_YES":   (["sistemul de panouri termosolare"], 0),
+    "RENEW_SOLAR_TH_NO":    (["sistemul de panouri termosolare"], 1),
+    "RENEW_PV_YES":         (["sistemul de panouri fotovoltaice"], 0),
+    "RENEW_PV_NO":          (["sistemul de panouri fotovoltaice"], 1),
+    "RENEW_HP_YES":         (["pompa de caldura"], 0),
+    "RENEW_HP_NO":          (["pompa de caldura"], 1),
+    "RENEW_BIOMASS_YES":    (["sistemul de utilizare a biomasei"], 0),
+    "RENEW_BIOMASS_NO":     (["sistemul de utilizare a biomasei"], 1),
+    "RENEW_WIND_YES":       (["centrala eoliana"], 0),
+    "RENEW_WIND_NO":        (["centrala eoliana"], 1),
+}
+
+
+def build_checkbox_index(doc):
+    """Construiește mapping dinamic SEMANTIC_KEY → xml_checkbox_index pentru un template.
+
+    Pentru fiecare cheie din CHECKBOX_KEYWORD_MAP, găsește PRIMUL checkbox al
+    cărui context (paragraf curent + prev + header secțiune + celulă tabel)
+    conține TOATE keyword-urile asociate (case + diacritice insensitive).
+
+    Returnează dict {key: idx} pentru cheile găsite. Cheile fără match nu apar
+    în dict (apelantul folosește vechiul fallback hardcoded).
+
+    Cache pe instanța doc: rezultatul e stocat în doc._zephren_cb_index.
+    """
+    # Cache pe document — evită re-scanare la apeluri multiple în același flow
+    cached = getattr(doc, "_zephren_cb_index", None)
+    if cached is not None:
+        return cached
+
+    checkboxes = doc.element.findall(".//w:checkBox", NSMAP)
+    # Pre-calculează contextele
+    contexts = [_get_checkbox_context(cb, doc) for cb in checkboxes]
+
+    index = {}
+    for sem_key, kw_spec in CHECKBOX_KEYWORD_MAP.items():
+        # Suport pentru două formate:
+        #   (a) list[str] — toate keywords trebuie să apară, primul match câștigă
+        #   (b) tuple(list[str], int) — al N-lea match (ordinal) câștigă
+        if isinstance(kw_spec, tuple) and len(kw_spec) == 2 and isinstance(kw_spec[1], int):
+            keywords, occurrence = kw_spec
+        else:
+            keywords, occurrence = kw_spec, 0
+        normalized_kws = [_normalize_text(k) for k in keywords]
+        match_count = 0
+        for idx, ctx in enumerate(contexts):
+            if all(kw in ctx for kw in normalized_kws):
+                if match_count == occurrence:
+                    index[sem_key] = idx
+                    break
+                match_count += 1
+
+    # Salvăm pe doc pentru reutilizare
+    try:
+        doc._zephren_cb_index = index
+    except Exception:
+        pass
+    return index
+
+
+def toggle_checkboxes_by_keys(doc, semantic_keys):
+    """Bifează checkbox-uri folosind chei semantice (mapping dinamic la runtime).
+
+    Pentru fiecare cheie din semantic_keys, găsește indexul real al checkbox-ului
+    în template via build_checkbox_index(doc) și îl bifează.
+
+    Returnează dict {found: [keys], missing: [keys]} pentru audit/debug.
+    """
+    if not semantic_keys:
+        return {"found": [], "missing": []}
+    cb_index = build_checkbox_index(doc)
+    found_keys = [k for k in semantic_keys if k in cb_index]
+    missing_keys = [k for k in semantic_keys if k not in cb_index]
+    indices = sorted(set(cb_index[k] for k in found_keys))
+    if indices:
+        toggle_checkboxes(doc, indices)
+    return {"found": found_keys, "missing": missing_keys}
+
+
+def compute_checkbox_keys(data, category):
+    """Calculează lista de chei semantice ACTIVE pentru un audit.
+
+    Spre deosebire de compute_checkboxes() care returnează indici hardcodate,
+    această funcție returnează chei care sunt rezolvate dinamic la runtime
+    cu CHECKBOX_KEYWORD_MAP (independent de versiunea template).
+
+    Returnează list[str].
+    """
+    keys = []
+    is_res = category in ("RI", "RC", "RA")
+    u_ref = _U_REF_RES if is_res else _U_REF_NRES
+
+    # Parse opaque + glazing
+    try:
+        opaque_u = json.loads(data.get("opaque_u_values", "[]"))
+    except Exception:
+        opaque_u = []
+    try:
+        glaz_max_u = float(data.get("glazing_max_u", "0") or "0")
+        if glaz_max_u != glaz_max_u or glaz_max_u < 0:
+            glaz_max_u = 0.0
+    except Exception:
+        glaz_max_u = 0.0
+
+    # ── Anexa 1 — recomandări anvelopă ──
+    if any(e.get("type") == "PE" and float(e.get("u", 0)) > u_ref.get("PE", 0.25) for e in opaque_u):
+        keys.append("REC_PE_INSULATE")
+    if any(e.get("type") == "PB" and float(e.get("u", 0)) > u_ref.get("PB", 0.29) for e in opaque_u):
+        keys.append("REC_PB_INSULATE")
+    if any(e.get("type") in ("PT", "PP") and float(e.get("u", 0)) > u_ref.get(e["type"], 0.15) for e in opaque_u):
+        keys.append("REC_PT_INSULATE")
+    if any(e.get("type") in ("PL", "SE") and float(e.get("u", 0)) > u_ref.get(e["type"], 0.20) for e in opaque_u):
+        keys.append("REC_PL_INSULATE")
+    u_glaz_ref = 1.30 if is_res else 1.80
+    if glaz_max_u > u_glaz_ref:
+        keys.append("REC_GLAZING")
+
+    # ── Anexa 1 — recomandări instalații ──
+    vent_type = data.get("ventilation_type", "")
+    if not vent_type or vent_type == "natural_neorg":
+        keys.append("REC_GRILES_VENT")
+    h_src = data.get("heating_source", "")
+    if h_src and h_src not in ("electric_direct", "pc_aer_aer"):
+        keys.append("REC_THERM_VALVES")
+    h_ctrl = data.get("heating_control", "")
+    if not h_ctrl or h_ctrl == "manual":
+        keys.append("REC_AUTOMATION")
+    l_type = data.get("lighting_type", "")
+    if l_type and l_type != "led":
+        keys.append("REC_LIGHT_LED")
+    l_ctrl = data.get("lighting_control", "")
+    if not l_ctrl or l_ctrl not in ("sensor_presence", "daylight_dimming"):
+        keys.append("REC_PRESENCE_SENS")
+    st_en = data.get("solar_thermal_enabled", "") == "true"
+    pv_en = data.get("pv_enabled", "") == "true"
+    if not st_en and not pv_en:
+        keys.append("REC_RENEWABLES")
+    if not vent_type or "hr" not in vent_type:
+        keys.append("REC_HEAT_RECOVERY")
+
+    # ── Anexa 2 — tip clădire ──
+    try:
+        year_b = int(data.get("year_built", "2000") or "2000")
+    except Exception:
+        year_b = 2000
+    import datetime
+    if year_b >= datetime.datetime.now().year - 1:
+        keys.append("BLDG_NEW")
+    else:
+        keys.append("BLDG_EXISTING")
+
+    # ── Anexa 2 — categoria clădirii ──
+    cat_to_keys = {
+        "RI": "CAT_RES_INDIV",
+        "RC": "CAT_RES_BLOC",
+        "RA": "CAT_RES_BLOC",
+        "BI": "CAT_OFFICE",
+        "ED": "CAT_EDU_SCOALA",
+        "SA": "CAT_HOSPITAL",
+        "HC": "CAT_HOTEL",
+        "CO": "CAT_COMMERCE_SMALL",
+        "SP": "CAT_SPORT",
+        "AL": "CAT_OTHER",
+    }
+    cat_key = cat_to_keys.get(category)
+    if cat_key:
+        keys.append(cat_key)
+
+    # ── Anexa 2 — existență instalații ──
+    if h_src:
+        keys.append("HEAT_EXISTS_OK")
+    else:
+        keys.append("HEAT_EXISTS_NONE")
+    acm_src = data.get("acm_source", "")
+    if acm_src:
+        keys.append("DHW_EXISTS_OK")
+    else:
+        keys.append("DHW_EXISTS_NONE")
+    has_cool = data.get("cooling_has", "") == "true"
+    if has_cool:
+        keys.append("COOL_EXISTS_OK")
+    else:
+        keys.append("COOL_EXISTS_NONE")
+    has_vent = vent_type and vent_type != "natural_neorg"
+    if has_vent:
+        keys.append("VENT_EXISTS_OK")
+    else:
+        keys.append("VENT_EXISTS_NONE")
+    if l_type:
+        keys.append("LIGHT_EXISTS_OK")
+    else:
+        keys.append("LIGHT_EXISTS_NONE")
+
+    # ── Anexa 2 — tip ventilare ──
+    if vent_type == "natural_neorg":
+        keys.append("VENT_NATURAL_NEORG")
+    elif vent_type == "natural_org":
+        keys.append("VENT_NATURAL_ORG")
+    elif has_vent:
+        keys.append("VENT_MECHANICAL")
+    if vent_type and "hr" in vent_type:
+        keys.append("VENT_HR_YES")
+
+    # ── Anexa 2 — iluminat ──
+    if l_type == "fluorescent":
+        keys.append("LIGHT_FLUORESCENT")
+    elif l_type == "led":
+        keys.append("LIGHT_LED")
+    keys.append("LIGHT_STATE_GOOD")
+
+    # ── Anexa 2 — regenerabile ──
+    keys.append("RENEW_SOLAR_TH_YES" if st_en else "RENEW_SOLAR_TH_NO")
+    keys.append("RENEW_PV_YES" if pv_en else "RENEW_PV_NO")
+    hp_en = data.get("heat_pump_enabled", "") == "true"
+    keys.append("RENEW_HP_YES" if hp_en else "RENEW_HP_NO")
+    bio_en = data.get("biomass_enabled", "") == "true"
+    keys.append("RENEW_BIOMASS_YES" if bio_en else "RENEW_BIOMASS_NO")
+    wind_en = data.get("wind_enabled", "") == "true"
+    keys.append("RENEW_WIND_YES" if wind_en else "RENEW_WIND_NO")
+
+    return keys
+
+
+# ═══════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════
 def format_ro(val, dec=1):
@@ -2632,14 +3032,34 @@ class handler(BaseHTTPRequestHandler):
             # 4. CHECKBOXES (Anexa)
             # ═══════════════════════════════════════
             if mode == "anexa":
-                # Compute checkbox indices from building data (server-side)
+                # Etapa 3 (BUG-11) — DUAL-PASS bifare:
+                #   1. Vechiul flux: indici hardcodate (compute_checkboxes) —
+                #      funcționează pe template clădire (308 cb)
+                #   2. Flux nou: chei semantice (compute_checkbox_keys) — funcționează
+                #      pe orice template (clădire 308 cb / apartament 244 cb / viitor)
+                # Operațiile pe XML sunt idempotente — bifarea de 2x nu strică nimic.
                 cb_indices = compute_checkboxes(data, category)
-                # Also accept client-side overrides if provided
+                # Client-side overrides (legacy)
                 client_cbs = body.get("checkboxes", [])
                 if client_cbs:
                     cb_indices = list(set(cb_indices + client_cbs))
                 if cb_indices:
                     toggle_checkboxes(doc, cb_indices)
+
+                # Mapping dinamic — chei semantice rezolvate la runtime
+                try:
+                    sem_keys = compute_checkbox_keys(data, category)
+                    if sem_keys:
+                        result = toggle_checkboxes_by_keys(doc, sem_keys)
+                        if result.get("missing"):
+                            print(
+                                f"[checkbox_dynamic] {len(result['found'])} found, "
+                                f"{len(result['missing'])} missing keys: "
+                                f"{result['missing'][:5]}{'...' if len(result['missing']) > 5 else ''}",
+                                flush=True,
+                            )
+                except Exception as e_dyn:
+                    print(f"[checkbox_dynamic] error: {e_dyn}", flush=True)
 
             # ═══════════════════════════════════════
             # 4b. ANEXA 2 — TEXT REPLACEMENTS
