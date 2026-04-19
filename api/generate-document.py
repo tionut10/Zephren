@@ -2278,6 +2278,31 @@ class handler(BaseHTTPRequestHandler):
             overheat_h = "0" if has_cool else (data.get("overheating_hours", "0") or "0")
             replace_in_doc(doc, ".....................h", overheat_h + " h")
 
+            # Aliniere stânga pentru valorile completate automat din coloana stângă a
+            # tabelului "DATE PRIVIND CLĂDIREA CERTIFICATĂ" (Categoria, Adresa, Coordonate
+            # GPS, Regim de înălțime). Template MDLPA folosește 8-12 spații după ":" pentru
+            # pseudo-aliniere tab — după replace cu valori reale, rezultă indent vizual mare.
+            # Colapsez spațiile multiple → 1 spațiu DOAR pe aceste 4 labels.
+            _LEFT_ALIGN_LABELS = [
+                "Categoria clădirii:",
+                "Adresa:",
+                "Coordonate GPS (lat x long):",
+                "Regim de înălțime:",
+            ]
+            for _para in _iter_all_paragraphs(doc, include_txbx=True):
+                _pt = _para.text
+                for _lbl in _LEFT_ALIGN_LABELS:
+                    if _pt.startswith(_lbl) and "  " in _pt[len(_lbl):]:
+                        # Colapsează spațiile multiple DUPĂ ":" într-un singur spațiu
+                        _new_text = _lbl + " " + _pt[len(_lbl):].lstrip()
+                        # Rescrie prin run-uri (păstrează formatarea primei runs)
+                        if _para.runs:
+                            _first = _para.runs[0]
+                            _first.text = _new_text
+                            for _r in _para.runs[1:]:
+                                _r.text = ""
+                        break
+
             # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
             # ═══════════════════════════════════════
