@@ -72,6 +72,11 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
   const [name, setName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [toast, setToast] = useState("");
+  // Sprint 20 (18 apr 2026) — cablare Supabase auth ca fallback cand props lipsesc.
+  // IMPORTANT: toate hook-urile TREBUIE declarate înainte de orice early return
+  // (Rules of Hooks: ordine identică la fiecare render, indiferent de `show`).
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (!show) return null;
 
@@ -92,10 +97,6 @@ function LoginModal({ show, onClose, onLogin, onRegister, onGoogleLogin, onStart
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   };
-
-  // Sprint 20 (18 apr 2026) — cablare Supabase auth ca fallback cand props lipsesc.
-  const [consentAccepted, setConsentAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   async function getSupabaseClient() {
     const { createClient } = await import("@supabase/supabase-js");
