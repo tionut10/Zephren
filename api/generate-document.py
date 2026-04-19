@@ -3407,8 +3407,20 @@ class handler(BaseHTTPRequestHandler):
             if mode in ("anexa", "anexa_bloc"):
                 # Adresa și nr certificat
                 replace_in_doc(doc, "[adresa]", data.get("address", ""))
-                # An construcție/renovare
-                replace_in_doc(doc, ".................", data.get("year", "") + (" / " + data.get("year_renov", "") if data.get("year_renov") else ""))
+                # An construcție/renovare — FIX 20 apr 2026:
+                # replace_in_doc(".................") era prea agresiv: înlocuia
+                # global toate șirurile de 17 puncte (cum sunt placeholder-ele de
+                # 151/150/121 puncte din template pentru "Enunțarea etapelor",
+                # "Informații stimulente", "auditorul completează"), rezultând
+                # "2015201520152015..." (string-ul "2015" repetat de 7-8 ori).
+                # Fix chirurgical: înlocuiesc DOAR în paragraful care conține
+                # "Anul construc" (eticheta semantică unică), o singură dată.
+                year_full = data.get("year", "") + (" / " + data.get("year_renov", "") if data.get("year_renov") else "")
+                if year_full:
+                    for _p_year in doc.paragraphs:
+                        if "Anul construc" in _p_year.text and "................." in _p_year.text:
+                            replace_in_paragraph(_p_year, ".................", year_full, count=1)
+                            break
                 # Arie referință totală
                 au = data.get("area_ref", "")
                 vol = data.get("volume", "")
