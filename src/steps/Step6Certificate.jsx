@@ -393,7 +393,72 @@ export default function Step6Certificate(props) {
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };
 
-                const resp = await fetch(`/api/generate-document?type=${mode === "anexa" ? "anexa" : "cpe"}`, {
+                // Etapa 4 (BUG-4) — Anexa Bloc multi-apartament: payload extins
+                if (mode === "anexa_bloc") {
+                  const apartmentsRaw = building?.apartments || [];
+                  if (apartmentsRaw.length === 0) {
+                    showToast("Nu există apartamente definite pentru bloc — adaugă în Pasul 1.", "error");
+                    return;
+                  }
+                  // Calcul EP/CO2 + clase per apartament (logică Mc 001-2022 Anexa 7)
+                  const POSITION_FACTORS = {
+                    ground_interior: 1.10, ground_corner: 1.18,
+                    mid_interior: 1.00,    mid_corner: 1.07,
+                    top_interior: 1.08,    top_corner: 1.15,
+                  };
+                  const totalAuApt = apartmentsRaw.reduce((s, a) => s + (parseFloat(a.areaUseful) || 0), 0);
+                  const apartmentsRich = apartmentsRaw.map((apt) => {
+                    const isGround = apt.groundFloor || String(apt.floor).toLowerCase() === "p" || apt.floor === 0 || apt.floor === "0";
+                    const isTop = !!apt.topFloor;
+                    const isCorner = !!apt.corner;
+                    const posKey = isGround
+                      ? (isCorner ? "ground_corner" : "ground_interior")
+                      : isTop
+                        ? (isCorner ? "top_corner" : "top_interior")
+                        : (isCorner ? "mid_corner" : "mid_interior");
+                    const posFactor = POSITION_FACTORS[posKey] || 1.0;
+                    const epAptM2 = epFinal * posFactor;
+                    const co2AptM2 = (co2Final_m2 || 0) * posFactor;
+                    const enClsApt = getEnergyClass(epAptM2, catKey);
+                    const co2ClsApt = getCO2Class(co2AptM2, baseCatResolved);
+                    const au = parseFloat(apt.areaUseful) || 0;
+                    return {
+                      number: apt.number || "",
+                      staircase: apt.staircase || "",
+                      floor: apt.floor,
+                      areaUseful: au,
+                      orientation: apt.orientation || [],
+                      occupants: apt.occupants || 2,
+                      corner: apt.corner, topFloor: apt.topFloor, groundFloor: apt.groundFloor,
+                      posKey, posFactor,
+                      epAptM2, co2AptM2,
+                      enClass: enClsApt?.cls || "—",
+                      co2Class: co2ClsApt?.cls || "—",
+                      allocatedPct: totalAuApt > 0 ? (au / totalAuApt) * 100 : 0,
+                    };
+                  });
+                  // Sumar
+                  const wEp = apartmentsRich.reduce((s, r) => s + r.epAptM2 * r.areaUseful, 0);
+                  const wCo2 = apartmentsRich.reduce((s, r) => s + r.co2AptM2 * r.areaUseful, 0);
+                  const epAvgWeighted = totalAuApt > 0 ? wEp / totalAuApt : 0;
+                  const co2AvgWeighted = totalAuApt > 0 ? wCo2 / totalAuApt : 0;
+                  const dist = {};
+                  apartmentsRich.forEach((r) => { dist[r.enClass] = (dist[r.enClass] || 0) + 1; });
+                  payload.apartments = apartmentsRich;
+                  payload.apartmentSummary = {
+                    totalAu: totalAuApt,
+                    epAvgWeighted, co2AvgWeighted,
+                    avgEnergyClass: getEnergyClass(epAvgWeighted, catKey)?.cls || "—",
+                    avgCo2Class: getCO2Class(co2AvgWeighted, baseCatResolved)?.cls || "—",
+                    classDistribution: dist,
+                    count: apartmentsRich.length,
+                  };
+                  payload.commonSystems = building?.commonSystems || {};
+                }
+
+                // Routing query: cpe / anexa / anexa_bloc
+                const typeQuery = mode === "anexa_bloc" ? "anexa_bloc" : (mode === "anexa" ? "anexa" : "cpe");
+                const resp = await fetch(`/api/generate-document?type=${typeQuery}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(payload),
@@ -2659,6 +2724,47 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         </div>
                       </div>
                     </button>
+                    {/* Etapa 4 (BUG-4) — Anexa Bloc multi-apartament: vizibil doar dacă există apartamente */}
+                    {(building?.apartments || []).length > 0 && (
+                      <button
+                        disabled={!dataComplete}
+                        onClick={async () => {
+                          if (!canExportDocx) { requireUpgrade("Export Anexa Bloc necesită plan Standard sau superior"); return; }
+                          if (!dataComplete) { showToast("Completați datele obligatorii", "error"); return; }
+                          try {
+                            const aptCount = (building.apartments || []).length;
+                            showToast(`Se generează Anexa Bloc DOCX (${aptCount} apartamente)...`, "info", 2000);
+                            const buf = await fetchTemplate(tpl.anexa);
+                            await generateDocxCPE(buf, "anexa_bloc");
+                          } catch(e) {
+                            showToast("Eroare: " + e.message, "error", 5000);
+                          }
+                        }}
+                        className={`w-full rounded-xl border transition-all text-sm ${
+                          !dataComplete
+                            ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                            : !canExportDocx
+                              ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                              : "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 cursor-pointer"
+                        }`}>
+                        <div className="flex items-center justify-center gap-2 px-4 py-3">
+                          <span className="text-lg">🏢</span>
+                          <div className="text-left">
+                            <div className="font-medium flex items-center gap-1.5">
+                              {lang==="EN"
+                                ? `Generate Block Annex DOCX (${(building.apartments || []).length} apt.)`
+                                : `Generează Anexa Bloc DOCX (${(building.apartments || []).length} ap.)`}
+                              {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
+                            </div>
+                            <div className="text-[10px] opacity-60">
+                              {lang==="EN"
+                                ? "Annex 2 + per-apartment table + common systems"
+                                : "Anexa 2 + tabel apartamente + sisteme comune"}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         const html = generatePDF();

@@ -618,6 +618,342 @@ def _format_area(val):
     return f"{s} m²"
 
 
+# ═══════════════════════════════════════════════════════
+# Etapa 4 (BUG-4) — ANEXA BLOC MULTI-APARTAMENT (19 apr 2026)
+# ═══════════════════════════════════════════════════════
+# Pentru blocurile de locuințe (mode == "anexa_bloc"), pe lângă procesarea
+# Anexa standard (checkbox-uri, replacements, fotografii), injectăm un tabel
+# detaliat cu fiecare apartament + sumar bloc + listă sisteme comune.
+#
+# Date de input (body['apartments']):
+#   [
+#     {"number": "1A", "staircase": "A", "floor": 0, "areaUseful": 58.5,
+#      "orientation": ["N","E"], "occupants": 3, "corner": true,
+#      "topFloor": false, "groundFloor": true,
+#      "epAptM2": 192.4, "co2AptM2": 32.1, "enClass": "C", "co2Class": "D",
+#      "posKey": "ground_corner", "posFactor": 1.18, "allocatedPct": 12.4},
+#     ...
+#   ]
+#
+# Sumar (body['apartmentSummary']):
+#   {"totalAu": 580.0, "epAvgWeighted": 175.3, "co2AvgWeighted": 28.9,
+#    "classDistribution": {"C": 5, "D": 3, "E": 1}, "count": 9}
+#
+# Sisteme comune (body['commonSystems']):
+#   {"elevator": {"installed": true, "powerKW": 4.5, "hoursYear": 2000, "fuel": "electric"},
+#    "stairsLighting": {"installed": true, "powerKW": 0.6, "hoursYear": 4380},
+#    ...}
+# ═══════════════════════════════════════════════════════
+
+# Etichetele coloanelor tabelului de apartamente (Mc 001-2022 Cap. 4.7 + Anexa 7)
+_APT_TABLE_HEADERS = [
+    "Nr.", "Ap.", "Sc.", "Etaj", "Au [m²]", "Orient.",
+    "Poziție", "× Corr.", "EP [kWh/(m²·an)]", "Clasă",
+    "CO₂ [kg/(m²·an)]", "Clasă CO₂", "Comun [%]",
+]
+
+_POSITION_RO_LABELS = {
+    "ground_interior": "parter int.",
+    "ground_corner":   "parter colț",
+    "mid_interior":    "etaj int.",
+    "mid_corner":      "etaj colț",
+    "top_interior":    "ultim int.",
+    "top_corner":      "ultim colț",
+}
+
+_COMMON_SYSTEM_LABELS = {
+    "elevator":         "Lift",
+    "stairsLighting":   "Iluminat scări/holuri",
+    "centralHeating":   "Centrală termică comună",
+    "commonVentilation": "Ventilație comună",
+    "pumpGroup":        "Grup pompe",
+}
+
+
+def _fmt_ro(val, decimals=1):
+    """Format numeric cu virgulă românească. Acceptă None/string."""
+    try:
+        if val is None or val == "" or val == "—":
+            return "—"
+        return f"{float(val):.{decimals}f}".replace(".", ",")
+    except (ValueError, TypeError):
+        return "—"
+
+
+def _fmt_floor(floor):
+    """Formatare etaj: 0 sau 'P' → 'P'; restul → string."""
+    if floor in (0, "0", "P", "p"):
+        return "P"
+    return str(floor) if floor not in (None, "") else "—"
+
+
+def _set_table_borders_all(table, sz="4"):
+    """Aplică borduri single 0.5pt pe toate celulele tabelului."""
+    from docx.oxml import OxmlElement
+    for row in table.rows:
+        for cell in row.cells:
+            tc_pr = cell._tc.get_or_add_tcPr()
+            existing = tc_pr.find(qn("w:tcBorders"))
+            if existing is not None:
+                tc_pr.remove(existing)
+            tc_borders = OxmlElement("w:tcBorders")
+            for edge in ("top", "left", "bottom", "right"):
+                b = OxmlElement(f"w:{edge}")
+                b.set(qn("w:val"), "single")
+                b.set(qn("w:sz"), sz)
+                b.set(qn("w:color"), "000000")
+                tc_borders.append(b)
+            tc_pr.append(tc_borders)
+
+
+def _shade_cell(cell, fill_hex):
+    """Aplică culoarea de fundal (hex fără #) pe o celulă."""
+    from docx.oxml import OxmlElement
+    tc_pr = cell._tc.get_or_add_tcPr()
+    existing = tc_pr.find(qn("w:shd"))
+    if existing is not None:
+        tc_pr.remove(existing)
+    shd = OxmlElement("w:shd")
+    shd.set(qn("w:val"), "clear")
+    shd.set(qn("w:color"), "auto")
+    shd.set(qn("w:fill"), fill_hex)
+    tc_pr.append(shd)
+
+
+# Culori per clasă energetică (identic cu CLASS_COLORS frontend)
+_EP_CLASS_COLORS_BG = {
+    "A+": "009B00", "A": "32C831", "B": "00FF00", "C": "FFFF00",
+    "D":  "F39C00", "E": "FF6400", "F": "FE4101", "G": "FE0000",
+}
+
+
+def insert_apartment_table(doc, apartments, summary=None):
+    """Injectează un tabel cu lista apartamentelor blocului în document.
+
+    Args:
+        doc: docx.Document instanță
+        apartments: list[dict] cu cheile esențiale: number, floor, areaUseful,
+                    orientation (list), posKey, posFactor, epAptM2, enClass,
+                    co2AptM2, co2Class, allocatedPct
+        summary: dict cu totalAu, epAvgWeighted, co2AvgWeighted, classDistribution
+
+    Returnează True dacă tabelul a fost adăugat, False dacă lista e goală.
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    if not apartments:
+        return False
+
+    # 1) Page break — secțiunea apartamente pe pagină proprie
+    doc.add_page_break()
+
+    # 2) Titlu secțiune
+    title_p = doc.add_paragraph()
+    title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_run = title_p.add_run(
+        f"ANEXA 2 — APARTAMENTE BLOC ({len(apartments)} apartamente)"
+    )
+    title_run.bold = True
+    title_run.font.size = Pt(11)
+    title_run.font.name = "Calibri"
+
+    # Subtitlu metodologie
+    sub_p = doc.add_paragraph()
+    sub_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    sub_run = sub_p.add_run(
+        "Mc 001-2022 Cap. 4.7 + Anexa 7 — corecție poziție termică (parter/colț/ultim etaj)"
+    )
+    sub_run.italic = True
+    sub_run.font.size = Pt(9)
+
+    # 3) Tabel apartamente
+    n_cols = len(_APT_TABLE_HEADERS)
+    table = doc.add_table(rows=1, cols=n_cols)
+    try:
+        table.style = "Table Grid"
+    except Exception:
+        pass
+    table.autofit = True
+
+    # Header row
+    hdr_cells = table.rows[0].cells
+    for i, h in enumerate(_APT_TABLE_HEADERS):
+        hdr_cells[i].text = ""
+        p = hdr_cells[i].paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run(h)
+        r.bold = True
+        r.font.size = Pt(8)
+        _shade_cell(hdr_cells[i], "DDDDDD")
+
+    # Data rows
+    for idx, apt in enumerate(apartments):
+        row = table.add_row()
+        cells = row.cells
+        ap_num = str(apt.get("number", "—") or "—")
+        staircase = str(apt.get("staircase", "—") or "—")
+        floor = _fmt_floor(apt.get("floor"))
+        au_raw = apt.get("areaUseful", "")
+        au = _fmt_ro(au_raw, 1)
+        orient_list = apt.get("orientation") or []
+        orient = " ".join(str(o) for o in orient_list) if orient_list else "—"
+        pos_key = apt.get("posKey", "")
+        pos_label = _POSITION_RO_LABELS.get(pos_key, pos_key or "—")
+        pos_factor = apt.get("posFactor")
+        pos_factor_str = _fmt_ro(pos_factor, 2) if pos_factor is not None else "—"
+        ep = _fmt_ro(apt.get("epAptM2"), 1)
+        en_class = str(apt.get("enClass") or "—")
+        co2 = _fmt_ro(apt.get("co2AptM2"), 1)
+        co2_class = str(apt.get("co2Class") or "—")
+        common_pct = _fmt_ro(apt.get("allocatedPct"), 1)
+
+        values = [
+            str(idx + 1), ap_num, staircase, floor, au, orient,
+            pos_label, pos_factor_str, ep, en_class, co2, co2_class, common_pct,
+        ]
+        for ci, val in enumerate(values):
+            cells[ci].text = ""
+            p = cells[ci].paragraphs[0]
+            # Alignment per column
+            if ci in (4, 7, 8, 10, 12):  # numerice → right
+                p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            elif ci in (0, 9, 11):  # numerotare + clase → center
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run(val)
+            run.font.size = Pt(8)
+            run.font.name = "Calibri"
+
+        # Color clase energetice
+        if en_class in _EP_CLASS_COLORS_BG:
+            _shade_cell(cells[9], _EP_CLASS_COLORS_BG[en_class])
+        if co2_class in _EP_CLASS_COLORS_BG:
+            _shade_cell(cells[11], _EP_CLASS_COLORS_BG[co2_class])
+
+    # Sumar row (media ponderată)
+    if summary:
+        sum_row = table.add_row()
+        sum_cells = sum_row.cells
+        # Coloana 0-3 → "MEDIE PONDERATĂ BLOC" colspan=4
+        sum_cells[0].text = ""
+        p_lbl = sum_cells[0].paragraphs[0]
+        r_lbl = p_lbl.add_run("MEDIE PONDERATĂ BLOC")
+        r_lbl.bold = True
+        r_lbl.font.size = Pt(9)
+
+        # Au total (col 4)
+        sum_cells[4].text = _fmt_ro(summary.get("totalAu"), 1)
+        p_au = sum_cells[4].paragraphs[0]
+        p_au.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        if p_au.runs:
+            p_au.runs[0].bold = True
+            p_au.runs[0].font.size = Pt(9)
+
+        # EP ponderat (col 8) + clasa (col 9)
+        sum_cells[8].text = _fmt_ro(summary.get("epAvgWeighted"), 1)
+        sum_cells[8].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        if sum_cells[8].paragraphs[0].runs:
+            sum_cells[8].paragraphs[0].runs[0].bold = True
+            sum_cells[8].paragraphs[0].runs[0].font.size = Pt(9)
+
+        avg_class = str(summary.get("avgEnergyClass") or "—")
+        sum_cells[9].text = avg_class
+        sum_cells[9].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if sum_cells[9].paragraphs[0].runs:
+            sum_cells[9].paragraphs[0].runs[0].bold = True
+            sum_cells[9].paragraphs[0].runs[0].font.size = Pt(9)
+        if avg_class in _EP_CLASS_COLORS_BG:
+            _shade_cell(sum_cells[9], _EP_CLASS_COLORS_BG[avg_class])
+
+        # CO₂ ponderat (col 10) + clasa (col 11)
+        sum_cells[10].text = _fmt_ro(summary.get("co2AvgWeighted"), 1)
+        sum_cells[10].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        if sum_cells[10].paragraphs[0].runs:
+            sum_cells[10].paragraphs[0].runs[0].bold = True
+
+        avg_co2 = str(summary.get("avgCo2Class") or "—")
+        sum_cells[11].text = avg_co2
+        sum_cells[11].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if avg_co2 in _EP_CLASS_COLORS_BG:
+            _shade_cell(sum_cells[11], _EP_CLASS_COLORS_BG[avg_co2])
+
+        # Bold summary row + light gray background
+        for c in sum_cells:
+            _shade_cell(c, "F0F0F0")
+
+    _set_table_borders_all(table)
+
+    # 4) Distribuție clase + total (text simplu sub tabel)
+    if summary and summary.get("classDistribution"):
+        dist_p = doc.add_paragraph()
+        dist_p.paragraph_format.space_before = Pt(6)
+        r = dist_p.add_run("Distribuție clase apartamente: ")
+        r.bold = True
+        r.font.size = Pt(10)
+        dist_items = []
+        total_count = summary.get("count") or len(apartments)
+        for cls, cnt in summary.get("classDistribution", {}).items():
+            pct = (cnt / total_count * 100) if total_count > 0 else 0
+            dist_items.append(f"{cls}={cnt} ({pct:.0f}%)")
+        dist_p.add_run("   |   ".join(dist_items)).font.size = Pt(10)
+
+    return True
+
+
+def insert_common_systems_section(doc, common_systems):
+    """Injectează o secțiune cu sistemele comune ale blocului (lift, iluminat, etc.).
+
+    Args:
+        doc: docx.Document
+        common_systems: dict {key: {"installed": bool, "powerKW": ..., "hoursYear": ..., "fuel": ...}}
+
+    Returnează True dacă cel puțin un sistem a fost adăugat.
+    """
+    if not common_systems:
+        return False
+    installed = [
+        (key, sys_data) for key, sys_data in common_systems.items()
+        if isinstance(sys_data, dict) and sys_data.get("installed")
+    ]
+    if not installed:
+        return False
+
+    title_p = doc.add_paragraph()
+    title_p.paragraph_format.space_before = Pt(8)
+    r = title_p.add_run("SISTEME COMUNE BLOC")
+    r.bold = True
+    r.font.size = Pt(10)
+
+    table = doc.add_table(rows=1, cols=4)
+    try:
+        table.style = "Table Grid"
+    except Exception:
+        pass
+    headers = ["Sistem", "Putere [kW]", "Ore/an", "Combustibil"]
+    for i, h in enumerate(headers):
+        c = table.rows[0].cells[i]
+        c.text = ""
+        p = c.paragraphs[0]
+        run = p.add_run(h)
+        run.bold = True
+        run.font.size = Pt(9)
+        _shade_cell(c, "DDDDDD")
+
+    for key, sys_data in installed:
+        row = table.add_row()
+        cells = row.cells
+        cells[0].text = _COMMON_SYSTEM_LABELS.get(key, key)
+        cells[1].text = _fmt_ro(sys_data.get("powerKW"), 2)
+        cells[2].text = str(sys_data.get("hoursYear") or "—")
+        cells[3].text = str(sys_data.get("fuel") or "—")
+        for c in cells:
+            for p in c.paragraphs:
+                for r in p.runs:
+                    r.font.size = Pt(9)
+
+    _set_table_borders_all(table)
+    return True
+
+
 def replace_in_doc(doc, old_text, new_text, max_count=0):
     """Replace text across entire document (paragraphs + tables + text boxes)."""
     total = 0
@@ -2675,6 +3011,10 @@ class handler(BaseHTTPRequestHandler):
                 effective_mode = body.get("mode", "cpe") if doc_type == "" else "cpe"
             elif doc_type in ("anexa", "anexa2"):
                 effective_mode = "anexa"
+            elif doc_type == "anexa_bloc":
+                # Etapa 4 (BUG-4) — Anexa 2 multi-apartament
+                # Procesare identică cu "anexa" + injecție tabel apartamente la final
+                effective_mode = "anexa_bloc"
             else:
                 # type necunoscut → fallback la body.mode
                 effective_mode = body.get("mode", "cpe")
@@ -3031,7 +3371,7 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             # 4. CHECKBOXES (Anexa)
             # ═══════════════════════════════════════
-            if mode == "anexa":
+            if mode in ("anexa", "anexa_bloc"):
                 # Etapa 3 (BUG-11) — DUAL-PASS bifare:
                 #   1. Vechiul flux: indici hardcodate (compute_checkboxes) —
                 #      funcționează pe template clădire (308 cb)
@@ -3064,7 +3404,7 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             # 4b. ANEXA 2 — TEXT REPLACEMENTS
             # ═══════════════════════════════════════
-            if mode == "anexa":
+            if mode in ("anexa", "anexa_bloc"):
                 # Adresa și nr certificat
                 replace_in_doc(doc, "[adresa]", data.get("address", ""))
                 # An construcție/renovare
@@ -3302,7 +3642,7 @@ class handler(BaseHTTPRequestHandler):
             # 6. ANEXĂ FOTOGRAFII CLĂDIRE (doar în modul "anexa")
             # ═══════════════════════════════════════
             building_photos = body.get("buildingPhotos", [])
-            if mode == "anexa" and building_photos:
+            if mode in ("anexa", "anexa_bloc") and building_photos:
                 from docx.shared import Pt, Inches
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
                 from docx.oxml.ns import qn as docx_qn
@@ -3502,16 +3842,46 @@ class handler(BaseHTTPRequestHandler):
                     print(f"[supplement] eroare: {e_sup}", flush=True)
 
             # ═══════════════════════════════════════
+            # 7c. ANEXA BLOC — tabel apartamente + sisteme comune (Etapa 4, BUG-4)
+            # ═══════════════════════════════════════
+            # Doar pentru mode == "anexa_bloc" — injectăm la finalul Anexei standard
+            # un tabel detaliat cu apartamentele + lista sistemelor comune.
+            # Datele vin din body['apartments'], body['apartmentSummary'], body['commonSystems'].
+            if mode == "anexa_bloc":
+                apartments = body.get("apartments", []) or []
+                apartment_summary = body.get("apartmentSummary") or {}
+                common_systems = body.get("commonSystems") or {}
+                try:
+                    if apartments:
+                        added_apts = insert_apartment_table(doc, apartments, apartment_summary)
+                        if added_apts:
+                            print(
+                                f"[anexa_bloc] tabel apartamente injectat: {len(apartments)} ap.",
+                                flush=True,
+                            )
+                    if common_systems:
+                        insert_common_systems_section(doc, common_systems)
+                except Exception as e_bloc:
+                    print(f"[anexa_bloc] eroare injecție: {e_bloc}", flush=True)
+
+            # ═══════════════════════════════════════
             # 8. SAVE & RETURN
             # ═══════════════════════════════════════
             buf = io.BytesIO()
             doc.save(buf)
             result = buf.getvalue()
 
+            # Filename per mode (Etapa 4: anexa_bloc primește nume distinct)
+            _filename_map = {
+                "anexa": "Anexa-1-2-CPE.docx",
+                "anexa_bloc": "Anexa-Bloc-Multi-Apartament.docx",
+            }
+            _filename = _filename_map.get(mode, "CPE.docx")
+
             self.send_response(200)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-            self.send_header("Content-Disposition", "attachment; filename=CPE.docx")
+            self.send_header("Content-Disposition", f"attachment; filename={_filename}")
             self.send_header("Content-Length", str(len(result)))
             self.end_headers()
             self.wfile.write(result)
