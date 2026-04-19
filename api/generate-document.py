@@ -2308,22 +2308,23 @@ class handler(BaseHTTPRequestHandler):
                             for _r in _para.runs[1:]:
                                 _r.text = ""
                         break
-                # 2) Aliniere stânga pentru celulele cu "m²" (template are center —
-                #    rămâneau la dreapta coloanei, depărtate de valori). User request:
-                #    'și la cele din dreapta, inclusiv metrii pătrați m²' + 'și asta să
-                #    fie aliniat stânga' (screenshot cu 3 × m² stacked center).
-                #    Setez direct XML <w:jc w:val="left"/> în pPr — python-docx
-                #    alignment setter nu suprascria întotdeauna jc existent.
+                # 2) "m²" e într-o celulă separată de tabel (lățime 3680 DXA pentru
+                #    valoare, 429 DXA pentru m²) — setarea LEFT pe celula m² nu e
+                #    suficientă: rămâne spațiu de ~20mm între valoare și m² din cauza
+                #    lățimii mari a celulei valorii.
+                #    Fix: concatenez " m²" la finalul valorii și golesc celula m²
+                #    separată. Astfel m² apare lipit de valoare.
+                for _mlbl in ("Aria de referință a pardoselii:",
+                               "Aria utilă / desfășurată:",
+                               "Volumul interior de referință:"):
+                    if _pt.startswith(_mlbl) and " m²" not in _pt and " m2" not in _pt:
+                        if _para.runs:
+                            _para.runs[-1].text = _para.runs[-1].text.rstrip() + " m²"
+                        break
+                # Golire celule "m²" separate (unde textul e STRICT m2 sau m²)
                 if _pt.strip() in ("m2", "m²"):
-                    _w_ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                    _pPr = _para._p.find(f"{{{_w_ns}}}pPr")
-                    if _pPr is None:
-                        _pPr = etree.SubElement(_para._p, f"{{{_w_ns}}}pPr")
-                        _para._p.insert(0, _pPr)
-                    _jc = _pPr.find(f"{{{_w_ns}}}jc")
-                    if _jc is None:
-                        _jc = etree.SubElement(_pPr, f"{{{_w_ns}}}jc")
-                    _jc.set(f"{{{_w_ns}}}val", "left")
+                    for _r in _para.runs:
+                        _r.text = ""
 
             # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
