@@ -2216,6 +2216,32 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </div>
                   </button>
 
+                  {/* Banner informativ pentru clădiri atipice (Mc 001-2022: "alte destinații") */}
+                  {baseCatResolved === "AL" && (
+                    <div className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-3 text-[11px] leading-relaxed">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base shrink-0">⚠️</span>
+                        <div className="flex-1 space-y-1">
+                          <div className="font-bold text-amber-200">
+                            {lang === "EN"
+                              ? "Atypical building (Mc 001-2022: \"other destinations\")"
+                              : "Clădire atipică (Mc 001-2022: „alte destinații\")"}
+                          </div>
+                          <div className="text-white/75">
+                            {lang === "EN"
+                              ? "Thresholds A+...G are not imposed by MDLPA for this category. The reference building (ep_ref) is calculated dynamically from the real building data. The auditor fills in the energy class scale manually or omits the classification."
+                              : "Pragurile A+...G nu sunt impuse de MDLPA pentru această categorie. Clădirea de referință (ep_ref) se calculează dinamic din datele clădirii reale. Auditorul completează manual scala clasei energetice sau omite clasificarea."}
+                          </div>
+                          <div className="text-white/45 text-[10px] pt-1">
+                            {lang === "EN"
+                              ? "Ref: Mc 001-2022 cap. 5 — buildings with \"other destinations\" are explicitly excluded from tables 5.7 ... 5.14."
+                              : "Referință: Mc 001-2022 cap. 5 — clădirile cu „alte destinații\" sunt excluse explicit din tabelele 5.7 ... 5.14."}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <button onClick={async function() {
                     try {
                       setDocxRendering(true);
