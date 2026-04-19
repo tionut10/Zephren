@@ -72,6 +72,48 @@ describe("Sprint 14 — Penalizări p0-p11 Mc 001-2022 §8.10", () => {
       expect(r.applied).toBe(true);
       expect(r.delta_EP_pct).toBe(PENALTY_DELTAS.p2);
     });
+
+    // Etapa 5 (BUG-8) — regression: bridges propagate prin calcPenalties end-to-end
+    it("REGRESSION: calcPenalties propagă bridges din envelope (Etapa 5)", () => {
+      const result = calcPenalties({
+        envelope: {
+          opaque: [{ type: "PE", area: 100, u: 0.20 }],
+          glazing: [{ u: 1.5 }],
+          bridges: [{ psi: 0.30, length: 50 }, { psi: 0.08, length: 30 }],
+        },
+        instSummary: {
+          heating: { eta_gen: 0.92, eta_dist: 0.95, controls: "termostat" },
+          dhw: { eta_dhw: 0.90, storage: { volume: 100, standing_loss: 0.3 } },
+          lighting: { leni: 8 },
+          bacs: "C",
+        },
+        ventilation: { type: "natural_org" },
+        building: { category: "RC" },
+        renewables: { rer: 35 },
+      });
+      // p2 trebuie să fie applied (worst psi = 0.30 > limit 0.15)
+      expect(result.p2.applied).toBe(true);
+      expect(result.p2.value).toBe(0.30);
+      expect(result.p2.delta_EP_pct).toBe(PENALTY_DELTAS.p2);
+    });
+
+    it("REGRESSION: calcPenalties cu bridges=[] NU declanșează p2 (înainte era cazul pe Step6)", () => {
+      const result = calcPenalties({
+        envelope: { opaque: [], glazing: [], bridges: [] },
+        instSummary: {
+          heating: { eta_gen: 0.92, eta_dist: 0.95, controls: "termostat" },
+          dhw: { eta_dhw: 0.90, storage: { volume: 100, standing_loss: 0.3 } },
+          lighting: { leni: 8 },
+          bacs: "C",
+        },
+        ventilation: { type: "natural_org" },
+        building: { category: "RC" },
+        renewables: { rer: 35 },
+      });
+      // p2 NU se aplică pentru bridges goale (comportament corect)
+      expect(result.p2.applied).toBe(false);
+      expect(result.p2.delta_EP_pct).toBe(0);
+    });
   });
 
   // ── p3 — Cazan ineficient ──

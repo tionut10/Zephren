@@ -300,7 +300,14 @@ export default function Step6Certificate(props) {
                               return { type: el.type, area: parseFloat(el.area) || 0, u };
                             }) || [],
                             glazing: glazingElements?.map((el) => ({ u: parseFloat(el.u) || 0 })) || [],
-                            bridges: [],
+                            // Etapa 5 (BUG-8): legare thermalBridges în calcPenalties pentru
+                            // penalizarea p2 (punți termice neacordate, Mc 001-2022 P3 §8.10).
+                            // Înainte: hardcoded [] → p2 nu se aplica niciodată.
+                            bridges: thermalBridges?.map((b) => ({
+                              psi: parseFloat(b.psi) || 0,
+                              length: parseFloat(b.length) || 0,
+                              type: b.type || "",
+                            })) || [],
                           },
                           instSummary: {
                             heating: { eta_gen: parseFloat(heating?.eta_gen) || 0, eta_dist: parseFloat(heating?.eta_dist) || 0, controls: heating?.control || "" },
