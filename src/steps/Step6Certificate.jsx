@@ -7,6 +7,7 @@ import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx"
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { calcOpaqueR } from "../calc/opaque.js";
+import { calcSummerComfort } from "../calc/summer-comfort.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
 import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
@@ -230,6 +231,21 @@ export default function Step6Certificate(props) {
                     // Sprint 15 — Identificare juridică
                     cadastral_number: building.cadastralNumber || "",
                     land_book: building.landBook || "",
+                    // Nota *** CPE — ore cu T_interior > T_confort în regim liber (fără răcire)
+                    // Python: dacă cooling_has=true → forțează "0"; altfel folosește această valoare.
+                    // Calcul: max overheatingHours între toate elementele opace (C107/7-2002 + ISO 7730).
+                    overheating_hours: (() => {
+                      if (instSummary?.hasCool) return "0";
+                      try {
+                        const hours = (opaqueElements || []).map((el) => {
+                          if (!el?.layers || el.layers.length === 0) return 0;
+                          const r = calcSummerComfort(el.layers, selectedClimate, el.orientation || "S");
+                          return r?.overheatingHours || 0;
+                        });
+                        const maxH = hours.length > 0 ? Math.max(...hours) : 0;
+                        return String(maxH);
+                      } catch { return "0"; }
+                    })(),
                     // Sprint 17 — Pașaport renovare (EPBD 2024/1275 Art. 12)
                     passport_uuid: building.passportUUID || "",
                     passport_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
