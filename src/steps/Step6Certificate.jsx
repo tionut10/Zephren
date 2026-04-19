@@ -1838,8 +1838,8 @@ ${(() => {
                     </div>
                   </Card>
 
-                  {/* Google Maps localizare */}
-                  {building.city && (
+                  {/* Google Maps localizare — skip în DEV (Claude Preview blochează URL-uri externe) */}
+                  {building.city && !import.meta.env.DEV && (
                     <Card title="Localizare">
                       <div className="rounded-lg overflow-hidden border border-white/10" style={{height:"150px"}}>
                         <iframe
