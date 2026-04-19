@@ -3664,6 +3664,351 @@ class handler(BaseHTTPRequestHandler):
                             p.add_run(f"   |   Arie totală ferestre: {glaz_area} m²")
                             break
 
+                # ── Tabel apartamente/unități/zone termice (Etapa 7b — 20 apr 2026) ──
+                # User raport: tabelul "Tip apart/destinație unitate/zonă" e gol în
+                # Anexa generată. Trebuie completat cu denumire + arie + nr. unități.
+                # Identificare: tabelul care conține header "Tip apart/" și TOTAL pe ultimul rând.
+                _cat_label_table = data.get("category_label", "") or "Unitate de clădire"
+                _area_ref = data.get("area_ref", "")
+                _n_apt = data.get("n_apartments_count", "1") or "1"
+                if _area_ref:
+                    try:
+                        _area_total = float(_area_ref.replace(",", "."))
+                        _n_apt_int = max(1, int(float(_n_apt or "1")))
+                        _area_per_unit = _area_total / _n_apt_int
+                        for tbl in doc.tables:
+                            if len(tbl.rows) < 2 or len(tbl.columns) < 4:
+                                continue
+                            header_text = tbl.rows[0].cells[0].text + " " + tbl.rows[0].cells[1].text
+                            # Identific tabelul corect: header conține "Tip apart" + "Aria de referință"
+                            if "Tip apart" not in header_text and "destinație" not in header_text:
+                                continue
+                            if "Aria de referință" not in tbl.rows[0].cells[1].text:
+                                continue
+                            # Tabelul corect — verific dacă deja completat (idempotent)
+                            row1 = tbl.rows[1]
+                            if row1.cells[1].text.strip():
+                                break  # Deja completat, skip
+                            # Înlocuiesc r1c0 (placeholder multi-line) cu denumirea reală
+                            cell0 = row1.cells[0]
+                            cell0.text = ""
+                            p0 = cell0.paragraphs[0]
+                            r0 = p0.add_run(_cat_label_table)
+                            r0.font.size = Pt(10)
+                            # r1c1 — aria per unitate
+                            row1.cells[1].text = format_ro(_area_per_unit, 1)
+                            # r1c2 — număr unități
+                            row1.cells[2].text = str(_n_apt_int)
+                            # r1c3 — aria totală pe tip
+                            row1.cells[3].text = format_ro(_area_total, 1)
+                            # Setez font 10pt pe celulele noi
+                            for ci in (1, 2, 3):
+                                for p in row1.cells[ci].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(10)
+                            # Rândul TOTAL (ultim rând) — completez c2 + c3 cu totaluri
+                            if len(tbl.rows) >= 3:
+                                row_total = tbl.rows[-1]
+                                if not row_total.cells[2].text.strip():
+                                    row_total.cells[2].text = str(_n_apt_int)
+                                if not row_total.cells[3].text.strip():
+                                    row_total.cells[3].text = format_ro(_area_total, 1)
+                                for ci in (2, 3):
+                                    for p in row_total.cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(10)
+                                            r.bold = True
+                            break
+                    except (ValueError, TypeError) as e_apt_tbl:
+                        print(f"[apt_table] eroare: {e_apt_tbl}", flush=True)
+
+                # ── Tabel 0 — Zone climatice + eoliene + regim înălțime ──
+                # User raport (20 apr 2026): tabelele Anexa sunt goale.
+                # Marchez cu "X" coloana corespunzătoare zonei reale a clădirii.
+                # Header structure (13 cols): zona clima [I, II, II, II, II, III, III, IV, IV, IV, V, V]
+                # → mapare zone num → coloane:
+                _ZONA_CLIMA_COLS = {1: 1, 2: 2, 3: 6, 4: 8, 5: 11}
+                _ZONA_EOL_COLS   = {1: 1, 2: 4, 3: 7, 4: 10}
+                _REGIM_COLS      = {"S": 1, "D": 3, "Mez": 5, "P": 7, "E": 9, "M": 12, "M/P": 12}
+                try:
+                    zone_num = int(data.get("climate_zone_num", "3") or "3")
+                    zone_num = max(1, min(5, zone_num))
+                    wind_zone = 1 if zone_num <= 2 else (2 if zone_num <= 4 else 3)
+                    regime_str = (data.get("regime", "") or "").upper().strip()
+                    # Detectez regim simplificat (doar prima parte)
+                    regim_key = ""
+                    for k in _REGIM_COLS:
+                        if regime_str.startswith(k.upper()):
+                            regim_key = k
+                            break
+                    for tbl in doc.tables:
+                        if len(tbl.rows) < 6 or len(tbl.columns) != 13:
+                            continue
+                        h0 = tbl.rows[0].cells[0].text.lower()
+                        if "zona climatică" not in h0 and "zona climatica" not in h0:
+                            continue
+                        # Tabel 0 identificat — marchez cu "X" valorile
+                        # r1 (zona climatică selectată)
+                        if not any(c.text.strip() for c in tbl.rows[1].cells[1:]):
+                            col_clima = _ZONA_CLIMA_COLS.get(zone_num, 2)
+                            tbl.rows[1].cells[col_clima].text = "X"
+                            for p in tbl.rows[1].cells[col_clima].paragraphs:
+                                for r in p.runs:
+                                    r.font.size = Pt(11)
+                                    r.bold = True
+                        # r3 (zona eoliană selectată)
+                        if not any(c.text.strip() for c in tbl.rows[3].cells[1:]):
+                            col_eol = _ZONA_EOL_COLS.get(wind_zone, 1)
+                            tbl.rows[3].cells[col_eol].text = "X"
+                            for p in tbl.rows[3].cells[col_eol].paragraphs:
+                                for r in p.runs:
+                                    r.font.size = Pt(11)
+                                    r.bold = True
+                        # r5 (regim înălțime — păstrăm valorile existente "2 (nr)" / "5 (nr)" și
+                        # bifez coloana corectă pentru regimul real)
+                        if regim_key:
+                            col_reg = _REGIM_COLS[regim_key]
+                            current = tbl.rows[5].cells[col_reg].text.strip()
+                            if not current or current == "":
+                                tbl.rows[5].cells[col_reg].text = "X"
+                                for p in tbl.rows[5].cells[col_reg].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(11)
+                                        r.bold = True
+                        break
+                except Exception as e_t0:
+                    print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
+
+                # ── Tabel 2 — Anvelopă (R-values + arii) ──
+                # Pentru fiecare tip element distinct din opaque_u_values, calculez R și
+                # adaug un rând nou înainte de TOTAL. Aria totală anvelopă în r3c3.
+                try:
+                    opaque_u_anv = json.loads(data.get("opaque_u_values", "[]"))
+                    glaz_u_anv = float((data.get("glazing_max_u", "0") or "0").replace(",", "."))
+                    glaz_area_anv = float((data.get("glazing_area_total_m2", "0") or "0").replace(",", "."))
+                    if opaque_u_anv or glaz_area_anv > 0:
+                        # Mapare U → R (R = 1/U, rsi+rse incluse aproximativ)
+                        # Standard MDLPA: R_normat per tip element
+                        R_NORMAT = {
+                            "PE": 1.80, "PT": 5.00, "PP": 5.00, "PB": 4.50, "PL": 4.50,
+                            "FE": 0.77, "UE": 0.77, "SE": 4.50, "CS": 1.80, "Sb": 4.50,
+                        }
+                        TYPE_LABELS = {
+                            "PE": "PE - Pereți exteriori",
+                            "PT": "PT - Planșeu peste ultimul nivel (terasă)",
+                            "PP": "PP - Planșeu peste ultimul nivel (pod)",
+                            "PB": "PB - Planșeu peste subsol",
+                            "PL": "PL - Placă pe sol",
+                            "FE": "FE - Ferestre exterioare",
+                            "UE": "UE - Uși exterioare",
+                            "SE": "SE - Planșeu spațiu exterior",
+                            "CS": "CS - Pereți casa scării",
+                            "Sb": "Sb - Planșeu peste subsol",
+                        }
+                        # Identific Tabel 2
+                        for tbl in doc.tables:
+                            if len(tbl.rows) < 4 or len(tbl.columns) != 4:
+                                continue
+                            h0 = tbl.rows[0].cells[0].text.lower()
+                            if "tip element" not in h0:
+                                continue
+                            # Verific idempotență: dacă r2c1 deja are valoare, skip
+                            if tbl.rows[2].cells[1].text.strip():
+                                break
+                            # Construiesc lista de elemente cu agregare arii pe tip
+                            from collections import defaultdict
+                            type_data = defaultdict(lambda: {"area": 0.0, "u_sum_w": 0.0, "u_count": 0})
+                            for el in opaque_u_anv:
+                                t_id = el.get("type", "")
+                                area = float(el.get("area", 0) or 0)
+                                u_val = float(el.get("u", 0) or 0)
+                                if t_id and area > 0 and u_val > 0:
+                                    type_data[t_id]["area"] += area
+                                    type_data[t_id]["u_sum_w"] += area * u_val
+                                    type_data[t_id]["u_count"] += 1
+                            if glaz_u_anv > 0 and glaz_area_anv > 0:
+                                type_data["FE"]["area"] += glaz_area_anv
+                                type_data["FE"]["u_sum_w"] += glaz_area_anv * glaz_u_anv
+                                type_data["FE"]["u_count"] += 1
+                            # Modific r2 cu primul tip (înlocuiește placeholder-ul) și adaug noi rânduri
+                            sorted_types = sorted(type_data.items())
+                            if sorted_types:
+                                # Primul tip → modific r2
+                                t_first, td_first = sorted_types[0]
+                                u_avg_first = td_first["u_sum_w"] / td_first["area"] if td_first["area"] > 0 else 0
+                                r_calc_first = 1 / u_avg_first if u_avg_first > 0 else 0
+                                r_norm_first = R_NORMAT.get(t_first, 0)
+                                tbl.rows[2].cells[0].text = TYPE_LABELS.get(t_first, t_first)
+                                tbl.rows[2].cells[1].text = format_ro(r_calc_first, 2)
+                                tbl.rows[2].cells[2].text = format_ro(r_norm_first, 2) if r_norm_first > 0 else "—"
+                                tbl.rows[2].cells[3].text = format_ro(td_first["area"], 1)
+                                # Setez font + alignment
+                                for ci in range(4):
+                                    for p in tbl.rows[2].cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(9)
+                                # Adaug rânduri pentru restul tipurilor înainte de TOTAL (r3)
+                                from copy import deepcopy
+                                for t_id, td in sorted_types[1:]:
+                                    u_avg = td["u_sum_w"] / td["area"] if td["area"] > 0 else 0
+                                    r_calc = 1 / u_avg if u_avg > 0 else 0
+                                    r_norm = R_NORMAT.get(t_id, 0)
+                                    # Insert row before last (TOTAL)
+                                    new_row_xml = deepcopy(tbl.rows[2]._tr)
+                                    tbl.rows[-1]._tr.addprevious(new_row_xml)
+                                    # După insert, accesez rândul nou
+                                    new_row = tbl.rows[-2]
+                                    new_row.cells[0].text = TYPE_LABELS.get(t_id, t_id)
+                                    new_row.cells[1].text = format_ro(r_calc, 2)
+                                    new_row.cells[2].text = format_ro(r_norm, 2) if r_norm > 0 else "—"
+                                    new_row.cells[3].text = format_ro(td["area"], 1)
+                                    for ci in range(4):
+                                        for p in new_row.cells[ci].paragraphs:
+                                            for r in p.runs:
+                                                r.font.size = Pt(9)
+                                # TOTAL anvelopă SE — sumez ariile
+                                total_se = sum(td["area"] for _, td in sorted_types)
+                                tbl.rows[-1].cells[3].text = format_ro(total_se, 1)
+                                for p in tbl.rows[-1].cells[3].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(10)
+                                        r.bold = True
+                            break
+                except Exception as e_t2:
+                    print(f"[tabel_2_anvelopa] eroare: {e_t2}", flush=True)
+
+                # ── Tabel 3 — Consum specific 5 sisteme + clase + TOTAL ──
+                # Completez consum + CO2 + clasă pentru fiecare sistem (rândurile r2-r6).
+                # r7 = TOTAL/CLASA (din date globale ep_specific + co2_val + energy_class).
+                try:
+                    sistem_data = {
+                        "Încălzire":         {"ep": data.get("ep_incalzire", "")},
+                        "Apă caldă":         {"ep": data.get("ep_acm", "")},
+                        "Răcire":            {"ep": data.get("ep_racire", "")},
+                        "Ventilare":         {"ep": data.get("ep_ventilare", "")},
+                        "Iluminat":          {"ep": data.get("ep_iluminat", "")},
+                    }
+                    # CO2 pe sistem — proporțional cu EP (heuristic: ratio CO2_total / EP_total)
+                    ep_total_val = float((data.get("ep_specific", "0") or "0").replace(",", "."))
+                    co2_total_val = float((data.get("co2_val", "0") or "0").replace(",", "."))
+                    co2_ratio = co2_total_val / ep_total_val if ep_total_val > 0 else 0
+                    for tbl in doc.tables:
+                        if len(tbl.rows) < 8 or len(tbl.columns) != 8:
+                            continue
+                        # Header r0c2 = "Clădirea reală", r1c2 = "Consum specific energie"
+                        h_check = tbl.rows[0].cells[2].text + " " + tbl.rows[1].cells[2].text
+                        if "Clădirea reală" not in h_check or "Consum" not in h_check:
+                            continue
+                        # Idempotency: skip dacă deja completat
+                        if tbl.rows[2].cells[2].text.strip():
+                            break
+                        # Mapare nume sistem → rând
+                        sistem_to_row = {
+                            "Încălzire": 2, "Apă caldă": 3, "Răcire": 4,
+                            "Ventilare": 5, "Iluminat": 6,
+                        }
+                        for nume, row_idx in sistem_to_row.items():
+                            sd = sistem_data.get(nume, {})
+                            ep_val_str = sd.get("ep", "")
+                            if not ep_val_str or ep_val_str == "0,0":
+                                continue
+                            try:
+                                ep_val = float(ep_val_str.replace(",", "."))
+                            except (ValueError, TypeError):
+                                continue
+                            row = tbl.rows[row_idx]
+                            # c2 — consum specific energie primară (EP în kWh/m²·an)
+                            row.cells[2].text = format_ro(ep_val, 1)
+                            # c3 — emisii CO2 (proporțional)
+                            row.cells[3].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
+                            # c4 — clasă (lăsăm gol, auditorul determină per sistem)
+                            # row.cells[4].text rămâne gol
+                            for ci in (2, 3):
+                                for p in row.cells[ci].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(10)
+                        # r7 — TOTAL/CLASA
+                        if ep_total_val > 0:
+                            tbl.rows[7].cells[2].text = format_ro(ep_total_val, 1)
+                            tbl.rows[7].cells[3].text = format_ro(co2_total_val, 1)
+                            tbl.rows[7].cells[4].text = data.get("energy_class", "") or ""
+                            # Coloane clădire referință
+                            ep_ref = (data.get("ep_ref", "") or "0").replace(",", ".")
+                            try:
+                                ep_ref_f = float(ep_ref)
+                                if ep_ref_f > 0:
+                                    tbl.rows[7].cells[5].text = format_ro(ep_ref_f, 1)
+                                    if co2_ratio > 0:
+                                        tbl.rows[7].cells[6].text = format_ro(ep_ref_f * co2_ratio, 1)
+                                    tbl.rows[7].cells[7].text = data.get("ep_class_ref", "") or ""
+                            except (ValueError, TypeError):
+                                pass
+                            for ci in range(2, 8):
+                                for p in tbl.rows[7].cells[ci].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(10)
+                                        r.bold = True
+                        break
+                except Exception as e_t3:
+                    print(f"[tabel_3_sisteme] eroare: {e_t3}", flush=True)
+
+                # ── Etapa 7d (20 apr 2026) — gap-uri suplimentare paragrafe ──
+                # După audit exhaustiv, identificate aceste gap-uri P0 (date exist):
+                #   p208 — Necesarul de căldură (kW)
+                #   p266, p267 — Putere termică ACM (kW)
+                #   p349 — Debit aer proaspăt (m³/h)
+                #   p424, p425 — Energie regenerabilă (duplicate p422/p423)
+                #   p426 — EPP (kWh/m²·an)
+                #   p427 — RERP (%)
+                #   p428 — Emisii CO2 (kg/m²·an)
+                #   p429 — SRI (smart readiness indicator)
+
+                # p208 — Necesarul de căldură de calcul
+                heat_power = data.get("heating_power", "")
+                if heat_power and heat_power not in ("", "0"):
+                    _fill_para_blank("Necesarul de căldură de calcul", heat_power, " kW")
+
+                # p266, p267 — Putere termică ACM (folosesc acm_power dacă există, fallback heating)
+                acm_power = data.get("acm_power", "") or data.get("heating_power", "")
+                if acm_power and acm_power not in ("", "0"):
+                    _fill_para_blank("Puterea termică necesară pentru prepararea acc", acm_power, " kW")
+                    _fill_para_blank("Puterea termică maximă instalată pentru prepararea acc", acm_power, " kW")
+
+                # p349 — Debit aer proaspăt minim
+                vent_flow = data.get("ventilation_flow_m3h", "")
+                if vent_flow and vent_flow != "0":
+                    _fill_para_blank("Debitul minim de aer proaspăt", vent_flow, " m³/h")
+
+                # p424, p425 — duplicate cu p422/p423 (acelaș text dar contains "din surse regenerabile")
+                if data.get("solar_th_kwh_year") and data["solar_th_kwh_year"] != "0":
+                    _fill_para_blank("Energia termică exportată din surse regenerabile",
+                                     data["solar_th_kwh_year"], " kWh/an")
+                if data.get("pv_kwh_year") and data["pv_kwh_year"] != "0":
+                    _fill_para_blank("Energia electrică exportată din surse regenerabile",
+                                     data["pv_kwh_year"], " kWh/an")
+
+                # p426 — EPP (Indicatorul energiei primare)
+                epp = data.get("ep_specific", "")
+                if epp and epp not in ("", "0,0"):
+                    _fill_para_blank("Indicatorul energiei primare EPP", epp, " kWh/(m²·an)")
+
+                # p427 — RERP % (renewable energy ratio prime)
+                rerp = data.get("rer", "")
+                if rerp and rerp not in ("", "0,0"):
+                    _fill_para_blank("Indicele RERP", rerp, "%")
+
+                # p428 — Indicator emisii CO2
+                co2_ind = data.get("co2_val", "")
+                if co2_ind and co2_ind not in ("", "0,0"):
+                    _fill_para_blank("Indicatorul emisiilor de CO", co2_ind, " kgCO₂/(m²·an)")
+
+                # p429 — SRI complet (label + valoare + clasă)
+                sri_v = data.get("sri_total", "")
+                sri_g = data.get("sri_grade", "")
+                if sri_v:
+                    _fill_para_blank("Indicele SRI (smart readiness indicator)",
+                                     f"{sri_v}% (Clasa {sri_g})" if sri_g else f"{sri_v}%")
+
             # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine în text box
             # ═══════════════════════════════════════

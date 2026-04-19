@@ -440,6 +440,18 @@ export default function Step6Certificate(props) {
                       if (fromArr > 0) return String(fromArr);
                       return building?.units || "";
                     })(),
+                    // Etapa 7d (20 apr 2026) — câmpuri suplimentare pentru gap-urile P0
+                    acm_power: acm?.power ? fmtRo(parseFloat(acm.power), 1) : "",
+                    ventilation_flow_m3h: (() => {
+                      // Debit aer proaspăt: priority pe ventilation.flowRate, fallback calc EN 16798-1
+                      // (4.5 l/s/persoană × ocupanți)
+                      const direct = ventilation?.flowRate || ventilation?.flow_m3h;
+                      if (direct) return fmtRo(parseFloat(direct), 0);
+                      // Fallback: 4.5 l/s × ocupanți (15 m²/pers nrez, 30 m²/pers rez) → m³/h
+                      const isRes = ["RI","RC","RA"].includes(building?.category);
+                      const occ = Math.max(1, Math.round(Au / (isRes ? 30 : 15)));
+                      return String(Math.round(occ * 4.5 * 3.6));  // l/s → m³/h
+                    })(),
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };
