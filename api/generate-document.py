@@ -692,12 +692,16 @@ def _update_shape_color(shape_xml_str, color_info):
                 count=1
             )
 
-    # FIX 3: înlocuiește <a:noFill/> cu solidFill — indicatoarele din template au noFill
-    # (fundal transparent) dar trebuie să afișeze culoarea clasei indiferent de fundal
-    result = re.sub(r'<a:noFill\s*/>', explicit_fill, result, count=1)
+    # FIX 3 (eliminat 19 apr 2026): textbox-urile cu litera au <a:noFill/> intenționat
+    # în template-ul oficial MDLPA (transparent) — doar pentagoanele primesc culoarea.
+    # Dacă înlocuim noFill cu solidFill, rezultă DUBLĂ SUPRAPUNERE vizibilă (rectangle
+    # textbox peste pentagon), cu contururi imperfecte. Lăsăm noFill neatins.
 
     # VML fillcolor (folosit de Office pentru compatibilitate)
-    # Dacă nu există atribut fillcolor, adăugăm unul în <v:shape
+    # Înlocuim fillcolor existent, dar NU adăugăm fillcolor pe shape-uri care au
+    # <a:noFill/> în DrawingML — acelea sunt transparente intenționat (textbox cu
+    # literă peste pentagon). Suprapunerea colorabilă ar crea rectangle vizibil.
+    has_no_fill_drawing = '<a:noFill' in result
     if re.search(r'fillcolor="[^"]*"', result):
         result = re.sub(
             r'fillcolor="[^"]*"',
@@ -705,7 +709,7 @@ def _update_shape_color(shape_xml_str, color_info):
             result,
             count=1
         )
-    else:
+    elif not has_no_fill_drawing:
         result = re.sub(
             r'(<v:shape\b)',
             r'\1 fillcolor="' + vml_color + '"',
