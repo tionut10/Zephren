@@ -860,16 +860,15 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
         new_content = re.sub(r'(<w:t[^>]*>)[A-G]\+?(</w:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
         # Actualizează litera și în elementele DrawingML <a:t> (Choice primary)
         new_content = re.sub(r'(<a:t[^>]*>)[A-G]\+?(</a:t>)', r'\g<1>' + new_class + r'\g<2>', new_content)
-        # Uniformizare font cu scala statică (Arial 18 half-points = 9pt) — template
-        # mobile folosește AvantGarde Bk BT 32 (16pt) care apare diferit de scala statică.
+        # Uniformizare font cu scala statică (Arial Bold) — template mobile folosește
+        # AvantGarde Bk BT (font proprietar, substituit cu fallback neuniform de LibreOffice).
+        # Păstrez size-ul original 32 (16pt) pentru vizibilitate — scala statică e 9pt dar
+        # apare vizual mai mare din context (celule tabel cu auto-scale). La 16pt Arial Bold
+        # mobile arată comparabil cu scala statică.
         new_content = re.sub(r'w:ascii="AvantGarde Bk BT"', 'w:ascii="Arial"', new_content)
         new_content = re.sub(r'w:hAnsi="AvantGarde Bk BT"', 'w:hAnsi="Arial"', new_content)
         new_content = re.sub(r'w:cs="AvantGarde Bk BT"', 'w:cs="Arial"', new_content)
-        new_content = re.sub(r'<w:sz w:val="32"/>', '<w:sz w:val="18"/>', new_content)
-        new_content = re.sub(r'<w:szCs w:val="32"/>', '<w:szCs w:val="18"/>', new_content)
-        # DrawingML rFonts & sz (pentru a:t text)
         new_content = re.sub(r'typeface="AvantGarde Bk BT"', 'typeface="Arial"', new_content)
-        new_content = re.sub(r'<a:rPr\b([^>]*?)sz="3200"', r'<a:rPr\g<1>sz="1800"', new_content)
         # Centrare verticală în textbox (anchor="t" → "ctr")
         new_content = re.sub(r'anchor="t"', 'anchor="ctr"', new_content)
         # Centrare orizontală — inject <w:jc w:val="center"/> în <w:pPr> dacă nu există
@@ -877,11 +876,27 @@ def replace_class_indicators(doc, ep_class_real, ep_class_ref, co2_class_real):
             new_content = re.sub(r'(<w:pPr>)', r'\g<1><w:jc w:val="center"/>', new_content, count=1)
         # DrawingML paragraph alignment (a:pPr algn="ctr")
         new_content = re.sub(r'<a:pPr\b(?![^>]*algn=)', '<a:pPr algn="ctr"', new_content, count=1)
-        # Eliminat fix anterior "A+ cx extend 45%" — cu fontul aliniat la Arial 9pt
-        # (uniformizare cu scala statică) litera "A+" (~11pt width) încape confortabil
-        # în cx=293370 (23pt) dacă reducem padding intern la 0.
+        # Reduce padding intern pentru mai mult spațiu util (16pt litera în 23pt cx)
         new_content = re.sub(r'lIns="\d+"', 'lIns="0"', new_content)
         new_content = re.sub(r'rIns="\d+"', 'rIns="0"', new_content)
+        # Pentru clase 2-char ("A+"), mărește cx cu 35% ca să încapă litera completă
+        # (Arial Bold 16pt "A+" ~21pt vs cx=23pt → clipping la margin).
+        if len(new_class) > 1:
+            new_content = re.sub(
+                r'(<wp:extent cx=")(\d+)("\s+cy=")',
+                lambda m: m.group(1) + str(int(int(m.group(2)) * 1.35)) + m.group(3),
+                new_content
+            )
+            new_content = re.sub(
+                r'(<a:ext cx=")(\d+)("\s+cy=")',
+                lambda m: m.group(1) + str(int(int(m.group(2)) * 1.35)) + m.group(3),
+                new_content
+            )
+            new_content = re.sub(
+                r'(width:\s*)([\d.]+)(pt)',
+                lambda m: m.group(1) + str(round(float(m.group(2)) * 1.35, 1)) + m.group(3),
+                new_content
+            )
         new_content = _update_shape_pos_v(new_content, new_pos)
         # Actualizează și culoarea de fundal a textbox-ului (solidFill) — altfel litera
         # rămâne colorată cu culoarea implicită din template (nu cu culoarea clasei reale)
