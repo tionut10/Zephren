@@ -2463,8 +2463,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         )}
 
                         {/* Fallback: docx-preview în browser (fără pdfPreviewUrl) */}
-                        {docxRendered && !pdfPreviewUrl && (
-                          <div className="w-full h-full overflow-auto" style={{maxHeight: "85vh"}}>
+                        {!pdfPreviewUrl && (
+                          <div className="w-full h-full overflow-auto"
+                               style={{maxHeight: "85vh", display: docxRendered ? "block" : "none"}}>
                             <div ref={docxPreviewRef} className="docx-preview-wrapper" />
                           </div>
                         )}
