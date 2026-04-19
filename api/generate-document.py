@@ -318,6 +318,245 @@ def insert_qr_code(doc, verify_url, cpe_code=""):
     return count
 
 
+# ═══════════════════════════════════════════════════════
+# Sprint 14/15/17 — PAGINĂ SUPLIMENT DATE LEGALE CPE (Etapa 1, 19 apr 2026)
+# ═══════════════════════════════════════════════════════
+# Template-ele oficiale MDLPA (2-12-CPE-*.docx) NU conțin placeholder-e pentru
+# cod unic CPE, QR, semnătură, cadastru, valabilitate, pașaport renovare.
+# Pentru a NU modifica template-ele oficiale (risc conformitate Ord. MDLPA 16/2023),
+# adăugăm o pagină supliment finală cu toate metadatele legale cerute de:
+#   - Ord. MDLPA 16/2023 (cod unic, semnătură, ștampilă, QR)
+#   - L.238/2024 Art. 19 (înregistrare în max 30 zile + verificabilitate)
+#   - EPBD 2024/1275 Art. 12 (pașaport renovare) și Art. 14 (calitate aer + EV)
+#   - EPBD 2024/1275 Art. 17 (valabilitate diferențiată 5/10 ani per clasă)
+# ═══════════════════════════════════════════════════════
+
+_SUPPLEMENT_TITLE = "DATE LEGALE CONFORM ORD. MDLPA 16/2023 + L.238/2024 + EPBD 2024/1275"
+
+_SUPPLEMENT_FOOTER_NOTE = (
+    "Pagina suplimentară generată automat de Zephren conform Ord. MDLPA 16/2023, "
+    "L.238/2024 Art. 19 și EPBD 2024/1275 Art. 12-14, 17. Codul unic CPE și UUID-ul "
+    "pașaportului de renovare sunt deterministice (UUID v5, RFC 4122) — pot fi "
+    "verificate online la URL-urile indicate."
+)
+
+
+def _set_cell_borders(cell, color="000000", sz="4"):
+    """Aplică borduri single 0.5pt pe toate laturile celulei.
+
+    sz=4 (1/8 pt) ≈ 0.5pt linie subțire, conform stilului tehnic MDLPA.
+    """
+    from docx.oxml import OxmlElement
+    tc_pr = cell._tc.get_or_add_tcPr()
+    tc_borders = OxmlElement("w:tcBorders")
+    for edge in ("top", "left", "bottom", "right"):
+        b = OxmlElement(f"w:{edge}")
+        b.set(qn("w:val"), "single")
+        b.set(qn("w:sz"), sz)
+        b.set(qn("w:color"), color)
+        tc_borders.append(b)
+    # Înlocuiește orice tcBorders existent
+    existing = tc_pr.find(qn("w:tcBorders"))
+    if existing is not None:
+        tc_pr.remove(existing)
+    tc_pr.append(tc_borders)
+
+
+def _add_label_value_row(table, label, value, bold_label=True):
+    """Adaugă un rând cu etichetă (col 1) + valoare text (col 2). Valori goale → '—'."""
+    row = table.add_row()
+    cell_label = row.cells[0]
+    cell_value = row.cells[1]
+    cell_label.text = ""
+    cell_value.text = ""
+
+    p_l = cell_label.paragraphs[0]
+    r_l = p_l.add_run(str(label))
+    r_l.font.size = Pt(10)
+    r_l.font.name = "Calibri"
+    if bold_label:
+        r_l.bold = True
+
+    val_str = str(value).strip() if value is not None else ""
+    p_v = cell_value.paragraphs[0]
+    r_v = p_v.add_run(val_str if val_str else "—")
+    r_v.font.size = Pt(10)
+    r_v.font.name = "Calibri"
+    if not val_str:
+        r_v.italic = True
+
+    _set_cell_borders(cell_label)
+    _set_cell_borders(cell_value)
+    return row
+
+
+def _add_label_image_row(table, label, img_b64, width_cm=4.0):
+    """Adaugă un rând cu etichetă (col 1) + imagine PNG (col 2). Lipsă → '— (lipsă)'."""
+    row = table.add_row()
+    cell_label = row.cells[0]
+    cell_value = row.cells[1]
+    cell_label.text = ""
+    cell_value.text = ""
+
+    p_l = cell_label.paragraphs[0]
+    r_l = p_l.add_run(str(label))
+    r_l.font.size = Pt(10)
+    r_l.font.name = "Calibri"
+    r_l.bold = True
+
+    p_v = cell_value.paragraphs[0]
+    if not img_b64:
+        r_v = p_v.add_run("— (lipsă)")
+        r_v.font.size = Pt(10)
+        r_v.italic = True
+    else:
+        try:
+            if isinstance(img_b64, (bytes, bytearray)):
+                img_bytes = bytes(img_b64)
+            else:
+                # Strip data URL prefix dacă e prezent
+                s = str(img_b64)
+                if s.startswith("data:") and "," in s:
+                    s = s.split(",", 1)[1]
+                img_bytes = base64.b64decode(s)
+            run_img = p_v.add_run()
+            run_img.add_picture(io.BytesIO(img_bytes), width=Cm(width_cm))
+        except Exception as e_img:
+            r_v = p_v.add_run(f"[eroare imagine: {e_img}]")
+            r_v.font.size = Pt(9)
+            r_v.italic = True
+
+    _set_cell_borders(cell_label)
+    _set_cell_borders(cell_value)
+    return row
+
+
+def append_legal_supplement(doc, data):
+    """Adaugă pagină supliment cu toate metadatele legale CPE.
+
+    Apelată DOAR pentru mode == "cpe" și DOAR dacă cpe_code e prezent.
+    Returnează True dacă pagina a fost adăugată, False altfel.
+
+    Sprint 14/15/17 — Etapa 1 audit 19 apr 2026.
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    cpe_code = (data.get("cpe_code") or "").strip()
+    if not cpe_code:
+        return False
+
+    # 1) Page break — supliment pe pagină proprie
+    doc.add_page_break()
+
+    # 2) Titlu mare centrat
+    title_p = doc.add_paragraph()
+    title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_run = title_p.add_run(_SUPPLEMENT_TITLE)
+    title_run.bold = True
+    title_run.font.size = Pt(11)
+    title_run.font.name = "Calibri"
+
+    # 3) Tabel 2 coloane
+    tbl = doc.add_table(rows=0, cols=2)
+    try:
+        tbl.style = "Table Grid"
+    except Exception:
+        # Style "Table Grid" nu există în template-ele MDLPA — borduri se aplică manual via _set_cell_borders
+        pass
+    tbl.autofit = False
+    # Lățimi: ~5.5cm etichetă, ~10.5cm valoare (total ~16cm — încape în margini A4 implicite)
+    try:
+        for row in [tbl.rows[i] for i in range(len(tbl.rows))]:
+            row.cells[0].width = Cm(5.5)
+            row.cells[1].width = Cm(10.5)
+    except Exception:
+        pass
+
+    # 4) Rânduri text — Sprint 14/15/17 metadata
+    rows_text = [
+        ("Cod unic CPE",                cpe_code),
+        ("Data emiterii",               data.get("auditor_date", "")),
+        ("Data expirării",              data.get("expiry", "")),
+        ("Valabilitate (ani)",          data.get("validity_years", "")),
+        ("Etichetă valabilitate",       data.get("validity_label", "")),
+        ("Nr. cadastral",               data.get("cadastral_number", "")),
+        ("Carte funciară",              data.get("land_book", "")),
+        ("Arie construită desfășurată", _format_area(data.get("area_built", ""))),
+        ("Nr. apartamente",             data.get("n_apartments", "")),
+        ("UUID pașaport renovare",      data.get("passport_uuid", "")),
+        ("URL verificare CPE",          data.get("qr_verify_url", "")),
+        ("URL pașaport renovare",       data.get("passport_url", "")),
+    ]
+    for label, value in rows_text:
+        _add_label_value_row(tbl, label, value)
+
+    # Aplică lățimi și pe rândurile noi
+    try:
+        for row in tbl.rows:
+            row.cells[0].width = Cm(5.5)
+            row.cells[1].width = Cm(10.5)
+    except Exception:
+        pass
+
+    # 5) Rânduri imagini — semnătură + ștampilă + QR-uri
+    _add_label_image_row(tbl, "Semnătură auditor",   data.get("signature_png_b64", ""), width_cm=4.0)
+    _add_label_image_row(tbl, "Ștampilă auditor",    data.get("stamp_png_b64", ""),     width_cm=2.5)
+
+    # QR verificare CPE — generat din qr_verify_url
+    qr_verify_bytes = generate_qr_png(data.get("qr_verify_url", ""), scale=4, border=2)
+    _add_label_image_row(tbl, "QR verificare CPE",   qr_verify_bytes,                   width_cm=2.5)
+
+    # QR pașaport — generat din passport_qr_url (fallback passport_url)
+    passport_qr_url = data.get("passport_qr_url", "") or data.get("passport_url", "")
+    qr_pass_bytes = generate_qr_png(passport_qr_url, scale=4, border=2) if passport_qr_url else None
+    _add_label_image_row(tbl, "QR pașaport renovare", qr_pass_bytes,                    width_cm=2.0)
+
+    # Re-aplică lățimile (rândurile noi se reset la default)
+    try:
+        for row in tbl.rows:
+            row.cells[0].width = Cm(5.5)
+            row.cells[1].width = Cm(10.5)
+    except Exception:
+        pass
+
+    # 6) Indicatori EPBD 2024 Art. 14 — calitate aer + EV charging
+    epbd_p = doc.add_paragraph()
+    epbd_p.paragraph_format.space_before = Pt(6)
+    epbd_run_t = epbd_p.add_run("EPBD 2024/1275 Art. 14 — Calitate aer interior + Mobilitate electrică:")
+    epbd_run_t.bold = True
+    epbd_run_t.font.size = Pt(10)
+
+    co2_ppm = data.get("co2_max_ppm", "") or "—"
+    pm25 = data.get("pm25_avg", "") or "—"
+    ev_inst = data.get("ev_charging_points", "0") or "0"
+    ev_prep = data.get("ev_charging_prepared", "0") or "0"
+    epbd_p2 = doc.add_paragraph()
+    epbd_run = epbd_p2.add_run(
+        f"CO₂ max: {co2_ppm} ppm   |   PM2.5 mediu: {pm25} μg/m³   |   "
+        f"Puncte încărcare EV: {ev_inst} instalate + {ev_prep} pregătite"
+    )
+    epbd_run.font.size = Pt(10)
+
+    # 7) Notă finală
+    note_p = doc.add_paragraph()
+    note_p.paragraph_format.space_before = Pt(8)
+    note_run = note_p.add_run(_SUPPLEMENT_FOOTER_NOTE)
+    note_run.font.size = Pt(8)
+    note_run.italic = True
+
+    return True
+
+
+def _format_area(val):
+    """Adaugă unitate ' m²' la o valoare numerică, dacă lipsește."""
+    s = str(val or "").strip()
+    if not s:
+        return ""
+    if "m²" in s or "m2" in s:
+        return s
+    return f"{s} m²"
+
+
 def replace_in_doc(doc, old_text, new_text, max_count=0):
     """Replace text across entire document (paragraphs + tables + text boxes)."""
     total = 0
@@ -2765,6 +3004,21 @@ class handler(BaseHTTPRequestHandler):
                                         val = sp2.get(attr)
                                         if val and int(val) > 0:
                                             sp2.set(attr, "0")
+
+            # ═══════════════════════════════════════
+            # 7b. PAGINĂ SUPLIMENT — Sprint 14/15/17 metadata legale (Etapa 1)
+            # ═══════════════════════════════════════
+            # Doar pentru CPE (nu pentru anexa care are deja propria structură).
+            # Adaugă pagină A4 finală cu cod unic, QR, semnătură, ștampilă, cadastru,
+            # valabilitate, pașaport renovare, EPBD 2024 indicatori.
+            # Skip silent dacă cpe_code lipsește.
+            if mode == "cpe":
+                try:
+                    added = append_legal_supplement(doc, data)
+                    if not added:
+                        print("[supplement] cpe_code gol — pagină supliment omisă", flush=True)
+                except Exception as e_sup:
+                    print(f"[supplement] eroare: {e_sup}", flush=True)
 
             # ═══════════════════════════════════════
             # 8. SAVE & RETURN

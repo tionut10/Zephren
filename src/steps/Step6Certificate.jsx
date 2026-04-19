@@ -16,6 +16,7 @@ import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
 import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
+import { autoGenerateCPECode, canAutoGenerateCPE } from "../utils/cpe-auto-gen.js";
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
@@ -67,6 +68,29 @@ export default function Step6Certificate(props) {
               }, 400);
               return () => clearTimeout(t);
             }, [instSummary]);
+
+            // Sprint 14 / Etapa 1 (19 apr 2026) — auto-generare cod unic CPE
+            // Fără click manual: când nume + cod MDLPA + data sunt complete și
+            // auditor.cpeCode e gol, generăm automat. Butonul "🔄 Generează automat"
+            // rămâne ca fallback dacă useEffect eșuează sau auditorul vrea regenerare.
+            useEffect(() => {
+              if (!setAuditor) return;
+              if (auditor?.cpeCode) return;
+              if (!canAutoGenerateCPE(auditor)) return;
+              const code = autoGenerateCPECode({ auditor, building });
+              if (code) {
+                setAuditor((p) => ({ ...p, cpeCode: code }));
+              }
+            }, [
+              auditor?.name,
+              auditor?.mdlpaCode,
+              auditor?.date,
+              auditor?.atestat,
+              auditor?.registryIndex,
+              auditor?.cpeCode,
+              setAuditor,
+              building,
+            ]);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
