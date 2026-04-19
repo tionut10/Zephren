@@ -537,6 +537,67 @@ def append_legal_supplement(doc, data):
     )
     epbd_run.font.size = Pt(10)
 
+    # 6b) BACS + SRI + n50 (Etapa 2 BUG-1, BUG-2, BUG-3 — propagate corect)
+    bacs_class = (data.get("bacs_class") or "").strip()
+    sri_total = (data.get("sri_total") or "").strip()
+    sri_grade = (data.get("sri_grade") or "").strip()
+    n50_val = (data.get("n50") or "").strip()
+    if bacs_class or sri_total or n50_val:
+        bs_p = doc.add_paragraph()
+        bs_p.paragraph_format.space_before = Pt(4)
+        bs_t = bs_p.add_run("Performanță automatizare + etanșeitate:")
+        bs_t.bold = True
+        bs_t.font.size = Pt(10)
+        parts = []
+        if bacs_class:
+            parts.append(f"Clasa BACS: {bacs_class} (SR EN ISO 52120-1:2022)")
+        if sri_total:
+            parts.append(f"SRI: {sri_total}%" + (f" (clasa {sri_grade})" if sri_grade else ""))
+        if n50_val:
+            parts.append(f"n₅₀: {n50_val} h⁻¹ (etanșeitate test blower door)")
+        bs_p2 = doc.add_paragraph()
+        bs_p2.add_run("   |   ".join(parts)).font.size = Pt(10)
+
+    # 6c) Penalizări Mc 001-2022 Partea III §8.10 (BUG-7 — Etapa 2)
+    penalties_raw = data.get("penalties_summary") or ""
+    if penalties_raw:
+        try:
+            import json as _json
+            pen_data = _json.loads(penalties_raw)
+            pen_summary = pen_data.get("summary", {})
+            pen_applied = pen_data.get("applied", []) or []
+            count_applied = pen_summary.get("count_applied", 0)
+            total_pct = pen_summary.get("total_delta_pct", 0)
+            ep_mult = pen_summary.get("ep_multiplier", 1)
+
+            pen_p = doc.add_paragraph()
+            pen_p.paragraph_format.space_before = Pt(6)
+            pen_t = pen_p.add_run(
+                f"Penalizări utilizare irațională energie (Mc 001-2022 Partea III §8.10):"
+            )
+            pen_t.bold = True
+            pen_t.font.size = Pt(10)
+
+            pen_p2 = doc.add_paragraph()
+            pen_p2.add_run(
+                f"Penalizări active: {count_applied}   |   "
+                f"Adaos EP total: +{total_pct:.1f}%   |   "
+                f"Multiplicator EP: ×{ep_mult:.3f}"
+            ).font.size = Pt(10)
+
+            # Listă penalizări aplicate
+            if pen_applied:
+                for p in pen_applied[:12]:  # max 12 (p0..p11)
+                    pid = p.get("id", "?")
+                    reason = p.get("reason", "")
+                    delta = p.get("delta_EP_pct", 0)
+                    li = doc.add_paragraph()
+                    li.paragraph_format.left_indent = Cm(0.5)
+                    li.add_run(f"• {pid.upper()} (+{delta:.0f}%): {reason}").font.size = Pt(9)
+        except Exception as e_pen:
+            pen_err = doc.add_paragraph()
+            pen_err.add_run(f"[penalizări — eroare parse: {e_pen}]").font.size = Pt(8)
+
     # 7) Notă finală
     note_p = doc.add_paragraph()
     note_p.paragraph_format.space_before = Pt(8)

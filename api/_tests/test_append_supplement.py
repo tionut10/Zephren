@@ -281,6 +281,128 @@ class TestAppendLegalSupplement(unittest.TestCase):
         self.assertEqual(len(last_tbl.columns), 2)
 
 
+class TestEtapa2Fixes(unittest.TestCase):
+    """Etapa 2 (19 apr 2026) — BACS, SRI, n50, penalties propagate corect."""
+
+    def setUp(self):
+        self.base = {
+            "cpe_code": "TEST_CODE_E2",
+        }
+
+    def test_bacs_class_displayed_in_supplement(self):
+        doc = _make_minimal_doc()
+        d = dict(self.base)
+        d["bacs_class"] = "B"
+        gd.append_legal_supplement(doc, d)
+        text = _doc_text(doc)
+        self.assertIn("Clasa BACS", text)
+        self.assertIn("B", text)
+        self.assertIn("SR EN ISO 52120-1:2022", text)
+
+    def test_sri_total_and_grade_displayed(self):
+        doc = _make_minimal_doc()
+        d = dict(self.base)
+        d["sri_total"] = "67"
+        d["sri_grade"] = "B"
+        gd.append_legal_supplement(doc, d)
+        text = _doc_text(doc)
+        self.assertIn("SRI", text)
+        self.assertIn("67%", text)
+        self.assertIn("clasa B", text)
+
+    def test_n50_displayed(self):
+        doc = _make_minimal_doc()
+        d = dict(self.base)
+        d["n50"] = "3.2"
+        gd.append_legal_supplement(doc, d)
+        text = _doc_text(doc)
+        self.assertIn("n₅₀", text)
+        self.assertIn("3.2", text)
+        self.assertIn("h⁻¹", text)
+
+    def test_bacs_sri_n50_section_omitted_when_all_empty(self):
+        """Dacă toate trei sunt goale, secțiunea nu apare deloc."""
+        doc = _make_minimal_doc()
+        gd.append_legal_supplement(doc, self.base)
+        text = _doc_text(doc)
+        self.assertNotIn("Performanță automatizare", text)
+
+    def test_penalties_summary_processed(self):
+        """penalties_summary JSON e parsat și afișat în secțiunea dedicată."""
+        import json
+        doc = _make_minimal_doc()
+        d = dict(self.base)
+        d["penalties_summary"] = json.dumps({
+            "summary": {
+                "count_applied": 3,
+                "total_delta_pct": 25.5,
+                "ep_multiplier": 1.255,
+            },
+            "applied": [
+                {"id": "p0", "reason": "Anvelopa subizolată: U mediu = 0.85 W/(m²·K)", "delta_EP_pct": 15},
+                {"id": "p3", "reason": "Cazan ineficient: η_gen = 0.78", "delta_EP_pct": 12},
+                {"id": "p10", "reason": "Fără BACS — control manual", "delta_EP_pct": 6},
+            ],
+        })
+        gd.append_legal_supplement(doc, d)
+        text = _doc_text(doc)
+        self.assertIn("Penalizări utilizare irațională", text)
+        self.assertIn("Mc 001-2022 Partea III §8.10", text)
+        self.assertIn("Penalizări active: 3", text)
+        self.assertIn("+25.5%", text)
+        self.assertIn("×1.255", text)
+        self.assertIn("P0", text)
+        self.assertIn("Anvelopa subizolată", text)
+        self.assertIn("P10", text)
+
+    def test_penalties_invalid_json_does_not_crash(self):
+        doc = _make_minimal_doc()
+        d = dict(self.base)
+        d["penalties_summary"] = "not valid JSON {{"
+        try:
+            result = gd.append_legal_supplement(doc, d)
+            self.assertTrue(result)
+            text = _doc_text(doc)
+            self.assertIn("eroare parse", text)
+        except Exception as e:
+            self.fail(f"Penalty processing aruncă: {e}")
+
+    def test_penalties_empty_summary_skipped(self):
+        """Fără penalties_summary → secțiunea nu apare."""
+        doc = _make_minimal_doc()
+        gd.append_legal_supplement(doc, self.base)
+        text = _doc_text(doc)
+        self.assertNotIn("Penalizări utilizare irațională", text)
+
+    def test_all_etapa2_fields_combined(self):
+        """Cu BACS + SRI + n50 + penalties → toate apar în supplement."""
+        import json
+        doc = _make_minimal_doc()
+        d = {
+            "cpe_code": "FULL_E2",
+            "bacs_class": "A",
+            "sri_total": "82",
+            "sri_grade": "A",
+            "n50": "1.5",
+            "penalties_summary": json.dumps({
+                "summary": {"count_applied": 1, "total_delta_pct": 8, "ep_multiplier": 1.08},
+                "applied": [{"id": "p1", "reason": "Ferestre slabe", "delta_EP_pct": 8}],
+            }),
+        }
+        gd.append_legal_supplement(doc, d)
+        text = _doc_text(doc)
+        # BACS
+        self.assertIn("Clasa BACS: A", text)
+        # SRI
+        self.assertIn("82%", text)
+        self.assertIn("clasa A", text)
+        # n50
+        self.assertIn("1.5", text)
+        # Penalități
+        self.assertIn("Penalizări active: 1", text)
+        self.assertIn("Ferestre slabe", text)
+
+
 class TestQRGeneration(unittest.TestCase):
     """Verifică generate_qr_png() — folosit de append_legal_supplement pentru QR-uri."""
 

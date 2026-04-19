@@ -21,6 +21,8 @@ import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import { calcPenalties } from "../calc/penalties.js";
+import { calcSRI } from "../calc/epbd.js";
+import { getCityCoordinates } from "../utils/city-coordinates.js";
 
 /**
  * Step6Certificate — Extracted from energy-calc.jsx lines 10211-12317
@@ -136,8 +138,10 @@ export default function Step6Certificate(props) {
                 const Aref = parseFloat(building.areaUseful) || 0;
                 const Vol = parseFloat(building.volume) || 0;
                 const latV = selectedClimate?.lat || 0;
-                const CITY_LNG = {"București":26.10,"Cluj-Napoca":23.60,"Constanța":28.65,"Timișoara":21.23,"Iași":27.59,"Brașov":25.59,"Sibiu":24.15,"Craiova":23.80,"Galați":28.05,"Oradea":21.92,"Ploiești":25.98,"Brăila":27.97,"Arad":21.31,"Pitești":24.87,"Bacău":26.91,"Târgu Mureș":24.55,"Baia Mare":23.58,"Buzău":26.82,"Botoșani":26.67,"Satu Mare":22.88,"Râmnicu Vâlcea":24.37,"Suceava":26.25,"Drobeta-Turnu Severin":22.66,"Târgoviște":25.46,"Focșani":27.19,"Reșița":21.89,"Bistrița":24.50,"Alba Iulia":23.57,"Tulcea":28.79,"Slobozia":27.37,"Călărași":27.33,"Giurgiu":25.97,"Vaslui":27.73,"Deva":22.90,"Sfântu Gheorghe":25.79,"Zalău":23.06,"Miercurea Ciuc":25.80,"Piatra Neamț":26.38,"Târgu Jiu":23.28,"Alexandria":25.33,"Hunedoara":22.90,"Petroșani":23.37,"Mediaș":24.35,"Lugoj":21.90,"Sighișoara":24.79,"Mangalia":28.58,"Dej":23.87,"Curtea de Argeș":24.67,"Câmpina":25.74,"Câmpulung":24.97,"Turda":23.78,"Caransebeș":22.22,"Blaj":23.92,"Odorheiu Secuiesc":25.30,"Reghin":24.71,"Tecuci":27.43,"Roșiorii de Vede":24.98};
-                const lngV = selectedClimate ? (CITY_LNG[selectedClimate.name] || 25.0) : 0;
+                // Etapa 2 — fix BUG-6: longitude din catalog 120 orașe + fallback centroid județ
+                // (înainte: 60 orașe inline + fallback 25.0 generic → coordonate greșite pentru orașe mici)
+                const cityCoords = getCityCoordinates(selectedClimate?.name, building?.county);
+                const lngV = selectedClimate ? cityCoords.lng : 0;
 
                 const fullAddress = [building.address, building.city, building.county].filter(Boolean).join(", ");
                 const yearStr = building.yearBuilt || "____";
@@ -277,6 +281,8 @@ export default function Step6Certificate(props) {
                     area_built: building.areaBuilt || "",
                     n_apartments: building.nApartments || "1",
                     // Sprint 14 — Penalizări Mc 001-2022 Partea III §8.10 (serializate)
+                    // Etapa 2 (BUG-7): trimit summary + lista aplicate cu reason+delta_EP_pct
+                    // pentru ca Python să le poată afișa în pagina supliment legală.
                     penalties_summary: (() => {
                       try {
                         const pen = calcPenalties({
@@ -300,13 +306,20 @@ export default function Step6Certificate(props) {
                             heating: { eta_gen: parseFloat(heating?.eta_gen) || 0, eta_dist: parseFloat(heating?.eta_dist) || 0, controls: heating?.control || "" },
                             dhw: { eta_dhw: parseFloat(acm?.eta_dhw ?? acm?.eta_gen) || 0, storage: { volume: parseFloat(acm?.storageVolume) || 0, standing_loss: parseFloat(acm?.standingLoss) || 0 } },
                             lighting: { leni: parseFloat(instSummary?.leni) || 0 },
-                            bacs: "C",
+                            bacs: bacsClass || heating?.bacsClass || "C",
                           },
                           ventilation: { type: ventilation?.type || "", hrEfficiency: parseFloat(ventilation?.hrEfficiency) || 0 },
                           building: { category: building.category },
                           renewables: { rer: renewSummary?.rer || 0 },
                         });
-                        return JSON.stringify(pen.summary);
+                        const applied = Object.entries(pen)
+                          .filter(([k, v]) => k !== "summary" && v?.applied)
+                          .map(([k, v]) => ({
+                            id: k,
+                            reason: String(v?.reason || ""),
+                            delta_EP_pct: Number(v?.delta_EP_pct || 0),
+                          }));
+                        return JSON.stringify({ summary: pen.summary, applied });
                       } catch { return ""; }
                     })(),
                     energy_class: enClassDocx.cls,
@@ -316,6 +329,30 @@ export default function Step6Certificate(props) {
                     rer: renewSummary ? fmtRo(renewSummary.rer, 1) : "0,0",
                     nzeb: nzebOk ? "DA" : "NU",
                     gwp: fmtRo(gwpTotalDocx, 1),
+                    // Etapa 2 — BACS class + SRI + n50 propagate corect (BUG-1, BUG-2, BUG-3)
+                    // Python așteaptă bacs_class la line ~2447, sri_total la line ~2459, n50 la line ~2479
+                    bacs_class: bacsClass || heating?.bacsClass || "C",
+                    n50: building.n50 || "",
+                    sri_total: (() => {
+                      try {
+                        const s = calcSRI(
+                          heating, cooling, ventilation, lighting,
+                          solarThermal, photovoltaic, heatPump,
+                          bacsClass || heating?.bacsClass || "C"
+                        );
+                        return String(s?.total ?? "");
+                      } catch { return ""; }
+                    })(),
+                    sri_grade: (() => {
+                      try {
+                        const s = calcSRI(
+                          heating, cooling, ventilation, lighting,
+                          solarThermal, photovoltaic, heatPump,
+                          bacsClass || heating?.bacsClass || "C"
+                        );
+                        return s?.grade ?? "";
+                      } catch { return ""; }
+                    })(),
                     // Date instalații + anvelopă (pentru checkbox-uri Anexa)
                     heating_source: heating.source || "",
                     heating_fuel: (HEAT_SOURCES.find(function(s){return s.id===heating.source;})?.fuel) || "",

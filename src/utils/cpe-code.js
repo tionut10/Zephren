@@ -65,23 +65,43 @@ export function generateCPECode({ auditor, building, date, registryIndex }) {
 /**
  * Validează formatul codului unic CPE.
  *
- * Reguli:
- *   - mdlpaCode = alfanumeric + punct/dash (min 1)
+ * Reguli (Etapa 2 — relaxate 19 apr 2026 după feedback real):
+ *   - mdlpaCode = alfanumeric + punct/dash/slash (min 1) — ex: "CE-2024-00756"
  *   - date = YYYY-MM-DD
- *   - nume/prenume = încep cu majusculă (permite diacritice ĂÂÎȘȚ)
- *   - serie = 2-3 majuscule (ex: RO, BUC)
- *   - număr = cifre
- *   - idxRegistru = cifre
+ *   - nume/prenume = unicode word chars + diacritice + punct/dash + spații
+ *     (acceptă: "ing.", "BogdanMihai-Vlad", "Țepeș", titulaturi profesionale,
+ *     compoziții cu cratimă; numele lipsă ⇒ string gol acceptat)
+ *   - serie = alfanumeric + dash (poate lipsi: ex auditori fără atestat dual)
+ *   - număr = cifre (poate lipsi)
+ *   - idxRegistru = cifre (≥1)
  *   - _CPE_
  *   - hash8 = 8 cifre hex
+ *
+ * Notă: validarea este *permisivă* pentru a se potrivi cu pattern-uri reale
+ * din câmp (auditori cu titluri academice, atestate cu format vechi).
+ * Validarea strictă rămâne în UI ca *info*, nu blocheaz\u0103 emiterea.
  *
  * @param {string} code
  * @returns {boolean}
  */
 export function validateCPECode(code) {
   if (typeof code !== "string") return false;
-  const pattern =
-    /^[A-Za-z0-9.\-/]+_\d{4}-\d{2}-\d{2}_[A-ZĂÂÎȘȚ][A-Za-zăâîșțĂÂÎȘȚ\-]*_[A-ZĂÂÎȘȚ][A-Za-zăâîșțĂÂÎȘȚ\-]*_[A-Z]{1,4}_\d+_\d+_CPE_[a-f0-9]{8}$/;
+  // Pattern relaxat: nume/prenume permit ., -, spații, diacritice, cifre legate;
+  // serie permite alfanumeric+dash sau gol; număr permite cifre sau gol.
+  const NAME_PART = "[A-Za-z0-9ăâîșțĂÂÎȘȚ.\\-]+";
+  const SERIES_PART = "[A-Za-z0-9\\-]*"; // poate fi gol
+  const NUMBER_PART = "\\d*";            // poate fi gol
+  const pattern = new RegExp(
+    "^[A-Za-z0-9.\\-/]+" +     // mdlpaCode
+    "_\\d{4}-\\d{2}-\\d{2}" +  // data
+    `_${NAME_PART}` +           // lastName
+    `_${NAME_PART}` +           // firstName
+    `_${SERIES_PART}` +         // series (gol permis)
+    `_${NUMBER_PART}` +         // number (gol permis)
+    "_\\d+" +                   // idx (≥1)
+    "_CPE_" +
+    "[a-f0-9]{8}$"              // hash8
+  );
   return pattern.test(code);
 }
 

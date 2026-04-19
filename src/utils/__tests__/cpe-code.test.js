@@ -154,4 +154,49 @@ describe("Sprint 14 — Cod unic CPE (Ord. MDLPA 16/2023)", () => {
     expect(code).toContain("_Țurcan_Ștefania_");
     expect(validateCPECode(code)).toBe(true);
   });
+
+  // ─── Etapa 2 (BUG extra) — regex relaxat pentru date reale câmp ────────
+  describe("Etapa 2 — regex relaxat (19 apr 2026)", () => {
+    it("acceptă cod cu titlu profesional 'ing.' în nume", () => {
+      const code = "CE-2024-00756_2026-04-19_ing._BogdanMihai-Vlad_CT-00756__1_CPE_c37ed841";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("acceptă serie alfanumerică cu cifre (CT-00756)", () => {
+      const code = "12345_2026-04-19_Popescu_Ion_CT-00756_42_1_CPE_a3f7b9c2";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("acceptă serie goală (auditor fără atestat)", () => {
+      const code = "12345_2026-04-19_Popescu_Ion__1234_1_CPE_a3f7b9c2";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("acceptă serie ȘI număr goale", () => {
+      const code = "12345_2026-04-19_Popescu_Ion___1_CPE_a3f7b9c2";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("acceptă nume compus cu cratimă (Mihai-Vlad)", () => {
+      const code = "12345_2026-04-19_Popescu_Mihai-Vlad_RO_4567_1_CPE_a3f7b9c2";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("acceptă nume cu cifre legate (date 2024 prefix mdlpa)", () => {
+      const code = "CE-2024-00756_2026-04-19_Popescu_Ion_RO_4567_1_CPE_a3f7b9c2";
+      expect(validateCPECode(code)).toBe(true);
+    });
+
+    it("respinge totuși codurile fundamental rupte (lipsă _CPE_)", () => {
+      expect(validateCPECode("12345_2026-04-19_Popescu_Ion_RO_4567_1_BAD_a3f7b9c2")).toBe(false);
+    });
+
+    it("respinge totuși hash invalid (G nu e hex)", () => {
+      expect(validateCPECode("12345_2026-04-19_Popescu_Ion_RO_4567_1_CPE_g3f7b9c2")).toBe(false);
+    });
+
+    it("respinge totuși data malformată (an cu 3 cifre)", () => {
+      expect(validateCPECode("12345_226-04-19_Popescu_Ion_RO_4567_1_CPE_a3f7b9c2")).toBe(false);
+    });
+  });
 });
