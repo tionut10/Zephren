@@ -2310,9 +2310,20 @@ class handler(BaseHTTPRequestHandler):
                         break
                 # 2) Aliniere stânga pentru celulele cu "m²" (template are center —
                 #    rămâneau la dreapta coloanei, depărtate de valori). User request:
-                #    'și la cele din dreapta, inclusiv metrii pătrați m²'
+                #    'și la cele din dreapta, inclusiv metrii pătrați m²' + 'și asta să
+                #    fie aliniat stânga' (screenshot cu 3 × m² stacked center).
+                #    Setez direct XML <w:jc w:val="left"/> în pPr — python-docx
+                #    alignment setter nu suprascria întotdeauna jc existent.
                 if _pt.strip() in ("m2", "m²"):
-                    _para.alignment = _WD_ALIGN.LEFT
+                    _w_ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+                    _pPr = _para._p.find(f"{{{_w_ns}}}pPr")
+                    if _pPr is None:
+                        _pPr = etree.SubElement(_para._p, f"{{{_w_ns}}}pPr")
+                        _para._p.insert(0, _pPr)
+                    _jc = _pPr.find(f"{{{_w_ns}}}jc")
+                    if _jc is None:
+                        _jc = etree.SubElement(_pPr, f"{{{_w_ns}}}jc")
+                    _jc.set(f"{{{_w_ns}}}val", "left")
 
             # (Scale EP/CO₂ și class indicators — mutate la secțiunea 0, înainte de text replacements)
 
