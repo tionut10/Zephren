@@ -81,6 +81,14 @@ export async function verifyAuth(req) {
  * @returns {Promise<{ user: { id: string, email: string }, plan: string } | null>}
  */
 export async function requireAuth(req, res) {
+  // PUBLIC_API_MODE=1 — bypass auth pentru testare pre-lansare (19 apr 2026).
+  // Șterge env var din Vercel → auth strict revine automat, fără cod change.
+  if (process.env.PUBLIC_API_MODE === "1") {
+    return {
+      user: { id: "anon-public", email: "anon@public.local" },
+      plan: "business",
+    };
+  }
   const auth = await verifyAuth(req);
   if (!auth) {
     res.status(401).json({ error: "Autentificare necesara. Conectati-va la cont." });

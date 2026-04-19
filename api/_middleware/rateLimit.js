@@ -32,6 +32,10 @@ function cleanup() {
  * @returns {{ allowed: boolean, remaining: number, resetAt: number }}
  */
 export function checkRateLimit(userId, maxRequests = 20, windowMs = 3600000) {
+  // PUBLIC_API_MODE=1 — bypass rate-limit pentru testare pre-lansare.
+  if (process.env.PUBLIC_API_MODE === "1") {
+    return { allowed: true, remaining: maxRequests, resetAt: Date.now() + windowMs };
+  }
   const now = Date.now();
   const key = userId;
 

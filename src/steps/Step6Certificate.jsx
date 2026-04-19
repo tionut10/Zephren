@@ -2213,22 +2213,27 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       const buf = await fetchTemplate(tpl.cpe);
                       const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
 
-                      // ── Încearcă Office Online Viewer via Vercel Blob ──
-                      // Endpoint require Bearer token Supabase (auth.js requireAuth).
-                      // Dacă user nu e logat sau Supabase lipsește env → sărim direct la fallback.
+                      // ── Încearcă preview server-side (Gotenberg PDF sau Office Online) ──
+                      // PUBLIC_API_MODE=1 pe server bypass-ează auth → trimitem request
+                      // fără token. Dacă user e logat, trimitem și token (viitor util).
                       let authToken = null;
                       try {
                         if (supabase) {
                           const { data: { session } } = await supabase.auth.getSession();
                           authToken = session?.access_token || null;
                         }
-                      } catch { /* ignore, cade pe fallback */ }
+                      } catch { /* ignore */ }
 
-                      if (docxBlob && authToken) {
+                      if (docxBlob) {
                         try {
-                          const previewResp = await fetch("/api/preview-document", {
+                          // În DEV local (Vite) endpoint-ul /api/* nu e servit → folosim
+                          // prod direct (CORS allowlist include localhost:5173).
+                          const apiBase = import.meta.env.DEV ? "https://energy-app-ruby.vercel.app" : "";
+                          const headers = {};
+                          if (authToken) headers.Authorization = `Bearer ${authToken}`;
+                          const previewResp = await fetch(apiBase + "/api/preview-document", {
                             method: "POST",
-                            headers: { Authorization: `Bearer ${authToken}` },
+                            headers,
                             body: docxBlob,
                           });
                           if (previewResp.ok) {
