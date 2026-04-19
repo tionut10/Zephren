@@ -10,3 +10,4 @@ __pycache__
 api/generate-audit-report.py
 
 .env*.local
+.env.vcheck
