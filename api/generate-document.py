@@ -3832,72 +3832,83 @@ class handler(BaseHTTPRequestHandler):
                 # Sprint post-deploy fix (20 apr 2026) — detalii regenerabile
                 # ═══════════════════════════════════════════════════════
 
-                # ── Solar termic: Tip panou, Număr, Mod montare, Orientare, Utilizare ──
+                # ── Regenerabile: Fill CONTEXT-AWARE (20 apr 2026 fix) ──
+                # Problema: _fill_para_blank("Număr panouri", ...) înlocuiește PRIMA
+                # apariție — când doar PV e activ, valoarea ajunge sub "Solar termic"
+                # (și rezultă în "Nu există ⊠" cu Număr 110 — inconsistent logic).
+                # Fix: fill SECVENȚIAL, secțiune cu secțiune, prin section boundaries.
                 solar_th_type = data.get("solar_th_type_label", "")
                 solar_th_panels = data.get("solar_th_panels", "")
                 solar_th_orient = data.get("solar_th_orientation", "")
                 solar_th_usage = data.get("solar_th_usage", "")
-                mount_loc = data.get("renewable_mount_location", "pe clădire")
-                if solar_th_type:
-                    _fill_para_blank("Tip panou (plan, cu tuburi vidate etc.)", solar_th_type)
-                if solar_th_panels:
-                    # Atenție: două contexte pentru "Număr panouri" — solar termic + PV
-                    # _fill_para_blank ia primul match → trebuie apelate în ordine (solar înainte de PV)
-                    _fill_para_blank("Număr panouri", solar_th_panels)
-                if solar_th_type or solar_th_panels:
-                    _fill_para_blank("Mod montare (pe clădire, lângă clădire etc.)", mount_loc)
-                if solar_th_orient:
-                    _fill_para_blank("Orientare", solar_th_orient)
-                if solar_th_usage:
-                    _fill_para_blank("Utilizate pentru (preparea acc, preparare acc și încălzire etc.)", solar_th_usage)
-
-                # ── PV: Tip panou, Număr, Mod montare, Orientare, Utilizare ──
                 pv_type = data.get("pv_type_label", "")
                 pv_panels = data.get("pv_panels", "")
                 pv_orient = data.get("pv_orientation", "")
                 pv_usage = data.get("pv_usage", "")
+                mount_loc = data.get("renewable_mount_location", "")
+
+                def _fill_in_section(section_start_text, section_end_text, label_match, value):
+                    """Fill placeholder în CADRUL secțiunii delimitate (între 2 headere)."""
+                    if not value:
+                        return False
+                    in_section = False
+                    for p in doc.paragraphs:
+                        pt = p.text
+                        if section_start_text in pt:
+                            in_section = True
+                            continue
+                        if in_section and section_end_text in pt:
+                            return False
+                        if in_section and label_match in pt:
+                            val_str = str(value).strip()
+                            if val_str in pt:
+                                return True  # idempotent
+                            for run in p.runs:
+                                m = re.search(r"[\xa0\s]{3,}|\.{4,}", run.text)
+                                if m:
+                                    run.text = run.text[:m.start()] + " " + val_str + " " + run.text[m.end():]
+                                    return True
+                    return False
+
+                # Secțiunea SOLAR TERMIC: între "panouri termosolare" → "panouri fotovoltaice"
+                SEC_SOLAR_START = "Sistemul de panouri termosolare"
+                SEC_PV_START = "Sistemul de panouri fotovoltaice"
+                SEC_PC_START = "Pompa de căldură"
+                SEC_BIO_START = "Sistemul de utilizare a biomasei"
+                SEC_END_G = "Energia termică exportată"
+
+                if solar_th_type:
+                    _fill_in_section(SEC_SOLAR_START, SEC_PV_START,
+                                     "Tip panou (plan, cu tuburi vidate", solar_th_type)
+                if solar_th_panels:
+                    _fill_in_section(SEC_SOLAR_START, SEC_PV_START,
+                                     "Număr panouri", solar_th_panels)
+                if solar_th_type and mount_loc:
+                    _fill_in_section(SEC_SOLAR_START, SEC_PV_START,
+                                     "Mod montare", mount_loc)
+                if solar_th_orient:
+                    _fill_in_section(SEC_SOLAR_START, SEC_PV_START,
+                                     "Orientare", solar_th_orient)
+                if solar_th_usage:
+                    _fill_in_section(SEC_SOLAR_START, SEC_PV_START,
+                                     "Utilizate pentru", solar_th_usage)
+
+                # Secțiunea PV: între "fotovoltaice" → "Pompa de căldură"
                 if pv_type:
-                    _fill_para_blank("Tip panou (monocristalin, policristalin)", pv_type)
+                    _fill_in_section(SEC_PV_START, SEC_PC_START,
+                                     "Tip panou (monocristalin", pv_type)
                 if pv_panels:
-                    _fill_para_blank("Număr panouri", pv_panels)
-                if pv_type or pv_panels:
-                    # Mod montare PV — pattern distinct "Mod montare (pe clădire..." dar e a 2-a apariție
-                    # _fill_para_blank skip-uie pentru că primul match e deja completat (idempotency)
-                    # Adăugăm explicit pentru al 2-lea paragraf
-                    mount_fills = 0
-                    for p in doc.paragraphs:
-                        if "Mod montare" in p.text and "pe clădire" in p.text.lower():
-                            if mount_loc in p.text:
-                                mount_fills += 1
-                                continue  # deja completat
-                            for run in p.runs:
-                                m = _re.search(r"[\xa0\s]{3,}", run.text) if "_re" in dir() else re.search(r"[\xa0\s]{3,}", run.text)
-                                if m:
-                                    run.text = run.text[:m.start()] + " " + mount_loc + " " + run.text[m.end():]
-                                    mount_fills += 1
-                                    break
-                            if mount_fills >= 2:
-                                break
+                    _fill_in_section(SEC_PV_START, SEC_PC_START,
+                                     "Număr panouri", pv_panels)
+                if pv_type and mount_loc:
+                    _fill_in_section(SEC_PV_START, SEC_PC_START,
+                                     "Mod montare", mount_loc)
                 if pv_orient:
-                    # Similar pattern: a 2-a apariție "Orientare"
-                    orient_fills = 0
-                    for p in doc.paragraphs:
-                        pt = p.text.strip()
-                        if pt.startswith("Orientare") or pt.startswith("- Orientare"):
-                            if pv_orient in pt:
-                                orient_fills += 1
-                                continue
-                            for run in p.runs:
-                                m = re.search(r"[\xa0\s]{3,}", run.text)
-                                if m:
-                                    run.text = run.text[:m.start()] + " " + pv_orient + " " + run.text[m.end():]
-                                    orient_fills += 1
-                                    break
-                            if orient_fills >= 2:
-                                break
+                    _fill_in_section(SEC_PV_START, SEC_PC_START,
+                                     "Orientare", pv_orient)
                 if pv_usage:
-                    # "Utilizate pentru" la PV (singur label vs. solar care are "preparea acc")
-                    _fill_para_blank("Utilizate pentru", pv_usage)
+                    _fill_in_section(SEC_PV_START, SEC_PC_START,
+                                     "Utilizate pentru", pv_usage)
 
                 # ── Heat pump: Număr pompe ──
                 hp_count = data.get("heat_pump_count", "")
@@ -4307,6 +4318,24 @@ class handler(BaseHTTPRequestHandler):
                             ep_ref_total = 0
                         # Raport ref/real pentru proporționalitate per sistem
                         ratio_ref = (ep_ref_total / ep_total_val) if ep_total_val > 0 else 0
+                        # FIX 20 apr 2026: calculez clasă energetică per sistem
+                        # folosind scale-ul global EP (thresholds din data.s_ap, s_a, ..., s_f)
+                        # Scale: [A+, A, B, C, D, E, F] (7 praguri)
+                        try:
+                            ep_scale = [float((data.get(k, "0") or "0").replace(",", "."))
+                                        for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+                        except (ValueError, TypeError):
+                            ep_scale = []
+                        def _class_from_ep(ep_val):
+                            """Returnează clasa A+/A/B/C/D/E/F/G bazată pe scale-ul EP."""
+                            if not ep_scale or all(v == 0 for v in ep_scale):
+                                return ""
+                            classes = ["A+", "A", "B", "C", "D", "E", "F"]
+                            for i, threshold in enumerate(ep_scale):
+                                if threshold > 0 and ep_val < threshold:
+                                    return classes[i]
+                            return "G"
+
                         for nume, row_idx in sistem_to_row.items():
                             sd = sistem_data.get(nume, {})
                             ep_val_str = sd.get("ep", "")
@@ -4321,15 +4350,21 @@ class handler(BaseHTTPRequestHandler):
                             row.cells[2].text = format_ro(ep_val, 1)
                             # c3 — emisii CO2 real (proporțional)
                             row.cells[3].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
-                            # c4 — clasă real (gol, auditorul completează manual per sistem)
+                            # c4 — clasă energetică reală per sistem (FIX 20 apr)
+                            cls_real = _class_from_ep(ep_val)
+                            if cls_real:
+                                row.cells[4].text = cls_real
                             # c5 — consum specific energie primară REFERINȚĂ (proporțional)
                             if ratio_ref > 0:
                                 ep_val_ref = ep_val * ratio_ref
                                 row.cells[5].text = format_ro(ep_val_ref, 1)
                                 # c6 — CO2 referință (proporțional)
                                 row.cells[6].text = format_ro(ep_val_ref * co2_ratio, 1) if co2_ratio > 0 else "—"
-                            # c7 — clasa referință per sistem (gol, manual)
-                            for ci in (2, 3, 5, 6):
+                                # c7 — clasa referință per sistem (FIX 20 apr)
+                                cls_ref = _class_from_ep(ep_val_ref)
+                                if cls_ref:
+                                    row.cells[7].text = cls_ref
+                            for ci in (2, 3, 4, 5, 6, 7):
                                 for p in row.cells[ci].paragraphs:
                                     for r in p.runs:
                                         r.font.size = Pt(10)
@@ -4595,21 +4630,25 @@ class handler(BaseHTTPRequestHandler):
                         }
                     if fixtures:
                         # Map între cheia semantică și label-ul din template
-                        fix_key_map = {
-                            "Lavoare": "lavoare",
-                            "Cadă de baie": "cada_baie",
-                            "Cada de baie": "cada_baie",
-                            "Spălătoare": "spalatoare",
-                            "Spalatoare": "spalatoare",
-                            "Rezervor WC": "rezervor_wc",
-                            "Bideuri": "bideuri",
-                            "Masina de spalat vase": "masina_spalat_vase",
-                            "Mașina de spălat vase": "masina_spalat_vase",
-                            "Pisoare": "pisoare",
-                            "Masina de spalat rufe": "masina_spalat_rufe",
-                            "Mașina de spălat rufe": "masina_spalat_rufe",
-                            "Duș": "dus",
-                            "Dus": "dus",
+                        # Fix 20 apr 2026: normalizare diacritice pentru match robust
+                        def _norm_label(s):
+                            """Normalizare pentru match: jos + fara diacritice + strip"""
+                            return (s or "").lower().replace("ș", "s").replace("ş", "s") \
+                                .replace("ț", "t").replace("ţ", "t") \
+                                .replace("ă", "a").replace("â", "a").replace("î", "i") \
+                                .strip()
+                        fix_key_map_norm = {
+                            "lavoare": "lavoare",
+                            "cada de baie": "cada_baie",
+                            "spalatoare": "spalatoare",
+                            "rezervor wc": "rezervor_wc",
+                            "bideuri": "bideuri",
+                            "masina de spalat vase": "masina_spalat_vase",
+                            "masini spalat vase": "masina_spalat_vase",
+                            "pisoare": "pisoare",
+                            "masina de spalat rufe": "masina_spalat_rufe",
+                            "masini spalat rufe": "masina_spalat_rufe",
+                            "dus": "dus",
                         }
                         for tbl in doc.tables:
                             if len(tbl.rows) < 3 or len(tbl.columns) != 4:
@@ -4909,6 +4948,51 @@ class handler(BaseHTTPRequestHandler):
                 radiator_type = data.get("heating_radiator_type", "")
                 if radiator_type:
                     _fill_para_blank("Încălzire cu corpuri statice", f" — {radiator_type}")
+
+                # ══════════════════════════════════════════════════════════
+                # FIX 20 apr 2026: marcaj "—" pentru secțiuni EXOTICE neaplicabile
+                # (planșeu/plafon/perete încălzitor, tuburi radiante, aer cald)
+                # Aceste secțiuni au ~8 placeholder-e ".........." care rămân goale
+                # pentru majoritatea clădirilor (unde nu există aceste instalații).
+                # Marchează cu "—" pentru a arăta că software-ul a procesat câmpul,
+                # dar nu există date aplicabile (distinct de "nefilled").
+                # ══════════════════════════════════════════════════════════
+                heating_src_key = (data.get("heating_source", "") or "").lower()
+                has_radiant = any(k in heating_src_key for k in ["radiant", "planseu", "plafon", "perete", "pardoseala"])
+                has_radiant_tube = "tub" in heating_src_key or "radiant_tube" in heating_src_key
+                has_hot_air = "aer_cald" in heating_src_key or "generator_aer" in heating_src_key
+                has_electric_radiant = "electric_radiant" in heating_src_key or "cable" in heating_src_key
+
+                # Pentru secțiuni NEAPLICABILE, marchez cu "—" în placeholder
+                def _fill_na_placeholder(label, marker="—"):
+                    """Înlocuiește placeholder "..." cu marker "—" pentru secțiuni neaplicabile."""
+                    for p in doc.paragraphs:
+                        if label in p.text:
+                            for run in p.runs:
+                                if re.search(r"[\xa0\s]{3,}|\.{4,}", run.text):
+                                    run.text = re.sub(r"[\xa0\s]{3,}|\.{4,}", f" {marker} ", run.text, count=1)
+                                    return True
+                    return False
+
+                # Planșeu/plafon/perete încălzitor — dacă nu e activ, marchez "—"
+                if not has_radiant:
+                    _fill_na_placeholder("Aria planșeelor/plafoanelor/pereților")
+                # Cabluri electrice încălzitoare — dacă nu e activ
+                if not has_electric_radiant:
+                    _fill_na_placeholder("Lungimea și tipul cablurilor electrice")
+                # Tuburi radiante
+                if not has_radiant_tube:
+                    _fill_na_placeholder("Tip/putere tub radiant")
+                    _fill_na_placeholder("Număr/lungime tuburi radiante")
+                # Generator aer cald
+                if not has_hot_air:
+                    _fill_na_placeholder("Tip/putere generator aer cald")
+                    _fill_na_placeholder("Număr/debit aer")
+
+                # Similar pentru necesar umidificare (rar aplicabil)
+                humid_power_val = data.get("humidification_power_kw", "")
+                if not humid_power_val:
+                    _fill_na_placeholder("Necesarul de energie pentru umidificare", marker="0")
 
             # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine în text box
