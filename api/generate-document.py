@@ -2128,6 +2128,17 @@ CHECKBOX_KEYWORD_MAP = {
     "LIGHT_LED":            ["led mixt"],
     "LIGHT_STATE_GOOD":     ["starea retelei electrice", "buna"],
 
+    # ── Anexa 2 — Structura constructivă (CB 127-134) ──
+    # Paragrafe p163-p166 cu câte 2 checkboxes / paragraf — folosesc occurrence_idx
+    # pentru a alege STÂNGA (0) vs DREAPTA (1) când contextul e identic.
+    "STRUCT_ZIDARIE":      (["pereti structurali din zidarie"], 0),
+    "STRUCT_BETON_PERETI": (["pereti structurali din zidarie"], 1),
+    "STRUCT_BETON_CADRE":  (["cadre din beton armat"], 0),
+    "STRUCT_STALPI":       (["cadre din beton armat"], 1),
+    "STRUCT_LEMN":         (["structura de lemn"], 0),
+    "STRUCT_METAL":        (["structura de lemn"], 1),
+    "STRUCT_PANOURI":      (["structuri din panouri mari"], 0),
+
     # ── Anexa 2 — Regenerabile (CB 288-307) ──
     # Perechi YES/NO cu CONTEXT IDENTIC ("Există Nu există" în același paragraf):
     # folosim format tuple (keywords, occurrence_idx) — al N-lea match conform ordinii.
@@ -2281,6 +2292,25 @@ def compute_checkbox_keys(data, category):
         keys.append("BLDG_NEW")
     else:
         keys.append("BLDG_EXISTING")
+
+    # ── Anexa 2 — Structura constructivă (FIX Etapa 7e) ──
+    # Mapare building.structure (string lung) → cheia semantică checkbox
+    struct_text = (data.get("structure", "") or "").lower()
+    struct_key = ""
+    if "panouri" in struct_text and "mari" in struct_text:
+        struct_key = "STRUCT_PANOURI"
+    elif "lemn" in struct_text:
+        struct_key = "STRUCT_LEMN"
+    elif "metalic" in struct_text or " lsf" in struct_text or "metal" in struct_text:
+        struct_key = "STRUCT_METAL"
+    elif "cadre" in struct_text and "beton" in struct_text:
+        struct_key = "STRUCT_BETON_CADRE"
+    elif "diafragm" in struct_text or "dual" in struct_text or ("monolit" in struct_text and "beton" in struct_text):
+        struct_key = "STRUCT_BETON_PERETI"
+    elif "zidărie" in struct_text or "zidarie" in struct_text:
+        struct_key = "STRUCT_ZIDARIE"
+    if struct_key:
+        keys.append(struct_key)
 
     # ── Anexa 2 — categoria clădirii ──
     cat_to_keys = {
@@ -3982,6 +4012,14 @@ class handler(BaseHTTPRequestHandler):
                             "Încălzire": 2, "Apă caldă": 3, "Răcire": 4,
                             "Ventilare": 5, "Iluminat": 6,
                         }
+                        # FIX Etapa 7e: completez și coloanele clădire referință (proporțional)
+                        ep_ref_raw = (data.get("ep_ref", "") or "0").replace(",", ".")
+                        try:
+                            ep_ref_total = float(ep_ref_raw)
+                        except (ValueError, TypeError):
+                            ep_ref_total = 0
+                        # Raport ref/real pentru proporționalitate per sistem
+                        ratio_ref = (ep_ref_total / ep_total_val) if ep_total_val > 0 else 0
                         for nume, row_idx in sistem_to_row.items():
                             sd = sistem_data.get(nume, {})
                             ep_val_str = sd.get("ep", "")
@@ -3992,13 +4030,19 @@ class handler(BaseHTTPRequestHandler):
                             except (ValueError, TypeError):
                                 continue
                             row = tbl.rows[row_idx]
-                            # c2 — consum specific energie primară (EP în kWh/m²·an)
+                            # c2 — consum specific energie primară (EP real în kWh/m²·an)
                             row.cells[2].text = format_ro(ep_val, 1)
-                            # c3 — emisii CO2 (proporțional)
+                            # c3 — emisii CO2 real (proporțional)
                             row.cells[3].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
-                            # c4 — clasă (lăsăm gol, auditorul determină per sistem)
-                            # row.cells[4].text rămâne gol
-                            for ci in (2, 3):
+                            # c4 — clasă real (gol, auditorul completează manual per sistem)
+                            # c5 — consum specific energie primară REFERINȚĂ (proporțional)
+                            if ratio_ref > 0:
+                                ep_val_ref = ep_val * ratio_ref
+                                row.cells[5].text = format_ro(ep_val_ref, 1)
+                                # c6 — CO2 referință (proporțional)
+                                row.cells[6].text = format_ro(ep_val_ref * co2_ratio, 1) if co2_ratio > 0 else "—"
+                            # c7 — clasa referință per sistem (gol, manual)
+                            for ci in (2, 3, 5, 6):
                                 for p in row.cells[ci].paragraphs:
                                     for r in p.runs:
                                         r.font.size = Pt(10)

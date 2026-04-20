@@ -382,12 +382,16 @@ export default function Step6Certificate(props) {
                     year_built: building.yearBuilt || "",
                     climate_zone_num: String(parseInt(selectedClimate?.zone) || 3),
                     opaque_u_values: JSON.stringify(opaqueElements.map(function(el) {
-                      if (!el.layers || el.layers.length === 0) return {type: el.type, u: 0};
+                      // FIX 21 apr 2026: trimit și `area` (lipsea înainte) — Python avea
+                      // filtrare area>0 → toate elementele opace erau respinse → Tabel 2
+                      // anvelopă populat doar cu ferestre (FE din glazing_area_total_m2).
+                      var area = parseFloat(el.area) || 0;
+                      if (!el.layers || el.layers.length === 0) return {type: el.type, area: area, u: 0};
                       var elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
                       var rsi = elType ? elType.rsi : 0.13;
                       var rse = elType ? elType.rse : 0.04;
                       var rL = el.layers.reduce(function(s,l){var d=(parseFloat(l.thickness)||0)/1000; return s+(d>0&&l.lambda>0?d/l.lambda:0);},0);
-                      return {type: el.type, u: rL > 0 ? 1/(rsi+rL+rse) : 0};
+                      return {type: el.type, area: area, u: rL > 0 ? 1/(rsi+rL+rse) : 0};
                     })),
                     glazing_max_u: String(glazingElements.length > 0 ? Math.max(0, ...glazingElements.map(function(e){return parseFloat(e.u)||0;})) : 0),
                     // EP per utilitate (kWh/m²·an) — pentru colorare celule tabel clase
@@ -418,8 +422,19 @@ export default function Step6Certificate(props) {
                       };
                       return map[ventilation?.type] || ventilation?.type || "";
                     })(),
-                    ventilation_has_hr: (ventilation?.type && (ventilation.type.includes("hr") || ventilation.type.includes("HR") || ventilation.type === "UTA"))
-                      ? "Da" : "Nu",
+                    ventilation_has_hr: (() => {
+                      // FIX 21 apr 2026: detectare HR mai cuprinzătoare:
+                      // hr / HR / UTA (orice prefix) / ERV / recuperator / hrEfficiency > 0
+                      const vt = String(ventilation?.type || "").toLowerCase();
+                      const eff = parseFloat(ventilation?.hrEfficiency) || 0;
+                      const hasHR =
+                        vt.includes("hr") ||
+                        vt.includes("uta") ||
+                        vt.includes("erv") ||
+                        vt.includes("recup") ||
+                        eff > 0;
+                      return hasHR ? "Da" : "Nu";
+                    })(),
                     lighting_power_kw: (() => {
                       // Putere iluminat: din W_P × Au sau qf_l / ore funcționare standard
                       const wp = parseFloat(lighting?.totalPowerInstalled) || 0;
