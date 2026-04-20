@@ -582,6 +582,10 @@ export default function Step6Certificate(props) {
                     })(),
                     biomass_power_kw: (biomass?.enabled && biomass?.power) ? fmtRo(parseFloat(biomass.power), 1) : "",
                     renewable_mount_location: (solarThermal?.enabled || photovoltaic?.enabled) ? "pe clădire" : "",
+                    // Fix 20 apr 2026: subsol/pod flags pentru regim înălțime complet
+                    basement: building.basement ? "true" : "false",
+                    attic: building.attic ? "true" : "false",
+                    biomass_enabled: biomass?.enabled ? "true" : "false",
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };

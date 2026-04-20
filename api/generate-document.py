@@ -4126,10 +4126,28 @@ class handler(BaseHTTPRequestHandler):
                             if letter not in regim_keys_found:
                                 regim_keys_found.append(letter)
                     # Parse nr subsoluri/etaje pentru înlocuirea "2 (nr)" / "5 (nr)"
-                    # "2S+P+5E+M" → 2 subsoluri, 5 etaje
+                    # Formate acceptate:
+                    #   "2S+P+5E+M" → 2 subsoluri, 5 etaje explicit
+                    #   "P+4" → 4 etaje (fără sufix E — format scurt)
+                    #   "P+4E" → 4 etaje explicit
+                    #   "S+P+4" → 1 subsol (implicit), 4 etaje
                     m_sub = _re_reg.search(r"(\d+)S", regime_str)
-                    n_subsoluri = int(m_sub.group(1)) if m_sub else (1 if "S" in regim_keys_found else 0)
+                    if m_sub:
+                        n_subsoluri = int(m_sub.group(1))
+                    elif "S" in regim_keys_found:
+                        n_subsoluri = 1
+                    else:
+                        n_subsoluri = 0
+                    # Fallback: building.basement=true → min 1 subsol
+                    if n_subsoluri == 0 and str(data.get("basement", "") or "").lower() in ("true", "1", "da"):
+                        n_subsoluri = 1
+                    # Etaje: regex cu sau fără E (P+4 = P+4E)
                     m_et = _re_reg.search(r"(\d+)E", regime_str)
+                    if not m_et:
+                        # Format scurt "P+X" — X = nr etaje peste parter
+                        m_et_short = _re_reg.search(r"P\+(\d+)", regime_str)
+                        if m_et_short:
+                            m_et = m_et_short
                     n_etaje = int(m_et.group(1)) if m_et else (1 if "E" in regim_keys_found else 0)
 
                     for tbl in doc.tables:
