@@ -3922,8 +3922,13 @@ class handler(BaseHTTPRequestHandler):
                 bio_type_label_val = data.get("biomass_type_label", "")
                 # FIX 20 apr 2026: biomass "alt tip" contamina TOATE cele 7 paragrafe
                 # "alt tip, precizați" din document (încălzire, răcire, iluminat etc.)
-                # Fix: targetare explicit doar în secțiunea biomasă (CB 303-305 din apropiere)
-                if bio_type_label_val and bio_type_label_val.lower() not in ("peleți", "peleti", "brichete", ""):
+                # Fix DUBLU (server-side cleanup + frontend blank):
+                # 1. Frontend NU mai trimite biomass_type_label când !enabled
+                # 2. Python: skip complet dacă biomass_enabled=false SAU tip standard
+                biomass_is_enabled = str(data.get("biomass_enabled", "") or "").lower() == "true"
+                if not biomass_is_enabled:
+                    bio_type_label_val = ""  # force empty dacă biomass not enabled
+                if bio_type_label_val and bio_type_label_val.lower() not in ("peleți", "peleti", "brichete", "lemn", "lemn tocat", ""):
                     # Caut paragraful "alt tip, precizați" DUPĂ "Tip biomasă utilizată"
                     found_bio_section = False
                     for p in doc.paragraphs:
@@ -4174,6 +4179,39 @@ class handler(BaseHTTPRequestHandler):
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
+
+                # ── FALLBACK DOC-LEVEL: Regim "2 (nr)" / "5 (nr)" ──
+                # Table-level fix poate eșua dacă Tabel 0 are structură diferită.
+                # Fallback: iter TOATE paragrafele doc-level + paragrafele din TOATE
+                # celulele tabelelor, match exact (normalized) → înlocuire.
+                try:
+                    # Colectare tuturor paragrafelor (doc + tabel cells)
+                    all_paras = list(doc.paragraphs)
+                    for tbl in doc.tables:
+                        for row in tbl.rows:
+                            for cell in row.cells:
+                                all_paras.extend(cell.paragraphs)
+                    for para in all_paras:
+                        pt = para.text.strip()
+                        norm = " ".join(pt.split())
+                        if n_subsoluri > 0 and norm in ("2 (nr)", "2(nr)"):
+                            for r in para.runs:
+                                if r.text.strip() == "2":
+                                    r.text = str(n_subsoluri)
+                                    break
+                                elif "2" in r.text:
+                                    r.text = r.text.replace("2", str(n_subsoluri), 1)
+                                    break
+                        elif n_etaje > 0 and norm in ("5 (nr)", "5(nr)"):
+                            for r in para.runs:
+                                if r.text.strip() == "5":
+                                    r.text = str(n_etaje)
+                                    break
+                                elif "5" in r.text:
+                                    r.text = r.text.replace("5", str(n_etaje), 1)
+                                    break
+                except Exception as e_regim_fb:
+                    print(f"[regim_fallback] eroare: {e_regim_fb}", flush=True)
 
                 # ── Tabel 5 — Apartamente debranșate condominiu ──
                 # Pentru clădiri RC/RA (bloc) → "Nu există" default; pentru altele skip.
@@ -4659,16 +4697,15 @@ class handler(BaseHTTPRequestHandler):
                             "dus": "dus",
                         }
                         for tbl in doc.tables:
-                            if len(tbl.rows) < 3 or len(tbl.columns) != 4:
-                                continue
                             # Header check: r0c0 = "Lavoare" și r0c1 = "[nr.]"
+                            if len(tbl.rows) < 1 or len(tbl.rows[0].cells) < 2:
+                                continue
                             r0c0 = tbl.rows[0].cells[0].text.strip()
                             r0c1 = tbl.rows[0].cells[1].text.strip()
                             if "Lavoare" not in r0c0 or "[nr.]" not in r0c1:
                                 continue
-                            # Idempotent: skip dacă r0c1 ≠ "[nr.]" (deja înlocuit)
-                            # Dar aici tocmai că vrem să înlocuim [nr.] cu număr real
-                            # Iterez peste toate rândurile și celulele; pentru fiecare label găsit, umplu [nr.] adiacent
+                            # FIX 20 apr 2026: folosesc matching NORMALIZAT (diacritice-insensitive)
+                            # pentru a match "Duș"/"Dus"/"Spălătoare"/"Spalatoare"/"Mașina"/"Masina"
                             for ri in range(len(tbl.rows)):
                                 for ci in range(0, len(tbl.rows[ri].cells), 2):
                                     if ci + 1 >= len(tbl.rows[ri].cells):
@@ -4676,8 +4713,9 @@ class handler(BaseHTTPRequestHandler):
                                     label_cell = tbl.rows[ri].cells[ci]
                                     value_cell = tbl.rows[ri].cells[ci + 1]
                                     label_txt = label_cell.text.strip()
+                                    label_norm = _norm_label(label_txt)
                                     if "[nr.]" in value_cell.text:
-                                        key = fix_key_map.get(label_txt)
+                                        key = fix_key_map_norm.get(label_norm)
                                         if key:
                                             count = fixtures.get(key, "0")
                                             # Înlocuiesc [nr.] cu valoarea numerică
