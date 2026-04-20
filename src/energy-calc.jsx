@@ -41,7 +41,7 @@ import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.j
 import { TIERS } from "./data/tiers.js";
 import { BENCHMARKS } from "./data/benchmarks.js";
 import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
-import { DEMO_PROJECTS } from "./data/demoProjects.js";
+import { DEMO_PROJECTS, buildMdlpaDefaults } from "./data/demoProjects.js";
 import { normalizeGlazingList } from "./components/SmartEnvelopeHub/utils/normalizeGlazing.js";
 import { ENVELOPE_TEMPLATES, extractEnvelopeFromTemplate } from "./components/SmartEnvelopeHub/utils/envelopeTemplates.js";
 import { applyStandardBridgesPack as buildStandardBridgesPack } from "./components/SmartEnvelopeHub/utils/applyStandardBridgesPack.js";
@@ -1007,7 +1007,10 @@ export default function EnergyCalcApp({ cloud }) {
     const d = DEMO_PROJECTS[idx];
     if (!d) return;
     pushUndo();
-    setBuilding(d.building);
+    // Merge defaults MDLPA Anexa 1+2 contextuale (adaptate la demo: sobe, bloc,
+    // nerezidențial, termoficare, heat pump, wind) cu d.building explicit.
+    // Proprietățile din d.building override-uiesc defaults, păstrând flexibilitate.
+    setBuilding({ ...buildMdlpaDefaults(d), ...d.building });
     setOpaqueElements(d.opaqueElements);
     // Fix D2 (envelope_hub_design.md, 14.04.2026): normalizăm câmpul vitrajelor
     // la load — demo-urile folosesc `type`, GlazingModal folosește `glazingType`.

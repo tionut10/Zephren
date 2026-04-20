@@ -4,6 +4,174 @@
 // Valori realiste conform Mc 001-2022, Ord. MDLPA 16/2023, EN ISO 13790
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * buildMdlpaDefaults(demo) — valori Anexa 1+2 MDLPA (Ord. 16/2023)
+ *
+ * Produce contextul DEMO în funcție de specificitățile proiectului încărcat:
+ *  - Sobe (soba_teracota / cazan_lemn) → stoveCount calculat
+ *  - Bloc (RC/RA/BC) → buildingHasDisconnectedApartments + nApartments
+ *  - Nerezidențial (BI/ED/CO etc.) → fixtures minime (lavoar + WC)
+ *  - Heat pump aer-apă sau sol-apă → ajustări diametru/agent
+ *  - Wind enabled → detalii eoliene cu valori reale
+ *  - Cooling activ → unitățile interior/exterior calculate din power
+ *
+ * Apelată din `loadDemoByIndex` (energy-calc.jsx) cu spread:
+ *   setBuilding({ ...buildMdlpaDefaults(d), ...d.building })
+ *
+ * Proprietățile explicite din d.building override-uiesc defaults contextuale.
+ */
+export function buildMdlpaDefaults(demo = {}) {
+  const b = demo.building || {};
+  const heating = demo.heating || {};
+  const cooling = demo.cooling || {};
+  const acm = demo.acm || {};
+  const solar = demo.solarThermal || {};
+  const pv = demo.photovoltaic || {};
+  const hp = demo.heatPump || {};
+  const other = demo.otherRenew || {};
+
+  const cat = b.category || "";
+  const isBlock = ["RC", "RA", "BC"].includes(cat);
+  const isResidential = ["RI", "RC", "RA", "BC"].includes(cat);
+  const isOffice = cat === "BI";
+  const isEdu = ["ED", "IU"].includes(cat);
+
+  // ── Detectare surse încălzire pentru adaptări specifice ──
+  const heatSource = String(heating.source || "").toLowerCase();
+  const hasStove = ["soba_teracota", "soba", "cazan_lemn", "cazan_peleti"].some(
+    (s) => heatSource.includes(s)
+  );
+  const isTermoficare = heatSource.includes("termof");
+  const hasCooling = !!cooling.hasCooling;
+  const coolingPowerKw = parseFloat(cooling.power) || 0;
+  const heatingPowerKw = parseFloat(heating.power) || 0;
+
+  // Număr apartamente — derivare din b.units sau default 1
+  const nApt = parseInt(b.units) || parseInt(b.nApartments) || 1;
+
+  // Număr radiatoare estimat (1.5 kW / radiator standard)
+  const nRadiators = heatingPowerKw > 0 ? Math.max(3, Math.ceil(heatingPowerKw / 1.5)) : 6;
+
+  // Unități split estimate din coolingPower (~2.5 kW / split standard)
+  const nCoolingUnits = coolingPowerKw > 0 ? Math.max(1, Math.ceil(coolingPowerKw / 2.5)) : 1;
+
+  // Fixtures: rezidențial vs. nerezidențial
+  const fixtures = isResidential ? {
+    lavoare: String(nApt),
+    cada_baie: String(nApt),
+    spalatoare: String(nApt),
+    rezervor_wc: String(nApt),
+    bideuri: "0",
+    pisoare: "0",
+    dus: String(nApt),
+    masina_spalat_vase: nApt > 1 ? String(Math.ceil(nApt / 2)) : "0",
+    masina_spalat_rufe: String(nApt),
+  } : isOffice ? {
+    lavoare: "2",  cada_baie: "0", spalatoare: "1", rezervor_wc: "2",
+    bideuri: "0",  pisoare: "1",   dus: "1",
+    masina_spalat_vase: "0", masina_spalat_rufe: "0",
+  } : isEdu ? {
+    lavoare: "4",  cada_baie: "0", spalatoare: "1", rezervor_wc: "4",
+    bideuri: "0",  pisoare: "2",   dus: "2",
+    masina_spalat_vase: "0", masina_spalat_rufe: "0",
+  } : {
+    lavoare: "1",  cada_baie: "0", spalatoare: "0", rezervor_wc: "1",
+    bideuri: "0",  pisoare: "0",   dus: "0",
+    masina_spalat_vase: "0", masina_spalat_rufe: "0",
+  };
+
+  // Puncte consum total (lavoare + cadă + duș + spălătoare)
+  const totalPoints =
+    (parseInt(fixtures.lavoare) || 0) +
+    (parseInt(fixtures.cada_baie) || 0) +
+    (parseInt(fixtures.spalatoare) || 0) +
+    (parseInt(fixtures.dus) || 0);
+
+  // Radiator type based on heating source (CT → oțel; centralizat → fontă vechi)
+  const radiatorType = hasStove ? "Soba teracotă"
+    : isTermoficare ? "Radiator fontă (termoficare)"
+    : "Radiator oțel panou";
+
+  // Unheated spaces — subsol + pod standard pentru casă / bloc
+  const unheated = isBlock ? [
+    { code: "ZU1", diameter_mm: "32", length_m: "15" },  // Subsol bloc (distribuție)
+    { code: "ZU2", diameter_mm: "20", length_m: "8" },   // Scara (riser)
+  ] : [
+    { code: "ZU1", diameter_mm: "20", length_m: "6" },   // Subsol casă
+  ];
+
+  // Agent frigorific — R32 pentru split-uri moderne, R410A pentru mai vechi
+  const coolingRefrigerant = !hasCooling ? ""
+    : (parseInt(b.yearBuilt) >= 2015) ? "R32"
+    : "R410A";
+
+  return {
+    // ── Grup A — Încălzire ──
+    heatGenLocation: isTermoficare ? "TERMOFICARE"
+      : hasStove ? "SURSA_PROPRIE"
+      : "CT_PROP",
+    heatingOtherSource: "",
+    heatingRadiatorType: radiatorType,
+    heatingRadiators: heatingPowerKw > 0 ? [{
+      type: radiatorType,
+      count_private: isBlock ? Math.max(3, nRadiators - 1) : nRadiators,
+      count_common: isBlock ? 1 : 0,
+      power_kw: heatingPowerKw.toFixed(1),
+    }] : [],
+    heatingHasMeter: isBlock ? "nu" : "nu_caz",
+    heatingCostAllocator: isBlock ? "da" : "nu_caz",
+    heatingPipeDiameterMm: isBlock ? "32" : "25",
+    heatingPipePressureMca: isTermoficare ? "4.0" : "3.5",
+    stoveCount: hasStove ? (isResidential ? "2" : "1") : "",
+    // ── Grup B — Anvelopă ──
+    unheatedSpaces: unheated,
+    buildingHasDisconnectedApartments: isBlock ? "nu" : "",
+    // ── Grup C — ACM ──
+    acmFixtures: fixtures,
+    acmConsumePointsCount: String(totalPoints),
+    acmPipeDiameterMm: isBlock ? "25" : "20",
+    acmInstantPowerKw: String(acm.source || "").toLowerCase().includes("instant")
+      ? (heatingPowerKw > 0 ? (heatingPowerKw * 0.5).toFixed(1) : "18")
+      : "",
+    acmHasMeter: isBlock ? "nu" : "nu_caz",
+    acmFlowMeters: "nu_exista",
+    acmRecirculation: isBlock ? "nu_functioneaza" : "nu_exista",
+    // ── Grup D — Răcire ──
+    coolingRefrigerant,
+    coolingDehumPowerKw: "",
+    coolingIndoorUnits: hasCooling ? String(nCoolingUnits) : "",
+    coolingOutdoorUnits: hasCooling ? String(Math.max(1, Math.ceil(nCoolingUnits / 2))) : "",
+    coolingPipeDiameterMm: hasCooling ? "12" : "",
+    coolingSpaceScope: hasCooling ? "partial" : "",
+    coolingHumidityControl: hasCooling ? "fara" : "",
+    coolingIndividualMeter: hasCooling ? "nu" : "",
+    // ── Grup E — Ventilare + Iluminat ──
+    ventilationFanCount: isResidential ? "2" : (isOffice ? "6" : "4"),
+    ventilationHrType: "placi",
+    ventilationControlType: "manual_simpla",
+    lightingNetworkState: "buna",
+    lightingOtherType: "",
+    // ── Grup F — Umidificare + Eoliene ──
+    humidificationPowerKw: "",
+    windCentralsCount: other.windEnabled ? "1" : "",
+    windPowerKw: other.windEnabled && other.windCapacity ? String(other.windCapacity) : "",
+    windHubHeightM: other.windEnabled ? "12" : "",
+    windRotorDiameterM: other.windEnabled ? "5.5" : "",
+    // ── Identificare juridică (fallback doar dacă demo nu o specifică) ──
+    cadastralNumber: "250100-C1-U1",
+    landBook: "CF nr. 250100",
+    nApartments: String(nApt),
+  };
+}
+
+/** Alias static pentru backward-compat (default rezidențial generic). */
+export const DEMO_MDLPA_DEFAULTS = buildMdlpaDefaults({
+  building: { category: "RI", units: "1", yearBuilt: "2010" },
+  heating: { source: "GAZ_COND", power: "15" },
+  cooling: { hasCooling: false },
+  acm: {}, otherRenew: {},
+});
+
 export const DEMO_PROJECTS = [
 
   // ─────────────────────────────────────────────────────────────────────────────
