@@ -278,8 +278,10 @@ export default function Step6Certificate(props) {
                     passport_uuid: building.passportUUID || "",
                     passport_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
                     passport_qr_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
-                    area_built: building.areaBuilt || "",
-                    n_apartments: building.nApartments || "1",
+                    // Arie construită desfășurată — fallback automat din Au × 1.15
+                    // (standard RO: Acd ≈ Au × factor formă clădire ~1.15)
+                    area_built: building.areaBuilt || (Aref > 0 ? fmtRo(Aref * 1.15, 1) : ""),
+                    n_apartments: building.nApartments || building.units || "1",
                     // Sprint 14 — Penalizări Mc 001-2022 Partea III §8.10 (serializate)
                     // Etapa 2 (BUG-7): trimit summary + lista aplicate cu reason+delta_EP_pct
                     // pentru ca Python să le poată afișa în pagina supliment legală.
@@ -511,43 +513,52 @@ export default function Step6Certificate(props) {
                     heat_pump_scop_heating: heatPump?.scopHeating || "",
                     heat_pump_scop_cooling: heatPump?.scopCooling || "",
                     // ── Sprint post-deploy fix (20 apr 2026) — extinderi regenerabile ──
+                    // FIX 20 apr: trimitem DETALII DOAR DACĂ `enabled=true` (altfel
+                    // detaliile apar în DOCX pentru "Nu există" ⊠ — inconsistență logică).
                     solar_th_type_label: (() => {
+                      if (!solarThermal?.enabled) return "";
                       const map = { PLAN: "Plan", VACUUM: "Cu tuburi vidate", TUBURI: "Cu tuburi vidate" };
                       return map[solarThermal?.type] || "";
                     })(),
-                    solar_th_area: solarThermal?.area ? fmtRo(parseFloat(solarThermal.area), 1) : "",
+                    solar_th_area: (solarThermal?.enabled && solarThermal?.area) ? fmtRo(parseFloat(solarThermal.area), 1) : "",
                     solar_th_panels: (() => {
+                      if (!solarThermal?.enabled) return "";
                       const area = parseFloat(solarThermal?.area) || 0;
                       if (solarThermal?.panels) return String(solarThermal.panels);
                       if (area > 0) return String(Math.max(1, Math.ceil(area / 2)));
                       return "";
                     })(),
-                    solar_th_orientation: solarThermal?.orientation || "",
-                    solar_th_tilt: solarThermal?.tilt || "",
+                    solar_th_orientation: (solarThermal?.enabled && solarThermal?.orientation) || "",
+                    solar_th_tilt: (solarThermal?.enabled && solarThermal?.tilt) || "",
                     solar_th_usage: (() => {
+                      if (!solarThermal?.enabled) return "";
                       const map = { acm: "preparare acc", acm_heating: "preparare acc și încălzire", heating: "încălzire" };
                       return map[solarThermal?.usage] || solarThermal?.usage || "";
                     })(),
                     pv_type_label: (() => {
+                      if (!photovoltaic?.enabled) return "";
                       const map = { MONO: "Monocristalin", POLI: "Policristalin", POLY: "Policristalin", THIN: "Film subțire" };
                       return map[photovoltaic?.type] || "";
                     })(),
-                    pv_area: photovoltaic?.area ? fmtRo(parseFloat(photovoltaic.area), 1) : "",
-                    pv_peak_power: photovoltaic?.peakPower ? fmtRo(parseFloat(photovoltaic.peakPower), 2) : "",
+                    pv_area: (photovoltaic?.enabled && photovoltaic?.area) ? fmtRo(parseFloat(photovoltaic.area), 1) : "",
+                    pv_peak_power: (photovoltaic?.enabled && photovoltaic?.peakPower) ? fmtRo(parseFloat(photovoltaic.peakPower), 2) : "",
                     pv_panels: (() => {
+                      if (!photovoltaic?.enabled) return "";
                       const peak = parseFloat(photovoltaic?.peakPower) || 0;
                       if (photovoltaic?.panels) return String(photovoltaic.panels);
                       if (peak > 0) return String(Math.max(1, Math.ceil(peak / 0.4)));
                       return "";
                     })(),
-                    pv_orientation: photovoltaic?.orientation || "",
-                    pv_tilt: photovoltaic?.tilt || "",
+                    pv_orientation: (photovoltaic?.enabled && photovoltaic?.orientation) || "",
+                    pv_tilt: (photovoltaic?.enabled && photovoltaic?.tilt) || "",
                     pv_usage: (() => {
+                      if (!photovoltaic?.enabled) return "";
                       const map = { all: "consum total + injecție rețea", self: "autoconsum", heating: "încălzire", cooling: "răcire" };
                       return map[photovoltaic?.usage] || photovoltaic?.usage || "";
                     })(),
-                    heat_pump_count: String(heatPump?.count || (heatPump?.enabled ? 1 : 0)),
+                    heat_pump_count: heatPump?.enabled ? String(heatPump?.count || 1) : "",
                     heat_pump_type_label: (() => {
+                      if (!heatPump?.enabled) return "";
                       const map = {
                         PC_AA: "aer-aer", PC_AW: "aer-apă", pc_aer_apa: "aer-apă",
                         pc_aer_aer: "aer-aer", pc_sol_apa: "sol-apă buclă închisă",
@@ -558,11 +569,12 @@ export default function Step6Certificate(props) {
                       return map[heatPump?.type] || heatPump?.type || "";
                     })(),
                     biomass_type_label: (() => {
+                      if (!biomass?.enabled) return "";
                       const map = { PELETI: "peleți", BRICHETE: "brichete", LEMN: "lemn tocat" };
                       return map[biomass?.type] || biomass?.type || "";
                     })(),
-                    biomass_power_kw: biomass?.power ? fmtRo(parseFloat(biomass.power), 1) : "",
-                    renewable_mount_location: "pe clădire",
+                    biomass_power_kw: (biomass?.enabled && biomass?.power) ? fmtRo(parseFloat(biomass.power), 1) : "",
+                    renewable_mount_location: (solarThermal?.enabled || photovoltaic?.enabled) ? "pe clădire" : "",
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };

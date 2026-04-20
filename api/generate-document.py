@@ -3904,13 +3904,93 @@ class handler(BaseHTTPRequestHandler):
                 if hp_count and hp_count != "0":
                     _fill_para_blank("Număr pompe de căldură", hp_count)
 
-                # ── Biomass: putere + alt tip precizare (biomass_type_label deja în compute_checkboxes) ──
+                # ── Biomass: putere + alt tip precizare ──
                 bio_pow = data.get("biomass_power_kw", "")
                 if bio_pow:
                     _fill_para_blank("Putere nominală cazan biomasă", bio_pow, " kW")
                 bio_type_label_val = data.get("biomass_type_label", "")
-                if bio_type_label_val and bio_type_label_val not in ("peleți", "brichete"):
-                    _fill_para_blank("alt tip, precizați", bio_type_label_val)
+                # FIX 20 apr 2026: biomass "alt tip" contamina TOATE cele 7 paragrafe
+                # "alt tip, precizați" din document (încălzire, răcire, iluminat etc.)
+                # Fix: targetare explicit doar în secțiunea biomasă (CB 303-305 din apropiere)
+                if bio_type_label_val and bio_type_label_val.lower() not in ("peleți", "peleti", "brichete", ""):
+                    # Caut paragraful "alt tip, precizați" DUPĂ "Tip biomasă utilizată"
+                    found_bio_section = False
+                    for p in doc.paragraphs:
+                        pt = p.text
+                        if "Tip biomas" in pt or "biomas" in pt.lower()[:50]:
+                            found_bio_section = True
+                            continue
+                        if found_bio_section and "alt tip, preciza" in pt.lower():
+                            # Verific că precedent paragraf NU e heating/cooling/lighting
+                            # Înlocuiesc dots/spații cu tipul biomassei
+                            for run in p.runs:
+                                if re.search(r"\.{4,}|[\xa0\s]{4,}", run.text):
+                                    run.text = re.sub(r"\.{4,}|[\xa0\s]{4,}", " " + bio_type_label_val + " ", run.text, count=1)
+                                    break
+                            break
+
+                # ══════════════════════════════════════════════════════════
+                # Sprint post-deploy fix (20 apr 2026) — regim înălțime "2 (nr)" / "5 (nr)"
+                # Aceste placeholder-e apar ca paragrafe separate în template,
+                # NU în celule de tabel. Înlocuim text literal cu numere reale.
+                # ══════════════════════════════════════════════════════════
+                regime_str_rep = (data.get("regime", "") or "").upper().strip()
+                import re as _re_reg
+                m_sub_rep = _re_reg.search(r"(\d+)S", regime_str_rep)
+                n_subsoluri = int(m_sub_rep.group(1)) if m_sub_rep else (1 if "S" in regime_str_rep else 0)
+                m_et_rep = _re_reg.search(r"(\d+)E", regime_str_rep)
+                n_etaje = int(m_et_rep.group(1)) if m_et_rep else (1 if "E" in regime_str_rep else 0)
+
+                # Înlocuim paragrafele standalone "2 (nr)" și "5 (nr)"
+                # (placeholder-e în template MDLPA pentru regim înălțime)
+                for p in doc.paragraphs:
+                    pt_stripped = p.text.strip()
+                    # Match flexibil: "2 (nr)", "2(nr)", "2\n(nr)" etc.
+                    txt_normalized = " ".join(pt_stripped.split())
+                    if txt_normalized in ("2 (nr)", "2(nr)") and n_subsoluri > 0:
+                        for r in p.runs:
+                            if "2" in r.text and "(nr)" not in r.text:
+                                r.text = r.text.replace("2", str(n_subsoluri), 1)
+                                break
+                            elif r.text.strip() == "2":
+                                r.text = str(n_subsoluri)
+                                break
+                    elif txt_normalized in ("5 (nr)", "5(nr)") and n_etaje > 0:
+                        for r in p.runs:
+                            if "5" in r.text and "(nr)" not in r.text:
+                                r.text = r.text.replace("5", str(n_etaje), 1)
+                                break
+                            elif r.text.strip() == "5":
+                                r.text = str(n_etaje)
+                                break
+
+                # ══════════════════════════════════════════════════════════
+                # Sprint post-deploy fix — Structura constructivă CB (fuzzy match)
+                # Template are 8 CB structură; demo-urile folosesc texte descriptive
+                # detaliate ("Structură prefabricată PAFP") care nu match "Zidărie portantă"
+                # ══════════════════════════════════════════════════════════
+                struct_text_raw = (data.get("structure", "") or "").lower()
+                struct_cb_fuzzy = None
+                if "pafp" in struct_text_raw or "panouri" in struct_text_raw or "prefabr" in struct_text_raw:
+                    struct_cb_fuzzy = 133  # Panouri prefabricate mari
+                elif "zidăr" in struct_text_raw or "zidar" in struct_text_raw or "cărăm" in struct_text_raw:
+                    struct_cb_fuzzy = 127  # Zidărie
+                elif "cadre" in struct_text_raw and "beton" in struct_text_raw:
+                    struct_cb_fuzzy = 129  # Cadre beton armat
+                elif "stâlpi" in struct_text_raw or "grinzi" in struct_text_raw:
+                    struct_cb_fuzzy = 130  # Stâlpi și grinzi
+                elif "lemn" in struct_text_raw:
+                    struct_cb_fuzzy = 131  # Structură lemn
+                elif "metalic" in struct_text_raw or "oțel" in struct_text_raw:
+                    struct_cb_fuzzy = 132  # Structură metalică
+                elif "mixt" in struct_text_raw:
+                    struct_cb_fuzzy = 134
+                if struct_cb_fuzzy is not None and mode in ("anexa", "anexa_bloc"):
+                    # Bifăm CB suplimentar prin toggle (idempotent)
+                    try:
+                        toggle_checkboxes(doc, [struct_cb_fuzzy])
+                    except Exception:
+                        pass
 
                 # ── Nr. apartamente / unități ──────────────────────────
                 n_apt = data.get("n_apartments_count", "")
@@ -4316,44 +4396,64 @@ class handler(BaseHTTPRequestHandler):
                             }]
                     if radiators:
                         for tbl in doc.tables:
-                            if len(tbl.rows) < 3 or len(tbl.columns) != 4:
+                            # Header complex: 4 rânduri, uneori 9 coloane (subheadere merged)
+                            # Detectare pe label "Tip corp static" oriunde în primele 2 rânduri
+                            if len(tbl.rows) < 3:
                                 continue
-                            # Header r0c0 = "Tip corp static" (posibil împărțit pe 2 rânduri)
                             h0 = " ".join(tbl.rows[0].cells[0].text.split())
                             h1 = " ".join(tbl.rows[1].cells[0].text.split()) if len(tbl.rows) > 1 else ""
                             if "Tip corp static" not in h0 and "Tip corp static" not in h1:
                                 continue
-                            # Idempotent: skip dacă r2c0 e deja populat (cu altceva decât header)
-                            if tbl.rows[2].cells[0].text.strip() and tbl.rows[2].cells[0].text.strip() not in ("...", "…"):
+                            # Identificare rând data + rând TOTAL
+                            data_row_idx = None
+                            total_row_idx = None
+                            for ri, row in enumerate(tbl.rows):
+                                txt0 = row.cells[0].text.strip()
+                                if txt0 == "..." or txt0 == "…":
+                                    data_row_idx = ri
+                                elif "TOTAL" in txt0.upper():
+                                    total_row_idx = ri
+                            if data_row_idx is None:
+                                # Fallback: asumăm r2 = data, r-1 = TOTAL
+                                data_row_idx = 2
+                                total_row_idx = len(tbl.rows) - 1
+                            # Idempotent: skip dacă deja populat cu altceva decât "..."
+                            data_row = tbl.rows[data_row_idx]
+                            if data_row.cells[0].text.strip() and data_row.cells[0].text.strip() not in ("...", "…"):
                                 break
-                            # Umplu rândurile 2..N-1 (ultimul = TOTAL)
-                            n_data_rows = len(tbl.rows) - 3  # r0,r1=header; ultim=TOTAL
-                            if n_data_rows < 1:
+                            # Identificare coloane cheie:
+                            # [0]=Tip corp, [1]=Zona, [2]=spațiu locuit, [3]=spațiu comun, [4+]=Putere
+                            n_cells = len(data_row.cells)
+                            if n_cells < 4:
                                 break
-                            tot_private, tot_common = 0, 0
-                            for i, rad in enumerate(radiators[:n_data_rows]):
-                                row = tbl.rows[2 + i]
-                                row.cells[0].text = str(rad.get("type", "Radiator"))
-                                cp = int(rad.get("count_private", 0) or 0)
-                                cc = int(rad.get("count_common", 0) or 0)
-                                row.cells[1].text = str(cp) if cp else "—"
-                                row.cells[2].text = str(cc) if cc else "—"
-                                row.cells[3].text = str(rad.get("power_kw", "—"))
-                                tot_private += cp
-                                tot_common += cc
-                                for ci in range(4):
-                                    for p in row.cells[ci].paragraphs:
-                                        for r in p.runs:
-                                            r.font.size = Pt(9)
-                            # Rând TOTAL (ultim)
-                            total_row = tbl.rows[-1]
-                            if "TOTAL" in total_row.cells[0].text.upper():
-                                if not total_row.cells[1].text.strip() or total_row.cells[1].text.strip() in ("...", "…"):
-                                    total_row.cells[1].text = str(tot_private) if tot_private else "—"
-                                if not total_row.cells[2].text.strip() or total_row.cells[2].text.strip() in ("...", "…"):
-                                    total_row.cells[2].text = str(tot_common) if tot_common else "—"
-                                for ci in range(4):
-                                    for p in total_row.cells[ci].paragraphs:
+                            rad = radiators[0]
+                            # Col 0 = tip (clear "..." first)
+                            data_row.cells[0].text = str(rad.get("type", "Radiator"))
+                            # Col 1 = zona (opțional; "Zona 1" default)
+                            if n_cells >= 5:
+                                data_row.cells[1].text = "Zona 1"
+                            # Col 2 = spațiu locuit
+                            cp = int(rad.get("count_private", 0) or 0)
+                            cc = int(rad.get("count_common", 0) or 0)
+                            locuit_col = 2 if n_cells >= 5 else 1
+                            common_col = 3 if n_cells >= 5 else 2
+                            power_col = n_cells - 1  # ultima coloană = putere
+                            data_row.cells[locuit_col].text = str(cp) if cp else "—"
+                            data_row.cells[common_col].text = str(cc) if cc else "—"
+                            data_row.cells[power_col].text = str(rad.get("power_kw", "—"))
+                            for ci in range(n_cells):
+                                for p in data_row.cells[ci].paragraphs:
+                                    for r in p.runs:
+                                        r.font.size = Pt(9)
+                            # Rând TOTAL
+                            if total_row_idx is not None:
+                                trow = tbl.rows[total_row_idx]
+                                if locuit_col < len(trow.cells):
+                                    trow.cells[locuit_col].text = str(cp) if cp else "—"
+                                if common_col < len(trow.cells):
+                                    trow.cells[common_col].text = str(cc) if cc else "—"
+                                for ci in range(len(trow.cells)):
+                                    for p in trow.cells[ci].paragraphs:
                                         for r in p.runs:
                                             r.font.size = Pt(10)
                                             r.bold = True
