@@ -569,9 +569,16 @@ export default function Step6Certificate(props) {
                       return map[heatPump?.type] || heatPump?.type || "";
                     })(),
                     biomass_type_label: (() => {
+                      // FIX 20 apr 2026: trimit DOAR când enabled (altfel contaminare
+                      // "alt tip, precizați PELETI" în secțiuni străine)
                       if (!biomass?.enabled) return "";
+                      const bt = biomass?.type;
+                      // Standard types: PELETI, BRICHETE, LEMN → nu trimit ca "alt tip"
+                      if (["PELETI", "BRICHETE", "LEMN", "peleti", "brichete", "lemn"].includes(bt)) {
+                        return "";  // tipul standard se bifează via CB, nu prin "alt tip"
+                      }
                       const map = { PELETI: "peleți", BRICHETE: "brichete", LEMN: "lemn tocat" };
-                      return map[biomass?.type] || biomass?.type || "";
+                      return map[bt] || bt || "";
                     })(),
                     biomass_power_kw: (biomass?.enabled && biomass?.power) ? fmtRo(parseFloat(biomass.power), 1) : "",
                     renewable_mount_location: (solarThermal?.enabled || photovoltaic?.enabled) ? "pe clădire" : "",

@@ -4145,24 +4145,32 @@ class handler(BaseHTTPRequestHandler):
                                 _check_cell_checkbox(tbl.rows[5].cells[col_reg])
                         # Înlocuire "2" și "5" literal din rândul regim cu numere reale
                         # Template are celule cu "2 (nr)" pentru S, "5 (nr)" pentru E
+                        # AGRESIV: iterez TOATE paragrafele din TOATE celulele rândului 5
+                        # și înlocuiesc "2" cu n_subsoluri, "5" cu n_etaje
                         regim_row_cells = tbl.rows[5].cells
                         for ci, cell in enumerate(regim_row_cells):
-                            ct = cell.text.strip()
-                            # Pattern "2" singular sau "2 (nr)" — detectează celula subsol (după S)
-                            if ct in ("2", "2 (nr)", "2(nr)") and n_subsoluri > 0:
-                                for p in cell.paragraphs:
-                                    for r in p.runs:
+                            for para in cell.paragraphs:
+                                para_text = para.text.strip()
+                                # Cazurile posibile: "2", "2 (nr)", "2\n(nr)", "2(nr)"
+                                # Normalizez whitespace
+                                norm = " ".join(para_text.split())
+                                if n_subsoluri > 0 and norm in ("2", "2 (nr)", "2(nr)"):
+                                    # Înlocuiesc primul run care conține "2" cu n_subsoluri
+                                    for r in para.runs:
                                         if r.text.strip() == "2":
                                             r.text = str(n_subsoluri)
-                                        elif "2" in r.text and "(nr)" in r.text:
-                                            r.text = r.text.replace("2", str(n_subsoluri))
-                            elif ct in ("5", "5 (nr)", "5(nr)") and n_etaje > 0:
-                                for p in cell.paragraphs:
-                                    for r in p.runs:
+                                            break
+                                        elif "2" in r.text:
+                                            r.text = r.text.replace("2", str(n_subsoluri), 1)
+                                            break
+                                elif n_etaje > 0 and norm in ("5", "5 (nr)", "5(nr)"):
+                                    for r in para.runs:
                                         if r.text.strip() == "5":
                                             r.text = str(n_etaje)
-                                        elif "5" in r.text and "(nr)" in r.text:
-                                            r.text = r.text.replace("5", str(n_etaje))
+                                            break
+                                        elif "5" in r.text:
+                                            r.text = r.text.replace("5", str(n_etaje), 1)
+                                            break
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
