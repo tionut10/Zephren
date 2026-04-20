@@ -51,6 +51,61 @@ export const INITIAL_BUILDING = {
     commonVentilation: { installed: false, powerKW: "", hoursYear: "8760" },
     pumpGroup:         { installed: false, powerKW: "", hoursYear: "8760" },  // grup pompe ACM/recirculare
   },
+  // ── Sprint monolith (20 apr 2026) — Extinderi Anexa 1+2 MDLPA complete ──
+  // Date necesare pentru completarea automată a tuturor tabelelor și câmpurilor
+  // din Anexa 1+2 conform Ord. MDLPA 16/2023 (nu se setează implicit — auditor)
+  heatGenLocation: "",            // "CT_PROP" (centrala proprie în clădire) | "CT_EXT" (centrala exterior) | "TERMOFICARE" | "SURSA_PROPRIE"
+  heatingOtherSource: "",         // text liber pentru "Altă sursă sau sursă mixtă (precizați)"
+  heatingRadiatorType: "",        // Tip corp static dominant: "Radiator oțel" / "Radiator fontă" / "Convector" / "Fan-coil" / "Alte"
+  heatingRadiators: [],           // listă { type, count_private, count_common, power_kw } per tip corp static
+  heatingHasMeter: "",            // "da" / "nu" / "nu_caz" (contor de căldură)
+  heatingCostAllocator: "",       // "da" / "nu" / "nu_caz" (repartitoare costuri)
+  heatingPipeDiameterMm: "",      // Diametru nominal racord centralizat [mm]
+  heatingPipePressureMca: "",     // Presiune disponibilă racord centralizat [mCA]
+  stoveCount: "",                 // Număr sobe (pentru încălzire locală)
+  unheatedSpaces: [],             // listă { code, diameter_mm, length_m } pentru conducte în spații neîncălzite
+  buildingHasDisconnectedApartments: "", // "da" / "nu" (pentru RC/RA/BC)
+  // ACM
+  acmFixtures: {                  // obiecte sanitare pe tipuri
+    lavoare: "",
+    cada_baie: "",
+    spalatoare: "",
+    rezervor_wc: "",
+    bideuri: "",
+    pisoare: "",
+    dus: "",
+    masina_spalat_vase: "",
+    masina_spalat_rufe: "",
+  },
+  acmConsumePointsCount: "",      // Număr total puncte consum ACM
+  acmPipeDiameterMm: "",          // Diametru nominal racord ACM [mm]
+  acmInstantPowerKw: "",          // Putere boiler instant [kW]
+  acmHasMeter: "",                // "da" / "nu" / "nu_caz"
+  acmFlowMeters: "",              // "peste_tot" / "partial" / "nu_exista"
+  acmRecirculation: "",           // "functionala" / "nu_functioneaza" / "nu_exista"
+  // Răcire/climatizare
+  coolingRefrigerant: "",         // cod agent frigorific (R32, R410A, R290 etc.)
+  coolingDehumPowerKw: "",        // Necesar frig dezumidificare [kW]
+  coolingIndoorUnits: "",         // Număr unități interioare (split)
+  coolingOutdoorUnits: "",        // Număr unități exterioare (split)
+  coolingPipeDiameterMm: "",      // Diametru nominal conducte răcire [mm]
+  coolingSpaceScope: "",          // "complet" / "global" / "partial"
+  coolingHumidityControl: "",     // "fara" / "cu_control" / "cu_partial"
+  coolingIndividualMeter: "",     // "da" / "nu"
+  // Ventilare
+  ventilationFanCount: "",        // Număr total ventilatoare
+  ventilationHrType: "",          // Tip recuperator ("rotativ" / "cu plăci" / "dublu flux" etc.)
+  ventilationControlType: "",     // "program" / "manual_simpla" / "temporizare" / "jaluzele_reglate"
+  // Iluminat
+  lightingNetworkState: "",       // "buna" (default) / "uzata" / "indisp"
+  lightingOtherType: "",          // Text liber pentru Mixt (precizați)
+  // Umidificare (opțional)
+  humidificationPowerKw: "",      // Necesar umidificare [kW]
+  // Eoliene
+  windCentralsCount: "",          // Număr centrale eoliene
+  windPowerKw: "",                // Putere nominală [kW]
+  windHubHeightM: "",             // Înălțime ax rotor [m]
+  windRotorDiameterM: "",         // Diametru rotor [m]
 };
 
 // ─── STEP 3: INSTALAȚII ───

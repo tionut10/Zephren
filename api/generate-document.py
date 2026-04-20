@@ -1931,6 +1931,136 @@ def compute_checkboxes(data, category):
         cbs.append(307)
 
     # ══════════════════════════════
+    # Sprint monolith (20 apr 2026) — Extinderi CB suplimentare din date existente
+    # ══════════════════════════════
+
+    # Regim înălțime (CB 121-126): S/D/Mez/P/E/M|M/P
+    # Parse building.floors ("P+4E", "S+P+2E+M") → extrage tip niveluri
+    regime = (data.get("regime", "") or "").upper()
+    regim_cbs = {"S": 121, "D": 122, "MEZ": 123, "P": 124, "E": 125, "M": 126}
+    for key, cb in regim_cbs.items():
+        if key in regime:
+            cbs.append(cb)
+
+    # Contor căldură încălzire (CB ~165-168: există / nu există / nu este cazul)
+    # Default bazat pe heating_has_meter din payload
+    heat_meter = data.get("heating_has_meter", "")
+    if heat_meter == "da":
+        cbs.append(165)
+    elif heat_meter == "nu":
+        cbs.append(166)
+    elif heat_meter == "nu_caz":
+        cbs.append(167)
+    else:
+        cbs.append(166)  # default nu există
+
+    # Repartitoare costuri (CB ~169-172)
+    cost_alloc = data.get("heating_cost_allocator", "")
+    if cost_alloc == "da":
+        cbs.append(169)
+    elif cost_alloc == "nu":
+        cbs.append(170)
+    elif cost_alloc == "nu_caz":
+        cbs.append(171)
+    else:
+        cbs.append(170)  # default nu există
+
+    # Elemente de reglaj termic și hidraulic (CB ~238-241)
+    # Derivare din heating.control: TERMO_RAD → la corpuri statice; BACS → la nivel racord/coloane
+    h_ctrl_full = data.get("heating_control", "")
+    bacs_class_temp = data.get("bacs_class", "C")
+    if bacs_class_temp in ("A", "B"):
+        cbs.append(238)  # la nivel racord/sursă
+        cbs.append(239)  # la nivelul coloanelor
+    if h_ctrl_full in ("TERMO_RAD", "termo_rad"):
+        cbs.append(240)  # la nivelul corpurilor statice
+    elif not h_ctrl_full:
+        cbs.append(241)  # nu există
+
+    # Conducta recirculare ACM (CB ~191-195): funcțională / nu funcționează / nu există
+    acm_recirc = data.get("acm_recirculation", "")
+    if acm_recirc == "functionala":
+        cbs.append(193)
+    elif acm_recirc == "nu_functioneaza":
+        cbs.append(194)
+    else:
+        cbs.append(195)  # nu există (default)
+
+    # Contor general ACM (CB ~196-200)
+    acm_meter = data.get("acm_has_meter", "")
+    if acm_meter == "da":
+        cbs.append(196)
+    elif acm_meter == "nu_caz":
+        cbs.append(198)
+    else:
+        cbs.append(197)  # nu există default
+
+    # Debitmetre puncte consum ACM (CB ~199-201)
+    acm_flow = data.get("acm_flow_meters", "")
+    if acm_flow == "peste_tot":
+        cbs.append(201)
+    elif acm_flow == "partial":
+        cbs.append(200)
+    else:
+        cbs.append(199)  # nu există
+
+    # Tratare aer (CB ~234-236): fără/cu/cu parțial controlul umidității
+    cool_humid_ctrl = data.get("cooling_humidity_control", "")
+    if has_cool:
+        if cool_humid_ctrl == "cu_control":
+            cbs.append(235)
+        elif cool_humid_ctrl == "cu_partial":
+            cbs.append(236)
+        else:
+            cbs.append(234)  # fără control (default)
+
+    # Spațiul climatizat (CB ~231-233): Complet / Global / Parțial
+    cool_space = data.get("cooling_space_scope", "")
+    if has_cool:
+        if cool_space == "global":
+            cbs.append(232)
+        elif cool_space == "partial":
+            cbs.append(233)
+        else:
+            cbs.append(231)  # Complet default
+
+    # Ventilare caracteristici (CB ~266-269)
+    vent_control = data.get("ventilation_control_type", "")
+    vent_ctrl_map = {
+        "program": 266,
+        "manual_simpla": 267,
+        "temporizare": 268,
+        "jaluzele_reglate": 269,
+    }
+    vc_cb = vent_ctrl_map.get(vent_control)
+    if vc_cb:
+        cbs.append(vc_cb)
+
+    # Contorizare individuală consumatori răcire (CB ~252-253): da / nu
+    cool_ind_meter = data.get("cooling_individual_meter", "")
+    if has_cool:
+        if cool_ind_meter == "da":
+            cbs.append(252)
+        else:
+            cbs.append(253)
+
+    # Stare rețea iluminat (CB 285-287: Bună / Uzată / Date indisponibile)
+    light_state = data.get("lighting_network_state", "")
+    if light_state == "uzata":
+        cbs.append(286)
+    elif light_state == "indisp":
+        cbs.append(287)
+    # 285 e deja default bifat mai sus
+
+    # Apartamente debranșate condominiu (pentru RC/RA/BC)
+    apt_debransate = data.get("building_has_disconnected_apartments", "")
+    if category in ("RC", "RA", "BC"):
+        if apt_debransate == "da":
+            cbs.append(156)
+        else:
+            cbs.append(157)  # Nu există default
+
+    # ══════════════════════════════
     # BACS (CB 308+) — EN 15232-1
     # Dacă template-ul are câmpuri BACS (Anexe cu CB 308-311)
     # ══════════════════════════════
@@ -4071,6 +4201,239 @@ class handler(BaseHTTPRequestHandler):
                 except Exception as e_t3:
                     print(f"[tabel_3_sisteme] eroare: {e_t3}", flush=True)
 
+                # ══════════════════════════════════════════════════════════
+                # Sprint monolith (20 apr 2026) — Populare TABELE RĂMASE
+                # T5 Corpuri statice (din heating_radiators JSON)
+                # T7 Spații neîncălzite (din building_unheated_spaces JSON)
+                # T8 Gradul ocupare încălzire (defaults rezidențial/nerezidențial)
+                # T11 Obiecte sanitare (din acm_fixtures JSON, fallback defaults)
+                # T12 Gradul ocupare răcire (defaults)
+                # ══════════════════════════════════════════════════════════
+
+                # ── Tabel 5 — Corpuri statice (Tip | Număr | Putere termică) ──
+                try:
+                    radiators_json = data.get("heating_radiators", "[]")
+                    radiators = json.loads(radiators_json) if radiators_json else []
+                    # Fallback: dacă e lista goală dar avem putere instalată → 1 rând default
+                    if not radiators and data.get("heating_power", ""):
+                        try:
+                            pw = float(data.get("heating_power", "0").replace(",", "."))
+                            if pw > 0:
+                                radiators = [{
+                                    "type": "Radiator oțel",
+                                    "count_private": int(max(1, pw / 1.5)),  # heuristic: ~1.5kW/radiator
+                                    "count_common": 0,
+                                    "power_kw": format_ro(pw, 1),
+                                }]
+                        except (ValueError, TypeError):
+                            pass
+                    if radiators:
+                        for tbl in doc.tables:
+                            if len(tbl.rows) < 3 or len(tbl.columns) != 4:
+                                continue
+                            # Header r0c0 = "Tip corp static" (posibil împărțit pe 2 rânduri)
+                            h0 = " ".join(tbl.rows[0].cells[0].text.split())
+                            h1 = " ".join(tbl.rows[1].cells[0].text.split()) if len(tbl.rows) > 1 else ""
+                            if "Tip corp static" not in h0 and "Tip corp static" not in h1:
+                                continue
+                            # Idempotent: skip dacă r2c0 e deja populat (cu altceva decât header)
+                            if tbl.rows[2].cells[0].text.strip() and tbl.rows[2].cells[0].text.strip() not in ("...", "…"):
+                                break
+                            # Umplu rândurile 2..N-1 (ultimul = TOTAL)
+                            n_data_rows = len(tbl.rows) - 3  # r0,r1=header; ultim=TOTAL
+                            if n_data_rows < 1:
+                                break
+                            tot_private, tot_common = 0, 0
+                            for i, rad in enumerate(radiators[:n_data_rows]):
+                                row = tbl.rows[2 + i]
+                                row.cells[0].text = str(rad.get("type", "Radiator"))
+                                cp = int(rad.get("count_private", 0) or 0)
+                                cc = int(rad.get("count_common", 0) or 0)
+                                row.cells[1].text = str(cp) if cp else "—"
+                                row.cells[2].text = str(cc) if cc else "—"
+                                row.cells[3].text = str(rad.get("power_kw", "—"))
+                                tot_private += cp
+                                tot_common += cc
+                                for ci in range(4):
+                                    for p in row.cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(9)
+                            # Rând TOTAL (ultim)
+                            total_row = tbl.rows[-1]
+                            if "TOTAL" in total_row.cells[0].text.upper():
+                                if not total_row.cells[1].text.strip() or total_row.cells[1].text.strip() in ("...", "…"):
+                                    total_row.cells[1].text = str(tot_private) if tot_private else "—"
+                                if not total_row.cells[2].text.strip() or total_row.cells[2].text.strip() in ("...", "…"):
+                                    total_row.cells[2].text = str(tot_common) if tot_common else "—"
+                                for ci in range(4):
+                                    for p in total_row.cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(10)
+                                            r.bold = True
+                            break
+                except Exception as e_t5:
+                    print(f"[tabel_5_corpuri_statice] eroare: {e_t5}", flush=True)
+
+                # ── Tabel 7 — Spații neîncălzite (Cod | Diametru tronson | Lungime tronson) ──
+                try:
+                    unheated_json = data.get("building_unheated_spaces", "[]")
+                    unheated = json.loads(unheated_json) if unheated_json else []
+                    if unheated:
+                        for tbl in doc.tables:
+                            if len(tbl.rows) != 3:
+                                continue
+                            # Header r0c0 conține "Codul spațiului neîncălzit"
+                            h0 = tbl.rows[0].cells[0].text
+                            if "Codul spațiului" not in h0 and "Codul spa" not in h0:
+                                continue
+                            # Idempotent: skip dacă deja populat (r0c1 ≠ "ZU1")
+                            if tbl.rows[0].cells[1].text.strip() and tbl.rows[0].cells[1].text.strip() not in ("ZU1", "ZU2", "..."):
+                                # deja populat cu date reale
+                                pass
+                            n_cols = len(tbl.rows[0].cells) - 1  # exclud coloana label
+                            for i, sp in enumerate(unheated[:n_cols]):
+                                col_idx = 1 + i
+                                tbl.rows[0].cells[col_idx].text = str(sp.get("code", f"ZU{i+1}"))
+                                tbl.rows[1].cells[col_idx].text = str(sp.get("diameter_mm", "—"))
+                                tbl.rows[2].cells[col_idx].text = str(sp.get("length_m", "—"))
+                            for ri in range(3):
+                                for ci in range(1, 1 + n_cols):
+                                    for p in tbl.rows[ri].cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(9)
+                            break
+                except Exception as e_t7:
+                    print(f"[tabel_7_spatii_neincalzite] eroare: {e_t7}", flush=True)
+
+                # ── Tabel 8 + T12 — Grad ocupare (încălzire + răcire) ──
+                # Defaults rezidențial / nerezidențial
+                try:
+                    is_res_t8 = category in ("RI", "RC", "RA", "BC")
+                    # Defaults EN 16798-1 + Mc 001-2022
+                    if is_res_t8:
+                        sched_defaults = {
+                            "Programul (h)":         {"zi_lucru": "16", "noaptea": "24", "weekend": "24"},
+                            "Programul [h]":         {"zi_lucru": "16", "noaptea": "24", "weekend": "24"},
+                            "Temperatura interioară (grdC)": {"zi_lucru": "20", "noaptea": "18", "weekend": "20"},
+                            "Temperatura interioară [grdC]": {"zi_lucru": "20", "noaptea": "18", "weekend": "20"},
+                            "Grad de ocupare zilnic/săptămânal/lunar [m²/pers]": {"zi_lucru": "30", "noaptea": "30", "weekend": "30"},
+                        }
+                    else:
+                        sched_defaults = {
+                            "Programul (h)":         {"zi_lucru": "10", "noaptea": "0", "weekend": "0"},
+                            "Programul [h]":         {"zi_lucru": "10", "noaptea": "0", "weekend": "0"},
+                            "Temperatura interioară (grdC)": {"zi_lucru": "20", "noaptea": "15", "weekend": "15"},
+                            "Temperatura interioară [grdC]": {"zi_lucru": "26", "noaptea": "28", "weekend": "28"},
+                            "Grad de ocupare zilnic/săptămânal/lunar [m²/pers]": {"zi_lucru": "15", "noaptea": "15", "weekend": "15"},
+                        }
+                    for tbl in doc.tables:
+                        if len(tbl.rows) < 2 or len(tbl.columns) < 4:
+                            continue
+                        h0 = tbl.rows[0].cells[0].text.strip().lower()
+                        if h0 != "zona":
+                            continue
+                        # Check header contains "Zi de lucru" and "Noaptea"
+                        header_concat = " ".join(c.text for c in tbl.rows[0].cells).lower()
+                        if "zi de lucru" not in header_concat or "noaptea" not in header_concat:
+                            continue
+                        # Idempotent: skip dacă celula (1,1) e deja populată
+                        if tbl.rows[1].cells[1].text.strip():
+                            continue
+                        # Pentru fiecare rând de date (după header r0)
+                        for ri in range(1, len(tbl.rows)):
+                            row = tbl.rows[ri]
+                            label = " ".join(row.cells[0].text.split()).strip()
+                            # Match label la defaults
+                            sd = None
+                            for k, v in sched_defaults.items():
+                                if k in label or label in k:
+                                    sd = v
+                                    break
+                            if not sd:
+                                continue
+                            # c1=Zi de lucru, c2=Noaptea, c3=Zi de weekend (și c4= "...." ignore)
+                            if len(row.cells) > 1 and not row.cells[1].text.strip():
+                                row.cells[1].text = sd["zi_lucru"]
+                            if len(row.cells) > 2 and not row.cells[2].text.strip():
+                                row.cells[2].text = sd["noaptea"]
+                            if len(row.cells) > 3 and not row.cells[3].text.strip():
+                                row.cells[3].text = sd["weekend"]
+                            for ci in (1, 2, 3):
+                                if ci < len(row.cells):
+                                    for p in row.cells[ci].paragraphs:
+                                        for r in p.runs:
+                                            r.font.size = Pt(9)
+                except Exception as e_t8:
+                    print(f"[tabel_8_12_grad_ocupare] eroare: {e_t8}", flush=True)
+
+                # ── Tabel 11 — Obiecte sanitare ACM (Lavoare, Cadă, Spălătoare, etc.) ──
+                try:
+                    fixtures_json = data.get("acm_fixtures", "{}")
+                    fixtures = json.loads(fixtures_json) if fixtures_json else {}
+                    # Defaults rezidențial
+                    is_res_t11 = category in ("RI", "RC", "RA", "BC")
+                    if not fixtures and is_res_t11:
+                        n_apt_int = int(data.get("n_apartments_count", "1") or "1")
+                        fixtures = {
+                            "lavoare": str(n_apt_int),
+                            "cada_baie": str(n_apt_int),
+                            "spalatoare": str(n_apt_int),
+                            "rezervor_wc": str(n_apt_int),
+                            "bideuri": "0",
+                            "pisoare": "0",
+                            "dus": str(n_apt_int),
+                            "masina_spalat_vase": "0",
+                            "masina_spalat_rufe": str(n_apt_int),
+                        }
+                    if fixtures:
+                        # Map între cheia semantică și label-ul din template
+                        fix_key_map = {
+                            "Lavoare": "lavoare",
+                            "Cadă de baie": "cada_baie",
+                            "Cada de baie": "cada_baie",
+                            "Spălătoare": "spalatoare",
+                            "Spalatoare": "spalatoare",
+                            "Rezervor WC": "rezervor_wc",
+                            "Bideuri": "bideuri",
+                            "Masina de spalat vase": "masina_spalat_vase",
+                            "Mașina de spălat vase": "masina_spalat_vase",
+                            "Pisoare": "pisoare",
+                            "Masina de spalat rufe": "masina_spalat_rufe",
+                            "Mașina de spălat rufe": "masina_spalat_rufe",
+                            "Duș": "dus",
+                            "Dus": "dus",
+                        }
+                        for tbl in doc.tables:
+                            if len(tbl.rows) < 3 or len(tbl.columns) != 4:
+                                continue
+                            # Header check: r0c0 = "Lavoare" și r0c1 = "[nr.]"
+                            r0c0 = tbl.rows[0].cells[0].text.strip()
+                            r0c1 = tbl.rows[0].cells[1].text.strip()
+                            if "Lavoare" not in r0c0 or "[nr.]" not in r0c1:
+                                continue
+                            # Idempotent: skip dacă r0c1 ≠ "[nr.]" (deja înlocuit)
+                            # Dar aici tocmai că vrem să înlocuim [nr.] cu număr real
+                            # Iterez peste toate rândurile și celulele; pentru fiecare label găsit, umplu [nr.] adiacent
+                            for ri in range(len(tbl.rows)):
+                                for ci in range(0, len(tbl.rows[ri].cells), 2):
+                                    if ci + 1 >= len(tbl.rows[ri].cells):
+                                        continue
+                                    label_cell = tbl.rows[ri].cells[ci]
+                                    value_cell = tbl.rows[ri].cells[ci + 1]
+                                    label_txt = label_cell.text.strip()
+                                    if "[nr.]" in value_cell.text:
+                                        key = fix_key_map.get(label_txt)
+                                        if key:
+                                            count = fixtures.get(key, "0")
+                                            # Înlocuiesc [nr.] cu valoarea numerică
+                                            for p in value_cell.paragraphs:
+                                                for r in p.runs:
+                                                    if "[nr.]" in r.text:
+                                                        r.text = r.text.replace("[nr.]", str(count))
+                            break
+                except Exception as e_t11:
+                    print(f"[tabel_11_sanitare] eroare: {e_t11}", flush=True)
+
                 # ── Etapa 7d (20 apr 2026) — gap-uri suplimentare paragrafe ──
                 # După audit exhaustiv, identificate aceste gap-uri P0 (date exist):
                 #   p208 — Necesarul de căldură (kW)
@@ -4107,18 +4470,22 @@ class handler(BaseHTTPRequestHandler):
                                      data["pv_kwh_year"], " kWh/an")
 
                 # p426 — EPP (Indicatorul energiei primare)
+                # FIX 20 apr 2026 (Sprint monolith): elimin skip pe "0,0" — completez întotdeauna
+                # Placeholder rămas gol e mai rău decât valoarea 0 (vizual pare "necompletat").
                 epp = data.get("ep_specific", "")
-                if epp and epp not in ("", "0,0"):
+                if epp:
                     _fill_para_blank("Indicatorul energiei primare EPP", epp, " kWh/(m²·an)")
+                    _fill_para_blank("Indicatorul energiei primare EP", epp, " kWh/(m²·an)")
 
                 # p427 — RERP % (renewable energy ratio prime)
                 rerp = data.get("rer", "")
-                if rerp and rerp not in ("", "0,0"):
+                if rerp:
                     _fill_para_blank("Indicele RERP", rerp, "%")
+                    _fill_para_blank("Indicele RER", rerp, "%")
 
                 # p428 — Indicator emisii CO2
                 co2_ind = data.get("co2_val", "")
-                if co2_ind and co2_ind not in ("", "0,0"):
+                if co2_ind:
                     _fill_para_blank("Indicatorul emisiilor de CO", co2_ind, " kgCO₂/(m²·an)")
 
                 # p429 — SRI complet (label + valoare + clasă)
@@ -4127,6 +4494,162 @@ class handler(BaseHTTPRequestHandler):
                 if sri_v:
                     _fill_para_blank("Indicele SRI (smart readiness indicator)",
                                      f"{sri_v}% (Clasa {sri_g})" if sri_g else f"{sri_v}%")
+
+                # ═══════════════════════════════════════════════════════
+                # Sprint monolith (20 apr 2026) — completări suplimentare Anexa 2
+                # Umplere câmpuri care au date în payload dar nu erau procesate:
+                # - Heat pump usage (Utilizată/e pentru) + SCOP/SEER
+                # - Biomass alt tip precizare
+                # - Wind centrals count + putere + caracteristici
+                # - Energie termică/electrică exportată (non-regenerabil — duplicat)
+                # - Echipamente ACM (Boiler acumulare număr/volum, instant putere)
+                # - Necesar umidificare
+                # - Diametru nominal + presiune racord centralizat
+                # - Contor căldură încălzire + răcire + ACM
+                # - Elemente reglaj termic + hidraulic
+                # - Spații climatizate speciale + complet/global/parțial
+                # - Ventilare: caracteristici + recuperator tip
+                # - Iluminat alt tip precizare
+                # ═══════════════════════════════════════════════════════
+
+                # ── Heat pump: utilizare + SCOP/SEER ──────────────────
+                hp_covers = data.get("heat_pump_covers", "")
+                hp_covers_label = {
+                    "heating_only": "încălzire",
+                    "cooling_only": "răcire",
+                    "heating_cooling": "încălzire și răcire",
+                    "heating_acm": "încălzire și preparare acc",
+                    "all": "încălzire, răcire și preparare acc",
+                }.get(hp_covers, hp_covers) if hp_covers else ""
+                if hp_covers_label:
+                    _fill_para_blank("Utilizată/e pentru", hp_covers_label)
+                hp_scop = data.get("heat_pump_scop_heating", "")
+                hp_seer = data.get("heat_pump_scop_cooling", "")
+                if hp_scop or hp_seer:
+                    scop_text = f"SCOP = {hp_scop}" if hp_scop else ""
+                    seer_text = f"SEER = {hp_seer}" if hp_seer else ""
+                    value_str = " / ".join([v for v in (scop_text, seer_text) if v])
+                    _fill_para_blank("Valoarea medie SCOP/SEER", value_str)
+                    _fill_para_blank("Valoarea medie SCOP", value_str)
+
+                # ── Biomass: alt tip precizare + putere ───────────────
+                bio_type = data.get("biomass_type", "")
+                if bio_type and bio_type not in ("peleti", "brichete", ""):
+                    _fill_para_blank("alt tip, precizați", bio_type)
+
+                # ── Wind centrals detail ──────────────────────────────
+                wind_count = data.get("wind_centrals_count", "")
+                wind_power = data.get("wind_power_kw", "")
+                if wind_count:
+                    _fill_para_blank("Număr centrale eoliene", wind_count)
+                if wind_power:
+                    _fill_para_blank("Putere nominală [kW]", wind_power)
+
+                # ── Energie termică exportată (non-regenerabil duplicat) ──
+                if data.get("solar_th_kwh_year") and data["solar_th_kwh_year"] != "0":
+                    _fill_para_blank("Energia termică exportată:",
+                                     data["solar_th_kwh_year"], " kWh/an")
+                if data.get("pv_kwh_year") and data["pv_kwh_year"] != "0":
+                    _fill_para_blank("Energia electrică exportată:",
+                                     data["pv_kwh_year"], " kWh/an")
+
+                # ── ACM echipamente ───────────────────────────────────
+                acm_storage = data.get("acm_storage_volume", "")
+                if acm_storage:
+                    # "Boiler cu acumulare (număr/volum)"
+                    _fill_para_blank("Boiler cu acumulare", f"1 / {acm_storage} L")
+                acm_inst_power = data.get("acm_instant_power_kw", "")
+                if acm_inst_power:
+                    _fill_para_blank("Preparare locală cu aparate de tip instant", f"1 / {acm_inst_power} kW")
+
+                # ── Necesar umidificare (opțional, gol dacă nu se calculează) ──
+                humid_power = data.get("humidification_power_kw", "")
+                if humid_power:
+                    _fill_para_blank("Necesarul de energie pentru umidificare", humid_power, " kW")
+
+                # ── Racord centralizat de căldură: diametru + presiune ──
+                pipe_diam = data.get("heating_pipe_diameter_mm", "")
+                if pipe_diam:
+                    _fill_para_blank("diametru nominal:", pipe_diam, " mm")
+                pipe_press = data.get("heating_pipe_pressure_mca", "")
+                if pipe_press:
+                    _fill_para_blank("disponibil de presiune (nominal):", pipe_press, " mCA")
+
+                # ── Ventilare caracteristici + recuperator tip ────────
+                vent_fan_count = data.get("ventilation_fan_count", "")
+                if vent_fan_count:
+                    for p in doc.paragraphs:
+                        if "Numărul total de ventilatoare" in p.text and "......" in p.text:
+                            replace_in_paragraph(p, "......................", vent_fan_count, count=1)
+                            break
+                vent_hr_type = data.get("ventilation_hr_type", "")
+                if vent_hr_type:
+                    _fill_para_blank("Tip:", vent_hr_type)
+
+                # ── Iluminat alt tip precizare ────────────────────────
+                light_other = data.get("lighting_other_type", "")
+                if light_other:
+                    _fill_para_blank("Mixt (precizați)", light_other)
+
+                # ── Număr total puncte consum ACM ─────────────────────
+                acm_consume_points = data.get("acm_consume_points_count", "")
+                if acm_consume_points:
+                    _fill_para_blank("Număr total de puncte de consum acc", acm_consume_points)
+
+                # ── Cooling: agent frigorific + dezumidificare ────────
+                cool_refrigerant = data.get("cooling_refrigerant", "")
+                if cool_refrigerant:
+                    _fill_para_blank("Tip agent frigorific utilizat", cool_refrigerant)
+                cool_dehum = data.get("cooling_dehum_power_kw", "")
+                if cool_dehum:
+                    _fill_para_blank("Necesarul de frig pentru dezumidificare", cool_dehum, " kW")
+
+                # ── Cooling: număr unități interior/exterior (split) ──
+                cool_int_units = data.get("cooling_indoor_units", "")
+                cool_ext_units = data.get("cooling_outdoor_units", "")
+                if cool_int_units:
+                    _fill_para_blank("Număr de unități interioare", cool_int_units)
+                if cool_ext_units:
+                    _fill_para_blank("Număr de unități exterioare", cool_ext_units)
+
+                # ── Cooling: diametru + presiune racord ───────────────
+                cool_diam = data.get("cooling_pipe_diameter_mm", "")
+                if cool_diam:
+                    _fill_para_blank("diametru nominal:", cool_diam, " mm")
+
+                # ── ACM: diametru + presiune racord ───────────────────
+                acm_diam = data.get("acm_pipe_diameter_mm", "")
+                if acm_diam:
+                    # Fallback pattern pentru cazul "- diametru nominal:"
+                    for p in doc.paragraphs:
+                        pt = p.text
+                        if "diametru nominal" in pt and "mm" in pt and "acc" in pt.lower()[:200]:
+                            for run in p.runs:
+                                if re.search(r"[\xa0\s]{3,}", run.text):
+                                    run.text = re.sub(r"[\xa0\s]{3,}", f" {acm_diam} ", run.text, count=1)
+                                    break
+                            break
+
+                # ── Număr sobe ─────────────────────────────────────────
+                stove_count = data.get("stove_count", "")
+                if stove_count:
+                    _fill_para_blank("Numărul sobelor / combustibilul utilizat", stove_count)
+
+                # ── CT proprie/exterior combustibil + termoficare ─────
+                heat_location = data.get("heating_gen_location", "")
+                fuel_heating = fuel_labels.get(data.get("heating_fuel", ""), data.get("heating_fuel", ""))
+                if heat_location == "CT_PROP" and fuel_heating:
+                    _fill_para_blank("Centrală termică proprie în clădire, cu combustibil", fuel_heating)
+                elif heat_location == "CT_EXT" and fuel_heating:
+                    _fill_para_blank("Centrală termică în exteriorul clădirii, cu combustibil", fuel_heating)
+                # Alt tip sursă
+                other_heat_source = data.get("heating_other_source_text", "")
+                if other_heat_source:
+                    _fill_para_blank("Altă sursă sau sursă mixtă (precizați)", other_heat_source)
+                # Tip corp static (generic pentru încălzire cu corpuri statice)
+                radiator_type = data.get("heating_radiator_type", "")
+                if radiator_type:
+                    _fill_para_blank("Încălzire cu corpuri statice", f" — {radiator_type}")
 
             # ═══════════════════════════════════════
             # 5. FOTO CLĂDIRE — inserare imagine în text box
