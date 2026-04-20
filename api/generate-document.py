@@ -4826,17 +4826,68 @@ class handler(BaseHTTPRequestHandler):
                     _fill_para_blank("diametru nominal:", cool_diam, " mm")
 
                 # ── ACM: diametru + presiune racord ───────────────────
+                # FIX 20 apr: racord la sursa centralizată ACM are 3 câmpuri goale:
+                # - diametru nominal mm, - necesar de presiune mCA, multiplu ___ puncte
+                # Labels: "- diametru nominal:", "- necesar de presiune (nominal):", "puncte"
                 acm_diam = data.get("acm_pipe_diameter_mm", "")
-                if acm_diam:
-                    # Fallback pattern pentru cazul "- diametru nominal:"
-                    for p in doc.paragraphs:
-                        pt = p.text
-                        if "diametru nominal" in pt and "mm" in pt and "acc" in pt.lower()[:200]:
-                            for run in p.runs:
-                                if re.search(r"[\xa0\s]{3,}", run.text):
-                                    run.text = re.sub(r"[\xa0\s]{3,}", f" {acm_diam} ", run.text, count=1)
-                                    break
-                            break
+                acm_pts = data.get("acm_consume_points_count", "")
+                # Căutăm după "Tipul echipamentelor" sau "Boiler cu acumulare" pentru
+                # a detecta secțiunea ACM, apoi completăm următoarele paragrafe
+                acm_section_found = False
+                for p in doc.paragraphs:
+                    pt = p.text
+                    if "Tipul echipamentelor de preparare" in pt or "Boiler cu acumulare" in pt:
+                        acm_section_found = True
+                        continue
+                    if not acm_section_found:
+                        continue
+                    # Ieșire din secțiune când ajungem la răcire
+                    if "INFORMAȚII PRIVIND INSTALAȚIA DE RĂCIRE" in pt.upper():
+                        break
+                    # Fill diameter nominal (ACM)
+                    if acm_diam and "diametru nominal" in pt.lower() and "mm" in pt:
+                        for run in p.runs:
+                            m = re.search(r"[\xa0\s]{3,}|\.{4,}", run.text)
+                            if m:
+                                run.text = run.text[:m.start()] + f" {acm_diam} " + run.text[m.end():]
+                                break
+                    # Fill presiune (ACM)
+                    pipe_press = data.get("heating_pipe_pressure_mca", "")
+                    if pipe_press and "presiune" in pt.lower() and "mCA" in pt:
+                        for run in p.runs:
+                            m = re.search(r"[\xa0\s]{3,}|\.{4,}", run.text)
+                            if m:
+                                run.text = run.text[:m.start()] + f" {pipe_press} " + run.text[m.end():]
+                                break
+                    # Fill multiplu puncte
+                    if acm_pts and "multiplu" in pt.lower() and "puncte" in pt.lower():
+                        for run in p.runs:
+                            m = re.search(r"[\xa0\s]{3,}|\.{4,}", run.text)
+                            if m:
+                                run.text = run.text[:m.start()] + f" {acm_pts} " + run.text[m.end():]
+                                break
+
+                # ── Footer: Numărul certificatului în registrul auditorului ──
+                # Apare în footer DOCX, placeholder cu puncte ".........."
+                cpe_code_footer = data.get("cpe_code", "") or data.get("auditor_mdlpa", "")
+                if cpe_code_footer:
+                    # Short version pentru footer (max 30 chars)
+                    cpe_short = cpe_code_footer[:30] + ("..." if len(cpe_code_footer) > 30 else "")
+                    try:
+                        # Footer-urile sunt în doc.sections[].footer
+                        for section in doc.sections:
+                            for footer_type in ("first_page_footer", "even_page_footer", "footer"):
+                                footer = getattr(section, footer_type, None)
+                                if footer is None:
+                                    continue
+                                for p in footer.paragraphs:
+                                    if "registrul auditorului" in p.text:
+                                        for run in p.runs:
+                                            if re.search(r"\.{4,}", run.text):
+                                                run.text = re.sub(r"\.{4,}", f" {cpe_short}", run.text, count=1)
+                                                break
+                    except Exception:
+                        pass
 
                 # ── Număr sobe ─────────────────────────────────────────
                 stove_count = data.get("stove_count", "")
