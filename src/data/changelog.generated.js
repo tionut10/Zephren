@@ -1,47 +1,80 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-19
+// Ultima generare: 2026-04-20
 
-export const APP_VERSION = "0.3.0";
+export const APP_VERSION = "0.3.1";
 export const CHANGELOG = [
   {
-    "version": "0.3.0",
-    "week": "Săpt. 3",
-    "dateRange": "13 – 19 apr 2026",
+    "version": "0.3.1",
+    "week": "Săpt. 4",
+    "dateRange": "20 – 26 apr 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "fix(cpe): păstrează size 16pt pentru săgeți mobile (vizibil) + cx extend A+"
+        "icon": "🔧",
+        "text": "fix(anexa): structura constructivă + Tabel 3 ref + opaque area + HR detection (Etapa 7f)"
       },
       {
         "icon": "📄",
-        "text": "fix(cpe): uniformizare font săgeți mobile cu scala statică (Arial 9pt centrat)"
+        "text": "fix(anexa): bug-uri majore vizibile pe DOCX real al utilizatorului (Etapa 7e)"
       },
       {
         "icon": "🔧",
-        "text": "fix(step6): skip iframe Google Maps în DEV (blocat de Claude Preview MCP)"
-      },
-      {
-        "icon": "📄",
-        "text": "fix(cpe): elimină dubla suprapunere textbox/pentagon pe săgețile clasei"
-      },
-      {
-        "icon": "📄",
-        "text": "fix(cpe): 2 bug-uri CPE DOCX — margini + clipping 'A+'"
+        "text": "fix(anexa): hotfix HTTP 500 — Pt local variable shadow în do_POST"
       },
       {
         "icon": "✨",
-        "text": "fix(csp): adaugă blob: la frame-src — PDF preview via iframe"
+        "text": "feat(anexa): completare automată exhaustivă tabele + indicatori finali (Etapa 7c+7d)"
       },
       {
-        "icon": "🚀",
-        "text": "security: șterge .env.vcheck committed accidental (conținea OIDC token temporar)"
+        "icon": "✨",
+        "text": "feat(anexa): completare automată câmpuri Anexa 2 detaliate (Etapa 7)"
       },
       {
-        "icon": "🔧",
-        "text": "fix(api): PUBLIC_API_MODE acceptă orice valoare truthy (robustețe)"
+        "icon": "🎨",
+        "text": "fix(anexa): bug \"201520152015...\" — replace_in_doc înlocuia șiruri lungi de puncte"
+      }
+    ]
+  },
+  {
+    "version": "0.3.0",
+    "week": "Săpt. 3",
+    "dateRange": "13 – 19 apr 2026",
+    "color": "#6366f1",
+    "label": "",
+    "items": [
+      {
+        "icon": "📄",
+        "text": "test(smoke): E2E pentru toate template-ele MDLPA + categorii Mc 001-2022 (Etapa 6)"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(penalties): legare thermalBridges în calcPenalties (BUG-8 Etapa 5)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(anexa_bloc): endpoint + injecție tabel apartamente + sisteme comune (BUG-4)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(anexa): mapping dinamic checkbox keyword→index (BUG-11 fix)"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(payload): BACS/SRI/n50/longitude/penalties propagate corect + regex CPE relaxat"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(cpe): pagină supliment legal cu cod unic, QR, semnătură, cadastru, pașaport"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(cpe): m² lipit de valoare — concatenez la paragraf + golesc celula separată"
+      },
+      {
+        "icon": "📄",
+        "text": "fix(cpe): forțează XML <w:jc val='left'/> pentru celulele m² (fix anterior n-a avut efect vizual)"
       }
     ]
   },
@@ -49,7 +82,7 @@ export const CHANGELOG = [
     "version": "0.2.0",
     "week": "Săpt. 2",
     "dateRange": "6 – 12 apr 2026",
-    "color": "#6366f1",
+    "color": "#10b981",
     "label": "",
     "items": [
       {
@@ -90,7 +123,7 @@ export const CHANGELOG = [
     "version": "0.1.0",
     "week": "Săpt. 1",
     "dateRange": "30 mar – 5 apr 2026",
-    "color": "#10b981",
+    "color": "#22c55e",
     "label": "LANSARE",
     "items": [
       {

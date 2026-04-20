@@ -3043,7 +3043,7 @@ export default function EnergyCalcApp({ cloud }) {
             apply4WallsFromGeom={apply4WallsFromGeom}
             onOpenJSONImport={importProject}
             onOpenIFC={() => setShowImportWizard(true)}
-            onLoadDemoTutorial={() => loadDemoByIndex(0)}
+            onLoadDemoTutorial={() => loadDemoByIndex(1)}
             showToast={showToast}
           /></Suspense>}
 
