@@ -510,6 +510,59 @@ export default function Step6Certificate(props) {
                     heat_pump_covers: heatPump?.covers || "",
                     heat_pump_scop_heating: heatPump?.scopHeating || "",
                     heat_pump_scop_cooling: heatPump?.scopCooling || "",
+                    // ── Sprint post-deploy fix (20 apr 2026) — extinderi regenerabile ──
+                    solar_th_type_label: (() => {
+                      const map = { PLAN: "Plan", VACUUM: "Cu tuburi vidate", TUBURI: "Cu tuburi vidate" };
+                      return map[solarThermal?.type] || "";
+                    })(),
+                    solar_th_area: solarThermal?.area ? fmtRo(parseFloat(solarThermal.area), 1) : "",
+                    solar_th_panels: (() => {
+                      const area = parseFloat(solarThermal?.area) || 0;
+                      if (solarThermal?.panels) return String(solarThermal.panels);
+                      if (area > 0) return String(Math.max(1, Math.ceil(area / 2)));
+                      return "";
+                    })(),
+                    solar_th_orientation: solarThermal?.orientation || "",
+                    solar_th_tilt: solarThermal?.tilt || "",
+                    solar_th_usage: (() => {
+                      const map = { acm: "preparare acc", acm_heating: "preparare acc și încălzire", heating: "încălzire" };
+                      return map[solarThermal?.usage] || solarThermal?.usage || "";
+                    })(),
+                    pv_type_label: (() => {
+                      const map = { MONO: "Monocristalin", POLI: "Policristalin", POLY: "Policristalin", THIN: "Film subțire" };
+                      return map[photovoltaic?.type] || "";
+                    })(),
+                    pv_area: photovoltaic?.area ? fmtRo(parseFloat(photovoltaic.area), 1) : "",
+                    pv_peak_power: photovoltaic?.peakPower ? fmtRo(parseFloat(photovoltaic.peakPower), 2) : "",
+                    pv_panels: (() => {
+                      const peak = parseFloat(photovoltaic?.peakPower) || 0;
+                      if (photovoltaic?.panels) return String(photovoltaic.panels);
+                      if (peak > 0) return String(Math.max(1, Math.ceil(peak / 0.4)));
+                      return "";
+                    })(),
+                    pv_orientation: photovoltaic?.orientation || "",
+                    pv_tilt: photovoltaic?.tilt || "",
+                    pv_usage: (() => {
+                      const map = { all: "consum total + injecție rețea", self: "autoconsum", heating: "încălzire", cooling: "răcire" };
+                      return map[photovoltaic?.usage] || photovoltaic?.usage || "";
+                    })(),
+                    heat_pump_count: String(heatPump?.count || (heatPump?.enabled ? 1 : 0)),
+                    heat_pump_type_label: (() => {
+                      const map = {
+                        PC_AA: "aer-aer", PC_AW: "aer-apă", pc_aer_apa: "aer-apă",
+                        pc_aer_aer: "aer-aer", pc_sol_apa: "sol-apă buclă închisă",
+                        pc_apa_apa: "apă-apă", sol_apa_deschisa: "sol-apă buclă deschisă",
+                        sol_apa_inchisa: "sol-apă buclă închisă", apa_aer: "apă-aer",
+                        sol_aer: "sol-aer",
+                      };
+                      return map[heatPump?.type] || heatPump?.type || "";
+                    })(),
+                    biomass_type_label: (() => {
+                      const map = { PELETI: "peleți", BRICHETE: "brichete", LEMN: "lemn tocat" };
+                      return map[biomass?.type] || biomass?.type || "";
+                    })(),
+                    biomass_power_kw: biomass?.power ? fmtRo(parseFloat(biomass.power), 1) : "",
+                    renewable_mount_location: "pe clădire",
                   },
                   buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
                 };

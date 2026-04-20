@@ -3828,6 +3828,90 @@ class handler(BaseHTTPRequestHandler):
                             replace_in_paragraph(p, "............................", f"  ({wind_kwh} kWh/an produși)", count=1)
                             break
 
+                # ═══════════════════════════════════════════════════════
+                # Sprint post-deploy fix (20 apr 2026) — detalii regenerabile
+                # ═══════════════════════════════════════════════════════
+
+                # ── Solar termic: Tip panou, Număr, Mod montare, Orientare, Utilizare ──
+                solar_th_type = data.get("solar_th_type_label", "")
+                solar_th_panels = data.get("solar_th_panels", "")
+                solar_th_orient = data.get("solar_th_orientation", "")
+                solar_th_usage = data.get("solar_th_usage", "")
+                mount_loc = data.get("renewable_mount_location", "pe clădire")
+                if solar_th_type:
+                    _fill_para_blank("Tip panou (plan, cu tuburi vidate etc.)", solar_th_type)
+                if solar_th_panels:
+                    # Atenție: două contexte pentru "Număr panouri" — solar termic + PV
+                    # _fill_para_blank ia primul match → trebuie apelate în ordine (solar înainte de PV)
+                    _fill_para_blank("Număr panouri", solar_th_panels)
+                if solar_th_type or solar_th_panels:
+                    _fill_para_blank("Mod montare (pe clădire, lângă clădire etc.)", mount_loc)
+                if solar_th_orient:
+                    _fill_para_blank("Orientare", solar_th_orient)
+                if solar_th_usage:
+                    _fill_para_blank("Utilizate pentru (preparea acc, preparare acc și încălzire etc.)", solar_th_usage)
+
+                # ── PV: Tip panou, Număr, Mod montare, Orientare, Utilizare ──
+                pv_type = data.get("pv_type_label", "")
+                pv_panels = data.get("pv_panels", "")
+                pv_orient = data.get("pv_orientation", "")
+                pv_usage = data.get("pv_usage", "")
+                if pv_type:
+                    _fill_para_blank("Tip panou (monocristalin, policristalin)", pv_type)
+                if pv_panels:
+                    _fill_para_blank("Număr panouri", pv_panels)
+                if pv_type or pv_panels:
+                    # Mod montare PV — pattern distinct "Mod montare (pe clădire..." dar e a 2-a apariție
+                    # _fill_para_blank skip-uie pentru că primul match e deja completat (idempotency)
+                    # Adăugăm explicit pentru al 2-lea paragraf
+                    mount_fills = 0
+                    for p in doc.paragraphs:
+                        if "Mod montare" in p.text and "pe clădire" in p.text.lower():
+                            if mount_loc in p.text:
+                                mount_fills += 1
+                                continue  # deja completat
+                            for run in p.runs:
+                                m = _re.search(r"[\xa0\s]{3,}", run.text) if "_re" in dir() else re.search(r"[\xa0\s]{3,}", run.text)
+                                if m:
+                                    run.text = run.text[:m.start()] + " " + mount_loc + " " + run.text[m.end():]
+                                    mount_fills += 1
+                                    break
+                            if mount_fills >= 2:
+                                break
+                if pv_orient:
+                    # Similar pattern: a 2-a apariție "Orientare"
+                    orient_fills = 0
+                    for p in doc.paragraphs:
+                        pt = p.text.strip()
+                        if pt.startswith("Orientare") or pt.startswith("- Orientare"):
+                            if pv_orient in pt:
+                                orient_fills += 1
+                                continue
+                            for run in p.runs:
+                                m = re.search(r"[\xa0\s]{3,}", run.text)
+                                if m:
+                                    run.text = run.text[:m.start()] + " " + pv_orient + " " + run.text[m.end():]
+                                    orient_fills += 1
+                                    break
+                            if orient_fills >= 2:
+                                break
+                if pv_usage:
+                    # "Utilizate pentru" la PV (singur label vs. solar care are "preparea acc")
+                    _fill_para_blank("Utilizate pentru", pv_usage)
+
+                # ── Heat pump: Număr pompe ──
+                hp_count = data.get("heat_pump_count", "")
+                if hp_count and hp_count != "0":
+                    _fill_para_blank("Număr pompe de căldură", hp_count)
+
+                # ── Biomass: putere + alt tip precizare (biomass_type_label deja în compute_checkboxes) ──
+                bio_pow = data.get("biomass_power_kw", "")
+                if bio_pow:
+                    _fill_para_blank("Putere nominală cazan biomasă", bio_pow, " kW")
+                bio_type_label_val = data.get("biomass_type_label", "")
+                if bio_type_label_val and bio_type_label_val not in ("peleți", "brichete"):
+                    _fill_para_blank("alt tip, precizați", bio_type_label_val)
+
                 # ── Nr. apartamente / unități ──────────────────────────
                 n_apt = data.get("n_apartments_count", "")
                 if n_apt:
