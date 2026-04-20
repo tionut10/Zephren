@@ -105,7 +105,7 @@ function dateRO() {
 function auditorBlock(doc, auditor, y) {
   const rows = [
     ["Auditor energetic", auditor?.name || "-"],
-    ["Nr. atestat / Grad", `${auditor?.atestat || "-"} / Grad ${auditor?.grade || "-"}`],
+    ["Nr. atestat / Grad", `${auditor?.atestat || "-"} / ${auditor?.grade || "-"}`],
     ["Firma / Organizație", auditor?.company || "-"],
     ["Data elaborării", auditor?.date || dateRO()],
   ];
@@ -1543,7 +1543,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
     body: [
       ["Nume și prenume auditor", auditor?.name || "—"],
       ["Atestat nr. (serie/număr)", auditor?.atestat || "—"],
-      ["Grad atestare", `Grad ${auditor?.grade || "—"}`],
+      ["Grad atestare", auditor?.grade || "—"],
       ["Firma / Organizație", auditor?.company || "—"],
       ["Contact", [auditor?.phone, auditor?.email].filter(Boolean).join(" · ") || "—"],
       ["Cod unic MDLPA (registru)", auditor?.codUnicMDLPA || auditor?.mdlpaCode || "—"],
@@ -2295,7 +2295,7 @@ export async function generateNZEBConformanceReport(opts) {
     doc.text(auditor?.name || "—", boxX1 + 2, y + 10);
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(`Nr. atestat: ${auditor?.atestat || "—"}`, boxX1 + 2, y + 15);
-    doc.text(`Grad: ${auditor?.grade || "—"}`, boxX1 + 2, y + 19);
+    doc.text(auditor?.grade || "—", boxX1 + 2, y + 19);
     doc.text("Semnătură + ștampilă", boxX1 + 2, y + boxH - 3);
 
     doc.setFontSize(7);

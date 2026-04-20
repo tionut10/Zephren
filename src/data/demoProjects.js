@@ -167,7 +167,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Ionescu Mihai-Dan",
       atestat: "CT-01124",
-      grade: "II",
+      grade: "AE IIci",
       company: "CertEnergo Consulting SRL",
       phone: "0721 345 678",
       email: "ionescu.mihai@certenergro.ro",
@@ -377,7 +377,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Popa Cristina-Daniela",
       atestat: "CT-02450",
-      grade: "I",
+      grade: "AE Ici",
       company: "nZEB Certificare Energetică SRL",
       phone: "0744 567 890",
       email: "cristina.popa@nzeb-cert.ro",
@@ -559,7 +559,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Dănilă Florin-Andrei",
       atestat: "CT-01887",
-      grade: "II",
+      grade: "AE IIci",
       company: "Audit Termo Moldova SRL",
       phone: "0733 456 789",
       email: "florin.danila@auditmoldova.ro",
@@ -760,7 +760,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Rusu Mădălin-Ionuț",
       atestat: "CT-02601",
-      grade: "I",
+      grade: "AE Ici",
       company: "Green Buildings Consulting SRL",
       phone: "0756 789 012",
       email: "madalin.rusu@greenbuildings.ro",
@@ -942,7 +942,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Mureșan Ovidiu-Călin",
       atestat: "CT-01342",
-      grade: "II",
+      grade: "AE IIci",
       company: "Audit Energetic Transilvania SRL",
       phone: "0745 678 901",
       email: "ovidiu.muresan@auditransilvania.ro",
@@ -1121,7 +1121,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Gherasim Sorin-Valentin",
       atestat: "CT-00987",
-      grade: "II",
+      grade: "AE IIci",
       company: "Expertize Energetice SRL",
       phone: "0722 345 678",
       email: "sorin.gherasim@expertize-energetice.ro",
@@ -1316,7 +1316,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Florescu Andrei-Bogdan",
       atestat: "CT-01765",
-      grade: "I",
+      grade: "AE Ici",
       company: "Retail Energy Consulting SRL",
       phone: "0734 567 890",
       email: "andrei.florescu@retailenergy.ro",
@@ -1515,7 +1515,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Constantin Andreea-Mihaela",
       atestat: "CT-01556",
-      grade: "II",
+      grade: "AE IIci",
       company: "Montania Audit Energetic SRL",
       phone: "0755 678 901",
       email: "andreea.constantin@montania-audit.ro",
@@ -1714,7 +1714,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Lazăr Sorina-Valentina",
       atestat: "CT-02234",
-      grade: "I",
+      grade: "AE Ici",
       company: "Sport & Energy Audit SRL",
       phone: "0766 789 012",
       email: "sorina.lazar@sportenergy.ro",
@@ -1903,7 +1903,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Bogdan Mihai-Vlad",
       atestat: "CT-00756",
-      grade: "II",
+      grade: "AE IIci",
       company: "Univers Energetic SRL",
       phone: "0723 456 789",
       email: "mihai.bogdan@universenerget.ro",
@@ -2081,7 +2081,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Tănase Lucian-Gheorghe",
       atestat: "CT-00543",
-      grade: "II",
+      grade: "AE IIci",
       company: "Patrimoniu Energetic SRL",
       phone: "0745 678 123",
       email: "tanase@patrimoniu-en.ro",
@@ -2262,7 +2262,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Petrescu Adriana-Maria",
       atestat: "CT-01089",
-      grade: "II",
+      grade: "AE IIci",
       company: "Oltenia Cert Energetic SRL",
       phone: "0733 456 789",
       email: "petrescu@oltenia-cert.ro",
@@ -2457,7 +2457,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Vasilescu Dan-Cristian",
       atestat: "CT-01923",
-      grade: "I",
+      grade: "AE Ici",
       company: "Moldova Energy Audit SRL",
       phone: "0752 345 678",
       email: "vasilescu@moldova-audit.ro",
@@ -2643,7 +2643,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Marinescu Alexandru-Ștefan",
       atestat: "CT-02105",
-      grade: "I",
+      grade: "AE Ici",
       company: "Litoral Cert Energy SRL",
       phone: "0768 901 234",
       email: "marinescu@litoral-cert.ro",
@@ -2832,7 +2832,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Dumitrescu Radu-Andrei",
       atestat: "CT-02340",
-      grade: "I",
+      grade: "AE Ici",
       company: "Industrial Energy Solutions SRL",
       phone: "0741 567 890",
       email: "dumitrescu@ind-energy.ro",
@@ -3020,7 +3020,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Moldovan Elena-Diana",
       atestat: "CT-02567",
-      grade: "I",
+      grade: "AE Ici",
       company: "Green Kids Cert SRL",
       phone: "0744 234 567",
       email: "moldovan@greenkids-cert.ro",
@@ -3207,7 +3207,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Lungu Cristian-Viorel",
       atestat: "CT-01678",
-      grade: "I",
+      grade: "AE Ici",
       company: "Bucovina Audit Energy SRL",
       phone: "0756 789 012",
       email: "lungu@bucovina-audit.ro",
@@ -3397,7 +3397,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Moga Ioan-Ciprian",
       atestat: "CT-01234",
-      grade: "II",
+      grade: "AE IIci",
       company: "TransilCert Energetic SRL",
       phone: "0743 567 890",
       email: "moga@transilcert.ro",
@@ -3607,7 +3607,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Moldovan Gabriel-Rareș",
       atestat: "CT-02789",
-      grade: "I",
+      grade: "AE Ici",
       company: "nZEB Design Certificare SRL",
       phone: "0765 123 456",
       email: "moldovan-g@nzeb-design.ro",
@@ -3791,7 +3791,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Sas Bianca-Emilia",
       atestat: "CT-02012",
-      grade: "II",
+      grade: "AE IIci",
       company: "Heritage Energy Cert SRL",
       phone: "0739 890 123",
       email: "sas@heritage-cert.ro",

@@ -806,7 +806,7 @@ export async function exportPDFNative(ctx) {
       bodyStyles: { fontSize: 8 }, columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
       body: [
         ["Auditor energetic", auditor.name || "-"],
-        ["Nr. atestat / Grad", `${auditor.atestat || "-"} / Grad ${auditor.grade || "-"}`],
+        ["Nr. atestat / Grad", `${auditor.atestat || "-"} / ${auditor.grade || "-"}`],
         ["Firma", auditor.company || "-"],
         ["Data elaborarii", auditor.date || "-"],
         ["Scop CPE", auditor.scopCpe || "-"],
@@ -1084,7 +1084,7 @@ export async function exportFullReport(ctx) {
     doc.text("Auditor energetic:", 15, y); y += 6;
     doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.setTextColor(0);
     const audLines = [
-      `Nume: ${auditor.name || "—"}  |  Atestat: ${auditor.atestat || "—"} / Grad ${auditor.grade || "—"}`,
+      `Nume: ${auditor.name || "—"}  |  Atestat: ${auditor.atestat || "—"} / ${auditor.grade || "—"}`,
       `Firmă: ${auditor.company || "—"}`,
       `Data elaborării: ${auditor.date || new Date().toLocaleDateString("ro-RO")}  |  Valabilitate: ${auditor.validityYears || 10} ani`,
     ];
@@ -1631,7 +1631,7 @@ export function generateAuditReport(ctx) {
   lines.push("");
   lines.push("5. DATE AUDITOR");
   lines.push("─".repeat(50));
-  lines.push(`Auditor: ${auditor.name || "—"} (${auditor.atestat || "—"}, Grad ${auditor.grade || "—"})`);
+  lines.push(`Auditor: ${auditor.name || "—"} (${auditor.atestat || "—"}, ${auditor.grade || "—"})`);
   lines.push(`Firmă: ${auditor.company || "—"}`);
   lines.push(`Data: ${auditor.date || "—"}`);
   lines.push("");
