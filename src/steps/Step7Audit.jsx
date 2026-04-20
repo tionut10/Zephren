@@ -7,6 +7,7 @@ import MEPSCheck, { getMepsStatus } from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
 import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
+import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
 import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
 import { generateThermalMapSVG } from "../calc/thermal-map.js";
@@ -1040,6 +1041,21 @@ export default function Step7Audit(props) {
                   cn={cn}
                 />
               </Card>
+
+              {/* ── Sprint UI Anexa 1+2 (20 apr 2026) — 35 câmpuri extinse MDLPA ── */}
+              {setBuilding && (
+                <AnexaMDLPAFields
+                  building={building}
+                  setBuilding={setBuilding}
+                  heating={heating}
+                  cooling={cooling}
+                  ventilation={ventilation}
+                  acm={acm}
+                  otherRenew={otherRenew}
+                  lighting={lighting}
+                  lang={lang}
+                />
+              )}
 
               {/* ── Vizualizare 3D detaliată (SVG isometric) ── */}
               {building.areaUseful && building.floors && (
