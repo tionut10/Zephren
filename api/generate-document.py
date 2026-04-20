@@ -3421,28 +3421,62 @@ class handler(BaseHTTPRequestHandler):
                         if "Anul construc" in _p_year.text and "................." in _p_year.text:
                             replace_in_paragraph(_p_year, ".................", year_full, count=1)
                             break
+                # ── FIX 21 apr 2026: helper pentru înlocuire COMPLETĂ paragraf ──
+                # Bug raportat: replace_in_doc înlocuiește doar eticheta lăsând restul
+                # ca duplicat ("Aria de referință totală: 6800 m² a pardoselii clădirii sau a unității de clădire: m2").
+                # Soluție: replace COMPLET paragraf identificat prin label semantic.
+                def _replace_full_para(label_match, new_full_text):
+                    """Înlocuiește TEXTUL ÎNTREG al paragrafului care conține label_match."""
+                    for p in doc.paragraphs:
+                        if label_match in p.text:
+                            # Idempotent: skip dacă noul text e deja prezent identic
+                            if p.text.strip() == new_full_text.strip():
+                                return True
+                            # Curăț textul existent — păstrez primul run, șterg restul
+                            if p.runs:
+                                p.runs[0].text = new_full_text
+                                for r in p.runs[1:]:
+                                    r.text = ""
+                            else:
+                                p.add_run(new_full_text)
+                            return True
+                    return False
+
                 # Arie referință totală
                 au = data.get("area_ref", "")
                 vol = data.get("volume", "")
                 if au:
-                    replace_in_doc(doc, "Aria de referință totală", "Aria de referință totală a pardoselii: " + au + " m²")
+                    _replace_full_para(
+                        "Aria de referință totală",
+                        f"Aria de referință totală a pardoselii clădirii sau a unității de clădire: {au} m²"
+                    )
                 if vol:
-                    replace_in_doc(doc, "Volumul interior de referință", "Volumul interior de referință V: " + vol + " m³")
+                    _replace_full_para(
+                        "Volumul interior de referință",
+                        f"Volumul interior de referință V, al clădirii/unității de clădire: {vol} m³"
+                    )
                 # Factor formă
                 try:
                     au_f = float(au.replace(",", ".")) if au else 0
                     vol_f = float(vol.replace(",", ".")) if vol else 0
                     ae = float(data.get("area_envelope", "0").replace(",", ".")) if data.get("area_envelope") else au_f * 1.3
                     se_v = ae / vol_f if vol_f > 0 else 0
-                    replace_in_doc(doc, "Factorul de formă", "Factorul de formă al clădirii, SE/V: " + format_ro(se_v, 3))
-                except:
+                    if se_v > 0:
+                        _replace_full_para(
+                            "Factorul de formă",
+                            f"Factorul de formă al clădirii, SE/V: {format_ro(se_v, 3)} m⁻¹"
+                        )
+                except Exception:
                     pass
-                # Nr persoane
+                # Nr persoane — _replace_full_para pentru paragraful complet
                 try:
                     is_res = category in ("RI", "RC", "RA")
                     nr_pers = max(1, round(au_f / (30 if is_res else 15)))
-                    replace_in_doc(doc, "pers.", str(nr_pers) + " pers.")
-                except:
+                    _replace_full_para(
+                        "Numărul normat de persoane",
+                        f"Numărul normat de persoane din clădire/unitatea de clădire: {nr_pers} pers."
+                    )
+                except Exception:
                     pass
                 # Detalii instalații — combustibil
                 fuel_labels = {"gaz_nat": "gaz natural", "gpl": "GPL", "motorina": "motorină",
@@ -3452,11 +3486,17 @@ class handler(BaseHTTPRequestHandler):
                 if fuel:
                     replace_in_doc(doc, "combustibil .....................", "combustibil " + fuel)
                     replace_in_doc(doc, "combustibil ...........", "combustibil " + fuel)
-                # Putere nominală încălzire
+                # Putere nominală încălzire — _replace_full_para evită duplicat
                 hp = data.get("heating_power", "0")
                 if hp and hp != "0":
-                    replace_in_doc(doc, "Necesarul de căldură de calcul", "Necesarul de căldură de calcul: " + hp + " kW")
-                    replace_in_doc(doc, "Puterea termică instalată totală pentru încălzire", "Puterea termică instalată totală: " + hp + " kW")
+                    _replace_full_para(
+                        "Necesarul de căldură de calcul",
+                        f"Necesarul de căldură de calcul (sarcina termică necesară): {hp} kW"
+                    )
+                    _replace_full_para(
+                        "Puterea termică instalată totală pentru încălzire",
+                        f"Puterea termică instalată totală pentru încălzire: {hp} kW"
+                    )
 
                 # ── U-values per tip element ──────────────────────────────
                 # Înlocuim texte tip "U pereți exteriori" / "U acoperiș" etc.
@@ -3562,12 +3602,19 @@ class handler(BaseHTTPRequestHandler):
                 # ═══════════════════════════════════════════════════════
 
                 def _fill_para_blank(label_match, value, suffix=""):
-                    """Înlocuiește spații/non-breaking-space după eticheta din paragraf cu valoarea.
+                    """Inserează valoarea în paragraful identificat — INTELIGENT.
 
-                    Caută paragraful care START cu label_match. Dacă valoarea există,
-                    extinde paragraful cu " <value><suffix>" la final.
-                    Idempotent: dacă valoarea e deja în text, nu duplică.
+                    FIX 21 apr 2026: Vechea versiune adăuga la sfârșit ducând la
+                    bug-uri "____kW 600 kW" (dublarea unității). Noua versiune:
+                    1. Caut paragraful cu label_match
+                    2. Idempotent: skip dacă valoarea e deja prezentă
+                    3. Detectez placeholder-ul de spații/non-breaking-space DUPĂ label
+                       (pattern: ":  \xa0+ \\s+ \xa0+" sau ":  \\s{3,}")
+                    4. Înlocuiesc placeholder-ul cu " <value> " (păstrând unitatea
+                       originală care apare DUPĂ placeholder)
+                    5. Fallback: dacă nu găsesc placeholder, adaug la final cu suffix
                     """
+                    import re as _re
                     if not value:
                         return False
                     val_str = str(value).strip()
@@ -3577,10 +3624,28 @@ class handler(BaseHTTPRequestHandler):
                         pt = p.text
                         if label_match not in pt:
                             continue
-                        # Skip dacă valoarea apare deja (idempotent)
+                        # Idempotent: skip dacă valoarea e deja
                         if val_str in pt:
                             return True
-                        # Adaug valoarea ca run nou la finalul paragrafului
+                        # Detectez placeholder de spații între label și final/unit
+                        # Pattern 1: '\xa0+\s+\xa0+' (non-breaking-space block)
+                        # Pattern 2: ': \\s{3,}' (3+ spații după ':')
+                        replaced = False
+                        for run in p.runs:
+                            rt = run.text
+                            if not rt:
+                                continue
+                            # Caut pattern de spații/nbsp consecutive (>=3 chars whitespace)
+                            m = _re.search(r"[\xa0\s]{3,}", rt)
+                            if m:
+                                # Înlocuiesc placeholder-ul cu valoarea (păstrez 1 spațiu pre/post)
+                                new_text = rt[:m.start()] + " " + val_str + " " + rt[m.end():]
+                                run.text = new_text
+                                replaced = True
+                                break
+                        if replaced:
+                            return True
+                        # Fallback: adaug la final dacă nu am găsit placeholder
                         if p.runs:
                             run = p.add_run(f" {val_str}{suffix}")
                             run.font.size = p.runs[0].font.size
@@ -3723,19 +3788,34 @@ class handler(BaseHTTPRequestHandler):
                         print(f"[apt_table] eroare: {e_apt_tbl}", flush=True)
 
                 # ── Tabel 0 — Zone climatice + eoliene + regim înălțime ──
-                # User raport (20 apr 2026): tabelele Anexa sunt goale.
-                # Marchez cu "X" coloana corespunzătoare zonei reale a clădirii.
+                # FIX 21 apr 2026: BIFEZ checkbox XML existent în celulă (NU adaug text "X"
+                # care ștergea form field-ul + producea X lângă bullet gol).
                 # Header structure (13 cols): zona clima [I, II, II, II, II, III, III, IV, IV, IV, V, V]
-                # → mapare zone num → coloane:
                 _ZONA_CLIMA_COLS = {1: 1, 2: 2, 3: 6, 4: 8, 5: 11}
                 _ZONA_EOL_COLS   = {1: 1, 2: 4, 3: 7, 4: 10}
                 _REGIM_COLS      = {"S": 1, "D": 3, "Mez": 5, "P": 7, "E": 9, "M": 12, "M/P": 12}
+
+                def _check_cell_checkbox(cell):
+                    """Bifează TOATE checkbox-urile XML din celulă (set w:default w:val='1')."""
+                    cbs = cell._tc.findall(".//w:checkBox", NSMAP)
+                    if not cbs:
+                        return False
+                    for cb in cbs:
+                        default = cb.find("w:default", NSMAP)
+                        if default is not None:
+                            default.set(qn("w:val"), "1")
+                        else:
+                            from docx.oxml import OxmlElement
+                            d = OxmlElement("w:default")
+                            d.set(qn("w:val"), "1")
+                            cb.append(d)
+                    return True
+
                 try:
                     zone_num = int(data.get("climate_zone_num", "3") or "3")
                     zone_num = max(1, min(5, zone_num))
                     wind_zone = 1 if zone_num <= 2 else (2 if zone_num <= 4 else 3)
                     regime_str = (data.get("regime", "") or "").upper().strip()
-                    # Detectez regim simplificat (doar prima parte)
                     regim_key = ""
                     for k in _REGIM_COLS:
                         if regime_str.startswith(k.upper()):
@@ -3747,37 +3827,32 @@ class handler(BaseHTTPRequestHandler):
                         h0 = tbl.rows[0].cells[0].text.lower()
                         if "zona climatică" not in h0 and "zona climatica" not in h0:
                             continue
-                        # Tabel 0 identificat — marchez cu "X" valorile
-                        # r1 (zona climatică selectată)
-                        if not any(c.text.strip() for c in tbl.rows[1].cells[1:]):
-                            col_clima = _ZONA_CLIMA_COLS.get(zone_num, 2)
-                            tbl.rows[1].cells[col_clima].text = "X"
-                            for p in tbl.rows[1].cells[col_clima].paragraphs:
-                                for r in p.runs:
-                                    r.font.size = Pt(11)
-                                    r.bold = True
-                        # r3 (zona eoliană selectată)
-                        if not any(c.text.strip() for c in tbl.rows[3].cells[1:]):
-                            col_eol = _ZONA_EOL_COLS.get(wind_zone, 1)
-                            tbl.rows[3].cells[col_eol].text = "X"
-                            for p in tbl.rows[3].cells[col_eol].paragraphs:
-                                for r in p.runs:
-                                    r.font.size = Pt(11)
-                                    r.bold = True
-                        # r5 (regim înălțime — păstrăm valorile existente "2 (nr)" / "5 (nr)" și
-                        # bifez coloana corectă pentru regimul real)
+                        # Bifez checkbox-uri în celulele corecte
+                        col_clima = _ZONA_CLIMA_COLS.get(zone_num, 2)
+                        _check_cell_checkbox(tbl.rows[1].cells[col_clima])
+                        col_eol = _ZONA_EOL_COLS.get(wind_zone, 1)
+                        _check_cell_checkbox(tbl.rows[3].cells[col_eol])
                         if regim_key:
                             col_reg = _REGIM_COLS[regim_key]
-                            current = tbl.rows[5].cells[col_reg].text.strip()
-                            if not current or current == "":
-                                tbl.rows[5].cells[col_reg].text = "X"
-                                for p in tbl.rows[5].cells[col_reg].paragraphs:
-                                    for r in p.runs:
-                                        r.font.size = Pt(11)
-                                        r.bold = True
+                            _check_cell_checkbox(tbl.rows[5].cells[col_reg])
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
+
+                # ── Tabel 5 — Apartamente debranșate condominiu ──
+                # Pentru clădiri RC/RA (bloc) → "Nu există" default; pentru altele skip.
+                try:
+                    if category in ("RC", "RA"):
+                        for tbl in doc.tables:
+                            if len(tbl.rows) != 2 or len(tbl.columns) != 2:
+                                continue
+                            h0 = tbl.rows[0].cells[0].text.lower()
+                            if "apartamente debrans" in h0 or "apartamente debranș" in h0 or "debran" in h0:
+                                # Default: "Nu există" — auditorul modifică dacă e cazul
+                                _check_cell_checkbox(tbl.rows[1].cells[1])
+                                break
+                except Exception:
+                    pass
 
                 # ── Tabel 2 — Anvelopă (R-values + arii) ──
                 # Pentru fiecare tip element distinct din opaque_u_values, calculez R și
