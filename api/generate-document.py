@@ -4111,7 +4111,10 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             building_photos = body.get("buildingPhotos", [])
             if mode in ("anexa", "anexa_bloc") and building_photos:
-                from docx.shared import Pt, Inches
+                # Pt, Inches deja imported global la linia 20.
+                # Re-importul aici cauza Python să trateze Pt/Inches ca LOCAL VARIABLES
+                # în întregul scope al do_POST → "cannot access local variable 'Pt'"
+                # error la utilizare în Etapa 7c+7d înainte de această ramură.
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
                 from docx.oxml.ns import qn as docx_qn
                 from docx.oxml import OxmlElement
