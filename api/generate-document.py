@@ -1932,99 +1932,44 @@ def compute_checkboxes(data, category):
 
     # ══════════════════════════════
     # Sprint monolith (20 apr 2026) — Extinderi CB suplimentare din date existente
+    #
+    # IMPORTANT: CB-urile de mai jos se activează DOAR când user-ul furnizează
+    # date explicite. Evitări defaults pe indici incerți (cauzau bifare dublă
+    # în testarea reală — indicii 231-236, 238-241 etc. NU corespund liniar).
+    # Pentru defaults se preferă Tabel-cell-based logic (vezi Tabel 0 regim).
     # ══════════════════════════════
 
-    # Regim înălțime (CB 121-126): S/D/Mez/P/E/M|M/P
-    # Parse building.floors ("P+4E", "S+P+2E+M") → extrage tip niveluri
-    regime = (data.get("regime", "") or "").upper()
-    regim_cbs = {"S": 121, "D": 122, "MEZ": 123, "P": 124, "E": 125, "M": 126}
-    for key, cb in regim_cbs.items():
-        if key in regime:
-            cbs.append(cb)
-
-    # Contor căldură încălzire (CB ~165-168: există / nu există / nu este cazul)
-    # Default bazat pe heating_has_meter din payload
+    # Contor căldură încălzire (default: NU BIFĂM dacă user n-a setat)
     heat_meter = data.get("heating_has_meter", "")
-    if heat_meter == "da":
-        cbs.append(165)
-    elif heat_meter == "nu":
-        cbs.append(166)
-    elif heat_meter == "nu_caz":
-        cbs.append(167)
-    else:
-        cbs.append(166)  # default nu există
+    heat_meter_cb = {"da": 165, "nu": 166, "nu_caz": 167}.get(heat_meter)
+    if heat_meter_cb:
+        cbs.append(heat_meter_cb)
 
-    # Repartitoare costuri (CB ~169-172)
+    # Repartitoare costuri (fără default)
     cost_alloc = data.get("heating_cost_allocator", "")
-    if cost_alloc == "da":
-        cbs.append(169)
-    elif cost_alloc == "nu":
-        cbs.append(170)
-    elif cost_alloc == "nu_caz":
-        cbs.append(171)
-    else:
-        cbs.append(170)  # default nu există
+    cost_alloc_cb = {"da": 169, "nu": 170, "nu_caz": 171}.get(cost_alloc)
+    if cost_alloc_cb:
+        cbs.append(cost_alloc_cb)
 
-    # Elemente de reglaj termic și hidraulic (CB ~238-241)
-    # Derivare din heating.control: TERMO_RAD → la corpuri statice; BACS → la nivel racord/coloane
-    h_ctrl_full = data.get("heating_control", "")
-    bacs_class_temp = data.get("bacs_class", "C")
-    if bacs_class_temp in ("A", "B"):
-        cbs.append(238)  # la nivel racord/sursă
-        cbs.append(239)  # la nivelul coloanelor
-    if h_ctrl_full in ("TERMO_RAD", "termo_rad"):
-        cbs.append(240)  # la nivelul corpurilor statice
-    elif not h_ctrl_full:
-        cbs.append(241)  # nu există
-
-    # Conducta recirculare ACM (CB ~191-195): funcțională / nu funcționează / nu există
+    # Conducta recirculare ACM (fără default — 195 era deja bifat mai sus)
     acm_recirc = data.get("acm_recirculation", "")
-    if acm_recirc == "functionala":
-        cbs.append(193)
-    elif acm_recirc == "nu_functioneaza":
-        cbs.append(194)
-    else:
-        cbs.append(195)  # nu există (default)
+    acm_recirc_cb = {"functionala": 193, "nu_functioneaza": 194, "nu_exista": 195}.get(acm_recirc)
+    if acm_recirc_cb:
+        cbs.append(acm_recirc_cb)
 
-    # Contor general ACM (CB ~196-200)
+    # Contor general ACM (fără default)
     acm_meter = data.get("acm_has_meter", "")
-    if acm_meter == "da":
-        cbs.append(196)
-    elif acm_meter == "nu_caz":
-        cbs.append(198)
-    else:
-        cbs.append(197)  # nu există default
+    acm_meter_cb = {"da": 196, "nu": 197, "nu_caz": 198}.get(acm_meter)
+    if acm_meter_cb:
+        cbs.append(acm_meter_cb)
 
-    # Debitmetre puncte consum ACM (CB ~199-201)
+    # Debitmetre puncte consum ACM (fără default)
     acm_flow = data.get("acm_flow_meters", "")
-    if acm_flow == "peste_tot":
-        cbs.append(201)
-    elif acm_flow == "partial":
-        cbs.append(200)
-    else:
-        cbs.append(199)  # nu există
+    acm_flow_cb = {"peste_tot": 201, "partial": 200, "nu_exista": 199}.get(acm_flow)
+    if acm_flow_cb:
+        cbs.append(acm_flow_cb)
 
-    # Tratare aer (CB ~234-236): fără/cu/cu parțial controlul umidității
-    cool_humid_ctrl = data.get("cooling_humidity_control", "")
-    if has_cool:
-        if cool_humid_ctrl == "cu_control":
-            cbs.append(235)
-        elif cool_humid_ctrl == "cu_partial":
-            cbs.append(236)
-        else:
-            cbs.append(234)  # fără control (default)
-
-    # Spațiul climatizat (CB ~231-233): Complet / Global / Parțial
-    cool_space = data.get("cooling_space_scope", "")
-    if has_cool:
-        if cool_space == "global":
-            cbs.append(232)
-        elif cool_space == "partial":
-            cbs.append(233)
-        else:
-            cbs.append(231)  # Complet default
-
-    # Ventilare caracteristici (CB ~266-269)
+    # Ventilare caracteristici (fără default)
     vent_control = data.get("ventilation_control_type", "")
     vent_ctrl_map = {
         "program": 266,
@@ -2036,29 +1981,40 @@ def compute_checkboxes(data, category):
     if vc_cb:
         cbs.append(vc_cb)
 
-    # Contorizare individuală consumatori răcire (CB ~252-253): da / nu
-    cool_ind_meter = data.get("cooling_individual_meter", "")
-    if has_cool:
-        if cool_ind_meter == "da":
-            cbs.append(252)
-        else:
-            cbs.append(253)
-
-    # Stare rețea iluminat (CB 285-287: Bună / Uzată / Date indisponibile)
+    # Stare rețea iluminat (doar dacă user specifică non-default)
     light_state = data.get("lighting_network_state", "")
     if light_state == "uzata":
         cbs.append(286)
     elif light_state == "indisp":
         cbs.append(287)
-    # 285 e deja default bifat mai sus
 
-    # Apartamente debranșate condominiu (pentru RC/RA/BC)
+    # Apartamente debranșate condominiu — BINE pentru bloc (confirmat prin screenshot)
     apt_debransate = data.get("building_has_disconnected_apartments", "")
     if category in ("RC", "RA", "BC"):
-        if apt_debransate == "da":
-            cbs.append(156)
-        else:
-            cbs.append(157)  # Nu există default
+        apt_deb_cb = {"da": 156, "nu": 157}.get(apt_debransate)
+        if apt_deb_cb:
+            cbs.append(apt_deb_cb)
+
+    # NOTĂ: Tratare aer (CB 234-236) și Spațiul climatizat (CB 231-233):
+    # eliminate din defaults — indicii erau greșiți și cauzau bifare dublă.
+    # Se vor adăuga manual dacă user le setează, NU default.
+    cool_humid_ctrl = data.get("cooling_humidity_control", "")
+    if cool_humid_ctrl == "cu_control" and has_cool:
+        cbs.append(235)
+    elif cool_humid_ctrl == "cu_partial" and has_cool:
+        cbs.append(236)
+
+    cool_space = data.get("cooling_space_scope", "")
+    if cool_space == "global" and has_cool:
+        cbs.append(232)
+    elif cool_space == "partial" and has_cool:
+        cbs.append(233)
+
+    cool_ind_meter = data.get("cooling_individual_meter", "")
+    if cool_ind_meter == "da" and has_cool:
+        cbs.append(252)
+    elif cool_ind_meter == "nu" and has_cool:
+        cbs.append(253)
 
     # ══════════════════════════════
     # BACS (CB 308+) — EN 15232-1
@@ -3976,11 +3932,26 @@ class handler(BaseHTTPRequestHandler):
                     zone_num = max(1, min(5, zone_num))
                     wind_zone = 1 if zone_num <= 2 else (2 if zone_num <= 4 else 3)
                     regime_str = (data.get("regime", "") or "").upper().strip()
-                    regim_key = ""
-                    for k in _REGIM_COLS:
-                        if regime_str.startswith(k.upper()):
-                            regim_key = k
-                            break
+                    # Parse MULTI-LETTER: pentru "S+P+4E+M" → bif S, P, E, M
+                    # Extrage secvențele de litere (și "MEZ" special)
+                    import re as _re_reg
+                    regim_keys_found = []
+                    if "MEZ" in regime_str:
+                        regim_keys_found.append("Mez")
+                    # Caut caractere individuale relevante
+                    for letter in ["S", "D", "P", "E", "M"]:
+                        # "S" să nu match-uiască "MEZ" (deja tratat)
+                        pattern = r"(?<![A-Z])" + letter + r"(?![A-Z])"
+                        if _re_reg.search(pattern, regime_str):
+                            if letter not in regim_keys_found:
+                                regim_keys_found.append(letter)
+                    # Parse nr subsoluri/etaje pentru înlocuirea "2 (nr)" / "5 (nr)"
+                    # "2S+P+5E+M" → 2 subsoluri, 5 etaje
+                    m_sub = _re_reg.search(r"(\d+)S", regime_str)
+                    n_subsoluri = int(m_sub.group(1)) if m_sub else (1 if "S" in regim_keys_found else 0)
+                    m_et = _re_reg.search(r"(\d+)E", regime_str)
+                    n_etaje = int(m_et.group(1)) if m_et else (1 if "E" in regim_keys_found else 0)
+
                     for tbl in doc.tables:
                         if len(tbl.rows) < 6 or len(tbl.columns) != 13:
                             continue
@@ -3992,9 +3963,31 @@ class handler(BaseHTTPRequestHandler):
                         _check_cell_checkbox(tbl.rows[1].cells[col_clima])
                         col_eol = _ZONA_EOL_COLS.get(wind_zone, 1)
                         _check_cell_checkbox(tbl.rows[3].cells[col_eol])
-                        if regim_key:
-                            col_reg = _REGIM_COLS[regim_key]
-                            _check_cell_checkbox(tbl.rows[5].cells[col_reg])
+                        # Regim înălțime — bif MULTIPLE niveluri (nu doar primul)
+                        for rk in regim_keys_found:
+                            col_reg = _REGIM_COLS.get(rk)
+                            if col_reg is not None and col_reg < len(tbl.rows[5].cells):
+                                _check_cell_checkbox(tbl.rows[5].cells[col_reg])
+                        # Înlocuire "2" și "5" literal din rândul regim cu numere reale
+                        # Template are celule cu "2 (nr)" pentru S, "5 (nr)" pentru E
+                        regim_row_cells = tbl.rows[5].cells
+                        for ci, cell in enumerate(regim_row_cells):
+                            ct = cell.text.strip()
+                            # Pattern "2" singular sau "2 (nr)" — detectează celula subsol (după S)
+                            if ct in ("2", "2 (nr)", "2(nr)") and n_subsoluri > 0:
+                                for p in cell.paragraphs:
+                                    for r in p.runs:
+                                        if r.text.strip() == "2":
+                                            r.text = str(n_subsoluri)
+                                        elif "2" in r.text and "(nr)" in r.text:
+                                            r.text = r.text.replace("2", str(n_subsoluri))
+                            elif ct in ("5", "5 (nr)", "5(nr)") and n_etaje > 0:
+                                for p in cell.paragraphs:
+                                    for r in p.runs:
+                                        if r.text.strip() == "5":
+                                            r.text = str(n_etaje)
+                                        elif "5" in r.text and "(nr)" in r.text:
+                                            r.text = r.text.replace("5", str(n_etaje))
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
@@ -4211,22 +4204,32 @@ class handler(BaseHTTPRequestHandler):
                 # ══════════════════════════════════════════════════════════
 
                 # ── Tabel 5 — Corpuri statice (Tip | Număr | Putere termică) ──
+                # Populare AGRESIVĂ: force defaults pentru orice clădire cu încălzire funcțională
                 try:
                     radiators_json = data.get("heating_radiators", "[]")
                     radiators = json.loads(radiators_json) if radiators_json else []
-                    # Fallback: dacă e lista goală dar avem putere instalată → 1 rând default
-                    if not radiators and data.get("heating_power", ""):
+                    # Fallback FORCE: dacă lista e goală dar avem încălzire → 1 rând default
+                    if not radiators:
                         try:
-                            pw = float(data.get("heating_power", "0").replace(",", "."))
-                            if pw > 0:
-                                radiators = [{
-                                    "type": "Radiator oțel",
-                                    "count_private": int(max(1, pw / 1.5)),  # heuristic: ~1.5kW/radiator
-                                    "count_common": 0,
-                                    "power_kw": format_ro(pw, 1),
-                                }]
+                            pw_str = str(data.get("heating_power", "") or "0").replace(",", ".").strip()
+                            pw = float(pw_str) if pw_str else 0.0
+                            # Chiar dacă pw=0, tot populăm cu placeholder pentru a nu lăsa tabelul gol
+                            radiator_type_guess = data.get("heating_radiator_type", "") or "Radiator oțel"
+                            # Heuristic: 1.5 kW/radiator; fallback 1 radiator când pw=0
+                            n_rads = int(max(1, pw / 1.5)) if pw > 0 else 1
+                            radiators = [{
+                                "type": radiator_type_guess,
+                                "count_private": n_rads,
+                                "count_common": 0,
+                                "power_kw": format_ro(pw, 1) if pw > 0 else "—",
+                            }]
                         except (ValueError, TypeError):
-                            pass
+                            radiators = [{
+                                "type": "Radiator oțel",
+                                "count_private": 1,
+                                "count_common": 0,
+                                "power_kw": "—",
+                            }]
                     if radiators:
                         for tbl in doc.tables:
                             if len(tbl.rows) < 3 or len(tbl.columns) != 4:
@@ -4367,13 +4370,21 @@ class handler(BaseHTTPRequestHandler):
                     print(f"[tabel_8_12_grad_ocupare] eroare: {e_t8}", flush=True)
 
                 # ── Tabel 11 — Obiecte sanitare ACM (Lavoare, Cadă, Spălătoare, etc.) ──
+                # Populare AGRESIVĂ pentru rezidențial: chiar dacă fixtures[] are toate "0",
+                # tot aplicăm defaults bazate pe n_apartments
                 try:
                     fixtures_json = data.get("acm_fixtures", "{}")
-                    fixtures = json.loads(fixtures_json) if fixtures_json else {}
-                    # Defaults rezidențial
+                    try:
+                        fixtures = json.loads(fixtures_json) if fixtures_json else {}
+                    except (ValueError, TypeError):
+                        fixtures = {}
+                    # Detectare "efectiv gol" — toate valorile goale/0
+                    fixtures_empty = not fixtures or all(
+                        not v or str(v).strip() in ("", "0") for v in fixtures.values()
+                    )
                     is_res_t11 = category in ("RI", "RC", "RA", "BC")
-                    if not fixtures and is_res_t11:
-                        n_apt_int = int(data.get("n_apartments_count", "1") or "1")
+                    if fixtures_empty and is_res_t11:
+                        n_apt_int = max(1, int(str(data.get("n_apartments_count", "1") or "1").split(".")[0]))
                         fixtures = {
                             "lavoare": str(n_apt_int),
                             "cada_baie": str(n_apt_int),
@@ -4384,6 +4395,19 @@ class handler(BaseHTTPRequestHandler):
                             "dus": str(n_apt_int),
                             "masina_spalat_vase": "0",
                             "masina_spalat_rufe": str(n_apt_int),
+                        }
+                    elif fixtures_empty and not is_res_t11:
+                        # Nerezidențial minimal: 1 lavoar + 1 WC (evită tabel complet gol)
+                        fixtures = {
+                            "lavoare": "1",
+                            "cada_baie": "0",
+                            "spalatoare": "0",
+                            "rezervor_wc": "1",
+                            "bideuri": "0",
+                            "pisoare": "0",
+                            "dus": "0",
+                            "masina_spalat_vase": "0",
+                            "masina_spalat_rufe": "0",
                         }
                     if fixtures:
                         # Map între cheia semantică și label-ul din template

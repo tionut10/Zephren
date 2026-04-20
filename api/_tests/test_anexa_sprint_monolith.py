@@ -36,23 +36,27 @@ ANEXA_TPL = API_DIR.parent / "public" / "templates" / "ANEXA-1-si-ANEXA-2-la-CPE
 class TestSprintMonolithCheckboxes(unittest.TestCase):
     """Verifică extinderile compute_checkboxes pentru date noi."""
 
-    def test_regim_inaltime_from_regime_string(self):
-        """Regim înălțime P+4E → CB 124 (P) + 125 (E) bifate."""
+    def test_regim_inaltime_no_explicit_cb_bifing(self):
+        """Regim înălțime NU mai bifează CB 121-126 direct (erau indici greșiți).
+        Bifarea se face prin Tabel 0 cell checkbox (vezi _check_cell_checkbox).
+        """
         cbs = gd.compute_checkboxes({"regime": "P+4E", "climate_zone_num": "3"}, "RI")
-        self.assertIn(124, cbs, "CB 124 (P) trebuie bifat pentru 'P+4E'")
-        self.assertIn(125, cbs, "CB 125 (E) trebuie bifat pentru 'P+4E'")
+        for cb in (121, 122, 123, 124, 125, 126):
+            self.assertNotIn(cb, cbs, f"CB {cb} NU trebuie bifat direct (Tabel 0 handle-uiește)")
 
-    def test_regim_inaltime_s_p_m(self):
-        """Regim S+P+M → CB 121 (S) + 124 (P) + 126 (M)."""
-        cbs = gd.compute_checkboxes({"regime": "S+P+M", "climate_zone_num": "3"}, "RI")
-        self.assertIn(121, cbs)
-        self.assertIn(124, cbs)
-        self.assertIn(126, cbs)
-
-    def test_heating_meter_default_nu(self):
-        """Fără heating_has_meter → default CB 166 (nu există)."""
+    def test_heating_meter_default_empty(self):
+        """Fără heating_has_meter → NU bifăm nimic (evită CB greșit)."""
         cbs = gd.compute_checkboxes({"climate_zone_num": "3"}, "RI")
-        self.assertIn(166, cbs, "Default CB 166 (contor nu există) pentru heating_has_meter gol")
+        self.assertNotIn(165, cbs)
+        self.assertNotIn(166, cbs)
+        self.assertNotIn(167, cbs)
+
+    def test_heating_meter_explicit_da(self):
+        """heating_has_meter=da → CB 165 (există)."""
+        cbs = gd.compute_checkboxes(
+            {"heating_has_meter": "da", "climate_zone_num": "3"}, "RI"
+        )
+        self.assertIn(165, cbs)
 
     def test_cost_allocator_da(self):
         """heating_cost_allocator=da → CB 169."""
