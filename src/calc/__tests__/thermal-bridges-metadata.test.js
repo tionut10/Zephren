@@ -59,15 +59,16 @@ describe("getBridgeId — ID-uri deterministe", () => {
   });
 
   it("generează hash determinist pentru intrări fără metadate", () => {
-    const id1 = getBridgeId("Stâlp metalic neîntrerupt");
-    const id2 = getBridgeId("Stâlp metalic neîntrerupt");
+    const id1 = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
+    const id2 = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
     expect(id1).toBe(id2); // determinist
     expect(id1).toMatch(/^TB-[A-Z]+-[0-9a-f]{4}$/);
   });
 
   it("prefix categorie corect pentru hash-uri", () => {
-    const id = getBridgeId("Stâlp metalic neîntrerupt"); // categoria "Stâlpi/grinzi" → CB
-    expect(id.startsWith("TB-CB-")).toBe(true);
+    // categoria "Elemente punctuale (chi)" → CH
+    const id = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
+    expect(id.startsWith("TB-CH-")).toBe(true);
   });
 
   it("nu dă același ID pentru nume diferite (coliziuni improbabile)", () => {
@@ -91,7 +92,7 @@ describe("getBridgeSource — referințe normative citabile", () => {
   });
 
   it("cascadă: fallback la metadate categorie dacă intrarea nu are sursă explicită", () => {
-    const src = getBridgeSource("Stâlp metalic neîntrerupt");
+    const src = getBridgeSource("Ancoră de cavitate metalică (cavity wall tie)");
     expect(src).toMatch(/ISO 10211|SCI P380/);
   });
 
@@ -204,10 +205,10 @@ describe("getEnrichedBridge — agregator", () => {
   });
 
   it("funcționează și pentru intrări fără metadate detaliate", () => {
-    const e = getEnrichedBridge("Stâlp metalic neîntrerupt");
-    expect(e.name).toBe("Stâlp metalic neîntrerupt");
+    const e = getEnrichedBridge("Ancoră de cavitate metalică (cavity wall tie)");
+    expect(e.name).toBe("Ancoră de cavitate metalică (cavity wall tie)");
     expect(e.metadata.source).toBeTruthy(); // fallback categorie
-    expect(e.metadata.category_en).toBe("Columns & beams");
+    expect(e.metadata.category_en).toBe("Point thermal bridges (chi)");
   });
 
   it("returnează null pentru nume inexistent", () => {
@@ -227,11 +228,11 @@ describe("getAllEnrichedBridges + coverage", () => {
     });
   });
 
-  it("coverage metadate per-entry ≥ 8% (minim 15 intrări cu metadate complete)", () => {
+  it("coverage metadate per-entry ≥ 30% (minim 50 intrări cu metadate complete)", () => {
     const cov = getMetadataCoverage();
     expect(cov.total).toBe(165);
-    expect(cov.withFullMeta).toBeGreaterThanOrEqual(15);
-    expect(cov.coveragePct).toBeGreaterThanOrEqual(8);
+    expect(cov.withFullMeta).toBeGreaterThanOrEqual(50);
+    expect(cov.coveragePct).toBeGreaterThanOrEqual(30);
   });
 });
 
