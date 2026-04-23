@@ -1,7 +1,8 @@
 /**
  * ThermalBridgeCard — cartela compactă pentru o punte termică (S4).
  *
- * Înlocuiește rând-ul legacy din Step2Envelope grid (liniile 200-218).
+ * Afișează numele, categoria, ψ, lungimea, pierderea totală W/K.
+ * Tooltip cu sursa normativă + clasa ISO 14683 (A/B/C/D) din metadate.
  *
  * Props:
  *   - bridge : { name, cat, psi, length }
@@ -10,15 +11,51 @@
  *   - onDelete(idx)
  */
 
+import { getBridgeSource, classifyIsoLevel, validatePsiRange } from "../../calc/thermal-bridges-metadata.js";
+
+const ISO_CLASS_COLOR = {
+  A: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30",
+  B: "text-sky-400 bg-sky-500/15 border-sky-500/30",
+  C: "text-amber-400 bg-amber-500/15 border-amber-500/30",
+  D: "text-red-400 bg-red-500/15 border-red-500/30",
+};
+
 export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete }) {
   const psi = parseFloat(bridge.psi) || 0;
   const length = parseFloat(bridge.length) || 0;
   const totalLoss = psi * length;
 
+  const isoClass = classifyIsoLevel(psi);
+  const source = getBridgeSource(bridge.name);
+  const validation = validatePsiRange(bridge.name, psi);
+  const outOfRange = validation && !validation.inRange;
+
+  const tooltipText = [
+    `Sursă: ${source}`,
+    `Clasă ISO 14683: ${isoClass}`,
+    validation
+      ? `Interval tipologie: ψ ∈ [${validation.min}, ${validation.max}] W/(m·K)${outOfRange ? " ⚠ valoare în afara intervalului" : ""}`
+      : null,
+  ].filter(Boolean).join("\n");
+
   return (
-    <div className="bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors">
+    <div
+      className="bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors"
+      title={tooltipText}
+    >
       <div className="min-w-0">
-        <div className="text-sm font-medium truncate">{bridge.name}</div>
+        <div className="text-sm font-medium truncate flex items-center gap-2">
+          <span className="truncate">{bridge.name}</span>
+          <span
+            className={`text-[9px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${ISO_CLASS_COLOR[isoClass]}`}
+            aria-label={`Clasă ISO 14683 ${isoClass}`}
+          >
+            {isoClass}
+          </span>
+          {outOfRange && (
+            <span className="text-[9px] text-red-400" aria-label="Valoare în afara intervalului tipologiei">⚠</span>
+          )}
+        </div>
         <div className="text-[10px] opacity-40 truncate">
           {bridge.cat || "—"} · Ψ = {psi} W/(m·K)
         </div>

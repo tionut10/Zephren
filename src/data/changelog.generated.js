@@ -1,11 +1,11 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-20
+// Ultima generare: 2026-04-23
 
-export const APP_VERSION = "0.3.1";
+export const APP_VERSION = "0.4.0";
 export const CHANGELOG = [
   {
-    "version": "0.3.1",
+    "version": "0.4.0",
     "week": "Săpt. 4",
     "dateRange": "20 – 26 apr 2026",
     "color": "#f59e0b",
@@ -13,27 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🔧",
-        "text": "fix(anexa): structura constructivă + Tabel 3 ref + opaque area + HR detection (Etapa 7f)"
+        "text": "fix(anexa): regim 'P+4' format scurt + basement/attic flags in payload"
       },
       {
-        "icon": "📄",
-        "text": "fix(anexa): bug-uri majore vizibile pe DOCX real al utilizatorului (Etapa 7e)"
+        "icon": "✨",
+        "text": "feat(templates): adaugă template benchmark Cămin studențesc UTBv 1997 (demo-0, poziția #1)"
       },
       {
         "icon": "🔧",
-        "text": "fix(anexa): hotfix HTTP 500 — Pt local variable shadow în do_POST"
+        "text": "fix(anexa): regim 2/5 doc-level fallback + T11 normalized label + biomass dual-protection"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(anexa): biomass PELETI enabled-aware + regim 2/5 paragraf iter agresiv"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(anexa): Tabel 3 clase per sistem + context-aware regenerabile fill"
+      },
+      {
+        "icon": "📋",
+        "text": "fix(anexa): racord ACM diametru/presiune/puncte + footer registru auditor"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(anexa): multi-fix T5 9-col, regim 2/5 standalone, biomass PELETI, solar/PV enabled"
       },
       {
         "icon": "✨",
-        "text": "feat(anexa): completare automată exhaustivă tabele + indicatori finali (Etapa 7c+7d)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(anexa): completare automată câmpuri Anexa 2 detaliate (Etapa 7)"
-      },
-      {
-        "icon": "🎨",
-        "text": "fix(anexa): bug \"201520152015...\" — replace_in_doc înlocuia șiruri lungi de puncte"
+        "text": "feat(demo): contextual MDLPA defaults pentru toate demo-urile (35 câmpuri)"
       }
     ]
   },
