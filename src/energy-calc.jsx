@@ -3118,7 +3118,7 @@ export default function EnergyCalcApp({ cloud }) {
             presentationMode, setPresentationMode,
             financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
             exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
-            bacsClass,
+            bacsClass, bacsCheck,
             buildingPhotos,
           }} /></Suspense>}
 

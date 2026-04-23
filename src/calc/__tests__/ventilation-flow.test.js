@@ -53,4 +53,40 @@ describe("Ventilare EN 16798-1 — debite igienice", () => {
   it("Au = 0 → null", () => {
     expect(calcVentilationFlow({ ...baseParams, Au: 0 })).toBeNull();
   });
+
+  // ═══ Sprint 19 — FIX 2 CO₂ ΔCO₂ conform SR EN 16798-1 NA:2019 §6.2 ═══
+  describe("Sprint 19: limite CO₂ — ΔCO₂ peste exterior (Tab A.6.2)", () => {
+    it("Cat. I: deltaCO2Limit = 400 ppm → co2Limit = 820 ppm", () => {
+      const r = calcVentilationFlow({ ...baseParams, ieqCategory: "I" });
+      expect(r.co2Ext).toBe(420);
+      expect(r.deltaCO2Limit).toBe(400);
+      expect(r.co2Limit).toBe(820); // 420 + 400
+    });
+
+    it("Cat. II: deltaCO2Limit = 600 ppm → co2Limit = 1020 ppm", () => {
+      const r = calcVentilationFlow({ ...baseParams, ieqCategory: "II" });
+      expect(r.deltaCO2Limit).toBe(600);
+      expect(r.co2Limit).toBe(1020);
+    });
+
+    it("Cat. III: deltaCO2Limit = 1000 ppm → co2Limit = 1420 ppm", () => {
+      const r = calcVentilationFlow({ ...baseParams, ieqCategory: "III" });
+      expect(r.deltaCO2Limit).toBe(1000);
+      expect(r.co2Limit).toBe(1420);
+    });
+
+    it("deltaCO2_steady < deltaCO2Limit → conform", () => {
+      const r = calcVentilationFlow({ ...baseParams, ieqCategory: "II" });
+      expect(r.deltaCO2_steady).toBe(r.co2_steady - r.co2Ext);
+      if (r.deltaCO2_steady <= r.deltaCO2Limit) {
+        expect(r.co2Conform).toBe(true);
+      }
+    });
+
+    it("Verdict conține ΔCO₂ și referința la aer exterior", () => {
+      const r = calcVentilationFlow({ ...baseParams, ieqCategory: "II" });
+      // verdictul trebuie să menționeze ΔCO₂, nu valoare absolută
+      expect(r.verdict).toMatch(/ΔCO₂|peste exterior/i);
+    });
+  });
 });

@@ -208,9 +208,14 @@ export const FUELS = [
     price_lei_kwh:0.12, price_note:"Plafonat 400 lei/mc; putere calorifică ~4.0 kWh/kg (20% umiditate)" },
 
   // ── ENERGIE ELECTRICĂ ────────────────────────────────────────────────────
+  // @deprecated Valori Tab 5.17 Mc 001-2022 (fP_nren=2,62). Pentru calculul
+  // oficial folosește PE_FACTORS_TAB_A16_NA_2023.electricitate_sen (fP_nren=2,00,
+  // fP_ren=0,50) via helper-ul getFPElecNren(useNA2023) din u-reference.js.
+  // Păstrat pentru audit retroactiv și UI legacy (price/price_note).
   { id:"electricitate", label:"Electricitate din rețea (SEN — mix național)",
     fP_nren:2.62, fP_ren:0.00, fP_tot:2.62, fCO2:0.107, pci:null, unit:"kWh",
-    price_lei_kwh:1.12, price_note:"Media 2026: ~1.12 lei/kWh TVA incl. (ANRE, actualizat aprilie 2026)" },
+    price_lei_kwh:1.12, price_note:"Media 2026: ~1.12 lei/kWh TVA incl. (ANRE, actualizat aprilie 2026)",
+    _deprecated_note:"fP_nren Tab 5.17 — folosește PE_FACTORS_TAB_A16_NA_2023 (fP_nren=2,00, fP_ren=0,50) pentru calcul nou" },
 
   // ── TERMOFICARE ──────────────────────────────────────────────────────────
   { id:"termoficare", label:"Termoficare / cogenerare urbană (SACET)",

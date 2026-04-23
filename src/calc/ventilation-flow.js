@@ -94,13 +94,20 @@ export function calcVentilationFlow(params) {
   const heatLoss_LS = q_total_LS * 0.0012 * 3600; // W la ΔT=1K (ρ×c×Q)
   const heatSavedKwh = hrEffect > 0 ? heatLoss_LS * 25 * (climate?.ngz || 3000) / 1000000 * hrEffect : 0;
 
-  // CO₂ estimat [ppm] la ocupare maximă (verificare EN 16798-1 §6.2)
+  // CO₂ estimat [ppm] la ocupare maximă (verificare SR EN 16798-1:2019/NA:2019 §6.2 Tabel A.6.2)
+  // Standardul definește LIMITA ca ΔCO₂ față de exterior, NU valoare absolută:
+  //   IDA I:   ΔCO₂ ≤ 400 ppm  | IDA II:  ΔCO₂ ≤ 600 ppm
+  //   IDA III: ΔCO₂ ≤ 1000 ppm | IDA IV:  ΔCO₂ > 1000 ppm
   // CO₂ exterior ~420 ppm (2026); producție internă ~20 L/h·pers (activitate ușoară)
   const co2Ext = 420; // ppm
   const co2Prod_LS = nPersons * 20 / 3600; // L/s producție CO₂
   const co2_steady = co2Ext + (co2Prod_LS / q_total_LS) * 1e6; // ppm — Ecuația Pettenkofer
-  const co2Limit = iqCat === "I" ? 550 : iqCat === "II" ? 800 : iqCat === "III" ? 1350 : 1800;
-  const co2Conform = co2_steady <= co2Limit;
+  // ΔCO₂ maxim admis peste exterior (SR EN 16798-1 NA:2019 Tabel A.6.2)
+  const deltaCO2_limits = { I: 400, II: 600, III: 1000, IV: 1400 };
+  const deltaCO2Limit = deltaCO2_limits[iqCat] || 600;
+  const co2Limit = co2Ext + deltaCO2Limit; // ppm absolut (pentru afișare și comparare)
+  const deltaCO2_steady = co2_steady - co2Ext; // ΔCO₂ efectiv
+  const co2Conform = deltaCO2_steady <= deltaCO2Limit;
 
   // Clasificare
   let cls, color;
@@ -116,15 +123,18 @@ export function calcVentilationFlow(params) {
     q_min_LS: Math.round(q_min_LS * 10) / 10,
     n_air: Math.round(n_air * 100) / 100,
     co2_steady: Math.round(co2_steady),
+    co2Ext,
     co2Limit,
+    deltaCO2_steady: Math.round(deltaCO2_steady),
+    deltaCO2Limit,
     co2Conform,
     qConform,
     ventEnergyKwh: Math.round(ventEnergyKwh),
     heatSavedKwh: Math.round(heatSavedKwh),
     ieqCategory: iqCat,
     classification: cls, color,
-    verdict: co2Conform && qConform ? `Ventilare corespunzătoare Cat. ${iqCat} (CO₂ ≤ ${co2Limit} ppm)` :
-             `Debit insuficient — CO₂ estimat ${Math.round(co2_steady)} ppm (limită: ${co2Limit} ppm)`,
+    verdict: co2Conform && qConform ? `Ventilare corespunzătoare Cat. ${iqCat} (ΔCO₂ ≤ ${deltaCO2Limit} ppm peste exterior)` :
+             `Debit insuficient — ΔCO₂ estimat ${Math.round(deltaCO2_steady)} ppm (limită Cat. ${iqCat}: ${deltaCO2Limit} ppm peste ${co2Ext} ppm exterior)`,
     recommendation: n_air < 0.5 ? "Creșteți debitul de ventilare sau treceți la sistem mecanic controlat." :
                     !co2Conform ? "Creșteți debitele sau instalați controlul ventilării pe CO₂." : null,
     method: "SR EN 16798-1:2019/NA:2019 — metoda combinată (persoană + suprafață)",

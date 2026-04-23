@@ -132,7 +132,9 @@ ${energyXML}
 
   <Certification>
     ${tag('CertDate', today)}
-    ${tag('ValidUntil', today.replace(/^(\d{4})/, y => String(parseInt(y)+10)))}
+    ${/* Mc 001-2022 cap.5 + L.372/2005 R2 art.11: valabilitate 5 ani clădiri noi / 10 ani existente */''}
+    ${tag('ValidityYears', building?.isNew === true ? 5 : 10, {unit:'ani'})}
+    ${tag('ValidUntil', today.replace(/^(\d{4})/, y => String(parseInt(y) + (building?.isNew === true ? 5 : 10))))}
     ${tag('AuditorName', auditorName)}
     ${tag('AuditorCode', auditorCode)}
     ${tag('Software', 'Zephren v3.2 — zephren.energy')}

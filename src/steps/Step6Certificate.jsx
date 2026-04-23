@@ -49,7 +49,7 @@ export default function Step6Certificate(props) {
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
     exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
-    bacsClass,
+    bacsClass, bacsCheck,
     buildingPhotos,
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
@@ -1962,6 +1962,23 @@ ${(() => {
                 </div>
                 <p className="text-xs opacity-40">Generare CPE conform Ordinului MDLPA nr. 16/2023 — format oficial cu clasare dublă</p>
               </div>
+
+              {/* Banner BACS L.238/2024 — termen expirat (31.12.2024) */}
+              {bacsCheck?.deadlineExpired && (
+                <div className="mb-5 p-4 rounded-lg bg-red-500/15 border border-red-500/40 text-red-200 text-xs space-y-1">
+                  <div className="font-bold uppercase tracking-wide">🛑 BACS — Termen legal DEPĂȘIT</div>
+                  <div>{bacsCheck.reason}</div>
+                  <div className="text-red-300/80">{bacsCheck.epbdRef} · Clădirea NU respectă Legea 238/2024 Art. 14 la momentul emiterii CPE. Auditorul este obligat să consemneze neconformitatea.</div>
+                </div>
+              )}
+              {/* Banner BACS viitor (avertisment auditor) */}
+              {!bacsCheck?.deadlineExpired && bacsCheck?.mandatory && bacsCheck?.deadline && (
+                <div className="mb-5 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+                  <div className="font-semibold">⚠️ BACS obligatoriu</div>
+                  <div>{bacsCheck.reason}</div>
+                  <div className="text-amber-300/80">Termen: {bacsCheck.deadline} · {bacsCheck.epbdRef}</div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
                 {/* Date auditor + generare */}

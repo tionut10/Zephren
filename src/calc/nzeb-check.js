@@ -31,6 +31,109 @@ const BASE_CAT_FALLBACK = {
 const SEV = { ERR: "error", WARN: "warning", OK: "ok", INFO: "info" };
 
 // ═══════════════════════════════════════════════════════════════
+// U'max per element — SR EN ISO 52018-1:2018/NA:2023 Tab A.2b / A.3
+// Cerință OBLIGATORIE pentru nZEB (separat de limita EP): fiecare element
+// al anvelopei trebuie să respecte transmitanța maximă pe tip + tipologie.
+// Valori din NA 2023 (Licență ASRO TUNARU IONUȚ, Factură 148552/17.04.2026)
+// ═══════════════════════════════════════════════════════════════
+const NZEB_U_MAX = {
+  residential: {  // Tab A.2b — clădiri rezidențiale NZEB (după 01.01.2023)
+    PE:   0.20,   // Pereți exteriori
+    PET:  0.20,   // Pereți exteriori termoizolați
+    AC:   0.17,   // Planșee peste ultimul nivel (teras/pod)
+    PP:   0.17,   // Planșeu pod (echivalent AC)
+    PS:   0.29,   // Planșee peste subsoluri neîncălzite
+    PSI:  0.19,   // Plăci demisoluri/subsoluri încălzite
+    PR:   0.67,   // Pereți adiacenți rosturilor închise
+    PAR:  0.67,   // alias pereți rosturi
+    PLE:  0.20,   // Planșee delimitate de exterior
+    PL:   0.20,   // Plăci pe sol (peste CTS)
+    PB:   0.20,   // Plăci pe sol (bază)
+    PSE:  0.29,   // Pereți exteriori sub CTS
+    FE:   1.20,   // Ferestre / tâmplărie exterioară
+    UE:   1.20,   // Uși exterioare
+  },
+  nonresidential: { // Tab A.3 — clădiri nerezidențiale NZEB
+    PE:   0.22,
+    PET:  0.22,
+    AC:   0.17,
+    PP:   0.17,
+    PS:   0.32,
+    PSI:  0.21,
+    PR:   0.72,
+    PAR:  0.72,
+    PLE:  0.22,
+    PL:   0.22,
+    PB:   0.22,
+    PSE:  0.32,
+    FE:   1.30,
+    UE:   1.30,
+  },
+};
+
+// Categorii considerate rezidențiale pentru alegerea setului U'max
+const RESIDENTIAL_CATS = new Set(["RI", "RC", "RA"]);
+
+// Calculează U efectiv pentru un element (suportă U direct sau straturi)
+function computeElementU(el) {
+  if (el?.U != null && Number.isFinite(parseFloat(el.U))) return parseFloat(el.U);
+  const R_si_se = 0.17; // R_si + R_se tipic pereți (ISO 6946)
+  const R = (el?.layers || []).reduce((r, l) => {
+    const d = parseFloat(l.thickness) || 0;
+    const lambda = parseFloat(l.lambda) || 1;
+    return r + (d / 1000) / Math.max(lambda, 0.001);
+  }, R_si_se);
+  return 1 / Math.max(R, 0.05);
+}
+
+/**
+ * Verifică U'max pentru fiecare element al anvelopei conform SR EN ISO 52018-1
+ * @returns {{ ok, violations: [{name, type, U, uMax, deltaPct}], uMaxSet: "residential"|"nonresidential" }}
+ */
+function checkEnvelopeUmax({ opaqueElements, glazingElements, category }) {
+  const isRes = RESIDENTIAL_CATS.has(category);
+  const uMaxSet = isRes ? NZEB_U_MAX.residential : NZEB_U_MAX.nonresidential;
+  const uMaxSetKey = isRes ? "residential" : "nonresidential";
+  const violations = [];
+
+  (opaqueElements || []).forEach(el => {
+    const type = (el.type || "").toUpperCase();
+    const uMax = uMaxSet[type];
+    if (uMax == null) return; // tip necunoscut — nu verificăm
+    const U = computeElementU(el);
+    if (U > uMax + 0.005) { // toleranță 0,005 pentru rotunjiri
+      violations.push({
+        name: el.name || type,
+        type,
+        U: Math.round(U * 1000) / 1000,
+        uMax,
+        deltaPct: Math.round(((U - uMax) / uMax) * 1000) / 10,
+      });
+    }
+  });
+
+  (glazingElements || []).forEach(gl => {
+    const type = "FE";
+    const uMax = uMaxSet[type];
+    const U = parseFloat(gl.u);
+    if (!Number.isFinite(U)) return;
+    if (U > uMax + 0.005) {
+      violations.push({
+        name: gl.name || `Vitrare ${gl.orientation || ""}`.trim(),
+        type,
+        U: Math.round(U * 1000) / 1000,
+        uMax,
+        deltaPct: Math.round(((U - uMax) / uMax) * 1000) / 10,
+      });
+    }
+  });
+
+  return { ok: violations.length === 0, violations, uMaxSet: uMaxSetKey };
+}
+
+export { NZEB_U_MAX, checkEnvelopeUmax };
+
+// ═══════════════════════════════════════════════════════════════
 // checkNZEBCompliance — verificare completă conformare nZEB
 //
 // @param {object} params
@@ -94,7 +197,17 @@ export function checkNZEBCompliance(params = {}) {
   const epOk = ep <= epMax;
   const rerOk = rer >= rerMin;
   const rerOnsiteOk = rerOnsite >= rerOnsiteMin;
-  const compliant = epOk && rerOk && rerOnsiteOk;
+
+  // Verificare U'max per element (SR EN ISO 52018-1:2018/NA:2023)
+  // Obligatorie pentru nZEB — separat de limita EP globală
+  const envelopeCheck = checkEnvelopeUmax({
+    opaqueElements: building?.opaqueElements,
+    glazingElements: building?.glazingElements,
+    category: baseCat,
+  });
+  const envelopeOk = envelopeCheck.ok;
+
+  const compliant = epOk && rerOk && rerOnsiteOk && envelopeOk;
 
   const checks = [
     {
@@ -127,6 +240,17 @@ export function checkNZEBCompliance(params = {}) {
       unit: "%",
       reference: "Legea 238/2024 Art.6 + garanții origine 20%",
     },
+    {
+      id: "envelope_umax",
+      label: `Transmitanțe anvelopă U ≤ U'max (${envelopeCheck.uMaxSet === "residential" ? "rezidențial" : "nerezidențial"})`,
+      value: envelopeCheck.violations.length,
+      target: 0,
+      ok: envelopeOk,
+      severity: envelopeOk ? SEV.OK : SEV.ERR,
+      unit: "elem. neconforme",
+      reference: "SR EN ISO 52018-1:2018/NA:2023 Tab. A.2b/A.3",
+      details: envelopeCheck.violations,
+    },
   ];
 
   // Lista gap-urilor (doar cele neîndeplinite, cu descriere clară)
@@ -147,6 +271,15 @@ export function checkNZEBCompliance(params = {}) {
     gaps.push(
       `Ponderea regenerabilă la fața locului este de ${rerOnsite.toFixed(1)}% ` +
       `(necesar ≥ ${rerOnsiteMin}%) — se poate compensa parțial prin garanții de origine (max 20%)`
+    );
+  }
+  if (!envelopeOk) {
+    const list = envelopeCheck.violations
+      .map(v => `${v.name} (${v.type}): U=${v.U} > U'max=${v.uMax} W/(m²·K) [+${v.deltaPct}%]`)
+      .join("; ");
+    gaps.push(
+      `${envelopeCheck.violations.length} element(e) al anvelopei depășesc U'max nZEB ` +
+      `conform SR EN ISO 52018-1/NA:2023: ${list}`
     );
   }
 
@@ -302,6 +435,11 @@ export function checkNZEBCompliance(params = {}) {
       article: "Anexa 1 + Anexa 2",
       text: "Metodologie de calcul al performanței energetice — conținut-cadru certificat și raport tehnic",
     },
+    {
+      doc: "SR EN ISO 52018-1:2018/NA:2023",
+      article: "Tabel A.2b (rezidențial) / A.3 (nerezidențial)",
+      text: "Transmitanțe termice maxime U'max per element anvelopă — cerință obligatorie separată pentru nZEB",
+    },
   ];
 
   return {
@@ -324,6 +462,9 @@ export function checkNZEBCompliance(params = {}) {
     epOk,
     rerOk,
     rerOnsiteOk,
+    envelopeOk,
+    envelopeViolations: envelopeCheck.violations,
+    uMaxSet: envelopeCheck.uMaxSet,
 
     // Context
     zone: climate.zone,

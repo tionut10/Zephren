@@ -166,9 +166,12 @@ export function checkMajorRenovConformity(elements, glazingElements, category) {
 
 // ═══════════════════════════════════════════════════════════════
 // CHP — Cogenerare (Combined Heat and Power)
+// Catalog informativ pentru UI (Step7). Pentru calcul efectiv se folosește
+// `CHP_TYPES_CATALOG` din `chp-detailed.js` (Sprint 6) cu PES, factori reali.
+// fP_el aliniat cu SR EN ISO 52000-1:2017/NA:2023 Tab A.16 (fP_tot = 2,50).
 // ═══════════════════════════════════════════════════════════════
 export const CHP_TYPES = [
-  { id:"micro_chp_gaz", label:"Micro-cogenerare gaz natural", eta_el:0.30, eta_th:0.55, fP_el:2.62, fP_th:1.17 },
+  { id:"micro_chp_gaz", label:"Micro-cogenerare gaz natural", eta_el:0.30, eta_th:0.55, fP_el:2.50, fP_th:1.17 },
   { id:"chp_biogaz", label:"Cogenerare biogaz", eta_el:0.32, eta_th:0.50, fP_el:0.50, fP_th:0.50 },
   { id:"chp_biomasa", label:"Cogenerare biomasă", eta_el:0.20, eta_th:0.60, fP_el:0.20, fP_th:0.20 },
 ];
