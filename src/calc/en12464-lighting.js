@@ -158,11 +158,24 @@ export function calcZoneLighting(zoneType, area_m2, luminaireType = "led_standar
 }
 
 /**
- * Calcul LENI complet clădire — EN 15193-1 + EN 12464-1
+ * Calcul LENI complet clădire — metodă DETAILED multi-zonă (EN 12464-1 + EN 15193-1)
+ *
+ * DIFERENȚĂ de motorul LENI simplu din en15193-lighting.js:
+ *   - `en15193-lighting.js::calcLENI` — calcul agregat pentru întreaga clădire (folosit în
+ *     flux principal prin `useInstallationSummary`). Suficient pentru CPE obișnuit.
+ *   - `en12464-lighting.js::calcBuildingLENI` — calcul zonă-cu-zonă cu cerințe fotometrice
+ *     diferite (Em, UGR, Ra, U0) per activitate. Se folosește pentru Step8Advanced când
+ *     auditorul introduce zone personalizate (sală operație + hol + salon) sau pentru
+ *     audit detaliat de iluminat pe clădiri mari (Mc 001-2022 Part.IV Anexa 3).
+ *
+ * Sprint 20 (23 apr 2026): consolidare — marcat rolul funcției; integrarea în Step8
+ * Advanced e planificată Sprint 22 (feature premium "Audit iluminat detaliat").
+ *
+ * @see {@link "../calc/en15193-lighting.js"::calcLENI} pentru calcul simplu (flux principal)
  * @param {string} category - Categoria clădirii (BI, ED, SA, etc.)
  * @param {number} Au - Suprafață utilă [m²]
  * @param {object} params - Parametri iluminat
- * @returns {object} LENI [kWh/(m²·an)], putere instalată, conformitate
+ * @returns {object} LENI [kWh/(m²·an)], putere instalată per zonă, conformitate Em
  */
 export function calcBuildingLENI(category, Au, params = {}) {
   if (!Au || Au <= 0) return null;

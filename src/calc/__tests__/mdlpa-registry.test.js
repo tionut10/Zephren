@@ -35,6 +35,6 @@ describe("mdlpa-registry (API MDLPA încă nepublicat)", () => {
     expect(s.enabled).toBe(false);
     expect(typeof s.note).toBe("string");
     expect(s.note).toMatch(/MDLPA/);
-    expect(s.lastChecked).toBe("2026-04-18");
+    expect(s.lastChecked).toMatch(/^2026-04-\d{2}$/); // data actualizată la fiecare Sprint
   });
 });

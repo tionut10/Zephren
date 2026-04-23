@@ -2,7 +2,10 @@
 // MODEL RADIAȚIE SOLARĂ — SR EN ISO 52010-1:2017/NA:2023
 // Calcul iradianță pe suprafețe orientate/înclinate din date orizontale
 // Metodă: descompunere directă + difuză izotropică + reflectată de sol
+// Sprint 20 (23 apr 2026): integrare umbrire orizont + albedo sezonier
 // ═══════════════════════════════════════════════════════════════
+
+import { directBeamVisibility, skyViewFactor } from "./horizon.js";
 
 const DEG = Math.PI / 180;
 
@@ -79,6 +82,42 @@ const SURFACE_AZIMUTH = {
   S: 0, SV: 45, V: 90, NV: 135, N: 180, NE: -135, E: -90, SE: -45, Oriz: 0,
 };
 
+// ═══════════════════════════════════════════════════════════════
+// Albedo sezonier per zonă climatică RO — SR EN ISO 52010-1 §6.4.3 + IPCC AR6
+// Sprint 20 (23 apr 2026): înainte era 0.2 constant anual → supraestimare
+// radiație reflectată iarnă în zonele montane (zăpadă persistentă).
+// Valori: IPCC AR6 Tab 7.SM.1 + ASHRAE Handbook Fundamentals 2021.
+//
+// Strat de zăpadă recent: ρ = 0.80-0.90 (ASHRAE)
+// Strat de zăpadă vechi / murdar: ρ = 0.40-0.60
+// Iarbă uscată / sol gol: ρ = 0.15-0.25 (default 0.20)
+// ═══════════════════════════════════════════════════════════════
+const ALBEDO_SEASONAL = {
+  // Zonă I (Litoral, Constanța) — fără zăpadă persistentă
+  I:   [0.25, 0.22, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.25],
+  // Zonă II (București, Timișoara) — zăpadă ocazională dec-feb
+  II:  [0.35, 0.30, 0.22, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.20, 0.22, 0.30],
+  // Zonă III (Cluj, Iași) — zăpadă persistentă dec-mar
+  III: [0.55, 0.50, 0.35, 0.22, 0.20, 0.20, 0.20, 0.20, 0.20, 0.22, 0.30, 0.50],
+  // Zonă IV (Brașov, Miercurea Ciuc) — iarnă lungă cu zăpadă
+  IV:  [0.70, 0.65, 0.50, 0.25, 0.20, 0.20, 0.20, 0.20, 0.20, 0.25, 0.45, 0.65],
+  // Zonă V (munte, Predeal-Sinaia) — zăpadă nov-apr
+  V:   [0.80, 0.75, 0.65, 0.40, 0.25, 0.22, 0.20, 0.20, 0.22, 0.35, 0.60, 0.75],
+};
+
+/**
+ * Albedo pentru luna și zona climatică date
+ * @param {string} zone — "I" | "II" | "III" | "IV" | "V"
+ * @param {number} month — 0-11 (ian-dec)
+ * @returns {number} — reflectanța solului [0-1]
+ */
+export function getSeasonalAlbedo(zone, month) {
+  const table = ALBEDO_SEASONAL[zone] || ALBEDO_SEASONAL.III;
+  return table[Math.max(0, Math.min(11, month | 0))];
+}
+
+export { ALBEDO_SEASONAL };
+
 /**
  * Iradianță pe suprafață orientată — model izotropic difuz (Liu & Jordan)
  * ISO 52010-1 §6.5.4 — metoda simplificată
@@ -121,19 +160,26 @@ export function irradianceOnSurface(Gb_h, Gd_h, altitude, theta, tilt, rho_g = 0
  * @param {number} lat — latitudine [°]
  * @param {number[]} Gh_monthly — iradianță globală lunară orizontală [kWh/m²·lună] (12 valori)
  * @param {number} [diffuseRatio=0.45] — fracțiunea difuză din global (kt corecție, implicit 0.45)
+ * @param {string} [climateZone="III"] — zona climatică RO (I-V) pentru albedo sezonier
+ * @param {string|object} [horizonProfile] — profil orizont (cheie HORIZON_PROFILES sau obiect elevations)
  * @returns {{ [orientation: string]: number[] }} — 9 orientări × 12 luni
  */
-export function calcMonthlyIrradianceAllOrientations(lat, Gh_monthly, diffuseRatio = 0.45) {
+export function calcMonthlyIrradianceAllOrientations(lat, Gh_monthly, diffuseRatio = 0.45, climateZone = "III", horizonProfile = null) {
   const orientations = ["N", "NE", "E", "SE", "S", "SV", "V", "NV", "Oriz"];
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const result = {};
 
   orientations.forEach(ori => { result[ori] = new Array(12).fill(0); });
 
+  // Sky view factor pentru componenta difuză (Sprint 20)
+  const svf = horizonProfile ? skyViewFactor(horizonProfile) : 1.0;
+
   for (let m = 0; m < 12; m++) {
     const dayMid = daysInMonth.slice(0, m).reduce((a, b) => a + b, 0) + Math.round(daysInMonth[m] / 2);
     const decl = solarDeclination(dayMid);
     const Gh_day_Wh = (Gh_monthly[m] * 1000) / daysInMonth[m]; // Wh/m²·zi
+    // Albedo sezonier conform climateZone (Sprint 20 — iarna cu zăpadă)
+    const rho_g_month = getSeasonalAlbedo(climateZone, m);
 
     // Fracțiune directă/difuză
     const Gd_day_Wh = Gh_day_Wh * diffuseRatio;
@@ -153,7 +199,15 @@ export function calcMonthlyIrradianceAllOrientations(lat, Gh_monthly, diffuseRat
         const Gb_h = Gb_day_Wh / 10; // W/m² instant (aprox din Wh zilnic / ~10 ore soare)
         const Gd_h = Gd_day_Wh / 10;
         const theta = incidenceAngle(lat, decl, ha, tilt, surfAz);
-        const irr = irradianceOnSurface(Gb_h, Gd_h, pos.altitude, theta, tilt);
+
+        // Sprint 20: corecție directă cu umbrire orizont
+        const beamVisible = horizonProfile
+          ? directBeamVisibility(pos.altitude, pos.azimuth - 180, horizonProfile) // convenție: az geografic - 180 → az față de S
+          : 1.0;
+        const Gb_eff = Gb_h * beamVisible;
+        const Gd_eff = Gd_h * svf; // difuza redusă de sky view factor
+
+        const irr = irradianceOnSurface(Gb_eff, Gd_eff, pos.altitude, theta, tilt, rho_g_month);
         sum_Wh += irr.G_total; // 1 oră × W/m² = Wh/m²
       }
 

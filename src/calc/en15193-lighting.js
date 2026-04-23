@@ -46,6 +46,68 @@ export const LENI_MAX_BY_CATEGORY = {
   RI: 12, RC: 12, RA: 12, AL: 20,
 };
 
+// ═══════════════════════════════════════════════════════════════
+// F_D — Factor daylight (EN 15193-1 Anexa F, Tab F.1 + F.26)
+// Sprint 20 (23 apr 2026): înlocuire aproximare liniară `1 − 0,65·ratio`
+// cu tabel discret + interpolare, conform Anexei F pentru latitudini 42-48° (RO).
+//
+// F_D = F_D,S (supply) × F_D,C (constant) × F_D,N (no-daylight fraction)
+// Implementare simplificată: F_D final funcție de WFR (window-to-wall ratio)
+// și tip control daylight.
+// ═══════════════════════════════════════════════════════════════
+
+/** Tabel WFR (window-to-wall ratio) → F_D,S pentru zone daylight (EN 15193-1 Tab F.26) */
+const F_D_S_TABLE = [
+  { wfr: 0.00, fds: 1.00 },
+  { wfr: 0.10, fds: 0.90 },
+  { wfr: 0.20, fds: 0.76 },
+  { wfr: 0.30, fds: 0.62 },
+  { wfr: 0.40, fds: 0.48 },
+  { wfr: 0.50, fds: 0.38 },
+  { wfr: 0.60, fds: 0.32 },
+  { wfr: 0.70, fds: 0.28 },
+];
+
+/**
+ * Multiplicator F_D,C (exploatare daylight) — EN 15193-1 Tab F.18
+ * Valorile < 1 reduc F_D final → consum artificial redus când controlul
+ * exploatează efectiv lumina naturală. Manual = fără reducere suplimentară.
+ */
+const F_D_C_BY_CONTROL = {
+  manual:       1.00, // fără daylight dimming — folosește fDs direct
+  auto_switch:  0.85, // comutator automat 2-poziții
+  dimming:      0.72, // dimming liniar DALI / 1-10V
+  advanced:     0.55, // dimming + prezență + constant illuminance (BMS)
+};
+
+/**
+ * Calculează F_D conform EN 15193-1 Anexa F (tabular + interpolare liniară)
+ * F_D = fds_WFR × fdc_control. Valoare mai mică → consum artificial redus.
+ *
+ * @param {number} wfr — raport suprafață fereastră/perete (0-1); în practică 0,1-0,5
+ * @param {"manual"|"auto_switch"|"dimming"|"advanced"} controlType — tip control daylight
+ * @returns {number} — F_D final [0-1], factor reducere lumină artificială datorat daylight
+ */
+export function calcFD(wfr, controlType = "manual") {
+  const r = Math.max(0, Math.min(0.7, wfr || 0));
+  // Interpolare liniară în tabel
+  let fds = 1.0;
+  for (let i = 0; i < F_D_S_TABLE.length - 1; i++) {
+    const a = F_D_S_TABLE[i];
+    const b = F_D_S_TABLE[i + 1];
+    if (r >= a.wfr && r <= b.wfr) {
+      const t = (r - a.wfr) / (b.wfr - a.wfr);
+      fds = a.fds + t * (b.fds - a.fds);
+      break;
+    }
+  }
+  if (r >= 0.7) fds = F_D_S_TABLE[F_D_S_TABLE.length - 1].fds;
+  const fdc = F_D_C_BY_CONTROL[controlType] || 1.0;
+  return fds * fdc;
+}
+
+export { F_D_S_TABLE, F_D_C_BY_CONTROL };
+
 /**
  * Calcul LENI complet conform EN 15193-1 + Mc 001-2022.
  *
@@ -55,7 +117,9 @@ export const LENI_MAX_BY_CATEGORY = {
  * @param {number} params.pDensity         - Densitate putere iluminat [W/m²]
  * @param {number} params.fCtrl            - Factor control F_C ∈ [0.3, 1.0]
  * @param {number} params.operatingHours   - Ore funcționare/an [h] (0 < h ≤ 8760)
- * @param {number} params.naturalLightRatio - Raport lumină naturală [0..0.8]
+ * @param {number} params.naturalLightRatio - Raport lumină naturală [0..0.8] (legacy, folosit dacă wfr nu e dat)
+ * @param {number} [params.wfr]            - Window-to-wall ratio [0..0.7] — Sprint 20: F_D tabular Anexa F
+ * @param {string} [params.daylightControl] - "manual"|"auto_switch"|"dimming"|"advanced"
  * @param {number} [params.pEmergency]     - Putere iluminat urgență [W/m²] (default: 0 rezidențial, 1.0 public)
  * @param {number} [params.pStandby]       - Putere standby drivere [W/m²] (default 0.3)
  * @param {number} [params.fo]             - Factor ocupare explicit (default din F_O_BY_CATEGORY)
@@ -71,6 +135,8 @@ export function calcLENI(params) {
     fCtrl,
     operatingHours,
     naturalLightRatio,
+    wfr,
+    daylightControl,
     pEmergency,
     pStandby,
     fo: foOverride,
@@ -87,8 +153,14 @@ export function calcLENI(params) {
   const tD = operatingHours * (1 - nightFrac);
   const tN = operatingHours * nightFrac;
 
-  const natRatio = Math.max(0, Math.min(0.8, naturalLightRatio || 0));
-  const fD = Math.max(0, 1 - natRatio * 0.65);
+  // Sprint 20: F_D tabular EN 15193-1 Anexa F când `wfr` e dat; altfel formula legacy
+  let fD;
+  if (typeof wfr === "number" && wfr > 0) {
+    fD = calcFD(wfr, daylightControl || "manual");
+  } else {
+    const natRatio = Math.max(0, Math.min(0.8, naturalLightRatio || 0));
+    fD = Math.max(0, 1 - natRatio * 0.65);
+  }
 
   // W_L — F_d/F_c DOAR pe termen diurn (nu există daylight noaptea — fix Sprint 2)
   const W_L = pDensity * (tD * fo * fD * fCtrl + tN * fo) / 1000;

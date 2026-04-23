@@ -180,16 +180,20 @@ const INTERNAL_GAINS_PEAK = {
 };
 
 // Factor de amortizare datorat inerției termice — CIBSE Guide A Tabel 6.13
-// Structuri grele absorb ~30-40% din câștigurile instantanee
+// + SR EN 15243:2007 §6.5 (admitanță termică). Structuri grele amortizează
+// 40-50% din câștigurile instantanee (peak load reduction). Valorile
+// anterioare (0.65-0.95) subestimau amortizarea pentru structuri masive →
+// supraestimau sarcina de răcire cu ~10-15%. Sprint 20 (23 apr 2026):
+// recalibrare pe CIBSE Guide A Tab 6.13 (heavy 0.50-0.60; medium 0.65-0.75).
 const THERMAL_INERTIA_FACTOR = {
-  "Structură metalică": 0.95,       // aproape fără amortizare
-  "Structură lemn": 0.90,
-  "Panouri prefabricate mari": 0.75,
-  "Cadre beton armat": 0.70,
-  "Zidărie portantă": 0.65,        // amortizare semnificativă
-  "Pereți cortină + beton": 0.75,
-  "BCA + cadre beton": 0.70,
-  "Structură mixtă": 0.75,
+  "Structură metalică": 0.90,       // very light — amortizare minimă
+  "Structură lemn": 0.85,           // light
+  "Panouri prefabricate mari": 0.70, // medium-light
+  "Cadre beton armat": 0.60,        // medium-heavy (beton + umplutură ușoară)
+  "Zidărie portantă": 0.55,         // heavy — amortizare 45% peak
+  "Pereți cortină + beton": 0.65,   // medium
+  "BCA + cadre beton": 0.62,        // medium-heavy
+  "Structură mixtă": 0.70,          // default medium
 };
 
 export function calcPeakCoolingLoad(params) {
