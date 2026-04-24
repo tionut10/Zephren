@@ -6,6 +6,7 @@ import {
   PRIMARY_REFERENCES,
   CROSS_SOURCE_DATABASES,
   ISO_CLASS_THRESHOLDS,
+  DETAIL_TEMPLATES,
   getBridgeId,
   getBridgeSource,
   getBridgeEnglishName,
@@ -15,6 +16,10 @@ import {
   getEnrichedBridge,
   getAllEnrichedBridges,
   getMetadataCoverage,
+  getBridgeDetails,
+  calcAnnualLossPerMeter,
+  classifyCondensationRisk,
+  repairPriorityLabel,
 } from "../thermal-bridges-metadata.js";
 
 describe("thermal-bridges-metadata — constante și structură", () => {
@@ -59,16 +64,16 @@ describe("getBridgeId — ID-uri deterministe", () => {
   });
 
   it("generează hash determinist pentru intrări fără metadate", () => {
-    const id1 = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
-    const id2 = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
+    const id1 = getBridgeId("Soclu cu trotuar de protecție");
+    const id2 = getBridgeId("Soclu cu trotuar de protecție");
     expect(id1).toBe(id2); // determinist
     expect(id1).toMatch(/^TB-[A-Z]+-[0-9a-f]{4}$/);
   });
 
   it("prefix categorie corect pentru hash-uri", () => {
-    // categoria "Elemente punctuale (chi)" → CH
-    const id = getBridgeId("Ancoră de cavitate metalică (cavity wall tie)");
-    expect(id.startsWith("TB-CH-")).toBe(true);
+    // categoria "Fundații și subsol" → F
+    const id = getBridgeId("Soclu cu trotuar de protecție");
+    expect(id.startsWith("TB-F-")).toBe(true);
   });
 
   it("nu dă același ID pentru nume diferite (coliziuni improbabile)", () => {
@@ -92,8 +97,9 @@ describe("getBridgeSource — referințe normative citabile", () => {
   });
 
   it("cascadă: fallback la metadate categorie dacă intrarea nu are sursă explicită", () => {
-    const src = getBridgeSource("Ancoră de cavitate metalică (cavity wall tie)");
-    expect(src).toMatch(/ISO 10211|SCI P380/);
+    // "Soclu cu trotuar de protecție" nu are metadate entry → fallback la categoria "Fundații și subsol"
+    const src = getBridgeSource("Soclu cu trotuar de protecție");
+    expect(src).toMatch(/ISO 13370|ISO 14683/);
   });
 
   it("fallback final pentru nume inexistent", () => {
@@ -205,10 +211,10 @@ describe("getEnrichedBridge — agregator", () => {
   });
 
   it("funcționează și pentru intrări fără metadate detaliate", () => {
-    const e = getEnrichedBridge("Ancoră de cavitate metalică (cavity wall tie)");
-    expect(e.name).toBe("Ancoră de cavitate metalică (cavity wall tie)");
+    const e = getEnrichedBridge("Soclu cu trotuar de protecție");
+    expect(e.name).toBe("Soclu cu trotuar de protecție");
     expect(e.metadata.source).toBeTruthy(); // fallback categorie
-    expect(e.metadata.category_en).toBe("Point thermal bridges (chi)");
+    expect(e.metadata.category_en).toBe("Foundations & basement");
   });
 
   it("returnează null pentru nume inexistent", () => {
@@ -228,11 +234,133 @@ describe("getAllEnrichedBridges + coverage", () => {
     });
   });
 
-  it("coverage metadate per-entry ≥ 30% (minim 50 intrări cu metadate complete)", () => {
+  it("coverage metadate per-entry ≥ 50% (minim 80 intrări cu metadate complete)", () => {
     const cov = getMetadataCoverage();
     expect(cov.total).toBe(165);
-    expect(cov.withFullMeta).toBeGreaterThanOrEqual(50);
-    expect(cov.coveragePct).toBeGreaterThanOrEqual(30);
+    expect(cov.withFullMeta).toBeGreaterThanOrEqual(80);
+    expect(cov.coveragePct).toBeGreaterThanOrEqual(50);
+  });
+});
+
+describe("Schema v2 — detail_templates", () => {
+  it("DETAIL_TEMPLATES conține minim 15 arhetipuri", () => {
+    expect(Object.keys(DETAIL_TEMPLATES).length).toBeGreaterThanOrEqual(15);
+  });
+
+  it("fiecare template are toate câmpurile v2 (fRsi, detection, consequences, failures, remedies, priority, factor)", () => {
+    for (const [id, tpl] of Object.entries(DETAIL_TEMPLATES)) {
+      expect(typeof tpl.fRsi_typical, `${id}`).toBe("number");
+      expect(Array.isArray(tpl.detection), `${id}`).toBe(true);
+      expect(Array.isArray(tpl.consequences), `${id}`).toBe(true);
+      expect(Array.isArray(tpl.common_failures), `${id}`).toBe(true);
+      expect(Array.isArray(tpl.typical_remedies), `${id}`).toBe(true);
+      expect(typeof tpl.repair_priority, `${id}`).toBe("number");
+      expect(typeof tpl.annual_loss_factor, `${id}`).toBe("number");
+      expect(tpl.fRsi_typical).toBeGreaterThanOrEqual(0);
+      expect(tpl.fRsi_typical).toBeLessThanOrEqual(1);
+      expect(tpl.repair_priority).toBeGreaterThanOrEqual(1);
+      expect(tpl.repair_priority).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it("include template-urile cheie: CORNER, WALL_SLAB, BALCONY, WINDOW, ROOF, FOUNDATION", () => {
+    const keys = Object.keys(DETAIL_TEMPLATES);
+    expect(keys.some(k => k.includes("CORNER"))).toBe(true);
+    expect(keys.some(k => k.includes("BALCONY"))).toBe(true);
+    expect(keys.some(k => k.includes("WINDOW"))).toBe(true);
+    expect(keys.some(k => k.includes("ROOF"))).toBe(true);
+    expect(keys.some(k => k.includes("FOUNDATION") || k.includes("PLINTH"))).toBe(true);
+    expect(keys.some(k => k.includes("SLAB"))).toBe(true);
+  });
+});
+
+describe("getBridgeDetails — rezolvare template arhetip", () => {
+  it("Colț exterior → CORNER_EXTERNAL cu fRsi≈0.73, priority=3", () => {
+    const d = getBridgeDetails("Colț exterior");
+    expect(d).toBeTruthy();
+    expect(d.template_id).toBe("CORNER_EXTERNAL");
+    expect(d.fRsi_typical).toBeCloseTo(0.73, 1);
+    expect(d.repair_priority).toBe(3);
+    expect(d.detection.length).toBeGreaterThan(0);
+    expect(d.typical_remedies.length).toBeGreaterThan(0);
+  });
+
+  it("Consolă balcon neîntrerupt → BALCONY_UNINTERRUPTED cu priority=5", () => {
+    const d = getBridgeDetails("Consolă balcon — beton neîntrerupt");
+    expect(d.template_id).toBe("BALCONY_UNINTERRUPTED");
+    expect(d.repair_priority).toBe(5);
+    expect(d.fRsi_typical).toBeLessThan(0.65); // risc D
+    expect(d.annual_loss_factor).toBeGreaterThan(1.5);
+  });
+
+  it("Ruptor Isokorb → BALCONY_WITH_BREAK cu priority=1", () => {
+    const d = getBridgeDetails("Consolă balcon — cu ruptoare termice");
+    expect(d.template_id).toBe("BALCONY_WITH_BREAK");
+    expect(d.repair_priority).toBe(1);
+    expect(d.fRsi_typical).toBeGreaterThan(0.80); // clasa A condensare
+  });
+
+  it("returnează null pentru punte fără metadate", () => {
+    expect(getBridgeDetails("Punte inexistentă xyz")).toBe(null);
+  });
+});
+
+describe("calcAnnualLossPerMeter — pierderi kWh/m·an", () => {
+  it("ψ=0.25 × DD=3170 × 24h / 1000 × factor=1.4 ≈ 26.6 kWh/m·an", () => {
+    const loss = calcAnnualLossPerMeter(0.25, { degreeDays: 3170, factor: 1.4 });
+    expect(loss).toBeCloseTo(26.6, 0);
+  });
+
+  it("ψ=0 sau invalid returnează 0", () => {
+    expect(calcAnnualLossPerMeter(0)).toBe(0);
+    expect(calcAnnualLossPerMeter(NaN)).toBe(0);
+    expect(calcAnnualLossPerMeter(-0.1)).toBe(0);
+  });
+
+  it("ψ=0.7 (balcon) × factor 2 > 80 kWh/m·an (pierdere severă)", () => {
+    const loss = calcAnnualLossPerMeter(0.7, { factor: 2.0 });
+    expect(loss).toBeGreaterThan(80);
+  });
+});
+
+describe("classifyCondensationRisk — ISO 13788", () => {
+  it("fRsi ≥ 0.80 → clasa A (fără risc)", () => {
+    expect(classifyCondensationRisk(0.82)).toBe("A");
+    expect(classifyCondensationRisk(0.90)).toBe("A");
+  });
+
+  it("0.75 ≤ fRsi < 0.80 → clasa B", () => {
+    expect(classifyCondensationRisk(0.75)).toBe("B");
+    expect(classifyCondensationRisk(0.79)).toBe("B");
+  });
+
+  it("0.65 ≤ fRsi < 0.75 → clasa C (risc la HR≥60%)", () => {
+    expect(classifyCondensationRisk(0.70)).toBe("C");
+    expect(classifyCondensationRisk(0.74)).toBe("C");
+  });
+
+  it("fRsi < 0.65 → clasa D (condensare iarnă)", () => {
+    expect(classifyCondensationRisk(0.55)).toBe("D");
+    expect(classifyCondensationRisk(0.62)).toBe("D");
+  });
+
+  it("input invalid → D", () => {
+    expect(classifyCondensationRisk(NaN)).toBe("D");
+    expect(classifyCondensationRisk(undefined)).toBe("D");
+  });
+});
+
+describe("repairPriorityLabel", () => {
+  it("returnează etichetă pentru fiecare nivel 1-5", () => {
+    for (let p = 1; p <= 5; p++) {
+      const label = repairPriorityLabel(p);
+      expect(label).toContain(String(p));
+    }
+  });
+
+  it("returnează label pentru 3 pe input invalid", () => {
+    expect(repairPriorityLabel(999)).toBe(repairPriorityLabel(3));
+    expect(repairPriorityLabel(NaN)).toBe(repairPriorityLabel(3));
   });
 });
 

@@ -237,3 +237,93 @@ export function getMetadataCoverage() {
     coveragePct: Math.round((withFullMeta / total) * 1000) / 10,
   };
 }
+
+// ── Detail templates (v2 schema) ─────────────────────────────────────────────
+
+/** Schema câmpuri extinse v2 */
+export const FIELD_SCHEMA_V2 = META._meta.field_schema_v2 || {};
+
+/** Toate template-urile arhetipe disponibile */
+export const DETAIL_TEMPLATES = META.detail_templates || {};
+
+/**
+ * Returnează detaliile extinse (detection / consequences / remedies / priority
+ * / annual_loss_factor / fRsi_typical) pentru o punte, rezolvând template-ul
+ * arhetip din metadate.
+ *
+ * Cascada: entry.detail_template → DETAIL_TEMPLATES[tpl] → null
+ *
+ * @param {string} name
+ * @returns {object|null} { fRsi_typical, detection, consequences, common_failures,
+ *   typical_remedies, repair_priority, annual_loss_factor, template_id } sau null
+ */
+export function getBridgeDetails(name) {
+  const m = META.entries[name];
+  if (!m?.detail_template) return null;
+  const tpl = DETAIL_TEMPLATES[m.detail_template];
+  if (!tpl) return null;
+  return {
+    template_id: m.detail_template,
+    fRsi_typical: tpl.fRsi_typical,
+    detection: tpl.detection || [],
+    consequences: tpl.consequences || [],
+    common_failures: tpl.common_failures || [],
+    typical_remedies: tpl.typical_remedies || [],
+    repair_priority: tpl.repair_priority ?? 3,
+    annual_loss_factor: tpl.annual_loss_factor ?? 1.0,
+  };
+}
+
+/**
+ * Calculează pierderile anuale [kWh/m·an] pentru o punte termică dată.
+ * Formula ISO 13789: Q_an [kWh/m·an] = ψ × (T_int - T_ext_med) × t_heating[h] / 1000 × factor
+ * cu factor din template (multiplicator empiric 0.3-2.0 în funcție de severitate).
+ *
+ * Default pentru București: DD=3170 grade-zile, Δt_echivalent ≈ DD/D ≈ 3170/190 = 16.7°C
+ * heating hours 24h × 190 days = 4560h
+ *
+ * @param {number} psi - ψ [W/(m·K)]
+ * @param {object} opts - { degreeDays = 3170, heatingDays = 190, factor = 1.0 }
+ * @returns {number} pierderi per metru punte pe an [kWh/m·an]
+ */
+export function calcAnnualLossPerMeter(psi, { degreeDays = 3170, factor = 1.0 } = {}) {
+  if (!Number.isFinite(psi) || psi <= 0) return 0;
+  // kWh/m·an = ψ [W/(m·K)] × DD [K·zi] × 24 [h/zi] / 1000 × factor
+  const kWh = psi * degreeDays * 24 / 1000 * factor;
+  return Math.round(kWh * 100) / 100;
+}
+
+/**
+ * Severitate condens pe baza fRsi (ISO 13788):
+ *   fRsi ≥ 0.80 → A: fără risc
+ *   0.75 ≤ fRsi < 0.80 → B: acceptabil la HR≤50%
+ *   0.65 ≤ fRsi < 0.75 → C: risc la HR≥60% (mucegai posibil)
+ *   fRsi < 0.65 → D: condensare iarnă + mucegai Stachybotrys frecvent
+ *
+ * @param {number} fRsi
+ * @returns {"A"|"B"|"C"|"D"}
+ */
+export function classifyCondensationRisk(fRsi) {
+  const n = Number(fRsi);
+  if (!Number.isFinite(n)) return "D";
+  if (n >= 0.80) return "A";
+  if (n >= 0.75) return "B";
+  if (n >= 0.65) return "C";
+  return "D";
+}
+
+/**
+ * Etichetă textuală pentru prioritatea reparației (1-5).
+ * @param {number} p
+ * @returns {string}
+ */
+export function repairPriorityLabel(p) {
+  const labels = {
+    1: "1 · Cosmetic / opțional",
+    2: "2 · Îmbunătățire",
+    3: "3 · Necesar energetic",
+    4: "4 · Important (pierderi majore)",
+    5: "5 · CRITIC — risc sanitar/structural",
+  };
+  return labels[Math.round(Number(p) || 3)] || labels[3];
+}

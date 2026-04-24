@@ -175,6 +175,127 @@ function PsiBadge({ psi, x = 10, y = H - 10 }) {
   );
 }
 
+/**
+ * Cotă dimensională cu săgeți și valoare (stil arhitectural).
+ * Orientare: "h" = orizontală, "v" = verticală.
+ */
+function Dimension({ x1, y1, x2, y2, label, orientation = "h", offset = 8 }) {
+  const dx = orientation === "h" ? 0 : offset;
+  const dy = orientation === "h" ? offset : 0;
+  const mx = (x1 + x2) / 2 + dx * 1.5;
+  const my = (y1 + y2) / 2 + dy * 1.5;
+  // extensor lines
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <line x1={x1} y1={y1} x2={x1 + dx} y2={y1 + dy} stroke="#455a64" strokeWidth="0.4" />
+      <line x1={x2} y1={y2} x2={x2 + dx} y2={y2 + dy} stroke="#455a64" strokeWidth="0.4" />
+      <line x1={x1 + dx} y1={y1 + dy} x2={x2 + dx} y2={y2 + dy} stroke="#455a64" strokeWidth="0.5" />
+      {/* small arrow ticks */}
+      <circle cx={x1 + dx} cy={y1 + dy} r="1" fill="#455a64" />
+      <circle cx={x2 + dx} cy={y2 + dy} r="1" fill="#455a64" />
+      <text
+        x={mx}
+        y={my - (orientation === "h" ? 2 : 0)}
+        fontSize="8"
+        fill="#263238"
+        textAnchor="middle"
+        fontFamily="monospace"
+        fontWeight="600"
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * Zonă de risc condensare (când fRsi < 0.75).
+ * Marcată cu pattern hașurat albastru-mov + label.
+ */
+function CondensationZone({ x, y, w, h, fRsi }) {
+  if (fRsi >= 0.80) return null;
+  const severity = fRsi < 0.65 ? "severe" : fRsi < 0.75 ? "moderate" : "mild";
+  const color = severity === "severe" ? "#0891b2" : severity === "moderate" ? "#06b6d4" : "#67e8f9";
+  const label = severity === "severe" ? "CONDENS" : "risc cond.";
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <defs>
+        <pattern id={`p-cond-${severity}`} patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke={color} strokeWidth="0.8" opacity="0.6" />
+        </pattern>
+      </defs>
+      <rect x={x} y={y} width={w} height={h} fill={`url(#p-cond-${severity})`} rx="3" />
+      <rect x={x} y={y} width={w} height={h} stroke={color} strokeDasharray="3 2" strokeWidth="0.7" fill="none" rx="3" />
+      <g transform={`translate(${x + w - 30}, ${y + 8})`}>
+        <rect x="0" y="-7" width="28" height="9" rx="2" fill={color} opacity="0.9" />
+        <text x="14" y="0" fontSize="7" fontWeight="600" fill="white" textAnchor="middle">{label}</text>
+      </g>
+    </g>
+  );
+}
+
+/**
+ * Indicator isotermă — linie curbată între INT și EXT care arată unde
+ * scade temperatura prin element. Sugestiv (nu calculat).
+ */
+function IsothermHint({ x, y, w, h, color = "#ef4444" }) {
+  // Curbă simplă care arată convergența isotermelor în zona puntii
+  const cx = x + w / 2;
+  const path = `M ${x + 5} ${y + h / 4} Q ${cx - 5} ${y + h / 2} ${cx + 10} ${y + 3 * h / 4}`;
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <path d={path} stroke={color} strokeWidth="0.8" fill="none" strokeDasharray="2 2" opacity="0.7" />
+      <circle cx={cx} cy={y + h / 2} r="2" fill={color} opacity="0.6" />
+    </g>
+  );
+}
+
+/**
+ * Badge mic sus pentru clasă ISO 14683 A/B/C/D
+ */
+function IsoClassBadge({ isoClass, x = W - 38, y = 8 }) {
+  const color = isoClass === "A" ? "#10b981" : isoClass === "B" ? "#22d3ee" : isoClass === "C" ? "#f59e0b" : "#ef4444";
+  return (
+    <g transform={`translate(${x}, ${y})`} style={{ pointerEvents: "none" }}>
+      <rect x="0" y="0" width="30" height="14" rx="3" fill={color} opacity="0.95" />
+      <text x="15" y="10" fontSize="9" fontWeight="700" fill="white" textAnchor="middle" fontFamily="monospace">
+        ISO {isoClass}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * Indicator prioritate 1-5 stele portocaliu-roșu (colț superior stânga).
+ */
+function PriorityBadge({ priority = 3, x = 8, y = 8 }) {
+  const stars = "★".repeat(Math.max(1, Math.min(5, priority)));
+  const color = priority >= 4 ? "#dc2626" : priority >= 3 ? "#f97316" : "#fbbf24";
+  return (
+    <g transform={`translate(${x}, ${y})`} style={{ pointerEvents: "none" }}>
+      <rect x="0" y="0" width={5 * priority + 6} height="12" rx="2" fill="rgba(255,255,255,0.85)" />
+      <text x="3" y="9" fontSize="9" fill={color} fontFamily="monospace" fontWeight="700">{stars}</text>
+    </g>
+  );
+}
+
+/**
+ * Wrapper meta-ilustrație: primește bridge + detaliile extinse (fRsi, prioritate,
+ * clasă ISO) și adaugă overlay-uri deasupra ilustrației de bază.
+ */
+export function IllustrationOverlay({ fRsi, priority, isoClass, condZone }) {
+  return (
+    <>
+      {isoClass && <IsoClassBadge isoClass={isoClass} />}
+      {priority != null && <PriorityBadge priority={priority} />}
+      {condZone && typeof fRsi === "number" && <CondensationZone {...condZone} fRsi={fRsi} />}
+    </>
+  );
+}
+
+// Exportă primitive pentru utilizare ad-hoc dacă este nevoie
+export { Dimension, CondensationZone, IsothermHint, IsoClassBadge, PriorityBadge };
+
 // ── Ilustrații per categorie ─────────────────────────────────────────────────
 
 function IllustrationWallFloorIntermediate({ bridge }) {
@@ -1664,8 +1785,12 @@ function pickIllustration(bridge) {
 
 // ── Component public ─────────────────────────────────────────────────────────
 
-export default function BridgeIllustration({ bridge }) {
+export default function BridgeIllustration({ bridge, details, showOverlays = true }) {
   if (!bridge) return null;
+  // Determine condensation zone — aprox central pe zona fluxului termic
+  const condZone = details?.fRsi != null && details.fRsi < 0.80
+    ? { x: W * 0.22, y: H * 0.35, w: W * 0.30, h: H * 0.30 }
+    : null;
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
@@ -1676,6 +1801,14 @@ export default function BridgeIllustration({ bridge }) {
     >
       <Defs />
       {pickIllustration(bridge)}
+      {showOverlays && details && (
+        <IllustrationOverlay
+          fRsi={details.fRsi}
+          priority={details.priority}
+          isoClass={details.isoClass}
+          condZone={condZone}
+        />
+      )}
     </svg>
   );
 }

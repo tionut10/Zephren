@@ -488,87 +488,103 @@ export default function Step2Envelope({
             </Card>
           )}
 
-          {/* ── DIAGRAMĂ GLASER VIZUALĂ SVG (C1) ── */}
-          {glaserResult && opaqueElements[glaserElementIdx] && (
-            <Card title={t("Verificare condens Glaser (ISO 13788)", lang)}>
-              <svg viewBox="0 0 400 200" className="w-full" style={{minHeight:"160px"}}>
-                {/* Background */}
-                <rect x="0" y="0" width="400" height="200" fill="transparent" />
-                <text x="200" y="12" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="8">Profil temperatură și presiune vapori prin element</text>
-                {(() => {
-                  const el = opaqueElements[glaserElementIdx];
-                  const layers = el.layers || [];
-                  if (!layers.length) return null;
-                  const totalThick = layers.reduce((s,l) => s + (parseFloat(l.thickness)||0), 0);
-                  if (totalThick <= 0) return null;
-                  const tInt = 20, tExt = selectedClimate?.theta_e || -15;
-                  const rSi = 0.13, rSe = 0.04;
-                  // Calculate R values
-                  let rLayers = layers.map(l => {
-                    const d = (parseFloat(l.thickness)||0)/1000;
-                    return { d, lambda: l.lambda||0.5, rho: l.rho||1500, R: d > 0 && l.lambda > 0 ? d/l.lambda : 0, name: l.material || l.matName || "?" };
-                  });
-                  const rTotal = rSi + rLayers.reduce((s,l) => s+l.R, 0) + rSe;
-                  // Temperature profile
-                  const chartLeft = 50, chartRight = 380, chartTop = 25, chartBottom = 175;
-                  const chartW = chartRight - chartLeft;
-                  // Draw layers
-                  let xCum = chartLeft;
-                  const layerRects = [];
-                  const layerColors = ["rgba(239,68,68,0.08)","rgba(59,130,246,0.08)","rgba(234,179,8,0.08)","rgba(139,92,246,0.08)","rgba(34,197,94,0.08)"];
-                  rLayers.forEach((l, i) => {
-                    const w = (parseFloat(layers[i].thickness)||0) / totalThick * chartW;
-                    layerRects.push(<rect key={"lr"+i} x={xCum} y={chartTop} width={w} height={chartBottom-chartTop} fill={layerColors[i%layerColors.length]} stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />);
-                    layerRects.push(<text key={"lt"+i} x={xCum+w/2} y={chartBottom+11} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="5.5" className="select-none">{(parseFloat(layers[i].thickness)||0)}mm</text>);
-                    xCum += w;
-                  });
-                  // Temp line
-                  const tempPoints = [];
-                  let tCum = tInt, rCum2 = 0;
-                  tempPoints.push({ x: chartLeft, t: tInt - (tInt-tExt)*rSi/rTotal });
-                  rCum2 = rSi;
-                  rLayers.forEach((l, i) => {
-                    rCum2 += l.R;
-                    const t = tInt - (tInt-tExt)*rCum2/rTotal;
-                    const x = chartLeft + layers.slice(0,i+1).reduce((s,ll) => s+(parseFloat(ll.thickness)||0), 0) / totalThick * chartW;
-                    tempPoints.push({ x, t });
-                  });
-                  const tMin = Math.min(tExt, ...tempPoints.map(p=>p.t)) - 2;
-                  const tMax = Math.max(tInt, ...tempPoints.map(p=>p.t)) + 2;
-                  const tToY = (t) => chartTop + (1 - (t-tMin)/(tMax-tMin)) * (chartBottom - chartTop);
-                  const tempLine = tempPoints.map((p,i) => (i===0?"M":"L")+p.x.toFixed(1)+","+tToY(p.t).toFixed(1)).join(" ");
-                  // Y axis labels
-                  const yLabels = [];
-                  for (let t = Math.ceil(tMin/5)*5; t <= tMax; t += 5) {
-                    yLabels.push(<text key={"yl"+t} x={chartLeft-3} y={tToY(t)+2} textAnchor="end" fill="rgba(255,255,255,0.25)" fontSize="6">{t}°</text>);
-                    yLabels.push(<line key={"yg"+t} x1={chartLeft} y1={tToY(t)} x2={chartRight} y2={tToY(t)} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />);
-                  }
-                  // Dew point line (simplified)
-                  const dewPoints = tempPoints.map(p => {
-                    const rh = 0.65; // assume 65% RH interior
-                    const td = p.t - ((100 - rh*100) / 5);
-                    return { x: p.x, t: Math.min(td, p.t) };
-                  });
-                  const dewLine = dewPoints.map((p,i) => (i===0?"M":"L")+p.x.toFixed(1)+","+tToY(p.t).toFixed(1)).join(" ");
+          {/* ── DIAGRAMĂ GLASER REALĂ — p_sat vs p_v pe axa sd (ISO 13788) ── */}
+          {glaserResult && glaserResult.monthly && glaserResult.layers && glaserResult.layers.length > 0 && (
+            <Card title={t("Diagramă Glaser — presiuni vapori (ISO 13788)", lang)}>
+              {(() => {
+                // Luna critică: max condensation, fallback ianuarie
+                const worstIdx = glaserResult.monthly.reduce((best, m, i, arr) => (m.condensation || 0) > (arr[best].condensation || 0) ? i : best, 0);
+                const month = glaserResult.monthly[worstIdx];
+                const layers = glaserResult.layers;
+                const iFaces = month?.interfaces || [];
+                if (!iFaces.length) return <div className="text-[11px] opacity-40 text-center py-4">Interfețe indisponibile — reîncearcă după completarea straturilor.</div>;
+
+                // sd cumulativ [m]
+                const sdTotal = layers.reduce((s, l) => s + (l.sd || 0), 0);
+                if (sdTotal <= 0) return <div className="text-[11px] opacity-40 text-center py-4">sd = 0 — verifică μ și grosimile straturilor.</div>;
+                const sdCum = [0];
+                layers.forEach(l => sdCum.push(sdCum[sdCum.length - 1] + (l.sd || 0)));
+
+                const psVals = iFaces.map(p => p.ps || 0);
+                const pvVals = iFaces.map(p => p.pv || 0);
+                const pMax = Math.max(...psVals, ...pvVals, 100) * 1.1;
+
+                // Geometrie chart
+                const cL = 52, cR = 378, cT = 28, cB = 148;
+                const cW = cR - cL, cH = cB - cT;
+                const sdToX = (sd) => cL + (sd / sdTotal) * cW;
+                const pToY = (p) => cB - (p / pMax) * cH;
+
+                // Layer backgrounds + etichete rotite -45°
+                const colors = ["rgba(239,68,68,0.08)", "rgba(59,130,246,0.08)", "rgba(234,179,8,0.08)", "rgba(139,92,246,0.08)", "rgba(34,197,94,0.08)"];
+                const layerRects = layers.map((l, i) => {
+                  const x1 = sdToX(sdCum[i]);
+                  const x2 = sdToX(sdCum[i + 1]);
+                  const xc = (x1 + x2) / 2;
+                  const labelText = `${(l.name || ("Strat " + (i + 1))).slice(0, 20)} (${(l.d * 1000).toFixed(0)}mm · sd=${(l.sd || 0).toFixed(2)}m)`;
                   return (
-                    <>
-                      {layerRects}
-                      {yLabels}
-                      <path d={tempLine} fill="none" stroke="#ef4444" strokeWidth="2" />
-                      <path d={dewLine} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4,2" />
-                      {tempPoints.map((p,i) => <circle key={"tc"+i} cx={p.x} cy={tToY(p.t)} r="2.5" fill="#ef4444" />)}
-                      <text x={chartLeft} y={chartBottom+22} fill="rgba(255,255,255,0.2)" fontSize="6">Int ({tInt}°C)</text>
-                      <text x={chartRight} y={chartBottom+22} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="6">Ext ({tExt}°C)</text>
-                      {/* Legend */}
-                      <line x1={chartLeft} y1={190} x2={chartLeft+15} y2={190} stroke="#ef4444" strokeWidth="2" />
-                      <text x={chartLeft+18} y={192} fill="rgba(255,255,255,0.35)" fontSize="6">Temperatură</text>
-                      <line x1={chartLeft+80} y1={190} x2={chartLeft+95} y2={190} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4,2" />
-                      <text x={chartLeft+98} y={192} fill="rgba(255,255,255,0.35)" fontSize="6">Punct de rouă</text>
-                    </>
+                    <g key={"lg" + i}>
+                      <rect x={x1} y={cT} width={x2 - x1} height={cH} fill={colors[i % colors.length]} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+                      <text x={xc} y={cB + 4} fill="rgba(255,255,255,0.45)" fontSize="5.5" textAnchor="end" transform={`rotate(-45 ${xc} ${cB + 4})`}>{labelText}</text>
+                    </g>
                   );
-                })()}
-              </svg>
-              <div className="text-[10px] opacity-20 mt-1 text-center">Dacă linia de temperatură scade sub punctul de rouă → risc condens interstițial</div>
+                });
+
+                // Grid Y + etichete Pa
+                const yGrid = [];
+                for (let i = 0; i <= 4; i++) {
+                  const p = (pMax * i) / 4;
+                  const y = pToY(p);
+                  yGrid.push(
+                    <g key={"yg" + i}>
+                      <line x1={cL} y1={y} x2={cR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                      <text x={cL - 3} y={y + 2} textAnchor="end" fill="rgba(255,255,255,0.35)" fontSize="6">{Math.round(p)}</text>
+                    </g>
+                  );
+                }
+
+                // Curbe
+                const psPath = iFaces.map((p, i) => (i === 0 ? "M" : "L") + sdToX(sdCum[i]).toFixed(1) + "," + pToY(p.ps).toFixed(1)).join(" ");
+                const pvPath = iFaces.map((p, i) => (i === 0 ? "M" : "L") + sdToX(sdCum[i]).toFixed(1) + "," + pToY(p.pv).toFixed(1)).join(" ");
+
+                // Marcatoare condens
+                const condMarkers = iFaces.map((p, i) => p.condensing ? (
+                  <circle key={"cz" + i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="4" fill="#ef4444" opacity="0.5" />
+                ) : null).filter(Boolean);
+
+                return (
+                  <>
+                    <div className="text-[10px] opacity-50 mb-1 flex gap-3 flex-wrap">
+                      <span>Luna critică: <b>{month.month}</b></span>
+                      <span>θ<sub>e</sub> = <b>{month.tExt?.toFixed(1)}°C</b></span>
+                      <span>sd<sub>total</sub> = <b>{sdTotal.toFixed(2)} m</b></span>
+                      {condMarkers.length > 0 && <span className="text-red-400">⚠ {condMarkers.length} interfață cu condens</span>}
+                    </div>
+                    <svg viewBox="0 0 400 200" className="w-full" style={{ minHeight: "190px" }}>
+                      <text x="200" y="12" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8">Diagramă Glaser — p_sat (verde) vs p_v (albastru)</text>
+                      <text x={cL - 38} y={cT - 6} fill="rgba(255,255,255,0.4)" fontSize="6">p [Pa]</text>
+                      <text x={cR + 2} y={cB + 3} fill="rgba(255,255,255,0.4)" fontSize="6">sd→</text>
+                      {layerRects}
+                      {yGrid}
+                      <path d={psPath} fill="none" stroke="#22c55e" strokeWidth="2" />
+                      <path d={pvPath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,2" />
+                      {iFaces.map((p, i) => <circle key={"psc" + i} cx={sdToX(sdCum[i])} cy={pToY(p.ps)} r="1.8" fill="#22c55e" />)}
+                      {iFaces.map((p, i) => <circle key={"pvc" + i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="1.8" fill="#3b82f6" />)}
+                      {condMarkers}
+                      {/* Legendă */}
+                      <line x1={cL} y1={194} x2={cL + 12} y2={194} stroke="#22c55e" strokeWidth="2" />
+                      <text x={cL + 15} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">p_sat (saturație)</text>
+                      <line x1={cL + 95} y1={194} x2={cL + 107} y2={194} stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,2" />
+                      <text x={cL + 110} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">p_v (vapori reali)</text>
+                      <circle cx={cL + 195} cy={194} r="3" fill="#ef4444" opacity="0.5" />
+                      <text x={cL + 200} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">Condens (p_v ≥ p_sat)</text>
+                    </svg>
+                    <div className="text-[10px] opacity-40 mt-1 text-center">
+                      Condens apare unde linia albastră (p_v) atinge sau depășește linia verde (p_sat)
+                    </div>
+                  </>
+                );
+              })()}
             </Card>
           )}
 

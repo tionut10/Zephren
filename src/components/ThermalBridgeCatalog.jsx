@@ -1,7 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import THERMAL_BRIDGES_DB from "../data/thermal-bridges.json";
 import BridgeIllustration from "./thermal-bridges/bridgeIllustrations.jsx";
-import { getBridgeSource, classifyIsoLevel, validatePsiRange } from "../calc/thermal-bridges-metadata.js";
+import {
+  getBridgeSource,
+  classifyIsoLevel,
+  validatePsiRange,
+  getBridgeDetails,
+  calcAnnualLossPerMeter,
+  classifyCondensationRisk,
+  repairPriorityLabel,
+} from "../calc/thermal-bridges-metadata.js";
 import {
   getAllConstructions,
   getConstructionById,
@@ -216,6 +224,9 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                 const color = ISO_CLASS_COLOR[isoClass];
                 const source = getBridgeSource(bridge.name);
                 const validation = validatePsiRange(bridge.name, bridge.psi);
+                const details = getBridgeDetails(bridge.name);
+                const condRisk = details ? classifyCondensationRisk(details.fRsi_typical) : null;
+                const annualLoss = details ? calcAnnualLossPerMeter(bridge.psi, { factor: details.annual_loss_factor }) : null;
                 return (
                   <div
                     key={`${bridge.cat}-${bridge.name}-${i}`}
@@ -229,7 +240,10 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                     }}
                   >
                     <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 12, background: "#f7f3e8" }}>
-                      <BridgeIllustration bridge={bridge} />
+                      <BridgeIllustration
+                        bridge={bridge}
+                        details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
+                      />
                     </div>
 
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
@@ -282,6 +296,81 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                           <div style={{ opacity: 0.5, marginBottom: 3 }}>📚 Sursă normativă:</div>
                           <div style={{ color: "#93c5fd", lineHeight: 1.4 }}>{source}</div>
                         </div>
+
+                        {/* ── Secțiuni detaliate din template (fRsi, risc, prioritate, remedii) ─── */}
+                        {details && (
+                          <>
+                            {/* Risc condensare + prioritate intervenție */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10 }}>
+                              <div style={{ padding: "6px 10px", background: condRisk === "D" ? "rgba(239,68,68,0.08)" : condRisk === "C" ? "rgba(245,158,11,0.08)" : condRisk === "B" ? "rgba(56,189,248,0.06)" : "rgba(16,185,129,0.06)", border: `1px solid ${condRisk === "D" ? "rgba(239,68,68,0.25)" : condRisk === "C" ? "rgba(245,158,11,0.25)" : condRisk === "B" ? "rgba(56,189,248,0.2)" : "rgba(16,185,129,0.2)"}`, borderRadius: 6, fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9 }}>💧 Risc condensare (ISO 13788)</div>
+                                <div style={{ fontWeight: 700, marginTop: 2, color: condRisk === "D" ? "#f87171" : condRisk === "C" ? "#fbbf24" : condRisk === "B" ? "#7dd3fc" : "#4ade80" }}>
+                                  Clasă {condRisk} · fRsi ≈ {details.fRsi_typical.toFixed(2)}
+                                </div>
+                                <div style={{ fontSize: 9, opacity: 0.5, marginTop: 2 }}>
+                                  {condRisk === "D" ? "Condensare iarnă frecventă" : condRisk === "C" ? "Risc la HR>60%" : condRisk === "B" ? "Acceptabil la HR<50%" : "Fără risc"}
+                                </div>
+                              </div>
+                              <div style={{ padding: "6px 10px", background: details.repair_priority >= 4 ? "rgba(220,38,38,0.08)" : details.repair_priority >= 3 ? "rgba(249,115,22,0.08)" : "rgba(251,191,36,0.05)", border: `1px solid ${details.repair_priority >= 4 ? "rgba(220,38,38,0.25)" : details.repair_priority >= 3 ? "rgba(249,115,22,0.25)" : "rgba(251,191,36,0.15)"}`, borderRadius: 6, fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9 }}>⚠ Prioritate intervenție</div>
+                                <div style={{ fontWeight: 700, marginTop: 2, color: details.repair_priority >= 4 ? "#f87171" : details.repair_priority >= 3 ? "#fb923c" : "#fbbf24" }}>
+                                  {repairPriorityLabel(details.repair_priority)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Pierderi anuale estimate */}
+                            {annualLoss > 0 && (
+                              <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(168,85,247,0.06)", borderRadius: 6, border: "1px solid rgba(168,85,247,0.15)", fontSize: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ opacity: 0.55, fontSize: 9 }}>🔥 Pierderi estimate:</span>
+                                <span style={{ fontWeight: 700, color: "#c084fc", fontFamily: "monospace" }}>
+                                  {annualLoss.toFixed(1)} kWh/m·an
+                                </span>
+                                <span style={{ fontSize: 9, opacity: 0.5, marginLeft: "auto" }}>București DD=3170 K·zi × factor {details.annual_loss_factor}</span>
+                              </div>
+                            )}
+
+                            {/* Detectare în teren */}
+                            {details.detection?.length > 0 && (
+                              <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(14,165,233,0.05)", borderRadius: 6, border: "1px solid rgba(14,165,233,0.15)", fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9, marginBottom: 3 }}>🔍 Detectare în teren:</div>
+                                <ul style={{ margin: 0, paddingLeft: 16, color: "#7dd3fc", lineHeight: 1.4 }}>
+                                  {details.detection.map((d, i) => <li key={i}>{d}</li>)}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Consecințe */}
+                            {details.consequences?.length > 0 && (
+                              <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(244,63,94,0.05)", borderRadius: 6, border: "1px solid rgba(244,63,94,0.15)", fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9, marginBottom: 3 }}>⚡ Consecințe:</div>
+                                <ul style={{ margin: 0, paddingLeft: 16, color: "#fca5a5", lineHeight: 1.4 }}>
+                                  {details.consequences.map((c, i) => <li key={i}>{c}</li>)}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Defecte frecvente */}
+                            {details.common_failures?.length > 0 && (
+                              <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(251,146,60,0.05)", borderRadius: 6, border: "1px solid rgba(251,146,60,0.15)", fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9, marginBottom: 3 }}>🔧 Defecte frecvente:</div>
+                                <ul style={{ margin: 0, paddingLeft: 16, color: "#fdba74", lineHeight: 1.4 }}>
+                                  {details.common_failures.map((f, i) => <li key={i}>{f}</li>)}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Remedii tipice */}
+                            {details.typical_remedies?.length > 0 && (
+                              <div style={{ marginTop: 6, padding: "6px 10px", background: "rgba(34,197,94,0.06)", borderRadius: 6, border: "1px solid rgba(34,197,94,0.2)", fontSize: 10 }}>
+                                <div style={{ opacity: 0.55, fontSize: 9, marginBottom: 3 }}>✓ Remedii tipice:</div>
+                                <ul style={{ margin: 0, paddingLeft: 16, color: "#86efac", lineHeight: 1.4 }}>
+                                  {details.typical_remedies.map((r, i) => <li key={i}>{r}</li>)}
+                                </ul>
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         {/* ── Selector stratigrafie + ψ ajustat ─────────── */}
                         <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(139,92,246,0.06)", borderRadius: 6, border: "1px solid rgba(139,92,246,0.18)" }} onClick={e => e.stopPropagation()}>

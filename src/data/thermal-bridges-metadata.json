@@ -24,144 +24,658 @@
       "B": "Bună — detaliu optimizat (izolație continuă, ψ ≈ 0,01-0,05)",
       "C": "Acceptabilă — detaliu standard cu izolație (ψ ≈ 0,05-0,15)",
       "D": "Implicit — valori worst-case ISO 14683 Tab 1 (ψ > 0,15 sau construcție fără izolație)"
+    },
+    "field_schema_v2": {
+      "fRsi_typical": "Factor temperatură superficial ISO 13788 (risc condensare: fRsi<0.75 = atenție, <0.65 = condensare iarnă)",
+      "detection": "Metode practice de detectare în teren (termografie IR, inspecție vizuală, modelare ISO 10211)",
+      "consequences": "Consecințe vizibile și energetice ale punții (condens, mucegai Stachybotrys, pierderi kWh/m²·an)",
+      "common_failures": "Defecte constructive frecvente care agravează puntea (discontinuitate izolație, fisuri, umiditate)",
+      "typical_remedies": "Soluții standard de remediere (ETICS continuă, ruptură termică structurală, izolație perimetrală)",
+      "repair_priority": "Prioritate intervenție 1-5 (1=cosmetic, 3=energetic necesar, 5=risc structural/sanitar imediat)",
+      "annual_loss_factor": "Factor pentru calcul pierderi anuale: Q_an[kWh/m·an] ≈ ψ × L × DD × 24 / 1000 × factor"
     }
   },
-
+  "detail_templates": {
+    "CORNER_EXTERNAL": {
+      "fRsi_typical": 0.73,
+      "detection": [
+        "Termografie IR (zona rece vizibilă la -10°C iarnă)",
+        "Inspecție vizuală (urme condens la unghiul perete-tavan)"
+      ],
+      "consequences": [
+        "Condensare superficială iarnă când fRsi<0.75",
+        "Risc mucegai dacă HR>60% + izolație discontinuă",
+        "Pierderi 5-12 kWh/m·an"
+      ],
+      "common_failures": [
+        "ETICS întrerupt la unghi — profil de colț fără continuitate",
+        "Fisuri la unghiul interior tencuială"
+      ],
+      "typical_remedies": [
+        "Profil de colț Al+plasă armare continuă",
+        "ETICS minim 10 cm pe ambele fațade",
+        "Revenire 50cm perete interior"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 1.1
+    },
+    "CORNER_INTERNAL": {
+      "fRsi_typical": 0.82,
+      "detection": [
+        "Rar necesară — efect favorabil geometric (ψ<0)",
+        "Verificare doar dacă suspiciune construcție necorectă"
+      ],
+      "consequences": [
+        "Efect FAVORABIL — reduce pierderea totală",
+        "Risc redus condensare (fRsi>0.80)"
+      ],
+      "common_failures": [
+        "Extrem de rar o problemă — doar dacă izolația e întreruptă la joncțiunea a 3 pereți"
+      ],
+      "typical_remedies": [
+        "Nu necesită intervenție dedicată în majoritatea cazurilor"
+      ],
+      "repair_priority": 1,
+      "annual_loss_factor": 0.3
+    },
+    "WALL_SLAB_INTERMEDIATE": {
+      "fRsi_typical": 0.7,
+      "detection": [
+        "Termografie IR — bandă orizontală rece la înălțimea planșeului",
+        "Urme condens pe perete interior la baza planșeului"
+      ],
+      "consequences": [
+        "Condensare de iarnă pe banda planșeului",
+        "Pierderi 8-18 kWh/m·an (înmulțit cu perimetrul × numărul de etaje)"
+      ],
+      "common_failures": [
+        "Planșeul beton penetrează integral ETICS — punte severă fără racord",
+        "Soluții improvizate cu balcoane 'tip umeraș'"
+      ],
+      "typical_remedies": [
+        "ETICS continuă peste planșeu minim 10 cm",
+        "Izolație perimetrală placă balcon dacă e consolă"
+      ],
+      "repair_priority": 4,
+      "annual_loss_factor": 1.3
+    },
+    "WALL_ROOF_TERRACE": {
+      "fRsi_typical": 0.62,
+      "detection": [
+        "Termografie IR — zona rece la joncțiunea perete-tavan ultim nivel",
+        "Urme mucegai pe tavan ultim nivel lângă perete exterior"
+      ],
+      "consequences": [
+        "RISC MAJOR condensare + mucegai (fRsi<0.65 frecvent)",
+        "Pierderi 10-25 kWh/m·an",
+        "Degradare tencuială, culoare, igienă"
+      ],
+      "common_failures": [
+        "Izolație terasă întreruptă la atic",
+        "Membrană hidroizolație termice insuficient ridicată pe atic"
+      ],
+      "typical_remedies": [
+        "Izolație terasă continuă peste planșeu cu ridicare pe atic minim 30 cm",
+        "Aticul îmbrăcat cu XPS dublu strat"
+      ],
+      "repair_priority": 5,
+      "annual_loss_factor": 1.5
+    },
+    "WALL_GROUND_SLAB": {
+      "fRsi_typical": 0.75,
+      "detection": [
+        "Termografie IR — zona rece la soclu",
+        "Pardoseală rece iarna în zona perimetrală 60-80 cm"
+      ],
+      "consequences": [
+        "Pardoseală rece",
+        "Pierderi 12-20 kWh/m·an prin sol",
+        "Risc igrasie ascendentă dacă fără hidroizolație"
+      ],
+      "common_failures": [
+        "Lipsă izolație perimetrală XPS",
+        "Fundație fără ruptură termică la soclu"
+      ],
+      "typical_remedies": [
+        "Izolație XPS perimetrală coborâtă min 60 cm sub CTS",
+        "Izolație sub placă continuă (100-150 mm XPS)"
+      ],
+      "repair_priority": 4,
+      "annual_loss_factor": 1.2
+    },
+    "FOUNDATION_PLINTH": {
+      "fRsi_typical": 0.7,
+      "detection": [
+        "Termografie IR exterior (soclu rece)",
+        "Umezeală capilar ascendentă fără hidroizolație orizontală"
+      ],
+      "consequences": [
+        "Pierderi majore 15-30 kWh/m·an în contact cu sol",
+        "Igrasie perete",
+        "Punte termică cumulată cu cea a placii"
+      ],
+      "common_failures": [
+        "Izolație soclu absentă",
+        "XPS perimetral coborât <40 cm insuficient",
+        "Tencuială de soclu necorespunzătoare"
+      ],
+      "typical_remedies": [
+        "XPS perimetral min 60-80 cm sub CTS",
+        "Profil drip la tranziția ETICS-soclu",
+        "Hidroizolație orizontală obligatorie"
+      ],
+      "repair_priority": 5,
+      "annual_loss_factor": 1.4
+    },
+    "WINDOW_JAMB_STANDARD": {
+      "fRsi_typical": 0.68,
+      "detection": [
+        "Termografie IR — contur fereastră rece",
+        "Urme condens pe cant interior tâmplărie"
+      ],
+      "consequences": [
+        "Condensare apă pe cant interior iarnă",
+        "Pierderi 3-8 kWh/m·an per perimetru fereastră",
+        "Degradare finisaje"
+      ],
+      "common_failures": [
+        "Rama montată în planul zidăriei fără acoperire cu ETICS",
+        "Lipsă bandă precomprimată între tâmplărie-zidărie"
+      ],
+      "typical_remedies": [
+        "Montaj în planul izolației (reducere ψ cu 50%)",
+        "Bandă precomprimată PE + bandă etanșare interior/exterior"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 1.0
+    },
+    "WINDOW_JAMB_INSULATED": {
+      "fRsi_typical": 0.82,
+      "detection": [
+        "Nu e necesară monitorizare dedicată",
+        "Verificare anuală etanșare pentru infiltrații aer"
+      ],
+      "consequences": [
+        "Minim — detaliu optim Passivhaus",
+        "Pierderi 1-2 kWh/m·an"
+      ],
+      "common_failures": [
+        "Bandă precomprimată uzată (schimbare la 15-20 ani)",
+        "Infiltrații aer la degradare silicon"
+      ],
+      "typical_remedies": [
+        "Reînnoire bandă etanșare periodic"
+      ],
+      "repair_priority": 1,
+      "annual_loss_factor": 0.3
+    },
+    "WINDOW_SILL": {
+      "fRsi_typical": 0.68,
+      "detection": [
+        "Termografie IR sub fereastră (pervaz rece)",
+        "Condens sub glaf exterior"
+      ],
+      "consequences": [
+        "Pătare tencuială sub fereastră",
+        "Pierderi 2-5 kWh/m·an",
+        "Risc condensare în nișa radiatorului"
+      ],
+      "common_failures": [
+        "Nișă radiator cu perete subțiat (50% grosime)",
+        "Glaf metalic exterior fără ruptura termică"
+      ],
+      "typical_remedies": [
+        "Bandă ETICS continuă sub glaf",
+        "Eliminare nișă radiator în renovare majoră",
+        "Montare radiator pe perete"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 1.0
+    },
+    "DOOR_THRESHOLD": {
+      "fRsi_typical": 0.63,
+      "detection": [
+        "Termografie IR la pragul ușii",
+        "Curent rece la nivelul podelei iarnă",
+        "Pardoseală rece zona pragului"
+      ],
+      "consequences": [
+        "Pierderi majore 6-15 kWh/m·an per ușă",
+        "Disconfort iarnă",
+        "Risc condensare pardoseală interior"
+      ],
+      "common_failures": [
+        "Prag metalic continuu beton-metal",
+        "Lipsă bandă etanșare garnitură"
+      ],
+      "typical_remedies": [
+        "Prag cu rupere termică (reducere ψ cu 50%)",
+        "Garnitură dublă etanșare",
+        "Izolație perimetrală sub prag"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 1.1
+    },
+    "BALCONY_UNINTERRUPTED": {
+      "fRsi_typical": 0.52,
+      "detection": [
+        "Termografie IR (placa balconului e rece ca exteriorul pe plafon interior)",
+        "Condens vizibil pe plafon lângă balcon"
+      ],
+      "consequences": [
+        "CEA MAI GRAVĂ PUNTE — pierderi 50-80 kWh/m·an per balcon",
+        "Mucegai Stachybotrys frecvent",
+        "Degradare structură beton"
+      ],
+      "common_failures": [
+        "Placa continuă fără thermal break (Schöck, Halfen)",
+        "Izolație exterioară placă balcon lipsă"
+      ],
+      "typical_remedies": [
+        "Izolare completă placă balcon (superior + inferior + perimetral XPS)",
+        "Post-instalare Schöck Isokorb T (renovare majoră)"
+      ],
+      "repair_priority": 5,
+      "annual_loss_factor": 2.0
+    },
+    "BALCONY_WITH_BREAK": {
+      "fRsi_typical": 0.82,
+      "detection": [
+        "Nu e necesară monitorizare dedicată",
+        "Verificare periodică integritate structurală ruptor"
+      ],
+      "consequences": [
+        "Reducere 70-90% pierderi vs. balcon fără ruptor",
+        "Pierderi 3-8 kWh/m·an"
+      ],
+      "common_failures": [
+        "Rar — dacă rupturile nu au fost montate corect în șantier"
+      ],
+      "typical_remedies": [
+        "Nu necesită intervenție (soluție deja optimă)"
+      ],
+      "repair_priority": 1,
+      "annual_loss_factor": 0.4
+    },
+    "ROOF_EAVES": {
+      "fRsi_typical": 0.73,
+      "detection": [
+        "Termografie IR — zona rece la streașină",
+        "Condens pe tavan interior aproape perete exterior"
+      ],
+      "consequences": [
+        "Pierderi 4-10 kWh/m·an",
+        "Risc deteriorare izolație la umiditate ploaie-vânt"
+      ],
+      "common_failures": [
+        "Izolație șarpantă întreruptă la streașină",
+        "Lipsă continuitate izo perete-acoperiș"
+      ],
+      "typical_remedies": [
+        "Izolație continuă perete → acoperiș cu suprapunere min 30 cm",
+        "'Energy heel truss' pentru spațiu suficient izo streașină"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 1.1
+    },
+    "ROOF_PARAPET": {
+      "fRsi_typical": 0.58,
+      "detection": [
+        "Termografie IR — aticul foarte rece",
+        "Zona superioară perete (50cm) rece iarna"
+      ],
+      "consequences": [
+        "Pierderi 8-20 kWh/m·an (cumulat perimetru × nr clădire)",
+        "Risc condensare major pe ultimul etaj",
+        "Reduce R-valoarea peretelui până la 60%"
+      ],
+      "common_failures": [
+        "Aticul fără izolație verticală",
+        "Izolație coronament metalic direct pe beton",
+        "Membrană insuficient ridicată (<30 cm)"
+      ],
+      "typical_remedies": [
+        "Izolație XPS minim 80 mm pe toate fețele aticului",
+        "Capac metalic pe distanțiere",
+        "Membrană ridicată min 30 cm pe atic"
+      ],
+      "repair_priority": 5,
+      "annual_loss_factor": 1.7
+    },
+    "SERVICE_PENETRATION": {
+      "fRsi_typical": 0.72,
+      "detection": [
+        "Termografie IR punctual la fiecare penetrație",
+        "Curent rece vizibil la 20 cm"
+      ],
+      "consequences": [
+        "Pierderi punctuale χ ≈ 0.05-0.20 W/K per penetrație",
+        "Risc infiltrații aer + condens local"
+      ],
+      "common_failures": [
+        "Țevi/cabluri fără manșon etanșare",
+        "Canale HVAC cu flanșe metalice continue"
+      ],
+      "typical_remedies": [
+        "Manșon etanșare izolant (EPDM) în jurul fiecărei penetrații",
+        "Izolație conductă min 20 mm",
+        "Sigilare cu bandă butilică la penetrare"
+      ],
+      "repair_priority": 3,
+      "annual_loss_factor": 0.8
+    },
+    "ETICS_ANCHOR": {
+      "fRsi_typical": 0.9,
+      "detection": [
+        "Foarte rar necesar — impact punctual mic",
+        "Termografie IR poate identifica dibluri metalice distribute"
+      ],
+      "consequences": [
+        "χ ≈ 0.002-0.008 W/K per diblu — cumulat 6-8/m²",
+        "Impact total: reduce U cu ~5-10%"
+      ],
+      "common_failures": [
+        "Prea multe dibluri inutil (>10/m²)",
+        "Dibluri metalice când plastic+ac ar fi suficiente"
+      ],
+      "typical_remedies": [
+        "Dibluri plastic cu ac metalic (χ ≈ 0.001 W/K — clasa A)",
+        "Optimizare număr dibluri 6/m² (calcul statică vânt)"
+      ],
+      "repair_priority": 1,
+      "annual_loss_factor": 0.2
+    },
+    "STRUCTURAL_COLUMN_BEAM": {
+      "fRsi_typical": 0.6,
+      "detection": [
+        "Termografie IR — zone reci pe perete la poziția stâlpilor/grinzilor structurale",
+        "Urme condens pe perete interior lângă elementul structural"
+      ],
+      "consequences": [
+        "Pierderi severe 10-25 kWh/m·an per stâlp/grindă",
+        "Risc mucegai la joncțiuni beton-perete",
+        "Cumulativ pe clădire: 200-500 kWh/an"
+      ],
+      "common_failures": [
+        "Stâlp beton/metalic monolit fără ETICS continuu pe față",
+        "Grinzi de centură întrerupând continuitatea izolației",
+        "Profile HEA/HEB penetrante fără thermal break Armatherm"
+      ],
+      "typical_remedies": [
+        "ETICS continuă min 10cm peste element structural",
+        "Pentru metalic: întrerupere cu blocuri rigide izolante (Armatherm FRR)",
+        "Post-instalare rupturi termice (costisitor dar esențial pentru pasiv)"
+      ],
+      "repair_priority": 4,
+      "annual_loss_factor": 1.3
+    },
+    "TIMBER_CONSTRUCTION": {
+      "fRsi_typical": 0.76,
+      "detection": [
+        "Termografie IR (detectă rigle/căpriori lemn)",
+        "Modelare ISO 10211 pentru calcul ψ2D corect (fracția lemn 8-15%)"
+      ],
+      "consequences": [
+        "Pierderi moderate 3-7 kWh/m·an",
+        "Efect repetitiv — lemn λ=0.13 vs. MW λ=0.038",
+        "Risc umezeală la joncțiuni dacă nu există barieră vapori"
+      ],
+      "common_failures": [
+        "Absența foliei barieră vapori interior",
+        "Rigle dens distribuite fără cross-lamella",
+        "Joncțiuni neetanșe între panouri CLT/SIP"
+      ],
+      "typical_remedies": [
+        "Strat suplimentar izolație cross (min 50mm) perpendicular pe rigle",
+        "Bandă butilică la joncțiuni panou",
+        "Folie permeabilă vapori la exterior + barieră la interior"
+      ],
+      "repair_priority": 2,
+      "annual_loss_factor": 0.8
+    },
+    "PRECAST_PANEL": {
+      "fRsi_typical": 0.55,
+      "detection": [
+        "Termografie IR — rosturi orizontale și verticale foarte reci",
+        "Urme condens + mucegai pe perete interior aliniate la rosturi"
+      ],
+      "consequences": [
+        "CEL MAI SEVER PROFIL pentru blocurile IPCT '70-'90",
+        "Pierderi 15-30 kWh/m·an per rost",
+        "Risc sanitar major — mucegai Stachybotrys"
+      ],
+      "common_failures": [
+        "Izolație degradată în miez sandwich (50% eficiență pierdută)",
+        "Mastic rost deteriorat cu infiltrații apă",
+        "Ancore metalice corodate creând punți suplimentare"
+      ],
+      "typical_remedies": [
+        "Reabilitare cu ETICS 15cm (standard post-2008)",
+        "Tratare rosturi cu bandă comprimată + mastic nou",
+        "Înlocuire integrală ancore defecte"
+      ],
+      "repair_priority": 5,
+      "annual_loss_factor": 1.8
+    },
+    "ETICS_BAND": {
+      "fRsi_typical": 0.85,
+      "detection": [
+        "Nu e necesară — detaliu optim",
+        "Verificare vizuală continuitate bandă la inspecție"
+      ],
+      "consequences": [
+        "Reduce ψ sub fereastră cu 60-70% vs. detaliu standard",
+        "Elimină nișa radiatorului din bilanț"
+      ],
+      "common_failures": [
+        "Bandă întreruptă la colțurile ferestrei",
+        "Spumă PUR fără plasă armare creând fisuri"
+      ],
+      "typical_remedies": [
+        "Bandă ETICS continuă peste toată zona sub fereastră",
+        "Plasă armare suplimentară la colțuri"
+      ],
+      "repair_priority": 1,
+      "annual_loss_factor": 0.4
+    }
+  },
   "categories": {
     "Joncțiuni pereți": {
       "category_en": "Wall junctions",
-      "iso_14683_types": ["IF", "GF", "R", "CO"],
+      "iso_14683_types": [
+        "IF",
+        "GF",
+        "R",
+        "CO"
+      ],
       "reference": "SR EN ISO 14683:2017, Tab 1 (IF=internal floor, GF=ground floor, R=roof, CO=corner)",
       "description_ro": "Joncțiuni între pereți exteriori și planșee/alți pereți/soclu"
     },
     "Ferestre": {
       "category_en": "Windows & doors",
-      "iso_14683_types": ["W", "D"],
+      "iso_14683_types": [
+        "W",
+        "D"
+      ],
       "reference": "SR EN ISO 14683:2017, Tab 1 (W=window jamb/head/sill, D=door); PHI Window Installation Thermal Bridges Catalogue v2.0",
       "description_ro": "Perimetrul tâmplăriei — glaf, pervaz, prag, montanți"
     },
     "Balcoane": {
       "category_en": "Balconies & cantilevers",
-      "iso_14683_types": ["B"],
+      "iso_14683_types": [
+        "B"
+      ],
       "reference": "SR EN ISO 14683:2017, Tab 1 (B=balcony); Schöck Isokorb Technical Information; BRE IP 1/06",
       "description_ro": "Console balcon, parapete, ruptoare termice"
     },
     "Acoperiș": {
       "category_en": "Roof & eaves",
-      "iso_14683_types": ["R", "P"],
+      "iso_14683_types": [
+        "R",
+        "P"
+      ],
       "reference": "SR EN ISO 14683:2017, Tab 1 (R=roof, P=parapet); FLL Dachbegrünungsrichtlinie",
       "description_ro": "Coame, streașini, atice, luminatoare"
     },
     "Stâlpi/grinzi": {
       "category_en": "Columns & beams",
-      "iso_14683_types": ["IF", "IW"],
+      "iso_14683_types": [
+        "IF",
+        "IW"
+      ],
       "reference": "SR EN ISO 10211:2017 modelare 2D; SCI Publication P380",
       "description_ro": "Elemente structurale înglobate în peretele exterior"
     },
     "Instalații": {
       "category_en": "Services penetrations",
-      "iso_14683_types": ["chi-punctual"],
+      "iso_14683_types": [
+        "chi-punctual"
+      ],
       "reference": "SR EN ISO 10211:2017 (punți punctuale χ); C107/4-1997",
       "description_ro": "Țevi, canale, coșuri, casete rolete — penetrații prin anvelopă"
     },
     "Fundații și subsol": {
       "category_en": "Foundations & basement",
-      "iso_14683_types": ["GF"],
+      "iso_14683_types": [
+        "GF"
+      ],
       "reference": "SR EN ISO 14683:2017, Tab 1 (GF); SR EN ISO 13370 — Transfer termic prin sol",
       "description_ro": "Radier, fundație bandă, perete subsol, soclu"
     },
     "Structuri din lemn": {
       "category_en": "Timber structures",
-      "iso_14683_types": ["IF", "GF", "R"],
+      "iso_14683_types": [
+        "IF",
+        "GF",
+        "R"
+      ],
       "reference": "PHI Passipedia — Timber construction; Holzforschung Austria WDVS-Atlas",
       "description_ro": "Timber frame, CLT, SIP, căpriori, grinzi lemn"
     },
     "Structuri prefabricate": {
       "category_en": "Precast structures",
-      "iso_14683_types": ["IF", "CO"],
+      "iso_14683_types": [
+        "IF",
+        "CO"
+      ],
       "reference": "CEN/TR 15131; producători panouri prefabricate (Thermomass, Halfen)",
       "description_ro": "Panouri sandwich, planșee nervurate, joncțiuni prefabricat"
     },
     "Fațade și ferestre avansate": {
       "category_en": "Advanced facades & glazing",
-      "iso_14683_types": ["W", "CW"],
+      "iso_14683_types": [
+        "W",
+        "CW"
+      ],
       "reference": "CWCT (Centre for Window & Cladding Technology) Technical Note 36; producători (Schüco, Reynaers)",
       "description_ro": "Fațade cortină, ferestre colț, band-windows, fațade ventilate"
     },
     "Acoperiș avansat": {
       "category_en": "Advanced roof systems",
-      "iso_14683_types": ["R", "P"],
+      "iso_14683_types": [
+        "R",
+        "P"
+      ],
       "reference": "FLL Guidelines for Green Roofs; SR EN 13707 (membrane bituminoase)",
       "description_ro": "Acoperiș verde, mansarde, inverted roof, dome lights"
     },
     "Balcoane avansate": {
       "category_en": "Advanced balconies",
-      "iso_14683_types": ["B"],
+      "iso_14683_types": [
+        "B"
+      ],
       "reference": "Schöck Isokorb full catalog (K, KXT, KS, XT); Halfen HIT-HP/HIT-SP; Leviat Ancon Isotec",
       "description_ro": "Ruptoare termice specializate, console metalice, balcon suspendat"
     },
     "Sisteme ETICS": {
       "category_en": "ETICS (External Thermal Insulation Composite Systems)",
-      "iso_14683_types": ["chi-punctual", "IF"],
+      "iso_14683_types": [
+        "chi-punctual",
+        "IF"
+      ],
       "reference": "ETAG 004 / EAD 040083-00-0404; EN 13499 (EPS ETICS); EN 13500 (MW ETICS)",
       "description_ro": "Dibluri, rost dilatare, profile de colț/racord, soclu ETICS"
     },
     "Elemente punctuale (chi)": {
       "category_en": "Point thermal bridges (chi)",
-      "iso_14683_types": ["chi-punctual"],
+      "iso_14683_types": [
+        "chi-punctual"
+      ],
       "reference": "SR EN ISO 10211:2017 cap. 7 (punți punctuale χ [W/K]); Passipedia χ-values catalogue",
       "description_ro": "Ancore, dibluri, tije, conectori, puncte de fixare — unitate χ [W/K]"
     },
     "Instalații avansate": {
       "category_en": "Advanced services",
-      "iso_14683_types": ["chi-punctual"],
+      "iso_14683_types": [
+        "chi-punctual"
+      ],
       "reference": "SR EN ISO 10211:2017; ASHRAE Handbook Fundamentals (penetrations)",
       "description_ro": "HVAC, coșuri inox, panouri solare, colectori PV — penetrații complexe"
     },
     "Joncțiuni pereți – tipuri speciale": {
       "category_en": "Wall junctions — special types",
-      "iso_14683_types": ["IF", "GF", "CO"],
+      "iso_14683_types": [
+        "IF",
+        "GF",
+        "CO"
+      ],
       "reference": "SR EN ISO 14683:2017 + atlase specifice (PHI, ROCKWOOL, Knauf)",
       "description_ro": "Cavity wall, CFS (Cold-Formed Steel), BCA cu stâlpi, blocuri vechi prefabricat"
     },
     "Ferestre și uși – tipuri speciale": {
       "category_en": "Windows & doors — special types",
-      "iso_14683_types": ["W", "D"],
+      "iso_14683_types": [
+        "W",
+        "D"
+      ],
       "reference": "PHI Window Installation Thermal Bridges Catalogue v2.0; Compacfoam BB detail sheets",
       "description_ro": "Montaj adânc în izolație (Passivhaus deep), glaf metalic, spandrel cortină"
     },
     "Balcoane și logii – tipuri speciale": {
       "category_en": "Balconies & loggias — special types",
-      "iso_14683_types": ["B"],
+      "iso_14683_types": [
+        "B"
+      ],
       "reference": "Schöck Technical Information pentru Isokorb T/K/KXT/KS; Halfen HIT design guide",
       "description_ro": "Profile penetrante HEA/IPE, conectori GFRP/inox, ruptoare oțel-beton"
     },
     "Acoperiș – tipuri speciale": {
       "category_en": "Roof — special types",
-      "iso_14683_types": ["R", "P"],
+      "iso_14683_types": [
+        "R",
+        "P"
+      ],
       "reference": "FLL Dachbegrünungsrichtlinie; LABC Registered Detail 27.105 (parapet)",
       "description_ro": "Dormer, vent la coamă, calcan, skylight aluminium, coronament atic"
     },
     "Structuri speciale": {
       "category_en": "Special structures",
-      "iso_14683_types": ["IF", "IW"],
+      "iso_14683_types": [
+        "IF",
+        "IW"
+      ],
       "reference": "SCI P380; ACI 318 (concrete beams); Thermomass sandwich connector test data",
       "description_ro": "HEB/HEA oțel, nervuri planșee, capete grinzi lemn/metal în perete"
     },
     "Instalații – tipuri speciale": {
       "category_en": "Services — special types",
-      "iso_14683_types": ["chi-punctual"],
+      "iso_14683_types": [
+        "chi-punctual"
+      ],
       "reference": "SR EN ISO 10211:2017; Passipedia χ-values; CEN/TR 17183",
       "description_ro": "Priză aer HVAC, coș fum exterior, suport PV, ancore panou solar"
     },
     "Joncțiuni speciale": {
       "category_en": "Special junctions (legacy buildings)",
-      "iso_14683_types": ["GF", "IF", "R"],
+      "iso_14683_types": [
+        "GF",
+        "IF",
+        "R"
+      ],
       "reference": "Ghiduri MDLPA pentru clădiri istorice; C107/4-1997 capitolul 5 (clădiri existente)",
       "description_ro": "Clădiri vechi: izolație interioară, fundații piatră, buiandrugi adânci, scări exterioare"
     }
   },
-
   "entries": {
     "Colț exterior": {
       "id": "TB-WJ-001",
@@ -172,32 +686,46 @@
       "psi_max": 0.15,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip CO; ROCKWOOL EWEC01 (ψ = -0.056 W/(m·K) cu izolație continuă)",
-      "validated_against": ["ROCKWOOL Passive House Solutions Guide", "ISO 14683 Tab 1", "Mc 001-2022 Anexa B"],
-      "notes": "Valori negative posibile cu ETICS continuă (efect geometric favorabil suprafețelor interioare mari)"
+      "validated_against": [
+        "ROCKWOOL Passive House Solutions Guide",
+        "ISO 14683 Tab 1",
+        "Mc 001-2022 Anexa B"
+      ],
+      "notes": "Valori negative posibile cu ETICS continuă (efect geometric favorabil suprafețelor interioare mari)",
+      "detail_template": "CORNER_EXTERNAL"
     },
     "Colț interior": {
       "id": "TB-WJ-002",
       "iso_14683_type": "CO",
       "name_en": "Internal corner",
-      "psi_min": -0.10,
+      "psi_min": -0.1,
       "psi_typical": -0.05,
       "psi_max": 0.03,
       "iso_class": "B",
       "source": "SR EN ISO 14683:2017 Tab 1 tip CO; ROCKWOOL EWIC01 (ψ = 0.020 W/(m·K))",
-      "validated_against": ["ROCKWOOL", "ISO 14683 Tab 1"],
-      "notes": "Efect favorabil (ψ < 0): suprafața interioară mai mare decât cea exterioară reduce pierderea globală"
+      "validated_against": [
+        "ROCKWOOL",
+        "ISO 14683 Tab 1"
+      ],
+      "notes": "Efect favorabil (ψ < 0): suprafața interioară mai mare decât cea exterioară reduce pierderea globală",
+      "detail_template": "CORNER_INTERNAL"
     },
     "Perete ext. — Planșeu intermediar": {
       "id": "TB-WJ-003",
       "iso_14683_type": "IF",
       "name_en": "External wall — intermediate floor",
       "psi_min": 0.02,
-      "psi_typical": 0.10,
+      "psi_typical": 0.1,
       "psi_max": 0.25,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip IF; Mc 001-2022 Tab A.2",
-      "validated_against": ["ISO 14683", "Mc 001-2022", "BD_PERI"],
-      "notes": "Cu ETICS continuă peste planșeu: ψ scade la ≈0.04"
+      "validated_against": [
+        "ISO 14683",
+        "Mc 001-2022",
+        "BD_PERI"
+      ],
+      "notes": "Cu ETICS continuă peste planșeu: ψ scade la ≈0.04",
+      "detail_template": "WALL_SLAB_INTERMEDIATE"
     },
     "Perete ext. — Planșeu terasă": {
       "id": "TB-WJ-004",
@@ -208,20 +736,29 @@
       "psi_max": 0.35,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R; Mc 001-2022 Tab A.2",
-      "validated_against": ["ISO 14683", "PHI Passipedia roof junctions"],
-      "notes": "Risc major de condensare interioară; verificare fRsi ≥ 0.75 obligatorie"
+      "validated_against": [
+        "ISO 14683",
+        "PHI Passipedia roof junctions"
+      ],
+      "notes": "Risc major de condensare interioară; verificare fRsi ≥ 0.75 obligatorie",
+      "detail_template": "WALL_ROOF_TERRACE"
     },
     "Perete ext. — Planșeu pe sol": {
       "id": "TB-WJ-005",
       "iso_14683_type": "GF",
       "name_en": "External wall — ground floor slab",
-      "psi_min": -0.10,
-      "psi_typical": 0.30,
-      "psi_max": 0.60,
+      "psi_min": -0.1,
+      "psi_typical": 0.3,
+      "psi_max": 0.6,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; SR EN ISO 13370; Passipedia ewfs example (ψ = -0.062 W/(m·K) cu izolație perimetrală Passivhaus)",
-      "validated_against": ["ISO 14683", "ISO 13370", "Passipedia EWFS"],
-      "notes": "Cu izolație perimetrală XPS ≥ 60 cm și izolație sub placă completă: ψ poate deveni negativ"
+      "validated_against": [
+        "ISO 14683",
+        "ISO 13370",
+        "Passipedia EWFS"
+      ],
+      "notes": "Cu izolație perimetrală XPS ≥ 60 cm și izolație sub placă completă: ψ poate deveni negativ",
+      "detail_template": "WALL_GROUND_SLAB"
     },
     "Perete ext. — Soclu/fundație": {
       "id": "TB-WJ-006",
@@ -232,8 +769,13 @@
       "psi_max": 0.55,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; C107/4-1997",
-      "validated_against": ["ISO 14683", "C107/4-1997", "Mc 001-2022 Tab A.3"],
-      "notes": "Izolație XPS perimetrală minim 60cm adâncime este soluția tipică"
+      "validated_against": [
+        "ISO 14683",
+        "C107/4-1997",
+        "Mc 001-2022 Tab A.3"
+      ],
+      "notes": "Izolație XPS perimetrală minim 60cm adâncime este soluția tipică",
+      "detail_template": "FOUNDATION_PLINTH"
     },
     "Glaf fereastră — montaj standard": {
       "id": "TB-W-001",
@@ -244,8 +786,13 @@
       "psi_max": 0.18,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip W; PHI Window Installation Thermal Bridges Catalogue v2.0",
-      "validated_against": ["ISO 14683", "PHI Catalogue", "Knauf PSI Pattern Book"],
-      "notes": "Tâmplărie montată în planul zidăriei, fără acoperirea ramei cu izolație"
+      "validated_against": [
+        "ISO 14683",
+        "PHI Catalogue",
+        "Knauf PSI Pattern Book"
+      ],
+      "notes": "Tâmplărie montată în planul zidăriei, fără acoperirea ramei cu izolație",
+      "detail_template": "WINDOW_JAMB_STANDARD"
     },
     "Glaf fereastră — montaj în izolație": {
       "id": "TB-W-002",
@@ -256,8 +803,12 @@
       "psi_max": 0.08,
       "iso_class": "B",
       "source": "PHI Window Installation Thermal Bridges Catalogue v2.0; SR EN ISO 14683 Tab 1 tip W optimizat",
-      "validated_against": ["PHI Catalogue", "Compacfoam BB detail"],
-      "notes": "Tâmplăria pozitionată în dreptul stratului termoizolant; bandă precomprimată cheie"
+      "validated_against": [
+        "PHI Catalogue",
+        "Compacfoam BB detail"
+      ],
+      "notes": "Tâmplăria pozitionată în dreptul stratului termoizolant; bandă precomprimată cheie",
+      "detail_template": "WINDOW_JAMB_INSULATED"
     },
     "Glaf fereastră — montaj complet izolat": {
       "id": "TB-W-003",
@@ -268,20 +819,28 @@
       "psi_max": 0.04,
       "iso_class": "A",
       "source": "PHI Passive House Standard RAL; PHI Window Installation Thermal Bridges Catalogue v2.0",
-      "validated_against": ["PHI RAL montage", "Passipedia"],
-      "notes": "Console portante izolate + bandă interioară/exterioară + revenire izolație peste cercevea"
+      "validated_against": [
+        "PHI RAL montage",
+        "Passipedia"
+      ],
+      "notes": "Console portante izolate + bandă interioară/exterioară + revenire izolație peste cercevea",
+      "detail_template": "WINDOW_JAMB_INSULATED"
     },
     "Prag ușă exterioară": {
       "id": "TB-W-004",
       "iso_14683_type": "D",
       "name_en": "External door threshold",
       "psi_min": 0.03,
-      "psi_typical": 0.10,
-      "psi_max": 0.30,
+      "psi_typical": 0.1,
+      "psi_max": 0.3,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip D",
-      "validated_against": ["ISO 14683", "Mc 001-2022"],
-      "notes": "Prag metalic cu ruptură termică reduce ψ la ≈0.05"
+      "validated_against": [
+        "ISO 14683",
+        "Mc 001-2022"
+      ],
+      "notes": "Prag metalic cu ruptură termică reduce ψ la ≈0.05",
+      "detail_template": "DOOR_THRESHOLD"
     },
     "Pervaz/glaf sub fereastră": {
       "id": "TB-W-005",
@@ -292,20 +851,31 @@
       "psi_max": 0.12,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip W (sill); Mc 001-2022; C107/4-1997",
-      "validated_against": ["ISO 14683", "Mc 001-2022", "PHI Catalogue"],
-      "notes": "Nișa radiator sub fereastră agravează ψ cu 30-50%"
+      "validated_against": [
+        "ISO 14683",
+        "Mc 001-2022",
+        "PHI Catalogue"
+      ],
+      "notes": "Nișa radiator sub fereastră agravează ψ cu 30-50%",
+      "detail_template": "WINDOW_SILL"
     },
     "Consolă balcon — beton neîntrerupt": {
       "id": "TB-B-001",
       "iso_14683_type": "B",
       "name_en": "Balcony cantilever — uninterrupted concrete slab",
       "psi_min": 0.45,
-      "psi_typical": 0.70,
-      "psi_max": 1.10,
+      "psi_typical": 0.7,
+      "psi_max": 1.1,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip B; BRE IP 1/06; Schöck Technical Information T",
-      "validated_against": ["ISO 14683", "Schöck data", "BRE IP 1/06", "HTflux comparative study"],
-      "notes": "CEA MAI GRAVĂ punte termică lineară comună. HTflux: economie 78-82% cu thermal break"
+      "validated_against": [
+        "ISO 14683",
+        "Schöck data",
+        "BRE IP 1/06",
+        "HTflux comparative study"
+      ],
+      "notes": "CEA MAI GRAVĂ punte termică lineară comună. HTflux: economie 78-82% cu thermal break",
+      "detail_template": "BALCONY_UNINTERRUPTED"
     },
     "Consolă balcon — cu ruptoare termice": {
       "id": "TB-B-002",
@@ -313,48 +883,67 @@
       "name_en": "Balcony cantilever — with structural thermal break (Schöck Isokorb / equivalent)",
       "psi_min": 0.05,
       "psi_typical": 0.15,
-      "psi_max": 0.30,
+      "psi_max": 0.3,
       "iso_class": "B",
       "source": "Schöck Isokorb Technical Information (T/K/KXT types); Halfen HIT-HP/HIT-SP; Leviat Ancon Isotec",
-      "validated_against": ["Schöck", "Halfen", "Leviat", "EN ISO 10211"],
-      "notes": "Reducere până la 90% a pierderilor față de balcon neîntrerupt (Schöck datasheet)"
+      "validated_against": [
+        "Schöck",
+        "Halfen",
+        "Leviat",
+        "EN ISO 10211"
+      ],
+      "notes": "Reducere până la 90% a pierderilor față de balcon neîntrerupt (Schöck datasheet)",
+      "detail_template": "BALCONY_WITH_BREAK"
     },
     "Cornișă acoperiș — streașină": {
       "id": "TB-R-001",
       "iso_14683_type": "R",
       "name_en": "Roof eaves / cornice",
       "psi_min": 0.03,
-      "psi_typical": 0.10,
+      "psi_typical": 0.1,
       "psi_max": 0.25,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R; LABC Registered Details",
-      "validated_against": ["ISO 14683", "LABC RD", "Mc 001-2022"],
-      "notes": "Continuitate izolație între perete și acoperiș este cheia; truss cu 'energy heel' ideal"
+      "validated_against": [
+        "ISO 14683",
+        "LABC RD",
+        "Mc 001-2022"
+      ],
+      "notes": "Continuitate izolație între perete și acoperiș este cheia; truss cu 'energy heel' ideal",
+      "detail_template": "ROOF_EAVES"
     },
     "Parapetul atic": {
       "id": "TB-R-002",
       "iso_14683_type": "P",
       "name_en": "Parapet (roof edge, flat roof)",
-      "psi_min": 0.10,
+      "psi_min": 0.1,
       "psi_typical": 0.35,
-      "psi_max": 0.70,
+      "psi_max": 0.7,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip P; Armatherm parapet thermal break; Schöck Novomur",
-      "validated_against": ["ISO 14683", "Armatherm data", "thermalbridgingsolutions.com"],
-      "notes": "Parapetul poate reduce R-valoarea peretelui cu până la 60% (thermalbridgingsolutions.com). Minim 25mm izolație verticală + 300mm înălțime upstand."
+      "validated_against": [
+        "ISO 14683",
+        "Armatherm data",
+        "thermalbridgingsolutions.com"
+      ],
+      "notes": "Parapetul poate reduce R-valoarea peretelui cu până la 60% (thermalbridgingsolutions.com). Minim 25mm izolație verticală + 300mm înălțime upstand.",
+      "detail_template": "ROOF_PARAPET"
     },
-
     "Perete ext. — Planșeu peste subsol": {
       "id": "TB-WJ-007",
       "iso_14683_type": "GF",
       "name_en": "External wall — floor above unheated basement",
       "psi_min": 0.05,
-      "psi_typical": 0.20,
-      "psi_max": 0.40,
+      "psi_typical": 0.2,
+      "psi_max": 0.4,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; Mc 001-2022 Tab A.3; C107/4-1997",
-      "validated_against": ["ISO 14683", "Mc 001-2022"],
-      "notes": "Zona soclu/CTS — cea mai frecventă punte termică la blocuri vechi"
+      "validated_against": [
+        "ISO 14683",
+        "Mc 001-2022"
+      ],
+      "notes": "Zona soclu/CTS — cea mai frecventă punte termică la blocuri vechi",
+      "detail_template": "WALL_GROUND_SLAB"
     },
     "Perete ext. — Perete int. portant": {
       "id": "TB-WJ-008",
@@ -365,32 +954,44 @@
       "psi_max": 0.12,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip IW; Mc 001-2022",
-      "validated_against": ["ISO 14683", "Mc 001-2022"],
-      "notes": "Cu izolație termică pe primii ~50cm ai peretelui interior: ψ ≈ 0.02"
+      "validated_against": [
+        "ISO 14683",
+        "Mc 001-2022"
+      ],
+      "notes": "Cu izolație termică pe primii ~50cm ai peretelui interior: ψ ≈ 0.02",
+      "detail_template": "CORNER_INTERNAL"
     },
     "Loggie — parapete beton": {
       "id": "TB-B-003",
       "iso_14683_type": "B",
       "name_en": "Loggia — concrete parapet",
       "psi_min": 0.08,
-      "psi_typical": 0.30,
+      "psi_typical": 0.3,
       "psi_max": 0.55,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip B; C107/4-1997",
-      "validated_against": ["ISO 14683", "C107/4-1997"],
-      "notes": "Similar cu consola balcon pentru placa continuă, dar cu parapet suplimentar"
+      "validated_against": [
+        "ISO 14683",
+        "C107/4-1997"
+      ],
+      "notes": "Similar cu consola balcon pentru placa continuă, dar cu parapet suplimentar",
+      "detail_template": "BALCONY_UNINTERRUPTED"
     },
     "Balcon închis (extindere)": {
       "id": "TB-B-004",
       "iso_14683_type": "B",
       "name_en": "Enclosed balcony (extension)",
-      "psi_min": 0.10,
-      "psi_typical": 0.40,
-      "psi_max": 0.80,
+      "psi_min": 0.1,
+      "psi_typical": 0.4,
+      "psi_max": 0.8,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip B; BRE IP 1/06",
-      "validated_against": ["ISO 14683", "BRE IP 1/06"],
-      "notes": "Balcon cu extindere închisă post-construcție — punte foarte gravă dacă nu e reizolat"
+      "validated_against": [
+        "ISO 14683",
+        "BRE IP 1/06"
+      ],
+      "notes": "Balcon cu extindere închisă post-construcție — punte foarte gravă dacă nu e reizolat",
+      "detail_template": "BALCONY_UNINTERRUPTED"
     },
     "Coamă acoperiș": {
       "id": "TB-R-003",
@@ -401,8 +1002,12 @@
       "psi_max": 0.12,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R; LABC Registered Details",
-      "validated_against": ["ISO 14683", "LABC RD"],
-      "notes": "Continuitate izolație între cele două versanți — ventilare la coamă poate introduce punte adițională"
+      "validated_against": [
+        "ISO 14683",
+        "LABC RD"
+      ],
+      "notes": "Continuitate izolație între cele două versanți — ventilare la coamă poate introduce punte adițională",
+      "detail_template": "ROOF_EAVES"
     },
     "Luminatoare / trapă acces pod": {
       "id": "TB-R-004",
@@ -413,8 +1018,12 @@
       "psi_max": 0.35,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R; BR 497",
-      "validated_against": ["ISO 14683", "BR 497"],
-      "notes": "Cadru aluminium fără rupere termică dublează ψ"
+      "validated_against": [
+        "ISO 14683",
+        "BR 497"
+      ],
+      "notes": "Cadru aluminium fără rupere termică dublează ψ",
+      "detail_template": "ROOF_EAVES"
     },
     "Jgheab/streașină metalică": {
       "id": "TB-R-005",
@@ -422,11 +1031,14 @@
       "name_en": "Metal eaves gutter / fascia",
       "psi_min": 0.02,
       "psi_typical": 0.08,
-      "psi_max": 0.20,
+      "psi_max": 0.2,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R",
-      "validated_against": ["ISO 14683"],
-      "notes": "Ancorarea metalică a jgheabului penetrează izolația — prefer ancoraj tip thermal break"
+      "validated_against": [
+        "ISO 14683"
+      ],
+      "notes": "Ancorarea metalică a jgheabului penetrează izolația — prefer ancoraj tip thermal break",
+      "detail_template": "ROOF_EAVES"
     },
     "Stâlp beton în perete exterior": {
       "id": "TB-CB-001",
@@ -437,8 +1049,13 @@
       "psi_max": 0.35,
       "iso_class": "C",
       "source": "SR EN ISO 10211:2017 modelare 2D; Mc 001-2022",
-      "validated_against": ["ISO 10211", "Mc 001-2022", "ACI 318"],
-      "notes": "Cu ETICS continuu peste stâlp: ψ scade la ≈0.05; fără ETICS: punte gravă"
+      "validated_against": [
+        "ISO 10211",
+        "Mc 001-2022",
+        "ACI 318"
+      ],
+      "notes": "Cu ETICS continuu peste stâlp: ψ scade la ≈0.05; fără ETICS: punte gravă",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
     },
     "Grindă de centură / buiandrug": {
       "id": "TB-CB-002",
@@ -449,20 +1066,28 @@
       "psi_max": 0.28,
       "iso_class": "C",
       "source": "SR EN ISO 10211:2017; C107/4-1997; Mc 001-2022",
-      "validated_against": ["ISO 10211", "C107/4-1997"],
-      "notes": "Centurile din beton armat la fiecare nivel — cumulate pot genera 5-8 W/K pierdere pe clădire"
+      "validated_against": [
+        "ISO 10211",
+        "C107/4-1997"
+      ],
+      "notes": "Centurile din beton armat la fiecare nivel — cumulate pot genera 5-8 W/K pierdere pe clădire",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
     },
     "Stâlp metalic neîntrerupt": {
       "id": "TB-CB-003",
       "iso_14683_type": "IW",
       "name_en": "Uninterrupted steel column (HEA/HEB)",
       "psi_min": 0.05,
-      "psi_typical": 0.20,
+      "psi_typical": 0.2,
       "psi_max": 0.45,
       "iso_class": "D",
       "source": "SCI Publication P380; SR EN ISO 10211:2017",
-      "validated_against": ["SCI P380", "ISO 10211"],
-      "notes": "Profile HEA/HEB penetrante — foarte gravă; soluție: întrerupere cu thermal break Armatherm"
+      "validated_against": [
+        "SCI P380",
+        "ISO 10211"
+      ],
+      "notes": "Profile HEA/HEB penetrante — foarte gravă; soluție: întrerupere cu thermal break Armatherm",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
     },
     "Grindă metalică în perete": {
       "id": "TB-CB-004",
@@ -470,11 +1095,15 @@
       "name_en": "Steel beam embedded in wall",
       "psi_min": 0.08,
       "psi_typical": 0.25,
-      "psi_max": 0.50,
+      "psi_max": 0.5,
       "iso_class": "D",
       "source": "SCI Publication P380; SR EN ISO 10211:2017; Armatherm FRR",
-      "validated_against": ["SCI P380", "ISO 10211"],
-      "notes": "Similar cu stâlpul metalic — conductivitate oțel 50 W/(m·K) face necesară ruptura termică"
+      "validated_against": [
+        "SCI P380",
+        "ISO 10211"
+      ],
+      "notes": "Similar cu stâlpul metalic — conductivitate oțel 50 W/(m·K) face necesară ruptura termică",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
     },
     "Țeavă neizolată prin perete ext.": {
       "id": "TB-SV-001",
@@ -482,95 +1111,129 @@
       "name_en": "Uninsulated pipe through external wall",
       "psi_min": 0.02,
       "psi_typical": 0.15,
-      "psi_max": 0.30,
+      "psi_max": 0.3,
       "iso_class": "C",
       "source": "SR EN ISO 10211:2017 cap. 7; C107/4-1997",
-      "validated_against": ["ISO 10211", "C107/4-1997"],
-      "notes": "Unitate reală e χ [W/K] per penetrație; raportată ca ψ echivalent pentru simplificare"
+      "validated_against": [
+        "ISO 10211",
+        "C107/4-1997"
+      ],
+      "notes": "Unitate reală e χ [W/K] per penetrație; raportată ca ψ echivalent pentru simplificare",
+      "detail_template": "SERVICE_PENETRATION"
     },
     "Canal ventilare prin perete": {
       "id": "TB-SV-002",
       "iso_14683_type": "chi-punctual",
       "name_en": "Ventilation duct through wall",
       "psi_min": 0.04,
-      "psi_typical": 0.20,
-      "psi_max": 0.40,
+      "psi_typical": 0.2,
+      "psi_max": 0.4,
       "iso_class": "D",
       "source": "SR EN ISO 10211:2017; CEN/TR 17183",
-      "validated_against": ["ISO 10211", "CEN/TR 17183"],
-      "notes": "Canale rectangulare > 200mm — folosește conectori metalici izolați la penetrare"
+      "validated_against": [
+        "ISO 10211",
+        "CEN/TR 17183"
+      ],
+      "notes": "Canale rectangulare > 200mm — folosește conectori metalici izolați la penetrare",
+      "detail_template": "SERVICE_PENETRATION"
     },
     "Coș de fum exterior": {
       "id": "TB-SV-003",
       "iso_14683_type": "chi-punctual",
       "name_en": "External chimney flue",
       "psi_min": 0.08,
-      "psi_typical": 0.30,
-      "psi_max": 0.60,
+      "psi_typical": 0.3,
+      "psi_max": 0.6,
       "iso_class": "D",
       "source": "SR EN ISO 10211:2017; normativ NP 023-97",
-      "validated_against": ["ISO 10211", "NP 023-97"],
-      "notes": "Coș zidărie penetrant — tratare cu izolație perimetrală obligatorie"
+      "validated_against": [
+        "ISO 10211",
+        "NP 023-97"
+      ],
+      "notes": "Coș zidărie penetrant — tratare cu izolație perimetrală obligatorie",
+      "detail_template": "SERVICE_PENETRATION"
     },
     "Cutie de jaluzele (casetă roletă)": {
       "id": "TB-SV-004",
       "iso_14683_type": "W",
       "name_en": "Rolling shutter box",
       "psi_min": 0.08,
-      "psi_typical": 0.30,
+      "psi_typical": 0.3,
       "psi_max": 0.55,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1; PHI detail sheets pentru casete",
-      "validated_against": ["ISO 14683", "PHI"],
-      "notes": "Cutii integrate în ETICS cu izolație PUR reduc ψ la ≈0.10; cutii clasice PVC cu gol gol — worst case"
+      "validated_against": [
+        "ISO 14683",
+        "PHI"
+      ],
+      "notes": "Cutii integrate în ETICS cu izolație PUR reduc ψ la ≈0.10; cutii clasice PVC cu gol gol — worst case",
+      "detail_template": "SERVICE_PENETRATION"
     },
     "Radier general — perete exterior": {
       "id": "TB-F-001",
       "iso_14683_type": "GF",
       "name_en": "Mat foundation — external wall junction",
-      "psi_min": 0.10,
+      "psi_min": 0.1,
       "psi_typical": 0.38,
       "psi_max": 0.75,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; SR EN ISO 13370",
-      "validated_against": ["ISO 14683", "ISO 13370"],
-      "notes": "Radier fără izolație XPS sub placă — una dintre cele mai grave punți la clădiri fără izolație perimetrală"
+      "validated_against": [
+        "ISO 14683",
+        "ISO 13370"
+      ],
+      "notes": "Radier fără izolație XPS sub placă — una dintre cele mai grave punți la clădiri fără izolație perimetrală",
+      "detail_template": "FOUNDATION_PLINTH"
     },
     "Fundație bandă — perete exterior izolat perimetral": {
       "id": "TB-F-002",
       "iso_14683_type": "GF",
       "name_en": "Strip foundation — external wall with perimeter insulation",
       "psi_min": 0.04,
-      "psi_typical": 0.20,
-      "psi_max": 0.40,
+      "psi_typical": 0.2,
+      "psi_max": 0.4,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; SR EN ISO 13370",
-      "validated_against": ["ISO 14683", "ISO 13370", "Mc 001-2022"],
-      "notes": "Izolație XPS perimetrală minim 60 cm adâncime — standardul MDLPA pentru clădiri noi"
+      "validated_against": [
+        "ISO 14683",
+        "ISO 13370",
+        "Mc 001-2022"
+      ],
+      "notes": "Izolație XPS perimetrală minim 60 cm adâncime — standardul MDLPA pentru clădiri noi",
+      "detail_template": "FOUNDATION_PLINTH"
     },
     "Perete subsol — planșeu deasupra subsolului neîncălzit": {
       "id": "TB-F-003",
       "iso_14683_type": "GF",
       "name_en": "Basement wall — floor above unheated basement",
       "psi_min": 0.04,
-      "psi_typical": 0.20,
-      "psi_max": 0.40,
+      "psi_typical": 0.2,
+      "psi_max": 0.4,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; SR EN ISO 13370",
-      "validated_against": ["ISO 14683", "ISO 13370"],
-      "notes": "Similar cu joncțiunea standard perete ext.–planșeu peste subsol"
+      "validated_against": [
+        "ISO 14683",
+        "ISO 13370"
+      ],
+      "notes": "Similar cu joncțiunea standard perete ext.–planșeu peste subsol",
+      "detail_template": "WALL_GROUND_SLAB"
     },
     "Planșeu pe sol — izolație sub placă continuă": {
       "id": "TB-F-004",
       "iso_14683_type": "GF",
       "name_en": "Ground-bearing slab — continuous insulation below slab",
       "psi_min": 0.02,
-      "psi_typical": 0.10,
+      "psi_typical": 0.1,
       "psi_max": 0.22,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip GF; SR EN ISO 13370; Passipedia EWFS",
-      "validated_against": ["ISO 14683", "ISO 13370", "Passipedia"],
-      "notes": "Cu XPS ≥ 100mm sub placă + izolație perimetrală: ψ scade sub 0.06"
+      "validated_against": [
+        "ISO 14683",
+        "ISO 13370",
+        "Passipedia"
+      ],
+      "notes": "Cu XPS ≥ 100mm sub placă + izolație perimetrală: ψ scade sub 0.06",
+      "detail_template": "WALL_GROUND_SLAB"
     },
     "Planșeu pe sol — izolație perimetrală 60 cm": {
       "id": "TB-F-005",
@@ -581,8 +1244,12 @@
       "psi_max": 0.25,
       "iso_class": "C",
       "source": "SR EN ISO 13370:2017; Mc 001-2022 Anexa B",
-      "validated_against": ["ISO 13370", "Mc 001-2022"],
-      "notes": "Soluție tipică pentru renovări — izolație verticală XPS 60cm adâncime pe fațadă-soclu"
+      "validated_against": [
+        "ISO 13370",
+        "Mc 001-2022"
+      ],
+      "notes": "Soluție tipică pentru renovări — izolație verticală XPS 60cm adâncime pe fațadă-soclu",
+      "detail_template": "WALL_GROUND_SLAB"
     },
     "Perete timber frame — planșeu intermediar fără întrerupere": {
       "id": "TB-TM-001",
@@ -593,8 +1260,12 @@
       "psi_max": 0.15,
       "iso_class": "C",
       "source": "PHI Passipedia — Timber construction; Holzforschung Austria WDVS-Atlas",
-      "validated_against": ["PHI", "Holzforschung Austria"],
-      "notes": "Conductivitate lemn ~0.13 W/(m·K) — rim joist lemn e mult mai benign decât grinda metalică"
+      "validated_against": [
+        "PHI",
+        "Holzforschung Austria"
+      ],
+      "notes": "Conductivitate lemn ~0.13 W/(m·K) — rim joist lemn e mult mai benign decât grinda metalică",
+      "detail_template": "TIMBER_CONSTRUCTION"
     },
     "Perete timber frame — fundație": {
       "id": "TB-TM-002",
@@ -605,8 +1276,12 @@
       "psi_max": 0.25,
       "iso_class": "C",
       "source": "PHI Passipedia; BRE Timber Frame Details",
-      "validated_against": ["PHI", "BRE"],
-      "notes": "Talpa de bază (sill plate) lemn pe fundație — cu EPDM + bandă precomprimată"
+      "validated_against": [
+        "PHI",
+        "BRE"
+      ],
+      "notes": "Talpa de bază (sill plate) lemn pe fundație — cu EPDM + bandă precomprimată",
+      "detail_template": "TIMBER_CONSTRUCTION"
     },
     "CLT perete — CLT planșeu": {
       "id": "TB-TM-003",
@@ -617,8 +1292,12 @@
       "psi_max": 0.14,
       "iso_class": "C",
       "source": "PHI Passipedia CLT; Stora Enso Building Solutions; proHolz Austria TM-2",
-      "validated_against": ["PHI", "proHolz"],
-      "notes": "Joncțiune panouri CLT solide — comportament termic mai bun decât frame tradițional"
+      "validated_against": [
+        "PHI",
+        "proHolz"
+      ],
+      "notes": "Joncțiune panouri CLT solide — comportament termic mai bun decât frame tradițional",
+      "detail_template": "TIMBER_CONSTRUCTION"
     },
     "Panouri SIP — joncțiune": {
       "id": "TB-TM-004",
@@ -626,23 +1305,31 @@
       "name_en": "SIP panels — junction",
       "psi_min": 0.01,
       "psi_typical": 0.04,
-      "psi_max": 0.10,
+      "psi_max": 0.1,
       "iso_class": "B",
       "source": "PHI Passipedia SIPs; SIPA (Structural Insulated Panel Association)",
-      "validated_against": ["PHI", "SIPA"],
-      "notes": "Panouri SIP cu miez EPS/PUR — foarte performante dacă conexiunile sunt etanșe"
+      "validated_against": [
+        "PHI",
+        "SIPA"
+      ],
+      "notes": "Panouri SIP cu miez EPS/PUR — foarte performante dacă conexiunile sunt etanșe",
+      "detail_template": "TIMBER_CONSTRUCTION"
     },
     "Panou prefabricat mare — planșeu (neizolat)": {
       "id": "TB-PC-001",
       "iso_14683_type": "IF",
       "name_en": "Large precast panel — floor junction (uninsulated)",
       "psi_min": 0.15,
-      "psi_typical": 0.50,
+      "psi_typical": 0.5,
       "psi_max": 0.95,
       "iso_class": "D",
       "source": "CEN/TR 15131; studii MDLPA clădiri bloc 1960-1990",
-      "validated_against": ["CEN/TR 15131", "Mc 001-2022"],
-      "notes": "Blocurile IPCT '70-'80 din România — punte majoră dacă nu e reizolat cu ETICS"
+      "validated_against": [
+        "CEN/TR 15131",
+        "Mc 001-2022"
+      ],
+      "notes": "Blocurile IPCT '70-'80 din România — punte majoră dacă nu e reizolat cu ETICS",
+      "detail_template": "PRECAST_PANEL"
     },
     "Perete sandwich prefabricat — planșeu": {
       "id": "TB-PC-002",
@@ -653,32 +1340,44 @@
       "psi_max": 0.18,
       "iso_class": "C",
       "source": "Thermomass technical data; CEN/TR 15131",
-      "validated_against": ["Thermomass", "CEN/TR 15131"],
-      "notes": "Panouri moderne cu miez PIR/EPS — cu conectori GFRP: ψ ≈ 0.04"
+      "validated_against": [
+        "Thermomass",
+        "CEN/TR 15131"
+      ],
+      "notes": "Panouri moderne cu miez PIR/EPS — cu conectori GFRP: ψ ≈ 0.04",
+      "detail_template": "PRECAST_PANEL"
     },
     "Fațadă cortină — planșeu intermediar (neizolat)": {
       "id": "TB-FA-001",
       "iso_14683_type": "CW",
       "name_en": "Curtain wall — intermediate floor (uninsulated)",
       "psi_min": 0.08,
-      "psi_typical": 0.40,
-      "psi_max": 0.80,
+      "psi_typical": 0.4,
+      "psi_max": 0.8,
       "iso_class": "D",
       "source": "CWCT Technical Note 36; SR EN ISO 10211",
-      "validated_against": ["CWCT TN36", "ISO 10211"],
-      "notes": "Mullions de aluminiu penetrând planșeul — fără thermal break, punte foarte gravă"
+      "validated_against": [
+        "CWCT TN36",
+        "ISO 10211"
+      ],
+      "notes": "Mullions de aluminiu penetrând planșeul — fără thermal break, punte foarte gravă",
+      "detail_template": "WALL_SLAB_INTERMEDIATE"
     },
     "Fațadă cortină — colț exterior": {
       "id": "TB-FA-002",
       "iso_14683_type": "CW",
       "name_en": "Curtain wall — external corner",
       "psi_min": 0.02,
-      "psi_typical": 0.10,
+      "psi_typical": 0.1,
       "psi_max": 0.22,
       "iso_class": "C",
       "source": "CWCT Technical Note 36; Schüco Technical Information",
-      "validated_against": ["CWCT TN36", "Schüco"],
-      "notes": "Profile de colț aluminium cu rupere termică poliamid"
+      "validated_against": [
+        "CWCT TN36",
+        "Schüco"
+      ],
+      "notes": "Profile de colț aluminium cu rupere termică poliamid",
+      "detail_template": "CORNER_EXTERNAL"
     },
     "Fereastră de mansardă Velux — acoperiș": {
       "id": "TB-FA-003",
@@ -689,20 +1388,27 @@
       "psi_max": 0.32,
       "iso_class": "D",
       "source": "VELUX Technical Data; SR EN ISO 14683:2017 Tab 1 tip W",
-      "validated_against": ["VELUX", "ISO 14683"],
-      "notes": "Montaj cu element BBX de etanșare izolantă — ψ scade la ≈0.07"
+      "validated_against": [
+        "VELUX",
+        "ISO 14683"
+      ],
+      "notes": "Montaj cu element BBX de etanșare izolantă — ψ scade la ≈0.07",
+      "detail_template": "WINDOW_JAMB_STANDARD"
     },
     "Ușă balcon — prag": {
       "id": "TB-FA-004",
       "iso_14683_type": "D",
       "name_en": "Balcony door — threshold",
       "psi_min": 0.04,
-      "psi_typical": 0.20,
-      "psi_max": 0.40,
+      "psi_typical": 0.2,
+      "psi_max": 0.4,
       "iso_class": "D",
       "source": "SR EN ISO 14683:2017 Tab 1 tip D; producători tâmplărie",
-      "validated_against": ["ISO 14683"],
-      "notes": "Pragurile ușilor balcon — problematice datorită continuității plăcii balcon"
+      "validated_against": [
+        "ISO 14683"
+      ],
+      "notes": "Pragurile ușilor balcon — problematice datorită continuității plăcii balcon",
+      "detail_template": "DOOR_THRESHOLD"
     },
     "Bandă ETICS la baza ferestrelor": {
       "id": "TB-FA-005",
@@ -713,20 +1419,28 @@
       "psi_max": 0.08,
       "iso_class": "B",
       "source": "ETAG 004; PHI Passipedia",
-      "validated_against": ["ETAG 004", "PHI"],
-      "notes": "Bandă ETICS continuă sub glaf — soluție optimă pentru zona de sub fereastră"
+      "validated_against": [
+        "ETAG 004",
+        "PHI"
+      ],
+      "notes": "Bandă ETICS continuă sub glaf — soluție optimă pentru zona de sub fereastră",
+      "detail_template": "ETICS_BAND"
     },
     "Mansardă — conexiune perete exterior": {
       "id": "TB-RA-001",
       "iso_14683_type": "R",
       "name_en": "Loft — external wall connection",
       "psi_min": 0.02,
-      "psi_typical": 0.10,
+      "psi_typical": 0.1,
       "psi_max": 0.22,
       "iso_class": "C",
       "source": "SR EN ISO 14683:2017 Tab 1 tip R; PHI detail sheets",
-      "validated_against": ["ISO 14683", "PHI"],
-      "notes": "Transferul de la peretele vertical la rampantul acoperișului — continuitate izolație esențială"
+      "validated_against": [
+        "ISO 14683",
+        "PHI"
+      ],
+      "notes": "Transferul de la peretele vertical la rampantul acoperișului — continuitate izolație esențială",
+      "detail_template": "ROOF_EAVES"
     },
     "Ruptor termic Schöck Isokorb tip KXT": {
       "id": "TB-BA-001",
@@ -737,8 +1451,12 @@
       "psi_max": 0.22,
       "iso_class": "C",
       "source": "Schöck Technical Information Isokorb KXT (120 mm, Passivhaus certified)",
-      "validated_against": ["Schöck", "PHI certification"],
-      "notes": "KXT = Passivhaus certified (120mm Neopor); reducere 90% vs. balcon neîntrerupt"
+      "validated_against": [
+        "Schöck",
+        "PHI certification"
+      ],
+      "notes": "KXT = Passivhaus certified (120mm Neopor); reducere 90% vs. balcon neîntrerupt",
+      "detail_template": "BALCONY_WITH_BREAK"
     },
     "Diblu metalic de prindere EPS": {
       "id": "TB-ET-001",
@@ -749,8 +1467,12 @@
       "psi_max": 0.008,
       "iso_class": "A",
       "source": "ETAG 014; EJOT / Fischer / Rawlplug technical data",
-      "validated_against": ["ETAG 014", "producători dibluri"],
-      "notes": "Punte punctuală χ [W/K] — 6-8 dibluri/m² ETICS; cumulat ≈ 0.02 W/(m²·K)"
+      "validated_against": [
+        "ETAG 014",
+        "producători dibluri"
+      ],
+      "notes": "Punte punctuală χ [W/K] — 6-8 dibluri/m² ETICS; cumulat ≈ 0.02 W/(m²·K)",
+      "detail_template": "ETICS_ANCHOR"
     },
     "Soclu ETICS — interfața cu solul": {
       "id": "TB-ET-002",
@@ -761,8 +1483,12 @@
       "psi_max": 0.25,
       "iso_class": "C",
       "source": "ETAG 004; EAD 040083; SR EN ISO 14683:2017 Tab 1 tip GF",
-      "validated_against": ["ETAG 004", "ISO 14683"],
-      "notes": "Tranziție ETICS-fundație cu profile drip + izolație soclu XPS coborâtă 60cm sub CTS"
+      "validated_against": [
+        "ETAG 004",
+        "ISO 14683"
+      ],
+      "notes": "Tranziție ETICS-fundație cu profile drip + izolație soclu XPS coborâtă 60cm sub CTS",
+      "detail_template": "FOUNDATION_PLINTH"
     },
     "Trecere conductă termică izolată prin perete": {
       "id": "TB-SA-001",
@@ -773,8 +1499,12 @@
       "psi_max": 0.15,
       "iso_class": "C",
       "source": "SR EN ISO 10211:2017 cap. 7; CEN/TR 17183",
-      "validated_against": ["ISO 10211", "CEN/TR 17183"],
-      "notes": "Conductă Cu/OL cu izolație ≥ 20mm și manșon de etanșare — χ echivalent"
+      "validated_against": [
+        "ISO 10211",
+        "CEN/TR 17183"
+      ],
+      "notes": "Conductă Cu/OL cu izolație ≥ 20mm și manșon de etanșare — χ echivalent",
+      "detail_template": "SERVICE_PENETRATION"
     },
     "Trecere cablu electric prin perete exterior": {
       "id": "TB-SA-002",
@@ -785,8 +1515,668 @@
       "psi_max": 0.08,
       "iso_class": "B",
       "source": "SR EN ISO 10211:2017; Passipedia χ-values",
-      "validated_against": ["ISO 10211", "Passipedia"],
-      "notes": "Penetrație mică cu manșon sigilant — contribuție redusă dar necesară pentru etanșare"
+      "validated_against": [
+        "ISO 10211",
+        "Passipedia"
+      ],
+      "notes": "Penetrație mică cu manșon sigilant — contribuție redusă dar necesară pentru etanșare",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Subsol tehnic neîncălzit — planșeu": {
+      "id": "TB-F-006",
+      "iso_14683_type": "—",
+      "name_en": "Subsol tehnic neîncălzit — planșeu",
+      "psi_min": 0.03,
+      "psi_typical": 0.06,
+      "psi_max": 0.14,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fundații și subsol)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Planșeul dintre subsol tehnic și spațiul încălzit. Izolație pe fața inferioară a planșeului: Ψ≈0,06. Ref: Mc 001-2022, ISO 14683:2017.",
+      "detail_template": "WALL_GROUND_SLAB"
+    },
+    "Grinzi de fundație pe piloți": {
+      "id": "TB-F-007",
+      "iso_14683_type": "—",
+      "name_en": "Grinzi de foundation pe piloți",
+      "psi_min": 0.035,
+      "psi_typical": 0.07,
+      "psi_max": 0.18,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fundații și subsol)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Grinzile de fundație pe piloți creează punți spre sol. Cu izolație sub grindă și perimetral: Ψ≈0,07. Ref: EN ISO 13370, EN ISO 10211.",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
+    },
+    "Perete calcan (median) – racordul cu acoperișul": {
+      "id": "TB-RS-001",
+      "iso_14683_type": "—",
+      "name_en": "Perete calcan (median) – racordul cu rooful",
+      "psi_min": 0.04,
+      "psi_typical": 0.08,
+      "psi_max": 0.3,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș – tipuri speciale)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Peretele calcan ieșit din acoperiș: lipsa izolației la racord creează punte termică liniară. Ψ = 0.30 W/mK; cu umplere completă cu vată și barieră termică pe calcan: Ψ = 0.08 W/mK. Sursă: DIN 4108 Bei",
+      "detail_template": "ROOF_EAVES"
+    },
+    "Căpriori — neizolați vs. izolați": {
+      "id": "TB-TM-005",
+      "iso_14683_type": "—",
+      "name_en": "Căpriori — neizolați vs. izolați",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.08,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri din lemn)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Căpriorii din lemn creează punți liniare în planul izolației de acoperiș. Cu izolație între și sub căpriori (2 straturi): Ψ≈0,03. Ref: PHI, atlas punți termice german.",
+      "detail_template": "TIMBER_CONSTRUCTION"
+    },
+    "Grindă lemn încastrată în perete exterior": {
+      "id": "TB-TM-006",
+      "iso_14683_type": "—",
+      "name_en": "Grindă lemn încastrată în external wall",
+      "psi_min": 0.02,
+      "psi_typical": 0.04,
+      "psi_max": 0.11,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri din lemn)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Grinda masivă încastrată în zidărie/beton conduce căldura spre exterior. Cu capăt termoizolat sau nișă izolată: Ψ≈0,04. Ref: EN ISO 10211.",
+      "detail_template": "TIMBER_CONSTRUCTION"
+    },
+    "Acoperiș șarpantă — căpriori 45×200 mm izolați": {
+      "id": "TB-TM-007",
+      "iso_14683_type": "—",
+      "name_en": "Acoperiș șarpantă — căpriori 45×200 mm izolați",
+      "psi_min": 0.005,
+      "psi_typical": 0.01,
+      "psi_max": 0.03,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri din lemn)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Căpriori 45×200mm cu izolație minerală între + izolație sub căpriori (contracăpriori). Soluție performantă: Ψ≈0,01. Ref: PHI Passive House standard.",
+      "detail_template": "TIMBER_CONSTRUCTION"
+    },
+    "Perete lemn — atic": {
+      "id": "TB-TM-008",
+      "iso_14683_type": "—",
+      "name_en": "Perete lemn — atic",
+      "psi_min": 0.01,
+      "psi_typical": 0.02,
+      "psi_max": 0.05,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri din lemn)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Aticul la clădiri cu pereți din lemn. Cu continuitatea învelișului izolant la racordul perete–terasă: Ψ≈0,02. Ref: PHI, atlas german.",
+      "detail_template": "ROOF_PARAPET"
+    },
+    "Panou prefabricat — colț exterior": {
+      "id": "TB-PC-003",
+      "iso_14683_type": "—",
+      "name_en": "Panou prefabricat — colț exterior",
+      "psi_min": 0.05,
+      "psi_typical": 0.1,
+      "psi_max": 0.4,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri prefabricate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Panouri de beton la colțul exterior al blocurilor prefabricate. Fără izolație: Ψ≈0,40. Cu ETICS 10cm: Ψ≈0,10. Ref: Mc 001-2022, reabilitare termică.",
+      "detail_template": "CORNER_EXTERNAL"
+    },
+    "Planșeu prefabricat cu nervuri": {
+      "id": "TB-PC-004",
+      "iso_14683_type": "—",
+      "name_en": "Slab prefabricat cu nervuri",
+      "psi_min": 0.04,
+      "psi_typical": 0.08,
+      "psi_max": 0.2,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri prefabricate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Nervurile de beton ale planșeului nervurat creează punți multiple. Cu izolație continuă sub planșeu: Ψ≈0,08. Ref: ISO 14683:2017, EN ISO 10211.",
+      "detail_template": "PRECAST_PANEL"
+    },
+    "Joncțiune panou cortină + cadru beton": {
+      "id": "TB-PC-005",
+      "iso_14683_type": "—",
+      "name_en": "Joncțiune panou curtain-wallă + cadru beton",
+      "psi_min": 0.035,
+      "psi_typical": 0.07,
+      "psi_max": 0.2,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri prefabricate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Conexiunea mecanică dintre panoul de fațadă și structura de beton. Cu console izolate și etanșare: Ψ≈0,07. Ref: EN ISO 10211, atlas german punți termice.",
+      "detail_template": "WINDOW_JAMB_STANDARD"
+    },
+    "Prindere panou prefabricat — conector metalic": {
+      "id": "TB-PC-006",
+      "iso_14683_type": "—",
+      "name_en": "Prindere panou prefabricat — conector metalic",
+      "psi_min": 0.03,
+      "psi_typical": 0.06,
+      "psi_max": 0.15,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Structuri prefabricate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Conectorul metalic traversează stratul de izolație al panoului sandwich. Cu conector din inox sau fibră de sticlă: Ψ≈0,06. Ref: EN ISO 10211.",
+      "detail_template": "PRECAST_PANEL"
+    },
+    "Fereastră la subsol — glaf": {
+      "id": "TB-FA-006",
+      "iso_14683_type": "—",
+      "name_en": "Fereastră la basement — glaf",
+      "psi_min": 0.02,
+      "psi_typical": 0.04,
+      "psi_max": 0.1,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fațade și ferestre avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Fereastra de subsol montată în perete parțial îngropat. Cu izolație perimetrală și casetă de ghidare: Ψ≈0,04. Ref: ISO 14683:2017, C107/4-1997.",
+      "detail_template": "WINDOW_JAMB_STANDARD"
+    },
+    "Fereastră de colț (corner window)": {
+      "id": "TB-FA-007",
+      "iso_14683_type": "—",
+      "name_en": "Fereastră de colț (corner window)",
+      "psi_min": 0.025,
+      "psi_typical": 0.05,
+      "psi_max": 0.12,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fațade și ferestre avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Fereastra de colț cu profile de aluminiu sau PVC la 90°. Colțul creează punte liniară suplimentară. Cu profil termorupt: Ψ≈0,05. Ref: EN ISO 10211.",
+      "detail_template": "WINDOW_JAMB_STANDARD"
+    },
+    "Geam fix asamblat în fațadă": {
+      "id": "TB-FA-008",
+      "iso_14683_type": "—",
+      "name_en": "Geam fix asamblat în fațadă",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.06,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fațade și ferestre avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Geamul fix fără ramă mobilă, fixat direct în structura de fațadă. Cu garnitură termoizolantă și spumă PUR: Ψ≈0,03. Ref: EN ISO 10211, ISO 14683:2017.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Glaf lateral fereastră (stânga/dreapta)": {
+      "id": "TB-FA-009",
+      "iso_14683_type": "—",
+      "name_en": "Glaf lateral window (stânga/dreapta)",
+      "psi_min": 0.01,
+      "psi_typical": 0.02,
+      "psi_max": 0.05,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Fațade și ferestre avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Fiecare glaf lateral al ferestrei contribuie cu o punte liniară verticală. Cu bandă de racord ETICS și izolație în nișă: Ψ≈0,02. Ref: ISO 14683:2017, RAL montaj ferestre.",
+      "detail_template": "WINDOW_JAMB_STANDARD"
+    },
+    "Acoperiș verde extensiv — atic izolat": {
+      "id": "TB-RA-002",
+      "iso_14683_type": "—",
+      "name_en": "Acoperiș verde extensiv — atic izolat",
+      "psi_min": 0.025,
+      "psi_typical": 0.05,
+      "psi_max": 0.1,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș avansat)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Aticul la acoperiș verde extensiv (substrat 8-15cm). Masa termoizolantă a substratului reduce puntea. Cu izolație continuă pe atic: Ψ≈0,05. Ref: FLL ghid acoperișuri verzi.",
+      "detail_template": "WALL_ROOF_TERRACE"
+    },
+    "Acoperiș verde intensiv — atic": {
+      "id": "TB-RA-003",
+      "iso_14683_type": "—",
+      "name_en": "Acoperiș verde intensiv — atic",
+      "psi_min": 0.03,
+      "psi_typical": 0.06,
+      "psi_max": 0.12,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș avansat)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Aticul la acoperiș verde intensiv (substrat >15cm). Greutatea mai mare necesită atic mai robust, potențial cu mai multă conductivitate. Cu izolație atic: Ψ≈0,06. Ref: FLL.",
+      "detail_template": "WALL_ROOF_TERRACE"
+    },
+    "Gaură aerisire pod — perimetru": {
+      "id": "TB-RA-004",
+      "iso_14683_type": "—",
+      "name_en": "Gaură aerisire pod — perimetru",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.07,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș avansat)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Grilele de aerisire la streașina podului neîncălzit. Cu capac etanș pe perioada iernii și izolație: Ψ≈0,03. Ref: Mc 001-2022.",
+      "detail_template": "ROOF_EAVES"
+    },
+    "Coamă acoperiș în consolă": {
+      "id": "TB-RA-005",
+      "iso_14683_type": "—",
+      "name_en": "Coamă roof în consolă",
+      "psi_min": 0.02,
+      "psi_typical": 0.04,
+      "psi_max": 0.1,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș avansat)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Coama cu streașină extinsă în consolă. Elementele de lemn ale streașinii penetrează planul de izolație. Cu ecrane termoizolante: Ψ≈0,04. Ref: atlas german punți termice.",
+      "detail_template": "BALCONY_UNINTERRUPTED"
+    },
+    "Trecere conductă prin planșeu terasă": {
+      "id": "TB-RA-006",
+      "iso_14683_type": "—",
+      "name_en": "Trecere conductă prin planșeu terasă",
+      "psi_min": 0.025,
+      "psi_typical": 0.05,
+      "psi_max": 0.12,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Acoperiș avansat)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Conductele de canalizare, HVAC sau termice care penetrează hidroizolația și termoizolația terasei. Cu manșon etanș și izolație: Ψ≈0,05. Ref: EN ISO 10211.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Consolă metalică balcon (profil HEA penetrant)": {
+      "id": "TB-BA-002",
+      "iso_14683_type": "—",
+      "name_en": "Consolă metalică balcony (profil HEA penetrant)",
+      "psi_min": 0.1,
+      "psi_typical": 0.2,
+      "psi_max": 0.65,
+      "iso_class": "D",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Balcoane avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Profilele metalice HEA/HEB penetrante sunt extrem de conductoare (λ=58 W/mK). Fără izolație: Ψ≈0,65. Cu carcasă izolată și ruptură termică: Ψ≈0,20. Ref: EN ISO 10211.",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
+    },
+    "Consolă balcon prefabricată beton": {
+      "id": "TB-BA-003",
+      "iso_14683_type": "—",
+      "name_en": "Consolă balcony prefabricată beton",
+      "psi_min": 0.05,
+      "psi_typical": 0.1,
+      "psi_max": 0.32,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Balcoane avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Consolă de beton prefabricat fixată cu conectori la planșeul de beton interior. Fără ruptură: Ψ≈0,32. Cu ruptoare termice Schöck/Halfen: Ψ≈0,10. Ref: BR 497.",
+      "detail_template": "BALCONY_UNINTERRUPTED"
+    },
+    "Parapet zidărie balcon — exterior": {
+      "id": "TB-BA-004",
+      "iso_14683_type": "—",
+      "name_en": "Parapet zidărie balcony — exterior",
+      "psi_min": 0.045,
+      "psi_typical": 0.09,
+      "psi_max": 0.25,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Balcoane avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Parapetul de zidărie/cărămidă al balconului creează punte la baza sa pe placa de beton. Cu izolație pe parapet și sub consolă: Ψ≈0,09. Ref: Mc 001-2022.",
+      "detail_template": "BALCONY_UNINTERRUPTED"
+    },
+    "Balcon cu izolație sub placă + laterale": {
+      "id": "TB-BA-005",
+      "iso_14683_type": "—",
+      "name_en": "Balcon cu izolație sub placă + laterale",
+      "psi_min": 0.02,
+      "psi_typical": 0.04,
+      "psi_max": 0.1,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Balcoane avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Placa de balcon izolată pe sofita + laterale + parapet. Soluție de reabilitare completă. Ψ≈0,04 dacă ruptoarele termice sunt montate. Ref: Mc 001-2022, PHI.",
+      "detail_template": "BALCONY_UNINTERRUPTED"
+    },
+    "Balcon suspendat (steel hanger)": {
+      "id": "TB-BA-006",
+      "iso_14683_type": "—",
+      "name_en": "Balcon suspendat (steel hanger)",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.07,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Balcoane avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Balconul suspendat prin tiranți de oțel ancorați în planșeu/acoperiș. Tiranții subțiri: punte punctuală redusă. Cu tiranți din inox și izolație la penetrare: Ψ≈0,03. Ref: PHI.",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
+    },
+    "Diblu plastic cu ac metalic": {
+      "id": "TB-ET-003",
+      "iso_14683_type": "—",
+      "name_en": "Diblu plastic cu ac metalic",
+      "psi_min": 0.0,
+      "psi_typical": 0.0005,
+      "psi_max": 0.001,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Sisteme ETICS)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Diblul cu corp plastic și ac central de oțel are χ≈0,001 W/K per diblu. Soluție mult mai bună față de diblul integral metalic. Ref: EN ISO 14683:2017, BR 443.",
+      "detail_template": "ETICS_ANCHOR"
+    },
+    "Rost de dilatare ETICS": {
+      "id": "TB-ET-004",
+      "iso_14683_type": "—",
+      "name_en": "Rost de dilatare ETICS",
+      "psi_min": 0.005,
+      "psi_typical": 0.01,
+      "psi_max": 0.03,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Sisteme ETICS)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Rostul de dilatare în sistemul termoizolant ETICS cu profil de PVC/aluminiu. Cu etanșare corectă și bandă termoizolantă: Ψ≈0,01. Ref: ETAG 004, Mc 001-2022.",
+      "detail_template": "ETICS_BAND"
+    },
+    "Pervaz fereastră — profile de racord ETICS": {
+      "id": "TB-ET-005",
+      "iso_14683_type": "—",
+      "name_en": "Pervaz window — profile de racord ETICS",
+      "psi_min": 0.005,
+      "psi_typical": 0.01,
+      "psi_max": 0.03,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Sisteme ETICS)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Profilul de glaf cu picurător și banda de îmbinare ETICS la pervazul ferestrei. Soluție standard: Ψ≈0,01. Ref: ETAG 004, RAL montaj ferestre.",
+      "detail_template": "ETICS_BAND"
+    },
+    "Colț ETICS (profil de colț)": {
+      "id": "TB-ET-006",
+      "iso_14683_type": "—",
+      "name_en": "Colț ETICS (profil de colț)",
+      "psi_min": 0.004,
+      "psi_typical": 0.008,
+      "psi_max": 0.015,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Sisteme ETICS)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Profilul de colț cu plasă din fibră de sticlă în sistemul ETICS. Impact termic redus. Cu colțar termoizolant și strat de EPS: Ψ≈0,008. Ref: ETAG 004.",
+      "detail_template": "ETICS_BAND"
+    },
+    "Ancoră de cavitate metalică (cavity wall tie)": {
+      "id": "TB-CH-001",
+      "iso_14683_type": "—",
+      "name_en": "Ancoră de cavitate metalică (cavity wall tie)",
+      "psi_min": 0.002,
+      "psi_typical": 0.004,
+      "psi_max": 0.007,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Ancora metalică din oțel inox care leagă stratele zidăriei duble. χ≈0,004 W/K per ancoră. La 4 ancore/mp: ΔU≈0,016 W/m²K. Ref: EN ISO 14683:2017 Tabel 3, BR 443.",
+      "detail_template": "ETICS_ANCHOR"
+    },
+    "Ancoră de cavitate din plastic (cavity wall tie)": {
+      "id": "TB-CH-002",
+      "iso_14683_type": "—",
+      "name_en": "Ancoră de cavitate din plastic (cavity wall tie)",
+      "psi_min": 0.001,
+      "psi_typical": 0.001,
+      "psi_max": 0.002,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Ancora din nylon/fibră de sticlă pentru zidărie cu cavitate. χ≈0,001 W/K per ancoră. Soluție excelentă față de inox. Ref: EN ISO 14683:2017 Tabel 3.",
+      "detail_template": "ETICS_ANCHOR"
+    },
+    "Diblu metalic pentru izolație": {
+      "id": "TB-CH-003",
+      "iso_14683_type": "—",
+      "name_en": "Diblu metalic pentru izolație",
+      "psi_min": 0.001,
+      "psi_typical": 0.002,
+      "psi_max": 0.004,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Diblul metalic de prindere a plăcilor de izolație. χ≈0,002 W/K per diblu. Valoare tipică pentru oțel inox Ø6mm, L=200mm. Ref: EN ISO 14683:2017, BR 443.",
+      "detail_template": "ETICS_ANCHOR"
+    },
+    "Tijă metalică de prindere panou sandwich": {
+      "id": "TB-CH-004",
+      "iso_14683_type": "—",
+      "name_en": "Tijă metalică de prindere panou sandwich",
+      "psi_min": 0.004,
+      "psi_typical": 0.008,
+      "psi_max": 0.014,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Tija metalică de prindere care traversează miezul izolant al panoului sandwich. χ≈0,008 W/K per tijă. Cu tijă din fibră de sticlă: χ≈0,001 W/K. Ref: EN ISO 10211.",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
+    },
+    "Conector grindă metalică în beton": {
+      "id": "TB-CH-005",
+      "iso_14683_type": "—",
+      "name_en": "Conector grindă metalică în beton",
+      "psi_min": 0.035,
+      "psi_typical": 0.07,
+      "psi_max": 0.126,
+      "iso_class": "C",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Conectorul metalic (placuță, bolț, profilele metalice) între grinda de oțel și structura de beton. χ≈0,07 W/K per conector. Ref: EN ISO 10211.",
+      "detail_template": "STRUCTURAL_COLUMN_BEAM"
+    },
+    "Suport metalic fotovoltaic pe acoperiș": {
+      "id": "TB-CH-006",
+      "iso_14683_type": "—",
+      "name_en": "Suport metalic fotovoltaic pe roof",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.054,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Elemente punctuale (chi))",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Suportul metalic de prindere a modulelor FV pe acoperiș, care penetrează hidroizolația și izolația. χ≈0,03 W/K per suport. Cu suport izolat și etanșat: χ≈0,01. Ref: EN ISO 10211.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Grilă ventilație exterioară metalică": {
+      "id": "TB-SA-003",
+      "iso_14683_type": "—",
+      "name_en": "Grilă ventilație exterioară metalică",
+      "psi_min": 0.025,
+      "psi_typical": 0.05,
+      "psi_max": 0.12,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Grila metalică (aluminiu/oțel) montată în perete pentru ventilație naturală. Cu cadru termoizolant PVC și sigilare perimetrală: Ψ≈0,05. Ref: Mc 001-2022.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Priză aer HVAC prin perete exterior": {
+      "id": "TB-SA-004",
+      "iso_14683_type": "—",
+      "name_en": "Priză aer HVAC prin external wall",
+      "psi_min": 0.02,
+      "psi_typical": 0.04,
+      "psi_max": 0.1,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Racordul circular/dreptunghiular al prizei de aer pentru centrala VMC prin peretele exterior. Cu tubulătură izolată + etanșare perimetrală: Ψ≈0,04. Ref: Mc 001-2022.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Coș fum inox dublu perete — exterior": {
+      "id": "TB-SA-005",
+      "iso_14683_type": "—",
+      "name_en": "Coș fum inox dublu perete — exterior",
+      "psi_min": 0.025,
+      "psi_typical": 0.05,
+      "psi_max": 0.12,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Coșul de fum DW cu izolație proprie adosată fațadei exterioare. Izolația proprie reduce puntea față de coșul clasic. Cu izolație suplimentară la racord: Ψ≈0,05. Ref: Mc 001-2022.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Centrală termică — racord perete exterior": {
+      "id": "TB-SA-006",
+      "iso_14683_type": "—",
+      "name_en": "Centrală termică — racord external wall",
+      "psi_min": 0.015,
+      "psi_typical": 0.03,
+      "psi_max": 0.07,
+      "iso_class": "B",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Conductele de gaz, evacuare fum și alimentare aer ale centralei murale traversând peretele. Cu izolație individuală per conductă și sigilare: Ψ≈0,03. Ref: Mc 001-2022.",
+      "detail_template": "SERVICE_PENETRATION"
+    },
+    "Panou solar termic — ancorare acoperiș": {
+      "id": "TB-SA-007",
+      "iso_14683_type": "—",
+      "name_en": "Panou solar termic — ancorare roof",
+      "psi_min": 0.005,
+      "psi_typical": 0.01,
+      "psi_max": 0.03,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Suportul metalic al colectorului solar termic penetrând învelitoarea și izolația acoperișului. Cu etanșare și manșon termoizolant: Ψ≈0,01. Ref: EN ISO 10211.",
+      "detail_template": "ETICS_ANCHOR"
+    },
+    "Colectori fotovoltaici — ancorare acoperiș": {
+      "id": "TB-SA-008",
+      "iso_14683_type": "—",
+      "name_en": "Colectori fotovoltaici — ancorare roof",
+      "psi_min": 0.004,
+      "psi_typical": 0.008,
+      "psi_max": 0.02,
+      "iso_class": "A",
+      "source": "SR EN ISO 14683:2017 + Mc 001-2022 Anexa B; catalog intern Zephren (Instalații avansate)",
+      "validated_against": [
+        "SR EN ISO 14683:2017",
+        "Mc 001-2022"
+      ],
+      "notes": "Șinele și cârligele de prindere ale sistemului FV pe acoperiș cu șindrilă bituminoasă sau țiglă. Cu etanșare și izolație la penetrare: Ψ≈0,008. Ref: EN ISO 10211.",
+      "detail_template": "ETICS_ANCHOR"
     }
   }
 }

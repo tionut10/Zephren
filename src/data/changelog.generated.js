@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "✨",
-        "text": "extindere metadate punți termice 15→52 tipologii (31.5% coverage)"
-      },
-      {
-        "icon": "✨",
-        "text": "metadate citabile catalog punți termice (ISO 14683 + Mc 001-2022)"
-      },
-      {
-        "icon": "📋",
-        "text": "Sprint 20: 7 fix-uri post-audit (1 critic + 6 minore) — UUID v5, horizon, TMY, F_D tabular"
-      },
-      {
-        "icon": "🔬",
-        "text": "Sprint 19: 5 fix-uri critice conformitate normativă + 2 minore (S19-CRIT-01..05 + MIN-01,02)"
-      },
-      {
         "icon": "🔧",
-        "text": "fix(anexa): regim 'P+4' format scurt + basement/attic flags in payload"
+        "text": "Online copiază URL producție + CheckBox SDT învelit în Paragraph"
       },
       {
         "icon": "✨",
-        "text": "feat(templates): adaugă template benchmark Cămin studențesc UTBv 1997 (demo-0, poziția #1)"
+        "text": "3 opțiuni formular gol — Print ☐ / Word SDT ☑ / Online link"
+      },
+      {
+        "icon": "📄",
+        "text": "footer DOCX zephren.ro → ZEPHREN.COM"
+      },
+      {
+        "icon": "📄",
+        "text": "redesign: DOCX layout profesional tabelar (label 42%|valoare 58%), formular gol generat programatic din acelaș"
+      },
+      {
+        "icon": "✨",
+        "text": "buton Date Demo + export DOCX în ClientInputForm și AuditClientDataForm"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(demo-2): refacere completă nZEB Timișoara 2024 + mutare în top listă"
+      },
+      {
+        "icon": "🎨",
+        "text": "fix(BuildingPhotos): rezolvă 3 bug-uri critice + 3 îmbunătățiri UX"
       },
       {
         "icon": "🔧",
-        "text": "fix(anexa): regim 2/5 doc-level fallback + T11 normalized label + biomass dual-protection"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(anexa): biomass PELETI enabled-aware + regim 2/5 paragraf iter agresiv"
+        "text": "text invizibil în dropdown-uri <select> pe temă dark (global CSS)"
       }
     ]
   },
