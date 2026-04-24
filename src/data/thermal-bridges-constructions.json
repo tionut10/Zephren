@@ -1,0 +1,394 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "created": "2026-04-24",
+    "purpose": "Catalog stratigrafii tipice românești pentru elementele de anvelopă + factori corecție ψ per tipologie punte termică.",
+    "normative_basis": [
+      "C107/3-2005 — Anexele E (valori lambda), G (clasificare punți), K (catalog punți uzuale) [în vigoare, consolidat Ord. 2513/2010, Ord. 386/2016]",
+      "C107/1-2005 — Calcul coeficienți globali (Tab. 1-73 pentru pereți, Tab. 1-18 pentru planșee)",
+      "C107/6-2002 — Calcul termotehnic pardoseli",
+      "Mc 001-2022 — Anexa B (punți în audit), Anexa G (straturi tipice RO), Ord. 16/2023 (MDLPA)",
+      "SR EN ISO 6946:2017 — Rezistență termică elemente stratificate (metodă de calcul)",
+      "SR EN ISO 12524 / EN ISO 10456 — Valori de proiectare λ pentru materiale construcție",
+      "SR EN ISO 13370:2017 — Transfer termic prin sol",
+      "SR EN ISO 14683:2017 — Punți termice liniare (valori implicite)",
+      "SR EN ISO 10211:2017 — Calcule detaliate punți termice (2D/3D)",
+      "SR EN ISO 10077-1 — Tâmplărie exterioară",
+      "SR EN ISO 13788 — Condens superficial și interstițial (fRsi)",
+      "SR EN ISO 52016-1:2017 + A1:2025 — Sarcini termice orar (per strat)",
+      "EN 13162-13171 — Specificații izolații: MW/EPS/XPS/PUR/PF/EPB"
+    ],
+    "lambda_sources": {
+      "EPS": "EN 13163 + C107/3 Anexa E (λ = 0,036...0,044 W/(m·K) funcție densitate, calitatea, umiditatea)",
+      "XPS": "EN 13164 (λ = 0,033...0,038 W/(m·K))",
+      "MW_vata": "EN 13162 (λ = 0,035...0,045 W/(m·K) funcție densitate 30-150 kg/m³)",
+      "PUR_PIR": "EN 13165 (λ = 0,022...0,028 W/(m·K))",
+      "caramida_plina": "C107/3 Anexa E (λ = 0,80 W/(m·K) ρ≈1800 kg/m³)",
+      "caramida_GVP": "C107/3 Anexa E (λ = 0,36...0,55 W/(m·K) funcție tip goluri)",
+      "BCA_450": "C107/3 Anexa E (λ = 0,11 W/(m·K) ρ≈450 kg/m³)",
+      "BCA_700": "C107/3 Anexa E (λ = 0,27 W/(m·K) ρ≈700 kg/m³)",
+      "beton_armat": "C107/3 Anexa E (λ = 1,74...2,03 W/(m·K))",
+      "lemn_moale": "C107/3 Anexa E (λ = 0,13 W/(m·K) pin/brad)",
+      "OSB_CLT": "EN 312, EN 13986 (λ = 0,13 W/(m·K))",
+      "gips_carton": "C107/3 Anexa E (λ = 0,21 W/(m·K))",
+      "tencuiala_var": "C107/3 Anexa E (λ = 0,70 W/(m·K))",
+      "tencuiala_ciment": "C107/3 Anexa E (λ = 0,93 W/(m·K))",
+      "sapa_beton": "C107/3 Anexa E (λ = 1,40 W/(m·K))"
+    },
+    "Rsi_Rse": {
+      "perete_vertical": { "Rsi": 0.13, "Rse": 0.04 },
+      "planseu_ascendent_vertical": { "Rsi": 0.10, "Rse": 0.04 },
+      "planseu_descendent_vertical": { "Rsi": 0.17, "Rse": 0.04 },
+      "sol": { "Rsi": 0.17, "Rse": 0.00 }
+    }
+  },
+
+  "constructions": {
+    "PE-01-caramida-plina-EPS10": {
+      "id": "PE-01",
+      "category": "PE",
+      "name_ro": "Cărămidă plină 25 cm + EPS 10 cm (bloc reabilitat standard '70-'80)",
+      "name_en": "Solid brick 250 + EPS 100 (refurbished block, standard post-1980)",
+      "typical_year": "1970-1990 reabilitare 2005-2015",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă armare", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS alb fațadă (ρ=15-17 kg/m³)", "d_mm": 100, "lambda": 0.040, "R": 2.500 },
+        { "material": "Tencuială adezivă", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "Cărămidă plină", "d_mm": 250, "lambda": 0.80, "R": 0.313 },
+        { "material": "Tencuială var-ciment interior", "d_mm": 15, "lambda": 0.80, "R": 0.019 }
+      ],
+      "U_total": 0.336,
+      "R_total": 2.97,
+      "notes": "Cea mai frecventă soluție ETICS post-2008 pentru blocuri vechi. Cu EPS 15 cm: U ≈ 0,24."
+    },
+
+    "PE-02-caramida-GVP-EPS15": {
+      "id": "PE-02",
+      "category": "PE",
+      "name_ro": "Cărămidă GVP 30 cm + EPS 15 cm (clădire 1995-2010)",
+      "name_en": "Hollow brick 300 + EPS 150",
+      "typical_year": "1995-2010",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă armare", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS fațadă", "d_mm": 150, "lambda": 0.040, "R": 3.750 },
+        { "material": "Adeziv", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "Cărămidă GVP", "d_mm": 300, "lambda": 0.46, "R": 0.652 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.222,
+      "R_total": 4.60,
+      "notes": "Tipică pentru clădiri post-2000 reabilitate corect. U ≈ 0.22 satisface C107 chiar fără izo suplimentară."
+    },
+
+    "PE-03-BCA30-EPS10": {
+      "id": "PE-03",
+      "category": "PE",
+      "name_ro": "BCA 30 cm (ρ=500) + EPS 10 cm (construcție 2010-2020)",
+      "name_en": "AAC block 300 (ρ=500) + EPS 100",
+      "typical_year": "2010-2020",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS grafitat (ρ=15 kg/m³)", "d_mm": 100, "lambda": 0.032, "R": 3.125 },
+        { "material": "Adeziv", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "BCA ρ=500 kg/m³", "d_mm": 300, "lambda": 0.13, "R": 2.308 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.173,
+      "R_total": 5.60,
+      "notes": "BCA este propriu-zis izolant (λ=0.13). Cu EPS grafitat ajunge la clasa A nZEB."
+    },
+
+    "PE-04-BCA35-MW15-nZEB": {
+      "id": "PE-04",
+      "category": "PE",
+      "name_ro": "BCA 35 cm + vată minerală 15 cm (nZEB / Passivhaus)",
+      "name_en": "AAC 350 + mineral wool 150 (nZEB / Passivhaus)",
+      "typical_year": "2020+",
+      "layers_ext_to_int": [
+        { "material": "Tencuială siliconică", "d_mm": 3, "lambda": 0.70, "R": 0.004 },
+        { "material": "Vată minerală fațadă (ρ=135 kg/m³)", "d_mm": 150, "lambda": 0.037, "R": 4.054 },
+        { "material": "Adeziv", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "BCA ρ=500 kg/m³", "d_mm": 350, "lambda": 0.13, "R": 2.692 },
+        { "material": "Tencuială interior gips", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.143,
+      "R_total": 7.18,
+      "notes": "Atinge nZEB U≤0.18 pentru pereți exteriori. Vata minerală oferă și protecție la foc."
+    },
+
+    "PE-05-beton-monolit-EPS15": {
+      "id": "PE-05",
+      "category": "PE",
+      "name_ro": "Beton armat monolit 20 cm + EPS 15 cm (clădire nouă structură beton)",
+      "name_en": "RC monolithic 200 + EPS 150",
+      "typical_year": "2000-2020 clădiri turn",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS", "d_mm": 150, "lambda": 0.038, "R": 3.947 },
+        { "material": "Beton armat", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.233,
+      "R_total": 4.26,
+      "notes": "Structură frecventă în turnuri de birouri și blocuri moderne. Beton = punte majoră la planșee."
+    },
+
+    "PE-06-panou-prefab-IPCT": {
+      "id": "PE-06",
+      "category": "PE",
+      "name_ro": "Panou prefabricat sandwich IPCT 10+5+15 cm (bloc '70-'90)",
+      "name_en": "Precast sandwich IPCT 100+50+150 (1970-1990 block)",
+      "typical_year": "1970-1990",
+      "layers_ext_to_int": [
+        { "material": "Beton exterior", "d_mm": 100, "lambda": 1.74, "R": 0.057 },
+        { "material": "Polistiren IPCT original (degradat ρ≈15)", "d_mm": 50, "lambda": 0.050, "R": 1.000 },
+        { "material": "Beton interior structural", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "Tencuială", "d_mm": 15, "lambda": 0.80, "R": 0.019 }
+      ],
+      "U_total": 0.758,
+      "R_total": 1.32,
+      "notes": "Blocurile IPCT '70-'80 fără reabilitare — U catastrofal. Punți reci la rosturi."
+    },
+
+    "PE-07-timber-frame-MW20": {
+      "id": "PE-07",
+      "category": "PE",
+      "name_ro": "Timber frame (rigle lemn 40×150) + vată minerală 20 cm + OSB (casă lemn)",
+      "name_en": "Timber frame studs + mineral wool 200 + OSB",
+      "typical_year": "2010+",
+      "layers_ext_to_int": [
+        { "material": "Placaj fibrociment sau lemn", "d_mm": 20, "lambda": 0.18, "R": 0.111 },
+        { "material": "Folie permeabilă vapori", "d_mm": 0.3, "lambda": 0.35, "R": 0.001 },
+        { "material": "Vată minerală între rigle", "d_mm": 200, "lambda": 0.038, "R": 5.263 },
+        { "material": "OSB structural", "d_mm": 15, "lambda": 0.13, "R": 0.115 },
+        { "material": "Folie barieră vapori", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Gips-carton", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.173,
+      "R_total": 5.71,
+      "notes": "Punte termică repetitivă pe rigle (λ_lemn=0.13 vs. λ_MW=0.038) reduce U real cu 8-12%."
+    },
+
+    "PE-08-CLT-10-MW20": {
+      "id": "PE-08",
+      "category": "PE",
+      "name_ro": "CLT 10 cm + vată minerală 20 cm + rigips (Passivhaus lemn)",
+      "name_en": "CLT 100 + mineral wool 200 + GKB (timber Passivhaus)",
+      "typical_year": "2015+",
+      "layers_ext_to_int": [
+        { "material": "Placaj șindrilă lemn sau fibrociment", "d_mm": 20, "lambda": 0.18, "R": 0.111 },
+        { "material": "Vată minerală exterior CLT", "d_mm": 200, "lambda": 0.036, "R": 5.556 },
+        { "material": "Folie permeabilă", "d_mm": 0.3, "lambda": 0.35, "R": 0.001 },
+        { "material": "CLT (panou lamelar încrucișat)", "d_mm": 100, "lambda": 0.13, "R": 0.769 },
+        { "material": "Gips-carton", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.149,
+      "R_total": 6.70,
+      "notes": "CLT este masă termică + structură; nu există punți pe rigle individuale (avantaj vs. timber frame)."
+    },
+
+    "PE-09-SIP-sandwich": {
+      "id": "PE-09",
+      "category": "PE",
+      "name_ro": "Panou SIP (OSB 15 + EPS 150 + OSB 15) + finisaje",
+      "name_en": "SIP panel (OSB 15 + EPS 150 + OSB 15) + finishes",
+      "typical_year": "2010+",
+      "layers_ext_to_int": [
+        { "material": "Placaj finisaj ext", "d_mm": 20, "lambda": 0.18, "R": 0.111 },
+        { "material": "Spațiu aer ventilat", "d_mm": 30, "lambda": null, "R": 0.180 },
+        { "material": "OSB exterior SIP", "d_mm": 15, "lambda": 0.13, "R": 0.115 },
+        { "material": "EPS miez SIP", "d_mm": 150, "lambda": 0.038, "R": 3.947 },
+        { "material": "OSB interior SIP", "d_mm": 15, "lambda": 0.13, "R": 0.115 },
+        { "material": "Gips-carton", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.216,
+      "R_total": 4.63,
+      "notes": "Fabricare industrială; punți minime dacă joncțiunile SIP sunt etanșate cu bandă butilă."
+    },
+
+    "PE-10-zidarie-piatra-izolatie-interioara": {
+      "id": "PE-10",
+      "category": "PE",
+      "name_ro": "Zidărie piatră 60 cm + izolație interioară 10 cm (clădire istorică)",
+      "name_en": "Stone masonry 600 + internal insulation 100",
+      "typical_year": "Pre-1945",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment exterior", "d_mm": 25, "lambda": 0.93, "R": 0.027 },
+        { "material": "Zidărie piatră", "d_mm": 600, "lambda": 1.40, "R": 0.429 },
+        { "material": "Tencuială var interior original", "d_mm": 20, "lambda": 0.70, "R": 0.029 },
+        { "material": "Vată minerală izolație interioară", "d_mm": 100, "lambda": 0.038, "R": 2.632 },
+        { "material": "Barieră vapori", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Gips-carton dublu", "d_mm": 25, "lambda": 0.21, "R": 0.119 }
+      ],
+      "U_total": 0.297,
+      "R_total": 3.36,
+      "notes": "Izolație interioară NU elimină punțile reci la planșee (greu reabilitabile fără acces ETICS exterior)."
+    },
+
+    "PT-01-terasa-beton-XPS10": {
+      "id": "PT-01",
+      "category": "PT",
+      "name_ro": "Planșeu terasă beton 20 + XPS 10 + membrană + pietriș",
+      "name_en": "RC flat roof 200 + XPS 100 + membrane + gravel",
+      "typical_year": "2000+",
+      "layers_ext_to_int": [
+        { "material": "Pietriș protecție membrană", "d_mm": 50, "lambda": null, "R": 0.100 },
+        { "material": "Membrană hidroizolație bituminoasă", "d_mm": 4, "lambda": 0.17, "R": 0.024 },
+        { "material": "XPS terasă (ρ=30 kg/m³)", "d_mm": 100, "lambda": 0.034, "R": 2.941 },
+        { "material": "Barieră vapori", "d_mm": 1, "lambda": 0.17, "R": 0.006 },
+        { "material": "Șapă pantă", "d_mm": 50, "lambda": 1.40, "R": 0.036 },
+        { "material": "Beton armat planșeu", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.292,
+      "R_total": 3.42,
+      "notes": "Terasă plată cu izolație peste planșeu (warm roof). Aticul e punte majoră de luat în considerare separat."
+    },
+
+    "PT-02-terasa-XPS20-passivhaus": {
+      "id": "PT-02",
+      "category": "PT",
+      "name_ro": "Terasă Passivhaus: beton 20 + XPS 20 + membrană + protecție",
+      "name_en": "Passivhaus flat roof: RC 200 + XPS 200",
+      "typical_year": "2015+ nZEB/Passivhaus",
+      "layers_ext_to_int": [
+        { "material": "Protecție balastru sau placi", "d_mm": 50, "lambda": null, "R": 0.100 },
+        { "material": "Membrană EPDM", "d_mm": 1.5, "lambda": 0.25, "R": 0.006 },
+        { "material": "XPS 200 mm (2 straturi 100+100)", "d_mm": 200, "lambda": 0.034, "R": 5.882 },
+        { "material": "Barieră vapori", "d_mm": 1, "lambda": 0.17, "R": 0.006 },
+        { "material": "Beton armat", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.155,
+      "R_total": 6.44,
+      "notes": "Satisface nZEB U≤0.15 acoperiș. Membrană EPDM recomandată pentru durata ≥30 ani."
+    },
+
+    "PT-03-acoperis-verde-extensiv": {
+      "id": "PT-03",
+      "category": "PT",
+      "name_ro": "Acoperiș verde extensiv: substrat 10 + drenaj + membrană + XPS 15 + beton",
+      "name_en": "Extensive green roof: substrate 100 + drainage + EPDM + XPS 150 + RC",
+      "typical_year": "2015+",
+      "layers_ext_to_int": [
+        { "material": "Substrat vegetal (sedum)", "d_mm": 100, "lambda": null, "R": 0.150 },
+        { "material": "Membrană drenaj + geotextil", "d_mm": 30, "lambda": null, "R": 0.100 },
+        { "material": "Membrană anti-rădăcină EPDM", "d_mm": 2, "lambda": 0.25, "R": 0.008 },
+        { "material": "XPS terasă", "d_mm": 150, "lambda": 0.034, "R": 4.412 },
+        { "material": "Barieră vapori", "d_mm": 1, "lambda": 0.17, "R": 0.006 },
+        { "material": "Beton armat", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.201,
+      "R_total": 4.99,
+      "notes": "Substrat 10cm = sedum. Pentru intensiv: substrat ≥30cm (contribuție termică mai mare + masă)."
+    },
+
+    "PP-01-sarpanta-MW25": {
+      "id": "PP-01",
+      "category": "PP",
+      "name_ro": "Șarpantă lemn + vată minerală 25 cm între căpriori + folie + rigips",
+      "name_en": "Timber roof + mineral wool 250 between rafters + membrane + GKB",
+      "typical_year": "2000+",
+      "layers_ext_to_int": [
+        { "material": "Țiglă ceramică", "d_mm": 18, "lambda": 1.00, "R": 0.018 },
+        { "material": "Aer ventilat (≥40mm)", "d_mm": 40, "lambda": null, "R": 0.180 },
+        { "material": "Folie permeabilă vapori (difuzivă)", "d_mm": 0.3, "lambda": 0.35, "R": 0.001 },
+        { "material": "Vată minerală între căpriori", "d_mm": 250, "lambda": 0.038, "R": 6.579 },
+        { "material": "Folie barieră vapori", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Placă OSB", "d_mm": 15, "lambda": 0.13, "R": 0.115 },
+        { "material": "Gips-carton", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.143,
+      "R_total": 7.19,
+      "notes": "Căpriori de 45x200 = punte repetitivă (-8%). Pentru nZEB: strat suplimentar cross pe dedesubt +10 cm MW."
+    },
+
+    "PP-02-pod-neincalzit-MW20": {
+      "id": "PP-02",
+      "category": "PP",
+      "name_ro": "Planșeu pod neîncălzit: beton 15 + vată minerală 20 cm + folie",
+      "name_en": "Unheated loft floor: RC 150 + MW 200 on top",
+      "typical_year": "1980+",
+      "layers_ext_to_int": [
+        { "material": "Aer pod neventilat (neîncălzit)", "d_mm": null, "lambda": null, "R": 0.180 },
+        { "material": "Folie anti-praf permeabilă", "d_mm": 0.3, "lambda": 0.35, "R": 0.001 },
+        { "material": "Vată minerală (saltele)", "d_mm": 200, "lambda": 0.038, "R": 5.263 },
+        { "material": "Folie barieră vapori", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Beton armat planșeu", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "Tencuială", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.177,
+      "R_total": 5.66,
+      "notes": "Cel mai simplu și eficient mod de izolare — vată aruncată liber pe planșeu pod."
+    },
+
+    "PL-01-placa-pe-sol-XPS10": {
+      "id": "PL-01",
+      "category": "PL",
+      "name_ro": "Placă pe sol: beton armat 15 + XPS 10 cm sub placă + șapă",
+      "name_en": "Ground slab: RC 150 + XPS 100 below + screed",
+      "typical_year": "2000+",
+      "layers_ext_to_int": [
+        { "material": "Sol compactat + pietriș", "d_mm": null, "lambda": null, "R": 0.000 },
+        { "material": "Folie PE (hidroizolație)", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "XPS sub placă (ρ=30 kg/m³)", "d_mm": 100, "lambda": 0.034, "R": 2.941 },
+        { "material": "Folie PE + strat alunecare", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Beton armat placă", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "Șapă cu tuburi încălzire (dacă e cazul)", "d_mm": 60, "lambda": 1.40, "R": 0.043 },
+        { "material": "Finisaj pardoseală (parchet)", "d_mm": 12, "lambda": 0.16, "R": 0.075 }
+      ],
+      "U_total": 0.302,
+      "R_total": 3.32,
+      "notes": "Valoare fără contribuție sol (Rsol ≈ 0.4-0.8 adăugat la calcul). Cu Rsol inclus: U ≈ 0.22."
+    },
+
+    "PL-02-radier-passivhaus-L": {
+      "id": "PL-02",
+      "category": "PL",
+      "name_ro": "Radier Passivhaus în L: XPS 30 sub + XPS 20 perimetral (1.5 m adâncime)",
+      "name_en": "Passivhaus raft in L: XPS 300 below + XPS 200 perimeter to 1.5m depth",
+      "typical_year": "2015+ Passivhaus",
+      "layers_ext_to_int": [
+        { "material": "Sol drenant (pietriș)", "d_mm": 200, "lambda": null, "R": 0.100 },
+        { "material": "XPS sub radier (3 straturi 100mm)", "d_mm": 300, "lambda": 0.034, "R": 8.824 },
+        { "material": "Folie PE", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "Radier beton armat", "d_mm": 300, "lambda": 1.74, "R": 0.172 },
+        { "material": "Șapă încălzire", "d_mm": 70, "lambda": 1.40, "R": 0.050 },
+        { "material": "Finisaj", "d_mm": 12, "lambda": 0.16, "R": 0.075 }
+      ],
+      "U_total": 0.105,
+      "R_total": 9.55,
+      "notes": "Passivhaus standard. Eliminare aproape completă punte termică la soclu."
+    }
+  },
+
+  "psi_variations": {
+    "_comment": "Factori corecție ψ per combinație (bridge_typology, construction_type). Format: factor multiplicator aplicat peste ψ_default din thermal-bridges-metadata.json. Exemplu: PE-06 (IPCT) crește ψ×1.3 datorită rosturilor tipice; PE-04 (nZEB) scade ψ×0.6 datorită grosimii izolației.",
+
+    "Colț exterior": {
+      "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.5, "PE-05": 1.1,
+      "PE-06": 1.4, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.65, "PE-10": 1.3
+    },
+    "Perete ext. — Planșeu intermediar": {
+      "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.5, "PE-05": 1.2,
+      "PE-06": 1.5, "PE-07": 0.55, "PE-08": 0.6, "PE-09": 0.65, "PE-10": 1.4
+    },
+    "Perete ext. — Planșeu terasă": {
+      "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.45, "PE-05": 1.15,
+      "PE-06": 1.5, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.3
+    },
+    "Perete ext. — Planșeu pe sol": {
+      "PE-01": 1.0, "PE-02": 0.9, "PE-03": 0.75, "PE-04": 0.5, "PE-05": 1.2,
+      "PE-06": 1.6, "PE-07": 0.65, "PE-08": 0.6, "PE-09": 0.7, "PE-10": 1.5
+    },
+    "Consolă balcon — beton neîntrerupt": {
+      "PE-01": 1.0, "PE-02": 0.95, "PE-03": 0.9, "PE-04": 0.85, "PE-05": 1.1,
+      "PE-06": 1.3, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.2
+    },
+    "Glaf fereastră — montaj standard": {
+      "PE-01": 1.0, "PE-02": 0.95, "PE-03": 0.85, "PE-04": 0.8, "PE-05": 1.05,
+      "PE-06": 1.2, "PE-07": 0.75, "PE-08": 0.7, "PE-09": 0.75, "PE-10": 1.15
+    }
+  }
+}

@@ -2,6 +2,12 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import THERMAL_BRIDGES_DB from "../data/thermal-bridges.json";
 import BridgeIllustration from "./thermal-bridges/bridgeIllustrations.jsx";
 import { getBridgeSource, classifyIsoLevel, validatePsiRange } from "../calc/thermal-bridges-metadata.js";
+import {
+  getAllConstructions,
+  getConstructionById,
+  adjustPsiForConstruction,
+  formatLayersSummary,
+} from "../calc/thermal-bridges-layers.js";
 
 // ── Mapping emoji per categorie ──────────────────────────────────────────────
 const CAT_ICONS = {
@@ -42,6 +48,9 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
   const [selectedBridge, setSelectedBridge] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedConstruction, setSelectedConstruction] = useState("");
+
+  const allConstructions = useMemo(() => getAllConstructions(), []);
 
   const categoriesWithCount = useMemo(() => {
     const counts = {};
@@ -268,6 +277,58 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                         <div style={{ fontSize: 10, marginTop: 10, padding: "6px 10px", background: "rgba(59,130,246,0.05)", borderRadius: 6, border: "1px solid rgba(59,130,246,0.1)" }}>
                           <div style={{ opacity: 0.5, marginBottom: 3 }}>📚 Sursă normativă:</div>
                           <div style={{ color: "#93c5fd", lineHeight: 1.4 }}>{source}</div>
+                        </div>
+
+                        {/* ── Selector stratigrafie + ψ ajustat ─────────── */}
+                        <div style={{ marginTop: 10, padding: "8px 10px", background: "rgba(139,92,246,0.06)", borderRadius: 6, border: "1px solid rgba(139,92,246,0.18)" }} onClick={e => e.stopPropagation()}>
+                          <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>🏗️</span>
+                            <span style={{ fontWeight: 600 }}>Tipologie constructivă (straturi) — C107/3 + SR EN ISO 6946</span>
+                          </div>
+                          <select
+                            value={selectedConstruction}
+                            onChange={e => setSelectedConstruction(e.target.value)}
+                            style={{ width: "100%", padding: "6px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 4, color: "#e5e7eb", fontSize: 11 }}
+                          >
+                            <option value="">— selectează stratigrafia peretelui/planșeului —</option>
+                            {["PE", "PT", "PP", "PL"].map(cat => (
+                              <optgroup key={cat} label={cat === "PE" ? "Pereți exteriori" : cat === "PT" ? "Planșee terasă" : cat === "PP" ? "Planșee pod/șarpantă" : "Planșee pe sol"}>
+                                {allConstructions.filter(c => c.category === cat).map(c => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.id} · {c.name_ro} (U={c.U_total})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                          {selectedConstruction && (() => {
+                            const c = getConstructionById(selectedConstruction);
+                            const adj = adjustPsiForConstruction(bridge, selectedConstruction);
+                            const layersSummary = formatLayersSummary(selectedConstruction);
+                            return (
+                              <div style={{ marginTop: 8, fontSize: 10, lineHeight: 1.5 }}>
+                                <div style={{ opacity: 0.6 }}>Straturi (ext → int):</div>
+                                <div style={{ color: "#d1d5db", marginTop: 2, fontFamily: "monospace", fontSize: 9 }}>{layersSummary}</div>
+                                <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                                  <span style={{ opacity: 0.5 }}>U perete:</span>
+                                  <span style={{ fontWeight: 700, color: "#c084fc" }}>{c.U_total} W/(m²·K)</span>
+                                  <span style={{ opacity: 0.3 }}>·</span>
+                                  <span style={{ opacity: 0.5 }}>ψ ajustat:</span>
+                                  <span style={{ fontWeight: 700, color: adj.psi_adjusted < adj.psi_base ? "#4ade80" : adj.psi_adjusted > adj.psi_base ? "#f87171" : "#a78bfa" }}>
+                                    {adj.psi_adjusted} W/(m·K)
+                                  </span>
+                                  <span style={{ fontSize: 9, color: adj.factor < 1 ? "#4ade80" : adj.factor > 1 ? "#f87171" : "#9ca3af", marginLeft: "auto" }}>
+                                    ×{adj.factor.toFixed(2)} → clasă ISO {adj.iso_class_adjusted}
+                                  </span>
+                                </div>
+                                {c.notes && (
+                                  <div style={{ marginTop: 6, fontSize: 9, opacity: 0.55, fontStyle: "italic" }}>
+                                    💡 {c.notes}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {validation && (
