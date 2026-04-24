@@ -553,7 +553,7 @@ async function exportDOCX(data, planuri = [], isBlank = false) {
   // ══ FOOTER ══
   add(gap(200));
   add(new Paragraph({
-    children: [new TextRun({ text: "Generat de Zephren \u2014 " + new Date().toLocaleString("ro-RO") + "\u2003|\u2003zephren.ro", font: "Calibri", size: 17, italics: true, color: C.lGray })],
+    children: [new TextRun({ text: "Generat de Zephren \u2014 " + new Date().toLocaleString("ro-RO") + "\u2003|\u2003ZEPHREN.COM", font: "Calibri", size: 17, italics: true, color: C.lGray })],
     alignment: AlignmentType.CENTER,
     border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.border } },
     spacing: { before: 80, after: 0 },
