@@ -4,6 +4,7 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, BorderStyle, WidthType, ShadingType,
   TableLayoutType, VerticalAlign, convertInchesToTwip, ImageRun,
+  CheckBox,
 } from "docx";
 
 // ─── Helpers vizuale ──────────────────────────────────────────────────────────
@@ -183,15 +184,14 @@ function exportJSON(data) {
   a.click(); URL.revokeObjectURL(url);
 }
 
-// ─── Download Formular Gol (generat programatic, același design) ──────────────
-function downloadClientFormTemplate() {
-  exportDOCX({}, [], true);
-}
+// ─── Download Formular Gol variante ──────────────────────────────────────────
+function downloadBlankPrint()       { exportDOCX({}, [], true, false); } // ☐ simbol printabil
+function downloadBlankWordInteract(){ exportDOCX({}, [], true, true);  } // ☑ Word interactiv SDT
 
 // ─── Export DOCX ─────────────────────────────────────────────────────────────
-// isBlank=true → formular gol (câmpuri cu linie de completare)
-// isBlank=false → formular completat cu datele din formular
-async function exportDOCX(data, planuri = [], isBlank = false) {
+// isBlank=true          → formular gol (câmpuri cu linie de completare)
+// isWordInteractive=true → checkbox-uri Word SDT interactive (w:sdt)
+async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive = false) {
   const v   = (key) => data[key] ?? "";
   const has = (key) => { const val = data[key]; return val !== undefined && val !== "" && val !== null && val !== false; };
   const txt = (key, unit = "") => has(key) ? String(v(key)) + (unit ? "\u00a0" + unit : "") : "";
@@ -286,22 +286,51 @@ async function exportDOCX(data, planuri = [], isBlank = false) {
   };
 
   // ─── Helper: rând checkbox ─────────────────────────────────────────────────────
+  // Mod 1 (isBlank=false): celulă colorată verde/gri cu ✓ — formular completat online
+  // Mod 2 (isBlank=true, isWordInteractive=false): simbol ☐ — printabil
+  // Mod 3 (isBlank=true, isWordInteractive=true): CheckBox SDT Word — interactiv în Word
   const checkRow = (label, key, hint = "") => {
     const on = !isBlank && !!data[key];
+
+    let checkCell;
+    if (isBlank && isWordInteractive) {
+      // MOD 3 — Word SDT checkbox interactiv (click în Word pentru bifă)
+      checkCell = new TableCell({
+        width: { size: 7, type: WidthType.PERCENTAGE },
+        borders: allBd(),
+        verticalAlign: VerticalAlign.CENTER,
+        children: [new CheckBox({ checked: false })],
+      });
+    } else if (isBlank) {
+      // MOD 2 — simbol ☐ printabil (MS Gothic pentru redare corectă)
+      checkCell = new TableCell({
+        width: { size: 7, type: WidthType.PERCENTAGE },
+        shading: { type: ShadingType.SOLID, color: C.label, fill: C.label },
+        borders: allBd(),
+        verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({
+          children: [new TextRun({ text: "\u2610", font: "MS Gothic", size: 26, color: C.dark })],
+          alignment: AlignmentType.CENTER, spacing: { before: 60, after: 60 },
+        })],
+      });
+    } else {
+      // MOD 1 — formular completat: verde cu ✓ sau gri
+      checkCell = new TableCell({
+        width: { size: 7, type: WidthType.PERCENTAGE },
+        shading: { type: ShadingType.SOLID, color: on ? C.green : C.label, fill: on ? C.green : C.label },
+        borders: allBd(on ? C.green : C.border),
+        verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({
+          children: [new TextRun({ text: on ? "\u2713" : " ", font: "Calibri", size: 22, bold: true, color: WHITE })],
+          alignment: AlignmentType.CENTER, spacing: { before: 70, after: 70 },
+        })],
+      });
+    }
+
     return new TableRow({
       children: [
+        checkCell,
         new TableCell({
-          width: { size: 7, type: WidthType.PERCENTAGE },
-          shading: { type: ShadingType.SOLID, color: on ? C.green : C.label, fill: on ? C.green : C.label },
-          borders: allBd(on ? C.green : C.border),
-          verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({
-            children: [new TextRun({ text: on ? "\u2713" : " ", font: "Calibri", size: 22, bold: true, color: WHITE })],
-            alignment: AlignmentType.CENTER, spacing: { before: 70, after: 70 },
-          })],
-        }),
-        new TableCell({
-          columnSpan: 1,
           borders: allBd(),
           children: [new Paragraph({
             children: [
@@ -575,9 +604,11 @@ async function exportDOCX(data, planuri = [], isBlank = false) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = isBlank
-    ? "Formular_Client_Audit_Energetic.docx"
-    : "formular-date-client-" + new Date().toISOString().slice(0, 10) + ".docx";
+  a.download = !isBlank
+    ? "formular-date-client-" + new Date().toISOString().slice(0, 10) + ".docx"
+    : isWordInteractive
+      ? "Formular_Client_Audit_Energetic_Word.docx"
+      : "Formular_Client_Audit_Energetic_Print.docx";
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1062,23 +1093,73 @@ export default function ClientInputForm({ onDataChange }) {
       </div>
 
       {/* Footer */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl px-6 py-4">
+      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl px-6 py-4 space-y-4">
         <ProgressBar sections={SECTIONS_META} data={data} />
-        <div className="flex justify-between items-center mt-4">
-          <button onClick={() => downloadClientFormTemplate()}
-            className="px-6 py-2.5 bg-green-500/20 border border-green-500/30 hover:bg-green-500/30 text-green-300 rounded-xl text-sm font-medium transition-all">
-            ↓ Descarcă Formular Gol
-          </button>
-          <div className="flex gap-3">
-            <button onClick={() => exportDOCX(data, planuri)}
-              className="px-6 py-2.5 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-xl text-sm font-medium transition-all">
-              ↓ Descarcă DOCX
+
+        {/* Formular Gol — 3 opțiuni */}
+        <div className="border border-white/[0.08] rounded-xl p-4 bg-white/[0.02]">
+          <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">
+            Formular gol pentru client — alegeți modul de completare
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {/* Opțiunea 1 — Print */}
+            <button
+              onClick={downloadBlankPrint}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-amber-500/30 hover:bg-amber-500/5 text-white/70 hover:text-amber-300 rounded-lg text-sm transition-all"
+              title="Descarcă formular cu căsuțe ☐ — imprimă și completează cu pixul"
+            >
+              <span className="text-base">🖨️</span>
+              <span>
+                <span className="font-medium">Print</span>
+                <span className="text-white/40 ml-1 text-xs">☐ imprimă + bifează cu pixul</span>
+              </span>
             </button>
-            <button onClick={() => exportJSON(data)}
-              className="px-6 py-2.5 bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white/80 rounded-xl text-sm transition-all">
-              ↓ JSON
+
+            {/* Opțiunea 2 — Word interactiv */}
+            <button
+              onClick={downloadBlankWordInteract}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-blue-500/30 hover:bg-blue-500/5 text-white/70 hover:text-blue-300 rounded-lg text-sm transition-all"
+              title="Descarcă formular cu checkbox-uri Word interactive — deschide în Word și bifează cu click"
+            >
+              <span className="text-base">📝</span>
+              <span>
+                <span className="font-medium">Word</span>
+                <span className="text-white/40 ml-1 text-xs">☑ bifează cu click în Word</span>
+              </span>
+            </button>
+
+            {/* Opțiunea 3 — Online (copiază link) */}
+            <button
+              onClick={() => {
+                const url = window.location.origin + window.location.pathname + "#formular-client";
+                navigator.clipboard.writeText(url).then(() => {
+                  alert("Link copiat! Trimite-l clientului pentru completare online:\n\n" + url);
+                }).catch(() => {
+                  prompt("Copiază acest link și trimite-l clientului:", url);
+                });
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-green-500/30 hover:bg-green-500/5 text-white/70 hover:text-green-300 rounded-lg text-sm transition-all"
+              title="Copiază link-ul paginii pentru a-l trimite clientului — acesta poate completa online"
+            >
+              <span className="text-base">🔗</span>
+              <span>
+                <span className="font-medium">Online</span>
+                <span className="text-white/40 ml-1 text-xs">copiază link pentru client</span>
+              </span>
             </button>
           </div>
+        </div>
+
+        {/* Butoane auditor */}
+        <div className="flex justify-end gap-3">
+          <button onClick={() => exportDOCX(data, planuri)}
+            className="px-6 py-2.5 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-xl text-sm font-medium transition-all">
+            ↓ Descarcă DOCX
+          </button>
+          <button onClick={() => exportJSON(data)}
+            className="px-6 py-2.5 bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white/80 rounded-xl text-sm transition-all">
+            ↓ JSON
+          </button>
         </div>
       </div>
 
