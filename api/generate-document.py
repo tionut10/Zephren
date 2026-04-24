@@ -5183,7 +5183,7 @@ class handler(BaseHTTPRequestHandler):
                     "interior": "Interior",
                     "ir": "Termoviziune IR",
                     "instalatii": "Instalații",
-                    "defecte": "Defecte / Degradări",
+                    "defecte": "Defecte/Degradări",
                     "altele": "Altele",
                 }
 

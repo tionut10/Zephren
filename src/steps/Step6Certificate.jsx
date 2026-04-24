@@ -587,7 +587,17 @@ export default function Step6Certificate(props) {
                     attic: building.attic ? "true" : "false",
                     biomass_enabled: biomass?.enabled ? "true" : "false",
                   },
-                  buildingPhotos: (buildingPhotos || []).slice(0, 6).map(p => ({ url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || "" })),
+                  // Limită 30 poze pentru Anexa CPE — payload ~6-9MB după compresie, sub plafonul Vercel
+                  buildingPhotos: (() => {
+                    const all = buildingPhotos || [];
+                    const MAX_PHOTOS = 30;
+                    if (all.length > MAX_PHOTOS) {
+                      showToast(`Au fost incluse primele ${MAX_PHOTOS} fotografii din ${all.length} în Anexa CPE`, "warning");
+                    }
+                    return all.slice(0, MAX_PHOTOS).map(p => ({
+                      url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || ""
+                    }));
+                  })(),
                 };
 
                 // Etapa 4 (BUG-4) — Anexa Bloc multi-apartament: payload extins

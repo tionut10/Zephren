@@ -84,16 +84,26 @@ function PhotoCard({ photo, index, onDelete, onUpdate, cn }) {
 export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, showToast, cn }) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [uploadCategory, setUploadCategory] = useState("exterior");
+  const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef();
 
   const photos = buildingPhotos || [];
 
-  // Compresie canvas: max 1024px, 80% JPEG — reduce de la 3-5MB la ~150-300KB
+  // Generator ID robust — crypto.randomUUID evită coliziuni la upload simultan masiv.
+  const makeId = () =>
+    (typeof crypto !== "undefined" && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  // Compresie canvas: max 1024px, 80% JPEG — reduce de la 3-5MB la ~150-300KB.
+  // onerror pe reader + img previne freeze la fișiere HEIC în Chrome/Firefox/Edge.
   const compressImage = useCallback((file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
+      reader.onerror = () => resolve(null);
       reader.onload = (e) => {
         const img = new Image();
+        img.onerror = () => resolve(null);
         img.onload = () => {
           const MAX = 1024;
           let w = img.width, h = img.height;
@@ -111,28 +121,62 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
   }, []);
 
   const handleFiles = useCallback(async (files, category) => {
-    const fileArr = Array.from(files || []).filter(f => f.type.startsWith("image/"));
+    // Acceptă MIME image/* sau extensie .heic/.heif (Windows/Linux raportează uneori type vid).
+    const fileArr = Array.from(files || []).filter(f =>
+      f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name)
+    );
     if (!fileArr.length) return;
-    let loaded = 0;
-    for (const file of fileArr) {
+
+    // Procesare paralelă — mult mai rapidă la 20+ poze.
+    const results = await Promise.all(fileArr.map(async (file) => {
       const url = await compressImage(file);
-      setBuildingPhotos(prev => [...prev, {
-        id: Date.now() + Math.random(),
+      if (!url) return { error: true, file };
+      return {
+        id: makeId(),
         url,
         label: file.name.replace(/\.[^.]+$/, ""),
         note: "",
         zone: category,
         date: new Date().toLocaleDateString("ro-RO"),
-      }]);
-      loaded++;
-      if (loaded === fileArr.length) {
-        showToast(`${loaded} fotografi${loaded === 1 ? "e adăugată" : "i adăugate"} (compresate)`, "success");
-      }
+      };
+    }));
+
+    const ok = results.filter(r => !r.error);
+    const failed = results.filter(r => r.error);
+
+    if (ok.length) {
+      setBuildingPhotos(prev => [...prev, ...ok]);
+      showToast(
+        `${ok.length} fotografi${ok.length === 1 ? "e adăugată" : "i adăugate"} (compresate)`,
+        "success"
+      );
+    }
+
+    if (failed.length) {
+      const heicCount = failed.filter(r => /\.(heic|heif)$/i.test(r.file.name)).length;
+      const names = failed.slice(0, 3).map(r => r.file.name).join(", ") + (failed.length > 3 ? "…" : "");
+      showToast(
+        heicCount > 0
+          ? `${failed.length} fișier(e) HEIC nedecodabil(e) în acest browser — convertiți în JPG (${names})`
+          : `${failed.length} fișier(e) eșuate la procesare (${names})`,
+        "error"
+      );
     }
   }, [compressImage, setBuildingPhotos, showToast]);
 
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    if (!isDragging) setIsDragging(true);
+  }, [isDragging]);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
   const handleDrop = useCallback((e) => {
     e.preventDefault();
+    setIsDragging(false);
     handleFiles(e.dataTransfer.files, uploadCategory);
   }, [handleFiles, uploadCategory]);
 
@@ -170,17 +214,27 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
         </div>
         <div
           onDrop={handleDrop}
-          onDragOver={e => e.preventDefault()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
           onClick={() => fileRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-2 py-6 cursor-pointer rounded-lg border-2 border-dashed border-slate-600/40 hover:border-slate-500/60 hover:bg-slate-700/20 transition-all">
+          className={cn(
+            "flex flex-col items-center justify-center gap-2 py-6 cursor-pointer rounded-lg border-2 border-dashed transition-all",
+            isDragging
+              ? "border-blue-400 bg-blue-500/10 scale-[1.01]"
+              : "border-slate-600/40 hover:border-slate-500/60 hover:bg-slate-700/20"
+          )}>
           <span className="text-3xl">📷</span>
-          <div className="text-xs text-slate-300 font-medium">Click sau Drag & Drop imagini</div>
-          <div className="text-[10px] text-slate-500">Formate acceptate: JPG, PNG, WEBP, HEIC · Fără limită de dimensiune</div>
+          <div className="text-xs text-slate-300 font-medium">
+            {isDragging ? "Eliberați pentru încărcare" : "Click sau Drag & Drop imagini"}
+          </div>
+          <div className="text-[10px] text-slate-500">
+            JPG, PNG, WEBP · HEIC doar în Safari (convertiți în JPG pentru Chrome/Firefox/Edge)
+          </div>
           <div className={cn("text-[10px] px-2 py-0.5 rounded", CAT_STYLES[PHOTO_CATEGORIES.find(c=>c.id===uploadCategory)?.color]?.badge || "")}>
             Categorie: {PHOTO_CATEGORIES.find(c=>c.id===uploadCategory)?.icon} {PHOTO_CATEGORIES.find(c=>c.id===uploadCategory)?.label}
           </div>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
+        <input ref={fileRef} type="file" accept="image/*,.heic,.heif" multiple className="hidden"
           onChange={e => { handleFiles(e.target.files, uploadCategory); e.target.value = ""; }} />
       </div>
 
