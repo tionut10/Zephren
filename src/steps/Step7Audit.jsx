@@ -846,6 +846,29 @@ export default function Step7Audit(props) {
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400/80 hover:bg-violet-500/10 transition-all text-xs">
                   <span>📦</span> Export bulk proiecte
                 </button>
+                {/* Sprint 22 #23 — Anexe DOCX per element opac (fișe tehnice) */}
+                <button
+                  onClick={async () => {
+                    if (!opaqueElements || opaqueElements.length === 0) {
+                      showToast("Nu există elemente opace — adaugă cel puțin unul în Pasul 2.", "warning", 5000);
+                      return;
+                    }
+                    try {
+                      const { exportElementAnnexesDOCX } = await import("../lib/element-annex-docx.js");
+                      const buildingName = (building?.name || building?.address || "cladire").replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 40);
+                      await exportElementAnnexesDOCX(opaqueElements, {
+                        filename: `anexe_elemente_${buildingName}_${new Date().toISOString().slice(0, 10)}.docx`,
+                        building,
+                      });
+                      showToast(`Anexe DOCX exportate pentru ${opaqueElements.length} element(e).`, "success", 4000);
+                    } catch (e) {
+                      console.error("Eroare export anexe:", e);
+                      showToast(`Eroare la export anexe: ${e.message}`, "error", 6000);
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
+                  <span>📘</span> Export anexe elemente (DOCX)
+                </button>
               </div>
 
               {/* Simulare what-if interactivă */}
