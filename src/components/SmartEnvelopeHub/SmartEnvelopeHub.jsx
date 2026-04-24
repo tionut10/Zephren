@@ -30,6 +30,8 @@ import RampGuided from "./RampGuided.jsx";
 import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
 import ThermalVizButton from "./ThermalViz/ThermalVizButton.jsx";
+import ElementSectionModal from "../sections/ElementSectionModal.jsx";
+import { getBridgeDetails, classifyIsoLevel } from "../../calc/thermal-bridges-metadata.js";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
 import { computeEnvelopeHint } from "./utils/envelopeHints.js";
 
@@ -328,6 +330,29 @@ export default function SmartEnvelopeHub({
     setShowBridgeCatalog?.(true);
   }, [setShowBridgeCatalog]);
 
+  // ── Preview modal pentru vizualizare secțiune la click ──────────────────────
+  const [previewModal, setPreviewModal] = useState(null); // { type, element, bridgeDetails? }
+
+  const handlePreviewOpaque = useCallback((el) => {
+    setPreviewModal({ type: "opaque", element: el });
+  }, []);
+
+  const handlePreviewGlazing = useCallback((el) => {
+    setPreviewModal({ type: "glazing", element: el });
+  }, []);
+
+  const handlePreviewBridge = useCallback((b) => {
+    const details = getBridgeDetails(b.name);
+    const isoClass = classifyIsoLevel(parseFloat(b.psi) || 0);
+    setPreviewModal({
+      type: "bridge",
+      element: b,
+      bridgeDetails: details
+        ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass }
+        : { isoClass },
+    });
+  }, []);
+
   // ── Handler-e RampGuided — direct append în state (fără OpaqueModal) ───────
   const handleSaveOpaqueFromWizard = useCallback((element) => {
     setOpaqueElements?.(prev => [...prev, { ...element }]);
@@ -600,14 +625,29 @@ export default function SmartEnvelopeHub({
         onAddOpaque={handleAddOpaque}
         onEditOpaque={handleEditOpaque}
         onDeleteOpaque={handleDeleteOpaque}
+        onPreviewOpaque={handlePreviewOpaque}
         onAddGlazing={handleAddGlazing}
         onEditGlazing={handleEditGlazing}
         onDeleteGlazing={handleDeleteGlazing}
+        onPreviewGlazing={handlePreviewGlazing}
         onAddBridge={handleAddBridge}
         onEditBridge={handleEditBridge}
         onDeleteBridge={handleDeleteBridge}
+        onPreviewBridge={handlePreviewBridge}
         onOpenBridgeCatalog={handleOpenBridgeCatalog}
       />
+
+      {/* ── Modal preview secțiune (click pe element în listă) ──────────────────── */}
+      {previewModal && (
+        <ElementSectionModal
+          type={previewModal.type}
+          element={previewModal.element}
+          climate={selectedClimate}
+          tInt={20}
+          bridgeDetails={previewModal.bridgeDetails}
+          onClose={() => setPreviewModal(null)}
+        />
+      )}
 
       {/* ── Progress tracker detaliat (ce lipsește din 10 gate-uri) ──────── */}
       <div className="px-4 pb-3">

@@ -20,7 +20,7 @@ const ISO_CLASS_COLOR = {
   D: "text-red-400 bg-red-500/15 border-red-500/30",
 };
 
-export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete }) {
+export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete, onPreview }) {
   const psi = parseFloat(bridge.psi) || 0;
   const length = parseFloat(bridge.length) || 0;
   const totalLoss = psi * length;
@@ -36,12 +36,20 @@ export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete }) {
     validation
       ? `Interval tipologie: ψ ∈ [${validation.min}, ${validation.max}] W/(m·K)${outOfRange ? " ⚠ valoare în afara intervalului" : ""}`
       : null,
+    typeof onPreview === "function" ? "Click pentru detalii + secțiune" : null,
   ].filter(Boolean).join("\n");
+
+  const clickable = typeof onPreview === "function";
 
   return (
     <div
-      className="bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors"
+      className={`bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors ${clickable ? "cursor-pointer hover:bg-white/[0.05]" : ""}`}
       title={tooltipText}
+      onClick={clickable ? () => onPreview(bridge, index) : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPreview(bridge, index); } } : undefined}
+      aria-label={clickable ? `Vezi detalii pentru ${bridge.name}` : undefined}
     >
       <div className="min-w-0">
         <div className="text-sm font-medium truncate flex items-center gap-2">
@@ -70,12 +78,12 @@ export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete }) {
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
-            onClick={() => onEdit?.(bridge, index)}
+            onClick={(e) => { e.stopPropagation(); onEdit?.(bridge, index); }}
             className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             aria-label={`Editează ${bridge.name}`}
           >✎</button>
           <button
-            onClick={() => onDelete?.(index)}
+            onClick={(e) => { e.stopPropagation(); onDelete?.(index); }}
             className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
             aria-label={`Șterge ${bridge.name}`}
           >✕</button>

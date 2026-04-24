@@ -46,6 +46,7 @@ export default function ElementCard({
   ELEMENT_TYPES = [],
   onEdit,
   onDelete,
+  onPreview,
 }) {
   // ── Calcul U (opaque: live, glazing: direct) ───────────────────────────────
   let u = 0;
@@ -77,8 +78,20 @@ export default function ElementCard({
     subtitle = `${element.glazingType || ""} · ${element.frameType || ""} · ${element.orientation || ""}`.replace(/^ · /, "").replace(/ · $/, "");
   }
 
+  const clickable = typeof onPreview === "function";
+
   return (
-    <div className="bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors">
+    <div
+      className={cn(
+        "bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors",
+        clickable && "cursor-pointer hover:bg-white/[0.05]"
+      )}
+      onClick={clickable ? () => onPreview(element, index) : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPreview(element, index); } } : undefined}
+      aria-label={clickable ? `Vezi secțiunea pentru ${element.name}` : undefined}
+    >
       {/* Left: status + name + meta */}
       <div className="flex items-center gap-3 min-w-0">
         <span className={cn("text-sm shrink-0", status && STATUS_CLASS[status])}>
@@ -103,12 +116,12 @@ export default function ElementCard({
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button
-            onClick={() => onEdit?.(element, index)}
+            onClick={(e) => { e.stopPropagation(); onEdit?.(element, index); }}
             className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             aria-label={`Editează ${element.name}`}
           >✎</button>
           <button
-            onClick={() => onDelete?.(index)}
+            onClick={(e) => { e.stopPropagation(); onDelete?.(index); }}
             className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
             aria-label={`Șterge ${element.name}`}
           >✕</button>

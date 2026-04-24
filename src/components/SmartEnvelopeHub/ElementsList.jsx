@@ -75,12 +75,15 @@ export default function ElementsList({
   onAddOpaque,
   onEditOpaque,
   onDeleteOpaque,
+  onPreviewOpaque,
   onAddGlazing,
   onEditGlazing,
   onDeleteGlazing,
+  onPreviewGlazing,
   onAddBridge,
   onEditBridge,
   onDeleteBridge,
+  onPreviewBridge,
   onOpenBridgeCatalog,
 }) {
   // Default expanded: secțiuni cu conținut sau prima când nu există nimic
@@ -121,6 +124,7 @@ export default function ElementsList({
                   ELEMENT_TYPES={ELEMENT_TYPES}
                   onEdit={onEditOpaque}
                   onDelete={onDeleteOpaque}
+                  onPreview={onPreviewOpaque}
                 />
               ))}
             </div>
@@ -157,6 +161,7 @@ export default function ElementsList({
                   buildingCategory={building?.category}
                   onEdit={onEditGlazing}
                   onDelete={onDeleteGlazing}
+                  onPreview={onPreviewGlazing}
                 />
               ))}
             </div>
@@ -193,6 +198,7 @@ export default function ElementsList({
                   index={idx}
                   onEdit={onEditBridge}
                   onDelete={onDeleteBridge}
+                  onPreview={onPreviewBridge}
                 />
               ))}
             </div>
