@@ -183,195 +183,145 @@ function exportJSON(data) {
   a.click(); URL.revokeObjectURL(url);
 }
 
-// ─── Download Client Form Template ────────────────────────────────────────
+// ─── Download Formular Gol (generat programatic, același design) ──────────────
 function downloadClientFormTemplate() {
-  const a = document.createElement("a");
-  a.href = "/templates/Formular_Client_Audit_Energetic.docx";
-  a.download = "Formular_Client_Audit_Energetic.docx";
-  a.click();
+  exportDOCX({}, [], true);
 }
 
 // ─── Export DOCX ─────────────────────────────────────────────────────────────
-async function exportDOCX(data, planuri = []) {
+// isBlank=true → formular gol (câmpuri cu linie de completare)
+// isBlank=false → formular completat cu datele din formular
+async function exportDOCX(data, planuri = [], isBlank = false) {
   const v   = (key) => data[key] ?? "";
   const has = (key) => { const val = data[key]; return val !== undefined && val !== "" && val !== null && val !== false; };
-  const str = (key, unit = "") => has(key) ? String(v(key)) + (unit ? " " + unit : "") : "";
+  const txt = (key, unit = "") => has(key) ? String(v(key)) + (unit ? "\u00a0" + unit : "") : "";
 
-  // ─── Paletă culori ────────────────────────────────────────────────────────────
-  const AMBER  = "F59E0B";
-  const AMB_LT = "FFFBEB";
-  const DARK   = "1E293B";
-  const GRAY   = "475569";
-  const LGRAY  = "94A3B8";
-  const LIGHT  = "F8FAFC";
-  const GREEN  = "16A34A";
-  const BORDER = "E2E8F0";
-  const WHITE  = "FFFFFF";
-  const BLUE   = "1E40AF";
-  const BLU_LT = "EFF6FF";
+  // ─── Culori ───────────────────────────────────────────────────────────────────
+  const C = {
+    amber:   "F59E0B", ambLight: "FFFBEB",
+    dark:    "1E293B", gray:     "475569",
+    lGray:   "94A3B8", light:    "F8FAFC",
+    border:  "E2E8F0", white:    "FFFFFF",
+    blue:    "1E40AF", blueLight:"EFF6FF",
+    green:   "16A34A", label:    "F1F5F9",
+    line:    "CBD5E1",
+  };
+  // aliases compat
+  const AMBER = C.amber, DARK = C.dark, GRAY = C.gray, LGRAY = C.lGray,
+        LIGHT = C.light, GREEN = C.green, BORDER = C.border, WHITE = C.white,
+        BLUE = C.blue, BLU_LT = C.blueLight, AMB_LT = C.ambLight;
 
-  const nb = () => ({
-    top:    { style: BorderStyle.NONE, size: 0, color: WHITE },
-    bottom: { style: BorderStyle.NONE, size: 0, color: WHITE },
-    left:   { style: BorderStyle.NONE, size: 0, color: WHITE },
-    right:  { style: BorderStyle.NONE, size: 0, color: WHITE },
-  });
+  // ─── Border helpers ───────────────────────────────────────────────────────────
+  const NB = { top: { style: BorderStyle.NONE, size: 0, color: WHITE }, bottom: { style: BorderStyle.NONE, size: 0, color: WHITE }, left: { style: BorderStyle.NONE, size: 0, color: WHITE }, right: { style: BorderStyle.NONE, size: 0, color: WHITE } };
+  const nb = () => NB;
+  const ln = (col = C.border, sz = 4) => ({ style: BorderStyle.SINGLE, size: sz, color: col });
   const bd = (color = BORDER, sz = 4) => ({ style: BorderStyle.SINGLE, size: sz, color });
+  const allBd = (col = C.border) => ({ top: ln(col), bottom: ln(col), left: ln(col), right: ln(col) });
 
   const children = [];
   const add = (...items) => items.flat().forEach(i => i && children.push(i));
   const sp  = (after = 80) => new Paragraph({ spacing: { before: 0, after } });
+  const gap = (after = 200) => new Paragraph({ spacing: { before: 0, after }, children: [new TextRun({ text: "" })] });
 
-  // ─── Helper: titlu secțiune ────────────────────────────────────────────────────
-  const sectionHead = (nr, title) => new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-    rows: [new TableRow({ children: [
-      new TableCell({ width: { size: 220, type: WidthType.DXA }, shading: { type: ShadingType.SOLID, color: AMBER, fill: AMBER }, borders: nb(), children: [sp(0)] }),
-      new TableCell({
-        shading: { type: ShadingType.SOLID, color: LIGHT, fill: LIGHT }, borders: nb(),
-        children: [new Paragraph({
-          children: [
-            new TextRun({ text: nr + ".  ", font: "Calibri", size: 28, bold: true, color: AMBER }),
-            new TextRun({ text: title.toUpperCase(), font: "Calibri", size: 26, bold: true, color: DARK }),
-          ],
-          spacing: { before: 100, after: 100 }, indent: { left: 160 },
-        })],
-      }),
-    ]})]
+  // ─── Helper: titlu secțiune (rând header în tabel) ────────────────────────────
+  const headerRow = (nr, title) => new TableRow({
+    children: [new TableCell({
+      columnSpan: 2,
+      shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark },
+      borders: NB,
+      children: [new Paragraph({
+        children: [
+          new TextRun({ text: `${nr}. `, font: "Calibri", size: 24, bold: true, color: C.amber }),
+          new TextRun({ text: title.toUpperCase(), font: "Calibri", size: 22, bold: true, color: WHITE }),
+        ],
+        spacing: { before: 110, after: 110 }, indent: { left: 160 },
+      })],
+    })],
   });
 
-  // ─── Helper: etichetă câmp ────────────────────────────────────────────────────
-  const lbl = (text, req = false) => new Paragraph({
-    children: [
-      new TextRun({ text: text.toUpperCase(), font: "Calibri", size: 15, bold: true, color: LGRAY }),
-      req ? new TextRun({ text: "  \u2731", font: "Calibri", size: 15, bold: true, color: AMBER }) : new TextRun({ text: "" }),
-    ],
-    spacing: { before: 140, after: 40 },
+  // ─── Helper: rând notă informativă (full-width) ───────────────────────────────
+  const noteRow = (text) => new TableRow({
+    children: [new TableCell({
+      columnSpan: 2,
+      shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
+      borders: { top: ln(C.border), bottom: ln(C.border), left: ln("3B82F6", 14), right: ln(C.border) },
+      children: [new Paragraph({
+        children: [new TextRun({ text: "ℹ  " + text, font: "Calibri", size: 18, italics: true, color: C.blue })],
+        spacing: { before: 80, after: 80 }, indent: { left: 140 },
+      })],
+    })],
   });
 
-  // ─── Helper: valoare câmp ─────────────────────────────────────────────────────
-  const valBox = (key, unit = "") => {
-    const txt = str(key, unit);
-    return txt
-      ? new Paragraph({
-          children: [new TextRun({ text: txt, font: "Calibri", size: 23, bold: true, color: DARK })],
-          shading: { type: ShadingType.SOLID, color: AMB_LT, fill: AMB_LT },
-          border: { left: { style: BorderStyle.SINGLE, size: 14, color: AMBER } },
-          indent: { left: 120 }, spacing: { before: 0, after: 60 },
-        })
-      : new Paragraph({
-          children: [new TextRun({ text: " ", font: "Calibri", size: 21, color: WHITE })],
-          border: { bottom: bd(BORDER, 6) },
-          spacing: { before: 0, after: 80 },
-        });
-  };
-
-  // ─── Helper: câmp pe lățime întreagă ─────────────────────────────────────────
-  const field = (label, key, unit = "", req = false) => [lbl(label, req), valBox(key, unit)];
-
-  // ─── Helper: două câmpuri pe un rând ─────────────────────────────────────────
-  const field2 = (l1, k1, u1, r1, l2, k2, u2, r2) => {
-    const mkCell = (label, key, unit, req) => new TableCell({
-      borders: nb(), width: { size: 4600, type: WidthType.DXA },
-      children: [lbl(label, req), valBox(key, unit)],
-    });
-    return new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-      rows: [new TableRow({ children: [
-        mkCell(l1, k1, u1, r1),
-        new TableCell({ width: { size: 300, type: WidthType.DXA }, borders: nb(), children: [sp(0)] }),
-        mkCell(l2, k2, u2, r2),
-      ]})]
-    });
-  };
-
-  // ─── Helper: opțiuni radio (2 pe rând) ────────────────────────────────────────
-  const radioGroup = (label, key, opts, req = false) => {
-    const sel = v(key);
-    const mkOpt = (opt) => {
-      if (!opt) return new TableCell({ borders: nb(), children: [sp(0)] });
-      const on = sel === opt;
-      return new TableCell({
-        borders: { top: bd(on ? AMBER : BORDER), bottom: bd(on ? AMBER : BORDER), left: bd(on ? AMBER : BORDER), right: bd(on ? AMBER : BORDER) },
-        shading: on ? { type: ShadingType.SOLID, color: AMBER, fill: AMBER } : { type: ShadingType.SOLID, color: LIGHT, fill: LIGHT },
-        verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({
-          children: [
-            new TextRun({ text: on ? "\u2713  " : "   ", font: "Calibri", size: 19, bold: true, color: on ? WHITE : LGRAY }),
-            new TextRun({ text: opt, font: "Calibri", size: 19, bold: on, color: on ? WHITE : DARK }),
-          ],
-          spacing: { before: 50, after: 50 }, indent: { left: 60 },
-        })],
-      });
-    };
-
-    const rows = [];
-    for (let i = 0; i < opts.length; i += 2) {
-      const hasSecond = i + 1 < opts.length;
-      rows.push(new TableRow({ children: [
-        mkOpt(opts[i]),
-        new TableCell({ width: { size: 160, type: WidthType.DXA }, borders: nb(), children: [sp(0)] }),
-        hasSecond ? mkOpt(opts[i + 1]) : new TableCell({ borders: nb(), children: [sp(0)] }),
-      ]}));
-      if (i + 2 < opts.length) {
-        rows.push(new TableRow({ children: [
-          new TableCell({ borders: nb(), children: [sp(40)] }),
-          new TableCell({ width: { size: 160, type: WidthType.DXA }, borders: nb(), children: [sp(0)] }),
-          new TableCell({ borders: nb(), children: [sp(0)] }),
-        ]}));
-      }
-    }
-
-    return [lbl(label, req), new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, rows }), sp(80)];
-  };
-
-  // ─── Helper: linie checklist ──────────────────────────────────────────────────
-  const checkRow = (label, key, hint = "") => {
-    const on = !!data[key];
-    return new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-      rows: [new TableRow({ children: [
+  // ─── Helper: rând câmp (label | valoare) ──────────────────────────────────────
+  const fieldRow = (label, key, unit = "", req = false, valueOverride = null) => {
+    const val = valueOverride !== null ? valueOverride : txt(key, unit);
+    const filled = val !== "" && !isBlank;
+    return new TableRow({
+      children: [
         new TableCell({
-          width: { size: 480, type: WidthType.DXA },
-          shading: on ? { type: ShadingType.SOLID, color: GREEN, fill: GREEN } : { type: ShadingType.SOLID, color: LIGHT, fill: LIGHT },
-          borders: { top: bd(on ? GREEN : BORDER), bottom: bd(on ? GREEN : BORDER), left: bd(on ? GREEN : BORDER), right: bd(on ? GREEN : BORDER) },
+          width: { size: 42, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: C.label, fill: C.label },
+          borders: allBd(),
           verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({ children: [new TextRun({ text: on ? "  \u2713" : "  ", font: "Calibri", size: 22, bold: true, color: WHITE })], alignment: AlignmentType.CENTER, spacing: { before: 50, after: 50 } })],
-        }),
-        new TableCell({
-          borders: { top: { style: BorderStyle.NONE, size: 0, color: WHITE }, bottom: bd(BORDER), left: { style: BorderStyle.NONE, size: 0, color: WHITE }, right: { style: BorderStyle.NONE, size: 0, color: WHITE } },
           children: [new Paragraph({
             children: [
-              new TextRun({ text: "  " + label, font: "Calibri", size: 20, bold: on, color: on ? DARK : GRAY }),
-              hint ? new TextRun({ text: "  \u2014  " + hint, font: "Calibri", size: 18, italics: true, color: LGRAY }) : new TextRun({ text: "" }),
+              new TextRun({ text: label, font: "Calibri", size: 19, color: C.gray }),
+              req ? new TextRun({ text: " \u2731", font: "Calibri", size: 17, bold: true, color: C.amber }) : new TextRun({ text: "" }),
             ],
-            spacing: { before: 55, after: 55 },
+            spacing: { before: 90, after: 90 }, indent: { left: 140 },
           })],
         }),
-      ]})]
+        new TableCell({
+          width: { size: 58, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: filled ? C.ambLight : WHITE, fill: filled ? C.ambLight : WHITE },
+          borders: { top: ln(C.border), bottom: ln(C.border), left: ln(filled ? C.amber : C.line, filled ? 12 : 4), right: ln(C.border) },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({
+            children: [new TextRun({ text: filled ? val : (isBlank ? "" : "\u2014"), font: "Calibri", size: 20, bold: filled, color: filled ? C.dark : C.lGray })],
+            spacing: { before: 90, after: 90 }, indent: { left: 160 },
+          })],
+        }),
+      ],
     });
   };
 
-  // ─── Helper: notă informativă ─────────────────────────────────────────────────
-  const note = (text) => new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-    rows: [new TableRow({ children: [
-      new TableCell({
-        width: { size: 180, type: WidthType.DXA },
-        shading: { type: ShadingType.SOLID, color: AMBER, fill: AMBER }, borders: nb(),
-        verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({ children: [new TextRun({ text: "i", font: "Calibri", size: 22, bold: true, color: WHITE })], alignment: AlignmentType.CENTER, spacing: { before: 70, after: 70 } })],
-      }),
-      new TableCell({
-        shading: { type: ShadingType.SOLID, color: AMB_LT, fill: AMB_LT },
-        borders: { top: { style: BorderStyle.NONE, size: 0, color: WHITE }, bottom: { style: BorderStyle.NONE, size: 0, color: WHITE }, left: bd(AMBER, 8), right: { style: BorderStyle.NONE, size: 0, color: WHITE } },
-        children: [new Paragraph({ children: [new TextRun({ text: "  " + text, font: "Calibri", size: 18, italics: true, color: "92400E" })], spacing: { before: 70, after: 70 } })],
-      }),
-    ]})]
-  });
+  // ─── Helper: rând checkbox ─────────────────────────────────────────────────────
+  const checkRow = (label, key, hint = "") => {
+    const on = !isBlank && !!data[key];
+    return new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 7, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: on ? C.green : C.label, fill: on ? C.green : C.label },
+          borders: allBd(on ? C.green : C.border),
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({
+            children: [new TextRun({ text: on ? "\u2713" : " ", font: "Calibri", size: 22, bold: true, color: WHITE })],
+            alignment: AlignmentType.CENTER, spacing: { before: 70, after: 70 },
+          })],
+        }),
+        new TableCell({
+          columnSpan: 1,
+          borders: allBd(),
+          children: [new Paragraph({
+            children: [
+              new TextRun({ text: "  " + label, font: "Calibri", size: 20, bold: on, color: on ? C.dark : C.gray }),
+              hint ? new TextRun({ text: "  \u2014  " + hint, font: "Calibri", size: 18, italics: true, color: C.lGray }) : new TextRun({ text: "" }),
+            ],
+            spacing: { before: 80, after: 80 },
+          })],
+        }),
+      ],
+    });
+  };
 
-  // ─── Helper: separator ────────────────────────────────────────────────────────
-  const divider = () => new Paragraph({ border: { bottom: bd(BORDER) }, spacing: { before: 60, after: 60 } });
+  // ─── Helper: construiește tabelul de secțiune ──────────────────────────────────
+  const makeSection = (rows) => new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    layout: TableLayoutType.FIXED,
+    borders: allBd(),
+    rows,
+  });
 
   // ════════════════════════════════════════════════════════════════════════════
   //  CONȚINUT DOCUMENT
@@ -380,191 +330,189 @@ async function exportDOCX(data, planuri = []) {
   // ── ANTET ───────────────────────────────────────────────────────────────────
   add(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
+    borders: NB,
     rows: [new TableRow({ children: [
-      new TableCell({ width: { size: 280, type: WidthType.DXA }, shading: { type: ShadingType.SOLID, color: AMBER, fill: AMBER }, borders: nb(), children: [sp(0)] }),
+      new TableCell({ width: { size: 14, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.amber, fill: C.amber }, borders: NB, children: [sp(0)] }),
       new TableCell({
-        shading: { type: ShadingType.SOLID, color: DARK, fill: DARK }, borders: nb(),
+        shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark }, borders: NB,
         children: [
-          new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 44, bold: true, color: AMBER })], spacing: { before: 140, after: 40 }, indent: { left: 220 } }),
-          new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENTULUI \u2014 AUDIT ENERGETIC / CPE", font: "Calibri", size: 24, bold: true, color: WHITE })], spacing: { before: 0, after: 40 }, indent: { left: 220 } }),
-          new Paragraph({ children: [new TextRun({ text: "Data: " + new Date().toLocaleDateString("ro-RO") + "  |  Mc 001-2022  |  EPBD 2024/1275", font: "Calibri", size: 17, italics: true, color: "94A3B8" })], spacing: { before: 0, after: 140 }, indent: { left: 220 } }),
+          new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 56, bold: true, color: C.amber })], spacing: { before: 160, after: 40 }, indent: { left: 220 } }),
+          new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT \u2014 AUDIT ENERGETIC / CPE", font: "Calibri", size: 22, bold: true, color: WHITE })], spacing: { before: 0, after: 40 }, indent: { left: 220 } }),
+          new Paragraph({ children: [new TextRun({ text: "Data: " + new Date().toLocaleDateString("ro-RO") + "\u2003|\u2003Mc 001-2022\u2003|\u2003EPBD 2024/1275", font: "Calibri", size: 17, italics: true, color: "94A3B8" })], spacing: { before: 0, after: 160 }, indent: { left: 220 } }),
         ],
       }),
     ]})]
   }));
-
-  add(sp(240));
+  add(gap(260));
 
   // ── INTRO ───────────────────────────────────────────────────────────────────
   add(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: NB,
     rows: [new TableRow({ children: [new TableCell({
-      shading: { type: ShadingType.SOLID, color: BLU_LT, fill: BLU_LT },
-      borders: { top: bd("BFDBFE", 6), bottom: { style: BorderStyle.NONE, size: 0, color: WHITE }, left: bd("3B82F6", 18), right: { style: BorderStyle.NONE, size: 0, color: WHITE } },
+      shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
+      borders: { top: ln("BFDBFE", 6), bottom: ln("BFDBFE", 6), left: ln("3B82F6", 18), right: ln("BFDBFE", 6) },
       children: [
         new Paragraph({ children: [new TextRun({ text: "  Stimate proprietar,", font: "Calibri", size: 22, bold: true, color: "1E3A8A" })], spacing: { before: 100, after: 60 } }),
-        new Paragraph({ children: [new TextRun({ text: "  V\u0103 rug\u0103m s\u0103 completa\u021bi câmpurile de mai jos cu informa\u021biile disponibile despre cl\u0103direa dumneavoastr\u0103 \u0219i s\u0103 transmite\u021bi documentul auditorului energetic \u00eenainte de inspec\u021bie.", font: "Calibri", size: 20, color: BLUE })], spacing: { before: 0, after: 60 } }),
-        new Paragraph({ children: [
-          new TextRun({ text: "  Câmpurile marcate cu ", font: "Calibri", size: 20, color: BLUE }),
-          new TextRun({ text: "\u2731", font: "Calibri", size: 20, bold: true, color: AMBER }),
-          new TextRun({ text: " sunt obligatorii. Celelalte câmpuri vor fi completate de auditor dac\u0103 nu le cunoa\u0219te\u021bi.", font: "Calibri", size: 20, color: BLUE }),
-        ], spacing: { before: 0, after: 100 } }),
+        new Paragraph({ children: [new TextRun({ text: "  V\u0103 rug\u0103m s\u0103 completa\u021bi c\u00e2mpurile de mai jos cu informa\u021biile disponibile despre cl\u0103direa dumneavoastr\u0103 \u015fi s\u0103 transmite\u021bi documentul auditorului energetic \u00ednainte de inspec\u021bie. C\u00e2mpurile marcate cu \u2731 sunt obligatorii.", font: "Calibri", size: 20, color: C.blue })], spacing: { before: 0, after: 100 } }),
       ],
-    })]})]
+    })] })]
   }));
+  add(gap(280));
 
-  add(sp(280));
+  // ══ 1. DATE DE IDENTIFICARE ══
+  add(makeSection([
+    headerRow("1", "Date de identificare \u015fi contact"),
+    fieldRow("Nume \u015fi prenume proprietar", "numeProprietar", "", true),
+    fieldRow("Telefon de contact", "telefonProprietar", "", true),
+    fieldRow("Adres\u0103 de e-mail", "emailProprietar"),
+    fieldRow("Jude\u021b", "judet", "", true),
+    fieldRow("Localitate / Municipiu", "localitate", "", true),
+    fieldRow("Adresa complet\u0103 a cl\u0103dirii", "adresaCompleta", "", true),
+    fieldRow("Tipul cl\u0103dirii", "tip\u0106l\u0103dire", "", true),
+    fieldRow("Anul construc\u021biei (aproximativ)", "anConstructie", "", true),
+    fieldRow("Num\u0103r cadastral", "nrCadastral"),
+    fieldRow("Num\u0103r apartamente \u00een cl\u0103dire", "numarApartamenteBloc", "buc."),
+    fieldRow("Scopul auditului / CPE \u2731", "scopulCPE", "", true),
+    fieldRow("Lucr\u0103ri de reabilitare anterioare?", "reabilitarePrecedenta"),
+    ...(has("descriereReabilitare") ? [fieldRow("Descrierea lucr\u0103rilor de reabilitare efectuate", "descriereReabilitare")] : []),
+  ]));
+  add(gap(200));
 
-  // ════════════════════════
-  // 1. DATE DE IDENTIFICARE
-  // ════════════════════════
-  add(sectionHead("1", "Date de identificare \u0219i contact"));
-  add(sp(100));
-  add(field2("Nume \u0219i prenume proprietar", "numeProprietar", "", true, "Telefon de contact", "telefonProprietar", "", true));
-  add(field2("Adres\u0103 de e-mail", "emailProprietar", "", false, "Jude\u021b", "judet", "", true));
-  add(field2("Localitate / Municipiu", "localitate", "", true, "Tipul cl\u0103dirii", "tip\u0106l\u0103dire", "", true));
-  add(...field("Adresa complet\u0103 a cl\u0103dirii (strad\u0103, num\u0103r, bloc, scar\u0103, apartament)", "adresaCompleta", "", true));
-  add(field2("Anul construc\u021biei (aproximativ)", "anConstructie", "", true, "Num\u0103r cadastral", "nrCadastral", "", false));
-  add(field2("Num\u0103r de apartamente \u00een cl\u0103dire", "numarApartamenteBloc", "buc.", false, "Act de proprietate (num\u0103r \u0219i dat\u0103)", "propertyAct", "", false));
-  add(...radioGroup("Scopul auditului / CPE:", "scopulCPE", ["Vânzare", "Închiriere", "Recep\u021bie lucrare nou\u0103", "Refinan\u021bare credit", "Reabilitare termic\u0103", "Audit voluntar"], true));
-  add(...radioGroup("Au fost efectuate lucr\u0103ri de reabilitare anterioare?", "reabilitarePrecedenta", ["Nu", "Da \u2014 par\u021bial", "Da \u2014 integral"]));
-  if (has("descriereReabilitare")) add(...field("Descrierea lucr\u0103rilor de reabilitare efectuate", "descriereReabilitare"));
-  add(sp(280));
+  // ══ 2. DIMENSIUNILE CLĂDIRII ══
+  add(makeSection([
+    headerRow("2", "Dimensiunile cl\u0103dirii"),
+    noteRow("Furniza\u021bi cel pu\u021bin suprafa\u021ba util\u0103 total\u0103. Auditorul va efectua m\u0103sur\u0103tori suplimentare la fa\u021ba locului."),
+    fieldRow("Suprafa\u021ba total\u0103 construit\u0103", "arieTotala", "m\u00b2", true),
+    fieldRow("Suprafa\u021ba util\u0103 total\u0103", "arieUtila", "m\u00b2"),
+    fieldRow("Num\u0103r de niveluri (f\u0103r\u0103 subsol)", "numarEtaje", "", true),
+    fieldRow("Subsol sau demisol?", "areSubsol"),
+    fieldRow("Pod sau mansard\u0103?", "arePod"),
+    fieldRow("Num\u0103r de persoane care locuiesc permanent", "numarOcupanti", "pers."),
+  ]));
+  add(gap(200));
 
-  // ═══════════════════════
-  // 2. DIMENSIUNILE CLĂDIRII
-  // ═══════════════════════
-  add(sectionHead("2", "Dimensiunile cl\u0103dirii"));
-  add(sp(100));
-  add(note("Furniza\u021bi cel pu\u021bin suprafa\u021ba util\u0103 total\u0103. Auditorul va efectua m\u0103sur\u0103tori suplimentare la fa\u021ba locului."));
-  add(sp(80));
-  add(field2("Suprafa\u021ba total\u0103 construit\u0103", "arieTotala", "m\u00b2", true, "Suprafa\u021ba util\u0103 total\u0103", "arieUtila", "m\u00b2", false));
-  add(field2("Num\u0103r de niveluri (f\u0103r\u0103 subsol)", "numarEtaje", "", true, "Num\u0103r de persoane care locuiesc permanent", "numarOcupanti", "pers.", false));
-  add(field2("Exist\u0103 subsol sau demisol?", "areSubsol", "", false, "Exist\u0103 pod sau mansard\u0103?", "arePod", "", false));
-  add(sp(280));
+  // ══ 3. SISTEMUL DE ÎNCĂLZIRE ══
+  add(makeSection([
+    headerRow("3", "Sistemul de \u00eenc\u0103lzire"),
+    noteRow("Informa\u021biile despre cazan / pomp\u0103 de c\u0103ldur\u0103 le g\u0103si\u021bi pe eticheta aparatului din centrala termic\u0103."),
+    fieldRow("Sursa principal\u0103 de c\u0103ldur\u0103", "tipSursa", "", true),
+    fieldRow("Combustibilul utilizat", "combustibil", "", true),
+    fieldRow("Marca \u015fi modelul cazanului / pompei de c\u0103ldur\u0103", "marcaCazan"),
+    fieldRow("Anul fabrica\u021biei", "anCazan"),
+    fieldRow("Puterea nominal\u0103 (de pe eticheta aparatului)", "putereKw", "kW"),
+    fieldRow("Tipul de distribu\u021bie a c\u0103ldurii", "distributieIncalzire"),
+    fieldRow("Robine\u021bi termosta\u021ba\u021bi pe radiatoare?", "robinetiTermostati"),
+    fieldRow("Termostat de ambient programabil?", "termostatAmbient"),
+  ]));
+  add(gap(200));
 
-  // ═══════════════════════
-  // 3. SISTEMUL DE ÎNCĂLZIRE
-  // ═══════════════════════
-  add(sectionHead("3", "Sistemul de \u00eenc\u0103lzire"));
-  add(sp(100));
-  add(note("Informa\u021biile despre cazan / pomp\u0103 de c\u0103ldur\u0103 le g\u0103si\u021bi pe eticheta aparatului din centrala termic\u0103."));
-  add(sp(80));
-  add(...radioGroup("Sursa principal\u0103 de c\u0103ldur\u0103:", "tipSursa", ["Cazan gaz natural", "Cazan GPL", "Cazan motorin\u0103", "Cazan lemne / pele\u021bi", "Pomp\u0103 de c\u0103ldur\u0103", "\u00cenc\u0103lzire electric\u0103", "Termoficare (CET)"], true));
-  add(...radioGroup("Combustibilul utilizat:", "combustibil", ["Gaz natural", "GPL", "Motorin\u0103", "Lemne", "Pele\u021bi", "Brichete", "Electricitate", "Termoficare"]));
-  add(field2("Marca \u0219i modelul cazanului / pompei de c\u0103ldur\u0103", "marcaCazan", "", false, "Anul fabrica\u021biei", "anCazan", "", false));
-  add(...field("Puterea nominal\u0103 (de pe eticheta aparatului)", "putereKw", "kW"));
-  add(...radioGroup("Tipul de distribu\u021bie a c\u0103ldurii:", "distributieIncalzire", ["Radiatoare (calorifere)", "\u00cenc\u0103lzire \u00een pardoseal\u0103", "Fan-coil", "Sobe / \u0219emineu", "Altele"]));
-  add(...radioGroup("Exist\u0103 robine\u021bi termosta\u021ba\u021bi pe radiatoare?", "robinetiTermostati", ["Nu", "Da \u2014 la unele", "Da \u2014 la toate"]));
-  add(...radioGroup("Exist\u0103 termostat de ambient programabil?", "termostatAmbient", ["Nu", "Da \u2014 simplu", "Da \u2014 programabil", "Da \u2014 smart"]));
-  add(sp(280));
+  // ══ 4. APA CALDĂ MENAJERĂ ══
+  add(makeSection([
+    headerRow("4", "Prepararea apei calde menajere"),
+    fieldRow("Cum este preparat\u0103 apa cald\u0103 menajer\u0103?", "surseACM", "", true),
+    fieldRow("Volumul boilerului de acumulare (scris pe aparat)", "volumBoiler", "litri"),
+    ...(v("surseACM") === "solar_termic" ? [
+      fieldRow("Suprafa\u021ba panourilor solare", "suprafataSolarTermic", "m\u00b2"),
+      fieldRow("Anul instal\u0103rii panourilor solare", "anSolarTermic"),
+    ] : []),
+  ]));
+  add(gap(200));
 
-  // ═══════════════════════════
-  // 4. APA CALDĂ MENAJERĂ
-  // ═══════════════════════════
-  add(sectionHead("4", "Prepararea apei calde menajere"));
-  add(sp(100));
-  add(...radioGroup("Cum este preparat\u0103 apa cald\u0103 menajer\u0103?", "surseACM", ["Central\u0103 termic\u0103 combinat\u0103", "Boiler electric", "Boiler gaz (separat)", "Panouri solare termice", "Termoficare", "Instant gaz", "Pomp\u0103 de c\u0103ldur\u0103 ACM"], true));
-  add(...field("Volumul boilerului de acumulare (scris pe aparat)", "volumBoiler", "litri"));
-  add(sp(280));
+  // ══ 5. RĂCIRE ȘI AER CONDIȚIONAT ══
+  add(makeSection([
+    headerRow("5", "R\u0103cire \u015fi aer condi\u021bionat"),
+    fieldRow("Exist\u0103 sistem de r\u0103cire / aer condi\u021bionat?", "areRacire", "", true),
+    ...(has("areRacire") && v("areRacire") !== "Nu" ? [fieldRow("Tipul sistemului de r\u0103cire", "tipRacire")] : []),
+  ]));
+  add(gap(200));
 
-  // ═══════════════════════════════
-  // 5. RĂCIRE ȘI AER CONDIȚIONAT
-  // ═══════════════════════════════
-  add(sectionHead("5", "R\u0103cire \u0219i aer condi\u021bionat"));
-  add(sp(100));
-  add(...radioGroup("Exist\u0103 sistem de r\u0103cire / aer condi\u021bionat?", "areRacire", ["Nu", "Da \u2014 \u00een unele \u00eenc\u0103peri", "Da \u2014 \u00een toat\u0103 cl\u0103direa"], true));
-  add(...field("Tipul sistemului de r\u0103cire (dac\u0103 exist\u0103)", "tipRacire"));
-  add(sp(280));
+  // ══ 6. SURSE REGENERABILE ══
+  add(makeSection([
+    headerRow("6", "Surse de energie regenerabil\u0103"),
+    fieldRow("Sistem fotovoltaic (panouri pentru electricitate)?", "arePV", "", true),
+    ...(v("arePV") === "Da" ? [
+      fieldRow("Puterea instalat\u0103 a sistemului PV", "putereKwp", "kWp"),
+      fieldRow("Num\u0103rul de panouri fotovoltaice", "numarPanouriPV", "buc."),
+      fieldRow("Orientarea panourilor fotovoltaice", "orientarePV"),
+      fieldRow("Anul instal\u0103rii sistemului PV", "anPV"),
+      fieldRow("Produc\u021bie anual\u0103 estimat\u0103", "productieAnualaPV", "kWh/an"),
+    ] : []),
+    fieldRow("Panouri solare termice (pentru ap\u0103 cald\u0103)?", "areSolarTermicRenew", "", true),
+    ...(v("areSolarTermicRenew") === "Da" ? [
+      fieldRow("Suprafa\u021ba panourilor solare termice", "suprafataSolarRenew", "m\u00b2"),
+      fieldRow("Orientarea panourilor solare termice", "orientareSolar"),
+    ] : []),
+  ]));
+  add(gap(200));
 
-  // ═══════════════════════════════════
-  // 6. SURSE DE ENERGIE REGENERABILĂ
-  // ═══════════════════════════════════
-  add(sectionHead("6", "Surse de energie regenerabil\u0103"));
-  add(sp(100));
-  add(...radioGroup("Exist\u0103 sistem fotovoltaic (panouri pentru electricitate)?", "arePV", ["Nu", "Da"], true));
-  if (has("arePV") && v("arePV") === "Da") {
-    add(field2("Puterea total\u0103 instalat\u0103 a sistemului PV", "putereKwp", "kWp", false, "Num\u0103rul de panouri fotovoltaice", "numarPanouriPV", "buc.", false));
-    add(field2("Orientarea panourilor fotovoltaice", "orientarePV", "", false, "Anul instal\u0103rii sistemului PV", "anPV", "", false));
-    add(...field("Produc\u021bia anual\u0103 estimat\u0103 (din aplica\u021bia invertorului)", "productieAnualaPV", "kWh/an"));
-  }
-  add(...radioGroup("Exist\u0103 panouri solare termice (pentru ap\u0103 cald\u0103)?", "areSolarTermicRenew", ["Nu", "Da"], true));
-  if (has("areSolarTermicRenew") && v("areSolarTermicRenew") === "Da") {
-    add(field2("Suprafa\u021ba panourilor solare termice", "suprafataSolarRenew", "m\u00b2", false, "Orientarea panourilor solare", "orientareSolar", "", false));
-    add(...field("Anul instal\u0103rii panourilor solare termice", "anSolarTermic"));
-  }
-  add(sp(280));
+  // ══ 7. CONSUMURI ENERGETICE ══
+  add(makeSection([
+    headerRow("7", "Consumuri energetice anuale"),
+    noteRow("Valorile se preiau din facturile ultimelor 12 luni. Anexa\u021bi copii ale facturilor dac\u0103 este posibil."),
+    fieldRow("Consum anual gaz natural", "consumGaz", "m\u00b3/an"),
+    fieldRow("Consum anual electricitate", "consumElectricitate", "kWh/an"),
+    fieldRow("Consum agent termic (termoficare)", "consumTermoficare", "Gcal/an"),
+    fieldRow("Consum anual lemne de foc", "consumLemn", "mc/an"),
+    fieldRow("Consum anual pele\u021bi / brichete", "consumPeleti", "tone/an"),
+  ]));
+  add(gap(200));
 
-  // ══════════════════════════════
-  // 7. CONSUMURI ENERGETICE
-  // ══════════════════════════════
-  add(sectionHead("7", "Consumuri energetice anuale"));
-  add(sp(100));
-  add(note("Valorile se preiau din facturile ultimelor 12 luni. Anexa\u021bi copii ale facturilor dac\u0103 este posibil."));
-  add(sp(80));
-  add(field2("Consum anual gaz natural", "consumGaz", "m\u00b3/an", false, "Consum anual electricitate", "consumElectricitate", "kWh/an", false));
-  add(field2("Consum agent termic (termoficare)", "consumTermoficare", "Gcal/an", false, "Consum anual lemne de foc", "consumLemn", "mc/an", false));
-  add(field2("Consum anual pele\u021bi / brichete", "consumPeleti", "tone/an", false, "Consum anual motorin\u0103 / GPL", "consumCombLichid", "litri/an", false));
-  add(sp(280));
+  // ══ 8. DOCUMENTE DISPONIBILE ══
+  add(makeSection([
+    headerRow("8", "Documente disponibile pentru auditor"),
+    noteRow("Bifa\u021bi documentele pe care le pute\u021bi pune la dispozi\u021bia auditorului. Cu c\u00e2t furniza\u021bi mai multe, cu at\u00e2t calculul va fi mai precis."),
+    checkRow("Act de proprietate sau extras de carte funciar\u0103 actualizat", "areActProp", "obligatoriu pentru identificare"),
+    checkRow("Autoriza\u021bie de construire (num\u0103rul \u015fi data)", "areAutorizatie", "util pentru stabilirea anului construc\u021biei"),
+    checkRow("Planuri arhitecturale: parter, etaje, fa\u021bade, sec\u021biuni", "arePlanuri", "esen\u021bial pentru calcul suprafe\u021be"),
+    checkRow("Cartea tehnic\u0103 a cl\u0103dirii (dosarul construc\u021biei)", "areCarteTehn"),
+    checkRow("Fi\u015fa tehnic\u0103 / cartea cazanului sau pompei de c\u0103ldur\u0103", "areFisaCazan", "con\u021bine puterea nominal\u0103 \u015fi randamentul"),
+    checkRow("Documenta\u021bia sistemului fotovoltaic", "areFisaPV"),
+    checkRow("Facturi gaz natural \u2014 ultimele 12 luni (sau ultimii 3 ani)", "areFacGaz"),
+    checkRow("Facturi electricitate \u2014 ultimele 12 luni (sau ultimii 3 ani)", "areFacElec"),
+    checkRow("Facturi agent termic (termoficare / CET)", "areFacTermo"),
+    checkRow("Fotografii ale cl\u0103dirii: exterior, interior, instala\u021bii", "areFotoExter", "foarte utile pentru evaluare"),
+    ...(has("alteDocumente") ? [fieldRow("Alte documente sau informa\u021bii suplimentare", "alteDocumente")] : []),
+  ]));
+  add(gap(280));
 
-  // ══════════════════════════════════════
-  // 8. DOCUMENTE DISPONIBILE
-  // ══════════════════════════════════════
-  add(sectionHead("8", "Documente disponibile pentru auditor"));
-  add(sp(100));
-  add(note("Bifa\u021bi documentele pe care le pute\u021bi pune la dispozi\u021bia auditorului. Cu cât furniza\u021bi mai multe, cu atât calculul va fi mai precis."));
-  add(sp(80));
-  add(checkRow("Act de proprietate sau extras de carte funciar\u0103 actualizat", "areActProp", "obligatoriu pentru identificare"));
-  add(sp(40));
-  add(checkRow("Autoriza\u021bie de construire (num\u0103rul \u0219i data)", "areAutorizatie", "util pentru stabilirea anului construc\u021biei"));
-  add(sp(40));
-  add(checkRow("Planuri arhitecturale: plan parter, etaje, fa\u021bade, sec\u021biuni", "arePlanuri", "esen\u021bial pentru calcul suprafe\u021be"));
-  add(sp(40));
-  add(checkRow("Cartea tehnic\u0103 a cl\u0103dirii (dosarul construc\u021biei)", "areCarteTehn"));
-  add(sp(40));
-  add(checkRow("Fi\u015fa tehnic\u0103 / cartea cazanului sau pompei de c\u0103ldur\u0103", "areFisaCazan", "con\u021bine puterea nominal\u0103 \u0219i randamentul"));
-  add(sp(40));
-  add(checkRow("Documenta\u021bia sistemului fotovoltaic (contract instalator, schem\u0103)", "areFisaPV"));
-  add(sp(40));
-  add(checkRow("Facturi gaz natural \u2014 ultimele 12 luni (sau ultimii 3 ani)", "areFacGaz"));
-  add(sp(40));
-  add(checkRow("Facturi electricitate \u2014 ultimele 12 luni (sau ultimii 3 ani)", "areFacElec"));
-  add(sp(40));
-  add(checkRow("Facturi agent termic (termoficare / CET) \u2014 ultimele 12 luni", "areFacTermo"));
-  add(sp(40));
-  add(checkRow("Fotografii ale cl\u0103dirii: exterior (toate fa\u021badele), interior, instala\u021bii", "areFotoExter", "foarte utile pentru evaluare"));
-  if (has("alteDocumente")) {
-    add(sp(80));
-    add(...field("Alte documente sau informa\u021bii suplimentare", "alteDocumente"));
-  }
-  add(sp(280));
+  // ══ DECLARAȚIE ȘI SEMNĂTURĂ ══
+  add(makeSection([
+    new TableRow({ children: [new TableCell({
+      columnSpan: 2,
+      shading: { type: ShadingType.SOLID, color: C.light, fill: C.light },
+      borders: NB,
+      children: [
+        new Paragraph({ children: [new TextRun({ text: "Declara\u021bie", font: "Calibri", size: 22, bold: true, color: C.dark })], spacing: { before: 110, after: 60 }, indent: { left: 160 } }),
+        new Paragraph({ children: [new TextRun({ text: "Subsemnatul/a confirm c\u0103 informa\u021biile furnizate \u00een prezentul formular sunt corecte \u015fi complete, \u00een conformitate cu documentele de\u021binute \u015fi cu situa\u021bia real\u0103 a cl\u0103dirii.", font: "Calibri", size: 20, color: C.gray })], spacing: { before: 0, after: 110 }, indent: { left: 160 } }),
+      ],
+    })] }),
+    new TableRow({ children: [
+      new TableCell({
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders: { top: ln(C.border), bottom: NB.bottom, left: NB.left, right: NB.right },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "Data complet\u0103rii:", font: "Calibri", size: 18, color: C.lGray })], spacing: { before: 120, after: 40 }, indent: { left: 160 } }),
+          new Paragraph({ children: [new TextRun({ text: ".".repeat(46), font: "Calibri", size: 20, color: C.line })], spacing: { before: 0, after: 120 }, indent: { left: 160 } }),
+        ],
+      }),
+      new TableCell({
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders: { top: ln(C.border), bottom: NB.bottom, left: ln(C.border), right: NB.right },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "Semn\u0103tura proprietarului:", font: "Calibri", size: 18, color: C.lGray })], spacing: { before: 120, after: 40 }, indent: { left: 160 } }),
+          new Paragraph({ children: [new TextRun({ text: ".".repeat(46), font: "Calibri", size: 20, color: C.line })], spacing: { before: 0, after: 120 }, indent: { left: 160 } }),
+        ],
+      }),
+    ]}),
+  ]));
 
-  // ── DECLARAȚIE ȘI SEMNĂTURĂ ──────────────────────────────────────────────────
-  add(divider());
-  add(new Paragraph({ children: [new TextRun({ text: "Declara\u021bie", font: "Calibri", size: 22, bold: true, color: DARK })], spacing: { before: 140, after: 60 } }));
-  add(new Paragraph({ children: [new TextRun({ text: "Subsemnatul/a confirm c\u0103 informa\u021biile furnizate \u00een prezentul formular sunt corecte \u0219i complete, \u00een conformitate cu documentele de\u021binute \u0219i cu situa\u021bia real\u0103 a cl\u0103dirii.", font: "Calibri", size: 20, color: GRAY })], spacing: { before: 0, after: 120 } }));
-  add(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-    rows: [new TableRow({ children: [
-      new TableCell({ borders: nb(), children: [
-        new Paragraph({ children: [new TextRun({ text: "Data complet\u0103rii:", font: "Calibri", size: 18, color: LGRAY })], spacing: { before: 0, after: 30 } }),
-        new Paragraph({ children: [new TextRun({ text: "..................................................", font: "Calibri", size: 20, color: DARK })], spacing: { before: 0, after: 0 } }),
-      ]}),
-      new TableCell({ width: { size: 400, type: WidthType.DXA }, borders: nb(), children: [sp(0)] }),
-      new TableCell({ borders: nb(), children: [
-        new Paragraph({ children: [new TextRun({ text: "Semn\u0103tura proprietarului:", font: "Calibri", size: 18, color: LGRAY })], spacing: { before: 0, after: 30 } }),
-        new Paragraph({ children: [new TextRun({ text: "..................................................", font: "Calibri", size: 20, color: DARK })], spacing: { before: 0, after: 0 } }),
-      ]}),
-    ]})]
-  }));
-
-  // ── PLANȘE ───────────────────────────────────────────────────────────────────
+  // ══ PLANȘE ══
   const imgPlanuri = planuri.filter(p => p.type && p.type.startsWith("image/"));
   if (imgPlanuri.length > 0) {
-    add(sp(280));
-    add(sectionHead("9", "Plan\u015fe \u0219i fotografii ata\u015fate"));
-    add(sp(100));
-
+    add(gap(280));
+    add(makeSection([headerRow("9", "Plan\u015fe \u015fi fotografii ata\u015fate")]));
+    add(gap(100));
     const dataUrlToBuffer = (dataUrl) => {
       const base64 = dataUrl.split(",")[1];
       const bin = atob(base64);
@@ -572,17 +520,13 @@ async function exportDOCX(data, planuri = []) {
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       return arr;
     };
-
     const getImageDims = (dataUrl) => new Promise(resolve => {
       const img = new Image();
       img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
       img.onerror = () => resolve({ w: 800, h: 600 });
       img.src = dataUrl;
     });
-
-    const MAX_W = 3200000;
-    const MAX_H = 2400000;
-
+    const MAX_W = 3000000, MAX_H = 2200000;
     for (let i = 0; i < imgPlanuri.length; i += 2) {
       const cells = [];
       for (let j = i; j < Math.min(i + 2, imgPlanuri.length); j++) {
@@ -592,44 +536,51 @@ async function exportDOCX(data, planuri = []) {
         let ew = MAX_W, eh = Math.round(MAX_W / ratio);
         if (eh > MAX_H) { eh = MAX_H; ew = Math.round(MAX_H * ratio); }
         cells.push(new TableCell({
-          borders: { top: { style: BorderStyle.SINGLE, size: 4, color: BORDER }, bottom: { style: BorderStyle.SINGLE, size: 4, color: BORDER }, left: { style: BorderStyle.SINGLE, size: 4, color: BORDER }, right: { style: BorderStyle.SINGLE, size: 4, color: BORDER } },
+          borders: allBd(),
           children: [
-            new Paragraph({
-              children: [new ImageRun({ data: dataUrlToBuffer(pl.dataUrl), transformation: { width: Math.round(ew / 9144), height: Math.round(eh / 9144) } })],
-              alignment: AlignmentType.CENTER, spacing: { before: 80, after: 40 },
-            }),
-            new Paragraph({ children: [new TextRun({ text: pl.name || pl.fileName, font: "Calibri", size: 18, italics: true, color: GRAY })], alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 } }),
+            new Paragraph({ children: [new ImageRun({ data: dataUrlToBuffer(pl.dataUrl), transformation: { width: Math.round(ew / 9144), height: Math.round(eh / 9144) } })], alignment: AlignmentType.CENTER, spacing: { before: 80, after: 40 } }),
+            new Paragraph({ children: [new TextRun({ text: pl.name || pl.fileName, font: "Calibri", size: 18, italics: true, color: C.gray })], alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 } }),
           ],
         }));
-        if (imgPlanuri.length % 2 !== 0 && j === imgPlanuri.length - 1) {
-          cells.push(new TableCell({ borders: nb(), children: [sp(0)] }));
-        }
+        if (imgPlanuri.length % 2 !== 0 && j === imgPlanuri.length - 1)
+          cells.push(new TableCell({ borders: NB, children: [sp(0)] }));
       }
       add(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, rows: [new TableRow({ children: cells })] }));
-      add(sp(80));
+      add(gap(80));
     }
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  //  CREARE DOCUMENT
-  // ════════════════════════════════════════════════════════════════════════════
+  // ══ FOOTER ══
+  add(gap(200));
+  add(new Paragraph({
+    children: [new TextRun({ text: "Generat de Zephren \u2014 " + new Date().toLocaleString("ro-RO") + "\u2003|\u2003zephren.ro", font: "Calibri", size: 17, italics: true, color: C.lGray })],
+    alignment: AlignmentType.CENTER,
+    border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.border } },
+    spacing: { before: 80, after: 0 },
+  }));
+
+  // ══ CREARE DOCUMENT ══
   const doc = new Document({
     creator: "Zephren Energy Performance Calculator",
-    title: "Formular Client \u2014 Audit Energetic",
-    description: "Formular de colectare date pentru calculul performan\u021bei energetice conform Mc 001-2022",
-    styles: { default: { document: { run: { font: "Calibri", size: 20, color: DARK } } } },
-    sections: [{ properties: { page: { margin: { top: convertInchesToTwip(1.0), bottom: convertInchesToTwip(1.0), left: convertInchesToTwip(1.1), right: convertInchesToTwip(1.1) } } }, children }],
+    title: isBlank ? "Formular Client (Gol) \u2014 Audit Energetic" : "Formular Client \u2014 Audit Energetic",
+    description: "Formular colectare date pentru calculul performan\u021bei energetice conform Mc 001-2022",
+    styles: { default: { document: { run: { font: "Calibri", size: 20, color: C.dark } } } },
+    sections: [{
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 851, right: 851, bottom: 851, left: 851 } } },
+      children,
+    }],
   });
 
   const blob = await Packer.toBlob(doc);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "formular-date-client-" + new Date().toISOString().slice(0, 10) + ".docx";
+  a.download = isBlank
+    ? "Formular_Client_Audit_Energetic.docx"
+    : "formular-date-client-" + new Date().toISOString().slice(0, 10) + ".docx";
   a.click();
   URL.revokeObjectURL(url);
 }
-
 
 // ─── Date pentru sectiuni ─────────────────────────────────────────────────────
 const SECTIONS_META = [
