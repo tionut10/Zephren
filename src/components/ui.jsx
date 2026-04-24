@@ -2,12 +2,15 @@ import { useState, useEffect, useRef } from "react";
 
 export const cn = (...classes) => classes.filter(Boolean).join(" ");
 
-export function Select({ label, value, onChange, options, placeholder, className="" }) {
+export function Select({ label, value, onChange, options, placeholder, className="", tooltip="", error="" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const listboxId = useRef(`select-listbox-${Math.random().toString(36).slice(2)}`);
+  const tooltipId = useRef(`select-tip-${Math.random().toString(36).slice(2)}`);
+  const errorId = useRef(`select-err-${Math.random().toString(36).slice(2)}`);
   const selected = options.find(o => (typeof o === "string" ? o : o.value) === value);
   const selectedLabel = selected ? (typeof selected === "string" ? selected : selected.label) : (placeholder || "Selecteaza...");
+  const describedBy = [tooltip ? tooltipId.current : null, error ? errorId.current : null].filter(Boolean).join(" ") || undefined;
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -17,10 +20,17 @@ export function Select({ label, value, onChange, options, placeholder, className
 
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
-      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>}
+      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
+        {label}
+        {tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip} aria-hidden="true">ⓘ</span>}
+      </label>}
+      {tooltip && <span id={tooltipId.current} className="sr-only">{tooltip}</span>}
       <button type="button" onClick={() => setOpen(!open)}
         aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId.current}
-        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-left focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all flex items-center justify-between gap-2"
+        aria-describedby={describedBy}
+        aria-invalid={error ? "true" : undefined}
+        className={cn("bg-white/5 border rounded-lg px-3 py-2.5 text-sm text-left focus:outline-none focus:ring-1 transition-all flex items-center justify-between gap-2",
+          error ? "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30" : "border-white/10 focus:border-amber-500/50 focus:ring-amber-500/30")}
         style={{minHeight:"38px"}}>
         <span className={!selected && placeholder ? "opacity-40" : ""}>{selectedLabel}</span>
         <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{flexShrink:0,transform:open?"rotate(180deg)":"",transition:"transform 0.15s"}}><path d="M6 9l6 6 6-6"/></svg>
@@ -47,26 +57,39 @@ export function Select({ label, value, onChange, options, placeholder, className
           })}
         </div>
       )}
+      {error && <span id={errorId.current} role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5 flex items-center gap-1">
+        <span aria-hidden="true">⚠</span>{error}
+      </span>}
     </div>
   );
 }
 
 export function Input({ label, value, onChange, type="text", unit, placeholder, min, max, step, className="", disabled=false, tooltip="", error="", autoComplete, ariaLabel }) {
+  const tipId = useRef(`input-tip-${Math.random().toString(36).slice(2)}`);
+  const errId = useRef(`input-err-${Math.random().toString(36).slice(2)}`);
+  const describedBy = [tooltip ? tipId.current : null, error ? errId.current : null].filter(Boolean).join(" ") || undefined;
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}{tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip}>ⓘ</span>}</label>}
+      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
+        {label}
+        {tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip} aria-hidden="true">ⓘ</span>}
+      </label>}
+      {tooltip && <span id={tipId.current} className="sr-only">{tooltip}</span>}
       <div className="relative">
         <input type={type} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
           min={min} max={max} step={step} disabled={disabled}
           autoComplete={autoComplete}
           aria-label={ariaLabel || (label ? undefined : placeholder)}
           aria-invalid={error ? "true" : undefined}
+          aria-describedby={describedBy}
           className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
             unit && "pr-12", disabled && "opacity-40 cursor-not-allowed",
             error && "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30")} />
-        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40">{unit}</span>}
+        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40" aria-hidden="true">{unit}</span>}
       </div>
-      {error && <span role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5">{error}</span>}
+      {error && <span id={errId.current} role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5 flex items-center gap-1">
+        <span aria-hidden="true">⚠</span>{error}
+      </span>}
     </div>
   );
 }

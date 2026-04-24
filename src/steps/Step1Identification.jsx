@@ -14,6 +14,15 @@ import {
   validateClimateData,
 } from "../calc/climate-import.js";
 import { fetchCadastralData } from "../lib/external-apis.js";
+import {
+  validateStep1,
+  computeStep1Progress,
+  classifyN50,
+  getEVRequirements,
+  SCOP_CPE_OPTIONS,
+  OWNER_TYPE_OPTIONS,
+  isResidential,
+} from "../calc/step1-validators.js";
 
 // ── Lazy-load localități România ───────────────────────────────────────────────
 let _localitiesCache = null;
@@ -70,7 +79,43 @@ async function geocodeAddress({ address, city, county }) {
   };
 }
 
+// Cache Overpass (item 26) — evită request-uri repetate la aceleași coordonate
+const _overpassCache = new Map();
+const _OVERPASS_TTL_MS = 10 * 60 * 1000; // 10 min
+
+/**
+ * Aria unui poligon geografic — shoelace planară pe proiecție echidistantă locală
+ * (centrată pe centroidul poligonului). Eroare <0.5% pentru clădiri normale.
+ */
+function polygonAreaM2(coords) {
+  if (!coords || coords.length < 3) return 0;
+  // Închide poligonul dacă nu e închis
+  const ring = coords[0].lat === coords[coords.length - 1].lat && coords[0].lon === coords[coords.length - 1].lon
+    ? coords
+    : [...coords, coords[0]];
+  // Centroid simplu (pentru proiecție locală)
+  let latSum = 0, lonSum = 0;
+  for (const p of ring) { latSum += p.lat; lonSum += p.lon; }
+  const lat0 = (latSum / ring.length) * Math.PI / 180;
+  const R = 6371008.8; // raza medie Pământ (m) — IUGG 2015
+  const cosLat0 = Math.cos(lat0);
+  // Proiecție echidistantă locală: x = R·cos(lat0)·Δλ, y = R·Δφ
+  const pts = ring.map(p => ({
+    x: R * cosLat0 * (p.lon * Math.PI / 180),
+    y: R * (p.lat * Math.PI / 180),
+  }));
+  // Shoelace planară
+  let area2 = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    area2 += pts[i].x * pts[i + 1].y - pts[i + 1].x * pts[i].y;
+  }
+  return Math.abs(area2) / 2;
+}
+
 async function getBuildingFootprint(lat, lon) {
+  const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+  const cached = _overpassCache.get(key);
+  if (cached && Date.now() - cached.t < _OVERPASS_TTL_MS) return cached.v;
   // Overpass API: caută clădiri în raza de 30m
   const query = `[out:json][timeout:10];way["building"](around:30,${lat},${lon});out geom;`;
   const res = await fetch("https://overpass-api.de/api/interpreter", {
@@ -79,32 +124,29 @@ async function getBuildingFootprint(lat, lon) {
   });
   if (!res.ok) return null;
   const data = await res.json();
-  if (!data.elements?.length) return null;
+  if (!data.elements?.length) {
+    _overpassCache.set(key, { t: Date.now(), v: null });
+    return null;
+  }
   const way = data.elements[0];
   if (!way.geometry?.length) return null;
-  // Calculează aria poligonului (formula shoelace pe coordonate sferice)
-  const coords = way.geometry;
-  let area = 0;
-  const R = 6371000; // raza Pământ în metri
-  for (let i = 0; i < coords.length - 1; i++) {
-    const lat1 = coords[i].lat * Math.PI / 180;
-    const lon1 = coords[i].lon * Math.PI / 180;
-    const lat2 = coords[i + 1].lat * Math.PI / 180;
-    const lon2 = coords[i + 1].lon * Math.PI / 180;
-    area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
-  }
-  area = Math.abs(area * R * R / 2);
+  const area = polygonAreaM2(way.geometry);
   const tags = way.tags || {};
-  return {
+  const result = {
     footprintM2: Math.round(area),
     levels: parseInt(tags["building:levels"] || tags.levels || "0") || null,
     yearBuilt: tags["start_date"] || tags["construction_date"] || null,
     buildingType: tags.building || null,
   };
+  _overpassCache.set(key, { t: Date.now(), v: result });
+  return result;
 }
 
-// ── Validare câmpuri critice Step 1 (Sprint 18 UX) ───────────────────────────
-function validateStep1Critical(b, lang) {
+// ── Validare câmpuri critice Step 1 — DEPRECATED ──────────────────────────────
+// Delegată în `src/calc/step1-validators.js` (Sprint 21). Păstrăm stub-ul pentru
+// compatibilitate, dar Step1 folosește direct `validateStep1` din modul.
+// eslint-disable-next-line no-unused-vars
+function _legacyValidateStep1(b, lang) {
   const L = (ro, en) => lang === "EN" ? en : ro;
   const errs = {};
   const Au = parseFloat(b.areaUseful);
@@ -147,11 +189,17 @@ export default function Step1Identification({
   // P0-3 (18 apr 2026) — banner date simulate când ANCPI_API_KEY lipsește
   const [cadastralSimulated, setCadastralSimulated] = useState(false);
   const [cadastralBannerDismissed, setCadastralBannerDismissed] = useState(false);
-  // Sprint 18 UX — validare + banner
+  // Sprint 18 UX + Sprint 21 — validare extinsă + banner
   const [showValidationBanner, setShowValidationBanner] = useState(false);
-  const validationErrors = useMemo(() => validateStep1Critical(building, lang), [building, lang]);
+  const { errors: validationErrors, warnings: validationWarnings } = useMemo(
+    () => validateStep1(building, lang),
+    [building, lang],
+  );
   const hasErrors = Object.keys(validationErrors).length > 0;
-  const fieldErr = (key) => showValidationBanner ? validationErrors[key] || "" : "";
+  const hasWarnings = Object.keys(validationWarnings).length > 0;
+  const fieldErr = (key) => (showValidationBanner ? validationErrors[key] || "" : "");
+  const fieldWarn = (key) => validationWarnings[key] || "";
+  const progress = useMemo(() => computeStep1Progress(building, lang), [building, lang]);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -219,15 +267,14 @@ export default function Step1Identification({
       if (geo.postal && !building.postal) updateBuilding("postal", geo.postal);
       autoDetectLocality(geo.city || building.city);
 
-      // Caută footprint clădire
+      // Setăm ok implicit; dacă footprint-ul găsit → afișăm sugestie, dar starea rămâne "ok"
+      setGeoStatus("ok");
       try {
         const fp = await getBuildingFootprint(geo.lat, geo.lon);
-        if (fp) {
-          setGeoSuggestion(fp);
-        } else {
-          setGeoStatus("ok");
-        }
-      } catch { setGeoStatus("ok"); }
+        if (fp) setGeoSuggestion(fp);
+      } catch {
+        // footprint opțional — geocodarea principală a reușit
+      }
     } catch (e) {
       setGeoStatus("error");
       showToast("Geocodare eșuată: " + e.message, "error");
@@ -318,11 +365,19 @@ export default function Step1Identification({
         const addr = ancpi.address || "";
         const city = ancpi.city && ancpi.city !== "—" ? ancpi.city : "";
         const county = ancpi.county && ancpi.county !== "—" ? ancpi.county : "";
-        if (city || county) updateBuilding?.({ city, county });
+        // FIX (Sprint 21 Bug #1) — updateBuilding are signature (key, val)
+        if (city) updateBuilding("city", city);
+        if (county) updateBuilding("county", county);
+        if (addr) updateBuilding("address", addr);
+        if (ancpi.area_mp && !building.areaBuilt) updateBuilding("areaBuilt", String(ancpi.area_mp));
+        if (ancpi.year_built && !building.yearBuilt) updateBuilding("yearBuilt", String(ancpi.year_built));
+        // Auto-populare cadastralNumber în datele clădirii
+        updateBuilding("cadastralNumber", nr);
         setCadastralMsg(simulated
           ? `Găsit (simulat): ${addr}${city ? " · " + city : ""}`
           : `✓ Găsit: ${addr}${city ? " · " + city : ""}`
         );
+        setCadastralLoading(false);
         return;
       }
     } catch {
@@ -339,7 +394,10 @@ export default function Step1Identification({
         const a = r.address || {};
         const city = a.city || a.town || a.village || "";
         const county = a.county?.replace(/^Județul\s*/i,"") || "";
-        updateBuilding?.({ city, county });
+        // FIX (Sprint 21 Bug #1) — signature (key, val)
+        if (city) updateBuilding("city", city);
+        if (county) updateBuilding("county", county);
+        updateBuilding("cadastralNumber", nr);
         setCadastralSimulated(true); // Nominatim nu e ANCPI oficial
         setCadastralMsg(`Găsit (OSM fallback): ${city}${county ? ", " + county : ""}`);
       } else {
@@ -350,7 +408,7 @@ export default function Step1Identification({
     } finally {
       setCadastralLoading(false);
     }
-  }, [cadastralNr, updateBuilding]);
+  }, [cadastralNr, updateBuilding, building.areaBuilt, building.yearBuilt]);
 
   const handleIFCApply = useCallback((data) => {
     if (data.address) updateBuilding("address", data.address);
@@ -509,22 +567,29 @@ export default function Step1Identification({
                     autoComplete="address-level2"
                   />
                   {fieldErr("city") && (
-                    <p role="alert" aria-live="assertive" className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                    <p role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5 flex items-center gap-1">
                       <span aria-hidden="true">⚠</span>{fieldErr("city")}
                     </p>
                   )}
                 </div>
-                <AutocompleteInput
-                  label={t("Județ",lang)}
-                  value={building.county}
-                  onChange={v => updateBuilding("county", v)}
-                  onSelect={handleCountySelect}
-                  suggestions={countySuggestions}
-                  onFocusCapture={ensureLocalitiesLoaded}
-                  placeholder="Cluj"
-                  maxItems={8}
-                  autoComplete="address-level1"
-                />
+                <div>
+                  <AutocompleteInput
+                    label={t("Județ",lang)}
+                    value={building.county}
+                    onChange={v => updateBuilding("county", v)}
+                    onSelect={handleCountySelect}
+                    suggestions={countySuggestions}
+                    onFocusCapture={ensureLocalitiesLoaded}
+                    placeholder="Cluj"
+                    maxItems={8}
+                    autoComplete="address-level1"
+                  />
+                  {fieldErr("county") && (
+                    <p role="alert" aria-live="polite" className="text-xs text-red-400 mt-0.5 flex items-center gap-1">
+                      <span aria-hidden="true">⚠</span>{fieldErr("county")}
+                    </p>
+                  )}
+                </div>
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} autoComplete="postal-code" />
 
@@ -541,6 +606,11 @@ export default function Step1Identification({
                   </div>
                   <div className="flex gap-2">
                     <button
+                      type="button"
+                      aria-label={lang === "EN"
+                        ? `Apply OSM building data: ${geoSuggestion.footprintM2} m² footprint, ${geoSuggestion.levels || "?"} floors`
+                        : `Aplică datele OSM: amprentă ${geoSuggestion.footprintM2} m², ${geoSuggestion.levels || "?"} etaje`
+                      }
                       onClick={() => {
                         if (geoSuggestion.footprintM2 && !building.areaUseful) {
                           const estimatedUseful = Math.round(geoSuggestion.footprintM2 * (geoSuggestion.levels || 1) * 0.85);
@@ -552,11 +622,13 @@ export default function Step1Identification({
                         setGeoStatus("ok");
                         showToast("Date OSM aplicate", "success");
                       }}
-                      className="flex-1 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[10px] font-medium transition-all"
+                      className="flex-1 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[10px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
                     >Aplică date</button>
                     <button
+                      type="button"
+                      aria-label={lang === "EN" ? "Dismiss OSM suggestion" : "Ignoră sugestia OSM"}
                       onClick={() => { setGeoSuggestion(null); setGeoStatus("ok"); }}
-                      className="px-3 py-1 rounded-lg border border-white/10 text-[10px] opacity-50 hover:opacity-70 transition-all"
+                      className="px-3 py-1 rounded-lg border border-white/10 text-[10px] opacity-50 hover:opacity-70 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                     >Ignoră</button>
                   </div>
                 </div>
@@ -566,46 +638,81 @@ export default function Step1Identification({
 
           <Card title={t("Clasificare",lang)}>
             <div className="space-y-3">
-              <div>
-                <Select label={t("Categorie funcțională",lang)} value={building.category} onChange={v => updateBuilding("category",v)}
-                  options={BUILDING_CATEGORIES.map(c=>({value:c.id,label:c.label}))} />
-                {fieldErr("category") && (
-                  <p role="alert" aria-live="assertive" className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                    <span aria-hidden="true">⚠</span>{fieldErr("category")}
-                  </p>
-                )}
-              </div>
-              <Select label={t("Tip structură",lang)} value={building.structure} onChange={v => updateBuilding("structure",v)}
-                options={STRUCTURE_TYPES} />
+              <Select
+                label={t("Categorie funcțională", lang)}
+                value={building.category}
+                onChange={v => updateBuilding("category", v)}
+                options={BUILDING_CATEGORIES.map(c => ({ value: c.id, label: c.label }))}
+                error={fieldErr("category")}
+                tooltip="Categoria determină profilul orar, regimul de temperatură, debitele ventilație și pragurile nZEB."
+              />
+              <Select
+                label={t("Tip structură", lang)}
+                value={building.structure}
+                onChange={v => updateBuilding("structure", v)}
+                options={STRUCTURE_TYPES}
+                error={fieldErr("structure")}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input label={t("An construcție",lang)} value={building.yearBuilt} onChange={v => updateBuilding("yearBuilt",v)} type="number" placeholder="1975" error={fieldErr("yearBuilt")} />
-                <Input label={t("An renovare",lang)} value={building.yearRenov} onChange={v => updateBuilding("yearRenov",v)} type="number" placeholder="—" />
+                <Input
+                  label={t("An renovare",lang)}
+                  value={building.yearRenov}
+                  onChange={v => updateBuilding("yearRenov", v)}
+                  type="number"
+                  placeholder="—"
+                  error={fieldWarn("yearRenov")}
+                />
               </div>
             </div>
           </Card>
 
-          {/* Sprint 15 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1) */}
+          {/* Sprint 15 + 21 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1) */}
           <Card title={t("Identificare juridică",lang)} badge={<Badge color="amber">Ord. 16/2023</Badge>}>
             <div className="space-y-3">
-              <Input label={t("Nume proprietar",lang)} value={building.owner || ""} onChange={v => updateBuilding("owner",v)} placeholder="Popescu Ion / SC Exemplu SRL" />
+              {/* Sprint 21 #8 — tip proprietar + CUI validat */}
+              <Select
+                label={t("Tip proprietar", lang)}
+                tooltip="Persoană fizică, juridică, publică sau asociație. Pentru PJ/PUB, CUI este obligatoriu."
+                value={building.ownerType || ""}
+                onChange={v => updateBuilding("ownerType", v)}
+                options={OWNER_TYPE_OPTIONS.map(o => ({
+                  value: o.value,
+                  label: lang === "EN" ? o.labelEN : o.label,
+                }))}
+                placeholder={lang === "EN" ? "Select..." : "Selectează..."}
+              />
+              <Input
+                label={t("Nume proprietar",lang)}
+                value={building.owner || ""}
+                onChange={v => updateBuilding("owner",v)}
+                placeholder={building.ownerType === "PJ" ? "SC Exemplu SRL" : "Popescu Ion"}
+              />
+              {(building.ownerType === "PJ" || building.ownerType === "PUB") && (
+                <Input
+                  label={t("CUI / CIF", lang)}
+                  tooltip="Cod Unic de Înregistrare (ANAF). Validat cu cheia de control."
+                  value={building.ownerCUI || ""}
+                  onChange={v => updateBuilding("ownerCUI", v)}
+                  placeholder="RO12345678"
+                  error={fieldWarn("ownerCUI")}
+                />
+              )}
               <Input
                 label={t("Nr. cadastral",lang)}
-                tooltip="Format ANCPI: 5-6 cifre, opțional litera corpului, ex: 123456-A"
+                tooltip="Format ANCPI modern: 5-10 cifre, opțional corp (-C1) și UI (-U5). Ex: 123456, 123456-A, 123456-C1-U5."
                 value={building.cadastralNumber || ""}
                 onChange={v => updateBuilding("cadastralNumber",v)}
-                placeholder="123456-A"
+                placeholder="123456-C1-U5"
+                error={fieldWarn("cadastralNumber")}
               />
-              {building.cadastralNumber && !/^\d{5,6}([-][A-Z]\d*)?$/.test(building.cadastralNumber.trim()) && (
-                <div className="text-[10px] text-amber-400/80 bg-amber-500/5 rounded-lg p-2">
-                  ⚠️ Format neobișnuit — ANCPI uzual: „123456" sau „123456-A"
-                </div>
-              )}
               <Input
                 label={t("Carte Funciară",lang)}
                 tooltip="Nr. CF + localitate + sector/sat (ex: CF nr. 123456 București Sector 3)"
                 value={building.landBook || ""}
                 onChange={v => updateBuilding("landBook",v)}
                 placeholder="CF nr. 123456 București Sector 3"
+                error={fieldWarn("landBook")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
@@ -614,6 +721,7 @@ export default function Step1Identification({
                   value={building.areaBuilt || ""}
                   onChange={v => updateBuilding("areaBuilt",v)}
                   type="number" unit="m²" min="0" step="0.1"
+                  error={fieldWarn("areaBuilt")}
                 />
                 <Input
                   label={t("Arie încălzită",lang)}
@@ -621,24 +729,41 @@ export default function Step1Identification({
                   value={building.areaHeated || ""}
                   onChange={v => updateBuilding("areaHeated",v)}
                   type="number" unit="m²" min="0" step="0.1"
+                  error={fieldWarn("areaHeated")}
                 />
               </div>
-              {/* Pentru bloc (RC) — număr apartamente obligatoriu */}
+              {/* Pentru bloc (RC) — număr apartamente obligatoriu (Sprint 21 #6) */}
               {building.category === "RC" && (
                 <Input
                   label={t("Număr apartamente (pentru bloc)",lang)}
-                  tooltip="Obligatoriu pentru Anexa 2 CPE (multi-apartament)"
-                  value={building.nApartments || "1"}
+                  tooltip="Obligatoriu ≥ 2 pentru Anexa 2 CPE (multi-apartament)"
+                  value={building.nApartments || ""}
                   onChange={v => updateBuilding("nApartments",v)}
-                  type="number" min="1" step="1"
+                  type="number" min="2" step="1"
+                  placeholder="12"
+                  error={fieldErr("nApartments")}
                 />
               )}
-              {/* Pentru apartament (RA) — identificare apartament specific */}
+              {/* Pentru apartament (RA) — identificare apartament specific (Sprint 21 #6) */}
               {building.category === "RA" && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Input label={t("Nr. apartament",lang)} value={building.apartmentNo || ""} onChange={v => updateBuilding("apartmentNo",v)} placeholder="12" />
+                  <Input
+                    label={t("Nr. apartament",lang)}
+                    value={building.apartmentNo || ""}
+                    onChange={v => updateBuilding("apartmentNo",v)}
+                    placeholder="12"
+                    error={fieldErr("apartmentNo")}
+                  />
                   <Input label={t("Scara",lang)} value={building.staircase || ""} onChange={v => updateBuilding("staircase",v)} placeholder="A" />
                   <Input label={t("Etaj",lang)} value={building.floor || ""} onChange={v => updateBuilding("floor",v)} placeholder="3" />
+                </div>
+              )}
+              {/* Sprint 21 #27 — Hint cross-step Step 1 → Step 7 */}
+              {(building.owner || building.cadastralNumber || building.landBook) && (
+                <div className="text-[10px] text-sky-300/80 bg-sky-500/5 border border-sky-500/20 rounded-lg p-2">
+                  ℹ {lang === "EN"
+                    ? "These fields auto-populate the Audit Client Form (Step 7)."
+                    : "Aceste câmpuri se transferă automat în Formularul de audit client (Step 7)."}
                 </div>
               )}
             </div>
@@ -677,80 +802,215 @@ export default function Step1Identification({
                 {t("Estimare automată din Au + etaje", lang)}
               </button>
               <Input label={t("Suprafață utilă încălzită (Au)",lang)} tooltip="Suma suprafețelor utile ale tuturor spațiilor încălzite — Mc 001 Cap.1" value={building.areaUseful} onChange={v => updateBuilding("areaUseful",v)} type="number" unit="m²" min="0" step="0.1" error={fieldErr("areaUseful")} />
-              <Input label={t("Volum încălzit (V)",lang)} tooltip="Volumul interior al spațiilor încălzite delimitat de anvelopa termică — m³" value={building.volume} onChange={v => updateBuilding("volume",v)} type="number" unit="m³" min="0" step="0.1" />
-              <Input label={t("Suprafață anvelopă (Aenv)",lang)} value={building.areaEnvelope} onChange={v => updateBuilding("areaEnvelope",v)} type="number" unit="m²" min="0" step="0.1" />
+              <Input label={t("Volum încălzit (V)",lang)} tooltip="Volumul interior al spațiilor încălzite delimitat de anvelopa termică — m³" value={building.volume} onChange={v => updateBuilding("volume",v)} type="number" unit="m³" min="0" step="0.1" error={fieldErr("volume")} />
+              {fieldWarn("volumeConsistency") && (
+                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ⚠ {fieldWarn("volumeConsistency")}
+                </div>
+              )}
+              <Input label={t("Suprafață anvelopă (Aenv)",lang)} value={building.areaEnvelope} onChange={v => updateBuilding("areaEnvelope",v)} type="number" unit="m²" min="0" step="0.1" error={fieldErr("areaEnvelope")} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input label={t("Înălțime clădire",lang)} value={building.heightBuilding} onChange={v => updateBuilding("heightBuilding",v)} type="number" unit="m" step="0.1" />
-                <Input label={t("Înălțime etaj",lang)} value={building.heightFloor} onChange={v => updateBuilding("heightFloor",v)} type="number" unit="m" step="0.01" />
+                <Input label={t("Înălțime etaj",lang)} value={building.heightFloor} onChange={v => updateBuilding("heightFloor",v)} type="number" unit="m" step="0.01" error={fieldErr("heightFloor")} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input label={t("Perimetru clădire",lang)} value={building.perimeter} onChange={v => updateBuilding("perimeter",v)} type="number" unit="m" step="0.1" />
-                <Input label={t("n50 (blower door)",lang)} tooltip="Rata de schimb aer la 50Pa presiune — test etanșeitate conform EN 13829" value={building.n50} onChange={v => updateBuilding("n50",v)} type="number" unit="h⁻¹" step="0.1" />
+                <Input
+                  label={t("n50 (blower door)",lang)}
+                  tooltip="Rata de schimb aer la 50Pa — EN 13829. Prag nZEB: rezidențial ≤1.0 · non-rez ventilat mecanic ≤1.5 (Ord. MDLPA 161/2022)"
+                  value={building.n50}
+                  onChange={v => updateBuilding("n50",v)}
+                  type="number" unit="h⁻¹" step="0.1"
+                  error={fieldWarn("n50")}
+                />
               </div>
+              {/* Sprint 21 #12 — GWP lifecycle Level(s) EN 17392 breakdown */}
+              <details className="bg-white/[0.02] rounded-lg border border-white/5">
+                <summary className="cursor-pointer px-3 py-2 text-xs opacity-80 hover:opacity-100 select-none">
+                  🌍 GWP lifecycle (EPBD IV Art. 7 · Level(s) EN 17392)
+                </summary>
+                <div className="p-3 space-y-3">
+                  <Input
+                    label={t("GWP total lifecycle", lang)}
+                    tooltip="Total kgCO₂eq/m²·an — Art. 7 obligatoriu din 2028 pentru >1000m², 2030 pentru toate."
+                    value={building.gwpLifecycle}
+                    onChange={v => updateBuilding("gwpLifecycle", v)}
+                    type="number" unit="kgCO₂eq/m²a" step="0.1"
+                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Input
+                      label="A1-A3 (produse)"
+                      tooltip="Faza de producție (extracție + transport + fabricație)"
+                      value={building.gwpA1A3 || ""}
+                      onChange={v => updateBuilding("gwpA1A3", v)}
+                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                    />
+                    <Input
+                      label="B6 (operațional)"
+                      tooltip="Consum energetic în utilizare — se calculează automat din Step 5"
+                      value={building.gwpB6 || ""}
+                      onChange={v => updateBuilding("gwpB6", v)}
+                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                    />
+                    <Input
+                      label="C3-C4 (sfârșit viață)"
+                      tooltip="Demolare + procesare deșeuri"
+                      value={building.gwpC3C4 || ""}
+                      onChange={v => updateBuilding("gwpC3C4", v)}
+                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                    />
+                  </div>
+                </div>
+              </details>
+              {/* Solar-ready + albedo override (Sprint 21 #23) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label={t("GWP lifecycle",lang)} tooltip="Potențial de Încălzire Globală pe ciclu de viață — EPBD IV Art.7, obligatoriu din 2028 pentru >1000m²" value={building.gwpLifecycle} onChange={v => updateBuilding("gwpLifecycle",v)} type="number" unit="kgCO₂eq/m²a" step="0.1" />
-                <label className="flex items-center gap-2 text-xs cursor-pointer mt-auto py-2"><input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />{lang==="EN"?"Solar-ready building":"Clădire solar-ready"}</label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
+                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
+                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
+                </label>
+                <Input
+                  label={t("Albedo override (teren)", lang)}
+                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
+                  value={building.albedoOverride || ""}
+                  onChange={v => updateBuilding("albedoOverride", v)}
+                  type="number" step="0.01" min="0" max="1"
+                  placeholder="auto"
+                />
               </div>
-              <Input label={t("Factor umbrire",lang)} tooltip="Factor global umbrire Fc=0..1 — 1.0=fără umbrire, 0.5=umbrire puternică — SR EN ISO 13790" value={building.shadingFactor} onChange={v => updateBuilding("shadingFactor",v)} type="number" step="0.01" min="0" max="1" />
+              {/* Sprint 21 #28 — shadingFactor per-orientare */}
+              <details className="bg-white/[0.02] rounded-lg border border-white/5">
+                <summary className="cursor-pointer px-3 py-2 text-xs opacity-80 hover:opacity-100 select-none">
+                  🌓 Factor umbrire — per orientare (SR EN ISO 52010-1 §6.5.1)
+                </summary>
+                <div className="p-3 space-y-2">
+                  <Input
+                    label={t("Global (legacy)", lang)}
+                    tooltip="Factor global Fc=0..1. Recomandat: setează per orientare pentru horizon real."
+                    value={building.shadingFactor}
+                    onChange={v => updateBuilding("shadingFactor", v)}
+                    type="number" step="0.01" min="0" max="1"
+                  />
+                  <div className="grid grid-cols-4 gap-2">
+                    {["N", "S", "E", "V"].map(dir => (
+                      <Input
+                        key={dir}
+                        label={dir}
+                        value={(building.shadingByOrientation?.[dir]) || ""}
+                        onChange={v => updateBuilding("shadingByOrientation", {
+                          ...(building.shadingByOrientation || {}),
+                          [dir]: v,
+                        })}
+                        type="number" step="0.01" min="0" max="1"
+                        placeholder="1.00"
+                      />
+                    ))}
+                  </div>
+                  {/* Sprint 21 #21 — Horizon obstacole (stub button) */}
+                  <button
+                    type="button"
+                    onClick={() => showToast?.(
+                      lang === "EN"
+                        ? "Horizon editor coming soon (SR EN ISO 52010-1 §6.5.1). For now, enter per-orientation shading factors."
+                        : "Editor orizont în lucru (SR EN ISO 52010-1 §6.5.1). Deocamdată, introdu factori per orientare.",
+                      "info", 5000
+                    )}
+                    className="w-full text-[10px] py-1.5 rounded-lg border border-sky-500/20 bg-sky-500/5 text-sky-300 hover:bg-sky-500/10 transition-colors"
+                    aria-label={lang === "EN" ? "Open horizon editor" : "Deschide editorul de orizont"}
+                  >
+                    📐 {lang === "EN" ? "Horizon profile editor (soon)" : "Editor profil orizont (în curând)"}
+                  </button>
+                </div>
+              </details>
 
-              {/* Scop CPE — obligatoriu conform Mc 001-2022, subcap 5.1 */}
-              <Select label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"} value={building.scopCpe} onChange={v => updateBuilding("scopCpe",v)}
-                options={[{value:"vanzare",label:t("Vânzare")},{value:"inchiriere",label:t("Închiriere")},{value:"receptie",label:t("Recepție clădire nouă")},{value:"informare",label:t("Informare proprietar")},{value:"renovare",label:t("Renovare majoră")},{value:"alt",label:t("Alt scop")}]} />
+              {/* Scop CPE — L.372/2005 Art. 8¹ + extensii post-2024 (Sprint 21 #10) */}
+              <Select
+                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
+                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
+                value={building.scopCpe}
+                onChange={v => updateBuilding("scopCpe", v)}
+                error={fieldErr("scopCpe")}
+                options={SCOP_CPE_OPTIONS.map(o => ({
+                  value: o.value,
+                  label: lang === "EN" ? o.labelEN : o.label,
+                }))}
+              />
+              {building.scopCpe === "renovare" && (
+                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
+                </div>
+              )}
 
-              {/* n50 verification indicator */}
+              {/* Sprint 21 #9 — n50 diferențiat rezidențial vs. non-rezidențial (Ord. MDLPA 161/2022) */}
               {(() => {
-                const n50V = parseFloat(building.n50) || 4.0;
-                const n50Ref = n50V <= 1.0 ? {label:"nZEB (≤1.0)", color:"emerald"} : n50V <= 1.5 ? {label:"Vent. mecanică (≤1.5)", color:"emerald"} : n50V <= 3.0 ? {label:"Vent. naturală (≤3.0)", color:"amber"} : {label:"Peste limită (>3.0)", color:"red"};
+                const classification = classifyN50(building.n50, building.category);
+                if (!classification) {
+                  return (
+                    <div className="text-[10px] opacity-40 italic">
+                      Etanșeitate n50: introduceți valoarea pentru evaluare nZEB.
+                    </div>
+                  );
+                }
+                const { label, color, value, ref } = classification;
                 return (
-                  <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
                     <span className="opacity-40">Etanșeitate n50:</span>
-                    <Badge color={n50Ref.color}>{n50Ref.label} — {n50V} h⁻¹</Badge>
-                    {n50V > 1.0 && <span className="opacity-30">nZEB necesită ≤1.0 h⁻¹</span>}
+                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
+                    <span className="opacity-30">
+                      nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹
+                    </span>
                   </div>
                 );
               })()}
 
-              {/* EV Charging — L.238/2024 + EPBD 2024/1275 Art. 14 */}
-              {!["RI","RA"].includes(building.category) && (
+              {/* Sprint 21 #11 — EV Charging diferențiat rezidențial §3 vs non-rez §4 (EPBD 2024 Art. 14) */}
+              {building.category !== "RA" && (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Input label="Nr. locuri parcare" value={building.parkingSpaces} onChange={v => updateBuilding("parkingSpaces",v)} type="number" min="0" />
                     <Input
                       label="Pct. încărcare EV instalate"
-                      tooltip="Puncte funcționale — EPBD 2024 Art. 14"
+                      tooltip="Puncte EV funcționale — EPBD 2024 Art. 14"
                       value={building.evChargingPoints || "0"}
                       onChange={v => updateBuilding("evChargingPoints",v)}
                       type="number" min="0"
                     />
                     <Input
                       label="Locuri EV precablate"
-                      tooltip="Precablare ≥50% din locuri pentru rezidențial (Art. 14 §3)"
+                      tooltip="Rezidențial §3: ≥50% · Non-rez §4: 1/5 (existent) sau 1/2 (renovare majoră)"
                       value={building.evChargingPrepared || "0"}
                       onChange={v => updateBuilding("evChargingPrepared",v)}
                       type="number" min="0"
                     />
                   </div>
-                  {parseInt(building.parkingSpaces) >= 10 && (() => {
+                  {(() => {
                     const isRecent = (parseInt(building.yearRenov) || parseInt(building.yearBuilt) || 0) >= 2024;
-                    const n = parseInt(building.parkingSpaces) || 0;
-                    const installedMin = n > 20 && isRecent ? Math.ceil(n / 10) : Math.max(1, Math.ceil(n / 20));
-                    const preparedMin = n > 20 && isRecent ? Math.ceil(n * 0.5) : Math.ceil(n * 0.2);
-                    const iOk = (parseInt(building.evChargingPoints) || 0) >= installedMin;
-                    const pOk = (parseInt(building.evChargingPrepared) || 0) >= preparedMin;
+                    const req = getEVRequirements({
+                      parkingSpaces: building.parkingSpaces,
+                      category: building.category,
+                      isRecent,
+                    });
+                    if (!req) return null;
+                    const iHave = parseInt(building.evChargingPoints) || 0;
+                    const pHave = parseInt(building.evChargingPrepared) || 0;
+                    const iOk = iHave >= req.installedMin;
+                    const pOk = pHave >= req.preparedMin;
+                    const gaps = [];
+                    if (!iOk) gaps.push(`${req.installedMin - iHave} instalate`);
+                    if (!pOk) gaps.push(`${req.preparedMin - pHave} precablate`);
                     return (
                       <div className={cn(
                         "text-[10px] rounded-lg p-2 border",
                         iOk && pOk ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300/80" : "bg-amber-500/5 border-amber-500/20 text-amber-400/80"
                       )}>
-                        ⚡ EPBD 2024 Art. 14: min {installedMin} pct. instalate + min {preparedMin} precablate
-                        {iOk && pOk ? " — ✓ conform" : ` — lipsă ${!iOk ? `${installedMin - (parseInt(building.evChargingPoints)||0)} instalate` : ""}${!iOk && !pOk ? " + " : ""}${!pOk ? `${preparedMin - (parseInt(building.evChargingPrepared)||0)} precablate` : ""}`}
+                        ⚡ {req.reference}: {req.description}
+                        {iOk && pOk ? " — ✓ conform" : ` — lipsă ${gaps.join(" + ")}`}
                       </div>
                     );
                   })()}
                 </>
               )}
 
-              {/* Sprint 15 — IAQ (EN 16798-1 + EPBD 2024 Art. 11 + OMS 2021) */}
+              {/* Sprint 15 + 21 #13 — IAQ (EN 16798-1 + EPBD 2024 Art. 11 + OMS 2021) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
                 <Input
                   label={t("CO₂ max interior", lang)}
@@ -762,33 +1022,67 @@ export default function Step1Identification({
                 />
                 <Input
                   label={t("PM2.5 mediu anual", lang)}
-                  tooltip="PM2.5 mediu anual (μg/m³). OMS 2021: ≤5, UE 2030: ≤10"
+                  tooltip="PM2.5 mediu anual (μg/m³). OMS 2021: ≤5, UE 2030: ≤10, UE actual: ≤25"
                   value={building.pm25Avg || ""}
                   onChange={v => updateBuilding("pm25Avg",v)}
                   type="number" unit="μg/m³" min="0" step="0.1"
                   placeholder="7.5"
                 />
               </div>
-              {(building.co2MaxPpm || building.pm25Avg) && (() => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label={t("PM10 mediu anual", lang)}
+                  tooltip="PM10 mediu anual (μg/m³). OMS 2021: ≤15, UE 2030: ≤20, UE actual: ≤45"
+                  value={building.pm10Avg || ""}
+                  onChange={v => updateBuilding("pm10Avg", v)}
+                  type="number" unit="μg/m³" min="0" step="0.1"
+                  placeholder="15"
+                />
+                <Input
+                  label={t("NO₂ mediu anual", lang)}
+                  tooltip="NO₂ mediu anual (μg/m³). EN 16798-1 Cat. II: ≤40. OMS 2021: ≤10"
+                  value={building.no2Avg || ""}
+                  onChange={v => updateBuilding("no2Avg", v)}
+                  type="number" unit="μg/m³" min="0" step="0.1"
+                  placeholder="20"
+                />
+              </div>
+              {(building.co2MaxPpm || building.pm25Avg || building.pm10Avg || building.no2Avg) && (() => {
                 const co2 = parseFloat(building.co2MaxPpm);
-                const pm = parseFloat(building.pm25Avg);
-                let co2Label = null, pmLabel = null;
+                const pm25 = parseFloat(building.pm25Avg);
+                const pm10 = parseFloat(building.pm10Avg);
+                const no2 = parseFloat(building.no2Avg);
+                const out = [];
                 if (!isNaN(co2) && co2 > 0) {
-                  co2Label = co2 <= 950 ? { label: "Cat. I — ridicat", color: "text-emerald-400" }
-                    : co2 <= 1200 ? { label: "Cat. II — standard", color: "text-lime-400" }
-                    : co2 <= 1750 ? { label: "Cat. III — minim", color: "text-amber-400" }
-                    : { label: "Cat. IV — ventilație slabă", color: "text-red-400" };
+                  const c = co2 <= 950 ? { label: "Cat. I ✓", color: "text-emerald-400" }
+                    : co2 <= 1200 ? { label: "Cat. II ✓", color: "text-lime-400" }
+                    : co2 <= 1750 ? { label: "Cat. III", color: "text-amber-400" }
+                    : { label: "Cat. IV ✗", color: "text-red-400" };
+                  out.push(<span key="co2">CO₂: <span className={c.color}>{c.label}</span></span>);
                 }
-                if (!isNaN(pm) && pm >= 0) {
-                  pmLabel = pm <= 5 ? { label: "OMS 2021 ✓", color: "text-emerald-400" }
-                    : pm <= 10 ? { label: "UE 2030 ✓", color: "text-lime-400" }
-                    : pm <= 25 ? { label: "UE actual ✓", color: "text-amber-400" }
-                    : { label: "Depășește UE", color: "text-red-400" };
+                if (!isNaN(pm25) && pm25 >= 0) {
+                  const c = pm25 <= 5 ? { label: "OMS 2021 ✓", color: "text-emerald-400" }
+                    : pm25 <= 10 ? { label: "UE 2030 ✓", color: "text-lime-400" }
+                    : pm25 <= 25 ? { label: "UE actual", color: "text-amber-400" }
+                    : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="pm25">PM2.5: <span className={c.color}>{c.label}</span></span>);
+                }
+                if (!isNaN(pm10) && pm10 >= 0) {
+                  const c = pm10 <= 15 ? { label: "OMS ✓", color: "text-emerald-400" }
+                    : pm10 <= 20 ? { label: "UE 2030 ✓", color: "text-lime-400" }
+                    : pm10 <= 45 ? { label: "UE actual", color: "text-amber-400" }
+                    : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="pm10">PM10: <span className={c.color}>{c.label}</span></span>);
+                }
+                if (!isNaN(no2) && no2 >= 0) {
+                  const c = no2 <= 10 ? { label: "OMS ✓", color: "text-emerald-400" }
+                    : no2 <= 40 ? { label: "EN 16798 Cat. II ✓", color: "text-lime-400" }
+                    : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="no2">NO₂: <span className={c.color}>{c.label}</span></span>);
                 }
                 return (
-                  <div className="text-[10px] flex flex-wrap gap-3 px-1">
-                    {co2Label && <span>CO₂: <span className={co2Label.color}>{co2Label.label}</span></span>}
-                    {pmLabel && <span>PM2.5: <span className={pmLabel.color}>{pmLabel.label}</span></span>}
+                  <div className="text-[10px] flex flex-wrap gap-x-3 gap-y-1 px-1">
+                    {out}
                   </div>
                 );
               })()}
@@ -802,6 +1096,23 @@ export default function Step1Identification({
                 options={[
                   { value: "2023", label: "2023 — Mc 001-2022 (A+..G)" },
                   { value: "2030_zeb", label: "2030 — EPBD 2024 Art. 19 (ZEB=A)" },
+                ]}
+              />
+              {building.scaleVersion === "2030_zeb" && (
+                <div className="text-[10px] text-violet-300/80 bg-violet-500/5 border border-violet-500/20 rounded-lg p-2">
+                  ℹ EPBD 2024 Art. 19: din 1 ian 2030, ZEB = clasa A (shift). Clasele actuale A→B, B→C etc.
+                </div>
+              )}
+              {/* Sprint 21 #25 — Scenariu climatic viitor (EPBD 2024 Art. 11 adaptare) */}
+              <Select
+                label={t("Scenariu climatic proiecție", lang)}
+                tooltip="EPBD 2024 Art. 11 cere adaptare la schimbări climatice. Scenariile CORDEX RCP 4.5/8.5 modifică temperaturile medii și radiația solară pentru prognoză 2050."
+                value={building.climateScenario || "current"}
+                onChange={v => updateBuilding("climateScenario", v)}
+                options={[
+                  { value: "current", label: lang === "EN" ? "Current (TMY)" : "Curent (TMY)" },
+                  { value: "rcp45_2050", label: "RCP 4.5 · 2050 (moderat)" },
+                  { value: "rcp85_2050", label: "RCP 8.5 · 2050 (pesimist)" },
                 ]}
               />
               {avRatio !== "—" && (
@@ -818,7 +1129,19 @@ export default function Step1Identification({
         {/* Coloana 3: Vizualizare + Date climatice */}
         <div className="space-y-5">
           <Card title={t("Vizualizare clădire",lang)}>
-            <svg viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80">
+            <svg
+              viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80"
+              role="img"
+              aria-label={(() => {
+                const nF = Math.max(1, parseInt(String(building.floors).replace(/[^0-9]/g,"")) || 1);
+                const extras = [];
+                if (building.basement) extras.push(lang === "EN" ? "with basement" : "cu subsol");
+                if (building.attic) extras.push(lang === "EN" ? "with attic" : "cu mansardă");
+                return lang === "EN"
+                  ? `Building preview: ${building.floors || "P"} (${nF} floor${nF>1?"s":""}) ${extras.join(", ")}`
+                  : `Preview clădire: ${building.floors || "P"} (${nF} nivel${nF>1?"uri":""}) ${extras.join(", ")}`;
+              })()}
+            >
               {(() => {
                 var nF = Math.max(1, parseInt(String(building.floors).replace(/[^0-9]/g,"")) || 1);
                 var fH = Math.min(20, 100/nF), bW = 90, bX = 45, gY = 125;
@@ -844,9 +1167,15 @@ export default function Step1Identification({
           </Card>
           <Card title={t("Localizare climatică",lang)} badge={selectedClimate && <Badge color="blue">Auto-detectat</Badge>}>
             <div className="space-y-3">
-              <Select label={t("Localitatea de calcul",lang)} value={building.locality} onChange={v => updateBuilding("locality",v)}
+              <Select
+                label={t("Localitatea de calcul",lang)}
+                value={building.locality}
+                onChange={v => updateBuilding("locality",v)}
                 placeholder="Selectează localitatea..."
-                options={CLIMATE_DB.map(c=>({value:c.name, label:`${c.name} (Zona ${c.zone})`}))} />
+                options={CLIMATE_DB.map(c=>({value:c.name, label:`${c.name} (Zona ${c.zone})`}))}
+                error={fieldErr("locality")}
+                tooltip="Localitatea de calcul determină zona climatică (I–V), grade-zile și durata sezonului."
+              />
 
 
               {selectedClimate && (
@@ -936,19 +1265,54 @@ export default function Step1Identification({
         </Card>
       </div>
 
-      {/* Banner avertisment validare (Sprint 18 UX) */}
+      {/* Banner avertisment validare (Sprint 18 + 21 — extins cu warnings + progress) */}
       {showValidationBanner && hasErrors && (
-        <div role="alert" className="mt-6 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs flex justify-between items-start gap-3">
+        <div role="alert" className="mt-6 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs flex justify-between items-start gap-3">
           <span className="leading-relaxed">
             <span aria-hidden="true">⚠ </span>
             {lang==="EN"
-              ? "Incomplete fields detected. Calculation may be inaccurate or the certificate invalid. Complete the fields marked in red."
-              : "Câmpuri incomplete detectate. Calculul poate fi inexact sau certificatul invalid. Completați câmpurile marcate cu roșu."}
+              ? `${Object.keys(validationErrors).length} required field(s) missing or invalid. Complete the fields marked in red before proceeding.`
+              : `${Object.keys(validationErrors).length} câmp(uri) obligatorii lipsă sau invalide. Completați câmpurile marcate cu roșu înainte de a continua.`}
           </span>
-          <button onClick={() => setShowValidationBanner(false)} aria-label={lang==="EN"?"Close warning":"Închide avertisment"}
-            className="text-amber-400 hover:text-amber-300 text-base shrink-0 leading-none">✕</button>
+          <button type="button" onClick={() => setShowValidationBanner(false)} aria-label={lang==="EN"?"Close warning":"Închide avertisment"}
+            className="text-red-400 hover:text-red-300 text-base shrink-0 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 rounded">✕</button>
         </div>
       )}
+      {hasWarnings && !hasErrors && (
+        <div role="status" className="mt-6 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-300/90 text-xs">
+          <span aria-hidden="true">ℹ </span>
+          {lang === "EN"
+            ? `${Object.keys(validationWarnings).length} field(s) have warnings (values acceptable but unusual). Review the yellow hints.`
+            : `${Object.keys(validationWarnings).length} câmp(uri) cu avertismente (valori acceptabile dar neobișnuite). Verificați indicațiile galbene.`}
+        </div>
+      )}
+      {/* Sprint 21 #14 — Progress tracker sincronizat cu validare */}
+      <div className="mt-4 px-1">
+        <div className="flex items-center justify-between text-[10px] opacity-60 mb-1">
+          <span>
+            {lang === "EN" ? "Completion" : "Completitudine"}:
+            {" "}<strong className="text-amber-300">{progress.filled}/{progress.total}</strong>
+            {" "}{lang === "EN" ? "required fields" : "câmpuri obligatorii"}
+          </span>
+          <span>{Math.round((progress.filled / Math.max(1, progress.total)) * 100)}%</span>
+        </div>
+        <div
+          className="h-1.5 bg-white/5 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={progress.total}
+          aria-valuenow={progress.filled}
+          aria-label={lang === "EN" ? "Step 1 completion progress" : "Progres completare Step 1"}
+        >
+          <div
+            className={cn(
+              "h-full transition-all",
+              progress.filled === progress.total ? "bg-emerald-400" : progress.filled > progress.total / 2 ? "bg-amber-400" : "bg-red-400",
+            )}
+            style={{ width: `${(progress.filled / Math.max(1, progress.total)) * 100}%` }}
+          />
+        </div>
+      </div>
 
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">

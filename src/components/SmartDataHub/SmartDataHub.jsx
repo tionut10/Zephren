@@ -17,6 +17,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import RampInstant from "./RampInstant.jsx";
 import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
+import { validateStep1, computeStep1Progress } from "../../calc/step1-validators.js";
 
 // ── Detectare tip fișier pentru drop zone universal ───────────────────────────
 function detectFileType(file) {
@@ -32,29 +33,32 @@ function detectFileType(file) {
   return null;
 }
 
-// ── Câmpuri critice Step 1 pentru progress tracker ────────────────────────────
-const STEP1_FIELDS = [
-  { key: "address",       label: "Adresă",              check: v => !!(v && String(v).trim()) },
-  { key: "city",          label: "Localitate",          check: v => !!(v && String(v).trim()) },
-  { key: "county",        label: "Județ",               check: v => !!(v && String(v).trim()) },
-  { key: "category",      label: "Categorie",           check: v => !!(v && String(v).trim()) },
-  { key: "structure",     label: "Structură",           check: v => !!(v && String(v).trim()) },
-  { key: "yearBuilt",     label: "An construcție",      check: v => !!(v && parseInt(v) > 1800) },
-  { key: "floors",        label: "Regim înălțime",      check: v => !!(v && String(v).trim()) },
-  { key: "units",         label: "Nr. unități",         check: v => !!(v && parseInt(v) >= 1) },
-  { key: "areaUseful",    label: "Suprafață utilă",     check: v => !!(v && parseFloat(v) > 0) },
-  { key: "volume",        label: "Volum încălzit",      check: v => !!(v && parseFloat(v) > 0) },
-  { key: "areaEnvelope",  label: "Suprafață anvelopă",  check: v => !!(v && parseFloat(v) > 0) },
-  { key: "heightFloor",   label: "Înălțime etaj",       check: v => !!(v && parseFloat(v) > 0) },
-  { key: "n50",           label: "n50 etanșeitate",     check: v => !!(v && parseFloat(v) > 0) },
-  { key: "locality",      label: "Localitate climatică", check: v => !!(v && String(v).trim()) },
-  { key: "scopCpe",       label: "Scop CPE",            check: v => !!(v && String(v).trim()) },
-];
+// ── Etichete câmpuri pentru "missing fields hint" (folosite doar de UI) ───────
+const FIELD_LABELS_RO = {
+  city:            "Localitate",
+  county:          "Județ",
+  category:        "Categorie",
+  structure:       "Structură",
+  yearBuilt:       "An construcție",
+  floors:          "Regim înălțime",
+  areaUseful:      "Suprafață utilă",
+  volume:          "Volum încălzit",
+  areaEnvelope:    "Suprafață anvelopă",
+  heightFloor:     "Înălțime etaj",
+  locality:        "Localitate climatică",
+  scopCpe:         "Scop CPE",
+  apartmentNo:     "Nr. apartament",
+  nApartments:     "Nr. apartamente",
+};
 
+// Sincronizat cu `src/calc/step1-validators.js` (Sprint 21 #14)
 function computeProgress(building) {
-  const filled = STEP1_FIELDS.filter(f => f.check(building[f.key]));
-  const missing = STEP1_FIELDS.filter(f => !f.check(building[f.key]));
-  return { filled: filled.length, total: STEP1_FIELDS.length, missing };
+  const p = computeStep1Progress(building, "RO");
+  return {
+    filled: p.filled,
+    total: p.total,
+    missing: p.missing.map(key => ({ key, label: FIELD_LABELS_RO[key] || key })),
+  };
 }
 
 // ── Cartelă rampă (click → expandare) ─────────────────────────────────────────
