@@ -1785,12 +1785,69 @@ function pickIllustration(bridge) {
 
 // ── Component public ─────────────────────────────────────────────────────────
 
-export default function BridgeIllustration({ bridge, details, showOverlays = true }) {
+/**
+ * @param {object} props
+ * @param {object} props.bridge — tipologia de punte termică
+ * @param {object} [props.details] — metadata suplimentare (fRsi, priority, isoClass)
+ * @param {boolean} [props.showOverlays=true] — afișează PriorityBadge / IsoClassBadge / CondensationZone
+ * @param {"legacy"|"card"|"detail"} [props.mode="legacy"]
+ *   - "legacy" — comportament vechi (labels interne suprapuse de badge-uri)
+ *   - "card"   — strip EXT/INT extern deasupra, ascunde PsiBadge intern (titlul cardului afișează deja Ψ)
+ *   - "detail" — ca "card" + mai mare, include legendă
+ */
+export default function BridgeIllustration({ bridge, details, showOverlays = true, mode = "legacy" }) {
   if (!bridge) return null;
-  // Determine condensation zone — aprox central pe zona fluxului termic
   const condZone = details?.fRsi != null && details.fRsi < 0.80
     ? { x: W * 0.22, y: H * 0.35, w: W * 0.30, h: H * 0.30 }
     : null;
+
+  // Card mode: strip extern EXT/INT deasupra + clip inferior pentru a ascunde PsiBadge-urile interne;
+  // NU se adaugă IllustrationOverlay (IsoClassBadge + PriorityBadge) — afișate în cardul părinte.
+  if (mode === "card" || mode === "detail") {
+    const padTop = 24;
+    const padBottom = 6;
+    const clipBottom = 22; // px tăiați din interiorul ilustrației pentru a ascunde PsiBadge (la y=H-10..H)
+    const clipId = `clip-bridge-${(bridge.name || "x").replace(/\W/g, "").slice(0, 16)}`;
+    return (
+      <svg
+        viewBox={`0 ${-padTop} ${W} ${H - clipBottom + padTop + padBottom}`}
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }}
+        role="img"
+        aria-label={`Secțiune ilustrativă: ${bridge.name}`}
+      >
+        <Defs />
+        <defs>
+          <clipPath id={clipId}>
+            <rect x="0" y="0" width={W} height={H - clipBottom} />
+          </clipPath>
+        </defs>
+
+        {/* Strip extern EXT / INT — deasupra zonei desenate */}
+        <rect x="0" y={-padTop} width={W / 2} height={padTop} fill="#dbeafe" />
+        <rect x={W / 2} y={-padTop} width={W / 2} height={padTop} fill="#dcfce7" />
+        <text x={W / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill="#1e40af" textAnchor="middle" style={{ letterSpacing: "1px" }}>EXTERIOR</text>
+        <text x={(3 * W) / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill="#15803d" textAnchor="middle" style={{ letterSpacing: "1px" }}>INTERIOR</text>
+        <line x1={W / 2} y1={-padTop} x2={W / 2} y2={0} stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" strokeDasharray="2 2" />
+
+        {/* Ilustrația originală — clipped pentru a exclude PsiBadge-urile interne */}
+        <g clipPath={`url(#${clipId})`}>
+          {pickIllustration(bridge)}
+          {/* IllustrationOverlay (priority/iso) intenționat omis în card mode — cardul le afișează. */}
+          {mode === "detail" && details && (
+            <IllustrationOverlay
+              fRsi={details.fRsi}
+              priority={null} // ascuns chiar și în detail — afișat în header
+              isoClass={null}
+              condZone={condZone}
+            />
+          )}
+        </g>
+      </svg>
+    );
+  }
+
+  // Legacy mode (backward-compat)
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}

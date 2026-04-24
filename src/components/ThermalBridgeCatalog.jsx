@@ -217,7 +217,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
               Niciun rezultat pentru "{search}".
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: "18px", maxWidth: 900, margin: "0 auto" }}>
               {filtered.map((bridge, i) => {
                 const isOpen = selectedBridge === i;
                 const isoClass = classifyIsoLevel(bridge.psi);
@@ -243,6 +243,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       <BridgeIllustration
                         bridge={bridge}
                         details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
+                        mode="card"
                       />
                     </div>
 

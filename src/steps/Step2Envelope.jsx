@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import SmartEnvelopeHub from "../components/SmartEnvelopeHub/SmartEnvelopeHub.jsx";
+import OpaqueSection from "../components/sections/OpaqueSection.jsx";
+import GlazingSection from "../components/sections/GlazingSection.jsx";
+import ElementSectionModal from "../components/sections/ElementSectionModal.jsx";
 
 export default function Step2Envelope({
   building, lang, selectedClimate,
@@ -33,6 +37,14 @@ export default function Step2Envelope({
   showToast,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+
+  // ── State pentru secțiuni transversale detaliate ──
+  const [sectionTab, setSectionTab] = useState("opaque"); // "opaque" | "glazing"
+  const [sectionElementIdx, setSectionElementIdx] = useState(0);
+  const [sectionModalOpen, setSectionModalOpen] = useState(false);
+
+  const sectionElements = sectionTab === "opaque" ? opaqueElements : glazingElements;
+  const currentSectionEl = sectionElements[Math.min(sectionElementIdx, sectionElements.length - 1)] || null;
 
   return (
     <div>
@@ -364,6 +376,117 @@ export default function Step2Envelope({
               lang={lang}
             />
           </Card>
+        </div>
+      )}
+
+      {/* ── SECȚIUNI TRANSVERSALE DETALIATE (opac + vitrat) ── */}
+      {(opaqueElements.length > 0 || glazingElements.length > 0) && (
+        <div className="mt-5">
+          <Card
+            title={t("Secțiuni transversale detaliate", lang)}
+            badge={<Badge color="amber">ISO 128 · ISO 6946 · ISO 10077</Badge>}
+          >
+            {/* Tabs opaque / glazing */}
+            <div className="flex gap-2 mb-3 border-b border-white/10">
+              <button
+                onClick={() => { setSectionTab("opaque"); setSectionElementIdx(0); }}
+                className={cn(
+                  "px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px",
+                  sectionTab === "opaque"
+                    ? "border-amber-500 text-amber-400"
+                    : "border-transparent text-white/50 hover:text-white/80"
+                )}
+                disabled={opaqueElements.length === 0}
+                aria-pressed={sectionTab === "opaque"}
+              >
+                🧱 Elemente opace <span className="opacity-50">({opaqueElements.length})</span>
+              </button>
+              <button
+                onClick={() => { setSectionTab("glazing"); setSectionElementIdx(0); }}
+                className={cn(
+                  "px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px",
+                  sectionTab === "glazing"
+                    ? "border-amber-500 text-amber-400"
+                    : "border-transparent text-white/50 hover:text-white/80"
+                )}
+                disabled={glazingElements.length === 0}
+                aria-pressed={sectionTab === "glazing"}
+              >
+                🪟 Elemente vitrate <span className="opacity-50">({glazingElements.length})</span>
+              </button>
+              <div className="ml-auto flex items-center gap-2">
+                {currentSectionEl && (
+                  <button
+                    onClick={() => setSectionModalOpen(true)}
+                    className="px-3 py-1.5 text-[11px] rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-medium"
+                    title="Deschide vederea detaliată în modal"
+                  >
+                    🔍 Vizualizare detaliată
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Element selector */}
+            {sectionElements.length > 0 ? (
+              <>
+                <div className="mb-3">
+                  <Select
+                    label={t("Element selectat", lang)}
+                    value={sectionElementIdx}
+                    onChange={(v) => setSectionElementIdx(parseInt(v) || 0)}
+                    options={sectionElements.map((el, i) => ({
+                      value: i,
+                      label: sectionTab === "opaque"
+                        ? `${el.name || "Element " + (i + 1)} (${(ELEMENT_TYPES.find(t => t.id === el.type) || {}).label || el.type})`
+                        : `${el.name || "Fereastră " + (i + 1)} — ${el.glazingType || "?"} · ${el.area || "?"} m²`
+                    }))}
+                  />
+                </div>
+
+                {currentSectionEl && sectionTab === "opaque" && (
+                  <OpaqueSection
+                    element={currentSectionEl}
+                    climate={selectedClimate}
+                    tInt={20}
+                    width={640}
+                    height={240}
+                    showTemperatureProfile={true}
+                    showDimensions={true}
+                    showLegend={true}
+                    onClickExpand={() => setSectionModalOpen(true)}
+                  />
+                )}
+                {currentSectionEl && sectionTab === "glazing" && (
+                  <GlazingSection
+                    element={currentSectionEl}
+                    width={640}
+                    height={220}
+                    showDimensions={true}
+                    showLegend={true}
+                    onClickExpand={() => setSectionModalOpen(true)}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6 text-xs opacity-40">
+                {sectionTab === "opaque"
+                  ? "Adaugă elemente opace (pereți, acoperiș, planșee) pentru a vedea secțiunile."
+                  : "Adaugă elemente vitrate (ferestre, uși) pentru a vedea secțiunile."}
+              </div>
+            )}
+          </Card>
+
+          {/* Modal vizualizare detaliată */}
+          {sectionModalOpen && currentSectionEl && (
+            <ElementSectionModal
+              type={sectionTab}
+              element={currentSectionEl}
+              climate={selectedClimate}
+              tInt={20}
+              onClose={() => setSectionModalOpen(false)}
+            />
+          )}
         </div>
       )}
 
