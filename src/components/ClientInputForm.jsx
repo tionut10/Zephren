@@ -129,6 +129,51 @@ function ProgressBar({ sections, data }) {
   );
 }
 
+// ─── Date demo pentru testare ─────────────────────────────────────────────────
+const DEMO_DATA = {
+  numeProprietar: "Ionescu Maria",
+  telefonProprietar: "0721 234 567",
+  emailProprietar: "maria.ionescu@gmail.com",
+  judet: "Brașov",
+  localitate: "Brașov",
+  adresaCompleta: "Str. Florilor nr. 12, bl. A2, ap. 5",
+  latitude: 45.6427,
+  longitude: 25.5887,
+  tipClădire: "casa_unifamiliala",
+  anConstructie: 1978,
+  nrCadastral: "123456",
+  scopulCPE: "Reabilitare termică",
+  reabilitarePrecedenta: "Da — parțial",
+  descriereReabilitare: "Înlocuire ferestre cu termopane PVC dublu vitraj în 2010. Nu s-a realizat izolație termică pe fațadă.",
+  arieTotala: 185,
+  arieUtila: 142,
+  numarEtaje: "P+1",
+  areSubsol: "Nu",
+  arePod: "Pod neamenajat",
+  tipSursa: "cazan_gaz",
+  combustibil: "Gaz natural",
+  marcaCazan: "Vaillant ecoTEC Plus 24",
+  anCazan: 2008,
+  putereKw: 24,
+  distributieIncalzire: "radiatoare",
+  robinetiTermostati: "Da — la unele",
+  termostatAmbient: "Da — simplu",
+  surseACM: "cazan_combinat",
+  volumBoiler: 0,
+  areRacire: "Da — în unele camere",
+  tipRacire: "Aparat split (aer condiționat perete)",
+  arePV: "Nu",
+  areSolarTermicRenew: "Nu",
+  consumGaz: 1850,
+  consumElectricitate: 3200,
+  numarOcupanti: 4,
+  areActProp: true,
+  areFacGaz: true,
+  areFacElec: true,
+  areFotoExter: true,
+  alteDocumente: "Clădire construită circa 1978, fără izolație termică pe pereții exteriori. Se solicită reabilitare termică completă în vederea reducerii consumului energetic.",
+};
+
 // ─── Export PDF/JSON ──────────────────────────────────────────────────────────
 function exportJSON(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -610,6 +655,11 @@ export default function ClientInputForm({ onDataChange }) {
 
   const set = (key, val) => setData(prev => ({ ...prev, [key]: val }));
 
+  const loadDemoData = () => {
+    if (Object.keys(data).length > 0 && !confirm("Formularul conține deja date. Le înlocuiți cu datele demo?")) return;
+    setData(DEMO_DATA);
+  };
+
   useEffect(() => {
     const id = setTimeout(() => {
       localStorage.setItem("clientFormData", JSON.stringify(data));
@@ -660,7 +710,12 @@ export default function ClientInputForm({ onDataChange }) {
               Câmpurile marcate cu <span className="text-amber-400 font-bold">*</span> sunt obligatorii.
             </p>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0 flex-wrap">
+            <button onClick={loadDemoData}
+              className="px-4 py-2 bg-teal-500/20 border border-teal-500/30 hover:bg-teal-500/30 text-teal-300 rounded-lg text-sm font-medium transition-all"
+              title="Pre-populează cu date fictive pentru testare">
+              🧪 Demo
+            </button>
             <button onClick={() => exportDOCX(data, planuri)}
               className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-lg text-sm font-medium transition-all">
               ↓ DOCX

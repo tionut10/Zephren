@@ -1,8 +1,12 @@
 /**
  * exportUtils.js - Funcții export date audit energetic
- * JSON, CSV, TXT Checklist
+ * JSON, CSV, TXT Checklist, DOCX
  */
 import { getCategoryLabel } from "../../../data/anexa6-mapping.js";
+import {
+  Document, Paragraph, TextRun, Table, TableRow, TableCell,
+  WidthType, AlignmentType, HeadingLevel, BorderStyle, Packer
+} from "docx";
 
 /**
  * Formatează data curentă pentru nume fișier
@@ -183,6 +187,211 @@ export function generateDetailedReport(formData, completionStatus, SECTIONS) {
   report += `Procent: ${Math.round((completedFields / totalFields) * 100)}%\n`;
 
   return report;
+}
+
+/**
+ * Date demo pentru pre-populare formular (exemplu fictiv)
+ */
+export const DEMO_DATA = {
+  // Documentație
+  ownerName: "Ionescu Maria",
+  ownerEmail: "maria.ionescu@gmail.com",
+  ownerPhone: "0721 234 567",
+  buildingAddress: "Str. Florilor nr. 12, Brașov, jud. Brașov",
+  propertyAct: "Contract vânzare-cumpărare nr. 1234/2005",
+  constructionYear: 1978,
+  urbanismCert: "CU nr. 45/2023",
+  buildingAuthority: "AC nr. 123/1978",
+  technicalBook: "Parțial",
+  planArchitectural: "Parter+niveluri",
+  buildingTipAnex6: "Rezidențial",
+  buildingSubtipAnex6: "Rezidențial – unifamilial",
+  latitude: 45.6427,
+  longitude: 25.5887,
+  cadastralNumber: "123456",
+  landBook: "CF nr. 123456 Brașov",
+  areaBuilt: 210,
+  nApartments: 1,
+  // Anvelopă
+  totalBuildingArea: 185,
+  usefulArea: 142,
+  buildingVolume: 490,
+  externalWallMaterial: "Cărămidă GVP 30 cm",
+  externalWallThickness: 30,
+  insulationThickness: 0,
+  windowsType: "Dublu vitraj",
+  windowsYear: 2010,
+  frameProfile: "PVC",
+  roofType: "Țiglă ceramică pe șarpantă lemn",
+  roofInsulation: 10,
+  thermalBridgesPresent: "Da",
+  // Termice
+  heatingSystem: "Cazan gaz",
+  boilerYear: 2008,
+  boilerPower: 24,
+  boilerEfficiency: 89,
+  hotWaterSystem: "Individual (gaz)",
+  hotWaterStorage: 80,
+  hasCooling: "Aer condiționat",
+  coolingSystemType: "Split 9000 BTU dormitor + living",
+  gasConsumptionYearly: 1850,
+  heatingOilConsumption: 0,
+  ventilationType: "Naturală",
+  ventilationDetails: "Grile ventilație baie + bucătărie",
+  // Electrice
+  electricityConsumptionYearly: 3200,
+  hasPV: "Nu",
+  pvInstalledPower: 0,
+  pvAnnualProduction: 0,
+  hasSolarThermal: "Nu",
+  lightingType: "Mixă",
+  hasSmartMetering: "Nu",
+  // Măsurători
+  inspectionDate: "2026-04-24",
+  interiorTemperature: 21,
+  exteriorTemperature: 8,
+  relativeHumidity: 65,
+  envelopeCondition: "Satisfăcătoare",
+  roofCondition: "Necesită reparații minore",
+  windowsCondition: "Bună",
+  moistureIssues: "Ușoare",
+  thermalPhotosAvailable: "Nu",
+  infiltrationTests: "Nu",
+  // Administrativ
+  auditorName: "Popescu Alexandru",
+  auditorRegistry: "AE-BV-00123",
+  auditorCompany: "Zephren SRL",
+  auditType: "CPE obligatoriu",
+  occupancyType: "Rezidență permanentă",
+  occupantsNumber: 4,
+  hasElectricHeating: "Nu",
+  financialDocumentsAvailable: "Ultimii 3 ani",
+  budgetForRehab: 45000,
+  notesAndObservations: "Clădire construită înainte de 1980, fără izolație termică pe pereții exteriori. Podul mansardat parțial utilizabil. Necesită audit termografic complet în sezon rece.",
+};
+
+/**
+ * Export date la DOCX — Fișă sinteză audit energetic
+ */
+export async function exportToDOCX(formData, SECTIONS) {
+  const labelOf = (sectionKey, fieldId) => {
+    const section = SECTIONS[sectionKey];
+    if (!section) return fieldId;
+    const field = section.fields.find(f => f.id === fieldId);
+    return field ? field.label : fieldId;
+  };
+
+  const makeRow = (label, value, isHeader = false) =>
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 45, type: WidthType.PERCENTAGE },
+          shading: isHeader ? { fill: "2563EB" } : { fill: "F3F4F6" },
+          children: [new Paragraph({
+            children: [new TextRun({
+              text: label,
+              bold: true,
+              color: isHeader ? "FFFFFF" : "374151",
+              size: 20,
+            })],
+          })],
+        }),
+        new TableCell({
+          width: { size: 55, type: WidthType.PERCENTAGE },
+          children: [new Paragraph({
+            children: [new TextRun({
+              text: String(value || "—"),
+              size: 20,
+              color: "111827",
+            })],
+          })],
+        }),
+      ],
+    });
+
+  const sectionChildren = [];
+
+  Object.entries(SECTIONS).forEach(([key, section]) => {
+    sectionChildren.push(
+      new Paragraph({
+        text: `${section.icon || ""} ${section.label}`.trim(),
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 300, after: 120 },
+      })
+    );
+
+    const rows = section.fields
+      .filter(f => formData[f.id] !== undefined && formData[f.id] !== "")
+      .map(f => makeRow(f.label, formData[f.id]));
+
+    if (rows.length === 0) {
+      sectionChildren.push(new Paragraph({
+        children: [new TextRun({ text: "(nicio dată completată)", italics: true, color: "9CA3AF", size: 20 })],
+      }));
+    } else {
+      sectionChildren.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows,
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+            left: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+            right: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+            insideH: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+            insideV: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
+          },
+        })
+      );
+    }
+  });
+
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 }, // A4 portret
+          margin: { top: 1134, right: 850, bottom: 1134, left: 850 },
+        },
+      },
+      children: [
+        new Paragraph({
+          text: "FIȘĂ SINTEZĂ AUDIT ENERGETIC",
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 80 },
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 },
+          children: [
+            new TextRun({ text: `Data: ${new Date().toLocaleDateString("ro-RO")}`, size: 20, color: "6B7280" }),
+            new TextRun({ text: "   |   ", size: 20, color: "9CA3AF" }),
+            new TextRun({ text: `Proprietar: ${formData.ownerName || "—"}`, size: 20, color: "6B7280" }),
+            new TextRun({ text: "   |   ", size: 20, color: "9CA3AF" }),
+            new TextRun({ text: `Adresă: ${formData.buildingAddress || "—"}`, size: 20, color: "6B7280" }),
+          ],
+        }),
+        ...sectionChildren,
+        new Paragraph({
+          text: `Generat de Zephren — ${new Date().toLocaleString("ro-RO")}`,
+          alignment: AlignmentType.RIGHT,
+          spacing: { before: 400 },
+          children: [new TextRun({ text: `Generat de Zephren — ${new Date().toLocaleString("ro-RO")}`, size: 18, color: "9CA3AF", italics: true })],
+        }),
+      ],
+    }],
+  });
+
+  const buffer = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(buffer);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fisa-audit-${formData.ownerName?.replace(/\s+/g, "-").toLowerCase() || "client"}-${getTimestamp()}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /**

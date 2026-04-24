@@ -3,7 +3,7 @@ import { cn, Card, Input, Badge } from "./ui.jsx";
 import TabNavigation from "./AuditClientDataForm/TabNavigation.jsx";
 import ProgressIndicator from "./AuditClientDataForm/ProgressIndicator.jsx";
 import { SECTIONS, SECTIONS_ARRAY } from "./AuditClientDataForm/utils/sectionConfig.js";
-import { exportToJSON, exportToCSV, downloadChecklist, exportRegistruAnex6 } from "./AuditClientDataForm/utils/exportUtils.js";
+import { exportToJSON, exportToCSV, downloadChecklist, exportRegistruAnex6, exportToDOCX, DEMO_DATA } from "./AuditClientDataForm/utils/exportUtils.js";
 import { calculateFormCompletion } from "./AuditClientDataForm/utils/validationUtils.js";
 import { saveToStorage, loadFromStorage } from "./AuditClientDataForm/utils/storageUtils.js";
 
@@ -74,6 +74,16 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
   };
 
   /**
+   * Handler pre-populare cu date demo
+   */
+  const loadDemoData = () => {
+    if (Object.keys(formData).length > 0) {
+      if (!window.confirm("Formularul conține deja date. Le înlocuiți cu datele demo?")) return;
+    }
+    setFormData(DEMO_DATA);
+  };
+
+  /**
    * Handler ștergere date
    */
   const clearForm = () => {
@@ -104,6 +114,13 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
             {/* Export Buttons */}
             <div className="flex flex-wrap gap-2 w-full md:w-auto">
               <button
+                onClick={loadDemoData}
+                className="px-3 py-2 bg-teal-500 text-white rounded text-sm font-medium hover:bg-teal-600 transition whitespace-nowrap"
+                title="Pre-populează cu date fictive pentru testare"
+              >
+                🧪 Date Demo
+              </button>
+              <button
                 onClick={() => setShowChecklistOnly(!showChecklistOnly)}
                 className={cn(
                   "px-3 py-2 rounded text-sm font-medium transition whitespace-nowrap",
@@ -131,6 +148,13 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                 className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
               >
                 ✓ Check
+              </button>
+              <button
+                onClick={() => exportToDOCX(formData, SECTIONS)}
+                className="px-3 py-2 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700 transition whitespace-nowrap"
+                title="Descarcă fișă sinteză în format DOCX"
+              >
+                📄 DOCX
               </button>
               <button
                 onClick={() => exportRegistruAnex6(formData)}
