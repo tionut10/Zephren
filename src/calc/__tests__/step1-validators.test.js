@@ -11,6 +11,8 @@ import {
   SCOP_CPE_OPTIONS,
   OWNER_TYPE_OPTIONS,
   CADASTRAL_REGEX,
+  parseFloorsRegime,
+  countAboveGroundFloors,
 } from "../step1-validators.js";
 
 describe("step1-validators — Sprint 21", () => {
@@ -330,6 +332,58 @@ describe("step1-validators — Sprint 21", () => {
       const { errors } = validateStep1({}, "EN");
       expect(errors.city).toMatch(/required/i);
       expect(errors.areaUseful).toMatch(/usable area|must be/i);
+    });
+  });
+
+  describe("parseFloorsRegime — fix audit 24 apr 2026 (undercount S/P/M)", () => {
+    it("P = 1 nivel (parter)", () => {
+      const r = parseFloorsRegime("P");
+      expect(r.total).toBe(1);
+      expect(r.heated).toBe(1);
+      expect(r.aboveGround).toBe(1);
+    });
+    it("P+4E = 5 niveluri (parter + 4 etaje, NU 4)", () => {
+      const r = parseFloorsRegime("P+4E");
+      expect(r.total).toBe(5);
+      expect(r.heated).toBe(5);
+      expect(r.aboveGround).toBe(5);
+    });
+    it("S+P+4E+M fără opțiuni = 7 total / 5 heated", () => {
+      const r = parseFloorsRegime("S+P+4E+M");
+      expect(r.total).toBe(7);
+      expect(r.heated).toBe(5); // S și M neîncălzite default
+      expect(r.aboveGround).toBe(6); // P + 4E + M
+    });
+    it("S+P+4E+M cu basement+attic heated = 7 total / 7 heated", () => {
+      const r = parseFloorsRegime("S+P+4E+M", { basementHeated: true, atticHeated: true });
+      expect(r.total).toBe(7);
+      expect(r.heated).toBe(7);
+    });
+    it("D+P+2E cu demisol neîncălzit = 4/3", () => {
+      const r = parseFloorsRegime("D+P+2E");
+      expect(r.total).toBe(4);
+      expect(r.heated).toBe(3);
+    });
+    it("P+10E (bloc) = 11", () => {
+      expect(parseFloorsRegime("P+10E").total).toBe(11);
+    });
+    it("string gol / null = 0", () => {
+      expect(parseFloorsRegime("").total).toBe(0);
+      expect(parseFloorsRegime(null).total).toBe(0);
+      expect(parseFloorsRegime(undefined).total).toBe(0);
+    });
+    it("case-insensitive: p+4e = P+4E", () => {
+      const r = parseFloorsRegime("p+4e");
+      expect(r.total).toBe(5);
+    });
+    it("ignoră spații", () => {
+      const r = parseFloorsRegime("S + P + 4E + M");
+      expect(r.total).toBe(7);
+    });
+    it("countAboveGroundFloors helper pentru SVG", () => {
+      expect(countAboveGroundFloors("P+4E")).toBe(5);
+      expect(countAboveGroundFloors("S+P+4E+M")).toBe(6);
+      expect(countAboveGroundFloors("")).toBe(1); // fallback min
     });
   });
 });

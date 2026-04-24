@@ -103,6 +103,21 @@ describe("glaserCheck", () => {
     expect(r.gc).toBeGreaterThanOrEqual(0);
   });
 
+  // Fix audit 24 apr 2026 — pSat în glaserCheck trebuie bifurcat over-water/over-ice
+  it("pSat over-ice: temperaturi negative dau presiuni de saturație mai mici ca formula over-water", () => {
+    // La -15°C:
+    //   over-water (vechea formulă): 611.2 × exp(17.67·-15/(-15+243.5)) ≈ 191.5 Pa
+    //   over-ice   (noua formulă):   610.5 × exp(21.875·-15/(265.5-15)) ≈ 164.5 Pa
+    // Diferența ~15% — afecta direct detectarea condensului pe suprafețe exterioare iarna
+    const psInternal = glaserCheck(simpleBrickWall, 20, -15, 0.55, 0.80);
+    expect(psInternal.results).toBeDefined();
+    // Ultima interfață este exteriorul la -15°C
+    const extInterface = psInternal.results[psInternal.results.length - 1];
+    // ps_saturation la -15°C (over-ice) trebuie să fie ~164 Pa, nu 191 Pa
+    expect(extInterface.ps).toBeGreaterThan(150);
+    expect(extInterface.ps).toBeLessThan(175);
+  });
+
   it("folosește valori implicite pentru parametrii lipsă", () => {
     // Nu furnizăm theta_int, theta_ext, phi_int, phi_ext
     const r = glaserCheck(simpleBrickWall);

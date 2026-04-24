@@ -25,6 +25,63 @@ export const RESIDENTIAL_CATEGORIES = new Set(["RI", "RC", "RA"]);
 export const isResidential = (category) => RESIDENTIAL_CATEGORIES.has(category);
 
 // ─────────────────────────────────────────────────────────────────────────────
+// parseFloorsRegime — numără corect nivelurile dintr-un regim de înălțime RO
+// Fix audit 24 apr 2026: `replace(/[^0-9]/g,"")` ignora S (subsol), D (demisol),
+// P (parter), M (mansardă), undercount la "P+4E"→4 (corect 5), "S+P+4E+M"→4 (corect 7).
+//
+// Exemple:
+//   "P"         → { total: 1, heated: 1, parts: [P] }
+//   "P+4E"      → { total: 5, heated: 5, parts: [P, 4E] }
+//   "S+P+4E+M"  → { total: 7, heated: 6 (S=dacă basement flag), parts: [S, P, 4E, M] }
+//   "D+P+2E"    → { total: 4, heated: 3 }
+//   "P+4E+M"    → { total: 6, heated: 6 }
+// ─────────────────────────────────────────────────────────────────────────────
+export function parseFloorsRegime(floorsStr, opts = {}) {
+  const { basementHeated = false, atticHeated = false } = opts;
+  const s = String(floorsStr || "").toUpperCase().replace(/\s/g, "");
+  if (!s) return { total: 0, heated: 0, aboveGround: 0, parts: [] };
+
+  const parts = s.split("+").filter(Boolean);
+  let total = 0;
+  let heated = 0;
+  let aboveGround = 0;
+  const labels = [];
+
+  for (const p of parts) {
+    if (p === "S" || p === "SUBSOL") {
+      total += 1; labels.push("S");
+      if (basementHeated) heated += 1;
+    } else if (p === "D" || p === "DEMISOL") {
+      total += 1; labels.push("D");
+      if (basementHeated) heated += 1;
+    } else if (p === "P" || p === "PARTER") {
+      total += 1; heated += 1; aboveGround += 1; labels.push("P");
+    } else if (p === "M" || p === "MANSARDA" || p === "MANSARDĂ" || p === "POD") {
+      total += 1; aboveGround += 1; labels.push("M");
+      if (atticHeated) heated += 1;
+    } else {
+      // ex: "4E", "10E", "2ETAJ", "2NIVELURI"
+      const match = p.match(/^(\d+)(E|ETAJ|ETAJE|NIV|NIVELURI)?$/);
+      if (match) {
+        const n = parseInt(match[1]) || 0;
+        total += n; heated += n; aboveGround += n;
+        labels.push(`${n}E`);
+      } else {
+        // Necunoscut — ignoră dar loghează
+        labels.push(`?${p}`);
+      }
+    }
+  }
+
+  return { total, heated, aboveGround, parts: labels };
+}
+
+// Convenience: returnează doar numărul de niveluri deasupra solului (pentru SVG)
+export function countAboveGroundFloors(floorsStr) {
+  return Math.max(1, parseFloorsRegime(floorsStr).aboveGround || 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helper: bilingv
 // ─────────────────────────────────────────────────────────────────────────────
 const L = (lang, ro, en) => (lang === "EN" ? en : ro);
@@ -342,7 +399,9 @@ export function validateStep1(building, lang = "RO") {
   const Au = parseFloat(b.areaUseful);
   const hF = parseFloat(b.heightFloor);
   const V = parseFloat(b.volume);
-  const nF = parseInt(String(b.floors || "").replace(/[^0-9]/g, ""));
+  // Fix audit 24 apr 2026: folosește parseFloorsRegime — numără corect S/D/P/M, nu doar E
+  const fr = parseFloorsRegime(b.floors, { basementHeated: !!b.basement, atticHeated: !!b.attic });
+  const nF = fr.heated;
   if (Au > 0 && hF > 0 && V > 0 && nF > 0) {
     const Vexpected = Au * hF * Math.max(1, nF);
     const diff = Math.abs(V - Vexpected) / Vexpected;

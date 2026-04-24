@@ -6,8 +6,14 @@ export function glaserCheck(layers, theta_int, theta_ext, phi_int, phi_ext) {
   if (!layers || layers.length === 0) return null;
   var tInt = theta_int || 20, tExt = theta_ext || -15;
   var phiI = phi_int || 0.55, phiE = phi_ext || 0.80;
-  // Presiune saturație (Magnus formula) [Pa]
-  function pSat(t) { return 611.2 * Math.exp(17.67 * t / (t + 243.5)); }
+  // Presiune saturație (Magnus formula) [Pa] — bifurcată over-water / over-ice
+  // Fix audit 24 apr 2026: single-formula pSat supraestima p_sat cu ~15% la -15°C
+  // pentru temperaturi negative (WMO/ISO 13788:2012 §4.2)
+  function pSat(t) {
+    return t >= 0
+      ? 610.5 * Math.exp(17.269 * t / (237.3 + t))   // over-water
+      : 610.5 * Math.exp(21.875 * t / (265.5 + t));  // over-ice
+  }
   // Rezistențe termice și temperaturi pe interfețe
   var rsi = 0.13, rse = 0.04;
   var rLayers = layers.map(function(l) { var d = (parseFloat(l.thickness)||0)/1000; return d > 0 && l.lambda > 0 ? d/l.lambda : 0; });

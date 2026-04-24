@@ -22,6 +22,7 @@ import {
   SCOP_CPE_OPTIONS,
   OWNER_TYPE_OPTIONS,
   isResidential,
+  parseFloorsRegime,
 } from "../calc/step1-validators.js";
 
 // ── Lazy-load localități România ───────────────────────────────────────────────
@@ -1133,7 +1134,12 @@ export default function Step1Identification({
               viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80"
               role="img"
               aria-label={(() => {
-                const nF = Math.max(1, parseInt(String(building.floors).replace(/[^0-9]/g,"")) || 1);
+                // Fix audit 24 apr 2026: parseFloorsRegime numără corect S+P+4E+M (7), nu doar "4"
+                const fr = parseFloorsRegime(building.floors, {
+                  basementHeated: !!building.basement,
+                  atticHeated: !!building.attic,
+                });
+                const nF = Math.max(1, fr.aboveGround || 1);
                 const extras = [];
                 if (building.basement) extras.push(lang === "EN" ? "with basement" : "cu subsol");
                 if (building.attic) extras.push(lang === "EN" ? "with attic" : "cu mansardă");
@@ -1143,7 +1149,12 @@ export default function Step1Identification({
               })()}
             >
               {(() => {
-                var nF = Math.max(1, parseInt(String(building.floors).replace(/[^0-9]/g,"")) || 1);
+                // Fix audit 24 apr 2026: parseFloorsRegime pentru SVG viz niveluri deasupra solului
+                var fr = parseFloorsRegime(building.floors, {
+                  basementHeated: !!building.basement,
+                  atticHeated: !!building.attic,
+                });
+                var nF = Math.max(1, fr.aboveGround || 1);
                 var fH = Math.min(20, 100/nF), bW = 90, bX = 45, gY = 125;
                 var topY = gY - nF * fH;
                 var els = [];

@@ -21,6 +21,7 @@ import { buildRomaniaMapPoints, ROMANIA_BORDER_PATH } from "./data/map-data.js";
 
 // ── Calc imports ──
 import { calcUtilFactor, calcMonthlyISO13790, THERMAL_MASS_CLASS } from "./calc/iso13790.js";
+import { parseFloorsRegime } from "./calc/step1-validators.js";
 import { glaserCheck, pSatMagnus, calcGlaserMonthly } from "./calc/glaser.js";
 import { getEnergyClass, getCO2Class } from "./calc/classification.js";
 import { calcFinancialAnalysis } from "./calc/financial.js";
@@ -1318,8 +1319,13 @@ export default function EnergyCalcApp({ cloud }) {
   const estimateGeometry = useCallback(() => {
     const Au = parseFloat(building.areaUseful) || 0;
     const hFloor = parseFloat(building.heightFloor) || 2.80;
-    const floorsStr = String(building.floors).replace(/[^0-9]/g, "");
-    const nFloors = Math.max(1, parseInt(floorsStr) || 1);
+    // Fix audit 24 apr 2026: parseFloorsRegime numără corect S+P+4E+M = 7 niveluri,
+    // nu doar partea numerică "4" (→ underestima Au/etaj cu 30-75% pentru clădiri cu S/P/M).
+    const fr = parseFloorsRegime(building.floors, {
+      basementHeated: !!building.basement,
+      atticHeated: !!building.attic,
+    });
+    const nFloors = Math.max(1, fr.heated || 1);
     if (Au <= 0) return;
     const areaPerFloor = Au / nFloors;
     const ratio = 1.4;
