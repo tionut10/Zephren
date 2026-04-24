@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-23
+// Ultima generare: 2026-04-24
 
 export const APP_VERSION = "0.4.0";
 export const CHANGELOG = [
@@ -11,6 +11,22 @@ export const CHANGELOG = [
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "✨",
+        "text": "extindere metadate punți termice 15→52 tipologii (31.5% coverage)"
+      },
+      {
+        "icon": "✨",
+        "text": "metadate citabile catalog punți termice (ISO 14683 + Mc 001-2022)"
+      },
+      {
+        "icon": "📋",
+        "text": "Sprint 20: 7 fix-uri post-audit (1 critic + 6 minore) — UUID v5, horizon, TMY, F_D tabular"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint 19: 5 fix-uri critice conformitate normativă + 2 minore (S19-CRIT-01..05 + MIN-01,02)"
+      },
       {
         "icon": "🔧",
         "text": "fix(anexa): regim 'P+4' format scurt + basement/attic flags in payload"
@@ -26,22 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔧",
         "text": "fix(anexa): biomass PELETI enabled-aware + regim 2/5 paragraf iter agresiv"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(anexa): Tabel 3 clase per sistem + context-aware regenerabile fill"
-      },
-      {
-        "icon": "📋",
-        "text": "fix(anexa): racord ACM diametru/presiune/puncte + footer registru auditor"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(anexa): multi-fix T5 9-col, regim 2/5 standalone, biomass PELETI, solar/PV enabled"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(demo): contextual MDLPA defaults pentru toate demo-urile (35 câmpuri)"
       }
     ]
   },
