@@ -1,3 +1,5 @@
+import { calcFsh } from "./shading-factor.js";
+
 export function calcUtilFactor(gamma, a) {
   if (gamma < 0) return 1;
   if (Math.abs(gamma - 1) < 0.001) return a / (a + 1);
@@ -103,17 +105,21 @@ export function calcMonthlyISO13790(params) {
       for (var gi = 0; gi < gEls.length; gi++) {
         var el = gEls[gi], aG = parseFloat(el.area)||0, gV = parseFloat(el.g)||0.5;
         var fr = (parseFloat(el.frameRatio)||25)/100, ori = el.orientation||"S";
+        // Sprint 22 #15 — F_sh per fereastră (Mc 001-2022 Anexa E: streașină + aripi + mobil)
+        // Dacă el.shading e absent → F_sh = 1 (backward compat).
+        var fshRes = calcFsh(el);
+        var fShading = fshRes.fsh;
         if (ori === "Mixt") {
           // Distribuție pe toate 8 orientări
           for (var oi = 0; oi < orientDist.length; oi++) {
             var solarKey = orientDist[oi].d;
-            Q_sol += aG*orientDist[oi].f*gV*(1-fr)*sf*(climate.solar[solarKey]||200)*mFrac[i];
+            Q_sol += aG*orientDist[oi].f*gV*(1-fr)*sf*fShading*(climate.solar[solarKey]||200)*mFrac[i];
           }
         } else {
           // NE, SE, SV, NV sunt acum în climate.solar direct
           var k = ori === "Orizontal" ? "Oriz" : ori;
           var solarVal = climate.solar[k] !== undefined ? climate.solar[k] : (climate.solar["S"] || 390);
-          Q_sol += aG*gV*(1-fr)*sf*solarVal*mFrac[i];
+          Q_sol += aG*gV*(1-fr)*sf*fShading*solarVal*mFrac[i];
         }
       }
     }

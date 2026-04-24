@@ -6,6 +6,7 @@ import { cn, Select, Input, Card, ResultRow } from "./ui.jsx";
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../data/u-reference.js";
 import { FASTENER_TYPES } from "../calc/opaque.js";
 import { THETA_U_DEFAULT, calcDynamicTau } from "../calc/tau-dynamic.js";
+import { checkFireSafety, getRequiredFireClass } from "../calc/fire-safety.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -37,7 +38,7 @@ const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
  *   - calcOpaqueR: (layers, elementType) => { r_layers, r_total, u, ... }
  *   - constructionSolutions: CONSTRUCTION_SOLUTIONS array
  */
-export default function OpaqueModal({ element, onSave, onClose, lang, buildingCategory, heating, selectedClimate, calcOpaqueR, constructionSolutions }) {
+export default function OpaqueModal({ element, onSave, onClose, lang, buildingCategory, building, heating, selectedClimate, calcOpaqueR, constructionSolutions }) {
     const [el, setEl] = useState(() => {
       const base = element || {
         name:"Element nou", type:"PE", orientation:"S", area:"",
@@ -95,6 +96,13 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
     // Sprint 22 #1 — detectează dacă există strat izolant (λ < 0.06) pentru a afișa UI-ul de fixări
     const hasInsulation = el.layers.some(l => (parseFloat(l.lambda) || 1) < 0.06);
     const fastenerCfg = FASTENER_TYPES[el.fastener?.type] || FASTENER_TYPES.default;
+
+    // Sprint 22 #17 — Verificare siguranță la foc (P118/2013 + P118/3-2015)
+    // Aplicabil pe PE (perete exterior) unde izolația e expusă la foc prin fațadă.
+    const fireHeight = parseFloat(building?.heightBuilding) || 0;
+    const fireCheck = el.type === "PE" && el.layers.length > 0
+      ? checkFireSafety(el.layers, fireHeight)
+      : null;
 
     // Sprint 22 #3 — τ dinamic pentru spații neîncălzite (PP/PB/PS/PR)
     const isUnheatedAdjType = ["PP", "PB", "PS", "PR"].includes(el.type);
@@ -211,6 +219,46 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
                     ΔU″ = {deltaU.toFixed(3)} W/(m²·K)
                   </span>
                   <span className="opacity-50">{deltaU_method}</span>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Sprint 22 #17 — Verificare siguranță la foc (P118/2013 + P118/3-2015) */}
+          {fireCheck && (
+            <Card title={t("Siguranță la foc (P118/2013)",lang)} className="mb-4">
+              <div className={
+                "rounded-lg p-3 text-xs border " +
+                (fireCheck.verdict === "ok"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+                  : fireCheck.verdict === "warn"
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                  : "bg-red-500/10 border-red-500/30 text-red-200")
+              }>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold">
+                    {fireCheck.verdict === "ok" ? "✓ OK" : fireCheck.verdict === "warn" ? "⚠ Verificați" : "✗ NECONFORM"}
+                  </span>
+                  <span className="opacity-70">— {fireCheck.message}</span>
+                </div>
+                <div className="opacity-70 mt-1">
+                  Înălțime clădire: {fireHeight > 0 ? `${fireHeight.toFixed(1)} m` : "(nesetat → ≤11m)"} ·
+                  Cerință: <b>{fireCheck.requiredClass}</b> · {fireCheck.ruleRef}
+                </div>
+              </div>
+              {fireCheck.layerResults.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {fireCheck.layerResults.map((lr, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-[11px] bg-white/[0.02] px-2 py-1 rounded">
+                      <span className="opacity-70">{lr.name}</span>
+                      <span className={
+                        "font-medium " +
+                        (lr.status === "ok" ? "text-emerald-400" : lr.status === "warn" ? "text-amber-400" : "text-red-400")
+                      }>
+                        {lr.fire_class}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </Card>

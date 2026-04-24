@@ -3193,6 +3193,7 @@ export default function EnergyCalcApp({ cloud }) {
             onClose={() => { setShowOpaqueModal(false); setEditingOpaque(null); }}
             lang={lang}
             buildingCategory={building.category}
+            building={building}
             heating={heating}
             selectedClimate={selectedClimate}
             calcOpaqueR={calcOpaqueR}
