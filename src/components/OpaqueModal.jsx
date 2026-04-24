@@ -4,6 +4,8 @@ import { glaserCheck } from "../calc/glaser.js";
 import { T } from "../data/translations.js";
 import { cn, Select, Input, Card, ResultRow } from "./ui.jsx";
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../data/u-reference.js";
+import { FASTENER_TYPES } from "../calc/opaque.js";
+import { THETA_U_DEFAULT, calcDynamicTau } from "../calc/tau-dynamic.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
@@ -36,9 +38,13 @@ const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
  *   - constructionSolutions: CONSTRUCTION_SOLUTIONS array
  */
 export default function OpaqueModal({ element, onSave, onClose, lang, buildingCategory, heating, selectedClimate, calcOpaqueR, constructionSolutions }) {
-    const [el, setEl] = useState(element || {
-      name:"Element nou", type:"PE", orientation:"S", area:"",
-      layers:[{ material:"", thickness:"", lambda:0, rho:0, matName:"" }]
+    const [el, setEl] = useState(() => {
+      const base = element || {
+        name:"Element nou", type:"PE", orientation:"S", area:"",
+        layers:[{ material:"", thickness:"", lambda:0, rho:0, matName:"" }],
+      };
+      // Sprint 22 #1 — asigură fastener default pe elemente preexistente (ΔU'' ISO 6946 Annex F)
+      return { ...base, fastener: base.fastener || { type: "default", n_f: "" } };
     });
     const [matSearch, setMatSearch] = useState("");
     const [activeLayerIdx, setActiveLayerIdx] = useState(null);
@@ -81,10 +87,25 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
       setMatSearch("");
     };
 
-    const { r_layers, r_total, u } = calcOpaqueR(el.layers, el.type);
+    const { r_layers, r_total, u, u_base, deltaU, deltaU_method, fastenerLabel } = calcOpaqueR(el.layers, el.type, el.fastener);
     const elType = ELEMENT_TYPES.find(t => t.id === el.type);
     const uRef = getURefNZEB(buildingCategory, el.type);
     const uStatus = uRef ? (u <= uRef ? "ok" : u <= uRef * 1.3 ? "warn" : "fail") : null;
+
+    // Sprint 22 #1 — detectează dacă există strat izolant (λ < 0.06) pentru a afișa UI-ul de fixări
+    const hasInsulation = el.layers.some(l => (parseFloat(l.lambda) || 1) < 0.06);
+    const fastenerCfg = FASTENER_TYPES[el.fastener?.type] || FASTENER_TYPES.default;
+
+    // Sprint 22 #3 — τ dinamic pentru spații neîncălzite (PP/PB/PS/PR)
+    const isUnheatedAdjType = ["PP", "PB", "PS", "PR"].includes(el.type);
+    const thetaIDefault = parseFloat(heating?.theta_int) || 20;
+    const thetaEDefault = selectedClimate?.theta_e ?? -15;
+    const thetaUOverride = el.theta_u;
+    const hasThetaUOverride = thetaUOverride !== undefined && thetaUOverride !== null && thetaUOverride !== "" && Number.isFinite(parseFloat(thetaUOverride));
+    const effectiveThetaU = hasThetaUOverride ? parseFloat(thetaUOverride) : THETA_U_DEFAULT[el.type];
+    const tauDynamic = effectiveThetaU !== undefined
+      ? calcDynamicTau(thetaIDefault, effectiveThetaU, thetaEDefault)
+      : (elType?.tau ?? 1);
 
     const CONSTRUCTION_SOLUTIONS = constructionSolutions || [];
 
@@ -155,6 +176,46 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
           </div>
 
 
+          {/* Sprint 22 #1 — Fixare mecanică izolație (ISO 6946:2017 Annex F + Mc 001-2022 Tabel 2.19) */}
+          {hasInsulation && (
+            <Card title={t("Fixare mecanică a izolației (ΔU″)",lang)} className="mb-4">
+              <div className="text-[11px] opacity-60 mb-3">
+                Dibluri / conectori metalici străbat stratul izolant și creează o punte termică distribuită.
+                ΔU″ se adaugă la U conform ISO 6946:2017 Annex F.
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Select
+                  label={t("Tip fixare",lang)}
+                  value={el.fastener?.type || "default"}
+                  onChange={v => setEl(p => ({...p, fastener: {...(p.fastener||{}), type: v}}))}
+                  options={Object.entries(FASTENER_TYPES).map(([k,v]) => ({ value: k, label: v.label }))}
+                />
+                <Input
+                  label={t("Număr fixări",lang)}
+                  value={el.fastener?.n_f ?? ""}
+                  onChange={v => setEl(p => ({...p, fastener: {...(p.fastener||{}), n_f: v}}))}
+                  type="number"
+                  unit="buc/m²"
+                  min="0"
+                  step="0.5"
+                  placeholder={String(fastenerCfg.n_f_default)}
+                />
+              </div>
+              <div className="mt-2 text-[10px] opacity-50">
+                α = {fastenerCfg.alpha} · λ_f = {fastenerCfg.lambda_f} W/(m·K) · A_f = {(fastenerCfg.A_f * 1e6).toFixed(1)} mm²
+                · n_f default = {fastenerCfg.n_f_default} buc/m²
+              </div>
+              {deltaU > 0 && (
+                <div className="mt-2 flex items-center gap-2 text-[11px]">
+                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-medium">
+                    ΔU″ = {deltaU.toFixed(3)} W/(m²·K)
+                  </span>
+                  <span className="opacity-50">{deltaU_method}</span>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Secțiune transversală strat-cu-strat */}
           {el.layers.length > 0 && (
             <Card title={t("Secțiune transversală",lang)} className="mb-4">
@@ -182,11 +243,50 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
             </Card>
           )}
 
+          {/* Sprint 22 #3 — θ_u spațiu adiacent pentru elemente PP/PB/PS/PR (Mc 001-2022 Anexa A.9.3) */}
+          {isUnheatedAdjType && (
+            <Card title={t("Spațiu adiacent neîncălzit (τ dinamic)",lang)} className="mb-4">
+              <div className="text-[11px] opacity-60 mb-3">
+                τ = (θ_i − θ_u) / (θ_i − θ_e) — Mc 001-2022 Anexa A.9.3.
+                Default {el.type}: θ_u = {THETA_U_DEFAULT[el.type]}°C.
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label={t("θ_u spațiu adiacent (°C, opțional)",lang)}
+                  value={el.theta_u ?? ""}
+                  onChange={v => setEl(p => ({...p, theta_u: v}))}
+                  type="number"
+                  unit="°C"
+                  step="0.5"
+                  placeholder={String(THETA_U_DEFAULT[el.type])}
+                />
+                <div className="flex flex-col gap-1 text-[11px]">
+                  <div>θ_i = {thetaIDefault.toFixed(1)} °C · θ_e = {thetaEDefault.toFixed(1)} °C</div>
+                  <div className="flex items-center gap-2">
+                    <span className="opacity-60">τ calculat =</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-medium">
+                      {tauDynamic.toFixed(3)}
+                    </span>
+                    <span className="opacity-40">
+                      {hasThetaUOverride ? "(override)" : (elType?.tau !== undefined ? `static = ${elType.tau}` : "")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Results */}
           <Card title={t("Rezultate calcul",lang)} className="mb-4">
             <ResultRow label="R straturi" value={r_layers.toFixed(3)} unit="m²·K/W" />
             <ResultRow label={`R_si = ${elType?.rsi || 0} + R_se = ${elType?.rse || 0}`} value={(elType ? elType.rsi + elType.rse : 0).toFixed(2)} unit="m²·K/W" />
             <ResultRow label="R' total" value={r_total.toFixed(3)} unit="m²·K/W" />
+            {hasInsulation && u_base !== undefined && (
+              <ResultRow label="U_base (fără ΔU″)" value={u_base.toFixed(3)} unit="W/(m²·K)" />
+            )}
+            {hasInsulation && deltaU > 0 && (
+              <ResultRow label={`ΔU″ (${fastenerLabel || "fixare"})`} value={deltaU.toFixed(3)} unit="W/(m²·K)" />
+            )}
             <ResultRow label="U' (transmitanță)" value={u.toFixed(3)} unit="W/(m²·K)" status={uStatus} />
             {uRef && <ResultRow label={`U'max nZEB (${el.type})`} value={uRef.toFixed(2)} unit="W/(m²·K)" />}
             {(() => { var gc = glaserCheck(el.layers, parseFloat(heating?.theta_int)||20, selectedClimate?.theta_e||-15); if (!gc) return null; return <ResultRow label="Verificare condensare (Glaser)" value={gc.hasCondensation ? "RISC! ~" + gc.gc + " g/m² sezon" : "OK — fără condensare"} status={gc.hasCondensation ? "fail" : "ok"} />; })()}

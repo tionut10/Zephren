@@ -12,6 +12,7 @@ export default function Step2Envelope({
   opaqueElements, setOpaqueElements,
   glazingElements, setGlazingElements,
   thermalBridges, setThermalBridges,
+  pointThermalBridges = [], setPointThermalBridges = () => {}, // Sprint 22 #2
   envelopeSummary,
   setEditingOpaque, setShowOpaqueModal,
   setEditingGlazing, setShowGlazingModal,
@@ -236,6 +237,73 @@ export default function Step2Envelope({
               </div>
             )}
           </Card>
+
+          {/* Sprint 22 #2 — Punți termice punctuale (χ × N) — SR EN ISO 14683 §8.3 / ISO 10211 cap.7 */}
+          <Card title={t("Punți punctuale (χ)",lang)} badge={
+            <button
+              onClick={() => setPointThermalBridges(p => [...p, { id: Date.now(), name: "Punte punctuală nouă", chi: 0.02, count: 1 }])}
+              className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30">
+              + Adaugă
+            </button>
+          }>
+            <div className="text-[11px] opacity-60 mb-3">
+              Elemente punctuale χ [W/K] — conectori metalici, penetrații, ancore locale. H_tb_point = Σ(χ × N).
+            </div>
+            {pointThermalBridges.length === 0 ? (
+              <div className="text-center py-6 opacity-30">
+                <div className="text-2xl mb-1">·</div>
+                <div className="text-xs">{t("Fără punți punctuale definite (opțional)",lang)}</div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pointThermalBridges.map((b, idx) => {
+                  const loss = (parseFloat(b.chi) || 0) * (parseFloat(b.count) || 0);
+                  return (
+                    <div key={b.id || idx} className="bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={b.name || ""}
+                        onChange={e => setPointThermalBridges(p => p.map((x,i) => i===idx ? {...x, name: e.target.value} : x))}
+                        placeholder="Denumire"
+                        className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500/50"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] opacity-40">χ=</span>
+                        <input
+                          type="number"
+                          value={b.chi ?? ""}
+                          onChange={e => setPointThermalBridges(p => p.map((x,i) => i===idx ? {...x, chi: parseFloat(e.target.value) || 0} : x))}
+                          step="0.001" min="0"
+                          className="w-20 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                        />
+                        <span className="text-[10px] opacity-40">W/K</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] opacity-40">N=</span>
+                        <input
+                          type="number"
+                          value={b.count ?? ""}
+                          onChange={e => setPointThermalBridges(p => p.map((x,i) => i===idx ? {...x, count: parseFloat(e.target.value) || 0} : x))}
+                          step="1" min="0"
+                          className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                        />
+                        <span className="text-[10px] opacity-40">buc</span>
+                      </div>
+                      <div className="text-xs font-mono text-orange-400 w-24 text-right">{loss.toFixed(3)} W/K</div>
+                      <button
+                        onClick={() => setPointThermalBridges(p => p.filter((_,i) => i !== idx))}
+                        className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+                <div className="pt-2 text-right text-xs opacity-60">
+                  {t("Total",lang)} H_tb_point = {pointThermalBridges.reduce((s,b) => s + (parseFloat(b.chi)||0)*(parseFloat(b.count)||0), 0).toFixed(3)} W/K
+                </div>
+              </div>
+            )}
+          </Card>
         </div>
         )}
 
@@ -260,7 +328,10 @@ export default function Step2Envelope({
                 <div className="space-y-1">
                   <ResultRow label={t("Elemente opace",lang)} value={opaqueElements.length} unit="buc" />
                   <ResultRow label={t("Elemente vitrate",lang)} value={glazingElements.length} unit="buc" />
-                  <ResultRow label={t("Punți termice",lang)} value={thermalBridges.length} unit="buc" />
+                  <ResultRow label={t("Punți termice liniare",lang)} value={thermalBridges.length} unit="buc" />
+                  {pointThermalBridges.length > 0 && (
+                    <ResultRow label={t("Punți punctuale (χ)",lang)} value={pointThermalBridges.length} unit="buc" />
+                  )}
                 </div>
 
                 <div className="h-px bg-white/[0.06]" />
@@ -268,6 +339,9 @@ export default function Step2Envelope({
                 <div className="space-y-1">
                   <ResultRow label={t("Pierderi transmisie",lang)} value={envelopeSummary.totalHeatLoss.toFixed(1)} unit="W/K" />
                   <ResultRow label={t("  din care punți termice",lang)} value={envelopeSummary.bridgeLoss.toFixed(1)} unit="W/K" />
+                  {envelopeSummary.pointBridgeLoss > 0 && (
+                    <ResultRow label={t("    · punctuale (χ×N)",lang)} value={envelopeSummary.pointBridgeLoss.toFixed(2)} unit="W/K" />
+                  )}
                   <ResultRow label={t("Pierderi ventilare (n=0.5)",lang)} value={envelopeSummary.ventLoss.toFixed(1)} unit="W/K" />
                 </div>
 

@@ -32,6 +32,7 @@ import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCC
 import { calcAirInfiltration, calcNaturalLighting } from "./calc/infiltration.js";
 import { calcGroundHeatTransfer } from "./calc/ground.js";
 import { checkC107Conformity } from "./calc/c107.js";
+import { calcOpaqueR as calcOpaqueRFull, FASTENER_TYPES } from "./calc/opaque.js";
 
 // ── Extracted data modules (Sprint 3 → Faza 4 finalizare) ──
 import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES, CATEGORY_BASE_MAP, buildCatKey } from "./data/building-catalog.js";
@@ -314,6 +315,9 @@ export default function EnergyCalcApp({ cloud }) {
   const [opaqueElements, setOpaqueElements] = useState([]);
   const [glazingElements, setGlazingElements] = useState([]);
   const [thermalBridges, setThermalBridges] = useState([]);
+  // Sprint 22 #2 — punți termice punctuale χ [W/K] (SR EN ISO 14683 §8.3, SR EN ISO 10211 cap.7)
+  // Model: [{ id, name, chi (W/K), count (buc) }] — H_tb_point = Σ(χ × N) se adună la H_tb global.
+  const [pointThermalBridges, setPointThermalBridges] = useState([]);
 
   // Editing states for opaque element modal
   const [editingOpaque, setEditingOpaque] = useState(null);
@@ -1343,7 +1347,7 @@ export default function EnergyCalcApp({ cloud }) {
 
   // ─── Hooks: anvelopă, instalații, regenerabile, auto-sync ───
   const { envelopeSummary, monthlyISO, hourlyISO } = useEnvelopeSummary({
-    opaqueElements, glazingElements, thermalBridges, building, heating, ventilation, selectedClimate,
+    opaqueElements, glazingElements, thermalBridges, pointThermalBridges, building, heating, ventilation, selectedClimate,
   });
 
   const instSummary = useInstallationSummary({
@@ -1376,22 +1380,12 @@ export default function EnergyCalcApp({ cloud }) {
     showToast,
   });
 
-  // ─── Opaque element calculations (kept for local use by other parts of component) ───
-  const calcOpaqueR = useCallback((layers, elementType) => {
-    const elType = ELEMENT_TYPES.find(t => t.id === elementType);
-    if (!elType || !layers.length) return { r_layers:0, r_total:0, u:0 };
-    const r_layers = layers.reduce((sum, l) => {
-      const d = parseFloat(l.thickness) / 1000; // mm to m
-      return sum + (d > 0 && l.lambda > 0 ? d / l.lambda : 0);
-    }, 0);
-    const r_total = elType.rsi + r_layers + elType.rse;
-    const u_base = r_total > 0 ? 1 / r_total : 0;
-    // #3 ΔU'' correction per ISO 6946 §6.9.2 — fasteners, air gaps
-    // Simplified: ETICS anchors ~0.04, sandwich connectors ~0.08, other ~0.02
-    const hasInsulation = layers.some(l => l.lambda > 0 && l.lambda <= 0.06);
-    const deltaU = hasInsulation ? 0.04 : 0.02;
-    const u = u_base + deltaU;
-    return { r_layers, r_total, u, u_base, deltaU };
+  // ─── Opaque element calculations — delegă la calc/opaque.js (Sprint 22 #1) ───
+  // Motorul din calc/opaque.js folosește FASTENER_TYPES + calcDeltaU conform
+  // ISO 6946:2017 Annex F cu 9 tipuri fixări (plastic/metal/consolă etc.).
+  // Parametrul fastenerOpts = { type, n_f } propagat din el.fastener.
+  const calcOpaqueR = useCallback((layers, elementType, fastenerOpts) => {
+    return calcOpaqueRFull(layers, elementType, fastenerOpts);
   }, []);
 
   // [Moved to useEnvelopeSummary hook — Sprint 4 refactoring]
@@ -1637,7 +1631,7 @@ export default function EnergyCalcApp({ cloud }) {
       opaqueElements.forEach(el => {
         if (el.type === "PE") {
           const area = parseFloat(el.area) || 0;
-          const { u } = calcOpaqueR(el.layers, el.type);
+          const { u } = calcOpaqueR(el.layers, el.type, el.fastener);
           const elType = ELEMENT_TYPES.find(t => t.id === el.type);
           const tau = elType ? elType.tau : 1;
           newHT -= (tau * area * u - tau * area * (1 / (1/u + addR)));
@@ -1649,7 +1643,7 @@ export default function EnergyCalcApp({ cloud }) {
       opaqueElements.forEach(el => {
         if (el.type === "PP" || el.type === "PT") {
           const area = parseFloat(el.area) || 0;
-          const { u } = calcOpaqueR(el.layers, el.type);
+          const { u } = calcOpaqueR(el.layers, el.type, el.fastener);
           const elType = ELEMENT_TYPES.find(t => t.id === el.type);
           const tau = elType ? elType.tau : 1;
           newHT -= (tau * area * u - tau * area * (1 / (1/u + addR)));
@@ -1661,7 +1655,7 @@ export default function EnergyCalcApp({ cloud }) {
       opaqueElements.forEach(el => {
         if (el.type === "PB" || el.type === "PL") {
           const area = parseFloat(el.area) || 0;
-          const { u } = calcOpaqueR(el.layers, el.type);
+          const { u } = calcOpaqueR(el.layers, el.type, el.fastener);
           const elType = ELEMENT_TYPES.find(t => t.id === el.type);
           const tau = elType ? elType.tau : 1;
           newHT -= (tau * area * u - tau * area * (1 / (1/u + addR)));
@@ -3020,6 +3014,7 @@ export default function EnergyCalcApp({ cloud }) {
             opaqueElements={opaqueElements} setOpaqueElements={setOpaqueElements}
             glazingElements={glazingElements} setGlazingElements={setGlazingElements}
             thermalBridges={thermalBridges} setThermalBridges={setThermalBridges}
+            pointThermalBridges={pointThermalBridges} setPointThermalBridges={setPointThermalBridges}
             envelopeSummary={envelopeSummary}
             setEditingOpaque={setEditingOpaque} setShowOpaqueModal={setShowOpaqueModal}
             setEditingGlazing={setEditingGlazing} setShowGlazingModal={setShowGlazingModal}

@@ -4,6 +4,7 @@ import { ELEMENT_TYPES } from "../data/building-catalog.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcMonthlyISO13790, THERMAL_MASS_CLASS, WIND_SHIELD_FACTOR } from "../calc/iso13790.js";
 import { calcHourlyISO52016 } from "../calc/hourly.js";
+import { resolveTau } from "../calc/tau-dynamic.js";
 
 /**
  * useEnvelopeSummary — calcul anvelopă termică + bilanțuri lunare/orare
@@ -25,6 +26,7 @@ export function useEnvelopeSummary({
   opaqueElements,
   glazingElements,
   thermalBridges,
+  pointThermalBridges = [], // Sprint 22 #2 — punți punctuale χ [W/K] × N
   building,
   heating,
   ventilation,
@@ -39,22 +41,14 @@ export function useEnvelopeSummary({
 
     opaqueElements.forEach(el => {
       const area = parseFloat(el.area) || 0;
-      const { u } = calcOpaqueR(el.layers, el.type);
+      const { u } = calcOpaqueR(el.layers, el.type, el.fastener);
       const elType = ELEMENT_TYPES.find(t => t.id === el.type);
-      // Multi-zonă: τ dinamic pe baza temperaturilor zonelor adiacente
-      const tIntEnv = parseFloat(heating.theta_int) || 20;
+      // Sprint 22 #3 — τ dinamic cu cascadă (Mc 001-2022 Anexa A.9.3):
+      //   1. el.theta_u (override per element) → 2. heating.t* (global)
+      //   → 3. THETA_U_DEFAULT (Mc 001 Tabel 2.4) → 4. ELEMENT_TYPES.tau static
       const tExtEnv = selectedClimate?.theta_e ?? -15;
-      let tau = elType ? elType.tau : 1;
-      if (tIntEnv !== tExtEnv) {
-        if (el.type === "PB" || el.type === "PS") {
-          tau = (tIntEnv - (parseFloat(heating.tBasement) || 10)) / (tIntEnv - tExtEnv);
-        } else if (el.type === "PP") {
-          tau = (tIntEnv - (parseFloat(heating.tAttic) || 5)) / (tIntEnv - tExtEnv);
-        } else if (el.type === "PR") {
-          tau = (tIntEnv - (parseFloat(heating.tStaircase) || 15)) / (tIntEnv - tExtEnv);
-        }
-      }
-      tau = Math.max(0, Math.min(1, tau));
+      const tauResolved = resolveTau(el, heating, tExtEnv, elType?.tau);
+      const tau = tauResolved.tau;
       let uEff = u;
       // ISO 13370 — ground floor types
       if (el.type === "PL") {
@@ -90,11 +84,17 @@ export function useEnvelopeSummary({
       totalArea += area;
     });
 
-    // Punți termice
+    // Punți termice liniare (ψ × L) — SR EN ISO 14683 §8.1
     let bridgeLoss = 0;
     thermalBridges.forEach(b => {
       bridgeLoss += (parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0);
     });
+    // Sprint 22 #2 — punți termice punctuale (χ × N) — SR EN ISO 14683 §8.3
+    let pointBridgeLoss = 0;
+    pointThermalBridges.forEach(b => {
+      pointBridgeLoss += (parseFloat(b.chi) || 0) * (parseFloat(b.count) || 0);
+    });
+    bridgeLoss += pointBridgeLoss;
     totalHeatLoss += bridgeLoss;
 
     // Ventilare — folosim n50 dacă e disponibil, altfel n=0.5 h-1
@@ -116,12 +116,13 @@ export function useEnvelopeSummary({
     const H_tr_adj_per_A = totalHeatLoss / A_envelope;
 
     // Sprint 3a (17 apr 2026) — expus opaqueElements/glazingElements pentru cooling-hourly.js
+    // Sprint 22 #2 — pointBridgeLoss expus separat pentru rapoarte
     return {
-      totalHeatLoss, totalArea, bridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A,
+      totalHeatLoss, totalArea, bridgeLoss, pointBridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A,
       opaqueElements, glazingElements,
     };
   }, [
-    opaqueElements, glazingElements, thermalBridges,
+    opaqueElements, glazingElements, thermalBridges, pointThermalBridges,
     building.volume, building.perimeter, building.n50, building.windExposure,
     ventilation.type, ventilation.hrEfficiency,
     heating.theta_int, heating.tBasement, heating.tAttic, heating.tStaircase,
