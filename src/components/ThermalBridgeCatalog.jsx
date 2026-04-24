@@ -7,7 +7,9 @@ import {
   getConstructionById,
   adjustPsiForConstruction,
   formatLayersSummary,
+  calcRFromLayers,
 } from "../calc/thermal-bridges-layers.js";
+import CustomLayersBuilder from "./thermal-bridges/CustomLayersBuilder.jsx";
 
 // ── Mapping emoji per categorie ──────────────────────────────────────────────
 const CAT_ICONS = {
@@ -49,6 +51,8 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedConstruction, setSelectedConstruction] = useState("");
+  const [customLayers, setCustomLayers] = useState([]);
+  const [customU, setCustomU] = useState(0);
 
   const allConstructions = useMemo(() => getAllConstructions(), []);
 
@@ -287,10 +291,11 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                           </div>
                           <select
                             value={selectedConstruction}
-                            onChange={e => setSelectedConstruction(e.target.value)}
+                            onChange={e => { setSelectedConstruction(e.target.value); if (e.target.value !== "__custom__") setCustomLayers([]); }}
                             style={{ width: "100%", padding: "6px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 4, color: "#e5e7eb", fontSize: 11 }}
                           >
                             <option value="">— selectează stratigrafia peretelui/planșeului —</option>
+                            <option value="__custom__">✏️ Stratigrafie personalizată (adaugă straturi manual)</option>
                             {["PE", "PT", "PP", "PL"].map(cat => (
                               <optgroup key={cat} label={cat === "PE" ? "Pereți exteriori" : cat === "PT" ? "Planșee terasă" : cat === "PP" ? "Planșee pod/șarpantă" : "Planșee pe sol"}>
                                 {allConstructions.filter(c => c.category === cat).map(c => (
@@ -301,8 +306,31 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                               </optgroup>
                             ))}
                           </select>
-                          {selectedConstruction && (() => {
+
+                          {selectedConstruction === "__custom__" && (
+                            <div style={{ marginTop: 10, padding: 8, background: "rgba(255,255,255,0.02)", borderRadius: 4 }}>
+                              <CustomLayersBuilder
+                                orientation="perete_vertical"
+                                onChange={(layers, U) => { setCustomLayers(layers); setCustomU(U); }}
+                                initialLayers={customLayers.length > 0 ? customLayers : undefined}
+                              />
+                              {customLayers.length > 0 && customU > 0 && (
+                                <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed rgba(139,92,246,0.2)", fontSize: 10 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                                    <span style={{ opacity: 0.55 }}>ψ tipologie (din catalog):</span>
+                                    <span style={{ fontWeight: 700, color: "#a78bfa" }}>{bridge.psi} W/(m·K)</span>
+                                    <span style={{ fontSize: 9, opacity: 0.5, marginLeft: "auto" }}>
+                                      (fără factor corecție — stratigrafie custom)
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {selectedConstruction && selectedConstruction !== "__custom__" && (() => {
                             const c = getConstructionById(selectedConstruction);
+                            if (!c) return null;
                             const adj = adjustPsiForConstruction(bridge, selectedConstruction);
                             const layersSummary = formatLayersSummary(selectedConstruction);
                             return (

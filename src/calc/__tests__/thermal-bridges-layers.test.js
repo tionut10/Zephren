@@ -3,6 +3,7 @@ import {
   ELEMENT_CATEGORIES,
   CONSTRUCTIONS_NORMATIVE_BASIS,
   SURFACE_RESISTANCES,
+  MATERIAL_LIBRARY,
   getAllConstructions,
   getConstructionsByCategory,
   getConstructionById,
@@ -14,6 +15,9 @@ import {
   suggestConstruction,
   formatLayersSummary,
   checkConstructionCompliance,
+  getMaterialsByGroup,
+  findMaterial,
+  airGapResistance,
 } from "../thermal-bridges-layers.js";
 
 describe("thermal-bridges-layers — catalog & normative", () => {
@@ -194,6 +198,86 @@ describe("formatLayersSummary + checkConstructionCompliance", () => {
     const r = checkConstructionCompliance("PE-06", 0.35);
     expect(r.compliant).toBe(false);
     expect(r.margin).toBeLessThan(0);
+  });
+});
+
+describe("MATERIAL_LIBRARY — bibliotecă materiale cu λ", () => {
+  it("conține minim 50 materiale în 9+ grupe", () => {
+    expect(MATERIAL_LIBRARY.length).toBeGreaterThanOrEqual(50);
+    const groups = new Set(MATERIAL_LIBRARY.map(m => m.group));
+    expect(groups.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it("include izolațiile standard (EPS, XPS, MW, PUR, Aerogel)", () => {
+    const names = MATERIAL_LIBRARY.filter(m => m.group === "Izolație").map(m => m.name);
+    expect(names.some(n => n.includes("EPS"))).toBe(true);
+    expect(names.some(n => n.includes("XPS"))).toBe(true);
+    expect(names.some(n => n.includes("Vată"))).toBe(true);
+    expect(names.some(n => n.includes("PUR"))).toBe(true);
+    expect(names.some(n => n.includes("Aerogel"))).toBe(true);
+  });
+
+  it("include zidărie RO (cărămidă GVP, BCA 450/500/700, piatră)", () => {
+    const names = MATERIAL_LIBRARY.filter(m => m.group === "Zidărie").map(m => m.name);
+    expect(names.some(n => n.includes("GVP"))).toBe(true);
+    expect(names.some(n => n.includes("BCA") && n.includes("400"))).toBe(true);
+    expect(names.some(n => n.includes("BCA") && n.includes("500"))).toBe(true);
+    expect(names.some(n => n.includes("BCA") && n.includes("700"))).toBe(true);
+    expect(names.some(n => n.includes("Piatră"))).toBe(true);
+  });
+
+  it("toate materialele au λ pozitiv rezonabil (0.01–500)", () => {
+    for (const m of MATERIAL_LIBRARY) {
+      expect(m.lambda, `${m.name}: λ=${m.lambda} invalid`).toBeGreaterThan(0.01);
+      expect(m.lambda, `${m.name}: λ=${m.lambda} prea mare`).toBeLessThanOrEqual(500);
+      expect(m.source).toBeTruthy();
+    }
+  });
+
+  it("getMaterialsByGroup returnează dict grupat", () => {
+    const g = getMaterialsByGroup();
+    expect(Object.keys(g).length).toBeGreaterThanOrEqual(8);
+    expect(Array.isArray(g["Izolație"])).toBe(true);
+    expect(g["Izolație"].length).toBeGreaterThanOrEqual(10);
+  });
+
+  it("findMaterial găsește exact materialul după nume", () => {
+    const m = findMaterial("XPS extrudat (ρ≈30-35 kg/m³)");
+    expect(m).toBeTruthy();
+    expect(m.lambda).toBe(0.034);
+  });
+
+  it("findMaterial returnează null pentru nume necunoscut", () => {
+    expect(findMaterial("Material inexistent")).toBe(null);
+  });
+});
+
+describe("airGapResistance — SR EN ISO 6946:2017 Tab. 2", () => {
+  it("strat subțire (<5mm) are R=0", () => {
+    expect(airGapResistance(3, "horizontal")).toBe(0);
+  });
+
+  it("aer 25mm orizontal: R ≈ 0.18", () => {
+    expect(airGapResistance(25, "horizontal")).toBeCloseTo(0.18, 2);
+  });
+
+  it("aer 100mm flux descendent: R mai mare decât ascendent", () => {
+    const rDown = airGapResistance(100, "down");
+    const rUp = airGapResistance(100, "up");
+    expect(rDown).toBeGreaterThan(rUp);
+  });
+
+  it("interpolare liniară pentru grosimi intermediare", () => {
+    // Între 10mm (0.15) și 15mm (0.17) orizontal → 12mm ≈ 0.158
+    const r = airGapResistance(12, "horizontal");
+    expect(r).toBeGreaterThan(0.15);
+    expect(r).toBeLessThan(0.17);
+  });
+
+  it("aer >300mm cap la valoarea max (≥300)", () => {
+    const r500 = airGapResistance(500, "horizontal");
+    const r300 = airGapResistance(300, "horizontal");
+    expect(r500).toBe(r300);
   });
 });
 

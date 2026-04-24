@@ -36,6 +36,156 @@ export const CONSTRUCTIONS_LAMBDA_SOURCES = DATA._meta.lambda_sources;
 /** Rsi / Rse conform SR EN ISO 6946:2017 Tab. 7 */
 export const SURFACE_RESISTANCES = DATA._meta.Rsi_Rse;
 
+// ── Bibliotecă materiale tipice RO cu valori λ ───────────────────────────────
+
+/**
+ * Materiale de construcție tipice cu conductivități termice de proiectare.
+ * Sursa primară: C107/3-2005 Anexa E. Fallback: SR EN ISO 12524 / EN ISO 10456.
+ * Valorile sunt conservative (pentru calcul verificare); în proiecte reale
+ * utilizați valorile certificate ale producătorului.
+ *
+ * Organizate pe grupe: izolații, zidărie, beton/mortar, lemn, acoperire,
+ * hidroizolație, sticlă, aer, finisaje.
+ */
+export const MATERIAL_LIBRARY = Object.freeze([
+  // Izolații termice
+  { group: "Izolație", name: "EPS alb fațadă (ρ≈15-17 kg/m³)", lambda: 0.040, source: "EN 13163 + C107/3 Anexa E" },
+  { group: "Izolație", name: "EPS grafitat (ρ≈15-17 kg/m³)", lambda: 0.032, source: "EN 13163" },
+  { group: "Izolație", name: "EPS ignifugat fațadă (ρ≈20 kg/m³)", lambda: 0.038, source: "EN 13163" },
+  { group: "Izolație", name: "XPS extrudat (ρ≈30-35 kg/m³)", lambda: 0.034, source: "EN 13164" },
+  { group: "Izolație", name: "XPS terasă inversată (ρ≈35 kg/m³)", lambda: 0.036, source: "EN 13164" },
+  { group: "Izolație", name: "Vată minerală fațadă (ρ≈135 kg/m³)", lambda: 0.037, source: "EN 13162" },
+  { group: "Izolație", name: "Vată minerală rolă (ρ≈30-50 kg/m³)", lambda: 0.040, source: "EN 13162" },
+  { group: "Izolație", name: "Vată minerală saltele (ρ≈70-100 kg/m³)", lambda: 0.038, source: "EN 13162" },
+  { group: "Izolație", name: "Vată minerală bazaltică densă (ρ≈150 kg/m³)", lambda: 0.039, source: "EN 13162" },
+  { group: "Izolație", name: "Vată de sticlă (ρ≈15-25 kg/m³)", lambda: 0.042, source: "EN 13162" },
+  { group: "Izolație", name: "PUR / PIR spumă", lambda: 0.025, source: "EN 13165" },
+  { group: "Izolație", name: "Spumă poliuretanică proiectată", lambda: 0.028, source: "EN 14315" },
+  { group: "Izolație", name: "Celuloză insuflată", lambda: 0.040, source: "EN 15101" },
+  { group: "Izolație", name: "Fibre de lemn (ρ≈50-80 kg/m³)", lambda: 0.038, source: "EN 13171" },
+  { group: "Izolație", name: "Cânepă / in (izolație ecologică)", lambda: 0.042, source: "Certificate producător" },
+  { group: "Izolație", name: "Aerogel (flexibil)", lambda: 0.015, source: "ASTM C518" },
+  { group: "Izolație", name: "Sticlă spongioasă (foam glass)", lambda: 0.041, source: "EN 13167" },
+
+  // Zidărie
+  { group: "Zidărie", name: "Cărămidă plină (ρ≈1800 kg/m³)", lambda: 0.80, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "Cărămidă GVP (goluri verticale ρ≈1400)", lambda: 0.46, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "Cărămidă eficientă (Porotherm ρ≈900)", lambda: 0.27, source: "C107/3 Anexa E + producător" },
+  { group: "Zidărie", name: "BCA ρ=400 kg/m³", lambda: 0.10, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "BCA ρ=500 kg/m³", lambda: 0.13, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "BCA ρ=700 kg/m³", lambda: 0.22, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "Piatră naturală (ρ≈2400)", lambda: 1.40, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "Piatră poroasă (ρ≈1500)", lambda: 0.70, source: "C107/3 Anexa E" },
+  { group: "Zidărie", name: "Boltari beton (ρ≈2000)", lambda: 1.10, source: "C107/3 Anexa E" },
+
+  // Beton / mortar
+  { group: "Beton/Mortar", name: "Beton armat (ρ≈2400)", lambda: 1.74, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Beton ușor (ρ≈1200)", lambda: 0.45, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Beton celular autoclavizat (ρ≈600)", lambda: 0.18, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Șapă ciment (ρ≈2000)", lambda: 1.40, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Șapă anhidrit (ρ≈1800)", lambda: 1.20, source: "EN ISO 10456" },
+  { group: "Beton/Mortar", name: "Mortar var-ciment", lambda: 0.87, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Tencuială var (interior)", lambda: 0.70, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Tencuială ciment (exterior)", lambda: 0.93, source: "C107/3 Anexa E" },
+  { group: "Beton/Mortar", name: "Adeziv ETICS + plasă", lambda: 0.87, source: "ETAG 004" },
+
+  // Lemn și derivați
+  { group: "Lemn", name: "Lemn moale (pin/brad ρ≈450)", lambda: 0.13, source: "C107/3 Anexa E" },
+  { group: "Lemn", name: "Lemn tare (stejar ρ≈700)", lambda: 0.18, source: "C107/3 Anexa E" },
+  { group: "Lemn", name: "OSB (ρ≈600)", lambda: 0.13, source: "EN 13986" },
+  { group: "Lemn", name: "CLT — panou lamelar încrucișat", lambda: 0.13, source: "EN 16351" },
+  { group: "Lemn", name: "Placă aglomerată (PAL)", lambda: 0.14, source: "EN 13986" },
+  { group: "Lemn", name: "Placă MDF", lambda: 0.12, source: "EN 13986" },
+  { group: "Lemn", name: "Placaj multistrat", lambda: 0.17, source: "EN 13986" },
+
+  // Finisaje / acoperire
+  { group: "Finisaj", name: "Gips-carton (ρ≈900)", lambda: 0.21, source: "C107/3 Anexa E" },
+  { group: "Finisaj", name: "Gips-fibră (ρ≈1100)", lambda: 0.32, source: "EN 15283" },
+  { group: "Finisaj", name: "Parchet lemn masiv", lambda: 0.16, source: "C107/3 Anexa E" },
+  { group: "Finisaj", name: "Parchet laminat", lambda: 0.12, source: "EN ISO 10456" },
+  { group: "Finisaj", name: "Placă ceramică/gresie", lambda: 1.30, source: "C107/3 Anexa E" },
+  { group: "Finisaj", name: "Marmură / granit", lambda: 3.50, source: "C107/3 Anexa E" },
+  { group: "Finisaj", name: "Mocheta", lambda: 0.06, source: "EN ISO 10456" },
+  { group: "Finisaj", name: "Linoleum (ρ≈1200)", lambda: 0.17, source: "EN ISO 10456" },
+
+  // Acoperire exterioară
+  { group: "Acoperire", name: "Țiglă ceramică", lambda: 1.00, source: "C107/3 Anexa E" },
+  { group: "Acoperire", name: "Țiglă metalică (oțel zincat)", lambda: 50.0, source: "C107/3 Anexa E" },
+  { group: "Acoperire", name: "Şindrilă bituminoasă", lambda: 0.17, source: "EN ISO 10456" },
+  { group: "Acoperire", name: "Tablă plană oțel zincat", lambda: 50.0, source: "C107/3 Anexa E" },
+  { group: "Acoperire", name: "Placaj ceramic fațadă", lambda: 1.00, source: "C107/3 Anexa E" },
+  { group: "Acoperire", name: "Placaj fibrociment", lambda: 0.35, source: "EN ISO 10456" },
+
+  // Hidroizolație / membrane
+  { group: "Membrană", name: "Membrană bituminoasă", lambda: 0.17, source: "EN ISO 10456" },
+  { group: "Membrană", name: "Membrană EPDM", lambda: 0.25, source: "EN ISO 10456" },
+  { group: "Membrană", name: "Folie PVC hidroizolație", lambda: 0.16, source: "EN ISO 10456" },
+  { group: "Membrană", name: "Folie PE (barieră vapori)", lambda: 0.33, source: "EN ISO 10456" },
+  { group: "Membrană", name: "Folie permeabilă la vapori (Sd≈0.02m)", lambda: 0.35, source: "EN ISO 10456" },
+
+  // Sticlă
+  { group: "Sticlă", name: "Sticlă float", lambda: 1.00, source: "C107/3 Anexa E" },
+  { group: "Sticlă", name: "Policarbonat multiwall", lambda: 0.20, source: "EN ISO 10456" },
+
+  // Metal
+  { group: "Metal", name: "Oțel structural", lambda: 50.0, source: "C107/3 Anexa E" },
+  { group: "Metal", name: "Oțel inox", lambda: 17.0, source: "C107/3 Anexa E" },
+  { group: "Metal", name: "Aluminiu profile", lambda: 160.0, source: "C107/3 Anexa E" },
+  { group: "Metal", name: "Cupru", lambda: 380.0, source: "C107/3 Anexa E" },
+]);
+
+/**
+ * Returnează materialele grupate pentru UI (dropdown cu optgroup).
+ * @returns {Record<string, Array<{name, lambda, source}>>}
+ */
+export function getMaterialsByGroup() {
+  const result = {};
+  for (const m of MATERIAL_LIBRARY) {
+    if (!result[m.group]) result[m.group] = [];
+    result[m.group].push({ name: m.name, lambda: m.lambda, source: m.source });
+  }
+  return result;
+}
+
+/**
+ * Caută un material după nume (exact match).
+ * @param {string} name
+ * @returns {object|null}
+ */
+export function findMaterial(name) {
+  return MATERIAL_LIBRARY.find(m => m.name === name) || null;
+}
+
+// ── Spații de aer neventilate — R conform SR EN ISO 6946:2017 Tab. 2 ─────────
+
+/**
+ * Rezistența termică a unui strat de aer neventilat [m²·K/W], funcție de
+ * grosime și direcția fluxului termic.
+ * @param {number} d_mm - grosime [mm]
+ * @param {"up"|"horizontal"|"down"} direction - direcția fluxului termic
+ * @returns {number} R [m²·K/W]
+ */
+export function airGapResistance(d_mm, direction = "horizontal") {
+  if (d_mm < 5) return 0;
+  const mm = Math.min(d_mm, 300);
+  // Tabel 2 SR EN ISO 6946:2017 — interpolare liniară
+  const tableHorizontal = [[5, 0.11], [7, 0.13], [10, 0.15], [15, 0.17], [25, 0.18], [50, 0.18], [100, 0.17], [300, 0.16]];
+  const tableUp = [[5, 0.11], [7, 0.13], [10, 0.15], [15, 0.16], [25, 0.16], [50, 0.16], [100, 0.16], [300, 0.16]];
+  const tableDown = [[5, 0.11], [7, 0.13], [10, 0.15], [15, 0.17], [25, 0.19], [50, 0.21], [100, 0.22], [300, 0.23]];
+  const table = direction === "up" ? tableUp : direction === "down" ? tableDown : tableHorizontal;
+
+  // Găsește intervalul și interpolează
+  for (let i = 0; i < table.length - 1; i++) {
+    const [d1, r1] = table[i];
+    const [d2, r2] = table[i + 1];
+    if (mm >= d1 && mm <= d2) {
+      const t = (mm - d1) / (d2 - d1);
+      return Math.round((r1 + t * (r2 - r1)) * 1000) / 1000;
+    }
+  }
+  return table[table.length - 1][1];
+}
+
 // ── Categorii de elemente ────────────────────────────────────────────────────
 
 export const ELEMENT_CATEGORIES = {
