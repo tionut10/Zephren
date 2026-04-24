@@ -299,7 +299,11 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
         width: { size: 7, type: WidthType.PERCENTAGE },
         borders: allBd(),
         verticalAlign: VerticalAlign.CENTER,
-        children: [new CheckBox({ checked: false })],
+        children: [new Paragraph({
+          children: [new CheckBox({ checked: false })],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 60, after: 60 },
+        })],
       });
     } else if (isBlank) {
       // MOD 2 — simbol ☐ printabil (MS Gothic pentru redare corectă)
@@ -1128,15 +1132,19 @@ export default function ClientInputForm({ onDataChange }) {
               </span>
             </button>
 
-            {/* Opțiunea 3 — Online (copiază link) */}
+            {/* Opțiunea 3 — Online (copiază link producție) */}
             <button
               onClick={() => {
-                const url = window.location.origin + window.location.pathname + "#formular-client";
-                navigator.clipboard.writeText(url).then(() => {
-                  alert("Link copiat! Trimite-l clientului pentru completare online:\n\n" + url);
-                }).catch(() => {
-                  prompt("Copiază acest link și trimite-l clientului:", url);
-                });
+                const url = "https://energy-app-ruby.vercel.app";
+                if (navigator.clipboard && window.isSecureContext) {
+                  navigator.clipboard.writeText(url).then(() => {
+                    alert("Link copiat în clipboard!\n\nTrimite-l clientului:\n" + url);
+                  }).catch(() => {
+                    prompt("Copiază manual și trimite clientului:", url);
+                  });
+                } else {
+                  prompt("Copiază manual și trimite clientului:", url);
+                }
               }}
               className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 hover:border-green-500/30 hover:bg-green-500/5 text-white/70 hover:text-green-300 rounded-lg text-sm transition-all"
               title="Copiază link-ul paginii pentru a-l trimite clientului — acesta poate completa online"
