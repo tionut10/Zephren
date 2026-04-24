@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { cn } from "./ui.jsx";
 import {
   NATIONAL_AVERAGES,
@@ -28,7 +28,7 @@ function fmtPct(val) {
   return `${sign}${val.toFixed(1)}%`;
 }
 
-export default function BenchmarkNational({ epValue, buildingType: btProp, countyCode: ccProp }) {
+function BenchmarkNationalImpl({ epValue, buildingType: btProp, countyCode: ccProp }) {
   const [buildingType, setBuildingType] = useState(btProp || "rezidential_bloc");
   const [countyCode, setCountyCode]     = useState(ccProp || "B");
   const [userEP, setUserEP]             = useState(epValue ?? "");
@@ -198,3 +198,5 @@ function CompBar({ label, value, max, color }) {
     </div>
   );
 }
+
+export default memo(BenchmarkNationalImpl);

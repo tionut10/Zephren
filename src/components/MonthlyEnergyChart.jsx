@@ -1,11 +1,13 @@
-import React from "react";
+import React, { memo } from "react";
 
 /**
  * MonthlyEnergyChart — Grafic SVG bilanț energetic lunar
  * Afișează necesarul de încălzire și răcire pe luni (kWh/lună)
  * cu temperaturi externe și câștiguri solare.
+ *
+ * Sprint 19 Performanță — wrapper memo (re-render doar la schimbare monthlyData/Au/lang/theme)
  */
-export default function MonthlyEnergyChart({ monthlyData, Au, lang, theme }) {
+function MonthlyEnergyChartImpl({ monthlyData, Au, lang, theme }) {
   if (!monthlyData || !monthlyData.length) return null;
 
   const maxHeat = Math.max(...monthlyData.map(d => d.qHeat || 0));
@@ -167,3 +169,5 @@ export default function MonthlyEnergyChart({ monthlyData, Au, lang, theme }) {
     </div>
   );
 }
+
+export default memo(MonthlyEnergyChartImpl);

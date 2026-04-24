@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
 import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
@@ -46,8 +46,9 @@ export default function Step5Calculation(props) {
             const catKey = baseCatResolved + (["RI","RC","RA"].includes(baseCatResolved) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-            const enClass = getEnergyClass(epFinal, catKey);
-            const co2Class = getCO2Class(co2Final, baseCatResolved);
+            // Sprint 19 Performanță — memoizare calcule derivate (altfel rulează la fiecare re-render parent)
+            const enClass = useMemo(() => getEnergyClass(epFinal, catKey), [epFinal, catKey]);
+            const co2Class = useMemo(() => getCO2Class(co2Final, baseCatResolved), [co2Final, baseCatResolved]);
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCatResolved];
             const rer = renewSummary?.rer || 0;
 
@@ -55,7 +56,8 @@ export default function Step5Calculation(props) {
             const months = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
             const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
             const tInt = parseFloat(heating.theta_int) || 20;
-            const monthlyData = months.map((m,i) => {
+            // Sprint 19 Performanță — monthlyData + derivate memoizate (12 iterații + fallback ISO 13790)
+            const monthlyData = useMemo(() => months.map((m,i) => {
               const tExt = selectedClimate?.temp_month?.[i] ?? 5;
               const deltaT = Math.max(0, tInt - tExt);
               if (monthlyISO && monthlyISO[i]) {
@@ -73,10 +75,12 @@ export default function Step5Calculation(props) {
               const qHeat = Math.max(0, qLoss - etaH * (solarGain + intGain));
               const qCool = deltaT <= 0 ? Math.max(0, (solarGain + intGain) * 0.3) : 0;
               return { month:m, tExt, deltaT, qLoss, solarGain, intGain, qHeat, qCool };
-            });
-            const annualHeat = monthlyData.reduce((s,d) => s + d.qHeat, 0);
-            const annualCool = monthlyData.reduce((s,d) => s + d.qCool, 0);
-            const maxQ = Math.max(...monthlyData.map(d => Math.max(d.qLoss, d.qHeat)));
+            }), [monthlyISO, selectedClimate, tInt, envelopeSummary, building.volume, Au]);
+            const { annualHeat, annualCool, maxQ } = useMemo(() => ({
+              annualHeat: monthlyData.reduce((s,d) => s + d.qHeat, 0),
+              annualCool: monthlyData.reduce((s,d) => s + d.qCool, 0),
+              maxQ: Math.max(...monthlyData.map(d => Math.max(d.qLoss, d.qHeat))),
+            }), [monthlyData]);
 
             // Sprint 18 UX — verificare date minime pentru Step 5
             const _missingCritical = [];

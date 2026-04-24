@@ -12,6 +12,26 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "audit(steps-1-7): 2 fix-uri P1 + 11 teste + raport master"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(reports): Sprint 22 COMMIT 3 — anexă DOCX per element (SVG + tabel materiale)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Sprint 22 COMMIT 2 — confort + siguranță (F_sh + siguranță foc)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Sprint 22 COMMIT 1 — calcul conformitate (ΔU″ + χ + τ dinamic)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Sprint 1 Quick wins — duplicate + search + U-warnings + health check"
+      },
+      {
         "icon": "🧪",
         "text": "Sprint 21 — Step 1 Hardening (28 items) + 39 teste noi"
       },
@@ -22,26 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "feat(hub): click pe element din listă deschide modal cu secțiune detaliată"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(sections): viewer unificat secțiuni transversale opaque + glazing + bridge fix"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(Step2): diagramă Glaser reală p_sat vs p_v pe axa sd (ISO 13788)"
-      },
-      {
-        "icon": "🔧",
-        "text": "Online copiază URL producție + CheckBox SDT învelit în Paragraph"
-      },
-      {
-        "icon": "✨",
-        "text": "3 opțiuni formular gol — Print ☐ / Word SDT ☑ / Online link"
-      },
-      {
-        "icon": "📄",
-        "text": "footer DOCX zephren.ro → ZEPHREN.COM"
       }
     ]
   },

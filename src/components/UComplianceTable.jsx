@@ -1,10 +1,12 @@
-import React from "react";
+import React, { memo } from "react";
 
 /**
  * UComplianceTable — Tabel conformitate U față de referințe nZEB / renovare
  * Mc 001-2022 Tabel 2.4, 2.7, 2.10a, 2.10b
+ *
+ * Sprint 19 Performanță — wrapper memo (re-render doar la schimbare opaque/glazing/building)
  */
-export default function UComplianceTable({
+function UComplianceTableImpl({
   opaqueElements,
   glazingElements,
   building,
@@ -167,3 +169,5 @@ export default function UComplianceTable({
     </div>
   );
 }
+
+export default memo(UComplianceTableImpl);

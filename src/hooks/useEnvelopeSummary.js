@@ -5,6 +5,8 @@ import { calcOpaqueR } from "../calc/opaque.js";
 import { calcMonthlyISO13790, THERMAL_MASS_CLASS, WIND_SHIELD_FACTOR } from "../calc/iso13790.js";
 import { calcHourlyISO52016 } from "../calc/hourly.js";
 import { resolveTau } from "../calc/tau-dynamic.js";
+// Sprint 19 Performanță (24 apr 2026) — cache LRU pentru evitare recalcule identice
+import { globalCalcCache } from "../lib/calc-cache.js";
 
 /**
  * useEnvelopeSummary — calcul anvelopă termică + bilanțuri lunare/orare
@@ -139,14 +141,21 @@ export function useEnvelopeSummary({
     const hr = vt && vt.hasHR
       ? (ventilation.hrEfficiency ? parseFloat(ventilation.hrEfficiency) / 100 : vt.hrEta || 0)
       : 0;
-    return calcMonthlyISO13790({
+    const params = {
       G_env: envelopeSummary.totalHeatLoss,
       V, Au, climate: selectedClimate,
       theta_int: parseFloat(heating.theta_int) || 20,
       glazingElements, shadingFactor: building.shadingFactor,
       hrEta: hr, category: building.category,
       n50: building.n50, structure: building.structure,
-    });
+    };
+    // Sprint 19: cache LRU read-through (evită recalcul identic la re-render memoized)
+    const cacheKey = { building, climate: selectedClimate, opaqueElements: [], glazingElements, extras: { kind: "iso13790", params } };
+    const cached = globalCalcCache.get(cacheKey);
+    if (cached) return cached;
+    const result = calcMonthlyISO13790(params);
+    if (result) globalCalcCache.set(cacheKey, result);
+    return result;
   }, [
     envelopeSummary, selectedClimate,
     building, heating.theta_int, glazingElements, ventilation,
@@ -172,7 +181,7 @@ export function useEnvelopeSummary({
       (WIND_SHIELD_FACTOR[building.windExposure] || 0.07)) * V;
     const H_ve = H_ve_raw * (1 - hr);
 
-    return calcHourlyISO52016({
+    const params = {
       T_ext,
       Au,
       H_tr: envelopeSummary.totalHeatLoss,
@@ -181,7 +190,16 @@ export function useEnvelopeSummary({
       theta_int_set_h: parseFloat(heating.theta_int) || 20,
       theta_int_set_c: 26,
       Am: Au * 2.5,
-    });
+    };
+    // Sprint 19: cache LRU — calculul orar 8760 iterații e cel mai costisitor (~50-150ms)
+    // cheie inclus hash T_ext: fallback pe lungime+primele 3 valori (evită JSON.stringify pe 8760 floats)
+    const extHash = T_ext.length + ":" + T_ext[0] + ":" + T_ext[1000] + ":" + T_ext[5000];
+    const cacheKey = { building, climate: { ...selectedClimate, _hourlyHash: extHash }, opaqueElements: [], glazingElements: [], extras: { kind: "iso52016", params: { ...params, T_ext: undefined, _hash: extHash } } };
+    const cached = globalCalcCache.get(cacheKey);
+    if (cached) return cached;
+    const result = calcHourlyISO52016(params);
+    if (result) globalCalcCache.set(cacheKey, result);
+    return result;
   }, [envelopeSummary, selectedClimate, building, heating.theta_int, ventilation]);
 
   return { envelopeSummary, monthlyISO, hourlyISO };
