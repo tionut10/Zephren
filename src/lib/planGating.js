@@ -27,6 +27,26 @@ export const PLAN_FEATURES = {
     cpeAlertsExport:        false, // Export CSV alerte CPE
     mobileWizard:           false, // Wizard mobil colectare date
   },
+  starter: {
+    maxProjects:  999,
+    maxCerts:     999,
+    exportDOCX:   true,   // PDF fără watermark + DOCX
+    exportXML:    false,
+    nzebReport:   false,
+    aiAssistant:  false,
+    multiUser:    false,
+    maxUsers:     1,
+    api:          false,
+    watermark:    false,
+    brandingCPE:  false,
+    // funcționalități noi
+    gwpReport:              false,
+    devizPDF:               true,
+    devizExcel:             false,
+    buildingTemplatesFull:  false, // Șabloanele complete rămân Standard+
+    cpeAlertsExport:        false,
+    mobileWizard:           false,
+  },
   standard: {
     maxProjects:  999,
     maxCerts:     999,    // CPE nelimitat
@@ -76,6 +96,26 @@ export const PLAN_FEATURES = {
     aiAssistant:  true,
     multiUser:    true,
     maxUsers:     20,
+    api:          true,
+    watermark:    false,
+    brandingCPE:  true,
+    // funcționalități noi
+    gwpReport:              true,
+    devizPDF:               true,
+    devizExcel:             true,
+    buildingTemplatesFull:  true,
+    cpeAlertsExport:        true,
+    mobileWizard:           true,
+  },
+  enterprise: {
+    maxProjects:  999,
+    maxCerts:     999,
+    exportDOCX:   true,
+    exportXML:    true,
+    nzebReport:   true,
+    aiAssistant:  true,
+    multiUser:    true,
+    maxUsers:     999,
     api:          true,
     watermark:    false,
     brandingCPE:  true,
