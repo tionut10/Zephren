@@ -47,6 +47,7 @@ export default function ElementCard({
   onEdit,
   onDelete,
   onPreview,
+  onDuplicate,
 }) {
   // ── Calcul U (opaque: live, glazing: direct) ───────────────────────────────
   let u = 0;
@@ -67,6 +68,12 @@ export default function ElementCard({
 
   const status = getStatus(u, uRef);
   const area = parseFloat(element.area) || 0;
+  const uExcess = uRef && u > uRef ? ((u / uRef - 1) * 100) : 0;
+  const warningText = status === "fail"
+    ? `U = ${u.toFixed(3)} W/m²K depășește U'max = ${uRef?.toFixed(3)} cu +${uExcess.toFixed(0)}% (clasă nZEB)`
+    : status === "warn"
+      ? `U = ${u.toFixed(3)} W/m²K este peste U'max = ${uRef?.toFixed(3)} (toleranță ≤30%)`
+      : null;
 
   // ── Subtitle (meta) ────────────────────────────────────────────────────────
   let subtitle = "";
@@ -83,7 +90,10 @@ export default function ElementCard({
   return (
     <div
       className={cn(
-        "bg-white/[0.03] border border-white/5 rounded-lg p-3 flex items-center justify-between group hover:border-white/10 transition-colors",
+        "bg-white/[0.03] border rounded-lg p-3 flex items-center justify-between group transition-colors",
+        status === "fail" ? "border-red-500/30 hover:border-red-500/50 bg-red-500/[0.04]" :
+        status === "warn" ? "border-amber-500/25 hover:border-amber-500/40" :
+        "border-white/5 hover:border-white/10",
         clickable && "cursor-pointer hover:bg-white/[0.05]"
       )}
       onClick={clickable ? () => onPreview(element, index) : undefined}
@@ -91,6 +101,7 @@ export default function ElementCard({
       tabIndex={clickable ? 0 : undefined}
       onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPreview(element, index); } } : undefined}
       aria-label={clickable ? `Vezi secțiunea pentru ${element.name}` : undefined}
+      title={warningText || undefined}
     >
       {/* Left: status + name + meta */}
       <div className="flex items-center gap-3 min-w-0">
@@ -98,7 +109,19 @@ export default function ElementCard({
           {status ? STATUS_ICON[status] : "·"}
         </span>
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{element.name}</div>
+          <div className="text-sm font-medium truncate flex items-center gap-2">
+            <span className="truncate">{element.name}</span>
+            {status === "fail" && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 shrink-0" aria-label="Depășește U'max nZEB">
+                ⚠ +{uExcess.toFixed(0)}% U'max
+              </span>
+            )}
+            {status === "warn" && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                ⚠ U'max
+              </span>
+            )}
+          </div>
           <div className="text-[10px] opacity-40 truncate">{subtitle}</div>
         </div>
       </div>
@@ -119,11 +142,21 @@ export default function ElementCard({
             onClick={(e) => { e.stopPropagation(); onEdit?.(element, index); }}
             className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             aria-label={`Editează ${element.name}`}
+            title="Editează"
           >✎</button>
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(element, index); }}
+              className="text-xs px-2 py-1 rounded bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+              aria-label={`Duplică ${element.name}`}
+              title="Duplică (creează o copie)"
+            >⎘</button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(index); }}
             className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
             aria-label={`Șterge ${element.name}`}
+            title="Șterge"
           >✕</button>
         </div>
       </div>

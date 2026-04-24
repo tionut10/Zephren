@@ -20,7 +20,7 @@ const ISO_CLASS_COLOR = {
   D: "text-red-400 bg-red-500/15 border-red-500/30",
 };
 
-export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete, onPreview }) {
+export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete, onPreview, onDuplicate }) {
   const psi = parseFloat(bridge.psi) || 0;
   const length = parseFloat(bridge.length) || 0;
   const totalLoss = psi * length;
@@ -81,11 +81,21 @@ export default function ThermalBridgeCard({ bridge, index, onEdit, onDelete, onP
             onClick={(e) => { e.stopPropagation(); onEdit?.(bridge, index); }}
             className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             aria-label={`Editează ${bridge.name}`}
+            title="Editează"
           >✎</button>
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(bridge, index); }}
+              className="text-xs px-2 py-1 rounded bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+              aria-label={`Duplică ${bridge.name}`}
+              title="Duplică"
+            >⎘</button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(index); }}
             className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
             aria-label={`Șterge ${bridge.name}`}
+            title="Șterge"
           >✕</button>
         </div>
       </div>

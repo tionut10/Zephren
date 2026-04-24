@@ -31,7 +31,10 @@ import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
 import ThermalVizButton from "./ThermalViz/ThermalVizButton.jsx";
 import ElementSectionModal from "../sections/ElementSectionModal.jsx";
+import EnvelopeHealthCheck from "./EnvelopeHealthCheck.jsx";
 import { getBridgeDetails, classifyIsoLevel } from "../../calc/thermal-bridges-metadata.js";
+import { getURefNZEB } from "../../data/u-reference.js";
+import { U_REF_GLAZING } from "../../data/u-reference.js";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
 import { computeEnvelopeHint } from "./utils/envelopeHints.js";
 
@@ -353,6 +356,38 @@ export default function SmartEnvelopeHub({
     });
   }, []);
 
+  // ── Handler-e duplicate (deep-clone + naming "Copie - <nume>") ───────────
+  const handleDuplicateOpaque = useCallback((el, idx) => {
+    const copy = {
+      ...el,
+      name: `Copie — ${el.name || "Element"}`,
+      layers: Array.isArray(el.layers) ? el.layers.map(l => ({ ...l })) : [],
+    };
+    setOpaqueElements?.(prev => {
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+  }, [setOpaqueElements]);
+
+  const handleDuplicateGlazing = useCallback((el, idx) => {
+    const copy = { ...el, name: `Copie — ${el.name || "Fereastră"}` };
+    setGlazingElements?.(prev => {
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+  }, [setGlazingElements]);
+
+  const handleDuplicateBridge = useCallback((b, idx) => {
+    const copy = { ...b };
+    setThermalBridges?.(prev => {
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+  }, [setThermalBridges]);
+
   // ── Handler-e RampGuided — direct append în state (fără OpaqueModal) ───────
   const handleSaveOpaqueFromWizard = useCallback((element) => {
     setOpaqueElements?.(prev => [...prev, { ...element }]);
@@ -614,6 +649,19 @@ export default function SmartEnvelopeHub({
         </div>
       )}
 
+      {/* ── Envelope health check — verificări automate ───────────────────────── */}
+      <EnvelopeHealthCheck
+        building={building}
+        opaqueElements={opaqueElements}
+        glazingElements={glazingElements}
+        thermalBridges={thermalBridges}
+        calcOpaqueR={calcOpaqueR}
+        ELEMENT_TYPES={ELEMENT_TYPES}
+        getURefNZEB={getURefNZEB}
+        U_REF_GLAZING={U_REF_GLAZING}
+        onOpenBridgeCatalog={handleOpenBridgeCatalog}
+      />
+
       {/* ── ElementsList — 3 secțiuni CRUD (înlocuiește grid legacy Step2) ──────── */}
       <ElementsList
         opaqueElements={opaqueElements}
@@ -626,14 +674,17 @@ export default function SmartEnvelopeHub({
         onEditOpaque={handleEditOpaque}
         onDeleteOpaque={handleDeleteOpaque}
         onPreviewOpaque={handlePreviewOpaque}
+        onDuplicateOpaque={handleDuplicateOpaque}
         onAddGlazing={handleAddGlazing}
         onEditGlazing={handleEditGlazing}
         onDeleteGlazing={handleDeleteGlazing}
         onPreviewGlazing={handlePreviewGlazing}
+        onDuplicateGlazing={handleDuplicateGlazing}
         onAddBridge={handleAddBridge}
         onEditBridge={handleEditBridge}
         onDeleteBridge={handleDeleteBridge}
         onPreviewBridge={handlePreviewBridge}
+        onDuplicateBridge={handleDuplicateBridge}
         onOpenBridgeCatalog={handleOpenBridgeCatalog}
       />
 

@@ -12,6 +12,26 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🧪",
+        "text": "Sprint 21 — Step 1 Hardening (28 items) + 39 teste noi"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(sections): orientare adaptivă per tip element + text complet + vitraj clarificat"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(hub): click pe element din listă deschide modal cu secțiune detaliată"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(sections): viewer unificat secțiuni transversale opaque + glazing + bridge fix"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(Step2): diagramă Glaser reală p_sat vs p_v pe axa sd (ISO 13788)"
+      },
+      {
         "icon": "🔧",
         "text": "Online copiază URL producție + CheckBox SDT învelit în Paragraph"
       },
@@ -22,26 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "footer DOCX zephren.ro → ZEPHREN.COM"
-      },
-      {
-        "icon": "📄",
-        "text": "redesign: DOCX layout profesional tabelar (label 42%|valoare 58%), formular gol generat programatic din acelaș"
-      },
-      {
-        "icon": "✨",
-        "text": "buton Date Demo + export DOCX în ClientInputForm și AuditClientDataForm"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(demo-2): refacere completă nZEB Timișoara 2024 + mutare în top listă"
-      },
-      {
-        "icon": "🎨",
-        "text": "fix(BuildingPhotos): rezolvă 3 bug-uri critice + 3 îmbunătățiri UX"
-      },
-      {
-        "icon": "🔧",
-        "text": "text invizibil în dropdown-uri <select> pe temă dark (global CSS)"
       }
     ]
   },
