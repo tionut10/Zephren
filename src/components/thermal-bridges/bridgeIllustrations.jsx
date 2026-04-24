@@ -1801,13 +1801,44 @@ export default function BridgeIllustration({ bridge, details, showOverlays = tru
     ? { x: W * 0.22, y: H * 0.35, w: W * 0.30, h: H * 0.30 }
     : null;
 
-  // Card mode: strip extern EXT/INT deasupra + clip inferior pentru a ascunde PsiBadge-urile interne;
+  // Card mode: strip extern EXT/INT adaptiv per categorie + clip inferior pentru a ascunde PsiBadge-urile interne;
   // NU se adaugă IllustrationOverlay (IsoClassBadge + PriorityBadge) — afișate în cardul părinte.
   if (mode === "card" || mode === "detail") {
+    // Detectare orientare per categorie/nume punte — unde este cazul
+    const cat = (bridge.cat || "").toLowerCase();
+    const name = (bridge.name || "").toLowerCase();
+    const isRoof = /acoperiș|acoperis|terasă|terasa|atic|coamă|coama|streașină|streasina|cornișă|cornisa/.test(cat + " " + name);
+    const isGround = /sol|subsol|fundație|fundatie|radier|soclu|piloți|piloti|pe sol|peste subsol/.test(cat + " " + name);
+    const isCorner = /colț|colt|corner/.test(name);
+
+    // 3 layout-uri: standard (EXT stg / INT dr), roof (EXT sus / INT jos), ground (INT sus / SOL jos)
+    const layout = isRoof ? "roof" : isGround ? "ground" : isCorner ? "corner" : "standard";
+
     const padTop = 24;
     const padBottom = 6;
-    const clipBottom = 22; // px tăiați din interiorul ilustrației pentru a ascunde PsiBadge (la y=H-10..H)
+    const clipBottom = 22;
     const clipId = `clip-bridge-${(bridge.name || "x").replace(/\W/g, "").slice(0, 16)}`;
+
+    // Etichete + culori per layout
+    let leftLabel, rightLabel, leftColor, rightColor, leftFill, rightFill;
+    if (layout === "roof") {
+      leftLabel = "EXTERIOR (acoperiș)"; rightLabel = "INTERIOR";
+      leftColor = "#1e40af"; rightColor = "#15803d";
+      leftFill = "#dbeafe"; rightFill = "#dcfce7";
+    } else if (layout === "ground") {
+      leftLabel = "INTERIOR"; rightLabel = "SOL / SUBSOL";
+      leftColor = "#15803d"; rightColor = "#78350f";
+      leftFill = "#dcfce7"; rightFill = "#fef3c7";
+    } else if (layout === "corner") {
+      leftLabel = "EXTERIOR"; rightLabel = "INTERIOR (colț)";
+      leftColor = "#1e40af"; rightColor = "#15803d";
+      leftFill = "#dbeafe"; rightFill = "#dcfce7";
+    } else {
+      leftLabel = "EXTERIOR"; rightLabel = "INTERIOR";
+      leftColor = "#1e40af"; rightColor = "#15803d";
+      leftFill = "#dbeafe"; rightFill = "#dcfce7";
+    }
+
     return (
       <svg
         viewBox={`0 ${-padTop} ${W} ${H - clipBottom + padTop + padBottom}`}
@@ -1823,21 +1854,20 @@ export default function BridgeIllustration({ bridge, details, showOverlays = tru
           </clipPath>
         </defs>
 
-        {/* Strip extern EXT / INT — deasupra zonei desenate */}
-        <rect x="0" y={-padTop} width={W / 2} height={padTop} fill="#dbeafe" />
-        <rect x={W / 2} y={-padTop} width={W / 2} height={padTop} fill="#dcfce7" />
-        <text x={W / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill="#1e40af" textAnchor="middle" style={{ letterSpacing: "1px" }}>EXTERIOR</text>
-        <text x={(3 * W) / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill="#15803d" textAnchor="middle" style={{ letterSpacing: "1px" }}>INTERIOR</text>
+        {/* Strip extern adaptiv — deasupra zonei desenate */}
+        <rect x="0" y={-padTop} width={W / 2} height={padTop} fill={leftFill} />
+        <rect x={W / 2} y={-padTop} width={W / 2} height={padTop} fill={rightFill} />
+        <text x={W / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill={leftColor} textAnchor="middle" style={{ letterSpacing: "0.5px" }}>{leftLabel}</text>
+        <text x={(3 * W) / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill={rightColor} textAnchor="middle" style={{ letterSpacing: "0.5px" }}>{rightLabel}</text>
         <line x1={W / 2} y1={-padTop} x2={W / 2} y2={0} stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" strokeDasharray="2 2" />
 
         {/* Ilustrația originală — clipped pentru a exclude PsiBadge-urile interne */}
         <g clipPath={`url(#${clipId})`}>
           {pickIllustration(bridge)}
-          {/* IllustrationOverlay (priority/iso) intenționat omis în card mode — cardul le afișează. */}
           {mode === "detail" && details && (
             <IllustrationOverlay
               fRsi={details.fRsi}
-              priority={null} // ascuns chiar și în detail — afișat în header
+              priority={null}
               isoClass={null}
               condZone={condZone}
             />

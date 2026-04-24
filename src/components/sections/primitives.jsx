@@ -254,6 +254,18 @@ export const MaterialDefs = memo(function MaterialDefs() {
         <stop offset="0%" stopColor="#fff8e7" />
         <stop offset="100%" stopColor="#ffe8cc" />
       </linearGradient>
+      {/* Ambient — SOL (sub placă pe sol) */}
+      <pattern id="amb-soil" patternUnits="userSpaceOnUse" width="8" height="8">
+        <rect width="8" height="8" fill="#8d6e5a" />
+        <path d="M0,8 L8,0" stroke="#5d4638" strokeWidth="0.7" opacity="0.5" />
+        <circle cx="3" cy="3" r="0.5" fill="#6d5243" opacity="0.6" />
+        <circle cx="6" cy="6" r="0.4" fill="#4a3628" opacity="0.7" />
+      </pattern>
+      {/* Ambient — POD/SUBSOL neîncălzit (gri neutru) */}
+      <linearGradient id="amb-unheated" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#d4d4d8" />
+        <stop offset="100%" stopColor="#a1a1aa" />
+      </linearGradient>
 
       {/* Săgeată flux termic */}
       <marker id="sec-arrow-heat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -289,12 +301,22 @@ export function SectionFrame({
   padRight = 0,
   children,
   showStrips = true,
+  // Props opționale pentru customizare per tip element (placă pe sol, pod, etc.):
+  extFill,       // SVG fill string (ex: "url(#amb-soil)")
+  intFill,       // SVG fill string
+  extColor,      // culoare text label EXT
+  intColor,      // culoare text label INT
 }) {
+  const extFillFinal = extFill || "url(#amb-ext)";
+  const intFillFinal = intFill || "url(#amb-int)";
+  const extColorFinal = extColor || "#1e40af";
+  const intColorFinal = intColor || "#15803d";
+
   const totalW = width + padLeft + padRight;
   const totalH = height + padTop + padBottom;
 
   if (orientation === "horizontal") {
-    // EXT stânga, INT dreapta: folosim padLeft/padRight = 60 fiecare
+    // Secțiune tip „perete" — EXT stânga, INT dreapta
     const lpad = padLeft || 62;
     const rpad = padRight || 62;
     const totalWH = width + lpad + rpad;
@@ -303,10 +325,10 @@ export function SectionFrame({
         <MaterialDefs />
         {showStrips && (
           <>
-            <rect x="0" y="0" width={lpad} height={height} fill="url(#amb-ext)" />
-            <rect x={lpad + width} y="0" width={rpad} height={height} fill="url(#amb-int)" />
-            <text x={lpad / 2} y={height / 2} fontSize="11" fontWeight="700" fill="#1e40af" textAnchor="middle" transform={`rotate(-90 ${lpad / 2} ${height / 2})`}>{extLabel}</text>
-            <text x={lpad + width + rpad / 2} y={height / 2} fontSize="11" fontWeight="700" fill="#15803d" textAnchor="middle" transform={`rotate(90 ${lpad + width + rpad / 2} ${height / 2})`}>{intLabel}</text>
+            <rect x="0" y="0" width={lpad} height={height} fill={extFillFinal} />
+            <rect x={lpad + width} y="0" width={rpad} height={height} fill={intFillFinal} />
+            <text x={lpad / 2} y={height / 2} fontSize="11" fontWeight="700" fill={extColorFinal} textAnchor="middle" transform={`rotate(-90 ${lpad / 2} ${height / 2})`}>{extLabel}</text>
+            <text x={lpad + width + rpad / 2} y={height / 2} fontSize="11" fontWeight="700" fill={intColorFinal} textAnchor="middle" transform={`rotate(90 ${lpad + width + rpad / 2} ${height / 2})`}>{intLabel}</text>
           </>
         )}
         <g transform={`translate(${lpad}, 0)`}>{children}</g>
@@ -314,17 +336,16 @@ export function SectionFrame({
     );
   }
 
+  // Secțiune tip „vertical" — EXT sus, INT jos (sau invers, via ext/intFill)
   return (
     <svg viewBox={`0 0 ${totalW} ${totalH}`} xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "auto", display: "block" }}>
       <MaterialDefs />
       {showStrips && (
         <>
-          {/* EXT strip sus */}
-          <rect x="0" y="0" width={totalW} height={padTop} fill="url(#amb-ext)" />
-          <text x={totalW / 2} y={padTop * 0.65} fontSize="11" fontWeight="700" fill="#1e40af" textAnchor="middle" style={{ letterSpacing: "1px" }}>{extLabel}</text>
-          {/* INT strip jos */}
-          <rect x="0" y={padTop + height} width={totalW} height={padBottom} fill="url(#amb-int)" />
-          <text x={totalW / 2} y={padTop + height + padBottom * 0.65} fontSize="11" fontWeight="700" fill="#15803d" textAnchor="middle" style={{ letterSpacing: "1px" }}>{intLabel}</text>
+          <rect x="0" y="0" width={totalW} height={padTop} fill={extFillFinal} />
+          <text x={totalW / 2} y={padTop * 0.65} fontSize="11" fontWeight="700" fill={extColorFinal} textAnchor="middle" style={{ letterSpacing: "1px" }}>{extLabel}</text>
+          <rect x="0" y={padTop + height} width={totalW} height={padBottom} fill={intFillFinal} />
+          <text x={totalW / 2} y={padTop + height + padBottom * 0.65} fontSize="11" fontWeight="700" fill={intColorFinal} textAnchor="middle" style={{ letterSpacing: "1px" }}>{intLabel}</text>
         </>
       )}
       <g transform={`translate(${padLeft}, ${padTop})`}>{children}</g>
