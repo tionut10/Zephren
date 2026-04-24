@@ -46,6 +46,36 @@ textarea:focus-visible {
   border-radius: 4px;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Dark-theme fix pentru native <select> + <option> + <optgroup>
+   Options din native select nu respectă CSS-ul de pe <select>, folosesc
+   stilurile OS default → pe dark theme apar gri-pe-gri ilizibil.
+   Setăm explicit culori pe option/optgroup ca să fie vizibile la scroll.
+   Valabil pe Chrome/Edge/Firefox (Safari are suport limitat dar tolerabil).
+   ───────────────────────────────────────────────────────────────────── */
+option {
+  background-color: #1a1d2e;
+  color: #e5e7eb;
+  padding: 6px 8px;
+}
+option:hover,
+option:focus,
+option:active,
+option:checked {
+  background-color: #312e81; /* indigo-900 */
+  color: #fef3c7; /* amber-100 — evidență pentru opțiunea activă */
+}
+optgroup {
+  background-color: #12141f;
+  color: #a78bfa; /* violet-400 pentru etichete grupe */
+  font-weight: 600;
+  font-style: normal;
+}
+/* Ascund flicker-ul alb la deschidere select pe Firefox/Chrome */
+select {
+  color-scheme: dark;
+}
+
 /* Mobile responsive navbar */
 @media (max-width: 640px) {
   .nav-desktop { display: none !important; }
