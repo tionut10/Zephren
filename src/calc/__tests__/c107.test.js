@@ -85,4 +85,22 @@ describe("checkC107Conformity — verificare elemente", () => {
   it("Categorie invalidă → aruncă eroare", () => {
     expect(() => checkC107Conformity([], [], "INVALID", calcR)).toThrow();
   });
+
+  it.each([
+    ["CP", "RC"],   // cămin studențesc → rezidențial colectiv
+    ["AD", "BI"],   // clădire administrativă → birouri
+    ["BA_OFF", "BI"],
+    ["GR", "AL"],   // grădiniță
+    ["SC", "AL"],   // școală
+    ["UN", "AL"],   // universitate
+    ["SPA_H", "AL"],// spital
+    ["REST", "CO"], // restaurant
+    ["MAG", "CO"],  // magazin
+    ["SUPER", "CO"],// supermarket
+    ["IU", "IN"],   // industrie ușoară
+    ["HAL", "IN"],  // hală
+    ["DEP", "IN"],  // depozit
+  ])("Mapare categorie %s → %s nu aruncă eroare", (cat) => {
+    expect(() => checkC107Conformity([], [], cat, calcR)).not.toThrow();
+  });
 });

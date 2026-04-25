@@ -290,17 +290,68 @@ export function getRenovUMax(elementType, category) {
 export function checkC107Conformity(opaqueElements = [], glazingElements = [], category, calcOpaqueR) {
   // Mapare categorii extinse → categorii C107/2-2005
   const categoryMap = {
-    'RA': 'RC',  // Rezidențial alte tipuri → RC
-    'ED': 'AL',  // Educație → Alte clădiri
-    'SA': 'AL',  // Sănătate → Alte clădiri
-    'HC': 'AL',  // Hotel/turism → Alte clădiri
+    // Rezidențial
+    'RA': 'RC',
+    'CP': 'RC',      // Cămin studențesc/internat → rezidențial colectiv
+    // Birouri / administrative
+    'AD': 'BI',      // Clădire administrativă / instituție publică
+    'BA_OFF': 'BI',  // Bancă / instituție financiară
+    // Educație
+    'ED': 'AL',
+    'GR': 'AL',      // Grădiniță / creșă
+    'SC': 'AL',      // Școală primară / gimnaziu
+    'LI': 'AL',      // Liceu
+    'UN': 'AL',      // Universitate
+    // Sănătate
+    'SA': 'AL',
+    'SPA_H': 'AL',   // Spital
+    'CL': 'AL',      // Clinică ambulatorie
+    'ST': 'AL',      // Cabinet medical
+    'LB_MED': 'AL',  // Laborator medical
+    'AS_SOC': 'AL',
+    // Hoteluri / cazare
+    'HC': 'AL',
     'HO_LUX': 'AL',
     'HOSTEL': 'AL',
-    'SP': 'AL',  // Sport → Alte clădiri
-    'CU': 'AL',  // Cultură → Alte clădiri
-    'RE': 'CO',  // Restaurant → Comerț
-    'LB': 'AL',  // Laborator → Alte clădiri
-    'AS_SOC': 'AL',
+    // Restaurante / alimentație
+    'RE': 'CO',      // alias legacy
+    'REST': 'CO',    // Restaurant
+    'BAR': 'CO',     // Bar / cafenea
+    'CANTINE': 'CO', // Cantină
+    'FAST_F': 'CO',  // Fast-food
+    // Comerț extins
+    'MAG': 'CO',     // Magazin / boutique
+    'SUPER': 'CO',   // Supermarket
+    'MALL': 'CO',    // Mall
+    'AG_COM': 'CO',  // Showroom / agenție comercială
+    'FIT': 'CO',     // Sală fitness / club sportiv
+    'SPA_W': 'CO',   // SPA / wellness
+    // Sport
+    'SP': 'AL',
+    'PSC': 'AL',     // Piscină acoperită
+    'SALA_POL': 'AL',// Sală polivalentă
+    // Cultură
+    'CU': 'AL',      // alias generic
+    'CIN': 'AL',     // Cinema
+    'TEA': 'AL',     // Teatru
+    'MUZ': 'AL',     // Muzeu
+    'BIB': 'AL',     // Bibliotecă
+    'CC': 'AL',      // Casă de cultură
+    'EXP': 'AL',     // Sală de conferințe / expoziții
+    'CUL': 'AL',     // Edificiu de cult
+    // Transport
+    'GARA': 'AL',    // Gară / autogară
+    'AER': 'AL',     // Aeroport
+    // Industrie
+    'IU': 'IN',      // Industrie ușoară
+    'HAL': 'IN',     // Hală industrială
+    'DEP': 'IN',     // Depozit / logistică
+    'LAB_IND': 'IN', // Laborator / R&D
+    'FRG': 'IN',     // Cameră frigorifică
+    'LB': 'AL',      // Laborator generic (non-industrial)
+    // Parcări
+    'PRC': 'IN',     // Parcare acoperită
+    'GAR_IND': 'AL', // Garaj individual
   };
   const mappedCategory = categoryMap[category] ?? category;
 
