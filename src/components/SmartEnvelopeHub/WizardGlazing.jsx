@@ -13,6 +13,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Select, Input, cn } from "../ui.jsx";
+import SuggestionPanel from "../SuggestionPanel.jsx";
+import { suggestForGlazingElement } from "../../data/suggestions-catalog.js";
 import {
   GLAZING_DB,
   FRAME_DB,
@@ -95,6 +97,18 @@ export default function WizardGlazing({
       setElement(p => ({ ...p, name: "Fereastră nouă" }));
     }
   }, [element.isDoor]);
+
+  // ── Sugestii orientative (fără brand) — Pas 3 ────────────────────────────
+  const glazingSuggestions = useMemo(() => {
+    if (step !== 3) return { glazings: [], frames: [] };
+    if (!calcResult?.u) return { glazings: [], frames: [] };
+    return suggestForGlazingElement({
+      uTarget: uRef,
+      isDoor: element.isDoor,
+      preferredTags: uStatus === "fail" ? ["nZEB"] : [],
+      limit: 3,
+    });
+  }, [step, calcResult?.u, uRef, element.isDoor, uStatus]);
 
   // ── Handler salvare ────────────────────────────────────────────────────────
   const handleSave = () => {
@@ -419,6 +433,36 @@ export default function WizardGlazing({
                 </div>
               </div>
             </div>
+
+            {/* Sugestii orientative (fără brand) */}
+            {(glazingSuggestions.glazings.length > 0 || glazingSuggestions.frames.length > 0) && (
+              <div className="space-y-2">
+                {glazingSuggestions.glazings.length > 0 && (
+                  <SuggestionPanel
+                    suggestions={glazingSuggestions.glazings}
+                    title={
+                      uStatus === "fail"
+                        ? "Vitraje recomandate pentru U_ref nZEB"
+                        : "Vitraje alternative orientative"
+                    }
+                    subtitle={`Tipuri de vitraj — ${element.isDoor ? "ușă vitrată" : "fereastră"} — fără nume de marcă.`}
+                    mode="card"
+                    lang={lang}
+                    showDisclaimer={false}
+                  />
+                )}
+                {glazingSuggestions.frames.length > 0 && (
+                  <SuggestionPanel
+                    suggestions={glazingSuggestions.frames}
+                    title="Rame tâmplărie compatibile"
+                    subtitle="Combinații tipice pentru obținere U total optim."
+                    mode="card"
+                    lang={lang}
+                    showDisclaimer={true}
+                  />
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 justify-between pt-3">
               <button

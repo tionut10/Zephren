@@ -22,6 +22,8 @@
 import { useState, useMemo, useEffect } from "react";
 import MATERIALS_DB from "../../data/materials.json";
 import { Select, Input, cn } from "../ui.jsx";
+import SuggestionPanel from "../SuggestionPanel.jsx";
+import { suggestForOpaqueElement } from "../../data/suggestions-catalog.js";
 import {
   ELEMENT_TYPES_WIZARD,
   LAYER_PRESETS,
@@ -188,6 +190,22 @@ export default function WizardOpaque({
   };
 
   const elTypeLabel = ELEMENT_TYPES_WIZARD.find(t => t.id === element.type)?.label || element.type;
+
+  // ── Sugestii orientative (fără brand) ────────────────────────────────────
+  // Active în Pas 3 când avem U calculat și U_ref. Recomandă termoizolații
+  // capabile să ducă elementul către U_ref nZEB.
+  const opaqueSuggestions = useMemo(() => {
+    if (step !== 3) return [];
+    if (!uResult?.u || !uRef) return [];
+    if (!element.type) return [];
+    return suggestForOpaqueElement({
+      elementType: element.type,
+      uCurrent: uResult.u,
+      uTarget: uRef,
+      preferredTags: uStatus === "fail" ? ["nZEB"] : [],
+      limit: 3,
+    });
+  }, [step, uResult?.u, uRef, element.type, uStatus]);
 
   return (
     <div
@@ -519,6 +537,23 @@ export default function WizardOpaque({
                 </div>
               )}
             </div>
+
+            {/* Sugestii orientative termoizolații (fără brand) */}
+            {opaqueSuggestions.length > 0 && (
+              <SuggestionPanel
+                suggestions={opaqueSuggestions}
+                title={
+                  uStatus === "fail"
+                    ? "Soluții recomandate pentru atingerea U_ref nZEB"
+                    : uStatus === "warn"
+                    ? "Soluții pentru a aduce elementul în clasa A"
+                    : "Alternative orientative pentru element"
+                }
+                subtitle={`Termoizolații tipice piață RO 2025-2026 — fără nume de marcă. Pentru ${elTypeLabel}.`}
+                mode="card"
+                lang={lang}
+              />
+            )}
 
             {/* Editor avansat link (D5) */}
             <button
