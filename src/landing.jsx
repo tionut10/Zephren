@@ -739,6 +739,24 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             : "Alege pachetul care se potrivește volumului tău de audit. Step 1-7 acoperă tot fluxul CPE oficial; Step 8 adaugă 18 module avansate pentru auditori seniori."}
         </p>
 
+        {/* ── Notă globală TVA — vizibil deasupra pachetelor ── */}
+        <div style={{
+          maxWidth: "1140px",
+          margin: "0 auto 24px",
+          padding: "10px 18px",
+          borderRadius: "8px",
+          background: isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)",
+          border: "1px solid rgba(245,158,11,0.25)",
+          fontSize: "12px",
+          color: textMuted,
+          textAlign: "center",
+          fontWeight: "500",
+        }}>
+          💼 {lang === "EN"
+            ? <>All prices displayed are <strong>VAT-EXCLUDED</strong> (19% VAT is added at invoicing — applies to Romanian B2B and B2C; EU B2B with VIES VAT number = 0% reverse charge).</>
+            : <>Toate prețurile afișate sunt <strong>FĂRĂ TVA</strong> (TVA 19% se adaugă la facturare — pentru clienți RO B2B și B2C; B2B UE cu cod VAT VIES = 0% taxare inversă).</>}
+        </div>
+
         {/* ── Trust banner: Price Lock pe viață (DEASUPRA pachetelor — primul lucru pe care îl vede clientul) ── */}
         <div style={{ maxWidth: "1140px", margin: "0 auto 40px", padding: "20px 28px", borderRadius: "16px", background: isDark ? "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))" : "rgba(99,102,241,0.05)", border: "2px solid rgba(99,102,241,0.3)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>

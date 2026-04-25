@@ -178,9 +178,9 @@ export const PLANS = [
     period: "/lună",
     priceAn: "4.990",
     discount: "/an (10 luni) · CEL MAI ALES",
-    audience: "Auditor activ MDLPA · până la 36 CPE/lună (30 + 6 burst) · audit financiar inclus",
+    audience: "Auditor activ MDLPA · până la 36 CPE/lună (30 + 6 burst) · audit energetic complet inclus",
     features: [
-      "Step 1-7 COMPLET (CPE + Anexe + Audit financiar)",
+      "Step 1-7 COMPLET (CPE + Anexe + Audit energetic Mc 001-2022)",
       "30 CPE/lună incluse + 6 burst gratis",
       "Overage: 49→79→99 RON/CPE pe trepte",
       "Rollover CPE neutilizate 3 luni",

@@ -54,7 +54,7 @@ export default function Step7Audit(props) {
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
-  // Sprint Pricing v6.0 — Step 7 audit financiar e blocat pentru Free + Audit (199).
+  // Sprint Pricing v6.0 — Step 7 audit energetic e blocat pentru Free + Audit (199).
   // Acces: Pro 499 (Step 1-7 complet), Expert, Birou, Enterprise, Edu.
   if (!canAccess(userPlan, "step7Audit")) {
     return (
@@ -62,8 +62,8 @@ export default function Step7Audit(props) {
         <h2 className="text-lg font-bold mb-2">{lang === "EN" ? "Step 7 — Audit & Rehabilitation" : "Pas 7 — Audit & Reabilitare"}</h2>
         <p className="text-sm text-slate-400 mb-4">
           {lang === "EN"
-            ? "Financial audit (NPV/IRR/LCC), prioritized renovation recommendations, multi-year phased planning, PNRR funding eligibility, basic Renovation Passport (mandatory EPBD from May 29, 2026)."
-            : "Audit financiar (NPV/IRR/LCC), recomandări reabilitare prioritizate, planificare faze multi-an, eligibilitate PNRR, Pașaport Renovare basic (obligatoriu EPBD de la 29 mai 2026)."}
+            ? "Complete energy audit (Mc 001-2022) with financial analysis NPV/IRR/LCC, prioritized renovation recommendations, multi-year phased planning, PNRR funding eligibility, basic Renovation Passport (mandatory EPBD from May 29, 2026)."
+            : "Audit energetic complet (Mc 001-2022) cu analiză financiară NPV/IRR/LCC, recomandări reabilitare prioritizate, planificare faze multi-an, eligibilitate PNRR, Pașaport Renovare basic (obligatoriu EPBD de la 29 mai 2026)."}
         </p>
         <PlanGate
           feature="step7Audit"

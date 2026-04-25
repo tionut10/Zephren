@@ -40,7 +40,7 @@ export const PLAN_FEATURES = {
     maxUsers:           1,
     multiUser:          false,
     // Step gating
-    step7Audit:         false,       // Audit financiar BLOCAT
+    step7Audit:         false,       // Audit energetic complet BLOCAT
     step8Advanced:      false,
     // Export oficial
     exportDOCX:         true,        // cu watermark
