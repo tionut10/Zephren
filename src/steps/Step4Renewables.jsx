@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
+import SuggestionPanel from "../components/SuggestionPanel.jsx";
+import { suggestPV } from "../data/suggestions-catalog.js";
 import { calcSolarACMDetailed, COLLECTOR_TYPES } from "../calc/solar-acm-detailed.js";
 import { calcCHP, CHP_TYPES_CATALOG } from "../calc/chp-detailed.js";
 import {
@@ -24,6 +26,17 @@ export default function Step4Renewables({
   setStep, goToStep,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+
+  // ── Sugestii PV orientative (fără brand) ────────────────────────────────
+  // Folosim peakPower curent ca țintă; dacă nu există, sortare după default.
+  const pvSuggestions = useMemo(() => {
+    const targetKWp = parseFloat(photovoltaic?.peakPower) || undefined;
+    return suggestPV({
+      targetKWp,
+      preferredTags: ["nZEB", "regenerabil"],
+      limit: 3,
+    });
+  }, [photovoltaic?.peakPower]);
 
   return (
     <div>
@@ -183,6 +196,15 @@ export default function Step4Renewables({
                   )}
                 </div>
               </Card>
+
+              {/* Sugestii orientative sisteme PV (fără brand) */}
+              <SuggestionPanel
+                suggestions={pvSuggestions}
+                title={t("Soluții recomandate sisteme fotovoltaice",lang)}
+                subtitle={t("Sisteme PV tipice piață RO 2025-2026 — eligibile Casa Verde Fotovoltaice / Programul Național.",lang)}
+                mode="card"
+                lang={lang}
+              />
             </>
           )}
 

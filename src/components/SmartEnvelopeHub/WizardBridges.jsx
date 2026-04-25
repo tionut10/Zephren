@@ -17,6 +17,8 @@
 
 import { useState, useMemo } from "react";
 import { cn, Input } from "../ui.jsx";
+import SuggestionPanel from "../SuggestionPanel.jsx";
+import { filterByCategory } from "../../data/suggestions-catalog.js";
 import {
   MAIN_CATEGORIES,
   getQuickPicks,
@@ -71,6 +73,15 @@ export default function WizardBridges({
   // ── Totale ────────────────────────────────────────────────────────────────
   const totalLoss = queue.reduce((s, q) => s + (q.psi * q.length), 0);
   const totalLength = queue.reduce((s, q) => s + q.length, 0);
+
+  // ── Sugestii orientative tratare punți (când există ψ ridicat) ──────────
+  // Afișăm soluții doar când queue-ul conține punți cu ψ ≥ 0.30 W/(m·K) —
+  // praguri unde tratarea aduce reducere semnificativă.
+  const bridgeSuggestions = useMemo(() => {
+    const hasHighPsi = queue.some(q => q.psi >= 0.30);
+    if (!hasHighPsi) return [];
+    return filterByCategory("bridge");
+  }, [queue]);
 
   // ── Handler apply final ───────────────────────────────────────────────────
   const handleApply = () => {
@@ -286,6 +297,19 @@ export default function WizardBridges({
             )}
           </div>
         </div>
+
+        {/* Sugestii orientative tratare punți termice (full-width) */}
+        {bridgeSuggestions.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-white/5">
+            <SuggestionPanel
+              suggestions={bridgeSuggestions}
+              title="Soluții recomandate pentru tratarea punților termice"
+              subtitle={`Punți cu ψ ≥ 0.30 W/(m·K) detectate în listă — reducerea aduce câștig de 60-80% la pierderi liniare.`}
+              mode="card"
+              showDisclaimer
+            />
+          </div>
+        )}
 
         {/* ── Buttons footer ────────────────────────────────────────────── */}
         <div className="flex gap-3 justify-between mt-5 pt-3 border-t border-white/5">

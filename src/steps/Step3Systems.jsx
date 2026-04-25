@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { cn, Select, Input, Card, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import InvoiceOCR from "../components/InvoiceOCR.jsx";
+import SuggestionPanel from "../components/SuggestionPanel.jsx";
+import { suggestHVAC, filterByCategory } from "../data/suggestions-catalog.js";
 import {
   HEAT_SOURCES, FUELS, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY,
   CONTROL_TYPES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
@@ -24,6 +26,33 @@ export default function Step3Systems({
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [showOCR, setShowOCR] = useState(false);
+
+  // ── Sugestii orientative (fără brand) per tab ───────────────────────────
+  // Filtrare statică din catalog — afișate în fiecare sub-tab Step 3.
+  const heatingSuggestions = useMemo(() => {
+    const peakLoad = parseFloat(heating?.power) || 0;
+    return suggestHVAC({
+      functionType: "heating",
+      peakLoad_kW: peakLoad > 0 ? peakLoad : undefined,
+      preferredTags: ["nZEB"],
+      limit: 3,
+    });
+  }, [heating?.power]);
+
+  const coolingSuggestions = useMemo(
+    () => filterByCategory("hvac-cooling").slice(0, 3),
+    []
+  );
+
+  const ventilationSuggestions = useMemo(
+    () => filterByCategory("ventilation"),
+    []
+  );
+
+  const lightingSuggestions = useMemo(
+    () => filterByCategory("lighting"),
+    []
+  );
 
   const handleOCRApply = useCallback((data) => {
     try {
@@ -134,6 +163,15 @@ export default function Step3Systems({
                   </div>
                 </div>
               </Card>
+
+              {/* Sugestii orientative HVAC încălzire (fără brand) */}
+              <SuggestionPanel
+                suggestions={heatingSuggestions}
+                title={t("Soluții recomandate pentru sursa de căldură",lang)}
+                subtitle={t("Echipamente tipice piață RO 2025-2026 — fără nume de marcă. Pentru oferte concrete contactați furnizori autorizați.",lang)}
+                mode="card"
+                lang={lang}
+              />
             </>
           )}
 
@@ -668,6 +706,17 @@ export default function Step3Systems({
                   )}
                 </div>
               </Card>
+
+              {/* Sugestii orientative climatizare (fără brand) */}
+              {cooling.hasCooling !== false && (
+                <SuggestionPanel
+                  suggestions={coolingSuggestions}
+                  title={t("Soluții recomandate pentru climatizare",lang)}
+                  subtitle={t("Sisteme de răcire orientative pentru rezidențial/comercial — fără nume de marcă.",lang)}
+                  mode="card"
+                  lang={lang}
+                />
+              )}
             </>
             );
           })()}
@@ -740,6 +789,15 @@ export default function Step3Systems({
                   )}
                 </div>
               </Card>
+
+              {/* Sugestii orientative ventilare (fără brand) */}
+              <SuggestionPanel
+                suggestions={ventilationSuggestions}
+                title={t("Soluții recomandate pentru ventilare mecanică",lang)}
+                subtitle={t("Sisteme VMC tipice — VMC dual-flux cu recuperare ≥ 90% e obligatoriu pentru nZEB.",lang)}
+                mode="card"
+                lang={lang}
+              />
             </>
             );
           })()}
@@ -855,6 +913,15 @@ export default function Step3Systems({
                   )}
                 </div>
               </Card>
+
+              {/* Sugestii orientative iluminat (fără brand) */}
+              <SuggestionPanel
+                suggestions={lightingSuggestions}
+                title={t("Soluții recomandate pentru iluminat",lang)}
+                subtitle={t("Corpuri LED + control prezență — reduc LENI cu 30-50%, BACS clasă C obligatoriu nZEB.",lang)}
+                mode="card"
+                lang={lang}
+              />
             </>
             );
           })()}
