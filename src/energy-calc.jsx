@@ -3195,7 +3195,7 @@ export default function EnergyCalcApp({ cloud }) {
                 </>
               )}
             </div>
-            <button onClick={toggleThemeManual} aria-label={theme==="dark"?"Comută la mod luminos":"Comută la mod întunecat"} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"><span aria-hidden="true">{theme==="dark"?"☀":"🌙"}</span></button>
+            <button onClick={toggleThemeManual} aria-label={theme==="dark"?"Comută la mod luminos":"Comută la mod întunecat"} title={theme==="dark"?"Acum: mod întunecat — click pentru mod luminos":"Acum: mod luminos — click pentru mod întunecat"} className="text-[10px] px-1.5 py-1 rounded-lg border border-white/10 hover:bg-white/5 transition-colors"><span aria-hidden="true">{theme==="dark"?"☀":"🌙"}</span></button>
             <button onClick={() => setLang(l => l==="RO"?"EN":"RO")}
               aria-label={lang==="RO"?"Switch to English":"Comută la limba română"}
               className="text-[10px] sm:text-xs px-2 py-1 sm:py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors font-medium">
