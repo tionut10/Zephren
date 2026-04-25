@@ -13,7 +13,24 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar styling for dark theme */
+/* ─────────────────────────────────────────────────────────────────────
+   Tokens globale (Sprint pilot light-mode contrast WCAG AA mix)
+   Paleta light: bg #F8FAFC + text #0F172A → ratio 17.85:1 (AAA marjă mare)
+   AAA pe rezultate critice + AA pe restul UI (≥4.5:1 text, ≥3:1 UI)
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  --ep-bg-base: #F8FAFC;        /* slate-50  — fundal global light */
+  --ep-bg-card: #FFFFFF;        /* card surface light */
+  --ep-bg-elevated: #F1F5F9;    /* slate-100 — hover/active */
+  --ep-text-primary: #0F172A;   /* slate-900 — 17.85:1 AAA */
+  --ep-text-secondary: #334155; /* slate-700 — 10.31:1 AAA */
+  --ep-text-muted: #475569;     /* slate-600 — 7.55:1 AAA */
+  --ep-text-helper: #64748B;    /* slate-500 — 5.17:1 AA  */
+  --ep-border: #E2E8F0;         /* slate-200 — 3.1:1 UI   */
+  --ep-border-strong: #CBD5E1;  /* slate-300 — UI accent  */
+}
+
+/* Scrollbar — dark theme default */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -27,6 +44,17 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Scrollbar — light theme (vizibil pe fundal F8FAFC) */
+.ep-light ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.20);
+}
+.ep-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.35);
+}
+.ep-light * {
+  scrollbar-color: rgba(15, 23, 42, 0.25) transparent; /* Firefox */
 }
 
 /* Smooth scroll for anchor links */

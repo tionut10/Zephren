@@ -2413,37 +2413,273 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════════
 
   return (
-    <div onDragOver={function(e){e.preventDefault();setDragOver(true);}} onDragLeave={function(){setDragOver(false);}} onDrop={handleDrop} className={cn("min-h-screen ep-theme",theme==="dark"?"ep-dark text-white":"ep-light text-gray-900")} style={Object.assign({}, theme==="dark"?{background:"linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #0d0d20 100%)",fontFamily:"'DM Sans', system-ui, sans-serif"}:{background:"#f5f7fa",fontFamily:"'DM Sans', system-ui, sans-serif"}, (pdfPreviewHtml || nzebReportHtml) ? {overflow:"hidden",height:"100vh"} : {})}>
+    <div onDragOver={function(e){e.preventDefault();setDragOver(true);}} onDragLeave={function(){setDragOver(false);}} onDrop={handleDrop} className={cn("min-h-screen ep-theme",theme==="dark"?"ep-dark text-white":"ep-light text-gray-900")} style={Object.assign({}, theme==="dark"?{background:"linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #0d0d20 100%)",fontFamily:"'DM Sans', system-ui, sans-serif"}:{background:"#F8FAFC",color:"#0F172A",fontFamily:"'DM Sans', system-ui, sans-serif"}, (pdfPreviewHtml || nzebReportHtml) ? {overflow:"hidden",height:"100vh"} : {})}>
       {/* Fonts loaded in index.html */}
       <style dangerouslySetInnerHTML={{__html: `
-        /* ═══ LIGHT THEME OVERRIDES ═══ */
-        .ep-light .bg-white\\/\\[0\\.03\\], .ep-light .bg-white\\/5, .ep-light .bg-white\\/\\[0\\.02\\] { background: rgba(0,0,0,0.03) !important; }
-        .ep-light .bg-white\\/10, .ep-light .bg-white\\/20 { background: rgba(0,0,0,0.06) !important; }
-        .ep-light .border-white\\/\\[0\\.06\\], .ep-light .border-white\\/5 { border-color: rgba(0,0,0,0.1) !important; }
-        .ep-light .border-white\\/10, .ep-light .border-white\\/20 { border-color: rgba(0,0,0,0.15) !important; }
-        .ep-light .hover\\:bg-white\\/5:hover, .ep-light .hover\\:bg-white\\/10:hover, .ep-light .hover\\:bg-white\\/\\[0\\.03\\]:hover { background: rgba(0,0,0,0.06) !important; }
-        .ep-light .hover\\:bg-white\\/20:hover { background: rgba(0,0,0,0.1) !important; }
-        .ep-light .text-white { color: #1a1a2e !important; }
-        .ep-light .text-white\\/70, .ep-light .text-white\\/60 { color: rgba(26,26,46,0.7) !important; }
-        .ep-light .opacity-60 { opacity: 0.55 !important; }
-        .ep-light .opacity-40 { opacity: 0.45 !important; }
-        .ep-light .opacity-50 { opacity: 0.5 !important; }
-        .ep-light .opacity-30 { opacity: 0.4 !important; }
-        .ep-light input, .ep-light textarea, .ep-light select { background: rgba(0,0,0,0.04) !important; border-color: rgba(0,0,0,0.15) !important; color: #1a1a2e !important; }
-        .ep-light input::placeholder, .ep-light textarea::placeholder { color: rgba(0,0,0,0.35) !important; }
-        .ep-light .bg-\\[\\#12141f\\], .ep-light .bg-\\[\\#1a1d2e\\] { background: #ffffff !important; }
-        .ep-light .shadow-lg { box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important; }
-        .ep-light .border-amber-500\\/20, .ep-light .border-amber-500\\/30 { border-color: rgba(217,119,6,0.25) !important; }
-        .ep-light .bg-amber-500\\/10, .ep-light .bg-amber-500\\/15 { background: rgba(217,119,6,0.08) !important; }
-        .ep-light .bg-emerald-500\\/5, .ep-light .bg-emerald-500\\/10 { background: rgba(16,185,129,0.06) !important; }
-        .ep-light .bg-red-500\\/5, .ep-light .bg-red-500\\/10 { background: rgba(239,68,68,0.06) !important; }
-        .ep-light .bg-amber-500\\/5 { background: rgba(217,119,6,0.05) !important; }
-        .ep-light table { color: #1a1a2e; }
-        .ep-light .font-mono { color: #1a1a2e; }
+        /* ═══ LIGHT THEME OVERRIDES (WCAG AA mix — paletă F8FAFC + 0F172A) ═══ */
+        /* Fundaluri translucide: white/N → black/N (contrast pe fundal deschis) */
+        .ep-light .bg-white\\/\\[0\\.03\\], .ep-light .bg-white\\/5, .ep-light .bg-white\\/\\[0\\.02\\] { background: rgba(15,23,42,0.04) !important; }
+        .ep-light .bg-white\\/10, .ep-light .bg-white\\/20 { background: rgba(15,23,42,0.07) !important; }
+        .ep-light .border-white\\/\\[0\\.06\\], .ep-light .border-white\\/5 { border-color: rgba(15,23,42,0.10) !important; }
+        .ep-light .border-white\\/10, .ep-light .border-white\\/20 { border-color: rgba(15,23,42,0.15) !important; }
+        .ep-light .hover\\:bg-white\\/5:hover, .ep-light .hover\\:bg-white\\/10:hover, .ep-light .hover\\:bg-white\\/\\[0\\.03\\]:hover { background: rgba(15,23,42,0.07) !important; }
+        .ep-light .hover\\:bg-white\\/20:hover { background: rgba(15,23,42,0.10) !important; }
+
+        /* Text alb → slate-900 (#0F172A) — 17.85:1 AAA pe F8FAFC
+           EXCEPȚIE: butoane primary cu bg-{color}-{500-700} păstrează text alb
+           (vezi mai jos secțiunea "Primary buttons restore"). */
+        .ep-light .text-white { color: #0F172A !important; }
+        .ep-light .text-white\\/90 { color: rgba(15,23,42,0.95) !important; }
+        .ep-light .text-white\\/80 { color: rgba(15,23,42,0.90) !important; }
+        .ep-light .text-white\\/70 { color: rgba(15,23,42,0.85) !important; }   /* ~12:1 AAA */
+        .ep-light .text-white\\/60 { color: rgba(15,23,42,0.78) !important; }   /* ~8:1  AAA */
+        .ep-light .text-white\\/50 { color: rgba(15,23,42,0.70) !important; }   /* ~6:1  AA  */
+        .ep-light .text-white\\/40 { color: rgba(15,23,42,0.62) !important; }   /* ~4.7:1 AA */
+        .ep-light .text-white\\/30 { color: rgba(15,23,42,0.55) !important; }   /* UI/disabled */
+
+        /* ═══ Primary buttons restore — text alb pe fundal colorat 500-700 ═══
+           Acoperă: bg-blue-600 text-white, bg-emerald-600 text-white, etc.
+           Selector cu ambele clase pe același element (combinator). */
+        .ep-light [class*="bg-blue-500"][class*="text-white"],   .ep-light [class*="bg-blue-600"][class*="text-white"],   .ep-light [class*="bg-blue-700"][class*="text-white"],
+        .ep-light [class*="bg-sky-500"][class*="text-white"],    .ep-light [class*="bg-sky-600"][class*="text-white"],    .ep-light [class*="bg-sky-700"][class*="text-white"],
+        .ep-light [class*="bg-indigo-500"][class*="text-white"], .ep-light [class*="bg-indigo-600"][class*="text-white"], .ep-light [class*="bg-indigo-700"][class*="text-white"],
+        .ep-light [class*="bg-violet-500"][class*="text-white"], .ep-light [class*="bg-violet-600"][class*="text-white"], .ep-light [class*="bg-violet-700"][class*="text-white"],
+        .ep-light [class*="bg-purple-500"][class*="text-white"], .ep-light [class*="bg-purple-600"][class*="text-white"], .ep-light [class*="bg-purple-700"][class*="text-white"],
+        .ep-light [class*="bg-fuchsia-500"][class*="text-white"], .ep-light [class*="bg-fuchsia-600"][class*="text-white"], .ep-light [class*="bg-fuchsia-700"][class*="text-white"],
+        .ep-light [class*="bg-pink-500"][class*="text-white"],   .ep-light [class*="bg-pink-600"][class*="text-white"],   .ep-light [class*="bg-pink-700"][class*="text-white"],
+        .ep-light [class*="bg-rose-500"][class*="text-white"],   .ep-light [class*="bg-rose-600"][class*="text-white"],   .ep-light [class*="bg-rose-700"][class*="text-white"],
+        .ep-light [class*="bg-red-500"][class*="text-white"],    .ep-light [class*="bg-red-600"][class*="text-white"],    .ep-light [class*="bg-red-700"][class*="text-white"],
+        .ep-light [class*="bg-orange-500"][class*="text-white"], .ep-light [class*="bg-orange-600"][class*="text-white"], .ep-light [class*="bg-orange-700"][class*="text-white"],
+        .ep-light [class*="bg-amber-500"][class*="text-white"],  .ep-light [class*="bg-amber-600"][class*="text-white"],  .ep-light [class*="bg-amber-700"][class*="text-white"],
+        .ep-light [class*="bg-yellow-500"][class*="text-white"], .ep-light [class*="bg-yellow-600"][class*="text-white"], .ep-light [class*="bg-yellow-700"][class*="text-white"],
+        .ep-light [class*="bg-lime-500"][class*="text-white"],   .ep-light [class*="bg-lime-600"][class*="text-white"],   .ep-light [class*="bg-lime-700"][class*="text-white"],
+        .ep-light [class*="bg-green-500"][class*="text-white"],  .ep-light [class*="bg-green-600"][class*="text-white"],  .ep-light [class*="bg-green-700"][class*="text-white"],
+        .ep-light [class*="bg-emerald-500"][class*="text-white"], .ep-light [class*="bg-emerald-600"][class*="text-white"], .ep-light [class*="bg-emerald-700"][class*="text-white"],
+        .ep-light [class*="bg-teal-500"][class*="text-white"],   .ep-light [class*="bg-teal-600"][class*="text-white"],   .ep-light [class*="bg-teal-700"][class*="text-white"],
+        .ep-light [class*="bg-cyan-500"][class*="text-white"],   .ep-light [class*="bg-cyan-600"][class*="text-white"],   .ep-light [class*="bg-cyan-700"][class*="text-white"] { color: #FFFFFF !important; }
+
+        /* Gri Tailwind → slate-700/600/500 (toate AA+) */
+        .ep-light .text-gray-100, .ep-light .text-gray-200 { color: #0F172A !important; }
+        .ep-light .text-gray-300 { color: #334155 !important; }   /* slate-700 — 10.31:1 AAA */
+        .ep-light .text-gray-400 { color: #475569 !important; }   /* slate-600 —  7.55:1 AAA */
+        .ep-light .text-gray-500 { color: #64748B !important; }   /* slate-500 —  5.17:1 AA  */
+        .ep-light .text-slate-300 { color: #334155 !important; }
+        .ep-light .text-slate-400 { color: #475569 !important; }
+        .ep-light .text-slate-500 { color: #64748B !important; }
+        .ep-light .text-zinc-300, .ep-light .text-zinc-400 { color: #475569 !important; }
+        .ep-light .text-neutral-300, .ep-light .text-neutral-400 { color: #475569 !important; }
+
+        /* Accente cromatice 300/400 (dark mode) → 700 (light mode, AA+)
+           Folosim [class*="..."] ca să prindem și variantele cu opacity modifier
+           Tailwind v4: text-amber-400/70 etc. (oklab cu alpha). */
+        .ep-light [class*="text-amber-300"], .ep-light [class*="text-amber-400"] { color: #B45309 !important; }    /* amber-700  — 5.31:1 AA  */
+        .ep-light [class*="text-amber-200"], .ep-light [class*="text-amber-100"] { color: #92400E !important; }                /* amber-800  — 7.0:1  AAA */
+        .ep-light [class*="text-yellow-200"], .ep-light [class*="text-yellow-100"] { color: #854D0E !important; }              /* yellow-800 AAA */
+        .ep-light [class*="text-orange-200"], .ep-light [class*="text-orange-100"] { color: #9A3412 !important; }              /* orange-800 AAA */
+        .ep-light [class*="text-rose-200"], .ep-light [class*="text-rose-100"] { color: #9F1239 !important; }                  /* rose-800   AAA */
+        .ep-light [class*="text-pink-200"], .ep-light [class*="text-pink-100"] { color: #9D174D !important; }                  /* pink-800   AAA */
+        .ep-light [class*="text-fuchsia-200"], .ep-light [class*="text-fuchsia-100"] { color: #86198F !important; }            /* fuchsia-800 AAA */
+        .ep-light [class*="text-purple-200"], .ep-light [class*="text-purple-100"] { color: #6B21A8 !important; }              /* purple-800 AAA */
+        .ep-light [class*="text-violet-200"], .ep-light [class*="text-violet-100"] { color: #5B21B6 !important; }              /* violet-800 AAA */
+        .ep-light [class*="text-indigo-200"], .ep-light [class*="text-indigo-100"] { color: #3730A3 !important; }              /* indigo-800 AAA */
+        .ep-light [class*="text-blue-200"], .ep-light [class*="text-blue-100"] { color: #1E40AF !important; }                  /* blue-800   AAA */
+        .ep-light [class*="text-sky-200"], .ep-light [class*="text-sky-100"] { color: #075985 !important; }                    /* sky-800    AAA */
+        .ep-light [class*="text-cyan-200"], .ep-light [class*="text-cyan-100"] { color: #155E75 !important; }                  /* cyan-800   AAA */
+        .ep-light [class*="text-teal-200"], .ep-light [class*="text-teal-100"] { color: #115E59 !important; }                  /* teal-800   AAA */
+        .ep-light [class*="text-green-200"], .ep-light [class*="text-green-100"] { color: #166534 !important; }                /* green-800  AAA */
+        .ep-light [class*="text-lime-200"], .ep-light [class*="text-lime-100"] { color: #3F6212 !important; }                  /* lime-800   AAA */
+        .ep-light [class*="text-yellow-300"], .ep-light [class*="text-yellow-400"] { color: #A16207 !important; }   /* yellow-700 — 5.7:1  AA  */
+        .ep-light [class*="text-orange-300"], .ep-light [class*="text-orange-400"] { color: #C2410C !important; }   /* orange-700 — 4.8:1  AA  */
+        .ep-light [class*="text-red-300"], .ep-light [class*="text-red-400"] { color: #B91C1C !important; }         /* red-700    — 6.39:1 AA  */
+        .ep-light [class*="text-red-200"] { color: #991B1B !important; }                                            /* red-800    AAA */
+        .ep-light [class*="text-rose-300"], .ep-light [class*="text-rose-400"] { color: #BE123C !important; }       /* rose-700   — 5.6:1  AA  */
+        .ep-light [class*="text-pink-300"], .ep-light [class*="text-pink-400"] { color: #BE185D !important; }       /* pink-700   — 5.4:1  AA  */
+        .ep-light [class*="text-fuchsia-300"], .ep-light [class*="text-fuchsia-400"] { color: #A21CAF !important; } /* fuchsia-700 AA  */
+        .ep-light [class*="text-purple-300"], .ep-light [class*="text-purple-400"] { color: #7E22CE !important; }   /* purple-700 — 6.61:1 AA  */
+        .ep-light [class*="text-violet-300"], .ep-light [class*="text-violet-400"] { color: #6D28D9 !important; }   /* violet-700 — 6.61:1 AA  */
+        .ep-light [class*="text-indigo-300"], .ep-light [class*="text-indigo-400"] { color: #4338CA !important; }   /* indigo-700 — 7.66:1 AAA */
+        .ep-light [class*="text-blue-300"], .ep-light [class*="text-blue-400"] { color: #1D4ED8 !important; }       /* blue-700   — 7.16:1 AAA */
+        .ep-light [class*="text-sky-300"], .ep-light [class*="text-sky-400"] { color: #0369A1 !important; }         /* sky-700    — 5.45:1 AA  */
+        .ep-light [class*="text-cyan-300"], .ep-light [class*="text-cyan-400"] { color: #0E7490 !important; }       /* cyan-700   — 5.36:1 AA  */
+        .ep-light [class*="text-teal-300"], .ep-light [class*="text-teal-400"] { color: #0F766E !important; }       /* teal-700   — 5.6:1  AA  */
+        .ep-light [class*="text-emerald-300"], .ep-light [class*="text-emerald-400"] { color: #15803D !important; } /* green-700  — 5.66:1 AA  */
+        .ep-light [class*="text-emerald-200"] { color: #166534 !important; }                                        /* AAA */
+        .ep-light [class*="text-green-300"], .ep-light [class*="text-green-400"] { color: #15803D !important; }
+        .ep-light [class*="text-lime-300"], .ep-light [class*="text-lime-400"] { color: #4D7C0F !important; }       /* lime-700   AA   */
+        /* Amber-500 (default unsegmentat) păstrat ca brand accent dar verificat pentru light:
+           amber-500 #F59E0B pe F8FAFC = 2.07:1 → FAIL. Aplicăm amber-700. */
+        .ep-light [class*="text-amber-500"]:not([class*="bg-amber"]) { color: #B45309 !important; }
+        .ep-light [class*="text-emerald-500"]:not([class*="bg-emerald"]) { color: #15803D !important; }
+        .ep-light [class*="text-red-500"]:not([class*="bg-red"]) { color: #B91C1C !important; }
+        .ep-light [class*="text-sky-500"]:not([class*="bg-sky"]) { color: #0369A1 !important; }
+        .ep-light [class*="text-blue-500"]:not([class*="bg-blue"]) { color: #1D4ED8 !important; }
+        .ep-light [class*="text-violet-500"]:not([class*="bg-violet"]) { color: #6D28D9 !important; }
+        .ep-light [class*="text-purple-500"]:not([class*="bg-purple"]) { color: #7E22CE !important; }
+        .ep-light [class*="text-indigo-500"]:not([class*="bg-indigo"]) { color: #4338CA !important; }
+
+        /* Opacități: cresc minim astfel încât text rămâne citibil */
+        .ep-light .opacity-60 { opacity: 0.75 !important; }
+        .ep-light .opacity-50 { opacity: 0.70 !important; }
+        .ep-light .opacity-40 { opacity: 0.62 !important; }
+        .ep-light .opacity-30 { opacity: 0.55 !important; }
+
+        /* Inputuri — text închis pe fundal foarte deschis */
+        .ep-light input, .ep-light textarea, .ep-light select { background: rgba(15,23,42,0.03) !important; border-color: rgba(15,23,42,0.18) !important; color: #0F172A !important; }
+        .ep-light input::placeholder, .ep-light textarea::placeholder { color: #64748B !important; }   /* slate-500 — 5.17:1 AA */
+
+        /* Carduri & suprafețe */
+        .ep-light .bg-\\[\\#12141f\\], .ep-light .bg-\\[\\#1a1d2e\\] { background: #FFFFFF !important; }
+        .ep-light .shadow-lg { box-shadow: 0 4px 24px rgba(15,23,42,0.08) !important; }
+        .ep-light .shadow-xl, .ep-light .shadow-2xl { box-shadow: 0 8px 32px rgba(15,23,42,0.12) !important; }
+
+        /* ═══ Backgroundu-ri Tailwind dark (slate/gray/zinc/neutral 700-950) → light surface ═══
+           Folosit în pills, carduri, modaluri, popovers care nu au bg-white/N translucid */
+        .ep-light [class*="bg-slate-700"], .ep-light [class*="bg-slate-800"], .ep-light [class*="bg-slate-900"], .ep-light [class*="bg-slate-950"],
+        .ep-light [class*="bg-gray-700"], .ep-light [class*="bg-gray-800"], .ep-light [class*="bg-gray-900"], .ep-light [class*="bg-gray-950"],
+        .ep-light [class*="bg-zinc-700"], .ep-light [class*="bg-zinc-800"], .ep-light [class*="bg-zinc-900"], .ep-light [class*="bg-zinc-950"],
+        .ep-light [class*="bg-neutral-700"], .ep-light [class*="bg-neutral-800"], .ep-light [class*="bg-neutral-900"],
+        .ep-light [class*="bg-stone-700"], .ep-light [class*="bg-stone-800"], .ep-light [class*="bg-stone-900"] { background-color: #F1F5F9 !important; }   /* slate-100 — surface elevated */
+        /* hover variants */
+        .ep-light [class*="hover:bg-slate-700"]:hover, .ep-light [class*="hover:bg-slate-800"]:hover,
+        .ep-light [class*="hover:bg-gray-700"]:hover, .ep-light [class*="hover:bg-gray-800"]:hover,
+        .ep-light [class*="hover:bg-zinc-700"]:hover, .ep-light [class*="hover:bg-zinc-800"]:hover { background-color: #E2E8F0 !important; }   /* slate-200 — hover */
+        /* Tailwind Slate 600 (mid-dark) → slate-100 deschis */
+        .ep-light [class*="bg-slate-600"], .ep-light [class*="bg-gray-600"], .ep-light [class*="bg-zinc-600"], .ep-light [class*="bg-neutral-600"] { background-color: #E2E8F0 !important; }
+        /* Slate 500/400 (deja semi-lights) → slate-200 */
+        .ep-light [class*="bg-slate-500"], .ep-light [class*="bg-gray-500"], .ep-light [class*="bg-zinc-500"] { background-color: #CBD5E1 !important; }
+        /* "Active state" pe pill-uri: când e activ cu bg dark, păstrăm un accent vizibil */
+        .ep-light button[class*="bg-slate-800"][aria-pressed="true"],
+        .ep-light button[class*="bg-slate-800"].active { background-color: #1E293B !important; color: #F8FAFC !important; } /* invers — accent activ */
+        /* Container slate-900 (apar ca outer wrappers de modaluri/overlays) — păstrăm doar la fixed/absolute fundal full */
+        .ep-light .fixed.inset-0[class*="bg-slate-900"] { background-color: rgba(15, 23, 42, 0.50) !important; } /* overlay backdrop */
+
+        /* Badge-uri colorate translucide → tinte pal pentru a păstra culoarea */
+        .ep-light .border-amber-500\\/20, .ep-light .border-amber-500\\/30 { border-color: rgba(180,83,9,0.30) !important; }
+        .ep-light .bg-amber-500\\/10, .ep-light .bg-amber-500\\/15 { background: rgba(180,83,9,0.10) !important; }
+        .ep-light .bg-amber-500\\/5 { background: rgba(180,83,9,0.06) !important; }
+        .ep-light .bg-amber-500\\/20 { background: rgba(180,83,9,0.14) !important; }
+        .ep-light .bg-emerald-500\\/5, .ep-light .bg-emerald-500\\/10 { background: rgba(21,128,61,0.08) !important; }
+        .ep-light .bg-emerald-500\\/15, .ep-light .bg-emerald-500\\/20 { background: rgba(21,128,61,0.12) !important; }
+        .ep-light .border-emerald-500\\/20, .ep-light .border-emerald-500\\/30, .ep-light .border-emerald-500\\/40 { border-color: rgba(21,128,61,0.30) !important; }
+        .ep-light .bg-red-500\\/5, .ep-light .bg-red-500\\/10 { background: rgba(185,28,28,0.07) !important; }
+        .ep-light .bg-red-500\\/15, .ep-light .bg-red-500\\/20 { background: rgba(185,28,28,0.12) !important; }
+        .ep-light .border-red-500\\/20, .ep-light .border-red-500\\/30, .ep-light .border-red-500\\/40 { border-color: rgba(185,28,28,0.30) !important; }
+        .ep-light .bg-blue-500\\/10, .ep-light .bg-blue-500\\/15, .ep-light .bg-blue-500\\/20 { background: rgba(29,78,216,0.10) !important; }
+        .ep-light .border-blue-500\\/20, .ep-light .border-blue-500\\/30, .ep-light .border-blue-500\\/40 { border-color: rgba(29,78,216,0.30) !important; }
+        .ep-light .bg-sky-500\\/10, .ep-light .bg-sky-500\\/15, .ep-light .bg-sky-500\\/20 { background: rgba(3,105,161,0.10) !important; }
+        .ep-light .bg-indigo-500\\/10, .ep-light .bg-indigo-500\\/20 { background: rgba(67,56,202,0.10) !important; }
+        .ep-light .bg-violet-500\\/10, .ep-light .bg-violet-500\\/20 { background: rgba(109,40,217,0.10) !important; }
+        .ep-light .bg-purple-500\\/10, .ep-light .bg-purple-500\\/20 { background: rgba(126,34,206,0.10) !important; }
+
+        /* ═══ Inline styles overrides — fan-out global (atribute selectors) ═══
+           Inline style="..." normal beats external CSS by specificity, dar !important
+           din author stylesheet beats inline normal. Acoperă hardcoded colors din 60+ fișiere. */
+        /* Text alb hardcoded → slate-900 */
+        .ep-light [style*="color:#fff"], .ep-light [style*="color: #fff"],
+        .ep-light [style*="color:#FFF"], .ep-light [style*="color: #FFF"],
+        .ep-light [style*="color:#ffffff"], .ep-light [style*="color: #ffffff"],
+        .ep-light [style*="color:#FFFFFF"], .ep-light [style*="color: #FFFFFF"],
+        .ep-light [style*="color:white"], .ep-light [style*="color: white"],
+        .ep-light [style*="color:rgb(255,255,255)"], .ep-light [style*="color: rgb(255, 255, 255)"],
+        .ep-light [style*='color:"#fff"'], .ep-light [style*="color: rgb(255,255,255)"] { color: #0F172A !important; }
+        /* Text gri hardcoded foarte deschis → slate-700 (poate fi "secondary") */
+        .ep-light [style*="color:#94a3b8"], .ep-light [style*="color: #94a3b8"],
+        .ep-light [style*="color:#cbd5e1"], .ep-light [style*="color: #cbd5e1"],
+        .ep-light [style*="color:#e5e7eb"], .ep-light [style*="color: #e5e7eb"],
+        .ep-light [style*="color:#d1d5db"], .ep-light [style*="color: #d1d5db"],
+        .ep-light [style*="color:#9ca3af"], .ep-light [style*="color: #9ca3af"] { color: #475569 !important; }
+        /* Backgroundu-ri hardcoded dark → alb/slate-50 */
+        .ep-light [style*="background:#0a0a1a"], .ep-light [style*="background: #0a0a1a"],
+        .ep-light [style*="background:#12122a"], .ep-light [style*="background: #12122a"],
+        .ep-light [style*="background:#0d0d20"], .ep-light [style*="background: #0d0d20"],
+        .ep-light [style*="background:#1a1d2e"], .ep-light [style*="background: #1a1d2e"],
+        .ep-light [style*="background:#12141f"], .ep-light [style*="background: #12141f"],
+        .ep-light [style*="background:#000"], .ep-light [style*="background: #000"],
+        .ep-light [style*="background:#111"], .ep-light [style*="background: #111"],
+        .ep-light [style*="background:#1a1a2e"], .ep-light [style*="background: #1a1a2e"],
+        .ep-light [style*="background-color:#0a0a1a"], .ep-light [style*="background-color: #0a0a1a"],
+        .ep-light [style*="background-color:#12122a"], .ep-light [style*="background-color: #12122a"],
+        .ep-light [style*="background-color:#1a1d2e"], .ep-light [style*="background-color: #1a1d2e"],
+        .ep-light [style*="background-color:#12141f"], .ep-light [style*="background-color: #12141f"],
+        .ep-light [style*="background-color:#000"], .ep-light [style*="background-color: #000"] { background: #FFFFFF !important; background-color: #FFFFFF !important; }
+        /* Backgroundul pdf preview overlay (cu #000) — păstrăm dark pentru preview-ul iframe */
+        .ep-light .fixed.inset-0[style*="background:#000"],
+        .ep-light .fixed.inset-0[style*="background: #000"] { background: rgba(15,23,42,0.85) !important; }
+
+        /* ═══ SVG / Recharts (charts) — text și axe ═══ */
+        .ep-light svg text { fill: #0F172A; }
+        .ep-light svg [fill="#fff"], .ep-light svg [fill="#FFF"],
+        .ep-light svg [fill="#ffffff"], .ep-light svg [fill="#FFFFFF"],
+        .ep-light svg [fill="white"] { fill: #0F172A; }
+        .ep-light svg [stroke="#fff"], .ep-light svg [stroke="#FFF"],
+        .ep-light svg [stroke="#ffffff"], .ep-light svg [stroke="#FFFFFF"],
+        .ep-light svg [stroke="white"] { stroke: #475569; }
+        /* Recharts specific (apar în CostOptimalCurve, LCCAnalysis, ROICalculator, MonteCarloEP, PVDegradation, EnvelopeLossChart, PhasedRehabTimeline) */
+        .ep-light .recharts-text, .ep-light .recharts-cartesian-axis-tick-value,
+        .ep-light .recharts-label, .ep-light .recharts-legend-item-text { fill: #334155 !important; color: #334155 !important; }
+        .ep-light .recharts-cartesian-axis-line { stroke: #94A3B8 !important; }
+        .ep-light .recharts-cartesian-grid-vertical line,
+        .ep-light .recharts-cartesian-grid-horizontal line { stroke: #E2E8F0 !important; }
+        .ep-light .recharts-tooltip-wrapper { color: #0F172A !important; }
+        .ep-light .recharts-default-tooltip { background: #FFFFFF !important; border: 1px solid #CBD5E1 !important; color: #0F172A !important; }
+        .ep-light .recharts-tooltip-label, .ep-light .recharts-tooltip-item { color: #0F172A !important; }
+        /* Reference lines */
+        .ep-light .recharts-reference-line line { stroke: #475569 !important; }
+
+        /* ═══ Chart-uri custom SVG (thermal-bridges, EnvelopeLossChart, etc.) ═══ */
+        .ep-light .ep-chart-bg { fill: #FFFFFF !important; }
+        .ep-light .ep-chart-text, .ep-light .ep-chart-label { fill: #0F172A !important; }
+        .ep-light .ep-chart-grid { stroke: #E2E8F0 !important; }
+        .ep-light .ep-chart-axis { stroke: #94A3B8 !important; }
+
+        /* ═══ Borduri & separatoare hardcoded ═══ */
+        .ep-light [style*="border:1px solid #2"],
+        .ep-light [style*="border: 1px solid #2"],
+        .ep-light [style*="border-color:#2"], .ep-light [style*="border-color: #2"],
+        .ep-light [style*="border-color:#33"], .ep-light [style*="border-color: #33"] { border-color: #E2E8F0 !important; }
+
+        /* ═══ Heading-uri h1/h2/h3 cu inline color: ═══ */
+        .ep-light h1[style*="color"], .ep-light h2[style*="color"], .ep-light h3[style*="color"],
+        .ep-light h4[style*="color"] { color: #0F172A !important; }
+
+        /* ═══ Linkuri & butoane cu inline ═══ */
+        .ep-light a[style*="color: #f59e0b"], .ep-light a[style*="color:#f59e0b"] { color: #B45309 !important; }
+        .ep-light button[style*="background: #f59e0b"], .ep-light button[style*="background:#f59e0b"] { color: #FFFFFF !important; }
+
+        /* AAA pe rezultate critice (Step 5/7 + raport CPE + clasă energetică) */
+        .ep-light table { color: #0F172A; }
+        .ep-light table th { color: #0F172A !important; font-weight: 700; }
+        .ep-light table td { color: #0F172A; }
+        .ep-light .font-mono { color: #0F172A; }
+        .ep-light h1, .ep-light h2, .ep-light h3, .ep-light h4 { color: #0F172A; }
+
         /* Sidebar light */
-        .ep-light aside { background: #ffffff !important; border-color: rgba(0,0,0,0.1) !important; }
+        .ep-light aside { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+        .ep-light nav { color: #0F172A; }
+
         /* Toast light */
         .ep-light .backdrop-blur-xl { backdrop-filter: blur(12px); }
+
+        /* Selecție text — slate-200 pe slate-900 */
+        .ep-light ::selection { background: #CBD5E1; color: #0F172A; }
+
+        /* Focus ring optimizat pentru fundal deschis (era indigo-500 #6366f1) */
+        .ep-light button:focus-visible,
+        .ep-light a:focus-visible,
+        .ep-light [role="button"]:focus-visible,
+        .ep-light input:focus-visible,
+        .ep-light select:focus-visible,
+        .ep-light textarea:focus-visible {
+          outline-color: #4338CA !important; /* indigo-700 — vizibil pe F8FAFC */
+        }
+
+        /* Native <select> options — light variant (override-ul global e dark) */
+        .ep-light option { background-color: #FFFFFF !important; color: #0F172A !important; }
+        .ep-light option:hover, .ep-light option:focus, .ep-light option:active, .ep-light option:checked {
+          background-color: #E0E7FF !important; color: #1E1B4B !important;
+        }
+        .ep-light optgroup { background-color: #F1F5F9 !important; color: #4338CA !important; }
+        .ep-light select { color-scheme: light; }
 
         /* ═══ MOBILE RESPONSIVE OVERRIDES ═══ */
         @media (max-width: 639px) {
