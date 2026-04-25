@@ -65,12 +65,11 @@ async function createSmartBillInvoice(session) {
 
   let productName, productCode;
   if (productType === "one_time" && oneTimeProd) {
+    // Sprint Pricing v6.0 (25 apr 2026) — pay-per-use redus la doar Pașaport
+    // Renovare. CPE-uri eliminate (canibalizate de abonament Audit 199 RON).
     const ONE_TIME_LABELS = {
-      "cpe-single":         { name: "Credit CPE single (Step 1-7)",            code: "ZEP-CPE-1"     },
-      "cpe-pack-10":        { name: "Pachet 10 credite CPE (Step 1-7)",        code: "ZEP-CPE-10"    },
-      "cpe-step8":          { name: "Credit CPE + Step 8 (1 modul avansat)",  code: "ZEP-CPE-S8"    },
-      "pasaport-basic":     { name: "Pașaport Renovare EPBD (basic)",          code: "ZEP-PSP-B"     },
-      "pasaport-detailed":  { name: "Pașaport Renovare EPBD (detaliat LCC)",   code: "ZEP-PSP-D"     },
+      "pasaport-basic":    { name: "Pașaport Renovare EPBD (basic)",        code: "ZEP-PSP-B" },
+      "pasaport-detailed": { name: "Pașaport Renovare EPBD (detaliat LCC)", code: "ZEP-PSP-D" },
     };
     const lbl = ONE_TIME_LABELS[oneTimeProd] || { name: oneTimeProd, code: "ZEP-OT" };
     productName = lbl.name + (cpeUnits && cpeUnits > 1 ? ` (${cpeUnits} credite)` : "");

@@ -855,28 +855,41 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 );
               })()}
 
-              {/* ── Banner PAY-PER-USE ── */}
+              {/* ── Banner Pașaport Renovare (pay-per-doc, pentru NON-auditori) ── */}
               <div style={{ maxWidth: "1140px", margin: "32px auto 0", padding: "28px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" }}>
                   <h3 style={{ fontSize: "20px", fontWeight: "700", color: text, margin: 0 }}>
-                    💳 {lang === "EN" ? "Pay only when you need" : "Plătești doar când ai nevoie"}
+                    📋 {lang === "EN" ? "Renovation Passport — single document" : "Pașaport Renovare — document unic"}
                   </h3>
-                  <span style={{ fontSize: "12px", color: textFaint }}>
-                    {lang === "EN" ? "For auditors with less than 1 CPE/month — no subscription required" : "Pentru auditori cu mai puțin de 1 CPE/lună — fără abonament"}
+                  <span style={{
+                    fontSize: "10px", padding: "3px 10px", borderRadius: "20px",
+                    background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontWeight: "700"
+                  }}>
+                    {lang === "EN" ? "EPBD MANDATORY · MAY 29, 2026" : "OBLIGATORIU EPBD · 29 MAI 2026"}
                   </span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
+                <p style={{ fontSize: "13px", color: textFaint, marginTop: 0, marginBottom: "16px", lineHeight: 1.5 }}>
+                  {lang === "EN"
+                    ? "For property owners, building associations and real-estate developers (non-auditors) who need an EPBD-compliant Renovation Passport without a full audit subscription."
+                    : "Pentru proprietari, asociații de proprietari și dezvoltatori imobiliari (NON-auditori) care au nevoie de Pașaport Renovare EPBD-conform fără abonament complet de auditor."}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
                   {PAY_PER_USE.map(item => (
-                    <div key={item.id} style={{ padding: "14px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)" }}>
-                      <div style={{ fontSize: "13px", fontWeight: "700", color: text, marginBottom: "6px" }}>{item.name}</div>
-                      <div style={{ fontSize: "20px", fontWeight: "800", color: "#f59e0b" }}>{item.price} <span style={{ fontSize: "11px", color: textFaint, fontWeight: "500" }}>{item.unit}</span></div>
-                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "8px", lineHeight: 1.4 }}>{item.desc}</div>
-                      {item.discount && <div style={{ fontSize: "10px", color: "#10b981", marginTop: "4px", fontWeight: "600" }}>{item.discount}</div>}
+                    <div key={item.id} style={{ padding: "16px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "700", color: text, marginBottom: "6px" }}>{item.name}</div>
+                      <div style={{ fontSize: "22px", fontWeight: "800", color: "#f59e0b" }}>{item.price} <span style={{ fontSize: "11px", color: textFaint, fontWeight: "500" }}>{item.unit}</span></div>
+                      <div style={{ fontSize: "12px", color: textFaint, marginTop: "8px", lineHeight: 1.5 }}>{item.desc}</div>
+                      {item.audience && <div style={{ fontSize: "10px", color: textFaint, marginTop: "6px", fontStyle: "italic" }}>{item.audience}</div>}
                     </div>
                   ))}
                 </div>
-                <button onClick={() => onStart()} style={{ marginTop: "20px", padding: "10px 20px", borderRadius: "10px", border: `1px solid #f59e0b`, background: "transparent", color: "#f59e0b", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-                  {lang === "EN" ? "Buy CPE credits →" : "Cumpără credite CPE →"}
+                <div style={{ marginTop: "16px", padding: "10px 14px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "8px", fontSize: "11px", color: textFaint, lineHeight: 1.5 }}>
+                  💡 {lang === "EN"
+                    ? "Are you an energy auditor? Choose a subscription above (Audit, Pro or Expert) — Renovation Passport is included."
+                    : "Ești auditor energetic? Alege un abonament mai sus (Audit, Pro sau Expert) — Pașaportul Renovare este inclus."}
+                </div>
+                <button onClick={() => onStart()} style={{ marginTop: "16px", padding: "10px 20px", borderRadius: "10px", border: `1px solid #f59e0b`, background: "transparent", color: "#f59e0b", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+                  {lang === "EN" ? "Generate Renovation Passport →" : "Generează Pașaport Renovare →"}
                 </button>
               </div>
             </>

@@ -114,9 +114,12 @@ export default async function handler(req, res) {
   const userId = auth.user.id;
   const email = auth.user.email;
 
-  // Sprint Pricing v6.0 (25 apr 2026) — 5 plans abonament + 5 produse one-time
+  // Sprint Pricing v6.0 (25 apr 2026) — 5 plans abonament + 2 produse one-time
+  // Pay-per-use redus la doar Pașaport Renovare (basic + detaliat) pentru
+  // proprietari & non-auditori. CPE-uri eliminate fiindcă abonamentul Audit
+  // 199 RON oferă break-even la 2 CPE/lună (canibalizat de abonament).
   const VALID_PLANS = ["audit", "pro", "expert", "birou", "enterprise"];
-  const VALID_ONE_TIME = ["cpe-single", "cpe-pack-10", "cpe-step8", "pasaport-basic", "pasaport-detailed"];
+  const VALID_ONE_TIME = ["pasaport-basic", "pasaport-detailed"];
   const isOneTime = !!oneTimeProduct;
 
   if (isOneTime) {
@@ -169,11 +172,8 @@ export default async function handler(req, res) {
   };
 
   const ONE_TIME_PRICES = {
-    "cpe-single":         { priceId: process.env.STRIPE_PRICE_CPE_SINGLE         || "price_placeholder_cpe_single",         name: "CPE single",                amount: 9900,  cpeUnits: 1  },
-    "cpe-pack-10":        { priceId: process.env.STRIPE_PRICE_CPE_PACK_10        || "price_placeholder_cpe_pack_10",        name: "Pachet 10 CPE",             amount: 79000, cpeUnits: 10 },
-    "cpe-step8":          { priceId: process.env.STRIPE_PRICE_CPE_STEP8          || "price_placeholder_cpe_step8",          name: "CPE + Step 8 (1 modul)",   amount: 19900, cpeUnits: 1  },
-    "pasaport-basic":     { priceId: process.env.STRIPE_PRICE_PASAPORT_BASIC     || "price_placeholder_pasaport_basic",     name: "Pașaport Renovare basic",  amount: 7900,  cpeUnits: 0  },
-    "pasaport-detailed":  { priceId: process.env.STRIPE_PRICE_PASAPORT_DETAILED  || "price_placeholder_pasaport_detailed",  name: "Pașaport Renovare detaliat", amount: 19900, cpeUnits: 0  },
+    "pasaport-basic":    { priceId: process.env.STRIPE_PRICE_PASAPORT_BASIC    || "price_placeholder_pasaport_basic",    name: "Pașaport Renovare basic",    amount: 7900,  cpeUnits: 0 },
+    "pasaport-detailed": { priceId: process.env.STRIPE_PRICE_PASAPORT_DETAILED || "price_placeholder_pasaport_detailed", name: "Pașaport Renovare detaliat", amount: 19900, cpeUnits: 0 },
   };
 
   const selected = isOneTime ? ONE_TIME_PRICES[oneTimeProduct] : SUBSCRIPTION_PRICES[plan];

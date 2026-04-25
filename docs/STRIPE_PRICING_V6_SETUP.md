@@ -10,6 +10,8 @@
 
 Stripe products + prices se creează manual în Stripe Dashboard, NU prin cod. Fișierul `api/create-checkout.js` citește Price IDs din variabile de mediu Vercel.
 
+**Total v6.0**: 12 prețuri Stripe (10 abonament × M/Y + 2 one-time Pașaport).
+
 ### 1. Creare Products + Prices abonament (5 plans × 2 cicluri = 10 prețuri)
 
 Pentru fiecare din cele 5 plans v6.0, creează **1 product cu 2 prețuri** (lunar + anual):
@@ -36,15 +38,18 @@ Pentru fiecare product, adaugă **2 recurring prices**:
 
 ---
 
-### 2. Creare Prices one-time (pay-per-use, 5 produse)
+### 2. Creare Prices one-time (pay-per-use, 2 produse — DOAR Pașaport Renovare)
+
+Sprint v6.0 a redus pay-per-use la doar Pașaport Renovare. CPE-urile single
+(99 RON), pachet 10 (790 RON) și CPE+Step 8 (199 RON) au fost ELIMINATE
+fiindcă abonamentul Audit 199 RON oferă break-even la 2 CPE/lună (canibalizat).
+Pașaportul rămâne pentru proprietari & non-auditori care au nevoie de
+Pașaport Renovare EPBD obligatoriu (29 mai 2026) fără să fie auditori atestați.
 
 Acestea sunt **one-time payments** (nu recurring):
 
 | Product | Preț (RON) | Preț (bani) | Cod intern |
 |---|---|---|---|
-| **CPE single (Step 1-7)** | 99 RON | **9900** | `cpe-single` |
-| **Pachet 10 CPE (Step 1-7)** | 790 RON | **79000** | `cpe-pack-10` |
-| **CPE + Step 8 (1 modul)** | 199 RON | **19900** | `cpe-step8` |
 | **Pașaport Renovare basic** | 79 RON | **7900** | `pasaport-basic` |
 | **Pașaport Renovare detaliat (LCC)** | 199 RON | **19900** | `pasaport-detailed` |
 
@@ -69,10 +74,7 @@ STRIPE_PRICE_BIROU_Y=price_1XXXXX_birou_yearly
 STRIPE_PRICE_ENTERPRISE_M=price_1XXXXX_enterprise_monthly
 STRIPE_PRICE_ENTERPRISE_Y=price_1XXXXX_enterprise_yearly
 
-# ─── One-time pay-per-use (5 produse) ───
-STRIPE_PRICE_CPE_SINGLE=price_1XXXXX_cpe_single
-STRIPE_PRICE_CPE_PACK_10=price_1XXXXX_cpe_pack_10
-STRIPE_PRICE_CPE_STEP8=price_1XXXXX_cpe_step8
+# ─── One-time pay-per-use (2 produse — doar Pașaport Renovare) ───
 STRIPE_PRICE_PASAPORT_BASIC=price_1XXXXX_pasaport_basic
 STRIPE_PRICE_PASAPORT_DETAILED=price_1XXXXX_pasaport_detailed
 
@@ -118,8 +120,8 @@ Copiază **Signing secret** și pune-l în Vercel ca `STRIPE_WEBHOOK_SECRET`.
 Pentru fiecare plan, testează:
 1. Checkout subscription **lunar** → verifică în Supabase profiles că `tier` se actualizează
 2. Checkout subscription **anual** → idem
-3. Checkout one-time `cpe-pack-10` → verifică în profiles că `cpe_credits_remaining += 10`
-4. Pașaport basic 79 RON → verifică factură SmartBill cu cod `ZEP-PSP-B`
+3. Pașaport basic 79 RON → verifică factură SmartBill cu cod `ZEP-PSP-B`
+4. Pașaport detaliat 199 RON → verifică factură SmartBill cu cod `ZEP-PSP-D`
 5. Cancel subscription via Billing Portal → verifică `tier = 'free'` în Supabase
 
 ---
@@ -162,8 +164,8 @@ Aliasing-ul automat în `planGating.js` mapează:
 
 ## ✅ Checklist final pre-lansare v6.0
 
-- [ ] Toate cele 15 prețuri create în Stripe (10 abonament + 5 one-time)
-- [ ] Toate cele 15 env vars STRIPE_PRICE_* configurate în Vercel + redeploy
+- [ ] Toate cele 12 prețuri create în Stripe (10 abonament + 2 Pașaport one-time)
+- [ ] Toate cele 12 env vars STRIPE_PRICE_* configurate în Vercel + redeploy
 - [ ] Webhook endpoint configurat în Stripe Dashboard cu signing secret în Vercel
 - [ ] Migration SQL `20260425_pricing_v6.sql` rulat în Supabase Dashboard
 - [ ] Verificat în Supabase Table Editor: profiles are coloanele noi

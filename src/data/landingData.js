@@ -268,48 +268,28 @@ export const PLANS = [
   },
 ];
 
-// ── Pay-per-use (fără abonament) — pentru auditori ocazionali ──────────────
+// ── Pay-per-use (fără abonament) — DOAR Pașaport Renovare (v6.0 25 apr 2026)
+// ── Eliminat: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199
+// ── Motiv: abonamentul Audit 199 RON oferă break-even la 2 CPE/lună,
+// ── deci pay-per-use pentru auditori e canibalizat de abonament.
+// ── Pașaportul rămâne pentru proprietari & clienți NON-auditori care au
+// ── nevoie de Pașaport EPBD obligatoriu (29 mai 2026) fără să fie atestați.
 export const PAY_PER_USE = [
-  {
-    id: "cpe-single",
-    name: "CPE single",
-    price: "99",
-    unit: "RON/CPE",
-    desc: "1 CPE complet Step 1-7 · Valid 30 zile",
-    audience: "Auditor cu < 1 CPE/lună",
-  },
-  {
-    id: "cpe-pack-10",
-    name: "Pachet 10 CPE",
-    price: "790",
-    unit: "RON (79/CPE)",
-    desc: "10 credite CPE Step 1-7 · Valabilitate 6 luni",
-    audience: "Auditor sezonier",
-    discount: "-20% vs single",
-  },
-  {
-    id: "cpe-step8",
-    name: "CPE + Step 8",
-    price: "199",
-    unit: "RON/CPE",
-    desc: "1 CPE complet + 1 modul avansat la alegere (MonteCarlo, Pasivhaus etc.)",
-    audience: "Auditor cu nevoie ocazională modul avansat",
-  },
   {
     id: "pasaport-basic",
     name: "Pașaport Renovare basic",
     price: "79",
     unit: "RON/doc",
-    desc: "Pașaport EPBD format JSON+XML+PDF · obligatoriu 29 mai 2026",
-    audience: "Standalone EPBD",
+    desc: "Pașaport EPBD format JSON+XML+PDF · obligatoriu de la 29 mai 2026",
+    audience: "Proprietari, asociații, dezvoltatori imobiliari (non-auditori)",
   },
   {
     id: "pasaport-detailed",
     name: "Pașaport Renovare detaliat",
     price: "199",
     unit: "RON/doc",
-    desc: "Pașaport + LCC + multi-fază + benchmark",
-    audience: "Property owner pe termen lung",
+    desc: "Pașaport + analiză LCC + multi-fază reabilitare + benchmark național",
+    audience: "Property owner pe termen lung · investitor imobiliar",
   },
 ];
 
