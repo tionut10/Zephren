@@ -591,8 +591,10 @@ export default function Step6Certificate(props) {
                     attic: building.attic ? "true" : "false",
                     biomass_enabled: biomass?.enabled ? "true" : "false",
                   },
-                  // Limită 30 poze pentru Anexa CPE — payload ~6-9MB după compresie, sub plafonul Vercel
-                  buildingPhotos: (() => {
+                  // Fotografiile se trimit DOAR pentru Anexa (mode=anexa/anexa_bloc).
+                  // Pentru CPE (mode=cpe) fotografiile nu sunt procesate de Python →
+                  // excludem din payload pentru a rămâne sub limita Vercel Hobby (4.5MB).
+                  buildingPhotos: mode === "cpe" ? [] : (() => {
                     const all = buildingPhotos || [];
                     const MAX_PHOTOS = 30;
                     if (all.length > MAX_PHOTOS) {
