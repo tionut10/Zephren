@@ -2439,24 +2439,25 @@ export default function EnergyCalcApp({ cloud }) {
 
         /* ═══ Primary buttons restore — text alb pe fundal colorat 500-700 ═══
            Acoperă: bg-blue-600 text-white, bg-emerald-600 text-white, etc.
-           Selector cu ambele clase pe același element (combinator). */
-        .ep-light [class*="bg-blue-500"][class*="text-white"],   .ep-light [class*="bg-blue-600"][class*="text-white"],   .ep-light [class*="bg-blue-700"][class*="text-white"],
-        .ep-light [class*="bg-sky-500"][class*="text-white"],    .ep-light [class*="bg-sky-600"][class*="text-white"],    .ep-light [class*="bg-sky-700"][class*="text-white"],
-        .ep-light [class*="bg-indigo-500"][class*="text-white"], .ep-light [class*="bg-indigo-600"][class*="text-white"], .ep-light [class*="bg-indigo-700"][class*="text-white"],
-        .ep-light [class*="bg-violet-500"][class*="text-white"], .ep-light [class*="bg-violet-600"][class*="text-white"], .ep-light [class*="bg-violet-700"][class*="text-white"],
-        .ep-light [class*="bg-purple-500"][class*="text-white"], .ep-light [class*="bg-purple-600"][class*="text-white"], .ep-light [class*="bg-purple-700"][class*="text-white"],
-        .ep-light [class*="bg-fuchsia-500"][class*="text-white"], .ep-light [class*="bg-fuchsia-600"][class*="text-white"], .ep-light [class*="bg-fuchsia-700"][class*="text-white"],
-        .ep-light [class*="bg-pink-500"][class*="text-white"],   .ep-light [class*="bg-pink-600"][class*="text-white"],   .ep-light [class*="bg-pink-700"][class*="text-white"],
-        .ep-light [class*="bg-rose-500"][class*="text-white"],   .ep-light [class*="bg-rose-600"][class*="text-white"],   .ep-light [class*="bg-rose-700"][class*="text-white"],
-        .ep-light [class*="bg-red-500"][class*="text-white"],    .ep-light [class*="bg-red-600"][class*="text-white"],    .ep-light [class*="bg-red-700"][class*="text-white"],
-        .ep-light [class*="bg-orange-500"][class*="text-white"], .ep-light [class*="bg-orange-600"][class*="text-white"], .ep-light [class*="bg-orange-700"][class*="text-white"],
-        .ep-light [class*="bg-amber-500"][class*="text-white"],  .ep-light [class*="bg-amber-600"][class*="text-white"],  .ep-light [class*="bg-amber-700"][class*="text-white"],
-        .ep-light [class*="bg-yellow-500"][class*="text-white"], .ep-light [class*="bg-yellow-600"][class*="text-white"], .ep-light [class*="bg-yellow-700"][class*="text-white"],
-        .ep-light [class*="bg-lime-500"][class*="text-white"],   .ep-light [class*="bg-lime-600"][class*="text-white"],   .ep-light [class*="bg-lime-700"][class*="text-white"],
-        .ep-light [class*="bg-green-500"][class*="text-white"],  .ep-light [class*="bg-green-600"][class*="text-white"],  .ep-light [class*="bg-green-700"][class*="text-white"],
-        .ep-light [class*="bg-emerald-500"][class*="text-white"], .ep-light [class*="bg-emerald-600"][class*="text-white"], .ep-light [class*="bg-emerald-700"][class*="text-white"],
-        .ep-light [class*="bg-teal-500"][class*="text-white"],   .ep-light [class*="bg-teal-600"][class*="text-white"],   .ep-light [class*="bg-teal-700"][class*="text-white"],
-        .ep-light [class*="bg-cyan-500"][class*="text-white"],   .ep-light [class*="bg-cyan-600"][class*="text-white"],   .ep-light [class*="bg-cyan-700"][class*="text-white"] { color: #FFFFFF !important; }
+           CRITIC: folosim [class~="..."] (word match EXACT) ca să excludem
+           prefixele hover:/focus:/dark: și opacity modifiers (text-white/80, bg-X/10). */
+        .ep-light [class~="bg-blue-500"][class~="text-white"],   .ep-light [class~="bg-blue-600"][class~="text-white"],   .ep-light [class~="bg-blue-700"][class~="text-white"],
+        .ep-light [class~="bg-sky-500"][class~="text-white"],    .ep-light [class~="bg-sky-600"][class~="text-white"],    .ep-light [class~="bg-sky-700"][class~="text-white"],
+        .ep-light [class~="bg-indigo-500"][class~="text-white"], .ep-light [class~="bg-indigo-600"][class~="text-white"], .ep-light [class~="bg-indigo-700"][class~="text-white"],
+        .ep-light [class~="bg-violet-500"][class~="text-white"], .ep-light [class~="bg-violet-600"][class~="text-white"], .ep-light [class~="bg-violet-700"][class~="text-white"],
+        .ep-light [class~="bg-purple-500"][class~="text-white"], .ep-light [class~="bg-purple-600"][class~="text-white"], .ep-light [class~="bg-purple-700"][class~="text-white"],
+        .ep-light [class~="bg-fuchsia-500"][class~="text-white"], .ep-light [class~="bg-fuchsia-600"][class~="text-white"], .ep-light [class~="bg-fuchsia-700"][class~="text-white"],
+        .ep-light [class~="bg-pink-500"][class~="text-white"],   .ep-light [class~="bg-pink-600"][class~="text-white"],   .ep-light [class~="bg-pink-700"][class~="text-white"],
+        .ep-light [class~="bg-rose-500"][class~="text-white"],   .ep-light [class~="bg-rose-600"][class~="text-white"],   .ep-light [class~="bg-rose-700"][class~="text-white"],
+        .ep-light [class~="bg-red-500"][class~="text-white"],    .ep-light [class~="bg-red-600"][class~="text-white"],    .ep-light [class~="bg-red-700"][class~="text-white"],
+        .ep-light [class~="bg-orange-500"][class~="text-white"], .ep-light [class~="bg-orange-600"][class~="text-white"], .ep-light [class~="bg-orange-700"][class~="text-white"],
+        .ep-light [class~="bg-amber-500"][class~="text-white"],  .ep-light [class~="bg-amber-600"][class~="text-white"],  .ep-light [class~="bg-amber-700"][class~="text-white"],
+        .ep-light [class~="bg-yellow-500"][class~="text-white"], .ep-light [class~="bg-yellow-600"][class~="text-white"], .ep-light [class~="bg-yellow-700"][class~="text-white"],
+        .ep-light [class~="bg-lime-500"][class~="text-white"],   .ep-light [class~="bg-lime-600"][class~="text-white"],   .ep-light [class~="bg-lime-700"][class~="text-white"],
+        .ep-light [class~="bg-green-500"][class~="text-white"],  .ep-light [class~="bg-green-600"][class~="text-white"],  .ep-light [class~="bg-green-700"][class~="text-white"],
+        .ep-light [class~="bg-emerald-500"][class~="text-white"], .ep-light [class~="bg-emerald-600"][class~="text-white"], .ep-light [class~="bg-emerald-700"][class~="text-white"],
+        .ep-light [class~="bg-teal-500"][class~="text-white"],   .ep-light [class~="bg-teal-600"][class~="text-white"],   .ep-light [class~="bg-teal-700"][class~="text-white"],
+        .ep-light [class~="bg-cyan-500"][class~="text-white"],   .ep-light [class~="bg-cyan-600"][class~="text-white"],   .ep-light [class~="bg-cyan-700"][class~="text-white"] { color: #FFFFFF !important; }
 
         /* Gri Tailwind → slate-700/600/500 (toate AA+) */
         .ep-light .text-gray-100, .ep-light .text-gray-200 { color: #0F172A !important; }
@@ -2680,6 +2681,36 @@ export default function EnergyCalcApp({ cloud }) {
         }
         .ep-light optgroup { background-color: #F1F5F9 !important; color: #4338CA !important; }
         .ep-light select { color-scheme: light; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           DARK THEME OVERRIDES — fix contrast WCAG AA
+           Audit: 5 clase pică sub AA pe fundal slate-800/card+/10:
+           text-white/30 (2.58), text-gray-500 (3.02), text-slate-500 (3.07),
+           text-white/40 (3.61), text-red-500 (3.84). Restul 35+ clase AA-AAA OK.
+           ═══════════════════════════════════════════════════════════════════ */
+        /* Bump opacity la text disabled/muted alb pentru a atinge AA pe slate-800 */
+        .ep-dark [class*="text-white/30"] { color: rgba(255, 255, 255, 0.50) !important; }   /* 2.58 → ~4.6:1 AA */
+        .ep-dark [class*="text-white/40"] { color: rgba(255, 255, 255, 0.58) !important; }   /* 3.61 → ~5.4:1 AA */
+
+        /* Gri/slate-500 prea palid pe pills slate-800 → mapăm la 400 (mai luminos) */
+        .ep-dark [class*="text-gray-500"]:not([class*="text-white"]) { color: #9CA3AF !important; }    /* gray-400 — 6.19:1 AA */
+        .ep-dark [class*="text-slate-500"]:not([class*="text-white"]) { color: #94A3B8 !important; }   /* slate-400 — 5.56:1 AA */
+        .ep-dark [class*="text-zinc-500"]:not([class*="text-white"]) { color: #A1A1AA !important; }    /* zinc-400 */
+        .ep-dark [class*="text-neutral-500"]:not([class*="text-white"]) { color: #A3A3A3 !important; }
+        .ep-dark [class*="text-stone-500"]:not([class*="text-white"]) { color: #A8A29E !important; }
+
+        /* Roșu accent text-red-500 — pe slate-800 doar 3.84:1, mapăm la 400 (5.06 AA) */
+        .ep-dark [class*="text-red-500"]:not([class*="bg-red"]):not([class*="text-white"]) { color: #F87171 !important; }    /* red-400 — 5.06:1 AA */
+        .ep-dark [class*="text-rose-500"]:not([class*="bg-rose"]):not([class*="text-white"]) { color: #FB7185 !important; }  /* rose-400 */
+
+        /* Edge case: indigo-400 a fost 4.67 — peste AA dar marginal pe slate-800.
+           Bump preventiv la 300 pentru AAA: */
+        .ep-dark [class*="text-indigo-400"]:not([class*="bg-indigo"]):not([class*="text-white"]) { color: #A5B4FC !important; }   /* indigo-300 — 7.28:1 AAA */
+
+        /* Selecție text dark — vizibilă pe gradient navy */
+        .ep-dark ::selection { background: rgba(245, 158, 11, 0.40); color: #FFFFFF; }
+
+        /* Focus ring indigo-500 — AA dar nu AAA pe gradient. Lasăm ca e UI element (≥3:1). */
 
         /* ═══ MOBILE RESPONSIVE OVERRIDES ═══ */
         @media (max-width: 639px) {
