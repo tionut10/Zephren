@@ -64,6 +64,10 @@ export default function Step6Certificate(props) {
             const hasAutoPreviewd = useRef(false);
             const [docxRendering, setDocxRendering] = useState(false);
             const [docxRendered, setDocxRendered] = useState(false);
+            // Guard împotriva generărilor multiple simultane (anti-spam-click).
+            // Previne payload-uri concurente identice → reduce risc de System Rule
+            // challenge la Vercel edge când user-ul dă click rapid pe buton.
+            const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
 
             // Auto-generare preview la prima deschidere a Pasului 6
             useEffect(() => {
@@ -2893,30 +2897,36 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
                     <button
-                      disabled={!dataComplete}
+                      disabled={!dataComplete || isGeneratingDocx}
                       onClick={async () => {
+                        if (isGeneratingDocx) return;
                         if (!canExportDocx) { requireUpgrade("Export DOCX CPE necesită plan Standard sau superior"); return; }
                         if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
+                        setIsGeneratingDocx(true);
                         try {
                           showToast("Se generează CPE DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.cpe);
                           await generateDocxCPE(buf, "cpe");
                         } catch(e) {
                           showToast("Eroare: " + e.message, "error", 5000);
+                        } finally {
+                          setIsGeneratingDocx(false);
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !dataComplete
+                        !dataComplete || isGeneratingDocx
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
                           : !canExportDocx
                             ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
                             : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
                       }`}>
                       <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📋</span>
+                        <span className="text-lg">{isGeneratingDocx ? "⏳" : "📋"}</span>
                         <div className="text-left">
                           <div className="font-medium flex items-center gap-1.5">
-                            {lang==="EN" ? "Generate CPE DOCX" : "Generează CPE DOCX"}
+                            {isGeneratingDocx
+                              ? (lang==="EN" ? "Generating…" : "Se generează…")
+                              : (lang==="EN" ? "Generate CPE DOCX" : "Generează CPE DOCX")}
                             {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
                           </div>
                           <div className="text-[10px] opacity-60">{tpl.cpe}</div>
@@ -2924,30 +2934,36 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       </div>
                     </button>
                     <button
-                      disabled={!dataComplete}
+                      disabled={!dataComplete || isGeneratingDocx}
                       onClick={async () => {
+                        if (isGeneratingDocx) return;
                         if (!canExportDocx) { requireUpgrade("Export DOCX Anexe necesită plan Standard sau superior"); return; }
                         if (!dataComplete) { showToast("Completați datele obligatorii", "error"); return; }
+                        setIsGeneratingDocx(true);
                         try {
                           showToast("Se generează Anexa DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.anexa);
                           await generateDocxCPE(buf, "anexa");
                         } catch(e) {
                           showToast("Eroare: " + e.message, "error", 5000);
+                        } finally {
+                          setIsGeneratingDocx(false);
                         }
                       }}
                       className={`w-full rounded-xl border transition-all text-sm ${
-                        !dataComplete
+                        !dataComplete || isGeneratingDocx
                           ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
                           : !canExportDocx
                             ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
                             : "border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 cursor-pointer"
                       }`}>
                       <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📎</span>
+                        <span className="text-lg">{isGeneratingDocx ? "⏳" : "📎"}</span>
                         <div className="text-left">
                           <div className="font-medium flex items-center gap-1.5">
-                            {lang==="EN" ? "Generate Annex 1+2 DOCX" : "Generează Anexa 1+2 DOCX"}
+                            {isGeneratingDocx
+                              ? (lang==="EN" ? "Generating…" : "Se generează…")
+                              : (lang==="EN" ? "Generate Annex 1+2 DOCX" : "Generează Anexa 1+2 DOCX")}
                             {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
                           </div>
                           <div className="text-[10px] opacity-60">{tpl.anexa}</div>
@@ -2957,10 +2973,12 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     {/* Etapa 4 (BUG-4) — Anexa Bloc multi-apartament: vizibil doar dacă există apartamente */}
                     {(building?.apartments || []).length > 0 && (
                       <button
-                        disabled={!dataComplete}
+                        disabled={!dataComplete || isGeneratingDocx}
                         onClick={async () => {
+                          if (isGeneratingDocx) return;
                           if (!canExportDocx) { requireUpgrade("Export Anexa Bloc necesită plan Standard sau superior"); return; }
                           if (!dataComplete) { showToast("Completați datele obligatorii", "error"); return; }
+                          setIsGeneratingDocx(true);
                           try {
                             const aptCount = (building.apartments || []).length;
                             showToast(`Se generează Anexa Bloc DOCX (${aptCount} apartamente)...`, "info", 2000);
@@ -2968,22 +2986,26 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             await generateDocxCPE(buf, "anexa_bloc");
                           } catch(e) {
                             showToast("Eroare: " + e.message, "error", 5000);
+                          } finally {
+                            setIsGeneratingDocx(false);
                           }
                         }}
                         className={`w-full rounded-xl border transition-all text-sm ${
-                          !dataComplete
+                          !dataComplete || isGeneratingDocx
                             ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
                             : !canExportDocx
                               ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
                               : "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 cursor-pointer"
                         }`}>
                         <div className="flex items-center justify-center gap-2 px-4 py-3">
-                          <span className="text-lg">🏢</span>
+                          <span className="text-lg">{isGeneratingDocx ? "⏳" : "🏢"}</span>
                           <div className="text-left">
                             <div className="font-medium flex items-center gap-1.5">
-                              {lang==="EN"
-                                ? `Generate Block Annex DOCX (${(building.apartments || []).length} apt.)`
-                                : `Generează Anexa Bloc DOCX (${(building.apartments || []).length} ap.)`}
+                              {isGeneratingDocx
+                                ? (lang==="EN" ? "Generating…" : "Se generează…")
+                                : (lang==="EN"
+                                  ? `Generate Block Annex DOCX (${(building.apartments || []).length} apt.)`
+                                  : `Generează Anexa Bloc DOCX (${(building.apartments || []).length} ap.)`)}
                               {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
                             </div>
                             <div className="text-[10px] opacity-60">
