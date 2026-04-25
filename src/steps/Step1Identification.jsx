@@ -4,6 +4,7 @@ import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
 import SmartDataHub from "../components/SmartDataHub/SmartDataHub.jsx";
+import BuildingMap from "../components/BuildingMap.jsx"; // Sprint B Task 6: hartă OSM + ANCPI stub
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -1206,6 +1207,15 @@ export default function Step1Identification({
             </div>
           </Card>
 
+          {/* Sprint B Task 6: hartă OSM + ANCPI stub */}
+          {selectedClimate?.lat != null && selectedClimate?.lon != null && (
+            <BuildingMap
+              lat={selectedClimate.lat}
+              lon={selectedClimate.lon}
+              address={building?.address}
+              lang={lang}
+            />
+          )}
 
           {selectedClimate && (
             <Card title={t("Profil temperatură lunară",lang)}>

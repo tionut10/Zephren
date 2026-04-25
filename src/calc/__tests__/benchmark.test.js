@@ -171,7 +171,60 @@ describe("calcBenchmark — câmpuri obligatorii în rezultat", () => {
     expect(res).toHaveProperty("chart");
   });
 
-  it("nzebTarget = p10 din categoria/zona selectată", () => {
+  it("nzebTarget = p10 din categoria/zona selectată (fără yearBuilt → baseline neajustat)", () => {
     expect(res.nzebTarget).toBe(EP_BENCHMARKS.RC.II.p10);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Sprint B Task 3 — filtrare REALĂ pe era construcției
+// ═══════════════════════════════════════════════════════════════
+describe("calcBenchmark — filtrare pe eră (Sprint B Task 3)", () => {
+  it("fără yearBuilt → era=s2003_12 (baseline), factor 1.00, eraAdjusted=false", () => {
+    const res = calcBenchmark({ category: "RI", zone: "III", epActual: 150 });
+    expect(res.era).toBe("s2003_12");
+    expect(res.eraFactor).toBe(1.0);
+    expect(res.eraAdjusted).toBe(false);
+    expect(res.benchmark.p50).toBe(EP_BENCHMARKS.RI.III.p50);
+  });
+
+  it("yearBuilt=1980 (s1970_89) → factor >1, percentile MAI MARI decât baseline", () => {
+    const res = calcBenchmark({ category: "RI", zone: "III", epActual: 200, yearBuilt: 1980 });
+    expect(res.era).toBe("s1970_89");
+    expect(res.eraFactor).toBeGreaterThan(1.0);
+    expect(res.eraAdjusted).toBe(true);
+    expect(res.benchmark.p50).toBeGreaterThan(EP_BENCHMARKS.RI.III.p50);
+  });
+
+  it("yearBuilt=2024 (post2023, nZEB) → factor <1, percentile MAI MICI decât baseline", () => {
+    const res = calcBenchmark({ category: "RI", zone: "III", epActual: 80, yearBuilt: 2024 });
+    expect(res.era).toBe("post2023");
+    expect(res.eraFactor).toBeLessThan(1.0);
+    expect(res.benchmark.p50).toBeLessThan(EP_BENCHMARKS.RI.III.p50);
+  });
+
+  it("benchmarkRaw păstrează valorile baseline neajustate", () => {
+    const res = calcBenchmark({ category: "RC", zone: "IV", epActual: 200, yearBuilt: 1965 });
+    expect(res.benchmarkRaw.p50).toBe(EP_BENCHMARKS.RC.IV.p50);
+    // benchmark ajustat e diferit
+    expect(res.benchmark.p50).not.toBe(res.benchmarkRaw.p50);
+  });
+
+  it("clădire pre-1950 are p50 ajustat cu factor mai mare decât s2013_22", () => {
+    const oldHouse = calcBenchmark({ category: "RI", zone: "III", epActual: 250, yearBuilt: 1930 });
+    const newHouse = calcBenchmark({ category: "RI", zone: "III", epActual: 80, yearBuilt: 2018 });
+    expect(oldHouse.benchmark.p50).toBeGreaterThan(newHouse.benchmark.p50);
+  });
+
+  it("meta conține disclaimer text + sursă", () => {
+    const res = calcBenchmark({ category: "RI", zone: "III", epActual: 150 });
+    expect(res.meta).toBeDefined();
+    expect(res.meta.warning).toMatch(/orientativ/i);
+    expect(res.meta.source).toMatch(/UTBv|ICCPDC|INCERC|Mc 001/);
+  });
+
+  it("verdict include perioada constructivă când e ajustată", () => {
+    const res = calcBenchmark({ category: "RI", zone: "III", epActual: 150, yearBuilt: 1985 });
+    expect(res.verdict).toMatch(/perioad|factor/i);
   });
 });

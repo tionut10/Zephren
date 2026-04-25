@@ -58,7 +58,11 @@ import { calcRehabCost, REHAB_PRICE_DB } from "../calc/rehab-cost.js";
 import { calcCoolingHourly } from "../calc/cooling-hourly.js";
 import GWPReport from "../components/GWPReport.jsx";
 import SRICalculator from "../components/SRICalculator.jsx";
+import NormativeLibrary from "../components/NormativeLibrary.jsx";
+import FAQ from "../components/FAQ.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
+// Sprint B Task 1+2: tab usage tracker + mod expert
+import { trackTabClick, getFrequentTabs, togglePin, isPinned } from "../utils/tab-usage.js";
 
 // Sprint 18 UX — Categorii module avansate pentru filtrare + search
 // Sprint A Task 8: restructurare workflow-centric — 8 categorii ordonate după fluxul auditorului
@@ -123,10 +127,14 @@ export const TAB_SECTIONS = [
   { id:"preturi",       icon:"🏷️", label:"Prețuri materiale",        category:"date_ext" },
   { id:"cloud_sync",    icon:"☁️", label:"Cloud Sync",               category:"date_ext" },
 
-  // 🔬 08 AVANSAT / ÎNVĂȚARE (module rar folosite sau onboarding)
+  // 🔬 08 AVANSAT (module rar folosite — locked default cu Mod expert)
   { id:"acustic",       icon:"🔊", label:"Acustic",                  category:"expert" },
   { id:"pv_degradare",  icon:"📉", label:"Degradare PV",             category:"expert" },
-  { id:"tutorial",      icon:"🎓", label:"Tutorial",                 category:"expert" },
+
+  // 📚 09 RESURSE & ÎNVĂȚARE (Sprint B Task 4+5: Bibliotecă, FAQ, Tutorial)
+  { id:"biblioteca",    icon:"📚", label:"Bibliotecă normative",     category:"resurse" },
+  { id:"faq",           icon:"💡", label:"Best practices & FAQ",     category:"resurse" },
+  { id:"tutorial",      icon:"🎓", label:"Tutorial",                 category:"resurse" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -152,7 +160,7 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-// Sprint A Task 8 — 8 categorii workflow-centric (ordonate după fluxul mental al auditorului)
+// Sprint A Task 8 + Sprint B: 9 categorii workflow-centric (ordonate după fluxul mental al auditorului)
 export const CATEGORIES_RO = [
   { id: "all",           label: "Toate" },
   { id: "conformitate",  label: "🎯 Conformitate" },
@@ -162,6 +170,7 @@ export const CATEGORIES_RO = [
   { id: "rapoarte",      label: "📑 Rapoarte CPE" },
   { id: "cabinet",       label: "💼 Cabinet" },
   { id: "date_ext",      label: "🌐 Date & Cloud" },
+  { id: "resurse",       label: "📚 Resurse & FAQ" },
   { id: "expert",        label: "🔬 Avansat" },
 ];
 const CATEGORIES_EN = [
@@ -173,6 +182,7 @@ const CATEGORIES_EN = [
   { id: "rapoarte",      label: "📑 EPC Reports" },
   { id: "cabinet",       label: "💼 Office" },
   { id: "date_ext",      label: "🌐 Data & Cloud" },
+  { id: "resurse",       label: "📚 Resources & FAQ" },
   { id: "expert",        label: "🔬 Advanced" },
 ];
 
@@ -204,6 +214,47 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [rehabView, setRehabView] = useState("card");
   // Sprint A Task 3: sub-tab pentru verificare_U (fuzionat c107 + conformitate + proiect_tehnic)
   const [uVerifSubTab, setUVerifSubTab] = useState("c107"); // "c107" | "renovare" | "proiect"
+  // Sprint B Task 1: tracker pentru re-render după pin/unpin (forțează refresh)
+  const [pinTick, setPinTick] = useState(0);
+  // Sprint B Task 2: Mod expert (default off → categoria 🔬 e locked)
+  const [expertMode, setExpertMode] = useState(() => {
+    try { return localStorage.getItem("zephren_expert_mode") === "1"; }
+    catch { return false; }
+  });
+  const toggleExpertMode = useCallback(() => {
+    setExpertMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem("zephren_expert_mode", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  // Sprint B Task 1+2: handler unificat — track click + setează tab activ + blochează tab-uri expert dacă mod expert off
+  const handleSelectTab = useCallback((tabId) => {
+    const tab = TAB_SECTIONS.find(t => t.id === tabId);
+    if (tab?.category === "expert" && !expertMode) {
+      const ok = window.confirm(
+        "🔒 Modul „" + tab.label + "\" face parte din categoria Avansat (rar folosit).\n\n" +
+        "Vrei să activezi Modul Expert pentru a debloca toate aceste module?"
+      );
+      if (ok) {
+        setExpertMode(true);
+        try { localStorage.setItem("zephren_expert_mode", "1"); } catch { /* ignore */ }
+        setActiveTab(tabId);
+        trackTabClick(tabId);
+      }
+      return;
+    }
+    setActiveTab(tabId);
+    trackTabClick(tabId);
+  }, [expertMode]);
+
+  // Sprint B Task 1: handler pin/unpin (right-click sau buton dedicat)
+  const handleTogglePin = useCallback((tabId, e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    togglePin(tabId);
+    setPinTick(t => t + 1);
+  }, []);
 
   // ── Alerte CPE ──
   const cpeRegistry = useMemo(() => {
@@ -766,7 +817,24 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     <div className="space-y-4">
       {/* Sprint 18 UX — Heading + Search + Category Pills (Bloc E3 + D3) */}
       <div>
-        <h2 className="text-lg font-bold mb-3">{lang==="EN" ? "Advanced modules" : "Module avansate"}</h2>
+        {/* Sprint B Task 2: header cu toggle Mod expert */}
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-lg font-bold">{lang==="EN" ? "Advanced modules" : "Module avansate"}</h2>
+          <button onClick={toggleExpertMode}
+            aria-pressed={expertMode}
+            title={lang==="EN"
+              ? (expertMode ? "Hide expert modules (lock 🔬 category)" : "Unlock expert modules (acoustic, PV degradation, tutorial)")
+              : (expertMode ? "Ascunde modulele expert (lock categoria 🔬)" : "Deblochează modulele expert (acustic, degradare PV, tutorial)")}
+            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+              expertMode
+                ? "bg-purple-500/20 border-purple-400/40 text-purple-200"
+                : "bg-slate-800/60 border-white/10 text-slate-400 hover:bg-slate-700"
+            )}>
+            <span>{expertMode ? "🔓" : "🔒"}</span>
+            <span>{lang==="EN" ? "Expert mode" : "Mod expert"}</span>
+            <span className="text-[10px] opacity-60">{expertMode ? (lang==="EN" ? "ON" : "ACTIV") : (lang==="EN" ? "OFF" : "OPRIT")}</span>
+          </button>
+        </div>
         <input
           type="search"
           value={moduleSearch}
@@ -789,21 +857,82 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </div>
       </div>
 
+      {/* Sprint B Task 1: rând "Frecvent folosite" — pin-uri manuale sau Top 5 auto-tracked */}
+      {(() => {
+        // pinTick forțează re-evaluarea după togglePin
+        void pinTick;
+        const allTabIds = TAB_SECTIONS.map(t => t.id);
+        const frequentIds = getFrequentTabs(allTabIds);
+        const frequentTabs = frequentIds
+          .map(id => TAB_SECTIONS.find(t => t.id === id))
+          .filter(Boolean);
+        if (frequentTabs.length === 0) return null;
+        const hasPins = frequentTabs.some(t => isPinned(t.id));
+        return (
+          <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 px-3 py-2 mb-2">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                {hasPins
+                  ? (lang==="EN" ? "★ Pinned modules" : "★ Module fixate")
+                  : (lang==="EN" ? "⏱️ Most used" : "⏱️ Frecvent folosite")}
+              </span>
+              <span className="text-[9px] text-slate-500">
+                {lang==="EN" ? "(right-click any tab to pin/unpin)" : "(click dreapta pe orice tab pentru fixare/eliberare)"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {frequentTabs.map(tab => (
+                <button key={"freq-" + tab.id}
+                  onClick={() => handleSelectTab(tab.id)}
+                  onContextMenu={(e) => handleTogglePin(tab.id, e)}
+                  title={lang==="EN" ? "Click: open · Right-click: unpin" : "Click: deschide · Click dreapta: elimină"}
+                  className={cn("relative px-2.5 py-1 rounded-md text-[11px] font-medium transition-all border",
+                    activeTab === tab.id
+                      ? "bg-indigo-600 text-white border-indigo-500"
+                      : "bg-amber-500/10 text-amber-200 border-amber-500/30 hover:bg-amber-500/20")}>
+                  {isPinned(tab.id) && <span className="text-amber-400 mr-0.5">★</span>}
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tabs — filtrate prin search + categorie */}
       <div className="flex flex-wrap gap-1.5">
-        {filteredTabs.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-              activeTab === tab.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
-            {tab.icon} {tab.label}
-            {/* Badge alerte CPE */}
-            {tab.id === "cpe_tracker" && urgentCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
-                {urgentCount}
-              </span>
-            )}
-          </button>
-        ))}
+        {filteredTabs.map(tab => {
+          const pinned = isPinned(tab.id);
+          // Sprint B Task 2: tab-uri din categoria expert sunt locked dacă expertMode == false
+          const locked = tab.category === "expert" && !expertMode;
+          return (
+            <button key={tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              onContextMenu={(e) => handleTogglePin(tab.id, e)}
+              aria-disabled={locked}
+              title={locked
+                ? (lang==="EN"
+                    ? "🔒 Click to enable Expert Mode and unlock this module"
+                    : "🔒 Click pentru a activa Modul Expert și a debloca acest modul")
+                : (lang==="EN"
+                    ? (pinned ? "Right-click to unpin" : "Right-click to pin to favorites")
+                    : (pinned ? "Click dreapta pentru a elibera" : "Click dreapta pentru a fixa la favorite"))}
+              className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                activeTab === tab.id ? "bg-indigo-600 text-white" :
+                locked ? "bg-slate-900/40 text-slate-600 border border-slate-700/40 hover:bg-slate-800/60" :
+                "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
+              {locked && <span className="mr-0.5 opacity-60">🔒</span>}
+              {pinned && !locked && <span className="text-amber-400 mr-0.5">★</span>}
+              {tab.icon} {tab.label}
+              {/* Badge alerte CPE */}
+              {tab.id === "cpe_tracker" && urgentCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                  {urgentCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
         {filteredTabs.length === 0 && (
           <p className="text-xs text-slate-500 italic px-2 py-3">
             {lang==="EN" ? "No modules found." : "Niciun modul găsit."}
@@ -815,7 +944,26 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {activeTab === "benchmark" && (
         <Card className="p-4">
           <SectionHeader icon="📊" title="Benchmark performanță energetică"
-            subtitle="Comparare cu stocul de clădiri similar din aceeași zonă climatică (date agregate MDLPA 2022-2024)" />
+            subtitle="Comparare cu stocul de clădiri similar din aceeași zonă climatică, ajustat pe perioada constructivă" />
+
+          {/* Sprint B Task 3: disclaimer vizibil — date orientative, nu oficiale */}
+          <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <div className="font-semibold mb-1">⚠ Date orientative neoficiale</div>
+            <div className="text-amber-100/80 leading-relaxed">
+              {benchmark?.meta?.warning ||
+                "Date orientative derivate din studii statistice publicate. Nu reprezintă audituri reale înregistrate la MDLPA."}
+            </div>
+            <div className="mt-1.5 text-[10px] text-amber-300/60">
+              Sursa: {benchmark?.meta?.source || "studii UTBv/ICCPDC/INCERC + extrapolare Mc 001-2022 Anexa K"}
+              {benchmark?.eraAdjusted && (
+                <> · Filtrare pe eră: <strong className="text-amber-200">{benchmark.eraLabel}</strong> (factor ×{benchmark.eraFactor?.toFixed(2)})</>
+              )}
+              {!benchmark?.eraAdjusted && benchmark?.era === "s2003_12" && (
+                <> · Perioadă baseline (s2003_12, factor ×1.00)</>
+              )}
+            </div>
+          </div>
+
           {benchmark ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -4306,6 +4454,27 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
             className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors text-sm">
             🎓 Pornește Tutorial
           </button>
+        </Card>
+      )}
+
+      {/* ═══ BIBLIOTECĂ NORMATIVE (Sprint B Task 4) ═══ */}
+      {activeTab === "biblioteca" && (
+        <Card className="p-4">
+          <NormativeLibrary
+            lang={lang}
+            onJumpToTab={(tabId) => handleSelectTab(tabId)}
+          />
+        </Card>
+      )}
+
+      {/* ═══ FAQ + BEST PRACTICES (Sprint B Task 5) ═══ */}
+      {activeTab === "faq" && (
+        <Card className="p-4">
+          <FAQ
+            lang={lang}
+            onJumpToTab={(tabId) => handleSelectTab(tabId)}
+            onJumpToNormative={() => handleSelectTab("biblioteca")}
+          />
         </Card>
       )}
 
