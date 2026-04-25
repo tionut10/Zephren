@@ -56,6 +56,31 @@ async function createSmartBillInvoice(session) {
   const priceNoVat = isEU ? amountTotal : amountTotal / 1.19;
   const vatPercent = isEU ? 0 : 19;
 
+  // v6.0 — denumire produs + cod SmartBill diferențiat pentru abonament vs one-time
+  const productType  = meta.productType || "subscription";
+  const billingCycle = meta.billingCycle || "monthly";
+  const cycleSuffix  = billingCycle === "yearly" ? "Y" : "M";
+  const oneTimeProd  = meta.oneTimeProduct;
+  const cpeUnits     = meta.cpeUnits ? parseInt(meta.cpeUnits, 10) : null;
+
+  let productName, productCode;
+  if (productType === "one_time" && oneTimeProd) {
+    const ONE_TIME_LABELS = {
+      "cpe-single":         { name: "Credit CPE single (Step 1-7)",            code: "ZEP-CPE-1"     },
+      "cpe-pack-10":        { name: "Pachet 10 credite CPE (Step 1-7)",        code: "ZEP-CPE-10"    },
+      "cpe-step8":          { name: "Credit CPE + Step 8 (1 modul avansat)",  code: "ZEP-CPE-S8"    },
+      "pasaport-basic":     { name: "Pașaport Renovare EPBD (basic)",          code: "ZEP-PSP-B"     },
+      "pasaport-detailed":  { name: "Pașaport Renovare EPBD (detaliat LCC)",   code: "ZEP-PSP-D"     },
+    };
+    const lbl = ONE_TIME_LABELS[oneTimeProd] || { name: oneTimeProd, code: "ZEP-OT" };
+    productName = lbl.name + (cpeUnits && cpeUnits > 1 ? ` (${cpeUnits} credite)` : "");
+    productCode = lbl.code;
+  } else {
+    const planUpper = (meta.plan || "PLAN").toUpperCase();
+    productName = `Abonament Zephren ${meta.plan || "—"} ${billingCycle === "yearly" ? "(anual)" : "(lunar)"} — ${getMonthYear()}`;
+    productCode = `ZEP-${planUpper}-${cycleSuffix}`;
+  }
+
   const body = {
     companyVatCode: sbCui,
     client,
@@ -63,8 +88,8 @@ async function createSmartBillInvoice(session) {
     seriesName: process.env.SMARTBILL_SERIES || "ZEP",
     currency: session.currency?.toUpperCase() || "RON",
     products: [{
-      name: `Abonament Zephren ${meta.plan || "—"} — ${getMonthYear()}`,
-      code: `ZEP-${(meta.plan || "PLAN").toUpperCase()}-M`,
+      name: productName,
+      code: productCode,
       isService: true,
       quantity: 1,
       price: Number(priceNoVat.toFixed(2)),

@@ -105,3 +105,57 @@ git commit -m "<mesaj relevant>"
 - **GitHub**: https://github.com/tionut10/Zephren
 - **Vercel limit**: max 12 funcții în `api/` (Hobby plan)
 - **Limbă**: Română cu diacritice corecte (ă, â, î, ș, ț) — obligatoriu
+
+---
+
+## 💰 PRICING v6.0 (25 apr 2026 — restructurare COMPLETĂ)
+
+### 8 niveluri (Set 11 naming „Zephren X")
+
+| # | Plan | Preț | CPE/lună | Conținut |
+|---|---|---|---|---|
+| 1 | **Zephren Free** | 0 RON | 3 hard cap | Step 1-7 cu watermark |
+| 2 | **Zephren Edu** | 0 RON cu dovadă | nelim cu watermark didactic | TOATE Expert, XML+submit blocate |
+| 3 | **Zephren Audit** | 199 RON | 8 + 2 burst, overage 49→79→99 | Step 1-6 (fără audit) |
+| 4 | **Zephren Pro** ⭐ | **499 RON** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** |
+| 5 | **Zephren Expert** | 899 RON | 60 + 12 burst, overage 39→69→99 | **Step 1-8 COMPLET + BIM Pack** |
+| 6 | **Zephren Birou** | 1.890 RON flat | NELIMITAT | Expert × 2-5 useri + white-label + API |
+| 7 | **Zephren Enterprise** | de la 4.990 RON | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
+| + | **Pay-per-use** | 99/790/199/79/199 RON | one-time | Pentru fără abonament |
+
+### Split CRITIC Step 1-7 vs Step 8
+
+- **Step 1-7** = pachetul popular **Zephren Pro 499** (CPE + Anexe + Audit financiar)
+- **Step 8** (18 module avansate) = **Zephren Expert 899** sau mai sus
+- **Module avansate** (Step 8): MonteCarloEP, Pasivhaus, PMV/PPD, EN 12831 rooms, Thermovision, UrbanHeatIsland, Historic, Mixed-use, PortfolioDashboard, ConsumReconciliere, ConsumoTracker, BACS detaliat 200 factori, SRI complet 42 servicii, MEPS optimizator, Pașaport detaliat LCC, Acoustic, Night ventilation, Shading dynamic, Cooling hourly
+
+### BACS+SRI+MEPS+Pașaport — DUAL MODE (CRITIC pentru EPBD)
+
+Versiunea **simplă** OBLIGATORIE EPBD rămâne accesibilă în Pro 499:
+- `BACSSelectorSimple.jsx` — selector A-D + factor f_BAC
+- `SRIScoreAuto.jsx` — score automat read-only
+- `MEPSCheckBinar.jsx` — verificare 2030 binar
+- `PasaportBasic.jsx` — generare JSON+XML+PDF
+
+Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 899+:
+- `MEPSCheck.jsx` cu roadmap 2030/2033/2050
+- `SRICalculator.jsx` complet 42 servicii
+- BACS detaliat 200 factori (în Step8 tab `bacs`)
+- `RenovationPassport.jsx` cu LCC + multi-fază
+
+### AI Pack & BIM Pack (incluse, NU separate)
+
+- **AI Pack** inclus în Pro+ (OCR facturi, OCR CPE, chat import, AI assistant)
+- **BIM Pack** inclus în Expert+ (IFC import, parser STEP nativ)
+
+### Componente cheie
+
+- `src/lib/planGating.js` — `PLAN_FEATURES`, `canAccess()`, `getLimit()`, `getOverageCost()`, `isEduValid()`, `resolvePlan()` (cu backward-compat aliases)
+- `src/components/PlanGate.jsx` — wrapper React 3 moduri (hide/upgrade/soft)
+- `src/data/landingData.js` — `PLANS`, `PAY_PER_USE`, `PLAN_LAYOUT`
+- `supabase/migrations/20260425_pricing_v6.sql` — schema v6 (cpe counters + EDU + price-lock + cpe_log + RPC functions)
+- `docs/STRIPE_PRICING_V6_SETUP.md` — ghid setup Stripe Dashboard
+
+### Backward compat
+
+Utilizatorii pe planurile vechi v5.x (starter/standard/professional/business/asociatie) rămân funcționali via `resolvePlan()` aliases. Email notificare cu „prețul rămâne blocat + primești bonus AI Pack/Step 8".
