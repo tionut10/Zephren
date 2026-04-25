@@ -60,6 +60,8 @@ import GWPReport from "../components/GWPReport.jsx";
 import SRICalculator from "../components/SRICalculator.jsx";
 import NormativeLibrary from "../components/NormativeLibrary.jsx";
 import FAQ from "../components/FAQ.jsx";
+import AppDiagnostic from "../components/AppDiagnostic.jsx";
+import Sandbox from "../components/Sandbox.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 // Sprint B Task 1+2: tab usage tracker + mod expert
 import { trackTabClick, getFrequentTabs, togglePin, isPinned } from "../utils/tab-usage.js";
@@ -130,6 +132,8 @@ export const TAB_SECTIONS = [
   // 🔬 08 AVANSAT (module rar folosite — locked default cu Mod expert)
   { id:"acustic",       icon:"🔊", label:"Acustic",                  category:"expert" },
   { id:"pv_degradare",  icon:"📉", label:"Degradare PV",             category:"expert" },
+  { id:"sandbox",       icon:"🧪", label:"Sandbox calcule",          category:"expert" },
+  { id:"diagnostic",    icon:"🛠️", label:"Diagnostic aplicație",     category:"expert" },
 
   // 📚 09 RESURSE & ÎNVĂȚARE (Sprint B Task 4+5: Bibliotecă, FAQ, Tutorial)
   { id:"biblioteca",    icon:"📚", label:"Bibliotecă normative",     category:"resurse" },
@@ -841,7 +845,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           onChange={e => setModuleSearch(e.target.value)}
           placeholder={lang==="EN" ? "Search modules..." : "Caută module..."}
           aria-label={lang==="EN" ? "Search advanced modules" : "Caută module avansate"}
-          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm mb-3 focus:border-indigo-400/50 focus:ring-1 focus:ring-indigo-400/30"
+          aria-controls="module-tabs-list"
+          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm mb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus:border-indigo-400/50"
         />
         <div className="flex flex-wrap gap-2 mb-3" role="group" aria-label={lang==="EN" ? "Module categories" : "Categorii module"}>
           {categoriesList.map(cat => (
@@ -857,7 +862,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </div>
       </div>
 
-      {/* Sprint B Task 1: rând "Frecvent folosite" — pin-uri manuale sau Top 5 auto-tracked */}
+      {/* Sprint B Task 1: rând "Frecvent folosite" — pin-uri manuale sau Top 5 auto-tracked
+          Sprint C Task 2: a11y role=region + aria-label */}
       {(() => {
         // pinTick forțează re-evaluarea după togglePin
         void pinTick;
@@ -868,8 +874,13 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           .filter(Boolean);
         if (frequentTabs.length === 0) return null;
         const hasPins = frequentTabs.some(t => isPinned(t.id));
+        const regionLabel = hasPins
+          ? (lang==="EN" ? "Pinned modules — quick access" : "Module fixate — acces rapid")
+          : (lang==="EN" ? "Most used modules — quick access" : "Module frecvent folosite — acces rapid");
         return (
-          <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 px-3 py-2 mb-2">
+          <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 px-3 py-2 mb-2"
+            role="region"
+            aria-label={regionLabel}>
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">
                 {hasPins
@@ -881,35 +892,56 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {frequentTabs.map(tab => (
-                <button key={"freq-" + tab.id}
-                  onClick={() => handleSelectTab(tab.id)}
-                  onContextMenu={(e) => handleTogglePin(tab.id, e)}
-                  title={lang==="EN" ? "Click: open · Right-click: unpin" : "Click: deschide · Click dreapta: elimină"}
-                  className={cn("relative px-2.5 py-1 rounded-md text-[11px] font-medium transition-all border",
-                    activeTab === tab.id
-                      ? "bg-indigo-600 text-white border-indigo-500"
-                      : "bg-amber-500/10 text-amber-200 border-amber-500/30 hover:bg-amber-500/20")}>
-                  {isPinned(tab.id) && <span className="text-amber-400 mr-0.5">★</span>}
-                  {tab.icon} {tab.label}
-                </button>
-              ))}
+              {frequentTabs.map(tab => {
+                const pinned = isPinned(tab.id);
+                const ariaLabel = (lang==="EN" ? "Open " : "Deschide ") + tab.label +
+                  (pinned ? (lang==="EN" ? " (pinned)" : " (fixat)") : "");
+                return (
+                  <button key={"freq-" + tab.id}
+                    aria-label={ariaLabel}
+                    onClick={() => handleSelectTab(tab.id)}
+                    onContextMenu={(e) => handleTogglePin(tab.id, e)}
+                    title={lang==="EN" ? "Click: open · Right-click: unpin" : "Click: deschide · Click dreapta: elimină"}
+                    className={cn("relative px-2.5 py-1 rounded-md text-[11px] font-medium transition-all border",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60",
+                      activeTab === tab.id
+                        ? "bg-indigo-600 text-white border-indigo-500"
+                        : "bg-amber-500/10 text-amber-200 border-amber-500/30 hover:bg-amber-500/20")}>
+                    {pinned && <span className="text-amber-400 mr-0.5" aria-hidden="true">★</span>}
+                    <span aria-hidden="true">{tab.icon}</span> {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         );
       })()}
 
-      {/* Tabs — filtrate prin search + categorie */}
-      <div className="flex flex-wrap gap-1.5">
+      {/* Tabs — filtrate prin search + categorie. Sprint C Task 2: a11y role=tablist */}
+      <div className="flex flex-wrap gap-1.5"
+        role="tablist"
+        aria-label={lang==="EN" ? "Advanced module tabs" : "Tab-uri module avansate"}>
         {filteredTabs.map(tab => {
           const pinned = isPinned(tab.id);
           // Sprint B Task 2: tab-uri din categoria expert sunt locked dacă expertMode == false
           const locked = tab.category === "expert" && !expertMode;
+          const isSelected = activeTab === tab.id;
+          // Sprint C Task 2: aria-label descriptiv (icon-only emojis nu sunt suficient pentru screen readers)
+          const ariaLabel = (locked ? (lang==="EN" ? "Locked module: " : "Modul blocat: ") : "") +
+            tab.label +
+            (pinned && !locked ? (lang==="EN" ? " (pinned)" : " (fixat)") : "") +
+            (tab.id === "cpe_tracker" && urgentCount > 0
+              ? (lang==="EN" ? `, ${urgentCount} expiring CPEs` : `, ${urgentCount} CPE-uri care expiră`)
+              : "");
           return (
             <button key={tab.id}
+              role="tab"
+              aria-selected={isSelected}
+              aria-controls={"panel-" + tab.id}
+              aria-disabled={locked}
+              aria-label={ariaLabel}
               onClick={() => handleSelectTab(tab.id)}
               onContextMenu={(e) => handleTogglePin(tab.id, e)}
-              aria-disabled={locked}
               title={locked
                 ? (lang==="EN"
                     ? "🔒 Click to enable Expert Mode and unlock this module"
@@ -918,15 +950,17 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                     ? (pinned ? "Right-click to unpin" : "Right-click to pin to favorites")
                     : (pinned ? "Click dreapta pentru a elibera" : "Click dreapta pentru a fixa la favorite"))}
               className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                activeTab === tab.id ? "bg-indigo-600 text-white" :
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-900",
+                isSelected ? "bg-indigo-600 text-white" :
                 locked ? "bg-slate-900/40 text-slate-600 border border-slate-700/40 hover:bg-slate-800/60" :
                 "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
-              {locked && <span className="mr-0.5 opacity-60">🔒</span>}
-              {pinned && !locked && <span className="text-amber-400 mr-0.5">★</span>}
-              {tab.icon} {tab.label}
+              {locked && <span className="mr-0.5 opacity-60" aria-hidden="true">🔒</span>}
+              {pinned && !locked && <span className="text-amber-400 mr-0.5" aria-hidden="true">★</span>}
+              <span aria-hidden="true">{tab.icon}</span> {tab.label}
               {/* Badge alerte CPE */}
               {tab.id === "cpe_tracker" && urgentCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1"
+                  aria-hidden="true">
                   {urgentCount}
                 </span>
               )}
@@ -934,7 +968,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           );
         })}
         {filteredTabs.length === 0 && (
-          <p className="text-xs text-slate-500 italic px-2 py-3">
+          <p className="text-xs text-slate-500 italic px-2 py-3" role="status">
             {lang==="EN" ? "No modules found." : "Niciun modul găsit."}
           </p>
         )}
@@ -4474,6 +4508,33 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
             lang={lang}
             onJumpToTab={(tabId) => handleSelectTab(tabId)}
             onJumpToNormative={() => handleSelectTab("biblioteca")}
+          />
+        </Card>
+      )}
+
+      {/* ═══ DIAGNOSTIC APLICAȚIE (Sprint C Task 1) ═══ */}
+      {activeTab === "diagnostic" && (
+        <Card className="p-4">
+          <AppDiagnostic
+            building={building}
+            climate={climate}
+            opaqueElements={opaqueElements}
+            glazingElements={glazingElements}
+            thermalBridges={thermalBridges}
+            instSummary={instSummary}
+            renewSummary={renewSummary}
+            lang={lang}
+          />
+        </Card>
+      )}
+
+      {/* ═══ SANDBOX CALCULE (Sprint C Task 3) ═══ */}
+      {activeTab === "sandbox" && (
+        <Card className="p-4">
+          <Sandbox
+            instSummary={instSummary}
+            building={building}
+            lang={lang}
           />
         </Card>
       )}
