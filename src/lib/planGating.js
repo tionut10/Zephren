@@ -17,8 +17,11 @@
  * AI PACK inclus în Pro+ (OCR facturi, OCR CPE, chat import, AI assistant)
  * BIM PACK inclus în Expert+ (IFC import, parser STEP nativ)
  *
- * EDU PLAN: GRATIS pe perioada formării (studenți + trainee + profesori +
- * cercetători) cu watermark obligatoriu „SCOP DIDACTIC" + XML MDLPA blocat.
+ * EDU PLAN: GRATIS pe perioada studiilor (DOAR studenți și doctoranzi cu
+ * dovadă valabilă) cu watermark obligatoriu „SCOP DIDACTIC" + XML MDLPA blocat.
+ * Pentru universități, centre formare OAER, institute cercetare și alte
+ * organizații: cerere separată de colaborare la edu@zephren.ro (NU plan
+ * Edu automat).
  *
  * Sursă completă: memorie pricing_strategy.md v6.0
  */

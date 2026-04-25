@@ -820,7 +820,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 ))}
               </div>
 
-              {/* ── Banner EDU (gratis pentru studenți + trainee + profesori) ── */}
+              {/* ── Banner EDU (gratis pentru studenți + doctoranzi) ── */}
               {(() => {
                 const eduPlan = PLANS.find(p => p.id === "edu");
                 if (!eduPlan) return null;
@@ -836,8 +836,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                         </h3>
                         <p style={{ fontSize: "14px", color: textMuted, lineHeight: 1.6, marginBottom: "16px" }}>
                           {lang === "EN"
-                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students, doctoral candidates, professors, OAER trainees and energy researchers. Watermark applied to all CPE documents — official MDLPA submission blocked."
-                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți, doctoranzi, profesori, trainee OAER și cercetători energetici. Watermark aplicat pe toate documentele CPE — submit oficial MDLPA blocat."}
+                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students and doctoral candidates with valid proof. Watermark applied to all CPE documents — official MDLPA submission blocked. Universities, OAER training centers, research institutes and other organizations: please send a separate collaboration request to edu@zephren.ro."
+                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți și doctoranzi cu dovadă valabilă. Watermark aplicat pe toate documentele CPE — submit oficial MDLPA blocat. Universități, centre de formare OAER, institute de cercetare și alte organizații: trimiteți o cerere separată de colaborare la edu@zephren.ro."}
                         </p>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "8px" }}>
                           {eduPlan.features.slice(0, 6).map(f => (

@@ -51,7 +51,9 @@ ALTER TABLE public.profiles
   -- Status verificare dovadă educațională
   ADD COLUMN IF NOT EXISTS edu_status text DEFAULT NULL
     CHECK (edu_status IS NULL OR edu_status IN ('pending', 'verified', 'expired', 'rejected')),
-  -- Tip dovadă (student licență/master/doctorat/profesor/trainee/cercetător)
+  -- Tip dovadă (student licență/master/doctorat — DOAR aceste categorii
+  -- au acces automat la planul Edu. Universități, centre OAER, institute
+  -- de cercetare și alte organizații: cerere separată de colaborare.)
   ADD COLUMN IF NOT EXISTS edu_proof_type text,
   -- URL dovadă (legitimație, adeverință) stocată în Supabase Storage
   ADD COLUMN IF NOT EXISTS edu_proof_doc_url text,

@@ -134,7 +134,7 @@ export const PLANS = [
     price: "0",
     period: " cu dovadă",
     priceAn: null,
-    discount: "Pentru studenți, doctoranzi, profesori, trainee OAER, cercetători",
+    discount: "Pentru studenți și doctoranzi (instituții — cerere de colaborare separată)",
     audience: "Educație & formare profesională",
     features: [
       "TOATE funcțiile Zephren Expert (Step 1-8 complet)",
