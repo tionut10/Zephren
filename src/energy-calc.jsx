@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { renderAsync } from "docx-preview";
 import ChatImport from "./components/ChatImport.jsx"; // static — floating button render at mount
 // ── Import/share modals — lazy loaded (S6.3) ──
@@ -181,6 +182,8 @@ export default function EnergyCalcApp({ cloud }) {
   const [userTier, setUserTier] = useState("free");
   // Sprint Pricing v6.0 — dropdown selector tier (afișare doar activ + popover toate 7)
   const [showTierPicker, setShowTierPicker] = useState(false);
+  const [tierPickerPos, setTierPickerPos] = useState({ top: 0, left: 0 });
+  const tierBadgeRef = useRef(null);
   const [projectCount, setProjectCount] = useState(0);
   const [certCount, setCertCount] = useState(0);
   const [certResetDate, setCertResetDate] = useState(() => {
@@ -2995,19 +2998,39 @@ export default function EnergyCalcApp({ cloud }) {
               const activeTid = TIER_BADGES[userTier] ? userTier : (TIER_LEGACY_MAP[userTier] || "free");
               const activeBadge = TIER_BADGES[activeTid];
               return (
-                <div className="relative">
+                <>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setShowTierPicker(s => !s); }}
+                    ref={tierBadgeRef}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!showTierPicker && tierBadgeRef.current) {
+                        const r = tierBadgeRef.current.getBoundingClientRect();
+                        setTierPickerPos({ top: r.bottom + 4, left: r.left });
+                      }
+                      setShowTierPicker(s => !s);
+                    }}
                     title={`Plan curent: ${activeBadge.full}. Click pentru schimbare.`}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${activeBadge.cls}`}
                   >
                     <span>{activeBadge.label}</span>
                     <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><path d="M2 4l4 4 4-4z"/></svg>
                   </button>
-                  {showTierPicker && (
+                  {showTierPicker && createPortal(
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowTierPicker(false)} />
-                      <div className="absolute top-full left-0 mt-1 z-50 bg-slate-900 border border-white/10 rounded-lg p-1 flex flex-col gap-0.5 min-w-[180px] shadow-xl">
+                      <div
+                        style={{ position: "fixed", inset: 0, zIndex: 99998 }}
+                        onClick={() => setShowTierPicker(false)}
+                      />
+                      <div
+                        style={{
+                          position: "fixed",
+                          top: tierPickerPos.top,
+                          left: tierPickerPos.left,
+                          zIndex: 99999,
+                          minWidth: 200,
+                        }}
+                        className="bg-slate-900 border border-white/10 rounded-lg p-1 flex flex-col gap-0.5 shadow-2xl"
+                      >
                         <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-white/40 border-b border-white/5 mb-0.5">
                           Selectează plan (test)
                         </div>
@@ -3037,9 +3060,10 @@ export default function EnergyCalcApp({ cloud }) {
                           );
                         })}
                       </div>
-                    </>
+                    </>,
+                    document.body
                   )}
-                </div>
+                </>
               );
             })()}
 
