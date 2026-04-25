@@ -543,6 +543,11 @@ export default function EnergyCalcApp({ cloud }) {
   }, [showToast]);
 
   const loadFromStorage = useCallback(async () => {
+    // Sprint A Task 4: dacă există flag "pending open project", săr peste autosave restore
+    // (proiectul pending va fi încărcat de useEffect dedicat → evită race condition)
+    if (typeof localStorage !== "undefined" && localStorage.getItem("zephren_pending_open_project")) {
+      return;
+    }
     if (typeof window === "undefined" || !window.storage) return;
     try {
       var result = await window.storage.get("energopro-project");
@@ -725,6 +730,21 @@ export default function EnergyCalcApp({ cloud }) {
   useEffect(() => { refreshProjectList(); }, []);
 
   useEffect(function() { loadFromStorage(); }, []);
+
+  // Sprint A Task 4: deschidere proiect din Portofoliu (reload approach)
+  useEffect(function() {
+    try {
+      const pendingKey = localStorage.getItem("zephren_pending_open_project");
+      if (!pendingKey) return;
+      const raw = localStorage.getItem(pendingKey);
+      localStorage.removeItem("zephren_pending_open_project");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      loadProjectData(d);
+      showToast("Proiect deschis: " + (d.building?.address || pendingKey), "success");
+    } catch (e) { /* ignore parse / storage errors */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-import din URL ?import=<base64> (ShareModal). decodeShareableData e
   // lazy (partea S6.3): doar când e nevoie de decodare, se face dynamic import.
@@ -1303,10 +1323,27 @@ export default function EnergyCalcApp({ cloud }) {
     }
   }, [importProject, importCSV, importDOSET, importGbXML, importENERGPlus, importOCR, importIFC]);
 
-  // ─── Climate auto-selection ───
-  const selectedClimate = useMemo(() =>
-    CLIMATE_DB.find(c => c.name === building.locality) || null
-  , [building.locality]);
+  // ─── Climate auto-selection + override din Climate Import (Sprint A Task 6) ───
+  const selectedClimate = useMemo(() => {
+    const base = CLIMATE_DB.find(c => c.name === building.locality) || null;
+    try {
+      const overrideRaw = typeof localStorage !== "undefined"
+        ? localStorage.getItem("zephren_climate_override") : null;
+      if (overrideRaw && base) {
+        const override = JSON.parse(overrideRaw);
+        // Suprascrie câmpuri climatice, păstrează coordonatele + zona climatică din baza Mc 001-2022
+        return { ...base,
+          temp_month: override.temp_month || base.temp_month,
+          GHI_month: override.GHI_month || base.GHI_month,
+          RH_month: override.RH_month || base.RH_month,
+          wind_month: override.wind_month || base.wind_month,
+          _source: override._source || "Import override",
+          _overridden: true,
+        };
+      }
+    } catch (e) { /* fallthrough */ }
+    return base;
+  }, [building.locality]);
 
 
 

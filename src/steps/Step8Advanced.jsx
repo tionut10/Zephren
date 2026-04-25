@@ -61,60 +61,72 @@ import SRICalculator from "../components/SRICalculator.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 
 // Sprint 18 UX — Categorii module avansate pentru filtrare + search
-const TAB_SECTIONS = [
-  { id:"benchmark",   icon:"📊", label:"Benchmark",             category:"calcul" },
-  { id:"nzeb_check",  icon:"🏆", label:"Verificare nZEB",        category:"calcul" },
-  { id:"bacs",        icon:"🤖", label:"BACS",                   category:"analiza" },
-  { id:"sri",         icon:"🧠", label:"SRI Indicator",          category:"analiza" },
-  { id:"acm_en15316", icon:"🚿", label:"ACM detaliat",           category:"calcul" },
-  { id:"sonde_geo",   icon:"🌍", label:"Sonde geotermale",       category:"calcul" },
-  { id:"en12831",     icon:"🔥", label:"Sarcină vârf",           category:"calcul" },
-  { id:"ventilare",   icon:"💨", label:"Ventilare",              category:"calcul" },
-  { id:"vmc_hr",      icon:"🔄", label:"VMC-HR",                 category:"calcul" },
-  { id:"infiltratii", icon:"💨", label:"Infiltrații n50",        category:"calcul" },
-  { id:"iluminat_nat",icon:"☀️", label:"Iluminat natural",       category:"calcul" },
-  { id:"confort_pmv", icon:"🌡️", label:"Confort PMV",            category:"calcul" },
-  { id:"c107",        icon:"📐", label:"C107 Conformitate",      category:"calcul" },
-  { id:"tb_dinamic",  icon:"🔗", label:"Punți termice",          category:"calcul" },
-  { id:"pompa",       icon:"♨️", label:"Pompă căldură",          category:"calcul" },
-  { id:"rehab",       icon:"🏗️", label:"Pachete reabilitare",    category:"analiza" },
-  { id:"pnrr",        icon:"💶", label:"Finanțare",              category:"documente" },
-  { id:"fond_rep",    icon:"🔧", label:"Fond reparații",         category:"analiza" },
-  { id:"solar_acm",   icon:"☀️", label:"Solar termic",           category:"calcul" },
-  { id:"gp123",       icon:"⚡", label:"GP 123 Fotovoltaic",     category:"calcul" },
-  { id:"glaser",        icon:"💧", label:"Condens Glaser",       category:"calcul" },
-  { id:"rehab_compare", icon:"📊", label:"Comparativ rehab",     category:"analiza" },
-  { id:"thermal_map", icon:"🌡️", label:"Hartă termică",          category:"analiza" },
-  { id:"deviz",         icon:"💰", label:"Deviz reabilitare",    category:"analiza" },
-  { id:"racire_orara",  icon:"❄️", label:"Răcire orară",         category:"calcul" },
-  { id:"pasivhaus",   icon:"🏠", label:"Pasivhaus",              category:"calcul" },
-  { id:"acustic",     icon:"🔊", label:"Acustic",                category:"calcul" },
-  { id:"conformitate",icon:"✅", label:"Conformitate U",         category:"calcul" },
-  { id:"xml_export",  icon:"📥", label:"Export XML",             category:"export" },
-  { id:"climate_import", icon:"📡", label:"Import climă",        category:"import" },
-  { id:"preturi",     icon:"🏷️", label:"Prețuri materiale",      category:"import" },
-  { id:"multi_building", icon:"🏘️", label:"Multi-clădire",       category:"cloud" },
-  { id:"mdlpa",       icon:"🏛️", label:"MDLPA Registru",         category:"documente" },
-  { id:"camere",      icon:"🏠", label:"Sarcini per cameră",     category:"calcul" },
-  { id:"proiect_tehnic", icon:"📐", label:"Verificare proiect",  category:"analiza" },
-  { id:"sim8760",     icon:"📈", label:"Profil anual",           category:"calcul" },
-  { id:"portofoliu",  icon:"📁", label:"Portofoliu",             category:"cloud" },
-  { id:"facturare",   icon:"🧾", label:"Deviz servicii",         category:"export" },
-  { id:"raport_audit",icon:"📋", label:"Raport audit",           category:"documente" },
-  { id:"pv_degradare", icon:"📉", label:"Degradare PV",          category:"analiza" },
-  { id:"contract",     icon:"📝", label:"Contract",              category:"documente" },
-  { id:"efactura",     icon:"🏛️", label:"e-Factură ANAF",        category:"export" },
-  { id:"termoviziune", icon:"🔴", label:"Termoviziune",          category:"analiza" },
-  { id:"cloud_sync",   icon:"☁️", label:"Cloud Sync",            category:"cloud" },
-  { id:"tutorial",     icon:"🎓", label:"Tutorial",              category:"cloud" },
-  { id:"reconciliere", icon:"📊", label:"Reconciliere consum",   category:"analiza" },
-  { id:"cpe_tracker",  icon:"📅", label:"Tracker CPE",           category:"documente" },
-  { id:"lcc",          icon:"💹", label:"LCC per măsură",        category:"analiza" },
-  { id:"monte_carlo",  icon:"🎲", label:"Monte Carlo EP",        category:"analiza" },
-  { id:"oferta_reab",  icon:"📄", label:"Ofertă reabilitare",    category:"documente" },
-  { id:"team",         icon:"👥", label:"Echipă",                category:"cloud" },
-  { id:"meps",         icon:"🏛️", label:"MEPS EPBD 2024",        category:"calcul" },
-  { id:"gwp_co2",      icon:"🌿", label:"CO₂ Lifecycle",         category:"calcul" },
+// Sprint A Task 8: restructurare workflow-centric — 8 categorii ordonate după fluxul auditorului
+// (prev: 6 categorii techno-centric calcul/analiza/export/import/documente/cloud)
+export const TAB_SECTIONS = [
+  // 🎯 01 CONFORMITATE NORMATIVĂ (prima verificare după calcul Step 5)
+  { id:"nzeb_check",    icon:"🏆", label:"Verificare nZEB",          category:"conformitate" },
+  { id:"meps",          icon:"🏛️", label:"MEPS EPBD 2024",           category:"conformitate" },
+  { id:"verificare_U",  icon:"✅", label:"Verificare U (C107/nZEB)", category:"conformitate" },
+  { id:"sri",           icon:"🧠", label:"SRI Indicator",            category:"conformitate" },
+  { id:"bacs",          icon:"🤖", label:"BACS",                     category:"conformitate" },
+  { id:"tb_dinamic",    icon:"🔗", label:"Punți termice ψ",          category:"conformitate" },
+  { id:"glaser",        icon:"💧", label:"Condens Glaser",           category:"conformitate" },
+
+  // 🏗️ 02 REABILITARE & MĂSURI (scenarii + cost + finanțare)
+  { id:"rehab",         icon:"🏗️", label:"Pachete reabilitare",      category:"rehab" },
+  { id:"deviz",         icon:"💰", label:"Deviz reabilitare",        category:"rehab" },
+  { id:"pnrr",          icon:"💶", label:"Finanțare PNRR/AFM",       category:"rehab" },
+  { id:"lcc",           icon:"💹", label:"LCC per măsură",           category:"rehab" },
+  { id:"fond_rep",      icon:"🔧", label:"Fond reparații",           category:"rehab" },
+  { id:"pompa",         icon:"♨️", label:"Pompă căldură",            category:"rehab" },
+  { id:"sonde_geo",     icon:"🌍", label:"Sonde geotermale",         category:"rehab" },
+  { id:"gp123",         icon:"⚡", label:"GP 123 Fotovoltaic",       category:"rehab" },
+
+  // 📊 03 CALCUL DETALIAT & VERIFICARE (aprofundare Step 5)
+  { id:"en12831",       icon:"🔥", label:"Sarcină vârf",             category:"calcul" },
+  { id:"camere",        icon:"🏠", label:"Sarcini per cameră",       category:"calcul" },
+  { id:"racire_orara",  icon:"❄️", label:"Răcire orară",             category:"calcul" },
+  { id:"ventilare",     icon:"💨", label:"Ventilare",                category:"calcul" },
+  { id:"vmc_hr",        icon:"🔄", label:"VMC-HR",                   category:"calcul" },
+  { id:"infiltratii",   icon:"💨", label:"Infiltrații n50",          category:"calcul" },
+  { id:"acm_en15316",   icon:"🚿", label:"ACM detaliat",             category:"calcul" },
+  { id:"solar_acm",     icon:"☀️", label:"Solar termic",             category:"calcul" },
+  { id:"iluminat_nat",  icon:"☀️", label:"Iluminat natural",         category:"calcul" },
+  { id:"confort_pmv",   icon:"🌡️", label:"Confort PMV",              category:"calcul" },
+  { id:"sim8760",       icon:"📈", label:"Profil anual",             category:"calcul" },
+
+  // 🔍 04 DIAGNOSTIC & VIZUALIZARE (validare vizuală + confruntare)
+  { id:"thermal_map",   icon:"🌡️", label:"Hartă termică",            category:"diagnostic" },
+  { id:"termoviziune",  icon:"🔴", label:"Termoviziune",             category:"diagnostic" },
+  { id:"reconciliere",  icon:"📊", label:"Reconciliere consum",      category:"diagnostic" },
+  { id:"benchmark",     icon:"📊", label:"Benchmark",                category:"diagnostic" },
+  { id:"monte_carlo",   icon:"🎲", label:"Monte Carlo EP",           category:"diagnostic" },
+  { id:"pasivhaus",     icon:"🏠", label:"Pasivhaus",                category:"diagnostic" },
+
+  // 📑 05 RAPOARTE CPE & AUDIT (livrabile oficiale)
+  { id:"raport_audit",  icon:"📋", label:"Raport audit",             category:"rapoarte" },
+  { id:"mdlpa",         icon:"🏛️", label:"MDLPA Registru (XML)",     category:"rapoarte" },
+  { id:"cpe_tracker",   icon:"📅", label:"Tracker CPE",              category:"rapoarte" },
+  { id:"gwp_co2",       icon:"🌿", label:"CO₂ Lifecycle",            category:"rapoarte" },
+
+  // 💼 06 ADMINISTRARE CABINET (business ops auditor)
+  { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
+  { id:"facturare",     icon:"🧾", label:"Deviz servicii",           category:"cabinet" },
+  { id:"contract",      icon:"📝", label:"Contract",                 category:"cabinet" },
+  { id:"efactura",      icon:"🏛️", label:"e-Factură ANAF",           category:"cabinet" },
+  { id:"oferta_reab",   icon:"📄", label:"Ofertă reabilitare",       category:"cabinet" },
+  { id:"team",          icon:"👥", label:"Echipă",                   category:"cabinet" },
+
+  // 🌐 07 DATE EXTERNE & CLOUD
+  { id:"climate_import", icon:"📡", label:"Import climă",            category:"date_ext" },
+  { id:"preturi",       icon:"🏷️", label:"Prețuri materiale",        category:"date_ext" },
+  { id:"cloud_sync",    icon:"☁️", label:"Cloud Sync",               category:"date_ext" },
+
+  // 🔬 08 AVANSAT / ÎNVĂȚARE (module rar folosite sau onboarding)
+  { id:"acustic",       icon:"🔊", label:"Acustic",                  category:"expert" },
+  { id:"pv_degradare",  icon:"📉", label:"Degradare PV",             category:"expert" },
+  { id:"tutorial",      icon:"🎓", label:"Tutorial",                 category:"expert" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -140,24 +152,28 @@ function ColorBar({ value, max, color }) {
   );
 }
 
-// Sprint 18 UX — Categorii pentru filtrarea celor 50+ module avansate
-const CATEGORIES_RO = [
-  { id: "all",       label: "Toate" },
-  { id: "calcul",    label: "Calcul avansat" },
-  { id: "analiza",   label: "Analiză & Simulare" },
-  { id: "export",    label: "Export & Rapoarte" },
-  { id: "import",    label: "Import date" },
-  { id: "documente", label: "Documente legale" },
-  { id: "cloud",     label: "Cloud & Echipă" },
+// Sprint A Task 8 — 8 categorii workflow-centric (ordonate după fluxul mental al auditorului)
+export const CATEGORIES_RO = [
+  { id: "all",           label: "Toate" },
+  { id: "conformitate",  label: "🎯 Conformitate" },
+  { id: "rehab",         label: "🏗️ Reabilitare" },
+  { id: "calcul",        label: "📊 Calcul detaliat" },
+  { id: "diagnostic",    label: "🔍 Diagnostic" },
+  { id: "rapoarte",      label: "📑 Rapoarte CPE" },
+  { id: "cabinet",       label: "💼 Cabinet" },
+  { id: "date_ext",      label: "🌐 Date & Cloud" },
+  { id: "expert",        label: "🔬 Avansat" },
 ];
 const CATEGORIES_EN = [
-  { id: "all",       label: "All" },
-  { id: "calcul",    label: "Calculations" },
-  { id: "analiza",   label: "Analysis" },
-  { id: "export",    label: "Export" },
-  { id: "import",    label: "Import" },
-  { id: "documente", label: "Documents" },
-  { id: "cloud",     label: "Cloud & Team" },
+  { id: "all",           label: "All" },
+  { id: "conformitate",  label: "🎯 Compliance" },
+  { id: "rehab",         label: "🏗️ Renovation" },
+  { id: "calcul",        label: "📊 Detailed calc" },
+  { id: "diagnostic",    label: "🔍 Diagnostics" },
+  { id: "rapoarte",      label: "📑 EPC Reports" },
+  { id: "cabinet",       label: "💼 Office" },
+  { id: "date_ext",      label: "🌐 Data & Cloud" },
+  { id: "expert",        label: "🔬 Advanced" },
 ];
 
 export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan, bacsClass: bacsClassProp, setBacsClass: setBacsClassProp }) {
@@ -184,6 +200,10 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [xmlGenerated, setXmlGenerated] = useState(false);
   const [epAfterRehabInput, setEpAfterRehabInput] = useState("");
   const [expandedProgram, setExpandedProgram] = useState(null);
+  // Sprint A Task 2: toggle Card/Tabel pentru tab-ul rehab (fuzionat cu rehab_compare)
+  const [rehabView, setRehabView] = useState("card");
+  // Sprint A Task 3: sub-tab pentru verificare_U (fuzionat c107 + conformitate + proiect_tehnic)
+  const [uVerifSubTab, setUVerifSubTab] = useState("c107"); // "c107" | "renovare" | "proiect"
 
   // ── Alerte CPE ──
   const cpeRegistry = useMemo(() => {
@@ -775,7 +795,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={cn("relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
               activeTab === tab.id ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>
-            {tab.icon} {tab.id === "conformitate" ? t(tab.label) : tab.label}
+            {tab.icon} {tab.label}
             {/* Badge alerte CPE */}
             {tab.id === "cpe_tracker" && urgentCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
@@ -1908,84 +1928,199 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ C107 CONFORMITATE ═══ */}
-      {activeTab === "c107" && (
+      {/* ═══ VERIFICARE U UNIFICATĂ (Sprint A Task 3: fuzionat c107 + conformitate + proiect_tehnic) ═══ */}
+      {activeTab === "verificare_U" && (
         <Card className="p-4">
-          <SectionHeader icon="📐" title="Conformitate C107/2-2005 + Mc 001-2022"
-            subtitle="Verificare rezistențe termice minime per element față de cerințele normative" />
-          {c107Result ? (
-            <div className="space-y-4">
-              {/* Badge sumar */}
-              <div className="flex gap-2 flex-wrap">
-                <Badge className="bg-green-900/50 text-green-300 text-xs">
-                  ✓ {c107Result.checks?.filter(c => c.conform).length || 0} conforme
-                </Badge>
-                <Badge className="bg-red-900/50 text-red-300 text-xs">
-                  ✗ {c107Result.checks?.filter(c => !c.conform).length || 0} neconforme
-                </Badge>
+          <SectionHeader icon="✅" title="Verificare transmitanță U — conformitate normativă"
+            subtitle="Trei niveluri de verificare: C107/2005 (construcție) · Renovare majoră (Mc 001-2022 Tab. 2.5) · Proiect tehnic (nZEB)" />
+
+          {/* Sub-tab pills */}
+          <div className="flex gap-1.5 mb-4 bg-slate-800/40 rounded-lg p-1 border border-white/5" role="tablist" aria-label="Niveluri verificare U">
+            {[
+              { id: "c107",     label: "C107/2005",       sub: "Construcție existentă", icon: "📐" },
+              { id: "renovare", label: "Renovare majoră", sub: "Mc 001-2022 Tab. 2.5", icon: "🔨" },
+              { id: "proiect",  label: "Proiect tehnic",  sub: "C107 + nZEB",           icon: "📐" },
+            ].map(st => (
+              <button key={st.id} role="tab"
+                aria-selected={uVerifSubTab === st.id}
+                onClick={() => setUVerifSubTab(st.id)}
+                className={cn("flex-1 text-left px-3 py-2 rounded-md transition-all",
+                  uVerifSubTab === st.id
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200")}>
+                <div className="text-xs font-bold">{st.icon} {st.label}</div>
+                <div className="text-[10px] opacity-70">{st.sub}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Sub-tab 1: C107/2-2005 */}
+          {uVerifSubTab === "c107" && (
+            c107Result ? (
+              <div className="space-y-4">
+                <div className="flex gap-2 flex-wrap">
+                  <Badge className="bg-green-900/50 text-green-300 text-xs">
+                    ✓ {c107Result.checks?.filter(c => c.conform).length || 0} conforme
+                  </Badge>
+                  <Badge className="bg-red-900/50 text-red-300 text-xs">
+                    ✗ {c107Result.checks?.filter(c => !c.conform).length || 0} neconforme
+                  </Badge>
+                </div>
+
+                {c107Result.checks?.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-slate-400 uppercase mb-1">Verificare elemente vs. C107/2-2005 + Mc 001-2022</div>
+                    {c107Result.checks.map((check, i) => {
+                      const margin = check.u_max > 0
+                        ? ((check.u_max - check.u_actual) / check.u_max * 100)
+                        : 0;
+                      const isWarning = check.conform && margin < 10;
+                      return (
+                        <div key={i} className={cn("rounded-lg p-3 text-xs border",
+                          !check.conform   ? "border-red-800/40 bg-red-900/10" :
+                          isWarning        ? "border-amber-800/40 bg-amber-900/10" :
+                          "border-green-800/30 bg-green-900/10")}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-medium text-slate-200 truncate flex-1">
+                              {check.name || check.element}
+                            </span>
+                            <span className="text-[10px] text-slate-500 ml-2">{check.type}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <div className="text-[10px] text-slate-500">U actual</div>
+                              <div className={cn("font-mono font-medium",
+                                !check.conform ? "text-red-400" : "text-green-400")}>
+                                {check.u_actual?.toFixed(3)} W/(m²·K)
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-500">U max C107</div>
+                              <div className="font-mono text-slate-300">{check.u_max?.toFixed(3)} W/(m²·K)</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-500">Marjă</div>
+                              <div className={cn("font-mono font-medium",
+                                !check.conform   ? "text-red-400" :
+                                isWarning        ? "text-amber-400" :
+                                "text-green-400")}>
+                                {check.conform ? "+" : ""}{margin.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {c107Result.summary && (
+                  <div className={cn("text-xs rounded-lg p-3",
+                    c107Result.checks?.every(c => c.conform)
+                      ? "bg-green-900/20 text-green-300"
+                      : "bg-red-900/20 text-red-300")}>
+                    {c107Result.summary}
+                  </div>
+                )}
               </div>
-
-              {/* Lista checks */}
-              {c107Result.checks?.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs font-medium text-slate-400 uppercase mb-1">Verificare elemente</div>
-                  {c107Result.checks.map((check, i) => {
-                    const margin = check.u_max > 0
-                      ? ((check.u_max - check.u_actual) / check.u_max * 100)
-                      : 0;
-                    const isWarning = check.conform && margin < 10;
-                    return (
-                      <div key={i} className={cn("rounded-lg p-3 text-xs border",
-                        !check.conform   ? "border-red-800/40 bg-red-900/10" :
-                        isWarning        ? "border-amber-800/40 bg-amber-900/10" :
-                        "border-green-800/30 bg-green-900/10")}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-medium text-slate-200 truncate flex-1">
-                            {check.name || check.element}
-                          </span>
-                          <span className="text-[10px] text-slate-500 ml-2">{check.type}</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div>
-                            <div className="text-[10px] text-slate-500">U actual</div>
-                            <div className={cn("font-mono font-medium",
-                              !check.conform ? "text-red-400" : "text-green-400")}>
-                              {check.u_actual?.toFixed(3)} W/(m²·K)
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-slate-500">U max C107</div>
-                            <div className="font-mono text-slate-300">{check.u_max?.toFixed(3)} W/(m²·K)</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-slate-500">Marjă</div>
-                            <div className={cn("font-mono font-medium",
-                              !check.conform   ? "text-red-400" :
-                              isWarning        ? "text-amber-400" :
-                              "text-green-400")}>
-                              {check.conform ? "+" : ""}{margin.toFixed(1)}%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Verdict */}
-              {c107Result.summary && (
-                <div className={cn("text-xs rounded-lg p-3",
-                  c107Result.checks?.every(c => c.conform)
-                    ? "bg-green-900/20 text-green-300"
-                    : "bg-red-900/20 text-red-300")}>
-                  {c107Result.summary}
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă (Pasul 2)</p>
+            ) : (
+              <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă (Pasul 2)</p>
+            )
           )}
+
+          {/* Sub-tab 2: Renovare majoră (Mc 001-2022 Tab. 2.5) */}
+          {uVerifSubTab === "renovare" && (
+            uConformity ? (
+              <div className="space-y-3">
+                <div className="text-xs text-slate-400 bg-slate-800/60 rounded-lg p-3">
+                  Verificare automată pentru <strong>renovare majoră (&gt;25% anvelopă)</strong> față de U<sub>max</sub> admis conform Mc 001-2022 Tabel 2.5.
+                </div>
+                <ConformBadge ok={uConformity.allConform} label={uConformity.verdict} />
+                <div className="space-y-1">
+                  {uConformity.results.map((r,i) => (
+                    <div key={i} className={cn("flex justify-between px-3 py-2 rounded text-xs",
+                      r.conform ? "bg-green-900/20 text-green-300" : "bg-red-900/20 text-red-300")}>
+                      <span>{r.conform?"✓":"✗"} {r.name}</span>
+                      <span>U={r.U} / U_max={r.Umax} W/(m²·K){!r.conform?" (depășit cu "+r.deficit+")":" "}</span>
+                    </div>
+                  ))}
+                </div>
+                {!uConformity.allConform && (
+                  <div className="text-xs text-amber-300 bg-amber-900/20 rounded p-2">
+                    Elementele marcate cu ✗ necesită îmbunătățire termică înainte de obținerea avizului de renovare majoră.
+                  </div>
+                )}
+              </div>
+            ) : <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă pentru verificare conformitate.</p>
+          )}
+
+          {/* Sub-tab 3: Proiect tehnic (C107 + nZEB combinat) */}
+          {uVerifSubTab === "proiect" && (() => {
+            const isRes = ["RI","RC","RA"].includes(cat);
+            const C107_U = { PE: 0.50, PT: isRes ? 0.40 : 0.35, PP: isRes ? 0.50 : 0.45, PB: 0.40, tamp: isRes ? 1.77 : 1.60 };
+            const NZEB_U = { PE: isRes ? 0.28 : 0.30, PT: isRes ? 0.20 : 0.22, PP: isRes ? 0.25 : 0.28, PB: 0.25, tamp: 1.10 };
+            const elements = [
+              ...(opaqueElements||[]).map(el => {
+                const R = (el.layers||[]).reduce((r,l)=>r+((parseFloat(l.thickness)||0)/1000)/(l.lambda||1),0.17);
+                const U = Math.round(1/Math.max(R,0.05)*1000)/1000;
+                const type = el.type || "PE";
+                return { name:el.name||el.type, type, U, area:parseFloat(el.area)||0, lim_c107:C107_U[type]||0.50, lim_nzeb:NZEB_U[type]||0.28, ok_c107:U<=(C107_U[type]||0.50), ok_nzeb:U<=(NZEB_U[type]||0.28) };
+              }),
+              ...(glazingElements||[]).map(gl => {
+                const U = parseFloat(gl.u)||2.0;
+                return { name:gl.name||gl.orientation, type:"tamp", U, area:parseFloat(gl.area)||0, lim_c107:C107_U.tamp, lim_nzeb:NZEB_U.tamp, ok_c107:U<=C107_U.tamp, ok_nzeb:U<=NZEB_U.tamp };
+              }),
+            ];
+            const conform_c107 = elements.every(e => e.ok_c107);
+            const conform_nzeb = elements.every(e => e.ok_nzeb);
+            return (
+              <div className="space-y-4">
+                <div className="text-xs text-slate-400 bg-slate-800/60 rounded-lg p-3">
+                  Verificare dublă a proiectului tehnic: <strong>C107/2-2005</strong> (nivel minim) + <strong>cerință nZEB</strong> (L.238/2024, obligatoriu pentru clădiri noi și renovare majoră).
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[{label:"C107/2005", ok:conform_c107, sub:"Normativ transmitanță max."}, {label:"Cerință nZEB", ok:conform_nzeb, sub:"Transmitanță maximă nZEB"}].map(({label,ok,sub}) => (
+                    <div key={label} className={cn("rounded-xl p-3 text-center border", ok ? "border-green-700/40 bg-green-900/15" : "border-red-700/40 bg-red-900/15")}>
+                      <div className="text-lg">{ok ? "✅" : "❌"}</div>
+                      <div className={cn("text-sm font-bold", ok ? "text-green-300" : "text-red-300")}>{label}</div>
+                      <div className="text-[10px] text-slate-400">{sub}</div>
+                    </div>
+                  ))}
+                </div>
+                {elements.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          {["Element","Tip","Au (m²)","U calc.","U_max C107","U_max nZEB","C107","nZEB"].map(h => (
+                            <th key={h} className="text-left py-1.5 pr-3 text-[10px] text-slate-400 font-normal">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {elements.map((el, i) => (
+                          <tr key={i} className="border-b border-white/[0.04]">
+                            <td className="py-1.5 pr-3 text-white">{el.name}</td>
+                            <td className="py-1.5 pr-3 text-slate-400">{el.type}</td>
+                            <td className="py-1.5 pr-3 font-mono">{el.area}</td>
+                            <td className="py-1.5 pr-3 font-mono font-bold" style={{color:!el.ok_c107?"#ef4444":!el.ok_nzeb?"#f97316":"#22c55e"}}>{el.U.toFixed(3)}</td>
+                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_c107.toFixed(2)}</td>
+                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_nzeb.toFixed(2)}</td>
+                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_c107} label=""/></td>
+                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_nzeb} label=""/></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă în Pasul 2.</p>}
+                {!conform_c107 && elements.length > 0 && (
+                  <div className="text-xs text-red-300 bg-red-900/15 rounded-lg p-3">✗ Neconform C107: {elements.filter(e=>!e.ok_c107).map(e=>e.name).join(", ")}</div>
+                )}
+                {conform_nzeb && elements.length > 0 && <div className="text-xs text-green-300 bg-green-900/15 rounded-lg p-3">✓ Conform C107 și cerință nZEB.</div>}
+              </div>
+            );
+          })()}
         </Card>
       )}
 
@@ -2030,45 +2165,167 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ COMPARATOR PACHETE REABILITARE ═══ */}
+      {/* ═══ PACHETE REABILITARE (Sprint A Task 2: fuzionat rehab + rehab_compare) ═══ */}
       {activeTab === "rehab" && (
         <Card className="p-4">
-          <SectionHeader icon="🏗️" title="Comparator pachete de reabilitare"
-            subtitle="Analiză paralelă 3 scenarii: Minimal, Mediu, nZEB Integral — NPV + termen recuperare" />
+          <SectionHeader icon="🏗️" title="Pachete de reabilitare — comparator"
+            subtitle="3 scenarii: Minimal, Mediu, nZEB Integral — NPV, payback, clasă energetică, CO₂" />
           {rehabPackages ? (
             <div className="space-y-4">
-              <div className="text-xs text-slate-400 mb-3">
-                EP actual: <strong className="text-white">{epActual}</strong> kWh/(m²·an) |
-                Țintă nZEB: <strong className="text-green-400">{rehabPackages.nzebEpMax}</strong> kWh/(m²·an) |
-                Gap: <strong className="text-orange-400">{rehabPackages.epGap}</strong> kWh/(m²·an)
+              {/* Header: info EP + toggle Card/Tabel */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="text-xs text-slate-400">
+                  EP actual: <strong className="text-white">{epActual}</strong> kWh/(m²·an) |
+                  Țintă nZEB: <strong className="text-green-400">{rehabPackages.nzebEpMax}</strong> kWh/(m²·an) |
+                  Gap: <strong className="text-orange-400">{rehabPackages.epGap}</strong> kWh/(m²·an)
+                </div>
+                <div className="flex gap-1 bg-slate-800/60 rounded-lg p-1 border border-white/5" role="group" aria-label="Mod afișare pachete reabilitare">
+                  <button onClick={() => setRehabView("card")}
+                    aria-pressed={rehabView === "card"}
+                    className={cn("px-3 py-1 rounded text-xs font-medium transition-all",
+                      rehabView === "card" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200")}>
+                    🃏 Carduri
+                  </button>
+                  <button onClick={() => setRehabView("table")}
+                    aria-pressed={rehabView === "table"}
+                    className={cn("px-3 py-1 rounded text-xs font-medium transition-all",
+                      rehabView === "table" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200")}>
+                    📊 Tabel
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {rehabPackages.packages.map((pkg, i) => (
-                  <div key={i} className={cn("rounded-xl p-4 border",
-                    pkg.isBest ? "border-green-600 bg-green-900/10" : "border-slate-700 bg-slate-800/50")}>
-                    {pkg.isBest && <Badge className="bg-green-600 text-white text-xs mb-2">⭐ Optim NPV</Badge>}
-                    <div className="font-bold text-white mb-1">{pkg.label}</div>
-                    <div className="text-2xl font-bold" style={{color: pkg.nzebConform ? "#22c55e" : "#f97316"}}>
-                      {pkg.epNew} <span className="text-sm text-slate-400">kWh/(m²·an)</span>
+
+              {/* View 1: Card (3 carduri paralele, design sintetic) */}
+              {rehabView === "card" && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {rehabPackages.packages.map((pkg, i) => (
+                    <div key={i} className={cn("rounded-xl p-4 border",
+                      pkg.isBest ? "border-green-600 bg-green-900/10" : "border-slate-700 bg-slate-800/50")}>
+                      {pkg.isBest && <Badge className="bg-green-600 text-white text-xs mb-2">⭐ Optim NPV</Badge>}
+                      <div className="font-bold text-white mb-1">{pkg.label}</div>
+                      <div className="text-2xl font-bold" style={{color: pkg.nzebConform ? "#22c55e" : "#f97316"}}>
+                        {pkg.epNew} <span className="text-sm text-slate-400">kWh/(m²·an)</span>
+                      </div>
+                      <div className="text-xs text-slate-400">Reducere: -{pkg.epReductionPct}%</div>
+                      <div className="mt-3 space-y-1 text-xs">
+                        <div className="flex justify-between"><span className="text-slate-400">Investiție</span><span className="text-white font-medium">{pkg.invest?.toLocaleString()} EUR</span></div>
+                        <div className="flex justify-between"><span className="text-slate-400">Economie anuală</span><span className="text-green-400">{pkg.annualSaving?.toLocaleString()} EUR/an</span></div>
+                        <div className="flex justify-between"><span className="text-slate-400">NPV 30 ani</span>
+                          <span className={pkg.fin?.npv >= 0 ? "text-green-400" : "text-red-400"}>{pkg.fin?.npv?.toLocaleString()} EUR</span></div>
+                        <div className="flex justify-between"><span className="text-slate-400">Recuperare</span><span className="text-white">{pkg.fin?.paybackSimple} ani</span></div>
+                        {pkg.fin?.irr && <div className="flex justify-between"><span className="text-slate-400">IRR</span><span className="text-white">{pkg.fin.irr}%</span></div>}
+                      </div>
+                      <ConformBadge ok={pkg.nzebConform} label={pkg.nzebConform ? "Conform nZEB" : "Sub nZEB"} />
+                      <div className="mt-2 text-xs text-slate-500">
+                        {pkg.measures?.map((m,j) => <div key={j}>• {m}</div>)}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-400">Reducere: -{pkg.epReductionPct}%</div>
-                    <div className="mt-3 space-y-1 text-xs">
-                      <div className="flex justify-between"><span className="text-slate-400">Investiție</span><span className="text-white font-medium">{pkg.invest?.toLocaleString()} EUR</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Economie anuală</span><span className="text-green-400">{pkg.annualSaving?.toLocaleString()} EUR/an</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">NPV 30 ani</span>
-                        <span className={pkg.fin?.npv >= 0 ? "text-green-400" : "text-red-400"}>{pkg.fin?.npv?.toLocaleString()} EUR</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Recuperare</span><span className="text-white">{pkg.fin?.paybackSimple} ani</span></div>
-                      {pkg.fin?.irr && <div className="flex justify-between"><span className="text-slate-400">IRR</span><span className="text-white">{pkg.fin.irr}%</span></div>}
-                    </div>
-                    <ConformBadge ok={pkg.nzebConform} label={pkg.nzebConform ? "Conform nZEB" : "Sub nZEB"} />
-                    <div className="mt-2 text-xs text-slate-500">
-                      {pkg.measures?.map((m,j) => <div key={j}>• {m}</div>)}
-                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* View 2: Tabel comparativ (toate indicatorii + stare actuală) */}
+              {rehabView === "table" && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="text-left py-2 text-slate-400 font-medium">Indicator</th>
+                          <th className="text-right py-2 px-2 text-orange-300 font-medium">Stare actuală</th>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <th key={i} className="text-right py-2 px-2 font-medium"
+                              style={{ color: `hsl(${120 + i * 30}, 60%, 65%)` }}>
+                              {pkg.name || pkg.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">EP [kWh/(m²·an)]</td>
+                          <td className="py-1.5 text-right font-mono text-orange-300 px-2">{(rehabPackages.epActual ?? epActual ?? "—")}</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.epNew ?? "—"}</td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">Clasă energetică</td>
+                          <td className="py-1.5 text-right px-2">
+                            <Badge className="bg-orange-900/50 text-orange-300">{rehabPackages.classActual ?? "—"}</Badge>
+                          </td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right px-2">
+                              <Badge className={cn(
+                                pkg.classNew === "A+" || pkg.classNew === "A" ? "bg-green-900/50 text-green-300" :
+                                pkg.classNew === "B" ? "bg-teal-900/50 text-teal-300" :
+                                pkg.classNew === "C" ? "bg-blue-900/50 text-blue-300" :
+                                "bg-slate-700 text-slate-300"
+                              )}>{pkg.classNew ?? "—"}</Badge>
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">CO₂ estimat [kg/an]</td>
+                          <td className="py-1.5 text-right font-mono text-orange-300 px-2">{rehabPackages.co2Actual ?? "—"}</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.co2New ?? "—"}</td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">Cost anual energie [RON]</td>
+                          <td className="py-1.5 text-right font-mono text-orange-300 px-2">{rehabPackages.costActual ?? "—"}</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.costNew ?? "—"}</td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">Reducere EP [%]</td>
+                          <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-emerald-300">
+                              {pkg.epReduction != null ? `${pkg.epReduction.toFixed(1)}%` : pkg.epReductionPct != null ? `${pkg.epReductionPct}%` : "—"}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">Investiție [EUR]</td>
+                          <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-amber-300">{pkg.invest?.toLocaleString() ?? "—"}</td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">NPV 30 ani [EUR]</td>
+                          <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className={cn("py-1.5 text-right font-mono px-2",
+                              ((pkg.npv30 ?? pkg.fin?.npv) ?? 0) >= 0 ? "text-green-300" : "text-red-300")}>
+                              {(pkg.npv30 ?? pkg.fin?.npv)?.toLocaleString() ?? "—"}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-1.5 text-slate-400">Recuperare [ani]</td>
+                          <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
+                          {rehabPackages.packages?.map((pkg, i) => (
+                            <td key={i} className="py-1.5 text-right font-mono px-2 text-sky-300">{pkg.payback ?? pkg.fin?.paybackSimple ?? "—"}</td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                ))}
-              </div>
+
+                  {/* Avertizare dacă niciun pachet nu atinge nZEB */}
+                  {rehabPackages.packages?.every(pkg => (pkg.epNew ?? Infinity) > (rehabPackages.nzebEpMax ?? 0)) && (
+                    <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-3 text-xs text-amber-300">
+                      ⚠ Niciun pachet de reabilitare propus nu atinge pragul nZEB pentru această clădire. Considerați măsuri suplimentare (OZR+, sisteme regenerabile integrate).
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          ) : <p className="text-slate-500 text-sm">Date insuficiente pentru compararea pachetelor.</p>}
+          ) : <p className="text-slate-500 text-sm">Date insuficiente pentru compararea pachetelor. Completați datele anvelopei și instalațiilor.</p>}
         </Card>
       )}
 
@@ -2718,134 +2975,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ COMPARATIV REABILITARE ═══ */}
-      {activeTab === "rehab_compare" && (
-        <Card className="p-4">
-          <SectionHeader icon="📊" title="Comparativ energetic — înainte și după reabilitare"
-            subtitle="Pachete de reabilitare Minimal / Mediu / nZEB Integral — reducere EP, CO₂, costuri" />
-          {rehabPackages ? (
-            <div className="space-y-4">
-              {/* Tabel comparativ */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left py-2 text-slate-400 font-medium">Indicator</th>
-                      <th className="text-right py-2 px-2 text-orange-300 font-medium">Stare actuală</th>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <th key={i} className="text-right py-2 px-2 font-medium"
-                          style={{ color: `hsl(${120 + i * 30}, 60%, 65%)` }}>
-                          {pkg.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* EP */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">EP [kWh/(m²·an)]</td>
-                      <td className="py-1.5 text-right font-mono text-orange-300 px-2">{(rehabPackages.epActual ?? epActual ?? "—")}</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.epNew ?? "—"}</td>
-                      ))}
-                    </tr>
-                    {/* Clasă */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">Clasă energetică</td>
-                      <td className="py-1.5 text-right px-2">
-                        <Badge className="bg-orange-900/50 text-orange-300">{rehabPackages.classActual ?? "—"}</Badge>
-                      </td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right px-2">
-                          <Badge className={cn(
-                            pkg.classNew === "A+" || pkg.classNew === "A" ? "bg-green-900/50 text-green-300" :
-                            pkg.classNew === "B" ? "bg-teal-900/50 text-teal-300" :
-                            pkg.classNew === "C" ? "bg-blue-900/50 text-blue-300" :
-                            "bg-slate-700 text-slate-300"
-                          )}>{pkg.classNew ?? "—"}</Badge>
-                        </td>
-                      ))}
-                    </tr>
-                    {/* CO₂ */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">CO₂ estimat [kg/an]</td>
-                      <td className="py-1.5 text-right font-mono text-orange-300 px-2">{rehabPackages.co2Actual ?? "—"}</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.co2New ?? "—"}</td>
-                      ))}
-                    </tr>
-                    {/* Cost anual energie */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">Cost anual energie [RON]</td>
-                      <td className="py-1.5 text-right font-mono text-orange-300 px-2">{rehabPackages.costActual ?? "—"}</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-green-300">{pkg.costNew ?? "—"}</td>
-                      ))}
-                    </tr>
-                    {/* Reducere EP% */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">Reducere EP [%]</td>
-                      <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-emerald-300">
-                          {pkg.epReduction != null ? `${pkg.epReduction.toFixed(1)}%` : "—"}
-                        </td>
-                      ))}
-                    </tr>
-                    {/* Investiție */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">Investiție [EUR]</td>
-                      <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-amber-300">{pkg.invest ?? "—"}</td>
-                      ))}
-                    </tr>
-                    {/* NPV 30 ani */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">NPV 30 ani [EUR]</td>
-                      <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className={cn("py-1.5 text-right font-mono px-2",
-                          (pkg.npv30 ?? 0) >= 0 ? "text-green-300" : "text-red-300")}>
-                          {pkg.npv30 ?? "—"}
-                        </td>
-                      ))}
-                    </tr>
-                    {/* Recuperare ani */}
-                    <tr className="border-b border-white/5">
-                      <td className="py-1.5 text-slate-400">Recuperare [ani]</td>
-                      <td className="py-1.5 text-right font-mono text-slate-500 px-2">—</td>
-                      {rehabPackages.packages?.map((pkg, i) => (
-                        <td key={i} className="py-1.5 text-right font-mono px-2 text-sky-300">{pkg.payback ?? "—"}</td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Note prag nZEB */}
-              <div className="bg-slate-800/50 rounded-lg p-3 text-xs space-y-1">
-                <div className="text-slate-400 font-medium">Prag nZEB pentru categoria / zona curentă</div>
-                <div className="text-slate-300">
-                  nZEB maxim: <span className="font-mono text-green-300">{rehabPackages.nzebEpMax} kWh/(m²·an)</span>
-                  {rehabPackages.epGap != null && (
-                    <span className="ml-3 text-slate-400">Gap față de actual: <span className="font-mono text-orange-300">{rehabPackages.epGap} kWh/(m²·an)</span></span>
-                  )}
-                </div>
-              </div>
-
-              {/* Avertizare dacă niciun pachet nu atinge nZEB */}
-              {rehabPackages.packages?.every(pkg => (pkg.epNew ?? Infinity) > (rehabPackages.nzebEpMax ?? 0)) && (
-                <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-3 text-xs text-amber-300">
-                  ⚠ Niciun pachet de reabilitare propus nu atinge pragul nZEB pentru această clădire. Considerați măsuri suplimentare (OZR+, sisteme regenerabile integrate).
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-slate-500 text-sm">Completați datele anvelopei și instalațiilor pentru simulare pachete reabilitare.</p>
-          )}
-        </Card>
-      )}
+      {/* ═══ COMPARATIV REABILITARE ═══ Sprint A Task 2: fuzionat în tab-ul `rehab` cu toggle Card/Tabel */}
 
       {/* ═══ HARTĂ TERMICĂ ═══ */}
       {activeTab === "thermal_map" && (
@@ -3310,63 +3440,9 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ CONFORMITATE U RENOVARE ═══ */}
-      {activeTab === "conformitate" && (
-        <Card className="p-4">
-          <SectionHeader icon="✅" title={t("Conformitate U la renovare majoră")}
-            subtitle="Verificare automată față de U maxim admis Mc 001-2022 Tabel 2.5 (renovare >25% anvelopă)" />
-          {uConformity ? (
-            <div className="space-y-3">
-              <ConformBadge ok={uConformity.allConform} label={uConformity.verdict} />
-              <div className="space-y-1">
-                {uConformity.results.map((r,i) => (
-                  <div key={i} className={cn("flex justify-between px-3 py-2 rounded text-xs",
-                    r.conform ? "bg-green-900/20 text-green-300" : "bg-red-900/20 text-red-300")}>
-                    <span>{r.conform?"✓":"✗"} {r.name}</span>
-                    <span>U={r.U} / U_max={r.Umax} W/(m²·K){!r.conform?" (depășit cu "+r.deficit+")":" "}</span>
-                  </div>
-                ))}
-              </div>
-              {!uConformity.allConform && (
-                <div className="text-xs text-amber-300 bg-amber-900/20 rounded p-2">
-                  Elementele marcate cu ✗ necesită îmbunătățire termică înainte de obținerea avizului de renovare majoră.
-                </div>
-              )}
-            </div>
-          ) : <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă pentru verificare conformitate.</p>}
-        </Card>
-      )}
+      {/* ═══ CONFORMITATE U RENOVARE ═══ Sprint A Task 3: fuzionat în tab-ul verificare_U (sub-tab "renovare") */}
 
-      {/* ═══ EXPORT XML ═══ */}
-      {activeTab === "xml_export" && (
-        <Card className="p-4">
-          <SectionHeader icon="📥" title="Export date CPE — format XML EPBDcheck"
-            subtitle="Format compatibil Directiva 2024/1275/UE — SR EN ISO 52000-1:2017" />
-          <div className="space-y-4">
-            <div className="bg-slate-800 rounded-lg p-4 text-sm text-slate-300 space-y-2">
-              <p>Generează fișier XML cu toate datele calculului curent:</p>
-              <ul className="list-disc pl-5 space-y-1 text-xs text-slate-400">
-                <li>Date identificare clădire și date climatice</li>
-                <li>Anvelopă detaliată (straturi, U-value, punți termice)</li>
-                <li>Sisteme instalații și regenerabile</li>
-                <li>Performanță energetică: EP, RER, CO₂, clasă energetică</li>
-                <li>Date auditor și dată certificat</li>
-              </ul>
-            </div>
-            <button
-              onClick={handleXMLExport}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-              📥 Descarcă CPE.xml
-            </button>
-            {xmlGenerated && (
-              <div className="text-xs text-green-400 text-center">✓ Fișier generat și descărcat cu succes!</div>
-            )}
-            <div className="text-xs text-slate-500 text-center">
-              Fișierul XML poate fi importat în sisteme naționale EPBDcheck sau arhivat cu dosarul tehnic al clădirii.
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* ═══ EXPORT XML ═══ Sprint A Task 1: fuzionat în tab-ul MDLPA */}
 
       {/* ═══ IMPORT CLIMĂ ERA5/TMY ═══ */}
       {activeTab === "climate_import" && (
@@ -3431,7 +3507,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
               </button>
             </div>
 
-            {/* Status */}
+            {/* Status + Apply/Clear override (Sprint A Task 6) */}
             {climImportStatus === "ok" && climImportedData && (
               <div className="rounded-xl border border-green-700/30 bg-green-900/20 p-4 space-y-2">
                 <div className="flex items-center gap-2 text-green-300 text-sm font-semibold">
@@ -3455,12 +3531,72 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                     Vânt mediu (m/s): {climImportedData.wind_month.map(v => v?.toFixed(1)).join(" / ")}
                   </div>
                 )}
-                <div className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-green-900/40">
-                  Datele importate sunt afișate informativ. Calculele Zephren folosesc datele Mc 001-2022 din baza de date internă.
-                  Comparați datele importate cu profilul localității selectate pentru validare.
+                {/* Sprint A Task 6: toggle "Folosește în calcul" */}
+                <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-green-900/40">
+                  <div className="text-[11px] text-slate-300">
+                    <strong>Folosește aceste date în calculele Zephren?</strong>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Suprascrie temporar temperaturile lunare, GHI, RH și vânt din baza Mc 001-2022. Pagina se va reîncărca.</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!window.confirm(
+                        "Aplică datele importate în calculele Zephren?\n\n" +
+                        "Zona climatică și coordonatele rămân din Mc 001-2022.\n" +
+                        "Doar temperaturile lunare, GHI, RH și vântul sunt suprascrise.\n\n" +
+                        "Pagina se va reîncărca."
+                      )) return;
+                      try {
+                        localStorage.setItem("zephren_climate_override", JSON.stringify({
+                          temp_month: climImportedData.temp_month,
+                          GHI_month: climImportedData.GHI_month,
+                          RH_month: climImportedData.RH_month,
+                          wind_month: climImportedData.wind_month,
+                          _source: climImportedData._source || climImportMsg,
+                          _appliedAt: new Date().toISOString(),
+                        }));
+                        window.location.reload();
+                      } catch (e) {
+                        alert("Eroare la salvarea override: " + e.message);
+                      }
+                    }}
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-semibold transition-all"
+                  >
+                    ✓ Aplică & Reîncarcă
+                  </button>
                 </div>
               </div>
             )}
+
+            {/* Banner override activ */}
+            {typeof window !== "undefined" && (() => {
+              let override = null;
+              try { override = JSON.parse(localStorage.getItem("zephren_climate_override") || "null"); } catch { /* ignore */ }
+              if (!override) return null;
+              return (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-start justify-between gap-3">
+                  <div className="text-xs text-amber-200">
+                    <div className="font-semibold mb-0.5">🔶 Override climatic activ</div>
+                    <div className="text-amber-300/80 text-[11px]">
+                      Sursă: <span className="font-mono">{override._source || "—"}</span>
+                      {override._appliedAt && <> · aplicat {new Date(override._appliedAt).toLocaleString("ro-RO")}</>}
+                    </div>
+                    <div className="text-[10px] text-amber-400/60 mt-1">
+                      Toate modulele Zephren folosesc aceste date în locul celor din Mc 001-2022.
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!window.confirm("Revino la datele Mc 001-2022?\nPagina se va reîncărca.")) return;
+                      localStorage.removeItem("zephren_climate_override");
+                      window.location.reload();
+                    }}
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
+                  >
+                    ✗ Șterge override
+                  </button>
+                </div>
+              );
+            })()}
             {climImportStatus === "error" && (
               <div className="rounded-xl border border-red-700/30 bg-red-900/20 p-3 flex items-start gap-2 text-xs text-red-300">
                 <span className="mt-0.5">✗</span>
@@ -3560,147 +3696,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         );
       })()}
 
-      {/* ═══ MULTI-CLĂDIRE ═══ */}
-      {activeTab === "multi_building" && (() => {
-        const currentKey = building?.address
-          ? `zephren_project_${(building.address || "").replace(/\s+/g, "_").toLowerCase()}`
-          : null;
-
-        // Statistici sumar
-        const totalAu = savedProjects.reduce((s, p) => s + p.au, 0);
-        const epMediu = savedProjects.length > 0
-          ? (savedProjects.reduce((s, p) => s + p.ep, 0) / savedProjects.length).toFixed(1)
-          : "—";
-
-        const classDist = savedProjects.reduce((acc, p) => {
-          const cls = p.cls === "calc" ? (p.ep <= 50 ? "A+" : p.ep <= 90 ? "A" : p.ep <= 130 ? "B" : p.ep <= 180 ? "C" : p.ep <= 240 ? "D" : "E+") : "—";
-          acc[cls] = (acc[cls] || 0) + 1;
-          return acc;
-        }, {});
-
-        return (
-          <Card className="p-4">
-            <SectionHeader icon="🏘️" title="Comparator proiecte — Multi-clădire"
-              subtitle="Toate proiectele salvate în sesiunea curentă (localStorage)" />
-
-            {savedProjects.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm space-y-2">
-                <div className="text-3xl">🏘️</div>
-                <p>Nu există proiecte salvate în localStorage.</p>
-                <p className="text-xs text-slate-600">Salvați proiecte din bara superioară pentru a le compara aici.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Tabel comparativ */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-white/10 text-slate-400">
-                        <th className="text-left py-2 pr-3">Proiect</th>
-                        <th className="text-center py-2 px-2">Categorie</th>
-                        <th className="text-right py-2 px-2">Au [m²]</th>
-                        <th className="text-right py-2 px-2">EP [kWh/(m²·an)]</th>
-                        <th className="text-center py-2 px-2">Clasă</th>
-                        <th className="text-right py-2 px-2">CO₂</th>
-                        <th className="text-right py-2 px-2">RER%</th>
-                        <th className="text-left py-2 px-2">Auditor</th>
-                        <th className="py-2 px-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {savedProjects.map(p => {
-                        const isActive = p.id === currentKey || p.name === (building?.address || "");
-                        const epCls = p.ep <= 50 ? "A+" : p.ep <= 90 ? "A" : p.ep <= 130 ? "B"
-                          : p.ep <= 180 ? "C" : p.ep <= 240 ? "D" : p.ep > 0 ? "E+" : "—";
-                        const clsColor = epCls === "A+" || epCls === "A" ? "#22c55e"
-                          : epCls === "B" ? "#84cc16" : epCls === "C" ? "#eab308"
-                          : epCls === "D" ? "#f97316" : epCls !== "—" ? "#ef4444" : "#6b7280";
-                        return (
-                          <tr key={p.id}
-                            className={`border-b transition-colors ${isActive
-                              ? "border-amber-500/50 bg-amber-900/20"
-                              : "border-white/5 hover:bg-white/5"}`}
-                            style={isActive ? { outline: "1px solid rgba(245,158,11,0.4)", outlineOffset: "-1px" } : {}}>
-                            <td className="py-2 pr-3">
-                              <div className={`font-medium ${isActive ? "text-amber-300" : "text-slate-200"}`}>
-                                {isActive && <span className="mr-1 text-amber-400">★</span>}
-                                {p.name.length > 28 ? p.name.slice(0, 25) + "..." : p.name}
-                              </div>
-                            </td>
-                            <td className="py-2 px-2 text-center text-slate-300">{p.category}</td>
-                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.au > 0 ? p.au : "—"}</td>
-                            <td className="py-2 px-2 text-right font-mono text-white">{p.ep > 0 ? p.ep.toFixed(1) : "—"}</td>
-                            <td className="py-2 px-2 text-center">
-                              <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: clsColor + "33", color: clsColor }}>
-                                {epCls}
-                              </span>
-                            </td>
-                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.co2 > 0 ? p.co2.toFixed(1) : "—"}</td>
-                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.rer > 0 ? p.rer.toFixed(0) + "%" : "—"}</td>
-                            <td className="py-2 px-2 text-slate-400">{p.auditor}</td>
-                            <td className="py-2 px-2">
-                              <button
-                                disabled
-                                title="Deschide proiect — funcționalitate viitoare"
-                                className="px-2 py-1 rounded text-xs bg-slate-700 text-slate-500 cursor-not-allowed opacity-60"
-                              >
-                                Deschide
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Sumar statistici */}
-                <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/10">
-                  <div className="bg-slate-800 rounded-lg p-3 text-center">
-                    <div className="text-xs text-slate-400 mb-1">EP mediu</div>
-                    <div className="text-xl font-bold text-white">{epMediu}</div>
-                    <div className="text-xs text-slate-500">kWh/(m²·an)</div>
-                  </div>
-                  <div className="bg-slate-800 rounded-lg p-3 text-center">
-                    <div className="text-xs text-slate-400 mb-1">Total Au</div>
-                    <div className="text-xl font-bold text-white">{totalAu.toLocaleString("ro-RO", { maximumFractionDigits: 0 })}</div>
-                    <div className="text-xs text-slate-500">m²</div>
-                  </div>
-                  <div className="bg-slate-800 rounded-lg p-3 text-center">
-                    <div className="text-xs text-slate-400 mb-1">Proiecte salvate</div>
-                    <div className="text-xl font-bold text-white">{savedProjects.length}</div>
-                    <div className="text-xs text-slate-500">total</div>
-                  </div>
-                </div>
-
-                {/* Distribuție clase */}
-                {Object.keys(classDist).length > 0 && (
-                  <div className="bg-slate-800 rounded-lg p-3">
-                    <div className="text-xs font-medium text-slate-400 mb-2 uppercase">Distribuție clase energetice</div>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(classDist).map(([cls, count]) => {
-                        const color = cls === "A+" || cls === "A" ? "#22c55e"
-                          : cls === "B" ? "#84cc16" : cls === "C" ? "#eab308"
-                          : cls === "D" ? "#f97316" : cls !== "—" ? "#ef4444" : "#6b7280";
-                        return (
-                          <div key={cls} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={{ backgroundColor: color + "22", border: `1px solid ${color}55` }}>
-                            <span className="font-bold text-sm" style={{ color }}>{cls}</span>
-                            <span className="text-xs text-slate-300">× {count}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-xs text-slate-600 text-center">
-                  ★ = proiectul activ curent · Butonul "Deschide" va fi disponibil într-o versiune viitoare
-                </div>
-              </div>
-            )}
-          </Card>
-        );
-      })()}
+      {/* ═══ MULTI-CLĂDIRE ═══ Sprint A Task 4: fuzionat în tab-ul portofoliu cu onOpenProject funcțional (reload) */}
 
       {/* ═══ MDLPA REGISTRU ═══ */}
       {activeTab === "mdlpa" && (
@@ -3762,41 +3758,114 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
 
             {/* Card 3 — Checklist depunere */}
             <div className="bg-slate-800 rounded-xl p-4 space-y-3">
+              {/* Sprint A Task 5: checklist DINAMIC, checkuri reale din state proiect */}
               <div className="text-sm font-semibold text-white">Checklist pregătire depunere CPE</div>
-              <div className="space-y-2">
-                {[
-                  "CPE semnat digital de auditor atestat",
-                  "Număr atestat OAER valid",
-                  "Adresa corespunde cu CF/Act proprietate",
-                  "Data elaborării completată",
-                  "XML exportat și arhivat local",
-                  "Copie CPE predată beneficiarului",
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-slate-300">
-                    <span className="text-green-400 font-bold flex-shrink-0">☑</span>
-                    <span>{item}</span>
+              {(() => {
+                const hasValidAuditor = !!(building?.auditorName?.trim().length > 2);
+                const hasValidCertNr = !!(building?.auditorCode && building.auditorCode !== "AE-XXXX" && building.auditorCode.trim().length > 3);
+                const hasSignature = !!(building?.auditorSignatureUrl || systems?.auditor?.signatureUrl || building?.auditorSignature);
+                const hasAddress = !!(building?.address?.trim().length > 2);
+                const hasCadastre = !!(building?.cadastralNumber || building?.cfNumber);
+                const hasEnergyClass = !!(renewSummary?.energyClass?.class || instSummary?.energyClass?.class);
+                const hasEpTotal = (renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0) > 0;
+                const hasXmlExported = xmlGenerated;
+
+                const checks = [
+                  { ok: hasValidAuditor && hasValidCertNr, label: "Auditor atestat (nume + nr. atestat OAER)",
+                    hint: !hasValidAuditor ? "Completați numele auditorului în Pasul 1" : !hasValidCertNr ? "Completați nr. atestat auditor (diferit de AE-XXXX)" : null },
+                  { ok: hasSignature, label: "Semnătură digitală auditor încărcată",
+                    hint: !hasSignature ? "Încărcați semnătura PNG/JPG în Pasul 6" : null },
+                  { ok: hasAddress, label: "Adresă clădire completată",
+                    hint: !hasAddress ? "Completați adresa în Pasul 1" : null },
+                  { ok: hasCadastre, label: "Număr cadastral / CF",
+                    hint: !hasCadastre ? "Recomandat: completați nr. cadastral pentru identificare oficială (Pasul 1)" : null,
+                    optional: true },
+                  { ok: hasEpTotal && hasEnergyClass, label: "EP total + clasă energetică calculate",
+                    hint: !hasEpTotal ? "Completați calculul energetic (Pasul 5)" : !hasEnergyClass ? "Clasa energetică lipsește — verificați calculul" : null },
+                  { ok: hasXmlExported, label: "XML CPE generat și descărcat local",
+                    hint: !hasXmlExported ? "Apăsați „Descarcă CPE.xml" în secțiunea de mai jos" : null },
+                  { ok: null, label: "Copie CPE predată beneficiarului",
+                    hint: "Verificare manuală — semnați procesul-verbal de predare",
+                    manual: true },
+                ];
+                const total = checks.filter(c => !c.optional && !c.manual).length;
+                const done = checks.filter(c => !c.optional && !c.manual && c.ok).length;
+                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+                return (
+                  <div className="space-y-2.5">
+                    {/* Progress bar */}
+                    <div className="flex items-center gap-3 bg-slate-900/40 rounded-lg px-3 py-2">
+                      <div className="flex-1 bg-slate-700 rounded-full h-2">
+                        <div className="h-2 rounded-full transition-all"
+                          style={{ width: pct + "%", backgroundColor: pct === 100 ? "#22c55e" : pct >= 60 ? "#eab308" : "#f97316" }} />
+                      </div>
+                      <span className={cn("text-xs font-bold font-mono shrink-0",
+                        pct === 100 ? "text-green-400" : pct >= 60 ? "text-amber-400" : "text-orange-400")}>
+                        {done}/{total} · {pct}%
+                      </span>
+                    </div>
+                    {/* Items */}
+                    <div className="space-y-1.5">
+                      {checks.map((c, i) => (
+                        <div key={i} className={cn("flex items-start gap-2 text-xs rounded px-2.5 py-1.5",
+                          c.manual ? "bg-slate-900/40 text-slate-400" :
+                          c.optional ? (c.ok ? "bg-blue-900/15 text-blue-300" : "bg-slate-900/40 text-slate-400") :
+                          c.ok ? "bg-green-900/15 text-green-300" : "bg-amber-900/15 text-amber-300"
+                        )}>
+                          <span className="font-bold flex-shrink-0 mt-0.5">
+                            {c.manual ? "ℹ" : c.optional ? (c.ok ? "✓" : "○") : c.ok ? "✓" : "⚠"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div>{c.label}{c.optional && !c.ok && <span className="ml-1 text-[10px] opacity-60">(recomandat)</span>}</div>
+                            {c.hint && !c.ok && (
+                              <div className="text-[10px] opacity-70 mt-0.5">{c.hint}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {pct < 100 && (
+                      <div className="text-[10px] text-slate-500 italic pt-1 border-t border-white/5">
+                        Completați itemii cu ⚠ înainte de depunerea CPE la MDLPA.
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
 
-            {/* Card 4 — Link util + Descărcare XML */}
+            {/* Card 4 — Export XML EPBD + link util (Sprint A Task 1: fuzionat din xml_export) */}
             <div className="bg-slate-800 rounded-xl p-4 space-y-3">
-              <div className="text-sm font-semibold text-white">Resurse utile</div>
-              <div className="text-xs text-slate-400">
+              <div className="text-sm font-semibold text-white">Export XML CPE — format EPBDcheck</div>
+              <div className="text-[11px] text-slate-500">Directiva 2024/1275/UE · SR EN ISO 52000-1:2017</div>
+              <div className="bg-slate-900/60 rounded-lg p-3 text-xs text-slate-400 space-y-1.5">
+                <p className="text-slate-300">Fișierul XML conține:</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  <li>Date identificare clădire și date climatice</li>
+                  <li>Anvelopă detaliată (straturi, U-value, punți termice)</li>
+                  <li>Sisteme instalații și regenerabile</li>
+                  <li>Performanță energetică: EP, RER, CO₂, clasă energetică</li>
+                  <li>Date auditor și dată certificat</li>
+                </ul>
+              </div>
+              <button
+                onClick={handleXMLExport}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <span>📥</span> Descarcă CPE.xml
+              </button>
+              {xmlGenerated && (
+                <div className="text-xs text-green-400 text-center">✓ Fișier XML generat și descărcat cu succes!</div>
+              )}
+              <div className="text-[10px] text-slate-500 pt-2 border-t border-white/5">
+                Fișierul XML poate fi importat în sisteme naționale EPBDcheck sau arhivat cu dosarul tehnic al clădirii.
+              </div>
+              <div className="text-[10px] text-slate-500">
                 Registrul național CPE:{" "}
                 <span className="text-indigo-300 font-mono">mdlpa.gov.ro/cpecladiri</span>{" "}
                 <span className="text-slate-600">(link informativ)</span>
               </div>
-              <button
-                onClick={handleXMLExport}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all"
-              >
-                <span>📥</span> Descarcă XML CPE
-              </button>
-              {xmlGenerated && (
-                <div className="text-xs text-green-400">✓ Fișier XML generat și descărcat cu succes!</div>
-              )}
             </div>
 
           </div>
@@ -3896,76 +3965,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ VERIFICARE PROIECT TEHNIC ═══ */}
-      {activeTab === "proiect_tehnic" && (
-        <Card className="p-4">
-          <SectionHeader icon="📐" title="Verificare proiect tehnic vs. normative"
-            subtitle="Comparare U-values față de C107/2005 și cerințe nZEB" />
-          {(() => {
-            const isRes = ["RI","RC","RA"].includes(cat);
-            const C107_U = { PE: 0.50, PT: isRes ? 0.40 : 0.35, PP: isRes ? 0.50 : 0.45, PB: 0.40, tamp: isRes ? 1.77 : 1.60 };
-            const NZEB_U = { PE: isRes ? 0.28 : 0.30, PT: isRes ? 0.20 : 0.22, PP: isRes ? 0.25 : 0.28, PB: 0.25, tamp: 1.10 };
-            const elements = [
-              ...(opaqueElements||[]).map(el => {
-                const R = (el.layers||[]).reduce((r,l)=>r+((parseFloat(l.thickness)||0)/1000)/(l.lambda||1),0.17);
-                const U = Math.round(1/Math.max(R,0.05)*1000)/1000;
-                const type = el.type || "PE";
-                return { name:el.name||el.type, type, U, area:parseFloat(el.area)||0, lim_c107:C107_U[type]||0.50, lim_nzeb:NZEB_U[type]||0.28, ok_c107:U<=(C107_U[type]||0.50), ok_nzeb:U<=(NZEB_U[type]||0.28) };
-              }),
-              ...(glazingElements||[]).map(gl => {
-                const U = parseFloat(gl.u)||2.0;
-                return { name:gl.name||gl.orientation, type:"tamp", U, area:parseFloat(gl.area)||0, lim_c107:C107_U.tamp, lim_nzeb:NZEB_U.tamp, ok_c107:U<=C107_U.tamp, ok_nzeb:U<=NZEB_U.tamp };
-              }),
-            ];
-            const conform_c107 = elements.every(e => e.ok_c107);
-            const conform_nzeb = elements.every(e => e.ok_nzeb);
-            return (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {[{label:"C107/2005", ok:conform_c107, sub:"Normativ transmitanță max."}, {label:"Cerință nZEB", ok:conform_nzeb, sub:"Transmitanță maximă nZEB"}].map(({label,ok,sub}) => (
-                    <div key={label} className={cn("rounded-xl p-3 text-center border", ok ? "border-green-700/40 bg-green-900/15" : "border-red-700/40 bg-red-900/15")}>
-                      <div className="text-lg">{ok ? "✅" : "❌"}</div>
-                      <div className={cn("text-sm font-bold", ok ? "text-green-300" : "text-red-300")}>{label}</div>
-                      <div className="text-[10px] text-slate-400">{sub}</div>
-                    </div>
-                  ))}
-                </div>
-                {elements.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-white/10">
-                          {["Element","Tip","Au (m²)","U calc.","U_max C107","U_max nZEB","C107","nZEB"].map(h => (
-                            <th key={h} className="text-left py-1.5 pr-3 text-[10px] text-slate-400 font-normal">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {elements.map((el, i) => (
-                          <tr key={i} className="border-b border-white/[0.04]">
-                            <td className="py-1.5 pr-3 text-white">{el.name}</td>
-                            <td className="py-1.5 pr-3 text-slate-400">{el.type}</td>
-                            <td className="py-1.5 pr-3 font-mono">{el.area}</td>
-                            <td className="py-1.5 pr-3 font-mono font-bold" style={{color:!el.ok_c107?"#ef4444":!el.ok_nzeb?"#f97316":"#22c55e"}}>{el.U.toFixed(3)}</td>
-                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_c107.toFixed(2)}</td>
-                            <td className="py-1.5 pr-3 font-mono text-slate-400">{el.lim_nzeb.toFixed(2)}</td>
-                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_c107} label=""/></td>
-                            <td className="py-1.5 pr-3"><ConformBadge ok={el.ok_nzeb} label=""/></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : <p className="text-slate-500 text-sm">Adăugați elemente de anvelopă în Pasul 2.</p>}
-                {!conform_c107 && elements.length > 0 && (
-                  <div className="text-xs text-red-300 bg-red-900/15 rounded-lg p-3">✗ Neconform C107: {elements.filter(e=>!e.ok_c107).map(e=>e.name).join(", ")}</div>
-                )}
-                {conform_nzeb && <div className="text-xs text-green-300 bg-green-900/15 rounded-lg p-3">✓ Conform C107 și cerință nZEB.</div>}
-              </div>
-            );
-          })()}
-        </Card>
-      )}
+      {/* ═══ VERIFICARE PROIECT TEHNIC ═══ Sprint A Task 3: fuzionat în tab-ul verificare_U (sub-tab "proiect") */}
 
       {/* ═══ PROFIL ANUAL ═══ */}
       {activeTab === "sim8760" && (
@@ -4055,13 +4055,176 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ PORTOFOLIU / DEVIZ / RAPORT ═══ */}
-      {activeTab === "portofoliu" && (
-        <Card className="p-4">
-          <SectionHeader icon="📁" title="Dashboard portofoliu proiecte" subtitle="Vizualizare și management proiecte salvate" />
-          <button onClick={() => setShowPortfolio(true)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors text-sm">📁 Deschide Portofoliu</button>
-        </Card>
-      )}
+      {/* ═══ PORTOFOLIU (Sprint A Task 4: fuzionat cu multi_building + onOpenProject funcțional) ═══ */}
+      {activeTab === "portofoliu" && (() => {
+        const currentKey = building?.address
+          ? `zephren_project_${(building.address || "").replace(/\s+/g, "_").toLowerCase()}`
+          : null;
+
+        const totalAu = savedProjects.reduce((s, p) => s + p.au, 0);
+        const epMediu = savedProjects.length > 0
+          ? (savedProjects.reduce((s, p) => s + p.ep, 0) / savedProjects.length).toFixed(1)
+          : "—";
+
+        const classDist = savedProjects.reduce((acc, p) => {
+          const cls = p.cls === "calc" ? (p.ep <= 50 ? "A+" : p.ep <= 90 ? "A" : p.ep <= 130 ? "B" : p.ep <= 180 ? "C" : p.ep <= 240 ? "D" : "E+") : "—";
+          acc[cls] = (acc[cls] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Sprint A Task 4: handler "Deschide proiect" cu reload strategy
+        const handleOpenProject = (projectKey, projectName) => {
+          if (projectKey === currentKey) return; // deja activ
+          const raw = localStorage.getItem(projectKey);
+          if (!raw) {
+            alert("Proiectul nu poate fi încărcat (date lipsă în localStorage).");
+            return;
+          }
+          const confirmed = window.confirm(
+            `Deschizi proiectul "${projectName}"?\n\n` +
+            `Proiectul curent va fi înlocuit. Asigurați-vă că ați salvat modificările.\n\n` +
+            `Pagina se va reîncărca automat.`
+          );
+          if (!confirmed) return;
+          localStorage.setItem("zephren_pending_open_project", projectKey);
+          window.location.reload();
+        };
+
+        return (
+          <Card className="p-4">
+            <SectionHeader icon="📁" title="Portofoliu proiecte"
+              subtitle="Toate proiectele salvate în sesiunea curentă (localStorage). Click pe „Deschide" pentru a încărca un alt proiect." />
+
+            {savedProjects.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm space-y-2">
+                <div className="text-3xl">📁</div>
+                <p>Nu există proiecte salvate.</p>
+                <p className="text-xs text-slate-600">Salvați proiectul curent din bara superioară pentru a-l vedea aici.</p>
+                <button onClick={() => setShowPortfolio(true)}
+                  className="mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs transition-colors">
+                  📁 Deschide Dashboard detaliat
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Tabel comparativ */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 text-slate-400">
+                        <th className="text-left py-2 pr-3">Proiect</th>
+                        <th className="text-center py-2 px-2">Categorie</th>
+                        <th className="text-right py-2 px-2">Au [m²]</th>
+                        <th className="text-right py-2 px-2">EP [kWh/(m²·an)]</th>
+                        <th className="text-center py-2 px-2">Clasă</th>
+                        <th className="text-right py-2 px-2">CO₂</th>
+                        <th className="text-right py-2 px-2">RER%</th>
+                        <th className="text-left py-2 px-2">Auditor</th>
+                        <th className="py-2 px-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {savedProjects.map(p => {
+                        const isActive = p.id === currentKey || p.name === (building?.address || "");
+                        const epCls = p.ep <= 50 ? "A+" : p.ep <= 90 ? "A" : p.ep <= 130 ? "B"
+                          : p.ep <= 180 ? "C" : p.ep <= 240 ? "D" : p.ep > 0 ? "E+" : "—";
+                        const clsColor = epCls === "A+" || epCls === "A" ? "#22c55e"
+                          : epCls === "B" ? "#84cc16" : epCls === "C" ? "#eab308"
+                          : epCls === "D" ? "#f97316" : epCls !== "—" ? "#ef4444" : "#6b7280";
+                        return (
+                          <tr key={p.id}
+                            className={`border-b transition-colors ${isActive
+                              ? "border-amber-500/50 bg-amber-900/20"
+                              : "border-white/5 hover:bg-white/5"}`}
+                            style={isActive ? { outline: "1px solid rgba(245,158,11,0.4)", outlineOffset: "-1px" } : {}}>
+                            <td className="py-2 pr-3">
+                              <div className={`font-medium ${isActive ? "text-amber-300" : "text-slate-200"}`}>
+                                {isActive && <span className="mr-1 text-amber-400">★</span>}
+                                {p.name.length > 28 ? p.name.slice(0, 25) + "..." : p.name}
+                              </div>
+                            </td>
+                            <td className="py-2 px-2 text-center text-slate-300">{p.category}</td>
+                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.au > 0 ? p.au : "—"}</td>
+                            <td className="py-2 px-2 text-right font-mono text-white">{p.ep > 0 ? p.ep.toFixed(1) : "—"}</td>
+                            <td className="py-2 px-2 text-center">
+                              <span className="px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: clsColor + "33", color: clsColor }}>
+                                {epCls}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.co2 > 0 ? p.co2.toFixed(1) : "—"}</td>
+                            <td className="py-2 px-2 text-right font-mono text-slate-300">{p.rer > 0 ? p.rer.toFixed(0) + "%" : "—"}</td>
+                            <td className="py-2 px-2 text-slate-400">{p.auditor}</td>
+                            <td className="py-2 px-2">
+                              {isActive ? (
+                                <span className="px-2 py-1 text-[10px] text-amber-300 italic">Activ</span>
+                              ) : (
+                                <button
+                                  onClick={() => handleOpenProject(p.id, p.name)}
+                                  title="Deschide proiectul (se va reîncărca pagina)"
+                                  className="px-2 py-1 rounded text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
+                                >
+                                  Deschide
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Sumar statistici */}
+                <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/10">
+                  <div className="bg-slate-800 rounded-lg p-3 text-center">
+                    <div className="text-xs text-slate-400 mb-1">EP mediu</div>
+                    <div className="text-xl font-bold text-white">{epMediu}</div>
+                    <div className="text-xs text-slate-500">kWh/(m²·an)</div>
+                  </div>
+                  <div className="bg-slate-800 rounded-lg p-3 text-center">
+                    <div className="text-xs text-slate-400 mb-1">Total Au</div>
+                    <div className="text-xl font-bold text-white">{totalAu.toLocaleString("ro-RO", { maximumFractionDigits: 0 })}</div>
+                    <div className="text-xs text-slate-500">m²</div>
+                  </div>
+                  <div className="bg-slate-800 rounded-lg p-3 text-center">
+                    <div className="text-xs text-slate-400 mb-1">Proiecte salvate</div>
+                    <div className="text-xl font-bold text-white">{savedProjects.length}</div>
+                    <div className="text-xs text-slate-500">total</div>
+                  </div>
+                </div>
+
+                {/* Distribuție clase */}
+                {Object.keys(classDist).length > 0 && (
+                  <div className="bg-slate-800 rounded-lg p-3">
+                    <div className="text-xs font-medium text-slate-400 mb-2 uppercase">Distribuție clase energetice</div>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(classDist).map(([cls, count]) => {
+                        const color = cls === "A+" || cls === "A" ? "#22c55e"
+                          : cls === "B" ? "#84cc16" : cls === "C" ? "#eab308"
+                          : cls === "D" ? "#f97316" : cls !== "—" ? "#ef4444" : "#6b7280";
+                        return (
+                          <div key={cls} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg" style={{ backgroundColor: color + "22", border: `1px solid ${color}55` }}>
+                            <span className="font-bold text-sm" style={{ color }}>{cls}</span>
+                            <span className="text-xs text-slate-300">× {count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-white/5">
+                  <span>★ = proiectul activ curent</span>
+                  <button onClick={() => setShowPortfolio(true)}
+                    className="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">
+                    📁 Vedere detaliată
+                  </button>
+                </div>
+              </div>
+            )}
+          </Card>
+        );
+      })()}
       {activeTab === "facturare" && (
         <Card className="p-4">
           <SectionHeader icon="🧾" title="Deviz servicii audit energetic" subtitle="Generare deviz/factură proformă pentru serviciile de audit" />

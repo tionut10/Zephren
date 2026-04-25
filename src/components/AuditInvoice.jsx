@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn, Card } from "./ui.jsx";
+import { nextDocNumber } from "../utils/doc-counter.js";
 
 const TODAY = new Date().toLocaleDateString("ro-RO", {
   day: "2-digit",
@@ -7,8 +8,9 @@ const TODAY = new Date().toLocaleDateString("ro-RO", {
   year: "numeric",
 });
 
+// Sprint A Task 7: counter secvențial, fără Math.random (risc coliziune)
 function makeInvoiceNr() {
-  return `AE-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`;
+  return nextDocNumber("AE");
 }
 
 function buildDefaultItems(building) {

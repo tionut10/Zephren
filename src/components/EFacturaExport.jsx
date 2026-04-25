@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { cn } from "../components/ui.jsx";
 import { sanitizeSvg } from "../lib/sanitize-html.js";
+import { nextDocNumber } from "../utils/doc-counter.js";
 
 const pad = (n, w = 3) => String(n).padStart(w, "0");
 const isoDate = (d) => d.toISOString().slice(0, 10);
@@ -14,8 +15,9 @@ const TVA_OPTIONS = [
   { value: "S",  label: "Scutit" },
 ];
 
+// Sprint A Task 7: counter secvențial, fără Math.random (critic pt. e-Factură ANAF)
 function autoNr() {
-  return `FV-${today.getFullYear()}-${pad(Math.floor(Math.random() * 900) + 100)}`;
+  return nextDocNumber("FV");
 }
 
 function defaultLines(building) {

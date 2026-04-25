@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "./ui.jsx";
+import { nextDocNumber } from "../utils/doc-counter.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -7,8 +8,9 @@ const TODAY_RO = new Date().toLocaleDateString("ro-RO", {
   day: "2-digit", month: "2-digit", year: "numeric",
 });
 
+// Sprint A Task 7: counter secvențial, fără Math.random (risc coliziune)
 function makeContractNr() {
-  return `CS-${YEAR}-${String(Math.floor(Math.random() * 900) + 100)}`;
+  return nextDocNumber("CS");
 }
 
 const OBIECTE = [
