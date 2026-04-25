@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { canAccess } from "../lib/planGating.js";
+import PlanGate from "../components/PlanGate.jsx";
 import { T } from "../data/translations.js";
 import { fetchPVGISClimate } from "../calc/pvgis.js";
 import { MATERIAL_PRICES_2025, PRICES_UPDATED, PRICES_SOURCE, EUR_TO_RON, getMaterialsByCategory } from "../data/material-prices.js";
@@ -816,6 +817,32 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     } finally {
       setXmlValidating(false);
     }
+  }
+
+  // Sprint Pricing v6.0 (25 apr 2026) — gating Step 8 la nivel container.
+  // Acces: Edu (cu watermark), Expert, Birou, Enterprise. Blocați: Free, Audit, Pro.
+  if (!canAccess(userPlan, "step8Advanced")) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-bold mb-3">{lang === "EN" ? "Advanced modules" : "Module avansate"}</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            {lang === "EN"
+              ? "Step 8 includes 18 advanced specialist modules: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per room, Thermovision, Urban Heat Island, Historic & Mixed-use buildings, Portfolio Dashboard, BACS detailed (200 factors), SRI complete (42 services), MEPS optimizer 2050, detailed Renovation Passport with LCC."
+              : "Step 8 include 18 module avansate specializate: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per cameră, Thermovision, Insulă termică urbană, Clădiri istorice & mixed-use, PortfolioDashboard, BACS detaliat (200 factori), SRI complet (42 servicii), MEPS optimizator 2050, Pașaport Renovare detaliat cu LCC."}
+          </p>
+        </div>
+        <PlanGate
+          feature="step8Advanced"
+          plan={userPlan}
+          requiredPlan="expert"
+          mode="upgrade"
+        >
+          {/* Children — niciodată randate fiindcă feature blocat. */}
+          <div />
+        </PlanGate>
+      </div>
+    );
   }
 
   return (

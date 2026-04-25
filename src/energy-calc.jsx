@@ -3423,8 +3423,9 @@ export default function EnergyCalcApp({ cloud }) {
             presentationMode, setPresentationMode,
             financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
             exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
-            bacsClass, bacsCheck,
+            bacsClass, bacsCheck, setBacsClass,
             buildingPhotos,
+            userPlan,            // Sprint Pricing v6.0 — pentru noile componente simple BACS/SRI/MEPS/Pasaport
           }} /></Suspense>}
 
           {/* ═══ STEP 7: AUDIT — RECOMANDĂRI DE REABILITARE ═══ */}
@@ -3445,6 +3446,7 @@ export default function EnergyCalcApp({ cloud }) {
             generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
             setThermalBridges,
             setBuilding,
+            userPlan,            // Sprint Pricing v6.0 — pentru gating Step 7 audit + Pașaport basic
           }} /></Suspense>}
 
           {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}

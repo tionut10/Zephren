@@ -1,4 +1,7 @@
 import React, { useState, useMemo } from "react";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "../components/PlanGate.jsx";
+import PasaportBasic from "../components/PasaportBasic.jsx";
 import { sanitizeSvg } from "../lib/sanitize-html.js";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -47,8 +50,38 @@ export default function Step7Audit(props) {
     generateAuditReport, exportXML, exportPDFNative, exportFullReport, exportBulkProjects, exportExcelFull,
     setThermalBridges,
     setBuilding,  // Sprint 17: pentru a stoca passportUUID pe building
+    userPlan,     // Sprint Pricing v6.0 — gating Step 7 + Pașaport basic
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+
+  // Sprint Pricing v6.0 — Step 7 audit financiar e blocat pentru Free + Audit (199).
+  // Acces: Pro 499 (Step 1-7 complet), Expert, Birou, Enterprise, Edu.
+  if (!canAccess(userPlan, "step7Audit")) {
+    return (
+      <div className="space-y-4 p-4">
+        <h2 className="text-lg font-bold mb-2">{lang === "EN" ? "Step 7 — Audit & Rehabilitation" : "Pas 7 — Audit & Reabilitare"}</h2>
+        <p className="text-sm text-slate-400 mb-4">
+          {lang === "EN"
+            ? "Financial audit (NPV/IRR/LCC), prioritized renovation recommendations, multi-year phased planning, PNRR funding eligibility, basic Renovation Passport (mandatory EPBD from May 29, 2026)."
+            : "Audit financiar (NPV/IRR/LCC), recomandări reabilitare prioritizate, planificare faze multi-an, eligibilitate PNRR, Pașaport Renovare basic (obligatoriu EPBD de la 29 mai 2026)."}
+        </p>
+        <PlanGate
+          feature="step7Audit"
+          plan={userPlan}
+          requiredPlan="pro"
+          mode="upgrade"
+        >
+          <div />
+        </PlanGate>
+        <div className="flex justify-start mt-4">
+          <button onClick={() => setStep(6)}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
+            ← Pas 6: Certificat
+          </button>
+        </div>
+      </div>
+    );
+  }
 
             const Au = parseFloat(building.areaUseful) || 0;
             const V = parseFloat(building.volume) || 0;
@@ -1806,6 +1839,22 @@ export default function Step7Audit(props) {
                   </div>
                 );
               })()}
+
+              {/* Sprint Pricing v6.0 — Pașaport Renovare basic (obligatoriu EPBD 29 mai 2026)
+                  Versiune simplă inclusă în Pro 499. Pentru LCC + multi-fază → Expert/Step 8. */}
+              <div className="mt-6">
+                <PasaportBasic
+                  building={building}
+                  energyClass={enClass}
+                  epFinal={epFinal}
+                  auditor={auditor}
+                  onGenerate={(passport) => {
+                    if (setBuilding && passport) {
+                      setBuilding(prev => ({ ...prev, passportUUID: passport.id || passport.generatedAt }));
+                    }
+                  }}
+                />
+              </div>
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
