@@ -49,7 +49,7 @@ export default function ContractGenerator({ building, auditor, onClose }) {
   const prestatorContact = [auditor?.phone, auditor?.email].filter(Boolean).join(" | ");
   const obiectLabel = OBIECTE.find((o) => o.value === obiect)?.label || "";
   const valoareNum = parseFloat(valoare) || 0;
-  const tva = +(valoareNum * 0.19).toFixed(2);
+  const tva = +(valoareNum * 0.21).toFixed(2);
   const totalTva = +(valoareNum + tva).toFixed(2);
   const dataRo = dataContract
     ? new Date(dataContract).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -108,7 +108,7 @@ export default function ContractGenerator({ building, auditor, onClose }) {
     // Art. 3 – Valoare
     line("Art. 3 – Valoarea contractului și modalități de plată", 11, true); br(6);
     line(`Valoare fără TVA: ${valoareNum.toFixed(2)} RON`, 10); br(5);
-    line(`TVA 19%: ${tva.toFixed(2)} RON`, 10); br(5);
+    line(`TVA 21%: ${tva.toFixed(2)} RON`, 10); br(5);
     line(`Total de plată: ${totalTva.toFixed(2)} RON`, 10, true); br(5);
     line("Plata se va efectua în termen de 15 zile de la livrarea serviciului, prin virament bancar.", 10); br(8);
     rule();
@@ -287,7 +287,7 @@ export default function ContractGenerator({ building, auditor, onClose }) {
                   onChange={(e) => setValoare(e.target.value)}
                 />
               </Field>
-              <Field label="Total cu TVA 19%">
+              <Field label="Total cu TVA 21%">
                 <div className={cn(inputCls, "bg-white/3 text-amber-300 font-semibold cursor-default")}>
                   {totalTva > 0 ? `${totalTva.toFixed(2)} RON` : "—"}
                 </div>

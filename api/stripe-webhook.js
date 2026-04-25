@@ -18,8 +18,8 @@ export const config = { api: { bodyParser: false } };
 
 // ══════════════════════════════════════════════════════════════════════════
 // SmartBill — emitere automată factură fiscală (P0-1, 18 apr 2026)
-//   B2B România    → TVA 19% + eFactura ANAF automat
-//   B2C PF         → TVA 19% (fără eFactura — ANAF cere CUI)
+//   B2B România    → TVA 21% + eFactura ANAF automat
+//   B2C PF         → TVA 21% (fără eFactura — ANAF cere CUI)
 //   B2B UE         → TVA 0% reverse charge + D390 VIES
 // ══════════════════════════════════════════════════════════════════════════
 function getMonthYear(date = new Date()) {
@@ -53,8 +53,8 @@ async function createSmartBillInvoice(session) {
         country: "Romania", isTaxPayer: false };
 
   const amountTotal = (session.amount_total || 0) / 100;
-  const priceNoVat = isEU ? amountTotal : amountTotal / 1.19;
-  const vatPercent = isEU ? 0 : 19;
+  const priceNoVat = isEU ? amountTotal : amountTotal / 1.21;
+  const vatPercent = isEU ? 0 : 21;
 
   // v6.0 — denumire produs + cod SmartBill diferențiat pentru abonament vs one-time
   const productType  = meta.productType || "subscription";

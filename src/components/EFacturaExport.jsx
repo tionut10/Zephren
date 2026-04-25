@@ -9,8 +9,8 @@ const today = new Date();
 const due30 = new Date(today); due30.setDate(due30.getDate() + 30);
 
 const TVA_OPTIONS = [
-  { value: "19", label: "19%" },
-  { value: "5",  label: "5%" },
+  { value: "21", label: "21%" },
+  { value: "11", label: "11%" },
   { value: "0",  label: "0%" },
   { value: "S",  label: "Scutit" },
 ];
@@ -23,8 +23,8 @@ function autoNr() {
 function defaultLines(building) {
   const Au = parseFloat(building?.areaUseful) || 100;
   return [
-    { desc: "Audit energetic clădire — deplasare, măsurători, calcul", qty: "1", unit: "forfetar", pret: String(Math.round(Au * 1.4 + 350)), tva: "19" },
-    { desc: "Elaborare Certificat Performanță Energetică (CPE)", qty: "1", unit: "buc", pret: String(Math.round(Au * 0.4 + 100)), tva: "19" },
+    { desc: "Audit energetic clădire — deplasare, măsurători, calcul", qty: "1", unit: "forfetar", pret: String(Math.round(Au * 1.4 + 350)), tva: "21" },
+    { desc: "Elaborare Certificat Performanță Energetică (CPE)", qty: "1", unit: "buc", pret: String(Math.round(Au * 0.4 + 100)), tva: "21" },
   ];
 }
 
@@ -182,7 +182,7 @@ export default function EFacturaExport({ building, auditor, invoice, onClose }) 
     setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
   }
   function addLine() {
-    setLines(prev => [...prev, { desc: "", qty: "1", unit: "buc", pret: "0", tva: "19" }]);
+    setLines(prev => [...prev, { desc: "", qty: "1", unit: "buc", pret: "0", tva: "21" }]);
   }
   function removeLine(i) {
     setLines(prev => prev.filter((_, idx) => idx !== i));

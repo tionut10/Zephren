@@ -3374,10 +3374,10 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         });
                         const y = doc.lastAutoTable.finalY + 5;
                         const subtotal = devizResult.totalEUR || 0;
-                        const tva = subtotal * 0.19;
+                        const tva = subtotal * 0.21;
                         doc.setFontSize(9);
                         doc.text(`Subtotal (fără TVA): ${subtotal.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 6, { align: "right" });
-                        doc.text(`TVA 19%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
+                        doc.text(`TVA 21%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
                         doc.setFontSize(10); doc.setFont(undefined, "bold");
                         doc.text(`TOTAL cu TVA: ${(subtotal + tva).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 20, { align: "right" });
                         doc.setFont(undefined, "normal"); doc.setFontSize(7); doc.setTextColor(120);
@@ -3406,7 +3406,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                           ]),
                           [],
                           ["", "", "", "", "Subtotal (fără TVA) EUR:", devizResult.totalEUR?.toFixed(0) || ""],
-                          ["", "", "", "", "TVA 19%:", ((devizResult.totalEUR || 0) * 0.19).toFixed(0)],
+                          ["", "", "", "", "TVA 21%:", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
                           ["", "", "", "", "TOTAL cu TVA EUR:", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
                         ];
                         const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -3416,7 +3416,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                           ["Suprafață utilă (m²)", Au || "—"],
                           ["Data deviz", dateStr],
                           ["Total fără TVA (EUR)", devizResult.totalEUR?.toFixed(0) || ""],
-                          ["TVA 19% (EUR)", ((devizResult.totalEUR || 0) * 0.19).toFixed(0)],
+                          ["TVA 21% (EUR)", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
                           ["Total cu TVA (EUR)", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
                           ["Cost per m² (EUR/m²)", devizResult.costPerM2?.toFixed(0) || ""],
                           ["Sursa prețuri", "Zephren — orientativ 2024-2025"],

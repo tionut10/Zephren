@@ -10,7 +10,7 @@ export const DEFAULT_RATES_BY_PERSPECTIVE = {
   macroeconomic: { discountRate: 4, escalation: 3, includeVAT: false, label: "Macroeconomică (fără TVA)" },
 };
 
-const VAT_RATE = 0.19;
+const VAT_RATE = 0.21;
 
 // ─── Valoare reziduală liniară pentru componente cu durate diferite ──────────────────────────
 // Folosit de EN 15459-1 Anexa B pentru calcul cost global complet.
@@ -40,7 +40,7 @@ export function calcFinancialAnalysis(params) {
   const perspective = params.perspective || null;
   const perspDefaults = perspective ? DEFAULT_RATES_BY_PERSPECTIVE[perspective] : null;
 
-  // Investiție și mentenanță — ajustate pentru perspectivă macroeconomică (excludere TVA 19%)
+  // Investiție și mentenanță — ajustate pentru perspectivă macroeconomică (excludere TVA 21% RO 2026)
   var rawInvest = params.investCost || 0;
   var rawMaint  = params.annualMaint || 0;
   var adjustedInvest = rawInvest;

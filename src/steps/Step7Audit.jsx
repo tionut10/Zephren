@@ -827,7 +827,7 @@ export default function Step7Audit(props) {
                 if (ri.addSolarTh) { const c = parseFloat(ri.solarThArea||0) * 500; totalInv += c; lines.push(nr++ + " | Solar termic " + ri.solarThArea + " m² | " + ri.solarThArea + " m² | 500 €/m² | " + c.toFixed(0) + " €"); }
                 lines.push("─".repeat(60));
                 lines.push("TOTAL INVESTIȚIE ESTIMATĂ: " + totalInv.toFixed(0) + " € (fără TVA)");
-                lines.push("TVA 19%: " + (totalInv * 0.19).toFixed(0) + " €");
+                lines.push("TVA 21%: " + (totalInv * 0.21).toFixed(0) + " €");
                 lines.push("TOTAL CU TVA: " + (totalInv * 1.19).toFixed(0) + " €");
                 lines.push("");
                 lines.push("Economie anuală estimată: " + (rehabComparison.savings.qfSaved * 0.12).toFixed(0) + " €/an");

@@ -753,8 +753,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           fontWeight: "500",
         }}>
           💼 {lang === "EN"
-            ? <>All prices displayed are <strong>VAT-EXCLUDED</strong> (19% VAT is added at invoicing — applies to Romanian B2B and B2C; EU B2B with VIES VAT number = 0% reverse charge).</>
-            : <>Toate prețurile afișate sunt <strong>FĂRĂ TVA</strong> (TVA 19% se adaugă la facturare — pentru clienți RO B2B și B2C; B2B UE cu cod VAT VIES = 0% taxare inversă).</>}
+            ? <>All prices displayed are <strong>VAT-EXCLUDED</strong> (21% VAT is added at invoicing — applies to Romanian B2B and B2C; EU B2B with VIES VAT number = 0% reverse charge).</>
+            : <>Toate prețurile afișate sunt <strong>FĂRĂ TVA</strong> (TVA 21% se adaugă la facturare — pentru clienți RO B2B și B2C; B2B UE cu cod VAT VIES = 0% taxare inversă).</>}
         </div>
 
         {/* ── Trust banner: Price Lock pe viață (DEASUPRA pachetelor — primul lucru pe care îl vede clientul) ── */}
@@ -804,6 +804,19 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         {/* ── Rând 1: Plans pentru auditori solo (Free + Audit + Pro + Expert) ── */}
         {(() => {
           const PrimaryPlans = PLANS.filter(p => PLAN_LAYOUT.primary.includes(p.id));
+          // Helper TVA 21% RO 2026 — afișare preț + TVA pe fiecare card.
+          const VAT_RATE = 0.21;
+          const parseRonPrice = (str) => {
+            if (!str) return 0;
+            const m = String(str).replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+            return parseFloat(m) || 0;
+          };
+          const fmtRon = (n) => n.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const withVat = (priceStr) => {
+            const n = parseRonPrice(priceStr);
+            if (!n) return null;
+            return fmtRon(n * (1 + VAT_RATE));
+          };
           const renderCard = (p) => (
             <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>⭐ {lang === "EN" ? "MOST POPULAR" : "CEL MAI ALES"}</div>}
@@ -815,8 +828,24 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               <div style={{ margin: "14px 0" }}>
                 <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
                 {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
+                {/* Sprint Pricing v6.0 — TVA 21% RO 2026 afișat pe fiecare card */}
+                {p.price !== "0" && withVat(p.price) && (
+                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
+                    {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
+                    <strong style={{ color: textMuted }}>{withVat(p.price)} RON{p.period}</strong>
+                  </div>
+                )}
                 {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
-                {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} RON/an <span style={{ color: "#f59e0b" }}>({p.discount})</span></div>}
+                {p.priceAn && (
+                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>
+                    {p.priceAn} RON/an <span style={{ color: "#f59e0b" }}>({p.discount})</span>
+                    {withVat(p.priceAn) && (
+                      <span style={{ display: "block", opacity: 0.7, marginTop: "2px" }}>
+                        {lang === "EN" ? "with VAT: " : "cu TVA: "}<strong>{withVat(p.priceAn)} RON/an</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                 {p.features.map(f => (
@@ -859,8 +888,24 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ margin: "14px 0" }}>
                       <span style={{ fontSize: "32px", fontWeight: "900", color: text }}>{p.price}</span>
                       {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
+                      {/* Sprint Pricing v6.0 — TVA 21% RO 2026 */}
+                      {withVat(p.price) && (
+                        <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
+                          {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
+                          <strong style={{ color: textMuted }}>{withVat(p.price)} RON{p.period}</strong>
+                        </div>
+                      )}
                       {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
-                      {p.priceAn && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.priceAn} <span style={{ color: "#f59e0b" }}>({p.discount})</span></div>}
+                      {p.priceAn && (
+                        <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>
+                          {p.priceAn} <span style={{ color: "#f59e0b" }}>({p.discount})</span>
+                          {withVat(p.priceAn) && (
+                            <span style={{ display: "block", opacity: 0.7, marginTop: "2px" }}>
+                              {lang === "EN" ? "with VAT: " : "cu TVA: "}<strong>{withVat(p.priceAn)} RON</strong>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                       {p.features.map(f => (
@@ -993,14 +1038,26 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     : "Pentru proprietari, asociații de proprietari și dezvoltatori imobiliari (NON-auditori) care au nevoie de Pașaport Renovare EPBD-conform fără abonament complet de auditor."}
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
-                  {PAY_PER_USE.map(item => (
-                    <div key={item.id} style={{ padding: "16px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)" }}>
-                      <div style={{ fontSize: "14px", fontWeight: "700", color: text, marginBottom: "6px" }}>{item.name}</div>
-                      <div style={{ fontSize: "22px", fontWeight: "800", color: "#f59e0b" }}>{item.price} <span style={{ fontSize: "11px", color: textFaint, fontWeight: "500" }}>{item.unit}</span></div>
-                      <div style={{ fontSize: "12px", color: textFaint, marginTop: "8px", lineHeight: 1.5 }}>{item.desc}</div>
-                      {item.audience && <div style={{ fontSize: "10px", color: textFaint, marginTop: "6px", fontStyle: "italic" }}>{item.audience}</div>}
-                    </div>
-                  ))}
+                  {PAY_PER_USE.map(item => {
+                    // Sprint Pricing v6.0 — TVA 21% RO 2026 pe Pașaport
+                    const itemRon = parseFloat(item.price) || 0;
+                    const itemWithVat = itemRon ? (itemRon * 1.21).toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null;
+                    const unitClean = item.unit.replace("RON/", "RON cu TVA/");
+                    return (
+                      <div key={item.id} style={{ padding: "16px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)" }}>
+                        <div style={{ fontSize: "14px", fontWeight: "700", color: text, marginBottom: "6px" }}>{item.name}</div>
+                        <div style={{ fontSize: "22px", fontWeight: "800", color: "#f59e0b" }}>{item.price} <span style={{ fontSize: "11px", color: textFaint, fontWeight: "500" }}>{item.unit}</span></div>
+                        {itemWithVat && (
+                          <div style={{ fontSize: "10px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
+                            {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
+                            <strong style={{ color: textMuted }}>{itemWithVat} {unitClean}</strong>
+                          </div>
+                        )}
+                        <div style={{ fontSize: "12px", color: textFaint, marginTop: "8px", lineHeight: 1.5 }}>{item.desc}</div>
+                        {item.audience && <div style={{ fontSize: "10px", color: textFaint, marginTop: "6px", fontStyle: "italic" }}>{item.audience}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div style={{ marginTop: "16px", padding: "10px 14px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "8px", fontSize: "11px", color: textFaint, lineHeight: 1.5 }}>
                   💡 {lang === "EN"

@@ -18,10 +18,10 @@ describe("3 perspective economice EN 15459-1 + Reg. 2025/2273", () => {
     expect(soc.npv).toBeGreaterThan(fin.npv);
   });
 
-  it("perspectiva macroeconomică exclude TVA (adjustedInvest = invest / 1.19)", () => {
+  it("perspectiva macroeconomică exclude TVA (adjustedInvest = invest / 1.21)", () => {
     const macro = calcFinancialAnalysis({ ...baseParams, perspective: "macroeconomic" });
     expect(macro).not.toBeNull();
-    expect(macro.adjustedInvest).toBeCloseTo(50000 / 1.19, 0);
+    expect(macro.adjustedInvest).toBeCloseTo(50000 / 1.21, 0);
     expect(macro.vatExcluded).toBe(true);
   });
 
