@@ -17,31 +17,31 @@
  * Activități metabolice predefinite [met]
  * 1 met = 58.15 W/m² suprafață corporală
  */
-export const PMV_ACTIVITY = {
-  'Culcat':              0.8,
-  'Sedentar':            1.0,
-  'Birou':               1.2,
-  'Stând în picioare':   1.4,
-  'Mers ușor':           1.7,
-  'Mers':                2.0,
-  'Mers rapid':          2.6,
-  'Muncă ușoară':        2.0,
-  'Muncă medie':         3.0,
-  'Muncă grea':          4.0,
-};
+export const PMV_ACTIVITY = [
+  { label: 'Culcat',              value: 0.8 },
+  { label: 'Sedentar',            value: 1.0 },
+  { label: 'Birou',               value: 1.2 },
+  { label: 'Stând în picioare',   value: 1.4 },
+  { label: 'Mers ușor',           value: 1.7 },
+  { label: 'Mers',                value: 2.0 },
+  { label: 'Mers rapid',          value: 2.6 },
+  { label: 'Muncă ușoară',        value: 2.0 },
+  { label: 'Muncă medie',         value: 3.0 },
+  { label: 'Muncă grea',          value: 4.0 },
+];
 
 /**
  * Garnituri vestimentare predefinite [clo]
  * 1 clo = 0.155 m²·K/W
  */
-export const PMV_CLOTHING = {
-  'Dezbrăcat':           0.0,
-  'Vară (ușor)':         0.5,
-  'Demi-sezon':          0.7,
-  'Iarnă (standard)':    1.0,
-  'Iarnă (gros)':        1.5,
-  'Îmbrăcăminte termică': 2.0,
-};
+export const PMV_CLOTHING = [
+  { label: 'Dezbrăcat',            value: 0.0 },
+  { label: 'Vară (ușor)',           value: 0.5 },
+  { label: 'Demi-sezon',            value: 0.7 },
+  { label: 'Iarnă (standard)',      value: 1.0 },
+  { label: 'Iarnă (gros)',          value: 1.5 },
+  { label: 'Îmbrăcăminte termică',  value: 2.0 },
+];
 
 // ---------------------------------------------------------------------------
 // Funcții auxiliare
