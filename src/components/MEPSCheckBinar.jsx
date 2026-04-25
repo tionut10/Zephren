@@ -38,7 +38,7 @@ export default function MEPSCheckBinar({ energyClass, buildingCategory }) {
         <h3 style={{ margin: 0, fontSize: "16px" }}>
           🏛️ MEPS EPBD 2024 — Verificare 2030
         </h3>
-        <Badge color={isConform ? "#10B981" : "#EF4444"}>
+        <Badge color={isConform ? "green" : "red"}>
           {isConform ? "✓ CONFORM" : "✗ NECONFORM"}
         </Badge>
       </div>

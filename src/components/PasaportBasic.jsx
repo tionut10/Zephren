@@ -68,7 +68,7 @@ export default function PasaportBasic({ building, energyClass, epFinal, auditor,
         <h3 style={{ margin: 0, fontSize: "16px" }}>
           📋 Pașaport Renovare EPBD (basic)
         </h3>
-        <Badge color="#3B82F6">EPBD 2024</Badge>
+        <Badge color="blue">EPBD 2024</Badge>
       </div>
 
       <p style={{ fontSize: "13px", opacity: 0.75, marginTop: 0, marginBottom: "12px" }}>

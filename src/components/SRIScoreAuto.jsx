@@ -14,11 +14,11 @@ import { Card, Badge, ResultRow } from "./ui.jsx";
 import { calcSRI } from "../calc/epbd.js";
 
 const SRI_GRADES = [
-  { min: 90, label: "A — Inteligență superioară",  color: "#10B981" },
-  { min: 75, label: "B — Inteligență ridicată",    color: "#3B82F6" },
-  { min: 60, label: "C — Inteligență moderată",    color: "#F59E0B" },
-  { min: 40, label: "D — Inteligență scăzută",     color: "#EF4444" },
-  { min: 0,  label: "E — Fără inteligență",        color: "#6B7280" },
+  { min: 90, label: "A — Inteligență superioară",  color: "green",  hex: "#10B981" },
+  { min: 75, label: "B — Inteligență ridicată",    color: "blue",   hex: "#3B82F6" },
+  { min: 60, label: "C — Inteligență moderată",    color: "amber",  hex: "#F59E0B" },
+  { min: 40, label: "D — Inteligență scăzută",     color: "red",    hex: "#EF4444" },
+  { min: 0,  label: "E — Fără inteligență",        color: "purple", hex: "#6B7280" },
 ];
 
 function getGrade(score) {
@@ -56,11 +56,11 @@ export default function SRIScoreAuto({ building, heating, cooling, ventilation, 
 
       <div style={{
         padding: "16px",
-        background: `${grade.color}15`,
-        borderLeft: `3px solid ${grade.color}`,
+        background: `${grade.hex}15`,
+        borderLeft: `3px solid ${grade.hex}`,
         borderRadius: "6px",
       }}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: grade.color }}>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: grade.hex }}>
           {grade.label}
         </div>
         <div style={{ marginTop: "8px", fontSize: "12px", opacity: 0.8 }}>

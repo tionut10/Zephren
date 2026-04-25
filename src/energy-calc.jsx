@@ -179,6 +179,8 @@ export default function EnergyCalcApp({ cloud }) {
 
 
   const [userTier, setUserTier] = useState("free");
+  // Sprint Pricing v6.0 — dropdown selector tier (afișare doar activ + popover toate 7)
+  const [showTierPicker, setShowTierPicker] = useState(false);
   const [projectCount, setProjectCount] = useState(0);
   const [certCount, setCertCount] = useState(0);
   const [certResetDate, setCertResetDate] = useState(() => {
@@ -2975,28 +2977,71 @@ export default function EnergyCalcApp({ cloud }) {
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{APP_VERSION}</span>
             <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
 
-            {/* Plan badges */}
-            <div className="flex items-center bg-white/[0.04] rounded-lg p-0.5">
-              {["free","starter","standard","pro","business","enterprise"].map(tid => {
-                const isActive = userTier === tid || (userTier === "asociatie" && tid === "business");
-                const BADGE = {
-                  free:       { label: "FREE", cls: "bg-white/15 text-white" },
-                  starter:    { label: "STA",  cls: "bg-sky-400 text-white shadow-sm" },
-                  standard:   { label: "STD",  cls: "bg-sky-500 text-white shadow-sm" },
-                  pro:        { label: "⚡PRO", cls: "bg-amber-500 text-black shadow-sm" },
-                  business:   { label: "BUS",  cls: "bg-violet-500 text-white shadow-sm" },
-                  enterprise: { label: "ENT",  cls: "bg-emerald-500 text-white shadow-sm" },
-                };
-                return (
-                  <button key={tid} onClick={(e) => { e.stopPropagation(); activateTier(tid); showToast(`Plan ${TIERS[tid]?.label || tid} activat`, "success"); }}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${isActive ? "" : "hidden sm:block"} ${
-                      isActive ? BADGE[tid].cls : "text-white/30 hover:text-white/60"
-                    }`}>
-                    {BADGE[tid].label}
+            {/* Plan badge dropdown — Sprint Pricing v6.0 (25 apr 2026)
+                Afișare doar plan activ + click → popover cu toate 7 niveluri.
+                Compatibil backward cu nume vechi (starter→audit, standard→pro,
+                business→birou, asociatie→birou, professional→expert). */}
+            {(() => {
+              const TIER_BADGES = {
+                free:       { label: "FREE", full: "Zephren Free",       cls: "bg-white/15 text-white" },
+                edu:        { label: "EDU",  full: "Zephren Edu",        cls: "bg-emerald-500 text-white shadow-sm" },
+                audit:      { label: "AUD",  full: "Zephren Audit",      cls: "bg-sky-400 text-white shadow-sm" },
+                pro:        { label: "⚡PRO", full: "Zephren Pro ⭐",      cls: "bg-amber-500 text-black shadow-sm" },
+                expert:     { label: "EXP",  full: "Zephren Expert",     cls: "bg-violet-500 text-white shadow-sm" },
+                birou:      { label: "BIR",  full: "Zephren Birou",      cls: "bg-pink-500 text-white shadow-sm" },
+                enterprise: { label: "ENT",  full: "Zephren Enterprise", cls: "bg-red-500 text-white shadow-sm" },
+              };
+              const TIER_LEGACY_MAP = { starter: "audit", standard: "pro", business: "birou", asociatie: "birou", professional: "expert" };
+              const activeTid = TIER_BADGES[userTier] ? userTier : (TIER_LEGACY_MAP[userTier] || "free");
+              const activeBadge = TIER_BADGES[activeTid];
+              return (
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowTierPicker(s => !s); }}
+                    title={`Plan curent: ${activeBadge.full}. Click pentru schimbare.`}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${activeBadge.cls}`}
+                  >
+                    <span>{activeBadge.label}</span>
+                    <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor"><path d="M2 4l4 4 4-4z"/></svg>
                   </button>
-                );
-              })}
-            </div>
+                  {showTierPicker && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowTierPicker(false)} />
+                      <div className="absolute top-full left-0 mt-1 z-50 bg-slate-900 border border-white/10 rounded-lg p-1 flex flex-col gap-0.5 min-w-[180px] shadow-xl">
+                        <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-white/40 border-b border-white/5 mb-0.5">
+                          Selectează plan (test)
+                        </div>
+                        {Object.entries(TIER_BADGES).map(([tid, badge]) => {
+                          const isActive = tid === activeTid;
+                          return (
+                            <button
+                              key={tid}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                activateTier(tid);
+                                setShowTierPicker(false);
+                                showToast(`Plan ${badge.full} activat`, "success");
+                              }}
+                              className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all text-left ${
+                                isActive ? badge.cls : "text-white/70 hover:bg-white/5"
+                              }`}
+                            >
+                              <span className="flex items-center gap-2">
+                                <span className={`inline-block w-9 text-center px-1 py-0.5 rounded text-[9px] font-bold ${isActive ? "bg-white/15" : badge.cls}`}>
+                                  {badge.label}
+                                </span>
+                                <span>{badge.full}</span>
+                              </span>
+                              {isActive && <span className="text-[10px]">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Cloud + Echipă — zona identitate */}
             <div className="hidden lg:flex items-center gap-1 pl-2 border-l border-white/[0.08]">

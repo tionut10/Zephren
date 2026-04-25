@@ -15,7 +15,25 @@
  */
 
 import React from "react";
-import { canAccess, resolvePlan } from "../lib/planGating.js";
+import { canAccess } from "../lib/planGating.js";
+
+// Inline resolvePlan pentru a evita probleme de cache Vite cu re-export.
+// Sincronizat cu src/lib/planGating.js — actualizează în ambele locuri.
+const LEGACY_PLAN_ALIAS = {
+  starter: "audit",
+  standard: "pro",
+  business: "birou",
+  asociatie: "birou",
+  professional: "expert",
+};
+const VALID_PLANS = ["free", "edu", "audit", "pro", "expert", "birou", "enterprise"];
+function resolvePlan(plan) {
+  if (!plan) return "free";
+  const key = String(plan).toLowerCase();
+  if (VALID_PLANS.includes(key)) return key;
+  if (LEGACY_PLAN_ALIAS[key]) return LEGACY_PLAN_ALIAS[key];
+  return "free";
+}
 
 const PLAN_DISPLAY = {
   free:       { label: "Zephren Free",       price: "0 RON",         color: "#6B7280" },

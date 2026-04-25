@@ -14,10 +14,10 @@ import React from "react";
 import { Card, Select, Badge, ResultRow } from "./ui.jsx";
 
 const BACS_CLASSES = {
-  A: { label: "Clasa A — Înaltă energetic",      factor: 0.80, color: "#10B981", desc: "Sisteme automate avansate · BMS integrat · optimizare AI" },
-  B: { label: "Clasa B — Avansată",              factor: 0.93, color: "#3B82F6", desc: "Control zonal automat · senzori prezență/CO₂" },
-  C: { label: "Clasa C — Standard (referință)",  factor: 1.00, color: "#F59E0B", desc: "Termostate digitale · timer programabil" },
-  D: { label: "Clasa D — Non-energetic",         factor: 1.10, color: "#EF4444", desc: "Control manual · fără automatizare" },
+  A: { label: "Clasa A — Înaltă energetic",      factor: 0.80, color: "green",  hex: "#10B981", desc: "Sisteme automate avansate · BMS integrat · optimizare AI" },
+  B: { label: "Clasa B — Avansată",              factor: 0.93, color: "blue",   hex: "#3B82F6", desc: "Control zonal automat · senzori prezență/CO₂" },
+  C: { label: "Clasa C — Standard (referință)",  factor: 1.00, color: "amber",  hex: "#F59E0B", desc: "Termostate digitale · timer programabil" },
+  D: { label: "Clasa D — Non-energetic",         factor: 1.10, color: "red",    hex: "#EF4444", desc: "Control manual · fără automatizare" },
 };
 
 export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO" }) {
@@ -52,12 +52,12 @@ export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO
       <div style={{
         marginTop: "12px",
         padding: "12px",
-        background: `${selected.color}15`,
-        borderLeft: `3px solid ${selected.color}`,
+        background: `${selected.hex}15`,
+        borderLeft: `3px solid ${selected.hex}`,
         borderRadius: "6px",
         fontSize: "13px",
       }}>
-        <strong style={{ color: selected.color }}>{selected.label}</strong>
+        <strong style={{ color: selected.hex }}>{selected.label}</strong>
         <div style={{ opacity: 0.85, marginTop: "4px" }}>{selected.desc}</div>
         <div style={{ marginTop: "8px", fontSize: "12px" }}>
           Factor f_BAC = <strong>{selected.factor.toFixed(2)}</strong>
@@ -66,17 +66,9 @@ export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO
 
       {epAdjusted !== null && (
         <div style={{ marginTop: "12px" }}>
-          <ResultRow
-            label="EP ajustat cu BACS"
-            value={`${epAdjusted.toFixed(1)} kWh/(m²·an)`}
-            color={selected.color}
-          />
+          <ResultRow label="EP ajustat cu BACS" value={`${epAdjusted.toFixed(1)} kWh/(m²·an)`} />
           {savings > 0 && (
-            <ResultRow
-              label="Economie vs. clasa C"
-              value={`${savings.toFixed(1)} kWh/(m²·an) (-20%)`}
-              color="#10B981"
-            />
+            <ResultRow label="Economie vs. clasa C" value={`${savings.toFixed(1)} kWh/(m²·an) (-20%)`} />
           )}
         </div>
       )}

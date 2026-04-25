@@ -3186,7 +3186,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       (CATEGORY_BASE_MAP?.[building.category] || building.category) +
                         (["RI","RC","RA"].includes(CATEGORY_BASE_MAP?.[building.category] || building.category)
                           ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")
-                    )}
+                    )?.cls}
                     buildingCategory={CATEGORY_BASE_MAP?.[building.category] || building.category}
                   />
                 </div>
