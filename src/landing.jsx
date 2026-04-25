@@ -739,6 +739,50 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             : "Alege pachetul care se potrivește volumului tău de audit. Step 1-7 acoperă tot fluxul CPE oficial; Step 8 adaugă 18 module avansate pentru auditori seniori."}
         </p>
 
+        {/* ── Trust banner: Price Lock pe viață (DEASUPRA pachetelor — primul lucru pe care îl vede clientul) ── */}
+        <div style={{ maxWidth: "1140px", margin: "0 auto 40px", padding: "20px 28px", borderRadius: "16px", background: isDark ? "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))" : "rgba(99,102,241,0.05)", border: "2px solid rgba(99,102,241,0.3)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
+            <div style={{ fontSize: "32px", lineHeight: 1, flexShrink: 0 }}>🔒</div>
+            <div style={{ flex: 1, minWidth: "240px" }}>
+              <div style={{ fontSize: "16px", fontWeight: "800", color: "#6366f1", marginBottom: "6px" }}>
+                {lang === "EN" ? "Price locked for life — guaranteed" : "Prețul tău, blocat pe viață — garantat"}
+              </div>
+              <div style={{ fontSize: "12px", color: textFaint, marginBottom: "14px", lineHeight: 1.5 }}>
+                {lang === "EN"
+                  ? "Applies to all paid plans (Audit, Pro, Expert, Birou, Enterprise). Free and Edu are already free of charge."
+                  : "Se aplică tuturor planurilor plătite (Audit, Pro, Expert, Birou, Enterprise). Free și Edu sunt deja gratuite."}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+                {[
+                  {
+                    icon: "✅",
+                    title: lang === "EN" ? "Subscribe today" : "Te abonezi azi",
+                    desc: lang === "EN" ? "Pay today's price — forever, as long as the subscription stays active." : "Plătești prețul de azi — pentru totdeauna, cât abonamentul rămâne activ.",
+                  },
+                  {
+                    icon: "📈",
+                    title: lang === "EN" ? "Prices may increase" : "Prețurile pot crește",
+                    desc: lang === "EN" ? "As we add features, prices rise. Your locked price stays the same." : "Pe măsură ce adăugăm funcționalități, prețurile vor crește. Prețul tău blocat rămâne neschimbat.",
+                  },
+                  {
+                    icon: "⚠️",
+                    title: lang === "EN" ? "If you cancel" : "Dacă anulezi",
+                    desc: lang === "EN" ? "The lock is lost. On reactivation, you pay the current price." : "Beneficiul se pierde. La reactivare, plătești prețul curent din acel moment.",
+                  },
+                ].map(it => (
+                  <div key={it.title} style={{ padding: "12px 14px", borderRadius: "10px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)", border: `1px solid rgba(99,102,241,0.15)` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "15px" }}>{it.icon}</span>
+                      <span style={{ fontSize: "12px", fontWeight: "700", color: text }}>{it.title}</span>
+                    </div>
+                    <div style={{ fontSize: "11px", color: textFaint, lineHeight: "1.5" }}>{it.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── Rând 1: Plans pentru auditori solo (Free + Audit + Pro + Expert) ── */}
         {(() => {
           const PrimaryPlans = PLANS.filter(p => PLAN_LAYOUT.primary.includes(p.id));
@@ -953,47 +997,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           );
         })()}
 
-        {/* ── Price Lock explicație ── */}
-        <div style={{ maxWidth: "1140px", margin: "32px auto 0", padding: "24px 32px", borderRadius: "16px", background: isDark ? "rgba(99,102,241,0.06)" : "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.2)" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-            <div style={{ fontSize: "28px", lineHeight: 1 }}>🔒</div>
-            <div style={{ flex: 1, minWidth: "220px" }}>
-              <div style={{ fontSize: "14px", fontWeight: "700", color: "#6366f1", marginBottom: "8px" }}>
-                {lang === "EN" ? "Price locked for life — how it works" : "Prețul tău, blocat pe viață — cum funcționează"}
-              </div>
-              <div style={{ fontSize: "11px", color: textFaint, marginBottom: "10px", lineHeight: 1.5 }}>
-                {lang === "EN"
-                  ? "Applies to all paid plans (Audit, Pro, Expert, Birou, Enterprise). Free and Edu are already free of charge."
-                  : "Se aplică tuturor planurilor plătite (Audit, Pro, Expert, Birou, Enterprise). Free și Edu sunt deja gratuite."}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
-                {[
-                  {
-                    icon: "✅",
-                    title: lang === "EN" ? "Subscribe today" : "Te abonezi azi",
-                    desc: lang === "EN" ? "You pay the current price — forever, as long as the subscription is active." : "Plătești prețul de azi — pentru totdeauna, cât abonamentul rămâne activ.",
-                  },
-                  {
-                    icon: "📈",
-                    title: lang === "EN" ? "Prices may increase" : "Prețurile pot crește",
-                    desc: lang === "EN" ? "We will raise prices as we add features. Your locked price is never affected." : "Pe măsură ce adăugăm funcționalități, prețurile vor crește. Prețul tău blocat nu e afectat.",
-                  },
-                  {
-                    icon: "⚠️",
-                    title: lang === "EN" ? "If you cancel" : "Dacă anulezi",
-                    desc: lang === "EN" ? "The price lock is lost. When you reactivate, you pay the current price at that time." : "Beneficiul se pierde. La reactivare, vei fi taxat cu prețul curent din acel moment.",
-                  },
-                ].map(it => (
-                  <div key={it.title} style={{ padding: "14px 16px", borderRadius: "10px", background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.7)", border: `1px solid rgba(99,102,241,0.15)` }}>
-                    <div style={{ fontSize: "16px", marginBottom: "6px" }}>{it.icon}</div>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: text, marginBottom: "4px" }}>{it.title}</div>
-                    <div style={{ fontSize: "11px", color: textFaint, lineHeight: "1.5" }}>{it.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Price Lock explicație MUTATĂ SUS — vezi după heading principal */}
 
         {/* ── (Ofertă lansare + Pașaport stand-alone + Credite pay-per-project — UNIFICATE
               în secțiunea PAY_PER_USE de mai sus, Sprint Pricing v6.0, 25 apr 2026) ── */}

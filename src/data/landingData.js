@@ -116,7 +116,7 @@ export const PLANS = [
     period: "",
     priceAn: null,
     discount: null,
-    audience: "Demo public",
+    audience: "Evaluare gratuită · maxim 3 CPE/lună cu watermark",
     features: [
       "3 CPE/lună (hard cap)",
       "Calculator complet Step 1-7",
@@ -135,7 +135,7 @@ export const PLANS = [
     period: " cu dovadă",
     priceAn: null,
     discount: "Pentru studenți și doctoranzi (instituții — cerere de colaborare separată)",
-    audience: "Educație & formare profesională",
+    audience: "Studenți și doctoranzi · CPE nelimitat cu watermark didactic",
     features: [
       "TOATE funcțiile Zephren Expert (Step 1-8 complet)",
       "AI Pack + BIM Pack incluse",
@@ -156,7 +156,7 @@ export const PLANS = [
     period: "/lună",
     priceAn: "1.999",
     discount: "/an (10 luni)",
-    audience: "Auditor ocazional 1-3 CPE/lună",
+    audience: "Auditor independent · până la 10 CPE/lună incluse (8 + 2 burst)",
     features: [
       "Step 1-6 complet (CPE + Anexe oficial)",
       "8 CPE/lună incluse + 2 burst gratis",
@@ -178,7 +178,7 @@ export const PLANS = [
     period: "/lună",
     priceAn: "4.990",
     discount: "/an (10 luni) · CEL MAI ALES",
-    audience: "Auditor activ MDLPA cu CPE + audit financiar",
+    audience: "Auditor activ MDLPA · până la 36 CPE/lună (30 + 6 burst) · audit financiar inclus",
     features: [
       "Step 1-7 COMPLET (CPE + Anexe + Audit financiar)",
       "30 CPE/lună incluse + 6 burst gratis",
@@ -202,7 +202,7 @@ export const PLANS = [
     period: "/lună",
     priceAn: "8.990",
     discount: "/an (10 luni) · Toate modulele avansate",
-    audience: "Auditor senior + consultant Pasivhaus / NZEB+",
+    audience: "Auditor senior + consultant · până la 72 CPE/lună (60 + 12 burst) · 18 module avansate Step 8",
     features: [
       "Tot Zephren Pro, plus:",
       "Step 8 COMPLET (18 module avansate)",
@@ -227,7 +227,7 @@ export const PLANS = [
     priceAn: "18.900",
     discount: "/an (10 luni) · Preț FIX, nu per user",
     tierNote: "2–5 utilizatori · CPE NELIMITAT pentru toți",
-    audience: "Birou de audit 2-5 useri",
+    audience: "Birou de audit 2-5 utilizatori · CPE NELIMITAT pentru toți · preț FIX",
     features: [
       "Tot Zephren Expert × 2-5 utilizatori",
       "CPE NELIMITAT (rollover 6 luni)",
@@ -250,7 +250,7 @@ export const PLANS = [
     priceAn: "Negociat",
     discount: "Volume tiers transparente · 6-100+ utilizatori",
     tierNote: "11-30u: ajustat · 31-60u: ajustat · 61-100+u: ajustat (negociat)",
-    audience: "Organizații, ordine profesionale, primării, INCERC",
+    audience: "Organizații 6-100+ utilizatori · CPE NELIMITAT · SLA 99.9% · INCERC validation",
     features: [
       "Tot Zephren Birou, plus:",
       "6-100+ utilizatori (volume scaling)",
