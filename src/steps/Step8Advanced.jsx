@@ -62,6 +62,7 @@ import NormativeLibrary from "../components/NormativeLibrary.jsx";
 import FAQ from "../components/FAQ.jsx";
 import AppDiagnostic from "../components/AppDiagnostic.jsx";
 import Sandbox from "../components/Sandbox.jsx";
+import TMYPanel from "../components/TMYPanel.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 // Sprint B Task 1+2: tab usage tracker + mod expert
 import { trackTabClick, getFrequentTabs, togglePin, isPinned } from "../utils/tab-usage.js";
@@ -126,6 +127,7 @@ export const TAB_SECTIONS = [
 
   // 🌐 07 DATE EXTERNE & CLOUD
   { id:"climate_import", icon:"📡", label:"Import climă",            category:"date_ext" },
+  { id:"tmy",            icon:"🌡️", label:"TMY orar",                category:"date_ext" },
   { id:"preturi",       icon:"🏷️", label:"Prețuri materiale",        category:"date_ext" },
   { id:"cloud_sync",    icon:"☁️", label:"Cloud Sync",               category:"date_ext" },
 
@@ -4533,6 +4535,17 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <Sandbox
             instSummary={instSummary}
+            building={building}
+            lang={lang}
+          />
+        </Card>
+      )}
+
+      {/* ═══ TMY ORAR (Sprint D Task 7) ═══ */}
+      {activeTab === "tmy" && (
+        <Card className="p-4">
+          <TMYPanel
+            climate={climate}
             building={building}
             lang={lang}
           />

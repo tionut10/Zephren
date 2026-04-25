@@ -4,7 +4,10 @@ import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
 import SmartDataHub from "../components/SmartDataHub/SmartDataHub.jsx";
-import BuildingMap from "../components/BuildingMap.jsx"; // Sprint B Task 6: hartă OSM + ANCPI stub
+import BuildingMap from "../components/BuildingMap.jsx"; // Sprint B Task 6: hartă OSM iframe simplu (legacy)
+import BuildingMapAdvanced from "../components/BuildingMapAdvanced.jsx"; // Sprint D Task 5: Leaflet + Overpass + shading
+import { findNearestLocality } from "../utils/exif-gps.js"; // Sprint D Task 6: GPS auto-localitate
+import CLIMATE_FOR_GPS from "../data/climate.json";
 import CLIMATE_DB from "../data/climate.json";
 import { T } from "../data/translations.js";
 import {
@@ -1207,12 +1210,13 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* Sprint B Task 6: hartă OSM + ANCPI stub */}
+          {/* Sprint D Task 5: Leaflet + Overpass + shading (înlocuiește BuildingMap iframe) */}
           {selectedClimate?.lat != null && selectedClimate?.lon != null && (
-            <BuildingMap
+            <BuildingMapAdvanced
               lat={selectedClimate.lat}
               lon={selectedClimate.lon}
               address={building?.address}
+              building={building}
               lang={lang}
             />
           )}
@@ -1282,6 +1286,25 @@ export default function Step1Identification({
             setBuildingPhotos={setBuildingPhotos}
             showToast={showToast}
             cn={cn}
+            onGPSDetected={(gps, meta) => {
+              // Sprint D Task 6: auto-aplicare prima foto cu GPS — găsim cea mai apropiată localitate din CLIMATE_DB
+              if (!meta.inRomania) return;
+              const nearest = findNearestLocality(gps.lat, gps.lon, CLIMATE_FOR_GPS);
+              if (!nearest) return;
+              // Nu suprascriem dacă utilizatorul a setat deja localitatea
+              if (building?.locality) {
+                showToast(
+                  `📍 GPS sugerează „${nearest.name}" (${(nearest._distanceMeters/1000).toFixed(1)} km) dar localitate deja setată: ${building.locality}`,
+                  "info"
+                );
+                return;
+              }
+              updateBuilding("locality", nearest.name);
+              showToast(
+                `📍 Localitate auto-detectată: ${nearest.name} (Zona ${nearest.zone}, ${(nearest._distanceMeters/1000).toFixed(1)} km de GPS foto)`,
+                "success"
+              );
+            }}
           />
         </Card>
       </div>

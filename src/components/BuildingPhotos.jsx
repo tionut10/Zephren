@@ -81,7 +81,10 @@ function PhotoCard({ photo, index, onDelete, onUpdate, cn }) {
   );
 }
 
-export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, showToast, cn }) {
+// Sprint D Task 6: extragere EXIF GPS automată la upload
+import { extractGPSFromFile, isInRomania } from "../utils/exif-gps.js";
+
+export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, showToast, cn, onGPSDetected }) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [uploadCategory, setUploadCategory] = useState("exterior");
   const [isDragging, setIsDragging] = useState(false);
@@ -128,8 +131,12 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
     if (!fileArr.length) return;
 
     // Procesare paralelă — mult mai rapidă la 20+ poze.
+    // Sprint D Task 6: extragere EXIF GPS în paralel cu compresia
     const results = await Promise.all(fileArr.map(async (file) => {
-      const url = await compressImage(file);
+      const [url, gps] = await Promise.all([
+        compressImage(file),
+        extractGPSFromFile(file).catch(() => null),
+      ]);
       if (!url) return { error: true, file };
       return {
         id: makeId(),
@@ -138,18 +145,45 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
         note: "",
         zone: category,
         date: new Date().toLocaleDateString("ro-RO"),
+        gps: gps || null, // {lat, lon, alt, timestamp} sau null
       };
     }));
 
     const ok = results.filter(r => !r.error);
     const failed = results.filter(r => r.error);
+    const withGPS = ok.filter(r => r.gps);
 
     if (ok.length) {
       setBuildingPhotos(prev => [...prev, ...ok]);
+      const gpsHint = withGPS.length > 0
+        ? ` · ${withGPS.length} cu GPS 📍`
+        : "";
       showToast(
-        `${ok.length} fotografi${ok.length === 1 ? "e adăugată" : "i adăugate"} (compresate)`,
+        `${ok.length} fotografi${ok.length === 1 ? "e adăugată" : "i adăugate"} (compresate)${gpsHint}`,
         "success"
       );
+    }
+
+    // Sprint D Task 6: prima fotografie cu GPS în RO → propagare auto către parent
+    if (withGPS.length > 0 && typeof onGPSDetected === "function") {
+      const first = withGPS.find(r => isInRomania(r.gps.lat, r.gps.lon)) || withGPS[0];
+      // Doar dacă nu mai există fotografii anterioare cu GPS (evită override la upload incremental)
+      const previousWithGPS = (buildingPhotos || []).find(p => p.gps);
+      if (!previousWithGPS) {
+        const inRO = isInRomania(first.gps.lat, first.gps.lon);
+        onGPSDetected(first.gps, { fileName: first.label, inRomania: inRO });
+        if (inRO) {
+          showToast(
+            `📍 GPS detectat în EXIF: ${first.gps.lat.toFixed(4)}°N, ${first.gps.lon.toFixed(4)}°E — căutăm cea mai apropiată localitate...`,
+            "info"
+          );
+        } else {
+          showToast(
+            `📍 GPS detectat dar coordonatele sunt în afara României (${first.gps.lat.toFixed(2)}, ${first.gps.lon.toFixed(2)})`,
+            "warn"
+          );
+        }
+      }
     }
 
     if (failed.length) {
@@ -162,7 +196,7 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
         "error"
       );
     }
-  }, [compressImage, setBuildingPhotos, showToast]);
+  }, [compressImage, setBuildingPhotos, showToast, onGPSDetected, buildingPhotos]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
