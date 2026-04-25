@@ -388,7 +388,7 @@ export default function EnergyCalcApp({ cloud }) {
   const [auditor, setAuditor] = useState({...INITIAL_AUDITOR});
 
   // ── Toggle Tabel 5.17 / Tabel A.16 (SR EN ISO 52000-1/NA:2023) ──
-  const [useNA2023, setUseNA2023] = useState(true); // implicit: NA:2023 (recomandat OAER)
+  const [useNA2023, setUseNA2023] = useState(true); // implicit: NA:2023 (recomandat MDLPA)
   
   // ── Analiza financiară reabilitare ──
   const [finAnalysisInputs, setFinAnalysisInputs] = useState({

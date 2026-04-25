@@ -3981,7 +3981,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                 const hasXmlExported = xmlGenerated;
 
                 const checks = [
-                  { ok: hasValidAuditor && hasValidCertNr, label: "Auditor atestat (nume + nr. atestat OAER)",
+                  { ok: hasValidAuditor && hasValidCertNr, label: "Auditor atestat (nume + nr. atestat MDLPA)",
                     hint: !hasValidAuditor ? "Completați numele auditorului în Pasul 1" : !hasValidCertNr ? "Completați nr. atestat auditor (diferit de AE-XXXX)" : null },
                   { ok: hasSignature, label: "Semnătură digitală auditor încărcată",
                     hint: !hasSignature ? "Încărcați semnătura PNG/JPG în Pasul 6" : null },

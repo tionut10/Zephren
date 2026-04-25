@@ -478,7 +478,7 @@ export function useInstallationSummary({
     // Sprint 11 (17 apr 2026) — Tab A.16 NA:2023 gated pe useNA2023:
     //   true  → fP_nren=2.00, fP_ren=0.50, fP_tot=2.50  (autoritar ASRO)
     //   false → fP_nren=2.62, fP_ren=0.00, fP_tot=2.62  (Tab 5.17 Mc001 legacy)
-    // Pompe de căldură: energia ambientală (qH_nd - qf_h) cu fP_ambient (NA:2023 corecție OAER)
+    // Pompe de căldură: energia ambientală (qH_nd - qf_h) cu fP_ambient (NA:2023 corecție MDLPA)
     const fP_elec_nren = getFPElecNren(useNA2023);
     const fP_elec_ren = getFPElecRen(useNA2023);
     const fP_elec_tot = getFPElecTot(useNA2023);

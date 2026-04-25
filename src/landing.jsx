@@ -878,12 +878,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                         </div>
                         <p style={{ fontSize: "13px", color: textFaint, lineHeight: 1.5, margin: 0 }}>
                           {lang === "EN"
-                            ? "Universities, OAER training centers, research institutes, professors, trainees and energy researchers: contact us for an institutional collaboration agreement (multi-user access, custom training, branding, special terms)."
-                            : "Universități, centre de formare OAER, institute de cercetare, profesori, trainee și cercetători energetici: contactează-ne pentru un acord instituțional de colaborare (acces multi-user, training personalizat, branding, condiții speciale)."}
+                            ? "Universities, professional training centers, research institutes, professors, trainees and energy researchers: contact us for an institutional collaboration agreement (multi-user access, custom training, branding, special terms)."
+                            : "Universități, centre de formare profesională, institute de cercetare, profesori, trainee și cercetători energetici: contactează-ne pentru un acord instituțional de colaborare (acces multi-user, training personalizat, branding, condiții speciale)."}
                         </p>
                       </div>
                       <a
-                        href="mailto:edu@zephren.ro?subject=Cerere%20colaborare%20Zephren%20%E2%80%94%20Uz%20didactic%20institu%C8%9Bional&body=Bun%C4%83%20ziua%2C%0A%0ADoresc%20s%C4%83%20discut%20o%20colaborare%20Zephren%20pentru%20uz%20didactic%2Fcercetare.%0A%0ANume%20institu%C8%9Bie%3A%20%0ATip%20institu%C8%9Bie%20(universitate%2Fcentru%20OAER%2Finstitut%20cercetare%2Falt)%3A%20%0AContact%3A%20%0APozi%C8%9Bie%2Frol%3A%20%0ANr.%20utilizatori%20estima%C8%9Bi%3A%20%0AScop%20utilizare%20(curs%2Flaborator%2Fproiect%20cercetare%2Fformare%20auditori)%3A%20%0ATermen%20colabor%C4%83rii%3A%20%0A%0AMul%C8%9Bumesc%2C%0A"
+                        href="mailto:edu@zephren.ro?subject=Cerere%20colaborare%20Zephren%20%E2%80%94%20Uz%20didactic%20institu%C8%9Bional&body=Bun%C4%83%20ziua%2C%0A%0ADoresc%20s%C4%83%20discut%20o%20colaborare%20Zephren%20pentru%20uz%20didactic%2Fcercetare.%0A%0ANume%20institu%C8%9Bie%3A%20%0ATip%20institu%C8%9Bie%20(universitate%2Fcentru%20de%20formare%2Finstitut%20cercetare%2Falt)%3A%20%0AContact%3A%20%0APozi%C8%9Bie%2Frol%3A%20%0ANr.%20utilizatori%20estima%C8%9Bi%3A%20%0AScop%20utilizare%20(curs%2Flaborator%2Fproiect%20cercetare%2Fformare%20auditori)%3A%20%0ATermen%20colabor%C4%83rii%3A%20%0A%0AMul%C8%9Bumesc%2C%0A"
                         style={{
                           display: "inline-flex",
                           alignItems: "center",

@@ -1448,7 +1448,7 @@ export default function Step5Calculation(props) {
                 </label>
                 <div className="text-[10px] opacity-40 flex-1">
                   {useNA2023
-                    ? "ON (recomandat): electricitate fP_nren=2.00 + fP_ren=0.50 (Tab A.16, valoare ASRO autoritară) • energie ambientală PC = 1.00 (corecție OAER confirmată MDLPA nr. 50843/09.03.2026)."
+                    ? "ON (recomandat): electricitate fP_nren=2.00 + fP_ren=0.50 (Tab A.16, valoare ASRO autoritară) • energie ambientală PC = 1.00 (corecție confirmată MDLPA nr. 50843/09.03.2026)."
                     : "OFF (legacy Mc001-2022 Tab 5.17): electricitate fP_nren=2.62 (fP_ren=0) • energie ambientală PC = 0. Păstrat pentru paritate cu CPE-uri emise înainte de Sprint 11."}
                 </div>
               </div>

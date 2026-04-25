@@ -224,7 +224,7 @@ export const FUELS = [
 ];
 
 // Factor energie ambientală conform SR EN ISO 52000-1:2017/NA:2023 (Tabel A.16)
-// OAER: factor 0 pentru energia ambientală a pompelor de căldură (în loc de 1.0 din Mc001 original)
+// MDLPA: factor 0 pentru energia ambientală a pompelor de căldură (în loc de 1.0 din Mc001 original)
 export const AMBIENT_ENERGY_FACTOR = {
   mc001_original: { fP_nren: 1.0, fP_ren: 0.0, fP_tot: 1.0, fCO2: 0.0, label: "Mc001-2022 original (Tabel 5.17)" },
   na2023:         { fP_nren: 0.0, fP_ren: 0.0, fP_tot: 0.0, fCO2: 0.0, label: "SR EN ISO 52000-1/NA:2023 (Tabel A.16)" },

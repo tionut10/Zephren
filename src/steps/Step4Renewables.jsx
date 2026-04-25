@@ -290,8 +290,8 @@ export default function Step4Renewables({
               </Card>
 
               <Card className="bg-amber-500/[0.02] border-amber-500/10">
-                <div className="text-xs text-amber-400 font-medium mb-1">Notă OAER privind Tabelul 5.17</div>
-                <div className="text-xs opacity-60">OAER a inițiat procedura de înlocuire a factorilor de conversie cu valorile din SR EN ISO 52000-1:2017/NA:2023, unde factorul pentru energia ambientală devine 0 (zero), pentru a nu dezavantaja pompele de căldură. Aplicația utilizează în prezent valorile din Mc 001-2022 original.</div>
+                <div className="text-xs text-amber-400 font-medium mb-1">Notă privind Tabelul 5.17</div>
+                <div className="text-xs opacity-60">A fost inițiată procedura de înlocuire a factorilor de conversie cu valorile din SR EN ISO 52000-1:2017/NA:2023, unde factorul pentru energia ambientală devine 0 (zero), pentru a nu dezavantaja pompele de căldură. Aplicația utilizează în prezent valorile din Mc 001-2022 original.</div>
               </Card>
             </>
           )}

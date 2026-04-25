@@ -118,7 +118,7 @@ export const NORMATIVES = [
       },
       { id: "art20", title: "Art. 20 — Auditori atestați", excerpt:
         "Auditorul energetic e profesionist atestat de MDLPA în baza unei specializări specifice. " +
-        "Lista actualizată: Registrul OAER (Ordinul Auditorilor Energetici din România, oaer.ro). " +
+        "Lista actualizată: registrul auditorilor energetici publicat de MDLPA. " +
         "Atestat valabil 5 ani, reexamen periodic."
       },
     ],
