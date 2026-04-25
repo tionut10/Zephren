@@ -3783,7 +3783,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   { ok: hasEpTotal && hasEnergyClass, label: "EP total + clasă energetică calculate",
                     hint: !hasEpTotal ? "Completați calculul energetic (Pasul 5)" : !hasEnergyClass ? "Clasa energetică lipsește — verificați calculul" : null },
                   { ok: hasXmlExported, label: "XML CPE generat și descărcat local",
-                    hint: !hasXmlExported ? "Apăsați „Descarcă CPE.xml" în secțiunea de mai jos" : null },
+                    hint: !hasXmlExported ? "Apăsați „Descarcă CPE.xml” în secțiunea de mai jos" : null },
                   { ok: null, label: "Copie CPE predată beneficiarului",
                     hint: "Verificare manuală — semnați procesul-verbal de predare",
                     manual: true },
@@ -4093,7 +4093,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         return (
           <Card className="p-4">
             <SectionHeader icon="📁" title="Portofoliu proiecte"
-              subtitle="Toate proiectele salvate în sesiunea curentă (localStorage). Click pe „Deschide" pentru a încărca un alt proiect." />
+              subtitle="Toate proiectele salvate în sesiunea curentă (localStorage). Click pe „Deschide” pentru a încărca un alt proiect." />
 
             {savedProjects.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm space-y-2">
