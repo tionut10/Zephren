@@ -140,7 +140,6 @@ export const TAB_SECTIONS = [
   // 📚 09 RESURSE & ÎNVĂȚARE (Sprint B Task 4+5: Bibliotecă, FAQ, Tutorial)
   { id:"biblioteca",    icon:"📚", label:"Bibliotecă normative",     category:"resurse" },
   { id:"faq",           icon:"💡", label:"Best practices & FAQ",     category:"resurse" },
-  { id:"tutorial",      icon:"🎓", label:"Tutorial",                 category:"resurse" },
 ];
 
 function SectionHeader({ icon, title, subtitle }) {
@@ -829,8 +828,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           <button onClick={toggleExpertMode}
             aria-pressed={expertMode}
             title={lang==="EN"
-              ? (expertMode ? "Hide expert modules (lock 🔬 category)" : "Unlock expert modules (acoustic, PV degradation, tutorial)")
-              : (expertMode ? "Ascunde modulele expert (lock categoria 🔬)" : "Deblochează modulele expert (acustic, degradare PV, tutorial)")}
+              ? (expertMode ? "Hide expert modules (lock 🔬 category)" : "Unlock expert modules (acoustic, PV degradation)")
+              : (expertMode ? "Ascunde modulele expert (lock categoria 🔬)" : "Deblochează modulele expert (acustic, degradare PV)")}
             className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
               expertMode
                 ? "bg-purple-500/20 border-purple-400/40 text-purple-200"
@@ -4481,17 +4480,6 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ TUTORIAL ═══ */}
-      {activeTab === "tutorial" && (
-        <Card className="p-4">
-          <SectionHeader icon="🎓" title="Tutorial interactiv"
-            subtitle="Walkthrough pas cu pas cu clădire exemplu predefinită — ideal pentru utilizatori noi" />
-          <button onClick={() => onOpenTutorial?.()}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors text-sm">
-            🎓 Pornește Tutorial
-          </button>
-        </Card>
-      )}
 
       {/* ═══ BIBLIOTECĂ NORMATIVE (Sprint B Task 4) ═══ */}
       {activeTab === "biblioteca" && (
