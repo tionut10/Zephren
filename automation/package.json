@@ -1,0 +1,21 @@
+{
+  "name": "zephren-automation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Mentenanță automată Zephren cu Claude — DEZACTIVAT pană la lansarea oficială v4.0",
+  "scripts": {
+    "test-analyzer": "node agents/test-analyzer.js",
+    "bug-triage": "node agents/bug-triage.js",
+    "normative-watcher": "node agents/normative-watcher.js",
+    "deploy-monitor": "node agents/deploy-monitor.js",
+    "regression-detector": "node agents/regression-detector.js",
+    "dry-run": "node tools/dry-run.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

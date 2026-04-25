@@ -1,0 +1,85 @@
+{
+  "$schema": "./config.schema.json",
+  "version": "1.0.0",
+  "enabled": false,
+  "_comment": "DEZACTIVAT pană la lansarea oficială Zephren v4.0. Setează `enabled: true` și activează workflow-urile GitHub Actions după soft-launch.",
+  "activation": {
+    "policy": "post-launch",
+    "earliestActivationDate": "2026-06-01",
+    "requireManualConfirmation": true,
+    "requireMinimumTestsPassing": 1500
+  },
+  "model": {
+    "default": "claude-opus-4-7",
+    "fallback": "claude-sonnet-4-6",
+    "lightTasks": "claude-haiku-4-5"
+  },
+  "agents": {
+    "test-analyzer": {
+      "enabled": false,
+      "trigger": "pull_request",
+      "model": "claude-sonnet-4-6",
+      "maxTokensPerRun": 50000,
+      "description": "Analizează eșecuri Vitest + Playwright pe PR și comentează diagnostic"
+    },
+    "bug-triage": {
+      "enabled": false,
+      "trigger": "issue_opened",
+      "model": "claude-sonnet-4-6",
+      "maxTokensPerRun": 30000,
+      "description": "Triază bug-uri raportate, propune fișier + linie + fix preliminar"
+    },
+    "normative-watcher": {
+      "enabled": false,
+      "trigger": "schedule",
+      "cron": "0 8 * * 1",
+      "model": "claude-opus-4-7",
+      "maxTokensPerRun": 100000,
+      "description": "Săptămânal luni 08:00 — verifică modificări MDLPA / ASRO / EPBD",
+      "sources": [
+        "https://www.mdlpa.ro/pages/normative",
+        "https://www.asro.ro/colectii-de-standarde/cladiri-eficiente-energetic",
+        "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024L1275"
+      ]
+    },
+    "deploy-monitor": {
+      "enabled": false,
+      "trigger": "deployment_success",
+      "model": "claude-haiku-4-5",
+      "maxTokensPerRun": 20000,
+      "description": "Monitorizează erori Vercel post-deploy 24h, raportează anomalii",
+      "vercelProject": "energy-app-ruby"
+    },
+    "regression-detector": {
+      "enabled": false,
+      "trigger": "schedule",
+      "cron": "0 6 * * *",
+      "model": "claude-sonnet-4-6",
+      "maxTokensPerRun": 40000,
+      "description": "Zilnic 06:00 — rulează full test suite, detectează regresii, creează issue"
+    }
+  },
+  "limits": {
+    "maxApiCallsPerDay": 50,
+    "maxTokensPerDay": 500000,
+    "monthlyBudgetUSD": 30
+  },
+  "notifications": {
+    "channel": "github-issues",
+    "labelPrefix": "claude-bot",
+    "criticalSeverityCreatesIssue": true,
+    "lowSeverityComments": true
+  },
+  "safety": {
+    "neverCommitDirectly": true,
+    "neverPushToMaster": true,
+    "neverDeployToProduction": true,
+    "neverModifyPricing": true,
+    "alwaysRequireHumanReview": [
+      "src/calc/**/*.js",
+      "api/**/*.py",
+      "src/i18n/**",
+      "package.json"
+    ]
+  }
+}

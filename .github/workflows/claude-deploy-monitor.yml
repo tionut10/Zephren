@@ -1,0 +1,56 @@
+# Zephren — Deploy Monitor (DEZACTIVAT pană la lansare)
+#
+# Rulează la fiecare oră timp de 24h post-deploy.
+
+name: "Claude · Deploy Monitor (Hourly post-deploy)"
+
+on:
+  workflow_run:
+    workflows: ["deploy"]
+    types: [completed]
+  schedule:
+    - cron: "0 * * * *"  # fallback orar
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    if: false  # ⚠️ DEZACTIVAT
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: automation/package-lock.json
+
+      - name: Install automation deps
+        working-directory: automation
+        run: npm ci
+
+      - name: Monitor
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          AUTOMATION_ENABLED: "1"
+        working-directory: automation
+        run: node agents/deploy-monitor.js > monitor-report.md
+
+      - name: Create issue on critical
+        if: success()
+        run: |
+          if grep -qE '"severity":\s*"P0"' automation/monitor-report.md; then
+            gh issue create \
+              --title "[Deploy Monitor] 🚨 P0 erori producție $(date +%H:%M)" \
+              --label "deploy-incident,P0,needs-human-urgent" \
+              --body-file automation/monitor-report.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,56 @@
+# Zephren — Regression Detector (DEZACTIVAT pană la lansare)
+#
+# Rulare zilnică 06:00 UTC (08:00 RO vară). Compară numărul teste PASS cu baseline.
+
+name: "Claude · Regression Detector (Daily)"
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  detect:
+    if: false  # ⚠️ DEZACTIVAT
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Install automation deps
+        working-directory: automation
+        run: npm ci
+
+      - name: Detect regressions
+        id: detect
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTOMATION_ENABLED: "1"
+        working-directory: automation
+        run: node agents/regression-detector.js > daily-report.md
+
+      - name: Create issue on regression
+        if: success()
+        run: |
+          if grep -q "Regresie detectată" automation/daily-report.md; then
+            DATE=$(date +%Y-%m-%d)
+            gh issue create \
+              --title "[Regression] $DATE — teste pierdute față de baseline" \
+              --label "regression,P1,needs-human" \
+              --body-file automation/daily-report.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

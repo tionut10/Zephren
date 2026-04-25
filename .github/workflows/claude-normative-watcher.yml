@@ -1,0 +1,61 @@
+# Zephren — Normative Watcher (DEZACTIVAT pană la lansare)
+#
+# Săptămânal luni 08:00 RO (06:00 UTC) — verifică modificări MDLPA/ASRO/EPBD.
+
+name: "Claude · Normative Watcher (Weekly)"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # luni 06:00 UTC = 08:00 RO (vară) / 09:00 RO (iarnă)
+  workflow_dispatch:    # rulare manuală oricând
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    if: false  # ⚠️ DEZACTIVAT
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: automation/package-lock.json
+
+      - name: Install automation deps
+        working-directory: automation
+        run: npm ci
+
+      - name: Run watcher
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTOMATION_ENABLED: "1"
+        working-directory: automation
+        run: node agents/normative-watcher.js > weekly-report.md
+
+      - name: Commit snapshot update
+        run: |
+          git config user.name "claude-bot"
+          git config user.email "noreply@anthropic.com"
+          git add automation/state/normative-snapshot.json
+          git diff --cached --quiet || git commit -m "chore(automation): update normative snapshot"
+          git push origin HEAD:claude-automation/normative-snapshot --force
+
+      - name: Create issue if changes detected
+        if: success()
+        run: |
+          if grep -q "issues_to_create" automation/weekly-report.md; then
+            DATE=$(date +%Y-%m-%d)
+            gh issue create \
+              --title "[Normative Watch] Săptămâna $DATE — modificări detectate" \
+              --label "normative-update,P2" \
+              --body-file automation/weekly-report.md
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

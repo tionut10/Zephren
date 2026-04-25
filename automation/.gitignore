@@ -1,0 +1,6 @@
+logs/*.jsonl
+logs/rate-limit.json
+state/normative-snapshot.json
+state/test-baseline.json
+node_modules/
+*.local

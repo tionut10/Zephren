@@ -1,0 +1,60 @@
+# Zephren — Bug Triage (DEZACTIVAT pană la lansare)
+#
+# Triază automat issue-uri noi: tip, severitate, modul afectat.
+
+name: "Claude · Bug Triage (Issues)"
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    if: false  # ⚠️ DEZACTIVAT
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: automation/package-lock.json
+
+      - name: Install automation deps
+        working-directory: automation
+        run: npm ci
+
+      - name: Triage
+        id: triage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTOMATION_ENABLED: "1"
+          LABELS_OUTPUT_PATH: "labels.txt"
+        working-directory: automation
+        run: |
+          node agents/bug-triage.js > comment.md
+          echo "comment_path=automation/comment.md" >> $GITHUB_OUTPUT
+
+      - name: Post comment
+        run: gh issue comment "$ISSUE_NUMBER" --body-file automation/comment.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+
+      - name: Apply labels
+        if: hashFiles('automation/labels.txt') != ''
+        run: |
+          while IFS= read -r label; do
+            [ -z "$label" ] && continue
+            gh issue edit "$ISSUE_NUMBER" --add-label "$label" || true
+          done < automation/labels.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}

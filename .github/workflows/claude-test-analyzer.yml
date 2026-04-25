@@ -1,0 +1,72 @@
+# Zephren — Test Analyzer (DEZACTIVAT pană la lansare oficială)
+#
+# Activare post-lansare:
+#   1. Setează AUTOMATION_ENABLED=true în secrets repo
+#   2. Setează ANTHROPIC_API_KEY în secrets repo
+#   3. Setează automation/config.json -> agents.test-analyzer.enabled = true
+#   4. Schimbă `if: false` din job-ul `analyze` în `if: vars.AUTOMATION_ENABLED == 'true'`
+
+name: "Claude · Test Analyzer (PR)"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "src/**"
+      - "api/**"
+      - "package.json"
+      - "vitest.config.*"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  analyze:
+    if: false  # ⚠️ DEZACTIVAT — vezi instrucțiuni activare în antet.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Run Vitest (allow failures)
+        continue-on-error: true
+        run: npm test -- --reporter=json --outputFile=test-results/vitest-report.json
+
+      - name: Install automation deps
+        working-directory: automation
+        run: npm ci
+
+      - name: Run Test Analyzer
+        id: analyze
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTOMATION_ENABLED: "1"
+          VITEST_REPORT_PATH: "../test-results/vitest-report.json"
+        working-directory: automation
+        run: |
+          node agents/test-analyzer.js > analysis.md
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          cat analysis.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `${{ steps.analyze.outputs.comment }}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
