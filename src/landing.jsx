@@ -891,6 +891,11 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               <div style={{ fontSize: "14px", fontWeight: "700", color: "#6366f1", marginBottom: "8px" }}>
                 {lang === "EN" ? "Price locked for life — how it works" : "Prețul tău, blocat pe viață — cum funcționează"}
               </div>
+              <div style={{ fontSize: "11px", color: textFaint, marginBottom: "10px", lineHeight: 1.5 }}>
+                {lang === "EN"
+                  ? "Applies to all paid plans (Audit, Pro, Expert, Birou, Enterprise). Free and Edu are already free of charge."
+                  : "Se aplică tuturor planurilor plătite (Audit, Pro, Expert, Birou, Enterprise). Free și Edu sunt deja gratuite."}
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
                 {[
                   {
