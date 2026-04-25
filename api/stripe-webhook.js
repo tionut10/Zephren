@@ -104,16 +104,59 @@ async function createSmartBillInvoice(session) {
   }
 }
 
-// Sprint 20 (18 apr 2026) — mapare Stripe Price ID → plan intern.
-// Configurați ID-urile exacte în env vars: STRIPE_PRICE_STARTER, STRIPE_PRICE_STANDARD etc.
+// Sprint Pricing v6.0 (25 apr 2026) — mapare Stripe Price ID → plan intern.
+// Acoperă atât prețurile lunare (M) cât și anuale (Y) pentru toate cele 5 plans noi.
+// Plus backward-compat pentru env vars vechi (STRIPE_PRICE_STARTER etc.).
 function derivePlanFromPriceId(priceId) {
   if (!priceId) return null;
-  if (priceId === process.env.STRIPE_PRICE_STARTER)    return "starter";
-  if (priceId === process.env.STRIPE_PRICE_STANDARD)   return "standard";
-  if (priceId === process.env.STRIPE_PRICE_PRO)        return "pro";
-  if (priceId === process.env.STRIPE_PRICE_ASOCIATIE)  return "asociatie";
-  if (priceId === process.env.STRIPE_PRICE_BUSINESS)   return "business";
+  // v6.0 — abonamente noi (Audit / Pro / Expert / Birou / Enterprise × M/Y)
+  if (priceId === process.env.STRIPE_PRICE_AUDIT_M      || priceId === process.env.STRIPE_PRICE_AUDIT_Y)      return "audit";
+  if (priceId === process.env.STRIPE_PRICE_PRO_M        || priceId === process.env.STRIPE_PRICE_PRO_Y)        return "pro";
+  if (priceId === process.env.STRIPE_PRICE_EXPERT_M     || priceId === process.env.STRIPE_PRICE_EXPERT_Y)     return "expert";
+  if (priceId === process.env.STRIPE_PRICE_BIROU_M      || priceId === process.env.STRIPE_PRICE_BIROU_Y)      return "birou";
+  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE_M || priceId === process.env.STRIPE_PRICE_ENTERPRISE_Y) return "enterprise";
+  // Backward-compat v5.x (utilizatori existenți pe planurile vechi)
+  if (priceId === process.env.STRIPE_PRICE_STARTER)     return "audit";       // 199 (Starter→Audit)
+  if (priceId === process.env.STRIPE_PRICE_STANDARD)    return "pro";         // 499 (Standard→Pro)
+  if (priceId === process.env.STRIPE_PRICE_PRO)         return "pro";         // legacy unic
+  if (priceId === process.env.STRIPE_PRICE_ASOCIATIE)   return "birou";       // (Asociație→Birou)
+  if (priceId === process.env.STRIPE_PRICE_BUSINESS)    return "birou";       // (Business→Birou)
   return null;
+}
+
+// v6.0 — handler pentru produse one-time (pay-per-CPE / pay-per-pașaport).
+// Adaugă credite în profiles.cpe_credits_remaining pentru utilizatori fără abonament.
+async function applyOneTimePurchase(supabaseUrl, supabaseServiceKey, userId, cpeUnits) {
+  if (!userId || !cpeUnits || !supabaseUrl || !supabaseServiceKey) return false;
+  const units = parseInt(cpeUnits, 10) || 0;
+  if (units <= 0) return false;
+
+  // Citește credite curente, adaugă noile, scrie atomic.
+  // (Pentru o implementare 100% safe, folosește RPC SQL în Supabase — vezi migration v6.)
+  const getResp = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=cpe_credits_remaining`,
+    { headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}` } }
+  );
+  const rows = await getResp.json().catch(() => []);
+  const current = Array.isArray(rows) && rows[0]?.cpe_credits_remaining || 0;
+  const next = current + units;
+
+  const patchResp = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}`, {
+    method: "PATCH",
+    headers: {
+      apikey: supabaseServiceKey,
+      Authorization: `Bearer ${supabaseServiceKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ cpe_credits_remaining: next }),
+  });
+  if (!patchResp.ok) {
+    console.error(`[Webhook] One-time credit add failed: user ${userId} units ${units}`);
+    return false;
+  }
+  console.log(`[Webhook] User ${userId} +${units} CPE credits (now: ${next})`);
+  return true;
 }
 
 async function patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan) {
@@ -197,11 +240,24 @@ export default async function handler(req, res) {
       case "checkout.session.completed": {
         const session = event.data?.object;
         const userId = session?.metadata?.userId;
-        const plan = session?.metadata?.plan;
-        const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan);
-        if (ok) console.log(`[Webhook] User ${userId} upgraded to ${plan}`);
+        const productType = session?.metadata?.productType || "subscription";
+
+        if (productType === "one_time") {
+          // v6.0 — Pay-per-CPE / Pașaport (one-time, nu modifică planul abonament)
+          const cpeUnits = session?.metadata?.cpeUnits;
+          const oneTimeProduct = session?.metadata?.oneTimeProduct;
+          if (cpeUnits) {
+            await applyOneTimePurchase(supabaseUrl, supabaseServiceKey, userId, cpeUnits);
+          }
+          console.log(`[Webhook] One-time purchase: user ${userId} product ${oneTimeProduct} units ${cpeUnits || 0}`);
+        } else {
+          // Abonament — actualizează planul utilizatorului
+          const plan = session?.metadata?.plan;
+          const ok = await patchProfilePlan(supabaseUrl, supabaseServiceKey, userId, plan);
+          if (ok) console.log(`[Webhook] User ${userId} upgraded to ${plan}`);
+        }
         // P0-1 (18 apr 2026) — emitere factură SmartBill + eFactura ANAF
-        // Rulează în paralel cu răspunsul Stripe; erorile sunt logate, nu aruncate.
+        // (rulează pentru ambele tipuri: abonament + one-time)
         await createSmartBillInvoice(session);
         break;
       }

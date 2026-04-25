@@ -139,7 +139,7 @@ export const PLANS = [
     features: [
       "TOATE funcțiile Zephren Expert (Step 1-8 complet)",
       "AI Pack + BIM Pack incluse",
-      "CPE NELIMITATE cu watermark „SCOP DIDACTIC"",
+      "CPE NELIMITATE cu watermark „SCOP DIDACTIC”",
       "Export XML MDLPA blocat (nu pentru utilizare oficială)",
       "Submit MDLPA blocat",
       "Gratis pe perioada formării (anuală cu dovadă)",

@@ -109,13 +109,28 @@ export default async function handler(req, res) {
     return handleBillingPortal(req, res, stripeKey, auth);
   }
 
-  const { plan, clientType, cui, company, fullName, address, city, vatEU, country } = req.body || {};
+  const { plan, clientType, cui, company, fullName, address, city, vatEU, country, billingCycle, oneTimeProduct, quantity } = req.body || {};
   // Use authenticated user's ID and email (prevents impersonation)
   const userId = auth.user.id;
   const email = auth.user.email;
 
-  if (!plan || !["pro", "business"].includes(plan)) {
-    return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'business'." });
+  // Sprint Pricing v6.0 (25 apr 2026) — 5 plans abonament + 5 produse one-time
+  const VALID_PLANS = ["audit", "pro", "expert", "birou", "enterprise"];
+  const VALID_ONE_TIME = ["cpe-single", "cpe-pack-10", "cpe-step8", "pasaport-basic", "pasaport-detailed"];
+  const isOneTime = !!oneTimeProduct;
+
+  if (isOneTime) {
+    if (!VALID_ONE_TIME.includes(oneTimeProduct)) {
+      return res.status(400).json({
+        error: `Invalid oneTimeProduct. Must be one of: ${VALID_ONE_TIME.join(", ")}.`,
+      });
+    }
+  } else {
+    if (!plan || !VALID_PLANS.includes(plan)) {
+      return res.status(400).json({
+        error: `Invalid plan. Must be one of: ${VALID_PLANS.join(", ")}.`,
+      });
+    }
   }
 
   // P0-2 (18 apr 2026) — validare minimă metadata fiscală pentru factură SmartBill.
@@ -136,21 +151,35 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Pentru persoană fizică este obligatoriu numele complet." });
   }
 
-  // Price configuration — replace with real Stripe Price IDs in production
-  const PRICES = {
-    pro: {
-      priceId: process.env.STRIPE_PRICE_PRO || "price_placeholder_pro",
-      name: "Zephren Pro",
-      amount: 9900, // 99 RON in bani
-    },
-    business: {
-      priceId: process.env.STRIPE_PRICE_BUSINESS || "price_placeholder_business",
-      name: "Zephren Business",
-      amount: 24900, // 249 RON in bani
-    },
+  // ────────────────────────────────────────────────────────────────────────
+  // PRICING v6.0 (25 apr 2026) — 5 abonamente lunare + 5 anuale + 5 one-time
+  //   Stripe Price IDs sunt configurate în env vars (vezi memorie infrastructure_payments_fiscal.md).
+  //   Lunar: STRIPE_PRICE_AUDIT_M / STRIPE_PRICE_PRO_M / STRIPE_PRICE_EXPERT_M / STRIPE_PRICE_BIROU_M / STRIPE_PRICE_ENTERPRISE_M
+  //   Anual: STRIPE_PRICE_AUDIT_Y / STRIPE_PRICE_PRO_Y / STRIPE_PRICE_EXPERT_Y / STRIPE_PRICE_BIROU_Y / STRIPE_PRICE_ENTERPRISE_Y
+  //   One-time: STRIPE_PRICE_CPE_SINGLE / STRIPE_PRICE_CPE_PACK_10 / STRIPE_PRICE_CPE_STEP8 /
+  //             STRIPE_PRICE_PASAPORT_BASIC / STRIPE_PRICE_PASAPORT_DETAILED
+  // ────────────────────────────────────────────────────────────────────────
+  const cycle = billingCycle === "yearly" ? "Y" : "M";
+  const SUBSCRIPTION_PRICES = {
+    audit:      { priceId: process.env[`STRIPE_PRICE_AUDIT_${cycle}`]      || "price_placeholder_audit",      name: "Zephren Audit",      amount: cycle === "Y" ? 199900 : 19900   },
+    pro:        { priceId: process.env[`STRIPE_PRICE_PRO_${cycle}`]        || "price_placeholder_pro",        name: "Zephren Pro",        amount: cycle === "Y" ? 499000 : 49900   },
+    expert:     { priceId: process.env[`STRIPE_PRICE_EXPERT_${cycle}`]     || "price_placeholder_expert",     name: "Zephren Expert",     amount: cycle === "Y" ? 899000 : 89900   },
+    birou:      { priceId: process.env[`STRIPE_PRICE_BIROU_${cycle}`]      || "price_placeholder_birou",      name: "Zephren Birou",      amount: cycle === "Y" ? 1890000 : 189000 },
+    enterprise: { priceId: process.env[`STRIPE_PRICE_ENTERPRISE_${cycle}`] || "price_placeholder_enterprise", name: "Zephren Enterprise", amount: cycle === "Y" ? 4990000 : 499000 },
   };
 
-  const selected = PRICES[plan];
+  const ONE_TIME_PRICES = {
+    "cpe-single":         { priceId: process.env.STRIPE_PRICE_CPE_SINGLE         || "price_placeholder_cpe_single",         name: "CPE single",                amount: 9900,  cpeUnits: 1  },
+    "cpe-pack-10":        { priceId: process.env.STRIPE_PRICE_CPE_PACK_10        || "price_placeholder_cpe_pack_10",        name: "Pachet 10 CPE",             amount: 79000, cpeUnits: 10 },
+    "cpe-step8":          { priceId: process.env.STRIPE_PRICE_CPE_STEP8          || "price_placeholder_cpe_step8",          name: "CPE + Step 8 (1 modul)",   amount: 19900, cpeUnits: 1  },
+    "pasaport-basic":     { priceId: process.env.STRIPE_PRICE_PASAPORT_BASIC     || "price_placeholder_pasaport_basic",     name: "Pașaport Renovare basic",  amount: 7900,  cpeUnits: 0  },
+    "pasaport-detailed":  { priceId: process.env.STRIPE_PRICE_PASAPORT_DETAILED  || "price_placeholder_pasaport_detailed",  name: "Pașaport Renovare detaliat", amount: 19900, cpeUnits: 0  },
+  };
+
+  const selected = isOneTime ? ONE_TIME_PRICES[oneTimeProduct] : SUBSCRIPTION_PRICES[plan];
+  const qty = isOneTime && quantity ? Math.max(1, Math.min(10, parseInt(quantity, 10) || 1)) : 1;
+  const mode = isOneTime ? "payment" : "subscription";
+  const productKey = isOneTime ? oneTimeProduct : plan;
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, "") || "https://zephren.ro";
 
   try {
@@ -162,14 +191,20 @@ export default async function handler(req, res) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        "mode": "subscription",
+        "mode": mode,
         "line_items[0][price]": selected.priceId,
-        "line_items[0][quantity]": "1",
-        "success_url": `${origin}/#app?checkout=success&plan=${plan}`,
+        "line_items[0][quantity]": String(qty),
+        "success_url": `${origin}/#app?checkout=success&product=${productKey}`,
         "cancel_url": `${origin}/#app?checkout=cancel`,
         ...(email ? { "customer_email": email } : {}),
         ...(userId ? { "metadata[userId]": userId } : {}),
-        "metadata[plan]": plan,
+        // v6.0 — distincție clară abonament vs one-time în webhook
+        "metadata[productType]": isOneTime ? "one_time" : "subscription",
+        "metadata[productKey]": productKey,
+        ...(plan            ? { "metadata[plan]": plan }                                : {}),
+        ...(billingCycle    ? { "metadata[billingCycle]": billingCycle }                : {}),
+        ...(oneTimeProduct  ? { "metadata[oneTimeProduct]": oneTimeProduct }            : {}),
+        ...(selected.cpeUnits != null ? { "metadata[cpeUnits]": String(selected.cpeUnits * qty) } : {}),
         // P0-2 — metadata fiscală pentru SmartBill (stripe-webhook citește meta)
         "metadata[clientType]": ct,
         ...(cui      ? { "metadata[cui]": String(cui).trim() }           : {}),
