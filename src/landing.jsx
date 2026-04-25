@@ -829,6 +829,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ position: "absolute", top: "-12px", left: "32px", padding: "4px 14px", borderRadius: "12px", background: "#10b981", color: "#fff", fontSize: "12px", fontWeight: "700" }}>
                       🎓 {lang === "EN" ? "EDUCATION — FREE" : "EDUCAȚIE — GRATIS"}
                     </div>
+
+                    {/* Sub-secțiunea 1: Studenți + Doctoranzi (auto-grant) */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "32px", alignItems: "center", flexWrap: "wrap" }}>
                       <div>
                         <h3 style={{ fontSize: "22px", fontWeight: "700", color: text, marginTop: 0, marginBottom: "8px" }}>
@@ -836,8 +838,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                         </h3>
                         <p style={{ fontSize: "14px", color: textMuted, lineHeight: 1.6, marginBottom: "16px" }}>
                           {lang === "EN"
-                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students and doctoral candidates with valid proof. Watermark applied to all CPE documents — official MDLPA submission blocked. Universities, OAER training centers, research institutes and other organizations: please send a separate collaboration request to edu@zephren.ro."
-                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți și doctoranzi cu dovadă valabilă. Watermark aplicat pe toate documentele CPE — submit oficial MDLPA blocat. Universități, centre de formare OAER, institute de cercetare și alte organizații: trimiteți o cerere separată de colaborare la edu@zephren.ro."}
+                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students and doctoral candidates with valid proof. Watermark applied to all CPE documents — official MDLPA submission blocked."
+                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți și doctoranzi cu dovadă valabilă. Watermark aplicat pe toate documentele CPE — submit oficial MDLPA blocat."}
                         </p>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "8px" }}>
                           {eduPlan.features.slice(0, 6).map(f => (
@@ -847,9 +849,64 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                           ))}
                         </ul>
                       </div>
-                      <a href="mailto:edu@zephren.ro?subject=Aplicatie Zephren Edu" style={{ padding: "14px 28px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "14px", fontWeight: "600", textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(16,185,129,0.3)" }}>
+                      <a href="mailto:edu@zephren.ro?subject=Aplicatie%20Zephren%20Edu%20%E2%80%94%20Student%2FDoctorand&body=Salut%2C%0A%0ADoresc%20s%C4%83%20activez%20planul%20Zephren%20Edu.%0A%0ANume%20complet%3A%20%0AInstitu%C8%9Bie%3A%20%0AProgram%20de%20studii%20(licen%C8%9B%C4%83%2Fmaster%2Fdoctorat)%3A%20%0AAn%20de%20studii%3A%20%0AEmail%20institu%C8%9Bional%3A%20%0A%0AAtas%C8%99at%3A%20legitima%C8%9Bie%20student%20%2F%20adeverin%C8%9B%C4%83%20valabil%C4%83.%0A%0AMul%C8%9Bumesc%21" style={{ padding: "14px 28px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "14px", fontWeight: "600", textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(16,185,129,0.3)" }}>
                         {lang === "EN" ? "Apply with proof →" : "Aplică cu dovadă →"}
                       </a>
+                    </div>
+
+                    {/* Separator vizual */}
+                    <div style={{ borderTop: "1px dashed rgba(16,185,129,0.3)", margin: "28px 0 20px" }} />
+
+                    {/* Sub-secțiunea 2: Universități + Instituții (cerere de colaborare) */}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: "24px",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      padding: "20px 24px",
+                      background: "rgba(255,255,255,0.02)",
+                      borderRadius: "12px",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                          <span style={{ fontSize: "18px" }}>🏛️</span>
+                          <h4 style={{ fontSize: "15px", fontWeight: "700", color: text, margin: 0 }}>
+                            {lang === "EN" ? "For institutions and organizations" : "Pentru instituții și organizații"}
+                          </h4>
+                        </div>
+                        <p style={{ fontSize: "13px", color: textFaint, lineHeight: 1.5, margin: 0 }}>
+                          {lang === "EN"
+                            ? "Universities, OAER training centers, research institutes, professors, trainees and energy researchers: contact us for an institutional collaboration agreement (multi-user access, custom training, branding, special terms)."
+                            : "Universități, centre de formare OAER, institute de cercetare, profesori, trainee și cercetători energetici: contactează-ne pentru un acord instituțional de colaborare (acces multi-user, training personalizat, branding, condiții speciale)."}
+                        </p>
+                      </div>
+                      <a
+                        href="mailto:edu@zephren.ro?subject=Cerere%20colaborare%20Zephren%20%E2%80%94%20Uz%20didactic%20institu%C8%9Bional&body=Bun%C4%83%20ziua%2C%0A%0ADoresc%20s%C4%83%20discut%20o%20colaborare%20Zephren%20pentru%20uz%20didactic%2Fcercetare.%0A%0ANume%20institu%C8%9Bie%3A%20%0ATip%20institu%C8%9Bie%20(universitate%2Fcentru%20OAER%2Finstitut%20cercetare%2Falt)%3A%20%0AContact%3A%20%0APozi%C8%9Bie%2Frol%3A%20%0ANr.%20utilizatori%20estima%C8%9Bi%3A%20%0AScop%20utilizare%20(curs%2Flaborator%2Fproiect%20cercetare%2Fformare%20auditori)%3A%20%0ATermen%20colabor%C4%83rii%3A%20%0A%0AMul%C8%9Bumesc%2C%0A"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "12px 20px",
+                          borderRadius: "10px",
+                          background: "transparent",
+                          color: "#10b981",
+                          border: "2px solid #10b981",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        📩 {lang === "EN" ? "Request collaboration →" : "Cerere colaborare →"}
+                      </a>
+                    </div>
+
+                    {/* Footer mic cu email general */}
+                    <div style={{ marginTop: "16px", textAlign: "center", fontSize: "11px", color: textFaint }}>
+                      {lang === "EN" ? "Direct contact: " : "Contact direct: "}
+                      <a href="mailto:edu@zephren.ro" style={{ color: "#10b981", textDecoration: "none", fontWeight: "600" }}>edu@zephren.ro</a>
                     </div>
                   </div>
                 );
