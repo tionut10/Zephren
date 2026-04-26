@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-24
+// Ultima generare: 2026-04-26
 
 export const APP_VERSION = "0.4.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "audit(steps-1-7): 2 fix-uri P1 + 11 teste + raport master"
+        "icon": "✨",
+        "text": "feat(step6): debounce butoane generare DOCX + proxy /api la vercel dev local"
+      },
+      {
+        "icon": "💰",
+        "text": "fix(pricing): TVA 19% → 21% (RO 2026) + afișare preț cu TVA pe fiecare card"
+      },
+      {
+        "icon": "💰",
+        "text": "fix(pricing): „audit energetic\" (NU „audit financiar\") + notă globală „fără TVA\""
       },
       {
         "icon": "✨",
-        "text": "feat(reports): Sprint 22 COMMIT 3 — anexă DOCX per element (SVG + tabel materiale)"
+        "text": "feat(pricing): mutare price-lock SUS + audience descriptions aliniate cu volum CPE"
+      },
+      {
+        "icon": "🎨",
+        "text": "elimină referințele la „OAER\" din UI și comentarii"
       },
       {
         "icon": "✨",
-        "text": "feat(envelope): Sprint 22 COMMIT 2 — confort + siguranță (F_sh + siguranță foc)"
+        "text": "feat(pricing): banner Edu reorganizat în 2 sub-secțiuni cu CTA-uri distincte"
       },
       {
-        "icon": "✨",
-        "text": "feat(envelope): Sprint 22 COMMIT 1 — calcul conformitate (ΔU″ + χ + τ dinamic)"
+        "icon": "💰",
+        "text": "refactor(pricing): EDU restrâns la doar studenți + doctoranzi (auto-grant)"
       },
       {
-        "icon": "✨",
-        "text": "feat(envelope): Sprint 1 Quick wins — duplicate + search + U-warnings + health check"
-      },
-      {
-        "icon": "🧪",
-        "text": "Sprint 21 — Step 1 Hardening (28 items) + 39 teste noi"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(sections): orientare adaptivă per tip element + text complet + vitraj clarificat"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(hub): click pe element din listă deschide modal cu secțiune detaliată"
+        "icon": "💰",
+        "text": "refactor(pricing): elimină CPE pay-per-use + repoziționează Pașaport pentru non-auditori"
       }
     ]
   },

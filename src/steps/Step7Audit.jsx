@@ -1656,7 +1656,7 @@ export default function Step7Audit(props) {
                   try { return checkAcousticConformity({ opaqueElements, glazingElements, category: building.category, calcOpaqueR }); } catch { return null; }
                 }, [opaqueElements, glazingElements, building, calcOpaqueR]);
 
-                const enClassStr = instSummary ? getEnergyClass(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")) : "";
+                const enClassStr = instSummary ? (getEnergyClass(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2, building.category + (["RI","RC","RA"].includes(building.category) ? (cooling?.hasCooling ? "_cool" : "_nocool") : ""))?.cls || "") : "";
 
                 // Context MEPS pentru pașaport + PhasedRehab
                 const mepsContext = instSummary
@@ -1845,7 +1845,7 @@ export default function Step7Audit(props) {
               <div className="mt-6">
                 <PasaportBasic
                   building={building}
-                  energyClass={enClass}
+                  energyClass={enClass?.cls || "—"}
                   epFinal={epFinal}
                   auditor={auditor}
                   onGenerate={(passport) => {
