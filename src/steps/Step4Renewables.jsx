@@ -464,7 +464,7 @@ export default function Step4Renewables({
 
         {/* ── RIGHT PANEL: SUMAR REGENERABILE ── */}
         <div className="space-y-5">
-          <Card title={t("Sumar regenerabile",lang)} className="sticky top-6">
+          <Card title={t("Sumar regenerabile",lang)}>
             {renewSummary ? (
               <div className="space-y-4">
                 <div className="text-center py-3">

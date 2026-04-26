@@ -2790,7 +2790,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                 {/* Preview CPE + Anexa preview — coloana 2+3 */}
                 <div className="xl:col-span-2 space-y-5">
-                  <div className="xl:sticky xl:top-6">
+                  <div>
                     <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
                       <div className="docx-preview-outer rounded-lg overflow-hidden"
                         style={{minHeight: docxRendered ? undefined : "320px", height: docxRendered ? "85vh" : undefined, position: "relative", background: "#e8e8e8"}}>

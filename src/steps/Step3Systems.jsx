@@ -929,7 +929,7 @@ export default function Step3Systems({
 
         {/* ── RIGHT PANEL: SUMAR ENERGIE ── */}
         <div className="space-y-5">
-          <Card title={t("Sumar energetic",lang)} className="sticky top-6">
+          <Card title={t("Sumar energetic",lang)}>
             {instSummary ? (
               <div className="space-y-4">
                 {/* Energie primară totală */}

@@ -311,7 +311,7 @@ export default function Step2Envelope({
         <div className={envelopeHubEnabled
           ? "xl:col-span-3 grid grid-cols-1 xl:grid-cols-3 gap-5"
           : "space-y-5"}>
-          <Card title={t("Sumar anvelopă",lang)} className={envelopeHubEnabled ? "xl:col-span-2" : "sticky top-6"}>
+          <Card title={t("Sumar anvelopă",lang)} className={envelopeHubEnabled ? "xl:col-span-2" : ""}>
             {envelopeSummary && envelopeSummary.G > 0 ? (
               <div className="space-y-4">
                 <div className="text-center py-4">
