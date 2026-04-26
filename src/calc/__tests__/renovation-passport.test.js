@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   buildRenovationPassport,
   generatePassportId,
+  generatePassportIdV4,
+  generatePassportIdV5,
   isValidPassportId,
   validatePassportShallow,
   findMepsMilestone,
@@ -9,6 +11,8 @@ import {
 import { RENOVATION_PASSPORT_SCHEMA_VERSION } from "../../data/renovation-passport-schema.js";
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Sprint 25 P0.4: UUID v5 (determinist) acceptat alături de v4 (random)
+const UUID_V4_OR_V5 = /^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const minimalArgs = {
   building: { address: "Str. Test nr. 1", category: "RC", areaUseful: 120, yearBuilt: 1980 },
@@ -19,29 +23,86 @@ const minimalArgs = {
 };
 
 describe("generatePassportId", () => {
-  it("returnează un UUID v4 valid", () => {
+  it("fără argumente returnează UUID v4 random", () => {
     const id = generatePassportId();
     expect(id).toMatch(UUID_V4);
   });
 
-  it("generează ID-uri unice pe 100 iterații", () => {
+  it("generează ID-uri unice pe 100 iterații (mod random)", () => {
     const ids = new Set();
     for (let i = 0; i < 100; i++) ids.add(generatePassportId());
     expect(ids.size).toBe(100);
   });
 
-  it("isValidPassportId validează corect formatul", () => {
+  it("isValidPassportId acceptă atât v4 cât și v5", () => {
     expect(isValidPassportId(generatePassportId())).toBe(true);
+    expect(isValidPassportId(generatePassportIdV5({ cpeCode: "TEST_CPE_a3f7b9c2" }))).toBe(true);
     expect(isValidPassportId("not-a-uuid")).toBe(false);
     expect(isValidPassportId("")).toBe(false);
     expect(isValidPassportId(null)).toBe(false);
   });
 });
 
+describe("Sprint 25 P0.4 — generatePassportIdV5 determinist", () => {
+  it("același cpeCode → același UUID v5 (re-rulare stabilă)", () => {
+    const id1 = generatePassportIdV5({ cpeCode: "12345_2026-04-26_Popescu_Ion_RO_4567_12_CPE_a3f7b9c2" });
+    const id2 = generatePassportIdV5({ cpeCode: "12345_2026-04-26_Popescu_Ion_RO_4567_12_CPE_a3f7b9c2" });
+    expect(id1).toBe(id2);
+    expect(id1).toMatch(UUID_V4_OR_V5);
+    expect(id1.charAt(14)).toBe("5"); // versiunea UUID = 5
+  });
+
+  it("cpeCode diferit → UUID-uri diferite", () => {
+    const id1 = generatePassportIdV5({ cpeCode: "CPE_A" });
+    const id2 = generatePassportIdV5({ cpeCode: "CPE_B" });
+    expect(id1).not.toBe(id2);
+  });
+
+  it("fingerprint clădire fără cpeCode → UUID determinist din cadastru+adresă", () => {
+    const b = { cadastralNumber: "100200", address: "Str. Test 1", areaUseful: 100, yearBuilt: 1980 };
+    const id1 = generatePassportIdV5({ building: b });
+    const id2 = generatePassportIdV5({ building: b });
+    expect(id1).toBe(id2);
+    expect(id1).toMatch(UUID_V4_OR_V5);
+  });
+
+  it("buildRenovationPassport cu cpeCode → UUID v5 determinist (re-rulare stabilă)", () => {
+    const args = {
+      ...minimalArgs,
+      cpeCode: "TEST_CPE_2026-04-26_a3f7b9c2",
+    };
+    const p1 = buildRenovationPassport(args);
+    const p2 = buildRenovationPassport(args);
+    expect(p1.passportId).toBe(p2.passportId);
+    expect(p1.passportId.charAt(14)).toBe("5");
+    expect(p1.cpeCode).toBe("TEST_CPE_2026-04-26_a3f7b9c2");
+  });
+
+  it("legacyPassportId păstrat când e UUID v4 valid și diferit de cel nou", () => {
+    const legacy = generatePassportIdV4();
+    const p = buildRenovationPassport({
+      ...minimalArgs,
+      cpeCode: "NEW_CPE",
+      legacyPassportId: legacy,
+    });
+    expect(p.legacyPassportId).toBe(legacy);
+    expect(p.passportId).not.toBe(legacy);
+  });
+
+  it("legacyPassportId omis dacă invalid sau egal cu passportId", () => {
+    const p1 = buildRenovationPassport({
+      ...minimalArgs,
+      cpeCode: "X",
+      legacyPassportId: "not-a-uuid",
+    });
+    expect(p1.legacyPassportId).toBeUndefined();
+  });
+});
+
 describe("buildRenovationPassport", () => {
-  it("creează pașaport minimal cu UUID v4 + history 1 entry", () => {
+  it("creează pașaport minimal cu UUID v4 sau v5 + history 1 entry", () => {
     const p = buildRenovationPassport(minimalArgs);
-    expect(p.passportId).toMatch(UUID_V4);
+    expect(p.passportId).toMatch(UUID_V4_OR_V5);
     expect(p.version).toBe(RENOVATION_PASSPORT_SCHEMA_VERSION);
     expect(p.status).toBe("draft");
     expect(p.history).toHaveLength(1);
@@ -144,7 +205,7 @@ describe("buildRenovationPassport", () => {
 
   it("rezistă la date complet lipsă (fără crash)", () => {
     const p = buildRenovationPassport({});
-    expect(p.passportId).toMatch(UUID_V4);
+    expect(p.passportId).toMatch(UUID_V4_OR_V5);
     expect(p.building.category).toBe("AL");
     expect(p.building.climateZone).toBe("II");
   });

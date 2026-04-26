@@ -33,9 +33,23 @@ export const JSON_SCHEMA = {
   properties: {
     passportId: {
       type: "string",
+      // Sprint 25 P0.4: acceptă UUID v4 (random, legacy) și v5 (determinist din cpeCode/clădire)
       pattern:
-        "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-      description: "UUID v4 unic pașaport",
+        "^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      description:
+        "UUID unic pașaport (v5 determinist din cpeCode dacă disponibil; v4 random fallback)",
+    },
+    legacyPassportId: {
+      type: "string",
+      pattern:
+        "^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      description:
+        "ID pașaport anterior (v4) — păstrat la migrare către UUID v5 deterministic",
+    },
+    cpeCode: {
+      type: "string",
+      description:
+        "Cod CPE Ord. MDLPA 16/2023 — cross-ref CPE↔Pașaport↔Raport (Sprint 17/25)",
     },
     version: {
       type: "string",

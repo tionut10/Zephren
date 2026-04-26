@@ -3,21 +3,53 @@
  * Construiește obiect pașaport validabil contra schemei JSON preliminary.
  *
  * La update păstrăm passportId + istoric versiuni (cap la 50 entries).
+ *
+ * Sprint 25 P0.4 — UUID v5 determinist:
+ *   passportId = uuidv5("PASSPORT:{cpeCode}", CPE_NAMESPACE) când cpeCode e
+ *   prezent; fallback fingerprint clădire (cadastru + adresă + Au + an).
+ *   Re-rularea aceluiași audit produce ACELAȘI UUID → cross-ref CPE↔Pașaport
+ *   stabil pentru raport, registru MDLPA, integrare ANRE.
+ *
+ *   Pentru pașapoartele existente (UUID v4 din generații pre-S25), `legacyPassportId`
+ *   păstrează ID-ul vechi la re-emitere (regenerare); nu se șterg date utilizator.
  */
 
+import { v5 as uuidv5 } from "uuid";
 import {
   JSON_SCHEMA,
   RENOVATION_PASSPORT_SCHEMA_VERSION,
   RENOVATION_PASSPORT_SCHEMA_URL,
 } from "../data/renovation-passport-schema.js";
+import { CPE_NAMESPACE } from "../utils/cpe-code.js";
 
 const HISTORY_CAP = 50;
 
 /**
- * UUID v4 conform RFC 4122. Folosește crypto.randomUUID când e disponibil
- * (Node 19+, browser modern), altfel fallback Math.random.
+ * UUID v5 determinist pentru pașaport.
+ * @param {object} p
+ * @param {string} [p.cpeCode]   Cod unic CPE (preferat — cross-ref direct)
+ * @param {object} [p.building]  Date clădire pentru fingerprint fallback
+ * @returns {string} UUID v5
  */
-export function generatePassportId() {
+export function generatePassportIdV5({ cpeCode, building } = {}) {
+  if (cpeCode && typeof cpeCode === "string" && cpeCode.trim()) {
+    return uuidv5(`PASSPORT:${cpeCode}`, CPE_NAMESPACE);
+  }
+  // Fallback fingerprint: cadastru + adresă + Au + an (suficient de unic în practică)
+  const fp = [
+    building?.cadastralNumber || "",
+    building?.address || "",
+    Math.round(parseFloat(building?.areaUseful) || 0),
+    building?.yearBuilt || "",
+  ].join("|");
+  return uuidv5(`PASSPORT_FALLBACK:${fp}`, CPE_NAMESPACE);
+}
+
+/**
+ * UUID v4 random — păstrat pentru fallback și backward compat.
+ * Folosește crypto.randomUUID când e disponibil; altfel Math.random.
+ */
+export function generatePassportIdV4() {
   if (
     typeof crypto !== "undefined" &&
     typeof crypto.randomUUID === "function"
@@ -31,11 +63,23 @@ export function generatePassportId() {
   });
 }
 
-const UUID_V4_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/**
+ * Generator default — alege v5 dacă context disponibil, altfel v4.
+ * Backward-compatible: apelat fără argumente → UUID v4 random.
+ */
+export function generatePassportId(ctx) {
+  if (ctx && (ctx.cpeCode || ctx.building)) {
+    return generatePassportIdV5(ctx);
+  }
+  return generatePassportIdV4();
+}
+
+// Acceptă atât UUID v4 (random) cât și v5 (determinist) — RFC 4122 versiunea în [45]
+const UUID_V4_OR_V5_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isValidPassportId(id) {
-  return typeof id === "string" && UUID_V4_RE.test(id);
+  return typeof id === "string" && UUID_V4_OR_V5_RE.test(id);
 }
 
 function num(v, fallback = 0) {
@@ -62,17 +106,20 @@ export function buildRenovationPassport({
   mepsStatus = null,
   financialSummary = null,
   fundingEligible = null,
+  cpeCode = null,                  // Sprint 25 P0.4 — cross-ref CPE↔Pașaport
   existingPassportId = null,
   existingHistory = [],
   existingTimestamp = null,
+  legacyPassportId = null,         // Sprint 25 P0.4 — păstrare istoric pre-v5
   changeReason = "Creare inițială pașaport",
   changedBy = null,
 } = {}) {
   const now = new Date().toISOString();
+  // Sprint 25 P0.4 — UUID v5 determinist (când cpeCode/building disponibile)
   const passportId =
     existingPassportId && isValidPassportId(existingPassportId)
       ? existingPassportId
-      : generatePassportId();
+      : generatePassportId({ cpeCode, building });
 
   const newVersionEntry = {
     version: RENOVATION_PASSPORT_SCHEMA_VERSION,
@@ -212,8 +259,16 @@ export function buildRenovationPassport({
     contact: auditor?.contact || "",
   };
 
+  // Sprint 25 P0.4 — păstrare ID legacy v4 dacă re-emitere
+  const legacy =
+    legacyPassportId && isValidPassportId(legacyPassportId) && legacyPassportId !== passportId
+      ? legacyPassportId
+      : null;
+
   return {
     passportId,
+    ...(legacy ? { legacyPassportId: legacy } : {}),
+    ...(cpeCode ? { cpeCode } : {}),
     version: RENOVATION_PASSPORT_SCHEMA_VERSION,
     schemaUrl: RENOVATION_PASSPORT_SCHEMA_URL,
     timestamp: existingTimestamp || now,
@@ -271,7 +326,7 @@ export function validatePassportShallow(passport) {
     return { valid: false, errors: [{ message: "Pașaport gol" }] };
   }
   if (!isValidPassportId(passport.passportId)) {
-    errors.push({ path: "/passportId", message: "UUID v4 invalid" });
+    errors.push({ path: "/passportId", message: "UUID v4 sau v5 invalid" });
   }
   if (!passport.version) errors.push({ path: "/version", message: "Versiune lipsă" });
   if (!passport.building?.address) {

@@ -113,6 +113,7 @@ export default function RenovationPassport({
   mepsStatus = null,
   financialSummary = null,
   fundingEligible = null,
+  cpeCode = null,                    // Sprint 25 P0.4 — cross-ref CPE↔Pașaport
   onClose,
   onPassportChange,  // Sprint 17: notifică parentul când UUID-ul se schimbă
 }) {
@@ -134,9 +135,11 @@ export default function RenovationPassport({
         mepsStatus,
         financialSummary,
         fundingEligible,
+        cpeCode,
         existingPassportId: existing.passportId,
         existingHistory: existing.history || [],
         existingTimestamp: existing.timestamp,
+        legacyPassportId: existing.legacyPassportId || null,
         changeReason: "Regenerare din context curent",
         changedBy: auditor?.name,
       });
@@ -151,6 +154,7 @@ export default function RenovationPassport({
       mepsStatus,
       financialSummary,
       fundingEligible,
+      cpeCode,
     });
   });
 
@@ -202,9 +206,11 @@ export default function RenovationPassport({
       mepsStatus,
       financialSummary,
       fundingEligible,
+      cpeCode,
       existingPassportId: passport.passportId,
       existingHistory: passport.history || [],
       existingTimestamp: passport.timestamp,
+      legacyPassportId: passport.legacyPassportId || null,
       changeReason: reason,
       changedBy: auditor?.name,
     });
@@ -222,6 +228,7 @@ export default function RenovationPassport({
     mepsStatus,
     financialSummary,
     fundingEligible,
+    cpeCode,
   ]);
 
   const handleNewPassport = useCallback(() => {
@@ -233,6 +240,8 @@ export default function RenovationPassport({
         : true;
     if (!confirmed) return;
     archivePassportInStorage(buildingId, passport);
+    // Sprint 25 P0.4 — la regenerare, păstrează vechiul UUID v4 ca legacyPassportId
+    const isLegacy = passport.passportId && passport.passportId.charAt(14) === "4";
     const fresh = buildRenovationPassport({
       building,
       instSummary,
@@ -243,6 +252,8 @@ export default function RenovationPassport({
       mepsStatus,
       financialSummary,
       fundingEligible,
+      cpeCode,
+      legacyPassportId: isLegacy ? passport.passportId : (passport.legacyPassportId || null),
     });
     setPassport(fresh);
   }, [
@@ -257,6 +268,7 @@ export default function RenovationPassport({
     mepsStatus,
     financialSummary,
     fundingEligible,
+    cpeCode,
   ]);
 
   const handleExportJSON = useCallback(() => {
