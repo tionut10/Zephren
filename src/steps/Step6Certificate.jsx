@@ -2797,10 +2797,15 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           </div>
                         )}
 
-                        {/* Office Online Viewer sau PDF direct (pdfPreviewUrl setat) */}
+                        {/* Office Online Viewer sau PDF direct (pdfPreviewUrl setat).
+                            Pentru blob PDF adăugăm #toolbar=0&navpanes=0 ca să ascundem
+                            bara nativă Chrome (descărcare, print, rotire) — preview-ul
+                            din Pas 6 e doar pentru vizualizare; descărcarea oficială se
+                            face prin butoanele dedicate "Generează CPE DOCX" / "Export
+                            PDF cu QR" cu watermark/cod oficial. */}
                         {docxRendered && pdfPreviewUrl && (
                           <iframe
-                            src={pdfPreviewUrl}
+                            src={pdfPreviewUrl.startsWith("blob:") ? `${pdfPreviewUrl}#toolbar=0&navpanes=0&scrollbar=1` : pdfPreviewUrl}
                             className="w-full h-full border-0"
                             title="CPE Preview"
                             style={{display: "block", height: "85vh"}}
