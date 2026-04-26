@@ -201,6 +201,84 @@ textarea:focus-visible {
 .ep-light .text-stone-300   { color: #475569 !important; }
 .ep-light .text-stone-400   { color: #475569 !important; }
 
+/* TEXT colorat -300 (folosit pe active states ex: text-amber-300 pe bg-amber-500/20)
+   pe alb e ~2:1 → invizibil. Promovăm la -800 (mai întunecat decât -700, pentru
+   contrast bun pe fundal pastel cu /20 opacity). */
+.ep-light .text-amber-300   { color: #92400E !important; } /* amber-800 */
+.ep-light .text-emerald-300 { color: #065F46 !important; } /* emerald-800 */
+.ep-light .text-red-300     { color: #991B1B !important; } /* red-800 */
+.ep-light .text-sky-300     { color: #075985 !important; } /* sky-800 */
+.ep-light .text-violet-300  { color: #5B21B6 !important; } /* violet-800 */
+.ep-light .text-blue-300    { color: #1E40AF !important; } /* blue-800 */
+.ep-light .text-rose-300    { color: #9F1239 !important; }
+.ep-light .text-pink-300    { color: #9D174D !important; }
+.ep-light .text-cyan-300    { color: #155E75 !important; }
+.ep-light .text-yellow-300  { color: #854D0E !important; }
+.ep-light .text-indigo-300  { color: #3730A3 !important; }
+.ep-light .text-purple-300  { color: #6B21A8 !important; }
+.ep-light .text-green-300   { color: #166534 !important; }
+.ep-light .text-orange-300  { color: #9A3412 !important; }
+.ep-light .text-teal-300    { color: #115E59 !important; }
+.ep-light .text-fuchsia-300 { color: #86198F !important; }
+.ep-light .text-lime-300    { color: #3F6212 !important; }
+
+/* HOVER states — hover:bg-white/X pe light → slate-900 translucid pe :hover */
+.ep-light [class*="hover:bg-white/"]:hover     { background-color: rgba(15, 23, 42, 0.06) !important; }
+.ep-light [class*="hover:bg-white/5"]:hover    { background-color: rgba(15, 23, 42, 0.05) !important; }
+.ep-light [class*="hover:bg-white/10"]:hover   { background-color: rgba(15, 23, 42, 0.08) !important; }
+.ep-light [class*="hover:bg-white/20"]:hover   { background-color: rgba(15, 23, 42, 0.12) !important; }
+.ep-light [class*="hover:bg-white/[0.03]"]:hover { background-color: rgba(15, 23, 42, 0.04) !important; }
+
+/* DROPDOWN custom (.ep-listbox din ui.jsx Select + AutocompleteInput) —
+   fundal explicit per temă, peste inline style/Tailwind arbitrary.
+   Default = dark; light mode = alb cu border slate. */
+.ep-listbox {
+  background: #1a1d2e;
+  color: #e5e7eb;
+}
+.ep-light .ep-listbox {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.10) !important;
+}
+.ep-light .ep-listbox [role="option"],
+.ep-light .ep-listbox li { color: #0F172A; }
+.ep-light .ep-listbox [role="option"]:hover,
+.ep-light .ep-listbox li:hover { background-color: #F1F5F9 !important; }
+.ep-light .ep-listbox [role="option"][aria-selected="true"] {
+  background-color: #FEF3C7 !important; /* amber-100 */
+  color: #92400E !important;            /* amber-800 — 7.69:1 AAA pe amber-100 */
+}
+
+/* Tailwind arbitrary BG-uri întunecate hardcodate (bg-[#1a1a2e], bg-[#0a0a1a],
+   bg-[#0d0d20], bg-[#12122a], etc.) — invizibile / lipsă contrast pe light.
+   Convertim la slate-50/100 cu text slate-900. */
+.ep-light [class*="bg-[#1a1a2e]"],
+.ep-light [class*="bg-[#1a1d2e]"],
+.ep-light [class*="bg-[#0a0a1a]"],
+.ep-light [class*="bg-[#0d0d20]"],
+.ep-light [class*="bg-[#12122a]"],
+.ep-light [class*="bg-[#12141f]"],
+.ep-light [class*="bg-[#0a0a"],
+.ep-light [class*="bg-[#0d0d"],
+.ep-light [class*="bg-[#1a1"],
+.ep-light [class*="bg-[#12"],
+.ep-light [class*="bg-[#1c1c"] {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+/* slate-800/900/950 ca fundal — invizibil pe light (negru pe alb fără contrast util) */
+.ep-light .bg-slate-950 { background-color: #F1F5F9 !important; color: #0F172A !important; }
+.ep-light .bg-slate-900 { background-color: #F1F5F9 !important; color: #0F172A !important; }
+.ep-light .bg-slate-800 { background-color: #E2E8F0 !important; color: #0F172A !important; }
+.ep-light .bg-slate-800\/40,
+.ep-light [class*="bg-slate-800/"] { background-color: rgba(15, 23, 42, 0.04) !important; color: #0F172A !important; }
+.ep-light .bg-zinc-900,
+.ep-light .bg-neutral-900,
+.ep-light .bg-gray-900 { background-color: #F1F5F9 !important; color: #0F172A !important; }
+
 /* Bg colorat -500/-600 cu text-white pe light: text-white deja overrid mai sus, dar
    dacă Card folosește bg-amber-500 + text-white, trebuie să rămână alb. Restaurăm
    text-white pe fundaluri colorate: */

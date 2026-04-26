@@ -186,7 +186,7 @@ export default function AutocompleteInput({
 
       {open && items.length > 0 && (
         <div
-          className="absolute z-50 mt-1 w-full rounded-xl border border-white/[0.08] bg-[#1a1a2e] shadow-2xl overflow-hidden"
+          className="ep-listbox absolute z-50 mt-1 w-full rounded-xl border border-white/[0.08] shadow-2xl overflow-hidden"
           style={{ maxHeight: "240px", overflowY: "auto" }}
         >
           <ul ref={listRef} className="py-1">

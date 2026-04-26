@@ -37,8 +37,8 @@ export function Select({ label, value, onChange, options, placeholder, className
       </button>
       {open && (
         <div id={listboxId.current} role="listbox" aria-label={label || "Opțiuni"}
-          className="absolute z-50 left-0 right-0 mt-1 border border-white/10 rounded-lg shadow-xl overflow-hidden"
-          style={{top:"100%",background:"#1a1d2e",maxHeight:"240px",overflowY:"auto",scrollbarWidth:"thin"}}>
+          className="ep-listbox absolute z-50 left-0 right-0 mt-1 border border-white/10 rounded-lg shadow-xl overflow-hidden"
+          style={{top:"100%",maxHeight:"240px",overflowY:"auto",scrollbarWidth:"thin"}}>
           {placeholder && (
             <div role="option" aria-selected={!value} onClick={() => { onChange(""); setOpen(false); }}
               className="px-3 py-2 text-sm cursor-pointer hover:bg-white/10 transition-colors opacity-40">{placeholder}</div>
