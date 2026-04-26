@@ -15,7 +15,7 @@ Ord. MDLPA 16/2023 cere strict A4 portret + Calibri 11pt.
 """
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import json, io, base64, re, copy
+import json, io, base64, re, copy, datetime
 from docx import Document
 from docx.shared import Inches, Emu, Pt, Cm
 from docx.enum.section import WD_ORIENT
@@ -2368,12 +2368,114 @@ def compute_checkbox_keys(data, category):
     if not vent_type or "hr" not in vent_type:
         keys.append("REC_HEAT_RECOVERY")
 
+    # ════════════════════════════════════════════════════════════════════
+    # Sprint 25 P0.2 — 14 chei REC_* extinse (Anexa 1 CPE completă)
+    # Surse: CHECKBOX_KEYWORD_MAP linii 2142-2171 + audit S25.
+    # Fiecare cheie e tratată ca opțională: dacă datele frontend lipsesc
+    # (data.get → "") cheia NU se declanșează (no-op silent).
+    # ════════════════════════════════════════════════════════════════════
+    is_block = category in ("RC", "RA")
+    # acm_src e declarat și mai jos în secțiunea Anexa 2 — definim aici pentru P0.2
+    acm_src = data.get("acm_source", "")
+    has_vent = bool(vent_type) and vent_type != "natural_neorg"
+
+    # REC_SARPANTA — clădiri cu mansardă/șarpantă peste ultimul nivel
+    struct_text_low = (data.get("structure", "") or "").lower()
+    has_attic = ("mansard" in struct_text_low) or (data.get("attic_heated") == "true")
+    if has_attic:
+        keys.append("REC_SARPANTA")
+
+    # REC_SHADING — fără rolouri/dispozitive umbrire (g_eff > 0.85 indică lipsa)
+    try:
+        shading_factor = float(data.get("shading_factor", "1.0") or "1.0")
+    except Exception:
+        shading_factor = 1.0
+    if shading_factor > 0.85:
+        keys.append("REC_SHADING")
+
+    # REC_HEAT_PIPES — conducte vechi încălzire (anul instalării < 2000)
+    try:
+        heat_year = int(data.get("heating_year_installed", "0") or "0")
+    except Exception:
+        heat_year = 0
+    if 0 < heat_year < 2000 and h_src and h_src not in ("electric_direct", "pc_aer_aer"):
+        keys.append("REC_HEAT_PIPES")
+
+    # REC_DHW_PIPES — conducte vechi ACM
+    try:
+        acm_year = int(data.get("acm_year_installed", "0") or "0")
+    except Exception:
+        acm_year = 0
+    if 0 < acm_year < 2000 and acm_src:
+        keys.append("REC_DHW_PIPES")
+
+    # REC_HEAT_INSULATE — fără izolație conducte încălzire
+    heat_pipe_insul = (data.get("heating_pipe_insulated", "") or "").lower()
+    if heat_pipe_insul in ("no", "partial", "nu", "partial_izolata"):
+        keys.append("REC_HEAT_INSULATE")
+
+    # REC_DHW_INSULATE — fără izolație conducte ACM
+    acm_pipe_insul = (data.get("acm_pipe_insulated", "") or "").lower()
+    if acm_pipe_insul in ("no", "partial", "nu", "partial_izolata"):
+        keys.append("REC_DHW_INSULATE")
+
+    # REC_BAL_VALVES — bloc fără vane echilibrare
+    has_balancing = data.get("heating_has_balancing_valves", "") == "true"
+    if not has_balancing and is_block and h_src:
+        keys.append("REC_BAL_VALVES")
+
+    # REC_AIR_QUALITY — vent natural / fără filtre F7+ / CO2 > 1200 ppm
+    try:
+        co2_max = float(data.get("co2_max_ppm", "0") or "0")
+    except Exception:
+        co2_max = 0.0
+    if co2_max > 1200 or vent_type == "natural_neorg":
+        keys.append("REC_AIR_QUALITY")
+
+    # REC_FLOW_METERS — apartamente fără contoare individuale ACM
+    if data.get("acm_has_meter", "") == "no":
+        keys.append("REC_FLOW_METERS")
+
+    # REC_HEAT_METERS — apartamente fără contoare individuale încălzire
+    if data.get("heating_has_meter", "") == "no":
+        keys.append("REC_HEAT_METERS")
+
+    # REC_LOW_FLOW — armături sanitare fără consum redus
+    if data.get("acm_fixtures_low_flow", "") not in ("true", "yes", "da"):
+        # declanșăm doar dacă există ACM (altfel nu are sens)
+        if acm_src:
+            keys.append("REC_LOW_FLOW")
+
+    # REC_DHW_RECIRC — bloc cu ACM dar fără recirculare funcțională
+    acm_recirc = (data.get("acm_recirculation", "") or "").lower()
+    if is_block and acm_src and acm_recirc not in ("functioneaza", "functional", "yes", "true", "da"):
+        keys.append("REC_DHW_RECIRC")
+
+    # REC_HEAT_EQUIP — echipament CT vechi (η < 0.85) sau >15 ani
+    try:
+        heat_eta = float(data.get("heating_eta_gen", "1.0") or "1.0")
+    except Exception:
+        heat_eta = 1.0
+    if 0 < heat_eta < 0.85 and h_src and h_src not in ("electric_direct", "pc_aer_aer"):
+        keys.append("REC_HEAT_EQUIP")
+    elif heat_year and (datetime.datetime.now().year - heat_year) > 15 and h_src not in ("electric_direct", "pc_aer_aer"):
+        keys.append("REC_HEAT_EQUIP")
+
+    # REC_VENT_EQUIP — centrală climatizare MECANICĂ uzată (>15 ani)
+    # Doar dacă există ventilație mecanică (natural_neorg/natural_org NU contează)
+    try:
+        vent_year = int(data.get("ventilation_year_installed", "0") or "0")
+    except Exception:
+        vent_year = 0
+    has_mechanical_vent = bool(vent_type) and vent_type not in ("natural_neorg", "natural_org")
+    if has_mechanical_vent and 0 < vent_year < 2010:
+        keys.append("REC_VENT_EQUIP")
+
     # ── Anexa 2 — tip clădire ──
     try:
         year_b = int(data.get("year_built", "2000") or "2000")
     except Exception:
         year_b = 2000
-    import datetime
     if year_b >= datetime.datetime.now().year - 1:
         keys.append("BLDG_NEW")
     else:
