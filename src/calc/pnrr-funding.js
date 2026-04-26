@@ -1,43 +1,64 @@
 // ═══════════════════════════════════════════════════════════════
 // CALCULATOR FINANȚARE — Casa Verde Plus, PNRR, AFM, HG 906/2023,
 //                        AFM Termoizolare, POR 2021-2027, Casa Eficientă
-// Actualizat: 2026-04-18 (Ghid Casa Verde Plus 2024 + 3 programe noi)
+// Actualizat: 2026-04-26 (Sprint 25 P0.3 — Casa Verde Plus 2026 RON corectat)
 // ═══════════════════════════════════════════════════════════════
+
+import { getEurRonSync } from '../data/rehab-prices.js';
+
+// Sprint 25 P0.3 — curs static pentru valorile EUR derivate la încărcare modul.
+// Conversia runtime se face în logică (calcGrantsForBuilding) cu getEurRonSync().
+const _EUR_RON_STATIC = 5.10;
+const _toEur = (ron) => Math.round(ron / _EUR_RON_STATIC);
 
 export const FUNDING_PROGRAMS = [
   {
     id: "casa_verde_plus_rez",
-    name: "Casa Verde Plus — Rezidențial",
+    name: "Casa Verde Plus — Rezidențial (AFM 2026)",
     authority: "AFM (Administrația Fondului pentru Mediu)",
-    legal: "OUG 20/2023, Ghid AFM 2024",
+    legal: "OUG 20/2023, Ghid AFM 2026",
     category: "rezidential",
     buildingTypes: ["RI", "RC", "RA"],
-    // Ghid 2024: 30.000 EUR PC standalone + 10.000 PV + 3.000 solar termic = 43.000 EUR cumul maxim
-    // Setăm pragul principal la 30.000 EUR (PC standalone)
-    maxGrant_EUR: 30000,
+    // Sprint 25 P0.3 — Ghid AFM 2026: valorile sunt în RON (NU EUR).
+    // Surse: energieacasa.ro (2026 ghid sub.), money.ro (max 20k RON pompă),
+    // termo-solar.ro. PV/storage NU sunt în Casa Verde Plus — sunt în
+    // programul separat „Casa Verde Fotovoltaice".
+    maxGrant_RON: 30000,           // Sol-apă max (cel mai mare plafon HP)
+    maxGrant_EUR: _toEur(30000),   // ≈ 5.882 EUR la curs 5.10
     grantPct: 90,
     cofinancePct: 10,
-    eligibleMeasures: ["Pompă de căldură", "PV + stocare", "Solar termic", "Termoizolare anvelopă"],
-    // Detaliu plafoane per măsură (Ghid AFM 2024)
+    eligibleMeasures: ["Pompă de căldură", "Solar termic"],
+    // Detaliu plafoane per măsură (Ghid AFM 2026)
+    maxGrantBreakdown_RON: {
+      hp_aw:          20000,  // RON — pompă căldură aer-apă
+      hp_gw:          30000,  // RON — pompă căldură sol-apă
+      hp_hybrid:      35000,  // RON — sistem hibrid (PC + altă sursă)
+      solar_thermal:  10000,  // RON — panouri solare termice ACM
+      cumul_max:      35000,  // RON — un singur sistem primar (NU se cumulează tipurile HP)
+    },
+    // Compat backward — valori EUR derivate static (5.10 RON/EUR fallback)
     maxGrantBreakdown: {
-      hp_standalone:  30000,  // EUR — pompă căldură standalone
-      pv_addon:       10000,  // EUR — PV adăugat la PC
-      solar_addon:     3000,  // EUR — solar termic adăugat
-      cumul_max:      43000,  // EUR — maxim cumulat
+      hp_standalone:  _toEur(30000),  // ≈ 5.882 EUR — sol-apă (max realistic)
+      pv_addon:       0,              // ELIMINAT — vezi „Casa Verde Fotovoltaice"
+      solar_addon:    _toEur(10000),  // ≈ 1.961 EUR
+      cumul_max:      _toEur(35000),  // ≈ 6.863 EUR
     },
     conditions: [
-      "Proprietar persoană fizică",
-      "Clădire cu vechime >5 ani sau casă nouă cu materiale ecologice",
-      "Racordat la rețea electrică (pentru PV)",
+      "Proprietar persoană fizică (extras CF dovada)",
+      "Clădire cu uz rezidențial (NU comercial/industrial)",
+      "Niciun ajutor AFM pentru același tip de instalație în ultimii 3 ani",
+      "Echipament nou cu certificat CE",
+      "Instalator validat AFM (lista oficială)",
     ],
     maxMeasures: {
-      pv_kwp: 10,
+      pv_kwp: 0,         // ELIMINAT — PV e în Casa Verde Fotovoltaice
       hp_kw: null,
-      storage_kwh: 20,
+      storage_kwh: 0,    // ELIMINAT — stocare e în Casa Verde Fotovoltaice
       solar_m2: null,
     },
     active: true,
-    note: "Ghid 2024: 30.000 EUR PC + 10.000 EUR PV + 3.000 EUR solar termic (43.000 EUR maxim cumulat)",
+    note: "Ghid AFM 2026: 20.000 RON aer-apă, 30.000 RON sol-apă, 35.000 RON hibrid, " +
+          "10.000 RON solar termic. PV/baterii sunt în program separat (Casa Verde Fotovoltaice).",
   },
   {
     id: "pnrr_cladiri",
@@ -307,15 +328,32 @@ export function calcPNRRFunding(params) {
     let grantAmount = 0;
     let eligibleCost = investTotal;
 
-    // Casa Verde Plus: breakdown pe măsuri (Ghid 2024)
-    if (prog.id === "casa_verde_plus_rez" && prog.maxGrantBreakdown) {
-      const hasPV = (measures || []).some(m => /PV|fotovoltaic|solar elec/i.test(m));
-      const hasSolar = (measures || []).some(m => /solar term|panouri solare ACM/i.test(m));
-      const hasHP = (measures || []).some(m => /pompă|pompa|heat pump/i.test(m));
-      let limit = hasHP ? prog.maxGrantBreakdown.hp_standalone : prog.maxGrant_EUR;
-      if (hasPV) limit = Math.min(limit + prog.maxGrantBreakdown.pv_addon, prog.maxGrantBreakdown.cumul_max);
-      if (hasSolar) limit = Math.min(limit + prog.maxGrantBreakdown.solar_addon, prog.maxGrantBreakdown.cumul_max);
-      eligibleCost = Math.min(investTotal, limit / (prog.grantPct / 100));
+    // Sprint 25 P0.3 — Casa Verde Plus 2026: breakdown nativ RON convertit la EUR runtime
+    if (prog.id === "casa_verde_plus_rez" && prog.maxGrantBreakdown_RON) {
+      const eurRon = getEurRonSync();
+      const measuresStr = (measures || []).join(" ").toLowerCase();
+      const hasHybrid = /hibrid|hybrid/.test(measuresStr);
+      const hasGW = /sol[ -]apa|sol[ -]apă|geotermal/.test(measuresStr);
+      const hasAW = /aer[ -]apa|aer[ -]apă|aer[ -]aer/.test(measuresStr);
+      const hasSolar = /solar term|panouri solare acm/.test(measuresStr);
+      const hasHP = /pompă|pompa|heat pump|hp[ _]/.test(measuresStr);
+
+      let limit_RON;
+      if (hasHybrid)      limit_RON = prog.maxGrantBreakdown_RON.hp_hybrid;
+      else if (hasGW)     limit_RON = prog.maxGrantBreakdown_RON.hp_gw;
+      else if (hasAW)     limit_RON = prog.maxGrantBreakdown_RON.hp_aw;
+      else if (hasHP)     limit_RON = prog.maxGrantBreakdown_RON.hp_aw;  // fallback aer-apă
+      else                limit_RON = prog.maxGrant_RON;
+
+      if (hasSolar) {
+        limit_RON = Math.min(
+          limit_RON + prog.maxGrantBreakdown_RON.solar_thermal,
+          prog.maxGrantBreakdown_RON.cumul_max
+        );
+      }
+
+      const limit_EUR = limit_RON / eurRon;
+      eligibleCost = Math.min(investTotal, limit_EUR / (prog.grantPct / 100));
     }
 
     // Limitare kWp PV
