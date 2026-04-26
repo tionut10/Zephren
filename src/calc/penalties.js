@@ -51,12 +51,27 @@ export const PENALTY_THRESHOLDS = Object.freeze({
   STORAGE_LOSS_MAX_WK: 0.50,      // W/K per litru stocaj — peste = slab
   // p8 — ventilație fără recuperare (când ar fi obligatorie)
   HR_EFFICIENCY_MIN: 0.70,        // 70% recuperare minim pentru nZEB
-  // p9 — iluminat cu LENI ridicat
+  // p9 — iluminat cu LENI ridicat (fallback când categoria nu e mapată)
   LENI_LIMIT: 15,                 // kWh/(m²·an) — peste → penalizare
   // p10 — fără BACS (clasă D sau absent)
   BACS_MIN_CLASS: "C",            // sub C = penalizare
   // p11 — fără surse regenerabile (RER < 30%)
   RER_MIN: 30,                    // %
+});
+
+// ═══════════════════════════════════════════════════════
+// LENI LIMITE PER CATEGORIE — Sprint 26 P1.12
+// EN 15193-1 Anexa F + valori orientative profil de utilizare RO 2026
+// ═══════════════════════════════════════════════════════
+export const LENI_LIMITS_BY_CATEGORY = Object.freeze({
+  RI: 8, RC: 8, RA: 8,        // rezidențial: locuințe (folosire ocazională)
+  BI: 25,                       // birouri (EN 15193-1)
+  ED: 32,                       // educație (școli, grădinițe)
+  SA: 90,                       // spitale (24/7 + intensiv)
+  HC: 30, HOR: 30,              // hoteluri, hosteluri
+  CO: 35, MAG: 35, MALL: 35,    // comerț (intensiv vitrine)
+  SP: 25,                       // sport (terenuri + vestiare)
+  AL: 20,                       // altele (default mediu)
 });
 
 // ═══════════════════════════════════════════════════════
@@ -140,24 +155,24 @@ export function calcP0_AnvelopaSubizolata(envelope, category = "RC") {
 }
 
 // ═══════════════════════════════════════════════════════
-// p1 — FERESTRE SLABE (U_w > 1.80, Ord. MDLPA 16/2023)
-// Pragul U_WINDOW_LIMIT=1.80 este prag de penalizare (Mc 001 §8.10),
-// distinct de U_REF_GLAZING care e target nZEB (mai strict, ~1.11).
+// p1 — FERESTRE SLABE (Mc 001 §8.10 + L.238/2024 Art.6)
+// Sprint 26 P1.11 — prag diferențiat per categorie:
+//   - rezidențial (RI/RC/RA): 1.30 W/(m²·K)
+//   - nerezidențial:          1.80 W/(m²·K)
+// Distinct de U_REF_GLAZING (target nZEB ~1.11 rez / ~1.20 nrez).
 // ═══════════════════════════════════════════════════════
 export function calcP1_FerestreSlab(glazing = [], category = "RC") {
   if (!glazing?.length) {
     return { value: 0, applied: false, reason: "Fără tâmplărie evaluată", delta_EP_pct: 0 };
   }
-  // `category` rezervat pentru diferențiere viitoare res/nres (L.238/2024 Art.6)
-  void category;
-  const limit = PENALTY_THRESHOLDS.U_WINDOW_LIMIT;
+  const limit = _isResidential(category) ? 1.30 : 1.80;
   const maxU = Math.max(...glazing.map((g) => _num(g.u)));
   const applied = maxU > limit;
   return {
     value: parseFloat(maxU.toFixed(2)),
     applied,
     reason: applied
-      ? `U_w maxim ${maxU.toFixed(2)} W/(m²·K) depășește pragul ${limit.toFixed(2)}`
+      ? `U_w maxim ${maxU.toFixed(2)} W/(m²·K) depășește pragul ${limit.toFixed(2)} (${_isResidential(category) ? "rez" : "nrez"})`
       : `U_w maxim ${maxU.toFixed(2)} ≤ ${limit.toFixed(2)} — OK`,
     delta_EP_pct: applied ? PENALTY_DELTAS.p1 : 0,
   };
@@ -312,14 +327,15 @@ export function calcP8_Ventilatie(ventilation = {}) {
 }
 
 // ═══════════════════════════════════════════════════════
-// p9 — ILUMINAT (LENI > 15)
+// p9 — ILUMINAT (LENI > limit per categorie)
+// Sprint 26 P1.12 — limit din LENI_LIMITS_BY_CATEGORY (EN 15193-1 Anexa F)
 // ═══════════════════════════════════════════════════════
-export function calcP9_Iluminat(lighting = {}) {
+export function calcP9_Iluminat(lighting = {}, category = "AL") {
   const leni = _num(lighting.leni);
   if (leni <= 0) {
     return { value: 0, applied: false, reason: "LENI nedefinit", delta_EP_pct: 0 };
   }
-  const limit = PENALTY_THRESHOLDS.LENI_LIMIT;
+  const limit = LENI_LIMITS_BY_CATEGORY[category] || PENALTY_THRESHOLDS.LENI_LIMIT;
   const applied = leni > limit;
   return {
     value: parseFloat(leni.toFixed(1)),
@@ -399,7 +415,7 @@ export function calcPenalties({
     p6: calcP6_ACMIneficient(instSummary.dhw),
     p7: calcP7_Stocare(instSummary.dhw?.storage),
     p8: calcP8_Ventilatie(ventilation),
-    p9: calcP9_Iluminat(instSummary.lighting),
+    p9: calcP9_Iluminat(instSummary.lighting, category),
     p10: calcP10_FaraBACS(instSummary.bacs),
     p11: calcP11_FaraRegenerabile(renewables, category),
   };

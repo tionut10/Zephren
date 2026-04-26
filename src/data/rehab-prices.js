@@ -16,13 +16,15 @@ export const REHAB_PRICES = {
   // ── Anvelopă (EUR/m²) ────────────────────────────────────────────────────
   envelope: {
     // Pereți exteriori (sistem ETICS — material + manoperă + schele)
-    wall_eps_10cm:     { low: 36, mid: 42, high: 52, lifespan: 40, unit: 'EUR/m²' },
-    wall_eps_15cm:     { low: 52, mid: 62, high: 75, lifespan: 40, unit: 'EUR/m²' },
-    wall_mw_10cm:      { low: 44, mid: 52, high: 65, lifespan: 45, unit: 'EUR/m²' },
-    wall_mw_15cm:      { low: 62, mid: 74, high: 90, lifespan: 45, unit: 'EUR/m²' },
+    // Sprint 26 P1.8 — calibrare pe Daibau 2026 + ReConstruct 2026 + CIDConstruct
+    wall_eps_10cm:     { low: 42, mid: 49, high: 60, lifespan: 40, unit: 'EUR/m²' },
+    wall_eps_15cm:     { low: 58, mid: 68, high: 82, lifespan: 40, unit: 'EUR/m²' },
+    wall_mw_10cm:      { low: 50, mid: 59, high: 72, lifespan: 45, unit: 'EUR/m²' },
+    wall_mw_15cm:      { low: 68, mid: 80, high: 96, lifespan: 45, unit: 'EUR/m²' },
     wall_pur_8cm:      { low: 58, mid: 68, high: 82, lifespan: 35, unit: 'EUR/m²' },
     // Acoperiș / terasă
-    roof_eps_15cm:     { low: 36, mid: 42, high: 50, lifespan: 35, unit: 'EUR/m²' },
+    // Sprint 26 P1.9 — calibrare în jos (era supraevaluat, materiale + manoperă reduse vs ETICS)
+    roof_eps_15cm:     { low: 28, mid: 32, high: 40, lifespan: 35, unit: 'EUR/m²' },
     roof_xps_12cm:     { low: 48, mid: 55, high: 65, lifespan: 50, unit: 'EUR/m²' },
     roof_mw_25cm:      { low: 55, mid: 68, high: 82, lifespan: 40, unit: 'EUR/m²' },
     // Planșeu subsol / demisol (XPS)

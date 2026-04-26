@@ -2341,7 +2341,9 @@ def compute_checkbox_keys(data, category):
         keys.append("REC_PT_INSULATE")
     if any(e.get("type") in ("PL", "SE") and float(e.get("u", 0)) > u_ref.get(e["type"], 0.20) for e in opaque_u):
         keys.append("REC_PL_INSULATE")
-    u_glaz_ref = 1.30 if is_res else 1.80
+    # Sprint 26 P1.10 — prag nZEB efectiv pentru REC_GLAZING (Mc 001-2022 Tab 2.5)
+    # 1.30/1.80 era prag de PENALIZARE p1 (acum în penalties.js); aici țintă nZEB
+    u_glaz_ref = 1.11 if is_res else 1.20
     if glaz_max_u > u_glaz_ref:
         keys.append("REC_GLAZING")
 

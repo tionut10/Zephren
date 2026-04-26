@@ -41,17 +41,27 @@ describe("Sprint 14 — Penalizări p0-p11 Mc 001-2022 §8.10", () => {
     });
   });
 
-  // ── p1 — Ferestre slabe ──
+  // ── p1 — Ferestre slabe (Sprint 26 P1.11: prag adaptiv RES 1.30 / NRES 1.80) ──
   describe("p1 — Ferestre slabe", () => {
-    it("NU penalizează ferestre moderne (U_w ≤ 1.80)", () => {
-      const r = calcP1_FerestreSlab([{ u: 1.1 }, { u: 1.5 }], "RC");
+    it("REZ: NU penalizează ferestre moderne (U_w ≤ 1.30)", () => {
+      const r = calcP1_FerestreSlab([{ u: 1.1 }, { u: 1.25 }], "RC");
       expect(r.applied).toBe(false);
     });
 
-    it("PENALIZEAZĂ ferestre slabe (U_w > 1.80)", () => {
-      const r = calcP1_FerestreSlab([{ u: 2.5 }], "RC");
+    it("REZ: PENALIZEAZĂ ferestre slabe (U_w > 1.30)", () => {
+      const r = calcP1_FerestreSlab([{ u: 1.5 }], "RC");
       expect(r.applied).toBe(true);
       expect(r.delta_EP_pct).toBe(PENALTY_DELTAS.p1);
+    });
+
+    it("NREZ: NU penalizează ferestre cu U_w 1.5 (prag 1.80)", () => {
+      const r = calcP1_FerestreSlab([{ u: 1.5 }], "BI");
+      expect(r.applied).toBe(false);
+    });
+
+    it("NREZ: PENALIZEAZĂ ferestre cu U_w > 1.80", () => {
+      const r = calcP1_FerestreSlab([{ u: 2.5 }], "BI");
+      expect(r.applied).toBe(true);
     });
 
     it("returnează value=maxU (cea mai slabă)", () => {
