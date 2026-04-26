@@ -15,6 +15,7 @@
   "SR EN ISO 13788",
   "SR EN ISO 14683",
   "EN 15193-1",
+  "SR EN ISO 52120-1:2022 (BACS — automatizare și control clădiri)",
   "EN 15459-1",
   "EN 15978 (GWP)",
   "I5-2022",
@@ -36,5 +37,7 @@
   "Legea 121/2014 (eficiență energetică clădiri publice)",
   "OUG 59/2025 (RED III — energie regenerabilă clădiri)",
   "P 130-2025 (monitorizare comportare clădiri în exploatare)",
-  "NP 048-2000 (normativ audit energetic)"
+  "NP 048-2000 (normativ audit energetic)",
+  "ISO 7730:2005 (PMV/PPD — confort termic)",
+  "GP 123-2016 (ghid proiectare sisteme fotovoltaice)"
 ]

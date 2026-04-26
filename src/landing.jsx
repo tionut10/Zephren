@@ -439,9 +439,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               : "Calculator de performanță energetică conform Mc 001-2022 · Ord. MDLPA 16/2023"}
           </span>
         </div>
-        <div style={{ display: "inline-block", padding: "4px 16px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "24px" }}>
-          {T("hero_badge", "Mc 001-2022 · ISO 52000-1/NA:2023 · EPBD 2024/1275 · Legea 238/2024")}
-        </div>
         <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "24px", color: text }}>
           {T("hero_title1", "Calculator performanță")}<br />
           <span style={{ color: "#f59e0b" }}>{T("hero_title2", "energetică clădiri")}</span>
@@ -666,66 +663,33 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
       {/* ═══ CHANGELOG / NOUTĂȚI ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 80px" }}>
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "20px" }}>
             {lang === "EN" ? "RELEASE NOTES" : "ISTORICUL VERSIUNILOR"}
           </div>
-          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{lang === "EN" ? "What's new" : "Ce este nou"}</h2>
-          <p style={{ fontSize: "13px", color: textFaint, marginTop: "8px" }}>
-            {lang === "EN" ? "Key improvements per version — " : "Îmbunătățirile principale per versiune — "}
-            <a href="#changelog" style={{ color: "#f59e0b", textDecoration: "none", fontWeight: "600" }}>
-              {lang === "EN" ? "see full changelog →" : "vezi tot istoricul →"}
-            </a>
-          </p>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "860px", margin: "0 auto" }}>
-          {CHANGELOG.map((release, ri) => {
-            const important = release.items.filter(it => it.icon === "✨");
-            const otherCount = release.items.length - important.length;
-            return (
-              <div key={release.version} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
-                {/* Timeline dot + line */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "4px" }}>
-                  <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, gap: "1px" }}>
-                    <span style={{ fontSize: "9px", fontWeight: "800", color: release.color, lineHeight: 1 }}>{release.week}</span>
-                    <span style={{ fontSize: "8px", fontWeight: "600", color: `${release.color}99`, lineHeight: 1 }}>v{release.version}</span>
-                  </div>
-                  {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "20px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
-                </div>
-                {/* Card */}
-                <div style={{ flex: 1, padding: "20px 24px", borderRadius: "14px", background: cardBg, border: `1px solid ${release.color}20`, marginBottom: "4px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>{release.week}</span>
-                    <span style={{ fontSize: "12px", color: textFaint }}>— {release.dateRange}</span>
-                    {release.label && (
-                      <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "8px", background: `${release.color}25`, color: release.color, border: `1px solid ${release.color}40` }}>
-                        {release.label}
-                      </span>
-                    )}
-                  </div>
-                  {important.length > 0 ? (
-                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {important.map((item, i) => (
-                        <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: textMuted, lineHeight: 1.5 }}>
-                          <span style={{ fontSize: "15px", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
-                          {item.text}
-                        </li>
-                      ))}
-                      {otherCount > 0 && (
-                        <li style={{ fontSize: "11px", color: textFaint, paddingTop: "4px" }}>
-                          {lang === "EN" ? `+ ${otherCount} fixes & improvements` : `+ ${otherCount} corecții și îmbunătățiri tehnice`}
-                        </li>
-                      )}
-                    </ul>
-                  ) : (
-                    <p style={{ fontSize: "13px", color: textFaint, margin: 0 }}>
-                      {lang === "EN" ? `${release.items.length} fixes & improvements` : `${release.items.length} corecții și îmbunătățiri tehnice`}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          <div style={{ marginBottom: "8px" }}>
+            <span style={{ fontSize: "13px", color: textFaint }}>
+              {lang === "EN" ? `Current version: ` : `Versiunea curentă: `}
+            </span>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b" }}>v{APP_VERSION}</span>
+            <span style={{ fontSize: "13px", color: textFaint }}> · {CHANGELOG[0]?.dateRange}</span>
+          </div>
+          <a
+            href="#changelog"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "8px",
+              padding: "14px 36px", borderRadius: "12px",
+              background: isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)",
+              border: "1.5px solid rgba(245,158,11,0.35)",
+              color: "#f59e0b", textDecoration: "none",
+              fontSize: "15px", fontWeight: "700",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.18)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.35)"; }}
+          >
+            📋 {lang === "EN" ? "See full version history →" : "Vezi tot istoricul versiunilor →"}
+          </a>
         </div>
       </section>
 

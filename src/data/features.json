@@ -53,7 +53,7 @@
       "id": 8,
       "icon": "🔬",
       "title": "Module avansate",
-      "desc": "38+ instrumente specializate: BACS EN 15232, EN 12831 sarcini termice, Pasivhaus, PMV/PPD ISO 7730, analiza Monte Carlo EP, MEPS EPBD 2024, clădiri istorice, portfolio multi-clădiri.",
+      "desc": "18+ module avansate: BACS ISO 52120-1 (clasa A–D), EN 12831 sarcini termice per cameră, Pasivhaus, PMV/PPD ISO 7730, Monte Carlo EP, MEPS EPBD 2030/2033, clădiri istorice, portfolio multi-clădiri.",
       "modules": ["bacs-en15232", "en12831", "en12831-rooms", "pasivhaus", "pmv-ppd", "acoustic", "urban-heat-island", "historic-buildings", "mixed-use-buildings"]
     }
   ],
@@ -93,13 +93,6 @@
       "title": "Surse regenerabile complete",
       "desc": "Solar termic EN 15316-4-3, PV din PVGIS, pompe căldură (SCOP/COP), biomasă, CHP — calcul RER automat.",
       "category": "calcul"
-    },
-    {
-      "id": "catalog",
-      "icon": "🏪",
-      "title": "Catalog produse reale 2026",
-      "desc": "Ferestre, pompe căldură, panouri PV, invertoare, baterii, centrale termice — toate cu specificații tehnice reale, actualizate 2026.",
-      "category": "date"
     },
     {
       "id": "quickfill",
