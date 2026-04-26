@@ -598,13 +598,22 @@ export default function Step6Certificate(props) {
                   // Fotografiile se trimit DOAR pentru Anexa (mode=anexa/anexa_bloc).
                   // Pentru CPE (mode=cpe) fotografiile nu sunt procesate de Python →
                   // excludem din payload pentru a rămâne sub limita Vercel Hobby (4.5MB).
+                  // Limită dinamică pe bytes: max 2.5MB fotografii → payload total < 4.5MB.
                   buildingPhotos: mode === "cpe" ? [] : (() => {
                     const all = buildingPhotos || [];
-                    const MAX_PHOTOS = 30;
-                    if (all.length > MAX_PHOTOS) {
-                      showToast(`Au fost incluse primele ${MAX_PHOTOS} fotografii din ${all.length} în Anexa CPE`, "warning");
+                    const MAX_PHOTO_BYTES = 2.5 * 1024 * 1024; // 2.5MB total pentru fotografii
+                    let totalBytes = 0;
+                    const selected = [];
+                    for (const p of all) {
+                      const sz = (p.url || "").length * 0.75; // base64 → bytes estimate
+                      if (totalBytes + sz > MAX_PHOTO_BYTES) break;
+                      totalBytes += sz;
+                      selected.push(p);
                     }
-                    return all.slice(0, MAX_PHOTOS).map(p => ({
+                    if (selected.length < all.length) {
+                      showToast(`Au fost incluse ${selected.length} din ${all.length} fotografii (limită 2.5MB)`, "warning");
+                    }
+                    return selected.map(p => ({
                       url: p.url, label: p.label || "", zone: p.zone || "altele", note: p.note || ""
                     }));
                   })(),
