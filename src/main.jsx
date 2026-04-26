@@ -7,10 +7,11 @@ const EnergyCalcApp = lazy(() => import("./energy-calc.jsx"));
 const LandingPage = lazy(() => import("./landing.jsx"));
 const ClientReport = lazy(() => import("./components/ClientReport.jsx"));
 const MobileWizard = lazy(() => import("./components/MobileWizard.jsx"));
-// Sprint 20 — pagini legale GDPR + banner cookies
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy.jsx"));
 const TermsOfService = lazy(() => import("./components/TermsOfService.jsx"));
 const CookieBanner = lazy(() => import("./components/CookieBanner.jsx"));
+const ChangelogPage = lazy(() => import("./components/ChangelogPage.jsx"));
+const WhatsNewModal = lazy(() => import("./components/WhatsNewModal.jsx"));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -63,8 +64,9 @@ function computeInitialRoute(viewData) {
   if (p === "/privacy" || p === "/privacy/") return "privacy";
   if (p === "/terms"   || p === "/terms/")   return "terms";
   const h = window.location.hash;
-  if (h === "#privacy") return "privacy";
-  if (h === "#terms")   return "terms";
+  if (h === "#privacy")   return "privacy";
+  if (h === "#terms")     return "terms";
+  if (h === "#changelog") return "changelog";
   return h === "#app" ? "app" : "landing";
 }
 
@@ -103,13 +105,17 @@ function Router() {
           ? <PrivacyPolicy />
           : route === "terms"
           ? <TermsOfService />
+          : route === "changelog"
+          ? <ChangelogPage />
           : route === "app"
             ? <EnergyCalcApp />
             : <LandingPage onStart={goToApp} />
         }
+        {/* Modal „Ce este nou" — apare la prima intrare după fiecare update */}
+        {route === "app" && <WhatsNewModal />}
       </ErrorBoundary>
-      {/* Sprint 20 — Cookie banner (GDPR Art. 7 + Legea 506/2004) */}
-      {(route === "landing" || route === "privacy" || route === "terms") && <CookieBanner />}
+      {/* Cookie banner (GDPR Art. 7 + Legea 506/2004) */}
+      {(route === "landing" || route === "privacy" || route === "terms" || route === "changelog") && <CookieBanner />}
     </Suspense>
   );
 }

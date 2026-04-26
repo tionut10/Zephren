@@ -671,6 +671,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             {lang === "EN" ? "RELEASE NOTES" : "ISTORICUL VERSIUNILOR"}
           </div>
           <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{lang === "EN" ? "What's new" : "Ce este nou"}</h2>
+          <p style={{ fontSize: "13px", color: textFaint, marginTop: "8px" }}>
+            {lang === "EN" ? "Key improvements per version — " : "Îmbunătățirile principale per versiune — "}
+            <a href="#changelog" style={{ color: "#f59e0b", textDecoration: "none", fontWeight: "600" }}>
+              {lang === "EN" ? "see full changelog →" : "vezi tot istoricul →"}
+            </a>
+          </p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "860px", margin: "0 auto" }}>
           {CHANGELOG.map((release, ri) => {
