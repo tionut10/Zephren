@@ -422,6 +422,7 @@ export function calcPNRRFunding(params) {
   const best = eligible[0] || null;
 
   // Matrice conflicte de cumulare — programe care NU se pot cumula pe același obiect
+  // Sprint 27 P2.8 — extinsă cu perechi rezidențial nou + PV
   const CONFLICT_PAIRS = [
     // PNRR C5-I3 și AFM termoizolare — aceleași lucrări anvelopă
     ["pnrr_cladiri", "afm_termoizolare"],
@@ -432,6 +433,10 @@ export function calcPNRRFunding(params) {
     ["pnrr_publice", "por_2021_2027_axa3"],
     // POR public nu se combină cu PNRR public (același obiect, surse FEDR diferite)
     ["por_2021_2027_axa3", "pnrr_publice"],
+    // Sprint 27 P2.8 — rezidențial nou: nu poți cumula 2 programe pentru aceeași clădire
+    ["casa_verde_plus_rez", "eco_casa"],         // ambele rezidențial nou (HP/PV vs anvelopă nZEB)
+    ["casa_eficienta_pnrr", "casa_verde_plus_rez"],  // ambele cu PV/HP
+    ["casa_eficienta_pnrr", "eco_casa"],
   ];
 
   function areConflicting(id1, id2) {

@@ -609,8 +609,17 @@ export function suggestForOpaqueElement({
     return { ...s, meetsTarget, tagMatch, _avgPrice: avgPrice };
   });
 
+  // Sprint 27 P2.13 — prioritizare patrimoniu (aerogel, celuloză, materiale tradiționale)
+  // când preferredTags include "patrimoniu" → soluții cu tag "patrimoniu" prioritizate
+  const isPatrimony = preferredTags.includes("patrimoniu");
   scored.sort((a, b) => {
     if (a.meetsTarget !== b.meetsTarget) return a.meetsTarget ? -1 : 1;
+    // Patrimoniu: solutiile compatibile (aerogel, celuloză) primele indiferent de cost
+    if (isPatrimony) {
+      const aPat = a.tags.includes("patrimoniu") ? 1 : 0;
+      const bPat = b.tags.includes("patrimoniu") ? 1 : 0;
+      if (aPat !== bPat) return bPat - aPat;
+    }
     if (a.tagMatch !== b.tagMatch) return b.tagMatch - a.tagMatch;
     return a._avgPrice - b._avgPrice;
   });

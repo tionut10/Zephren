@@ -301,19 +301,26 @@ const FIELD_VALIDATORS = {
   scopCpe: (v, _b, lang) =>
     !v ? L(lang, "Selectați scopul elaborării CPE", "Select CPE purpose") : null,
 
-  cadastralNumber: (v, _b, lang) =>
-    v && !isValidCadastral(v)
-      ? L(
-          lang,
-          "Format cadastru neobișnuit (ex: 123456, 123456-A, 123456-C1-U5)",
-          "Unusual cadastral format (e.g. 123456, 123456-A, 123456-C1-U5)",
-        )
-      : null,
+  // Sprint 27 P2.4 — cadastru + CF obligatorii (Ord. MDLPA 16/2023 + L.238/2024 Art.12)
+  cadastralNumber: (v, _b, lang) => {
+    if (!v) return L(lang, "Numărul cadastral este obligatoriu pentru CPE", "Cadastral number required for CPE");
+    if (!isValidCadastral(v)) {
+      return L(
+        lang,
+        "Format cadastru neobișnuit (ex: 123456, 123456-A, 123456-C1-U5)",
+        "Unusual cadastral format (e.g. 123456, 123456-A, 123456-C1-U5)",
+      );
+    }
+    return null;
+  },
 
-  landBook: (v, _b, lang) =>
-    v && !isValidLandBook(v)
-      ? L(lang, 'Format CF neobișnuit (ex: "CF nr. 123456 Cluj")', 'Unusual CF format')
-      : null,
+  landBook: (v, _b, lang) => {
+    if (!v) return L(lang, "Carte funciară este obligatorie pentru CPE", "Land book required for CPE");
+    if (!isValidLandBook(v)) {
+      return L(lang, 'Format CF neobișnuit (ex: "CF nr. 123456 Cluj")', 'Unusual CF format');
+    }
+    return null;
+  },
 
   ownerType: (v, _b, lang) =>
     !v ? L(lang, "Selectați tipul proprietarului", "Select owner type") : null,
@@ -347,6 +354,8 @@ const FIELD_VALIDATORS = {
 // warnings = non-blocante (suspicious / unusual / inconsistente) — afișate ca hint
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Sprint 27 P2.4 — cadastralNumber + landBook promovate la CRITICAL
+// (obligatorii pentru CPE conform Ord. MDLPA 16/2023 + L.238/2024 Art. 12)
 const CRITICAL_FIELDS = [
   "city",
   "county",
@@ -362,6 +371,8 @@ const CRITICAL_FIELDS = [
   "scopCpe",
   "apartmentNo",
   "nApartments",
+  "cadastralNumber",
+  "landBook",
 ];
 
 const WARNING_ONLY_FIELDS = [
@@ -369,8 +380,6 @@ const WARNING_ONLY_FIELDS = [
   "areaHeated",
   "areaBuilt",
   "n50",
-  "cadastralNumber",
-  "landBook",
   "ownerCUI",
 ];
 

@@ -24,7 +24,9 @@ function getUnitCosts() {
     vent_hr80:   _p('cooling',  'vmc_hr_80_per_m2', 22), // VMC HR 80%
     vent_hr90:   _p('cooling',  'vmc_hr_90_per_m2', 32), // VMC HR 90%
     hp_airwater: 55,                                      // Pompă căldură aer-apă [EUR/m² Au] — gross
-    pv_3kwp:     180,                                     // PV [EUR/m² panou] — gross
+    // Sprint 27 P2.7 — pv unitate consistentă cu PV catalog (EUR/kWp, NU EUR/m² panou)
+    pv_per_kwp:  _p('renewables', 'pv_kwp', 1100),        // PV [EUR/kWp instalat]
+    pv_3kwp:     180,                                     // @deprecated — păstrat backward compat (era EUR/m² panou)
     led:         _p('lighting', 'led_replacement', 8),    // Înlocuire LED
     solar_th:    15,                                      // Solar termic ACM [EUR/m² Au] — gross
   };
@@ -86,10 +88,11 @@ export function calcRehabPackages(params) {
   const pkg2Saving = pkg2EpRed * annualSavingPerKwh;
 
   // ─── Pachet 3: nZEB ───
-  const pkg3Measures = ["Izolare pereți EPS 15cm", "Izolare acoperiș 25cm", "Ferestre U≤0.70", "Ventilare HR 90%", "Pompă căldură", "PV 3 kWp/100m²", "LED + senzori"];
-  const pvAreaEst = Au * 0.03; // 3% din Au = suprafață PV estimată (panou)
+  const pkg3Measures = ["Izolare pereți EPS 15cm", "Izolare acoperiș 25cm", "Ferestre U≤0.70", "Ventilare HR 90%", "Pompă căldură", "PV 5 kWp/100m²", "LED + senzori"];
+  // Sprint 27 P2.7 — PV calcul prin kWp (consistent cu smart-rehab.js + rehab-prices.js)
+  const pvKwpEst = Au * 0.05; // 5W/m² Au estimat (consistent cu smart-rehab.js)
   const pkg3Invest = wA * UC.wall_eps15 + rA * UC.roof_25cm + wndA * UC.windows_u07 +
-                     Au * UC.vent_hr90 + Au * UC.hp_airwater + pvAreaEst * UC.pv_3kwp + Au * UC.led;
+                     Au * UC.vent_hr90 + Au * UC.hp_airwater + pvKwpEst * UC.pv_per_kwp + Au * UC.led;
   const pkg3EpRed = reductions.wall_enhanced + reductions.roof + reductions.windows + reductions.vent_hr + reductions.hp + reductions.pv + reductions.led;
   const pkg3EpNew = Math.max(nzebEpMax * 0.3, epActual - pkg3EpRed);
   const pkg3Saving = pkg3EpRed * annualSavingPerKwh;

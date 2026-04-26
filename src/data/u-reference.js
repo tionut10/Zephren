@@ -39,7 +39,10 @@ export const ZEB_THRESHOLDS = {
   SP: { ep_max: 55, rer_min: 80 },
   AL: { ep_max: 65, rer_min: 80 },
 };
-export const ZEB_FACTOR = 1.0;
+// Sprint 27 P2.5 — ZEB_FACTOR 0.9 conform EPBD 2024/1275 Art. 11:
+// ZEB = clădire cu emisii zero la fața locului ȘI ep ≤ 90% din pragul nZEB.
+// Anterior 1.0 era prea permisiv (ep_max identic cu nZEB → orice nZEB ar fi ZEB).
+export const ZEB_FACTOR = 0.9;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FACTORI ENERGIE PRIMARĂ ELECTRICITATE — SEN România

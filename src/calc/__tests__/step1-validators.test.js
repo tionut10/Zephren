@@ -144,15 +144,19 @@ describe("step1-validators — Sprint 21", () => {
     });
 
     it("proiect complet rezidențial → fără erori", () => {
+      // Sprint 27 P2.4: cadastralNumber + landBook acum obligatorii
       const b = {
         city: "Cluj-Napoca", county: "Cluj", category: "RI", structure: "zidarie",
         yearBuilt: "1975", floors: "P+1E",
         areaUseful: "120", volume: "300", areaEnvelope: "220", heightFloor: "2.7",
         locality: "Cluj-Napoca", scopCpe: "vanzare",
+        cadastralNumber: "123456", landBook: "CF nr. 123456 Cluj",
       };
       const { errors } = validateStep1(b, "RO");
       expect(errors.city).toBeUndefined();
       expect(errors.areaUseful).toBeUndefined();
+      expect(errors.cadastralNumber).toBeUndefined();
+      expect(errors.landBook).toBeUndefined();
       expect(Object.keys(errors).length).toBe(0);
     });
 
@@ -270,11 +274,13 @@ describe("step1-validators — Sprint 21", () => {
     });
 
     it("proiect rezidențial complet → 100%", () => {
+      // Sprint 27 P2.4: cadastralNumber + landBook acum obligatorii
       const b = {
         city: "Cluj", county: "Cluj", category: "RI", structure: "x",
         yearBuilt: "1975", floors: "P+1E",
         areaUseful: "120", volume: "300", areaEnvelope: "220", heightFloor: "2.7",
         locality: "Cluj", scopCpe: "vanzare",
+        cadastralNumber: "123456", landBook: "CF nr. 123456 Cluj",
       };
       const p = computeStep1Progress(b, "RO");
       expect(p.filled).toBe(p.total);
