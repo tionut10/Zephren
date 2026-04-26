@@ -20,42 +20,88 @@ const COL_OK  = [22, 163, 74];
 // jspdf-autotable v5 nu mai patch-ează automat prototipul jsPDF — apelul
 // `doc.autoTable(...)` eșuează cu "is not a function". Folosim fallback
 // pe default export `autoTable(doc, options)` și atașăm manual la instanță.
+//
+// Diacritice RO: Roboto TTF (Regular + opțional Bold/Italic/BoldItalic)
+// înregistrat în VFS pe TOATE 4 stilurile, ca `setFont(undefined,"bold")` și
+// celulele autoTable cu `fontStyle:"bold"` să rămână pe Roboto (nu cad pe
+// Helvetica → ar pierde ș/ț/ă/î/â). Vezi `src/utils/pdf-fonts.js`.
 async function initDoc() {
   const { default: jsPDF } = await import("jspdf");
   const autoTableMod = await import("jspdf-autotable");
   const autoTableFn = autoTableMod.default || autoTableMod.autoTable || autoTableMod;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  // Idempotent: dacă pluginul a patch-at deja prototipul, păstrăm varianta nativă
+
+  // Patch autoTable + injectează font Liberation Sans în toate stilurile
+  let fontName = null;
+  let normalizeForPdf = (t) => t;
+  try {
+    const { setupRomanianFont, normalizeForPdf: _norm, ROMANIAN_FONT } = await import("../utils/pdf-fonts.js");
+    const fontOk = await setupRomanianFont(doc);
+    if (fontOk) fontName = ROMANIAN_FONT;
+    // Aplicăm ÎNTOTDEAUNA normalizarea simbolurilor (✓ ✗ ⚠ → text safe);
+    // dacă font-ul nu e disponibil, aplicăm și transliterarea diacriticelor.
+    normalizeForPdf = (t) => _norm(t, fontOk);
+  } catch (_) { /* font indisponibil — text trece raw */ }
+
+  // Helper de normalizare aplicabil pe valori autoTable (string sau {content})
+  const normCell = (cell) => {
+    if (typeof cell === "string") return normalizeForPdf(cell);
+    if (cell && typeof cell === "object" && typeof cell.content === "string") {
+      return { ...cell, content: normalizeForPdf(cell.content) };
+    }
+    return cell;
+  };
+  const normRow = (row) => Array.isArray(row) ? row.map(normCell) : row;
+
+  // Patch doc.text pentru normalizare simboluri + diacritice
+  const origText = doc.text.bind(doc);
+  doc.text = (text, ...args) => {
+    if (Array.isArray(text)) return origText(text.map((t) => typeof t === "string" ? normalizeForPdf(t) : t), ...args);
+    return origText(typeof text === "string" ? normalizeForPdf(text) : text, ...args);
+  };
+
+  // Atașează autoTable + injectează font + normalizare în toate secțiunile
   if (typeof doc.autoTable !== "function" && typeof autoTableFn === "function") {
     doc.autoTable = function (opts) {
-      const result = autoTableFn(doc, opts);
+      const merged = applyFontDefaults(opts || {}, fontName);
+      if (Array.isArray(merged.body)) merged.body = merged.body.map(normRow);
+      if (Array.isArray(merged.head)) merged.head = merged.head.map(normRow);
+      if (Array.isArray(merged.foot)) merged.foot = merged.foot.map(normRow);
+      const result = autoTableFn(doc, merged);
       if (!doc.lastAutoTable && result) doc.lastAutoTable = result;
       return doc.lastAutoTable;
     };
+  } else if (typeof doc.autoTable === "function") {
+    const origAt = doc.autoTable.bind(doc);
+    doc.autoTable = (opts) => {
+      const merged = applyFontDefaults(opts || {}, fontName);
+      if (Array.isArray(merged.body)) merged.body = merged.body.map(normRow);
+      if (Array.isArray(merged.head)) merged.head = merged.head.map(normRow);
+      if (Array.isArray(merged.foot)) merged.foot = merged.foot.map(normRow);
+      return origAt(merged);
+    };
   }
-  // Font Unicode pentru diacritice românești ă â î ș ț
-  // Roboto TTF din /public/fonts/Roboto-Regular.ttf (dacă există).
-  // Fallback: monkey-patch doc.text + doc.autoTable cu normalizeDiacritics.
-  try {
-    const { setupRomanianFont, normalizeDiacritics } = await import("../utils/pdf-fonts.js");
-    const fontOk = await setupRomanianFont(doc);
-    if (!fontOk) {
-      const nd = (t) => typeof t === "string" ? normalizeDiacritics(t) : t;
-      const ndRow = (row) => Array.isArray(row) ? row.map(nd) : (typeof row === "object" && row !== null ? { ...row, content: nd(row.content) } : row);
-      const origText = doc.text.bind(doc);
-      doc.text = (text, ...args) => origText(Array.isArray(text) ? text.map(nd) : nd(text), ...args);
-      const origAt = doc.autoTable.bind(doc);
-      doc.autoTable = (opts) => {
-        if (Array.isArray(opts?.body)) opts.body = opts.body.map(r => Array.isArray(r) ? r.map(ndRow) : r);
-        if (Array.isArray(opts?.head)) opts.head = opts.head.map(r => Array.isArray(r) ? r.map(ndRow) : r);
-        return origAt(opts);
-      };
-    }
-  } catch (_) { /* font indisponibil — diacriticele rămân cu Helvetica default */ }
+
   return doc;
 }
 
+// Injectează font Roboto în styles/headStyles/bodyStyles/footStyles ale
+// autoTable, fără să suprascrie alte proprietăți deja setate de apelant.
+function applyFontDefaults(opts, fontName) {
+  if (!fontName) return opts;
+  const merge = (existing) => ({ font: fontName, ...(existing || {}) });
+  return {
+    ...opts,
+    styles: merge(opts.styles),
+    headStyles: merge(opts.headStyles),
+    bodyStyles: merge(opts.bodyStyles),
+    footStyles: merge(opts.footStyles),
+  };
+}
+
 // ── Utilitar: header pagini ───────────────────────────────────
+// Layout: [BRAND ZEPHREN] (fix 28mm stânga) | [title centrat, clamp lățime] | [auditor + data dreapta, clamp 60mm]
+// Evităm suprapunerile dintre titlu și sigla auditor măsurând lățimea reală.
 function addPageHeader(doc, title, auditorName, dateStr) {
   const w = doc.internal.pageSize.getWidth();
   doc.setFillColor(...COL_H);
@@ -63,11 +109,39 @@ function addPageHeader(doc, title, auditorName, dateStr) {
   doc.setFontSize(11); doc.setFont(undefined, "bold");
   doc.setTextColor(...COL_A);
   doc.text(BRAND, 10, 12);
+
+  // Auditor + data — lățime maximă 60mm, aliniat dreapta
+  doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(180, 180, 180);
+  const audMeta = `${auditorName || ""}${auditorName && dateStr ? "  |  " : ""}${dateStr || ""}`;
+  const audMaxW = 62;
+  const audClipped = clampText(doc, audMeta, audMaxW);
+  doc.text(audClipped, w - 10, 12, { align: "right" });
+  const audActualW = doc.getTextWidth(audClipped);
+
+  // Titlu — centrat dar într-o casetă care respectă spațiul liber dintre brand și auditor
+  const brandRight = 10 + doc.getTextWidth(BRAND) + 4; // după brand
+  const audLeft = w - 10 - audActualW - 4;             // înainte de meta
+  const titleZoneCenter = (brandRight + audLeft) / 2;
+  const titleZoneWidth = Math.max(40, audLeft - brandRight - 2);
   doc.setFontSize(9); doc.setFont(undefined, "normal");
   doc.setTextColor(...COL_W);
-  doc.text(title, w / 2, 12, { align: "center" });
-  doc.setFontSize(7); doc.setTextColor(180, 180, 180);
-  doc.text(`${auditorName || ""}  |  ${dateStr || ""}`, w - 10, 12, { align: "right" });
+  const titleClamped = clampText(doc, title || "", titleZoneWidth);
+  doc.text(titleClamped, titleZoneCenter, 12, { align: "center" });
+}
+
+// Trunchiază un text astfel încât să încapă în maxWidth (mm), adăugând "…" la final.
+function clampText(doc, text, maxWidth) {
+  if (!text) return "";
+  const t = String(text);
+  if (doc.getTextWidth(t) <= maxWidth) return t;
+  const ellipsis = "…";
+  let lo = 0, hi = t.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (doc.getTextWidth(t.slice(0, mid) + ellipsis) <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return t.slice(0, lo) + ellipsis;
 }
 
 // ── Utilitar: footer pagini ───────────────────────────────────
@@ -1249,26 +1323,28 @@ function _renderAnexa1(doc, startPageNum, opts) {
   doc.text("Conform Mc 001-2022 și Ordinul MDLPA nr. 16/2023", w / 2, y, { align: "center" });
   y += 10;
 
-  // ── Badge clasă energetică (zona centrală mare) ──
+  // ── Badge clasă energetică (stânga, text valori dreapta cu spațiu generos) ──
   const badgeW = 55, badgeH = 35;
-  const badgeX = w / 2 - badgeW / 2;
+  const badgeX = 12;
+  const badgeCenterX = badgeX + badgeW / 2;
   doc.setFillColor(...cls.color);
   doc.roundedRect(badgeX, y, badgeW, badgeH, 4, 4, "F");
   doc.setFontSize(32); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
-  doc.text(cls.label, w / 2, y + 22, { align: "center" });
+  doc.text(cls.label, badgeCenterX, y + 22, { align: "center" });
   doc.setFontSize(7); doc.setFont(undefined, "normal");
-  doc.text("CLASA ENERGETICĂ", w / 2, y + 30, { align: "center" });
+  doc.text("CLASA ENERGETICĂ", badgeCenterX, y + 30, { align: "center" });
 
   // ── Valori numerice lângă badge ──
+  const valueX = badgeX + badgeW + 8;
   doc.setTextColor(...COL_H); doc.setFont(undefined, "bold");
   doc.setFontSize(9);
-  doc.text(`EP specific: ${fmtRo(epFinal, 1)} kWh/(m²·an)`, badgeX + badgeW + 8, y + 8);
-  doc.text(`EP referință nZEB: ${fmtRo(epRefMax, 1)} kWh/(m²·an)`, badgeX + badgeW + 8, y + 14);
-  doc.text(`Emisii CO₂: ${fmtRo(co2Final, 1)} kg/(m²·an)  |  Clasa: ${co2Cls.label}`, badgeX + badgeW + 8, y + 20);
-  doc.text(`RER (regenerabil): ${fmtRo(rer, 1)} %`, badgeX + badgeW + 8, y + 26);
+  doc.text(`EP specific: ${fmtRo(epFinal, 1)} kWh/(m²·an)`, valueX, y + 8);
+  doc.text(`EP referință nZEB: ${fmtRo(epRefMax, 1)} kWh/(m²·an)`, valueX, y + 14);
+  doc.text(`Emisii CO₂: ${fmtRo(co2Final, 1)} kg/(m²·an)  |  Clasa: ${co2Cls.label}`, valueX, y + 20);
+  doc.text(`RER (regenerabil): ${fmtRo(rer, 1)} %`, valueX, y + 26);
   doc.setFont(undefined, "bold"); doc.setFontSize(10);
   doc.setTextColor(...(nzebOk ? COL_OK : COL_ERR));
-  doc.text(`Conformitate nZEB: ${nzebOk ? "DA ✓" : "NU ✗"}`, badgeX + badgeW + 8, y + 33);
+  doc.text(`Conformitate nZEB: ${nzebOk ? "DA ✓" : "NU ✗"}`, valueX, y + 33);
   doc.setTextColor(...COL_H);
   y += badgeH + 10;
 
@@ -1306,7 +1382,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = sectionTitle(doc, "II. DATE TEHNICE — GEOMETRIE ȘI ANVELOPĂ", y);
   y = autoTable(doc, {
     startY: y,
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Arie utilă de referință", fmtRo(Au, 2), "m²"],
       ["Volum încălzit V", fmtRo(V, 2), "m³"],
@@ -1392,7 +1468,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = autoTable(doc, {
     startY: y,
     head: [["III.a. Instalație încălzire", "", ""]],
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Sursă de energie", lbl(HEAT_SOURCES, heating?.source, heating?.source), ""],
       ["Randament generare η_gen", heating?.eta_gen || "—", "—"],
@@ -1408,7 +1484,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = autoTable(doc, {
     startY: y,
     head: [["III.b. Preparare apă caldă menajeră", "", ""]],
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Sursă ACM", lbl(ACM_SOURCES, acm?.source, acm?.source), ""],
       ["Consum specific zilnic", fmtRo(acm?.dailyLiters, 0), "L/zi"],
@@ -1423,7 +1499,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = autoTable(doc, {
     startY: y,
     head: [["III.c. Climatizare / răcire", "", ""]],
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Sistem răcire", cooling?.hasCooling ? lbl(COOLING_SYSTEMS, cooling?.system, cooling?.system) : "Nu există", ""],
       ...(cooling?.hasCooling ? [
@@ -1439,7 +1515,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = autoTable(doc, {
     startY: y,
     head: [["III.d. Ventilare", "", ""]],
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Tip ventilare", lbl(VENTILATION_TYPES, ventilation?.type, ventilation?.type), ""],
       ["Rată de schimb aer", fmtRo(ventilation?.ach, 2), "h⁻¹"],
@@ -1452,7 +1528,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
   y = autoTable(doc, {
     startY: y,
     head: [["III.e. Iluminat artificial", "", ""]],
-    columnStyles: { 0: { cellWidth: 85, fontStyle: "bold" }, 2: { cellWidth: 25, halign: "center" } },
+    columnStyles: { 0: { cellWidth: 70, fontStyle: "bold" }, 2: { cellWidth: 22, halign: "center" } },
     body: [
       ["Tip iluminat", lbl(LIGHTING_TYPES, lighting?.type, lighting?.type), ""],
       ["Densitate putere instalată", fmtRo(lighting?.pDensity, 1), "W/m²"],
@@ -2344,5 +2420,605 @@ export async function generateNZEBConformanceReport(opts) {
     return finalize(doc, filename, download);
   } catch (e) {
     throw new Error(`generateNZEBConformanceReport: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RAPORT DE AUDIT ENERGETIC — PDF (înlocuiește varianta .txt)
+// 4 pagini A4: identificare + rezultate + observații + recomandări + auditor
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Raport de audit energetic în format PDF (înlocuiește exportul .txt).
+ * Conține: identificare clădire, rezultate calcul, observații/constatări,
+ * recomandări de reabilitare, date auditor cu semnătură.
+ *
+ * @param {object} opts
+ *   @param {object} opts.building       Date clădire
+ *   @param {object} opts.auditor        Auditor { name, atestat, grade, company, ... }
+ *   @param {object} opts.instSummary    Rezultate calcul instalații
+ *   @param {object} opts.renewSummary   Rezultate regenerabile
+ *   @param {object} opts.envelopeSummary Sumar anvelopă
+ *   @param {object} opts.selectedClimate
+ *   @param {object} opts.cooling
+ *   @param {object} [opts.airInfiltrationCalc]
+ *   @param {object} [opts.naturalLightingCalc]
+ *   @param {object} [opts.gwpDetailed]
+ *   @param {object} [opts.annualEnergyCost]
+ *   @param {Array}  [opts.smartSuggestions]
+ *   @param {string} [opts.epClass] Clasa energetică derivată
+ *   @param {boolean} [opts.isNZEB]
+ *   @param {string}  [opts.catLabel]
+ *   @param {boolean} [opts.download=true]
+ * @returns {Promise<Blob|null>}
+ */
+export async function generateAuditReportPDF(opts) {
+  try {
+    const {
+      building = {}, auditor = {},
+      instSummary, renewSummary, envelopeSummary,
+      selectedClimate = {}, cooling = {},
+      airInfiltrationCalc, naturalLightingCalc, gwpDetailed, annualEnergyCost,
+      smartSuggestions = [],
+      epClass, isNZEB, catLabel,
+      epRefMax,
+      rerMin = 30,
+      download = true,
+    } = opts || {};
+
+    if (!instSummary) throw new Error("Lipsesc rezultatele calculului energetic (Pasul 5)");
+
+    const doc = await initDoc();
+    const w = doc.internal.pageSize.getWidth();
+    const title = "RAPORT DE AUDIT ENERGETIC";
+    const audName = auditor?.name || "";
+    const today = dateRO();
+    let page = 1;
+
+    const epF = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
+    const co2F = renewSummary?.co2_adjusted_m2 ?? instSummary?.co2_total_m2 ?? 0;
+    const rer = renewSummary?.rer || 0;
+    const cls = epToClass(epF);
+    const Au = parseFloat(building.areaUseful) || 0;
+    const V = parseFloat(building.volume) || 0;
+
+    // ═══ PAGINA 1: COPERTĂ + IDENTIFICARE + REZULTATE ═══
+    addPageHeader(doc, title, audName, today);
+    let y = 26;
+
+    doc.setFontSize(16); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text("RAPORT DE AUDIT ENERGETIC", w / 2, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text("Mc 001-2022  ·  SR EN ISO 52000-1:2017/NA:2023  ·  Legea 238/2024", w / 2, y, { align: "center" });
+    y += 10;
+
+    // Badge clasă energetică (stânga) + verdict nZEB (dreapta)
+    const badgeW = 50, badgeH = 32;
+    const badgeX = 12;
+    doc.setFillColor(...cls.color);
+    doc.roundedRect(badgeX, y, badgeW, badgeH, 4, 4, "F");
+    doc.setFontSize(28); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text(cls.label, badgeX + badgeW / 2, y + 20, { align: "center" });
+    doc.setFontSize(7); doc.setFont(undefined, "normal");
+    doc.text("CLASA ENERGETICĂ", badgeX + badgeW / 2, y + 28, { align: "center" });
+
+    // Verdict nZEB
+    const nzebX = 75;
+    const nzebW = w - nzebX - 12;
+    doc.setFillColor(...(isNZEB ? COL_OK : COL_ERR));
+    doc.roundedRect(nzebX, y, nzebW, badgeH, 4, 4, "F");
+    doc.setFontSize(13); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text(
+      isNZEB ? "✓ CLĂDIRE nZEB CONFORMĂ" : "✗ NU SE ÎNCADREAZĂ ÎN nZEB",
+      nzebX + nzebW / 2, y + 13,
+      { align: "center" }
+    );
+    doc.setFontSize(8); doc.setFont(undefined, "normal");
+    doc.text(
+      `EP=${fmtRo(epF, 1)} kWh/(m²·an)  ·  RER=${fmtRo(rer, 1)} %  ·  CO₂=${fmtRo(co2F, 1)} kg/(m²·an)`,
+      nzebX + nzebW / 2, y + 22,
+      { align: "center" }
+    );
+    y += badgeH + 10;
+
+    // Identificare clădire
+    y = sectionTitle(doc, "1. IDENTIFICARE CLĂDIRE", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
+      body: [
+        ["Adresă", [building.address, building.city, building.county && `jud. ${building.county}`].filter(Boolean).join(", ") || "—"],
+        ["Categorie funcțională", catLabel || building.category || "—"],
+        ["An construcție / renovare", `${building.yearBuilt || "—"} / ${building.yearRenov || "—"}`],
+        ["Suprafață utilă Au", `${fmtRo(Au, 2)} m²`],
+        ["Volum încălzit V", `${fmtRo(V, 2)} m³`],
+        ["Zonă climatică", `${selectedClimate.name || "—"} (Zona ${selectedClimate.zone || "—"}, θe=${selectedClimate.theta_e ?? "—"} °C)`],
+        ["Sistem de răcire", cooling?.hasCooling ? "DA" : "NU"],
+      ],
+    });
+
+    // Rezultate calcul energetic
+    y = ensureSpace(doc, y, 60, title, audName, today);
+    y = sectionTitle(doc, "2. REZULTATE CALCUL ENERGETIC", y);
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Indicator", "Valoare", "Prag/Referință", "Verificare"]],
+      body: [
+        ["Clasa energetică", `${epClass || cls.label}`, "A (nZEB)", ["A+", "A"].includes(epClass || cls.label) ? "✓ CONFORM" : "✗ DE MAJORAT"],
+        ["Energie primară EP", `${fmtRo(epF, 1)} kWh/(m²·an)`, epRefMax != null ? `≤ ${fmtRo(epRefMax, 1)}` : "—", epRefMax != null ? (epF <= epRefMax ? "✓ CONFORM" : "✗ NECONFORM") : "—"],
+        ["Energie finală totală", `${fmtRo(instSummary.qf_total_m2, 1)} kWh/(m²·an)`, "—", "—"],
+        ["Emisii CO₂ specifice", `${fmtRo(co2F, 1)} kg/(m²·an)`, "—", "—"],
+        ["RER (rata energie regenerabilă)", `${fmtRo(rer, 1)} %`, `≥ ${rerMin} %`, rer >= rerMin ? "✓ CONFORM" : "✗ NECONFORM"],
+        ["Conformitate nZEB", isNZEB ? "DA" : "NU", "Legea 238/2024", isNZEB ? "✓ CONFORM" : "✗ NECONFORM"],
+      ],
+      columnStyles: {
+        0: { cellWidth: 70, fontStyle: "bold" },
+        3: { halign: "center", cellWidth: 32 },
+      },
+      didParseCell: (hook) => {
+        if (hook.column.index === 3 && hook.section === "body") {
+          const txt = String(hook.cell.raw || "");
+          if (txt.includes("✓")) hook.cell.styles.textColor = COL_OK;
+          else if (txt.includes("✗")) hook.cell.styles.textColor = COL_ERR;
+        }
+      },
+    });
+
+    addPageFooter(doc, "Mc 001-2022 §5 | Legea 238/2024 Art.6 | SR EN ISO 52000-1", page);
+
+    // ═══ PAGINA 2: OBSERVAȚII + RECOMANDĂRI ═══
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "3. OBSERVAȚII ȘI CONSTATĂRI TEHNICE", y);
+    const obsRows = [];
+    if (envelopeSummary?.G != null) {
+      obsRows.push([
+        "Coeficient global pierderi G",
+        `${fmtRo(envelopeSummary.G, 3)} W/(m³·K)`,
+        envelopeSummary.G > 0.5 ? "⚠ Anvelopă slab izolată" : "✓ În limite",
+      ]);
+    }
+    if (airInfiltrationCalc) {
+      obsRows.push([
+        "Etanșeitate la aer (n50)",
+        `${airInfiltrationCalc.n50} h⁻¹`,
+        airInfiltrationCalc.classification || "—",
+      ]);
+    }
+    if (naturalLightingCalc) {
+      obsRows.push([
+        "Iluminat natural FLZ",
+        `${naturalLightingCalc.flz} %`,
+        naturalLightingCalc.classification || "—",
+      ]);
+    }
+    if (gwpDetailed) {
+      obsRows.push([
+        "Amprenta de carbon (GWP)",
+        `${gwpDetailed.gwpPerM2Year} kgCO₂eq/(m²·an)`,
+        gwpDetailed.classification || "—",
+      ]);
+    }
+    if (annualEnergyCost?.total) {
+      obsRows.push([
+        "Cost anual de exploatare estimat",
+        `${annualEnergyCost.total.toLocaleString("ro-RO")} lei/an`,
+        `≈ ${(annualEnergyCost.totalEur || 0).toLocaleString("ro-RO")} EUR/an`,
+      ]);
+    }
+    if (obsRows.length === 0) {
+      obsRows.push(["—", "Nu sunt observații suplimentare disponibile", "—"]);
+    }
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Indicator", "Valoare", "Constatare"]],
+      body: obsRows,
+      columnStyles: {
+        0: { cellWidth: 65, fontStyle: "bold" },
+      },
+    });
+
+    // Recomandări de reabilitare
+    y = ensureSpace(doc, y, 50, title, audName, today);
+    y = sectionTitle(doc, "4. RECOMANDĂRI DE REABILITARE", y);
+    if (smartSuggestions && smartSuggestions.length > 0) {
+      y = autoTable(doc, {
+        startY: y,
+        head: [["#", "Prioritate", "Măsură", "Impact", "Cost", "Recuperare"]],
+        body: smartSuggestions.map((s, i) => {
+          const pLabel = s.priority === 1 ? "URGENT" : s.priority === 2 ? "RECOMANDAT" : "OPȚIONAL";
+          return [
+            String(i + 1),
+            pLabel,
+            s.measure || "—",
+            s.impact || "—",
+            s.costEstimate || "—",
+            s.payback || "—",
+          ];
+        }),
+        columnStyles: {
+          0: { halign: "center", cellWidth: 10 },
+          1: { halign: "center", cellWidth: 24 },
+          2: { cellWidth: 60 },
+          3: { cellWidth: 32 },
+          4: { cellWidth: 32 },
+          5: { halign: "center", cellWidth: 22 },
+        },
+        didParseCell: (hook) => {
+          if (hook.column.index === 1 && hook.section === "body") {
+            const txt = String(hook.cell.raw || "");
+            if (txt === "URGENT") hook.cell.styles.textColor = COL_ERR;
+            else if (txt === "RECOMANDAT") hook.cell.styles.textColor = [217, 119, 6];
+            else if (txt === "OPȚIONAL") hook.cell.styles.textColor = COL_OK;
+            hook.cell.styles.fontStyle = "bold";
+          }
+        },
+      });
+
+      // Detalii fiecare măsură
+      y = ensureSpace(doc, y, 40, title, audName, today);
+      doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+      doc.text("Detalii măsuri:", 10, y);
+      y += 6;
+      doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+      smartSuggestions.forEach((s, i) => {
+        if (!s.detail) return;
+        y = ensureSpace(doc, y, 14, title, audName, today);
+        doc.setFont(undefined, "bold");
+        doc.text(`${i + 1}. ${s.measure || ""}`, 10, y);
+        y += 4;
+        doc.setFont(undefined, "normal");
+        const lines = doc.splitTextToSize(s.detail, w - 24);
+        doc.text(lines, 14, y);
+        y += lines.length * 3.6 + 3;
+      });
+    } else {
+      doc.setFontSize(9); doc.setTextColor(...COL_G);
+      doc.text("Nu sunt disponibile recomandări automate. Completați datele anvelopei și instalațiilor în pașii 1-5.", 10, y, { maxWidth: w - 20 });
+      y += 8;
+    }
+
+    addPageFooter(doc, "Mc 001-2022 §6 Reabilitare | EPBD 2024/1275 | Legea 372/2005 R2", page);
+
+    // ═══ PAGINA 3: AUDITOR + SEMNĂTURĂ ═══
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "5. DATE AUDITOR ENERGETIC", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
+      body: [
+        ["Nume și prenume auditor", auditor?.name || "—"],
+        ["Atestat nr. (serie/număr)", auditor?.atestat || "—"],
+        ["Grad atestare", auditor?.grade || "—"],
+        ["Firmă / Organizație", auditor?.company || "—"],
+        ["Contact", [auditor?.phone, auditor?.email].filter(Boolean).join(" · ") || "—"],
+        ["Data întocmirii", auditor?.date ? new Date(auditor.date).toLocaleDateString("ro-RO") : dateRO()],
+      ],
+    });
+
+    // Caseta de semnătură
+    y += 6;
+    y = ensureSpace(doc, y, 50, title, audName, today);
+    const sigW = 80, sigH = 40;
+    doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
+    doc.roundedRect(15, y, sigW, sigH, 2, 2);
+    doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2);
+
+    doc.setFontSize(7); doc.setTextColor(...COL_G);
+    doc.text("AUDITOR ENERGETIC", 17, y + 5);
+    doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text(auditor?.name || "—", 17, y + 11);
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(`Nr. atestat: ${auditor?.atestat || "—"}  ·  Grad: ${auditor?.grade || "—"}`, 17, y + 16);
+    doc.text("Semnătură + ștampilă profesională", 17, y + sigH - 4);
+
+    doc.setFontSize(7);
+    doc.text("DATA ȘI LOCUL ÎNTOCMIRII", w - 13 - sigW, y + 5);
+    doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text(today, w - 13 - sigW, y + 11);
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(building?.city || building?.address || "—", w - 13 - sigW, y + 16);
+    y += sigH + 8;
+
+    // Notă conformitate
+    doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+    const nota = "Prezentul raport a fost întocmit în conformitate cu metodologia Mc 001-2022 (MDLPA Ord. 16/2023) și SR EN ISO 52000-1:2017/NA:2023. Datele de calcul sunt cele furnizate de beneficiar și măsurătorile efectuate la fața locului. Auditorul își asumă răspunderea pentru corectitudinea calculelor energetice prezentate.";
+    const notaLines = doc.splitTextToSize(nota, w - 20);
+    doc.text(notaLines, 10, y);
+
+    addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | EPBD 2024/1275", page);
+
+    const addr = (building?.address || "audit").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25);
+    const filename = `Raport_Audit_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, download);
+  } catch (e) {
+    throw new Error(`generateAuditReportPDF: ${e.message}`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEVIZ ESTIMATIV REABILITARE — PDF (înlocuiește varianta .txt)
+// 2-3 pagini A4: identificare + tabel deviz + sumar economic + auditor
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Deviz estimativ pentru lucrările de reabilitare energetică, în PDF.
+ *
+ * @param {object} opts
+ *   @param {object} opts.building
+ *   @param {object} opts.auditor
+ *   @param {object} opts.rehabScenarioInputs
+ *   @param {Array}  opts.glazingElements
+ *   @param {object} opts.rehabComparison
+ *   @param {boolean} [opts.download=true]
+ * @returns {Promise<Blob|null>}
+ */
+export async function generateRehabEstimatePDF(opts) {
+  try {
+    const {
+      building = {}, auditor = {},
+      rehabScenarioInputs = {}, glazingElements = [],
+      rehabComparison,
+      vatRate = 0.21,
+      download = true,
+    } = opts || {};
+
+    if (!rehabComparison) {
+      throw new Error("Configurați scenariul de reabilitare (Pasul 5)");
+    }
+
+    const ri = rehabScenarioInputs;
+    const Au = parseFloat(building.areaUseful) || 0;
+
+    // Build measure list (mirror Step 7 inline TXT logic)
+    const measures = [];
+    let totalEUR = 0;
+    let nr = 1;
+
+    const push = (denumire, cantitate, unitate, pret, costEur, detalii = "") => {
+      totalEUR += costEur;
+      measures.push({
+        nr: nr++,
+        denumire,
+        cantitate: `${cantitate} ${unitate}`,
+        pret: `${pret} €/${unitate}`,
+        cost: costEur,
+        detalii,
+      });
+    };
+
+    if (ri.addInsulWall) {
+      const cant = Au * 3.5;
+      const cost = cant * 45;
+      push(
+        `Termoizolație pereți ETICS (${ri.insulWallThickness} cm)`,
+        cant.toFixed(0), "m²", "45", cost,
+        "Sistem ETICS conform SR EN 13499/13500, EPS grafitat sau vată minerală"
+      );
+    }
+    if (ri.addInsulRoof) {
+      const cant = Au * 1.1;
+      const cost = cant * 35;
+      push(
+        `Termoizolație acoperiș (${ri.insulRoofThickness} cm)`,
+        cant.toFixed(0), "m²", "35", cost,
+        "Vată minerală sau XPS, barieră de vapori SR EN ISO 6946"
+      );
+    }
+    if (ri.addInsulBasement) {
+      const cant = Au;
+      const cost = cant * 25;
+      push(
+        `Izolație planșeu subsol (${ri.insulBasementThickness} cm)`,
+        cant.toFixed(0), "m²", "25", cost,
+        "Vată minerală sau polistiren extrudat la pardoseala subsol"
+      );
+    }
+    if (ri.replaceWindows) {
+      const wArea = glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+      const cost = wArea * 280;
+      push(
+        `Înlocuire tâmplărie (U_w=${ri.newWindowU} W/m²K)`,
+        wArea.toFixed(1), "m²", "280", cost,
+        "PVC sau aluminiu cu rupere de punte termică, geam Low-E argon"
+      );
+    }
+    if (ri.addHR) {
+      const cost = Au * 12;
+      push(
+        `Ventilare mecanică cu recuperare (η=${ri.hrEfficiency}%)`,
+        "1", "buc", `${(Au * 12).toFixed(0)} €`, cost,
+        "Centrală HRV cu schimbător contracurent, distribuție tubulatură"
+      );
+    }
+    if (ri.addPV) {
+      const cant = parseFloat(ri.pvArea || 0);
+      const cost = cant * 350;
+      push(
+        `Panouri fotovoltaice (${ri.pvArea} m²)`,
+        cant.toFixed(0), "m²", "350", cost,
+        "Module monocristaline + invertor on-grid + montaj acoperiș"
+      );
+    }
+    if (ri.addHP) {
+      const cost = Au * 55;
+      push(
+        `Pompă de căldură (COP=${ri.hpCOP})`,
+        "1", "buc", `${(Au * 55).toFixed(0)} €`, cost,
+        "Pompă aer-apă cu rezervor tampon, integrare ACM"
+      );
+    }
+    if (ri.addSolarTh) {
+      const cant = parseFloat(ri.solarThArea || 0);
+      const cost = cant * 500;
+      push(
+        `Colectoare solare termice (${ri.solarThArea} m²)`,
+        cant.toFixed(0), "m²", "500", cost,
+        "Colectoare plane sau tuburi vidate + boiler bivalent + sistem reglare"
+      );
+    }
+
+    if (measures.length === 0) {
+      throw new Error("Nu există măsuri active în scenariul de reabilitare. Activați cel puțin o măsură în Pasul 5.");
+    }
+
+    const tva = totalEUR * vatRate;
+    const totalCuTVA = totalEUR + tva;
+    const econAnualEUR = (rehabComparison?.savings?.qfSaved || 0) * 0.12;
+    const payback = econAnualEUR > 0 ? totalEUR / econAnualEUR : null;
+
+    const doc = await initDoc();
+    const w = doc.internal.pageSize.getWidth();
+    const title = "DEVIZ ESTIMATIV REABILITARE";
+    const audName = auditor?.name || "";
+    const today = dateRO();
+    let page = 1;
+
+    // ═══ PAGINA 1: COPERTĂ + IDENTIFICARE + DEVIZ ═══
+    addPageHeader(doc, title, audName, today);
+    let y = 26;
+
+    doc.setFontSize(16); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text("DEVIZ ESTIMATIV REABILITARE ENERGETICĂ", w / 2, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text("Costuri orientative actualizate 2025-2026  ·  Mc 001-2022  ·  PNRR + Casa Verde", w / 2, y, { align: "center" });
+    y += 10;
+
+    y = sectionTitle(doc, "1. IDENTIFICARE CLĂDIRE", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
+      body: [
+        ["Adresă", [building.address, building.city].filter(Boolean).join(", ") || "—"],
+        ["Suprafață utilă", `${fmtRo(Au, 2)} m²`],
+        ["Auditor energetic", `${auditor?.name || "—"} (${auditor?.atestat || "—"})`],
+        ["Data devizului", today],
+      ],
+    });
+
+    // Tabel deviz cu detalii
+    y = ensureSpace(doc, y, 70, title, audName, today);
+    y = sectionTitle(doc, "2. LUCRĂRI DE REABILITARE — DEVIZ DETALIAT", y);
+    y = autoTable(doc, {
+      startY: y,
+      head: [["Nr.", "Măsură de reabilitare", "Cantitate", "Preț unitar", "Cost total (€)"]],
+      body: measures.map(m => [
+        String(m.nr),
+        m.denumire,
+        m.cantitate,
+        m.pret,
+        m.cost.toLocaleString("ro-RO", { maximumFractionDigits: 0 }),
+      ]),
+      foot: [
+        [
+          { content: "TOTAL INVESTIȚIE (fără TVA)", colSpan: 4, styles: { halign: "right", fontStyle: "bold" } },
+          { content: `${totalEUR.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`, styles: { halign: "right", fontStyle: "bold" } },
+        ],
+        [
+          { content: `TVA ${(vatRate * 100).toFixed(0)} %`, colSpan: 4, styles: { halign: "right" } },
+          { content: `${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`, styles: { halign: "right" } },
+        ],
+        [
+          { content: "TOTAL CU TVA", colSpan: 4, styles: { halign: "right", fontStyle: "bold" } },
+          { content: `${totalCuTVA.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`, styles: { halign: "right", fontStyle: "bold" } },
+        ],
+      ],
+      footStyles: { fillColor: COL_H, textColor: COL_A, fontStyle: "bold" },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 12 },
+        1: { cellWidth: 80 },
+        2: { halign: "right", cellWidth: 26 },
+        3: { halign: "right", cellWidth: 28 },
+        4: { halign: "right", cellWidth: 34 },
+      },
+    });
+
+    // Detalii fișe per măsură (pagina 2)
+    if (measures.some(m => m.detalii)) {
+      y = ensureSpace(doc, y, 30, title, audName, today);
+      y = sectionTitle(doc, "3. SPECIFICAȚII TEHNICE PER MĂSURĂ", y);
+      doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+      measures.forEach(m => {
+        if (!m.detalii) return;
+        y = ensureSpace(doc, y, 12, title, audName, today);
+        doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+        doc.text(`${m.nr}. ${m.denumire}`, 10, y);
+        y += 4;
+        doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+        const lines = doc.splitTextToSize(m.detalii, w - 24);
+        doc.text(lines, 14, y);
+        y += lines.length * 3.6 + 3;
+      });
+    }
+
+    addPageFooter(doc, "Costuri orientative ±30% | Mc 001-2022 | EPBD 2024/1275", page);
+
+    // ═══ PAGINA 2: SUMAR FINANCIAR + AUDITOR ═══
+    doc.addPage(); page++;
+    addPageHeader(doc, title, audName, today);
+    y = 26;
+
+    y = sectionTitle(doc, "4. SUMAR FINANCIAR ȘI ECONOMII", y);
+    y = autoTable(doc, {
+      startY: y,
+      columnStyles: { 0: { cellWidth: 80, fontStyle: "bold" }, 1: { halign: "right" } },
+      body: [
+        ["Total investiție (fără TVA)", `${totalEUR.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`],
+        [`TVA (${(vatRate * 100).toFixed(0)} %)`, `${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`],
+        ["Total cu TVA", `${totalCuTVA.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €`],
+        ["Economie anuală estimată", econAnualEUR > 0 ? `${econAnualEUR.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} €/an` : "—"],
+        ["Termen de recuperare simplu", payback != null ? `${payback.toFixed(1)} ani` : "—"],
+        ["Q_final economisit (Pasul 5)", `${(rehabComparison?.savings?.qfSaved || 0).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} kWh/an`],
+      ],
+    });
+
+    // Note importante
+    y = ensureSpace(doc, y, 35, title, audName, today);
+    y = sectionTitle(doc, "5. NOTE IMPORTANTE", y);
+    doc.setFontSize(8); doc.setTextColor(...COL_G); doc.setFont(undefined, "normal");
+    const note = [
+      "• Prețurile sunt estimative pentru perioada 2025-2026 (fără TVA) și pot varia ±30% în funcție de zonă, furnizor și complexitatea lucrărilor.",
+      "• Devizul nu include lucrări conexe: relocare instalații, refacere finisaje interioare/exterioare, demolări parțiale, organizare șantier.",
+      "• Pentru implementare se recomandă obținerea a minim 3 oferte ferme de la executanți autorizați conform legii.",
+      "• Eligibil pentru programe de finanțare: PNRR Componenta C5/C7, Casa Verde Fotovoltaice, Programul Național de Reabilitare Termică, fonduri europene 2021-2027.",
+      "• Termenul de recuperare nu include eventuale subvenții/granturi care îl pot reduce semnificativ (până la 50-100% din valoare).",
+    ];
+    note.forEach(line => {
+      y = ensureSpace(doc, y, 8, title, audName, today);
+      const lines = doc.splitTextToSize(line, w - 20);
+      doc.text(lines, 10, y);
+      y += lines.length * 3.8 + 1;
+    });
+
+    // Auditor
+    y = ensureSpace(doc, y, 50, title, audName, today);
+    y = sectionTitle(doc, "6. AUDITOR ENERGETIC", y);
+    y = auditorBlock(doc, auditor, y);
+
+    // Caseta de semnătură
+    y += 4;
+    y = ensureSpace(doc, y, 32, title, audName, today);
+    const sigW = 80, sigH = 24;
+    doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
+    doc.roundedRect(15, y, sigW, sigH);
+    doc.roundedRect(w - 15 - sigW, y, sigW, sigH);
+    doc.setFontSize(7); doc.setTextColor(...COL_G);
+    doc.text("Semnătură auditor", 15 + sigW / 2, y + sigH + 3, { align: "center" });
+    doc.text("Ștampilă profesională", w - 15 - sigW / 2, y + sigH + 3, { align: "center" });
+
+    addPageFooter(doc, "Deviz estimativ — orientativ | Mc 001-2022 | PNRR + Casa Verde", page);
+
+    const addr = (building?.address || "deviz").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25);
+    const filename = `Deviz_estimativ_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    return finalize(doc, filename, download);
+  } catch (e) {
+    throw new Error(`generateRehabEstimatePDF: ${e.message}`);
   }
 }

@@ -1,88 +1,190 @@
 /**
  * pdf-fonts.js — Suport diacritice RO + TOC pentru jsPDF
- * Sprint 16 Task 6 — Zephren
+ * Sprint 16 Task 6 — Zephren  |  patch 26 apr 2026: Liberation Sans (jsPDF compat)
  *
  * STRATEGIE DUBLĂ:
- *   A) Roboto TTF embedded — dacă fișierul /public/fonts/Roboto-Regular.ttf
- *      există, e fetch-uit, encodat base64 și înregistrat în VFS-ul jsPDF.
- *      Rezultat: diacriticele ă â î ș ț sunt afișate natural în PDF.
+ *   A) Liberation Sans TTF embedded — fișierele din /public/fonts/
+ *      LiberationSans-{Regular,Bold,Italic,BoldItalic}.ttf sunt fetch-uite,
+ *      encodate base64 și înregistrate în VFS-ul jsPDF pe toate 4 stilurile
+ *      (normal, bold, italic, bolditalic). Astfel `setFont(undefined,"bold")`
+ *      și autoTable cu `fontStyle:"bold"` păstrează font-ul Unicode (cu
+ *      diacritice ă â î ș ț) în loc să cadă pe Helvetica.
+ *      ALEGERE FONT: Liberation Sans (Red Hat, SIL OFL 1.1) e metric-
+ *      compatibil Arial, are 3 subtabele cmap (platform 0+3, format 4) și
+ *      este parsabil de jsPDF v4.x — testat. Roboto v2 are subtable format
+ *      12 care declanșează „No unicode cmap for font" în jsPDF.
  *
- *   B) Fallback transliterare — dacă TTF-ul lipsește sau nu poate fi încărcat,
- *      `normalizeDiacritics(text)` convertește diacriticele în echivalente
- *      ASCII (ă→a, î→i, ș→s etc.) pentru a evita squares/garbage în PDF.
+ *   B) Fallback transliterare — dacă TTF-urile lipsesc, sau jsPDF nu poate
+ *      parsa font-ul (validare sintetică `setFont` + `getTextWidth` →
+ *      „Cannot read 'widths'"), `normalizeDiacritics(text)` convertește
+ *      diacriticele în ASCII (ă→a, ș→s, ț→t etc.). PDF rămâne lizibil.
  *
- * INSTALARE Roboto (pentru diacritice native):
- *   Descarcă Roboto-Regular.ttf de pe https://fonts.google.com/specimen/Roboto
- *   și copiază-l în `public/fonts/Roboto-Regular.ttf`.
- *   Licență: Apache 2.0 — permite redistribuire comercială.
+ * INSTALARE FONT (pentru diacritice native):
+ *   Liberation Sans 4 stiluri sunt deja în /public/fonts/ (din pdfjs-dist).
+ *   Total ~575 KB. Licență SIL OFL 1.1 — redistribuire/embed liber permis.
  *
  * TOC NAVIGABIL:
  *   `buildPdfOutline(doc, entries)` adaugă un cuprins clickable folosind
  *   jsPDF.outline API (PDF bookmarks). Entries: [{ title, page }, ...].
  */
 
-let robotoLoaded = null;       // "loaded" | "failed" | null
-let robotoPromise = null;       // Promise<boolean>
+// Numele font-ului folosit intern în jsPDF (poate diferi de fișierul TTF)
+export const ROMANIAN_FONT = "LiberationSans";
+
+// Cache la nivel de modul pentru a evita re-fetch
+const fontCache = {
+  // 'normal' | 'bold' | 'italic' | 'bolditalic' → base64 string | null
+  normal: undefined,
+  bold: undefined,
+  italic: undefined,
+  bolditalic: undefined,
+};
+const fontPromises = {};
+
+const FONT_FILES = {
+  normal: "/fonts/LiberationSans-Regular.ttf",
+  bold: "/fonts/LiberationSans-Bold.ttf",
+  italic: "/fonts/LiberationSans-Italic.ttf",
+  bolditalic: "/fonts/LiberationSans-BoldItalic.ttf",
+};
+
+const VFS_NAMES = {
+  normal: "LiberationSans-Regular.ttf",
+  bold: "LiberationSans-Bold.ttf",
+  italic: "LiberationSans-Italic.ttf",
+  bolditalic: "LiberationSans-BoldItalic.ttf",
+};
 
 // ═══════════════════════════════════════════════════════════════
-// ROBOTO TTF LOADING (lazy, deduplicat)
+// ROBOTO TTF LOADING (lazy, deduplicat, per stil)
 // ═══════════════════════════════════════════════════════════════
-/**
- * Încarcă Roboto-Regular.ttf de la /fonts/Roboto-Regular.ttf, îl encodează
- * base64 și returnează stringul. Cache-uit după prima încărcare.
- *
- * @returns {Promise<string|null>} base64 string sau null dacă font lipsește
- */
-async function loadRobotoBase64() {
+async function loadFontBase64(style) {
   if (typeof window === "undefined") return null;
-  if (robotoLoaded === "failed") return null;
-  if (robotoPromise) return robotoPromise;
+  if (fontCache[style] !== undefined) return fontCache[style];
+  if (fontPromises[style]) return fontPromises[style];
 
-  robotoPromise = (async () => {
+  fontPromises[style] = (async () => {
     try {
-      const res = await fetch("/fonts/Roboto-Regular.ttf", { cache: "force-cache" });
+      const res = await fetch(FONT_FILES[style], { cache: "force-cache" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const buf = await res.arrayBuffer();
+      if (!buf || buf.byteLength < 1000) throw new Error("font file empty/too small");
       const bytes = new Uint8Array(buf);
-      // Conversie Uint8Array → base64 (chunked, safe pentru fișiere mari)
       let binary = "";
       const chunk = 0x8000;
       for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode.apply(
-          null,
-          bytes.subarray(i, i + chunk)
-        );
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
       }
-      robotoLoaded = "loaded";
-      return btoa(binary);
-    } catch (err) {
-      robotoLoaded = "failed";
+      const b64 = btoa(binary);
+      fontCache[style] = b64;
+      return b64;
+    } catch (_err) {
+      fontCache[style] = null;
       return null;
     }
   })();
 
-  return robotoPromise;
+  return fontPromises[style];
 }
 
 /**
- * Instalează Roboto în jsPDF (lazy) și setează-l ca font curent.
- * Dacă Roboto lipsește → întoarce false; apelantul va folosi normalizeDiacritics.
+ * Instalează Roboto în jsPDF pe toate cele 4 stiluri și setează-l ca font
+ * curent. Dacă fișierele bold/italic/bolditalic lipsesc, Regular acoperă
+ * stilurile lipsă — astfel `setFont(undefined, "bold")` și autoTable cu
+ * `fontStyle: "bold"` păstrează Roboto (cu diacritice) în loc să cadă pe
+ * Helvetica.
+ *
+ * Validare critică: jsPDF nu throw-uiește la `addFont`, ci publică eroarea
+ * în PubSub („No unicode cmap for font"). Pentru a detecta eșecul real,
+ * după înregistrare facem un test sintetic `setFont` + `getTextWidth`.
+ * Dacă aruncă „Cannot read properties of undefined (reading 'widths')",
+ * font-ul nu e utilizabil → întoarcem false și apelantul folosește
+ * transliterarea ASCII.
  *
  * @param {jsPDF} doc
- * @returns {Promise<boolean>} true = Roboto disponibil; false = fallback
+ * @returns {Promise<boolean>} true = Roboto utilizabil; false = fallback
  */
 export async function setupRomanianFont(doc) {
-  const base64 = await loadRobotoBase64();
-  if (!base64) return false;
+  // Încarcă Regular obligatoriu — dacă lipsește, totul cade pe transliterare
+  const regular = await loadFontBase64("normal");
+  if (!regular) return false;
+
+  // Încarcă în paralel celelalte stiluri (cele care lipsesc → null)
+  const [boldB64, italicB64, biB64] = await Promise.all([
+    loadFontBase64("bold"),
+    loadFontBase64("italic"),
+    loadFontBase64("bolditalic"),
+  ]);
+
+  // Salvează fontul curent ca să putem reveni la el dacă Roboto eșuează
+  let prevFont = null;
+  try { prevFont = doc.getFont(); } catch { /* ignore */ }
+
   try {
-    doc.addFileToVFS("Roboto-Regular.ttf", base64);
-    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    doc.setFont("Roboto", "normal");
+    // Înregistrare per stil cu fișier propriu (sau fallback Regular)
+    doc.addFileToVFS(VFS_NAMES.normal, regular);
+    doc.addFont(VFS_NAMES.normal, ROMANIAN_FONT, "normal");
+
+    if (boldB64) {
+      doc.addFileToVFS(VFS_NAMES.bold, boldB64);
+      doc.addFont(VFS_NAMES.bold, ROMANIAN_FONT, "bold");
+    } else {
+      doc.addFont(VFS_NAMES.normal, ROMANIAN_FONT, "bold");
+    }
+
+    if (italicB64) {
+      doc.addFileToVFS(VFS_NAMES.italic, italicB64);
+      doc.addFont(VFS_NAMES.italic, ROMANIAN_FONT, "italic");
+    } else {
+      doc.addFont(VFS_NAMES.normal, ROMANIAN_FONT, "italic");
+    }
+
+    if (biB64) {
+      doc.addFileToVFS(VFS_NAMES.bolditalic, biB64);
+      doc.addFont(VFS_NAMES.bolditalic, ROMANIAN_FONT, "bolditalic");
+    } else {
+      doc.addFont(VFS_NAMES.normal, ROMANIAN_FONT, "bolditalic");
+    }
+
+    // Validare sintetică — jsPDF nu throw-uiește la addFont, dar la prima
+    // utilizare a font-ului (setFont+getTextWidth) aruncă „Cannot read
+    // properties of undefined (reading 'widths')" dacă cmap-ul a fost
+    // respins de parser. Detectăm aici și forțăm fallback.
+    doc.setFont(ROMANIAN_FONT, "normal");
+    doc.getTextWidth("ăâîșț");
+    doc.setFont(ROMANIAN_FONT, "bold");
+    doc.getTextWidth("ĂÂÎȘȚ");
+    // Resetăm la stilul normal, gata de utilizare
+    doc.setFont(ROMANIAN_FONT, "normal");
     return true;
   } catch (err) {
-    console.warn("[pdf-fonts] addFont Roboto failed:", err.message);
+    // Font-ul nu e utilizabil — revenim la fontul anterior
+    if (typeof console !== "undefined") {
+      console.warn(
+        "[pdf-fonts] Font Unicode inutilizabil în jsPDF:",
+        err.message,
+        "— fallback transliterare ASCII"
+      );
+    }
+    try {
+      if (prevFont) doc.setFont(prevFont.fontName || "helvetica", prevFont.fontStyle || "normal");
+      else doc.setFont("helvetica", "normal");
+    } catch { /* ignore */ }
     return false;
   }
+}
+
+/**
+ * Stiluri default pentru jspdf-autotable astfel încât toate celulele
+ * (head/body/foot) să folosească Roboto. Returnează un obiect care poate fi
+ * spread-uit în opts.styles / opts.headStyles / opts.bodyStyles / etc.
+ *
+ * Apelat doar dacă `setupRomanianFont` a returnat true.
+ *
+ * @returns {object} { font: "Roboto" }
+ */
+export function autoTableFontStyles() {
+  return { font: ROMANIAN_FONT };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -97,8 +199,8 @@ const DIACRITIC_MAP = {
 
 /**
  * Înlocuiește diacriticele românești cu echivalente ASCII.
- * Util când font-ul TTF Roboto nu e disponibil (helvetica default nu
- * suportă ă â î ș ț).
+ * Util când font-ul TTF Liberation Sans nu e disponibil (Helvetica default
+ * nu suportă ă â î ș ț).
  *
  * @param {string|any} text
  * @returns {string}
@@ -106,6 +208,74 @@ const DIACRITIC_MAP = {
 export function normalizeDiacritics(text) {
   if (typeof text !== "string") return text ?? "";
   return text.replace(/[ăâîșțĂÂÎȘȚşţŞŢ]/g, (c) => DIACRITIC_MAP[c] || c);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NORMALIZARE SIMBOLURI LIPSĂ (Liberation Sans / Helvetica)
+// Liberation Sans NU conține glyph-uri pentru: ✓ ✗ ⚠ ❌ ⭐ etc.
+// Aceste caractere se randează ca .notdef (pătrat gol) → arată
+// neprofesional în documente oficiale. Înlocuim cu echivalente
+// text safe (ex: ✓ → "OK", ✗ → "NU"), aplicate ÎNTOTDEAUNA
+// (chiar și când diacriticele funcționează).
+// ═══════════════════════════════════════════════════════════════
+const SYMBOL_MAP = {
+  // Bifă/cruce/atenție — folosite în verdicte conformitate
+  "✓": "DA",
+  "✔": "DA",
+  "✗": "NU",
+  "✘": "NU",
+  "❌": "NU",
+  "⚠": "[!]",
+  "⚠️": "[!]",
+  "❗": "[!]",
+  "ℹ": "[i]",
+  "ℹ️": "[i]",
+  "⭐": "*",
+  "★": "*",
+  "☆": "*",
+  // Săgeți speciale (-> și — funcționează nativ, dar variantele unicode pot lipsi)
+  "⇒": "=>",
+  "⇐": "<=",
+  "⇔": "<=>",
+  "⬆": "sus",
+  "⬇": "jos",
+  "⬅": "stanga",
+  "➡": "dreapta",
+  // Puncte/separatori care de obicei lipsesc
+  "▶": ">",
+  "◀": "<",
+  "▲": "^",
+  "▼": "v",
+  "■": "[X]",
+  "□": "[ ]",
+  "●": "*",
+  "○": "o",
+};
+
+const SYMBOL_RE = new RegExp(`[${Object.keys(SYMBOL_MAP).join("")}]`, "g");
+
+/**
+ * Înlocuiește simbolurile Unicode care lipsesc din Liberation Sans/Helvetica
+ * cu echivalente text safe. Păstrează diacriticele românești intacte.
+ *
+ * @param {string|any} text
+ * @returns {string}
+ */
+export function normalizeSymbols(text) {
+  if (typeof text !== "string") return text ?? "";
+  return text.replace(SYMBOL_RE, (c) => SYMBOL_MAP[c] || c);
+}
+
+/**
+ * Combină normalizarea simbolurilor (mereu) + diacritice (dacă font lipsă).
+ * @param {string|any} text
+ * @param {boolean} fontHasRomanian dacă font-ul rederează diacriticele OK
+ */
+export function normalizeForPdf(text, fontHasRomanian) {
+  if (typeof text !== "string") return text ?? "";
+  let t = normalizeSymbols(text);
+  if (!fontHasRomanian) t = normalizeDiacritics(t);
+  return t;
 }
 
 /**
@@ -145,7 +315,9 @@ export function makeTextWriter(doc, fontHasRomanian) {
  */
 export function buildPdfOutline(doc, entries) {
   if (!doc.outline || typeof doc.outline.add !== "function") {
-    console.warn("[pdf-fonts] jsPDF outline API nu este disponibil.");
+    if (typeof console !== "undefined") {
+      console.warn("[pdf-fonts] jsPDF outline API nu este disponibil.");
+    }
     return;
   }
   const addEntry = (parent, e) => {
@@ -205,8 +377,10 @@ export function drawTocPage(doc, toc, opts = {}) {
 
 export default {
   setupRomanianFont,
+  autoTableFontStyles,
   normalizeDiacritics,
   makeTextWriter,
   buildPdfOutline,
   drawTocPage,
+  ROMANIAN_FONT,
 };

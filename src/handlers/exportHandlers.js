@@ -880,6 +880,19 @@ export async function exportQuickSheet(ctx) {
     setExporting("pdf_quick");
     const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    // Font Liberation Sans pentru diacritice românești ă â î ș ț în toate
+    // stilurile (Helvetica default elimină diacriticele → text deformat).
+    // Întotdeauna normalizăm simbolurile lipsă (✓ ✗ ⚠ → text safe);
+    // dacă font-ul nu e disponibil, transliterăm și diacriticele.
+    try {
+      const { setupRomanianFont, normalizeForPdf } = await import("../utils/pdf-fonts.js");
+      const fontOk = await setupRomanianFont(doc);
+      const origText = doc.text.bind(doc);
+      doc.text = (text, ...args) => {
+        const norm = (t) => typeof t === "string" ? normalizeForPdf(t, fontOk) : t;
+        return origText(Array.isArray(text) ? text.map(norm) : norm(text), ...args);
+      };
+    } catch { /* font indisponibil — text rămâne în Helvetica raw */ }
     const w = doc.internal.pageSize.getWidth();
     const h = doc.internal.pageSize.getHeight();
 
@@ -928,10 +941,16 @@ export async function exportQuickSheet(ctx) {
     doc.text("Clasă CO₂", 74, y + 27, { align: "center" });
 
     const nzebColor = isNZEB ? [21, 128, 61] : [185, 28, 28];
+    // Box mai larg ca să încapă "✗ nZEB NECONFORM" cu Roboto
+    const nzBoxX = 95, nzBoxW = 70, nzBoxH = 22;
     doc.setFillColor(...nzebColor);
-    doc.roundedRect(95, y, 50, 18, 3, 3, "F");
-    doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
-    doc.text(isNZEB ? "✓ nZEB CONFORM" : "✗ nZEB NECONFORM", 120, y + 11, { align: "center" });
+    doc.roundedRect(nzBoxX, y + 6, nzBoxW, nzBoxH, 3, 3, "F");
+    doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
+    doc.text(
+      isNZEB ? "✓ nZEB CONFORM" : "✗ nZEB NECONFORM",
+      nzBoxX + nzBoxW / 2, y + 6 + nzBoxH / 2 + 2,
+      { align: "center" }
+    );
     y += 44;
 
     doc.setFillColor(240, 244, 248);

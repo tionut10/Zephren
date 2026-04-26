@@ -26,6 +26,7 @@ import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES } from "../data/b
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL } from "../data/constants.js";
 import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
+import { generateAuditReportPDF, generateRehabEstimatePDF } from "../lib/report-generators.js";
 
 /**
  * Step7Audit — Extracted from energy-calc.jsx lines 12320-13537
@@ -803,54 +804,51 @@ export default function Step7Audit(props) {
               </div>
               )}
 
-              {/* #13 Deviz estimativ reabilitare */}
-              <button onClick={() => {
+              {/* #13 Deviz estimativ reabilitare — PDF (era .txt înainte) */}
+              <button onClick={async () => {
                 if (!rehabComparison) { showToast("Configurați scenariul de reabilitare în Pasul 5", "error"); return; }
-                const ri = rehabScenarioInputs;
-                const lines = [];
-                lines.push("DEVIZ ESTIMATIV REABILITARE ENERGETICĂ");
-                lines.push("Clădire: " + (building.address || "—") + ", " + (building.city || "—"));
-                lines.push("Data: " + new Date().toLocaleDateString("ro-RO"));
-                lines.push("Auditor: " + (auditor.name || "—") + " / " + (auditor.atestat || "—"));
-                lines.push("─".repeat(60));
-                lines.push("Nr. | Măsură | Cantitate | Preț unitar | Total estimat");
-                lines.push("─".repeat(60));
-                let nr = 1, totalInv = 0;
-                const Au = parseFloat(building.areaUseful) || 0;
-                if (ri.addInsulWall) { const c = Au * 3.5 * 45; totalInv += c; lines.push(nr++ + " | Termoizolație pereți ETICS " + ri.insulWallThickness + "cm | " + (Au*3.5).toFixed(0) + " m² | 45 €/m² | " + c.toFixed(0) + " €"); }
-                if (ri.addInsulRoof) { const c = Au * 1.1 * 35; totalInv += c; lines.push(nr++ + " | Termoizolație acoperiș " + ri.insulRoofThickness + "cm | " + (Au*1.1).toFixed(0) + " m² | 35 €/m² | " + c.toFixed(0) + " €"); }
-                if (ri.addInsulBasement) { const c = Au * 25; totalInv += c; lines.push(nr++ + " | Izolație planșeu subsol " + ri.insulBasementThickness + "cm | " + Au.toFixed(0) + " m² | 25 €/m² | " + c.toFixed(0) + " €"); }
-                if (ri.replaceWindows) { const wArea = glazingElements.reduce((s,e) => s + (parseFloat(e.area)||0), 0); const c = wArea * 280; totalInv += c; lines.push(nr++ + " | Înlocuire tâmplărie (U=" + ri.newWindowU + ") | " + wArea.toFixed(1) + " m² | 280 €/m² | " + c.toFixed(0) + " €"); }
-                if (ri.addHR) { const c = Au * 12; totalInv += c; lines.push(nr++ + " | Ventilare mecanică cu HR " + ri.hrEfficiency + "% | 1 buc | " + (Au*12).toFixed(0) + " € | " + c.toFixed(0) + " €"); }
-                if (ri.addPV) { const c = parseFloat(ri.pvArea||0) * 350; totalInv += c; lines.push(nr++ + " | Panouri PV " + ri.pvArea + " m² | " + ri.pvArea + " m² | 350 €/m² | " + c.toFixed(0) + " €"); }
-                if (ri.addHP) { const c = Au * 55; totalInv += c; lines.push(nr++ + " | Pompă de căldură COP=" + ri.hpCOP + " | 1 buc | " + (Au*55).toFixed(0) + " € | " + c.toFixed(0) + " €"); }
-                if (ri.addSolarTh) { const c = parseFloat(ri.solarThArea||0) * 500; totalInv += c; lines.push(nr++ + " | Solar termic " + ri.solarThArea + " m² | " + ri.solarThArea + " m² | 500 €/m² | " + c.toFixed(0) + " €"); }
-                lines.push("─".repeat(60));
-                lines.push("TOTAL INVESTIȚIE ESTIMATĂ: " + totalInv.toFixed(0) + " € (fără TVA)");
-                lines.push("TVA 21%: " + (totalInv * 0.21).toFixed(0) + " €");
-                lines.push("TOTAL CU TVA: " + (totalInv * 1.19).toFixed(0) + " €");
-                lines.push("");
-                lines.push("Economie anuală estimată: " + (rehabComparison.savings.qfSaved * 0.12).toFixed(0) + " €/an");
-                lines.push("Termen recuperare simplu: " + (totalInv / Math.max(1, rehabComparison.savings.qfSaved * 0.12)).toFixed(1) + " ani");
-                lines.push("");
-                lines.push("Notă: Prețurile sunt estimative (2025-2026, fără TVA) și pot varia ±30% în funcție de zonă, furnizor și complexitatea lucrărilor.");
-                const blob = new Blob([lines.join("\n")], {type:"text/plain;charset=utf-8"});
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "Deviz_estimativ_" + (building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,25) + ".txt";
-                document.body.appendChild(a); a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
-                showToast("Deviz estimativ descărcat", "success");
+                try {
+                  showToast("Se generează devizul PDF...", "info", 2000);
+                  await generateRehabEstimatePDF({
+                    building, auditor,
+                    rehabScenarioInputs, glazingElements,
+                    rehabComparison,
+                    download: true,
+                  });
+                  showToast("✓ Deviz estimativ PDF descărcat", "success", 3000);
+                } catch (e) {
+                  showToast("Eroare generare deviz: " + e.message, "error", 5000);
+                }
               }}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-sm mt-4">
-                <span>📋</span> Generează deviz estimativ reabilitare (.txt)
+                <span>📋</span> Generează deviz estimativ reabilitare (PDF)
               </button>
 
               {/* ═══ NEW EXPORT BUTTONS ═══ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
-                <button onClick={generateAuditReport}
+                <button onClick={async () => {
+                  try {
+                    if (!instSummary) { showToast("Completați calculul (Pasul 5)", "error"); return; }
+                    showToast("Se generează raportul de audit PDF...", "info", 2000);
+                    await generateAuditReportPDF({
+                      building, auditor,
+                      instSummary, renewSummary, envelopeSummary,
+                      selectedClimate, cooling,
+                      smartSuggestions,
+                      epClass: enClass?.cls,
+                      isNZEB,
+                      catLabel: BUILDING_CATEGORIES.find(c => c.id === building.category)?.label || building.category,
+                      epRefMax: getNzebEpMax(building.category, selectedClimate?.zone),
+                      rerMin: nzebThresh.rer_min || 30,
+                      download: true,
+                    });
+                    showToast("✓ Raport audit PDF descărcat", "success", 3000);
+                  } catch (e) {
+                    showToast("Eroare generare raport: " + e.message, "error", 5000);
+                  }
+                }}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-xs">
-                  <span>📝</span> Raport audit (.txt)
+                  <span>📝</span> Raport audit (PDF)
                 </button>
                 <button onClick={exportXML}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
