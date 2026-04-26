@@ -535,8 +535,10 @@ export const ALL_SUGGESTIONS = [
 ];
 
 // ── Metadate ─────────────────────────────────────────────────────────────────
-export const CATALOG_VERSION = "1.0.0";
-export const CATALOG_UPDATED = "2026-04-25";
+// Sprint 27 P2.12 — versiune SemVer pentru migrare automată consumatori
+// Sprint 27 P2.14 — minor bump 1.0.0 → 1.1.0 (suport sortare GWP în suggestForOpaqueElement)
+export const CATALOG_VERSION = "1.1.0";
+export const CATALOG_UPDATED = "2026-04-26";
 export const CATALOG_DISCLAIMER =
   "Sugestii orientative bazate pe parametri fizici tipici. Prețurile sunt estimative pentru piața RO 2025-2026 " +
   "și NU constituie ofertă comercială. Pentru oferte concrete, contactați furnizori autorizați.";
@@ -612,6 +614,9 @@ export function suggestForOpaqueElement({
   // Sprint 27 P2.13 — prioritizare patrimoniu (aerogel, celuloză, materiale tradiționale)
   // când preferredTags include "patrimoniu" → soluții cu tag "patrimoniu" prioritizate
   const isPatrimony = preferredTags.includes("patrimoniu");
+  // Sprint 27 P2.14 — sort secundar pe GWP când preferredTags include "low-gwp"
+  // (folosește gwp_kgco2e_per_m2 din entry sau 999 fallback dacă nedefinit)
+  const isLowGwp = preferredTags.includes("low-gwp");
   scored.sort((a, b) => {
     if (a.meetsTarget !== b.meetsTarget) return a.meetsTarget ? -1 : 1;
     // Patrimoniu: solutiile compatibile (aerogel, celuloză) primele indiferent de cost
@@ -621,6 +626,12 @@ export function suggestForOpaqueElement({
       if (aPat !== bPat) return bPat - aPat;
     }
     if (a.tagMatch !== b.tagMatch) return b.tagMatch - a.tagMatch;
+    // Sprint 27 P2.14 — Low-GWP: sortare ascendentă pe GWP (mai mic = mai bun)
+    if (isLowGwp) {
+      const aGwp = a.gwp_kgco2e_per_m2 ?? 999;
+      const bGwp = b.gwp_kgco2e_per_m2 ?? 999;
+      if (aGwp !== bGwp) return aGwp - bGwp;
+    }
     return a._avgPrice - b._avgPrice;
   });
 

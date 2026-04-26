@@ -256,6 +256,61 @@ export const FUNDING_PROGRAMS = [
     active: true,
     note: "Program cumulabil cu Casa Verde Plus (sisteme diferite); verificați sesiunea activă la AFM",
   },
+
+  // ── Sprint 27 P2.9 — Programe noi 2026 ──
+  {
+    id: "preea_2026",
+    name: "PREEA — Program Românesc Eficiență Energetică Apartamente (proiect 2026)",
+    authority: "MDLPA + ANRE",
+    legal: "OUG 119/2020 (eficiență energetică) + proiect ordin MDLPA 2026",
+    category: "rezidential",
+    buildingTypes: ["RC", "RA"],
+    maxGrant_EUR: 15000, // per apartament
+    grantPct: 60,
+    cofinancePct: 40,
+    eligibleMeasures: [
+      "Termoizolare apartament individual",
+      "Înlocuire ferestre individuale",
+      "Pompă căldură aer-aer per apartament",
+      "Smart metering apartament",
+    ],
+    conditions: [
+      "Proprietar apartament individual (NU întreaga asociație)",
+      "Bloc cu structură rezidențială > 4 etaje",
+      "Acord majoritar pentru fațadă comună",
+      "Reducere EP individual ≥ 25%",
+    ],
+    minEpReduction_pct: 25,
+    active: false, // proiect pending publicare ordin MDLPA — verificați 2026 Q3
+    note: "Program în proiectare — finanțare la nivel apartament individual (alternativă la HG 906 unde asociația e blocată)",
+  },
+  {
+    id: "renovation_wave_eu_2026",
+    name: "Renovation Wave UE 2026 — fonduri FEDR/CETS dedicate",
+    authority: "Comisia Europeană (DG ENER) + MFE",
+    legal: "Strategy COM(2020)662 + Reg. UE 2021/1058 (FEDR) + Pilon Social Climate",
+    category: "mixt",
+    buildingTypes: ["RI", "RC", "RA", "BI", "ED", "SA"],
+    maxGrant_EUR: 200000, // per clădire
+    grantPct: 80,
+    cofinancePct: 20,
+    eligibleMeasures: [
+      "Renovare profundă (>60% reducere EP)",
+      "Pașaport renovare digital EPBD",
+      "Sisteme regenerabile integrate (PV + storage + HP)",
+      "Smart Readiness Indicator (SRI) clasă A/B",
+    ],
+    conditions: [
+      "Renovare profundă conform EPBD 2024 Art.9",
+      "Pașaport renovare digital obligatoriu",
+      "RER post-renovare ≥ 50%",
+      "Componentă socială (locuințe vulnerabili sau public)",
+    ],
+    minEpReduction_pct: 60,
+    targetClass: "A",
+    active: false, // disponibilitate finală 2026 — verificați apel național MFE
+    note: "Fonduri UE 2026-2030 (Pilonul Social Climate); apeluri prin MFE în coordonare ADR; cumulabil cu PNRR doar prin combinare temporală (NU pe aceeași clădire în același an fiscal)",
+  },
 ];
 
 // Verificare eligibilitate și calcul grant

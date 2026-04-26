@@ -292,9 +292,16 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
     epSavLED, 8, costLED,
     "LED eficacitate >100 lm/W. Senzori prezență în holuri, scări, grupuri sanitare. Recuperare rapidă.");
 
-  // Sortare: prioritate principală, apoi cost-eficiență (EUR/kWh·an — mai mic = mai bun)
+  // Sprint 27 P2.6 — unificare criteriu sortare cu rehab-comparator (NPV-best proxy)
+  // Sortare: prioritate principală → costEfficiency_aniPB (payback ASC) → eurPerKwhSaved
+  // Notă: payback simplu e o aproximare a NPV-rank pentru măsuri cu lifespan similar
+  // (~20-40 ani toate măsurile anvelopă/sisteme), consistent cu marcarea isBest în
+  // rehab-comparator.calcRehabPackages (care folosește NPV pe pachete întregi).
   return suggestions.sort((a, b) => {
     if (a.priority !== b.priority) return a.priority - b.priority;
-    return (a.eurPerKwhSaved || 999) - (b.eurPerKwhSaved || 999);
+    const pbA = a.costEfficiency_aniPB ?? 999;
+    const pbB = b.costEfficiency_aniPB ?? 999;
+    if (pbA !== pbB) return pbA - pbB;  // payback ASC = NPV proxy DESC
+    return (a.eurPerKwhSaved || 999) - (b.eurPerKwhSaved || 999);  // tiebreak
   });
 }
