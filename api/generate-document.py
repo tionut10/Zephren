@@ -2873,18 +2873,24 @@ class handler(BaseHTTPRequestHandler):
 
             tbl = doc.add_table(rows=0, cols=2)
             tbl.style = "Light Grid Accent 1"
-            def _row(k, v):
-                row = tbl.add_row().cells
-                row[0].text = k
-                row[1].text = str(v) if v not in (None, "", []) else "—"
-            _row("Adresă", building.get("address", ""))
-            _row("Localitate", building.get("city", ""))
-            _row("Județ", building.get("county", ""))
-            _row("An construcție", building.get("yearBuilt", ""))
-            _row("Categorie funcțională", building.get("category", ""))
-            _row("Arie utilă de referință Au", f"{building.get('areaUseful', '') or '—'} m²")
-            _row("Volum încălzit V", f"{building.get('volume', '') or '—'} m³")
-            _row("Număr apartamente", building.get("units", ""))
+            def _trow(table, k, v, bold_key=True):
+                """Adaugă rând cu font Calibri 10pt explicit pe ambele celule."""
+                cells = table.add_row().cells
+                val_str = str(v) if v not in (None, "", []) else "—"
+                for cell, text, bold in ((cells[0], k, bold_key), (cells[1], val_str, False)):
+                    cell.text = ""
+                    r = cell.paragraphs[0].add_run(text)
+                    r.font.name = "Calibri"
+                    r.font.size = _Pt(10)
+                    r.bold = bold
+            _trow(tbl, "Adresă", building.get("address", ""))
+            _trow(tbl, "Localitate", building.get("city", ""))
+            _trow(tbl, "Județ", building.get("county", ""))
+            _trow(tbl, "An construcție", building.get("yearBuilt", ""))
+            _trow(tbl, "Categorie funcțională", building.get("category", ""))
+            _trow(tbl, "Arie utilă de referință Au", f"{building.get('areaUseful', '') or '—'} m²")
+            _trow(tbl, "Volum încălzit V", f"{building.get('volume', '') or '—'} m³")
+            _trow(tbl, "Număr apartamente", building.get("units", ""))
 
             doc.add_paragraph()
 

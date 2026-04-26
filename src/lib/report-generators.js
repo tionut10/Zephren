@@ -33,6 +33,25 @@ async function initDoc() {
       return doc.lastAutoTable;
     };
   }
+  // Font Unicode pentru diacritice românești ă â î ș ț
+  // Roboto TTF din /public/fonts/Roboto-Regular.ttf (dacă există).
+  // Fallback: monkey-patch doc.text + doc.autoTable cu normalizeDiacritics.
+  try {
+    const { setupRomanianFont, normalizeDiacritics } = await import("../utils/pdf-fonts.js");
+    const fontOk = await setupRomanianFont(doc);
+    if (!fontOk) {
+      const nd = (t) => typeof t === "string" ? normalizeDiacritics(t) : t;
+      const ndRow = (row) => Array.isArray(row) ? row.map(nd) : (typeof row === "object" && row !== null ? { ...row, content: nd(row.content) } : row);
+      const origText = doc.text.bind(doc);
+      doc.text = (text, ...args) => origText(Array.isArray(text) ? text.map(nd) : nd(text), ...args);
+      const origAt = doc.autoTable.bind(doc);
+      doc.autoTable = (opts) => {
+        if (Array.isArray(opts?.body)) opts.body = opts.body.map(r => Array.isArray(r) ? r.map(ndRow) : r);
+        if (Array.isArray(opts?.head)) opts.head = opts.head.map(r => Array.isArray(r) ? r.map(ndRow) : r);
+        return origAt(opts);
+      };
+    }
+  } catch (_) { /* font indisponibil — diacriticele rămân cu Helvetica default */ }
   return doc;
 }
 

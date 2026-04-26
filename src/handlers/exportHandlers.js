@@ -19,6 +19,31 @@ import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { checkC107Conformity } from "../calc/c107.js";
 
+// ─── Helper: font Unicode + diacritice RO pentru orice doc jsPDF ────────────
+// Încearcă Roboto TTF din /public/fonts/Roboto-Regular.ttf (suport nativ ă â î ș ț).
+// Fallback: monkey-patch doc.text + doc.autoTable cu normalizeDiacritics (ă→a etc.)
+async function _setupRoFont(doc) {
+  try {
+    const { setupRomanianFont, normalizeDiacritics } = await import("../utils/pdf-fonts.js");
+    const fontOk = await setupRomanianFont(doc);
+    if (!fontOk) {
+      const nd = (t) => typeof t === "string" ? normalizeDiacritics(t) : t;
+      const ndRow = (row) => Array.isArray(row) ? row.map(nd) : row;
+      const origText = doc.text.bind(doc);
+      doc.text = (text, ...args) => origText(Array.isArray(text) ? text.map(nd) : nd(text), ...args);
+      if (typeof doc.autoTable === "function") {
+        const origAt = doc.autoTable.bind(doc);
+        doc.autoTable = (opts) => {
+          if (Array.isArray(opts?.body)) opts.body = opts.body.map(r => Array.isArray(r) ? r.map(ndRow) : r);
+          if (Array.isArray(opts?.head)) opts.head = opts.head.map(r => Array.isArray(r) ? r.map(ndRow) : r);
+          if (Array.isArray(opts?.foot)) opts.foot = opts.foot.map(r => Array.isArray(r) ? r.map(ndRow) : r);
+          return origAt(opts);
+        };
+      }
+    }
+  } catch (_) { /* font indisponibil — diacriticele rămân cu Helvetica default */ }
+}
+
 // ─── Helper local: U inline (doar pentru exportCSV / exportExcel / exportExcelFull / exportXML) ───
 // exportFullReport și exportComplianceReport primesc `calcOpaqueR` ca ctx param (logica locală specifică).
 function _uInline(layers) {
@@ -148,7 +173,7 @@ export async function exportExcel(ctx) {
 
     const infoData = [
       ["Parametru", "Valoare"],
-      ["Adresa", building.address || ""], ["Localitate", building.locality || ""],
+      ["Adresă", building.address || ""], ["Localitate", building.locality || ""],
       ["Județ", building.county || ""], ["Categorie", building.category || ""],
       ["An construcție", building.yearBuilt || ""], ["Suprafață utilă (m²)", building.areaUseful || ""],
       ["Volum (m³)", building.volume || ""], ["Suprafață anvelopă (m²)", building.areaEnvelope || ""],
@@ -438,7 +463,7 @@ export async function exportExcelFull(ctx) {
       ["Adresa", building.address || ""],
       ["Localitate", building.locality || ""],
       ["Judet", building.county || ""],
-      ["Categorie functionala", building.category || ""],
+      ["Categorie funcțională", building.category || ""],
       ["An constructie", building.yearBuilt || ""],
       ["Regim inaltime", building.floors || ""],
       ["Suprafata utila (m2)", building.areaUseful || ""],
@@ -448,7 +473,7 @@ export async function exportExcelFull(ctx) {
       [],
       ["DATE CLIMATICE", ""],
       ["Localitate referinta", selectedClimate?.name || ""],
-      ["Zona climatica", selectedClimate?.zone || ""],
+      ["Zonă climatică", selectedClimate?.zone || ""],
       ["Temperatura ext. calcul (C)", selectedClimate?.theta_e || ""],
       ["Temperatura medie anuala (C)", selectedClimate?.theta_a || ""],
       ["GZile (C*zile)", selectedClimate?.gzile || ""],
@@ -551,7 +576,7 @@ export async function exportExcelFull(ctx) {
       const hFuel = HEAT_SOURCES.find(s => s.id === heating.source);
       const fpH = hFuel?.fp || heating.fp || 1.1;
       const rows_inst = [
-        ["Incalzire", instSummary.qf_h, instSummary.ep_h, fpH, instSummary.co2_h],
+        ["Încălzire", instSummary.qf_h, instSummary.ep_h, fpH, instSummary.co2_h],
         ["Apa calda (ACM)", instSummary.qf_w, instSummary.ep_w, fpH, instSummary.co2_w],
         ["Racire", instSummary.qf_c, instSummary.ep_c, 2.5, instSummary.co2_c],
         ["Ventilare", instSummary.qf_v, instSummary.ep_v, 2.5, instSummary.co2_v],
@@ -694,6 +719,7 @@ export async function exportPDFNative(ctx) {
     const { default: jsPDF } = await import("jspdf");
     await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    await _setupRoFont(doc);
     const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
     const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
     const catKey = buildCatKey(building.category, cooling.hasCooling);
@@ -707,7 +733,7 @@ export async function exportPDFNative(ctx) {
     let y = 15;
 
     doc.setFontSize(16); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
-    doc.text("CERTIFICAT DE PERFORMANTA ENERGETICA", w / 2, y, { align: "center" }); y += 6;
+    doc.text("CERTIFICAT DE PERFORMANȚĂ ENERGETICĂ", w / 2, y, { align: "center" }); y += 6;
     doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(100);
     doc.text("conform Mc 001-2022 (Ordinul MDLPA nr. 16/2023)", w / 2, y, { align: "center" }); y += 10;
 
@@ -723,7 +749,7 @@ export async function exportPDFNative(ctx) {
     }
 
     doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
-    doc.text("1. Identificare cladire", 15, y); y += 2;
+    doc.text("1. Identificare clădire", 15, y); y += 2;
     doc.setDrawColor(0, 51, 102); doc.setLineWidth(0.5); doc.line(15, y, w - 15, y); y += 4;
     doc.autoTable({
       startY: y, margin: { left: 15, right: 15 }, theme: "grid",
@@ -732,16 +758,16 @@ export async function exportPDFNative(ctx) {
       body: [
         ["Adresa", `${building.address || "-"}, ${building.city || "-"}, jud. ${building.county || "-"}`],
         ["Categorie functionala", BUILDING_CATEGORIES.find(c => c.id === building.category)?.label || building.category],
-        ["An constructie / renovare", `${building.yearBuilt || "-"} / ${building.yearRenov || "-"}`],
-        ["Suprafata utila incalzita", `${Au} m\u00B2`],
-        ["Volum incalzit", `${building.volume || "-"} m\u00B3`],
+        ["An construcție / renovare", `${building.yearBuilt || "-"} / ${building.yearRenov || "-"}`],
+        ["Suprafață utilă încălzită", `${Au} m\u00B2`],
+        ["Volum încălzit", `${building.volume || "-"} m\u00B3`],
         ["Zona climatica", `${selectedClimate?.name || "-"} - Zona ${selectedClimate?.zone || "-"} (\u03B8e = ${selectedClimate?.theta_e || "-"}\u00B0C)`],
       ],
     });
     y = doc.lastAutoTable.finalY + 8;
 
     doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
-    doc.text("2. Clasare energetica", 15, y); y += 2;
+    doc.text("2. Clasare energetică", 15, y); y += 2;
     doc.line(15, y, w - 15, y); y += 6;
 
     const hexToRgb = (h) => { const r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16); return [r, g, b]; };
@@ -773,7 +799,7 @@ export async function exportPDFNative(ctx) {
     doc.text(`Nota: ${cls.score}/100`, w / 2, y, { align: "center" }); y += 8;
 
     doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(0, 51, 102);
-    doc.text("3. Consum si costuri", 15, y); y += 2;
+    doc.text("3. Consum și costuri", 15, y); y += 2;
     doc.line(15, y, w - 15, y); y += 4;
     doc.autoTable({
       startY: y, margin: { left: 15, right: 15 }, theme: "grid",
@@ -782,7 +808,7 @@ export async function exportPDFNative(ctx) {
       bodyStyles: { fontSize: 8 },
       body: [
         ["Incalzire", instSummary.qf_h?.toFixed(0) || "-", instSummary.ep_h?.toFixed(0) || "-"],
-        ["Apa calda", instSummary.qf_w?.toFixed(0) || "-", instSummary.ep_w?.toFixed(0) || "-"],
+        ["Apă caldă", instSummary.qf_w?.toFixed(0) || "-", instSummary.ep_w?.toFixed(0) || "-"],
         ["Climatizare", instSummary.qf_c?.toFixed(0) || "-", instSummary.ep_c?.toFixed(0) || "-"],
         ["Ventilare", instSummary.qf_v?.toFixed(0) || "-", instSummary.ep_v?.toFixed(0) || "-"],
         ["Iluminat", instSummary.qf_l?.toFixed(0) || "-", instSummary.ep_l?.toFixed(0) || "-"],
@@ -807,8 +833,8 @@ export async function exportPDFNative(ctx) {
       body: [
         ["Auditor energetic", auditor.name || "-"],
         ["Nr. atestat / Grad", `${auditor.atestat || "-"} / ${auditor.grade || "-"}`],
-        ["Firma", auditor.company || "-"],
-        ["Data elaborarii", auditor.date || "-"],
+        ["Firmă", auditor.company || "-"],
+        ["Data elaborării", auditor.date || "-"],
         ["Scop CPE", auditor.scopCpe || "-"],
         ["Valabilitate", `${auditor.validityYears || "10"} ani`],
       ],
@@ -1664,6 +1690,7 @@ export async function exportComplianceReport(ctx) {
     await import("jspdf-autotable");
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    await _setupRoFont(doc);
     const pageW = 210;
     const margin = 14;
     const colW = pageW - margin * 2;

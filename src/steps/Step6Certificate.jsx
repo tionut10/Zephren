@@ -1,5 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, lazy, Suspense } from "react";
 import { renderAsync } from "docx-preview";
+const PDFViewer = lazy(() => import("../components/PDFViewer.jsx"));
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
 import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
@@ -2797,19 +2798,32 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           </div>
                         )}
 
-                        {/* Office Online Viewer sau PDF direct (pdfPreviewUrl setat).
-                            Pentru blob PDF adăugăm #toolbar=0&navpanes=0 ca să ascundem
-                            bara nativă Chrome (descărcare, print, rotire) — preview-ul
-                            din Pas 6 e doar pentru vizualizare; descărcarea oficială se
-                            face prin butoanele dedicate "Generează CPE DOCX" / "Export
-                            PDF cu QR" cu watermark/cod oficial. */}
+                        {/* Preview certificat — doar pentru vizualizare.
+                            • blob PDF (Gotenberg) → randat prin PDF.js într-un canvas
+                              controlat de noi (fără toolbar nativ Chrome → fără buton
+                              descărcare/print indiferent de browser).
+                            • Office Online viewer URL → iframe Microsoft (nu putem
+                              ascunde controalele Microsoft; descărcarea oficială
+                              rămâne pe butoanele "Generează CPE DOCX" / "Export PDF cu
+                              QR" care includ codul unic CPE și restul aparatului).
+                         */}
                         {docxRendered && pdfPreviewUrl && (
-                          <iframe
-                            src={pdfPreviewUrl.startsWith("blob:") ? `${pdfPreviewUrl}#toolbar=0&navpanes=0&scrollbar=1` : pdfPreviewUrl}
-                            className="w-full h-full border-0"
-                            title="CPE Preview"
-                            style={{display: "block", height: "85vh"}}
-                          />
+                          pdfPreviewUrl.startsWith("blob:") ? (
+                            <Suspense fallback={
+                              <div className="w-full flex items-center justify-center text-xs opacity-60" style={{height: "85vh"}}>
+                                Se încarcă preview-ul…
+                              </div>
+                            }>
+                              <PDFViewer url={pdfPreviewUrl} height="85vh" title="Preview CPE" />
+                            </Suspense>
+                          ) : (
+                            <iframe
+                              src={pdfPreviewUrl}
+                              className="w-full h-full border-0"
+                              title="CPE Preview"
+                              style={{display: "block", height: "85vh"}}
+                            />
+                          )
                         )}
 
                         {/* Fallback: docx-preview în browser (fără pdfPreviewUrl) */}
