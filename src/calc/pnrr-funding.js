@@ -110,13 +110,24 @@ export const FUNDING_PROGRAMS = [
     category: "colectiv",
     buildingTypes: ["RC", "RA"],
     maxGrant_EUR: 40000, // per apartament
+    // Sprint 26 P1.17 — cofinanțare variabilă L.153/2011 republicată:
+    //   - UAT (autoritate publică locală): 30% cofinanțare locală + 70% buget de stat
+    //   - Asociație proprietari (privat): 50% cofinanțare proprie + 50% MDLPA
+    //   - Mixt (intervenție mixtă UAT + privat): 40% cofinanțare medie
+    // grantPct rămâne 50 ca DEFAULT (cazul cel mai frecvent — asociație); apelantii
+    // pot suprascrie via building.ownerType ("uat" | "asociation" | "mixed").
     grantPct: 50,
     cofinancePct: 50,
+    cofinanceByOwnerType: {
+      uat:        { grantPct: 70, cofinancePct: 30 },  // UAT primește 70% stat, contribuie 30% local
+      asociation: { grantPct: 50, cofinancePct: 50 },  // Asociație: 50/50 (default)
+      mixed:      { grantPct: 60, cofinancePct: 40 },  // Mixt: 60/40
+    },
     eligibleMeasures: ["Termoizolare fațadă", "Termoizolare acoperiș", "Ferestre comune", "Instalații comune"],
     conditions: [
       "Bloc cu minimum 4 etaje",
-      "Asociație de proprietari constituită legal",
-      "Acord minim 2/3 din proprietari",
+      "Asociație de proprietari constituită legal SAU UAT proprietar",
+      "Acord minim 2/3 din proprietari (asociație) sau hotărâre CL (UAT)",
       "Proiect tehnic avizat",
     ],
     active: true,
@@ -324,6 +335,18 @@ export function calcPNRRFunding(params) {
       }
     }
 
+    // Sprint 26 P1.17 — HG 906/2023 cofinanțare variabilă per ownerType
+    let progEffective = prog;
+    if (prog.id === "hg906_blocuri" && prog.cofinanceByOwnerType) {
+      const owner = ownerType === "uat" ? "uat"
+                  : ownerType === "mixed" ? "mixed"
+                  : "asociation";
+      const override = prog.cofinanceByOwnerType[owner];
+      if (override) {
+        progEffective = { ...prog, grantPct: override.grantPct, cofinancePct: override.cofinancePct };
+      }
+    }
+
     // Calcul grant
     let grantAmount = 0;
     let eligibleCost = investTotal;
@@ -363,7 +386,8 @@ export function calcPNRRFunding(params) {
       if (pvPct < 1) eligibleCost = investTotal * pvPct;
     }
 
-    grantAmount = Math.min(eligibleCost * (prog.grantPct / 100), prog.maxGrant_EUR);
+    // Sprint 26 P1.17 — folosește progEffective.grantPct (override per ownerType pentru HG 906)
+    grantAmount = Math.min(eligibleCost * (progEffective.grantPct / 100), prog.maxGrant_EUR);
     const cofinanceProprie = investTotal - grantAmount;
 
     if (ineligible.length === 0) {
@@ -382,7 +406,7 @@ export function calcPNRRFunding(params) {
       eligible,
       ineligible,
       grantAmount: isEligible ? Math.round(grantAmount) : 0,
-      grantPct: prog.grantPct,
+      grantPct: progEffective.grantPct,
       cofinanceProprie: isEligible ? Math.round(cofinanceProprie) : Math.round(investTotal),
       maxGrant: prog.maxGrant_EUR,
       eligibleMeasures: prog.eligibleMeasures,

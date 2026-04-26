@@ -3,63 +3,84 @@
  * Metodologie: EN 15459-1, Regulamentul UE 244/2012 (republicat 2025/2273)
  * Punct de referință cost-optim: 50 kWh/m²·an
  * Sprint 15: durate componente diferite, 3 perspective, export PDF, replacements intermediare
+ * Sprint 26 P1.15: prețuri sincronizate cu rehab-prices.js (sursă canonică)
+ * Sprint 26 P1.16: factor 0.45 (ENVELOPE_LOSSES_FRACTION) documentat explicit
  */
 import { useState, useMemo } from "react";
 import { cn } from "./ui.jsx";
 import { calcFinancialAnalysis } from "../calc/financial.js";
+import { getPriceRON } from "../data/rehab-prices.js";
 
-const MEASURES_DEFAULT = [
-  {
-    id:"wall_ins",  name:"Termoizolație pereți ext. (EPS 10cm)",
-    deltaU_pct:65,  investRON_m2:280,  lifespan:40, maintPct:0.5,
-    residualLinear:true, replacementCycles:0,
-  },
-  {
-    id:"roof_ins",  name:"Termoizolație planșeu/acoperiș (vată 20cm)",
-    deltaU_pct:70,  investRON_m2:220,  lifespan:40, maintPct:0.5,
-    residualLinear:true, replacementCycles:0,
-  },
-  {
-    id:"windows",   name:"Înlocuire ferestre (triplu vitraj Low-E)",
-    deltaU_pct:55,  investRON_m2:1200, lifespan:30, maintPct:1.0,
-    residualLinear:true, replacementCycles:0,
-  },
-  {
-    id:"boiler",    name:"Cazan condensare gaz (η=109%)",
-    deltaEP_pct:15, investRON:12000,   lifespan:20, maintPct:2.0,
-    residualLinear:true, replacementCycles:1,
-  },
-  {
-    id:"hp",        name:"Pompă de căldură aer-apă (COP=4)",
-    deltaEP_pct:40, investRON:32000,   lifespan:20, maintPct:2.0,
-    residualLinear:true, replacementCycles:1,
-  },
-  {
-    id:"pv_5kw",    name:"Sistem fotovoltaic 5 kWp",
-    prodkWh:5500,   investRON:27300,   lifespan:25, maintPct:1.0,
-    residualLinear:true, replacementCycles:1,
-  },
-  {
-    id:"solar_th",  name:"Panouri solare termice 4m²",
-    deltaEP_pct:12, investRON:8000,    lifespan:20, maintPct:1.5,
-    residualLinear:true, replacementCycles:1,
-  },
-  {
-    id:"vmc_hr",    name:"VMC cu recuperare căldură (η=80%)",
-    deltaEP_pct:18, investRON:15000,   lifespan:20, maintPct:2.0,
-    residualLinear:true, replacementCycles:1,
-  },
-  {
-    id:"led",       name:"LED + senzori",
-    deltaEP_pct:6,  investRON_m2:40,   lifespan:10, maintPct:0.5,
-    residualLinear:true, replacementCycles:2,
-  },
-  {
-    id:"bacs_b",    name:"BACS clasa B (economie ~17%)",
-    deltaEP_pct:17, investRON:25000,   lifespan:15, maintPct:3.0,
-    residualLinear:true, replacementCycles:1,
-  },
-];
+// Sprint 26 P1.16 — Factor 0.45 = ponderea pierderilor termice ale anvelopei
+// din EP total al clădirii (rest 55% = ACM, iluminat, ventilație, electrocasnice).
+// Sursă: Mc 001-2022 §5.2 (decompoziție EP per sistem) + studii UTBv 2018-2020
+// stoc rezidențial RO (medie 40-50% pe construcții 1960-2000).
+// Folosit pentru a converti reducerea U (anvelopă) în reducere EP (totală).
+const ENVELOPE_LOSSES_FRACTION = 0.45;
+
+// Sprint 26 P1.15 — Constructor MEASURES cu prețuri derivate runtime din rehab-prices.js.
+// Acceptă fallback la valorile vechi dacă catalogul nu are item-ul (backward compat).
+function buildDefaultMeasures() {
+  const _p = (cat, item, fb) => getPriceRON(cat, item)?.priceRON ?? fb;
+  return [
+    {
+      id:"wall_ins",  name:"Termoizolație pereți ext. (EPS 10cm)",
+      deltaU_pct:65,  investRON_m2:_p('envelope', 'wall_eps_10cm', 280),
+      lifespan:40, maintPct:0.5, residualLinear:true, replacementCycles:0,
+    },
+    {
+      id:"roof_ins",  name:"Termoizolație planșeu/acoperiș (vată 20cm)",
+      deltaU_pct:70,  investRON_m2:_p('envelope', 'roof_mw_25cm', 220),
+      lifespan:40, maintPct:0.5, residualLinear:true, replacementCycles:0,
+    },
+    {
+      id:"windows",   name:"Înlocuire ferestre (triplu vitraj Low-E)",
+      deltaU_pct:55,  investRON_m2:_p('envelope', 'windows_u090', 1200),
+      lifespan:30, maintPct:1.0, residualLinear:true, replacementCycles:0,
+    },
+    {
+      id:"boiler",    name:"Cazan condensare gaz (η=109%)",
+      deltaEP_pct:15, investRON:_p('heating', 'boiler_cond_24kw', 12000),
+      lifespan:20, maintPct:2.0, residualLinear:true, replacementCycles:1,
+    },
+    {
+      id:"hp",        name:"Pompă de căldură aer-apă (COP=4)",
+      deltaEP_pct:40, investRON:_p('heating', 'hp_aw_12kw', 32000),
+      lifespan:20, maintPct:2.0, residualLinear:true, replacementCycles:1,
+    },
+    {
+      id:"pv_5kw",    name:"Sistem fotovoltaic 5 kWp",
+      // pv_kwp e EUR/kWp → derivăm pentru 5 kWp în RON
+      prodkWh:5500,   investRON:_p('renewables', 'pv_kwp', 27300) * 5 || 27300,
+      lifespan:25, maintPct:1.0, residualLinear:true, replacementCycles:1,
+    },
+    {
+      id:"solar_th",  name:"Panouri solare termice 4m²",
+      deltaEP_pct:12, investRON:_p('heating', 'solar_thermal_4m2', 8000),
+      lifespan:20, maintPct:1.5, residualLinear:true, replacementCycles:1,
+    },
+    {
+      id:"vmc_hr",    name:"VMC cu recuperare căldură (η=80%)",
+      deltaEP_pct:18, investRON:15000,   // EUR/m² × Au; păstrat hardcodat (depinde de Au)
+      lifespan:20, maintPct:2.0, residualLinear:true, replacementCycles:1,
+    },
+    {
+      id:"led",       name:"LED + senzori",
+      deltaEP_pct:6,  investRON_m2:_p('lighting', 'led_replacement', 40),
+      lifespan:10, maintPct:0.5, residualLinear:true, replacementCycles:2,
+    },
+    {
+      id:"bacs_b",    name:"BACS clasa B (economie ~17%)",
+      deltaEP_pct:17, investRON:_p('bacs', 'class_c_to_b', 25000),
+      lifespan:15, maintPct:3.0, residualLinear:true, replacementCycles:1,
+    },
+  ];
+}
+
+// MEASURES_DEFAULT calculate la încărcarea modulului (snapshot al cursului EUR/RON
+// la momentul mount); pentru actualizări runtime, consumatorii pot apela
+// buildDefaultMeasures() direct.
+const MEASURES_DEFAULT = buildDefaultMeasures();
 
 const COST_OPTIMAL_REF = 50; // kWh/m²·an — EN 15459-1 / 244/2012 (rep. 2025/2273)
 
@@ -107,7 +128,7 @@ export function calcMeasure(m, Au, ep_m2, pretEnergie, escalare, rata, perioadaA
   if (m.deltaEP_pct) {
     ep_reducere_kWh = ep_m2 * Au * (m.deltaEP_pct / 100);
   } else if (m.deltaU_pct) {
-    ep_reducere_kWh = ep_m2 * Au * (m.deltaU_pct / 100) * 0.45;
+    ep_reducere_kWh = ep_m2 * Au * (m.deltaU_pct / 100) * ENVELOPE_LOSSES_FRACTION;
   } else if (m.prodkWh) {
     ep_reducere_kWh = m.prodkWh;
   }
@@ -144,7 +165,7 @@ export function calcMeasure(m, Au, ep_m2, pretEnergie, escalare, rata, perioadaA
   // EP după măsură
   let deltaEP_abs = 0;
   if (m.deltaEP_pct) deltaEP_abs = ep_m2 * (m.deltaEP_pct / 100);
-  else if (m.deltaU_pct) deltaEP_abs = ep_m2 * (m.deltaU_pct / 100) * 0.45;
+  else if (m.deltaU_pct) deltaEP_abs = ep_m2 * (m.deltaU_pct / 100) * ENVELOPE_LOSSES_FRACTION;
   else if (m.prodkWh && Au > 0) deltaEP_abs = m.prodkWh / Au;
 
   const ep_dupa    = Math.max(0, ep_m2 - deltaEP_abs);
@@ -248,7 +269,7 @@ export default function LCCAnalysis({ building = {}, instSummary = {}, opaqueEle
     let deltaEP_pct_total = 0;
     pachetSelected.forEach(r => {
       if (r.deltaEP_pct) deltaEP_pct_total += r.deltaEP_pct;
-      else if (r.deltaU_pct) deltaEP_pct_total += r.deltaU_pct * 0.45;
+      else if (r.deltaU_pct) deltaEP_pct_total += r.deltaU_pct * ENVELOPE_LOSSES_FRACTION;
       else if (r.prodkWh && Au > 0) deltaEP_pct_total += (r.prodkWh / Au / ep_m2) * 100;
     });
     deltaEP_pct_total = Math.min(90, deltaEP_pct_total);
