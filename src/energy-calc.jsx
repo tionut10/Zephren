@@ -164,6 +164,8 @@ export default function EnergyCalcApp({ cloud }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState("dark");
   const [showTutorial, setShowTutorial] = useState(false);
+  // Grup activ pentru bara de jos pe mobile (popover sub-pași 1-2 / 3-4 / 5-6 / 7-8)
+  const [activeNavGroup, setActiveNavGroup] = useState(null);
 
   // Sprint 18 UX — închide sidebar la tasta Escape (mobile/tablet)
   useEffect(() => {
@@ -172,6 +174,15 @@ export default function EnergyCalcApp({ cloud }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [sidebarOpen]);
+
+  // Închide popover-ul grupului la Escape sau la schimbarea pasului
+  useEffect(() => { if (activeNavGroup) setActiveNavGroup(null); }, [step]);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!activeNavGroup) return;
+    const onKey = (e) => { if (e.key === "Escape") setActiveNavGroup(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeNavGroup]);
 
   // ═══════════════════════════════════════════════════════════════
   // TIER SYSTEM — Free / Pro / Business
@@ -2743,8 +2754,8 @@ export default function EnergyCalcApp({ cloud }) {
             mask-image: linear-gradient(to right, black 90%, transparent);
           }
           
-          /* Main content: less padding, room for bottom nav */
-          .ep-theme main { padding: 12px 10px 64px 10px !important; }
+          /* Main content: less padding, room for bottom nav (28px bottom — bottom nav is overlaid via fixed) */
+          .ep-theme main { padding: 12px 10px 28px 10px !important; }
           
           /* Cards: tighter padding */
           .ep-theme .rounded-xl { border-radius: 12px; }
@@ -2807,10 +2818,12 @@ export default function EnergyCalcApp({ cloud }) {
           .ep-theme .h-14.lg\\:hidden { display: none !important; }
         }
         
-        /* ═══ SAFE AREA (iPhone notch) ═══ */
+        /* ═══ SAFE AREA (iPhone notch) — doar pe mobile (<md, sub 768px) unde bara de jos e fixed bottom-0 ═══ */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
           .ep-theme .fixed.bottom-0 { padding-bottom: env(safe-area-inset-bottom); }
-          .ep-theme main { padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
+          @media (max-width: 767px) {
+            .ep-theme main { padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important; }
+          }
         }
         
         /* ═══ PRINT LAYOUT (C10) ═══ */
@@ -2983,11 +2996,11 @@ export default function EnergyCalcApp({ cloud }) {
               aria-label={sidebarOpen ? "Închide navigare pași" : "Deschide navigare pași"}
               aria-expanded={sidebarOpen}
               aria-controls="sidebar-nav"
-              className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0">
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 hover:bg-white/5 shrink-0">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
             <img src="/logo.svg" alt="Zephren" className="shrink-0" style={{height:"36px", width:"auto"}} />
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{APP_VERSION}</span>
+            <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">v{APP_VERSION}</span>
             <h1 className="sr-only">Zephren — Calculator Performanță Energetică</h1>
 
             {/* Plan badge dropdown — Sprint Pricing v6.0 (25 apr 2026)
@@ -3139,23 +3152,18 @@ export default function EnergyCalcApp({ cloud }) {
           {/* Separator 2 */}
           <div className="hidden lg:block w-px h-5 bg-white/[0.08] shrink-0" />
 
-          {/* Spacer + breadcrumb desktop */}
-          <div className="flex-1 hidden lg:flex items-center justify-center">
-            <div className="flex items-center gap-1.5 text-xs opacity-40">
-              {STEPS.map((s, i) => (
-                <span key={s.id} className="flex items-center gap-1">
-                  {i > 0 && <span className="opacity-30">›</span>}
-                  <span className={cn("transition-all", step === s.id && "opacity-100 text-amber-400 font-semibold")}>
-                    {s.id === step ? s.label : s.id}
-                  </span>
-                </span>
-              ))}
-            </div>
-          </div>
+          {/* Spacer (breadcrumb numeric eliminat — redundant cu sidebar + progress bar) */}
+          <div className="flex-1" />
 
           {/* ── ZONA 3: ACȚIUNI (undo · salvat · quickfill · tutorial · ⋯) ── */}
           <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Mobile: Proiecte + Nou */}
+            {/* Mobile: Formular Client + Proiecte + Nou (Formular Client doar pe <md, sidebar-ul îl arată pe tabletă+) */}
+            <button onClick={() => { setShowClientForm(true); setSidebarOpen(false); }}
+              title={lang==="EN"?"Client form":"Formular date client"}
+              aria-label={lang==="EN"?"Open client form":"Deschide formular client"}
+              className="md:hidden text-[10px] px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15 transition-all shrink-0">
+              <span aria-hidden="true">👤</span>
+            </button>
             <button onClick={() => { refreshProjectList(); setShowProjectManager(true); }}
               className="lg:hidden text-[10px] px-2 py-1 rounded-lg border border-amber-500/20 text-amber-400/70 hover:bg-amber-500/10 transition-all shrink-0">
               📁
@@ -3303,34 +3311,51 @@ export default function EnergyCalcApp({ cloud }) {
                 <span className="hidden md:inline">Zona </span>{selectedClimate.zone}
               </Badge>
             )}
+            {/* Coef. G mini-badge — vizibil doar pe mobile (<md); sidebar-ul îl arată pe tabletă/desktop */}
+            {envelopeSummary && envelopeSummary.G > 0 && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                title={`Coef. global G = ${envelopeSummary.G.toFixed(3)} W/(m³·K). Click pentru detalii.`}
+                aria-label={`Coeficient global G: ${envelopeSummary.G.toFixed(3)}`}
+                className={cn(
+                  "md:hidden text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border transition-colors shrink-0",
+                  envelopeSummary.G < 0.5 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" :
+                  envelopeSummary.G < 0.8 ? "border-amber-500/30 text-amber-400 bg-amber-500/10" :
+                  "border-red-500/30 text-red-400 bg-red-500/10"
+                )}>
+                G {envelopeSummary.G.toFixed(2)}
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <div className="flex-1 overflow-hidden max-w-7xl mx-auto flex gap-0 relative w-full">
-        {sidebarOpen && <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] lg:hidden" onClick={() => setSidebarOpen(false)} />}
-        <nav id="sidebar-nav" aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 max-w-[min(280px,70vw)] lg:max-w-none shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
-          <button onClick={() => setSidebarOpen(false)} aria-label="Închide meniul lateral" className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2"><span aria-hidden="true">✕</span></button>
+        {sidebarOpen && <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] md:hidden" onClick={() => setSidebarOpen(false)} />}
+        <nav id="sidebar-nav" aria-label="Navigare pași" className={cn("fixed md:static inset-y-0 left-0 z-50 w-64 sm:w-56 max-w-[min(280px,70vw)] md:max-w-none lg:w-56 shrink-0 border-r border-white/[0.06] py-6 px-3 md:px-2 lg:px-3 transform transition-transform duration-200 md:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
+          <button onClick={() => setSidebarOpen(false)} aria-label="Închide meniul lateral" className="md:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2"><span aria-hidden="true">✕</span></button>
           {STEPS.map((s, i) => {
             const pct = stepCompleteness[i] ?? 0;
             const dotColor = pct >= 1 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(255,255,255,0.15)";
+            const stepLabel = lang==="EN" && s.labelEN ? s.labelEN : s.label;
+            const stepDesc = lang==="EN" && s.descEN ? s.descEN : s.desc;
             return (
             <button key={s.id} onClick={() => { if(!s.locked){setStep(s.id);setSidebarOpen(false);} }}
+              title={`${s.id}. ${stepLabel}`}
+              aria-label={`Pas ${s.id}: ${stepLabel}`}
+              aria-current={step === s.id ? "step" : undefined}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-3 rounded-xl mb-1 text-left transition-all",
+                "w-full flex items-center gap-2.5 md:gap-2 lg:gap-3 px-3 md:px-2 lg:px-3 py-2.5 md:py-2 lg:py-3 rounded-xl mb-1 text-left transition-all",
                 step === s.id ? "bg-amber-500/10 border border-amber-500/20" : "hover:bg-white/[0.03] border border-transparent",
                 s.locked && "opacity-25 cursor-not-allowed"
               )}>
-              <span className="text-lg">{s.icon}</span>
+              <span className="text-base md:text-base lg:text-lg shrink-0">{s.icon}</span>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold">{s.id}. {lang==="EN" && s.labelEN ? s.labelEN : s.label}</div>
-                <div className="text-[10px] opacity-40">{lang==="EN" && s.descEN ? s.descEN : s.desc}</div>
+                <div className="text-xs font-semibold leading-tight truncate">{s.id}. {stepLabel}</div>
+                <div className="hidden lg:block text-[10px] opacity-40 truncate">{stepDesc}</div>
               </div>
-              <div className="ml-auto flex flex-col items-center gap-1 shrink-0">
-                {step === s.id
-                  ? <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  : <div className="w-1.5 h-1.5 rounded-full" style={{background: dotColor}} />
-                }
+              <div className="ml-auto flex items-center shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full" style={{background: step === s.id ? "#f59e0b" : dotColor}} />
               </div>
             </button>
             );
@@ -3338,26 +3363,28 @@ export default function EnergyCalcApp({ cloud }) {
 
           {/* Envelope summary mini-panel */}
           {envelopeSummary && envelopeSummary.G > 0 && (
-            <div className="mt-6 p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
-              <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Coef. global G</div>
-              <div className={cn("text-2xl font-bold font-mono", envelopeSummary.G < 0.5 ? "text-emerald-400" : envelopeSummary.G < 0.8 ? "text-amber-400" : "text-red-400")}>
+            <div className="mt-4 p-2.5 md:p-2 lg:p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+              <div className="text-[9px] md:text-[9px] lg:text-[10px] uppercase tracking-widest opacity-40 mb-1.5">Coef. global G</div>
+              <div className={cn("text-xl md:text-xl lg:text-2xl font-bold font-mono leading-none", envelopeSummary.G < 0.5 ? "text-emerald-400" : envelopeSummary.G < 0.8 ? "text-amber-400" : "text-red-400")}>
                 {envelopeSummary.G.toFixed(3)}
               </div>
-              <div className="text-[10px] opacity-30">W/(m³·K)</div>
+              <div className="text-[9px] lg:text-[10px] opacity-30 mt-0.5">W/(m³·K)</div>
             </div>
           )}
           {/* Formular Date Client */}
           <button onClick={() => { setShowClientForm(true); setSidebarOpen(false); }}
             aria-label={lang==="EN"?"Open client data form":"Deschide formular date client"}
-            className="w-full mt-4 flex items-center gap-3 px-3 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left">
-            <span className="text-lg" aria-hidden="true">👤</span>
-            <div>
-              <div className="text-xs font-semibold text-amber-300">{lang==="EN"?"Client form":"Formular Client"}</div>
-              <div className="text-[10px] opacity-50">{lang==="EN"?"Audit data":"Date pentru audit"}</div>
+            title={lang==="EN"?"Client form — Audit data":"Formular Client — Date pentru audit"}
+            className="w-full mt-3 flex items-center gap-2.5 md:gap-2 lg:gap-3 px-3 md:px-2 lg:px-3 py-2.5 md:py-2 lg:py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left">
+            <span className="text-base lg:text-lg shrink-0" aria-hidden="true">👤</span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-amber-300 truncate">{lang==="EN"?"Client form":"Formular Client"}</div>
+              <div className="hidden lg:block text-[10px] opacity-50 truncate">{lang==="EN"?"Audit data":"Date pentru audit"}</div>
             </div>
           </button>
 
-          <div className="mt-4 p-2 bg-white/[0.02] rounded-lg">
+          {/* Shortcuts hint — doar pe desktop (sidebar full-size) */}
+          <div className="mt-3 p-2 bg-white/[0.02] rounded-lg hidden lg:block">
             <div className="text-[8px] opacity-25 space-y-0.5">
               <div>{lang==="EN"?"Ctrl+S — Export project":"Ctrl+S — Export proiect"}</div>
               <div>{lang==="EN"?"Alt+← → — Navigate steps":"Alt+← → — Navigare pași"}</div>
@@ -3367,7 +3394,7 @@ export default function EnergyCalcApp({ cloud }) {
         </nav>
 
         {/* MAIN CONTENT */}
-        <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 pb-16 lg:pb-6 overflow-y-auto min-w-0">
+        <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 pb-16 md:pb-6 overflow-y-auto min-w-0">
 
           {/* ═══ BANNER OFFLINE ═══ */}
           {!isOnline && (
@@ -4223,33 +4250,122 @@ export default function EnergyCalcApp({ cloud }) {
         </div>
       )}
 
-      {/* ═══ MOBILE BOTTOM NAVIGATION BAR ═══ */}
-      <div className="fixed bottom-0 left-0 right-0 z-[9990] lg:hidden" style={{background:theme==="dark"?"rgba(10,10,26,0.95)":"rgba(245,247,250,0.95)",backdropFilter:"blur(12px)",borderTop:theme==="dark"?"1px solid rgba(255,255,255,0.08)":"1px solid rgba(0,0,0,0.1)"}}>
-        <div className="flex items-stretch overflow-x-auto" style={{scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
-          {STEPS.map((s, i) => {
-            const pct = stepCompleteness[i] ?? 0;
-            const isActive = step === s.id;
-            return (
-            <button key={s.id} onClick={() => { setStep(s.id); setSidebarOpen(false); }}
-              className="flex flex-col items-center justify-center flex-shrink-0 py-2 transition-all relative"
-              style={{width: (100/STEPS.length)+"%", minWidth: "52px", opacity: isActive ? 1 : 0.5}}>
-              {/* dot completare */}
-              {pct >= 1 && !isActive && (
-                <div className="absolute top-1 right-1/4 w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              )}
-              <span className="text-base leading-none">{s.icon}</span>
-              <span className="text-[10px] mt-0.5 font-medium leading-tight truncate w-full text-center px-0.5"
-                style={{color: isActive ? "#f59e0b" : "inherit"}}>
-                {lang==="EN" ? (s.labelEN||s.label) : s.label}
-              </span>
-              {isActive && <div className="w-4 h-0.5 rounded-full bg-amber-500 mt-0.5" />}
-            </button>
-            );
-          })}
-        </div>
-      </div>
-      {/* Bottom nav spacer for mobile content */}
-      <div className="h-14 lg:hidden" />
+      {/* ═══ BOTTOM NAVIGATION BAR ═══
+          Mobile (<sm, <640px): 4 grupuri (Date/Sisteme/Calcul/Rapoarte) cu popover sub-pași
+          Tabletă (sm-lg, 640-1023px): 8 pași clasici
+          Desktop (lg+, 1024px+): ascuns (sidebar) */}
+      {(() => {
+        const NAV_GROUPS = [
+          { id: 'date',     labelRO: 'Date',     labelEN: 'Data',    icon: '📋', stepIds: [1, 2] },
+          { id: 'sisteme',  labelRO: 'Sisteme',  labelEN: 'Systems', icon: '⚙️', stepIds: [3, 4] },
+          { id: 'calcul',   labelRO: 'Calcul',   labelEN: 'Calc',    icon: '📊', stepIds: [5, 6] },
+          { id: 'rapoarte', labelRO: 'Rapoarte', labelEN: 'Reports', icon: '📑', stepIds: [7, 8] },
+        ];
+        const bgStyle = {
+          background: theme==="dark"?"rgba(10,10,26,0.95)":"rgba(245,247,250,0.95)",
+          backdropFilter: "blur(12px)",
+          borderTop: theme==="dark"?"1px solid rgba(255,255,255,0.08)":"1px solid rgba(0,0,0,0.1)"
+        };
+        return (<>
+          {/* Mobile (<sm) — grupuri + popover */}
+          <div className="fixed bottom-0 left-0 right-0 z-[9990] sm:hidden" style={bgStyle}>
+            {/* Popover sub-pași pentru grupul activ */}
+            {activeNavGroup && (() => {
+              const g = NAV_GROUPS.find(x => x.id === activeNavGroup);
+              if (!g) return null;
+              return (
+                <>
+                  <div className="fixed inset-0 z-[9989]" onClick={() => setActiveNavGroup(null)} aria-hidden="true" />
+                  <div className="absolute bottom-full left-2 right-2 mb-1 rounded-xl border border-white/10 shadow-2xl p-1 z-[9991]"
+                    style={{background: theme==="dark"?"#0d0f1a":"#ffffff"}}
+                    role="menu" aria-label={lang==="EN"?`Steps in ${g.labelEN}`:`Pași în ${g.labelRO}`}>
+                    {g.stepIds.map(sid => {
+                      const s = STEPS.find(st => st.id === sid);
+                      if (!s) return null;
+                      const pct = stepCompleteness[sid - 1] ?? 0;
+                      const isActive = step === sid;
+                      return (
+                        <button key={s.id}
+                          onClick={() => { if(!s.locked){ setStep(s.id); setActiveNavGroup(null); setSidebarOpen(false); } }}
+                          disabled={s.locked}
+                          role="menuitem"
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-colors",
+                            isActive ? "bg-amber-500/10 text-amber-400" : "hover:bg-white/5",
+                            s.locked && "opacity-30 cursor-not-allowed"
+                          )}>
+                          <span className="text-lg shrink-0">{s.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold">{s.id}. {lang==="EN" && s.labelEN ? s.labelEN : s.label}</div>
+                            <div className="text-[10px] opacity-50 truncate">{lang==="EN" && s.descEN ? s.descEN : s.desc}</div>
+                          </div>
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{
+                            background: pct >= 1 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(255,255,255,0.15)"
+                          }} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+            <div className="flex items-stretch">
+              {NAV_GROUPS.map(g => {
+                const isCurrentGroup = g.stepIds.includes(step);
+                const isOpen = activeNavGroup === g.id;
+                const groupPct = g.stepIds.reduce((a, sid) => a + (stepCompleteness[sid - 1] ?? 0), 0) / g.stepIds.length;
+                return (
+                  <button key={g.id}
+                    onClick={() => setActiveNavGroup(isOpen ? null : g.id)}
+                    aria-expanded={isOpen}
+                    aria-haspopup="menu"
+                    aria-label={`${lang==="EN" ? g.labelEN : g.labelRO} — ${g.stepIds.length} ${lang==="EN" ? "steps" : "pași"}`}
+                    className="flex flex-col items-center justify-center flex-1 py-2 transition-all relative"
+                    style={{minWidth: "52px", opacity: (isCurrentGroup || isOpen) ? 1 : 0.55}}>
+                    {/* dot completare grup (verde dacă ambii pași completi) */}
+                    {groupPct >= 1 && !isCurrentGroup && (
+                      <div className="absolute top-1 right-[28%] w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    )}
+                    <span className="text-base leading-none">{g.icon}</span>
+                    <span className="text-[10px] mt-0.5 font-medium leading-tight"
+                      style={{color: isCurrentGroup ? "#f59e0b" : "inherit"}}>
+                      {lang==="EN" ? g.labelEN : g.labelRO}
+                    </span>
+                    {isCurrentGroup && <div className="w-4 h-0.5 rounded-full bg-amber-500 mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Small tablet (sm-md, 640-767px) — 8 pași clasici */}
+          <div className="fixed bottom-0 left-0 right-0 z-[9990] hidden sm:block md:hidden" style={bgStyle}>
+            <div className="flex items-stretch overflow-x-auto" style={{scrollbarWidth:"none",WebkitOverflowScrolling:"touch"}}>
+              {STEPS.map((s, i) => {
+                const pct = stepCompleteness[i] ?? 0;
+                const isActive = step === s.id;
+                return (
+                  <button key={s.id} onClick={() => { setStep(s.id); setSidebarOpen(false); }}
+                    className="flex flex-col items-center justify-center flex-shrink-0 py-2 transition-all relative"
+                    style={{width: (100/STEPS.length)+"%", minWidth: "52px", opacity: isActive ? 1 : 0.5}}>
+                    {pct >= 1 && !isActive && (
+                      <div className="absolute top-1 right-1/4 w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    )}
+                    <span className="text-base leading-none">{s.icon}</span>
+                    <span className="text-[10px] mt-0.5 font-medium leading-tight truncate w-full text-center px-0.5"
+                      style={{color: isActive ? "#f59e0b" : "inherit"}}>
+                      {lang==="EN" ? (s.labelEN||s.label) : s.label}
+                    </span>
+                    {isActive && <div className="w-4 h-0.5 rounded-full bg-amber-500 mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>);
+      })()}
+      {/* Bottom nav spacer (only when bottom nav is visible: <md) */}
+      <div className="h-14 md:hidden" />
 
       {/* Project Manager Modal */}
       {/* Team Manager Modal */}
