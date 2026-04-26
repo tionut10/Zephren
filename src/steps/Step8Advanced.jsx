@@ -36,7 +36,6 @@ import PVDegradation from "../components/PVDegradation.jsx";
 import CloudSyncPanel from "../components/CloudSyncPanel.jsx";
 import ContractGenerator from "../components/ContractGenerator.jsx";
 import EFacturaExport from "../components/EFacturaExport.jsx";
-import ThermovisionModule from "../components/ThermovisionModule.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 import CPETracker from "../components/CPETracker.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -106,7 +105,6 @@ export const TAB_SECTIONS = [
 
   // 🔍 04 DIAGNOSTIC & VIZUALIZARE (validare vizuală + confruntare)
   { id:"thermal_map",   icon:"🌡️", label:"Hartă termică",            category:"diagnostic" },
-  { id:"termoviziune",  icon:"🔴", label:"Termoviziune",             category:"diagnostic" },
   { id:"reconciliere",  icon:"📊", label:"Reconciliere consum",      category:"diagnostic" },
   { id:"benchmark",     icon:"📊", label:"Benchmark",                category:"diagnostic" },
   { id:"monte_carlo",   icon:"🎲", label:"Monte Carlo EP",           category:"diagnostic" },
@@ -341,8 +339,6 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [showInvoice, setShowInvoice] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [showEFactura, setShowEFactura] = useState(false);
-  const [showThermovision, setShowThermovision] = useState(false);
-  const [thermovisionPhotos, setThermovisionPhotos] = useState([]);
   const [showOferta, setShowOferta] = useState(false);
 
   // ── Climate import state ──
@@ -828,8 +824,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           <h2 className="text-lg font-bold mb-3">{lang === "EN" ? "Advanced modules" : "Module avansate"}</h2>
           <p className="text-sm text-slate-400 mb-4">
             {lang === "EN"
-              ? "Step 8 includes 18 advanced specialist modules: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per room, Thermovision, Urban Heat Island, Historic & Mixed-use buildings, Portfolio Dashboard, BACS detailed (200 factors), SRI complete (42 services), MEPS optimizer 2050, detailed Renovation Passport with LCC."
-              : "Step 8 include 18 module avansate specializate: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per cameră, Thermovision, Insulă termică urbană, Clădiri istorice & mixed-use, PortfolioDashboard, BACS detaliat (200 factori), SRI complet (42 servicii), MEPS optimizator 2050, Pașaport Renovare detaliat cu LCC."}
+              ? "Step 8 includes advanced specialist modules: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per room, Urban Heat Island, Historic & Mixed-use buildings, Portfolio Dashboard, BACS detailed (200 factors), SRI complete (42 services), MEPS optimizer 2050, detailed Renovation Passport with LCC."
+              : "Step 8 include module avansate specializate: MonteCarlo EP, Pasivhaus, PMV/PPD, EN 12831 per cameră, Insulă termică urbană, Clădiri istorice & mixed-use, PortfolioDashboard, BACS detaliat (200 factori), SRI complet (42 servicii), MEPS optimizator 2050, Pașaport Renovare detaliat cu LCC."}
           </p>
         </div>
         <PlanGate
@@ -4481,23 +4477,6 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ TERMOVIZIUNE ═══ */}
-      {activeTab === "termoviziune" && (
-        <Card className="p-4">
-          <SectionHeader icon="🔴" title="Modul termoviziune"
-            subtitle="Upload fotografii IR, adnotare zone pierderi termice, includere în raport" />
-          {thermovisionPhotos.length > 0 && (
-            <div className="mb-3 text-xs text-emerald-400">
-              ✓ {thermovisionPhotos.length} fotografie(ii) salvate cu {thermovisionPhotos.reduce((s,p) => s + (p.annotations?.length||0), 0)} adnotări
-            </div>
-          )}
-          <button onClick={() => setShowThermovision(true)}
-            className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg transition-colors text-sm">
-            🔴 Deschide Modul Termoviziune
-          </button>
-        </Card>
-      )}
-
       {/* ═══ CLOUD SYNC ═══ */}
       {activeTab === "cloud_sync" && (
         <Card className="p-4">
@@ -4670,7 +4649,6 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {showInvoice && <AuditInvoice building={building} onClose={() => setShowInvoice(false)} />}
       {showContract && <ContractGenerator building={building} onClose={() => setShowContract(false)} />}
       {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />}
-      {showThermovision && <ThermovisionModule onClose={() => setShowThermovision(false)} onSave={photos => { setThermovisionPhotos(photos); setShowThermovision(false); }} />}
 
       {showOferta && <OfertaReabilitare building={building} instSummary={instSummary} auditor={systems?.auditor} onClose={() => setShowOferta(false)} />}
 

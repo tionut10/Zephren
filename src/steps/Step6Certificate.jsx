@@ -18,7 +18,7 @@ import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } 
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
 import { REHAB_COSTS } from "../data/rehab-costs.js";
 import { T } from "../data/translations.js";
-import { generateCPEAnexe, generateNZEBConformanceReport } from "../lib/report-generators.js";
+import { generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
 import { autoGenerateCPECode, canAutoGenerateCPE } from "../utils/cpe-auto-gen.js";
 import { supabase } from "../lib/supabase.js";
@@ -52,7 +52,7 @@ export default function Step6Certificate(props) {
     canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-    exportPDFArchival, exportQuickSheet, fetchTemplate,
+    fetchTemplate,
     bacsClass, bacsCheck, setBacsClass,
     buildingPhotos,
     userPlan,           // Sprint Pricing v6.0 — pentru gating BACS/SRI/MEPS detaliate
@@ -2143,10 +2143,27 @@ ${(() => {
                     </div>
                   </Card>
 
-                  {/* Sprint 15 — Semnătură + ștampilă auditor (PNG cu transparență) */}
-                  <Card title={t("Semnătură & ștampilă",lang)}>
-                    <AuditorSignatureStampUpload auditor={auditor} setAuditor={setAuditor} />
-                  </Card>
+                  {/* Sprint 15 — Semnătură + ștampilă auditor (PNG cu transparență)
+                      Setup one-time per cont auditor — ascuns într-un <details>
+                      collapsible (default închis) ca să nu aglomereze wizard-ul.
+                      Datele se persistă în starea `auditor` cross-CPE prin storage. */}
+                  <details className="group">
+                    <summary className="cursor-pointer text-[11px] opacity-50 hover:opacity-80 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] transition-all flex items-center gap-2">
+                      <span className="group-open:rotate-90 transition-transform">▶</span>
+                      <span>{t("Semnătură & ștampilă auditor",lang)}</span>
+                      <span className="text-[9px] opacity-60 ml-auto">{lang==="EN" ? "one-time setup" : "setup unic"}</span>
+                    </summary>
+                    <div className="mt-2">
+                      <Card title={t("Semnătură & ștampilă",lang)}>
+                        <div className="text-[10px] opacity-50 mb-3">
+                          {lang==="EN"
+                            ? "Upload PNG (transparent background) — used for embedding in CPE DOCX + Annex 2 official. Saved in auditor profile, not per CPE."
+                            : "Încarcă PNG (fundal transparent) — folosit pentru integrare în CPE DOCX + Anexa 2 oficială. Se salvează în profilul auditorului, nu per CPE."}
+                        </div>
+                        <AuditorSignatureStampUpload auditor={auditor} setAuditor={setAuditor} />
+                      </Card>
+                    </div>
+                  </details>
 
                   {/* MDLPA Registry info */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
@@ -3058,86 +3075,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         <div className="text-left">
                           <div className="font-medium">Export XML MDLPA</div>
                           <div className="text-[10px] opacity-60">Registru electronic Ord. 16/2023</div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={exportPDFArchival}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 cursor-pointer"
-                      }`}
-                      title="PDF/A-1b — format arhivare pe termen lung (ISO 19005-1)">
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">🗂️</span>
-                        <div className="text-left">
-                          <div className="font-medium">PDF/A Arhivare</div>
-                          <div className="text-[10px] opacity-60">ISO 19005-1 + XMP metadata</div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={exportQuickSheet}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📋</span>
-                        <div className="text-left">
-                          <div className="font-medium">Fișă sintetică client</div>
-                          <div className="text-[10px] opacity-60">1 pagină rezumativă client-friendly</div>
-                        </div>
-                      </div>
-                    </button>
-                    {/* ─── Card 7: CPE Anexa 1+2 PDF oficial (Ord. MDLPA 16/2023) ─── */}
-                    <button
-                      disabled={!dataComplete}
-                      onClick={async () => {
-                        if (!canExportDocx) { requireUpgrade("Export CPE oficial Anexe PDF necesită plan Standard sau superior"); return; }
-                        if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
-                        try {
-                          showToast("Se generează CPE Anexa 1+2 PDF oficial...", "info", 2500);
-                          await generateCPEAnexe({
-                            building, selectedClimate, auditor,
-                            heating, cooling, ventilation, lighting, acm,
-                            solarThermal, photovoltaic, heatPump, biomass,
-                            instSummary, renewSummary, envelopeSummary,
-                            opaqueElements, glazingElements,
-                            epFinal, co2Final, rer,
-                            getNzebEpMax, bacsClass,
-                            HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS,
-                            VENTILATION_TYPES, LIGHTING_TYPES, BUILDING_CATEGORIES,
-                            calcOpaqueR,
-                            rehabScenarios: props.rehabScenarioInputs,
-                            financialAnalysis,
-                            download: true,
-                          });
-                          incrementCertCount?.();
-                          showToast("✓ CPE Anexa 1+2 PDF generat cu succes", "success", 3000);
-                        } catch(e) {
-                          showToast("Eroare la generare PDF: " + e.message, "error", 5000);
-                        }
-                      }}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !dataComplete
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : !canExportDocx
-                            ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
-                            : "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📘</span>
-                        <div className="text-left">
-                          <div className="font-medium flex items-center gap-1.5">
-                            {lang==="EN" ? "CPE Annex 1+2 (official PDF)" : "Anexa 1+2 PDF oficial"}
-                            {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
-                          </div>
-                          <div className="text-[10px] opacity-60">Ord. MDLPA 16/2023 — format oficial</div>
                         </div>
                       </div>
                     </button>

@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "4 bug-uri export PDF + curățare butoane Pas 6"
+      },
+      {
         "icon": "✨",
         "text": "optimizări grafice landing + light mode"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "corectare etichete diacritice lipsă în exportPDFNative"
-      },
-      {
-        "icon": "📄",
-        "text": "integrare pdf-fonts.js pentru diacritice corecte în PDF + restaurare etichete RO"
       }
     ]
   },
