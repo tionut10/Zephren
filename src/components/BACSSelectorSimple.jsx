@@ -72,6 +72,29 @@ export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO
           )}
         </div>
       )}
+
+      {/* Sprint 27 P2.15 — NIS2 cybersecurity warning pentru BACS clasa A */}
+      {value === "A" && (
+        <div style={{
+          marginTop: "12px",
+          padding: "10px 12px",
+          background: "#FCD34D15",
+          borderLeft: "3px solid #F59E0B",
+          borderRadius: "6px",
+          fontSize: "11px",
+          lineHeight: 1.5,
+          color: "#FCD34D",
+        }}>
+          <strong style={{ color: "#FBBF24" }}>🔐 NIS2 — risc cybersecurity</strong>
+          <div style={{ opacity: 0.9, marginTop: "4px", color: "rgba(252, 211, 77, 0.9)" }}>
+            Clasa A include sisteme cu conexiune cloud → expunere atacuri OT/IT.
+            Conform <strong>Directiva UE 2022/2555 (NIS2)</strong> + transpunere RO 2026,
+            clădirile cu BACS clasa A sunt obligate să implementeze măsuri minime
+            de securitate IT (MFA, audit log, segmentare rețea OT/IT, plan IRP).
+            Verificați conformitate cu furnizorul BMS înainte de instalare.
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

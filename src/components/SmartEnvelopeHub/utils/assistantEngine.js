@@ -6,13 +6,43 @@
  */
 
 import { computeEnvelopeProgress } from "../EnvelopeProgress.js";
-import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB } from "../../../data/u-reference.js";
+import {
+  U_REF_NZEB_RES, U_REF_NZEB_NRES,
+  U_REF_RENOV_RES, U_REF_RENOV_NRES,
+  U_REF_GLAZING, getURefNZEB,
+} from "../../../data/u-reference.js";
 
 // ── Re-export constante canonice (consumate de EnvelopeAssistant + teste) ─────
 export { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB };
 // Alias-uri scalare pentru compatibilitate cu testele existente
 export const U_REF_GLAZING_RES  = U_REF_GLAZING.nzeb_res;
 export const U_REF_GLAZING_NRES = U_REF_GLAZING.nzeb_nres;
+
+// Sprint 27 P2.2 — detectare renovare majoră (yearBuilt < 2000 SAU scopCpe="renovare")
+function _isRenovation(building) {
+  const yearBuilt = parseInt(building?.yearBuilt) || 9999;
+  const scop = (building?.scopCpe || building?.scopCPE || "").toLowerCase();
+  return yearBuilt < 2000 || scop === "renovare" || scop === "renovare_majora";
+}
+
+/**
+ * Returnează U_REF pentru un element în context (nZEB nou vs renovare).
+ * Mc 001-2022 Tab 2.4 (nZEB rez) / 2.7 (nZEB nrez) / 2.10a (renov rez) / 2.10b (renov nrez).
+ */
+function _getURefAdaptive(category, elementType, building) {
+  const isRes = ["RI","RC","RA"].includes(category);
+  const isRenov = _isRenovation(building);
+  const table = isRenov
+    ? (isRes ? U_REF_RENOV_RES : U_REF_RENOV_NRES)
+    : (isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES);
+  return table?.[elementType] ?? null;
+}
+
+function _getURefGlazingAdaptive(category, building) {
+  const isRes = ["RI","RC","RA"].includes(category);
+  if (_isRenovation(building)) return U_REF_GLAZING.renov;
+  return isRes ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
+}
 
 // ── Preset prompts ────────────────────────────────────────────────────────────
 export const PRESET_PROMPTS = [
@@ -96,25 +126,28 @@ export function generateResponse(intent, ctx) {
   }
 
   // ── INTENT: „Conformitate U" ────────────────────────────────────────────────
+  // Sprint 27 P2.2 — folosește U_REF adaptiv (renovare vs nZEB nou) per categorie
   if (intent === "conformity") {
+    const isRenov = _isRenovation(building);
+    const ctxLabel = isRenov ? "renovare" : "nZEB";
     const nonCompOpaque = [];
     (opaqueElements || []).forEach(el => {
       if (!calcOpaqueR) return;
       try {
         const { u } = calcOpaqueR(el.layers, el.type) || {};
-        const uRef = getURefNZEB(cat, el.type);
+        const uRef = _getURefAdaptive(cat, el.type, building);
         if (Number.isFinite(u) && uRef && u > uRef) {
-          nonCompOpaque.push({ name: el.name, u: u.toFixed(3), uRef: uRef.toFixed(2), type: el.type });
+          nonCompOpaque.push({ name: el.name, u: u.toFixed(3), uRef: uRef.toFixed(2), type: el.type, ctxLabel });
         }
       } catch {/* ignore */}
     });
 
     const nonCompGlazing = [];
-    const uRefGlazing = isResidential(cat) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
+    const uRefGlazing = _getURefGlazingAdaptive(cat, building);
     (glazingElements || []).forEach(el => {
       const u = parseFloat(el.u);
       if (Number.isFinite(u) && u > uRefGlazing) {
-        nonCompGlazing.push({ name: el.name, u: u.toFixed(2), uRef: uRefGlazing.toFixed(2) });
+        nonCompGlazing.push({ name: el.name, u: u.toFixed(2), uRef: uRefGlazing.toFixed(2), ctxLabel });
       }
     });
 

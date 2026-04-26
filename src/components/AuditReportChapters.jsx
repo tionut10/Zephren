@@ -41,6 +41,26 @@ function fmtRo(v, d = 2) {
   return fmt(v, d).replace(".", ",");
 }
 
+// Sprint 27 P2.3 — Rsi+Rse per element type (SR EN ISO 6946 Anexa C)
+// Anterior 0.17 era folosit indiferent de tip (corect doar pentru perete vertical).
+//   PE perete vertical:        Rsi=0.13 + Rse=0.04 = 0.17
+//   PT perete tavan/acoperiș:  Rsi=0.10 + Rse=0.04 = 0.14
+//   PB planșeu peste subsol:   Rsi=0.17 + Rse=0.10 = 0.27 (în contact cu spațiu cald)
+//   PI perete intern:          Rsi=0.13 (NO Rse, perete între spații cald-cald)
+//   PL planșeu pe sol:         Rsi=0.17 + R_sol=0.10 = 0.27
+//   SE subsol exterior:        Rsi=0.17 + R_sol=0.10 = 0.27
+const RSI_RSE = {
+  PE: 0.17, // perete exterior vertical
+  PR: 0.17, // perete cu rosturi (similar PE)
+  PT: 0.14, // perete tavan / acoperiș
+  PP: 0.14, // perete planșeu peste ultim
+  PB: 0.27, // planșeu peste subsol/demisol
+  PI: 0.13, // perete intern (no Rse)
+  PL: 0.27, // planșeu pe sol
+  PS: 0.27, // planșeu pe sol (alias)
+  SE: 0.27, // subsol exterior
+};
+
 function calcU(element) {
   if (!element?.layers || element.layers.length === 0) return 0;
   const rLayers = element.layers.reduce((sum, l) => {
@@ -48,7 +68,9 @@ function calcU(element) {
     const lambda = parseFloat(l.lambda) || 1;
     return sum + d / 1000 / lambda;
   }, 0);
-  return 1 / (rLayers + 0.17);
+  // Sprint 27 P2.3 — Rsi+Rse per element type (fallback 0.17 pentru tipuri necunoscute)
+  const rsiRse = RSI_RSE[element.type] ?? 0.17;
+  return 1 / (rLayers + rsiRse);
 }
 
 function isResidential(category) {

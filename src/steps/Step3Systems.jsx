@@ -124,6 +124,20 @@ export default function Step3Systems({
                       </div>
                     ) : null;
                   })()}
+                  {/* Sprint 27 P2.10 — Banner EPBD 2024 interdicție subvenții/instalare cazane gaz */}
+                  {(() => {
+                    const src = HEAT_SOURCES.find(s=>s.id===heating.source);
+                    const isGas = src?.fuel === "gaz" || src?.fuel === "gpl";
+                    if (!isGas) return null;
+                    return (
+                      <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-200 leading-relaxed">
+                        <span className="font-semibold text-amber-300">⚠ EPBD 2024 (Art.17)</span> — interdicție
+                        subvenții pentru cazane fosile <strong>din 2025</strong>; interdicție instalare nouă
+                        cazane gaz <strong>din 2030</strong> (transpunere prin L.238/2024 + ordin MDLPA 2026).
+                        Considerați pompă de căldură (aer-apă/sol-apă) pentru conformitate viitoare.
+                      </div>
+                    );
+                  })()}
                 </div>
               </Card>
 
