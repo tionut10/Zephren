@@ -57,6 +57,55 @@ function estimateEpSaving(measure, gap, epActual) {
            solar: epActual * pct.solar, led: epActual * pct.led }[measure] || 0;
 }
 
+// ─── Sprint 25 P0.7 — preț energie per combustibil principal ──────────────
+// Surse: ANRE Q1 2026 (gaz, electric, termoficare) + statistici INS (lemn, peleți)
+// Subsidii eliminate cf. EPBD 2024 → reflectă piața liberă
+export const FUEL_PRICES_EUR = {
+  gaz_natural:    0.08,  // gaz natural cu TVA 21% (RO 2026)
+  gaz_butelie:    0.12,
+  gpl:            0.13,
+  motorina:       0.18,
+  pacura:         0.16,
+  electric:       0.22,  // ANRE Q1 2026 mediu rezidențial
+  termoficare:    0.07,
+  lemn:           0.04,
+  peleti:         0.06,
+  carbune:        0.05,
+  biomasa:        0.05,
+};
+
+/**
+ * Returnează prețul energiei în EUR/kWh pentru combustibilul principal de încălzire.
+ * Preferă instSummary.energyPriceEUR (override explicit), apoi mapare heuristică
+ * pe instSummary.heating.source / heatingSrcType, apoi fallback gaz natural.
+ * @param {object} instSummary
+ * @param {object} [building] - rezervat pentru extensii viitoare
+ */
+export function getEnergyPriceEUR(instSummary, building) {
+  if (instSummary?.energyPriceEUR) return parseFloat(instSummary.energyPriceEUR);
+  const src = String(
+    instSummary?.heating?.source ?? instSummary?.heatingSrcType ?? instSummary?.heatingSource ?? ""
+  ).toLowerCase();
+  if (!src) return FUEL_PRICES_EUR.gaz_natural;
+  if (src.includes("electric")) return FUEL_PRICES_EUR.electric;
+  if (src.includes("termof"))   return FUEL_PRICES_EUR.termoficare;
+  if (src.includes("peleti") || src.includes("peleți")) return FUEL_PRICES_EUR.peleti;
+  if (src.includes("lemn"))     return FUEL_PRICES_EUR.lemn;
+  if (src.includes("carbune"))  return FUEL_PRICES_EUR.carbune;
+  if (src.includes("biomasa"))  return FUEL_PRICES_EUR.biomasa;
+  if (src.includes("motorina") || src.includes("motorină")) return FUEL_PRICES_EUR.motorina;
+  if (src.includes("pacura")  || src.includes("păcură"))  return FUEL_PRICES_EUR.pacura;
+  if (src.includes("butelie")) return FUEL_PRICES_EUR.gaz_butelie;
+  if (src.includes("gpl"))     return FUEL_PRICES_EUR.gpl;
+  // pompele de căldură consumă electricitate — preț electric, nu gaz
+  if (src.includes("pc_") || src.includes("pompa") || src.includes("pompă") ||
+      src.includes("hp_") || src.includes("aer_aer") || src.includes("aer_apa")) {
+    return FUEL_PRICES_EUR.electric;
+  }
+  if (src.includes("gaz")) return FUEL_PRICES_EUR.gaz_natural;
+  return FUEL_PRICES_EUR.gaz_natural;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SUGESTII SMART REABILITARE — Motor de recomandări cu cost-eficiență
 // ═══════════════════════════════════════════════════════════════
@@ -70,8 +119,8 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   const nzebEpMax = getNzebEpMax(cat, climate?.zone);
   const Au = parseFloat(building?.areaUseful) || 100;
   const gap = Math.max(0, epActual - nzebEpMax);
-  // Prețul energiei [EUR/kWh] — din combustibil principal sau default
-  const energyPriceEUR = (instSummary?.energyPriceEUR) || 0.08; // ~0.08 EUR/kWh gaz, ~0.22 EUR/kWh electricitate
+  // Prețul energiei [EUR/kWh] — Sprint 25 P0.7 mapare per combustibil
+  const energyPriceEUR = getEnergyPriceEUR(instSummary, building);
 
   function addSuggestion(priority, system, measure, epSavingM2, investPerM2, totalInvest, detail, payback) {
     const annualSavingEUR = epSavingM2 * Au * energyPriceEUR;
