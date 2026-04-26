@@ -756,12 +756,12 @@ export async function exportPDFNative(ctx) {
       headStyles: { fillColor: [240, 244, 248], textColor: [26, 26, 46], fontStyle: "bold", fontSize: 8 },
       bodyStyles: { fontSize: 8 }, columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
       body: [
-        ["Adresa", `${building.address || "-"}, ${building.city || "-"}, jud. ${building.county || "-"}`],
-        ["Categorie functionala", BUILDING_CATEGORIES.find(c => c.id === building.category)?.label || building.category],
+        ["Adresă", `${building.address || "-"}, ${building.city || "-"}, jud. ${building.county || "-"}`],
+        ["Categorie funcțională", BUILDING_CATEGORIES.find(c => c.id === building.category)?.label || building.category],
         ["An construcție / renovare", `${building.yearBuilt || "-"} / ${building.yearRenov || "-"}`],
         ["Suprafață utilă încălzită", `${Au} m\u00B2`],
         ["Volum încălzit", `${building.volume || "-"} m\u00B3`],
-        ["Zona climatica", `${selectedClimate?.name || "-"} - Zona ${selectedClimate?.zone || "-"} (\u03B8e = ${selectedClimate?.theta_e || "-"}\u00B0C)`],
+        ["Zonă climatică", `${selectedClimate?.name || "-"} - Zona ${selectedClimate?.zone || "-"} (\u03B8e = ${selectedClimate?.theta_e || "-"}\u00B0C)`],
       ],
     });
     y = doc.lastAutoTable.finalY + 8;
