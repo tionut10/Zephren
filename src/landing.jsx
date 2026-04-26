@@ -369,21 +369,22 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
   // Stiluri dependente de temă
   const isDark = theme === "dark";
-  const bg         = isDark ? "#0a0a1a" : "#f5f7fa";
-  const text        = isDark ? "#e2e8f0" : "#1a202c";
-  const textMuted   = isDark ? "rgba(255,255,255,0.5)"  : "rgba(0,0,0,0.5)";
-  const textFaint   = isDark ? "rgba(255,255,255,0.4)"  : "rgba(0,0,0,0.4)";
-  const border      = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)";
-  const borderHover = isDark ? "rgba(245,158,11,0.2)"   : "rgba(245,158,11,0.4)";
-  const navBg       = isDark ? "rgba(10,10,26,0.9)"     : "rgba(245,247,250,0.9)";
-  const cardBg      = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)";
-  const cardBorder  = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
-  const greenCardBg = isDark ? "rgba(16,185,129,0.03)"  : "rgba(16,185,129,0.04)";
-  const amberCardBg = isDark ? "rgba(245,158,11,0.03)"  : "rgba(245,158,11,0.04)";
-  const footerBg    = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const bg         = isDark ? "#0a0a1a" : "linear-gradient(160deg, #EFF6FF 0%, #F8FAFC 40%, #F0FDF4 100%)";
+  const text        = isDark ? "#e2e8f0" : "#0F172A";
+  const textMuted   = isDark ? "rgba(255,255,255,0.5)"  : "#475569";
+  const textFaint   = isDark ? "rgba(255,255,255,0.4)"  : "#64748B";
+  const border      = isDark ? "rgba(255,255,255,0.06)" : "#E2E8F0";
+  const borderHover = isDark ? "rgba(245,158,11,0.2)"   : "rgba(245,158,11,0.5)";
+  const navBg       = isDark ? "rgba(10,10,26,0.9)"     : "rgba(248,250,252,0.88)";
+  const cardBg      = isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF";
+  const cardBorder  = isDark ? "rgba(255,255,255,0.06)" : "#E2E8F0";
+  const cardShadow  = isDark ? "none"                   : "0 2px 12px rgba(15,23,42,0.06)";
+  const greenCardBg = isDark ? "rgba(16,185,129,0.03)"  : "rgba(5,150,105,0.06)";
+  const amberCardBg = isDark ? "rgba(245,158,11,0.03)"  : "rgba(217,119,6,0.06)";
+  const footerBg    = isDark ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.05)";
 
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: bg, color: text, minHeight: "100vh", transition: "background 0.3s, color 0.3s" }}>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: bg, color: text, minHeight: "100vh", transition: "background 0.3s, color 0.3s" }} data-theme={theme}>
 
       {/* ═══ NAVBAR ═══ */}
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: navBg, backdropFilter: "blur(12px)", borderBottom: `1px solid ${border}`, padding: "0 24px", transition: "background 0.3s" }}>
@@ -447,7 +448,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           {T("hero_sub", `Software profesional pentru auditori energetici atestați MDLPA. Certificat de performanță energetică conform Mc 001-2022 · ${STEPS_COUNT} pași de calcul · verificare nZEB/ZEB · EPBD 2024.`)}
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-          <button onClick={onStart} style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)" }}>
+          <button onClick={onStart}
+            style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)", transition: "transform 0.15s ease, box-shadow 0.15s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(245,158,11,0.45)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(245,158,11,0.3)"; }}
+            onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; }}
+            onMouseUp={e => { e.currentTarget.style.transform = "scale(1.03)"; }}>
             {T("hero_cta", "Începe calculul gratuit →")}
           </button>
         </div>
@@ -462,6 +468,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           ))}
         </div>
       </section>
+
+      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
 
       {/* ═══ CALCULATOR ÎN 8 PAȘI ═══ */}
       <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
@@ -480,9 +488,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
           {(STEPS_DATA || []).map((step, i) => (
-            <div key={step.id} style={{ padding: "24px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, position: "relative", transition: "all 0.25s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.transform = "translateY(0)"; }}>
+            <div key={step.id} style={{ padding: "24px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow, position: "relative", transition: "all 0.25s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = isDark ? "none" : "0 8px 24px rgba(15,23,42,0.10)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = cardShadow; }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                 <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "rgba(99,102,241,0.15)", border: "1.5px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontSize: "11px", fontWeight: "800", color: "#6366f1" }}>{step.id}</span>
@@ -504,6 +512,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
+      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
+
       {/* ═══ FUNCȚIONALITĂȚI PRINCIPALE ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 80px" }}>
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
@@ -516,9 +526,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
           {(FEATURES || []).map(f => (
-            <div key={f.id || f.title} style={{ padding: "28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, transition: "all 0.25s ease", cursor: "default" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = borderHover; e.currentTarget.style.boxShadow = "0 8px 24px rgba(245,158,11,0.05)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.boxShadow = "none"; }}>
+            <div key={f.id || f.title} style={{ padding: "28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow, transition: "all 0.25s ease", cursor: "default" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = borderHover; e.currentTarget.style.boxShadow = isDark ? "0 8px 24px rgba(245,158,11,0.05)" : "0 8px 24px rgba(15,23,42,0.10)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.boxShadow = cardShadow; }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
                 <span style={{ fontSize: "28px", flexShrink: 0, marginTop: "2px" }}>{f.icon}</span>
                 <div>
@@ -531,6 +541,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
+
+      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
 
       {/* ═══ EXPORT & IMPORT ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
@@ -781,7 +793,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             return fmtRon(n * (1 + VAT_RATE));
           };
           const renderCard = (p) => (
-            <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, position: "relative" }}>
+            <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, boxShadow: p.highlight ? (isDark ? "0 4px 32px rgba(245,158,11,0.10)" : "0 4px 24px rgba(245,158,11,0.12)") : cardShadow, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>⭐ {lang === "EN" ? "MOST POPULAR" : "CEL MAI ALES"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
               {p.id === "audit" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#3b82f6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🔒 {lang === "EN" ? "PRICE LOCK" : "PREȚ BLOCAT"}</div>}

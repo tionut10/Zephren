@@ -57,6 +57,21 @@ body {
   scrollbar-color: rgba(15, 23, 42, 0.25) transparent; /* Firefox */
 }
 
+/* color-scheme light — browser stilizează native inputs, scrollbar-uri, selects nativ */
+.ep-light {
+  color-scheme: light;
+}
+
+/* ::selection — text selectat, diferit per temă */
+::selection {
+  background: rgba(99, 102, 241, 0.25);
+  color: inherit;
+}
+.ep-light ::selection {
+  background: #DBEAFE;
+  color: #1E3A8A;
+}
+
 /* Smooth scroll for anchor links */
 html {
   scroll-behavior: smooth;
@@ -72,6 +87,29 @@ textarea:focus-visible {
   outline: 2px solid #6366f1; /* indigo-500 */
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* content-visibility: auto — skip render pentru secțiuni off-screen */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* Separator secțiuni cu gradient */
+.section-divider {
+  height: 1px;
+  border: none;
+  background: linear-gradient(90deg, transparent, var(--ep-border, #E2E8F0), transparent);
+  margin: 0;
+}
+
+/* will-change pentru elemente animate frecvent */
+.animate-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  will-change: transform;
+}
+.animate-lift:hover {
+  transform: translateY(-3px);
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -102,6 +140,39 @@ optgroup {
 /* Ascund flicker-ul alb la deschidere select pe Firefox/Chrome */
 select {
   color-scheme: dark;
+}
+/* Light mode: select nativ cu fundal alb corect */
+.ep-light select {
+  color-scheme: light;
+}
+.ep-light option {
+  background-color: #ffffff;
+  color: #0F172A;
+}
+.ep-light option:checked {
+  background-color: #EEF2FF;
+  color: #4338CA;
+}
+.ep-light optgroup {
+  background-color: #F8FAFC;
+  color: #6366f1;
+}
+
+/* Badge variants light mode — fundal pastel + bordură */
+.ep-light .badge-success {
+  background: #D1FAE5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.ep-light .badge-warning {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+.ep-light .badge-error {
+  background: #FEE2E2;
+  color: #991B1B;
+  border-color: #FECACA;
 }
 
 /* Mobile responsive navbar */

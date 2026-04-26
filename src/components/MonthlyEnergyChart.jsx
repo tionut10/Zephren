@@ -35,11 +35,12 @@ function MonthlyEnergyChartImpl({ monthlyData, Au, lang, theme }) {
   const yOf = (val) => PAD.t + chartH - (val / yMax) * chartH;
   const xOf = (i) => PAD.l + i * slotW;
 
-  const textCol = "#9ca3af";
-  const gridCol = "rgba(255,255,255,0.06)";
-  const heatCol = "#f97316"; // portocaliu — încălzire
-  const coolCol = "#38bdf8"; // albastru — răcire
-  const lossCol = "rgba(255,255,255,0.12)"; // gri transparent — pierderi totale
+  const isLight = theme === "light";
+  const textCol = isLight ? "#64748B" : "#9ca3af";
+  const gridCol = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.06)";
+  const heatCol = isLight ? "#EA580C" : "#f97316"; // portocaliu — încălzire (mai saturat pe light)
+  const coolCol = isLight ? "#0284C7" : "#38bdf8"; // albastru — răcire (mai saturat pe light)
+  const lossCol = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)"; // pierderi totale
 
   return (
     <div className="w-full">
@@ -132,7 +133,7 @@ function MonthlyEnergyChartImpl({ monthlyData, Au, lang, theme }) {
         <line
           x1={PAD.l} x2={PAD.l + chartW}
           y1={PAD.t + chartH} y2={PAD.t + chartH}
-          stroke="rgba(255,255,255,0.15)" strokeWidth="1"
+          stroke={isLight ? "rgba(15,23,42,0.15)" : "rgba(255,255,255,0.15)"} strokeWidth="1"
         />
 
         {/* Legendă */}
