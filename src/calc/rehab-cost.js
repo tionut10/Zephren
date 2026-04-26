@@ -2,8 +2,12 @@
 // DEVIZ ESTIMATIV REABILITARE TERMICĂ — Prețuri unitare orientative RO 2024-2026
 // Surse: HG 907/2016 + MDLPA + oferte contractori + piața Q1 2026
 // Curs EUR/RON: dinamic via getEurRonSync() din rehab-prices.js
+//
+// Sprint 25 P0.1: pentru itemii cu echivalent în rehab-prices.js (sursă canonică)
+// se preferă acolo prețul; REHAB_PRICE_DB rămâne pentru schema price_per_cm
+// (cost incremental) care nu există în rehab-prices.js.
 // ═══════════════════════════════════════════════════════════════
-import { getEurRonSync } from '../data/rehab-prices.js';
+import { getEurRonSync, getPrice } from '../data/rehab-prices.js';
 
 // ---------------------------------------------------------------
 // BAZA DE DATE PREȚURI UNITARE [EUR]
@@ -207,6 +211,23 @@ export function calcRehabCost({
   // Lista pozițiilor din deviz
   const items = [];
 
+  // ── Sprint 25 P0.1 — overlay prețuri canonice (rehab-prices.js) ─────────
+  // Pentru itemii cu corespondent direct: getPrice() suprascrie REHAB_PRICE_DB.
+  function _canonical(category, item, fallback) {
+    return getPrice(category, item)?.price ?? fallback;
+  }
+  const PRICES_CANONICAL = {
+    windows_2g:       _canonical('envelope',   'windows_u110',      REHAB_PRICE_DB.windows_2g[1]),    // U≤1.1
+    windows_3g:       _canonical('envelope',   'windows_u090',      REHAB_PRICE_DB.windows_3g[1]),    // U≤0.8
+    windows_pvc:      _canonical('envelope',   'windows_u140',      REHAB_PRICE_DB.windows_pvc[1]),   // U≤1.4
+    basement_m2:      _canonical('envelope',   'basement_xps_10cm', REHAB_PRICE_DB.basement_insul.price_m2),
+    airtightness_m2:  _canonical('envelope',   'airtightness_n50',  REHAB_PRICE_DB.airtightness.price_m2),
+    pv_kwp:           _canonical('renewables', 'pv_kwp',            REHAB_PRICE_DB.pv_panels.price_kwp),
+    vmc_m2:           _canonical('cooling',    'vmc_hr_80_per_m2',  REHAB_PRICE_DB.vmc_hr.price_m2),
+    // hp_aa/hp_aw: schemă diferită (EUR/kW vs EUR/set) — păstrez REHAB_PRICE_DB
+    // solar_thermal: păstrez (EUR/m² gross)
+  };
+
   // ── Helper: adaugă o poziție în deviz ──────────────────────────────────
   function addItem(label, qty, unit, price_unit) {
     if (qty <= 0 || price_unit <= 0) return;
@@ -243,7 +264,7 @@ export function calcRehabCost({
       REHAB_PRICE_DB.basement_insul.label,
       floorArea,
       "m²",
-      REHAB_PRICE_DB.basement_insul.price_m2
+      PRICES_CANONICAL.basement_m2
     );
   }
 
@@ -252,7 +273,8 @@ export function calcRehabCost({
     const typeKey = "windows_" + (windowType || "2g");
     const dbEntry = REHAB_PRICE_DB[typeKey];
     if (dbEntry && Array.isArray(dbEntry)) {
-      const [label, priceM2] = dbEntry;
+      const [label] = dbEntry;
+      const priceM2 = PRICES_CANONICAL[typeKey] ?? dbEntry[1];
       addItem(label, windowArea, "m²", priceM2);
     }
   }
@@ -272,7 +294,7 @@ export function calcRehabCost({
       REHAB_PRICE_DB.vmc_hr.label,
       Au,
       "m²",
-      REHAB_PRICE_DB.vmc_hr.price_m2
+      PRICES_CANONICAL.vmc_m2
     );
   }
 
@@ -292,7 +314,7 @@ export function calcRehabCost({
       REHAB_PRICE_DB.pv_panels.label,
       pvKwp,
       "kWp",
-      REHAB_PRICE_DB.pv_panels.price_kwp
+      PRICES_CANONICAL.pv_kwp
     );
   }
 
@@ -303,7 +325,7 @@ export function calcRehabCost({
       REHAB_PRICE_DB.airtightness.label,
       Au,                                   // estimat pe baza ariei utile
       "m²",
-      REHAB_PRICE_DB.airtightness.price_m2
+      PRICES_CANONICAL.airtightness_m2
     );
   }
 

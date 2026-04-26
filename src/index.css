@@ -1,11 +1,32 @@
 @import "tailwindcss";
 
-/* DM Sans is loaded via Google Fonts in index.html */
+/* ─────────────────────────────────────────────────────────────────────
+   Sprint 24 (26 apr 2026) — Tipografie & Contrast Final
+   1) @theme bind DM Sans → --font-sans (Tailwind v4 default)
+   2) Light-mode overrides pentru clasele „dark-native" (bg-white/X,
+      border-white/X, text-white/X, text-{color}-400) — fix global pentru
+      ~1800 instanțe fără editare per-fișier.
+   3) Boost opacity-30/40 (sub WCAG AA) pe ambele teme.
+   ───────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* DM Sans is loaded via Google Fonts in index.html and now applied globally */
 body {
   margin: 0;
   padding: 0;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Code/numerical results inherit JetBrains Mono via font-mono utility */
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
 }
 
 /* Prevent FOUC */
@@ -39,22 +60,22 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.30);
 }
 
 /* Scrollbar — light theme (vizibil pe fundal F8FAFC) */
 .ep-light ::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.20);
+  background: rgba(15, 23, 42, 0.22);
 }
 .ep-light ::-webkit-scrollbar-thumb:hover {
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.38);
 }
 .ep-light * {
-  scrollbar-color: rgba(15, 23, 42, 0.25) transparent; /* Firefox */
+  scrollbar-color: rgba(15, 23, 42, 0.28) transparent; /* Firefox */
 }
 
 /* color-scheme light — browser stilizează native inputs, scrollbar-uri, selects nativ */
@@ -64,7 +85,7 @@ body {
 
 /* ::selection — text selectat, diferit per temă */
 ::selection {
-  background: rgba(99, 102, 241, 0.25);
+  background: rgba(99, 102, 241, 0.30);
   color: inherit;
 }
 .ep-light ::selection {
@@ -113,11 +134,119 @@ textarea:focus-visible {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+   LIGHT MODE — override clase „dark-native" (Sprint 24)
+   Clasele Tailwind compilate sunt selectate cu [class*="bg-white/"] etc.
+   pentru a captura simultan utility-ul standard (bg-white/5, /10) și
+   arbitrary values (bg-white/[0.03], /[0.06]). Specificitatea `.ep-light`
+   + atribut wildcard ține peste utility-ul Tailwind generat.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* SURFACES — bg-white/X pe fundal alb e invizibil → translucid slate-900 */
+.ep-light [class*="bg-white/"] {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+.ep-light [class*="bg-white/[0.03]"] { background-color: rgba(15, 23, 42, 0.03) !important; }
+.ep-light [class*="bg-white/[0.06]"] { background-color: rgba(15, 23, 42, 0.05) !important; }
+.ep-light [class*="bg-white/5"]  { background-color: rgba(15, 23, 42, 0.04) !important; }
+.ep-light [class*="bg-white/10"] { background-color: rgba(15, 23, 42, 0.06) !important; }
+.ep-light [class*="bg-white/20"] { background-color: rgba(15, 23, 42, 0.10) !important; }
+
+/* BORDERS — border-white/X pe alb e invizibil */
+.ep-light [class*="border-white/"] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.ep-light [class*="border-white/[0.06]"] { border-color: rgba(15, 23, 42, 0.10) !important; }
+.ep-light [class*="border-white/5"]  { border-color: rgba(15, 23, 42, 0.10) !important; }
+.ep-light [class*="border-white/10"] { border-color: rgba(15, 23, 42, 0.14) !important; }
+.ep-light [class*="border-white/20"] { border-color: rgba(15, 23, 42, 0.20) !important; }
+
+/* TEXT-WHITE/X pe alb invizibil → invertim la slate-900 cu opacity ajustat AA */
+.ep-light [class*="text-white/"] { color: rgba(15, 23, 42, 0.78) !important; }
+.ep-light [class*="text-white/40"] { color: rgba(15, 23, 42, 0.62) !important; } /* min AA 4.5:1 */
+.ep-light [class*="text-white/50"] { color: rgba(15, 23, 42, 0.70) !important; }
+.ep-light [class*="text-white/60"] { color: rgba(15, 23, 42, 0.76) !important; }
+.ep-light [class*="text-white/70"] { color: rgba(15, 23, 42, 0.82) !important; }
+.ep-light [class*="text-white/80"] { color: rgba(15, 23, 42, 0.88) !important; }
+.ep-light [class*="text-white/90"] { color: rgba(15, 23, 42, 0.94) !important; }
+.ep-light .text-white { color: #0F172A !important; }
+
+/* TEXT COLOR -400 (folosit ca acent dark) pe fundal alb e sub AA → promovăm la -700 */
+.ep-light .text-amber-400   { color: #B45309 !important; } /* amber-700  6.30:1 AA */
+.ep-light .text-emerald-400 { color: #047857 !important; } /* emerald-700 5.93:1 AA */
+.ep-light .text-red-400     { color: #B91C1C !important; } /* red-700    7.07:1 AAA */
+.ep-light .text-sky-400     { color: #0369A1 !important; } /* sky-700    6.43:1 AA */
+.ep-light .text-violet-400  { color: #6D28D9 !important; } /* violet-700 7.49:1 AAA */
+.ep-light .text-blue-400    { color: #1D4ED8 !important; } /* blue-700   8.59:1 AAA */
+.ep-light .text-rose-400    { color: #BE123C !important; }
+.ep-light .text-pink-400    { color: #BE185D !important; }
+.ep-light .text-cyan-400    { color: #0E7490 !important; }
+.ep-light .text-yellow-400  { color: #A16207 !important; }
+.ep-light .text-indigo-400  { color: #4338CA !important; }
+.ep-light .text-purple-400  { color: #7E22CE !important; }
+.ep-light .text-green-400   { color: #15803D !important; }
+.ep-light .text-orange-400  { color: #C2410C !important; }
+.ep-light .text-teal-400    { color: #0F766E !important; }
+.ep-light .text-fuchsia-400 { color: #A21CAF !important; }
+.ep-light .text-lime-400    { color: #4D7C0F !important; }
+
+/* slate/gray-300/400 prea deschis pe alb */
+.ep-light .text-slate-300   { color: #475569 !important; }
+.ep-light .text-slate-400   { color: #475569 !important; }
+.ep-light .text-gray-300    { color: #475569 !important; }
+.ep-light .text-gray-400    { color: #475569 !important; }
+.ep-light .text-zinc-300    { color: #475569 !important; }
+.ep-light .text-zinc-400    { color: #475569 !important; }
+.ep-light .text-neutral-300 { color: #475569 !important; }
+.ep-light .text-neutral-400 { color: #475569 !important; }
+.ep-light .text-stone-300   { color: #475569 !important; }
+.ep-light .text-stone-400   { color: #475569 !important; }
+
+/* Bg colorat -500/-600 cu text-white pe light: text-white deja overrid mai sus, dar
+   dacă Card folosește bg-amber-500 + text-white, trebuie să rămână alb. Restaurăm
+   text-white pe fundaluri colorate: */
+.ep-light .bg-amber-500   .text-white,
+.ep-light .bg-amber-600   .text-white,
+.ep-light .bg-indigo-500  .text-white,
+.ep-light .bg-indigo-600  .text-white,
+.ep-light .bg-emerald-500 .text-white,
+.ep-light .bg-emerald-600 .text-white,
+.ep-light .bg-red-500     .text-white,
+.ep-light .bg-red-600     .text-white,
+.ep-light .bg-sky-500     .text-white,
+.ep-light .bg-sky-600     .text-white,
+.ep-light .bg-violet-500  .text-white,
+.ep-light .bg-violet-600  .text-white,
+.ep-light .bg-blue-500    .text-white,
+.ep-light .bg-blue-600    .text-white { color: #FFFFFF !important; }
+
+/* La fel pentru text-white/X pe fundal colorat saturat — mergem alb opac */
+.ep-light [class*="bg-amber-5"] [class*="text-white"],
+.ep-light [class*="bg-amber-6"] [class*="text-white"],
+.ep-light [class*="bg-indigo-5"] [class*="text-white"],
+.ep-light [class*="bg-indigo-6"] [class*="text-white"],
+.ep-light [class*="bg-emerald-5"] [class*="text-white"],
+.ep-light [class*="bg-emerald-6"] [class*="text-white"],
+.ep-light [class*="bg-red-5"] [class*="text-white"],
+.ep-light [class*="bg-red-6"] [class*="text-white"],
+.ep-light [class*="bg-sky-5"] [class*="text-white"],
+.ep-light [class*="bg-sky-6"] [class*="text-white"],
+.ep-light [class*="bg-violet-5"] [class*="text-white"],
+.ep-light [class*="bg-violet-6"] [class*="text-white"],
+.ep-light [class*="bg-blue-5"] [class*="text-white"],
+.ep-light [class*="bg-blue-6"] [class*="text-white"] { color: #FFFFFF !important; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   OPACITY BOOST — opacity-30 sub AA chiar și pe dark; opacity-40 borderline.
+   Boost moderat (păstrează ierarhia vizuală) atât pe dark cât și pe light.
+   ───────────────────────────────────────────────────────────────────── */
+[class~="opacity-30"] { opacity: 0.50 !important; }
+[class~="opacity-40"] { opacity: 0.62 !important; }
+.ep-light [class~="opacity-30"] { opacity: 0.62 !important; }
+.ep-light [class~="opacity-40"] { opacity: 0.72 !important; }
+.ep-light [class~="opacity-50"] { opacity: 0.78 !important; }
+
+/* ─────────────────────────────────────────────────────────────────────
    Dark-theme fix pentru native <select> + <option> + <optgroup>
-   Options din native select nu respectă CSS-ul de pe <select>, folosesc
-   stilurile OS default → pe dark theme apar gri-pe-gri ilizibil.
-   Setăm explicit culori pe option/optgroup ca să fie vizibile la scroll.
-   Valabil pe Chrome/Edge/Firefox (Safari are suport limitat dar tolerabil).
    ───────────────────────────────────────────────────────────────────── */
 option {
   background-color: #1a1d2e;
@@ -175,6 +304,11 @@ select {
   border-color: #FECACA;
 }
 
+/* Badge dark-mode — text -400 pe -500/15 e borderline (~3.8:1) → boost la -300 */
+:where(:not(.ep-light)) .badge-success { color: #6EE7B7; } /* emerald-300  ~7.1:1 AAA */
+:where(:not(.ep-light)) .badge-warning { color: #FCD34D; } /* amber-300   ~10.6:1 AAA */
+:where(:not(.ep-light)) .badge-error   { color: #FCA5A5; } /* red-300      ~6.4:1 AA  */
+
 /* Mobile responsive navbar */
 @media (max-width: 640px) {
   .nav-desktop { display: none !important; }
@@ -183,6 +317,19 @@ select {
 @media (min-width: 641px) {
   .nav-mobile { display: none !important; }
   .nav-mobile-menu { display: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   READING — line-length optim (45–75 caractere) pentru pagini text-grele
+   .prose-readable e helper pentru paragrafe lungi (FAQ, Privacy, Terms…)
+   ───────────────────────────────────────────────────────────────────── */
+.prose-readable {
+  max-width: 70ch;
+  line-height: 1.65;
+}
+.prose-readable p,
+.prose-readable li {
+  max-width: 70ch;
 }
 
 /* Print styles */

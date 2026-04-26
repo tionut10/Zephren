@@ -60,7 +60,7 @@ function FAQItem({ entry, onJumpToTab, onJumpToNormative }) {
 
       {open && (
         <div className="px-4 pb-4 pt-0 border-t border-white/5 space-y-3">
-          <div className="text-xs text-slate-300 whitespace-pre-line leading-relaxed">
+          <div className="text-xs text-slate-300 whitespace-pre-line leading-relaxed prose-readable">
             <span className="text-emerald-400 font-bold mr-1">A.</span>
             {entry.answer}
           </div>

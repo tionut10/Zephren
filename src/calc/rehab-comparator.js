@@ -5,23 +5,30 @@
 // ═══════════════════════════════════════════════════════════════
 import { calcFinancialAnalysis } from './financial.js';
 import { getNzebEpMax } from './smart-rehab.js';
+import { getPrice } from '../data/rehab-prices.js';
 
-// Costuri unitare de referință [EUR/m²] — actualizate 2025-2026
-const UNIT_COSTS = {
-  wall_eps10: 42,   // Termoizolare perete EPS 10cm
-  wall_eps15: 62,   // Termoizolare perete EPS 15cm
-  roof_15cm:  42,   // Termoizolare acoperiș 15cm
-  roof_25cm:  68,   // Termoizolare acoperiș 25cm
-  windows_u13: 135, // Ferestre U≤1.30
-  windows_u09: 280, // Ferestre U≤0.90
-  windows_u07: 390, // Ferestre U≤0.70
-  vent_hr80: 15,    // Ventilare mecanică HR 80% [EUR/m² Au]
-  vent_hr90: 22,    // Ventilare mecanică HR 90%
-  hp_airwater: 55,  // Pompă căldură aer-apă [EUR/m² Au]
-  pv_3kwp:    180,  // PV 3 kWp [EUR/m² panou]
-  led:         8,   // Înlocuire LED [EUR/m² Au]
-  solar_th:    15,  // Solar termic ACM [EUR/m² Au]
-};
+// Sprint 25 P0.1: prețuri unitare derivate din rehab-prices.js (sursă canonică).
+// `_p(category, item, fallback)` returnează EUR mid; păstrează compat cu test-uri existente.
+function _p(category, item, fallback) {
+  return getPrice(category, item)?.price ?? fallback;
+}
+function getUnitCosts() {
+  return {
+    wall_eps10:  _p('envelope', 'wall_eps_10cm', 42),   // Termoizolare perete EPS 10cm
+    wall_eps15:  _p('envelope', 'wall_eps_15cm', 62),   // Termoizolare perete EPS 15cm
+    roof_15cm:   _p('envelope', 'roof_eps_15cm', 42),   // Termoizolare acoperiș 15cm
+    roof_25cm:   _p('envelope', 'roof_mw_25cm',  68),   // Termoizolare acoperiș 25cm MW
+    windows_u13: _p('envelope', 'windows_u140', 135),   // Ferestre U≤1.40
+    windows_u09: _p('envelope', 'windows_u090', 280),   // Ferestre U≤0.90
+    windows_u07: _p('envelope', 'windows_u070', 390),   // Ferestre U≤0.70
+    vent_hr80:   _p('cooling',  'vmc_hr_80_per_m2', 22), // VMC HR 80%
+    vent_hr90:   _p('cooling',  'vmc_hr_90_per_m2', 32), // VMC HR 90%
+    hp_airwater: 55,                                      // Pompă căldură aer-apă [EUR/m² Au] — gross
+    pv_3kwp:     180,                                     // PV [EUR/m² panou] — gross
+    led:         _p('lighting', 'led_replacement', 8),    // Înlocuire LED
+    solar_th:    15,                                      // Solar termic ACM [EUR/m² Au] — gross
+  };
+}
 
 // Reducere EP estimată [kWh/(m²·an)] per măsură față de clădire existentă
 // Valorile sunt procente din gap față de nZEB
@@ -62,17 +69,18 @@ export function calcRehabPackages(params) {
   const rA = roofArea || Au * 0.9;
   const wndA = windowArea || Au * 0.15;
   const annualSavingPerKwh = Au * energyPriceEUR;
+  const UC = getUnitCosts();
 
   // ─── Pachet 1: MINIMAL ───
   const pkg1Measures = ["Izolare acoperiș 15cm", "Ferestre U≤1.30"];
-  const pkg1Invest = rA * UNIT_COSTS.roof_15cm + wndA * UNIT_COSTS.windows_u13;
+  const pkg1Invest = rA * UC.roof_15cm + wndA * UC.windows_u13;
   const pkg1EpRed = reductions.roof + reductions.windows;
   const pkg1EpNew = Math.max(nzebEpMax * 0.5, epActual - pkg1EpRed);
   const pkg1Saving = pkg1EpRed * annualSavingPerKwh;
 
   // ─── Pachet 2: MEDIU ───
   const pkg2Measures = ["Izolare pereți EPS 10cm", "Izolare acoperiș 15cm", "Ferestre U≤0.90", "LED"];
-  const pkg2Invest = wA * UNIT_COSTS.wall_eps10 + rA * UNIT_COSTS.roof_15cm + wndA * UNIT_COSTS.windows_u09 + Au * UNIT_COSTS.led;
+  const pkg2Invest = wA * UC.wall_eps10 + rA * UC.roof_15cm + wndA * UC.windows_u09 + Au * UC.led;
   const pkg2EpRed = reductions.wall_basic + reductions.roof + reductions.windows + reductions.led;
   const pkg2EpNew = Math.max(nzebEpMax * 0.8, epActual - pkg2EpRed);
   const pkg2Saving = pkg2EpRed * annualSavingPerKwh;
@@ -80,8 +88,8 @@ export function calcRehabPackages(params) {
   // ─── Pachet 3: nZEB ───
   const pkg3Measures = ["Izolare pereți EPS 15cm", "Izolare acoperiș 25cm", "Ferestre U≤0.70", "Ventilare HR 90%", "Pompă căldură", "PV 3 kWp/100m²", "LED + senzori"];
   const pvAreaEst = Au * 0.03; // 3% din Au = suprafață PV estimată (panou)
-  const pkg3Invest = wA * UNIT_COSTS.wall_eps15 + rA * UNIT_COSTS.roof_25cm + wndA * UNIT_COSTS.windows_u07 +
-                     Au * UNIT_COSTS.vent_hr90 + Au * UNIT_COSTS.hp_airwater + pvAreaEst * UNIT_COSTS.pv_3kwp + Au * UNIT_COSTS.led;
+  const pkg3Invest = wA * UC.wall_eps15 + rA * UC.roof_25cm + wndA * UC.windows_u07 +
+                     Au * UC.vent_hr90 + Au * UC.hp_airwater + pvAreaEst * UC.pv_3kwp + Au * UC.led;
   const pkg3EpRed = reductions.wall_enhanced + reductions.roof + reductions.windows + reductions.vent_hr + reductions.hp + reductions.pv + reductions.led;
   const pkg3EpNew = Math.max(nzebEpMax * 0.3, epActual - pkg3EpRed);
   const pkg3Saving = pkg3EpRed * annualSavingPerKwh;

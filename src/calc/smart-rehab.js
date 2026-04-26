@@ -1,4 +1,5 @@
 import { NZEB_THRESHOLDS } from '../data/energy-classes.js';
+import { getPrice } from '../data/rehab-prices.js';
 
 // getNzebEpMax: Calculate nZEB ep_max for category and climate zone
 // zone: "I"-"V" string → index 0-4 în array-ul ep_max
@@ -8,24 +9,44 @@ export function getNzebEpMax(category, zone) {
   return Array.isArray(t.ep_max) ? t.ep_max[zoneIdx] : t.ep_max;
 }
 
-// Prețuri reabilitare [EUR/m²] materiale + manoperă, actualizate 2025-2026
-// Sursa: MDLPA, INS, oferte piață
-const REHAB_COSTS_M2 = {
-  insulWall:    { 5:28, 8:36, 10:42, 12:50, 15:62, 20:78 },
-  insulRoof:    { 8:25, 10:32, 15:42, 20:55, 25:68 },
-  insulBasement:{ 5:34, 8:45, 10:56, 12:68 },
-  windows_u140: 135,  // U ≤ 1.40 W/(m²·K)
-  windows_u110: 200,  // U ≤ 1.10 W/(m²·K)
-  windows_u090: 280,  // U ≤ 0.90 W/(m²·K)
-  windows_u070: 390,  // U ≤ 0.70 W/(m²·K)
-};
+// ─── Adaptori prețuri (Sprint 25 P0.1) ──────────────────────────────────────
+// Sursă canonică: rehab-prices.js. Aici doar interpolare liniară pe grosime.
+// Fallback (între paranteze) = valori vechi smart-rehab înainte de migrare.
 
-function getInsulCostM2(table, thicknessCm) {
-  const keys = Object.keys(table).map(Number).sort((a,b) => a - b);
-  for (let i = keys.length - 1; i >= 0; i--) {
-    if (thicknessCm >= keys[i]) return table[keys[i]];
+function _interp(p10, p15, thickCm) {
+  if (p10 == null || p15 == null) return null;
+  const slope = (p15 - p10) / 5;
+  return p10 + (thickCm - 10) * slope;
+}
+
+function getWallInsulCostM2(thickCm, scenario = 'mid') {
+  const p10 = getPrice('envelope', 'wall_eps_10cm', scenario)?.price;
+  const p15 = getPrice('envelope', 'wall_eps_15cm', scenario)?.price;
+  const itp = _interp(p10, p15, Math.max(5, Math.min(25, thickCm)));
+  return itp != null ? Math.round(itp) : 42;
+}
+
+function getRoofInsulCostM2(thickCm, scenario = 'mid') {
+  const p15 = getPrice('envelope', 'roof_eps_15cm', scenario)?.price;
+  const p25 = getPrice('envelope', 'roof_mw_25cm', scenario)?.price;
+  if (p15 != null && p25 != null) {
+    const slope = (p25 - p15) / 10;
+    return Math.round(p15 + (Math.max(8, Math.min(30, thickCm)) - 15) * slope);
   }
-  return table[keys[0]];
+  return 42;
+}
+
+function getBasementInsulCostM2(scenario = 'mid') {
+  return getPrice('envelope', 'basement_xps_10cm', scenario)?.price ?? 32;
+}
+
+function getWindowsCostM2(uTarget, scenario = 'mid') {
+  // uTarget: 1.40, 1.10, 0.90, 0.70
+  const key = uTarget <= 0.75 ? 'windows_u070'
+           : uTarget <= 0.95 ? 'windows_u090'
+           : uTarget <= 1.20 ? 'windows_u110'
+           : 'windows_u140';
+  return getPrice('envelope', key, scenario)?.price ?? 135;
 }
 
 // Calcul economie anuală estimată [kWh/m²·an] per măsură de reabilitare
@@ -79,14 +100,14 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   }, 0) / walls.length : 2.0;
   const wallArea = walls.reduce((s,w) => s + (parseFloat(w.area)||0), 0) || Au * 0.7;
   if (avgUWall > 0.50) {
-    const thickCm = 10, costM2Wall = getInsulCostM2(REHAB_COSTS_M2.insulWall, thickCm);
+    const thickCm = 10, costM2Wall = getWallInsulCostM2(thickCm);
     const totalCost = wallArea * costM2Wall;
     const epSav = estimateEpSaving("wall", gap, epActual);
     addSuggestion(1, "Anvelopă", "Termoizolare pereți exteriori",
       epSav, costM2Wall, totalCost,
       `U mediu pereți = ${avgUWall.toFixed(2)} W/(m²·K). Ținta nZEB: ≤0.28. Adăugare EPS 10-15cm.`);
   } else if (avgUWall > 0.35) {
-    const thickCm = 5, costM2Wall = getInsulCostM2(REHAB_COSTS_M2.insulWall, thickCm);
+    const thickCm = 5, costM2Wall = getWallInsulCostM2(thickCm);
     const totalCost = wallArea * costM2Wall;
     const epSav = estimateEpSaving("wall", gap, epActual) * 0.4;
     addSuggestion(2, "Anvelopă", "Suplimentare izolație pereți",
@@ -98,7 +119,7 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   const avgUWin = glazingElements?.length ? glazingElements.reduce((s,e) => s + (parseFloat(e.u)||2.5), 0) / glazingElements.length : 3.0;
   const winArea = glazingElements?.reduce((s,e) => s + (parseFloat(e.area)||0), 0) || 20;
   if (avgUWin > 1.5) {
-    const costM2Win = REHAB_COSTS_M2.windows_u090; // tripan
+    const costM2Win = getWindowsCostM2(0.90); // tripan U≤0.90
     const totalCost = winArea * costM2Win;
     const epSav = estimateEpSaving("window", gap, epActual);
     addSuggestion(1, "Anvelopă", "Înlocuire tâmplărie exterioară",
@@ -114,7 +135,7 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   }, 0) / roofs.length : 1.5;
   const roofArea = roofs.reduce((s,r) => s + (parseFloat(r.area)||0), 0) || Au * 0.9;
   if (avgURoof > 0.30) {
-    const thickCm = 15, costM2Roof = getInsulCostM2(REHAB_COSTS_M2.insulRoof, thickCm);
+    const thickCm = 15, costM2Roof = getRoofInsulCostM2(thickCm);
     const totalCost = roofArea * costM2Roof;
     const epSav = estimateEpSaving("roof", gap, epActual);
     addSuggestion(1, "Anvelopă", "Termoizolare acoperiș/terasă",
