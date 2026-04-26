@@ -18,10 +18,11 @@ export const PHASING_STRATEGIES = {
 const SYSTEM_CATEGORIES    = ['Instalații', 'Regenerabile', 'Iluminat'];
 const ENVELOPE_CATEGORIES  = ['Anvelopă'];
 
+// Sprint 26 P1.6+P1.7 — aliniere cu Reg. UE 2025/2273 financial private + escalation default 3%
 // Rata de actualizare implicită pentru NPV [%/an]
-const DEFAULT_DISCOUNT_RATE = 0.06; // 6% (aproape de rata obligațiuni stat RO)
-// Rata inflației energie [%/an] — energie scumpă trend crescător
-const DEFAULT_ENERGY_INFLATION = 0.04; // 4%
+const DEFAULT_DISCOUNT_RATE = 0.04; // 4% (Reg. UE 2025/2273 financial private)
+// Rata inflației energie [%/an] — escalation default 3% (alinare cu financial.js)
+const DEFAULT_ENERGY_INFLATION = 0.03; // 3%
 
 /**
  * Determină clasa energetică dintr-un EP și o categorie de clădire.

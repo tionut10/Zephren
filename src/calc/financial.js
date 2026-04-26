@@ -4,10 +4,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 // ─── Parametri impliciti per perspectivă (Reg. 2025/2273 + Ord. MDLPA 16/2023) ─────────────
+// Sprint 26 P1.2: macroeconomic discountRate 4 → 3 (Reg. UE 244/2012 republicat
+// 2025/2273 Anexa I — perspectiva macro folosește rată identică cu socială pentru
+// că ambele exclud distorsionări fiscale). Financial private rămâne 4%.
 export const DEFAULT_RATES_BY_PERSPECTIVE = {
   financial:     { discountRate: 4, escalation: 3, includeVAT: true,  label: "Financiară (privat)" },
   social:        { discountRate: 3, escalation: 3, includeVAT: true,  label: "Socială" },
-  macroeconomic: { discountRate: 4, escalation: 3, includeVAT: false, label: "Macroeconomică (fără TVA)" },
+  macroeconomic: { discountRate: 3, escalation: 3, includeVAT: false, label: "Macroeconomică (fără TVA)" },
 };
 
 const VAT_RATE = 0.21;
@@ -100,7 +103,8 @@ export function calcFinancialAnalysis(params) {
       paybackSimple = cf > 0 ? (y - 1 + (-cumulativeCF[y - 1]) / cf) : y;
     }
     if (paybackDisc === null && cumulativeDiscCF[y] >= 0) {
-      paybackDisc = y;
+      // Sprint 26 P1.5 — interpolare liniară (consistent cu paybackSimple)
+      paybackDisc = discCF > 0 ? (y - 1 + (-cumulativeDiscCF[y - 1]) / discCF) : y;
     }
   }
 
@@ -159,6 +163,7 @@ export function calcFinancialAnalysis(params) {
   globalCost -= residualTotal;
 
   // ─── LCOE (EUR/kWh) — EN 15459-1 Anexa B ────────────────────────────────────────────────
+  // Sprint 26 P1.4 — include replacements actualizate (anterior lipseau din numărător)
   var lcoe = null;
   if (annualEnergyKwh > 0) {
     var totalDiscountedCostLCOE = investCost;
@@ -167,6 +172,12 @@ export function calcFinancialAnalysis(params) {
       totalDiscountedCostLCOE += (annualMaint * Math.pow(1 + maintEscalation, le - 1)) / Math.pow(1 + discountRate, le);
       totalDiscountedEnergy   += annualEnergyKwh / Math.pow(1 + discountRate, le);
     }
+    // Adaugă înlocuirile actualizate la numărător (consistență cu B/C ratio + globalCost)
+    replacementCosts.forEach(function(rc) {
+      if (rc.year <= period) {
+        totalDiscountedCostLCOE += rc.cost / Math.pow(1 + discountRate, rc.year);
+      }
+    });
     lcoe = totalDiscountedEnergy > 0 ? totalDiscountedCostLCOE / totalDiscountedEnergy : null;
   }
 
@@ -180,12 +191,28 @@ export function calcFinancialAnalysis(params) {
     }
     return Math.round(n);
   }
+  // Sprint 26 P1.3 — sensitivity NPV pe rate (discount/escalation) ±200 bp
+  function calcNPVForRates(savingBase, dRate, esc) {
+    var n = -investCost;
+    for (var y3 = 1; y3 <= period; y3++) {
+      var cf3 = savingBase * Math.pow(1 + esc, y3 - 1) - annualMaint * Math.pow(1 + maintEscalation, y3 - 1);
+      if (y3 === period) cf3 += residualValue;
+      n += cf3 / Math.pow(1 + dRate, y3);
+    }
+    return Math.round(n);
+  }
   var sensitivity = {
     saving_m20:  calcNPVForSaving(annualSaving * 0.80),
     saving_m10:  calcNPVForSaving(annualSaving * 0.90),
     saving_base: Math.round(npv),
     saving_p10:  calcNPVForSaving(annualSaving * 1.10),
     saving_p20:  calcNPVForSaving(annualSaving * 1.20),
+    // Sprint 26 P1.3 — variație rată actualizare ±200 bp
+    rate_m200bp: calcNPVForRates(annualSaving, Math.max(0, discountRate - 0.02), escalation),
+    rate_p200bp: calcNPVForRates(annualSaving, discountRate + 0.02,                escalation),
+    // Sprint 26 P1.3 — variație rată escalare ±200 bp
+    esc_m200bp:  calcNPVForRates(annualSaving, discountRate, Math.max(0, escalation - 0.02)),
+    esc_p200bp:  calcNPVForRates(annualSaving, discountRate, escalation + 0.02),
   };
 
   return {

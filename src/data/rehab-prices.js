@@ -8,9 +8,10 @@
 
 export const REHAB_PRICES = {
   currency: 'EUR',
-  eur_ron_fallback: 4.97,
+  // Sprint 26 P1.1 — fallback EUR/RON 4.97 → 5.10 (rotunjire conservatoare BNR Q1 2026)
+  eur_ron_fallback: 5.10,
   source: 'Piață Q1 2026 + HG 907/2016 + MDLPA + oferte contractori',
-  last_updated: '2026-04-18',
+  last_updated: '2026-04-26',
 
   // ── Anvelopă (EUR/m²) ────────────────────────────────────────────────────
   envelope: {

@@ -46,10 +46,11 @@ function _getPackagePrices() {
 
 const COST_OPTIMAL_REF = 50; // kWh/m²·an — Reg. delegat UE 2025/2273
 
+// Sprint 26 P1.2 — aliniere cu DEFAULT_RATES_BY_PERSPECTIVE: macro 4→3% (Reg. 2025/2273 Anexa I)
 export const PERSPECTIVES = {
   financial:     { label: "Financiară 4%",     rate: 4, color: "#3b82f6" },
   social:        { label: "Socială 3%",         rate: 3, color: "#22c55e" },
-  macroeconomic: { label: "Macroeconomică",     rate: 4, color: "#a855f7", noVAT: true },
+  macroeconomic: { label: "Macroeconomică 3%",  rate: 3, color: "#a855f7", noVAT: true },
 };
 
 // ─── Algoritm frontieră Pareto ────────────────────────────────────────────────
