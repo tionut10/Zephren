@@ -20,10 +20,13 @@ export default function PasaportBasic({ building, energyClass, epFinal, auditor,
   const handleGenerate = async (format = "json") => {
     setGenerating(true);
     try {
+      const passportId = `epbd-basic-${Date.now().toString(36)}`;
       const passport = {
         version: "1.0",
         format: "EPBD-2024-RO",
+        passportId,
         generatedAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
         generatedBy: auditor?.name || "—",
         building: {
           address: building?.address || "—",
@@ -43,19 +46,27 @@ export default function PasaportBasic({ building, energyClass, epFinal, auditor,
         },
       };
 
+      // Toate 3 formate folosesc lib-ul comun passport-export.js (consistent
+      // cu RenovationPassport.jsx + corect EPBD 2024-RO)
+      const lib = await import("../lib/passport-export.js");
+
       if (format === "json") {
-        const blob = new Blob([JSON.stringify(passport, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `pasaport-renovare-basic-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        lib.exportPassportJSON(passport);
+      } else if (format === "xml") {
+        lib.exportPassportXML(passport);
+      } else if (format === "pdf") {
+        await lib.exportPassportPDF(passport, {
+          building,
+          auditor,
+          energyClass,
+          epPrimary: epFinal,
+        });
       }
 
-      setResult({ ok: true, passport });
+      setResult({ ok: true, passport, format });
       onGenerate?.(passport);
     } catch (err) {
+      console.error("[PasaportBasic] export error:", err);
       setResult({ ok: false, error: err.message });
     } finally {
       setGenerating(false);
@@ -155,7 +166,9 @@ export default function PasaportBasic({ building, energyClass, epFinal, auditor,
           fontSize: "12px",
           color: result.ok ? "#10B981" : "#EF4444",
         }}>
-          {result.ok ? "✓ Pașaport generat cu succes." : `✗ Eroare: ${result.error}`}
+          {result.ok
+            ? `✓ Pașaport ${(result.format || "").toUpperCase()} descărcat cu succes.`
+            : `✗ Eroare: ${result.error}`}
         </div>
       )}
     </Card>

@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
+        "text": "consolidare exporturi (19→9) + ascundere semnătură + eliminare 3D/termoviziune"
+      },
+      {
+        "icon": "📄",
         "text": "4 bug-uri export PDF + curățare butoane Pas 6"
       },
       {
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "adaugă Roboto-Regular.ttf pentru diacritice native în PDF"
-      },
-      {
-        "icon": "📄",
-        "text": "corectare etichete diacritice lipsă în exportPDFNative"
       }
     ]
   },
