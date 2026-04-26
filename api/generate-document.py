@@ -2902,18 +2902,14 @@ class handler(BaseHTTPRequestHandler):
 
             tbl2 = doc.add_table(rows=0, cols=2)
             tbl2.style = "Light Grid Accent 1"
-            def _row2(k, v):
-                row = tbl2.add_row().cells
-                row[0].text = k
-                row[1].text = str(v) if v not in (None, "", []) else "—"
-            _row2("Nume prenume", auditor.get("name", ""))
-            _row2("Firmă/PFA", auditor.get("company", ""))
-            _row2("Atestat nr.", auditor.get("atestat", ""))
-            _row2("Gradul", auditor.get("grade", ""))
-            _row2("Telefon", auditor.get("phone", ""))
-            _row2("Email", auditor.get("email", ""))
-            _row2("Data", auditor.get("date", ""))
-            _row2("Cod unic MDLPA", auditor.get("mdlpaCode", ""))
+            _trow(tbl2, "Nume prenume", auditor.get("name", ""))
+            _trow(tbl2, "Firmă/PFA", auditor.get("company", ""))
+            _trow(tbl2, "Atestat nr.", auditor.get("atestat", ""))
+            _trow(tbl2, "Gradul", auditor.get("grade", ""))
+            _trow(tbl2, "Telefon", auditor.get("phone", ""))
+            _trow(tbl2, "Email", auditor.get("email", ""))
+            _trow(tbl2, "Data", auditor.get("date", ""))
+            _trow(tbl2, "Cod unic MDLPA", auditor.get("mdlpaCode", ""))
 
             doc.add_paragraph()
 
@@ -2925,18 +2921,14 @@ class handler(BaseHTTPRequestHandler):
 
             tbl3 = doc.add_table(rows=0, cols=2)
             tbl3.style = "Light Grid Accent 1"
-            def _row3(k, v):
-                row = tbl3.add_row().cells
-                row[0].text = k
-                row[1].text = str(v) if v not in (None, "", []) else "—"
-            _row3("Clasă energetică EP", en_class.get("cls", "—"))
-            _row3("EP total [kWh/(m²·an)]",
+            _trow(tbl3, "Clasă energetică EP", en_class.get("cls", "—"))
+            _trow(tbl3, "EP total [kWh/(m²·an)]",
                   f"{renew.get('ep_adjusted_m2', inst.get('ep_total_m2', '—'))}")
-            _row3("CO₂ specific [kg/(m²·an)]",
+            _trow(tbl3, "CO₂ specific [kg/(m²·an)]",
                   f"{renew.get('co2_adjusted_m2', inst.get('co2_total_m2', '—'))}")
-            _row3("RER [%]", f"{renew.get('rer', '—')}")
-            _row3("Qf total [kWh/an]", f"{inst.get('qf_total', '—')}")
-            _row3("LENI [kWh/(m²·an)]", f"{inst.get('leni', '—')}")
+            _trow(tbl3, "RER [%]", f"{renew.get('rer', '—')}")
+            _trow(tbl3, "Qf total [kWh/an]", f"{inst.get('qf_total', '—')}")
+            _trow(tbl3, "LENI [kWh/(m²·an)]", f"{inst.get('leni', '—')}")
 
             doc.add_paragraph()
 
