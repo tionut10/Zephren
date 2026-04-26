@@ -6,38 +6,43 @@
 import { useState, useMemo, useRef } from "react";
 import { cn } from "./ui.jsx";
 import { calcAllPerspectives } from "../calc/financial.js";
+import { getPrice } from "../data/rehab-prices.js";
 
-// Prețuri minime necesare pentru generarea pachetelor benchmark (EUR, mid scenario, Q1 2026)
-// Sursă: piață RO + HG 907/2016; sincronizat cu src/data/rehab-prices.js (Sprint 14)
-const PRICES = {
-  envelope: {
-    wall_eps_10cm:  42,  // EUR/m²
-    wall_eps_15cm:  62,
-    roof_eps_15cm:  42,
-    roof_mw_25cm:   68,
-    windows_u140:  135,  // EUR/m² tâmplărie
-    windows_u110:  200,
-    windows_u090:  280,
-  },
-  heating: {
-    boiler_cond_24kw: 1750,  // EUR/set
-    hp_aw_12kw:       9000,
-  },
-  cooling: {
-    vmc_hr_90_per_m2: 32,   // EUR/m²Au
-  },
-  renewables: {
-    pv_kwp:          1100,  // EUR/kWp
-    pv_battery_kwh:   550,  // EUR/kWh stocare
-  },
-  lighting: {
-    led_replacement: 8,    // EUR/m²Au
-    dali_upgrade:   12,
-  },
-  bacs: {
-    class_c_to_b: 8000,    // EUR/set
-  },
-};
+// Sprint 25 P0.8 — prețuri derivate din rehab-prices.js (sursă canonică).
+// Elimină PRICES constant local (era duplicat, pre-S25) → o singură sursă de adevăr.
+// Fallback la valorile vechi pentru robustețe (catalogul oprit / categorie absentă).
+function _getPackagePrices() {
+  const _p = (cat, item, fb) => getPrice(cat, item)?.price ?? fb;
+  return {
+    envelope: {
+      wall_eps_10cm: _p('envelope', 'wall_eps_10cm', 42),
+      wall_eps_15cm: _p('envelope', 'wall_eps_15cm', 62),
+      roof_eps_15cm: _p('envelope', 'roof_eps_15cm', 42),
+      roof_mw_25cm:  _p('envelope', 'roof_mw_25cm',  68),
+      windows_u140:  _p('envelope', 'windows_u140', 135),
+      windows_u110:  _p('envelope', 'windows_u110', 200),
+      windows_u090:  _p('envelope', 'windows_u090', 280),
+    },
+    heating: {
+      boiler_cond_24kw: _p('heating',  'boiler_cond_24kw', 1750),
+      hp_aw_12kw:       _p('heating',  'hp_aw_12kw',       9000),
+    },
+    cooling: {
+      vmc_hr_90_per_m2: _p('cooling',  'vmc_hr_90_per_m2', 32),
+    },
+    renewables: {
+      pv_kwp:           _p('renewables', 'pv_kwp',         1100),
+      pv_battery_kwh:   _p('renewables', 'pv_battery_kwh',  550),
+    },
+    lighting: {
+      led_replacement:  _p('lighting', 'led_replacement',  8),
+      dali_upgrade:     _p('lighting', 'dali_upgrade',    12),
+    },
+    bacs: {
+      class_c_to_b:     _p('bacs',     'class_c_to_b',  8000),
+    },
+  };
+}
 
 const COST_OPTIMAL_REF = 50; // kWh/m²·an — Reg. delegat UE 2025/2273
 
@@ -84,7 +89,7 @@ function generatePackagesExtended(building, instSummary, energyPrices) {
   const roofA    = Au * 0.9;
   const windA    = Au * 0.15;
   const priceEUR = energyPrices?.mixEUR || 0.08;
-  const P        = PRICES;
+  const P        = _getPackagePrices(); // Sprint 25 P0.8 — runtime din rehab-prices.js
 
   function defaultParams(investEur, epFinal) {
     const epRed  = Math.max(0, epActual - epFinal);
