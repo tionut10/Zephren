@@ -135,7 +135,9 @@ export function buildRenovationPassport({
 
   const mepsThresholds = mepsStatus?.thresholds || {};
   const ep2030 = num(mepsThresholds.ep2030, 999);
-  const ep2033 = num(mepsThresholds.ep2033, 999);
+  // Sprint 26 P1.18 — folosește ep2nd (2035 rez / 2033 nrez) cu fallback ep2033 backward compat
+  const ep2nd = num(mepsThresholds.ep2nd ?? mepsThresholds.ep2035 ?? mepsThresholds.ep2033, 999);
+  const milestone2 = mepsThresholds.milestone2 || 2033;
   const epTotalBase = num(instSummary?.ep_total_m2, 0);
 
   const baseline = {
@@ -147,7 +149,8 @@ export function buildRenovationPassport({
     energyClass: instSummary?.energyClass || "G",
     rer_pct: num(renewSummary?.rer, 0),
     meps2030_compliant: epTotalBase > 0 ? epTotalBase <= ep2030 : false,
-    meps2033_compliant: epTotalBase > 0 ? epTotalBase <= ep2033 : false,
+    meps2033_compliant: epTotalBase > 0 ? epTotalBase <= ep2nd : false,
+    mepsMilestone2: milestone2,
     cpeNumber: building?.cpeNumber || null,
     cpeIssueDate: building?.cpeIssueDate || null,
   };
@@ -178,7 +181,7 @@ export function buildRenovationPassport({
         annualSaving_RON: num(p.annualSaving_RON, 0),
         mepsComplianceAfterPhase: {
           meps2030: num(p.ep_after, 999) <= ep2030,
-          meps2033: num(p.ep_after, 999) <= ep2033,
+          meps2033: num(p.ep_after, 999) <= ep2nd,
         },
       }))
     : [];
@@ -209,7 +212,7 @@ export function buildRenovationPassport({
     costOptimalCompliant: epTarget > 0 && epTarget <= 50,
     mepsComplianceTarget: {
       meps2030: epTarget <= ep2030,
-      meps2033: epTarget <= ep2033,
+      meps2033: epTarget <= ep2nd,
     },
   };
 

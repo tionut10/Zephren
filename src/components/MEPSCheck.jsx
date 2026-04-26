@@ -1,16 +1,38 @@
 import { useState } from "react";
 import { cn } from "./ui.jsx";
 
+// Sprint 26 P1.18 — EPBD 2024/1275 Art. 9:
+//   • REZIDENȚIAL (Art. 9.1.a): ținte 2030 (clasă F) + 2035 (clasă E)
+//   • NEREZIDENȚIAL (Art. 9.1.b): ținte 2030 (clasă F) + 2033 (clasă E)
+// Pragurile EP sunt EXTRAPOLĂRI din L.238/2024 transpunere — ordin MDLPA pending
+// publicare (termen 29 mai 2026). Valorile finale vor fi cunoscute atunci.
 export const MEPS_THRESHOLDS = {
-  RI: { class2030: "F", class2033: "E", ep2030: 250, ep2033: 200 },
-  RC: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160 },
-  BI: { class2030: "F", class2033: "E", ep2030: 180, ep2033: 150 },
-  ED: { class2030: "F", class2033: "E", ep2030: 160, ep2033: 130 },
-  default: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160 },
+  RI: { class2030: "F", class2035: "E", ep2030: 250, ep2035: 200, milestone2: 2035 },
+  RC: { class2030: "F", class2035: "E", ep2030: 200, ep2035: 160, milestone2: 2035 },
+  RA: { class2030: "F", class2035: "E", ep2030: 200, ep2035: 160, milestone2: 2035 },
+  BI: { class2030: "F", class2033: "E", ep2030: 180, ep2033: 150, milestone2: 2033 },
+  ED: { class2030: "F", class2033: "E", ep2030: 160, ep2033: 130, milestone2: 2033 },
+  SA: { class2030: "F", class2033: "E", ep2030: 220, ep2033: 180, milestone2: 2033 },
+  HC: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160, milestone2: 2033 },
+  CO: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160, milestone2: 2033 },
+  SP: { class2030: "F", class2033: "E", ep2030: 180, ep2033: 150, milestone2: 2033 },
+  AL: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160, milestone2: 2033 },
+  default: { class2030: "F", class2033: "E", ep2030: 200, ep2033: 160, milestone2: 2033 },
 };
 
+/** Returnează praguri normalizate cu chei generice ep2nd/class2nd indiferent de categoria. */
 export function getMepsThresholdsFor(category) {
-  return MEPS_THRESHOLDS[category] || MEPS_THRESHOLDS.default;
+  const t = MEPS_THRESHOLDS[category] || MEPS_THRESHOLDS.default;
+  // Backward compat: expune ep2nd/class2nd pentru consum agnostic la milestone
+  const m2 = t.milestone2 || 2033;
+  const ep2 = m2 === 2035 ? t.ep2035 : t.ep2033;
+  const cls2 = m2 === 2035 ? t.class2035 : t.class2033;
+  return { ...t, ep2nd: ep2, class2nd: cls2 };
+}
+
+/** True dacă categoria e rezidențială (folosește milestone 2035 EPBD Art.9.1.a). */
+export function isResidentialMepsCategory(category) {
+  return ["RI", "RC", "RA"].includes(category);
 }
 
 const CLASS_ORDER = ["A++", "A+", "A", "B", "C", "D", "E", "F", "G"];
@@ -28,16 +50,16 @@ function classWorseOrEqual(cls, threshold) {
 }
 
 export function getMepsStatus(energyClass, epTotal, category) {
-  const thresholds = MEPS_THRESHOLDS[category] || MEPS_THRESHOLDS.default;
+  const thresholds = getMepsThresholdsFor(category);
   const nonConform2030 =
     classWorseOrEqual(energyClass, thresholds.class2030) ||
     (epTotal != null && epTotal > thresholds.ep2030);
-  const nonConform2033 =
-    classWorseOrEqual(energyClass, thresholds.class2033) ||
-    (epTotal != null && epTotal > thresholds.ep2033);
+  const nonConform2nd =
+    classWorseOrEqual(energyClass, thresholds.class2nd) ||
+    (epTotal != null && epTotal > thresholds.ep2nd);
 
   if (nonConform2030) return { level: "red", year: 2030, thresholds };
-  if (nonConform2033) return { level: "amber", year: 2033, thresholds };
+  if (nonConform2nd) return { level: "amber", year: thresholds.milestone2, thresholds };
   return { level: "green", year: null, thresholds };
 }
 
@@ -97,15 +119,23 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
   const { level, year, thresholds } = getMepsStatus(energyClass, epTotal, category);
 
   const days2030 = daysUntil("2030-12-31");
-  const days2033 = daysUntil("2033-12-31");
+  // Sprint 26 P1.18 — folosește milestone categoria (2035 rez / 2033 nrez)
+  const milestone2 = thresholds.milestone2 || 2033;
+  const days2nd = daysUntil(`${milestone2}-12-31`);
 
-  const epTarget = year === 2030 ? thresholds.ep2030 : thresholds.ep2033;
+  const epTarget = year === 2030 ? thresholds.ep2030 : thresholds.ep2nd;
   const reduction =
     epTotal && epTarget && epTotal > epTarget
       ? Math.round(((epTotal - epTarget) / epTotal) * 100)
       : 0;
-  const investEstimate =
-    area && reduction ? Math.round(area * 200 * (reduction / 10)) : null;
+  // Sprint 26 P1.13 — formulă realistă investiție per m² funcție de profunzime renovare:
+  //   <30% reducere = renovare ușoară 1500 RON/m²
+  //   30–60%        = renovare medie 2500 RON/m²
+  //   >60%          = renovare profundă (nZEB) 3500 RON/m²
+  // Anterior 200 RON/m² × (reducere/10) era ~10× SUBEVALUAT față de practica RO 2026.
+  const investEstimate = area
+    ? Math.round(area * (reduction < 30 ? 1500 : reduction < 60 ? 2500 : 3500))
+    : null;
 
   function handleCopy() {
     const lines = [
@@ -116,8 +146,8 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
       level === "red"
         ? `STATUS: NON-CONFORM MEPS 2030 — Renovare obligatorie până 31 Dec 2030`
         : level === "amber"
-        ? `STATUS: RISC MEPS 2033 — Renovare recomandată până 2033`
-        : `STATUS: CONFORM MEPS 2030 și 2033`,
+        ? `STATUS: RISC MEPS ${milestone2} — Renovare recomandată până ${milestone2}`
+        : `STATUS: CONFORM MEPS 2030 și ${milestone2}`,
       reduction
         ? `Reducere EP necesară: ${reduction}% (țintă: ${epTarget} kWh/m²an)`
         : "",
@@ -169,14 +199,14 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
               {level === "red"
                 ? "NON-CONFORM MEPS 2030 — Renovare obligatorie până 31 Dec 2030"
                 : level === "amber"
-                ? "RISC MEPS 2033 — Renovare recomandată până 2033"
-                : "CONFORM MEPS 2030 și 2033"}
+                ? `RISC MEPS ${milestone2} — Renovare recomandată până ${milestone2}`
+                : `CONFORM MEPS 2030 și ${milestone2}`}
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
               {level === "red"
                 ? "Clădire în percentila inferioară 15–16% — clasă F/G"
                 : level === "amber"
-                ? "Clădire în zona de risc 2033 — clasă E"
+                ? `Clădire în zona de risc ${milestone2} — clasă E`
                 : "Clădire peste pragul minim de performanță energetică"}
             </p>
           </div>
@@ -194,14 +224,14 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
               </p>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-center min-w-[90px]">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Termen 2033</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">Termen {milestone2}</p>
               <p
                 className={cn(
                   "text-sm font-bold",
                   level === "amber" ? "text-amber-400" : "text-slate-400"
                 )}
               >
-                {days2033.toLocaleString("ro-RO")} zile
+                {days2nd.toLocaleString("ro-RO")} zile
               </p>
             </div>
           </div>
@@ -245,7 +275,11 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
                   ~{investEstimate.toLocaleString("ro-RO")} RON
                 </p>
                 <p className="text-[10px] text-slate-600 mt-0.5">
-                  Estimare orientativă: 200 RON/m² per 10% reducere EP
+                  {reduction < 30
+                    ? "1.500 RON/m² (renovare ușoară)"
+                    : reduction < 60
+                    ? "2.500 RON/m² (renovare medie)"
+                    : "3.500 RON/m² (renovare profundă nZEB)"}
                 </p>
               </div>
             )}
@@ -302,15 +336,17 @@ export default function MEPSCheck({ instSummary = {}, building = {}, energyClass
         </div>
       )}
 
-      {/* EU context */}
+      {/* EU context — Sprint 26 P1.14 disclaimer extins */}
       <div className="bg-blue-950/40 border border-blue-500/15 rounded-xl px-4 py-3 flex gap-3">
         <span className="text-blue-400 text-base mt-0.5 flex-shrink-0">ℹ</span>
         <p className="text-[11px] text-blue-300/80 leading-relaxed">
           <span className="font-semibold text-blue-300">EPBD 2024/1275 (recast)</span> în vigoare
-          din 28 mai 2024. Transpunere în legislația națională:{" "}
-          <span className="font-medium">termen 29 mai 2026</span>. Pragurile exacte vor fi
-          stabilite prin ordin MDLPA. Valorile EP afișate sunt estimări orientative pentru România
-          până la publicarea ordinului oficial.
+          din 28 mai 2024. Transpunere prin <span className="font-medium">L.238/2024</span> +
+          ordin MDLPA aplicare (termen 29 mai 2026).
+          {" "}<span className="font-semibold">Rezidențial: ținte 2030 + 2035</span> (Art. 9.1.a);
+          {" "}<span className="font-semibold">Nerezidențial: ținte 2030 + 2033</span> (Art. 9.1.b).
+          {" "}Pragurile EP afișate sunt EXTRAPOLĂRI din L.238/2024 transpunere — valorile
+          finale (clase + EP/m²) vor fi stabilite prin ordinul MDLPA aplicare.
         </p>
       </div>
 
