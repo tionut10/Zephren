@@ -38,26 +38,57 @@ async function _attachAutoTable(doc) {
 }
 
 // ─── Helper: font Unicode + diacritice RO pentru orice doc jsPDF ────────────
-// Încearcă Roboto TTF din /public/fonts/Roboto-Regular.ttf (suport nativ ă â î ș ț).
-// Fallback: monkey-patch doc.text + doc.autoTable cu normalizeDiacritics (ă→a etc.)
+// Încearcă Liberation Sans TTF din /public/fonts/ (suport nativ ă â î ș ț).
+//
+// Patch-uiește ÎNTOTDEAUNA `doc.text` și `doc.autoTable`:
+//   • cu fontOk=true  → injectează font="LiberationSans" în styles/headStyles/
+//     bodyStyles/footStyles ale autoTable (altfel tabelele cad pe Helvetica
+//     default, care NU are glyph-uri pentru ă â î ș ț ψ η ₂ ⁻¹) + normalizează
+//     simbolurile lipsă (✓ ✗ ⚠ → text safe).
+//   • cu fontOk=false → transliterare diacritice + normalizare simboluri.
+//
+// Identic cu pattern-ul din `report-generators.js::initDoc()` (Deviz estimativ
+// e perfect → reproducem aceeași abordare). Fără injectare font în autoTable
+// styles, toate tabelele cad pe Helvetica → diacritice tăiate în Raport tehnic.
 async function _setupRoFont(doc) {
   try {
-    const { setupRomanianFont, normalizeDiacritics } = await import("../utils/pdf-fonts.js");
+    const { setupRomanianFont, normalizeForPdf, ROMANIAN_FONT } = await import("../utils/pdf-fonts.js");
     const fontOk = await setupRomanianFont(doc);
-    if (!fontOk) {
-      const nd = (t) => typeof t === "string" ? normalizeDiacritics(t) : t;
-      const ndRow = (row) => Array.isArray(row) ? row.map(nd) : row;
-      const origText = doc.text.bind(doc);
-      doc.text = (text, ...args) => origText(Array.isArray(text) ? text.map(nd) : nd(text), ...args);
-      if (typeof doc.autoTable === "function") {
-        const origAt = doc.autoTable.bind(doc);
-        doc.autoTable = (opts) => {
-          if (Array.isArray(opts?.body)) opts.body = opts.body.map(r => Array.isArray(r) ? r.map(ndRow) : r);
-          if (Array.isArray(opts?.head)) opts.head = opts.head.map(r => Array.isArray(r) ? r.map(ndRow) : r);
-          if (Array.isArray(opts?.foot)) opts.foot = opts.foot.map(r => Array.isArray(r) ? r.map(ndRow) : r);
-          return origAt(opts);
-        };
+    const norm = (t) => typeof t === "string" ? normalizeForPdf(t, fontOk) : t;
+    const normCell = (cell) => {
+      if (typeof cell === "string") return norm(cell);
+      if (cell && typeof cell === "object" && typeof cell.content === "string") {
+        return { ...cell, content: norm(cell.content) };
       }
+      return cell;
+    };
+    const normRow = (row) => Array.isArray(row) ? row.map(normCell) : row;
+
+    // Patch doc.text — normalizează diacritice (dacă fontOk=false) + simboluri (mereu)
+    const origText = doc.text.bind(doc);
+    doc.text = (text, ...args) => origText(
+      Array.isArray(text) ? text.map(norm) : norm(text), ...args
+    );
+
+    // Patch doc.autoTable — INJECTEAZĂ FONT în toate stilurile + normalizează celulele.
+    // FĂRĂ font: ... în styles, autoTable cade pe Helvetica → diacritice eliminate.
+    if (typeof doc.autoTable === "function") {
+      const origAt = doc.autoTable.bind(doc);
+      doc.autoTable = (opts) => {
+        const merged = { ...(opts || {}) };
+        if (fontOk) {
+          // Injectează font fără să suprascrie alte proprietăți deja setate
+          const inject = (existing) => ({ font: ROMANIAN_FONT, ...(existing || {}) });
+          merged.styles = inject(merged.styles);
+          merged.headStyles = inject(merged.headStyles);
+          merged.bodyStyles = inject(merged.bodyStyles);
+          merged.footStyles = inject(merged.footStyles);
+        }
+        if (Array.isArray(merged.body)) merged.body = merged.body.map(normRow);
+        if (Array.isArray(merged.head)) merged.head = merged.head.map(normRow);
+        if (Array.isArray(merged.foot)) merged.foot = merged.foot.map(normRow);
+        return origAt(merged);
+      };
     }
   } catch (_) { /* font indisponibil — diacriticele rămân cu Helvetica default */ }
 }
@@ -397,7 +428,7 @@ export function exportXML(ctx) {
     <PompaCaldura activ="${heatPump.enabled}" COP="${heatPump.cop || ""}"/>
     <Biomasa activ="${biomass.enabled}" tip="${biomass.type || ""}"/>
   </Regenerabile>
-  <BilanțEnergetic>
+  <BilantEnergetic>
     <EnergieFinala unit="kWh/an">${instSummary.qf_total?.toFixed(1) || ""}</EnergieFinala>
     <EnergieFinalaSpecifica unit="kWh/(m2·an)">${instSummary.qf_total_m2?.toFixed(1) || ""}</EnergieFinalaSpecifica>
     <EnergiePrimara unit="kWh/an">${(renewSummary?.ep_adjusted || instSummary.ep_total || 0).toFixed(1)}</EnergiePrimara>
@@ -406,7 +437,7 @@ export function exportXML(ctx) {
     <ClasaEnergetica>${cls.cls}</ClasaEnergetica>
     <NotaEnergetica>${cls.score}</NotaEnergetica>
     <ConformNZEB>${epF <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30)}</ConformNZEB>
-  </BilanțEnergetic>
+  </BilantEnergetic>
   <Auditor>
     <Nume>${auditor.name || ""}</Nume>
     <GradAtestat>${auditor.grade || ""}</GradAtestat>
@@ -456,6 +487,88 @@ export function generateQRCodeSVG(text, size) {
 // ═══════════════════════════════════════════════════════════════════════════
 // 6. EXPORT EXCEL FULL — workbook 7 foi detaliate (dynamic xlsx)
 // ═══════════════════════════════════════════════════════════════════════════
+// ─── Helpers Excel: stiluri profesionale + tipuri numerice ──────────────────
+// Folosim xlsx-js-style (drop-in pentru xlsx, suport `s` pe celule). Stiluri:
+//   • Header foi: bold + bg navy + text alb + alignment center
+//   • Sub-header: bold + bg gray
+//   • Body: text 10pt + border thin
+//   • Total: bold + bg amber pal
+function _excelStyles() {
+  const border = {
+    top:    { style: "thin", color: { rgb: "DDDDDD" } },
+    bottom: { style: "thin", color: { rgb: "DDDDDD" } },
+    left:   { style: "thin", color: { rgb: "DDDDDD" } },
+    right:  { style: "thin", color: { rgb: "DDDDDD" } },
+  };
+  return {
+    title: {
+      font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "0D47A1" } }, // navy
+      alignment: { horizontal: "left", vertical: "center" },
+    },
+    header: {
+      font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "1A237E" } }, // navy darker
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border,
+    },
+    subheader: {
+      font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "0D47A1" } },
+      fill: { fgColor: { rgb: "E3F2FD" } }, // blue light
+      alignment: { horizontal: "left", vertical: "center" },
+      border,
+    },
+    label: {
+      font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "1F2937" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: true },
+      border,
+    },
+    body: {
+      font: { name: "Calibri", sz: 10, color: { rgb: "111827" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: true },
+      border,
+    },
+    bodyNum: {
+      font: { name: "Calibri", sz: 10, color: { rgb: "111827" } },
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0.0",
+      border,
+    },
+    bodyInt: {
+      font: { name: "Calibri", sz: 10, color: { rgb: "111827" } },
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0",
+      border,
+    },
+    total: {
+      font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "78350F" } },
+      fill: { fgColor: { rgb: "FEF3C7" } }, // amber pale
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0.0",
+      border,
+    },
+    totalLabel: {
+      font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "78350F" } },
+      fill: { fgColor: { rgb: "FEF3C7" } },
+      alignment: { horizontal: "left", vertical: "center" },
+      border,
+    },
+  };
+}
+
+// Construiește un sheet din rânduri tipate: { v, t, s } fluent.
+// Helper: cell(value, type, style) — t: 's'(string) | 'n'(number) | 'd'(date)
+function _cell(value, type, style) {
+  if (value === null || value === undefined || value === "") {
+    return { v: "", t: "s", s: style };
+  }
+  if (type === "n") {
+    const n = typeof value === "number" ? value : parseFloat(value);
+    return { v: isNaN(n) ? "" : n, t: isNaN(n) ? "s" : "n", s: style };
+  }
+  return { v: String(value), t: "s", s: style };
+}
+
 export async function exportExcelFull(ctx) {
   const {
     building, selectedClimate, opaqueElements, glazingElements, thermalBridges,
@@ -466,258 +579,332 @@ export async function exportExcelFull(ctx) {
   } = ctx;
   try {
     setExporting("excelFull");
-    const XLSX = (await import("xlsx")).default || await import("xlsx");
+    // xlsx-js-style — drop-in pentru xlsx (suport stiluri pe celule).
+    const XLSX = (await import("xlsx-js-style")).default || (await import("xlsx-js-style"));
+    const S = _excelStyles();
     const wb = XLSX.utils.book_new();
     const Au = parseFloat(building.areaUseful) || 1;
     const epF = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
     const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
     const catKey = buildCatKey(building.category, cooling?.hasCooling);
+    const cat = BUILDING_CATEGORIES.find(c => c.id === building.category);
+    const catLabel = cat?.label || building.category || "";
+    const cls = getEnergyClass(epF, catKey)?.cls || "";
+    const co2Cls = getCO2Class(co2F, building.category)?.cls || "";
+    const conformNZEB = (renewSummary?.rer || 0) >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30)
+      && epF <= getNzebEpMax(building.category, selectedClimate?.zone);
 
-    // Foaie 1: Rezumat
-    const rezumatData = [
-      ["REZUMAT"],
-      [],
-      ["DATE CLADIRE", ""],
-      ["Adresa", building.address || ""],
-      ["Localitate", building.locality || ""],
-      ["Judet", building.county || ""],
-      ["Categorie funcțională", building.category || ""],
-      ["An constructie", building.yearBuilt || ""],
-      ["Regim inaltime", building.floors || ""],
-      ["Suprafata utila (m2)", building.areaUseful || ""],
-      ["Volum incalzit (m3)", building.volume || ""],
-      ["Suprafata anvelopa (m2)", building.areaEnvelope || ""],
-      ["Structura", building.structure || ""],
-      [],
-      ["DATE CLIMATICE", ""],
-      ["Localitate referinta", selectedClimate?.name || ""],
-      ["Zonă climatică", selectedClimate?.zone || ""],
-      ["Temperatura ext. calcul (C)", selectedClimate?.theta_e || ""],
-      ["Temperatura medie anuala (C)", selectedClimate?.theta_a || ""],
-      ["GZile (C*zile)", selectedClimate?.gzile || ""],
-      [],
-      ["KPI ENERGETICI", "", ""],
-      ["Indicator", "Valoare", "Unitate"],
-      ["Energie primara totala EP", epF?.toFixed(1) || "", "kWh/(m2*an)"],
-      ["Energie finala totala EF", instSummary?.qf_total_m2?.toFixed(1) || "", "kWh/(m2*an)"],
-      ["Emisii CO2", co2F?.toFixed(1) || "", "kgCO2/(m2*an)"],
-      ["Clasa energetica EP", getEnergyClass(epF, catKey)?.cls || "", ""],
-      ["RER total (%)", (renewSummary?.rer || 0).toFixed(1), "%"],
-      ["RER on-site (%)", (renewSummary?.rerOnSite || 0).toFixed(1), "%"],
-      ["Coef. global pierderi G", envelopeSummary?.G?.toFixed(4) || "", "W/(m3*K)"],
-      ["Conform nZEB", (renewSummary?.rer || 0) >= 30 && epF <= getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU", ""],
-      ["EP maxim nZEB", getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(0) || "", "kWh/(m2*an)"],
-      ["LENI iluminat", instSummary?.leni?.toFixed(1) || "", "kWh/(m2*an)"],
+    // Helper: aplică stil pe sheet din matrice de „styled rows"
+    // styledRows = [[{v, t, s}, ...], ...]
+    const buildSheet = (styledRows, colWidths, merges = []) => {
+      const ws = XLSX.utils.aoa_to_sheet(styledRows.map(r => r.map(c => (c && c.v !== undefined) ? c.v : (c ?? ""))));
+      // Re-aplicăm stilurile (aoa_to_sheet șterge metadata)
+      styledRows.forEach((row, ri) => {
+        row.forEach((cell, ci) => {
+          const ref = XLSX.utils.encode_cell({ r: ri, c: ci });
+          if (cell && typeof cell === "object" && cell.v !== undefined) {
+            ws[ref] = { v: cell.v, t: cell.t || "s" };
+            if (cell.s) ws[ref].s = cell.s;
+            if (cell.z) ws[ref].z = cell.z;
+          }
+        });
+      });
+      if (colWidths) ws["!cols"] = colWidths.map(w => ({ wch: w }));
+      if (merges.length) ws["!merges"] = merges;
+      // Row height pentru title
+      ws["!rows"] = styledRows.map((_, i) => ({ hpt: i === 0 ? 24 : 18 }));
+      return ws;
+    };
+
+    // ═══ Foaie 1: Rezumat ═══
+    const rezRows = [
+      [_cell("REZUMAT — Certificat de Performanță Energetică", "s", S.title), null, null],
+      [null, null, null],
+      [_cell("DATE CLĂDIRE", "s", S.subheader), null, null],
+      [_cell("Adresă", "s", S.label), _cell(building.address || "—", "s", S.body), null],
+      [_cell("Localitate", "s", S.label), _cell(building.locality || building.city || "—", "s", S.body), null],
+      [_cell("Județ", "s", S.label), _cell(building.county || "—", "s", S.body), null],
+      [_cell("Categorie funcțională", "s", S.label), _cell(catLabel, "s", S.body), null],
+      [_cell("An construcție", "s", S.label), _cell(building.yearBuilt || "—", "n", S.bodyInt), null],
+      [_cell("Regim înălțime", "s", S.label), _cell(building.floors || "—", "s", S.body), null],
+      [_cell("Suprafață utilă (m²)", "s", S.label), _cell(building.areaUseful, "n", S.bodyNum), null],
+      [_cell("Volum încălzit (m³)", "s", S.label), _cell(building.volume, "n", S.bodyNum), null],
+      [_cell("Suprafață anvelopă (m²)", "s", S.label), _cell(building.areaEnvelope, "n", S.bodyNum), null],
+      [_cell("Structură", "s", S.label), _cell(building.structure || "—", "s", S.body), null],
+      [null, null, null],
+      [_cell("DATE CLIMATICE", "s", S.subheader), null, null],
+      [_cell("Localitate referință", "s", S.label), _cell(selectedClimate?.name || "—", "s", S.body), null],
+      [_cell("Zonă climatică", "s", S.label), _cell(selectedClimate?.zone || "—", "s", S.body), null],
+      [_cell("Temperatura ext. de calcul (°C)", "s", S.label), _cell(selectedClimate?.theta_e, "n", S.bodyNum), null],
+      [_cell("Temperatura medie anuală (°C)", "s", S.label), _cell(selectedClimate?.theta_a, "n", S.bodyNum), null],
+      [_cell("Grade-zile încălzire (°C·zile)", "s", S.label), _cell(selectedClimate?.gzile, "n", S.bodyInt), null],
+      [null, null, null],
+      [_cell("INDICATORI ENERGETICI", "s", S.subheader), null, null],
+      [_cell("Indicator", "s", S.header), _cell("Valoare", "s", S.header), _cell("Unitate", "s", S.header)],
+      [_cell("Energie primară totală EP", "s", S.label), _cell(epF, "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("Energie finală totală EF", "s", S.label), _cell(instSummary?.qf_total_m2, "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("Emisii CO₂", "s", S.label), _cell(co2F, "n", S.bodyNum), _cell("kgCO₂/(m²·an)", "s", S.body)],
+      [_cell("Clasă energetică EP", "s", S.label), _cell(cls, "s", S.body), _cell("—", "s", S.body)],
+      [_cell("Clasă CO₂", "s", S.label), _cell(co2Cls, "s", S.body), _cell("—", "s", S.body)],
+      [_cell("RER total", "s", S.label), _cell(renewSummary?.rer || 0, "n", S.bodyNum), _cell("%", "s", S.body)],
+      [_cell("RER on-site", "s", S.label), _cell(renewSummary?.rerOnSite || 0, "n", S.bodyNum), _cell("%", "s", S.body)],
+      [_cell("Coeficient global pierderi G", "s", S.label), _cell(envelopeSummary?.G, "n", S.bodyNum), _cell("W/(m³·K)", "s", S.body)],
+      [_cell("Conformitate nZEB", "s", S.label), _cell(conformNZEB ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("EP maxim nZEB", "s", S.label), _cell(getNzebEpMax(building.category, selectedClimate?.zone), "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("LENI iluminat", "s", S.label), _cell(instSummary?.leni, "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rezumatData), "Rezumat");
+    XLSX.utils.book_append_sheet(wb, buildSheet(rezRows, [38, 28, 20], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }]), "Rezumat");
 
-    // Foaie 2: Anvelopa
-    const anvData = [
-      ["ANVELOPA"],
-      [],
-      ["ELEMENTE OPACE"],
-      ["Denumire", "Tip", "Suprafata (m2)", "Orientare", "U calculat (W/m2K)", "U ref nZEB (W/m2K)", "Straturi"],
+    // ═══ Foaie 2: Anvelopă ═══
+    const anvRows = [
+      [_cell("ANVELOPĂ — Elemente opace, vitrate și punți termice", "s", S.title), null, null, null, null, null, null],
+      [null, null, null, null, null, null, null],
+      [_cell("ELEMENTE OPACE", "s", S.subheader), null, null, null, null, null, null],
+      [
+        _cell("Denumire", "s", S.header), _cell("Tip", "s", S.header),
+        _cell("Suprafață (m²)", "s", S.header), _cell("Orientare", "s", S.header),
+        _cell("U calculat (W/m²·K)", "s", S.header), _cell("U ref nZEB (W/m²·K)", "s", S.header),
+        _cell("Straturi", "s", S.header),
+      ],
     ];
     opaqueElements.forEach(el => {
       const rL = (el.layers || []).reduce((s, l) => { const d = (parseFloat(l.thickness) || 0) / 1000; return s + (d > 0 && l.lambda > 0 ? d / l.lambda : 0); }, 0);
       const uCalc = rL > 0 ? (1 / (0.13 + rL + 0.04)) : 0;
       const uRef = el.type === "PE" ? 0.56 : el.type === "PSol" ? 0.40 : el.type === "PlanInt" ? 0.50 : el.type === "PlanExt" ? 0.20 : el.type === "Acoperis" ? 0.20 : 0.35;
-      anvData.push([
-        el.name || "", el.type || "", el.area || "", el.orientation || "",
-        uCalc.toFixed(3), uRef.toFixed(2),
-        (el.layers || []).map(l => `${l.matName || "?"} (${l.thickness || 0}mm, lambda=${l.lambda || 0})`).join(" | "),
+      anvRows.push([
+        _cell(el.name || "", "s", S.body), _cell(el.type || "", "s", S.body),
+        _cell(el.area, "n", S.bodyNum), _cell(el.orientation || "", "s", S.body),
+        _cell(uCalc, "n", { ...S.bodyNum, numFmt: "0.000" }),
+        _cell(uRef, "n", { ...S.bodyNum, numFmt: "0.00" }),
+        _cell((el.layers || []).map(l => `${l.matName || "?"} (${l.thickness || 0}mm, λ=${l.lambda || 0})`).join(" | "), "s", S.body),
       ]);
     });
-    anvData.push([]);
-    anvData.push(["ELEMENTE VITRATE"]);
-    anvData.push(["Denumire", "Tip vitraj", "Suprafata (m2)", "Orientare", "U (W/m2K)", "g (-)", "Tip rama"]);
-    glazingElements.forEach(el => anvData.push([
-      el.name || "", el.glazingType || "", el.area || "", el.orientation || "",
-      el.u || "", el.g || "", el.frameType || "",
+    anvRows.push([null, null, null, null, null, null, null]);
+    anvRows.push([_cell("ELEMENTE VITRATE", "s", S.subheader), null, null, null, null, null, null]);
+    anvRows.push([
+      _cell("Denumire", "s", S.header), _cell("Tip vitraj", "s", S.header),
+      _cell("Suprafață (m²)", "s", S.header), _cell("Orientare", "s", S.header),
+      _cell("U_w (W/m²·K)", "s", S.header), _cell("g (-)", "s", S.header),
+      _cell("Tip ramă", "s", S.header),
+    ]);
+    glazingElements.forEach(el => anvRows.push([
+      _cell(el.name || "", "s", S.body), _cell(el.glazingType || "", "s", S.body),
+      _cell(el.area, "n", S.bodyNum), _cell(el.orientation || "", "s", S.body),
+      _cell(el.u, "n", { ...S.bodyNum, numFmt: "0.00" }),
+      _cell(el.g, "n", { ...S.bodyNum, numFmt: "0.00" }),
+      _cell(el.frameType || "", "s", S.body),
     ]));
-    anvData.push([]);
-    anvData.push(["PUNTI TERMICE"]);
-    anvData.push(["Denumire", "Tip", "Psi (W/mK)", "Lungime (m)", "Pierdere liniara (W/K)"]);
-    thermalBridges.forEach(b => anvData.push([
-      b.name || "", b.type || "", b.psi || "", b.length || "",
-      ((parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0)).toFixed(3),
+    anvRows.push([null, null, null, null, null, null, null]);
+    anvRows.push([_cell("PUNȚI TERMICE LINIARE", "s", S.subheader), null, null, null, null, null, null]);
+    anvRows.push([
+      _cell("Denumire", "s", S.header), _cell("Tip", "s", S.header),
+      _cell("ψ (W/m·K)", "s", S.header), _cell("Lungime (m)", "s", S.header),
+      _cell("Pierdere liniară (W/K)", "s", S.header), null, null,
+    ]);
+    thermalBridges.forEach(b => anvRows.push([
+      _cell(b.name || b.desc || "", "s", S.body), _cell(b.type || b.cat || "", "s", S.body),
+      _cell(b.psi, "n", { ...S.bodyNum, numFmt: "0.000" }),
+      _cell(b.length, "n", S.bodyNum),
+      _cell(((parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0)), "n", { ...S.bodyNum, numFmt: "0.000" }),
+      null, null,
     ]));
     if (envelopeSummary) {
       const totalBridgeLoss = thermalBridges.reduce((s, b) => s + (parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0), 0);
-      anvData.push(["TOTAL punti termice", "", "", "", totalBridgeLoss.toFixed(3)]);
-      anvData.push([]);
-      anvData.push(["REZUMAT ANVELOPA", "Valoare", "Unitate"]);
-      anvData.push(["Coef. global G", envelopeSummary.G?.toFixed(4) || "", "W/(m3*K)"]);
-      anvData.push(["H_T total", envelopeSummary.H_T?.toFixed(2) || "", "W/K"]);
-      anvData.push(["H_V total", envelopeSummary.H_V?.toFixed(2) || "", "W/K"]);
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(anvData), "Anvelopa");
-
-    // Foaie 3: Calcul termic ISO 13790
-    if (monthlyISO && monthlyISO.length === 12) {
-      const thermalData = [
-        ["CALCUL TERMIC LUNAR ISO 13790"],
-        [],
-        ["Luna", "T ext (C)", "Q pierderi (kWh)", "Q sol (kWh)", "Q interne (kWh)",
-          "Q aporturi total (kWh)", "Factor utilizare eta_H", "Raport gamma_H",
-          "Q incalzire (kWh)", "Q racire (kWh)"],
-      ];
-      monthlyISO.forEach(m => thermalData.push([
-        m.name, m.tExt?.toFixed(1) || "", m.Q_loss?.toFixed(0) || "",
-        m.Q_sol?.toFixed(0) || "", m.Q_int?.toFixed(0) || "",
-        m.Q_gain?.toFixed(0) || "",
-        m.eta_H?.toFixed(3) || "", m.gamma_H?.toFixed(3) || "",
-        m.qH_nd?.toFixed(0) || "", m.qC_nd?.toFixed(0) || "",
-      ]));
-      thermalData.push([
-        "TOTAL", "",
-        monthlyISO.reduce((s, m) => s + (m.Q_loss || 0), 0).toFixed(0),
-        monthlyISO.reduce((s, m) => s + (m.Q_sol || 0), 0).toFixed(0),
-        monthlyISO.reduce((s, m) => s + (m.Q_int || 0), 0).toFixed(0),
-        monthlyISO.reduce((s, m) => s + (m.Q_gain || 0), 0).toFixed(0),
-        "", "",
-        monthlyISO.reduce((s, m) => s + (m.qH_nd || 0), 0).toFixed(0),
-        monthlyISO.reduce((s, m) => s + (m.qC_nd || 0), 0).toFixed(0),
+      anvRows.push([
+        _cell("TOTAL punți termice", "s", S.totalLabel), null, null, null,
+        _cell(totalBridgeLoss, "n", { ...S.total, numFmt: "0.000" }),
+        null, null,
       ]);
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(thermalData), "Calcul termic");
+      anvRows.push([null, null, null, null, null, null, null]);
+      anvRows.push([_cell("REZUMAT ANVELOPĂ", "s", S.subheader), null, null, null, null, null, null]);
+      anvRows.push([_cell("Indicator", "s", S.header), _cell("Valoare", "s", S.header), _cell("Unitate", "s", S.header), null, null, null, null]);
+      anvRows.push([_cell("Coeficient global G", "s", S.label), _cell(envelopeSummary.G, "n", { ...S.bodyNum, numFmt: "0.0000" }), _cell("W/(m³·K)", "s", S.body), null, null, null, null]);
+      anvRows.push([_cell("H_T total (transmisie)", "s", S.label), _cell(envelopeSummary.H_T, "n", S.bodyNum), _cell("W/K", "s", S.body), null, null, null, null]);
+      anvRows.push([_cell("H_V total (ventilație)", "s", S.label), _cell(envelopeSummary.H_V, "n", S.bodyNum), _cell("W/K", "s", S.body), null, null, null, null]);
+    }
+    XLSX.utils.book_append_sheet(wb, buildSheet(anvRows, [40, 8, 14, 10, 16, 16, 50], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }]), "Anvelopă");
+
+    // ═══ Foaie 3: Calcul termic ISO 13790 ═══
+    if (monthlyISO && monthlyISO.length === 12) {
+      const thRows = [
+        [_cell("CALCUL TERMIC LUNAR (ISO 13790 / SR EN ISO 52016-1)", "s", S.title), null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null],
+        [
+          _cell("Luna", "s", S.header), _cell("T ext (°C)", "s", S.header),
+          _cell("Q pierderi (kWh)", "s", S.header), _cell("Q solar (kWh)", "s", S.header),
+          _cell("Q interne (kWh)", "s", S.header), _cell("Q aporturi total (kWh)", "s", S.header),
+          _cell("Factor utilizare η_H", "s", S.header), _cell("Raport γ_H", "s", S.header),
+          _cell("Q încălzire (kWh)", "s", S.header), _cell("Q răcire (kWh)", "s", S.header),
+        ],
+      ];
+      monthlyISO.forEach(m => thRows.push([
+        _cell(m.name, "s", S.body), _cell(m.tExt, "n", S.bodyNum),
+        _cell(m.Q_loss, "n", S.bodyInt), _cell(m.Q_sol, "n", S.bodyInt),
+        _cell(m.Q_int, "n", S.bodyInt), _cell(m.Q_gain, "n", S.bodyInt),
+        _cell(m.eta_H, "n", { ...S.bodyNum, numFmt: "0.000" }),
+        _cell(m.gamma_H, "n", { ...S.bodyNum, numFmt: "0.000" }),
+        _cell(m.qH_nd, "n", S.bodyInt), _cell(m.qC_nd, "n", S.bodyInt),
+      ]));
+      thRows.push([
+        _cell("ANUAL", "s", S.totalLabel), null,
+        _cell(monthlyISO.reduce((s, m) => s + (m.Q_loss || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(monthlyISO.reduce((s, m) => s + (m.Q_sol || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(monthlyISO.reduce((s, m) => s + (m.Q_int || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(monthlyISO.reduce((s, m) => s + (m.Q_gain || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+        null, null,
+        _cell(monthlyISO.reduce((s, m) => s + (m.qH_nd || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(monthlyISO.reduce((s, m) => s + (m.qC_nd || 0), 0), "n", { ...S.total, numFmt: "#,##0" }),
+      ]);
+      XLSX.utils.book_append_sheet(wb, buildSheet(thRows, [10, 10, 14, 14, 14, 18, 14, 12, 14, 14], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }]), "Calcul termic");
     }
 
-    // Foaie 4: Instalatii
-    const instData = [
-      ["INSTALATII — CONSUMURI PER UTILITATE"],
-      [],
-      ["CONSUMURI FINALE SI PRIMARE", "", "", "", ""],
-      ["Utilitate", "Energie finala (kWh/an)", "EF (kWh/m2*an)", "Energie primara (kWh/an)", "EP (kWh/m2*an)",
-        "Factor primar fp", "CO2 (kgCO2/an)"],
+    // ═══ Foaie 4: Instalații ═══
+    const instRows = [
+      [_cell("INSTALAȚII — Consumuri per utilitate", "s", S.title), null, null, null, null, null, null],
+      [null, null, null, null, null, null, null],
+      [_cell("CONSUMURI FINALE ȘI PRIMARE", "s", S.subheader), null, null, null, null, null, null],
+      [
+        _cell("Utilitate", "s", S.header), _cell("Energie finală (kWh/an)", "s", S.header),
+        _cell("EF (kWh/m²·an)", "s", S.header), _cell("Energie primară (kWh/an)", "s", S.header),
+        _cell("EP (kWh/m²·an)", "s", S.header), _cell("Factor primar fp", "s", S.header),
+        _cell("CO₂ (kgCO₂/an)", "s", S.header),
+      ],
     ];
     if (instSummary) {
       const hFuel = HEAT_SOURCES.find(s => s.id === heating.source);
       const fpH = hFuel?.fp || heating.fp || 1.1;
       const rows_inst = [
         ["Încălzire", instSummary.qf_h, instSummary.ep_h, fpH, instSummary.co2_h],
-        ["Apa calda (ACM)", instSummary.qf_w, instSummary.ep_w, fpH, instSummary.co2_w],
-        ["Racire", instSummary.qf_c, instSummary.ep_c, 2.5, instSummary.co2_c],
+        ["Apă caldă (ACM)", instSummary.qf_w, instSummary.ep_w, fpH, instSummary.co2_w],
+        ["Răcire", instSummary.qf_c, instSummary.ep_c, 2.5, instSummary.co2_c],
         ["Ventilare", instSummary.qf_v, instSummary.ep_v, 2.5, instSummary.co2_v],
         ["Iluminat", instSummary.qf_l, instSummary.ep_l, 2.5, instSummary.co2_l],
       ];
-      rows_inst.forEach(([label, qf, ep, fp, co2]) => instData.push([
-        label,
-        (qf || 0).toFixed(0), ((qf || 0) / Au).toFixed(1),
-        (ep || 0).toFixed(0), ((ep || 0) / Au).toFixed(1),
-        fp,
-        (co2 || 0).toFixed(0),
+      rows_inst.forEach(([label, qf, ep, fp, co2]) => instRows.push([
+        _cell(label, "s", S.label),
+        _cell(qf || 0, "n", S.bodyInt),
+        _cell((qf || 0) / Au, "n", S.bodyNum),
+        _cell(ep || 0, "n", S.bodyInt),
+        _cell((ep || 0) / Au, "n", S.bodyNum),
+        _cell(fp, "n", { ...S.bodyNum, numFmt: "0.00" }),
+        _cell(co2 || 0, "n", S.bodyInt),
       ]));
-      instData.push([
-        "TOTAL",
-        instSummary.qf_total?.toFixed(0) || "", instSummary.qf_total_m2?.toFixed(1) || "",
-        instSummary.ep_total?.toFixed(0) || "", instSummary.ep_total_m2?.toFixed(1) || "",
-        "", instSummary.co2_total?.toFixed(0) || "",
+      instRows.push([
+        _cell("TOTAL", "s", S.totalLabel),
+        _cell(instSummary.qf_total, "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(instSummary.qf_total_m2, "n", { ...S.total, numFmt: "#,##0.0" }),
+        _cell(instSummary.ep_total, "n", { ...S.total, numFmt: "#,##0" }),
+        _cell(instSummary.ep_total_m2, "n", { ...S.total, numFmt: "#,##0.0" }),
+        null,
+        _cell(instSummary.co2_total, "n", { ...S.total, numFmt: "#,##0" }),
       ]);
-      instData.push([]);
-      instData.push(["PARAMETRI SISTEME", "", ""]);
-      instData.push(["Sistem", "Parametru", "Valoare"]);
-      instData.push(["Incalzire", "Sursa", HEAT_SOURCES.find(s => s.id === heating.source)?.label || heating.source]);
-      instData.push(["", "Putere nominala (kW)", heating.power || ""]);
-      instData.push(["", "Randament generare (eta_gen)", heating.etaGen || heating.eta_gen || ""]);
-      instData.push(["", "Randament distributie (eta_distr)", heating.etaDistr || heating.eta_distr || ""]);
-      instData.push(["", "Randament emisie (eta_emit)", heating.etaEmit || heating.eta_emit || ""]);
-      instData.push(["", "Factor primar fp", heating.fp || fpH || ""]);
-      instData.push(["ACM", "Sursa", ACM_SOURCES.find(s => s.id === acm.source)?.label || acm.source]);
-      instData.push(["", "Consumatori", acm.consumers || ""]);
-      instData.push(["", "Litri/zi/persoana", acm.dailyLiters || ""]);
-      instData.push(["Racire", "Sistem", COOLING_SYSTEMS.find(s => s.id === cooling.system)?.label || cooling.system]);
-      instData.push(["", "EER nominal", cooling.eer || ""]);
-      instData.push(["Ventilare", "Tip", VENTILATION_TYPES.find(s => s.id === ventilation.type)?.label || ventilation.type]);
-      instData.push(["", "Debit (m3/h)", ventilation.airflow || ""]);
-      instData.push(["", "Eficienta recuperare (%)", ventilation.hrEfficiency || ""]);
-      instData.push(["Iluminat", "Tip", LIGHTING_TYPES.find(s => s.id === lighting.type)?.label || lighting.type]);
-      instData.push(["", "Densitate putere (W/m2)", lighting.pDensity || ""]);
-      instData.push(["", "LENI (kWh/m2*an)", instSummary?.leni?.toFixed(1) || ""]);
+      instRows.push([null, null, null, null, null, null, null]);
+      instRows.push([_cell("PARAMETRI SISTEME", "s", S.subheader), null, null, null, null, null, null]);
+      instRows.push([_cell("Sistem", "s", S.header), _cell("Parametru", "s", S.header), _cell("Valoare", "s", S.header), null, null, null, null]);
+      const sysParam = (sys, par, val) => instRows.push([_cell(sys, "s", S.label), _cell(par, "s", S.body), _cell(val, "s", S.body), null, null, null, null]);
+      sysParam("Încălzire", "Sursă", HEAT_SOURCES.find(s => s.id === heating.source)?.label || heating.source);
+      sysParam("", "Putere nominală (kW)", heating.power || "—");
+      sysParam("", "Randament generare (η_gen)", heating.etaGen || heating.eta_gen || "—");
+      sysParam("", "Randament distribuție (η_distr)", heating.etaDistr || heating.eta_distr || "—");
+      sysParam("", "Randament emisie (η_emit)", heating.etaEmit || heating.eta_emit || "—");
+      sysParam("", "Factor primar fp", heating.fp || fpH || "—");
+      sysParam("ACM", "Sursă", ACM_SOURCES.find(s => s.id === acm.source)?.label || acm.source);
+      sysParam("", "Consumatori", acm.consumers || "—");
+      sysParam("", "Litri/zi/persoană", acm.dailyLiters || "—");
+      sysParam("Răcire", "Sistem", COOLING_SYSTEMS.find(s => s.id === cooling.system)?.label || cooling.system);
+      sysParam("", "EER nominal", cooling.eer || "—");
+      sysParam("Ventilare", "Tip", VENTILATION_TYPES.find(s => s.id === ventilation.type)?.label || ventilation.type);
+      sysParam("", "Debit (m³/h)", ventilation.airflow || "—");
+      sysParam("", "Eficiență recuperare (%)", ventilation.hrEfficiency || "—");
+      sysParam("Iluminat", "Tip", LIGHTING_TYPES.find(s => s.id === lighting.type)?.label || lighting.type);
+      sysParam("", "Densitate putere (W/m²)", lighting.pDensity || "—");
+      sysParam("", "LENI (kWh/m²·an)", instSummary?.leni?.toFixed(1) || "—");
     }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instData), "Instalatii");
+    XLSX.utils.book_append_sheet(wb, buildSheet(instRows, [22, 22, 16, 22, 16, 14, 18], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }]), "Instalații");
 
-    // Foaie 5: Regenerabile
-    const renData = [
-      ["SURSE REGENERABILE"],
-      [],
-      ["Sursa", "Parametru", "Valoare", "Unitate"],
-      ["Fotovoltaic (PV)", "Activ", photovoltaic.enabled ? "DA" : "NU", ""],
-      ["", "Putere de varf (kWp)", photovoltaic.peakPower || photovoltaic.power || "", "kWp"],
-      ["", "Suprafata panouri (m2)", photovoltaic.area || "", "m2"],
-      ["", "Tip panouri", photovoltaic.type || "", ""],
-      ["", "Productie anuala estimata", renewSummary?.qPV_kWh?.toFixed(0) || "", "kWh/an"],
-      [],
-      ["Solar termic", "Activ", solarThermal.enabled ? "DA" : "NU", ""],
-      ["", "Suprafata colectori (m2)", solarThermal.area || "", "m2"],
-      ["", "Tip colectori", solarThermal.type || "", ""],
-      ["", "Productie anuala estimata", renewSummary?.qSolarTh?.toFixed(0) || "", "kWh/an"],
-      [],
-      ["Pompa de caldura", "Activ", heatPump.enabled ? "DA" : "NU", ""],
-      ["", "Tip", heatPump.type || "", ""],
-      ["", "COP nominal", heatPump.cop || "", ""],
-      ["", "Energie ambiental extrasa", renewSummary?.qHP_ren?.toFixed(0) || "", "kWh/an"],
-      [],
-      ["Biomasa", "Activ", biomass.enabled ? "DA" : "NU", ""],
-      ["", "Tip combustibil", biomass.type || "", ""],
-      ["", "Putere nominala (kW)", biomass.power || "", "kW"],
-      [],
-      ["TOTAL REGENERABILE", "", "", ""],
-      ["RER total (%)", (renewSummary?.rer || 0).toFixed(1), "", "%"],
-      ["RER on-site (%)", (renewSummary?.rerOnSite || 0).toFixed(1), "", "%"],
-      ["Energie regenerabila totala (kWh/an)", renewSummary?.qRen_total?.toFixed(0) || "", "", "kWh/an"],
+    // ═══ Foaie 5: Regenerabile ═══
+    const renRows = [
+      [_cell("SURSE REGENERABILE DE ENERGIE", "s", S.title), null, null, null],
+      [null, null, null, null],
+      [_cell("Sursă", "s", S.header), _cell("Parametru", "s", S.header), _cell("Valoare", "s", S.header), _cell("Unitate", "s", S.header)],
+      [_cell("Fotovoltaic (PV)", "s", S.label), _cell("Activ", "s", S.body), _cell(photovoltaic.enabled ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Putere de vârf (kWp)", "s", S.body), _cell(photovoltaic.peakPower || photovoltaic.power, "n", S.bodyNum), _cell("kWp", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Suprafață panouri (m²)", "s", S.body), _cell(photovoltaic.area, "n", S.bodyNum), _cell("m²", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Tip panouri", "s", S.body), _cell(photovoltaic.type || "—", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Producție anuală estimată", "s", S.body), _cell(renewSummary?.qPV_kWh, "n", S.bodyInt), _cell("kWh/an", "s", S.body)],
+      [null, null, null, null],
+      [_cell("Solar termic", "s", S.label), _cell("Activ", "s", S.body), _cell(solarThermal.enabled ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Suprafață colectori (m²)", "s", S.body), _cell(solarThermal.area, "n", S.bodyNum), _cell("m²", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Tip colectori", "s", S.body), _cell(solarThermal.type || "—", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Producție anuală estimată", "s", S.body), _cell(renewSummary?.qSolarTh, "n", S.bodyInt), _cell("kWh/an", "s", S.body)],
+      [null, null, null, null],
+      [_cell("Pompă de căldură", "s", S.label), _cell("Activ", "s", S.body), _cell(heatPump.enabled ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Tip", "s", S.body), _cell(heatPump.type || "—", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("COP nominal", "s", S.body), _cell(heatPump.cop, "n", { ...S.bodyNum, numFmt: "0.00" }), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Energie ambientală extrasă", "s", S.body), _cell(renewSummary?.qHP_ren, "n", S.bodyInt), _cell("kWh/an", "s", S.body)],
+      [null, null, null, null],
+      [_cell("Biomasă", "s", S.label), _cell("Activ", "s", S.body), _cell(biomass.enabled ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Tip combustibil", "s", S.body), _cell(biomass.type || "—", "s", S.body), _cell("—", "s", S.body)],
+      [_cell("", "s", S.body), _cell("Putere nominală (kW)", "s", S.body), _cell(biomass.power, "n", S.bodyNum), _cell("kW", "s", S.body)],
+      [null, null, null, null],
+      [_cell("TOTAL REGENERABILE", "s", S.subheader), null, null, null],
+      [_cell("RER total", "s", S.label), _cell(renewSummary?.rer || 0, "n", { ...S.bodyNum, numFmt: "0.0" }), _cell("%", "s", S.body), null],
+      [_cell("RER on-site", "s", S.label), _cell(renewSummary?.rerOnSite || 0, "n", { ...S.bodyNum, numFmt: "0.0" }), _cell("%", "s", S.body), null],
+      [_cell("Energie regenerabilă totală", "s", S.label), _cell(renewSummary?.qRen_total, "n", S.bodyInt), _cell("kWh/an", "s", S.body), null],
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(renData), "Regenerabile");
+    XLSX.utils.book_append_sheet(wb, buildSheet(renRows, [24, 30, 18, 12], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }]), "Regenerabile");
 
-    // Foaie 6: Clasificare
-    const clasifData = [
-      ["CLASIFICARE ENERGETICA"],
-      [],
-      ["INDICATORI FINALI", "", ""],
-      ["Indicator", "Valoare", "Unitate"],
-      ["EP total (dupa regenerabile)", epF?.toFixed(1) || "", "kWh/(m2*an)"],
-      ["EP total fara regenerabile", instSummary?.ep_total_m2?.toFixed(1) || "", "kWh/(m2*an)"],
-      ["CO2 total (dupa regenerabile)", co2F?.toFixed(1) || "", "kgCO2/(m2*an)"],
-      [],
-      ["CLASIFICARE", "", ""],
-      ["Clasa energetica EP", getEnergyClass(epF, catKey)?.cls || "", ""],
-      ["Clasa CO2", getCO2Class(co2F, building.category)?.cls || "", ""],
-      [],
-      ["nZEB", "", ""],
-      ["EP maxim nZEB (zona " + (selectedClimate?.zone || "III") + ")", getNzebEpMax(building.category, selectedClimate?.zone)?.toFixed(0) || "", "kWh/(m2*an)"],
-      ["RER minim nZEB (%)", (NZEB_THRESHOLDS[building.category]?.rer_min || 30) + "", "%"],
-      ["RER realizat (%)", (renewSummary?.rer || 0).toFixed(1), "%"],
-      ["Conformitate nZEB", (renewSummary?.rer || 0) >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30) && epF <= getNzebEpMax(building.category, selectedClimate?.zone) ? "DA" : "NU", ""],
+    // ═══ Foaie 6: Clasificare ═══
+    const clasifRows = [
+      [_cell("CLASIFICARE ENERGETICĂ", "s", S.title), null, null],
+      [null, null, null],
+      [_cell("INDICATORI FINALI", "s", S.subheader), null, null],
+      [_cell("Indicator", "s", S.header), _cell("Valoare", "s", S.header), _cell("Unitate", "s", S.header)],
+      [_cell("EP total (după regenerabile)", "s", S.label), _cell(epF, "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("EP total fără regenerabile", "s", S.label), _cell(instSummary?.ep_total_m2, "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("CO₂ total (după regenerabile)", "s", S.label), _cell(co2F, "n", S.bodyNum), _cell("kgCO₂/(m²·an)", "s", S.body)],
+      [null, null, null],
+      [_cell("CLASIFICARE", "s", S.subheader), null, null],
+      [_cell("Clasă energetică EP", "s", S.label), _cell(cls, "s", S.body), _cell("—", "s", S.body)],
+      [_cell("Clasă CO₂", "s", S.label), _cell(co2Cls, "s", S.body), _cell("—", "s", S.body)],
+      [null, null, null],
+      [_cell("CONFORMITATE nZEB", "s", S.subheader), null, null],
+      [_cell("EP maxim nZEB (zona " + (selectedClimate?.zone || "III") + ")", "s", S.label), _cell(getNzebEpMax(building.category, selectedClimate?.zone), "n", S.bodyNum), _cell("kWh/(m²·an)", "s", S.body)],
+      [_cell("RER minim nZEB", "s", S.label), _cell(NZEB_THRESHOLDS[building.category]?.rer_min || 30, "n", S.bodyInt), _cell("%", "s", S.body)],
+      [_cell("RER realizat", "s", S.label), _cell(renewSummary?.rer || 0, "n", { ...S.bodyNum, numFmt: "0.0" }), _cell("%", "s", S.body)],
+      [_cell("Conformitate nZEB", "s", S.label), _cell(conformNZEB ? "DA" : "NU", "s", S.body), _cell("—", "s", S.body)],
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clasifData), "Clasificare");
+    XLSX.utils.book_append_sheet(wb, buildSheet(clasifRows, [38, 22, 22], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }]), "Clasificare");
 
-    // Foaie 7: Auditor
-    const audData = [
-      ["DATE AUDITOR SI CPE"],
-      [],
-      ["Camp", "Valoare"],
-      ["Nume auditor energetic", auditor.name || ""],
-      ["Nr. atestat", auditor.atestat || ""],
-      ["Grad atestat", auditor.grade || ""],
-      ["Firma / Birou", auditor.company || ""],
-      ["Telefon", auditor.phone || ""],
-      ["Email", auditor.email || ""],
-      ["Data emitere CPE", auditor.date || ""],
-      ["Valabilitate CPE (ani)", auditor.validity || 10],
-      ["Nr. inregistrare CPE", auditor.cpeNumber || ""],
-      ["Scopul auditului", auditor.purpose || ""],
-      [],
-      ["OBSERVATII"],
-      [auditor.observations || ""],
-      [],
-      ["Data generare fisier", new Date().toLocaleDateString("ro-RO")],
-      ["Versiune calculator", "Zephren Energy Calculator v3.2"],
+    // ═══ Foaie 7: Auditor ═══
+    const audRows = [
+      [_cell("DATE AUDITOR ȘI CPE", "s", S.title), null],
+      [null, null],
+      [_cell("Câmp", "s", S.header), _cell("Valoare", "s", S.header)],
+      [_cell("Nume auditor energetic", "s", S.label), _cell(auditor.name || "—", "s", S.body)],
+      [_cell("Nr. atestat", "s", S.label), _cell(auditor.atestat || "—", "s", S.body)],
+      [_cell("Grad atestat", "s", S.label), _cell(auditor.grade || "—", "s", S.body)],
+      [_cell("Firmă / Birou", "s", S.label), _cell(auditor.company || "—", "s", S.body)],
+      [_cell("Telefon", "s", S.label), _cell(auditor.phone || "—", "s", S.body)],
+      [_cell("Email", "s", S.label), _cell(auditor.email || "—", "s", S.body)],
+      [_cell("Data emitere CPE", "s", S.label), _cell(auditor.date || "—", "s", S.body)],
+      [_cell("Valabilitate CPE (ani)", "s", S.label), _cell(auditor.validityYears || auditor.validity || 10, "n", S.bodyInt)],
+      [_cell("Nr. înregistrare CPE / Cod MDLPA", "s", S.label), _cell(auditor.cpeCode || auditor.mdlpaCode || auditor.cpeNumber || "—", "s", S.body)],
+      [_cell("Scopul auditului", "s", S.label), _cell(auditor.scopCpe || auditor.purpose || "—", "s", S.body)],
+      [null, null],
+      [_cell("OBSERVAȚII", "s", S.subheader), null],
+      [_cell(auditor.observations || "—", "s", S.body), null],
+      [null, null],
+      [_cell("Data generare fișier", "s", S.label), _cell(new Date().toLocaleDateString("ro-RO"), "s", S.body)],
+      [_cell("Versiune calculator", "s", S.label), _cell("Zephren v3.4 — Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275", "s", S.body)],
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(audData), "Auditor");
+    XLSX.utils.book_append_sheet(wb, buildSheet(audRows, [38, 60], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }]), "Auditor");
 
     const filename = `Zephren_COMPLET_${(building.address || "proiect").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, filename);
-    showToast("Export Excel complet realizat cu succes — 7 foi de calcul.", "success");
+    showToast("Export Excel complet realizat cu succes — 7 foi de calcul cu styling profesional.", "success");
   } catch (e) {
+    console.error("Excel export error:", e);
     showToast("Eroare export Excel complet: " + e.message, "error");
   } finally { setExporting(null); }
 }
@@ -1755,7 +1942,6 @@ export async function exportComplianceReport(ctx) {
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     await _attachAutoTable(doc);
-    await _setupRoFont(doc);
     await _setupRoFont(doc);
     const pageW = 210;
     const margin = 14;

@@ -215,16 +215,19 @@ export function normalizeDiacritics(text) {
 // Liberation Sans NU conține glyph-uri pentru: ✓ ✗ ⚠ ❌ ⭐ etc.
 // Aceste caractere se randează ca .notdef (pătrat gol) → arată
 // neprofesional în documente oficiale. Înlocuim cu echivalente
-// text safe (ex: ✓ → "OK", ✗ → "NU"), aplicate ÎNTOTDEAUNA
+// text safe (ex: ✓ → "[OK]", ✗ → "[X]"), aplicate ÎNTOTDEAUNA
 // (chiar și când diacriticele funcționează).
 // ═══════════════════════════════════════════════════════════════
 const SYMBOL_MAP = {
   // Bifă/cruce/atenție — folosite în verdicte conformitate
-  "✓": "DA",
-  "✔": "DA",
-  "✗": "NU",
-  "✘": "NU",
-  "❌": "NU",
+  // IMPORTANT: NU folosim "DA"/"NU" ca înlocuiri — creează dublă negație
+  // în texte ca "✗ CLĂDIREA NU SE ÎNCADREAZĂ" → "NU CLĂDIREA NU SE
+  // ÎNCADREAZĂ". Folosim simboluri text neutre ASCII, semantic clare.
+  "✓": "[OK]",
+  "✔": "[OK]",
+  "✗": "[X]",
+  "✘": "[X]",
+  "❌": "[X]",
   "⚠": "[!]",
   "⚠️": "[!]",
   "❗": "[!]",

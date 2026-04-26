@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
+        "text": "Pașaport EPBD PDF + XML descărcabile + eliminare butoane HTML/Print legacy"
+      },
+      {
+        "icon": "📄",
         "text": "consolidare exporturi (19→9) + ascundere semnătură + eliminare 3D/termoviziune"
       },
       {
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📦",
         "text": "refactor(landing): normativ sub logo, eliminare catalog produse, changelog filtrat, export/import complet"
-      },
-      {
-        "icon": "✨",
-        "text": "adaugă Roboto-Regular.ttf pentru diacritice native în PDF"
       }
     ]
   },

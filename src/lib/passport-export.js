@@ -127,16 +127,44 @@ export async function exportPassportPDF(passport, options = {}) {
     };
   }
 
-  // Font Roboto pentru diacritice ro (ă â î ș ț). Fallback transliterare.
-  let normalize = (t) => t;
+  // Font Liberation Sans pentru diacritice RO + injectare în autoTable styles
+  // (altfel tabelele cad pe Helvetica → diacritice eliminate). Fallback
+  // transliterare ASCII.
   try {
-    const { setupRomanianFont, normalizeForPdf } = await import("../utils/pdf-fonts.js");
-    const ok = await setupRomanianFont(doc);
-    normalize = (t) => typeof t === "string" ? normalizeForPdf(t, ok) : t;
+    const { setupRomanianFont, normalizeForPdf, ROMANIAN_FONT } = await import("../utils/pdf-fonts.js");
+    const fontOk = await setupRomanianFont(doc);
+    const norm = (t) => typeof t === "string" ? normalizeForPdf(t, fontOk) : t;
+    const normCell = (cell) => {
+      if (typeof cell === "string") return norm(cell);
+      if (cell && typeof cell === "object" && typeof cell.content === "string") {
+        return { ...cell, content: norm(cell.content) };
+      }
+      return cell;
+    };
+    const normRow = (row) => Array.isArray(row) ? row.map(normCell) : row;
+
     const origText = doc.text.bind(doc);
     doc.text = (text, ...args) => origText(
-      Array.isArray(text) ? text.map(normalize) : normalize(text), ...args
+      Array.isArray(text) ? text.map(norm) : norm(text), ...args
     );
+
+    if (typeof doc.autoTable === "function") {
+      const origAt = doc.autoTable.bind(doc);
+      doc.autoTable = (opts) => {
+        const merged = { ...(opts || {}) };
+        if (fontOk) {
+          const inject = (existing) => ({ font: ROMANIAN_FONT, ...(existing || {}) });
+          merged.styles = inject(merged.styles);
+          merged.headStyles = inject(merged.headStyles);
+          merged.bodyStyles = inject(merged.bodyStyles);
+          merged.footStyles = inject(merged.footStyles);
+        }
+        if (Array.isArray(merged.body)) merged.body = merged.body.map(normRow);
+        if (Array.isArray(merged.head)) merged.head = merged.head.map(normRow);
+        if (Array.isArray(merged.foot)) merged.foot = merged.foot.map(normRow);
+        return origAt(merged);
+      };
+    }
   } catch (_) { /* fallback Helvetica raw */ }
 
   const w = doc.internal.pageSize.getWidth();
