@@ -1,5 +1,12 @@
 import { NZEB_THRESHOLDS } from '../data/energy-classes.js';
 import { getPrice } from '../data/rehab-prices.js';
+import {
+  U_REF_NZEB_RES,
+  U_REF_NZEB_NRES,
+  U_REF_RENOV_RES,
+  U_REF_RENOV_NRES,
+  U_REF_GLAZING,
+} from '../data/u-reference.js';
 
 // getNzebEpMax: Calculate nZEB ep_max for category and climate zone
 // zone: "I"-"V" string → index 0-4 în array-ul ep_max
@@ -106,6 +113,44 @@ export function getEnergyPriceEUR(instSummary, building) {
   return FUEL_PRICES_EUR.gaz_natural;
 }
 
+// ─── Sprint 25 P0.6 — detectare context normativ ──────────────────────────
+// Mc 001-2022 nu specifică U_REF per zonă climatică (verificat normativ +
+// Ord. MDLPA 2641/2017 — valori unice rezidențial). Praguri adaptive doar
+// pe RES vs NRES vs RENOVARE (Tabel 2.4/2.7/2.10a/2.10b).
+function _isResidential(category) {
+  return ["RI", "RC", "RA"].includes(category);
+}
+function _isRenovation(building) {
+  // Renovare majoră = construire înainte de 2000 SAU scop CPE explicit "renovare"
+  const yearBuilt = parseInt(building?.yearBuilt) || 9999;
+  const scop = (building?.scopCpe || building?.scopCPE || "").toLowerCase();
+  return yearBuilt < 2000 || scop === "renovare" || scop === "renovare_majora";
+}
+
+/**
+ * Returnează U_REF pentru un element + categorie + context renovare.
+ * Surse: Mc 001-2022 Tab 2.4 (nZEB rez), 2.7 (nZEB nrez), 2.10a (renov rez), 2.10b (renov nrez).
+ */
+export function getURefAdaptive(category, elementType, building) {
+  const isRes = _isResidential(category);
+  const isRenov = _isRenovation(building);
+  const table = isRenov
+    ? (isRes ? U_REF_RENOV_RES : U_REF_RENOV_NRES)
+    : (isRes ? U_REF_NZEB_RES : U_REF_NZEB_NRES);
+  return table[elementType] ?? null;
+}
+
+/**
+ * Returnează U_REF pentru ferestre: nZEB rez/nrez vs renovare.
+ * Sursă: Mc 001-2022 Tab 2.5 + U_REF_GLAZING.
+ */
+export function getURefGlazingAdaptive(category, building) {
+  const isRes = _isResidential(category);
+  const isRenov = _isRenovation(building);
+  if (isRenov) return U_REF_GLAZING.renov;
+  return isRes ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SUGESTII SMART REABILITARE — Motor de recomandări cu cost-eficiență
 // ═══════════════════════════════════════════════════════════════
@@ -121,6 +166,15 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   const gap = Math.max(0, epActual - nzebEpMax);
   // Prețul energiei [EUR/kWh] — Sprint 25 P0.7 mapare per combustibil
   const energyPriceEUR = getEnergyPriceEUR(instSummary, building);
+
+  // Sprint 25 P0.6 — praguri U adaptive RES/NRES/RENOVARE (Mc 001-2022 Tab 2.4/2.7/2.10a/2.10b)
+  const uRefWall   = getURefAdaptive(cat, "PE", building) ?? 0.30;
+  const uRefRoof   = getURefAdaptive(cat, "PT", building) ?? 0.20;
+  const uRefGlaz   = getURefGlazingAdaptive(cat, building);
+  const isRenov    = _isRenovation(building);
+  const isRes      = _isResidential(cat);
+  const ctxLabel   = isRenov ? "renovare" : "nZEB";
+  const catLabel   = isRes ? "rez" : "nrez";
 
   function addSuggestion(priority, system, measure, epSavingM2, investPerM2, totalInvest, detail, payback) {
     const annualSavingEUR = epSavingM2 * Au * energyPriceEUR;
@@ -141,55 +195,59 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
     });
   }
 
-  // ── Analiză pereți
+  // ── Analiză pereți (Sprint 25 P0.6 — prag U adaptiv)
+  // Strict (>1.20× U_REF): recomandare puternică — măsură obligatorie nZEB/renovare
+  // Moderate (>U_REF dar <1.20×): recomandare îmbunătățire — nu e pierdere mare
   const walls = opaqueElements?.filter(e => e.type === "PE") || [];
   const avgUWall = walls.length ? walls.reduce((s,w) => {
     const R = (w.layers||[]).reduce((r,l) => r + ((parseFloat(l.thickness)||0)/1000) / (l.lambda||1), 0.17);
     return s + 1/R;
   }, 0) / walls.length : 2.0;
   const wallArea = walls.reduce((s,w) => s + (parseFloat(w.area)||0), 0) || Au * 0.7;
-  if (avgUWall > 0.50) {
+  if (avgUWall > uRefWall * 1.20) {
     const thickCm = 10, costM2Wall = getWallInsulCostM2(thickCm);
     const totalCost = wallArea * costM2Wall;
     const epSav = estimateEpSaving("wall", gap, epActual);
     addSuggestion(1, "Anvelopă", "Termoizolare pereți exteriori",
       epSav, costM2Wall, totalCost,
-      `U mediu pereți = ${avgUWall.toFixed(2)} W/(m²·K). Ținta nZEB: ≤0.28. Adăugare EPS 10-15cm.`);
-  } else if (avgUWall > 0.35) {
+      `U mediu pereți = ${avgUWall.toFixed(2)} W/(m²·K). Țintă ${ctxLabel} ${catLabel}: ≤${uRefWall}. Adăugare EPS 10-15cm.`);
+  } else if (avgUWall > uRefWall) {
     const thickCm = 5, costM2Wall = getWallInsulCostM2(thickCm);
     const totalCost = wallArea * costM2Wall;
     const epSav = estimateEpSaving("wall", gap, epActual) * 0.4;
     addSuggestion(2, "Anvelopă", "Suplimentare izolație pereți",
       epSav, costM2Wall, totalCost,
-      `U mediu pereți = ${avgUWall.toFixed(2)}. Îmbunătățire cu 5cm EPS suplimentar la ≤0.22.`);
+      `U mediu pereți = ${avgUWall.toFixed(2)}. Îmbunătățire (țintă ${ctxLabel} ${catLabel}: ≤${uRefWall}). +5cm EPS suplimentar.`);
   }
 
-  // ── Ferestre
+  // ── Ferestre (Sprint 25 P0.6 — prag adaptiv din U_REF_GLAZING)
   const avgUWin = glazingElements?.length ? glazingElements.reduce((s,e) => s + (parseFloat(e.u)||2.5), 0) / glazingElements.length : 3.0;
   const winArea = glazingElements?.reduce((s,e) => s + (parseFloat(e.area)||0), 0) || 20;
-  if (avgUWin > 1.5) {
-    const costM2Win = getWindowsCostM2(0.90); // tripan U≤0.90
+  if (avgUWin > uRefGlaz * 1.20) {
+    // Pentru rezidențial recomandăm tripan (u090); pentru nrez/renovare — dublu vitraj low-e
+    const targetU = isRes && !isRenov ? 0.90 : 1.10;
+    const costM2Win = getWindowsCostM2(targetU);
     const totalCost = winArea * costM2Win;
     const epSav = estimateEpSaving("window", gap, epActual);
     addSuggestion(1, "Anvelopă", "Înlocuire tâmplărie exterioară",
       epSav, costM2Win, totalCost,
-      `U mediu ferestre = ${avgUWin.toFixed(2)}. Ținta: ≤1.00 (tripan). Reducere semnificativă pierderi.`);
+      `U mediu ferestre = ${avgUWin.toFixed(2)}. Țintă ${ctxLabel} ${catLabel}: ≤${uRefGlaz} (instalat ${targetU}).`);
   }
 
-  // ── Acoperiș
+  // ── Acoperiș (Sprint 25 P0.6 — prag adaptiv)
   const roofs = opaqueElements?.filter(e => ["PT","PP","PI"].includes(e.type)) || [];
   const avgURoof = roofs.length ? roofs.reduce((s,r) => {
     const R = (r.layers||[]).reduce((rr,l) => rr + ((parseFloat(l.thickness)||0)/1000)/(l.lambda||1), 0.14);
     return s + 1/R;
   }, 0) / roofs.length : 1.5;
   const roofArea = roofs.reduce((s,r) => s + (parseFloat(r.area)||0), 0) || Au * 0.9;
-  if (avgURoof > 0.30) {
+  if (avgURoof > uRefRoof * 1.20) {
     const thickCm = 15, costM2Roof = getRoofInsulCostM2(thickCm);
     const totalCost = roofArea * costM2Roof;
     const epSav = estimateEpSaving("roof", gap, epActual);
     addSuggestion(1, "Anvelopă", "Termoizolare acoperiș/terasă",
       epSav, costM2Roof, totalCost,
-      `U mediu acoperiș = ${avgURoof.toFixed(2)}. Adăugare 15-25cm vată minerală.`);
+      `U mediu acoperiș = ${avgURoof.toFixed(2)}. Țintă ${ctxLabel} ${catLabel}: ≤${uRefRoof}. Adăugare 15-25cm vată minerală.`);
   }
 
   // ── PV

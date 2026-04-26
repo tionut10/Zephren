@@ -9,7 +9,7 @@ import { getPrice } from '../../data/rehab-prices.js';
 const baseBuilding = {
   category: 'RC',
   areaUseful: '100',
-  yearBuilt: '1980',
+  yearBuilt: '2010',  // S25 P0.6: yearBuilt nou → context nZEB rez (țintă tripan U≤0.90)
 };
 const baseInst = { ep_total_m2: 250, energyPriceEUR: 0.08 };
 const climate = { zone: 'III' };
