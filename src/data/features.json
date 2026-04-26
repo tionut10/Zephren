@@ -205,14 +205,16 @@
   },
 
   "exports": [
-    { "fmt": "DOCX", "desc": "Certificat CPE oficial MDLPA", "icon": "📝" },
+    { "fmt": "DOCX", "desc": "Certificat CPE oficial MDLPA (Anexele 1+2)", "icon": "📝" },
+    { "fmt": "DOCX", "desc": "Raport audit energetic Mc 001-2022 (P.I–P.IV)", "icon": "📋" },
+    { "fmt": "DOCX", "desc": "Pașaport Renovare EPBD (multi-fază + LCC)", "icon": "🏠" },
     { "fmt": "XML",  "desc": "Registru electronic EPBD / MDLPA", "icon": "📡" },
-    { "fmt": "PDF",  "desc": "Raport CPE + QR code", "icon": "📄" },
+    { "fmt": "PDF/A","desc": "Raport CPE arhivabil (PDF/A-1b + QR)", "icon": "📄" },
     { "fmt": "XLSX", "desc": "Tabelar Excel 9 foi", "icon": "📊" },
     { "fmt": "JSON", "desc": "Proiect complet Zephren", "icon": "💾" },
     { "fmt": "CSV",  "desc": "Anvelopă și instalații", "icon": "📋" },
     { "fmt": "SVG",  "desc": "Diagrame Sankey, hărți termice", "icon": "🎨" },
-    { "fmt": "XML",  "desc": "e-Factură ANAF", "icon": "🧾" }
+    { "fmt": "XML",  "desc": "e-Factură ANAF (SmartBill)", "icon": "🧾" }
   ],
 
   "imports": [

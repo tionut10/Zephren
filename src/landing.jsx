@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  V3_FEATURES, PLANS, PAY_PER_USE, PLAN_LAYOUT, STATS, PRODUCT_BRANDS,
-  NORMATIVE, NORMATIVE_COUNT, TOTAL_PRODUCTS, STEPS_COUNT,
+  V3_FEATURES, PLANS, PAY_PER_USE, PLAN_LAYOUT, STATS,
+  NORMATIVE, NORMATIVE_COUNT, STEPS_COUNT,
   APP_VERSION, CHANGELOG,
   STEPS_DATA, FEATURES, EXPORTS_DATA, IMPORTS_DATA,
   CALC_MODULES_COUNT, API_ENDPOINTS_COUNT,
@@ -17,7 +17,7 @@ const LT = {
   hero_badge:    { EN: "Mc 001-2022 · ISO 52000-1/NA:2023 · EPBD 2024/1275 · Law 238/2024" },
   hero_title1:   { EN: "Building energy" },
   hero_title2:   { EN: "performance calculator" },
-  hero_sub:      { EN: `Professional software for certified energy auditors. EPC compliant with Mc 001-2022, ${TOTAL_PRODUCTS}+ real products, ${STEPS_COUNT} calculation steps, nZEB/ZEB verification.` },
+  hero_sub:      { EN: `Professional software for certified energy auditors. EPC compliant with Mc 001-2022 · ${STEPS_COUNT} calculation steps · nZEB/ZEB verification · EPBD 2024 compliant.` },
   hero_cta:      { EN: "Start free calculation →" },
   feat_title:    { EN: "Everything you need for energy certification" },
   feat_sub:      { EN: `From building identification to the audit report — ${STEPS_COUNT} steps, one software` },
@@ -394,7 +394,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
-            <a href="#products" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_catalog", "Catalog produse")}</a>
             <a href="#pricing" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_pricing", "Prețuri")}</a>
             {/* Toggle limbă */}
             <button onClick={toggleLang} title={lang === "RO" ? "Switch to English" : "Comută în Română"} style={{ fontSize: "12px", fontWeight: "700", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", letterSpacing: "0.5px", transition: "border-color 0.2s" }}>
@@ -424,7 +423,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       {mobileMenu && (
         <div style={{ background: isDark ? "rgba(10,10,26,0.97)" : "rgba(245,247,250,0.97)", borderBottom: `1px solid ${border}`, padding: "16px 24px", display: "flex", flexDirection: "column", gap: "12px" }} className="nav-mobile-menu">
           <a href="#features" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_features", "Funcționalități")}</a>
-          <a href="#products" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_catalog", "Catalog produse")}</a>
           <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_pricing", "Prețuri")}</a>
           <button onClick={() => { setMobileMenu(false); setShowLogin(true); }} style={{ fontSize: "13px", padding: "10px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textAlign: "left" }}>{T("nav_login", "Autentificare")}</button>
           <button onClick={() => { setMobileMenu(false); onStart(); }} style={{ fontSize: "13px", fontWeight: "600", padding: "10px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
@@ -433,8 +431,13 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
       {/* ═══ HERO ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "100px 24px 80px", textAlign: "center" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "32px" }}>
           <img src="/logo.svg" alt="Zephren" style={{ width: "min(420px, 85vw)", height: "auto" }} />
+          <span style={{ fontSize: "13px", color: textMuted, fontWeight: "500", letterSpacing: "0.3px" }}>
+            {lang === "EN"
+              ? "Energy performance calculator based on Mc 001-2022 · Ord. MDLPA 16/2023"
+              : "Calculator de performanță energetică conform Mc 001-2022 · Ord. MDLPA 16/2023"}
+          </span>
         </div>
         <div style={{ display: "inline-block", padding: "4px 16px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "24px" }}>
           {T("hero_badge", "Mc 001-2022 · ISO 52000-1/NA:2023 · EPBD 2024/1275 · Legea 238/2024")}
@@ -444,7 +447,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <span style={{ color: "#f59e0b" }}>{T("hero_title2", "energetică clădiri")}</span>
         </h1>
         <p style={{ fontSize: "18px", color: textMuted, maxWidth: "640px", margin: "0 auto 40px", lineHeight: 1.6 }}>
-          {T("hero_sub", `Software profesional pentru auditori energetici. Certificat de performanță energetică conform Mc 001-2022, cu ${TOTAL_PRODUCTS}+ produse reale, ${STEPS_COUNT} pași de calcul, verificare nZEB/ZEB.`)}
+          {T("hero_sub", `Software profesional pentru auditori energetici atestați MDLPA. Certificat de performanță energetică conform Mc 001-2022 · ${STEPS_COUNT} pași de calcul · verificare nZEB/ZEB · EPBD 2024.`)}
         </p>
         <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={onStart} style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)" }}>
@@ -531,31 +534,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
-      {/* ═══ CATALOG PRODUSE ═══ */}
-      <section id="products" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", fontSize: "12px", color: "#10b981", marginBottom: "16px" }}>
-            {TOTAL_PRODUCTS}+ PRODUSE REALE
-          </div>
-          <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>{T("cat_title", "Catalog produse actualizat 2026")}</h2>
-          <p style={{ fontSize: "15px", color: textFaint, maxWidth: "600px", margin: "12px auto 0" }}>
-            {T("cat_sub", "Toate brandurile majore de pe piata romaneasca si europeana, cu specificatii tehnice reale")}
-          </p>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "20px" }}>
-          {PRODUCT_BRANDS.map(p => (
-            <div key={p.cat} style={{ padding: "24px", borderRadius: "12px", background: greenCardBg, border: `1px solid rgba(16,185,129,0.08)`, transition: "all 0.3s ease" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(16,185,129,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(16,185,129,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <h4 style={{ fontSize: "16px", fontWeight: "700", color: text }}>{p.cat}</h4>
-                <span style={{ fontSize: "12px", padding: "2px 10px", borderRadius: "10px", background: "rgba(16,185,129,0.15)", color: "#10b981", fontWeight: "700" }}>{p.count} produse</span>
-              </div>
-              <p style={{ fontSize: "12px", color: textFaint, lineHeight: 1.6 }}>{p.brands}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ═══ EXPORT & IMPORT ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
@@ -695,38 +673,53 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>{lang === "EN" ? "What's new" : "Ce este nou"}</h2>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "860px", margin: "0 auto" }}>
-          {CHANGELOG.map((release, ri) => (
-            <div key={release.version} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
-              {/* Timeline dot + line */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "4px" }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, gap: "1px" }}>
-                  <span style={{ fontSize: "9px", fontWeight: "800", color: release.color, lineHeight: 1 }}>{release.week}</span>
-                  <span style={{ fontSize: "8px", fontWeight: "600", color: `${release.color}99`, lineHeight: 1 }}>v{release.version}</span>
+          {CHANGELOG.map((release, ri) => {
+            const important = release.items.filter(it => it.icon === "✨");
+            const otherCount = release.items.length - important.length;
+            return (
+              <div key={release.version} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+                {/* Timeline dot + line */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: "4px" }}>
+                  <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: `${release.color}20`, border: `2px solid ${release.color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, gap: "1px" }}>
+                    <span style={{ fontSize: "9px", fontWeight: "800", color: release.color, lineHeight: 1 }}>{release.week}</span>
+                    <span style={{ fontSize: "8px", fontWeight: "600", color: `${release.color}99`, lineHeight: 1 }}>v{release.version}</span>
+                  </div>
+                  {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "20px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
                 </div>
-                {ri < CHANGELOG.length - 1 && <div style={{ width: "2px", flex: 1, minHeight: "20px", background: `linear-gradient(to bottom, ${release.color}40, transparent)`, marginTop: "4px" }} />}
-              </div>
-              {/* Card */}
-              <div style={{ flex: 1, padding: "20px 24px", borderRadius: "14px", background: cardBg, border: `1px solid ${release.color}20`, marginBottom: "4px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>{release.week}</span>
-                  <span style={{ fontSize: "12px", color: textFaint }}>— {release.dateRange}</span>
-                  {release.label && (
-                    <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "8px", background: `${release.color}25`, color: release.color, border: `1px solid ${release.color}40` }}>
-                      {release.label}
-                    </span>
+                {/* Card */}
+                <div style={{ flex: 1, padding: "20px 24px", borderRadius: "14px", background: cardBg, border: `1px solid ${release.color}20`, marginBottom: "4px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "15px", fontWeight: "800", color: text }}>{release.week}</span>
+                    <span style={{ fontSize: "12px", color: textFaint }}>— {release.dateRange}</span>
+                    {release.label && (
+                      <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "8px", background: `${release.color}25`, color: release.color, border: `1px solid ${release.color}40` }}>
+                        {release.label}
+                      </span>
+                    )}
+                  </div>
+                  {important.length > 0 ? (
+                    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {important.map((item, i) => (
+                        <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: textMuted, lineHeight: 1.5 }}>
+                          <span style={{ fontSize: "15px", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
+                          {item.text}
+                        </li>
+                      ))}
+                      {otherCount > 0 && (
+                        <li style={{ fontSize: "11px", color: textFaint, paddingTop: "4px" }}>
+                          {lang === "EN" ? `+ ${otherCount} fixes & improvements` : `+ ${otherCount} corecții și îmbunătățiri tehnice`}
+                        </li>
+                      )}
+                    </ul>
+                  ) : (
+                    <p style={{ fontSize: "13px", color: textFaint, margin: 0 }}>
+                      {lang === "EN" ? `${release.items.length} fixes & improvements` : `${release.items.length} corecții și îmbunătățiri tehnice`}
+                    </p>
                   )}
                 </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {release.items.map((item, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: textMuted, lineHeight: 1.5 }}>
-                      <span style={{ fontSize: "15px", flexShrink: 0, marginTop: "1px" }}>{item.icon}</span>
-                      {item.text}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

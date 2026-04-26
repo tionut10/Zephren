@@ -57,7 +57,6 @@ import {
 } from "./program-stats.generated.js";
 
 export const STATS = [
-  { value: `${TOTAL_PRODUCTS}+`,  label: "Produse în catalog" },
   { value: String(CLIMATE_COUNT), label: "Localități climatice" },
   { value: String(BRIDGES_COUNT), label: "Punți termice" },
   { value: String(_CMC),          label: "Module de calcul" },
@@ -122,7 +121,6 @@ export const PLANS = [
       "Calculator complet Step 1-7",
       "60 localități climatice",
       "165 punți termice interactive",
-      "413+ produse în catalog",
       "Export PDF/DOCX cu watermark DEMO",
     ],
     cta: "Începe gratuit",
