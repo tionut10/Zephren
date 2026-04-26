@@ -2428,7 +2428,7 @@ export default function EnergyCalcApp({ cloud }) {
   // ═══════════════════════════════════════════════════════════════
 
   return (
-    <div onDragOver={function(e){e.preventDefault();setDragOver(true);}} onDragLeave={function(){setDragOver(false);}} onDrop={handleDrop} className={cn("min-h-screen ep-theme",theme==="dark"?"ep-dark text-white":"ep-light text-gray-900")} style={Object.assign({}, theme==="dark"?{background:"linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #0d0d20 100%)",fontFamily:"'DM Sans', system-ui, sans-serif"}:{background:"#F8FAFC",color:"#0F172A",fontFamily:"'DM Sans', system-ui, sans-serif"}, (pdfPreviewHtml || nzebReportHtml) ? {overflow:"hidden",height:"100vh"} : {})}>
+    <div onDragOver={function(e){e.preventDefault();setDragOver(true);}} onDragLeave={function(){setDragOver(false);}} onDrop={handleDrop} className={cn("h-screen flex flex-col ep-theme",theme==="dark"?"ep-dark text-white":"ep-light text-gray-900")} style={Object.assign({}, theme==="dark"?{background:"linear-gradient(135deg, #0a0a1a 0%, #12122a 50%, #0d0d20 100%)",fontFamily:"'DM Sans', system-ui, sans-serif"}:{background:"#F8FAFC",color:"#0F172A",fontFamily:"'DM Sans', system-ui, sans-serif"}, (pdfPreviewHtml || nzebReportHtml) ? {overflow:"hidden",height:"100vh"} : {})}>
       {/* Fonts loaded in index.html */}
       <style dangerouslySetInnerHTML={{__html: `
         /* ═══ LIGHT THEME OVERRIDES (WCAG AA mix — paletă F8FAFC + 0F172A) ═══ */
@@ -2938,7 +2938,7 @@ export default function EnergyCalcApp({ cloud }) {
       )}
 
       {/* Step progress indicator */}
-      <div className="w-full px-2 sm:px-6 py-1.5 no-print" style={{background:theme==="dark"?"rgba(26,29,46,0.5)":"rgba(0,0,0,0.02)"}}>
+      <div className="w-full px-2 sm:px-6 py-1.5 no-print shrink-0" style={{background:theme==="dark"?"rgba(26,29,46,0.5)":"rgba(0,0,0,0.02)"}}>
         <div className="max-w-7xl mx-auto flex items-center gap-0.5 sm:gap-1" role="tablist" aria-label="Pași calcul energetic">
           {STEPS.map((s, i) => (
             <button key={s.id} onClick={() => setStep(s.id)} className="flex-1 group relative pt-1 pb-0.5" title={`${s.id}. ${s.label}`}
@@ -2974,7 +2974,7 @@ export default function EnergyCalcApp({ cloud }) {
       </a>
 
       {/* HEADER */}
-      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-3 no-print">
+      <header className="border-b border-white/[0.06] px-3 sm:px-6 py-2 sm:py-3 no-print shrink-0">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
 
           {/* ── ZONA 1: IDENTITATE (logo · plan · cloud · echipă) ── */}
@@ -3307,7 +3307,7 @@ export default function EnergyCalcApp({ cloud }) {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto flex gap-0 min-h-[calc(100vh-73px)] relative">
+      <div className="flex-1 overflow-hidden max-w-7xl mx-auto flex gap-0 relative w-full">
         {sidebarOpen && <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] lg:hidden" onClick={() => setSidebarOpen(false)} />}
         <nav id="sidebar-nav" aria-label="Navigare pași" className={cn("fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-56 max-w-[min(280px,70vw)] lg:max-w-none shrink-0 border-r border-white/[0.06] py-6 px-3 transform transition-transform duration-200 lg:transform-none overflow-y-auto no-print", sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")} style={{background:theme==="dark"?"#0a0a1a":"#ffffff"}}>
           <button onClick={() => setSidebarOpen(false)} aria-label="Închide meniul lateral" className="lg:hidden sticky top-0 float-right w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white bg-[#0a0a1a] z-10 mb-2"><span aria-hidden="true">✕</span></button>
