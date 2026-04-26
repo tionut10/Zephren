@@ -26,15 +26,27 @@ Pentru fiecare din cele 5 plans v6.0, creează **1 product cu 2 prețuri** (luna
 
 Pentru fiecare product, adaugă **2 recurring prices**:
 
-| Plan | Lunar (RON) | Anual (RON, 10 luni) |
-|---|---|---|
-| Audit | 199 RON/lună (= **19900** bani) | 1.999 RON/an (= **199900** bani) |
-| Pro | 499 RON/lună (= **49900** bani) | 4.990 RON/an (= **499000** bani) |
-| Expert | 899 RON/lună (= **89900** bani) | 8.990 RON/an (= **899000** bani) |
-| Birou | 1.890 RON/lună flat (= **189000** bani) | 18.900 RON/an (= **1890000** bani) |
-| Enterprise | de la 4.990 RON/lună (= **499000** bani) | Negociat (= **4990000** bani) |
+| Plan | Lunar fără TVA | Cu TVA 21% | Bani (Stripe) |
+|---|---|---|---|
+| Audit | 199 RON/lună | 240,79 RON | **19900** bani |
+| Pro ⭐ | 499 RON/lună | 603,79 RON | **49900** bani |
+| Expert | 899 RON/lună | 1.087,79 RON | **89900** bani |
+| Birou | 1.890 RON/lună flat | 2.286,90 RON | **189000** bani |
+| Enterprise | de la 4.990 RON/lună | 6.037,90 RON | **499000** bani |
 
-**ATENȚIE**: Stripe folosește bani (subdiviziuni RON × 100), nu RON. 1 RON = 100 bani.
+| Plan | Anual fără TVA (10 luni) | Cu TVA 21% | Bani (Stripe) |
+|---|---|---|---|
+| Audit | 1.999 RON/an | 2.418,79 RON | **199900** bani |
+| Pro | 4.990 RON/an | 6.037,90 RON | **499000** bani |
+| Expert | 8.990 RON/an | 10.877,90 RON | **899000** bani |
+| Birou | 18.900 RON/an | 22.869,00 RON | **1890000** bani |
+| Enterprise | Negociat | — | **4990000** bani placeholder |
+
+**ATENȚIE 1**: Stripe folosește bani (subdiviziuni RON × 100), nu RON. 1 RON = 100 bani.
+
+**ATENȚIE 2**: Prețurile în Stripe se introduc **fără TVA** (Stripe nu calculează TVA — îl adaugă SmartBill la facturare). Coloana „cu TVA" e doar pentru afișare în UI și înțelegerea utilizatorului.
+
+**ATENȚIE 3**: TVA RO 2026 = **21%** (NU 19% cum era anterior). Verificat în `api/stripe-webhook.js` calcul `priceNoVat = amountTotal / 1.21` și `vatPercent = 21`.
 
 ---
 
@@ -48,10 +60,10 @@ Pașaport Renovare EPBD obligatoriu (29 mai 2026) fără să fie auditori atesta
 
 Acestea sunt **one-time payments** (nu recurring):
 
-| Product | Preț (RON) | Preț (bani) | Cod intern |
-|---|---|---|---|
-| **Pașaport Renovare basic** | 79 RON | **7900** | `pasaport-basic` |
-| **Pașaport Renovare detaliat (LCC)** | 199 RON | **19900** | `pasaport-detailed` |
+| Product | Fără TVA | Cu TVA 21% | Bani (Stripe) | Cod intern |
+|---|---|---|---|---|
+| **Pașaport Renovare basic** | 79 RON/doc | 95,59 RON | **7900** | `pasaport-basic` |
+| **Pașaport Renovare detaliat (LCC)** | 199 RON/doc | 240,79 RON | **19900** | `pasaport-detailed` |
 
 Tip: în Stripe Dashboard → Products → New product → setează `Pricing` = **One time**.
 

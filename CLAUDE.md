@@ -108,20 +108,35 @@ git commit -m "<mesaj relevant>"
 
 ---
 
-## 💰 PRICING v6.0 (25 apr 2026 — restructurare COMPLETĂ)
+## 💰 PRICING v6.1 FINAL (26 apr 2026 — TVA 21% RO 2026 + UI consolidat)
 
-### 8 niveluri (Set 11 naming „Zephren X")
+### 7 niveluri Zephren X (toate cu TVA 21% afișat pe card)
 
-| # | Plan | Preț | CPE/lună | Conținut |
-|---|---|---|---|---|
-| 1 | **Zephren Free** | 0 RON | 3 hard cap | Step 1-7 cu watermark |
-| 2 | **Zephren Edu** | 0 RON cu dovadă | nelim cu watermark didactic | TOATE Expert, XML+submit blocate |
-| 3 | **Zephren Audit** | 199 RON | 8 + 2 burst, overage 49→79→99 | Step 1-6 (fără audit) |
-| 4 | **Zephren Pro** ⭐ | **499 RON** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** |
-| 5 | **Zephren Expert** | 899 RON | 60 + 12 burst, overage 39→69→99 | **Step 1-8 COMPLET + BIM Pack** |
-| 6 | **Zephren Birou** | 1.890 RON flat | NELIMITAT | Expert × 2-5 useri + white-label + API |
-| 7 | **Zephren Enterprise** | de la 4.990 RON | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
-| + | **Pay-per-use** | 99/790/199/79/199 RON | one-time | Pentru fără abonament |
+| # | Plan | Fără TVA | Cu TVA 21% | CPE/lună | Conținut |
+|---|---|---|---|---|---|
+| 1 | **Zephren Free** | 0 RON | 0 RON | 3 hard cap | Step 1-7 cu watermark |
+| 2 | **Zephren Edu** | 0 cu dovadă | 0 | nelim cu watermark didactic | TOATE Expert (DOAR studenți + doctoranzi auto) |
+| 3 | **Zephren Audit** | 199 RON | 240,79 | 8 + 2 burst, overage 49→79→99 | Step 1-6 (fără audit energetic) |
+| 4 | **Zephren Pro** ⭐ | **499 RON** | **603,79** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** |
+| 5 | **Zephren Expert** | 899 RON | 1.087,79 | 60 + 12 burst, overage 39→69→99 | **Step 1-8 COMPLET + BIM Pack** |
+| 6 | **Zephren Birou** | 1.890 flat | 2.286,90 | NELIMITAT | Expert × 2-5 useri + white-label + API |
+| 7 | **Zephren Enterprise** | de la 4.990 | 6.037,90 | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
+| + | **Pașaport Renovare** | 79 / 199 RON/doc | 95,59 / 240,79 | one-time | DOAR pentru NON-auditori (proprietari/dezvoltatori) |
+
+### TVA RO 2026
+- **Standard**: **21%** (era 19% în v5.x — actualizat în 8 fișiere code)
+- **Cota redusă**: 11% (era 5% în v5.x)
+- **B2B UE VIES**: 0% taxare inversă
+- Banner global „Toate prețurile FĂRĂ TVA" + linie pe FIECARE card „cu TVA 21%: X RON"
+
+### EDU plan — RESTRÂNS la auto-grant studenți + doctoranzi
+- Pentru profesori/trainee/cercetători/instituții → cerere separată **edu@zephren.ro**
+- Banner Edu cu 2 sub-secțiuni: „Aplică cu dovadă →" vs „📩 Cerere colaborare →"
+
+### Pay-per-use SIMPLIFICAT
+- ELIMINATE: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199 (canibalizate de Audit 199)
+- PĂSTRATE: doar Pașaport Renovare basic 79 + detaliat 199 pentru NON-auditori
+- Badge „OBLIGATORIU EPBD · 29 MAI 2026"
 
 ### Split CRITIC Step 1-7 vs Step 8
 
