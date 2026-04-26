@@ -226,23 +226,41 @@ describe("generateQRCodeSVG", () => {
 // exportBulkProjects — ZIP JSON cu multi proiecte
 // ═══════════════════════════════════════════════════════════════════════════
 describe("exportBulkProjects", () => {
-  it("refuză când lista de proiecte e goală", () => {
+  it("refuză când lista de proiecte e goală", async () => {
     const ctx = { projectList: [], showToast: vi.fn() };
-    exportBulkProjects(ctx);
+    await exportBulkProjects(ctx);
     expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("Niciun proiect"), "error");
   });
 
-  it("procesează proiecte din localStorage și generează Blob bulk", () => {
-    vi.stubGlobal("localStorage", {
-      getItem: vi.fn((k) => k.includes("proj_1") ? JSON.stringify({ building: mockBuilding }) : null),
-      setItem: vi.fn(),
+  it("procesează proiecte din window.storage (cheie ep-proj:) și generează Blob bulk", async () => {
+    const storedRaw = JSON.stringify({ building: mockBuilding });
+    vi.stubGlobal("window", {
+      storage: {
+        get: vi.fn(async (k) => k === "ep-proj:proj_1" ? { value: storedRaw } : null),
+      },
+      localStorage: { getItem: vi.fn(() => null) },
     });
-    vi.stubGlobal("window", { storage: null });
     const ctx = {
       projectList: [{ id: "proj_1", name: "Test project", date: "2026-04-15" }],
       showToast: vi.fn(),
     };
-    exportBulkProjects(ctx);
+    await exportBulkProjects(ctx);
+    expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("1 proiecte"), "success");
+  });
+
+  it("fallback pe localStorage cu cheia legacy zephren_project_<id>", async () => {
+    const storedRaw = JSON.stringify({ building: mockBuilding });
+    vi.stubGlobal("window", {
+      storage: { get: vi.fn(async () => null) },
+      localStorage: {
+        getItem: vi.fn((k) => k === "zephren_project_proj_1" ? storedRaw : null),
+      },
+    });
+    const ctx = {
+      projectList: [{ id: "proj_1", name: "Legacy", date: "2026-04-15" }],
+      showToast: vi.fn(),
+    };
+    await exportBulkProjects(ctx);
     expect(ctx.showToast).toHaveBeenCalledWith(expect.stringContaining("1 proiecte"), "success");
   });
 });

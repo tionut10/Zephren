@@ -2381,8 +2381,8 @@ export async function generateNZEBConformanceReport(opts) {
     const boxX1 = 15;
     const boxX2 = w - boxW - 15;
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
-    doc.roundedRect(boxX1, y, boxW, boxH, 2, 2);
-    doc.roundedRect(boxX2, y, boxW, boxH, 2, 2);
+    doc.roundedRect(boxX1, y, boxW, boxH, 2, 2, "S");
+    doc.roundedRect(boxX2, y, boxW, boxH, 2, 2, "S");
 
     doc.setFontSize(7); doc.setTextColor(...COL_G);
     doc.text("AUDITOR ENERGETIC GRAD I (AE Ici)", boxX1 + 2, y + 4);
@@ -2707,8 +2707,8 @@ export async function generateAuditReportPDF(opts) {
     y = ensureSpace(doc, y, 50, title, audName, today);
     const sigW = 80, sigH = 40;
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
-    doc.roundedRect(15, y, sigW, sigH, 2, 2);
-    doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2);
+    doc.roundedRect(15, y, sigW, sigH, 2, 2, "S");
+    doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2, "S");
 
     doc.setFontSize(7); doc.setTextColor(...COL_G);
     doc.text("AUDITOR ENERGETIC", 17, y + 5);
@@ -3007,8 +3007,8 @@ export async function generateRehabEstimatePDF(opts) {
     y = ensureSpace(doc, y, 32, title, audName, today);
     const sigW = 80, sigH = 24;
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
-    doc.roundedRect(15, y, sigW, sigH);
-    doc.roundedRect(w - 15 - sigW, y, sigW, sigH);
+    doc.roundedRect(15, y, sigW, sigH, 2, 2, "S");
+    doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2, "S");
     doc.setFontSize(7); doc.setTextColor(...COL_G);
     doc.text("Semnătură auditor", 15 + sigW / 2, y + sigH + 3, { align: "center" });
     doc.text("Ștampilă profesională", w - 15 - sigW / 2, y + sigH + 3, { align: "center" });

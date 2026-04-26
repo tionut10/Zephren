@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "✨",
-        "text": "feat(step6): debounce butoane generare DOCX + proxy /api la vercel dev local"
+        "text": "optimizări grafice landing + light mode"
       },
       {
-        "icon": "💰",
-        "text": "fix(pricing): TVA 19% → 21% (RO 2026) + afișare preț cu TVA pe fiecare card"
+        "icon": "📄",
+        "text": "fix(pdf): diacritice native + simboluri safe + Step 7 TXT→PDF"
       },
       {
-        "icon": "💰",
-        "text": "fix(pricing): „audit energetic\" (NU „audit financiar\") + notă globală „fără TVA\""
-      },
-      {
-        "icon": "✨",
-        "text": "feat(pricing): mutare price-lock SUS + audience descriptions aliniate cu volum CPE"
-      },
-      {
-        "icon": "🎨",
-        "text": "elimină referințele la „OAER\" din UI și comentarii"
+        "icon": "📦",
+        "text": "refactor(landing): curățare pagină principală — badge, catalog, changelog, normative"
       },
       {
         "icon": "✨",
-        "text": "feat(pricing): banner Edu reorganizat în 2 sub-secțiuni cu CTA-uri distincte"
+        "text": "feat(changelog): pagină dedicată #changelog + modal WhatsNew la update"
       },
       {
-        "icon": "💰",
-        "text": "refactor(pricing): EDU restrâns la doar studenți + doctoranzi (auto-grant)"
+        "icon": "📦",
+        "text": "refactor(landing): normativ sub logo, eliminare catalog produse, changelog filtrat, export/import complet"
       },
       {
-        "icon": "💰",
-        "text": "refactor(pricing): elimină CPE pay-per-use + repoziționează Pașaport pentru non-auditori"
+        "icon": "✨",
+        "text": "adaugă Roboto-Regular.ttf pentru diacritice native în PDF"
+      },
+      {
+        "icon": "📄",
+        "text": "corectare etichete diacritice lipsă în exportPDFNative"
+      },
+      {
+        "icon": "📄",
+        "text": "integrare pdf-fonts.js pentru diacritice corecte în PDF + restaurare etichete RO"
       }
     ]
   },

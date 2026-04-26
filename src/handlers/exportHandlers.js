@@ -19,6 +19,24 @@ import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { checkC107Conformity } from "../calc/c107.js";
 
+// ─── Helper: atașare jspdf-autotable v5+ la instanță jsPDF ──────────────────
+// jspdf-autotable v5 NU mai patch-ează automat prototipul jsPDF, deci apelul
+// `doc.autoTable(opts)` aruncă "X.autoTable is not a function" (în prod, X = t/e
+// minificat). Importăm modulul și atașăm manual funcția pe instanță.
+async function _attachAutoTable(doc) {
+  if (typeof doc.autoTable === "function") return; // deja patch-uit (v4 sau alt path)
+  const mod = await import("jspdf-autotable");
+  const autoTableFn = mod.default || mod.autoTable || mod;
+  if (typeof autoTableFn !== "function") {
+    throw new Error("jspdf-autotable: funcția default export indisponibilă");
+  }
+  doc.autoTable = function (opts) {
+    const result = autoTableFn(doc, opts);
+    if (!doc.lastAutoTable && result) doc.lastAutoTable = result;
+    return doc.lastAutoTable;
+  };
+}
+
 // ─── Helper: font Unicode + diacritice RO pentru orice doc jsPDF ────────────
 // Încearcă Roboto TTF din /public/fonts/Roboto-Regular.ttf (suport nativ ă â î ș ț).
 // Fallback: monkey-patch doc.text + doc.autoTable cu normalizeDiacritics (ă→a etc.)
@@ -717,8 +735,8 @@ export async function exportPDFNative(ctx) {
   try {
     setExporting("pdf");
     const { default: jsPDF } = await import("jspdf");
-    await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    await _attachAutoTable(doc);
     await _setupRoFont(doc);
     const epF = renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2;
     const co2F = renewSummary ? renewSummary.co2_adjusted_m2 : instSummary.co2_total_m2;
@@ -1054,8 +1072,9 @@ export async function exportFullReport(ctx) {
   try {
     setExporting("pdf_full");
     const { default: jsPDF } = await import("jspdf");
-    await import("jspdf-autotable");
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    await _attachAutoTable(doc);
+    await _setupRoFont(doc);
     const w = doc.internal.pageSize.getWidth();
     const h = doc.internal.pageSize.getHeight();
     let y = 0;
@@ -1576,17 +1595,44 @@ export async function exportFullReport(ctx) {
 // ═══════════════════════════════════════════════════════════════════════════
 // 10. EXPORT BULK PROJECTS — arhivă JSON cu toate proiectele salvate
 // ═══════════════════════════════════════════════════════════════════════════
-export function exportBulkProjects(ctx) {
+// Cheia de stocare actuală e `ep-proj:<id>` în window.storage (IndexedDB
+// via storage-polyfill). Fallback pe cheile legacy `project_<id>` și
+// `zephren_project_<id>` pentru compatibilitate cu exporturi vechi.
+export async function exportBulkProjects(ctx) {
   const { projectList, showToast } = ctx;
-  if (!projectList.length) { showToast("Niciun proiect salvat pentru export bulk.", "error"); return; }
+  if (!projectList || !projectList.length) {
+    showToast("Niciun proiect salvat pentru export bulk.", "error");
+    return;
+  }
   const allProjects = [];
-  projectList.forEach(p => {
+  for (const p of projectList) {
     try {
-      const raw = window.storage?.getItem ? window.storage.getItem("project_" + p.id) : localStorage.getItem("zephren_project_" + p.id);
-      if (raw) allProjects.push({ id: p.id, name: p.name, date: p.date, data: JSON.parse(raw) });
-    } catch (e) { /* skip corrupted */ }
-  });
-  const blob = new Blob([JSON.stringify({ format: "zephren-bulk", version: "3.0", exportDate: new Date().toISOString(), projects: allProjects }, null, 2)], { type: "application/json" });
+      let raw = null;
+      if (typeof window !== "undefined" && window.storage?.get) {
+        const r = await window.storage.get("ep-proj:" + p.id);
+        if (r && r.value) raw = r.value;
+      }
+      if (!raw && typeof window !== "undefined") {
+        raw = window.localStorage?.getItem("zephren_project_" + p.id)
+          || window.localStorage?.getItem("project_" + p.id)
+          || null;
+      }
+      if (raw) {
+        const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+        allProjects.push({ id: p.id, name: p.name, date: p.date, data });
+      }
+    } catch (_) { /* skip corrupted */ }
+  }
+  if (!allProjects.length) {
+    showToast("Nu s-au putut citi datele proiectelor (storage corupt sau gol).", "error");
+    return;
+  }
+  const blob = new Blob([JSON.stringify({
+    format: "zephren-bulk",
+    version: "3.1",
+    exportDate: new Date().toISOString(),
+    projects: allProjects,
+  }, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `Zephren_BULK_${allProjects.length}proiecte_${new Date().toISOString().slice(0, 10)}.json`;
@@ -1706,9 +1752,10 @@ export async function exportComplianceReport(ctx) {
   setExporting("pdf");
   try {
     const { default: jsPDF } = await import("jspdf");
-    await import("jspdf-autotable");
 
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    await _attachAutoTable(doc);
+    await _setupRoFont(doc);
     await _setupRoFont(doc);
     const pageW = 210;
     const margin = 14;

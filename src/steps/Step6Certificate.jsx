@@ -52,7 +52,7 @@ export default function Step6Certificate(props) {
     canExportDocx, canNzebReport, requireUpgrade, hasWatermark,
     presentationMode, setPresentationMode,
     financialAnalysis, finAnalysisInputs, setFinAnalysisInputs,
-    exportPDFNative, exportPDFArchival, exportQuickSheet, fetchTemplate,
+    exportPDFArchival, exportQuickSheet, fetchTemplate,
     bacsClass, bacsCheck, setBacsClass,
     buildingPhotos,
     userPlan,           // Sprint Pricing v6.0 — pentru gating BACS/SRI/MEPS detaliate
@@ -3046,30 +3046,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       </button>
                     )}
                     <button
-                      onClick={() => {
-                        const html = generatePDF();
-                        if (!html) return;
-                        const printWin = window.open("", "_blank");
-                        printWin.document.write(html);
-                        printWin.document.close();
-                        printWin.onload = () => { printWin.print(); };
-                        showToast("PDF: folosește Print → Save as PDF", "info", 3000);
-                      }}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">🖨️</span>
-                        <div className="text-left">
-                          <div className="font-medium">Export PDF (Print)</div>
-                          <div className="text-[10px] opacity-60">Deschide CPE HTML → Save as PDF</div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
                       onClick={generateXMLMDLPA}
                       disabled={!instSummary}
                       className={`w-full rounded-xl border transition-all text-sm ${
@@ -3082,22 +3058,6 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         <div className="text-left">
                           <div className="font-medium">Export XML MDLPA</div>
                           <div className="text-[10px] opacity-60">Registru electronic Ord. 16/2023</div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={exportPDFNative}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📑</span>
-                        <div className="text-left">
-                          <div className="font-medium">Export PDF cu QR</div>
-                          <div className="text-[10px] opacity-60">Certificat complet cu QR code</div>
                         </div>
                       </div>
                     </button>
