@@ -4,14 +4,16 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Proxy /api → Vercel Dev local (port 3000) pentru a evita System Rule challenge
-  // de la Vercel edge când se fac multe request-uri de testare. Pornește în alt
-  // terminal: `npx vercel dev --listen 3000` din root-ul proiectului energy-app/.
-  // Fallback la producție dacă vercel dev nu rulează — `target` poate fi schimbat.
+  // Proxy /api → producție (default) sau Vercel Dev local prin env var.
+  // Pentru a testa modificări la `api/*.py` sau `api/*.js` local:
+  //   1. terminal A: `npx vercel dev --listen 3000`
+  //   2. terminal B: `VITE_API_TARGET=http://localhost:3000 npm run dev`
+  // Fără override, frontend-ul folosește endpoint-urile deployate pe Vercel —
+  // suficient pentru testarea fluxului UI/UX fără setup Python local.
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_TARGET || 'http://localhost:3000',
+        target: process.env.VITE_API_TARGET || 'https://energy-app-ruby.vercel.app',
         changeOrigin: true,
         secure: false,
       },
