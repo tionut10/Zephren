@@ -391,7 +391,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: navBg, backdropFilter: "blur(12px)", borderBottom: `1px solid ${border}`, padding: "0 24px", transition: "background 0.3s" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src={isDark ? "/logo.svg" : "/logo-light.svg"} alt="Zephren" style={{ height: "40px", width: "auto" }} />
+            <img src={isDark ? "/logo.svg" : "/logo-canva.png"} alt="Zephren" style={{ height: "40px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
@@ -441,7 +441,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 24px 48px", textAlign: "center" }}>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "28px" }}>
-          <img src={isDark ? "/logo.svg" : "/logo-light.svg"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto" }} />
+          <img src={isDark ? "/logo.svg" : "/logo-canva.png"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
 
           {/* Separator vizual */}
           <div style={{ width: "48px", height: "1px", background: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)", margin: "6px 0" }} />
@@ -1065,7 +1065,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       {/* ═══ FOOTER ═══ */}
       <footer style={{ borderTop: `1px solid ${border}`, padding: "48px 24px 32px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
-          <img src={isDark ? "/logo.svg" : "/logo-light.svg"} alt="Zephren" style={{ height: "32px", width: "auto" }} />
+          <img src={isDark ? "/logo.svg" : "/logo-canva.png"} alt="Zephren" style={{ height: "32px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
           <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
         </div>
         <p style={{ fontSize: "12px", color: textFaint, maxWidth: "520px", margin: "0 auto 20px", lineHeight: 1.6 }}>
