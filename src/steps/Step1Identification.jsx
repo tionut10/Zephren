@@ -1207,6 +1207,10 @@ export default function Step1Identification({
               <div className="text-[10px] text-slate-500 italic mt-1">
                 Import date climatice externe disponibil în hub-ul de import de mai sus (tab Climă).
               </div>
+              <div className="text-[10px] text-slate-500 italic mt-0.5">
+                {/* S30B·B7 — referință standard RO pentru grade-zile */}
+                Sursa Grade-Zile: SR 4839:2014 — Calculul gradelor-zile de încălzire.
+              </div>
             </div>
           </Card>
 

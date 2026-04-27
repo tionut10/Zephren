@@ -693,6 +693,38 @@ export const INTERNAL_GAINS_PROFILES = {
   },
 };
 
+// S30B·B6 — Densitate ocupare per categorie clădire conform SR EN ISO 52016-1:2017/NA:2023.
+// Valori per 100 m² Au (persoane), folosite pentru calc câștiguri interne în absența
+// unor date de ocupare specifice.
+export const OCCUPANCY_DENSITY_PER_100M2 = {
+  RA: 1.4,   // Apartament rezidențial
+  RI: 2.5,   // Casă unifamilială
+  RC: 1.8,   // Rezidențial colectiv mediu
+  CP: 2.0,   // Cămin pensionari
+  BI: 4.0,   // Birouri
+  ED: 8.0,   // Educație (elevi/clase)
+  SA: 3.5,   // Sănătate (pacienți + personal)
+  HC: 1.5,   // Hotel / cazare
+  CO: 5.0,   // Comerț (clienți + personal, mediu zilnic)
+  SP: 2.5,   // Sport (utilizatori + personal)
+  AL: 3.0,   // Altele (industrial mixt)
+};
+
+// S30B·B6 — Profile sezoniere per categorie (factori multiplicativi 0-1 pe an).
+// Lunile [Ian, Feb, ..., Dec] cu 1.0 = ocupare nominală, 0 = închis.
+// Sursa: literatura academică (UTBv 2018-2020 stoc rezidențial RO + EN 16798-1 Anexa C).
+export const SEASONAL_OCCUPANCY = {
+  RA: Array(12).fill(1.0),                                              // rezidențial — constant
+  RI: Array(12).fill(1.0),
+  BI: [0.95, 0.95, 1.00, 1.00, 1.00, 0.90, 0.70, 0.70, 1.00, 1.00, 1.00, 0.85], // birouri (vacanțe)
+  ED: [1.00, 1.00, 1.00, 1.00, 1.00, 0.30, 0.10, 0.10, 1.00, 1.00, 1.00, 0.85], // educație (vacanță vară)
+  SA: Array(12).fill(1.0),                                              // sănătate — constant
+  HC: [0.55, 0.55, 0.65, 0.75, 0.85, 0.95, 1.00, 1.00, 0.85, 0.75, 0.65, 0.85], // turism sezon
+  CO: [0.85, 0.85, 0.95, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.05, 1.10], // comerț (sărbători)
+  SP: Array(12).fill(1.0),
+  AL: Array(12).fill(1.0),
+};
+
 // Mapare tipologie COOLING_INTERNAL_GAINS (engleză) → INTERNAL_GAINS_PROFILES (română)
 export const COOLING_TYPE_TO_GAINS_PROFILE = {
   residential: "rezidential",

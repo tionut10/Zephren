@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "S30A — bug-fix tehnic global (15 fix-uri post verificare M1 Constanța)"
+      },
+      {
         "icon": "✨",
         "text": "feat(landing v6.2.1): rescriere badge-uri pricing — Sistem A audience-first"
       },
