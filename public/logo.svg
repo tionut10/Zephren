@@ -1,59 +1,56 @@
 <svg viewBox="0 0 500 580" xmlns="http://www.w3.org/2000/svg" width="500" height="580">
   <rect width="500" height="580" fill="none"/>
 
-  <!-- Coș pe latura dreaptă, centrat la x=350 -->
-  <rect x="330" y="74" width="40" height="90" fill="#2C3E50" rx="3"/>
+  <!-- Coș -->
+  <rect x="332" y="74" width="36" height="90" fill="#94a3b8" rx="2"/>
 
-  <!-- Acoperiș exterior (acoperă baza coșului) -->
-  <polygon points="50,205 250,48 450,205" fill="#2C3E50"/>
+  <!-- Acoperiș deschis — contur fără umplutură -->
+  <polyline points="50,205 250,50 450,205" fill="none" stroke="#94a3b8" stroke-width="14" stroke-linejoin="miter"/>
 
-  <!-- Decupaj interior -->
-  <polygon points="78,205 250,62 422,205" fill="none"/>
+  <!-- Perete stâng -->
+  <rect x="50" y="205" width="14" height="241" fill="#94a3b8"/>
 
-  <!-- Perete stâng: 28px -->
-  <rect x="50" y="205" width="28" height="241" fill="#2C3E50"/>
+  <!-- Podea -->
+  <rect x="50" y="446" width="400" height="14" fill="#94a3b8"/>
 
-  <!-- Podea: 20px -->
-  <rect x="50" y="446" width="400" height="20" fill="#2C3E50"/>
+  <!-- A+ -->
+  <polygon points="64,205 184,205 195,218 184,231 64,231" fill="#00A550"/>
+  <text x="122" y="223" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">A+</text>
 
-  <!-- A+  #00A550 -->
-  <polygon points="82,205 180,205 191,218 180,231 82,231" fill="#00A550"/>
-  <text x="131" y="223" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">A+</text>
+  <!-- A -->
+  <polygon points="64,235 217,235 228,248 217,261 64,261" fill="#4CB848"/>
+  <text x="139" y="253" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">A</text>
 
-  <!-- A  #4CB848 -->
-  <polygon points="82,235 213,235 224,248 213,261 82,261" fill="#4CB848"/>
-  <text x="148" y="253" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">A</text>
+  <!-- B -->
+  <polygon points="64,265 250,265 261,278 250,291 64,291" fill="#BDD630"/>
+  <text x="155" y="283" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#333333" text-anchor="middle">B</text>
 
-  <!-- B  #BDD630 -->
-  <polygon points="82,265 246,265 257,278 246,291 82,291" fill="#BDD630"/>
-  <text x="164" y="283" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#333333" text-anchor="middle">B</text>
+  <!-- C -->
+  <polygon points="64,295 283,295 294,308 283,321 64,321" fill="#FFF200"/>
+  <text x="172" y="313" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#333333" text-anchor="middle">C</text>
 
-  <!-- C  #FFF200 -->
-  <polygon points="82,295 279,295 290,308 279,321 82,321" fill="#FFF200"/>
-  <text x="181" y="313" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="#333333" text-anchor="middle">C</text>
+  <!-- D -->
+  <polygon points="64,325 316,325 327,338 316,351 64,351" fill="#FDB913"/>
+  <text x="188" y="343" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">D</text>
 
-  <!-- D  #FDB913 -->
-  <polygon points="82,325 312,325 323,338 312,351 82,351" fill="#FDB913"/>
-  <text x="197" y="343" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">D</text>
+  <!-- E -->
+  <polygon points="64,355 349,355 360,368 349,381 64,381" fill="#F37021"/>
+  <text x="205" y="373" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">E</text>
 
-  <!-- E  #F37021 -->
-  <polygon points="82,355 345,355 356,368 345,381 82,381" fill="#F37021"/>
-  <text x="214" y="373" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">E</text>
+  <!-- F -->
+  <polygon points="64,385 382,385 393,398 382,411 64,411" fill="#ED1C24"/>
+  <text x="221" y="403" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">F</text>
 
-  <!-- F  #ED1C24 -->
-  <polygon points="82,385 378,385 389,398 378,411 82,411" fill="#ED1C24"/>
-  <text x="230" y="403" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">F</text>
+  <!-- G -->
+  <polygon points="64,415 415,415 426,428 415,441 64,441" fill="#B31217"/>
+  <text x="238" y="433" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">G</text>
 
-  <!-- G  #B31217 -->
-  <polygon points="82,415 411,415 422,428 411,441 82,441" fill="#B31217"/>
-  <text x="247" y="433" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white" text-anchor="middle">G</text>
-
-  <!-- "Zephren": Z verde A+, letter-spacing 7 -->
-  <text x="253" y="515" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="60" text-anchor="middle" letter-spacing="7"><tspan fill="#007A3D">Z</tspan><tspan fill="#e2e8f0">ephren</tspan></text>
+  <!-- Zephren -->
+  <text x="253" y="515" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="62" text-anchor="middle" letter-spacing="3"><tspan fill="#007A3D">Z</tspan><tspan fill="#e2e8f0">ephren</tspan></text>
 
   <!-- Linie separatoare -->
-  <line x1="120" y1="528" x2="380" y2="528" stroke="#c8d6e0" stroke-width="1"/>
+  <line x1="120" y1="530" x2="380" y2="530" stroke="#475569" stroke-width="1"/>
 
   <!-- Tagline -->
-  <text x="250" y="548" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#95a5a6" text-anchor="middle" letter-spacing="1.5">Energy Performance Calculator</text>
+  <text x="250" y="550" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#64748b" text-anchor="middle" letter-spacing="1.5">Energy Performance Calculator</text>
 </svg>
