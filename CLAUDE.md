@@ -116,8 +116,8 @@ git commit -m "<mesaj relevant>"
 |---|---|---|---|---|---|
 | 1 | **Zephren Free** | 0 RON | 0 RON | 3 hard cap | Step 1-7 cu watermark |
 | 2 | **Zephren Edu** | 0 cu dovadă | 0 | nelim cu watermark didactic | TOATE Expert (DOAR studenți + doctoranzi auto) |
-| 3 | **Zephren Audit** | 199 RON | 240,79 | 8 + 2 burst, overage 49→79→99 | Step 1-6 (fără audit energetic) |
-| 4 | **Zephren Pro** ⭐ | **499 RON** | **603,79** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** |
+| 3 | **Zephren AE IIci** | 199 RON | 240,79 | 8 + 2 burst, overage 49→79→99 | Step 1-6 · auditori grad II civile · CPE locuințe (Art. 6 alin. 2) |
+| 4 | **Zephren AE Ici** ⭐ | **499 RON** | **603,79** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** · auditori grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1) |
 | 5 | **Zephren Expert** | 899 RON | 1.087,79 | 60 + 12 burst, overage 39→69→99 | **Step 1-8 COMPLET + BIM Pack** |
 | 6 | **Zephren Birou** | 1.890 flat | 2.286,90 | NELIMITAT | Expert × 2-5 useri + white-label + API |
 | 7 | **Zephren Enterprise** | de la 4.990 | 6.037,90 | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
@@ -134,19 +134,19 @@ git commit -m "<mesaj relevant>"
 - Banner Edu cu 2 sub-secțiuni: „Aplică cu dovadă →" vs „📩 Cerere colaborare →"
 
 ### Pay-per-use SIMPLIFICAT
-- ELIMINATE: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199 (canibalizate de Audit 199)
+- ELIMINATE: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199 (canibalizate de AE IIci 199)
 - PĂSTRATE: doar Pașaport Renovare basic 79 + detaliat 199 pentru NON-auditori
 - Badge „OBLIGATORIU EPBD · 29 MAI 2026"
 
 ### Split CRITIC Step 1-7 vs Step 8
 
-- **Step 1-7** = pachetul popular **Zephren Pro 499** (CPE + Anexe + Audit financiar)
+- **Step 1-7** = pachetul popular **Zephren AE Ici 499** (CPE + Anexe + Audit + nZEB)
 - **Step 8** (18 module avansate) = **Zephren Expert 899** sau mai sus
 - **Module avansate** (Step 8): MonteCarloEP, Pasivhaus, PMV/PPD, EN 12831 rooms, Thermovision, UrbanHeatIsland, Historic, Mixed-use, PortfolioDashboard, ConsumReconciliere, ConsumoTracker, BACS detaliat 200 factori, SRI complet 42 servicii, MEPS optimizator, Pașaport detaliat LCC, Acoustic, Night ventilation, Shading dynamic, Cooling hourly
 
 ### BACS+SRI+MEPS+Pașaport — DUAL MODE (CRITIC pentru EPBD)
 
-Versiunea **simplă** OBLIGATORIE EPBD rămâne accesibilă în Pro 499:
+Versiunea **simplă** OBLIGATORIE EPBD rămâne accesibilă în AE Ici 499:
 - `BACSSelectorSimple.jsx` — selector A-D + factor f_BAC
 - `SRIScoreAuto.jsx` — score automat read-only
 - `MEPSCheckBinar.jsx` — verificare 2030 binar
@@ -160,7 +160,7 @@ Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 899+:
 
 ### AI Pack & BIM Pack (incluse, NU separate)
 
-- **AI Pack** inclus în Pro+ (OCR facturi, OCR CPE, chat import, AI assistant)
+- **AI Pack** inclus în AE Ici+ (OCR facturi, OCR CPE, chat import, AI assistant)
 - **BIM Pack** inclus în Expert+ (IFC import, parser STEP nativ)
 
 ### Componente cheie

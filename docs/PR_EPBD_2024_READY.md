@@ -60,8 +60,8 @@ Zephren operează pe model SaaS abonament, cu șapte niveluri (toate prețurile 
 
 - **Zephren Free** — 0 RON, 3 CPE/lună cu watermark
 - **Zephren Edu** — 0 RON pentru studenți și doctoranzi cu dovadă instituțională
-- **Zephren Audit** — 199 RON/lună, până la 10 CPE
-- **Zephren Pro ⭐** — 499 RON/lună, până la 36 CPE, cu AI Pack inclus
+- **Zephren AE IIci** — 199 RON/lună, până la 10 CPE (auditori grad II civile · CPE locuințe)
+- **Zephren AE Ici ⭐** — 499 RON/lună, până la 36 CPE, cu AI Pack inclus (auditori grad I civile · CPE + audit + nZEB)
 - **Zephren Expert** — 899 RON/lună, până la 72 CPE, cu BIM Pack și 18 module avansate
 - **Zephren Birou** — 1.890 RON/lună, CPE nelimitat, 2-5 utilizatori
 - **Zephren Enterprise** — de la 4.990 RON/lună, organizații 6-100+ utilizatori, SLA 99.9%

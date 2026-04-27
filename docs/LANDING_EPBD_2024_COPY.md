@@ -242,12 +242,12 @@ Două schimbări reglementare majore se închid în 2026 — **transpunerea EPBD
 │ 165 tipologii e o gură de aer."     │
 │                                     │
 │ — A.M., auditor Cluj-Napoca         │
-│   (planul Pro, 18 CPE/lună)         │
+│   (planul AE Ici, 18 CPE/lună)      │
 └─────────────────────────────────────┘
 
 ┌─────────────────────────────────────┐
 │ „Am migrat de la AllEnergy v8 la    │
-│ Zephren Pro și nu mă mai întorc.   │
+│ Zephren AE Ici și nu mă mai întorc. │
 │ Pașaportul Renovare se generează    │
 │ singur din datele din Step 6 — la   │
 │ AllEnergy nu există."               │
@@ -306,7 +306,7 @@ Politica noastră este transparentă și predictibilă: **orice modificare de pr
 │                                     │    │                                     │
 │   • 3 CPE/lună gratis în Free       │    │   • Pașaport Renovare 79 RON        │
 │   • Generează primul CPE în 15 min  │    │   • EPBD 2024 conform               │
-│   • AI inclus din planul Pro        │    │   • PDF/A + QR + UUID în 5 min      │
+│   • AI inclus din planul AE Ici     │    │   • PDF/A + QR + UUID în 5 min      │
 │                                     │    │                                     │
 │   [ Înregistrează-te gratuit → ]    │    │   [ Generează Pașaport → ]          │
 └─────────────────────────────────────┘    └─────────────────────────────────────┘

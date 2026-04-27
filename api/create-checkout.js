@@ -164,8 +164,8 @@ export default async function handler(req, res) {
   // ────────────────────────────────────────────────────────────────────────
   const cycle = billingCycle === "yearly" ? "Y" : "M";
   const SUBSCRIPTION_PRICES = {
-    audit:      { priceId: process.env[`STRIPE_PRICE_AUDIT_${cycle}`]      || "price_placeholder_audit",      name: "Zephren Audit",      amount: cycle === "Y" ? 199900 : 19900   },
-    pro:        { priceId: process.env[`STRIPE_PRICE_PRO_${cycle}`]        || "price_placeholder_pro",        name: "Zephren Pro",        amount: cycle === "Y" ? 499000 : 49900   },
+    audit:      { priceId: process.env[`STRIPE_PRICE_AUDIT_${cycle}`]      || "price_placeholder_audit",      name: "Zephren AE IIci",    amount: cycle === "Y" ? 199900 : 19900   },
+    pro:        { priceId: process.env[`STRIPE_PRICE_PRO_${cycle}`]        || "price_placeholder_pro",        name: "Zephren AE Ici",     amount: cycle === "Y" ? 499000 : 49900   },
     expert:     { priceId: process.env[`STRIPE_PRICE_EXPERT_${cycle}`]     || "price_placeholder_expert",     name: "Zephren Expert",     amount: cycle === "Y" ? 899000 : 89900   },
     birou:      { priceId: process.env[`STRIPE_PRICE_BIROU_${cycle}`]      || "price_placeholder_birou",      name: "Zephren Birou",      amount: cycle === "Y" ? 1890000 : 189000 },
     enterprise: { priceId: process.env[`STRIPE_PRICE_ENTERPRISE_${cycle}`] || "price_placeholder_enterprise", name: "Zephren Enterprise", amount: cycle === "Y" ? 4990000 : 499000 },

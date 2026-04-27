@@ -18,8 +18,8 @@ Pentru fiecare din cele 5 plans v6.0, creează **1 product cu 2 prețuri** (luna
 
 | Product Name | Product ID propus | Description |
 |---|---|---|
-| **Zephren Audit** | `prod_zephren_audit` | Auditor ocazional 1-3 CPE/lună · Step 1-6 complet |
-| **Zephren Pro** | `prod_zephren_pro` | Auditor activ MDLPA · Step 1-7 complet + AI Pack |
+| **Zephren AE IIci** | `prod_zephren_audit` | Auditor energetic AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2) · Step 1-6 |
+| **Zephren AE Ici** | `prod_zephren_pro` | Auditor energetic AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1) · Step 1-7 |
 | **Zephren Expert** | `prod_zephren_expert` | Auditor senior · Step 1-8 complet + BIM Pack |
 | **Zephren Birou** | `prod_zephren_birou` | Birou audit 2-5 useri · CPE NELIMITAT + white-label |
 | **Zephren Enterprise** | `prod_zephren_enterprise` | Organizații 6+ useri · SLA 99.9% + INCERC |
@@ -28,16 +28,16 @@ Pentru fiecare product, adaugă **2 recurring prices**:
 
 | Plan | Lunar fără TVA | Cu TVA 21% | Bani (Stripe) |
 |---|---|---|---|
-| Audit | 199 RON/lună | 240,79 RON | **19900** bani |
-| Pro ⭐ | 499 RON/lună | 603,79 RON | **49900** bani |
+| AE IIci | 199 RON/lună | 240,79 RON | **19900** bani |
+| AE Ici ⭐ | 499 RON/lună | 603,79 RON | **49900** bani |
 | Expert | 899 RON/lună | 1.087,79 RON | **89900** bani |
 | Birou | 1.890 RON/lună flat | 2.286,90 RON | **189000** bani |
 | Enterprise | de la 4.990 RON/lună | 6.037,90 RON | **499000** bani |
 
 | Plan | Anual fără TVA (10 luni) | Cu TVA 21% | Bani (Stripe) |
 |---|---|---|---|
-| Audit | 1.999 RON/an | 2.418,79 RON | **199900** bani |
-| Pro | 4.990 RON/an | 6.037,90 RON | **499000** bani |
+| AE IIci | 1.999 RON/an | 2.418,79 RON | **199900** bani |
+| AE Ici | 4.990 RON/an | 6.037,90 RON | **499000** bani |
 | Expert | 8.990 RON/an | 10.877,90 RON | **899000** bani |
 | Birou | 18.900 RON/an | 22.869,00 RON | **1890000** bani |
 | Enterprise | Negociat | — | **4990000** bani placeholder |
@@ -54,7 +54,7 @@ Pentru fiecare product, adaugă **2 recurring prices**:
 
 Sprint v6.0 a redus pay-per-use la doar Pașaport Renovare. CPE-urile single
 (99 RON), pachet 10 (790 RON) și CPE+Step 8 (199 RON) au fost ELIMINATE
-fiindcă abonamentul Audit 199 RON oferă break-even la 2 CPE/lună (canibalizat).
+fiindcă abonamentul AE IIci 199 RON oferă break-even la 2 CPE/lună (canibalizat).
 Pașaportul rămâne pentru proprietari & non-auditori care au nevoie de
 Pașaport Renovare EPBD obligatoriu (29 mai 2026) fără să fie auditori atestați.
 
