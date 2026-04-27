@@ -145,8 +145,11 @@ export function canEmitForBuilding({ plan, auditorGrad, building, operation = "c
     }
 
     // 3.3) Scop NEPERMIS (renovare, schimbare destinație etc.) — INTERZIS
-    const allowedScopes = features.scopCpeAllowed;
-    if (Array.isArray(allowedScopes) && scop && !allowedScopes.includes(scop)) {
+    //    IMPORTANT: când effectiveGrade=IIci (auditor real IIci pe plan Pro/Expert),
+    //    restricția se aplică indiferent de scopCpeAllowed al planului. Atestatul real
+    //    al auditorului trumps permisiunile planului.
+    const ALLOWED_SCOPES_IICI = ["construire", "receptie", "vanzare", "inchiriere"];
+    if (scop && !ALLOWED_SCOPES_IICI.includes(scop)) {
       return {
         ok: false,
         severity: "blocking",
@@ -162,13 +165,8 @@ export function canEmitForBuilding({ plan, auditorGrad, building, operation = "c
 
     // 3.4) Bloc întreg (RC) la vânzare/închiriere — INTERZIS
     //    Art. 6 alin. (2) menționează blocuri DOAR la „se construiesc".
-    //    Vânzarea/închirierea unui bloc întreg e tranzacție unitară pe proprietatea
-    //    cumulativă → necesită AE Ici (sfera apartamentelor individuale e separată).
-    if (
-      cat === "RC" &&
-      features.blocIntregScopRestricted &&
-      (scop === "vanzare" || scop === "inchiriere")
-    ) {
+    //    Restricția se aplică indiferent de planul cumpărat — atestatul IIci real domină.
+    if (cat === "RC" && (scop === "vanzare" || scop === "inchiriere")) {
       return {
         ok: false,
         severity: "blocking",
@@ -184,13 +182,8 @@ export function canEmitForBuilding({ plan, auditorGrad, building, operation = "c
 
     // 3.5) Apartament (BC) la construire individuală — INTERZIS
     //    Art. 6 alin. (2) menționează apartamentele DOAR la „se vând sau se
-    //    închiriază". Construirea unui apartament individual (rar dar posibil
-    //    juridic) → necesită AE Ici.
-    if (
-      cat === "BC" &&
-      features.apartmentScopRestricted &&
-      (scop === "construire" || scop === "receptie")
-    ) {
+    //    închiriază". Restricția aplicabilă indiferent de plan (atestatul IIci domină).
+    if (cat === "BC" && (scop === "construire" || scop === "receptie")) {
       return {
         ok: false,
         severity: "blocking",

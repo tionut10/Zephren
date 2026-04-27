@@ -116,6 +116,86 @@ describe("auditor-grad-validation — Sprint v6.2 (Ord. MDLPA 348/2026)", () => 
     });
   });
 
+  describe("validateGradVsBuildingCategory — Sprint v6.3 reguli scope/public", () => {
+    it("blochează AE IIci la scop=renovare chiar pe rezidențial (Art. 6 alin. 2)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "RI", scopCpe: "renovare",
+      });
+      expect(r.valid).toBe(false);
+      expect(r.severity).toBe("blocking");
+      expect(r.message).toMatch(/renovare/i);
+      expect(r.upgradePath).toBe("AE Ici");
+    });
+    it("blochează AE IIci la schimbare destinație (scop nepermis)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "RI", scopCpe: "schimbare_destinatie",
+      });
+      expect(r.valid).toBe(false);
+      expect(r.severity).toBe("blocking");
+    });
+    it("blochează AE IIci la clădire publică rezidențială (case protocol)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "RI", scopCpe: "construire", isPublic: true,
+      });
+      expect(r.valid).toBe(false);
+      expect(r.severity).toBe("blocking");
+      expect(r.legalRef).toMatch(/L\.372\/2005/);
+    });
+    it("blochează AE IIci la vânzare bloc întreg (RC + vanzare)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "RC", scopCpe: "vanzare",
+      });
+      expect(r.valid).toBe(false);
+      expect(r.severity).toBe("blocking");
+      expect(r.message).toMatch(/bloc.*întreg/i);
+    });
+    it("blochează AE IIci la apartament construire individuală (BC + construire)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "BC", scopCpe: "construire",
+      });
+      expect(r.valid).toBe(false);
+      expect(r.severity).toBe("blocking");
+      expect(r.message).toMatch(/apartament/i);
+    });
+    it("permite AE IIci pe casă construire (RI + construire)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "RI", scopCpe: "construire",
+      });
+      expect(r.valid).toBe(true);
+    });
+    it("permite AE IIci pe apartament vânzare (BC + vanzare)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "IIci", auditorGrad: "IIci",
+        buildingCategory: "BC", scopCpe: "vanzare",
+      });
+      expect(r.valid).toBe(true);
+    });
+    it("permite AE Ici la orice scop pe orice categorie (Art. 6 alin. 1)", () => {
+      for (const scop of ["construire", "vanzare", "inchiriere", "renovare", "receptie"]) {
+        for (const cat of ["RI", "RC", "BC", "BIR", "SP", "SC", "AL"]) {
+          const r = validateGradVsBuildingCategory({
+            gradMdlpaRequired: "Ici", auditorGrad: "Ici",
+            buildingCategory: cat, scopCpe: scop, isPublic: false,
+          });
+          expect(r.valid, `cat=${cat} scop=${scop}`).toBe(true);
+        }
+      }
+    });
+    it("permite AE Ici pe clădire publică (Art. 6 alin. 1 lit. a)", () => {
+      const r = validateGradVsBuildingCategory({
+        gradMdlpaRequired: "Ici", auditorGrad: "Ici",
+        buildingCategory: "RI", scopCpe: "construire", isPublic: true,
+      });
+      expect(r.valid).toBe(true);
+    });
+  });
+
   describe("validateAuditorGradMatchesPlan", () => {
     it("ok dacă plan nu cere grad", () => {
       const r = validateAuditorGradMatchesPlan({ auditorGrad: null, gradMdlpaRequired: null });
