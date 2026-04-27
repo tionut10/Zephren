@@ -66,6 +66,7 @@ export const TIERS = {
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: false, api: false,
     mdlpaGrade: "Ici",
+    legalScope: "Toate categoriile + audit + nZEB + 18 module avansate Step 8 (Art. 6 alin. 1 Ord. 348/2026 + funcționalități premium)",
   },
   birou: {
     id: "birou", label: "Zephren Birou",
@@ -77,6 +78,7 @@ export const TIERS = {
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: true, api: true,
     mdlpaGrade: "Ici",
+    legalScope: "Toate categoriile + audit + nZEB pentru min. 1 utilizator AE Ici · per-user limitare runtime per gradul real",
   },
   enterprise: {
     id: "enterprise", label: "Zephren Enterprise",
@@ -88,6 +90,7 @@ export const TIERS = {
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: true, api: true,
     mdlpaGrade: "Ici",
+    legalScope: "Organizație 6-100+ auditori (toate gradele) · per-user limitare runtime per gradul real al fiecărui auditor",
   },
 
   // ═══ Backward-compat aliases (v5.x → v6.0) ═══
