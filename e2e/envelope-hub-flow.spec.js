@@ -233,13 +233,13 @@ async function applyFirstDemo(page) {
   const mostreBtn = page.getByRole("button", { name: /Mostre exemplu/ });
   await mostreBtn.click();
   await page.waitForTimeout(300);
-  // Prima mostră din listă (DEMO_PROJECTS[0]) — apartament RA bloc PAFP
-  await page.getByRole("button", { name: /Demo 1.*Apartament RA/ }).click();
+  // Prima mostră din listă (DEMO_PROJECTS[0] = M1) — apartament RA bloc PAFP Constanța
+  await page.getByRole("button", { name: /M1.*Apartament bloc PAFP/ }).click();
   await page.waitForTimeout(1500);
 }
 
 test.describe("SmartEnvelopeHub — Toggle legacy (state shared)", () => {
-  test("Hub ON + Demo 1 → conținut anvelopă vizibil; Hub OFF + Demo 1 → legacy afișează aceleași categorii", async ({ page }) => {
+  test("Hub ON + M1 → conținut anvelopă vizibil; Hub OFF + M1 → legacy afișează aceleași categorii", async ({ page }) => {
     // ─── Prima încărcare: Hub ON (default flag) ────────────────────────────
     await goToCalculator(page, 1);
     await applyFirstDemo(page);

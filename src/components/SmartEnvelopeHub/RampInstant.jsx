@@ -1,9 +1,9 @@
 /**
  * RampInstant (anvelopă) — COMPLETARE S3 (14.04.2026).
  *
- * 4 acțiuni instantanee, derivate 100% din DEMO_PROJECTS:
- *   1. 8 șabloane tipologii (envelopeTemplates.js) — categorizate
- *   2. Selector 20 demo-uri — aplicare selectivă { opaque, glazing, bridges } (D6)
+ * 4 acțiuni instantanee, derivate 100% din DEMO_PROJECTS (refacere v2 — 5 modele):
+ *   1. 5 șabloane tipologii (envelopeTemplates.js) — câte unul per zonă climatică I-V
+ *   2. Selector 5 demo-uri — aplicare selectivă { opaque, glazing, bridges } (D6)
  *   3. Pachet 5 punți termice standard (D1) — cu confirmation + warning
  *   4. 4 pereți N/S/E/V din geometria Step 1 (+ acoperiș + planșeu)
  *
@@ -138,16 +138,16 @@ export default function RampInstant({
   return (
     <div className="space-y-2">
       <div className="text-[11px] text-amber-200/70 mb-2">
-        ⚡ Completare instantanee derivată din 20 exemple demo + geometria Step 1.
+        ⚡ Completare instantanee derivată din 5 modele demo (zone climatice I-V) + geometria Step 1.
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 1. Șabloane tipologii (8)                                            */}
+      {/* 1. Șabloane tipologii (5 — câte unul per zonă climatică I-V)         */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <ActionCard
         icon="🏛️"
-        title="8 șabloane tipologii"
-        description="Rezidențial vechi/nZEB, birouri, școală, hală — pachete complete { pereți + vitraje + punți } derivate din demo-uri."
+        title="5 șabloane tipologii (Zone I-V)"
+        description="Apartament '70, birouri nZEB, casă renovată, școală reabilitată, pensiune lemn — pachete complete { pereți + vitraje + punți } derivate din modele demo."
         badge={`${ENVELOPE_TEMPLATES.length}`}
         onClick={() => { setShowTemplates(v => !v); setShowDemos(false); }}
       />
@@ -184,12 +184,12 @@ export default function RampInstant({
       )}
 
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 2. Aplicare selectivă anvelopă din 20 demo-uri (D6)                  */}
+      {/* 2. Aplicare selectivă anvelopă dintr-un demo M1-M5 (D6)              */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <ActionCard
         icon="📦"
         title="Aplică anvelopa dintr-un demo"
-        description="Copiază doar { opaque, glazing, bridges } din oricare dintre cele 20 demo-uri, păstrând building + instalații curente."
+        description="Copiază doar { opaque, glazing, bridges } din oricare dintre cele 5 modele demo (M1-M5, zone climatice I-V), păstrând building + instalații curente."
         badge={`${DEMO_PROJECTS.length}`}
         onClick={() => { setShowDemos(v => !v); setShowTemplates(false); }}
       />

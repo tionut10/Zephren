@@ -2,7 +2,7 @@
  * RampInstant — metode de completare instantanee (fără upload, fără tastare extinsă).
  *
  * Conținut:
- *   ├─ Șabloane clădiri tip românești (22+ modele) — buton ce deschide modal
+ *   ├─ Șabloane clădiri tip românești (5 modele · Zone I-V) — buton ce deschide modal
  *   ├─ Demo proiecte — listă mostre exemplu expandabilă (DEMO_PROJECTS)
  *   ├─ Geocodare adresă OSM (Nominatim) — one click
  *   ├─ Căutare număr cadastral (ANCPI via OSM) — input + lookup
@@ -79,7 +79,7 @@ export default function RampInstant({
       <ActionButton
         icon="🏛️"
         title="Șabloane clădiri tip românești"
-        description="22+ modele predefinite (rezidențial, birouri, educație, spitale) — completare automată toate câmpurile"
+        description="5 modele predefinite (zone climatice I-V: apartament, birouri nZEB, casă, școală, pensiune) — completare automată toate câmpurile"
         accent="amber"
         onClick={() => setShowTemplates(true)}
         badge="Recomandat"

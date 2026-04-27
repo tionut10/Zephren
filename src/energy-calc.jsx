@@ -1047,7 +1047,7 @@ export default function EnergyCalcApp({ cloud }) {
   }, [pushUndo]);
 
   // ═══════════════════════════════════════════════════════════
-  // GENERIC DEMO LOADER — 20 exemple complete din demoProjects.js
+  // GENERIC DEMO LOADER — 5 modele complete din demoProjects.js (zone climatice I-V)
   // ═══════════════════════════════════════════════════════════
   // ═══════════════════════════════════════════════════════════
   // SmartEnvelopeHub — feature flag check (S3 test harness, S4 GA)
@@ -3489,6 +3489,7 @@ export default function EnergyCalcApp({ cloud }) {
             instSummary={instSummary}
             setStep={setStep} goToStep={goToStep}
             showToast={showToast}
+            userPlan={userPlan}
           /></Suspense>}
 
 
@@ -3999,8 +4000,9 @@ export default function EnergyCalcApp({ cloud }) {
         </Suspense>
       )}
 
-      {/* ═══ ChatImport — buton flotant + chat panel ═══ */}
+      {/* ═══ ChatImport — buton flotant + chat panel (gated AI Pack: Pro+/Edu) ═══ */}
       <ChatImport
+        userPlan={userPlan}
         isOpen={showChat}
         onOpenChange={setShowChat}
         onApply={(data) => {
