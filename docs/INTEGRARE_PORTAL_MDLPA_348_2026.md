@@ -1,8 +1,60 @@
 # Integrare Portal Electronic MDLPA — Ord. 348/2026
 
-**Document tehnic strategic · v1.0 · 27 aprilie 2026**
+**Document tehnic strategic · v1.1 · 27 aprilie 2026**
 
 > Filozofie de execuție: **„Ready Day 1"** — în momentul în care portalul electronic MDLPA devine operațional (orientativ 8 iulie 2026), Zephren va fi singurul software CPE din România cu integrare nativă funcțională din prima zi.
+
+---
+
+## ✅ STATUS IMPLEMENTARE — Faza 0 LIVRATĂ (27 aprilie 2026)
+
+Faza 0 din plan (Pregătire — 16-24h estimat) a fost executată în această sesiune.
+Toate fișierele sunt în repo, testele trec, build-ul e OK.
+
+### Codebase descoperit existent (Sprint 17 — 18 apr 2026)
+
+În timpul implementării am descoperit că **există deja infrastructură MDLPA**:
+- `src/lib/mdlpa-submit.js` — workflow email (mailto:birou.atestari@mdlpa.ro) + Supabase Storage upload pentru fișiere >25 MB + tracking localStorage
+- `src/calc/mdlpa-registry.js` — registry logic
+- `src/components/MDLPASubmitPanel.jsx` — UI email submit panel
+- `src/components/AnexaMDLPAFields.jsx` — câmpuri specifice MDLPA
+
+Aceasta e abordarea **email-based curentă** (singura disponibilă astăzi, deoarece API portal nu există încă).
+Implementarea Faza 0 este **complementară**, NU înlocuiește — adaugă layer pentru viitorul API portal.
+
+### Fișiere CREATE în această sesiune
+
+| Fișier | Linii | Rol |
+|---|---|---|
+| `supabase/migrations/20260427_mdlpa_portal_integration.sql` | ~190 | Tabele audit log + queue + RPCs claim/retry/success |
+| `src/lib/mdlpa-portal-adapter.js` | ~250 | Adapter cu mock/real mode toggle (env var `VITE_MDLPA_PORTAL_MODE=real`) |
+| `src/lib/mdlpa-validator.js` | ~210 | Validare payload pre-depunere (tipuri, UUID, atestat, XML well-formed, limite size) |
+| `src/lib/mdlpa-queue.js` | ~180 | Queue + retry exponential backoff (5min→24h) prin Supabase RPC |
+| `api/submit-mdlpa.js` | ~120 | Endpoint POST submit + GET cron (consolidat — limit Vercel 12) |
+| `automation/mdlpa-cron-retry.js` | ~70 | CLI utility pentru rulare manuală drainQueue |
+| `src/components/MDLPAPortalSubmit.jsx` | ~220 | UI nou cu validare reactivă + status portal + mock badge |
+| `src/lib/__tests__/mdlpa-portal-adapter.test.js` | ~110 | 14 teste adapter |
+| `src/lib/__tests__/mdlpa-validator.test.js` | ~140 | 25 teste validator |
+
+**Total**: 9 fișiere noi, ~1.490 LOC, 39 teste noi (toate PASS).
+
+### Decizii arhitecturale luate
+
+1. **Cron consolidat în `api/submit-mdlpa.js`** (POST=submit, GET=cron) pentru a respecta limita Vercel Hobby de 12 funcții (eram exact la 11/12 înainte de această sesiune).
+2. **Mock mode default** — adapter rulează cu răspunsuri simulate până când MDLPA publică specs API; comutare via env var `VITE_MDLPA_PORTAL_MODE=real`.
+3. **Backoff exponențial 5min · 15min · 1h · 6h · 24h** — implementat ca SQL function (`mdlpa_schedule_next_retry`).
+4. **Lock optimist queue** — `mdlpa_claim_queue_item` folosește `FOR UPDATE SKIP LOCKED` pentru concurrent-safe cron workers.
+5. **Deduplicare hash** — unique index pe `(document_hash, status)` cu filter pe `status IN ('success', 'submitting')` previne dublarea aceleiași depuneri.
+6. **Coexistență cu fluxul email** — auditorul va vedea AMBELE opțiuni în Step 6/7 când integrăm `MDLPAPortalSubmit` în UI (Faza 1).
+
+### Pașii rămași — Faza 1 (când MDLPA publică specs API)
+
+- [ ] Înlocuire `_realApiCall()` în `mdlpa-portal-adapter.js` cu apeluri reale (auth header, schema mapping)
+- [ ] Stocare XML real în Supabase Storage + adăugare coloană `xml_storage_path` în `mdlpa_submissions` (queue actual folosește placeholder XML)
+- [ ] Wire `<MDLPAPortalSubmit />` în Step 6 + Step 7 (UI integration)
+- [ ] Test pe sandbox MDLPA dacă ministerul îl pune la dispoziție
+- [ ] Activare cron Vercel în production prin `vercel deploy` cu noul `vercel.json`
+- [ ] PR comunicat „Primul software cu integrare nativă portal MDLPA"
 
 ---
 

@@ -51,6 +51,15 @@
     },
     "api/chat-import.js": {
       "maxDuration": 15
+    },
+    "api/submit-mdlpa.js": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/submit-mdlpa?cron=1",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }

@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🧪",
+        "text": "S30D — verificare end-to-end + matrice conformitate v4 + validator e2e"
+      },
+      {
         "icon": "✨",
         "text": "S30C — module avansate Step 8 cu export PDF unificat (13 module)"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "feat(pricing v6.1): adaptare funcții per tier — gating 8 componente + sync tiers.js"
-      },
-      {
-        "icon": "🗺️",
-        "text": "S28 DEMO v2 — refacere completă: 5 modele zone climatice I-V + teste"
       }
     ]
   },
