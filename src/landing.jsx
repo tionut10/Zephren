@@ -554,7 +554,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             {lang === "EN" ? "Export & Import — all formats" : "Export & Import — toate formatele"}
           </h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
           {/* Export */}
           <div style={{ padding: "28px 32px", borderRadius: "14px", background: amberCardBg, border: "1px solid rgba(245,158,11,0.1)" }}>
             <div style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
@@ -853,7 +853,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               <h3 style={{ fontSize: "20px", fontWeight: "700", textAlign: "center", marginTop: "64px", marginBottom: "24px", color: text }}>
                 {lang === "EN" ? "For audit teams and organizations" : "Pentru birouri de audit și organizații"}
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "24px", maxWidth: "900px", margin: "0 auto" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))", gap: "24px", maxWidth: "900px", margin: "0 auto" }}>
                 {PLANS.filter(p => PLAN_LAYOUT.team.includes(p.id)).map(p => (
                   <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}`, position: "relative" }}>
                     {p.id === "birou" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#ec4899", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "FLAT PRICE · UNLIMITED CPE" : "PREȚ FIX · CPE NELIMITAT"}</div>}

@@ -24,6 +24,24 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Anti-overflow orizontal global — blochează "tras spre dreapta" pe
+   mobile/tabletă în toate paginile (landing, app, mobile-wizard, etc.)
+   ───────────────────────────────────────────────────────────────────── */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+@media (max-width: 1023px) {
+  /* Pe mobile + tabletă: forțează toate copiii direcți ai body/root să
+     respecte lățimea viewport-ului (previne overflow din inline styles
+     sau elemente cu min-width hardcodat). */
+  #root, #root > * {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}
+
 /* Code/numerical results inherit JetBrains Mono via font-mono utility */
 code, kbd, samp, pre {
   font-family: var(--font-mono);
