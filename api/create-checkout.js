@@ -155,20 +155,22 @@ export default async function handler(req, res) {
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // PRICING v6.0 (25 apr 2026) — 5 abonamente lunare + 5 anuale + 5 one-time
+  // PRICING v7.0 (27 apr 2026) — 5 abonamente lunare + 5 anuale + 2 one-time
+  //   Volum standardizat: 30 CPE/lună pe IIci, Ici, Expert (acoperă media aritmetică națională).
+  //   Diferențiere prin funcționalități + grad MDLPA + audituri/lună.
+  //   AI Pack + Cloud nelimitat = standard pe toate planurile plătite.
   //   Stripe Price IDs sunt configurate în env vars (vezi memorie infrastructure_payments_fiscal.md).
   //   Lunar: STRIPE_PRICE_AUDIT_M / STRIPE_PRICE_PRO_M / STRIPE_PRICE_EXPERT_M / STRIPE_PRICE_BIROU_M / STRIPE_PRICE_ENTERPRISE_M
   //   Anual: STRIPE_PRICE_AUDIT_Y / STRIPE_PRICE_PRO_Y / STRIPE_PRICE_EXPERT_Y / STRIPE_PRICE_BIROU_Y / STRIPE_PRICE_ENTERPRISE_Y
-  //   One-time: STRIPE_PRICE_CPE_SINGLE / STRIPE_PRICE_CPE_PACK_10 / STRIPE_PRICE_CPE_STEP8 /
-  //             STRIPE_PRICE_PASAPORT_BASIC / STRIPE_PRICE_PASAPORT_DETAILED
+  //   One-time: STRIPE_PRICE_PASAPORT_BASIC / STRIPE_PRICE_PASAPORT_DETAILED
   // ────────────────────────────────────────────────────────────────────────
   const cycle = billingCycle === "yearly" ? "Y" : "M";
   const SUBSCRIPTION_PRICES = {
-    audit:      { priceId: process.env[`STRIPE_PRICE_AUDIT_${cycle}`]      || "price_placeholder_audit",      name: "Zephren AE IIci",    amount: cycle === "Y" ? 199900 : 19900   },
-    pro:        { priceId: process.env[`STRIPE_PRICE_PRO_${cycle}`]        || "price_placeholder_pro",        name: "Zephren AE Ici",     amount: cycle === "Y" ? 499000 : 49900   },
-    expert:     { priceId: process.env[`STRIPE_PRICE_EXPERT_${cycle}`]     || "price_placeholder_expert",     name: "Zephren Expert",     amount: cycle === "Y" ? 899000 : 89900   },
-    birou:      { priceId: process.env[`STRIPE_PRICE_BIROU_${cycle}`]      || "price_placeholder_birou",      name: "Zephren Birou",      amount: cycle === "Y" ? 1890000 : 189000 },
-    enterprise: { priceId: process.env[`STRIPE_PRICE_ENTERPRISE_${cycle}`] || "price_placeholder_enterprise", name: "Zephren Enterprise", amount: cycle === "Y" ? 4990000 : 499000 },
+    audit:      { priceId: process.env[`STRIPE_PRICE_AUDIT_${cycle}`]      || "price_placeholder_audit",      name: "Zephren AE IIci",    amount: cycle === "Y" ? 499000  : 49900  },
+    pro:        { priceId: process.env[`STRIPE_PRICE_PRO_${cycle}`]        || "price_placeholder_pro",        name: "Zephren AE Ici",     amount: cycle === "Y" ? 1299000 : 129900 },
+    expert:     { priceId: process.env[`STRIPE_PRICE_EXPERT_${cycle}`]     || "price_placeholder_expert",     name: "Zephren Expert",     amount: cycle === "Y" ? 2499000 : 249900 },
+    birou:      { priceId: process.env[`STRIPE_PRICE_BIROU_${cycle}`]      || "price_placeholder_birou",      name: "Zephren Birou",      amount: cycle === "Y" ? 4999000 : 499900 },
+    enterprise: { priceId: process.env[`STRIPE_PRICE_ENTERPRISE_${cycle}`] || "price_placeholder_enterprise", name: "Zephren Enterprise", amount: cycle === "Y" ? 9999000 : 999900 },
   };
 
   const ONE_TIME_PRICES = {

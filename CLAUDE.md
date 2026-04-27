@@ -108,20 +108,31 @@ git commit -m "<mesaj relevant>"
 
 ---
 
-## 💰 PRICING v6.1 FINAL (26 apr 2026 — TVA 21% RO 2026 + UI consolidat)
+## 💰 PRICING v7.0 FINAL (27 apr 2026 — Volum standardizat 30 CPE + Diferențiere prin funcționalități)
+
+### Filozofie v7.0
+- **Volum CPE/lună standardizat la 30** pe IIci, Ici, Expert (acoperă media aritmetică națională ~32 CPE/lună)
+- **Diferențierea** între planuri NU mai e prin volum, ci prin **CE POATE FACE** auditorul (grad MDLPA + funcționalități)
+- **AI Pack inclus pe TOATE planurile plătite** (era doar Ici+ în v6.x)
+- **Cloud retention NELIMITAT pe TOATE planurile plătite** (era 6 luni IIci, nelim Ici+ în v6.x)
+- **Audituri energetice/lună incluse** ca cap separat (Ici 2/lună, Expert 4/lună, Birou+Enterprise nelim)
 
 ### 7 niveluri Zephren X (toate cu TVA 21% afișat pe card)
 
-| # | Plan | Fără TVA | Cu TVA 21% | CPE/lună | Conținut |
-|---|---|---|---|---|---|
-| 1 | **Zephren Free** | 0 RON | 0 RON | 3 hard cap | Step 1-7 cu watermark |
-| 2 | **Zephren Edu** | 0 cu dovadă | 0 | nelim cu watermark didactic | TOATE Expert (DOAR studenți + doctoranzi auto) |
-| 3 | **Zephren AE IIci** | 199 RON | 240,79 | 8 + 2 burst, overage 49→79→99 | Step 1-6 · auditori grad II civile · CPE locuințe (Art. 6 alin. 2) |
-| 4 | **Zephren AE Ici** ⭐ | **499 RON** | **603,79** | 30 + 6 burst, overage 49→79→99 | **Step 1-7 COMPLET + AI Pack** · auditori grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1) |
-| 5 | **Zephren Expert** | 899 RON | 1.087,79 | 60 + 12 burst, overage 39→69→99 | **Step 1-8 COMPLET + BIM Pack** |
-| 6 | **Zephren Birou** | 1.890 flat | 2.286,90 | NELIMITAT | Expert × 2-5 useri + white-label + API |
-| 7 | **Zephren Enterprise** | de la 4.990 | 6.037,90 | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
-| + | **Pașaport Renovare** | 79 / 199 RON/doc | 95,59 / 240,79 | one-time | DOAR pentru NON-auditori (proprietari/dezvoltatori) |
+| # | Plan | Fără TVA | Cu TVA 21% | CPE/lună | Audit/lună | Conținut |
+|---|---|---|---|---|---|---|
+| 1 | **Zephren Free** | 0 RON | 0 RON | 3 hard cap | 0 | Step 1-6 cu watermark |
+| 2 | **Zephren Edu** | 0 cu dovadă | 0 | nelim cu watermark didactic | nelim | TOATE Expert (DOAR studenți + doctoranzi auto) |
+| 3 | **Zephren AE IIci** | **499 RON** | **603,79** | 30 + 6 burst, overage 39→69→99 | 0 (legal blocat) | Step 1-6 · grad II civile · CPE locuințe (Art. 6 alin. 2) + AI Pack + Cloud nelim |
+| 4 | **Zephren AE Ici** ⭐ | **1.299 RON** | **1.571,79** | 30 + 6 burst, overage 39→69→99 | 2 + 1 burst, overage 999→1.499→1.999 | **Step 1-7 COMPLET + AI Pack + Pașaport basic** · grad I civile · CPE + audit + nZEB TOATE clădirile (Art. 6 alin. 1) |
+| 5 | **Zephren Expert** | **2.499 RON** | **3.023,79** | 30 + 6 burst, overage 39→69→99 | 4 + 2 burst, overage 999→1.499→1.999 | **Step 1-8 COMPLET + BIM Pack + Pașaport detaliat LCC** |
+| 6 | **Zephren Birou** | **4.999 flat** | **6.048,79** | NELIMITAT | NELIMITAT | Expert × 2-5 useri + white-label + API |
+| 7 | **Zephren Enterprise** | de la **9.999** | 12.098,79+ | NELIMITAT | NELIMITAT | 6-100+ useri + SLA 99.9% + INCERC |
+| + | **Pașaport Renovare** | 79 / 199 RON/doc | 95,59 / 240,79 | one-time | — | DOAR pentru NON-auditori (proprietari/dezvoltatori) |
+
+### Stripe amounts (subunit RON × 100 = bani)
+- **Lunar (M)**: audit 49.900 / pro 129.900 / expert 249.900 / birou 499.900 / enterprise 999.900
+- **Anual Y (10 luni)**: audit 499.000 / pro 1.299.000 / expert 2.499.000 / birou 4.999.000 / enterprise 9.999.000
 
 ### TVA RO 2026
 - **Standard**: **21%** (era 19% în v5.x — actualizat în 8 fișiere code)
@@ -134,25 +145,47 @@ git commit -m "<mesaj relevant>"
 - Banner Edu cu 2 sub-secțiuni: „Aplică cu dovadă →" vs „📩 Cerere colaborare →"
 
 ### Pay-per-use SIMPLIFICAT
-- ELIMINATE: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199 (canibalizate de AE IIci 199)
+- ELIMINATE: CPE single 99, Pachet 10 CPE 790, CPE+Step 8 199 (canibalizate de AE IIci 499 v7.0)
 - PĂSTRATE: doar Pașaport Renovare basic 79 + detaliat 199 pentru NON-auditori
 - Badge „OBLIGATORIU EPBD · 29 MAI 2026"
 
+### Diferențierea pe AXE FUNCȚIONALE v7.0 (NU pe volum CPE)
+
+| Funcționalitate | IIci 499 | Ici 1.299 | Expert 2.499 |
+|---|---|---|---|
+| CPE/lună | 30+6 | 30+6 | 30+6 |
+| Audituri/lună | 0 | 2+1 | 4+2 |
+| Tip clădiri permise legal | DOAR rezidențial | TOATE | TOATE |
+| Step 1-6 (CPE) | ✅ | ✅ | ✅ |
+| Step 7 (Audit Mc 001 + LCC + NPV) | ❌ | ✅ | ✅ |
+| Raport conformare nZEB (Art. 6 lit. c) | ❌ | ✅ | ✅ |
+| Step 8 (18 module avansate) | ❌ | ❌ | ✅ |
+| AI Pack (OCR + chat + assistant) | ✅ | ✅ | ✅ |
+| BIM Pack (IFC import) | ❌ | ❌ | ✅ |
+| BACS detaliat 200 factori | ❌ (doar A-D) | ❌ (doar A-D) | ✅ |
+| SRI complet 42 servicii | ❌ (doar auto) | ❌ (doar auto) | ✅ |
+| MEPS optimizator + roadmap 2050 | ❌ (doar binar) | ❌ (doar binar) | ✅ |
+| Pașaport Renovare | ❌ | basic | detaliat LCC |
+| Climate import EPW + TMY | ❌ | ✅ | ✅ |
+| Cloud retention | NELIMITAT | NELIMITAT | NELIMITAT |
+| Suport email | 48h | 24h | 24h |
+
 ### Split CRITIC Step 1-7 vs Step 8
 
-- **Step 1-7** = pachetul popular **Zephren AE Ici 499** (CPE + Anexe + Audit + nZEB)
-- **Step 8** (18 module avansate) = **Zephren Expert 899** sau mai sus
+- **Step 1-6** = baza CPE accesibilă în toate planurile (IIci/Ici/Expert)
+- **Step 7** (Audit + nZEB) = **Zephren AE Ici 1.299** sau mai sus (legal grad I obligatoriu)
+- **Step 8** (18 module avansate) = **Zephren Expert 2.499** sau mai sus
 - **Module avansate** (Step 8): MonteCarloEP, Pasivhaus, PMV/PPD, EN 12831 rooms, Thermovision, UrbanHeatIsland, Historic, Mixed-use, PortfolioDashboard, ConsumReconciliere, ConsumoTracker, BACS detaliat 200 factori, SRI complet 42 servicii, MEPS optimizator, Pașaport detaliat LCC, Acoustic, Night ventilation, Shading dynamic, Cooling hourly
 
 ### BACS+SRI+MEPS+Pașaport — DUAL MODE (CRITIC pentru EPBD)
 
-Versiunea **simplă** OBLIGATORIE EPBD rămâne accesibilă în AE Ici 499:
+Versiunea **simplă** OBLIGATORIE EPBD accesibilă pe TOATE planurile plătite (IIci/Ici/Expert/Birou/Enterprise):
 - `BACSSelectorSimple.jsx` — selector A-D + factor f_BAC
 - `SRIScoreAuto.jsx` — score automat read-only
 - `MEPSCheckBinar.jsx` — verificare 2030 binar
-- `PasaportBasic.jsx` — generare JSON+XML+PDF
+- `PasaportBasic.jsx` — generare JSON+XML+PDF (DOAR Ici+ — IIci nu poate emite pașaport)
 
-Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 899+:
+Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 2.499+:
 - `MEPSCheck.jsx` cu roadmap 2030/2033/2050
 - `SRICalculator.jsx` complet 42 servicii
 - BACS detaliat 200 factori (în Step8 tab `bacs`)
@@ -160,7 +193,7 @@ Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 899+:
 
 ### AI Pack & BIM Pack (incluse, NU separate)
 
-- **AI Pack** inclus în AE Ici+ (OCR facturi, OCR CPE, chat import, AI assistant)
+- **AI Pack** inclus în TOATE planurile plătite v7.0 (IIci/Ici/Expert/Birou/Enterprise) — OCR facturi, OCR CPE, chat import, AI assistant
 - **BIM Pack** inclus în Expert+ (IFC import, parser STEP nativ)
 
 ### Componente cheie

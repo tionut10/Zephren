@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "💰",
+        "text": "Rebrand badge-uri pricing per Ord. MDLPA 348/2026 + subtitluri legale"
+      },
+      {
+        "icon": "🚀",
+        "text": "sprint v6.2 — rebrand AE Ici/IIci + conformitate Ord. MDLPA 348/2026"
+      },
+      {
+        "icon": "📄",
+        "text": "sprint B+D — TMY export CSV/JSON + ANCPI verification panel cu blocaj export Step 6"
+      },
+      {
         "icon": "🔧",
         "text": "fix(vercel): remove _comment from crons (schema validation strict)"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "S30C — module avansate Step 8 cu export PDF unificat (13 module)"
-      },
-      {
-        "icon": "✨",
-        "text": "S30B — conformitate normativă strictă (5 module noi + 2 extensii)"
-      },
-      {
-        "icon": "🔧",
-        "text": "S30A — bug-fix tehnic global (15 fix-uri post verificare M1 Constanța)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(landing v6.2.1): rescriere badge-uri pricing — Sistem A audience-first"
       }
     ]
   },

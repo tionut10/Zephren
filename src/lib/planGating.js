@@ -218,14 +218,16 @@ export const PLAN_FEATURES = {
   // (Art. 6 alin. 1 lit. c) — acestea sunt rezervate exclusiv AE Ici.
   audit: {
     maxProjects:        9999,
-    maxCertsPerMonth:   8,           // 8 incluse + 2 burst gratis
+    maxCertsPerMonth:   30,          // v7.0: standardizat 30 + 6 burst (36 total)
+    maxAuditsPerMonth:  0,           // v7.0: AE IIci NU poate face audit (Art.6 alin.2)
+    maxAuditsBurst:     0,
     overageEnabled:     true,
     overageTiers: [
-      { fromCertCount: 11, toCertCount: 15, pricePerCert: 49 },
-      { fromCertCount: 16, toCertCount: 20, pricePerCert: 79 },
-      { fromCertCount: 21, toCertCount: null, pricePerCert: 99 },
+      { fromCertCount: 37, toCertCount: 50, pricePerCert: 39 },
+      { fromCertCount: 51, toCertCount: 65, pricePerCert: 69 },
+      { fromCertCount: 66, toCertCount: null, pricePerCert: 99 },
     ],
-    burstPercent:       25,          // ~2 CPE peste 8 = burst gratis (10 total)
+    burstPercent:       20,          // 30 * 1.20 = 36 burst total
     rolloverMonths:     3,
     cpeWatermark:       false,
     maxUsers:           1,
@@ -256,16 +258,17 @@ export const PLAN_FEATURES = {
     mepsOptimizer:      false,
     pasaportBasic:      false,
     pasaportDetailed:   false,
-    aiPack:             false,
-    aiAssistant:        false,
-    ocrInvoice:         false,
-    ocrCPE:             false,
-    chatImport:         false,
-    aiDocumentImport:   false,
+    // v7.0 — AI Pack inclus pe toate planurile plătite
+    aiPack:             true,
+    aiAssistant:        true,
+    ocrInvoice:         true,
+    ocrCPE:             true,
+    chatImport:         true,
+    aiDocumentImport:   true,
     bimPack:            false,
     ifcImport:          false,
     cloudSync:          true,
-    cloudRetentionDays: 180,         // 6 luni
+    cloudRetentionDays: 9999,        // v7.0: nelimitat pe toate planurile plătite
     shareReadOnly:      true,
     teamDashboard:      false,
     whiteLabel:         false,
@@ -288,7 +291,7 @@ export const PLAN_FEATURES = {
     shadingDynamic:     false,
     coolingHourly:      false,
     cpeTracker:         true,
-    cpeAlertSystem:     false,
+    cpeAlertSystem:     true,        // v7.0: alerts pe toate plătite
     climateImportEPW:   false,
     ancpiCadastru:      true,
     supportEmailHours:  48,
@@ -308,12 +311,19 @@ export const PLAN_FEATURES = {
   // Vechime profesională cerută MDLPA: minimum 5 ani.
   pro: {
     maxProjects:        9999,
-    maxCertsPerMonth:   30,          // 30 + 6 burst gratis = 36 total
+    maxCertsPerMonth:   30,          // v7.0: 30 + 6 burst (36 total)
+    maxAuditsPerMonth:  2,           // v7.0: 2 audituri/lună incluse + 1 burst
+    maxAuditsBurst:     1,
     overageEnabled:     true,
     overageTiers: [
-      { fromCertCount: 37, toCertCount: 50, pricePerCert: 49 },
-      { fromCertCount: 51, toCertCount: 65, pricePerCert: 79 },
+      { fromCertCount: 37, toCertCount: 50, pricePerCert: 39 },
+      { fromCertCount: 51, toCertCount: 65, pricePerCert: 69 },
       { fromCertCount: 66, toCertCount: null, pricePerCert: 99 },
+    ],
+    overageAuditTiers: [             // v7.0: trepte audit overage
+      { fromAuditCount: 4, toAuditCount: 5, pricePerAudit: 999 },
+      { fromAuditCount: 6, toAuditCount: 7, pricePerAudit: 1499 },
+      { fromAuditCount: 8, toAuditCount: null, pricePerAudit: 1999 },
     ],
     burstPercent:       20,
     rolloverMonths:     3,
@@ -390,12 +400,19 @@ export const PLAN_FEATURES = {
   // ─────────────────────────── EXPERT (899 RON) ───────────────────────────
   expert: {
     maxProjects:        9999,
-    maxCertsPerMonth:   60,          // 60 + 12 burst gratis = 72 total
+    maxCertsPerMonth:   30,          // v7.0: standardizat 30 + 6 burst (36 total)
+    maxAuditsPerMonth:  4,           // v7.0: 4 audituri/lună incluse + 2 burst
+    maxAuditsBurst:     2,
     overageEnabled:     true,
     overageTiers: [
-      { fromCertCount: 73, toCertCount: 100, pricePerCert: 39 },
-      { fromCertCount: 101, toCertCount: 130, pricePerCert: 69 },
-      { fromCertCount: 131, toCertCount: null, pricePerCert: 99 },
+      { fromCertCount: 37, toCertCount: 50, pricePerCert: 39 },
+      { fromCertCount: 51, toCertCount: 65, pricePerCert: 69 },
+      { fromCertCount: 66, toCertCount: null, pricePerCert: 99 },
+    ],
+    overageAuditTiers: [             // v7.0: trepte audit overage
+      { fromAuditCount: 7, toAuditCount: 9, pricePerAudit: 999 },
+      { fromAuditCount: 10, toAuditCount: 12, pricePerAudit: 1499 },
+      { fromAuditCount: 13, toAuditCount: null, pricePerAudit: 1999 },
     ],
     burstPercent:       20,
     rolloverMonths:     3,
@@ -473,6 +490,8 @@ export const PLAN_FEATURES = {
   birou: {
     maxProjects:        9999,
     maxCertsPerMonth:   9999,        // NELIMITAT
+    maxAuditsPerMonth:  9999,        // v7.0: audituri NELIMITATE
+    maxAuditsBurst:     0,
     overageEnabled:     false,
     burstPercent:       0,
     rolloverMonths:     6,
@@ -550,6 +569,8 @@ export const PLAN_FEATURES = {
   enterprise: {
     maxProjects:        9999,
     maxCertsPerMonth:   9999,        // NELIMITAT
+    maxAuditsPerMonth:  9999,        // v7.0: audituri NELIMITATE
+    maxAuditsBurst:     0,
     overageEnabled:     false,
     burstPercent:       0,
     rolloverMonths:     12,
