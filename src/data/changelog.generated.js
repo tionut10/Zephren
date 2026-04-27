@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "💰",
-        "text": "Rebrand badge-uri pricing per Ord. MDLPA 348/2026 + subtitluri legale"
+        "text": "pricing v7.1: elimină banner TVA global + actualizează descriere secțiune prețuri (CPE nelimitat, diferențiere"
       },
       {
-        "icon": "🚀",
-        "text": "sprint v6.2 — rebrand AE Ici/IIci + conformitate Ord. MDLPA 348/2026"
-      },
-      {
-        "icon": "📄",
-        "text": "sprint B+D — TMY export CSV/JSON + ANCPI verification panel cu blocaj export Step 6"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(vercel): remove _comment from crons (schema validation strict)"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(vercel): cron MDLPA zilnic în loc de */15 (limit Hobby)"
+        "icon": "💰",
+        "text": "pricing v7.1: prețuri TVA inclus (IIci 599, Ici 1499, Expert 2999, Birou 5999, Enterprise 9999); elimină ofert"
       },
       {
         "icon": "✨",
-        "text": "feat(mdlpa portal v0.1): Faza 0 ready — adapter + queue + validator + API endpoint"
+        "text": "dezactivează Pașaport Renovare global până la EPBD 29 mai 2026"
       },
       {
-        "icon": "🧪",
-        "text": "S30D — verificare end-to-end + matrice conformitate v4 + validator e2e"
+        "icon": "🔸",
+        "text": "landing: ascunde temporar banner Pașaport Renovare pay-per-doc"
       },
       {
-        "icon": "✨",
-        "text": "S30C — module avansate Step 8 cu export PDF unificat (13 module)"
+        "icon": "💰",
+        "text": "fix(pricing v7.0): sync PLAN_DISPLAY + TIERS la noile prețuri"
+      },
+      {
+        "icon": "💰",
+        "text": "landing v7.0: PlanComparisonTable interactiv pentru clienți"
+      },
+      {
+        "icon": "💰",
+        "text": "pricing v7.0: standardizare 30 CPE + diferențiere prin funcționalități"
+      },
+      {
+        "icon": "🎨",
+        "text": "Sprint v6.3 Stage 4 - teste comprehensive canEmitForBuilding + bug fix"
       }
     ]
   },

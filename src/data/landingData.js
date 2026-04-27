@@ -128,7 +128,7 @@ export const PLANS = [
   },
   {
     id: "edu",
-    name: "Zephren Edu",
+    name: "ZEPHREN EDU",
     price: "0",
     period: " cu dovadă",
     priceAn: null,

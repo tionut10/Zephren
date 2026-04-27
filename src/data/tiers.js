@@ -27,7 +27,7 @@ export const TIERS = {
     mdlpaGrade: null,
   },
   edu: {
-    id: "edu", label: "Zephren Edu", subtitle: "Studenți + doctoranzi", price: 0, priceAn: 0,
+    id: "edu", label: "ZEPHREN EDU", subtitle: "Studenți + doctoranzi", price: 0, priceAn: 0,
     maxProjects: 9999, maxCerts: 100,
     multiUser: false, maxUsers: 1,
     watermark: true, watermarkType: "SCOP DIDACTIC",
