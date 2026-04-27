@@ -1,10 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import { cn, Card, Badge } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // PARSER IFC 2x3 / IFC4 — extragere geometrie clădire din fișier .ifc
 // Format: STEP (ISO 10303-21) — text ASCII parsabil fără bib. externe
 // Extrage: suprafețe elemente, orientări, volume, etaje, tipuri zone
+// Gating v6.0: feature `ifcImport` — disponibil Expert+ / Edu (BIM Pack inclus).
 // ═══════════════════════════════════════════════════════════════
 
 // Parsează un fișier IFC și returnează date structurate pentru calculator
@@ -236,7 +239,26 @@ function mapIFCToZephren(parsed) {
 // ═══════════════════════════════════════════════════════════════
 // COMPONENTĂ UI IFCImport
 // ═══════════════════════════════════════════════════════════════
-export default function IFCImport({ onImport, onClose }) {
+export default function IFCImport({ onImport, onClose, userPlan }) {
+  // Pricing v6.0 — BIM Pack disponibil Expert+ / Edu.
+  // Wrapper care decide ce sub-component se randează → previne încălcarea Rules of Hooks.
+  if (!canAccess(userPlan, "ifcImport")) {
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-2 w-full max-w-lg shadow-2xl"
+          onClick={e => e.stopPropagation()}>
+          <PlanGate feature="ifcImport" plan={userPlan} requiredPlan="expert" mode="upgrade" />
+          <div className="flex justify-end p-2">
+            <button onClick={onClose} className="text-xs text-slate-400 hover:text-white">Închide</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <IFCImportInternal onImport={onImport} onClose={onClose} />;
+}
+
+function IFCImportInternal({ onImport, onClose }) {
   const [status, setStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [parsed, setParsed] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");

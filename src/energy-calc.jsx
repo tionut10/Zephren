@@ -254,8 +254,11 @@ export default function EnergyCalcApp({ cloud }) {
   }, [certResetDate]);
 
   // Check limits
+  // Pricing v6.1 — Free permite 3 CPE/lună hard cap cu watermark "DEMO";
+  // Edu permite 100 CPE/lună cu watermark "SCOP DIDACTIC".
+  // Plan-urile plătite folosesc cap din TIERS (sincronizat cu PLAN_FEATURES).
   const canCreateProject = projectCount < tier.maxProjects;
-  const canGenerateCert = userTier !== "free" ? (tier.maxCerts === 999 || certCount < tier.maxCerts) : false;
+  const canGenerateCert = tier.maxCerts === 999 || certCount < tier.maxCerts;
   const canExportDocx = tier.docxExport;
   const canNzebReport = tier.nzebReport;
   const hasWatermark = tier.watermark;

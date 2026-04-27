@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "./ui.jsx";
 import { useZephrenCloud } from "../lib/useZephrenCloud.js";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 
 const LS_MEMBERS = "zephren_team_members";
 const LS_ASSIGN  = "zephren_project_assignments";
@@ -31,7 +33,16 @@ const roleBadgeColor = (role) => ({
 
 const loadBar = (ratio) => ratio < 0.5 ? "#22c55e" : ratio < 0.8 ? "#f59e0b" : "#ef4444";
 
-export default function TeamDashboard({ building, auditor }) {
+export default function TeamDashboard({ building, auditor, userPlan }) {
+  // Pricing v6.0 — TeamDashboard disponibil Birou+ / Edu (multi-user 2-5 sau 6-100+).
+  // Wrapper extern → previne încălcarea Rules of Hooks la schimbarea planului.
+  if (!canAccess(userPlan, "teamDashboard")) {
+    return <PlanGate feature="teamDashboard" plan={userPlan} requiredPlan="birou" mode="upgrade" />;
+  }
+  return <TeamDashboardInternal building={building} auditor={auditor} />;
+}
+
+function TeamDashboardInternal({ building, auditor }) {
   const cloud   = useZephrenCloud();
   const projKey = building?.address || "Proiect curent";
 

@@ -1,10 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import { cn, Card, Badge } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 
 // ═══════════════════════════════════════════════════════════════
 // OCR FACTURI ENERGIE — extragere automată kWh/m³ din facturi
 // Folosește api/import-invoice.js (Claude Haiku Vision)
 // Suportă PDF și imagini (JPG, PNG, WEBP)
+// Gating v6.0: feature `ocrInvoice` — disponibil Pro+ / Edu (AI Pack inclus).
 // ═══════════════════════════════════════════════════════════════
 
 const ENERGY_LABELS = {
@@ -20,7 +23,26 @@ function formatKwh(v) {
   return isNaN(n) ? null : n.toLocaleString("ro-RO") + " kWh/an";
 }
 
-export default function InvoiceOCR({ onApply, onClose }) {
+export default function InvoiceOCR({ onApply, onClose, userPlan }) {
+  // Pricing v6.0 — OCR facturi disponibil Pro+ / Edu (AI Pack inclus).
+  // Wrapper extern → previne încălcarea Rules of Hooks la schimbarea planului.
+  if (!canAccess(userPlan, "ocrInvoice")) {
+    return (
+      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-2 w-full max-w-lg shadow-2xl"
+          onClick={e => e.stopPropagation()}>
+          <PlanGate feature="ocrInvoice" plan={userPlan} requiredPlan="pro" mode="upgrade" />
+          <div className="flex justify-end p-2">
+            <button onClick={onClose} className="text-xs text-slate-400 hover:text-white">Închide</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <InvoiceOCRInternal onApply={onApply} onClose={onClose} />;
+}
+
+function InvoiceOCRInternal({ onApply, onClose }) {
   const [status, setStatus] = useState(null); // null | "loading" | "ok" | "error"
   const [data, setData] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");

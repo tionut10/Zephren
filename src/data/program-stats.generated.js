@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-features.js
-// Ultima generare: 2026-04-26
+// Ultima generare: 2026-04-27
 
 export const CALC_MODULES_COUNT  = 78;
 export const API_ENDPOINTS_COUNT = 8;

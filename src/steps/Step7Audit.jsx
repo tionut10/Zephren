@@ -1289,6 +1289,7 @@ export default function Step7Audit(props) {
                     )}
                     {activeTool === "passport" && (
                       <RenovationPassport
+                        userPlan={userPlan}
                         building={{ ...building, energyClass: enClassStr }}
                         instSummary={{ ...instSummary, energyClass: enClassStr }}
                         renewSummary={renewSummary}
@@ -1415,6 +1416,7 @@ export default function Step7Audit(props) {
                   energyClass={enClass?.cls || "—"}
                   epFinal={epFinal}
                   auditor={auditor}
+                  userPlan={userPlan}
                   onGenerate={(passport) => {
                     if (setBuilding && passport) {
                       setBuilding(prev => ({ ...prev, passportUUID: passport.id || passport.generatedAt }));

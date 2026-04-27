@@ -1,47 +1,60 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-26
+// Ultima generare: 2026-04-27
 
-export const APP_VERSION = "0.4.0";
+export const APP_VERSION = "0.4.1";
 export const CHANGELOG = [
   {
-    "version": "0.4.0",
-    "week": "Săpt. 4",
-    "dateRange": "20 – 26 apr 2026",
+    "version": "0.4.1",
+    "week": "Săpt. 5",
+    "dateRange": "27 apr – 3 mai 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "Pașaport EPBD PDF + XML descărcabile + eliminare butoane HTML/Print legacy"
+        "icon": "🔧",
+        "text": "fix(mobile): blochez scroll orizontal nedorit (overflow-x hidden global)"
+      }
+    ]
+  },
+  {
+    "version": "0.4.0",
+    "week": "Săpt. 4",
+    "dateRange": "20 – 26 apr 2026",
+    "color": "#6366f1",
+    "label": "",
+    "items": [
+      {
+        "icon": "🔸",
+        "text": "S27 batch 3 — P2.6 + P2.9 + P2.12 + P2.14"
       },
       {
-        "icon": "📄",
-        "text": "consolidare exporturi (19→9) + ascundere semnătură + eliminare 3D/termoviziune"
+        "icon": "🔸",
+        "text": "S27 batch 2 — P2.3 + P2.2 + P2.10 + P2.15 + P2.11"
       },
       {
-        "icon": "📄",
-        "text": "4 bug-uri export PDF + curățare butoane Pas 6"
+        "icon": "🔸",
+        "text": "S27 batch 1 — P2.5 + P2.7 + P2.4 + P2.8 + P2.13"
       },
       {
-        "icon": "✨",
-        "text": "optimizări grafice landing + light mode"
+        "icon": "🔸",
+        "text": "S26 P1.15+P1.16+P1.17: LCCAnalysis sincronizat + HG 906 cofinanțare variabilă"
       },
       {
-        "icon": "📄",
-        "text": "fix(pdf): diacritice native + simboluri safe + Step 7 TXT→PDF"
+        "icon": "🔸",
+        "text": "S26 P1.13+P1.14+P1.18: MEPS rezidențial 2035 + invest realist + disclaimer extins"
       },
       {
-        "icon": "📦",
-        "text": "refactor(landing): curățare pagină principală — badge, catalog, changelog, normative"
+        "icon": "💰",
+        "text": "S26 P1.8+P1.9+P1.10+P1.11+P1.12: calibrare prețuri + praguri normative"
       },
       {
-        "icon": "✨",
-        "text": "feat(changelog): pagină dedicată #changelog + modal WhatsNew la update"
+        "icon": "🚀",
+        "text": "S26 P1.1+P1.2+P1.3+P1.4+P1.5+P1.6+P1.7: macro economice + financial.js îmbunătățiri"
       },
       {
-        "icon": "📦",
-        "text": "refactor(landing): normativ sub logo, eliminare catalog produse, changelog filtrat, export/import complet"
+        "icon": "🔸",
+        "text": "S25 P0.6: smart-rehab praguri U adaptive RES/NRES/RENOVARE (varianta C)"
       }
     ]
   },
@@ -49,7 +62,7 @@ export const CHANGELOG = [
     "version": "0.3.0",
     "week": "Săpt. 3",
     "dateRange": "13 – 19 apr 2026",
-    "color": "#6366f1",
+    "color": "#10b981",
     "label": "",
     "items": [
       {
@@ -90,7 +103,7 @@ export const CHANGELOG = [
     "version": "0.2.0",
     "week": "Săpt. 2",
     "dateRange": "6 – 12 apr 2026",
-    "color": "#10b981",
+    "color": "#22c55e",
     "label": "",
     "items": [
       {
@@ -131,7 +144,7 @@ export const CHANGELOG = [
     "version": "0.1.0",
     "week": "Săpt. 1",
     "dateRange": "30 mar – 5 apr 2026",
-    "color": "#22c55e",
+    "color": "#8b5cf6",
     "label": "LANSARE",
     "items": [
       {

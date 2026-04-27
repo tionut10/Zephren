@@ -4616,7 +4616,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="👥" title="Dashboard echipă auditori"
             subtitle="Management membri echipă, alocare proiecte, workload, jurnal activitate" />
-          <TeamDashboard building={building} />
+          <TeamDashboard building={building} userPlan={userPlan} />
         </Card>
       )}
 

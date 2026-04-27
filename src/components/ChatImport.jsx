@@ -2,8 +2,13 @@
  * ChatImport — completare vocală/textuală a datelor clădirii
  * Buton flotant "💬" ce deschide un chat minimalist.
  * Utilizatorul descrie clădirea în cuvinte → Claude extrage date structurate.
+ *
+ * Gating v6.0: feature `chatImport` — disponibil Pro+ și Edu (AI Pack).
+ * Pe Free / Audit butonul flotant e ascuns; nu există upsell vizibil aici (CTA upgrade
+ * apare în Step 1 prin alte componente AI Pack).
  */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { canAccess } from "../lib/planGating.js";
 
 const EXAMPLES = [
   "Apartament 3 camere, bloc P+4 din 1982, București, cazan gaz condensare, fără izolație, vânzare",
@@ -12,7 +17,11 @@ const EXAMPLES = [
   "Birouri P+3 Brașov, VRF Daikin, LED, HR 80%, fațadă cortină, 2500m²",
 ];
 
-export default function ChatImport({ onApply, showToast, isOpen, onOpenChange }) {
+export default function ChatImport({ onApply, showToast, isOpen, onOpenChange, userPlan }) {
+  // Pricing v6.0 — AI Pack disponibil Pro+ / Edu. Plan-uri inferioare nu văd butonul.
+  // Hook-urile sunt apelate ÎNTOTDEAUNA (rule-of-hooks compliance);
+  // gating-ul se aplică doar la randarea JSX finală.
+  const allowed = canAccess(userPlan, "chatImport");
   const [internalOpen, setInternalOpen] = useState(false);
   // Controlled dacă isOpen e definit; altfel folosește starea internă
   const open = isOpen !== undefined ? isOpen : internalOpen;
@@ -83,6 +92,9 @@ export default function ChatImport({ onApply, showToast, isOpen, onOpenChange })
     showToast("Date aplicate din chat", "success");
     setOpen(false);
   }, [lastData, onApply, showToast]);
+
+  // Pricing v6.0 — gate vizibil aici, după ce hook-urile au rulat.
+  if (!allowed) return null;
 
   return (
     <>

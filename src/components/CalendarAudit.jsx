@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 
 const LS_KEY = "zephren_calendar_audit";
 
@@ -79,7 +81,15 @@ function generateICS(visits) {
   return lines.join("\r\n");
 }
 
-export default function CalendarAudit({ onClose }) {
+export default function CalendarAudit({ onClose, userPlan }) {
+  // Pricing v6.0 — Calendar audit echipă disponibil Birou+ / Edu.
+  if (!canAccess(userPlan, "calendarTeam")) {
+    return <PlanGate feature="calendarTeam" plan={userPlan} requiredPlan="birou" mode="upgrade" />;
+  }
+  return <CalendarAuditInternal onClose={onClose} />;
+}
+
+function CalendarAuditInternal({ onClose }) {
   const today = new Date();
 
   const [visits, setVisits] = useState(() => {

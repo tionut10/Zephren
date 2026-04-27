@@ -24,6 +24,7 @@ import { autoGenerateCPECode, canAutoGenerateCPE } from "../utils/cpe-auto-gen.j
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
+import { canAccess as canAccessFn } from "../lib/planGating.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
 import { getCityCoordinates } from "../utils/city-coordinates.js";
@@ -58,6 +59,9 @@ export default function Step6Certificate(props) {
     userPlan,           // Sprint Pricing v6.0 — pentru gating BACS/SRI/MEPS detaliate
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+  // Pricing v6.1 — watermark diferențiat: Free → "Zephren DEMO", Edu → "SCOP DIDACTIC".
+  // Backward-compat: hasWatermark flag-ul rămâne ca master-switch.
+  const watermarkText = userPlan === "edu" ? "SCOP DIDACTIC" : "Zephren DEMO";
 
             // Preview DOCX local — render cu docx-preview (identic cu fișierul descărcat)
             const docxPreviewRef = useRef(null);
@@ -1229,6 +1233,12 @@ export default function Step6Certificate(props) {
             // ═══════════════════════════════════════════════════════════
             const generateXMLMDLPA = () => {
               if (!instSummary) { showToast("Completați pașii 1-4.", "error"); return; }
+              // Pricing v6.0 — XML MDLPA disponibil Audit/Pro/Expert/Birou/Enterprise.
+              // Free + Edu: BLOCAT (Free are watermark; Edu n-are atestat → fără registru oficial).
+              if (!canAccessFn(userPlan, "exportXML")) {
+                showToast("Export XML MDLPA disponibil din planul Zephren Audit (199 RON/lună).", "error");
+                return;
+              }
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
               const fmtD = (d) => d ? d.split("-").reverse().join(".") : "";
               const validDate = auditor.date ? fmtD(auditor.date) : new Date().toISOString().slice(0,10).split("-").reverse().join(".");
@@ -1589,7 +1599,7 @@ table.d .dv{text-align:center;font-weight:bold;font-size:7.5pt}
 </style>
 </head><body>
 <button class="back-btn no-print" onclick="window.history.back()">&#x2190; ${T.back}</button>
-${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0.07"><div style="transform:rotate(-35deg);font-size:80pt;font-weight:900;color:#003366;white-space:nowrap;font-family:sans-serif;letter-spacing:10px">Zephren DEMO</div></div>' : ''}
+${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0.07"><div style="transform:rotate(-35deg);font-size:80pt;font-weight:900;color:#003366;white-space:nowrap;font-family:sans-serif;letter-spacing:10px">' + watermarkText + '</div></div>' : ''}
 
 <!-- ======== PAGINA 1 ======== -->
 <div class="hdr">

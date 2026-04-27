@@ -12,8 +12,18 @@
 
 import React, { useState } from "react";
 import { Card, Badge, Input } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 
-export default function PasaportBasic({ building, energyClass, epFinal, auditor, onGenerate }) {
+export default function PasaportBasic({ building, energyClass, epFinal, auditor, onGenerate, userPlan }) {
+  // Pricing v6.0 — Pașaport basic disponibil Pro+ / Edu.
+  if (!canAccess(userPlan, "pasaportBasic")) {
+    return <PlanGate feature="pasaportBasic" plan={userPlan} requiredPlan="pro" mode="upgrade" />;
+  }
+  return <PasaportBasicInternal building={building} energyClass={energyClass} epFinal={epFinal} auditor={auditor} onGenerate={onGenerate} />;
+}
+
+function PasaportBasicInternal({ building, energyClass, epFinal, auditor, onGenerate }) {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
 

@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 import {
   buildSubmitEmail,
   submitToMDLPA,
@@ -107,7 +109,16 @@ const STATUS_LABELS = {
   rejected: { label: "Respins", color: "bg-red-500/20 text-red-300 border-red-500/40" },
 };
 
-export default function MDLPASubmitPanel({ projectData = {}, cpeCode = "", attachments = [] }) {
+export default function MDLPASubmitPanel(props) {
+  // Pricing v6.0 — Submit oficial MDLPA disponibil Audit/Pro/Expert/Birou/Enterprise.
+  // Free + Edu: BLOCAT (Edu nu are atestat → NU poate trimite oficial).
+  if (!canAccess(props.userPlan, "submitMDLPA")) {
+    return <PlanGate feature="submitMDLPA" plan={props.userPlan} requiredPlan="audit" mode="upgrade" />;
+  }
+  return <MDLPASubmitPanelInternal {...props} />;
+}
+
+function MDLPASubmitPanelInternal({ projectData = {}, cpeCode = "", attachments = [] }) {
   const [showXML, setShowXML] = useState(false);
   const [submitStatus, setSubmitStatus] = useState("idle"); // idle | working | success | error
   const [submitError, setSubmitError] = useState(null);

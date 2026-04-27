@@ -8,6 +8,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { cn } from "./ui.jsx";
+import { canAccess } from "../lib/planGating.js";
+import PlanGate from "./PlanGate.jsx";
 import {
   buildRenovationPassport,
   validatePassportShallow,
@@ -103,7 +105,17 @@ function Section({ title, children }) {
   );
 }
 
-export default function RenovationPassport({
+export default function RenovationPassport(props) {
+  // Pricing v6.0 — Pașaport detaliat (LCC + multi-fază) disponibil Expert+ / Edu.
+  // Versiunea simplă EPBD-conformă rămâne PasaportBasic în Step 7 / Pro+.
+  // Wrapper extern → previne încălcarea Rules of Hooks la schimbarea planului.
+  if (!canAccess(props.userPlan, "pasaportDetailed")) {
+    return <PlanGate feature="pasaportDetailed" plan={props.userPlan} requiredPlan="expert" mode="upgrade" />;
+  }
+  return <RenovationPassportInternal {...props} />;
+}
+
+function RenovationPassportInternal({
   building = {},
   instSummary = {},
   renewSummary = {},

@@ -23,6 +23,7 @@ export default function Step3Systems({
   instSummary,
   setStep, goToStep,
   showToast,
+  userPlan,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [showOCR, setShowOCR] = useState(false);
@@ -1029,7 +1030,7 @@ export default function Step3Systems({
         </div>
       </div>
 
-      {showOCR && <InvoiceOCR onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
+      {showOCR && <InvoiceOCR userPlan={userPlan} onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
 
       {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
