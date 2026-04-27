@@ -732,38 +732,38 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             : <>Toate prețurile afișate sunt <strong>FĂRĂ TVA</strong> (TVA 21% se adaugă la facturare — pentru clienți RO B2B și B2C; B2B UE cu cod VAT VIES = 0% taxare inversă).</>}
         </div>
 
-        {/* ── Trust banner: Price Lock pe viață (DEASUPRA pachetelor — primul lucru pe care îl vede clientul) ── */}
-        <div style={{ maxWidth: "1140px", margin: "0 auto 40px", padding: "20px 28px", borderRadius: "16px", background: isDark ? "linear-gradient(135deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))" : "rgba(99,102,241,0.05)", border: "2px solid rgba(99,102,241,0.3)" }}>
+        {/* ── Trust banner: Transparență prețuri — anunț 90 zile pentru orice modificare ── */}
+        <div style={{ maxWidth: "1140px", margin: "0 auto 40px", padding: "16px 24px", borderRadius: "14px", background: isDark ? "linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.03))" : "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.30)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-            <div style={{ fontSize: "32px", lineHeight: 1, flexShrink: 0 }}>🔒</div>
+            <div style={{ fontSize: "28px", lineHeight: 1, flexShrink: 0 }}>📅</div>
             <div style={{ flex: 1, minWidth: "240px" }}>
-              <div style={{ fontSize: "16px", fontWeight: "800", color: "#6366f1", marginBottom: "6px" }}>
-                {lang === "EN" ? "Price locked for life — guaranteed" : "Prețul tău, blocat pe viață — garantat"}
+              <div style={{ fontSize: "15px", fontWeight: "800", color: "#16a34a", marginBottom: "6px" }}>
+                {lang === "EN" ? "Pricing transparency — 90-day notice guaranteed" : "Transparență prețuri — anunț cu 90 zile garantat"}
               </div>
-              <div style={{ fontSize: "12px", color: textFaint, marginBottom: "14px", lineHeight: 1.5 }}>
+              <div style={{ fontSize: "12px", color: textFaint, marginBottom: "12px", lineHeight: 1.5 }}>
                 {lang === "EN"
-                  ? "Applies to all paid plans (Audit, Pro, Expert, Birou, Enterprise). Free and Edu are already free of charge."
-                  : "Se aplică tuturor planurilor plătite (Audit, Pro, Expert, Birou, Enterprise). Free și Edu sunt deja gratuite."}
+                  ? "Any price change is announced at least 90 days in advance, by email and on this page. No surprises at billing. Cancel anytime — no commitment."
+                  : "Orice modificare de preț este anunțată cu minimum 90 de zile în avans, prin email și pe această pagină. Fără surprize la facturare. Anulare oricând — fără angajament."}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
                 {[
                   {
-                    icon: "✅",
-                    title: lang === "EN" ? "Subscribe today" : "Te abonezi azi",
-                    desc: lang === "EN" ? "Pay today's price — forever, as long as the subscription stays active." : "Plătești prețul de azi — pentru totdeauna, cât abonamentul rămâne activ.",
+                    icon: "📧",
+                    title: lang === "EN" ? "Email notification" : "Notificare email",
+                    desc: lang === "EN" ? "We email every active subscriber 90 days before any price change takes effect." : "Trimitem email fiecărui abonat activ cu 90 de zile înainte de orice modificare de preț.",
                   },
                   {
-                    icon: "📈",
-                    title: lang === "EN" ? "Prices may increase" : "Prețurile pot crește",
-                    desc: lang === "EN" ? "As we add features, prices rise. Your locked price stays the same." : "Pe măsură ce adăugăm funcționalități, prețurile vor crește. Prețul tău blocat rămâne neschimbat.",
+                    icon: "🌐",
+                    title: lang === "EN" ? "Public roadmap" : "Roadmap public",
+                    desc: lang === "EN" ? "Planned price changes are published on this page and on /pricing/roadmap." : "Modificările planificate sunt publicate pe această pagină și pe /pricing/roadmap.",
                   },
                   {
-                    icon: "⚠️",
-                    title: lang === "EN" ? "If you cancel" : "Dacă anulezi",
-                    desc: lang === "EN" ? "The lock is lost. On reactivation, you pay the current price." : "Beneficiul se pierde. La reactivare, plătești prețul curent din acel moment.",
+                    icon: "🔓",
+                    title: lang === "EN" ? "Cancel anytime" : "Anulare oricând",
+                    desc: lang === "EN" ? "No commitment. Cancel from your account or from the Stripe portal in one click." : "Fără angajament. Anulează din contul tău sau din portalul Stripe într-un singur click.",
                   },
                 ].map(it => (
-                  <div key={it.title} style={{ padding: "12px 14px", borderRadius: "10px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)", border: `1px solid rgba(99,102,241,0.15)` }}>
+                  <div key={it.title} style={{ padding: "12px 14px", borderRadius: "10px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)", border: `1px solid rgba(34,197,94,0.15)` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                       <span style={{ fontSize: "15px" }}>{it.icon}</span>
                       <span style={{ fontSize: "12px", fontWeight: "700", color: text }}>{it.title}</span>
@@ -796,7 +796,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <div key={p.id} style={{ padding: "28px", borderRadius: "16px", background: p.highlight ? "rgba(245,158,11,0.05)" : cardBg, border: p.highlight ? "2px solid rgba(245,158,11,0.3)" : `1px solid ${cardBorder}`, boxShadow: p.highlight ? (isDark ? "0 4px 32px rgba(245,158,11,0.10)" : "0 4px 24px rgba(245,158,11,0.12)") : cardShadow, position: "relative" }}>
               {p.highlight && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#f59e0b", color: "#000", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>⭐ {lang === "EN" ? "MOST POPULAR" : "CEL MAI ALES"}</div>}
               {p.id === "free" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: "700" }}>{lang === "EN" ? "FREE" : "GRATUIT"}</div>}
-              {p.id === "audit" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#3b82f6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>🔒 {lang === "EN" ? "PRICE LOCK" : "PREȚ BLOCAT"}</div>}
+              {p.id === "audit" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#3b82f6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "NO COMMITMENT" : "FĂRĂ ANGAJAMENT"}</div>}
               {p.id === "expert" && <div style={{ position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)", padding: "2px 12px", borderRadius: "10px", background: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: "700", whiteSpace: "nowrap" }}>{lang === "EN" ? "STEP 8 INCLUDED" : "STEP 8 INCLUS"}</div>}
               <h3 style={{ fontSize: "18px", fontWeight: "700", color: text }}>{p.name}</h3>
               {p.audience && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px", marginBottom: "8px" }}>{p.audience}</div>}
@@ -830,10 +830,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 ))}
               </ul>
               {p.id !== "free" && p.id !== "edu" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", background: isDark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: "12px" }}>
-                  <span style={{ fontSize: "13px" }}>🔒</span>
-                  <span style={{ fontSize: "11px", color: "#6366f1", fontWeight: "600", lineHeight: "1.4" }}>
-                    {lang === "EN" ? "Price locked while subscription is active" : "Prețul rămâne blocat cât abonamentul e activ"}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", background: isDark ? "rgba(34,197,94,0.10)" : "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.20)", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "13px" }}>📅</span>
+                  <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "600", lineHeight: "1.4" }}>
+                    {lang === "EN" ? "90-day notice for any price change · cancel anytime" : "Anunț cu 90 zile pentru orice modificare · anulare oricând"}
                   </span>
                 </div>
               )}
@@ -1047,7 +1047,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           );
         })()}
 
-        {/* Price Lock explicație MUTATĂ SUS — vezi după heading principal */}
+        {/* (Banner trust prețuri mutat sus — anunț 90 zile pentru orice modificare) */}
 
         {/* ── (Ofertă lansare + Pașaport stand-alone + Credite pay-per-project — UNIFICATE
               în secțiunea PAY_PER_USE de mai sus, Sprint Pricing v6.0, 25 apr 2026) ── */}

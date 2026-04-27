@@ -68,13 +68,22 @@ ALTER TABLE public.profiles
 CREATE INDEX IF NOT EXISTS idx_profiles_edu_status   ON public.profiles(edu_status);
 CREATE INDEX IF NOT EXISTS idx_profiles_edu_expires  ON public.profiles(edu_expires_at);
 
--- ─── 4. PRICE-LOCK MECHANIC ───────────────────────────────────────────────
--- Prețul rămâne blocat cât timp abonamentul e activ neîntrerupt.
+-- ─── 4. PRICE-LOCK MECHANIC (DEPRECATED v6.2 — 27 apr 2026) ───────────────
+-- Mecanismul price-lock a fost ELIMINAT din oferta Zephren în v6.2.
+-- Politica nouă: anunț cu 90 zile pentru orice modificare de preț (vezi docs/STRIPE_PRICING_V6_SETUP.md §6).
+--
+-- Coloanele de mai jos sunt PĂSTRATE în schema (nu se aruncă):
+--   • backward-compatibility cu utilizatorii existenți (grandfathering tăcut — citire valori vechi)
+--   • audit istoric pentru rapoarte financiare
+--   • opțiune viitoare de „preț locked tactic" pentru cohorte speciale (Founders, Enterprise SLA)
+--
+-- IMPORTANT: codul aplicației NU mai citește/setează aceste coloane în fluxul standard de signup.
+-- Migrarea NOUĂ (20260427_pricing_v62.sql, opțională) le poate marca ca DEPRECATED dacă se dorește.
 
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS price_locked       boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS price_lock_amount  integer,                    -- în bani (RON × 100)
-  ADD COLUMN IF NOT EXISTS price_lock_date    timestamptz,                -- prima activare
+  ADD COLUMN IF NOT EXISTS price_locked       boolean NOT NULL DEFAULT false,  -- DEPRECATED v6.2: nu mai e setat la signup
+  ADD COLUMN IF NOT EXISTS price_lock_amount  integer,                          -- DEPRECATED v6.2: în bani (RON × 100)
+  ADD COLUMN IF NOT EXISTS price_lock_date    timestamptz,                      -- DEPRECATED v6.2: prima activare
   ADD COLUMN IF NOT EXISTS billing_cycle      text DEFAULT 'monthly'
     CHECK (billing_cycle IN ('monthly', 'yearly'));
 

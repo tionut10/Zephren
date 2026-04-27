@@ -195,8 +195,9 @@ export default function EnergyCalcApp({ cloud }) {
   const [showTierPicker, setShowTierPicker] = useState(false);
   const [tierPickerPos, setTierPickerPos] = useState({ top: 0, left: 0 });
   const tierBadgeRef = useRef(null);
-  // Sprint Pricing v6.0 — warning modal înainte de Stripe Billing Portal (anti-cancel price-lock loss)
-  const [showCancelWarning, setShowCancelWarning] = useState(false);
+  // Sprint Pricing v6.2 (27 apr 2026) — eliminat showCancelWarning state odată cu mecanismul price-lock.
+  // Billing Portal se deschide direct, fără modal intermediar; anulările sunt protejate de
+  // anunțul cu 90 zile pentru orice modificare de preț (politica nouă de transparență).
   const [projectCount, setProjectCount] = useState(0);
   const [certCount, setCertCount] = useState(0);
   const [certResetDate, setCertResetDate] = useState(() => {
@@ -301,15 +302,10 @@ export default function EnergyCalcApp({ cloud }) {
   };
 
   // P1-1 (18 apr 2026) — Deschide sesiune Stripe Billing Portal (gestionare abonament).
-  // Sprint Pricing v6.0 (25 apr 2026) — afișează modal warning price-lock înainte de redirect
-  // (în Stripe Billing Portal utilizatorul poate face cancel → pierde price-lock).
-  // Pentru utilizatori pe planuri gratuite (free/edu) sau bypass explicit (skipWarning=true)
-  // se face direct request-ul către Stripe.
-  const openBillingPortal = async (skipWarning = false) => {
-    if (!skipWarning && userTier && !["free", "edu"].includes(userTier)) {
-      setShowCancelWarning(true);
-      return;
-    }
+  // Sprint Pricing v6.2 (27 apr 2026) — eliminat warning intermediar pentru price-lock loss
+  // (mecanism scos complet). Portalul se deschide direct; pentru orice modificare de preț,
+  // utilizatorul primește email cu 90 zile înainte (politica nouă de transparență prețuri).
+  const openBillingPortal = async () => {
     try {
       const res = await fetch("/api/create-checkout", {
         method: "POST",
@@ -3085,7 +3081,7 @@ export default function EnergyCalcApp({ cloud }) {
                             </button>
                           );
                         })}
-                        {/* Sprint Pricing v6.0 — buton Gestionează abonament Stripe (cu warning price-lock) */}
+                        {/* Sprint Pricing v6.2 — buton Gestionează abonament Stripe (deschidere directă, fără warning intermediar) */}
                         {activeTid !== "free" && activeTid !== "edu" && (
                           <>
                             <div className="border-t border-white/5 mt-1 pt-1" />
@@ -3598,115 +3594,9 @@ export default function EnergyCalcApp({ cloud }) {
         </main>
       </div>
 
-      {/* Sprint Pricing v6.0 — Cancel warning modal (price-lock loss prevention) */}
-      {showCancelWarning && createPortal(
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 99999,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "20px",
-            backdropFilter: "blur(4px)",
-          }}
-          onClick={() => setShowCancelWarning(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#0f172a",
-              border: "2px solid #f59e0b",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "520px",
-              width: "100%",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
-              color: "#fff",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-              <span style={{ fontSize: "32px" }}>🔒</span>
-              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>
-                {lang === "EN" ? "Warning — you may lose your price lock" : "Atenție — poți pierde prețul blocat"}
-              </h2>
-            </div>
-            <p style={{ fontSize: "14px", lineHeight: 1.6, opacity: 0.9, margin: "0 0 16px" }}>
-              {lang === "EN"
-                ? "You are about to enter the subscription management portal. If you cancel your subscription:"
-                : "Urmează să intri în portalul de gestionare a abonamentului. Dacă anulezi abonamentul:"}
-            </p>
-            <ul style={{ fontSize: "13px", lineHeight: 1.7, margin: "0 0 20px", paddingLeft: "20px" }}>
-              <li style={{ marginBottom: "8px" }}>
-                <strong style={{ color: "#f59e0b" }}>
-                  {lang === "EN" ? "You lose your locked price" : "Pierzi prețul tău blocat"}
-                </strong>{" "}
-                {lang === "EN"
-                  ? "(currently locked at the rate from your initial subscription date)."
-                  : "(blocat în momentul abonării inițiale)."}
-              </li>
-              <li style={{ marginBottom: "8px" }}>
-                {lang === "EN"
-                  ? "If you reactivate later, you will pay the current price at that time, which may be higher."
-                  : "Dacă reactivezi mai târziu, vei plăti prețul curent din acel moment, care poate fi mai mare."}
-              </li>
-              <li>
-                {lang === "EN"
-                  ? "Your project history and CPE certificates remain accessible only on a free plan (limited)."
-                  : "Istoricul proiectelor și CPE rămân accesibile doar pe plan free (limitate)."}
-              </li>
-            </ul>
-            <div style={{
-              padding: "12px 16px",
-              background: "rgba(245, 158, 11, 0.1)",
-              border: "1px solid rgba(245, 158, 11, 0.3)",
-              borderRadius: "10px",
-              fontSize: "12px",
-              marginBottom: "20px",
-              opacity: 0.95,
-            }}>
-              💡 {lang === "EN"
-                ? "Tip: in the portal you can also change your card or download invoices without canceling."
-                : "Sfat: în portal poți și schimba cardul sau descărca facturi fără să anulezi."}
-            </div>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <button
-                onClick={() => setShowCancelWarning(false)}
-                style={{
-                  flex: 1,
-                  padding: "12px 16px",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "10px",
-                  color: "#fff",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  minWidth: "180px",
-                }}
-              >
-                {lang === "EN" ? "Keep my price lock" : "Păstrează prețul blocat"}
-              </button>
-              <button
-                onClick={() => { setShowCancelWarning(false); openBillingPortal(true); }}
-                style={{
-                  flex: 1,
-                  padding: "12px 16px",
-                  background: "#f59e0b",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "#000",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  minWidth: "180px",
-                }}
-              >
-                {lang === "EN" ? "Continue to portal →" : "Continuă către portal →"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Sprint Pricing v6.2 (27 apr 2026) — Cancel warning modal eliminat odată cu mecanismul price-lock.
+          Billing Portal se deschide direct fără modal intermediar; anulările nu mai au consecințe pe „preț blocat"
+          deoarece politica nouă oferă anunț cu 90 zile pentru orice modificare de preț. */}
 
       {/* TUTORIAL MODAL */}
       {showTutorial && (

@@ -140,16 +140,18 @@ Pentru fiecare plan, testează:
 
 ### 6. Migrare utilizatori existenți (v5.x → v6.0)
 
-**Decizie utilizator (25 apr 2026)**: utilizatorii existenți rămân pe planurile vechi cu **price-lock grandfathered** (prețul vechi rămâne blocat cât abonamentul e activ).
+**Decizie utilizator (27 apr 2026 — v6.2)**: mecanismul `price-lock` a fost ELIMINAT complet din ofertă.
 
-Aliasing-ul automat în `planGating.js` mapează:
-- `starter` → comportament `audit` (199 RON, dar utilizator plătește prețul vechi 299 RON locked)
-- `standard` → comportament `pro` (vechi 499 RON locked, primește acum AI Pack inclus = bonus!)
-- `professional` → comportament `expert` (vechi 799 RON locked, primește Step 8 complet)
-- `business` → comportament `birou` (vechi 749/u locked)
-- `asociatie` → comportament `birou` (vechi 5.990 RON locked)
+Politica nouă: **„Anunț cu 90 zile pentru orice modificare de preț"** — utilizatorii existenți rămân pe prețurile actuale (grandfathering tăcut, fără promisiune contractuală pe viață); orice viitoare creștere/reducere este comunicată prin email cu minimum 90 de zile în avans și publicată pe `zephren.com/preturi`.
 
-**NU forța migrare** — utilizatorii existenți primesc upgrade la features (AI/Step 8/BIM) automat dar la prețul lor vechi locked.
+Aliasing-ul automat în `planGating.js` mapează planurile vechi la cele noi:
+- `starter` → comportament `audit` (199 RON)
+- `standard` → comportament `pro` (499 RON, primește acum AI Pack inclus = bonus!)
+- `professional` → comportament `expert` (899 RON, primește Step 8 complet)
+- `business` → comportament `birou` (1.890 RON flat)
+- `asociatie` → comportament `birou`
+
+**NU forța migrare** — utilizatorii existenți primesc upgrade la features (AI/Step 8/BIM) automat. Pentru modificări de preț pe planurile lor curente, regula generală a celor 90 zile se aplică ca pentru toți utilizatorii.
 
 **Email notificare** template:
 
@@ -159,13 +161,14 @@ Aliasing-ul automat în `planGating.js` mapează:
 >
 > Am restructurat pachetele Zephren la versiunea 6.0. Vești bune pentru tine:
 >
-> ✅ **Prețul tău rămâne blocat** la valoarea actuală cât abonamentul e activ.
-> ✅ Primești **automat funcții noi** la pachetul tău:
+> ✅ **Prețul tău rămâne neschimbat** la valoarea actuală.
+> ✅ Primești **automat funcții noi** la pachetul tău, fără cost suplimentar:
 >    - AI Pack (OCR facturi/CPE + chat import + AI assistant)
 >    - Pașaport Renovare EPBD basic
 >    - GWP CO₂ lifecycle (EN 15978)
 >    - BACS A-D selector + SRI auto + MEPS check
 > ✅ **Niciun act necesar** din partea ta.
+> 📅 **Politică de transparență prețuri**: orice viitoare modificare de preț este anunțată cu minimum 90 de zile în avans prin email și pe pagina noastră de prețuri. Fără surprize la facturare. Anulare oricând, fără angajament.
 >
 > Vezi noile pachete: [zephren.ro/#pricing](https://zephren.ro/#pricing)
 >

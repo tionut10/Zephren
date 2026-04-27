@@ -168,9 +168,9 @@ Versiunea **detaliată** (optimizator avansat) doar în Step 8 = Expert 899+:
 - `src/lib/planGating.js` — `PLAN_FEATURES`, `canAccess()`, `getLimit()`, `getOverageCost()`, `isEduValid()`, `resolvePlan()` (cu backward-compat aliases)
 - `src/components/PlanGate.jsx` — wrapper React 3 moduri (hide/upgrade/soft)
 - `src/data/landingData.js` — `PLANS`, `PAY_PER_USE`, `PLAN_LAYOUT`
-- `supabase/migrations/20260425_pricing_v6.sql` — schema v6 (cpe counters + EDU + price-lock + cpe_log + RPC functions)
+- `supabase/migrations/20260425_pricing_v6.sql` — schema v6 (cpe counters + EDU + cpe_log + RPC functions); coloanele `price_locked*` rămân pentru compatibilitate, dar mecanismul price-lock a fost eliminat din ofertă în v6.2 (27 apr 2026) — politica nouă: anunț cu 90 zile pentru orice modificare de preț
 - `docs/STRIPE_PRICING_V6_SETUP.md` — ghid setup Stripe Dashboard
 
 ### Backward compat
 
-Utilizatorii pe planurile vechi v5.x (starter/standard/professional/business/asociatie) rămân funcționali via `resolvePlan()` aliases. Email notificare cu „prețul rămâne blocat + primești bonus AI Pack/Step 8".
+Utilizatorii pe planurile vechi v5.x (starter/standard/professional/business/asociatie) rămân funcționali via `resolvePlan()` aliases. Email notificare cu „prețul rămâne neschimbat + primești bonus AI Pack/Step 8/BIM Pack". Orice modificare ulterioară de preț este anunțată cu minimum 90 zile în avans, conform politicii v6.2.

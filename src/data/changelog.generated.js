@@ -2,15 +2,27 @@
 // Script: scripts/update-changelog.js
 // Ultima generare: 2026-04-27
 
-export const APP_VERSION = "0.4.1";
+export const APP_VERSION = "0.5.0";
 export const CHANGELOG = [
   {
-    "version": "0.4.1",
+    "version": "0.5.0",
     "week": "Săpt. 5",
     "dateRange": "27 apr – 3 mai 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "🔧",
+        "text": "S29 DEMO v2.1 — bug-fix după verificare manuală M1 (Constanța)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(pricing v6.1): adaptare funcții per tier — gating 8 componente + sync tiers.js"
+      },
+      {
+        "icon": "🗺️",
+        "text": "S28 DEMO v2 — refacere completă: 5 modele zone climatice I-V + teste"
+      },
       {
         "icon": "🔧",
         "text": "fix(mobile): blochez scroll orizontal nedorit (overflow-x hidden global)"
