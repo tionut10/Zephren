@@ -3049,8 +3049,8 @@ export default function EnergyCalcApp({ cloud }) {
               const TIER_BADGES = {
                 free:       { label: "FREE", full: "Zephren Free",       cls: "bg-white/15 text-white" },
                 edu:        { label: "EDU",  full: "Zephren Edu",        cls: "bg-emerald-500 text-white shadow-sm" },
-                audit:      { label: "AUD",  full: "Zephren Audit",      cls: "bg-sky-400 text-white shadow-sm" },
-                pro:        { label: "⚡PRO", full: "Zephren Pro ⭐",      cls: "bg-amber-500 text-black shadow-sm" },
+                audit:      { label: "AE II", full: "Zephren AE IIci",   cls: "bg-sky-400 text-white shadow-sm" },
+                pro:        { label: "⚡AE I", full: "Zephren AE Ici ⭐", cls: "bg-amber-500 text-black shadow-sm" },
                 expert:     { label: "EXP",  full: "Zephren Expert",     cls: "bg-violet-500 text-white shadow-sm" },
                 birou:      { label: "BIR",  full: "Zephren Birou",      cls: "bg-pink-500 text-white shadow-sm" },
                 enterprise: { label: "ENT",  full: "Zephren Enterprise", cls: "bg-red-500 text-white shadow-sm" },

@@ -38,8 +38,8 @@ function resolvePlan(plan) {
 const PLAN_DISPLAY = {
   free:       { label: "Zephren Free",       price: "0 RON",         color: "#6B7280" },
   edu:        { label: "Zephren Edu",        price: "Gratis cu dovadă", color: "#10B981" },
-  audit:      { label: "Zephren Audit",      price: "199 RON/lună",  color: "#3B82F6" },
-  pro:        { label: "Zephren Pro",        price: "499 RON/lună",  color: "#F59E0B" },
+  audit:      { label: "Zephren AE IIci",    price: "199 RON/lună",  color: "#3B82F6" },
+  pro:        { label: "Zephren AE Ici",     price: "499 RON/lună",  color: "#F59E0B" },
   expert:     { label: "Zephren Expert",     price: "899 RON/lună",  color: "#8B5CF6" },
   birou:      { label: "Zephren Birou",      price: "1.890 RON flat", color: "#EC4899" },
   enterprise: { label: "Zephren Enterprise", price: "de la 4.990 RON", color: "#DC2626" },

@@ -212,7 +212,7 @@ export const PLANS = [
     discount: "/an (10 luni) · Toate modulele avansate",
     audience: "Auditor senior AE Ici + consultant · CPE + audit + nZEB + BIM + Pasivhaus + MonteCarlo · 72 CPE/lună (60 + 12 burst)",
     features: [
-      "Tot Zephren Pro, plus:",
+      "Tot Zephren AE Ici, plus:",
       "Step 8 COMPLET (18 module avansate)",
       "60 CPE/lună + 12 burst gratis · Overage 39→69→99 RON",
       "BIM Pack inclus (IFC/Revit/ArchiCAD import)",

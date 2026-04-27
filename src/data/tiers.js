@@ -34,7 +34,7 @@ export const TIERS = {
   },
   audit: {
     id: "audit", label: "Zephren AE IIci",
-    subtitle: "CPE rezidențial · auditori AE IIci",
+    subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
     price: 199, priceAn: 1990,
     maxProjects: 9999, maxCerts: 8,
     multiUser: false, maxUsers: 1,
@@ -46,7 +46,7 @@ export const TIERS = {
   },
   pro: {
     id: "pro", label: "Zephren AE Ici",
-    subtitle: "CPE complet + Audit + nZEB · auditori AE Ici",
+    subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
     price: 499, priceAn: 4990,
     maxProjects: 9999, maxCerts: 30,
     multiUser: false, maxUsers: 1,
@@ -58,7 +58,7 @@ export const TIERS = {
   },
   expert: {
     id: "expert", label: "Zephren Expert",
-    subtitle: "Module avansate Step 8 · Mc 001 P.III/P.IV",
+    subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
     price: 899, priceAn: 8990,
     maxProjects: 9999, maxCerts: 60,
     multiUser: false, maxUsers: 1,
@@ -69,7 +69,7 @@ export const TIERS = {
   },
   birou: {
     id: "birou", label: "Zephren Birou",
-    subtitle: "Multi-user 2-5 + API + white-label",
+    subtitle: "Pentru birouri 2-5 auditori (mix AE Ici + AE IIci) · CPE NELIMITAT · preț FIX per birou",
     price: 1890, priceAn: 18900,
     maxProjects: 9999, maxCerts: 999,
     multiUser: true, maxUsers: 5,
@@ -80,7 +80,7 @@ export const TIERS = {
   },
   enterprise: {
     id: "enterprise", label: "Zephren Enterprise",
-    subtitle: "6-100+ useri · SLA 99.9% · INCERC",
+    subtitle: "Pentru organizații 6-100+ auditori (toate gradele) · SLA 99.9% + INCERC validation",
     price: 4990, priceAn: 49900,
     maxProjects: 9999, maxCerts: 999,
     multiUser: true, maxUsers: 999,

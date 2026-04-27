@@ -1242,7 +1242,7 @@ export default function Step6Certificate(props) {
               // Pricing v6.0 — XML MDLPA disponibil Audit/Pro/Expert/Birou/Enterprise.
               // Free + Edu: BLOCAT (Free are watermark; Edu n-are atestat → fără registru oficial).
               if (!canAccessFn(userPlan, "exportXML")) {
-                showToast("Export XML MDLPA disponibil din planul Zephren Audit (199 RON/lună).", "error");
+                showToast("Export XML MDLPA disponibil din planul Zephren AE IIci (199 RON/lună).", "error");
                 return;
               }
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
