@@ -905,16 +905,27 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                             : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți, doctoranzi, absolvenți în curs de atestare MDLPA și stagiari în birouri de audit. Practică pe proiecte reale fără riscul emiterii unui CPE neoficial — documentele poartă ștampila SCOP DIDACTIC."}
                         </p>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "8px" }}>
-                          {eduPlan.features.slice(0, 6).map(f => (
+                          {eduPlan.features.slice(0, 9).map(f => (
                             <li key={f} style={{ fontSize: "12px", padding: "3px 0", color: textMuted, display: "flex", alignItems: "flex-start", gap: "6px" }}>
                               <span style={{ color: "#10b981", marginTop: "2px" }}>✓</span> <span>{f}</span>
                             </li>
                           ))}
                         </ul>
+                        <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "8px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.20)", fontSize: "12px", color: textFaint, lineHeight: 1.6 }}>
+                          <strong style={{ color: textMuted }}>{lang === "EN" ? "Accepted proof:" : "Dovadă acceptată:"}</strong>{" "}
+                          {lang === "EN"
+                            ? "Student/doctoral candidate — valid student ID or enrollment certificate. Graduate awaiting attestation — MDLPA attestation application receipt or registered file confirmation. Trainee — letter from the audit office. Renewed every 6 months."
+                            : "Student/doctorand — legitimație student valabilă sau adeverință de înscriere. Absolvent în curs de atestare — confirmare depunere dosar MDLPA sau cerere de atestare înregistrată. Stagiar — adeverință de la biroul de audit. Reînnoire la fiecare 6 luni."}
+                        </div>
                       </div>
-                      <a href="mailto:edu@zephren.ro?subject=Aplicatie%20Zephren%20Edu%20%E2%80%94%20Student%2FDoctorand&body=Salut%2C%0A%0ADoresc%20s%C4%83%20activez%20planul%20Zephren%20Edu.%0A%0ANume%20complet%3A%20%0AInstitu%C8%9Bie%3A%20%0AProgram%20de%20studii%20(licen%C8%9B%C4%83%2Fmaster%2Fdoctorat)%3A%20%0AAn%20de%20studii%3A%20%0AEmail%20institu%C8%9Bional%3A%20%0A%0AAtas%C8%99at%3A%20legitima%C8%9Bie%20student%20%2F%20adeverin%C8%9B%C4%83%20valabil%C4%83.%0A%0AMul%C8%9Bumesc%21" style={{ padding: "14px 28px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "14px", fontWeight: "600", textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(16,185,129,0.3)" }}>
-                        {lang === "EN" ? "Apply with proof →" : "Aplică cu dovadă →"}
-                      </a>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "180px" }}>
+                        <a href="mailto:edu@zephren.ro?subject=Aplicatie%20Zephren%20Edu%20%E2%80%94%20Student%2FDoctorand&body=Salut%2C%0A%0ADoresc%20sa%20activez%20planul%20Zephren%20Edu%20ca%20student%20sau%20doctorand.%0A%0ANume%20complet%3A%20%0AInstitutie%3A%20%0AProgram%20de%20studii%20(licenta%2Fmaster%2Fdoctorat)%3A%20%0AAn%20de%20studii%3A%20%0AEmail%20institutional%3A%20%0A%0AAtasat%3A%20legitimatie%20student%20sau%20adeverinta%20valabila.%0A%0AMultumesc!" style={{ padding: "12px 20px", borderRadius: "10px", background: "#10b981", color: "#fff", fontSize: "13px", fontWeight: "600", textDecoration: "none", textAlign: "center", boxShadow: "0 4px 16px rgba(16,185,129,0.3)" }}>
+                          {lang === "EN" ? "Apply as student →" : "Aplică ca student →"}
+                        </a>
+                        <a href="mailto:edu@zephren.ro?subject=Aplicatie%20Zephren%20Edu%20%E2%80%94%20Absolvent%20in%20atestare&body=Salut%2C%0A%0ADoresc%20sa%20activez%20planul%20Zephren%20Edu%20ca%20absolvent%20in%20curs%20de%20atestare%20MDLPA.%0A%0ANume%20complet%3A%20%0AEmail%3A%20%0AStadiu%20atestare%20(dosar%20depus%20%2F%20examen%20programat%20%2F%20stagiar%20in%20birou)%3A%20%0A%0AAtasat%3A%20confirmare%20depunere%20dosar%20MDLPA%20sau%20adeverinta%20birou%20audit.%0A%0AMultumesc!" style={{ padding: "12px 20px", borderRadius: "10px", background: "transparent", color: "#10b981", border: "2px solid #10b981", fontSize: "13px", fontWeight: "600", textDecoration: "none", textAlign: "center" }}>
+                          {lang === "EN" ? "Apply as grad →" : "Aplică ca absolvent →"}
+                        </a>
+                      </div>
                     </div>
 
                     {/* Separator vizual */}

@@ -142,7 +142,7 @@ export const PLANS = [
       "Submit MDLPA blocat",
       "Pregătire proiect de atestare MDLPA — simulare completă CPE conform Ord. 348/2026",
       "Upgrade direct la AE IIci sau AE Ici la obținerea atestamentului — proiectele se păstrează",
-      "Gratis pe perioada formării (anuală cu dovadă)",
+      "Acces reînnoit la fiecare 6 luni cu dovadă valabilă",
       "Suport email 72h",
     ],
     cta: "Aplică cu dovadă",
