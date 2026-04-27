@@ -5,11 +5,9 @@
 // `tier.maxCerts`, `tier.watermark`, `tier.exportXML`, etc. Nu adăuga
 // feature noi aici — toate gating-urile noi trec prin planGating.canAccess().
 //
-// v7.0 (27 apr 2026): Volum CPE standardizat la 30/lună pe IIci/Ici/Expert.
-// Diferențiere prin funcționalități + grad MDLPA + audituri/lună.
-// AI Pack + Cloud nelimitat = standard pe toate planurile plătite.
-// Prețuri majorate: IIci 199→499, Ici 499→1299, Expert 899→2499,
-// Birou 1890→4999, Enterprise 4990→9999+.
+// v7.1 (27 apr 2026): Prețuri TVA inclus, CPE nelimitat pe toate planurile plătite.
+// Prețuri noi: IIci 599, Ici 1499, Expert 2999, Birou 5999, Enterprise 9999.
+// Eliminat: overage pe trepte, limită CPE/lună, ofertă anuală 10 luni.
 //
 // REBRAND v6.2 (Ord. MDLPA 348/2026 — MO 292/14.IV.2026):
 //   - audit → label „Zephren AE IIci" (auditori grad II civile, doar rezidențial)
@@ -40,9 +38,9 @@ export const TIERS = {
   audit: {
     id: "audit", label: "Zephren AE IIci",
     subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
-    price: 499, priceAn: 4990,
-    maxProjects: 9999, maxCerts: 30,           // v7.0: standardizat 30 CPE
-    maxAudits: 0,                               // v7.0: AE IIci NU poate face audit (legal)
+    price: 599, priceAn: null,
+    maxProjects: 9999, maxCerts: 999,          // v7.1: CPE nelimitat
+    maxAudits: 0,                               // AE IIci NU poate face audit (legal)
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
     nzebReport: false, docxExport: true, exportXML: true, // Art. 6 alin. (2): IIci NU face nZEB
@@ -53,9 +51,9 @@ export const TIERS = {
   pro: {
     id: "pro", label: "Zephren AE Ici",
     subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
-    price: 1299, priceAn: 12990,                // v7.0: 499→1299
-    maxProjects: 9999, maxCerts: 30,
-    maxAudits: 2,                                // v7.0: 2 audituri/lună incluse
+    price: 1499, priceAn: null,                 // v7.1: TVA inclus
+    maxProjects: 9999, maxCerts: 999,           // v7.1: CPE nelimitat
+    maxAudits: 999,                              // v7.1: audituri nelimitate
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
@@ -66,9 +64,9 @@ export const TIERS = {
   expert: {
     id: "expert", label: "Zephren Expert",
     subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
-    price: 2499, priceAn: 24990,                // v7.0: 899→2499
-    maxProjects: 9999, maxCerts: 30,            // v7.0: 60→30 standardizat
-    maxAudits: 4,                                // v7.0: 4 audituri/lună incluse
+    price: 2999, priceAn: null,                 // v7.1: TVA inclus
+    maxProjects: 9999, maxCerts: 999,           // v7.1: CPE nelimitat
+    maxAudits: 999,                              // v7.1: audituri nelimitate
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
@@ -79,7 +77,7 @@ export const TIERS = {
   birou: {
     id: "birou", label: "Zephren Birou",
     subtitle: "Pentru birouri 2-5 auditori (mix AE Ici + AE IIci) · CPE + audit NELIMITAT · preț FIX per birou",
-    price: 4999, priceAn: 49990,                // v7.0: 1890→4999
+    price: 5999, priceAn: null,                 // v7.1: TVA inclus
     maxProjects: 9999, maxCerts: 999,
     maxAudits: 999,                              // v7.0: audituri NELIMITATE
     multiUser: true, maxUsers: 5,

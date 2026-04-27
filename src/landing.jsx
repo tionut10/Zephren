@@ -729,8 +729,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           fontWeight: "500",
         }}>
           💼 {lang === "EN"
-            ? <>All prices displayed are <strong>VAT-EXCLUDED</strong> (21% VAT is added at invoicing — applies to Romanian B2B and B2C; EU B2B with VIES VAT number = 0% reverse charge).</>
-            : <>Toate prețurile afișate sunt <strong>FĂRĂ TVA</strong> (TVA 21% se adaugă la facturare — pentru clienți RO B2B și B2C; B2B UE cu cod VAT VIES = 0% taxare inversă).</>}
+            ? <>All prices include <strong>21% VAT</strong>. EU B2B with VIES VAT number: 0% reverse charge — contact us for a VAT-excluded invoice.</>
+            : <>Toate prețurile afișate includ <strong>TVA 21%</strong>. B2B UE cu cod VAT VIES: 0% taxare inversă — contactați-ne pentru factură fără TVA.</>}
         </div>
 
         {/* ── Trust banner: Transparență prețuri — anunț 90 zile pentru orice modificare ── */}
@@ -804,24 +804,14 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               <div style={{ margin: "14px 0" }}>
                 <span style={{ fontSize: p.price === "0" ? "38px" : "30px", fontWeight: "900", color: text }}>{p.price === "0" ? (lang === "EN" ? "Free" : "Gratuit") : p.price}</span>
                 {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
-                {/* Sprint Pricing v6.0 — TVA 21% RO 2026 afișat pe fiecare card */}
-                {p.price !== "0" && withVat(p.price) && (
+                {p.vatIncluded && <span style={{ fontSize: "11px", color: textFaint, marginLeft: "5px" }}>{lang === "EN" ? "VAT incl." : "TVA inclus"}</span>}
+                {p.price !== "0" && !p.vatIncluded && withVat(p.price) && (
                   <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
                     {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
                     <strong style={{ color: textMuted }}>{withVat(p.price)} RON{p.period}</strong>
                   </div>
                 )}
                 {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
-                {p.priceAn && (
-                  <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>
-                    {p.priceAn} RON/an <span style={{ color: "#f59e0b" }}>({p.discount})</span>
-                    {withVat(p.priceAn) && (
-                      <span style={{ display: "block", opacity: 0.7, marginTop: "2px" }}>
-                        {lang === "EN" ? "with VAT: " : "cu TVA: "}<strong>{withVat(p.priceAn)} RON/an</strong>
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
               <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                 {p.features.map(f => (
@@ -864,24 +854,14 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ margin: "14px 0" }}>
                       <span style={{ fontSize: "32px", fontWeight: "900", color: text }}>{p.price}</span>
                       {p.period && <span style={{ fontSize: "13px", color: textFaint }}>{" RON"}{p.period}</span>}
-                      {/* Sprint Pricing v6.0 — TVA 21% RO 2026 */}
-                      {withVat(p.price) && (
+                      {p.vatIncluded && <span style={{ fontSize: "11px", color: textFaint, marginLeft: "5px" }}>{lang === "EN" ? "VAT incl." : "TVA inclus"}</span>}
+                      {!p.vatIncluded && withVat(p.price) && (
                         <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
                           {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
                           <strong style={{ color: textMuted }}>{withVat(p.price)} RON{p.period}</strong>
                         </div>
                       )}
                       {p.tierNote && <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>{p.tierNote}</div>}
-                      {p.priceAn && (
-                        <div style={{ fontSize: "11px", color: textFaint, marginTop: "4px" }}>
-                          {p.priceAn} <span style={{ color: "#f59e0b" }}>({p.discount})</span>
-                          {withVat(p.priceAn) && (
-                            <span style={{ display: "block", opacity: 0.7, marginTop: "2px" }}>
-                              {lang === "EN" ? "with VAT: " : "cu TVA: "}<strong>{withVat(p.priceAn)} RON</strong>
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                     <ul style={{ listStyle: "none", padding: 0, margin: "20px 0" }}>
                       {p.features.map(f => (
