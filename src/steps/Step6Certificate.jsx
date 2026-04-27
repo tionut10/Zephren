@@ -29,6 +29,7 @@ import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUplo
 import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { canAccess as canAccessFn } from "../lib/planGating.js";
+import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
 import { getCityCoordinates } from "../utils/city-coordinates.js";
@@ -137,6 +138,23 @@ export default function Step6Certificate(props) {
               if (!fileOrBuffer) return;
               if (Au <= 0) { showToast("Completați Au în Pasul 1.", "error"); return; }
               if (!instSummary) { showToast("Completați pașii 1-4.", "error"); return; }
+
+              // Sprint v6.3 — Verificare HARD legal pre-export per Ord. MDLPA 348/2026 Art. 6.
+              // Plasele de siguranță anti-bypass: chiar dacă utilizatorul a ocolit
+              // banner-ul Step 1 (DevTools, race condition), aici se refuză exportul.
+              const legalCheck = canEmitForBuilding({
+                plan: userPlan,
+                auditorGrad: building?.auditorGrad || null,
+                building,
+                operation: "cpe",
+              });
+              if (!legalCheck.ok) {
+                showToast(
+                  `Export blocat legal: ${legalCheck.reason} (${legalCheck.legalRef})`,
+                  "error",
+                );
+                return;
+              }
 
               try {
                 const arrayBuffer = fileOrBuffer instanceof ArrayBuffer ? fileOrBuffer : await fileOrBuffer.arrayBuffer();
@@ -1243,6 +1261,20 @@ export default function Step6Certificate(props) {
               // Free + Edu: BLOCAT (Free are watermark; Edu n-are atestat → fără registru oficial).
               if (!canAccessFn(userPlan, "exportXML")) {
                 showToast("Export XML MDLPA disponibil din planul Zephren AE IIci (199 RON/lună).", "error");
+                return;
+              }
+              // Sprint v6.3 — verificare HARD legal pre-export XML (Ord. 348/2026 Art. 6)
+              const legalCheckXml = canEmitForBuilding({
+                plan: userPlan,
+                auditorGrad: building?.auditorGrad || null,
+                building,
+                operation: "cpe",
+              });
+              if (!legalCheckXml.ok) {
+                showToast(
+                  `Export XML blocat legal: ${legalCheckXml.reason} (${legalCheckXml.legalRef})`,
+                  "error",
+                );
                 return;
               }
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");

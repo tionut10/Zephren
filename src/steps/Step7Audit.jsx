@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { canAccess } from "../lib/planGating.js";
+import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import PlanGate from "../components/PlanGate.jsx";
 import PasaportBasic from "../components/PasaportBasic.jsx";
 import { sanitizeSvg } from "../lib/sanitize-html.js";
@@ -81,6 +82,47 @@ export default function Step7Audit(props) {
             ← Pas 6: Certificat
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Sprint v6.3 — Verificare HARD pe gradul REAL al auditorului (Ord. 348/2026 Art. 6.1.b).
+  // Edge case: utilizator pe plan AE Ici/Expert/Birou/Enterprise dar atestat real AE IIci.
+  // Auditul energetic e rezervat exclusiv AE Ici per Art. 6 alin. (1) lit. b).
+  const auditLegalCheck = canEmitForBuilding({
+    plan: userPlan,
+    auditorGrad: building?.auditorGrad || null,
+    building,
+    operation: "audit",
+  });
+  if (!auditLegalCheck.ok) {
+    return (
+      <div className="space-y-4 p-4">
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">🚫</span>
+            <div className="flex-1 space-y-2">
+              <h2 className="text-lg font-bold text-red-200">
+                {lang === "EN" ? "Audit blocked — MDLPA grade restriction" : "Audit blocat — restricție grad MDLPA"}
+              </h2>
+              <p className="text-sm text-red-200/90">{auditLegalCheck.reason}</p>
+              <p className="text-xs text-red-300/70">
+                {lang === "EN" ? "Legal reference:" : "Referință legală:"} {auditLegalCheck.legalRef}
+              </p>
+              {auditLegalCheck.upgradePath && (
+                <p className="text-xs text-amber-300/90 mt-3">
+                  {lang === "EN"
+                    ? `Required attestation: ${auditLegalCheck.upgradePath} (5+ years professional experience).`
+                    : `Atestat necesar: ${auditLegalCheck.upgradePath} (vechime profesională ≥ 5 ani).`}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        <button onClick={() => setStep(6)}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
+          ← Pas 6: Certificat
+        </button>
       </div>
     );
   }
