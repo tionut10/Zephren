@@ -138,8 +138,6 @@ export const PLANS = [
       "TOATE funcțiile Zephren Expert (Step 1-8 complet)",
       "AI Pack + BIM Pack incluse",
       "CPE NELIMITATE cu watermark SCOP DIDACTIC — practică reală, fără risc de emitere neoficială",
-      "Export XML MDLPA blocat (nu pentru utilizare oficială)",
-      "Submit MDLPA blocat",
       "Pregătire proiect de atestare MDLPA — simulare completă CPE conform Ord. 348/2026",
       "Upgrade direct la AE IIci sau AE Ici la obținerea atestamentului — proiectele se păstrează",
       "Acces reînnoit la fiecare 6 luni cu dovadă valabilă",

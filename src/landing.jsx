@@ -953,7 +953,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                         <p style={{ fontSize: "13px", color: textFaint, lineHeight: 1.5, margin: 0 }}>
                           {lang === "EN"
                             ? "Universities, professional training centers, research institutes and audit firms training staff: contact us for an institutional collaboration agreement — multi-user access, custom curriculum, Zephren branding for courses, special pricing."
-                            : "Universități, centre de formare MDLPA/INCERC, institute de cercetare și birouri care formează personal: contactați-ne pentru un acord instituțional — acces multi-user, curriculum personalizat, branding Zephren în cursuri, condiții speciale."}
+                            : "Universități, centre de formare MDLPA, institute de cercetare și birouri care formează personal: contactați-ne pentru un acord instituțional — acces multi-user, curriculum personalizat, branding Zephren în cursuri, condiții speciale."}
                         </p>
                       </div>
                       <a
