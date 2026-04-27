@@ -1012,55 +1012,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 );
               })()}
 
-              {/* ── Banner Pașaport Renovare (pay-per-doc, pentru NON-auditori) ── */}
-              <div style={{ maxWidth: "1140px", margin: "32px auto 0", padding: "28px", borderRadius: "16px", background: cardBg, border: `1px solid ${cardBorder}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" }}>
-                  <h3 style={{ fontSize: "20px", fontWeight: "700", color: text, margin: 0 }}>
-                    📋 {lang === "EN" ? "Renovation Passport — single document" : "Pașaport Renovare — document unic"}
-                  </h3>
-                  <span style={{
-                    fontSize: "10px", padding: "3px 10px", borderRadius: "20px",
-                    background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontWeight: "700"
-                  }}>
-                    {lang === "EN" ? "EPBD MANDATORY · MAY 29, 2026" : "OBLIGATORIU EPBD · 29 MAI 2026"}
-                  </span>
-                </div>
-                <p style={{ fontSize: "13px", color: textFaint, marginTop: 0, marginBottom: "16px", lineHeight: 1.5 }}>
-                  {lang === "EN"
-                    ? "For property owners, building associations and real-estate developers (non-auditors) who need an EPBD-compliant Renovation Passport without a full audit subscription."
-                    : "Pentru proprietari, asociații de proprietari și dezvoltatori imobiliari (NON-auditori) care au nevoie de Pașaport Renovare EPBD-conform fără abonament complet de auditor."}
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
-                  {PAY_PER_USE.map(item => {
-                    // Sprint Pricing v6.0 — TVA 21% RO 2026 pe Pașaport
-                    const itemRon = parseFloat(item.price) || 0;
-                    const itemWithVat = itemRon ? (itemRon * 1.21).toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : null;
-                    const unitClean = item.unit.replace("RON/", "RON cu TVA/");
-                    return (
-                      <div key={item.id} style={{ padding: "16px", borderRadius: "10px", border: `1px solid ${cardBorder}`, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)" }}>
-                        <div style={{ fontSize: "14px", fontWeight: "700", color: text, marginBottom: "6px" }}>{item.name}</div>
-                        <div style={{ fontSize: "22px", fontWeight: "800", color: "#f59e0b" }}>{item.price} <span style={{ fontSize: "11px", color: textFaint, fontWeight: "500" }}>{item.unit}</span></div>
-                        {itemWithVat && (
-                          <div style={{ fontSize: "10px", color: textFaint, marginTop: "3px", opacity: 0.85 }}>
-                            {lang === "EN" ? "with 21% VAT: " : "cu TVA 21%: "}
-                            <strong style={{ color: textMuted }}>{itemWithVat} {unitClean}</strong>
-                          </div>
-                        )}
-                        <div style={{ fontSize: "12px", color: textFaint, marginTop: "8px", lineHeight: 1.5 }}>{item.desc}</div>
-                        {item.audience && <div style={{ fontSize: "10px", color: textFaint, marginTop: "6px", fontStyle: "italic" }}>{item.audience}</div>}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ marginTop: "16px", padding: "10px 14px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "8px", fontSize: "11px", color: textFaint, lineHeight: 1.5 }}>
-                  💡 {lang === "EN"
-                    ? "Are you an energy auditor? Choose a subscription above (Audit, Pro or Expert) — Renovation Passport is included."
-                    : "Ești auditor energetic? Alege un abonament mai sus (Audit, Pro sau Expert) — Pașaportul Renovare este inclus."}
-                </div>
-                <button onClick={() => onStart()} style={{ marginTop: "16px", padding: "10px 20px", borderRadius: "10px", border: `1px solid #f59e0b`, background: "transparent", color: "#f59e0b", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-                  {lang === "EN" ? "Generate Renovation Passport →" : "Generează Pașaport Renovare →"}
-                </button>
-              </div>
+              {/* ── Banner Pașaport Renovare (pay-per-doc, pentru NON-auditori) — ASCUNS TEMPORAR ── */}
+              {/* {PAY_PER_USE.length > 0 && false && (
+                <div>...</div>
+              )} */}
             </>
           );
         })()}
