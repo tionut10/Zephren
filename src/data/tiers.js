@@ -10,15 +10,15 @@
 // Eliminat: overage pe trepte, limită CPE/lună, ofertă anuală 10 luni.
 //
 // REBRAND v6.2 (Ord. MDLPA 348/2026 — MO 292/14.IV.2026):
-//   - audit → label „Zephren AE IIci" (auditori grad II civile, doar rezidențial)
-//   - pro   → label „Zephren AE Ici"  (auditori grad I civile, scop complet)
+//   - audit → label „ZEPHREN AE IIci" (auditori grad II civile, doar rezidențial)
+//   - pro   → label „ZEPHREN AE Ici"  (auditori grad I civile, scop complet)
 //   Cheile interne `audit` și `pro` rămân stabile pentru backward-compat.
 // ═══════════════════════════════════════════════════════════════
 
 export const TIERS = {
   // ═══ V6.2 PLANS (canonical) ═══
   free: {
-    id: "free", label: "Zephren Free", subtitle: "Demo cu watermark", price: 0, priceAn: 0,
+    id: "free", label: "ZEPHREN Free", subtitle: "Demo cu watermark", price: 0, priceAn: 0,
     maxProjects: 99, maxCerts: 3,
     multiUser: false, maxUsers: 1,
     watermark: true, watermarkType: "DEMO",
@@ -36,7 +36,7 @@ export const TIERS = {
     mdlpaGrade: null,
   },
   audit: {
-    id: "audit", label: "Zephren AE IIci",
+    id: "audit", label: "ZEPHREN AE IIci",
     subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
     price: 599, priceAn: null,
     maxProjects: 9999, maxCerts: 999,          // v7.1: CPE nelimitat
@@ -49,7 +49,7 @@ export const TIERS = {
     legalScope: "Locuințe unifamiliale + blocuri locuințe + apartamente (Art. 6 alin. 2 Ord. 348/2026)",
   },
   pro: {
-    id: "pro", label: "Zephren AE Ici",
+    id: "pro", label: "ZEPHREN AE Ici",
     subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
     price: 1499, priceAn: null,                 // v7.1: TVA inclus
     maxProjects: 9999, maxCerts: 999,           // v7.1: CPE nelimitat
@@ -62,7 +62,7 @@ export const TIERS = {
     legalScope: "Toate categoriile de clădiri + audit energetic + raport nZEB (Art. 6 alin. 1 Ord. 348/2026)",
   },
   expert: {
-    id: "expert", label: "Zephren Expert",
+    id: "expert", label: "ZEPHREN Expert",
     subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
     price: 2999, priceAn: null,                 // v7.1: TVA inclus
     maxProjects: 9999, maxCerts: 999,           // v7.1: CPE nelimitat
@@ -75,7 +75,7 @@ export const TIERS = {
     legalScope: "Toate categoriile + audit + nZEB + 18 module avansate Step 8 (Art. 6 alin. 1 Ord. 348/2026 + funcționalități premium)",
   },
   birou: {
-    id: "birou", label: "Zephren Birou",
+    id: "birou", label: "ZEPHREN Birou",
     subtitle: "Pentru birouri 2-5 auditori (mix AE Ici + AE IIci) · CPE + audit NELIMITAT · preț FIX per birou",
     price: 5999, priceAn: null,                 // v7.1: TVA inclus
     maxProjects: 9999, maxCerts: 999,
@@ -88,7 +88,7 @@ export const TIERS = {
     legalScope: "Toate categoriile + audit + nZEB pentru min. 1 utilizator AE Ici · per-user limitare runtime per gradul real",
   },
   enterprise: {
-    id: "enterprise", label: "Zephren Enterprise",
+    id: "enterprise", label: "ZEPHREN Enterprise",
     subtitle: "Pentru organizații 6-100+ auditori (toate gradele) · SLA 99.9% + INCERC validation",
     price: 9999, priceAn: 99990,                // v7.0: 4990→9999
     maxProjects: 9999, maxCerts: 999,

@@ -110,7 +110,7 @@ export const V3_FEATURES = (FEATURES_DATA.main || []).map(f => ({
 export const PLANS = [
   {
     id: "free",
-    name: "Zephren Free",
+    name: "ZEPHREN Free",
     price: "0",
     period: "",
     priceAn: null,
@@ -135,7 +135,7 @@ export const PLANS = [
     discount: "Studenți, doctoranzi, absolvenți în curs de atestare MDLPA, stagiari în birouri de audit",
     audience: "Studenți · doctoranzi · absolvenți în curs de atestare MDLPA · stagiari în birouri de audit · CPE nelimitat cu watermark didactic",
     features: [
-      "TOATE funcțiile Zephren Expert (Step 1-8 complet)",
+      "TOATE funcțiile ZEPHREN Expert (Step 1-8 complet)",
       "AI Pack + BIM Pack incluse",
       "CPE NELIMITATE cu watermark SCOP DIDACTIC — practică reală, fără risc de emitere neoficială",
       "Pregătire proiect de atestare MDLPA — simulare completă CPE conform Ord. 348/2026",
@@ -149,7 +149,7 @@ export const PLANS = [
   },
   {
     id: "audit",
-    name: "Zephren AE IIci",
+    name: "ZEPHREN AE IIci",
     subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
     price: "599",
     period: "/lună",
@@ -175,7 +175,7 @@ export const PLANS = [
   },
   {
     id: "pro",
-    name: "Zephren AE Ici",
+    name: "ZEPHREN AE Ici",
     subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
     price: "1.499",
     period: "/lună",
@@ -202,7 +202,7 @@ export const PLANS = [
   },
   {
     id: "expert",
-    name: "Zephren Expert",
+    name: "ZEPHREN Expert",
     subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
     price: "2.999",
     period: "/lună",
@@ -211,7 +211,7 @@ export const PLANS = [
     vatIncluded: true,
     audience: "Auditor senior AE Ici + consultant · CPE + audit + nZEB + BIM + Pasivhaus + MonteCarlo",
     features: [
-      "Tot Zephren AE Ici, plus:",
+      "Tot ZEPHREN AE Ici, plus:",
       "Step 8 COMPLET (18 module avansate)",
       "BIM Pack inclus (IFC/Revit/ArchiCAD import)",
       "MonteCarloEP · Pasivhaus · PMV/PPD ISO 7730",
@@ -229,7 +229,7 @@ export const PLANS = [
   },
   {
     id: "birou",
-    name: "Zephren Birou",
+    name: "ZEPHREN Birou",
     subtitle: "Pentru birouri 2-5 auditori (mix AE Ici + AE IIci) · CPE + audit NELIMITAT · preț FIX per birou",
     price: "5.999",
     period: "/lună",
@@ -239,7 +239,7 @@ export const PLANS = [
     tierNote: "2–5 utilizatori · CPE + audit NELIMITAT pentru toți",
     audience: "Birou audit 2-5 auditori (AE Ici și/sau AE IIci) · CPE + audit NELIMITAT pentru toți · preț FIX per birou",
     features: [
-      "Tot Zephren Expert × 2-5 utilizatori",
+      "Tot ZEPHREN Expert × 2-5 utilizatori",
       "CPE NELIMITAT (rollover 6 luni)",
       "Audituri energetice NELIMITATE",
       "TeamDashboard multi-user + Calendar audit echipă",
@@ -255,7 +255,7 @@ export const PLANS = [
   },
   {
     id: "enterprise",
-    name: "Zephren Enterprise",
+    name: "ZEPHREN Enterprise",
     subtitle: "Pentru organizații 6-100+ auditori (toate gradele) · SLA 99.9% + INCERC validation",
     price: "9.999",
     period: "/lună",
@@ -265,7 +265,7 @@ export const PLANS = [
     tierNote: "6-100+ utilizatori · SLA 99.9% · volum negociat",
     audience: "Organizații 6-100+ auditori (toate gradele AE Ici / AE IIci) · CPE + audit NELIMITAT · SLA 99.9% · INCERC validation",
     features: [
-      "Tot Zephren Birou, plus:",
+      "Tot ZEPHREN Birou, plus:",
       "6-100+ utilizatori (volume scaling)",
       "CPE + audit NELIMITAT pentru toți utilizatorii",
       "SLA garantat 99.9%",
