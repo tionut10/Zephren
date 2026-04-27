@@ -392,6 +392,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ height: "40px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
+            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700", letterSpacing: "0.3px" }}>v{APP_VERSION}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
