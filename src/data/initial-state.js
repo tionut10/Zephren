@@ -106,6 +106,19 @@ export const INITIAL_BUILDING = {
   windPowerKw: "",                // Putere nominală [kW]
   windHubHeightM: "",             // Înălțime ax rotor [m]
   windRotorDiameterM: "",         // Diametru rotor [m]
+  // ── Sprint D Task 1 (27 apr 2026) — Verificare cadastrală manuală auditor ──
+  // ANCPI nu oferă API public pentru SaaS comercial; auditorul confirmă manual
+  // că a verificat extrasul CF la OCPI. Flag-ul `verified=true` deblochează
+  // exportul DOCX CPE oficial în Step 6 (blocaj hard).
+  ancpi: {
+    verified: false,              // checkbox „am verificat manual"
+    fileName: null,               // nume fișier PDF extras CF încărcat
+    fileSize: null,               // mărime în bytes
+    fileBase64: null,              // conținut PDF (max 2 MB) — stocaj local browser
+    uploadDate: null,              // ISO timestamp upload
+    cadastralNr: "",               // sincronizat cu building.cadastralNumber
+    carteFunciara: "",             // sincronizat cu building.landBook
+  },
 };
 
 // ─── STEP 3: INSTALAȚII ───

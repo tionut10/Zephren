@@ -4,8 +4,10 @@ import AutocompleteInput from "../components/AutocompleteInput.jsx";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import IFCImport from "../components/IFCImport.jsx";
 import SmartDataHub from "../components/SmartDataHub/SmartDataHub.jsx";
-import BuildingMap from "../components/BuildingMap.jsx"; // Sprint B Task 6: hartă OSM iframe simplu (legacy)
 import BuildingMapAdvanced from "../components/BuildingMapAdvanced.jsx"; // Sprint D Task 5: Leaflet + Overpass + shading
+import TMYPanel from "../components/TMYPanel.jsx"; // Sprint B Task 2: TMY orar (Pro+)
+import ANCPIVerificationPanel from "../components/ANCPIVerificationPanel.jsx"; // Sprint D Task 1: verificare cadastru
+import { canAccess } from "../lib/planGating.js";
 import { findNearestLocality } from "../utils/exif-gps.js"; // Sprint D Task 6: GPS auto-localitate
 import CLIMATE_FOR_GPS from "../data/climate.json";
 import CLIMATE_DB from "../data/climate.json";
@@ -28,6 +30,9 @@ import {
   isResidential,
   parseFloorsRegime,
 } from "../calc/step1-validators.js";
+// Sprint v6.2 (27 apr 2026) — Validare grad MDLPA ↔ tip clădire (Ord. 348/2026 Art. 6)
+import { validateGradVsBuildingCategory } from "../calc/auditor-grad-validation.js";
+import { getRequiredMdlpaGrade } from "../lib/planGating.js";
 
 // ── Lazy-load localități România ───────────────────────────────────────────────
 let _localitiesCache = null;
@@ -205,6 +210,14 @@ export default function Step1Identification({
   const fieldErr = (key) => (showValidationBanner ? validationErrors[key] || "" : "");
   const fieldWarn = (key) => validationWarnings[key] || "";
   const progress = useMemo(() => computeStep1Progress(building, lang), [building, lang]);
+
+  // Sprint v6.2 — Validare grad MDLPA ↔ tip clădire (Ord. 348/2026 Art. 6)
+  // Recalculată reactiv la schimbarea planului sau a categoriei.
+  const gradValidation = useMemo(() => validateGradVsBuildingCategory({
+    gradMdlpaRequired: getRequiredMdlpaGrade(userPlan),
+    auditorGrad: building?.auditorGrad || null,
+    buildingCategory: building?.category,
+  }), [userPlan, building?.auditorGrad, building?.category]);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -651,6 +664,45 @@ export default function Step1Identification({
                 error={fieldErr("category")}
                 tooltip="Categoria determină profilul orar, regimul de temperatură, debitele ventilație și pragurile nZEB."
               />
+              {/* Sprint v6.2 (27 apr 2026) — Validare legală grad MDLPA ↔ tip clădire
+                  Conform Art. 6 alin. (2) Ord. MDLPA 348/2026: AE IIci poate certifica
+                  EXCLUSIV rezidențial (locuințe, blocuri, apartamente). */}
+              {gradValidation.severity === "blocking" && (
+                <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="text-base leading-none mt-0.5" aria-hidden="true">🚫</span>
+                    <div className="flex-1 space-y-1">
+                      <div className="font-semibold text-red-300">
+                        {lang === "EN"
+                          ? "Building category not permitted by your professional grade"
+                          : "Categoria clădirii nu este permisă de gradul tău profesional"}
+                      </div>
+                      <div className="text-red-200/90">{gradValidation.message}</div>
+                      <div className="text-[10px] opacity-60 italic mt-1">
+                        {lang === "EN" ? "Legal reference:" : "Referință legală:"} {gradValidation.legalRef}
+                      </div>
+                      {gradValidation.upgradePath && (
+                        <div className="mt-2 text-[11px]">
+                          <span className="opacity-70">
+                            {lang === "EN" ? "Recommended:" : "Recomandare:"}
+                          </span>{" "}
+                          <span className="font-semibold text-amber-300">
+                            {lang === "EN"
+                              ? `Upgrade to Zephren ${gradValidation.upgradePath} (full scope, all categories)`
+                              : `Upgrade la Zephren ${gradValidation.upgradePath} (scop complet, toate categoriile)`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {gradValidation.severity === "warning" && gradValidation.message && (
+                <div role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-200/90">
+                  <span aria-hidden="true">⚠️ </span>
+                  {gradValidation.message}
+                </div>
+              )}
               <Select
                 label={t("Tip structură", lang)}
                 value={building.structure}
@@ -1223,6 +1275,60 @@ export default function Step1Identification({
               building={building}
               lang={lang}
             />
+          )}
+
+          {/* Sprint D Task 1: verificare cadastru ANCPI (upload PDF + checkbox + redirect epay) */}
+          {/* Sincronizăm bidirecțional cadastralNr/carteFunciara cu cadastralNumber/landBook
+              din Anexa 1 MDLPA pentru a evita re-introducerea acelorași date. */}
+          <ANCPIVerificationPanel
+            data={{
+              ...(building?.ancpi || {}),
+              cadastralNr: building?.ancpi?.cadastralNr || building?.cadastralNumber || "",
+              carteFunciara: building?.ancpi?.carteFunciara || building?.landBook || "",
+            }}
+            onUpdate={(fields) => {
+              const updates = { ancpi: { ...(building?.ancpi || {}), ...fields } };
+              if (Object.prototype.hasOwnProperty.call(fields, "cadastralNr")) {
+                updates.cadastralNumber = fields.cadastralNr;
+              }
+              if (Object.prototype.hasOwnProperty.call(fields, "carteFunciara")) {
+                updates.landBook = fields.carteFunciara;
+              }
+              updateBuilding(updates);
+            }}
+            address={building?.address}
+            lang={lang}
+          />
+
+          {/* Sprint B Task 2: TMY orar (Pro+) — secțiune colapsabilă sub graficele climate */}
+          {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
+            <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4">
+              <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base">🌡️</span>
+                  <span className="text-sm font-semibold text-white">
+                    {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
+                  </span>
+                  <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
+                    Pro+ · PVGIS / EPW / CSV
+                  </span>
+                </div>
+                <span className="text-slate-500 text-xs group-open:hidden">▼</span>
+                <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
+              </summary>
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] text-slate-400">
+                  {lang === "EN"
+                    ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
+                    : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
+                </p>
+                <TMYPanel
+                  climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
+                  building={building}
+                  lang={lang}
+                />
+              </div>
+            </details>
           )}
 
           {selectedClimate && (

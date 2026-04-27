@@ -26,6 +26,8 @@ import { autoGenerateCPECode, canAutoGenerateCPE } from "../utils/cpe-auto-gen.j
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
+import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
+import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { canAccess as canAccessFn } from "../lib/planGating.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
@@ -39,7 +41,8 @@ import { getCityCoordinates } from "../utils/city-coordinates.js";
 export default function Step6Certificate(props) {
   const {
     monthlyISO, instSummary, renewSummary, envelopeSummary,
-    building, selectedClimate, lang, theme,
+    building, setBuilding,  // Sprint v6.2 — mutare AnexaMDLPAFields Step 7→Step 6 (Ord. 348/2026)
+    selectedClimate, lang, theme,
     heating, cooling, ventilation, lighting, acm,
     solarThermal, photovoltaic, heatPump, biomass, otherRenew,
     opaqueElements, glazingElements, thermalBridges,
@@ -2190,6 +2193,72 @@ ${(() => {
                     </div>
                   </details>
 
+                  {/* ── Sprint v6.2 (27 apr 2026) — Raport conformare nZEB ──
+                      Conform Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026, doar
+                      AE Ici poate emite acest raport pentru clădiri în faza de
+                      proiectare. Componenta validează intern gating-ul. */}
+                  {canAccessFn(userPlan, "nzebReport") && (
+                    <details className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 group">
+                      <summary className="cursor-pointer flex items-center gap-2 text-xs opacity-80 hover:opacity-100 list-none [&::-webkit-details-marker]:hidden">
+                        <span className="text-base">🌿</span>
+                        <span>{lang === "EN" ? "nZEB Conformance Report (design phase)" : "Raport conformare nZEB (proiectare)"}</span>
+                        <span className="text-[9px] opacity-60 ml-auto">AE Ici · Art. 6 lit. c</span>
+                      </summary>
+                      <div className="mt-2">
+                        <RaportConformareNZEB
+                          building={building}
+                          selectedClimate={selectedClimate}
+                          instSummary={instSummary}
+                          renewSummary={renewSummary}
+                          envelopeSummary={envelopeSummary}
+                          opaqueElements={opaqueElements}
+                          glazingElements={glazingElements}
+                          heating={heating}
+                          cooling={cooling}
+                          ventilation={ventilation}
+                          lighting={lighting}
+                          acm={acm}
+                          solarThermal={solarThermal}
+                          photovoltaic={photovoltaic}
+                          heatPump={heatPump}
+                          biomass={biomass}
+                          auditor={auditor}
+                          userPlan={userPlan}
+                          lang={lang}
+                          showToast={showToast}
+                        />
+                      </div>
+                    </details>
+                  )}
+
+                  {/* ── Sprint v6.2 (27 apr 2026) — Anexa 1+2 MDLPA ────────────────
+                      Mutat din Step 7 conform Ord. MDLPA 348/2026 (MO 292/14.IV.2026):
+                      Step 6 devine self-sufficient pentru CPE + Anexa 1+2 completă.
+                      Auditorii AE Ic și AE IIc completează aceleași 35 câmpuri extinse
+                      direct la generarea CPE, fără dependență de Step 7 (audit complet). */}
+                  {setBuilding && (
+                    <details className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 group">
+                      <summary className="cursor-pointer flex items-center gap-2 text-xs opacity-80 hover:opacity-100 list-none [&::-webkit-details-marker]:hidden">
+                        <span className="text-base">📋</span>
+                        <span>{lang === "EN" ? "Annex 1+2 MDLPA — extended fields" : "Anexa 1+2 MDLPA — câmpuri extinse"}</span>
+                        <span className="text-[9px] opacity-60 ml-auto">{lang === "EN" ? "auto-fill DOCX" : "completare automată DOCX"}</span>
+                      </summary>
+                      <div className="mt-2">
+                        <AnexaMDLPAFields
+                          building={building}
+                          setBuilding={setBuilding}
+                          heating={heating}
+                          cooling={cooling}
+                          ventilation={ventilation}
+                          acm={acm}
+                          otherRenew={otherRenew}
+                          lighting={lighting}
+                          lang={lang}
+                        />
+                      </div>
+                    </details>
+                  )}
+
                   {/* MDLPA Registry info */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
                     <div className="text-[10px] opacity-50 font-medium mb-1">Registru MDLPA</div>
@@ -2961,9 +3030,36 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               })()}
 
               {/* ═══ EXPORT DOCX OFICIAL — full-width sub grid ═══ */}
+              {/* Sprint D Task 2: blocaj hard export oficial dacă cadastru ANCPI neverificat */}
+              {!building?.ancpi?.verified && (
+                <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-base shrink-0 mt-0.5">🏛️</span>
+                    <div className="text-xs text-amber-200">
+                      <div className="font-semibold mb-0.5">
+                        {lang === "EN" ? "Cadastre verification required" : "Verificare cadastru ANCPI obligatorie"}
+                      </div>
+                      <div className="text-[11px] text-amber-300/90 leading-relaxed">
+                        {lang === "EN"
+                          ? "Official CPE export is blocked until you upload the CF extract PDF and confirm manual verification in Step 1 (ANCPI panel). The legal regime of the building must be confirmed before issuing the certificate."
+                          : "Exportul CPE oficial este blocat până când încarci PDF-ul extrasului de carte funciară și confirmi verificarea manuală în Pas 1 (panou ANCPI). Regimul juridic al clădirii trebuie confirmat înainte de emiterea certificatului."}
+                      </div>
+                      {goToStep && (
+                        <button
+                          onClick={() => goToStep(1)}
+                          className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-100 transition-colors"
+                        >
+                          → {lang === "EN" ? "Go to Step 1 — ANCPI verification" : "Mergi la Pas 1 — verificare ANCPI"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               {(() => {
                 const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
-                const dataComplete = Au > 0 && instSummary && building.locality && building.category;
+                const ancpiVerified = !!building?.ancpi?.verified;
+                const dataComplete = Au > 0 && instSummary && building.locality && building.category && ancpiVerified;
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
                     <button

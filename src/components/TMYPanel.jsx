@@ -21,6 +21,72 @@ import { parseEPW, parseClimateCSV } from "../calc/climate-import.js";
 
 const MONTHS_RO = ["Ian", "Feb", "Mar", "Apr", "Mai", "Iun", "Iul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// ── Export TMY → CSV / JSON (Sprint B Task 1) ─────────────────────────────────
+// Generează un fișier CSV cu toate valorile orare TMY (8760 dacă PVGIS real,
+// 288 = 12×24 dacă aproximare lunară din EPW/CSV). Header cu metadate sub formă
+// de comentarii (#) urmat de coloane month,hour,T_C,GHI_Wm2,RH_pct,wind_ms.
+// Pentru JSON exportăm structura completă inclusiv metadata + monthlyHourly.
+function buildTMYCSV(tmyData) {
+  if (!tmyData?.monthlyHourly) return null;
+  const meta = tmyData.metadata || {};
+  const lines = [];
+  lines.push("# TMY data export — Zephren");
+  lines.push(`# Generated: ${new Date().toISOString()}`);
+  if (meta.source)    lines.push(`# Source: ${meta.source}`);
+  if (meta.lat != null && meta.lon != null) lines.push(`# Coordinates: ${meta.lat}°N, ${meta.lon}°E`);
+  if (meta.elevation != null) lines.push(`# Elevation: ${meta.elevation} m`);
+  if (meta.periods && meta.periods !== "—") lines.push(`# Period: ${meta.periods}`);
+  if (meta.isLunarApprox) lines.push("# NOTE: hourly values are approximated from monthly means (288 = 12×24).");
+  lines.push("# Standard: SR EN ISO 15927-4:2007 + Mc 001-2022 §A.4");
+  lines.push("month,hour,T_C,GHI_Wm2,RH_pct,wind_ms");
+
+  const T   = tmyData.monthlyHourly.T   || [];
+  const GHI = tmyData.monthlyHourly.GHI || [];
+  const RH  = tmyData.monthlyHourly.RH  || [];
+  const WS  = tmyData.monthlyHourly.WS  || [];
+
+  const fmt = (v) => (v == null || isNaN(v) ? "" : Number(v).toFixed(2));
+
+  for (let m = 0; m < 12; m++) {
+    for (let h = 0; h < 24; h++) {
+      lines.push(`${m + 1},${h},${fmt(T[m]?.[h])},${fmt(GHI[m]?.[h])},${fmt(RH[m]?.[h])},${fmt(WS[m]?.[h])}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+function buildTMYJSON(tmyData) {
+  if (!tmyData) return null;
+  return JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    standard: "SR EN ISO 15927-4:2007 + Mc 001-2022 §A.4",
+    metadata: tmyData.metadata || {},
+    monthlyHourly: tmyData.monthlyHourly || {},
+    hourly: tmyData.hourly || [],
+  }, null, 2);
+}
+
+function downloadBlob(content, filename, mime) {
+  if (typeof window === "undefined" || !content) return;
+  try {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 300);
+  } catch (e) {
+    // Silent fail în SSR sau browser fără Blob support
+  }
+}
+
+export { buildTMYCSV, buildTMYJSON };
+
 // Parametri afișaj
 const PARAMS = {
   T:   { label: "Temperatură", unit: "°C",   color: "#ef4444", colorCold: "#3b82f6", min: -25, max: 40 },
@@ -257,8 +323,8 @@ export default function TMYPanel({ climate, building, lang = "RO" }) {
             )}
           </div>
 
-          {/* Selector parametru */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Selector parametru + export CSV/JSON */}
+          <div className="flex flex-wrap gap-1.5 items-center">
             {Object.entries(PARAMS).map(([key, p]) => (
               <button key={key}
                 onClick={() => setActiveParam(key)}
@@ -270,6 +336,30 @@ export default function TMYPanel({ climate, building, lang = "RO" }) {
                 {p.label} <span className="text-[10px] opacity-60">[{p.unit}]</span>
               </button>
             ))}
+            <div className="flex-1" />
+            {/* Sprint B Task 1: export CSV/JSON */}
+            <button
+              onClick={() => {
+                const csv = buildTMYCSV(tmyData);
+                const stamp = new Date().toISOString().slice(0, 10);
+                downloadBlob(csv, `tmy-zephren-${stamp}.csv`, "text/csv;charset=utf-8");
+              }}
+              className="px-2.5 py-1.5 rounded text-xs font-medium bg-emerald-600/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-200 transition-colors"
+              title={lang === "EN" ? "Export hourly TMY data as CSV" : "Exportă datele TMY orare ca CSV"}
+            >
+              📥 CSV
+            </button>
+            <button
+              onClick={() => {
+                const json = buildTMYJSON(tmyData);
+                const stamp = new Date().toISOString().slice(0, 10);
+                downloadBlob(json, `tmy-zephren-${stamp}.json`, "application/json;charset=utf-8");
+              }}
+              className="px-2.5 py-1.5 rounded text-xs font-medium bg-violet-600/20 hover:bg-violet-500/30 border border-violet-500/30 text-violet-200 transition-colors"
+              title={lang === "EN" ? "Export complete TMY data as JSON" : "Exportă datele TMY complete ca JSON"}
+            >
+              📥 JSON
+            </button>
           </div>
 
           {/* Heatmap 12 luni × 24 ore */}
