@@ -897,12 +897,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "32px", alignItems: "center", flexWrap: "wrap" }}>
                       <div>
                         <h3 style={{ fontSize: "22px", fontWeight: "700", color: text, marginTop: 0, marginBottom: "8px" }}>
-                          {eduPlan.name} — {lang === "EN" ? "Free during your studies" : "Gratis pe perioada studiilor"}
+                          {eduPlan.name} — {lang === "EN" ? "Free during training & attestation" : "Gratis pe perioada formării și atestării"}
                         </h3>
                         <p style={{ fontSize: "14px", color: textMuted, lineHeight: 1.6, marginBottom: "16px" }}>
                           {lang === "EN"
-                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students and doctoral candidates with valid proof. Watermark applied to all CPE documents — official MDLPA submission blocked."
-                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți și doctoranzi cu dovadă valabilă. Watermark aplicat pe toate documentele CPE — submit oficial MDLPA blocat."}
+                            ? "All Expert features (Step 1-8 + AI Pack + BIM Pack) free for students, doctoral candidates, graduates awaiting MDLPA attestation, and trainees in audit offices. Practice on real projects without the risk of issuing unofficial certificates — documents carry the SCOP DIDACTIC watermark."
+                            : "Toate funcțiile Expert (Step 1-8 + AI Pack + BIM Pack) gratis pentru studenți, doctoranzi, absolvenți în curs de atestare MDLPA și stagiari în birouri de audit. Practică pe proiecte reale fără riscul emiterii unui CPE neoficial — documentele poartă ștampila SCOP DIDACTIC."}
                         </p>
                         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "8px" }}>
                           {eduPlan.features.slice(0, 6).map(f => (
@@ -941,8 +941,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                         </div>
                         <p style={{ fontSize: "13px", color: textFaint, lineHeight: 1.5, margin: 0 }}>
                           {lang === "EN"
-                            ? "Universities, professional training centers, research institutes, professors, trainees and energy researchers: contact us for an institutional collaboration agreement (multi-user access, custom training, branding, special terms)."
-                            : "Universități, centre de formare profesională, institute de cercetare, profesori, trainee și cercetători energetici: contactează-ne pentru un acord instituțional de colaborare (acces multi-user, training personalizat, branding, condiții speciale)."}
+                            ? "Universities, professional training centers (INCERC, MDLPA), research institutes and audit firms training staff: contact us for an institutional collaboration agreement — multi-user access, custom curriculum, Zephren branding for courses, special pricing."
+                            : "Universități (UTCB, UTBv, TUIASI, UPT), centre de formare MDLPA/INCERC, institute de cercetare și birouri care formează personal: contactați-ne pentru un acord instituțional — acces multi-user, curriculum personalizat, branding Zephren în cursuri, condiții speciale."}
                         </p>
                       </div>
                       <a
