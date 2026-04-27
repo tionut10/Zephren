@@ -64,35 +64,42 @@ export function isResidentialCategory(category) {
 }
 
 /**
- * Validează conformitatea grad auditor ↔ categorie clădire.
+ * Validează conformitatea grad auditor ↔ categorie clădire ↔ scop ↔ public.
+ *
+ * Sprint v6.3 — extins cu `scopCpe` și `isPublic` per Art. 6 alin. (2).
  *
  * Returnează un obiect cu următoarele câmpuri:
- *   - valid       (bool)   — true dacă gradul permite legal această categorie
+ *   - valid       (bool)   — true dacă gradul permite legal această clădire
  *   - severity    (string) — "ok" | "blocking" | "warning" | "info"
  *   - message     (string) — text explicativ user-friendly
  *   - legalRef    (string) — referința articolului din Ord. 348/2026
  *   - upgradePath (string) — sugestie upgrade dacă blocking (ex: „AE Ici")
  *
- * Severitățile:
- *   - "ok"        — totul în regulă
- *   - "blocking"  — utilizatorul nu poate emite CPE legal pentru această clădire
- *   - "warning"   — atenționare (ex: grad lipsă, completează profilul)
- *   - "info"      — info contextual (ex: tranziție Ord. vechi)
- *
  * @param {object} args
  * @param {string|null} args.gradMdlpaRequired — gradul cerut de plan ("Ici" | "IIci" | null)
- * @param {string|null} args.auditorGrad        — gradul auditorului din profil ("Ici" | "IIci" | "" | null)
+ * @param {string|null} args.auditorGrad        — gradul auditorului din profil
  * @param {string|null} args.buildingCategory   — categoria clădirii (RI/BIR/...)
+ * @param {string|null} [args.scopCpe]          — scopul CPE ("construire"|"vanzare"|"renovare"|...)
+ * @param {boolean}     [args.isPublic]         — clădire publică (autoritate publică)
  * @returns {{valid: boolean, severity: string, message: string, legalRef: string, upgradePath: string|null}}
  */
 export function validateGradVsBuildingCategory({
   gradMdlpaRequired,
   auditorGrad,
   buildingCategory,
+  scopCpe = null,
+  isPublic = false,
 }) {
   const cat = buildingCategory ? String(buildingCategory).toUpperCase() : "";
+  const scop = scopCpe ? String(scopCpe).toLowerCase() : "";
   const planGrade = gradMdlpaRequired ? String(gradMdlpaRequired) : null;
   const auditGrade = auditorGrad ? String(auditorGrad) : null;
+
+  // Determină gradul efectiv — cel mai restrictiv dintre plan și atestat real.
+  const effectiveGrade =
+    auditGrade === "IIci" || planGrade === "IIci"
+      ? "IIci"
+      : (auditGrade === "Ici" || planGrade === "Ici" ? "Ici" : null);
 
   // 1) Free / Edu (planGrade === null) — fără validare legală (demo / didactic)
   if (planGrade === null) {
@@ -116,41 +123,90 @@ export function validateGradVsBuildingCategory({
     };
   }
 
-  const residential = isResidentialCategory(cat);
+  // 3) Reguli STRICTE pentru AE IIci (efectiv) — Art. 6 alin. (2)
+  if (effectiveGrade === "IIci") {
+    const residential = isResidentialCategory(cat);
 
-  // 3) Plan AE IIci + clădire NEREZIDENȚIALĂ → BLOCAJ legal
-  //    Conform Art. 6 alin. (2): AE IIci nu poate certifica decât rezidențial.
-  if (planGrade === "IIci" && !residential) {
-    return {
-      valid: false,
-      severity: "blocking",
-      message:
-        `Această clădire (${cat}) nu poate fi certificată de un auditor AE IIci. ` +
-        `Conform Art. 6 alin. (2) din Ordinul MDLPA nr. 348/2026, auditorii grad ` +
-        `profesional II elaborează CPE EXCLUSIV pentru locuințe unifamiliale, ` +
-        `blocuri de locuințe și apartamente din blocurile de locuințe.`,
-      legalRef: "Art. 6 alin. (2) Ord. MDLPA 348/2026 (MO 292/14.IV.2026)",
-      upgradePath: "AE Ici",
-    };
-  }
-
-  // 4) Plan AE Ici (sau Expert/Birou/Enterprise care extind Ici) — fără restricții
-  if (planGrade === "Ici") {
-    // Verificare suplimentară: dacă auditorul declară explicit IIci în profil,
-    // chiar dacă planul permite Ici, atestatul real al auditorului blochează.
-    if (auditGrade === "IIci" && !residential) {
+    // 3.1) Categorie nerezidențială → BLOCAJ
+    if (!residential) {
       return {
         valid: false,
         severity: "blocking",
         message:
-          `Atestatul tău MDLPA este AE IIci, care nu permite certificarea ` +
-          `acestei clădiri (${cat}). Conform Art. 6 alin. (2) Ord. 348/2026, ` +
-          `AE IIci poate emite CPE doar pentru rezidențial. Pentru clădiri ` +
-          `nerezidențiale este necesar atestatul AE Ici (vechime min. 5 ani).`,
+          `Această clădire (${cat}) nu poate fi certificată de un auditor AE IIci. ` +
+          `Conform Art. 6 alin. (2) din Ordinul MDLPA nr. 348/2026, auditorii grad ` +
+          `profesional II elaborează CPE EXCLUSIV pentru locuințe unifamiliale, ` +
+          `blocuri de locuințe și apartamente din blocurile de locuințe.`,
+        legalRef: "Art. 6 alin. (2) Ord. MDLPA 348/2026 (MO 292/14.IV.2026)",
+        upgradePath: "AE Ici",
+      };
+    }
+
+    // 3.2) Clădire publică — BLOCAJ (chiar dacă rezidențial: locuințe sociale ANL,
+    //      case de protocol → L.372/2005 Art. 7 alin. 1 lit. f → AE Ici)
+    if (isPublic) {
+      return {
+        valid: false,
+        severity: "blocking",
+        message:
+          `Clădirile ocupate de autorități publice (locuințe sociale ANL, case de ` +
+          `protocol etc.) nu pot fi certificate de AE IIci. Conform L.372/2005 Art. 7 ` +
+          `alin. (1) lit. f) coroborat cu Art. 6 alin. (1) Ord. MDLPA 348/2026, ` +
+          `acestea sunt în sfera de competență AE Ici.`,
+        legalRef: "L.372/2005 Art. 7 alin. (1) lit. f) + Art. 6 alin. (1) Ord. MDLPA 348/2026",
+        upgradePath: "AE Ici",
+      };
+    }
+
+    // 3.3) Scop NEPERMIS (renovare, schimbare destinație) → BLOCAJ
+    //      Permis pentru AE IIci: construire, receptie, vanzare, inchiriere.
+    const ALLOWED_SCOPES_IICI = ["construire", "receptie", "vanzare", "inchiriere"];
+    if (scop && !ALLOWED_SCOPES_IICI.includes(scop)) {
+      return {
+        valid: false,
+        severity: "blocking",
+        message:
+          `Scopul „${scop}" nu este permis pentru AE IIci. Conform Art. 6 alin. (2) ` +
+          `Ord. MDLPA 348/2026, gradul II civile certifică EXCLUSIV locuințele care ` +
+          `SE CONSTRUIESC, SE VÂND sau SE ÎNCHIRIAZĂ. Renovarea energetică, ` +
+          `schimbarea destinației etc. sunt rezervate AE Ici (Art. 6 alin. 1 lit. a).`,
         legalRef: "Art. 6 alin. (2) Ord. MDLPA 348/2026",
         upgradePath: "AE Ici",
       };
     }
+
+    // 3.4) Bloc întreg (RC) la vânzare/închiriere → BLOCAJ
+    //      Art. 6 alin. (2) menționează blocuri DOAR la „se construiesc".
+    if (cat === "RC" && (scop === "vanzare" || scop === "inchiriere")) {
+      return {
+        valid: false,
+        severity: "blocking",
+        message:
+          `Vânzarea sau închirierea unui bloc de locuințe întreg nu poate fi ` +
+          `certificată de AE IIci. Conform Art. 6 alin. (2) Ord. MDLPA 348/2026, ` +
+          `AE IIci certifică blocurile NUMAI la construire. Pentru tranzacția pe ` +
+          `bloc întreg existent este necesar AE Ici.`,
+        legalRef: "Art. 6 alin. (2) Ord. MDLPA 348/2026",
+        upgradePath: "AE Ici",
+      };
+    }
+
+    // 3.5) Apartament (BC) la construire/recepție individuală → BLOCAJ
+    //      Art. 6 alin. (2) menționează apartamentele DOAR la „se vând/închiriază".
+    if (cat === "BC" && (scop === "construire" || scop === "receptie")) {
+      return {
+        valid: false,
+        severity: "blocking",
+        message:
+          `Construirea/recepția unui apartament individual nu poate fi certificată ` +
+          `de AE IIci. Conform Art. 6 alin. (2) Ord. MDLPA 348/2026, AE IIci ` +
+          `certifică apartamente NUMAI la vânzare sau închiriere.`,
+        legalRef: "Art. 6 alin. (2) Ord. MDLPA 348/2026",
+        upgradePath: "AE Ici",
+      };
+    }
+
+    // 3.6) AE IIci — toate verificările trecute → OK
     return {
       valid: true,
       severity: "ok",
@@ -160,7 +216,7 @@ export function validateGradVsBuildingCategory({
     };
   }
 
-  // 5) Plan AE IIci + clădire rezidențială → OK
+  // 4) AE Ici (efectiv) — fără restricții (Art. 6 alin. 1: scop complet)
   return {
     valid: true,
     severity: "ok",

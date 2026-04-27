@@ -59,6 +59,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     false,       // raport audit energetic Mc 001-2022
     nzebReport:         false,       // raport conformare nZEB (Art. 6 lit. c)
     buildingCategoryRestricted: null, // null = toate categoriile permise (free e demo)
+    // ── Sprint v6.3 — MDLPA Ord. 348/2026 Art. 6 — gating fin scope/categorie ──
+    scopCpeAllowed:     "all",       // demo: toate scope-urile pentru testare
+    publicBuildingAllowed: true,     // demo: poate testa și public
+    blocIntregScopRestricted: false, // RC vânzare/închiriere permis (demo)
+    apartmentScopRestricted: false,  // BC construire permis (demo)
     // Step gating
     step7Audit:         false,       // Audit energetic complet BLOCAT
     step8Advanced:      false,
@@ -142,6 +147,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     true,
     nzebReport:         true,
     buildingCategoryRestricted: null, // edu: toate clădirile pentru învățare
+    // ── Sprint v6.3 — scop didactic, fără restricții legale (watermark obligatoriu) ──
+    scopCpeAllowed:     "all",       // edu: poate practica orice scope (cu watermark)
+    publicBuildingAllowed: true,     // edu: clădiri publice didactic
+    blocIntregScopRestricted: false,
+    apartmentScopRestricted: false,
     step7Audit:         true,
     step8Advanced:      true,        // toate Step 8
     exportDOCX:         true,
@@ -225,6 +235,13 @@ export const PLAN_FEATURES = {
     auditEnergetic:     false,       // BLOCAT — Art. 6 alin. (2): IIci NU face audit
     nzebReport:         false,       // BLOCAT — Art. 6 alin. (2): IIci NU face nZEB
     buildingCategoryRestricted: ["RI", "RC", "RA", "BC"], // doar rezidențial
+    // ── Sprint v6.3 — Art. 6 alin. (2) STRICT scope per regulament ──
+    // Permis: locuințe care SE CONSTRUIESC, SE VÂND, SE ÎNCHIRIAZĂ.
+    // INTERZIS: renovare energetică (lit. a), schimbare destinație, clădiri publice.
+    scopCpeAllowed:     ["construire", "receptie", "vanzare", "inchiriere"],
+    publicBuildingAllowed: false,    // case de protocol, locuințe sociale publice → AE Ici
+    blocIntregScopRestricted: true,  // RC (bloc) doar la construire/recepție, NU vânzare bloc întreg
+    apartmentScopRestricted: true,   // BC (apartament) doar la vânzare/închiriere
     step7Audit:         false,       // BLOCAT — diferențiator vs AE Ici
     step8Advanced:      false,
     exportDOCX:         true,
@@ -308,6 +325,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     true,        // ✅ Art. 6 alin. (1) lit. b
     nzebReport:         true,        // ✅ Art. 6 alin. (1) lit. c
     buildingCategoryRestricted: null, // toate categoriile permise
+    // ── Sprint v6.3 — Art. 6 alin. (1) — scop COMPLET ──
+    scopCpeAllowed:     "all",       // toate scope-urile (inclusiv renovare lit. a)
+    publicBuildingAllowed: true,     // clădiri publice permise
+    blocIntregScopRestricted: false, // bloc întreg vânzare/închiriere permis
+    apartmentScopRestricted: false,  // apartament în orice scop
     step7Audit:         true,        // ✅ DIFERENȚIATOR vs AE IIci
     step8Advanced:      false,       // BLOCAT — Step 8 doar Expert+
     exportDOCX:         true,
@@ -385,6 +407,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     true,
     nzebReport:         true,
     buildingCategoryRestricted: null,
+    // ── Sprint v6.3 — Expert moștenește scope COMPLET de la AE Ici ──
+    scopCpeAllowed:     "all",
+    publicBuildingAllowed: true,
+    blocIntregScopRestricted: false,
+    apartmentScopRestricted: false,
     step7Audit:         true,
     step8Advanced:      true,        // ✅ Step 8 COMPLET
     exportDOCX:         true,
@@ -457,6 +484,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     true,
     nzebReport:         true,
     buildingCategoryRestricted: null,
+    // ── Sprint v6.3 — Birou: scope complet, dar fiecare user limitat de gradul lui real ──
+    scopCpeAllowed:     "all",       // limitare per-user în runtime (canEmitForBuilding)
+    publicBuildingAllowed: true,
+    blocIntregScopRestricted: false,
+    apartmentScopRestricted: false,
     step7Audit:         true,
     step8Advanced:      true,
     exportDOCX:         true,
@@ -529,6 +561,11 @@ export const PLAN_FEATURES = {
     auditEnergetic:     true,
     nzebReport:         true,
     buildingCategoryRestricted: null,
+    // ── Sprint v6.3 — Enterprise: scope complet, limitare per-user în runtime ──
+    scopCpeAllowed:     "all",
+    publicBuildingAllowed: true,
+    blocIntregScopRestricted: false,
+    apartmentScopRestricted: false,
     step7Audit:         true,
     step8Advanced:      true,
     exportDOCX:         true,

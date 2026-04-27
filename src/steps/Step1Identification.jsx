@@ -211,13 +211,15 @@ export default function Step1Identification({
   const fieldWarn = (key) => validationWarnings[key] || "";
   const progress = useMemo(() => computeStep1Progress(building, lang), [building, lang]);
 
-  // Sprint v6.2 — Validare grad MDLPA ↔ tip clădire (Ord. 348/2026 Art. 6)
-  // Recalculată reactiv la schimbarea planului sau a categoriei.
+  // Sprint v6.2/v6.3 — Validare grad MDLPA ↔ tip clădire ↔ scop ↔ public
+  // (Ord. 348/2026 Art. 6 alin. 1 + 2). Recalculată reactiv.
   const gradValidation = useMemo(() => validateGradVsBuildingCategory({
     gradMdlpaRequired: getRequiredMdlpaGrade(userPlan),
     auditorGrad: building?.auditorGrad || null,
     buildingCategory: building?.category,
-  }), [userPlan, building?.auditorGrad, building?.category]);
+    scopCpe: building?.scopCpe || null,
+    isPublic: building?.isPublic === true,
+  }), [userPlan, building?.auditorGrad, building?.category, building?.scopCpe, building?.isPublic]);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"

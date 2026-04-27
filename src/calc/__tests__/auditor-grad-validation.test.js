@@ -80,13 +80,16 @@ describe("auditor-grad-validation — Sprint v6.2 (Ord. MDLPA 348/2026)", () => 
       }
     });
     it("blochează auditor cu atestat IIci pe plan Ici dacă încearcă nerezidențial", () => {
-      // Cazul: auditorul a luat plan superior dar atestatul real e IIci
+      // Cazul: auditorul a luat plan superior dar atestatul real e IIci.
+      // Sprint v6.3 — mesajul e unificat (effectiveGrade=IIci indiferent de sursă).
       const r = validateGradVsBuildingCategory({
         gradMdlpaRequired: "Ici", auditorGrad: "IIci", buildingCategory: "BIR",
       });
       expect(r.valid).toBe(false);
       expect(r.severity).toBe("blocking");
-      expect(r.message).toMatch(/Atestatul tău MDLPA este AE IIci/);
+      expect(r.message).toMatch(/nu poate fi certificată de un auditor AE IIci/);
+      expect(r.legalRef).toMatch(/Art\. 6 alin\. \(2\)/);
+      expect(r.upgradePath).toBe("AE Ici");
     });
     it("permite auditor IIci pe plan Ici pentru rezidențial", () => {
       const r = validateGradVsBuildingCategory({
