@@ -58,8 +58,9 @@
   },
   "crons": [
     {
+      "_comment": "Hobby plan limitation: max 1/day. Upgrade Vercel Pro pentru */15 min real-time retry. Pentru Faza 0 (mock) zilnic e suficient; queue real-time se poate face din UI manual sau extern (GitHub Actions).",
       "path": "/api/submit-mdlpa?cron=1",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
