@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "S30B — conformitate normativă strictă (5 module noi + 2 extensii)"
+      },
+      {
         "icon": "🔧",
         "text": "S30A — bug-fix tehnic global (15 fix-uri post verificare M1 Constanța)"
       },
