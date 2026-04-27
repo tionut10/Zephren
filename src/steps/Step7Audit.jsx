@@ -1225,7 +1225,7 @@ export default function Step7Audit(props) {
                   { id:"lcc",       icon:"📊", label:"Analiză LCC" },
                   { id:"costOptimal", icon:"🎯", label:"Curbă Cost-Optimal" },
                   { id:"meps",      icon:"⚠️",  label:"MEPS Check" },
-                  { id:"passport",  icon:"🆔", label:"Pașaport Renovare EPBD" },
+                  // { id:"passport",  icon:"🆔", label:"Pașaport Renovare EPBD" }, // DEZACTIVAT — reactiv după EPBD 29 mai 2026
                   { id:"oferta",    icon:"📄", label:"Ofertă Reabilitare" },
                   { id:"consum",    icon:"📈", label:"Consum Real" },
                   { id:"fond",      icon:"🏗️", label:"Fond Reparații" },
@@ -1320,32 +1320,10 @@ export default function Step7Audit(props) {
                         <OfertaReabilitare building={building} instSummary={instSummary} auditor={auditor} onClose={() => setActiveTool(null)} />
                       </div>
                     )}
+                    {/* Pașaport Renovare EPBD — DEZACTIVAT până la 29 mai 2026
                     {activeTool === "passport" && (
-                      <RenovationPassport
-                        userPlan={userPlan}
-                        building={{ ...building, energyClass: enClassStr }}
-                        instSummary={{ ...instSummary, energyClass: enClassStr }}
-                        renewSummary={renewSummary}
-                        climate={climate}
-                        auditor={auditor}
-                        mepsStatus={mepsContext}
-                        financialSummary={financialSummary}
-                        fundingEligible={fundingEligible}
-                        onClose={() => setActiveTool(null)}
-                        onPassportChange={(info) => {
-                          // Sprint 17: propagăm UUID-ul pașaportului către building,
-                          // pentru a fi referențiat în CPE XML/DOCX și în raportul de audit.
-                          if (typeof setBuilding === "function" && info?.passportId) {
-                            setBuilding(prev => ({
-                              ...prev,
-                              passportUUID: info.passportId,
-                              passportURL: info.url,
-                              passportTimestamp: info.timestamp,
-                            }));
-                          }
-                        }}
-                      />
-                    )}
+                      <RenovationPassport ... />
+                    )} */}
                     {activeTool === "consum" && (
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
                         <ConsumReconciliere instSummary={instSummary} building={building} />

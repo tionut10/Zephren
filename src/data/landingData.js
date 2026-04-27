@@ -195,7 +195,7 @@ export const PLANS = [
       "Overage audit: 999→1.499→1.999 RON/audit",
       "Rollover CPE neutilizate 3 luni",
       "AI Pack inclus (OCR facturi/CPE + chat import + AI assistant)",
-      "Pașaport Renovare EPBD + GWP CO₂ lifecycle",
+      // "Pașaport Renovare EPBD + GWP CO₂ lifecycle", // dezactivat până la EPBD 29 mai 2026
       "BACS A-D + SRI auto + MEPS check (conform EPBD)",
       "Cloud sync NELIMITAT · CPETracker + Alerts",
       "Climate import EPW + TMY orar",
@@ -225,7 +225,7 @@ export const PLANS = [
       "MonteCarloEP · Pasivhaus · PMV/PPD ISO 7730",
       "PortfolioDashboard multi-clădire · ThermovisionModule",
       "BACS detaliat 200 factori · SRI complet 42 servicii",
-      "MEPS optimizator + roadmap 2030/2033/2050 · Pașaport detaliat LCC",
+      "MEPS optimizator + roadmap 2030/2033/2050",
       "EN 12831 sarcini per cameră · UrbanHeatIsland",
       "Historic + Mixed-use buildings · Acoustic P 122-89",
       "ConsumReconciliere + ConsumoTracker",
@@ -293,24 +293,9 @@ export const PLANS = [
 // ── deci pay-per-use pentru auditori e canibalizat de abonament.
 // ── Pașaportul rămâne pentru proprietari & clienți NON-auditori care au
 // ── nevoie de Pașaport EPBD obligatoriu (29 mai 2026) fără să fie atestați.
-export const PAY_PER_USE = [
-  {
-    id: "pasaport-basic",
-    name: "Pașaport Renovare basic",
-    price: "79",
-    unit: "RON/doc",
-    desc: "Pașaport EPBD format JSON+XML+PDF · obligatoriu de la 29 mai 2026",
-    audience: "Proprietari, asociații, dezvoltatori imobiliari (non-auditori)",
-  },
-  {
-    id: "pasaport-detailed",
-    name: "Pașaport Renovare detaliat",
-    price: "199",
-    unit: "RON/doc",
-    desc: "Pașaport + analiză LCC + multi-fază reabilitare + benchmark național",
-    audience: "Property owner pe termen lung · investitor imobiliar",
-  },
-];
+// Pașaport Renovare dezactivat până la intrarea în vigoare a Directivei EPBD (29 mai 2026)
+// Reactiv array-ul de mai jos pentru a-l reactiva în landing.
+export const PAY_PER_USE = [];
 
 // ── Categorii pricing pentru afișare landing ───────────────────────────────
 // Layout recomandat: rând 1 = Free + Audit + Pro + Expert (4 carduri)

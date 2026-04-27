@@ -41,6 +41,12 @@
  * Sursă completă: memorie sprint_v62_mdlpa_348_2026.md
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FLAG GLOBAL — Pașaport Renovare dezactivat până la intrarea în vigoare a
+// Directivei EPBD (29 mai 2026). Setează true pentru reactivare.
+// ─────────────────────────────────────────────────────────────────────────────
+export const RENOVATION_PASSPORT_ENABLED = false;
+
 export const PLAN_FEATURES = {
   // ─────────────────────────── FREE ───────────────────────────
   free: {
@@ -693,6 +699,8 @@ export function canAccess(plan, feature) {
     const sess = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("zephren_demo_mode") : null;
     if (window.__demoModeActive || sess === "1") return true;
   }
+  // Pașaport Renovare dezactivat global până la intrarea în vigoare a EPBD
+  if (!RENOVATION_PASSPORT_ENABLED && (feature === "pasaportBasic" || feature === "pasaportDetailed")) return false;
   const tier = PLAN_FEATURES[resolvePlan(plan)];
   if (!tier) return false;
   const val = tier[feature];

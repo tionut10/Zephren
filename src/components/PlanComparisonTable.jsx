@@ -81,8 +81,9 @@ const CATEGORIES = [
       { key: "sriDetailed",      label: "SRI complet 42 servicii",               type: "bool" },
       { key: "mepsBinar",        label: "MEPS check binar (2030)",               type: "bool" },
       { key: "mepsOptimizer",    label: "MEPS optimizator + roadmap 2050",       type: "bool" },
-      { key: "pasaportBasic",    label: "Pașaport Renovare basic",               type: "bool" },
-      { key: "pasaportDetailed", label: "Pașaport Renovare detaliat (LCC)",      type: "bool" },
+      // Pașaport Renovare dezactivat până la EPBD 29 mai 2026
+      // { key: "pasaportBasic",    label: "Pașaport Renovare basic",               type: "bool" },
+      // { key: "pasaportDetailed", label: "Pașaport Renovare detaliat (LCC)",      type: "bool" },
       { key: "gwpReport",        label: "GWP report EN 15978 (CO₂ lifecycle)",   type: "bool" },
     ],
   },

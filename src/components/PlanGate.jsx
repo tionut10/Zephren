@@ -54,8 +54,8 @@ const FEATURE_LABELS = {
   bacsDetailed:       "BACS calculator detaliat (200 factori)",
   sriDetailed:        "SRI complet (42 servicii)",
   mepsOptimizer:      "MEPS optimizator + roadmap 2050",
-  pasaportBasic:      "Pașaport Renovare basic",
-  pasaportDetailed:   "Pașaport Renovare detaliat (LCC + multi-fază)",
+  // pasaportBasic:      "Pașaport Renovare basic",       // dezactivat până la EPBD 29 mai 2026
+  // pasaportDetailed:   "Pașaport Renovare detaliat (LCC + multi-fază)",
   aiPack:             "AI Pack (OCR + chat import + AI assistant)",
   aiAssistant:        "AI Assistant",
   ocrInvoice:         "OCR facturi energie",
