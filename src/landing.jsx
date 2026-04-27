@@ -438,9 +438,9 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       )}
 
       {/* ═══ HERO ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 24px 48px", textAlign: "center" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "28px 24px 40px", textAlign: "center" }}>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "28px" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "18px" }}>
           <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
 
           {/* Separator vizual */}
@@ -465,11 +465,11 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
         </div>
 
-        <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "24px", color: text }}>
+        <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "18px", color: text }}>
           {T("hero_title1", "Calculator performanță")}<br />
           <span style={{ color: "#f59e0b" }}>{T("hero_title2", "energetică clădiri")}</span>
         </h1>
-        <p style={{ fontSize: "18px", color: textMuted, maxWidth: "620px", margin: "0 auto 40px", lineHeight: 1.7 }}>
+        <p style={{ fontSize: "18px", color: textMuted, maxWidth: "620px", margin: "0 auto 32px", lineHeight: 1.7 }}>
           {lang === "EN"
             ? "Professional software for MDLPA certified energy auditors, compliant with Mc 001-2022."
             : "Software profesional pentru auditori energetici atestați MDLPA, conform Mc 001-2022."}
@@ -494,7 +494,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "24px", maxWidth: "900px", margin: "36px auto 0", padding: "24px 24px", borderRadius: "16px", background: isDark ? "rgba(255,255,255,0.02)" : "rgba(15,23,42,0.03)", border: `1px solid ${cardBorder}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "24px", maxWidth: "900px", margin: "22px auto 0", padding: "24px 24px", borderRadius: "16px", background: isDark ? "rgba(255,255,255,0.02)" : "rgba(15,23,42,0.03)", border: `1px solid ${cardBorder}` }}>
           {STATS.map(s => (
             <div key={s.label} style={{ textAlign: "center" }}>
               <div style={{ fontSize: "30px", fontWeight: "900", color: "#f59e0b", lineHeight: 1.1 }}>{s.value}</div>
