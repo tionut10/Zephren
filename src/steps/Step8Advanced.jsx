@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { canAccess } from "../lib/planGating.js";
+import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 import PlanGate from "../components/PlanGate.jsx";
 import { T } from "../data/translations.js";
 import { fetchPVGISClimate } from "../calc/pvgis.js";
@@ -2678,12 +2679,15 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   const { default: jsPDF } = await import("jspdf");
                   await import("jspdf-autotable");
                   const doc = new jsPDF();
+                  // S30A·A1 — diacritice RO via Liberation Sans embedded
+                  const fontOk = await setupRomanianFont(doc);
+                  const writeText = makeTextWriter(doc, fontOk);
                   doc.setFontSize(14);
-                  doc.text("Tablou finanțări disponibile", 14, 18);
+                  writeText("Tablou finanțări disponibile", 14, 18);
                   doc.setFontSize(9);
                   doc.setTextColor(120);
-                  doc.text(`Clădire: ${building?.address || "—"} | EP actual: ${epActual ? epActual.toFixed(1) : "—"} kWh/(m²·an)`, 14, 26);
-                  doc.text(`Proprietar: ${ownerType} | Data: ${new Date().toLocaleDateString("ro-RO")}`, 14, 31);
+                  writeText(`Clădire: ${building?.address || "—"} | EP actual: ${epActual ? epActual.toFixed(1) : "—"} kWh/(m²·an)`, 14, 26);
+                  writeText(`Proprietar: ${ownerType} | Data: ${new Date().toLocaleDateString("ro-RO")}`, 14, 31);
                   doc.setTextColor(0);
                   const rows = pnrrResult.results.map(r => [
                     r.programName,
@@ -2695,14 +2699,14 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                   doc.autoTable({
                     head: [["Program", "Autoritate", "Eligibilitate", "Grant estimat", "% Grant"]],
                     body: rows, startY: 38,
-                    styles: { fontSize: 8 },
+                    styles: { fontSize: 8, font: fontOk ? ROMANIAN_FONT : "helvetica" },
                     headStyles: { fillColor: [37, 99, 235] },
                   });
                   const finalY = doc.lastAutoTable.finalY + 8;
                   doc.setFontSize(10);
-                  doc.text(`Grant maxim disponibil: ${pnrrResult.maxGrant?.toLocaleString() || 0} EUR`, 14, finalY);
+                  writeText(`Grant maxim disponibil: ${pnrrResult.maxGrant?.toLocaleString() || 0} EUR`, 14, finalY);
                   doc.setFontSize(8); doc.setTextColor(120);
-                  doc.text("Zephren Energy App — estimare orientativă, verificați condițiile oficiale", 14, finalY + 7);
+                  writeText("Zephren Energy App — estimare orientativă, verificați condițiile oficiale", 14, finalY + 7);
                   doc.save(`Finantari_${building?.address || "cladire"}_${new Date().toISOString().slice(0,10)}.pdf`);
                 }}
                 className={cn("w-full py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
@@ -3348,13 +3352,16 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         const { default: jsPDF } = await import("jspdf");
                         await import("jspdf-autotable");
                         const doc = new jsPDF();
+                        // S30A·A1 — diacritice RO via Liberation Sans embedded
+                        const fontOk = await setupRomanianFont(doc);
+                        const writeText = makeTextWriter(doc, fontOk);
                         const dateStr = new Date().toLocaleDateString("ro-RO");
                         // Header
                         doc.setFontSize(14);
-                        doc.text("Deviz estimativ reabilitare termică", 14, 18);
+                        writeText("Deviz estimativ reabilitare termică", 14, 18);
                         doc.setFontSize(9); doc.setTextColor(100);
-                        doc.text(`Clădire: ${building?.address || "—"} | Au: ${Au || "—"} m²`, 14, 26);
-                        doc.text(`Data: ${dateStr} | Prețuri orientative 2024-2025 fără TVA`, 14, 31);
+                        writeText(`Clădire: ${building?.address || "—"} | Au: ${Au || "—"} m²`, 14, 26);
+                        writeText(`Data: ${dateStr} | Prețuri orientative 2024-2025 fără TVA`, 14, 31);
                         doc.setTextColor(0);
                         // Tabel items
                         const rows = (devizResult.items || []).map((item, i) => [
@@ -3368,7 +3375,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         doc.autoTable({
                           head: [["Nr.", "Descriere lucrare", "UM", "Cantitate", "P.U. EUR", "Valoare EUR"]],
                           body: rows, startY: 37,
-                          styles: { fontSize: 8 },
+                          styles: { fontSize: 8, font: fontOk ? ROMANIAN_FONT : "helvetica" },
                           headStyles: { fillColor: [79, 70, 229] },
                           columnStyles: { 0: { halign: "center", cellWidth: 10 }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
                         });
@@ -3376,16 +3383,16 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                         const subtotal = devizResult.totalEUR || 0;
                         const tva = subtotal * 0.21;
                         doc.setFontSize(9);
-                        doc.text(`Subtotal (fără TVA): ${subtotal.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 6, { align: "right" });
-                        doc.text(`TVA 21%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
-                        doc.setFontSize(10); doc.setFont(undefined, "bold");
-                        doc.text(`TOTAL cu TVA: ${(subtotal + tva).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 20, { align: "right" });
-                        doc.setFont(undefined, "normal"); doc.setFontSize(7); doc.setTextColor(120);
-                        doc.text("Zephren Energy App — deviz orientativ, verificați cu antreprenori autorizați", 14, y + 30);
+                        writeText(`Subtotal (fără TVA): ${subtotal.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 6, { align: "right" });
+                        writeText(`TVA 21%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
+                        doc.setFontSize(10); doc.setFont(fontOk ? ROMANIAN_FONT : "helvetica", "bold");
+                        writeText(`TOTAL cu TVA: ${(subtotal + tva).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 20, { align: "right" });
+                        doc.setFont(fontOk ? ROMANIAN_FONT : "helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(120);
+                        writeText("Zephren Energy App — deviz orientativ, verificați cu antreprenori autorizați", 14, y + 30);
                         // Watermark dacă Free
                         if (!canAccess(userPlan, "devizPDF")) {
                           doc.setFontSize(28); doc.setTextColor(180, 180, 180);
-                          doc.text("ORIENTATIV — ZEPHREN FREE", 50, 160, { angle: 45, opacity: 0.3 });
+                          writeText("ORIENTATIV — ZEPHREN FREE", 50, 160, { angle: 45, opacity: 0.3 });
                         }
                         doc.save(`Deviz_${building?.address || "cladire"}_${dateStr.replace(/\//g,"-")}.pdf`);
                       }}

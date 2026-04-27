@@ -21,6 +21,22 @@
  */
 export function nextDocNumber(prefix, startAt = 100) {
   const year = new Date().getFullYear();
+  // S30A·A14 — în demo mode prefixăm cu DEMO- și folosim counter sesiune separat,
+  // ca să nu polueze numerotarea reală a auditorului. Resetare la fiecare reload.
+  const isDemo = (typeof window !== "undefined") && (window.__demoModeActive ||
+    ((typeof sessionStorage !== "undefined") && sessionStorage.getItem("zephren_demo_mode") === "1"));
+  if (isDemo) {
+    const sessKey = `zephren_demo_counter_${prefix}`;
+    let n = 1;
+    try {
+      const v = sessionStorage.getItem(sessKey);
+      if (v) n = (parseInt(v, 10) || 0) + 1;
+      sessionStorage.setItem(sessKey, String(n));
+    } catch { /* ignore */ }
+    const padded = String(n).padStart(3, "0");
+    return `DEMO-${prefix}-${year}-${padded}`;
+  }
+
   const key = `zephren_doc_counter_${prefix}`;
 
   let raw = null;

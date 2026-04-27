@@ -4,6 +4,19 @@
 // Generează fișier XML descărcabil pentru importare în sisteme naționale
 // ═══════════════════════════════════════════════════════════════
 
+import { getValidityYears } from "../utils/cpe-validity.js";
+
+// S30A·A4 — DH (termoficare) factor PE conform Tab A.16 SR EN ISO 52000-1/NA:2023.
+const DH_FACTOR_PE_NREN = 0.92;
+
+// S30A·A5 — versiune program centralizată (Vite env, fallback v3.5).
+const APP_VERSION = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_APP_VERSION) || "v3.5";
+
+// S30A·A8 — formatare consistentă pentru EP (kWh/(m²·an) → 1 zecimală).
+function fmtSpec(v) {
+  return (typeof v === "number" && isFinite(v)) ? +v.toFixed(1) : v;
+}
+
 function xmlEscape(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -66,8 +79,14 @@ ${(el.layers||[]).map(l => `          <Layer>
       </GlazingElement>`).join('\n');
 
   // ─── Secțiune instalații ───
+  // S30A·A4 — DH (TERMOFICARE) → combustibil "termoficare_mix" + fP_nren = 0.92 (Tab A.16 NA:2023).
+  const isDH = instSummary?.heatingSource === "TERMOFICARE";
+  const heatingFuelId = isDH ? "termoficare_mix" : (instSummary?.fuel?.id || instSummary?.heatingFuel || "");
+  const heatingFpNren = isDH ? DH_FACTOR_PE_NREN : null;
   const instXML = instSummary ? `    <Systems>
       ${tag('HeatingSource', instSummary.heatingSource)}
+      ${tag('HeatingFuel', heatingFuelId)}
+      ${heatingFpNren !== null ? tag('HeatingFpNren', heatingFpNren) : ''}
       ${tag('HeatingEta', instSummary.eta_gen)}
       ${tag('EmissionSystem', instSummary.emissionSystem)}
       ${tag('DistributionEta', instSummary.eta_dist)}
@@ -80,19 +99,27 @@ ${(el.layers||[]).map(l => `          <Layer>
     </Systems>` : '';
 
   // ─── Secțiune energie ───
+  // S30A·A8 — fmtSpec aplicat pentru toate valorile kWh/(m²·an) → 1 zecimală.
   const energyXML = `    <EnergyPerformance>
-      ${tag('EP_total', epTotal, {unit:'kWh/(m2.an)'})}
-      ${tag('EP_heating', instSummary?.ep_heating_m2, {unit:'kWh/(m2.an)'})}
-      ${tag('EP_cooling', instSummary?.ep_cooling_m2, {unit:'kWh/(m2.an)'})}
-      ${tag('EP_ACM', instSummary?.ep_acm_m2, {unit:'kWh/(m2.an)'})}
-      ${tag('EP_lighting', instSummary?.ep_light_m2, {unit:'kWh/(m2.an)'})}
-      ${tag('RER', rer, {unit:'pct'})}
+      ${tag('EP_total', fmtSpec(epTotal), {unit:'kWh/(m2.an)'})}
+      ${tag('EP_heating', fmtSpec(instSummary?.ep_heating_m2), {unit:'kWh/(m2.an)'})}
+      ${tag('EP_cooling', fmtSpec(instSummary?.ep_cooling_m2), {unit:'kWh/(m2.an)'})}
+      ${tag('EP_ACM', fmtSpec(instSummary?.ep_acm_m2), {unit:'kWh/(m2.an)'})}
+      ${tag('EP_lighting', fmtSpec(instSummary?.ep_light_m2), {unit:'kWh/(m2.an)'})}
+      ${tag('RER', fmtSpec(rer), {unit:'pct'})}
       ${tag('EnergyClass', energyClass?.class || 'N/A')}
-      ${tag('CO2_specific', instSummary?.co2_m2, {unit:'kgCO2eq/(m2.an)'})}
+      ${tag('CO2_specific', fmtSpec(instSummary?.co2_m2), {unit:'kgCO2eq/(m2.an)'})}
     </EnergyPerformance>`;
 
+  // S30A·A3 — valabilitate unificată: scaleVersion 2026 → EPBD (5/10), altfel Ord. 16/2023 (10).
+  const validityYears = getValidityYears(energyClass?.class, {
+    scopCpe: data.scopCpe || (building?.isNew === true ? "receptie" : undefined),
+    scaleVersion: building?.scaleVersion || data.scaleVersion || "2023",
+  });
+  // S30A·A7 — cod poștal: building.postalCode preferat, fallback building.postal.
+  const postalCode = building?.postalCode || building?.postal || "";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<!-- Certificat Performanță Energetică — generat de Zephren v3.2 -->
+<!-- Certificat Performanță Energetică — generat de Zephren ${APP_VERSION} -->
 <!-- Standard: SR EN ISO 52000-1:2017, Mc 001-2022, EPBD 2024/1275 -->
 <EnergyPerformanceCertificate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   version="2024" country="RO" language="ro" generated="${today}">
@@ -101,6 +128,7 @@ ${(el.layers||[]).map(l => `          <Layer>
     ${tag('Address', building?.address)}
     ${tag('City', building?.city)}
     ${tag('County', building?.county)}
+    ${tag('PostalCode', postalCode)}
     ${tag('BuildingCategory', building?.category)}
     ${tag('YearBuilt', building?.yearBuilt)}
     ${tag('AreaUseful', building?.areaUseful, {unit:'m2'})}
@@ -132,12 +160,12 @@ ${energyXML}
 
   <Certification>
     ${tag('CertDate', today)}
-    ${/* Mc 001-2022 cap.5 + L.372/2005 R2 art.11: valabilitate 5 ani clădiri noi / 10 ani existente */''}
-    ${tag('ValidityYears', building?.isNew === true ? 5 : 10, {unit:'ani'})}
-    ${tag('ValidUntil', today.replace(/^(\d{4})/, y => String(parseInt(y) + (building?.isNew === true ? 5 : 10))))}
+    ${/* S30A·A3 — valabilitate unificată: 10 ani uniform (Ord. 16/2023) sau 5/10 EPBD 2026 */''}
+    ${tag('ValidityYears', validityYears, {unit:'ani'})}
+    ${tag('ValidUntil', today.replace(/^(\d{4})/, y => String(parseInt(y) + validityYears)))}
     ${tag('AuditorName', auditorName)}
     ${tag('AuditorCode', auditorCode)}
-    ${tag('Software', 'Zephren v3.2 — zephren.energy')}
+    ${tag('Software', `Zephren ${APP_VERSION} — zephren.energy`)}
   </Certification>
 
 </EnergyPerformanceCertificate>`;

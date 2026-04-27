@@ -29,11 +29,36 @@ export const VALIDITY_SHORT = 5;
 /**
  * Calculează numărul de ani de valabilitate pentru o clasă energetică dată.
  *
+ * S30A·A3 — regulă unificată cu scopCpe + scaleVersion:
+ *   - În RO Ord. MDLPA 16/2023 (în vigoare până la transpunerea EPBD 29 mai 2026):
+ *     valabilitate uniformă 10 ani.
+ *   - Începând cu EPBD 2024/1275 Art.17 (transpunere RO 29 mai 2026 → scaleVersion="2026"):
+ *     5 ani pentru clase D..G, 10 ani pentru A+..C.
+ *   - Recepție clădire nouă nZEB: tratată ca o clasă bună A-C (default 10 ani uniform RO).
+ *
  * @param {string} energyClass — "A+", "A", "B", "C", "D", "E", "F", "G"
- * @returns {number} — 10 pentru A+..C, 5 pentru D..G, 10 pentru unknown (backwards-compat)
+ * @param {object} [opts] — { scopCpe?: string, scaleVersion?: "2023"|"2026" }
+ * @returns {number} — 10 pentru A+..C sau scaleVersion legacy; 5 pentru D..G sub EPBD 2026
  */
-export function getValidityYears(energyClass) {
-  if (!energyClass) return VALIDITY_LONG; // fallback pentru compat cu CPE-uri fără clasă
+export function getValidityYears(energyClass, opts = {}) {
+  // Backward compat: dacă primim un object ca prim arg (vechea semnătură), interpretăm ca opts
+  if (typeof energyClass === "object" && energyClass !== null) {
+    opts = energyClass;
+    energyClass = opts.energyClass;
+  }
+  const scopCpe = opts.scopCpe;
+  const scaleVersion = opts.scaleVersion;
+  // S30A·A3 — regulă explicită cu opts.scaleVersion="2026" pentru cei care folosesc EPBD post-29 mai 2026.
+  // Fără opts (vechea semnătură doar cu energyClass) păstrăm comportamentul backward: clasă-based.
+  // Cu opts.scaleVersion absent (sau ≠ "2026"): aplicăm Ord. MDLPA 16/2023 (10 ani uniform).
+  const usedAsLegacyApi = arguments.length === 1 && (opts === undefined || (typeof opts === "object" && Object.keys(opts).length === 0));
+  if (!usedAsLegacyApi && scaleVersion !== "2026") {
+    // Ord. MDLPA 16/2023: 10 ani uniform indiferent de clasă
+    return VALIDITY_LONG;
+  }
+  // Recepție clădire nouă fără clasă: 10 ani default
+  if (scopCpe === "receptie" && !energyClass) return VALIDITY_LONG;
+  if (!energyClass) return VALIDITY_LONG;
   return LONG_VALIDITY_CLASSES.includes(String(energyClass).trim().toUpperCase())
     ? VALIDITY_LONG
     : VALIDITY_SHORT;

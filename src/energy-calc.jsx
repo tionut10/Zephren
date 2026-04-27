@@ -1083,6 +1083,13 @@ export default function EnergyCalcApp({ cloud }) {
       date: new Date().toISOString().slice(0, 10),
     }));
     setStep(1);
+    // S30A·A6 — activează demo mode pentru bypass plan-gating (Pro/Expert features unlocked).
+    // Cerere user: demo-urile trebuie să poată parcurge TOATE etapele (Step 1-8) pentru
+    // evaluarea completă a calculatorului. NU produce CPE oficiale (watermark DEMO rămâne).
+    if (typeof window !== "undefined") {
+      window.__demoModeActive = true;
+      try { sessionStorage.setItem("zephren_demo_mode", "1"); } catch (_e) { /* private mode ignore */ }
+    }
     showToast(`Demo ${idx + 1} încărcat — ${d.shortDesc}`, "success", 5000);
   }, [pushUndo, showToast]);
 
@@ -1412,6 +1419,29 @@ export default function EnergyCalcApp({ cloud }) {
     if (a > 0 && v > 0) return (a / v).toFixed(3);
     return "—";
   }, [building.areaEnvelope, building.volume]);
+
+  // ─── S30A·A16 — verificare suprafață anvelopă vs. sumă elemente ─────
+  // Dacă diferența > 10% între areaEnvelope manual și suma elementelor opace + vitrate,
+  // afișăm warning. Nu modificăm automat valoarea manuală (utilizatorul poate avea motive
+  // legitime: anexa MDLPA cere valoarea „arie totală anvelopă termică" diferit).
+  const envelopeMismatch = useMemo(() => {
+    const manual = parseFloat(building.areaEnvelope) || 0;
+    if (manual <= 0) return null;
+    const sumOpaque = (opaqueElements || []).reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
+    const sumGlazing = (glazingElements || []).reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
+    const computed = sumOpaque + sumGlazing;
+    if (computed <= 0) return null;
+    const diff = Math.abs(manual - computed) / Math.max(manual, computed);
+    if (diff > 0.10) {
+      return {
+        manual: manual.toFixed(1),
+        computed: computed.toFixed(1),
+        diffPct: (diff * 100).toFixed(1),
+        severity: diff > 0.25 ? "error" : "warning",
+      };
+    }
+    return null;
+  }, [building.areaEnvelope, opaqueElements, glazingElements]);
 
   // ─── Hooks: anvelopă, instalații, regenerabile, auto-sync ───
   const { envelopeSummary, monthlyISO, hourlyISO } = useEnvelopeSummary({

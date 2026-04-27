@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "✨",
+        "text": "feat(landing v6.2.1): rescriere badge-uri pricing — Sistem A audience-first"
+      },
+      {
+        "icon": "✨",
         "text": "feat(pricing v6.2): elimină mecanismul price-lock + politică nouă „anunț 90 zile\""
       },
       {

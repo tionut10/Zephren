@@ -6,7 +6,9 @@ import CpeAnexa from "../components/CpeAnexa.jsx";
 import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
 import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
 import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
-import { APP_VERSION } from "../data/landingData.js";
+import { APP_VERSION as TECH_VERSION } from "../data/landingData.js";
+// S30A·A5 — versiune document marketing (v3.5) pentru CPE/Anexe, separată de tech_version (0.5.0).
+import { APP_VERSION } from "../data/app-version.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
@@ -172,7 +174,8 @@ export default function Step6Certificate(props) {
 
                 const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
-                const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","alt":"Alt scop"};
+                // S30A·A15 — mapping unificat scopCpe (suport renovare + renovare_majora).
+                const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","renovare_majora":"Renovare majoră","alt":"Alt scop"};
                 const nzebDocx = NZEB_THRESHOLDS[baseCat] || NZEB_THRESHOLDS.AL;
                 const nzebOk = epFinal <= epRefMax && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
                 const enClassDocx = getEnergyClass(epFinal, catKey);
@@ -205,7 +208,7 @@ export default function Step6Certificate(props) {
                     gps: fmtRo(latV, 4) + " x " + fmtRo(lngV, 4),
                     regime: regimStr,
                     scope: scopeLabels[building.scopCpe] || "Vânzare",
-                    software: "ZEPHREN v" + APP_VERSION + "",
+                    software: "ZEPHREN " + APP_VERSION,
                     area_ref: fmtRo(Aref, 1),
                     area_gross: fmtRo(arieDesf, 1),
                     volume: Math.round(Vol).toString(),
@@ -1256,7 +1259,7 @@ export default function Step6Certificate(props) {
     <ValabilitateAni>${validityYearsXml}</ValabilitateAni>
     <NormativValabilitate>EPBD 2024/1275 Art. 17</NormativValabilitate>
     <ScopElaborare>${esc(building.scopCpe || "vanzare")}</ScopElaborare>
-    <ProgramCalcul>ZEPHREN v${APP_VERSION}</ProgramCalcul>
+    <ProgramCalcul>ZEPHREN ${APP_VERSION}</ProgramCalcul>
   </DateIdentificare>
   <Auditor>
     <Nume>${esc(auditor.name)}</Nume>
@@ -1665,8 +1668,8 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <table class="c">
 <tr>
   <td colspan="5" class="L" style="background:#E7E6E6"><strong>Scopul elabor\u0103rii CPE:</strong></td>
-  <td colspan="8" class="L">${({"vanzare":"V\u00e2nzare","inchiriere":"\u00cenchiriere","receptie":"Recep\u021bie cl\u0103dire nou\u0103","informare":"Informare proprietar","renovare":"Renovare major\u0103","alt":"Alt scop"})[building.scopCpe] || "V\u00e2nzare"}</td>
-  <td colspan="7" class="L"><strong>Program de calcul:</strong> Zephren v1.0</td>
+  <td colspan="8" class="L">${({"vanzare":"V\u00e2nzare","inchiriere":"\u00cenchiriere","receptie":"Recep\u021bie cl\u0103dire nou\u0103","informare":"Informare proprietar","renovare":"Renovare major\u0103","renovare_majora":"Renovare major\u0103","alt":"Alt scop"})[building.scopCpe] || "V\u00e2nzare"}</td>
+  <td colspan="7" class="L"><strong>Program de calcul:</strong> Zephren ${APP_VERSION}</td>
 </tr>
 </table>
 
@@ -1865,7 +1868,7 @@ ${[
   ctx.fillText(data.substring(0, 35), c.width / 2, c.height - 2);
 })();
 </script>
-<div class="ft">Pagina 1/3 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren v1.0 | ${dateNow}</div>
+<div class="ft">Pagina 1/3 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren ${APP_VERSION} | ${dateNow}</div>
 
 
 <!-- ======== PAGINA 2 ======== -->

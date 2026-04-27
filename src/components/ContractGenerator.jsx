@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "./ui.jsx";
 import { nextDocNumber } from "../utils/doc-counter.js";
+import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -65,14 +66,18 @@ export default function ContractGenerator({ building, auditor, onClose }) {
       return;
     }
     const doc = new jsPDF({ unit: "mm", format: "a4" });
+    // S30A·A1 — diacritice RO via Liberation Sans embedded
+    const fontOk = await setupRomanianFont(doc);
+    const writeText = makeTextWriter(doc, fontOk);
+    const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
     const L = 20, R = 190, W = R - L;
     let y = 20;
 
     const line = (txt, size = 10, bold = false, align = "left") => {
       doc.setFontSize(size);
-      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFont(baseFont, bold ? "bold" : "normal");
       const x = align === "center" ? 105 : align === "right" ? R : L;
-      doc.text(txt, x, y, { align });
+      writeText(txt, x, y, { align });
     };
     const br = (n = 6) => { y += n; };
     const rule = () => { doc.setDrawColor(180); doc.line(L, y, R, y); br(5); };
@@ -101,8 +106,8 @@ export default function ContractGenerator({ building, auditor, onClose }) {
       `Prestatorul se obligă să execute serviciul: ${obiectLabel}, pentru imobilul situat la adresa: ${building?.address || benefAdresa || "—"}.`,
       W
     );
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(obiectLines, L, y); y += obiectLines.length * 5 + 5;
+    doc.setFontSize(10); doc.setFont(baseFont, "normal");
+    writeText(obiectLines, L, y); y += obiectLines.length * 5 + 5;
     rule();
 
     // Art. 3 – Valoare
@@ -148,8 +153,8 @@ export default function ContractGenerator({ building, auditor, onClose }) {
         "Datele nu vor fi transmise terților fără consimțământul explicit al beneficiarului.",
         W
       );
-      doc.setFontSize(10); doc.setFont("helvetica", "normal");
-      doc.text(gdprText, L, y); y += gdprText.length * 5 + 8;
+      doc.setFontSize(10); doc.setFont(baseFont, "normal");
+      writeText(gdprText, L, y); y += gdprText.length * 5 + 8;
       rule();
     }
 
@@ -162,19 +167,19 @@ export default function ContractGenerator({ building, auditor, onClose }) {
     rule();
 
     // Semnături
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
-    doc.text("PRESTATOR", L + 20, y, { align: "center" });
-    doc.text("BENEFICIAR", R - 20, y, { align: "center" });
+    doc.setFontSize(10); doc.setFont(baseFont, "bold");
+    writeText("PRESTATOR", L + 20, y, { align: "center" });
+    writeText("BENEFICIAR", R - 20, y, { align: "center" });
     y += 15;
-    doc.setFont("helvetica", "normal");
-    doc.text(prestatorNume, L + 20, y, { align: "center" });
-    doc.text(benefDenumire || "—", R - 20, y, { align: "center" });
+    doc.setFont(baseFont, "normal");
+    writeText(prestatorNume, L + 20, y, { align: "center" });
+    writeText(benefDenumire || "—", R - 20, y, { align: "center" });
     y += 8;
-    doc.text("Semnătură: _______________", L + 20, y, { align: "center" });
-    doc.text("Semnătură: _______________", R - 20, y, { align: "center" });
+    writeText("Semnătură: _______________", L + 20, y, { align: "center" });
+    writeText("Semnătură: _______________", R - 20, y, { align: "center" });
     y += 8;
-    doc.text("Data: ___________________", L + 20, y, { align: "center" });
-    doc.text("Data: ___________________", R - 20, y, { align: "center" });
+    writeText("Data: ___________________", L + 20, y, { align: "center" });
+    writeText("Data: ___________________", R - 20, y, { align: "center" });
 
     doc.save(`Contract_${nr}.pdf`);
   }

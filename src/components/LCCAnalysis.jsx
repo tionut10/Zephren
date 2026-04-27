@@ -10,6 +10,7 @@ import { useState, useMemo } from "react";
 import { cn } from "./ui.jsx";
 import { calcFinancialAnalysis } from "../calc/financial.js";
 import { getPriceRON } from "../data/rehab-prices.js";
+import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 
 // Sprint 26 P1.16 — Factor 0.45 = ponderea pierderilor termice ale anvelopei
 // din EP total al clădirii (rest 55% = ACM, iluminat, ventilație, electrocasnice).
@@ -121,6 +122,16 @@ function calcDiscountedPayback(investitie, saving_an1, maint_an1, escalare, rata
   return null;
 }
 
+// S30A·A9 — fracțiuni maxime de cost total per categoria măsurii (clamp).
+// Motivare: deltaEP_pct se aplică pe EP TOTAL al clădirii, dar unele măsuri
+// (LED/iluminat, ACM) afectează doar o parte din consum; fără clamp, economia
+// poate depăși consumul real al sistemului afectat.
+// Sursă: distribuții tipice EP rezidențial RO conform Mc 001-2022 §5.2.
+const MAX_SAVINGS_FRACTION = {
+  led: 0.12,        // iluminat ~5-12% din EP total (UTBv 2018)
+  // Restul măsurilor afectează încălzire/răcire (50-70%) — clamp implicit nu necesar.
+};
+
 // ─── calcMeasure — exportat pentru teste ─────────────────────────────────────
 export function calcMeasure(m, Au, ep_m2, pretEnergie, escalare, rata, perioadaAnalize, perspective) {
   // Reducere EP anuală (kWh)
@@ -131,6 +142,14 @@ export function calcMeasure(m, Au, ep_m2, pretEnergie, escalare, rata, perioadaA
     ep_reducere_kWh = ep_m2 * Au * (m.deltaU_pct / 100) * ENVELOPE_LOSSES_FRACTION;
   } else if (m.prodkWh) {
     ep_reducere_kWh = m.prodkWh;
+  }
+
+  // S30A·A9 — clamp economie la max fracțiune din EP total (per categoria măsurii).
+  // Bug pre-S30A: economie LED 3.473 RON/an > consum iluminat 1.076 RON/an (M1 Constanța).
+  const maxFrac = MAX_SAVINGS_FRACTION[m.id];
+  if (maxFrac && ep_reducere_kWh > 0) {
+    const ep_max_kWh = ep_m2 * Au * maxFrac;
+    if (ep_reducere_kWh > ep_max_kWh) ep_reducere_kWh = ep_max_kWh;
   }
 
   // Investiție totală
@@ -317,58 +336,62 @@ export default function LCCAnalysis({ building = {}, instSummary = {}, opaqueEle
     try {
       const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      // S30A·A1 — diacritice RO via Liberation Sans embedded
+      const fontOk = await setupRomanianFont(doc);
+      const writeText = makeTextWriter(doc, fontOk);
+      const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
 
       // Header
       doc.setFontSize(15);
       doc.setTextColor(30, 30, 50);
-      doc.text("Analiza Cost Ciclu de Viata (LCC)", 20, 18);
+      writeText("Analiză Cost Ciclu de Viață (LCC)", 20, 18);
 
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 120);
-      doc.text(`EN 15459-1:2017 | Reg. UE 2025/2273 | Referinta cost-optim: ${COST_OPTIMAL_REF} kWh/m2*an`, 20, 25);
-      doc.text(`Suprafata utila: ${Au} m2 | EP actual: ${ep_m2} kWh/m2*an | Data: ${new Date().toLocaleDateString("ro-RO")}`, 20, 31);
+      writeText(`EN 15459-1:2017 | Reg. UE 2025/2273 | Referință cost-optim: ${COST_OPTIMAL_REF} kWh/(m²·an)`, 20, 25);
+      writeText(`Suprafață utilă: ${Au} m² | EP actual: ${ep_m2} kWh/(m²·an) | Data: ${new Date().toLocaleDateString("ro-RO")}`, 20, 31);
 
       // Parametri
       doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setTextColor(30, 30, 50);
-      doc.text("Parametri analiza", 20, 40);
-      doc.setFont("helvetica", "normal");
+      writeText("Parametri analiză", 20, 40);
+      doc.setFont(baseFont, "normal");
       doc.setFontSize(8);
-      doc.text(`Pret energie: ${params.pretEnergie} RON/kWh | Escaladare pret: ${(params.escalare*100).toFixed(1)}%/an`, 20, 47);
-      doc.text(`Rata actualizare: ${(rataEfectiva*100).toFixed(1)}% (${PERSPECTIVES_LCC[perspective]?.label || perspective}) | Perioada: ${params.perioadaAnalize} ani`, 20, 53);
+      writeText(`Preț energie: ${params.pretEnergie} RON/kWh | Escaladare preț: ${(params.escalare*100).toFixed(1)}%/an`, 20, 47);
+      writeText(`Rată actualizare: ${(rataEfectiva*100).toFixed(1)}% (${PERSPECTIVES_LCC[perspective]?.label || perspective}) | Perioadă: ${params.perioadaAnalize} ani`, 20, 53);
 
       // Tabel rezultate
       let y = 62;
       doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Rezultate LCC — sortate descrescator dupa NPV", 20, y);
+      doc.setFont(baseFont, "bold");
+      writeText("Rezultate LCC — sortate descrescător după NPV", 20, y);
       y += 6;
 
       doc.setFontSize(7);
       doc.setFillColor(240, 240, 248);
       doc.rect(18, y - 3, 174, 5.5, "F");
       doc.setTextColor(60, 60, 90);
-      doc.text("Masura",       20,  y);
-      doc.text("Invest.",      82,  y);
-      doc.text("Econ.An1",     102, y);
-      doc.text("PB ani",       120, y);
-      doc.text("NPV",          136, y);
-      doc.text("Repl.",        158, y);
-      doc.text("C-opt.",       172, y);
+      writeText("Măsură",       20,  y);
+      writeText("Invest.",      82,  y);
+      writeText("Econ.An1",     102, y);
+      writeText("PB ani",       120, y);
+      writeText("NPV",          136, y);
+      writeText("Repl.",        158, y);
+      writeText("C-opt.",       172, y);
       y += 6;
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       doc.setTextColor(40, 40, 60);
 
       const sortedForPDF = [...results].sort((a, b) => b.npv - a.npv);
       sortedForPDF.forEach(r => {
-        doc.text(r.name.slice(0, 28),                                      20,  y);
-        doc.text(Math.round(r.investitie).toLocaleString("ro-RO"),         82,  y);
-        doc.text(Math.round(r.economie_an1).toLocaleString("ro-RO"),       102, y);
-        doc.text(isFinite(r.payback_simplu) ? r.payback_simplu.toFixed(1) : "N/A", 120, y);
-        doc.text(Math.round(r.npv).toLocaleString("ro-RO"),                136, y);
-        doc.text(r.replacementCosts?.length > 0 ? `${r.replacementCosts.length}x` : "—", 158, y);
-        doc.text(r.cost_optim ? "DA" : "NU",                               172, y);
+        writeText(r.name.slice(0, 28),                                      20,  y);
+        writeText(Math.round(r.investitie).toLocaleString("ro-RO"),         82,  y);
+        writeText(Math.round(r.economie_an1).toLocaleString("ro-RO"),       102, y);
+        writeText(isFinite(r.payback_simplu) ? r.payback_simplu.toFixed(1) : "N/A", 120, y);
+        writeText(Math.round(r.npv).toLocaleString("ro-RO"),                136, y);
+        writeText(r.replacementCosts?.length > 0 ? `${r.replacementCosts.length}x` : "—", 158, y);
+        writeText(r.cost_optim ? "DA" : "NU",                               172, y);
         y += 4.8;
       });
 
@@ -376,34 +399,34 @@ export default function LCCAnalysis({ building = {}, instSummary = {}, opaqueEle
       if (pachetAnalysis) {
         y += 5;
         doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.text("Pachet optim selectat", 20, y);
+        doc.setFont(baseFont, "bold");
+        writeText("Pachet optim selectat", 20, y);
         y += 6;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         doc.setFontSize(8);
-        doc.text(`Investitie totala: ${Math.round(pachetAnalysis.totalInvest).toLocaleString("ro-RO")} RON`, 20, y); y += 5;
-        doc.text(`Reducere EP: ${pachetAnalysis.deltaEP_pct_total.toFixed(1)}% | EP dupa: ${pachetAnalysis.ep_dupa.toFixed(1)} kWh/m2*an`, 20, y); y += 5;
-        doc.text(`NPV total: ${Math.round(pachetAnalysis.npv).toLocaleString("ro-RO")} RON | Cost-optim: ${pachetAnalysis.cost_optim ? "DA" : "NU"}`, 20, y); y += 5;
+        writeText(`Investiție totală: ${Math.round(pachetAnalysis.totalInvest).toLocaleString("ro-RO")} RON`, 20, y); y += 5;
+        writeText(`Reducere EP: ${pachetAnalysis.deltaEP_pct_total.toFixed(1)}% | EP după: ${pachetAnalysis.ep_dupa.toFixed(1)} kWh/(m²·an)`, 20, y); y += 5;
+        writeText(`NPV total: ${Math.round(pachetAnalysis.npv).toLocaleString("ro-RO")} RON | Cost-optim: ${pachetAnalysis.cost_optim ? "DA" : "NU"}`, 20, y); y += 5;
       }
 
       // Note metodologice
       y += 5;
       doc.setFontSize(7.5);
       doc.setTextColor(110, 110, 130);
-      const note = `Nota metodologica: NPV calculat cu rata ${(rataEfectiva*100).toFixed(1)}% (${PERSPECTIVES_LCC[perspective]?.label}), escaladare energie ${(params.escalare*100).toFixed(1)}%/an, perioada ${params.perioadaAnalize} ani. Inlocuirile intermediare (replacements) sunt calculate automat pe baza duratei de viata a fiecarei componente conform EN 15459-1 Anexa B. Valoarea reziduala este calculata liniar la finalul perioadei de analiza.`;
+      const note = `Notă metodologică: NPV calculat cu rata ${(rataEfectiva*100).toFixed(1)}% (${PERSPECTIVES_LCC[perspective]?.label}), escaladare energie ${(params.escalare*100).toFixed(1)}%/an, perioadă ${params.perioadaAnalize} ani. Înlocuirile intermediare (replacements) sunt calculate automat pe baza duratei de viață a fiecărei componente conform EN 15459-1 Anexa B. Valoarea reziduală este calculată liniar la finalul perioadei de analiză.`;
       const noteLines = doc.splitTextToSize(note, 172);
-      doc.text(noteLines, 20, y);
+      writeText(noteLines, 20, y);
       y += noteLines.length * 3.8 + 4;
 
       // Referinte
       doc.setFontSize(6.5);
       doc.setTextColor(140, 140, 160);
-      doc.text("Referinte: EN 15459-1:2017 | Reg. delegat UE 2025/2273 (inlocuieste 244/2012) | Mc 001-2022 Partea I | Ord. MDLPA 16/2023", 20, y);
+      writeText("Referințe: EN 15459-1:2017 | Reg. delegat UE 2025/2273 (înlocuiește 244/2012) | Mc 001-2022 Partea I | Ord. MDLPA 16/2023", 20, y);
 
       // Footer
       doc.setFontSize(6);
       doc.setTextColor(160, 160, 180);
-      doc.text(`Zephren Energy Calculator — ${new Date().toISOString().slice(0, 10)} | LCC Analiza`, 20, 290);
+      writeText(`Zephren Energy Calculator — ${new Date().toISOString().slice(0, 10)} | Analiză LCC`, 20, 290);
 
       doc.save(`lcc_analiza_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {

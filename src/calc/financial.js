@@ -77,7 +77,13 @@ export function calcFinancialAnalysis(params) {
   var replacementCosts      = params.replacementCosts      || [];
   var componentsForResidual = params.componentsForResidual || null;
 
-  if (investCost <= 0 || annualSaving <= 0) return null;
+  // S30A·A10 — guard explicit: investCost ≤ 0 sau annualSaving ≤ 0 produce IRR/VAN absurd.
+  // Bug pre-S30A: IRR=1430%, VAN=24.663 lei când utilizatorul lăsa câmpuri goale.
+  // Returnăm structură null explicit (consumatori UI pot face `result?.npv ?? "—"`).
+  if (!Number.isFinite(investCost) || investCost <= 0 ||
+      !Number.isFinite(annualSaving) || annualSaving <= 0) {
+    return null;
+  }
 
   // ─── Cash flows + NPV / IRR / Payback ────────────────────────────────────────────────────
   var cashFlows       = [-investCost];

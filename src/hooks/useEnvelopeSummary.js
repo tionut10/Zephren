@@ -71,10 +71,11 @@ export function useEnvelopeSummary({
             uEff = 2 * lambda_g / (Math.PI * Bp + d_t) * Math.log(Math.PI * Bp / d_t + 1);
           }
         }
-      } else if (el.type === "PB") {
-        // Floor over unheated basement — ISO 13370 §9.4 simplified
-        uEff = u * 0.7;
       }
+      // S30A·A2 — eliminăm factorul ISO 13370 §9.4 (b=0.7) pentru PB:
+      // este redundant cu τ rezolvat din temperaturi (resolveTau) și producea
+      // double-counting (M1 Constanța: 182.5 W/K față de 91.3 corect ≈ 2×).
+      // SR EN ISO 13789 §8.4 (τ method) prevalează față de ISO 13370 §9.4 simplificat.
       totalHeatLoss += tau * area * uEff;
       totalArea += area;
     });

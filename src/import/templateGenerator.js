@@ -7,6 +7,7 @@
  *   Pas 1 (Identificare), Pas 2 (Anvelopă), Pas 3 (Instalații), Pas 4 (Regenerabile)
  */
 import * as XLSX from "xlsx";
+import { APP_VERSION } from "../data/app-version.js";
 
 export function generateImportTemplate() {
   const wb = XLSX.utils.book_new();
@@ -192,7 +193,7 @@ export function generateImportTemplate() {
 
   // ── Foaie 5: Instrucțiuni ─────────────────────────────────────────────────
   const instructiuni = [
-    ["INSTRUCȚIUNI IMPORT ZEPHREN v3.5"],
+    [`INSTRUCȚIUNI IMPORT ZEPHREN ${APP_VERSION}`],
     [""],
     ["Cum se folosește acest template:"],
     ["1. Completați foile 'Identificare', 'Anvelopa', 'Instalatii', 'Regenerabile'"],

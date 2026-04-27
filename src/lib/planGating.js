@@ -558,6 +558,14 @@ export function resolvePlan(plan) {
  * @returns {boolean}
  */
 export function canAccess(plan, feature) {
+  // S30A·A6 — bypass plan-gating când demo mode e activ (utilizatorul a încărcat
+  // un model M1-M5 din butonul „Mostre exemplu"). Cerere user: demo-urile trebuie
+  // să poată parcurge TOATE etapele (Step 1-8) inclusiv funcționalități Pro/Expert
+  // pentru evaluarea completă a calculatorului. Nu produce CPE oficiale.
+  if (typeof window !== "undefined") {
+    const sess = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("zephren_demo_mode") : null;
+    if (window.__demoModeActive || sess === "1") return true;
+  }
   const tier = PLAN_FEATURES[resolvePlan(plan)];
   if (!tier) return false;
   const val = tier[feature];

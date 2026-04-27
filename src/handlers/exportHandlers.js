@@ -18,6 +18,12 @@ import { ZEB_THRESHOLDS, FP_ELEC, getFPElecTot, getFPElecNren, getFPElecRen } fr
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { checkC107Conformity } from "../calc/c107.js";
+import { getValidityYears } from "../utils/cpe-validity.js";
+import { APP_VERSION } from "../data/app-version.js";
+
+// S30A·A4 — DH (termoficare) factor PE conform Tab A.16 SR EN ISO 52000-1/NA:2023.
+// Mix mediu RO: gaz + biomasă + cogenerare; fP_nren = 0.92 (sub gaz natural pur 1.10).
+const DH_FACTOR_PE_NREN = 0.92;
 
 // ─── Helper: atașare jspdf-autotable v5+ la instanță jsPDF ──────────────────
 // jspdf-autotable v5 NU mai patch-ează automat prototipul jsPDF, deci apelul
@@ -375,19 +381,34 @@ export function exportXML(ctx) {
   const cls = getEnergyClass(epF, catKey);
   const rer = renewSummary?.rer || 0;
   const Au = parseFloat(building.areaUseful) || 0;
+  // S30A·A3 — valabilitate unificată (Ord. MDLPA 16/2023 default 10 ani; EPBD 2026 → 5 ani D-G).
+  const validityYears = getValidityYears(cls.cls, {
+    scopCpe: auditor.scopCpe,
+    scaleVersion: building.scaleVersion || "2023",
+  });
+  // S30A·A4 — combustibil DH explicit ca "termoficare_mix" cu fP_nren 0.92 (Tab A.16 NA:2023).
+  const heatingFuelId = (heating.source === "TERMOFICARE")
+    ? "termoficare_mix"
+    : (instSummary.fuel?.id || "");
+  const heatingFpNren = (heating.source === "TERMOFICARE") ? DH_FACTOR_PE_NREN : "";
+  // S30A·A7 — cod poștal: suport atât building.postalCode (preferat) cât și building.postal (legacy).
+  const postalCode = building.postalCode || building.postal || "";
+  // S30A·A8 — toFixed(1) consistent pentru kWh/(m²·an); toFixed(0) pentru kWh/an totale.
+  const fmtSpec = (v) => (typeof v === "number" && isFinite(v)) ? v.toFixed(1) : "";
+  const fmtAbs = (v) => (typeof v === "number" && isFinite(v)) ? v.toFixed(0) : "";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CPE_RegistruElectronic xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" version="1.0">
   <MetaDate>
     <FormatVersiune>Mc001-2022</FormatVersiune>
     <DataExport>${new Date().toISOString()}</DataExport>
-    <Software>Zephren v3.0</Software>
+    <Software>Zephren ${APP_VERSION}</Software>
     <NormativCalcul>SR EN ISO 52000-1:2017/NA:2023</NormativCalcul>
   </MetaDate>
   <Cladire>
     <Adresa>${building.address || ""}</Adresa>
     <Localitate>${building.city || ""}</Localitate>
     <Judet>${building.county || ""}</Judet>
-    <CodPostal>${building.postal || ""}</CodPostal>
+    <CodPostal>${postalCode}</CodPostal>
     <NrCadastral>${auditor.nrCadastral || ""}</NrCadastral>
     <CategorieClase>${building.category || "RI"}</CategorieClase>
     <CategorieFunctionala>${BUILDING_CATEGORIES.find(c => c.id === building.category)?.label || ""}</CategorieFunctionala>
@@ -414,7 +435,7 @@ export function exportXML(ctx) {
     </PuntiTermice>
   </Anvelopa>
   <Instalatii>
-    <Incalzire sursa="${heating.source}" randament="${instSummary.eta_total_h?.toFixed(2) || ""}" combustibil="${instSummary.fuel?.id || ""}"/>
+    <Incalzire sursa="${heating.source}" randament="${instSummary.eta_total_h?.toFixed(2) || ""}" combustibil="${heatingFuelId}"${heatingFpNren ? ` fP_nren="${heatingFpNren}"` : ""}/>
     <ACM sursa="${acm.source}"/>
     <Climatizare activa="${cooling.hasCooling}" EER="${cooling.eer || ""}"/>
     <Ventilare tip="${ventilation.type}" recuperare="${ventilation.hrEfficiency || "0"}"/>
@@ -429,11 +450,11 @@ export function exportXML(ctx) {
     <Biomasa activ="${biomass.enabled}" tip="${biomass.type || ""}"/>
   </Regenerabile>
   <BilantEnergetic>
-    <EnergieFinala unit="kWh/an">${instSummary.qf_total?.toFixed(1) || ""}</EnergieFinala>
-    <EnergieFinalaSpecifica unit="kWh/(m2·an)">${instSummary.qf_total_m2?.toFixed(1) || ""}</EnergieFinalaSpecifica>
-    <EnergiePrimara unit="kWh/an">${(renewSummary?.ep_adjusted || instSummary.ep_total || 0).toFixed(1)}</EnergiePrimara>
-    <EnergiePrimaraSpecifica unit="kWh/(m2·an)">${epF.toFixed(1)}</EnergiePrimaraSpecifica>
-    <EmisiiCO2 unit="kgCO2/(m2·an)">${co2F.toFixed(1)}</EmisiiCO2>
+    <EnergieFinala unit="kWh/an">${fmtAbs(instSummary.qf_total)}</EnergieFinala>
+    <EnergieFinalaSpecifica unit="kWh/(m2·an)">${fmtSpec(instSummary.qf_total_m2)}</EnergieFinalaSpecifica>
+    <EnergiePrimara unit="kWh/an">${fmtAbs(renewSummary?.ep_adjusted || instSummary.ep_total || 0)}</EnergiePrimara>
+    <EnergiePrimaraSpecifica unit="kWh/(m2·an)">${fmtSpec(epF)}</EnergiePrimaraSpecifica>
+    <EmisiiCO2 unit="kgCO2/(m2·an)">${fmtSpec(co2F)}</EmisiiCO2>
     <ClasaEnergetica>${cls.cls}</ClasaEnergetica>
     <NotaEnergetica>${cls.score}</NotaEnergetica>
     <ConformNZEB>${epF <= (getNzebEpMax(building.category, selectedClimate?.zone) || 999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min || 30)}</ConformNZEB>
@@ -445,7 +466,7 @@ export function exportXML(ctx) {
     <Firma>${auditor.company || ""}</Firma>
     <DataElaborare>${auditor.date || ""}</DataElaborare>
     <ScopCPE>${auditor.scopCpe || ""}</ScopCPE>
-    <DurataValabilitate ani="${auditor.validityYears || "10"}"/>
+    <DurataValabilitate ani="${validityYears}"/>
     <CodUnicMDLPA>${auditor.codUnicMDLPA || ""}</CodUnicMDLPA>
   </Auditor>
 </CPE_RegistruElectronic>`;
@@ -896,7 +917,7 @@ export async function exportExcelFull(ctx) {
       [_cell(auditor.observations || "—", "s", S.body), null],
       [null, null],
       [_cell("Data generare fișier", "s", S.label), _cell(new Date().toLocaleDateString("ro-RO"), "s", S.body)],
-      [_cell("Versiune calculator", "s", S.label), _cell("Zephren v3.4 — Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275", "s", S.body)],
+      [_cell("Versiune calculator", "s", S.label), _cell(`Zephren ${APP_VERSION} — Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275`, "s", S.body)],
     ];
     XLSX.utils.book_append_sheet(wb, buildSheet(audRows, [38, 60], [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }]), "Auditor");
 
@@ -1046,7 +1067,7 @@ export async function exportPDFNative(ctx) {
     });
 
     doc.setFontSize(7); doc.setTextColor(150);
-    doc.text(`Generat cu Zephren v3.1 | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w / 2, 285, { align: "center" });
+    doc.text(`Generat cu Zephren ${APP_VERSION} | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w / 2, 285, { align: "center" });
 
     const baseName = `CPE_${(building.address || "certificat").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}`;
     const filename = `${baseName}.pdf`;
@@ -1233,7 +1254,7 @@ export async function exportQuickSheet(ctx) {
     doc.setFillColor(0, 51, 102);
     doc.rect(0, h - 10, w, 10, "F");
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(180, 210, 255);
-    doc.text(`Zephren v3.2 | Generat la ${new Date().toLocaleDateString("ro-RO")} | Date cu caracter informativ`, w / 2, h - 4, { align: "center" });
+    doc.text(`Zephren ${APP_VERSION} | Generat la ${new Date().toLocaleDateString("ro-RO")} | Date cu caracter informativ`, w / 2, h - 4, { align: "center" });
 
     const filename = `Fisa_Sintetica_${(building.address || "cladire").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(filename);
@@ -1298,7 +1319,7 @@ export async function exportFullReport(ctx) {
 
     const addPageFooter = () => {
       doc.setFontSize(7); doc.setTextColor(...GRAY);
-      doc.text(`Zephren v3.2 | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w / 2, h - 5, { align: "center" });
+      doc.text(`Zephren ${APP_VERSION} | Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 | ${new Date().toLocaleDateString("ro-RO")}`, w / 2, h - 5, { align: "center" });
     };
 
     // ── PAGINA 1: COPERTĂ ──────────────────────────────────────────
@@ -1914,7 +1935,7 @@ export function generateAuditReport(ctx) {
   lines.push(`Data: ${auditor.date || "—"}`);
   lines.push("");
   lines.push("═".repeat(50));
-  lines.push(`Generat cu Zephren v3.0 · ${new Date().toLocaleDateString("ro-RO")}`);
+  lines.push(`Generat cu Zephren ${APP_VERSION} · ${new Date().toLocaleDateString("ro-RO")}`);
   lines.push("Normative: Mc 001-2022, SR EN ISO 52000-1:2017/NA:2023, Legea 238/2024");
 
   const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
@@ -2119,7 +2140,7 @@ export async function exportComplianceReport(ctx) {
       doc.setPage(i);
       doc.setFontSize(6.5);
       doc.setTextColor(160, 160, 180);
-      doc.text(`Zephren v3.8 | Raport conformitate multi-normativ | Pag. ${i}/${pageCount}`, pageW / 2, 292, { align: "center" });
+      doc.text(`Zephren ${APP_VERSION} | Raport conformitate multi-normativ | Pag. ${i}/${pageCount}`, pageW / 2, 292, { align: "center" });
     }
 
     const addr = (building.address || "cladire").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);

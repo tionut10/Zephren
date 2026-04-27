@@ -69,13 +69,17 @@ export function calcPeakThermalLoad(params) {
       U = 1 / Math.max(R, 0.05);
     }
     const tau = el.tau !== undefined ? el.tau : 1.0;
-    // SR EN 12831-1 §6.6.2 + NA:2022/C91:2024 Tab.A17/A18: planșeu pe sol
-    if (el.type === "PL" || el.type === "PB") {
+    // S30A·A2 — separare PL (planșeu pe sol) vs. PB (planșeu peste subsol neîncălzit).
+    //   PL: SR EN 12831-1 §6.6.2 + NA:2022/C91:2024 Tab.A17/A18 — formulă fg1×fg2×Gw.
+    //   PB: SR EN ISO 13789 §8.4 — element adiacent spațiu neîncălzit, multiplicare cu τ.
+    // Bug pre-S30A: PB cădea pe ramura ground → ignora τ → pierdere supraestimată ~2× la M1.
+    if (el.type === "PL") {
       // Φ_ground = fg1 × fg2 × (A × U × Gw) × (θ_int - θ_me,an)
       const load_ground = fg1 * fg2 * area * U * Gw;
       H_T_ground += load_ground;
       elementLoads.push({ name: el.name || el.type, area, U: Math.round(U*100)/100, tau, load_WK: Math.round(load_ground*10)/10, ground: true, fg1, fg2, Gw });
     } else {
+      // Restul elementelor (PE, PP, PB, PR, AC etc.): area × U × τ × ΔT
       const load = area * U * tau; // W/K
       H_T += load;
       elementLoads.push({ name: el.name || el.type, area, U: Math.round(U*100)/100, tau, load_WK: Math.round(load*10)/10 });

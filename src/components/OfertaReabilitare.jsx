@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "./ui.jsx";
 import { nextDocNumber } from "../utils/doc-counter.js";
+import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -99,6 +100,10 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
     try {
       const { default: jsPDF } = await import("jspdf");
       const doc = new jsPDF({ unit: "mm", format: "a4" });
+      // S30A·A1 — diacritice RO via Liberation Sans embedded
+      const fontOk = await setupRomanianFont(doc);
+      const writeText = makeTextWriter(doc, fontOk);
+      const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
       const M = 15;
       let y = 18;
       const W = 210;
@@ -120,122 +125,122 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       doc.rect(0, 0, W, 30, "F");
       doc.setFontSize(18);
       doc.setTextColor(251, 191, 36);
-      doc.setFont("helvetica", "bold");
-      doc.text("ZEPHREN", M, 14);
+      doc.setFont(baseFont, "bold");
+      writeText("ZEPHREN", M, 14);
       doc.setFontSize(8);
       doc.setTextColor(200, 200, 200);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       const audLine = [auditor?.firma || auditor?.name, auditor?.certNr ? `Cert. ${auditor.certNr}` : null].filter(Boolean).join("  |  ");
-      if (audLine) doc.text(audLine, M, 20);
-      doc.text(`Data: ${TODAY_RO}`, W - M, 14, { align: "right" });
+      if (audLine) writeText(audLine, M, 20);
+      writeText(`Data: ${TODAY_RO}`, W - M, 14, { align: "right" });
       y = 38;
 
       // Titlu
       doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setTextColor(30, 30, 30);
-      doc.text("OFERTĂ DE REABILITARE ENERGETICĂ", W / 2, y, { align: "center" });
+      writeText("OFERTĂ DE REABILITARE ENERGETICĂ", W / 2, y, { align: "center" });
       y += 6;
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       doc.setTextColor(100, 100, 100);
-      doc.text(`Nr. ${nr}  |  Data: ${dataOferta}  |  Valabilitate: ${valabilitate} zile`, W / 2, y, { align: "center" });
+      writeText(`Nr. ${nr}  |  Data: ${dataOferta}  |  Valabilitate: ${valabilitate} zile`, W / 2, y, { align: "center" });
       y += 10;
 
       // Salut + client
       doc.setTextColor(30, 30, 30);
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${salut},`, M, y); y += 6;
+      doc.setFont(baseFont, "normal");
+      writeText(`${salut},`, M, y); y += 6;
       const intro = `Vă prezentăm oferta de reabilitare energetică pentru imobilul dumneavoastră, elaborată în baza analizei energetice efectuate.`;
       const introLines = doc.splitTextToSize(intro, W - M * 2);
-      doc.text(introLines, M, y); y += introLines.length * 4 + 6;
+      writeText(introLines, M, y); y += introLines.length * 4 + 6;
 
       // Date imobil
       doc.setFillColor(245, 245, 250);
       doc.rect(M, y - 3, W - M * 2, 26, "F");
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setFontSize(9);
-      doc.text("DATE IMOBIL", M + 3, y + 2);
-      doc.setFont("helvetica", "normal");
+      writeText("DATE IMOBIL", M + 3, y + 2);
+      doc.setFont(baseFont, "normal");
       doc.setFontSize(8.5);
       const imobilLines = [
         `Adresă: ${building?.address || "—"}`,
         `Categorie: ${building?.category || "—"}  |  Suprafață utilă: ${au} m²  |  An construcție: ${building?.yearBuilt || "—"}`,
         building?.county ? `Județ: ${building.county}` : null,
       ].filter(Boolean);
-      imobilLines.forEach((l, i) => { doc.text(l, M + 3, y + 8 + i * 5); });
+      imobilLines.forEach((l, i) => { writeText(l, M + 3, y + 8 + i * 5); });
       y += 32;
 
       // Situație actuală
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setFontSize(10);
-      doc.text("1. SITUAȚIE ACTUALĂ", M, y); y += 6;
+      writeText("1. SITUAȚIE ACTUALĂ", M, y); y += 6;
       doc.setFillColor(240, 240, 245);
       doc.rect(M, y, W - M * 2, 6, "F");
       doc.setFontSize(8);
-      ["Indicator", "Valoare", "Clasă"].forEach((h, i) => doc.text(h, M + 3 + i * 55, y + 4));
+      ["Indicator", "Valoare", "Clasă"].forEach((h, i) => writeText(h, M + 3 + i * 55, y + 4));
       y += 7;
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       const rows = [
         ["EP total", `${ep.toFixed(1)} kWh/m²·an`, clasaActuala],
         ["CO₂ total", `${co2.toFixed(2)} kgCO₂/m²·an`, ""],
         ["Cost anual estimat", `${costAnual.toLocaleString("ro-RO")} RON/an`, ""],
       ];
       rows.forEach(r => {
-        doc.text(r[0], M + 3, y + 4);
-        doc.text(r[1], M + 58, y + 4);
-        if (r[2]) { doc.setFont("helvetica", "bold"); doc.text(r[2], M + 113, y + 4); doc.setFont("helvetica", "normal"); }
+        writeText(r[0], M + 3, y + 4);
+        writeText(r[1], M + 58, y + 4);
+        if (r[2]) { doc.setFont(baseFont, "bold"); writeText(r[2], M + 113, y + 4); doc.setFont(baseFont, "normal"); }
         y += 6;
       });
       y += 6;
 
       // Scenarii
-      doc.setFont("helvetica", "bold");
+      doc.setFont(baseFont, "bold");
       doc.setFontSize(10);
-      doc.text("2. SCENARII PROPUSE", M, y); y += 6;
+      writeText("2. SCENARII PROPUSE", M, y); y += 6;
 
       scenarii.forEach((s, idx) => {
         const c = calcScenariu(s);
         doc.setFillColor(idx === 0 ? 254 : idx === 1 ? 209 : 167, idx === 0 ? 215 : idx === 1 ? 250 : 243, idx === 0 ? 170 : idx === 1 ? 205 : 210);
         doc.rect(M, y, W - M * 2, 5, "F");
-        doc.setFont("helvetica", "bold");
+        doc.setFont(baseFont, "bold");
         doc.setFontSize(9);
-        doc.text(`Scenariu ${idx + 1}: ${s.denumire || "(fără denumire)"}`, M + 3, y + 3.5);
+        writeText(`Scenariu ${idx + 1}: ${s.denumire || "(fără denumire)"}`, M + 3, y + 3.5);
         y += 7;
-        doc.setFont("helvetica", "normal");
+        doc.setFont(baseFont, "normal");
         doc.setFontSize(8.5);
-        doc.text(`EP: ${ep.toFixed(1)} → ${c.epNou} kWh/m²·an  |  Clasă: ${clasaActuala} → ${c.clasaNou}  |  CO₂: ${co2.toFixed(2)} → ${c.co2Nou} kgCO₂/m²·an`, M + 3, y);
+        writeText(`EP: ${ep.toFixed(1)} → ${c.epNou} kWh/m²·an  |  Clasă: ${clasaActuala} → ${c.clasaNou}  |  CO₂: ${co2.toFixed(2)} → ${c.co2Nou} kgCO₂/m²·an`, M + 3, y);
         y += 5;
-        doc.text(`Reducere EP: ${s.reducereEP}%  |  Economie anuală: ${c.econAn.toLocaleString("ro-RO")} RON/an  |  Payback simplu: ${c.payback} ani`, M + 3, y);
+        writeText(`Reducere EP: ${s.reducereEP}%  |  Economie anuală: ${c.econAn.toLocaleString("ro-RO")} RON/an  |  Payback simplu: ${c.payback} ani`, M + 3, y);
         y += 5;
-        doc.text(`Investiție estimată: ${c.inv.toLocaleString("ro-RO")} RON  |  Subvenție: ${c.subvPct}%  |  Cost net: ${c.invNet.toLocaleString("ro-RO")} RON`, M + 3, y);
+        writeText(`Investiție estimată: ${c.inv.toLocaleString("ro-RO")} RON  |  Subvenție: ${c.subvPct}%  |  Cost net: ${c.invNet.toLocaleString("ro-RO")} RON`, M + 3, y);
         y += 5;
-        if (s.finantari.length) doc.text(`Finanțare: ${s.finantari.join(", ")}`, M + 3, y);
+        if (s.finantari.length) writeText(`Finanțare: ${s.finantari.join(", ")}`, M + 3, y);
         y += 9;
       });
 
       // Notă finală
-      doc.setFont("helvetica", "italic");
+      doc.setFont(baseFont, "italic");
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
       const nota = "Prețurile sunt estimative. Auditul energetic detaliat va preciza costurile exacte. Valoarea subvențiilor depinde de eligibilitate și disponibilitatea fondurilor.";
       const notaLines = doc.splitTextToSize(nota, W - M * 2);
-      doc.text(notaLines, M, y); y += notaLines.length * 4 + 10;
+      writeText(notaLines, M, y); y += notaLines.length * 4 + 10;
 
       // Semnătură
       doc.setTextColor(30, 30, 30);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(baseFont, "normal");
       doc.setFontSize(9);
-      doc.text("Auditor energetic:", M, y);
-      doc.text("Semnătură și ștampilă:", W - M - 60, y);
+      writeText("Auditor energetic:", M, y);
+      writeText("Semnătură și ștampilă:", W - M - 60, y);
       y += 5;
-      doc.setFont("helvetica", "bold");
-      if (auditor?.name)   doc.text(auditor.name, M, y);
-      if (auditor?.certNr) { y += 5; doc.setFont("helvetica", "normal"); doc.text(`Cert. nr. ${auditor.certNr}`, M, y); }
+      doc.setFont(baseFont, "bold");
+      if (auditor?.name)   writeText(auditor.name, M, y);
+      if (auditor?.certNr) { y += 5; doc.setFont(baseFont, "normal"); writeText(`Cert. nr. ${auditor.certNr}`, M, y); }
       y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.text(`Data: ${TODAY_RO}`, M, y);
+      doc.setFont(baseFont, "normal");
+      writeText(`Data: ${TODAY_RO}`, M, y);
 
       // QR pașaport renovare (EPBD 2024/1275 Art. 12) — jos-dreapta
       if (qrDataURL && passport?.passportId) {
@@ -243,8 +248,8 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
           doc.addImage(qrDataURL, "PNG", W - M - 24, 258, 22, 22);
           doc.setFontSize(6);
           doc.setTextColor(120, 120, 140);
-          doc.text("Pașaport renovare EPBD", W - M - 24, 283);
-          doc.text(`ID: ${passport.passportId.slice(0, 8)}…`, W - M - 24, 286);
+          writeText("Pașaport renovare EPBD", W - M - 24, 283);
+          writeText(`ID: ${passport.passportId.slice(0, 8)}…`, W - M - 24, 286);
         } catch {
           /* ignore embed failures */
         }
