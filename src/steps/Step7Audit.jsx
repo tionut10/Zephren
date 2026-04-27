@@ -10,7 +10,8 @@ import MEPSCheck, { getMepsStatus } from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
 import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
-import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
+// Sprint v6.2 (27 apr 2026): AnexaMDLPAFields mutat în Step 6 pentru self-sufficiency CPE + Anexa 1+2.
+// Conform Ord. MDLPA 348/2026 (MO 292/14.IV.2026), AE Ic și AE IIc completează aceeași anexă.
 import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
 import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
 import { generateThermalMapSVG } from "../calc/thermal-map.js";
@@ -1061,20 +1062,10 @@ export default function Step7Audit(props) {
                 />
               </Card>
 
-              {/* ── Sprint UI Anexa 1+2 (20 apr 2026) — 35 câmpuri extinse MDLPA ── */}
-              {setBuilding && (
-                <AnexaMDLPAFields
-                  building={building}
-                  setBuilding={setBuilding}
-                  heating={heating}
-                  cooling={cooling}
-                  ventilation={ventilation}
-                  acm={acm}
-                  otherRenew={otherRenew}
-                  lighting={lighting}
-                  lang={lang}
-                />
-              )}
+              {/* ── Sprint v6.2 (27 apr 2026) — AnexaMDLPAFields mutat în Step 6 ──
+                  Conform Ord. MDLPA 348/2026, Anexa 1+2 se completează la momentul
+                  emiterii CPE (Step 6), nu în cadrul auditului energetic detaliat (Step 7).
+                  Auditorii AE Ic și AE IIc văd aceleași 35 câmpuri în Step 6. */}
 
               {/* ── Marketplace auditori ── */}
               <Card title="Marketplace auditori — Găsește un auditor atestat" className="mb-4">

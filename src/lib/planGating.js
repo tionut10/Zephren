@@ -1,20 +1,30 @@
 /**
- * planGating.js — v6.0 (25 apr 2026)
+ * planGating.js — v6.2 (27 apr 2026)
  *
  * Feature gating per plan abonament Zephren.
  *
  * STRUCTURĂ 8 NIVELURI:
- *   Free → Edu → Audit → Pro ⭐ → Expert → Birou → Enterprise
+ *   Free → Edu → Audit (AE IIci 199) → Pro (AE Ici 499) ⭐ → Expert → Birou → Enterprise
+ *
+ * REBRAND v6.2 (Ord. MDLPA 348/2026, MO 292/14.IV.2026):
+ *   - Plan `audit` (cheie internă păstrată) → label „Zephren AE IIci" — auditori grad
+ *     profesional II civile, restrânși legal la CPE rezidențial (locuințe unifamiliale,
+ *     blocuri și apartamente din blocurile de locuințe). Conform Art. 6 alin. (2).
+ *   - Plan `pro` (cheie internă păstrată) → label „Zephren AE Ici" — auditori grad
+ *     profesional I civile, scop complet: CPE toate clădirile + Audit energetic +
+ *     Raport conformare nZEB + Pașaport renovare. Conform Art. 6 alin. (1).
+ *   - Câmpuri noi: gradMdlpaRequired, nzebReport, auditEnergetic,
+ *     buildingCategoryRestricted (legal limit AE IIci la rezidențial).
  *
  * SPLIT STEP 1-7 vs STEP 8:
- *   - Step 1-7 (CPE + Anexe complete) = Pro 499 RON ← cel mai ales
+ *   - Step 1-7 (CPE + Anexe complete) = AE Ici 499 RON ← cel mai ales
  *   - Step 8 (18 module avansate)     = Expert 899 RON
  *
  * BACS/SRI/MEPS DUAL MODE:
- *   - Versiune simplă (obligatorie EPBD) = în Step 6/7 inclus în Pro
+ *   - Versiune simplă (obligatorie EPBD) = în Step 6/7 inclus în AE Ici
  *   - Versiune detaliată (optimizator)   = în Step 8 inclus în Expert
  *
- * AI PACK inclus în Pro+ (OCR facturi, OCR CPE, chat import, AI assistant)
+ * AI PACK inclus în AE Ici+ (OCR facturi, OCR CPE, chat import, AI assistant)
  * BIM PACK inclus în Expert+ (IFC import, parser STEP nativ)
  *
  * EDU PLAN: GRATIS pe perioada studiilor (DOAR studenți și doctoranzi cu
@@ -23,7 +33,12 @@
  * alte organizații: cerere separată de colaborare la edu@zephren.ro
  * (NU plan Edu automat).
  *
- * Sursă completă: memorie pricing_strategy.md v6.0
+ * BACKWARD COMPAT:
+ *   - Cheile interne `audit` și `pro` rămân neschimbate — utilizatorii v6.0/v6.1
+ *     migrează transparent la noile labels fără efort.
+ *   - LEGACY_PLAN_ALIAS: starter→audit, standard→pro, professional→expert etc.
+ *
+ * Sursă completă: memorie sprint_v62_mdlpa_348_2026.md
  */
 
 export const PLAN_FEATURES = {
@@ -39,6 +54,11 @@ export const PLAN_FEATURES = {
     // Useri
     maxUsers:           1,
     multiUser:          false,
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  null,        // demo: fără validare grad
+    auditEnergetic:     false,       // raport audit energetic Mc 001-2022
+    nzebReport:         false,       // raport conformare nZEB (Art. 6 lit. c)
+    buildingCategoryRestricted: null, // null = toate categoriile permise (free e demo)
     // Step gating
     step7Audit:         false,       // Audit energetic complet BLOCAT
     step8Advanced:      false,
@@ -117,6 +137,11 @@ export const PLAN_FEATURES = {
     cpeWatermark:       true,        // OBLIGATORIU „SCOP DIDACTIC"
     maxUsers:           1,
     multiUser:          false,
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  null,        // edu: fără atestare obligatorie (watermark didactic)
+    auditEnergetic:     true,
+    nzebReport:         true,
+    buildingCategoryRestricted: null, // edu: toate clădirile pentru învățare
     step7Audit:         true,
     step8Advanced:      true,        // toate Step 8
     exportDOCX:         true,
@@ -174,7 +199,13 @@ export const PLAN_FEATURES = {
     eduValidationDate:  null,        // se completează la activare
   },
 
-  // ─────────────────────────── AUDIT (199 RON) ───────────────────────────
+  // ─────────────────────────── AUDIT — „Zephren AE IIci" (199 RON) ───────────────────────────
+  // REBRAND v6.2 (27 apr 2026): Plan pentru auditori grad profesional II civile.
+  // Conform Art. 6 alin. (2) din Ord. MDLPA 348/2026: AE IIci elaborează CPE
+  // EXCLUSIV pentru locuințe unifamiliale, blocuri de locuințe și apartamente
+  // din blocurile de locuințe care se vând sau se închiriază. NU pot face audit
+  // energetic (Art. 6 alin. 1 lit. b) și NU pot întocmi raport conformare nZEB
+  // (Art. 6 alin. 1 lit. c) — acestea sunt rezervate exclusiv AE Ici.
   audit: {
     maxProjects:        9999,
     maxCertsPerMonth:   8,           // 8 incluse + 2 burst gratis
@@ -189,7 +220,12 @@ export const PLAN_FEATURES = {
     cpeWatermark:       false,
     maxUsers:           1,
     multiUser:          false,
-    step7Audit:         false,       // BLOCAT — diferențiator vs Pro
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  "IIci",      // auditor trebuie să aibă atestat AE IIci
+    auditEnergetic:     false,       // BLOCAT — Art. 6 alin. (2): IIci NU face audit
+    nzebReport:         false,       // BLOCAT — Art. 6 alin. (2): IIci NU face nZEB
+    buildingCategoryRestricted: ["RI", "RC", "RA", "BC"], // doar rezidențial
+    step7Audit:         false,       // BLOCAT — diferențiator vs AE Ici
     step8Advanced:      false,
     exportDOCX:         true,
     exportXML:          true,
@@ -246,7 +282,13 @@ export const PLAN_FEATURES = {
     eduValidationDate:  null,
   },
 
-  // ─────────────────────────── PRO (499 RON) ⭐ POPULAR ───────────────────────────
+  // ─────────────────────────── PRO — „Zephren AE Ici" (499 RON) ⭐ POPULAR ───────────────────────────
+  // REBRAND v6.2 (27 apr 2026): Plan pentru auditori grad profesional I civile.
+  // Conform Art. 6 alin. (1) din Ord. MDLPA 348/2026: AE Ici elaborează CPE
+  // pentru TOATE categoriile de clădiri (rezidențial + nerezidențial + public +
+  // industrial), realizează audit energetic și raport audit Mc 001-2022, și
+  // întocmește raportul de conformare nZEB pentru clădiri în faza de proiectare.
+  // Vechime profesională cerută MDLPA: minimum 5 ani.
   pro: {
     maxProjects:        9999,
     maxCertsPerMonth:   30,          // 30 + 6 burst gratis = 36 total
@@ -261,7 +303,12 @@ export const PLAN_FEATURES = {
     cpeWatermark:       false,
     maxUsers:           1,
     multiUser:          false,
-    step7Audit:         true,        // ✅ DIFERENȚIATOR vs Audit
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  "Ici",       // auditor trebuie să aibă atestat AE Ici (5 ani exp.)
+    auditEnergetic:     true,        // ✅ Art. 6 alin. (1) lit. b
+    nzebReport:         true,        // ✅ Art. 6 alin. (1) lit. c
+    buildingCategoryRestricted: null, // toate categoriile permise
+    step7Audit:         true,        // ✅ DIFERENȚIATOR vs AE IIci
     step8Advanced:      false,       // BLOCAT — Step 8 doar Expert+
     exportDOCX:         true,
     exportXML:          true,
@@ -333,6 +380,11 @@ export const PLAN_FEATURES = {
     cpeWatermark:       false,
     maxUsers:           1,
     multiUser:          false,
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  "Ici",       // Expert necesită grad I (extinde AE Ici)
+    auditEnergetic:     true,
+    nzebReport:         true,
+    buildingCategoryRestricted: null,
     step7Audit:         true,
     step8Advanced:      true,        // ✅ Step 8 COMPLET
     exportDOCX:         true,
@@ -400,6 +452,11 @@ export const PLAN_FEATURES = {
     cpeWatermark:       false,
     maxUsers:           5,           // 2-5 useri
     multiUser:          true,
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  "Ici",       // Birou: echipă cu cel puțin un AE Ici
+    auditEnergetic:     true,
+    nzebReport:         true,
+    buildingCategoryRestricted: null,
     step7Audit:         true,
     step8Advanced:      true,
     exportDOCX:         true,
@@ -467,6 +524,11 @@ export const PLAN_FEATURES = {
     cpeWatermark:       false,
     maxUsers:           999,         // 6-100+ useri
     multiUser:          true,
+    // ── Sprint v6.2 — MDLPA Ord. 348/2026 ──
+    gradMdlpaRequired:  "Ici",       // Enterprise: organizație cu auditori AE Ici
+    auditEnergetic:     true,
+    nzebReport:         true,
+    buildingCategoryRestricted: null,
     step7Audit:         true,
     step8Advanced:      true,
     exportDOCX:         true,
@@ -526,14 +588,21 @@ export const PLAN_FEATURES = {
 };
 
 // ─────────────────────────── BACKWARD COMPAT ───────────────────────────
-// Mapare nume vechi (v5.x) → nume noi v6.0 pentru migrare smooth.
+// Mapare nume vechi (v5.x + v6.2 rebrand) → nume canonice pentru migrare smooth.
 // Utilizatorii existenți rămân funcționali fără migrare DB imediat.
 const LEGACY_PLAN_ALIAS = {
-  starter:    "audit",   // Starter 199 → Audit 199
-  standard:   "pro",     // Standard 499 (vag) → Pro 499 (cu AI Pack inclus)
-  business:   "birou",   // Business 749/u → Birou 1.890 flat
-  asociatie:  "birou",   // Asociație → Birou (sau Enterprise dacă >5u)
-  professional: "expert", // Professional 799 → Expert 899
+  starter:      "audit",   // Starter 199 → Audit 199
+  standard:     "pro",     // Standard 499 (vag) → Pro 499 (cu AI Pack inclus)
+  business:     "birou",   // Business 749/u → Birou 1.890 flat
+  asociatie:    "birou",   // Asociație → Birou (sau Enterprise dacă >5u)
+  professional: "expert",  // Professional 799 → Expert 899
+  // Sprint v6.2 (27 apr 2026) — alias-uri brand AE Ici/IIci pentru noul rebrand
+  // conform Ord. MDLPA 348/2026. Cheile interne `audit` și `pro` rămân stabile,
+  // dar utilizatorii pot intra cu noul slug brandat și ajung la același plan.
+  aeiici:       "audit",   // „AE IIci" (case-insensitive) → audit (199 RON, rezidențial)
+  aeici:        "pro",     // „AE Ici"  (case-insensitive) → pro   (499 RON, complet)
+  ae_iici:      "audit",
+  ae_ici:       "pro",
 };
 
 /**
@@ -632,4 +701,54 @@ for (const key of Object.keys(PLAN_FEATURES)) {
   if (PLAN_FEATURES[key].maxCertsPerMonth !== undefined) {
     PLAN_FEATURES[key].maxCerts = PLAN_FEATURES[key].maxCertsPerMonth;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Sprint v6.2 — Helpers MDLPA Ord. 348/2026
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Returnează gradul MDLPA cerut pentru un plan: „Ici" / „IIci" / null.
+ * Util pentru afișare label brand (AE Ici / AE IIci) și validare auditor.
+ *
+ * @param {string|null|undefined} plan
+ * @returns {string|null}
+ */
+export function getRequiredMdlpaGrade(plan) {
+  const tier = PLAN_FEATURES[resolvePlan(plan)];
+  return tier?.gradMdlpaRequired ?? null;
+}
+
+/**
+ * Verifică dacă un plan permite o anumită categorie de clădire.
+ *
+ * Conform Art. 6 alin. (2) din Ord. MDLPA 348/2026, AE IIci certifică
+ * EXCLUSIV: locuințe unifamiliale (RI), blocuri (RC/RA) și apartamente
+ * din blocurile de locuințe (BC). Toate celelalte categorii (birouri,
+ * spitale, școli, hoteluri, comerț, industrial, AL etc.) sunt rezervate
+ * AE Ici (Art. 6 alin. 1 lit. a).
+ *
+ * @param {string|null|undefined} plan
+ * @param {string|null|undefined} buildingCategory - cod Mc 001-2022 (RI, BIR, SP etc.)
+ * @returns {boolean} true dacă planul permite categoria
+ */
+export function canCertifyBuildingCategory(plan, buildingCategory) {
+  if (!buildingCategory) return true;
+  const tier = PLAN_FEATURES[resolvePlan(plan)];
+  if (!tier) return false;
+  const restricted = tier.buildingCategoryRestricted;
+  // null sau array gol → toate categoriile permise
+  if (!restricted || !Array.isArray(restricted) || restricted.length === 0) return true;
+  return restricted.includes(buildingCategory);
+}
+
+/**
+ * Returnează lista categoriilor permise pentru un plan, sau null dacă fără restricții.
+ *
+ * @param {string|null|undefined} plan
+ * @returns {string[]|null}
+ */
+export function getAllowedBuildingCategories(plan) {
+  const tier = PLAN_FEATURES[resolvePlan(plan)];
+  return tier?.buildingCategoryRestricted ?? null;
 }

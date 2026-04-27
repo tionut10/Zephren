@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "fix(vercel): remove _comment from crons (schema validation strict)"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(vercel): cron MDLPA zilnic în loc de */15 (limit Hobby)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(mdlpa portal v0.1): Faza 0 ready — adapter + queue + validator + API endpoint"
+      },
+      {
         "icon": "🧪",
         "text": "S30D — verificare end-to-end + matrice conformitate v4 + validator e2e"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "feat(landing v6.2.1): rescriere badge-uri pricing — Sistem A audience-first"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(pricing v6.2): elimină mecanismul price-lock + politică nouă „anunț 90 zile\""
-      },
-      {
-        "icon": "🔧",
-        "text": "S29 DEMO v2.1 — bug-fix după verificare manuală M1 (Constanța)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(pricing v6.1): adaptare funcții per tier — gating 8 componente + sync tiers.js"
       }
     ]
   },

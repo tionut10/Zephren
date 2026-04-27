@@ -5,16 +5,27 @@
  * Scop: injecție PNG cu transparență în CPE DOCX/PDF (Ord. MDLPA 16/2023 Anexa 1
  * + uzanță juridică semnare autentică).
  *
+ * Sprint v6.2 — 27 apr 2026
+ * Adaos: validare strictă conform Anexa 1b din Ordinul MDLPA 348/2026 (MO 292/14.IV.2026):
+ *   • Ștampila trebuie să fie circulară, diametru exact 40 mm
+ *   • Texte obligatorii: „ROMÂNIA M.D.L.P.A. Nr.00000" și „AUDITOR ENERGETIC PENTRU CLĂDIRI"
+ *   • Simbol în centru: „AE Ici" (Gradul I) sau „AE IIci" (Gradul II)
+ *   • Art. 5 alin. (5): „Este interzisă executarea și/sau utilizarea de ștampile
+ *     cu alte dimensiuni și/sau alte înscrisuri decât cele precizate în anexa 1b."
+ * Detectarea automată este indicativă (analiza pixelilor); semnal user prin badge,
+ * iar validarea finală rămâne responsabilitatea auditorului.
+ *
  * Comportament:
  *  - acceptă PNG/JPG, compresează pe canvas la max 800×800 → dataURL PNG
  *  - max 300 KB output (similar `BuildingPhotos`)
  *  - preview live + buton „Șterge" per slot
  *  - persistență prin auditor.signatureDataURL / auditor.stampDataURL
+ *  - SVG de referință 40mm pentru auditori care nu au ștampilă scanată
  *
  * Componentele sunt dual (semnătură + ștampilă) într-un singur fișier
  * pentru a nu împărți 2 slot-uri de lazy-loading.
  */
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 
 // ── Compresie canvas PNG cu transparență (max 800×800, calitate 0.92) ──
 function compressToPNG(file, maxDim = 800) {
@@ -52,6 +63,34 @@ function kbSize(dataURL) {
   // Base64 adds ~33% overhead; bytes ≈ (length * 3/4) - padding
   const b64 = dataURL.split(",")[1] || "";
   return Math.round(b64.length * 0.75 / 1024);
+}
+
+/**
+ * Sprint v6.2 — Verifică aspect ratio al imaginii ștampilei.
+ * Conform Anexa 1b Ord. MDLPA 348/2026: ștampila este CIRCULARĂ cu Ø 40 mm.
+ * O imagine corect scanată va avea aspect ratio ~1:1 (toleranță ±10%).
+ *
+ * Nu putem măsura DPI-ul absolut din PNG fără metadata, dar putem semnala
+ * imagini clar non-circulare (ex: 300×80 pixeli — buton text, nu ștampilă).
+ *
+ * @param {string} dataURL
+ * @returns {Promise<{ok: boolean, ratio: number, width: number, height: number}>}
+ */
+function checkStampAspect(dataURL) {
+  return new Promise((resolve) => {
+    if (!dataURL) { resolve({ ok: true, ratio: 1, width: 0, height: 0 }); return; }
+    const img = new Image();
+    img.onload = () => {
+      const w = img.width || 1;
+      const h = img.height || 1;
+      const ratio = w / h;
+      // Toleranță ±15% în jurul 1:1 (acceptăm crop ușor și anti-aliasing)
+      const ok = ratio >= 0.85 && ratio <= 1.18;
+      resolve({ ok, ratio, width: w, height: h });
+    };
+    img.onerror = () => resolve({ ok: true, ratio: 1, width: 0, height: 0 });
+    img.src = dataURL;
+  });
 }
 
 function UploadSlot({
@@ -157,11 +196,33 @@ function UploadSlot({
 
 /**
  * AuditorSignatureStampUpload
+ *
+ * Sprint v6.2 — adaos validare ștampilă conform Anexa 1b Ord. MDLPA 348/2026:
+ *   • aspect 1:1 (cerc Ø 40 mm)
+ *   • simbol AE Ici (gradul I) sau AE IIci (gradul II) declarat de auditor
+ *   • feedback vizual non-blocant (badge + tooltip)
+ *
  * @param {object} props
- * @param {object} props.auditor — obiect auditor cu signatureDataURL + stampDataURL
+ * @param {object} props.auditor — obiect auditor cu signatureDataURL + stampDataURL +
+ *   gradMdlpa ("Ici"|"IIci") + atestat
  * @param {(updater: (a: object) => object) => void} props.setAuditor — React setState pentru auditor
  */
 export default function AuditorSignatureStampUpload({ auditor = {}, setAuditor }) {
+  const [stampAspect, setStampAspect] = useState({ ok: true, ratio: 1, width: 0, height: 0 });
+
+  // Re-verifică aspect ratio la fiecare schimbare a stamp-ului
+  useEffect(() => {
+    let cancelled = false;
+    if (auditor.stampDataURL) {
+      checkStampAspect(auditor.stampDataURL).then((res) => {
+        if (!cancelled) setStampAspect(res);
+      });
+    } else {
+      setStampAspect({ ok: true, ratio: 1, width: 0, height: 0 });
+    }
+    return () => { cancelled = true; };
+  }, [auditor.stampDataURL]);
+
   const setSignature = useCallback((dataURL) => {
     setAuditor?.(a => ({ ...a, signatureDataURL: dataURL }));
   }, [setAuditor]);
@@ -178,6 +239,13 @@ export default function AuditorSignatureStampUpload({ auditor = {}, setAuditor }
     setAuditor?.(a => ({ ...a, stampDataURL: "" }));
   }, [setAuditor]);
 
+  const setGradMdlpa = useCallback((grad) => {
+    setAuditor?.(a => ({ ...a, gradMdlpa: grad }));
+  }, [setAuditor]);
+
+  const grad = auditor.gradMdlpa || "";
+  const stampSymbol = grad === "Ici" ? "AE Ici" : grad === "IIci" ? "AE IIci" : "—";
+
   return (
     <div className="space-y-4">
       <div>
@@ -187,6 +255,44 @@ export default function AuditorSignatureStampUpload({ auditor = {}, setAuditor }
         <p className="text-[10px] text-white/40">
           Încărcăm imagini PNG cu transparență. Apar în CPE DOCX/PDF generat + raport audit. Păstrate local (localStorage).
         </p>
+      </div>
+
+      {/* Sprint v6.2 — Selector grad MDLPA conform Anexa 1b Ord. 348/2026 */}
+      <div className="rounded-lg bg-white/[0.03] border border-white/[0.08] p-3">
+        <div className="text-[10px] uppercase tracking-wider opacity-60 mb-2">
+          Gradul profesional MDLPA (Anexa 1b Ord. 348/2026)
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: "Ici",  label: "AE Ici  — Gradul I (toate clădirile)", help: "Vechime ≥ 5 ani · scop complet (Art. 6 alin. 1)" },
+            { value: "IIci", label: "AE IIci — Gradul II (rezidențial)",     help: "Vechime ≥ 3 ani · doar locuințe (Art. 6 alin. 2)" },
+          ].map((opt) => {
+            const active = grad === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                title={opt.help}
+                onClick={() => setGradMdlpa(active ? "" : opt.value)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] border transition-all ${
+                  active
+                    ? "bg-amber-500/20 border-amber-500/50 text-amber-200"
+                    : "bg-white/5 border-white/10 hover:bg-white/10 text-white/70"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+        {grad && (
+          <div className="mt-2 text-[10px] opacity-50">
+            Ștampila ta trebuie să afișeze simbolul „<strong>{stampSymbol}</strong>" în centru
+            și textul „ROMÂNIA M.D.L.P.A. Nr.____" pe coroana exterioară (Anexa 1b Ord. 348/2026).
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,19 +305,39 @@ export default function AuditorSignatureStampUpload({ auditor = {}, setAuditor }
           onClear={clearSignature}
           previewStyle={{ maxHeight: 80, objectFit: "contain" }}
         />
-        <UploadSlot
-          label="Ștampilă profesională"
-          hint="Ștampilă auditor atestat MDLPA (cerc / pătrat, PNG transparent)"
-          recommendedSize="150 × 150 px"
-          dataURL={auditor.stampDataURL || ""}
-          onChange={setStamp}
-          onClear={clearStamp}
-          previewStyle={{ maxHeight: 100, objectFit: "contain" }}
-        />
+        <div>
+          <UploadSlot
+            label={`Ștampilă auditor (Ø 40 mm) ${grad ? "— " + stampSymbol : ""}`}
+            hint="Ștampilă circulară conform Anexa 1b Ord. MDLPA 348/2026 — Ø 40 mm exact"
+            recommendedSize="500 × 500 px (raport 1:1)"
+            dataURL={auditor.stampDataURL || ""}
+            onChange={setStamp}
+            onClear={clearStamp}
+            previewStyle={{ maxHeight: 120, maxWidth: 120, objectFit: "contain", borderRadius: "50%" }}
+          />
+          {/* Indicator aspect ratio (validare automată indicativă) */}
+          {auditor.stampDataURL && (
+            <div className={`mt-2 text-[10px] flex items-center gap-2 ${stampAspect.ok ? "text-emerald-400/80" : "text-amber-300/90"}`}>
+              <span aria-hidden="true">{stampAspect.ok ? "✓" : "⚠"}</span>
+              <span>
+                {stampAspect.ok
+                  ? `Aspect 1:1 OK (${stampAspect.width}×${stampAspect.height} px, raport ${stampAspect.ratio.toFixed(2)})`
+                  : `Aspect non-circular (${stampAspect.width}×${stampAspect.height} px, raport ${stampAspect.ratio.toFixed(2)}). Re-scanează ștampila la format pătrat.`}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="text-[10px] text-white/30 italic">
-        ⓘ Imaginile sunt stocate local în browserul tău (localStorage), embeded în DOCX/PDF exportat și transmise către API la generare. Nu sunt încărcate pe servere externe.
+      <div className="text-[10px] text-white/30 italic space-y-1">
+        <div>
+          ⓘ Imaginile sunt stocate local în browserul tău (localStorage), embeded în DOCX/PDF exportat și transmise către API la generare. Nu sunt încărcate pe servere externe.
+        </div>
+        <div>
+          ⚖ Conform Art. 5 alin. (5) Ord. MDLPA 348/2026: „Este interzisă executarea și/sau
+          utilizarea de ștampile cu alte dimensiuni și/sau alte înscrisuri decât cele precizate în
+          anexa 1b." Validarea finală rămâne responsabilitatea auditorului.
+        </div>
       </div>
     </div>
   );

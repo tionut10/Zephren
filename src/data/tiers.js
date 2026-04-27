@@ -1,68 +1,93 @@
 // ═══════════════════════════════════════════════════════════════
-// TIERS — Planuri abonament Zephren v6.1 (apr 2026)
+// TIERS — Planuri abonament Zephren v6.2 (27 apr 2026)
 // Sincronizat cu PLAN_FEATURES din src/lib/planGating.js (sursă canonică).
 // Acest obiect rămâne pentru backward-compat: cod existent citește
 // `tier.maxCerts`, `tier.watermark`, `tier.exportXML`, etc. Nu adăuga
 // feature noi aici — toate gating-urile noi trec prin planGating.canAccess().
+//
+// REBRAND v6.2 (Ord. MDLPA 348/2026 — MO 292/14.IV.2026):
+//   - audit → label „Zephren AE IIci" (auditori grad II civile, doar rezidențial)
+//   - pro   → label „Zephren AE Ici"  (auditori grad I civile, scop complet)
+//   Cheile interne `audit` și `pro` rămân stabile pentru backward-compat.
+//   Subtitle MDLPA afișat sub label pe carduri pentru claritate profesională.
 // ═══════════════════════════════════════════════════════════════
 
 export const TIERS = {
-  // ═══ V6.1 PLANS (canonical) ═══
+  // ═══ V6.2 PLANS (canonical) ═══
   free: {
-    id: "free", label: "Zephren Free", price: 0, priceAn: 0,
+    id: "free", label: "Zephren Free", subtitle: "Demo cu watermark", price: 0, priceAn: 0,
     maxProjects: 99, maxCerts: 3,
     multiUser: false, maxUsers: 1,
     watermark: true, watermarkType: "DEMO",
     nzebReport: false, docxExport: true, exportXML: false,
     brandingCPE: false, api: false,
+    mdlpaGrade: null,
   },
   edu: {
-    id: "edu", label: "Zephren Edu", price: 0, priceAn: 0,
+    id: "edu", label: "Zephren Edu", subtitle: "Studenți + doctoranzi", price: 0, priceAn: 0,
     maxProjects: 9999, maxCerts: 100,
     multiUser: false, maxUsers: 1,
     watermark: true, watermarkType: "SCOP DIDACTIC",
     nzebReport: true, docxExport: true, exportXML: false,
     brandingCPE: false, api: false,
+    mdlpaGrade: null,
   },
   audit: {
-    id: "audit", label: "Zephren Audit", price: 199, priceAn: 1990,
+    id: "audit", label: "Zephren AE IIci",
+    subtitle: "CPE rezidențial · auditori AE IIci",
+    price: 199, priceAn: 1990,
     maxProjects: 9999, maxCerts: 8,
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
-    nzebReport: true, docxExport: true, exportXML: true,
+    nzebReport: false, docxExport: true, exportXML: true, // Art. 6 alin. (2): IIci NU face nZEB
     brandingCPE: false, api: false,
+    mdlpaGrade: "IIci",
+    legalScope: "Locuințe unifamiliale + blocuri locuințe + apartamente (Art. 6 alin. 2 Ord. 348/2026)",
   },
   pro: {
-    id: "pro", label: "Zephren Pro", price: 499, priceAn: 4990,
+    id: "pro", label: "Zephren AE Ici",
+    subtitle: "CPE complet + Audit + nZEB · auditori AE Ici",
+    price: 499, priceAn: 4990,
     maxProjects: 9999, maxCerts: 30,
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: false, api: false,
+    mdlpaGrade: "Ici",
+    legalScope: "Toate categoriile de clădiri + audit energetic + raport nZEB (Art. 6 alin. 1 Ord. 348/2026)",
   },
   expert: {
-    id: "expert", label: "Zephren Expert", price: 899, priceAn: 8990,
+    id: "expert", label: "Zephren Expert",
+    subtitle: "Module avansate Step 8 · Mc 001 P.III/P.IV",
+    price: 899, priceAn: 8990,
     maxProjects: 9999, maxCerts: 60,
     multiUser: false, maxUsers: 1,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: false, api: false,
+    mdlpaGrade: "Ici",
   },
   birou: {
-    id: "birou", label: "Zephren Birou", price: 1890, priceAn: 18900,
+    id: "birou", label: "Zephren Birou",
+    subtitle: "Multi-user 2-5 + API + white-label",
+    price: 1890, priceAn: 18900,
     maxProjects: 9999, maxCerts: 999,
     multiUser: true, maxUsers: 5,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: true, api: true,
+    mdlpaGrade: "Ici",
   },
   enterprise: {
-    id: "enterprise", label: "Zephren Enterprise", price: 4990, priceAn: 49900,
+    id: "enterprise", label: "Zephren Enterprise",
+    subtitle: "6-100+ useri · SLA 99.9% · INCERC",
+    price: 4990, priceAn: 49900,
     maxProjects: 9999, maxCerts: 999,
     multiUser: true, maxUsers: 999,
     watermark: false, watermarkType: null,
     nzebReport: true, docxExport: true, exportXML: true,
     brandingCPE: true, api: true,
+    mdlpaGrade: "Ici",
   },
 
   // ═══ Backward-compat aliases (v5.x → v6.0) ═══

@@ -77,6 +77,8 @@ const Step7Audit = lazy(() => import("./steps/Step7Audit.jsx"));
 const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
 const BridgeModal = lazy(() => import("./components/BridgeModal.jsx"));
 const TutorialWizard = lazy(() => import("./components/TutorialWizard.jsx"));
+// Sprint v6.2 (27 apr 2026) — banner global tranziție Ord. 2237/2010 → Ord. 348/2026
+const MDLPATransitionBanner = lazy(() => import("./components/MDLPATransitionBanner.jsx"));
 // ── Secondary components — lazy loaded (S6.1) ──
 const ClientInputForm = lazy(() => import("./components/ClientInputForm.jsx"));
 const AuditClientDataForm = lazy(() => import("./components/AuditClientDataForm.jsx"));
@@ -2875,6 +2877,13 @@ export default function EnergyCalcApp({ cloud }) {
         .ep-theme .fixed[class*="z-50"] > div { animation: scaleIn 0.2s ease-out; }
       `}} />
 
+      {/* Sprint v6.2 (27 apr 2026) — Banner global tranziție MDLPA Ord. 348/2026.
+          Auto-hide după 11 oct 2026 (data abrogării integrale Ord. 2237/2010).
+          Utilizatorul îl poate închide; persistă dismissal-ul în localStorage. */}
+      <Suspense fallback={null}>
+        <MDLPATransitionBanner lang={lang} />
+      </Suspense>
+
       {/* Tier modals */}
       <UpgradeModal />
       <PricingPage />
@@ -3560,7 +3569,8 @@ export default function EnergyCalcApp({ cloud }) {
           {/* ═══ STEP 6: CERTIFICAT ENERGETIC ═══ */}
           {step === 6 && <Suspense fallback={<div className="flex items-center justify-center py-20 opacity-40 text-sm">Se încarcă certificatul...</div>}><Step6Certificate {...{
             monthlyISO, instSummary, renewSummary, envelopeSummary,
-            building, selectedClimate, lang, theme,
+            building, setBuilding,  // Sprint v6.2 (27 apr 2026) — mutare AnexaMDLPAFields Step 7→Step 6
+            selectedClimate, lang, theme,
             heating, cooling, ventilation, lighting, acm,
             solarThermal, photovoltaic, heatPump, biomass, otherRenew,
             opaqueElements, glazingElements, thermalBridges,
