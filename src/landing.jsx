@@ -6,6 +6,7 @@ import {
   STEPS_DATA, FEATURES, EXPORTS_DATA, IMPORTS_DATA,
   CALC_MODULES_COUNT, API_ENDPOINTS_COUNT,
 } from "./data/landingData.js";
+import PlanComparisonTable from "./components/PlanComparisonTable.jsx";
 
 // Traduceri pagină principală
 const LT = {
@@ -901,6 +902,23 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   </div>
                 ))}
               </div>
+
+              {/* ── Comparator interactiv plan-uri (v7.0) ─────────────────
+                  Tabelă comprehensivă cu toate funcționalitățile diferențiate
+                  pe categorii. Permite clienților să vadă rapid diferența
+                  reală dintre cele 6 planuri principale (Free + 5 plătite).
+                  Sursa: PLAN_FEATURES din planGating.js.
+                  ───────────────────────────────────────────────────────── */}
+              <PlanComparisonTable
+                isDark={isDark}
+                text={text}
+                textMuted={textMuted}
+                textFaint={textFaint}
+                cardBg={cardBg}
+                cardBorder={cardBorder}
+                border={border}
+                lang={lang}
+              />
 
               {/* ── Banner EDU (gratis pentru studenți + doctoranzi) ── */}
               {(() => {
