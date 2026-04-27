@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "feat(pricing v6.2): elimină mecanismul price-lock + politică nouă „anunț 90 zile\""
+      },
+      {
         "icon": "🔧",
         "text": "S29 DEMO v2.1 — bug-fix după verificare manuală M1 (Constanța)"
       },
