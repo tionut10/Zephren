@@ -772,13 +772,15 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
 
   // ── Export XML ──
   function handleXMLExport() {
+    // S29 fix #40 — citește auditorul din systems.auditor (state separat) cu fallback
+    const auditorName = systems?.auditor?.name || building?.auditorName || "Auditor energetic";
+    const auditorCode = systems?.auditor?.atestat || systems?.auditor?.mdlpaCode || building?.auditorCode || "AE-XXXX";
     const xml = generateEPBDXML({
       building, climate, instSummary, renewSummary,
       opaqueElements, glazingElements,
       energyClass: renewSummary?.energyClass || instSummary?.energyClass,
       certDate: new Date().toISOString().split('T')[0],
-      auditorName: building?.auditorName || "Auditor energetic",
-      auditorCode: building?.auditorCode || "AE-XXXX",
+      auditorName, auditorCode,
     });
     downloadXML(xml, `CPE-${(building?.address || "cladire").replace(/[^a-z0-9]/gi,'_')}.xml`);
     setXmlGenerated(true);
@@ -789,18 +791,20 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
     setXmlValidating(true);
     setXmlValidation(null);
     try {
+      // S29 fix #40 — citește auditorul din systems.auditor (state separat) cu fallback
+      const auditorName = systems?.auditor?.name || building?.auditorName || "Auditor energetic";
+      const auditorCode = systems?.auditor?.atestat || systems?.auditor?.mdlpaCode || building?.auditorCode || "AE-XXXX";
       const xml = generateEPBDXML({
         building, climate, instSummary, renewSummary,
         opaqueElements, glazingElements,
         energyClass: renewSummary?.energyClass || instSummary?.energyClass,
         certDate: new Date().toISOString().split('T')[0],
-        auditorName: building?.auditorName || "Auditor energetic",
-        auditorCode: building?.auditorCode || "AE-XXXX",
+        auditorName, auditorCode,
       });
       const checks = [
         { field: "Adresă clădire", ok: !!(building?.address && building.address.trim().length > 2) },
-        { field: "Auditor (nume)", ok: !!(building?.auditorName && building.auditorName.trim().length > 2) },
-        { field: "Număr atestat auditor", ok: !!(building?.auditorCode && building.auditorCode !== "AE-XXXX" && building.auditorCode.trim().length > 3) },
+        { field: "Auditor (nume)", ok: !!(auditorName && auditorName !== "Auditor energetic") },
+        { field: "Număr atestat auditor", ok: !!(auditorCode && auditorCode !== "AE-XXXX" && auditorCode.trim().length > 3) },
         { field: "EP total [kWh/(m²·an)]", ok: (instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0) > 0 },
         { field: "Clasă energetică", ok: !!(renewSummary?.energyClass?.class || instSummary?.energyClass?.class) },
         { field: "Suprafață utilă Au [m²]", ok: (parseFloat(building?.areaUseful) || 0) > 0 },
@@ -3403,7 +3407,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                           [],
                           ["", "", "", "", "Subtotal (fără TVA) EUR:", devizResult.totalEUR?.toFixed(0) || ""],
                           ["", "", "", "", "TVA 21%:", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
-                          ["", "", "", "", "TOTAL cu TVA EUR:", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
+                          ["", "", "", "", "TOTAL cu TVA EUR:", ((devizResult.totalEUR || 0) * 1.21).toFixed(0)],
                         ];
                         const ws = XLSX.utils.aoa_to_sheet(rows);
                         ws["!cols"] = [{ wch: 5 }, { wch: 45 }, { wch: 8 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
@@ -3413,7 +3417,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                           ["Data deviz", dateStr],
                           ["Total fără TVA (EUR)", devizResult.totalEUR?.toFixed(0) || ""],
                           ["TVA 21% (EUR)", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
-                          ["Total cu TVA (EUR)", ((devizResult.totalEUR || 0) * 1.19).toFixed(0)],
+                          ["Total cu TVA (EUR)", ((devizResult.totalEUR || 0) * 1.21).toFixed(0)],
                           ["Cost per m² (EUR/m²)", devizResult.costPerM2?.toFixed(0) || ""],
                           ["Sursa prețuri", "Zephren — orientativ 2024-2025"],
                         ]);

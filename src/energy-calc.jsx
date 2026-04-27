@@ -3588,6 +3588,9 @@ export default function EnergyCalcApp({ cloud }) {
             systems: { hrEta: parseFloat(ventilation?.hrEfficiency)||0, ventType: ventilation?.type, emissionSystem: heating?.emission,
               ventilation: { ...ventilation, hrEfficiency: parseFloat(ventilation?.hrEfficiency)||0 },
               heating: { etaGen: parseFloat(heating?.eta_gen)||0.85, fp: parseFloat(heating?.fp)||1.1 },
+              acm, photovoltaic,
+              // S29 fix #40 — Step 8 nu primea auditor → CPE XML al treilea avea „AE-XXXX" placeholder
+              auditor,
             },
             onOpenTutorial: () => setShowTutorial(true),
           }} /></Suspense>}

@@ -216,7 +216,8 @@ describe("DEMO_PROJECTS v2 — schema completă pentru fiecare model", () => {
 describe("DEMO_PROJECTS v2 — diversitate scenarii (testare end-to-end)", () => {
   it("M1 (Constanța) folosește termoficare DH RADET", () => {
     expect(DEMO_PROJECTS[0].heating.source).toBe("TERMOFICARE");
-    expect(DEMO_PROJECTS[0].expectedResults.energyClass).toBe("F");
+    // S29 fix — M1 e clasă G (apartament panou mare neanvelopat, EP=968 kWh/m²·an)
+    expect(DEMO_PROJECTS[0].expectedResults.energyClass).toBe("G");
     expect(DEMO_PROJECTS[0].expectedResults.RER_pct).toBe(0);
     expect(DEMO_PROJECTS[0].expectedResults.passportRequired).toBe(true);
     expect(DEMO_PROJECTS[0].expectedResults.passportPhases).toBeGreaterThanOrEqual(2);

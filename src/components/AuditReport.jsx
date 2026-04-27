@@ -20,6 +20,7 @@ import {
   makeTextWriter,
   buildPdfOutline,
   drawTocPage,
+  ROMANIAN_FONT,
 } from "../utils/pdf-fonts.js";
 
 // ─── Constante clase energetice ───────────────────────────────────────────────
@@ -247,10 +248,12 @@ export default function AuditReport({
       const colW = w - 2 * margin;
       let y = 20;
 
-      // Sprint 16 — setup font Roboto (diacritice) cu fallback transliterare
+      // S29 fix #28 — folosește ROMANIAN_FONT (LiberationSans) în loc de "Roboto"
+      // (numele înregistrat în pdf-fonts.js — "Roboto" hardcoded făcea ca jsPDF
+      // să nu găsească fontul → fallback Helvetica → diacriticele se pierdeau)
       const fontOk = await setupRomanianFont(doc);
       const writeText = makeTextWriter(doc, fontOk);
-      const baseFont = fontOk ? "Roboto" : "helvetica";
+      const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
 
       // Secțiuni înregistrate pentru TOC + outline PDF
       const tocEntries = [];

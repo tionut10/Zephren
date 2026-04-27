@@ -394,8 +394,10 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Stoica Vlad-Răzvan",
       atestat: "CT-01875",
-      grade: "AE Ic",                     // Auditor Energetic clădiri locuit individual + colectiv
-      specialty: "construcții",
+      // S29 fix #8 — promovat la AE Ici pentru a permite emiterea Raportului de Conformare nZEB
+      // (Ord. MDLPA 348/2026 Art.6 §1 lit.c — necesită Grad I auditor Ici)
+      grade: "AE Ici",                    // Auditor Energetic Ici (individual + colectiv + nerezidențial)
+      specialty: "construcții și instalații",
       company: "EnergyConstanța Audit SRL",
       phone: "0744 123 456",
       email: "vlad.stoica@energyct.ro",
@@ -416,18 +418,21 @@ export const DEMO_PROJECTS = [
       observations: "Apartament 3 camere etajul 2, bloc PAFP nereabilitat — termoficare RADET (CET Constanța, contor unic bloc), boiler electric apartament 80L. Anvelopă: PAFP 27 cm BA fără izolație suplimentară (U_pereți ≈ 1.45 W/m²·K), termopan PVC 4-16-4 fără Low-E (U_glaz ≈ 2.70). Punți termice severe: rosturi orizontale/verticale panou mare. n₅₀ = 7.5 h⁻¹ (etanșeitate proastă). Recomandare urgentă: reabilitare termică Pașaport Renovare în 3 etape (anvelopă + ferestre + sursa).",
       photo: "",
     },
+    // S29 — calibrat după rezultate reale motor (CPE registru 27.04.2026):
+    // PAFP 27 cm BA fără izolație → U=2.70 W/m²·K (nu 1.45 — am subestimat)
+    // → Q_inc=637 kWh/m²·an, EP=968 kWh/m²·an, clasa G (nu F)
     expectedResults: {
-      energyClass: "F",
-      E_p_total_kWh_m2_y: 310,
-      E_p_nren_kWh_m2_y: 285,
-      E_p_ren_kWh_m2_y: 25,             // Doar parte regenerabilă DH (mix CET)
-      RER_pct: 0,                        // 0% RER on-site (DH 100% gaz/cărbune)
-      U_med_W_m2K: 1.42,
+      energyClass: "G",                  // S29 fix — corectat din F → G (Mc 001-2022 prag G pentru RA = > 870)
+      E_p_total_kWh_m2_y: 968,
+      E_p_nren_kWh_m2_y: 968,            // RER 0% → tot EP e nren
+      E_p_ren_kWh_m2_y: 0,
+      RER_pct: 0,
+      U_med_W_m2K: 2.10,                 // S29 — calculat 240.24/114.2 din raport tehnic
       U_max_violations: ["PE", "PL", "GLAZ"],
-      Q_inc_kWh_m2_y: 215,
+      Q_inc_kWh_m2_y: 637,
       Q_rac_kWh_m2_y: 0,
-      Q_acm_kWh_m2_y: 32,
-      Q_il_kWh_m2_y: 18,
+      Q_acm_kWh_m2_y: 71,
+      Q_il_kWh_m2_y: 15,
       Q_aux_kWh_m2_y: 4,
       bacsClass: "D",
       fBac: 1.10,
