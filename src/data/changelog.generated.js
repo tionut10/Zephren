@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "✨",
+        "text": "S30C — module avansate Step 8 cu export PDF unificat (13 module)"
+      },
+      {
+        "icon": "✨",
         "text": "S30B — conformitate normativă strictă (5 module noi + 2 extensii)"
       },
       {
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🗺️",
         "text": "S28 DEMO v2 — refacere completă: 5 modele zone climatice I-V + teste"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(mobile): blochez scroll orizontal nedorit (overflow-x hidden global)"
       }
     ]
   },
