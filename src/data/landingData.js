@@ -150,12 +150,12 @@ export const PLANS = [
   {
     id: "audit",
     name: "Zephren AE IIci",
-    subtitle: "CPE rezidențial · auditori AE IIci",
+    subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
     price: "199",
     period: "/lună",
     priceAn: "1.999",
     discount: "/an (10 luni)",
-    audience: "Auditor energetic AE IIci (grad II civile) · CPE rezidențial · până la 10 CPE/lună (8 + 2 burst)",
+    audience: "Auditor energetic AE IIci · grad II civile · CPE locuințe (case + bloc nou + apartament) · 10 CPE/lună (8 + 2 burst)",
     legalScope: "Conform Art. 6 alin. (2) Ord. MDLPA 348/2026: locuințe unifamiliale + blocuri de locuințe + apartamente",
     features: [
       "Step 1-6 complet (CPE + Anexa 1+2 MDLPA oficial)",
@@ -176,12 +176,12 @@ export const PLANS = [
   {
     id: "pro",
     name: "Zephren AE Ici",
-    subtitle: "CPE complet + Audit + nZEB · auditori AE Ici",
+    subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
     price: "499",
     period: "/lună",
     priceAn: "4.990",
     discount: "/an (10 luni) · CEL MAI ALES",
-    audience: "Auditor energetic AE Ici (grad I civile) · scop complet · până la 36 CPE/lună (30 + 6 burst)",
+    audience: "Auditor energetic AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (rezidențial + nerezidențial + public) · 36 CPE/lună (30 + 6 burst)",
     legalScope: "Conform Art. 6 alin. (1) Ord. MDLPA 348/2026: toate categoriile + audit energetic + raport conformare nZEB",
     features: [
       "Step 1-7 COMPLET — TOATE clădirile (rezidențial + nerezidențial + public)",
@@ -205,11 +205,12 @@ export const PLANS = [
   {
     id: "expert",
     name: "Zephren Expert",
+    subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
     price: "899",
     period: "/lună",
     priceAn: "8.990",
     discount: "/an (10 luni) · Toate modulele avansate",
-    audience: "Auditor senior + consultant · până la 72 CPE/lună (60 + 12 burst) · 18 module avansate Step 8",
+    audience: "Auditor senior AE Ici + consultant · CPE + audit + nZEB + BIM + Pasivhaus + MonteCarlo · 72 CPE/lună (60 + 12 burst)",
     features: [
       "Tot Zephren Pro, plus:",
       "Step 8 COMPLET (18 module avansate)",
@@ -229,12 +230,13 @@ export const PLANS = [
   {
     id: "birou",
     name: "Zephren Birou",
+    subtitle: "Pentru birouri 2-5 auditori (mix AE Ici + AE IIci) · CPE NELIMITAT · preț FIX per birou",
     price: "1.890",
     period: "/lună flat",
     priceAn: "18.900",
     discount: "/an (10 luni) · Preț FIX, nu per user",
     tierNote: "2–5 utilizatori · CPE NELIMITAT pentru toți",
-    audience: "Birou de audit 2-5 utilizatori · CPE NELIMITAT pentru toți · preț FIX",
+    audience: "Birou audit 2-5 auditori (AE Ici și/sau AE IIci) · CPE NELIMITAT pentru toți · preț FIX per birou",
     features: [
       "Tot Zephren Expert × 2-5 utilizatori",
       "CPE NELIMITAT (rollover 6 luni)",
@@ -252,12 +254,13 @@ export const PLANS = [
   {
     id: "enterprise",
     name: "Zephren Enterprise",
+    subtitle: "Pentru organizații 6-100+ auditori (toate gradele) · SLA 99.9% + INCERC validation",
     price: "de la 4.990",
     period: "/lună",
     priceAn: "Negociat",
     discount: "Volume tiers transparente · 6-100+ utilizatori",
     tierNote: "11-30u: ajustat · 31-60u: ajustat · 61-100+u: ajustat (negociat)",
-    audience: "Organizații 6-100+ utilizatori · CPE NELIMITAT · SLA 99.9% · INCERC validation",
+    audience: "Organizații 6-100+ auditori (toate gradele AE Ici / AE IIci) · CPE NELIMITAT · SLA 99.9% · INCERC validation",
     features: [
       "Tot Zephren Birou, plus:",
       "6-100+ utilizatori (volume scaling)",
