@@ -391,12 +391,18 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: navBg, backdropFilter: "blur(12px)", borderBottom: `1px solid ${border}`, padding: "0 24px", transition: "background 0.3s" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src="/logo.svg" alt="Zephren" style={{ height: "40px", width: "auto" }} />
-            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
+            <img src={isDark ? "/logo.svg" : "/logo-light.png"} alt="Zephren" style={{ height: "40px", width: "auto" }} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
             <a href="#pricing" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_pricing", "Prețuri")}</a>
+            <a href="#changelog" style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#f59e0b", textDecoration: "none", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)", transition: "background 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.16)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,158,11,0.08)"; }}>
+              <span style={{ fontSize: "11px" }}>📋</span>
+              {lang === "EN" ? `v${APP_VERSION}` : `v${APP_VERSION}`}
+              <span style={{ fontSize: "10px", opacity: 0.7 }}>{lang === "EN" ? "changelog" : "noutăți"}</span>
+            </a>
             {/* Toggle limbă */}
             <button onClick={toggleLang} title={lang === "RO" ? "Switch to English" : "Comută în Română"} style={{ fontSize: "12px", fontWeight: "700", padding: "6px 10px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", letterSpacing: "0.5px", transition: "border-color 0.2s" }}>
               {lang === "RO" ? "EN" : "RO"}
@@ -432,39 +438,67 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       )}
 
       {/* ═══ HERO ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "100px 24px 80px", textAlign: "center" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "32px" }}>
-          <img src="/logo.svg" alt="Zephren" style={{ width: "min(420px, 85vw)", height: "auto" }} />
-          <span style={{ fontSize: "13px", color: textMuted, fontWeight: "500", letterSpacing: "0.3px" }}>
-            {lang === "EN"
-              ? "Energy performance calculator based on Mc 001-2022 · Ord. MDLPA 16/2023"
-              : "Calculator de performanță energetică conform Mc 001-2022 · Ord. MDLPA 16/2023"}
-          </span>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 24px 48px", textAlign: "center" }}>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "28px" }}>
+          <img src={isDark ? "/logo.svg" : "/logo-light.png"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto" }} />
+
+          {/* Separator vizual */}
+          <div style={{ width: "48px", height: "1px", background: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)", margin: "6px 0" }} />
+
+          {/* Credențiale autor */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <span style={{ fontSize: "14px", color: text, fontWeight: "600", letterSpacing: "0.2px" }}>
+              {lang === "EN" ? "Developed by Eng. Ionuț Tunaru" : "Dezvoltat de ing. Ionuț Tunaru"}
+            </span>
+            <span style={{ fontSize: "12px", color: textMuted, fontWeight: "400" }}>
+              {lang === "EN"
+                ? "M.Sc. Energy Efficiency in the Built Environment (MEMC)"
+                : "M.Sc. Modernizare Energetică în Mediul Construit (MEMC)"}
+            </span>
+            <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
+              {lang === "EN" ? "Research track · High-performance buildings" : "Traseu cercetare științifică · Clădiri cu performanță energetică ridicată"}
+            </span>
+            <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
+              {lang === "EN" ? "Universitatea Transilvania Brașov, 2019" : "Universitatea Transilvania din Brașov, 2019"}
+            </span>
+          </div>
         </div>
+
         <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "24px", color: text }}>
           {T("hero_title1", "Calculator performanță")}<br />
           <span style={{ color: "#f59e0b" }}>{T("hero_title2", "energetică clădiri")}</span>
         </h1>
-        <p style={{ fontSize: "18px", color: textMuted, maxWidth: "640px", margin: "0 auto 40px", lineHeight: 1.6 }}>
-          {T("hero_sub", `Software profesional pentru auditori energetici atestați MDLPA. Certificat de performanță energetică conform Mc 001-2022 · ${STEPS_COUNT} pași de calcul · verificare nZEB/ZEB · EPBD 2024.`)}
+        <p style={{ fontSize: "18px", color: textMuted, maxWidth: "620px", margin: "0 auto 40px", lineHeight: 1.7 }}>
+          {lang === "EN"
+            ? "Professional software for MDLPA certified energy auditors, compliant with Mc 001-2022."
+            : "Software profesional pentru auditori energetici atestați MDLPA, conform Mc 001-2022."}
         </p>
-        <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
+
+        {/* CTA dublu */}
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={onStart}
             style={{ fontSize: "16px", fontWeight: "700", padding: "16px 40px", borderRadius: "12px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer", boxShadow: "0 4px 24px rgba(245,158,11,0.3)", transition: "transform 0.15s ease, box-shadow 0.15s ease" }}
             onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(245,158,11,0.45)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(245,158,11,0.3)"; }}
             onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; }}
             onMouseUp={e => { e.currentTarget.style.transform = "scale(1.03)"; }}>
-            {T("hero_cta", "Începe calculul gratuit →")}
+            {lang === "EN" ? "Start free calculation →" : "Începe calculul gratuit →"}
           </button>
+          <a href="#pricing"
+            style={{ fontSize: "15px", fontWeight: "600", padding: "16px 32px", borderRadius: "12px", border: `1.5px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "inline-flex", alignItems: "center" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#f59e0b"; e.currentTarget.style.background = isDark ? "rgba(245,158,11,0.06)" : "rgba(245,158,11,0.05)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.background = "transparent"; }}>
+            {lang === "EN" ? "See plans →" : "Vezi planurile →"}
+          </a>
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "24px", maxWidth: "900px", margin: "60px auto 0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "24px", maxWidth: "900px", margin: "36px auto 0", padding: "24px 24px", borderRadius: "16px", background: isDark ? "rgba(255,255,255,0.02)" : "rgba(15,23,42,0.03)", border: `1px solid ${cardBorder}` }}>
           {STATS.map(s => (
             <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "32px", fontWeight: "900", color: "#f59e0b" }}>{s.value}</div>
-              <div style={{ fontSize: "11px", color: textFaint }}>{s.label}</div>
+              <div style={{ fontSize: "30px", fontWeight: "900", color: "#f59e0b", lineHeight: 1.1 }}>{s.value}</div>
+              <div style={{ fontSize: "12px", color: textMuted, marginTop: "4px", lineHeight: 1.4 }}>{lang === "EN" ? s.labelEN || s.label : s.label}</div>
             </div>
           ))}
         </div>
@@ -473,8 +507,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
 
       {/* ═══ CALCULATOR ÎN 8 PAȘI ═══ */}
-      <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+      <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "12px", color: "#6366f1", marginBottom: "16px" }}>
             {lang === "EN" ? "HOW IT WORKS" : "CUM FUNCȚIONEAZĂ"}
           </div>
@@ -516,9 +550,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
 
       {/* ═══ FUNCȚIONALITĂȚI PRINCIPALE ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 80px" }}>
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 40px" }}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "12px", color: "#6366f1", marginBottom: "14px" }}>
+            {lang === "EN" ? "FEATURES" : "FUNCȚIONALITĂȚI"}
+          </div>
+          <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>
             {lang === "EN" ? "Everything you need for energy certification" : "Tot ce ai nevoie pentru certificare energetică"}
           </h2>
           <p style={{ fontSize: "14px", color: textFaint, maxWidth: "560px", margin: "10px auto 0" }}>
@@ -546,14 +583,17 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
 
       {/* ═══ EXPORT & IMPORT ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
-            v{APP_VERSION}
+            {lang === "EN" ? "EXPORT & IMPORT" : "EXPORT & IMPORT"}
           </div>
-          <h2 style={{ fontSize: "28px", fontWeight: "800", color: text }}>
-            {lang === "EN" ? "Export & Import — all formats" : "Export & Import — toate formatele"}
+          <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>
+            {lang === "EN" ? "All supported formats" : "Toate formatele suportate"}
           </h2>
+          <p style={{ fontSize: "14px", color: textFaint, maxWidth: "560px", margin: "10px auto 0" }}>
+            {lang === "EN" ? "Export official documents and import data from any source — all in one platform." : "Exportă documente oficiale și importă date din orice sursă — totul dintr-o singură platformă."}
+          </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
           {/* Export */}
@@ -590,8 +630,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       </section>
 
       {/* ═══ NORMATIVE ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 80px" }}>
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 40px" }}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
             {lang === "EN" ? "STANDARDS & REGULATIONS" : "STANDARDE ȘI REGLEMENTĂRI"}
           </div>
@@ -674,42 +714,15 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
-      {/* ═══ CHANGELOG / NOUTĂȚI ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 80px" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "20px" }}>
-            {lang === "EN" ? "RELEASE NOTES" : "ISTORICUL VERSIUNILOR"}
-          </div>
-          <div style={{ marginBottom: "8px" }}>
-            <span style={{ fontSize: "13px", color: textFaint }}>
-              {lang === "EN" ? `Current version: ` : `Versiunea curentă: `}
-            </span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b" }}>v{APP_VERSION}</span>
-            <span style={{ fontSize: "13px", color: textFaint }}> · {CHANGELOG[0]?.dateRange}</span>
-          </div>
-          <a
-            href="#changelog"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "8px",
-              padding: "14px 36px", borderRadius: "12px",
-              background: isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)",
-              border: "1.5px solid rgba(245,158,11,0.35)",
-              color: "#f59e0b", textDecoration: "none",
-              fontSize: "15px", fontWeight: "700",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.18)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = isDark ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.08)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.35)"; }}
-          >
-            📋 {lang === "EN" ? "See full version history →" : "Vezi tot istoricul versiunilor →"}
-          </a>
-        </div>
-      </section>
-
       {/* ═══ PRICING v6.0 — 4 carduri (Free + Audit + Pro + Expert) + 2 (Birou + Enterprise) + Edu banner + Pay-per-use ═══ */}
-      <section id="pricing" style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 24px" }}>
-        <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "16px", color: text }}>{T("price_title", "Planuri si preturi")}</h2>
-        <p style={{ textAlign: "center", fontSize: "14px", color: textFaint, marginBottom: "48px", maxWidth: "640px", margin: "0 auto 48px" }}>
+      <section id="pricing" style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+          <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
+            {lang === "EN" ? "PLANS & PRICING" : "PLANURI & PREȚURI"}
+          </div>
+        </div>
+        <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "16px", color: text }}>{T("price_title", "Planuri și prețuri")}</h2>
+        <p style={{ textAlign: "center", fontSize: "14px", color: textFaint, marginBottom: "32px", maxWidth: "640px", margin: "0 auto 32px" }}>
           {lang === "EN"
             ? "Choose the plan that matches your MDLPA grade and building type. All paid plans include unlimited EPC — the difference is in what you can issue and which modules you have access to."
             : "Alege pachetul care se potrivește gradului tău MDLPA și tipului de clădiri pe care le certifici. Toate planurile plătite includ CPE nelimitat — diferența constă în ce poți emite și ce module ai la dispoziție."}
@@ -888,7 +901,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 const eduPlan = PLANS.find(p => p.id === "edu");
                 if (!eduPlan) return null;
                 return (
-                  <div style={{ maxWidth: "1140px", margin: "64px auto 0", padding: "32px", borderRadius: "16px", background: "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))", border: "2px solid rgba(16,185,129,0.3)", position: "relative" }}>
+                  <div style={{ maxWidth: "1140px", margin: "32px auto 0", padding: "24px", borderRadius: "16px", background: "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))", border: "2px solid rgba(16,185,129,0.3)", position: "relative" }}>
                     <div style={{ position: "absolute", top: "-12px", left: "32px", padding: "4px 14px", borderRadius: "12px", background: "#10b981", color: "#fff", fontSize: "12px", fontWeight: "700" }}>
                       🎓 {lang === "EN" ? "EDUCATION — FREE" : "EDUCAȚIE — GRATIS"}
                     </div>
@@ -1050,15 +1063,33 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer style={{ borderTop: `1px solid ${border}`, padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "12px" }}>
-          <img src="/logo.svg" alt="Zephren" style={{ height: "32px", width: "auto" }} />
+      <footer style={{ borderTop: `1px solid ${border}`, padding: "48px 24px 32px", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
+          <img src={isDark ? "/logo.svg" : "/logo-light.png"} alt="Zephren" style={{ height: "32px", width: "auto" }} />
           <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
         </div>
-        <p style={{ fontSize: "12px", color: textFaint, maxWidth: "500px", margin: "0 auto" }}>
-          {T("footer_copy", "Software profesional pentru auditori energetici atestați MDLPA. Calculator performanță energetică conform Mc 001-2022.")}
+        <p style={{ fontSize: "12px", color: textFaint, maxWidth: "520px", margin: "0 auto 20px", lineHeight: 1.6 }}>
+          {lang === "EN"
+            ? "Professional software for MDLPA certified energy auditors. EPC calculator compliant with Mc 001-2022."
+            : "Software profesional pentru auditori energetici atestați MDLPA. Calculator performanță energetică conform Mc 001-2022."}
         </p>
-        <p style={{ fontSize: "11px", color: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.25)", marginTop: "16px" }}>© {new Date().getFullYear()} Zephren. Toate drepturile rezervate.</p>
+        {/* Linkuri footer */}
+        <div style={{ display: "flex", gap: "24px", justifyContent: "center", flexWrap: "wrap", marginBottom: "20px" }}>
+          {[
+            { label: lang === "EN" ? "Privacy Policy" : "Politică de confidențialitate", href: "/privacy" },
+            { label: lang === "EN" ? "Terms of Service" : "Termeni și condiții", href: "/terms" },
+            { label: "Contact", href: "mailto:contact@zephren.ro" },
+          ].map(link => (
+            <a key={link.href} href={link.href} style={{ fontSize: "12px", color: textFaint, textDecoration: "none", transition: "color 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = text; }}
+              onMouseLeave={e => { e.currentTarget.style.color = textFaint; }}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <p style={{ fontSize: "11px", color: isDark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.45)", margin: 0 }}>
+          © {new Date().getFullYear()} Zephren SRL · Toate drepturile rezervate
+        </p>
       </footer>
 
       {/* ═══ LOGIN MODAL ═══ */}
