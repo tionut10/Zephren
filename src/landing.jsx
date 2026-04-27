@@ -711,27 +711,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "16px", color: text }}>{T("price_title", "Planuri si preturi")}</h2>
         <p style={{ textAlign: "center", fontSize: "14px", color: textFaint, marginBottom: "48px", maxWidth: "640px", margin: "0 auto 48px" }}>
           {lang === "EN"
-            ? "Pick the plan that matches your audit volume. Step 1-7 covers all official CPE workflows; Step 8 unlocks 18 advanced modules for senior auditors."
-            : "Alege pachetul care se potrivește volumului tău de audit. Step 1-7 acoperă tot fluxul CPE oficial; Step 8 adaugă 18 module avansate pentru auditori seniori."}
+            ? "Choose the plan that matches your MDLPA grade and building type. All paid plans include unlimited EPC — the difference is in what you can issue and which modules you have access to."
+            : "Alege pachetul care se potrivește gradului tău MDLPA și tipului de clădiri pe care le certifici. Toate planurile plătite includ CPE nelimitat — diferența constă în ce poți emite și ce module ai la dispoziție."}
         </p>
 
-        {/* ── Notă globală TVA — vizibil deasupra pachetelor ── */}
-        <div style={{
-          maxWidth: "1140px",
-          margin: "0 auto 24px",
-          padding: "10px 18px",
-          borderRadius: "8px",
-          background: isDark ? "rgba(245,158,11,0.08)" : "rgba(245,158,11,0.06)",
-          border: "1px solid rgba(245,158,11,0.25)",
-          fontSize: "12px",
-          color: textMuted,
-          textAlign: "center",
-          fontWeight: "500",
-        }}>
-          💼 {lang === "EN"
-            ? <>All prices include <strong>21% VAT</strong>. EU B2B with VIES VAT number: 0% reverse charge — contact us for a VAT-excluded invoice.</>
-            : <>Toate prețurile afișate includ <strong>TVA 21%</strong>. B2B UE cu cod VAT VIES: 0% taxare inversă — contactați-ne pentru factură fără TVA.</>}
-        </div>
 
         {/* ── Trust banner: Transparență prețuri — anunț 90 zile pentru orice modificare ── */}
         <div style={{ maxWidth: "1140px", margin: "0 auto 40px", padding: "16px 24px", borderRadius: "14px", background: isDark ? "linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.03))" : "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.30)" }}>
