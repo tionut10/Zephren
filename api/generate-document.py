@@ -39,16 +39,16 @@ A4_HEIGHT_EMU = 16838 * 635    # 29.7 cm
 A4_MARGIN_EMU = 1417 * 635     # 2.5 cm
 
 
-def enforce_a4_portrait(doc, preserve_margins=False):
-    """Forțează toate secțiunile la A4 portret + margini 2.5 cm + Calibri 11pt.
+def enforce_a4_portrait(doc, preserve_margins=False, preserve_fonts=False):
+    """Forțează toate secțiunile la A4 portret. Margini + fonturi opționale.
 
-    Previne regresia în care template-ul moștenește format legacy (Letter,
-    Legal, landscape). Ord. MDLPA 16/2023 Anexa 1 cere strict A4 portret
-    pentru CPE tipărit.
+    preserve_margins=True — păstrează marginile originale ale template-ului
+    (template-urile MDLPA CPE au 20mm top/bot, 25mm left/right).
 
-    preserve_margins=True — pentru template-urile oficiale MDLPA CPE (margini
-    top/bottom 5mm, left/right 17.5mm) care încap conținutul pe o singură
-    pagină A4. Ord. MDLPA 16/2023 NU impune margini fixe — doar A4 portret.
+    preserve_fonts=True — NU suprascrie fontul Normal style. Folosit pentru
+    template-urile oficiale MDLPA care au deja fonturi corecte setate la nivel
+    de run/paragraf; suprascrierea Normal.font cascadează pe TOATE paragrafele
+    și modifică layout-ul față de modelul oficial.
     """
     for section in doc.sections:
         section.page_width = Emu(A4_WIDTH_EMU)
@@ -59,15 +59,16 @@ def enforce_a4_portrait(doc, preserve_margins=False):
             section.bottom_margin = Emu(A4_MARGIN_EMU)
             section.left_margin = Emu(A4_MARGIN_EMU)
             section.right_margin = Emu(A4_MARGIN_EMU)
-    try:
-        if "Normal" in doc.styles:
-            normal = doc.styles["Normal"]
-            if normal.font.name is None:
-                normal.font.name = "Calibri"
-            if normal.font.size is None:
-                normal.font.size = Pt(11)
-    except Exception:
-        pass
+    if not preserve_fonts:
+        try:
+            if "Normal" in doc.styles:
+                normal = doc.styles["Normal"]
+                if normal.font.name is None:
+                    normal.font.name = "Calibri"
+                if normal.font.size is None:
+                    normal.font.size = Pt(11)
+        except Exception:
+            pass
     return doc
 
 # ═══════════════════════════════════════════════════════
@@ -2206,8 +2207,31 @@ CHECKBOX_KEYWORD_MAP = {
     # ── Anexa 2 — Tip ventilare (CB ~259-271) ──
     "VENT_NATURAL_NEORG":   ["exclusiv naturala neorganizata"],
     "VENT_NATURAL_ORG":     ["naturala organizata"],
-    "VENT_MECHANICAL":      ["mecanica"],
-    "VENT_HR_YES":          ["recuperator de caldura", "da nu"],
+    # "tipul sistemului" în context — distinge de checkbox-ul existenței (care are "existenta")
+    "VENT_MECHANICAL":      ["tipul sistemului", "mecanica"],
+    # VENT_HR: Da = prima apariție, Nu = a doua apariție în paragraful cu "Da Nu"
+    "VENT_HR_YES":          (["recuperator de caldura", "da"], 0),
+    "VENT_HR_NO":           (["recuperator de caldura"], 1),
+
+    # ── Anexa 2 — Sursa încălzire Section B ──
+    "HEAT_SRC_TERMOFICARE": ["termoficare cu racordare", "incalzire"],
+    "HEAT_SRC_CT_PROP":     ["centrala termica proprie", "incalzire"],
+    "HEAT_SRC_CT_EXT":      ["centrala termica in exteriorul"],
+    "HEAT_SRC_ELECTRIC":    ["energie electrica", "incalzire"],
+    "HEAT_SRC_PC_HEAT":     ["pompa de caldura", "incalzire"],
+    "HEAT_SRC_SOBE":        ["combustibil solid", "incalzire"],
+    "HEAT_TYPE_STATIC":     ["corpuri statice"],
+    "HEAT_TYPE_SOBE":       ["sobe", "incalzire"],
+    "HEAT_TYPE_ELECTRIC":   ["radiatoare electrice"],
+    "HEAT_DIST_INF":        ["distributie inferioara"],
+    "HEAT_DIST_SUP":        ["distributie superioara"],
+
+    # ── Anexa 2 — Sursa ACM Section C ──
+    "DHW_SRC_TERMOFICARE":  ["termoficare cu racordare", "apa calda"],
+    "DHW_SRC_CT_PROP":      ["centrala termica", "apa calda de consum"],
+    "DHW_SRC_ELECTRIC":     ["boiler", "electrica"],
+    "DHW_SRC_SOLAR":        ["energie solara", "termosolare"],
+    "DHW_SRC_PC":           ["pompa de caldura", "apa calda"],
 
     # ── Anexa 2 — Tip iluminat (CB ~281-285) ──
     "LIGHT_FLUORESCENT":    ["tipul sistemului de iluminat", "fluorescent"],
@@ -2545,7 +2569,7 @@ def compute_checkbox_keys(data, category):
         keys.append("LIGHT_EXISTS_NONE")
 
     # ── Anexa 2 — tip ventilare ──
-    if vent_type == "natural_neorg":
+    if vent_type in ("natural_neorg", "natural"):
         keys.append("VENT_NATURAL_NEORG")
     elif vent_type == "natural_org":
         keys.append("VENT_NATURAL_ORG")
@@ -2553,6 +2577,45 @@ def compute_checkbox_keys(data, category):
         keys.append("VENT_MECHANICAL")
     if vent_type and "hr" in vent_type:
         keys.append("VENT_HR_YES")
+    else:
+        keys.append("VENT_HR_NO")
+
+    # ── Anexa 2 — sursa încălzire (Section B) ──
+    if h_src:
+        if h_src == "termoficare":
+            keys.append("HEAT_SRC_TERMOFICARE")
+        elif h_src in ("gaz_conv", "gaz_cond", "centrala_gpl", "ct_prop"):
+            keys.append("HEAT_SRC_CT_PROP")
+        elif h_src == "ct_ext":
+            keys.append("HEAT_SRC_CT_EXT")
+        elif h_src in ("electric_direct",):
+            keys.append("HEAT_SRC_ELECTRIC")
+        elif h_src in ("pc_aer_apa", "pc_sol_apa", "pc_apa_apa", "pompa_caldura"):
+            keys.append("HEAT_SRC_PC_HEAT")
+        elif h_src in ("cazan_lemn", "cazan_peleti", "soba_teracota"):
+            keys.append("HEAT_SRC_SOBE")
+        # Tip sistem încălzire
+        if h_src == "soba_teracota":
+            keys.append("HEAT_TYPE_SOBE")
+        elif h_src == "electric_direct":
+            keys.append("HEAT_TYPE_ELECTRIC")
+        else:
+            keys.append("HEAT_TYPE_STATIC")
+        # Distribuție (default inferioară)
+        keys.append("HEAT_DIST_INF")
+
+    # ── Anexa 2 — sursa ACM (Section C) ──
+    if acm_src:
+        if acm_src == "termoficare":
+            keys.append("DHW_SRC_TERMOFICARE")
+        elif acm_src in ("ct_prop", "boiler_gaz"):
+            keys.append("DHW_SRC_CT_PROP")
+        elif acm_src == "boiler_electric":
+            keys.append("DHW_SRC_ELECTRIC")
+        elif acm_src == "solar_termic":
+            keys.append("DHW_SRC_SOLAR")
+        elif acm_src == "pc":
+            keys.append("DHW_SRC_PC")
 
     # ── Anexa 2 — iluminat ──
     if l_type == "fluorescent":
@@ -3249,7 +3312,7 @@ class handler(BaseHTTPRequestHandler):
             # 17.5mm left/right) care încap CPE-ul pe 1 pagină A4. Altfel marginile
             # default Word (25mm) împing conținutul pe pagina 2.
             # ═══════════════════════════════════════
-            enforce_a4_portrait(doc, preserve_margins=True)
+            enforce_a4_portrait(doc, preserve_margins=True, preserve_fonts=True)
 
             # ═══════════════════════════════════════
             # 0. SCALE EP + CO₂ — PRIMELE! (înainte de text replacements)
@@ -3590,19 +3653,24 @@ class handler(BaseHTTPRequestHandler):
             # 4. CHECKBOXES (Anexa)
             # ═══════════════════════════════════════
             if mode in ("anexa", "anexa_bloc"):
-                # Template apartament (mode=anexa, 244 cb) are ordine diferită față de
-                # template clădire (mode=anexa_bloc, 308 cb). compute_checkboxes() folosește
-                # indici hardcod NUMAI pentru template clădire → bifează căsuțe greșite
-                # pe template apartament (ex: "Casă individuală" + "Cămin/internat" + "birouri").
-                # Soluție: pentru mode=anexa → SARI COMPLET peste indici hardcod,
-                # folosim EXCLUSIV semantic matching (funcționează pe orice template).
-                if mode == "anexa_bloc":
-                    cb_indices = compute_checkboxes(data, category)
-                    client_cbs = body.get("checkboxes", [])
-                    if client_cbs:
-                        cb_indices = list(set(cb_indices + client_cbs))
-                    if cb_indices:
-                        toggle_checkboxes(doc, cb_indices)
+                # Template apartament (mode=anexa, 244 cb) vs clădire (mode=anexa_bloc, 308 cb):
+                # compute_checkboxes() produce DOUĂ categorii de indici:
+                #   CB 0-64  = Anexa 1 (recomandări + estimare costuri/economii/recuperare)
+                #              → ACEEAȘI structură în ambele template-uri → SE APLICĂ
+                #   CB 65+   = Anexa 2 (tip clădire, zone, instalații)
+                #              → ordine diferită pe template apartament → CAUZEAZĂ ERORI
+                #              → înlocuit complet de semantic matching (mai jos)
+                cb_all = compute_checkboxes(data, category)
+                client_cbs = body.get("checkboxes", [])
+                if client_cbs:
+                    cb_all = list(set(cb_all + client_cbs))
+                if mode == "anexa":
+                    # Aplică NUMAI Anexa 1 (CB 0-64); Anexa 2 → semantic matching
+                    cb_indices = [i for i in cb_all if i <= 64]
+                else:
+                    cb_indices = cb_all
+                if cb_indices:
+                    toggle_checkboxes(doc, cb_indices)
 
                 # Mapping dinamic — chei semantice rezolvate la runtime
                 try:
@@ -3686,14 +3754,21 @@ class handler(BaseHTTPRequestHandler):
                         )
                 except Exception:
                     pass
-                # Nr persoane — _replace_full_para pentru paragraful complet
+                # Nr persoane — label diferit între template clădire și apartament:
+                # clădire:   "Numărul normat de persoane din clădire/unitatea de clădire:"
+                # apartament:"Numărul maxim real/normat de persoane din apartament:"
                 try:
                     is_res = category in ("RI", "RC", "RA")
                     nr_pers = max(1, round(au_f / (30 if is_res else 15)))
-                    _replace_full_para(
-                        "Numărul normat de persoane",
-                        f"Numărul normat de persoane din clădire/unitatea de clădire: {nr_pers} pers."
-                    )
+                    nr_pers_str = str(nr_pers)
+                    # Încearcă ambele variante; _fill_para_blank inserează valoarea în
+                    # locul placeholder-ului de spații/nbsp din paragraf
+                    filled = _fill_para_blank("persoane din apartament", nr_pers_str, " pers.")
+                    if not filled:
+                        _replace_full_para(
+                            "Numărul normat de persoane",
+                            f"Numărul normat de persoane din clădire/unitatea de clădire: {nr_pers} pers."
+                        )
                 except Exception:
                     pass
                 # Detalii instalații — combustibil
@@ -3895,18 +3970,21 @@ class handler(BaseHTTPRequestHandler):
                     _fill_para_blank("Volumul de referință al zonei climatizate", cooled_area, " m²")
 
                 # ── Ventilare ──────────────────────────────────────────
-                vent_hr = data.get("ventilation_has_hr", "")
-                if vent_hr:
-                    _fill_para_blank("Există recuperator de căldură", vent_hr)
+                # NU folosi _fill_para_blank pentru HR — checkbox-ul e gestionat
+                # prin VENT_HR_YES/VENT_HR_NO în semantic matching.
                 vent_hr_eff = data.get("ventilation_hr_efficiency_pct", "")
                 if vent_hr_eff and vent_hr_eff not in ("0", "0,0", "0.0"):
                     _fill_para_blank("Eficiență declarată pe durata verii/iernii", f"{vent_hr_eff}% / {vent_hr_eff}%")
                 elif not vent_hr_eff or vent_hr_eff in ("0", "0,0", "0.0"):
-                    # Dacă eficiența nu e setată, înlocuiește placeholder-ul "0% / 0%" cu "—"
                     replace_in_doc(doc, "0% / 0%", "—")
                 vent_label = data.get("ventilation_type_label", "")
-                if vent_label:
-                    # Para 354 "Cu 2 circuite, echilibrată | Alt tip:" — adaug eticheta tip
+                _vent_type_local = data.get("ventilation_type", "")
+                _is_mech_vent = bool(_vent_type_local) and _vent_type_local not in (
+                    "natural_neorg", "natural_org", "natural", ""
+                )
+                if vent_label and _is_mech_vent:
+                    # Para 354 — etichetă tip ventilare mecanică (ex. "cu recuperare")
+                    # Injectăm NUMAI pentru ventilare mecanică, nu pentru natural!
                     for p in doc.paragraphs:
                         if "Alt tip:" in p.text and "Cu 2 circuite" in p.text and vent_label not in p.text:
                             p.add_run(f" {vent_label}")
@@ -4699,6 +4777,13 @@ class handler(BaseHTTPRequestHandler):
                                     trow.cells[locuit_col].text = str(cp) if cp else "—"
                                 if common_col < len(trow.cells):
                                     trow.cells[common_col].text = str(cc) if cc else "—"
+                                # Putere totală în ultima coloană
+                                try:
+                                    pw_val = float(str(rad.get("power_kw", "0") or "0").replace(",", "."))
+                                    if pw_val > 0 and power_col < len(trow.cells):
+                                        trow.cells[power_col].text = format_ro(pw_val, 1)
+                                except (ValueError, TypeError):
+                                    pass
                                 for ci in range(len(trow.cells)):
                                     for p in trow.cells[ci].paragraphs:
                                         for r in p.runs:
@@ -4915,10 +5000,23 @@ class handler(BaseHTTPRequestHandler):
                     _fill_para_blank("Puterea termică necesară pentru prepararea acc", acm_power, " kW")
                     _fill_para_blank("Puterea termică maximă instalată pentru prepararea acc", acm_power, " kW")
 
-                # p349 — Debit aer proaspăt minim
+                # p349 — Debit aer proaspăt minim (supply / exhaust)
+                # Template format: "din apartament:    /     m³/h" (două câmpuri separate de "/")
+                # _fill_para_blank umple PRIMUL câmp; al doilea rămas gol → spațiu mare.
+                # Fix: înlocuim TOATE secvențele de spații din toate run-urile paragrafului.
                 vent_flow = data.get("ventilation_flow_m3h", "")
                 if vent_flow and vent_flow != "0":
-                    _fill_para_blank("Debitul minim de aer proaspăt", vent_flow, " m³/h")
+                    import re as _re_vf
+                    _vf_filled = False
+                    for _vfp in doc.paragraphs:
+                        if "Debitul minim de aer proaspăt" in _vfp.text:
+                            for _vfr in _vfp.runs:
+                                if _re_vf.search(r"[\xa0\s]{3,}", _vfr.text):
+                                    _vfr.text = _re_vf.sub(r"[\xa0\s]{3,}", f" {vent_flow} ", _vfr.text)
+                                    _vf_filled = True
+                            break
+                    if not _vf_filled:
+                        _fill_para_blank("Debitul minim de aer proaspăt", vent_flow, " m³/h")
 
                 # p424, p425 — duplicate cu p422/p423 (acelaș text dar contains "din surse regenerabile")
                 if data.get("solar_th_kwh_year") and data["solar_th_kwh_year"] != "0":
