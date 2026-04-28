@@ -160,14 +160,15 @@ export async function fetchOpenMeteo(lat, lon, year = 2023) {
   const startDate = `${year}-01-01`;
   const endDate   = `${year}-12-31`;
 
-  const params = new URLSearchParams({
+  const baseParams = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
     start_date: startDate,
     end_date: endDate,
     timezone: "Europe/Bucharest",
   });
-  for (const v of [
+  // Open-Meteo cere virgule literale în URL (nu %2C, nu parametri repetiți)
+  const monthlyVars = [
     "temperature_2m_mean",
     "temperature_2m_min",
     "temperature_2m_max",
@@ -175,9 +176,9 @@ export async function fetchOpenMeteo(lat, lon, year = 2023) {
     "shortwave_radiation_sum",
     "relative_humidity_2m_mean",
     "wind_speed_10m_mean",
-  ]) params.append("monthly", v);
+  ].join(",");
 
-  const url = `https://archive-api.open-meteo.com/v1/archive?${params.toString()}`;
+  const url = `https://archive-api.open-meteo.com/v1/archive?${baseParams.toString()}&monthly=${monthlyVars}`;
 
   const res = await fetch(url);
   if (!res.ok) {
