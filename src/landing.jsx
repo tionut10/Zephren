@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   V3_FEATURES, PLANS, PAY_PER_USE, PLAN_LAYOUT, STATS,
   NORMATIVE, NORMATIVE_COUNT, STEPS_COUNT,
@@ -338,6 +338,33 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
     } catch { return "dark"; }
   });
 
+  // Count-up animație stats
+  const statsRef = useRef(null);
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [statsCounts, setStatsCounts] = useState(STATS.map(() => 0));
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setStatsVisible(true); obs.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!statsVisible) return;
+    const STEPS = 40; const DURATION = 1100;
+    const targets = STATS.map(s => parseInt(s.value.replace(/\D/g, ""), 10) || 0);
+    let step = 0;
+    const id = setInterval(() => {
+      step++;
+      const ease = step / STEPS;
+      setStatsCounts(targets.map(t => Math.round(t * ease)));
+      if (step >= STEPS) clearInterval(id);
+    }, DURATION / STEPS);
+    return () => clearInterval(id);
+  }, [statsVisible]);
+
   // Sincronizare theme cu OS și energy-calc
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: light)");
@@ -441,29 +468,43 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       {/* ═══ HERO ═══ */}
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "28px 24px 40px", textAlign: "center" }}>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "18px" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "56px" }}>
           <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
 
           {/* Separator vizual */}
-          <div style={{ width: "48px", height: "1px", background: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)", margin: "6px 0" }} />
+          <div style={{ width: "160px", height: "1px", background: isDark ? "rgba(255,255,255,0.13)" : "rgba(15,23,42,0.13)", margin: "10px 0" }} />
 
           {/* Credențiale autor */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-            <span style={{ fontSize: "14px", color: text, fontWeight: "600", letterSpacing: "0.2px" }}>
-              {lang === "EN" ? "Developed by Eng. Ionuț Tunaru" : "Dezvoltat de ing. Ionuț Tunaru"}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "11px", color: textFaint, fontWeight: "400", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              {lang === "EN" ? "Developed by" : "Dezvoltat de"}
             </span>
-            <span style={{ fontSize: "12px", color: textMuted, fontWeight: "400" }}>
+            <span style={{ fontSize: "16px", color: text, fontWeight: "700", letterSpacing: "0.1px" }}>
+              <span style={{ color: "#22c55e", fontWeight: "600" }}>
+                {lang === "EN" ? "Eng. " : "ing. "}
+              </span>
+              {"Ionuț Tunaru"}
+            </span>
+            <span style={{ fontSize: "13px", color: textMuted, fontWeight: "400" }}>
               {lang === "EN"
                 ? "M.Sc. Energy Efficiency in the Built Environment (MEMC)"
                 : "M.Sc. Modernizare Energetică în Mediul Construit (MEMC)"}
             </span>
             <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
-              {lang === "EN" ? "Research track · High-performance buildings" : "Traseu cercetare științifică · Clădiri cu performanță energetică ridicată"}
-            </span>
-            <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
-              {lang === "EN" ? "Universitatea Transilvania Brașov, 2019" : "Universitatea Transilvania din Brașov, 2019"}
+              {lang === "EN"
+                ? "Research track · High-performance buildings · UTBv, 2019"
+                : "Traseu cercetare · Clădiri cu performanță energetică ridicată · UTBv, 2019"}
             </span>
           </div>
+        </div>
+
+        {/* Separator credențiale → titlu */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", maxWidth: "480px", margin: "0 auto 32px" }}>
+          <div style={{ flex: 1, height: "1px", background: isDark ? "linear-gradient(to right, transparent, rgba(255,255,255,0.12))" : "linear-gradient(to right, transparent, rgba(15,23,42,0.12))" }} />
+          <span style={{ fontSize: "10px", color: textFaint, letterSpacing: "1.5px", textTransform: "uppercase", whiteSpace: "nowrap", fontWeight: "500" }}>
+            {lang === "EN" ? "Software" : "Software profesional"}
+          </span>
+          <div style={{ flex: 1, height: "1px", background: isDark ? "linear-gradient(to left, transparent, rgba(255,255,255,0.12))" : "linear-gradient(to left, transparent, rgba(15,23,42,0.12))" }} />
         </div>
 
         <h1 style={{ fontSize: "clamp(36px, 5vw, 64px)", fontWeight: "900", lineHeight: 1.1, marginBottom: "18px", color: text }}>
@@ -495,20 +536,29 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "24px", maxWidth: "900px", margin: "22px auto 0", padding: "24px 24px", borderRadius: "16px", background: isDark ? "rgba(255,255,255,0.02)" : "rgba(15,23,42,0.03)", border: `1px solid ${cardBorder}` }}>
-          {STATS.map(s => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "30px", fontWeight: "900", color: "#f59e0b", lineHeight: 1.1 }}>{s.value}</div>
-              <div style={{ fontSize: "12px", color: textMuted, marginTop: "4px", lineHeight: 1.4 }}>{lang === "EN" ? s.labelEN || s.label : s.label}</div>
-            </div>
-          ))}
+        <div ref={statsRef} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "24px", maxWidth: "960px", margin: "22px auto 0", padding: "24px 28px", borderRadius: "16px", background: isDark ? "rgba(255,255,255,0.02)" : "rgba(15,23,42,0.03)", border: `1px solid ${cardBorder}` }}>
+          {STATS.map((s, i) => {
+            const raw = parseInt(s.value.replace(/\D/g, ""), 10) || 0;
+            const displayed = statsVisible
+              ? (raw > 0 ? statsCounts[i].toLocaleString("ro-RO") : s.value)
+              : "0";
+            return (
+              <div key={s.label} title={s.tooltip || ""} style={{ textAlign: "center", cursor: s.tooltip ? "help" : "default" }}>
+                <div style={{ fontSize: "13px", marginBottom: "4px" }}>{s.icon}</div>
+                <div style={{ fontSize: "28px", fontWeight: "900", color: "#f59e0b", lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>
+                  {displayed}
+                </div>
+                <div style={{ fontSize: "11px", color: textMuted, marginTop: "4px", lineHeight: 1.4 }}>{lang === "EN" ? s.labelEN || s.label : s.label}</div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
+      <hr className="section-divider" style={{ maxWidth: "600px", margin: "0 auto", opacity: 0.4 }} />
 
       {/* ═══ CALCULATOR ÎN 8 PAȘI ═══ */}
-      <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+      <section id="features" style={{ maxWidth: "1200px", margin: "0 auto", padding: "64px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "12px", color: "#6366f1", marginBottom: "16px" }}>
             {lang === "EN" ? "HOW IT WORKS" : "CUM FUNCȚIONEAZĂ"}
@@ -523,7 +573,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
-          {(STEPS_DATA || []).map((step, i) => (
+          {(STEPS_DATA || []).map((step) => (
             <div key={step.id} style={{ padding: "24px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow, position: "relative", transition: "all 0.25s ease" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = isDark ? "none" : "0 8px 24px rgba(15,23,42,0.10)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = cardShadow; }}>
@@ -548,10 +598,10 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         </div>
       </section>
 
-      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
+      <hr className="section-divider" style={{ maxWidth: "600px", margin: "0 auto", opacity: 0.4 }} />
 
       {/* ═══ FUNCȚIONALITĂȚI PRINCIPALE ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 40px" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "64px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", fontSize: "12px", color: "#6366f1", marginBottom: "14px" }}>
             {lang === "EN" ? "FEATURES" : "FUNCȚIONALITĂȚI"}
@@ -559,32 +609,57 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <h2 style={{ fontSize: "32px", fontWeight: "800", color: text }}>
             {lang === "EN" ? "Everything you need for energy certification" : "Tot ce ai nevoie pentru certificare energetică"}
           </h2>
-          <p style={{ fontSize: "14px", color: textFaint, maxWidth: "560px", margin: "10px auto 0" }}>
-            {lang === "EN" ? `${CALC_MODULES_COUNT} specialized modules · ${API_ENDPOINTS_COUNT} server-side APIs · auto-updating from code` : `${CALC_MODULES_COUNT} module specializate · ${API_ENDPOINTS_COUNT} API server-side · se actualizează automat din cod`}
-          </p>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap", marginTop: "10px" }}>
+            {[
+              lang === "EN" ? `${CALC_MODULES_COUNT} calc modules` : `${CALC_MODULES_COUNT} module de calcul`,
+              lang === "EN" ? `${API_ENDPOINTS_COUNT} server-side APIs` : `${API_ENDPOINTS_COUNT} API server-side`,
+              lang === "EN" ? "updated with legislation" : "actualizat cu legislația",
+            ].map(chip => (
+              <span key={chip} style={{ fontSize: "12px", color: textFaint, padding: "3px 10px", borderRadius: "20px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.04)", border: `1px solid ${cardBorder}` }}>{chip}</span>
+            ))}
+          </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
-          {(FEATURES || []).map(f => (
-            <div key={f.id || f.title} style={{ padding: "28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow, transition: "all 0.25s ease", cursor: "default" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = borderHover; e.currentTarget.style.boxShadow = isDark ? "0 8px 24px rgba(245,158,11,0.05)" : "0 8px 24px rgba(15,23,42,0.10)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.boxShadow = cardShadow; }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-                <span style={{ fontSize: "28px", flexShrink: 0, marginTop: "2px" }}>{f.icon}</span>
-                <div>
-                  <h3 style={{ fontSize: "15px", fontWeight: "700", marginBottom: "6px", color: text }}>{f.title}</h3>
-                  <p style={{ fontSize: "13px", color: textMuted, lineHeight: 1.6, margin: 0 }}>{f.desc}</p>
-                </div>
-              </div>
+        {(() => {
+          const FEAT_PLAN = { "mc001":"FREE","cpe-docx":"AE IIci+","envelope":"FREE","nzeb":"AE Ici+","renewables":"FREE","quickfill":"FREE","import":"AE Ici+","audit":"AE Ici+","bacs":"AE Ici+","climate-map":"FREE","export-multi":"AE IIci+","cloud-sync":"FREE","ai-pack":"AE Ici+" };
+          const FEAT_NEW  = new Set(["quickfill","cloud-sync","ai-pack"]);
+          const FEAT_EPBD = new Set(["nzeb","bacs"]);
+          const PLAN_CLR  = { "FREE":"#22c55e","AE IIci+":"#3b82f6","AE Ici+":"#f59e0b","Expert":"#8b5cf6" };
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+              {(FEATURES || []).map(f => {
+                const plan = FEAT_PLAN[f.id] || "FREE";
+                const clr = PLAN_CLR[plan];
+                const isNew = FEAT_NEW.has(f.id) || f.isNew;
+                const isEpbd = FEAT_EPBD.has(f.id);
+                return (
+                  <div key={f.id || f.title} style={{ padding: "24px 28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow, transition: "all 0.25s ease", cursor: "default", position: "relative" }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = `${clr}55`; e.currentTarget.style.boxShadow = isDark ? `0 8px 24px ${clr}10` : "0 8px 24px rgba(15,23,42,0.10)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.borderColor = cardBorder; e.currentTarget.style.boxShadow = cardShadow; }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                      <span style={{ fontSize: "28px", flexShrink: 0, marginTop: "2px" }}>{f.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap", marginBottom: "6px" }}>
+                          <h3 style={{ fontSize: "15px", fontWeight: "700", color: text, margin: 0 }}>{f.title}</h3>
+                          {isNew  && <span style={{ fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "4px", background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", flexShrink: 0 }}>NOU</span>}
+                          {isEpbd && <span style={{ fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "4px", background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", flexShrink: 0 }}>EPBD</span>}
+                        </div>
+                        <p style={{ fontSize: "13px", color: textMuted, lineHeight: 1.6, margin: "0 0 10px" }}>{f.desc}</p>
+                        <span style={{ fontSize: "9px", fontWeight: "700", padding: "2px 7px", borderRadius: "4px", background: `${clr}18`, color: clr, border: `1px solid ${clr}35` }}>{plan}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </section>
 
 
-      <hr className="section-divider" style={{ maxWidth: "800px", margin: "0 auto" }} />
+      <hr className="section-divider" style={{ maxWidth: "600px", margin: "0 auto", opacity: 0.4 }} />
 
       {/* ═══ EXPORT & IMPORT ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "64px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
             {lang === "EN" ? "EXPORT & IMPORT" : "EXPORT & IMPORT"}
@@ -596,42 +671,62 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             {lang === "EN" ? "Export official documents and import data from any source — all in one platform." : "Exportă documente oficiale și importă date din orice sursă — totul dintr-o singură platformă."}
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
-          {/* Export */}
-          <div style={{ padding: "28px 32px", borderRadius: "14px", background: amberCardBg, border: "1px solid rgba(245,158,11,0.1)" }}>
-            <div style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
-              📤 {lang === "EN" ? "Export" : "Export"} — {(EXPORTS_DATA || []).length} {lang === "EN" ? "formats" : "formate"}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {(EXPORTS_DATA || []).map(e => (
-                <div key={e.fmt + e.desc} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{e.icon}</span>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#f59e0b", width: "36px", flexShrink: 0 }}>{e.fmt}</span>
-                  <span style={{ fontSize: "12px", color: textMuted }}>{e.desc}</span>
+        {(() => {
+          const EXPORT_PLAN = ["AE IIci+","AE Ici+","AE Ici+","AE IIci+","AE IIci+","FREE","FREE","FREE","FREE","Expert"];
+          const IMPORT_PLAN = { "IFC / BIM":"Expert","PDF / imagine":"AE Ici+","Facturi PDF":"AE Ici+","XML energetic":"FREE","CSV anvelopă":"FREE","EPW / ERA5":"AE Ici+","OSM geocodare":"FREE","PVGIS API":"FREE","ANCPI GIS":"AE Ici+","Chat AI":"AE Ici+" };
+          const IMPORT_NEW  = new Set(["PDF / imagine","Facturi PDF","Chat AI"]);
+          const PLAN_CLR    = { "FREE":"#22c55e","AE IIci+":"#3b82f6","AE Ici+":"#f59e0b","Expert":"#8b5cf6" };
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "2px", borderRadius: "14px", overflow: "hidden", border: `1px solid ${cardBorder}` }}>
+              {/* Export */}
+              <div style={{ padding: "28px 32px", background: amberCardBg, borderRight: `1px solid ${cardBorder}` }}>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
+                  📤 {lang === "EN" ? "Export" : "Export"} — {(EXPORTS_DATA || []).length} {lang === "EN" ? "formats" : "formate"}
                 </div>
-              ))}
-            </div>
-          </div>
-          {/* Import */}
-          <div style={{ padding: "28px 32px", borderRadius: "14px", background: isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.03)", border: "1px solid rgba(16,185,129,0.1)" }}>
-            <div style={{ fontSize: "13px", fontWeight: "700", color: "#10b981", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
-              📥 {lang === "EN" ? "Import" : "Import"} — {(IMPORTS_DATA || []).length} {lang === "EN" ? "sources" : "surse"}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {(IMPORTS_DATA || []).map(im => (
-                <div key={im.src} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{im.icon}</span>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#10b981", width: "90px", flexShrink: 0 }}>{im.src}</span>
-                  <span style={{ fontSize: "12px", color: textMuted }}>{im.desc}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {(EXPORTS_DATA || []).map((e, i) => {
+                    const plan = EXPORT_PLAN[i] || "FREE";
+                    const clr = PLAN_CLR[plan];
+                    return (
+                      <div key={e.fmt + e.desc} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{e.icon}</span>
+                        <span style={{ fontSize: "11px", fontWeight: "700", color: "#f59e0b", width: "36px", flexShrink: 0 }}>{e.fmt}</span>
+                        <span style={{ fontSize: "12px", color: textMuted, flex: 1 }}>{e.desc}</span>
+                        <span style={{ fontSize: "8px", fontWeight: "700", padding: "1px 5px", borderRadius: "3px", background: `${clr}18`, color: clr, border: `1px solid ${clr}30`, flexShrink: 0 }}>{plan}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+              {/* Import */}
+              <div style={{ padding: "28px 32px", background: isDark ? "rgba(16,185,129,0.03)" : "rgba(16,185,129,0.03)" }}>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: "#10b981", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "18px" }}>
+                  📥 {lang === "EN" ? "Import" : "Import"} — {(IMPORTS_DATA || []).length} {lang === "EN" ? "sources" : "surse"}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {(IMPORTS_DATA || []).map(im => {
+                    const plan = IMPORT_PLAN[im.src] || "FREE";
+                    const clr = PLAN_CLR[plan];
+                    const isNew = IMPORT_NEW.has(im.src);
+                    return (
+                      <div key={im.src} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "16px", width: "20px", flexShrink: 0 }}>{im.icon}</span>
+                        <span style={{ fontSize: "11px", fontWeight: "700", color: "#10b981", width: "90px", flexShrink: 0 }}>{im.src}</span>
+                        <span style={{ fontSize: "12px", color: textMuted, flex: 1 }}>{im.desc}</span>
+                        {isNew && <span style={{ fontSize: "8px", fontWeight: "700", padding: "1px 5px", borderRadius: "3px", background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", flexShrink: 0 }}>NOU</span>}
+                        <span style={{ fontSize: "8px", fontWeight: "700", padding: "1px 5px", borderRadius: "3px", background: `${clr}18`, color: clr, border: `1px solid ${clr}30`, flexShrink: 0 }}>{plan}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </section>
 
       {/* ═══ NORMATIVE ═══ */}
-      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px 40px" }}>
+      <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "64px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
             {lang === "EN" ? "STANDARDS & REGULATIONS" : "STANDARDE ȘI REGLEMENTĂRI"}
@@ -651,6 +746,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             title: lang === "EN" ? "Primary methodology" : "Metodologie principală",
             icon: "📐",
             color: "#f59e0b",
+            isPrimary: true,
             items: NORMATIVE.filter(n => n.startsWith("Mc ") || n.includes("52000") || n.includes("52003") || n.includes("52010") || n.includes("52016") || n.includes("52018")),
           },
           {
@@ -681,6 +777,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             title: lang === "EN" ? "European directives & regulations" : "Directive și reglementări europene",
             icon: "🇪🇺",
             color: "#0ea5e9",
+            isEpbd: true,
             items: NORMATIVE.filter(n => n.includes("EPBD") || n.includes("Reg. delegat") || n.includes("OUG") || n.includes("RED III") || n.includes("ZEB")),
           },
           {
@@ -689,34 +786,40 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             color: "#f97316",
             items: NORMATIVE.filter(n => n.includes("Legea") || n.includes("NP 048") || n.includes("P 130")),
           },
-        ].filter(g => g.items.length > 0).map(group => (
-          <div key={group.title} style={{ marginBottom: "20px", padding: "24px 28px", borderRadius: "14px", background: cardBg, border: `1px solid ${cardBorder}`, textAlign: "left" }}>
+        ].filter(g => g.items.length > 0).map(group => {
+          const filtered = group.items;
+          return (
+          <div key={group.title} style={{ marginBottom: "16px", padding: "20px 24px", borderRadius: "14px", background: group.isPrimary ? (isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.04)") : cardBg, border: group.isPrimary ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${cardBorder}`, borderLeft: group.isPrimary ? "3px solid #f59e0b" : undefined, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <span style={{ fontSize: "18px" }}>{group.icon}</span>
               <span style={{ fontSize: "14px", fontWeight: "700", color: group.color }}>{group.title}</span>
-              <span style={{ fontSize: "11px", color: textFaint, marginLeft: "auto", padding: "2px 8px", borderRadius: "10px", background: `${group.color}15`, border: `1px solid ${group.color}25` }}>{group.items.length}</span>
+              {group.isEpbd && (
+                <span style={{ fontSize: "9px", fontWeight: "800", padding: "2px 7px", borderRadius: "4px", background: "rgba(14,165,233,0.15)", color: "#0ea5e9", border: "1px solid rgba(14,165,233,0.35)", animation: "pulse 2s infinite" }}>EPBD 2024 ✓</span>
+              )}
+              <span style={{ fontSize: "11px", color: textFaint, marginLeft: "auto", padding: "2px 8px", borderRadius: "10px", background: `${group.color}15`, border: `1px solid ${group.color}25` }}>{filtered.length}</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {group.items.map(n => (
+              {filtered.map(n => (
                 <span key={n} style={{ padding: "4px 10px", borderRadius: "6px", background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${cardBorder}`, fontSize: "11px", color: textMuted, lineHeight: 1.4 }}>{n}</span>
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Total */}
         <div style={{ textAlign: "center", marginTop: "24px", padding: "16px", borderRadius: "12px", background: amberCardBg, border: "1px solid rgba(245,158,11,0.15)" }}>
           <span style={{ fontSize: "13px", color: textMuted }}>
             {lang === "EN"
-              ? `Total: ${NORMATIVE_COUNT} standards and regulations actively used in calculations`
-              : `Total: ${NORMATIVE_COUNT} standarde și reglementări utilizate activ în calculele energetice`
+              ? `${NORMATIVE_COUNT} standards actively implemented · updated with every legislative amendment`
+              : `${NORMATIVE_COUNT} standarde implementate activ · actualizate permanent cu fiecare amendament legislativ`
             }
           </span>
         </div>
       </section>
 
       {/* ═══ PRICING v6.0 — 4 carduri (Free + Audit + Pro + Expert) + 2 (Birou + Enterprise) + Edu banner + Pay-per-use ═══ */}
-      <section id="pricing" style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 24px" }}>
+      <section id="pricing" style={{ maxWidth: "1200px", margin: "0 auto", padding: "64px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: "16px" }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: "20px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", fontSize: "12px", color: "#f59e0b", marginBottom: "14px" }}>
             {lang === "EN" ? "PLANS & PRICING" : "PLANURI & PREȚURI"}

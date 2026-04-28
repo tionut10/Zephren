@@ -57,11 +57,12 @@ import {
 } from "./program-stats.generated.js";
 
 export const STATS = [
-  { value: String(CLIMATE_COUNT), label: "Localități climatice" },
-  { value: String(BRIDGES_COUNT), label: "Punți termice" },
-  { value: String(_CMC),          label: "Module de calcul" },
-  { value: String(NORMATIVE_COUNT),label: "Normative integrate" },
-  { value: String(STEPS_COUNT),   label: "Pași calculator" },
+  { value: String(CLIMATE_COUNT), label: "Localități climatice", labelEN: "Climate locations", icon: "🌍", tooltip: "60 localități din zonele I–V OMTCT 2210/2013" },
+  { value: String(BRIDGES_COUNT), label: "Punți termice",         labelEN: "Thermal bridges",   icon: "🏗️", tooltip: "165 tipologii catalog, clasificare ISO A–D" },
+  { value: String(_CMC),          label: "Module de calcul",       labelEN: "Calc modules",       icon: "⚙️", tooltip: `${_CMC} module specializate Mc 001-2022` },
+  { value: String(NORMATIVE_COUNT),label:"Normative integrate",    labelEN: "Standards",          icon: "📐", tooltip: "41 standarde SR EN ISO + directive UE + normative RO" },
+  { value: String(STEPS_COUNT),   label: "Pași calculator",        labelEN: "Steps",              icon: "📋", tooltip: "8 pași complet integrat — de la date la CPE+Raport" },
+  { value: "2.249",               label: "Teste PASS",             labelEN: "Tests passing",      icon: "✓",  tooltip: "2.249 teste unitare și de integrare rulate automat la fiecare commit" },
 ];
 
 // ── Categorii produse pentru secțiunea catalog ───────────────────────────────

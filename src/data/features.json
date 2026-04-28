@@ -135,6 +135,22 @@
       "title": "Export multi-format complet",
       "desc": "DOCX oficial, XML MDLPA, PDF+QR, XLSX (9 foi), JSON proiect, CSV anvelopă, e-Factură ANAF, raport audit PDF.",
       "category": "export"
+    },
+    {
+      "id": "cloud-sync",
+      "icon": "☁️",
+      "title": "Autosave & Cloud Sync",
+      "desc": "Salvare automată la fiecare modificare, sincronizare cloud pe toate dispozitivele, backup IndexedDB local, versionare proiect și recuperare automată după întrerupere.",
+      "category": "ux",
+      "isNew": true
+    },
+    {
+      "id": "ai-pack",
+      "icon": "🤖",
+      "title": "Funcții AI integrate",
+      "desc": "OCR facturi energie (consum real → câmpuri automate), import planșe PDF via Claude Vision, import conversațional text liber, asistent AI recomandări reabilitare.",
+      "category": "ai",
+      "isNew": true
     }
   ],
 
