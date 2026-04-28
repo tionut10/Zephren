@@ -91,19 +91,26 @@ export function useRenewableSummary({
     const pv_peak_kWp = parseFloat(photovoltaic.peakPower) || 0;
 
     // ── POMPĂ DE CĂLDURĂ (fracțiunea regenerabilă = 1 - 1/SCOP, dacă SCOP ≥ 2.5 RED II) ──
+    // Sprint Demo Verification (29 apr 2026): fix bug — covers="heating_cooling_acm" returna qPC_ren=0
+    // Acum se folosește includes() pentru a aduna contribuții heating + cooling + ACM independent.
     let qPC_ren = 0;
     let pc_spf_compliant = true;
     if (heatPump.enabled) {
       const cop = parseFloat(heatPump.cop) || 3.5;
       const scop = parseFloat(heatPump.scopHeating) || cop * 0.85;
+      const scopCool = parseFloat(heatPump.scopCooling) || scop * 0.9;
       // Prag RED II: sub SPF 2.5 fracția regenerabilă = 0 (Dir. UE 2018/2001 Anexa VII)
       pc_spf_compliant = scop >= SPF_MIN_RED_II;
       const renFraction = pc_spf_compliant ? Math.max(0, 1 - 1 / scop) : 0;
-      let qCovered = 0;
-      if (heatPump.covers === "heating") qCovered = instSummary.qH_nd;
-      else if (heatPump.covers === "acm") qCovered = instSummary.qACM_nd;
-      else if (heatPump.covers === "heating_acm") qCovered = instSummary.qH_nd + instSummary.qACM_nd;
-      qPC_ren = qCovered * renFraction;
+      const renFractionCool = scopCool >= SPF_MIN_RED_II ? Math.max(0, 1 - 1 / scopCool) : 0;
+      const covers = String(heatPump.covers || "").toLowerCase();
+      let qCovered_heat = 0;
+      let qCovered_acm = 0;
+      let qCovered_cool = 0;
+      if (covers.includes("heating")) qCovered_heat = instSummary.qH_nd || 0;
+      if (covers.includes("acm")) qCovered_acm = instSummary.qACM_nd || 0;
+      if (covers.includes("cooling")) qCovered_cool = instSummary.qC_nd || 0;
+      qPC_ren = (qCovered_heat + qCovered_acm) * renFraction + qCovered_cool * renFractionCool;
     }
 
     // ── BIOMASĂ (fP_ren=0.80 per NA:2023) ──
@@ -129,6 +136,8 @@ export function useRenewableSummary({
     }
 
     // ── COGENERARE ──
+    // Sprint Demo Verification (29 apr 2026): fix bug — anterior se folosea cogenElectric (kW power)
+    // ca producție anuală fără multiplicare cu cogenHours. Acum: q_anual = P_nominal × ore_funcționare/an.
     let qCogen_el = 0;
     let qCogen_th = 0;
     let qCogen_ep_reduction = 0;
@@ -137,10 +146,23 @@ export function useRenewableSummary({
     // Cogenerare e regenerabilă doar dacă combustibilul e regenerabil (biogaz/hidrogen verde/biomasă)
     const cogenIsRenewable = cogenFuelData && (cogenFuelData.fP_ren >= 0.9);
     if (otherRenew.cogenEnabled) {
-      qCogen_el = parseFloat(otherRenew.cogenElectric) || 0;
-      qCogen_th = parseFloat(otherRenew.cogenThermal) || 0;
-      qCogen_ep_reduction = qCogen_el * fP_elec + qCogen_th * (cogenFuelData?.fP_tot || 1.17);
-      qCogen_co2_reduction = qCogen_el * CO2_ELEC + qCogen_th * (cogenFuelData?.fCO2 || 0.202);
+      const cogenHours = parseFloat(otherRenew.cogenHours) || 5000; // ore/an default (mini-CHP gaz)
+      const cogenElPower = parseFloat(otherRenew.cogenElectric) || 0;  // kW
+      const cogenThPower = parseFloat(otherRenew.cogenThermal) || 0;   // kW
+      qCogen_el = cogenElPower * cogenHours;  // kWh/an producție electrică
+      qCogen_th = cogenThPower * cogenHours;  // kWh/an producție termică
+      // Sprint Demo Verification (29 apr 2026): scădere primary input gas — fix double credit
+      // CHP consumă combustibil; creditul net = energia produsă × fP - combustibilul consumat × fP
+      // Eficiență tipică η_el ≈ 0.30 pentru mini-CHP gaz (Reg. UE 2012/27 Anexa II Tab.1)
+      const cogenEtaEl = 0.30;
+      const cogenGasInput = qCogen_el / cogenEtaEl;  // kWh/an gas input
+      const cogenGasPrimary = cogenGasInput * (cogenFuelData?.fP_tot || 1.17);
+      qCogen_ep_reduction = Math.max(0,
+        qCogen_el * fP_elec + qCogen_th * (cogenFuelData?.fP_tot || 1.17) - cogenGasPrimary
+      );
+      qCogen_co2_reduction = Math.max(0,
+        qCogen_el * CO2_ELEC + qCogen_th * (cogenFuelData?.fCO2 || 0.202) - cogenGasInput * (cogenFuelData?.fCO2 || 0.202)
+      );
     }
 
     // ── PROXIMITATE 30 km GPS (L.238/2024 Art.6) ──
