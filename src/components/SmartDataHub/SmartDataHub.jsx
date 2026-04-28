@@ -197,25 +197,20 @@ export default function SmartDataHub({
     if (building.address && building.city && !selectedClimate) {
       return { icon: "🗺️", text: "Ai scris adresa — poți geocoda automat pentru a detecta amprenta clădirii.", action: "geocode" };
     }
-    if (building.address && building.city && selectedClimate && !importedClimateData) {
-      return { icon: "📡", text: "Localitate detectată — descarcă date climatice actualizate de la Open-Meteo.", action: "climate" };
-    }
     if (isEmptyProject) {
       return { icon: "💡", text: "Sugestie: încearcă un Șablon clădire tip pentru completare în ~10 secunde.", action: "template" };
     }
     return null;
-  }, [building.address, building.city, selectedClimate, importedClimateData, isEmptyProject]);
+  }, [building.address, building.city, selectedClimate, isEmptyProject]);
 
   const handleHintAction = useCallback(() => {
     if (!contextHint) return;
     if (contextHint.action === "geocode") {
       onGeocode?.();
-    } else if (contextHint.action === "climate") {
-      onOpenMeteoImport?.();
     } else if (contextHint.action === "template") {
       setActiveRamp("instant");
     }
-  }, [contextHint, onGeocode, onOpenMeteoImport]);
+  }, [contextHint, onGeocode]);
 
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] overflow-hidden">
