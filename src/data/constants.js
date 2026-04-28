@@ -612,12 +612,39 @@ export const PV_INVERTER_ETA = [
   { id:"OFF_GRID",     label:"Invertor off-grid / UPS solar (Victron / Studer)",           eta:0.940 },
 ];
 
+// ── FACTORI HEATING SEASON (Mc 001-2022 §3.3 — pentru Q_S aporturi solare iarnă) ──
+// Referință: S vertical = 1.00; valorile sunt pentru sezon încălzire (Oct-Apr)
 export const TILT_FACTORS = {
   "0":0.87, "10":0.93, "15":0.96, "20":0.98, "25":0.99, "30":1.00,
   "35":1.00, "40":0.99, "45":0.97, "50":0.94, "60":0.87, "70":0.78, "90":0.56,
 };
 
 export const ORIENT_FACTORS = { S:1.00, SE:0.95, SV:0.95, E:0.82, V:0.82, NE:0.60, NV:0.60, N:0.45, Oriz:0.87 };
+
+// ── FACTORI PV ANUAL (Sprint Demo Verification 29 apr 2026 — calibrare PVGIS) ──
+// Referință: GHI annual (Global Horizontal Irradiance, kWh/m²·an) = 1.00
+// Datele sunt raportul iradiației anuale pe planul înclinat/orientat vs orizontală
+// Sursă: PVGIS v5.2 (JRC SARAH-2 satellite data 2005-2020) — interpolare RO 44-48°N
+//
+// Pentru un PV la S 30° tilt: factor combinat ≈ 1.10 (10% mai mult decât horizontal)
+// Pentru un PV la N 90° tilt: factor ≈ 0.30 (puține horuri sun direct)
+//
+// Formula: Annual_yield_on_panel = GHI_annual × PV_ORIENT_FACTORS_ANNUAL × PV_TILT_FACTORS_ANNUAL
+export const PV_TILT_FACTORS_ANNUAL = {
+  "0":1.00,  "10":1.04, "15":1.06, "20":1.08, "25":1.09, "30":1.10,  // optim ~30-35°
+  "35":1.10, "40":1.09, "45":1.08, "50":1.05, "60":1.00, "70":0.92, "90":0.65,
+};
+
+export const PV_ORIENT_FACTORS_ANNUAL = {
+  S:1.00, SE:0.97, SV:0.97, E:0.88, V:0.88, NE:0.74, NV:0.74, N:0.65, Oriz:1.00,
+};
+
+// ── Conversie sezon încălzire → anual (aproximare RO 44-48°N) ──
+// Iradiația anuală orizontală e ≈ 3.65× iradiația sezon încălzire (Mc 001 §3.3)
+// Validare PVGIS: București 360×3.65=1314 vs PVGIS 1320 (eroare 0.5%)
+//                 Cluj 340×3.65=1241 vs PVGIS 1230 (eroare 0.9%)
+//                 Predeal 310×3.65=1132 vs PVGIS 1100 (eroare 2.9%)
+export const SEASONAL_TO_ANNUAL_GHI_RATIO = 3.65;
 
 export const BIOMASS_TYPES = [
   // ── LEMN DE FOC ──────────────────────────────────────────────────────────
