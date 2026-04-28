@@ -50,6 +50,8 @@ export const RENOVATION_PASSPORT_ENABLED = false;
 export const PLAN_FEATURES = {
   // ─────────────────────────── FREE ───────────────────────────
   free: {
+    // Navigare pași wizard (1-8)
+    maxStep:            7,           // Free: Steps 1-7 accesibili, Step 8 blocat
     // CPE + limite
     maxProjects:        99,
     maxCertsPerMonth:   3,           // hard cap
@@ -140,6 +142,7 @@ export const PLAN_FEATURES = {
 
   // ─────────────────────────── EDU (gratis cu dovadă) ───────────────────────────
   edu: {
+    maxStep:            8,           // Edu: toți cei 8 pași accesibili
     maxProjects:        9999,
     maxCertsPerMonth:   100,         // hard cap anti-abuse
     overageEnabled:     false,
@@ -223,6 +226,7 @@ export const PLAN_FEATURES = {
   // energetic (Art. 6 alin. 1 lit. b) și NU pot întocmi raport conformare nZEB
   // (Art. 6 alin. 1 lit. c) — acestea sunt rezervate exclusiv AE Ici.
   audit: {
+    maxStep:            6,           // AE IIci: Steps 1-6, Step 7 și 8 blocate (Art. 6 alin. 2)
     maxProjects:        9999,
     maxCertsPerMonth:   30,          // v7.0: standardizat 30 + 6 burst (36 total)
     maxAuditsPerMonth:  0,           // v7.0: AE IIci NU poate face audit (Art.6 alin.2)
@@ -316,6 +320,7 @@ export const PLAN_FEATURES = {
   // întocmește raportul de conformare nZEB pentru clădiri în faza de proiectare.
   // Vechime profesională cerută MDLPA: minimum 5 ani.
   pro: {
+    maxStep:            7,           // AE Ici: Steps 1-7, Step 8 blocat
     maxProjects:        9999,
     maxCertsPerMonth:   30,          // v7.0: 30 + 6 burst (36 total)
     maxAuditsPerMonth:  2,           // v7.0: 2 audituri/lună incluse + 1 burst
@@ -405,6 +410,7 @@ export const PLAN_FEATURES = {
 
   // ─────────────────────────── EXPERT (899 RON) ───────────────────────────
   expert: {
+    maxStep:            8,           // Expert: toți cei 8 pași accesibili
     maxProjects:        9999,
     maxCertsPerMonth:   30,          // v7.0: standardizat 30 + 6 burst (36 total)
     maxAuditsPerMonth:  4,           // v7.0: 4 audituri/lună incluse + 2 burst
@@ -494,6 +500,7 @@ export const PLAN_FEATURES = {
 
   // ─────────────────────────── BIROU (1.890 RON flat) ───────────────────────────
   birou: {
+    maxStep:            8,           // Birou: toți cei 8 pași accesibili
     maxProjects:        9999,
     maxCertsPerMonth:   9999,        // NELIMITAT
     maxAuditsPerMonth:  9999,        // v7.0: audituri NELIMITATE
@@ -573,6 +580,7 @@ export const PLAN_FEATURES = {
 
   // ─────────────────────────── ENTERPRISE (de la 4.990 RON) ───────────────────────────
   enterprise: {
+    maxStep:            8,           // Enterprise: toți cei 8 pași accesibili
     maxProjects:        9999,
     maxCertsPerMonth:   9999,        // NELIMITAT
     maxAuditsPerMonth:  9999,        // v7.0: audituri NELIMITATE
@@ -817,4 +825,31 @@ export function canCertifyBuildingCategory(plan, buildingCategory) {
 export function getAllowedBuildingCategories(plan) {
   const tier = PLAN_FEATURES[resolvePlan(plan)];
   return tier?.buildingCategoryRestricted ?? null;
+}
+
+/**
+ * Returnează numărul maxim de pas accesibil pentru un plan (1-8).
+ * Folosit pentru gating navigare sidebar wizard.
+ *
+ * | Plan        | maxStep | Pași accesibili       |
+ * |-------------|---------|-----------------------|
+ * | free        |    7    | 1-7  (Step 8 blocat)  |
+ * | edu         |    8    | 1-8  (toți)           |
+ * | audit/IIci  |    6    | 1-6  (7+8 blocate)    |
+ * | pro/Ici     |    7    | 1-7  (Step 8 blocat)  |
+ * | expert      |    8    | 1-8  (toți)           |
+ * | birou       |    8    | 1-8  (toți)           |
+ * | enterprise  |    8    | 1-8  (toți)           |
+ *
+ * @param {string|null|undefined} plan
+ * @returns {number} 1-8
+ */
+export function getMaxStep(plan) {
+  // Demo mode: toți pașii accesibili
+  if (typeof window !== "undefined") {
+    const sess = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("zephren_demo_mode") : null;
+    if (window.__demoModeActive || sess === "1") return 8;
+  }
+  const tier = PLAN_FEATURES[resolvePlan(plan)];
+  return tier?.maxStep ?? 8;
 }

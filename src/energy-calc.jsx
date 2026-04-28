@@ -42,6 +42,7 @@ import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_R
 import { checkBACSMandatoryISO, BACS_CLASS_LABELS, getBACSCategoryFromCode, getBACSFactors } from "./calc/bacs-iso52120.js";
 import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
 import { TIERS } from "./data/tiers.js";
+import { getMaxStep } from "./lib/planGating.js";
 import { BENCHMARKS } from "./data/benchmarks.js";
 import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
 import { DEMO_PROJECTS, buildMdlpaDefaults } from "./data/demoProjects.js";
@@ -1471,6 +1472,13 @@ export default function EnergyCalcApp({ cloud }) {
   const { isOnline } = useOfflineMode();
   const userPlan = cloud?.user?.plan || userTier || "free";
 
+  // Pași blocați în navigare în funcție de planul curent
+  const maxAccessibleStep = getMaxStep(userPlan);
+  const lockedStepIds = useMemo(
+    () => new Set(STEPS.filter(s => s.id > maxAccessibleStep).map(s => s.id)),
+    [maxAccessibleStep]
+  );
+
   // ── Keyboard shortcuts (pct. 41) ──
   useKeyboardShortcuts({
     setStep,
@@ -1625,6 +1633,7 @@ export default function EnergyCalcApp({ cloud }) {
 
   // Navigare cu validare
   const goToStep = (targetStep, fromStep) => {
+    if (lockedStepIds.has(targetStep)) return; // blocat de plan
     if (targetStep > fromStep) {
       validateStep(fromStep); // avertizare dar nu blochează
     }
@@ -3377,15 +3386,16 @@ export default function EnergyCalcApp({ cloud }) {
             const dotColor = pct >= 1 ? "#22c55e" : pct > 0 ? "#f59e0b" : "rgba(255,255,255,0.15)";
             const stepLabel = lang==="EN" && s.labelEN ? s.labelEN : s.label;
             const stepDesc = lang==="EN" && s.descEN ? s.descEN : s.desc;
+            const isLocked = lockedStepIds.has(s.id);
             return (
-            <button key={s.id} onClick={() => { if(!s.locked){setStep(s.id);setSidebarOpen(false);} }}
-              title={`${s.id}. ${stepLabel}`}
-              aria-label={`Pas ${s.id}: ${stepLabel}`}
+            <button key={s.id} onClick={() => { if(!isLocked){setStep(s.id);setSidebarOpen(false);} }}
+              title={isLocked ? (lang==="EN" ? `Step ${s.id} — upgrade required` : `Pasul ${s.id} — necesită plan superior`) : `${s.id}. ${stepLabel}`}
+              aria-label={`Pas ${s.id}: ${stepLabel}${isLocked ? " (blocat)" : ""}`}
               aria-current={step === s.id ? "step" : undefined}
               className={cn(
                 "w-full flex items-center gap-2.5 md:gap-2 lg:gap-3 px-3 md:px-2 lg:px-3 py-2.5 md:py-2 lg:py-3 rounded-xl mb-1 text-left transition-all",
                 step === s.id ? "bg-amber-500/10 border border-amber-500/20" : "hover:bg-white/[0.03] border border-transparent",
-                s.locked && "opacity-25 cursor-not-allowed"
+                isLocked && "opacity-25 cursor-not-allowed"
               )}>
               <span className="text-base md:text-base lg:text-lg shrink-0">{s.icon}</span>
               <div className="flex-1 min-w-0">
@@ -4222,15 +4232,17 @@ export default function EnergyCalcApp({ cloud }) {
                       if (!s) return null;
                       const pct = stepCompleteness[sid - 1] ?? 0;
                       const isActive = step === sid;
+                      const isLocked = lockedStepIds.has(sid);
                       return (
                         <button key={s.id}
-                          onClick={() => { if(!s.locked){ setStep(s.id); setActiveNavGroup(null); setSidebarOpen(false); } }}
-                          disabled={s.locked}
+                          onClick={() => { if(!isLocked){ setStep(s.id); setActiveNavGroup(null); setSidebarOpen(false); } }}
+                          disabled={isLocked}
                           role="menuitem"
+                          title={isLocked ? (lang==="EN" ? `Step ${s.id} — upgrade required` : `Pasul ${s.id} — necesită plan superior`) : undefined}
                           className={cn(
                             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-colors",
                             isActive ? "bg-amber-500/10 text-amber-400" : "hover:bg-white/5",
-                            s.locked && "opacity-30 cursor-not-allowed"
+                            isLocked && "opacity-30 cursor-not-allowed"
                           )}>
                           <span className="text-lg shrink-0">{s.icon}</span>
                           <div className="flex-1 min-w-0">
