@@ -425,7 +425,7 @@ export default function Step6Certificate(props) {
                       // filtrare area>0 → toate elementele opace erau respinse → Tabel 2
                       // anvelopă populat doar cu ferestre (FE din glazing_area_total_m2).
                       var area = parseFloat(el.area) || 0;
-                      if (!el.layers || el.layers.length === 0) return {type: el.type, area: area, u: 0};
+                      if (!el.layers || el.layers.length === 0) return {type: el.type, area: area, u: parseFloat(el.u) || 0};
                       var elType = ELEMENT_TYPES.find(function(t){return t.id===el.type;});
                       var rsi = elType ? elType.rsi : 0.13;
                       var rse = elType ? elType.rse : 0.04;

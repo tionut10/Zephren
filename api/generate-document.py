@@ -4349,215 +4349,257 @@ class handler(BaseHTTPRequestHandler):
                     pass
 
                 # ── Tabel 2 — Anvelopă (R-values + arii) ──
-                # Pentru fiecare tip element distinct din opaque_u_values, calculez R și
-                # adaug un rând nou înainte de TOTAL. Aria totală anvelopă în r3c3.
+                # Template apartament: 3 rânduri, celula r1c0 are 8 paragrafe (PE 1, PE 2,
+                # FE, UE, TE, Sb, CS, ...) iar c1/c2/c3 au un singur paragraf gol.
+                # Fill: adăugăm paragrafe în c1/c2/c3 aliniate cu eticheta din c0.
                 try:
                     opaque_u_anv = json.loads(data.get("opaque_u_values", "[]"))
                     glaz_u_anv = float((data.get("glazing_max_u", "0") or "0").replace(",", "."))
                     glaz_area_anv = float((data.get("glazing_area_total_m2", "0") or "0").replace(",", "."))
                     if opaque_u_anv or glaz_area_anv > 0:
-                        # Mapare U → R (R = 1/U, rsi+rse incluse aproximativ)
-                        # Standard MDLPA: R_normat per tip element
                         R_NORMAT = {
                             "PE": 1.80, "PT": 5.00, "PP": 5.00, "PB": 4.50, "PL": 4.50,
                             "FE": 0.77, "UE": 0.77, "SE": 4.50, "CS": 1.80, "Sb": 4.50,
                         }
-                        TYPE_LABELS = {
-                            "PE": "PE - Pereți exteriori",
-                            "PT": "PT - Planșeu peste ultimul nivel (terasă)",
-                            "PP": "PP - Planșeu peste ultimul nivel (pod)",
-                            "PB": "PB - Planșeu peste subsol",
-                            "PL": "PL - Placă pe sol",
-                            "FE": "FE - Ferestre exterioare",
-                            "UE": "UE - Uși exterioare",
-                            "SE": "SE - Planșeu spațiu exterior",
-                            "CS": "CS - Pereți casa scării",
-                            "Sb": "Sb - Planșeu peste subsol",
-                        }
-                        # Identific Tabel 2
+                        # Mapare prefix etichetă template → cod tip element
+                        LABEL_PREFIX_MAP = [
+                            ("PE",  ["PE"]),
+                            ("FE",  ["FE"]),
+                            ("UE",  ["UE"]),
+                            ("TE",  ["PT", "PP"]),   # Terasă → PT sau PP
+                            ("Sb",  ["Sb", "PB"]),   # Planșeu subsol → Sb sau PB
+                            ("CS",  ["CS"]),
+                        ]
+                        def _label_to_types(label):
+                            for prefix, codes in LABEL_PREFIX_MAP:
+                                if label.strip().startswith(prefix):
+                                    return codes
+                            return []
+
                         for tbl in doc.tables:
-                            if len(tbl.rows) < 4 or len(tbl.columns) != 4:
+                            if len(tbl.rows) != 3 or len(tbl.columns) != 4:
                                 continue
                             h0 = tbl.rows[0].cells[0].text.lower()
                             if "tip element" not in h0:
                                 continue
-                            # Verific idempotență: dacă r2c1 deja are valoare, skip
-                            if tbl.rows[2].cells[1].text.strip():
+                            # Idempotență: dacă c1 are deja mai mult de 1 paragraf cu conținut, skip
+                            if any(p.text.strip() for p in tbl.rows[1].cells[1].paragraphs):
                                 break
-                            # Construiesc lista de elemente cu agregare arii pe tip
+
+                            paras_c0 = tbl.rows[1].cells[0].paragraphs
+                            cells_c = [tbl.rows[1].cells[ci] for ci in range(1, 4)]
+
+                            # Construiesc index: tip → lista de elemente (pentru multi-PE)
                             from collections import defaultdict
-                            type_data = defaultdict(lambda: {"area": 0.0, "u_sum_w": 0.0, "u_count": 0})
+                            type_els = defaultdict(list)
                             for el in opaque_u_anv:
-                                t_id = el.get("type", "")
+                                t = el.get("type", "")
                                 area = float(el.get("area", 0) or 0)
                                 u_val = float(el.get("u", 0) or 0)
-                                if t_id and area > 0 and u_val > 0:
-                                    type_data[t_id]["area"] += area
-                                    type_data[t_id]["u_sum_w"] += area * u_val
-                                    type_data[t_id]["u_count"] += 1
-                            if glaz_u_anv > 0 and glaz_area_anv > 0:
-                                type_data["FE"]["area"] += glaz_area_anv
-                                type_data["FE"]["u_sum_w"] += glaz_area_anv * glaz_u_anv
-                                type_data["FE"]["u_count"] += 1
-                            # Modific r2 cu primul tip (înlocuiește placeholder-ul) și adaug noi rânduri
-                            sorted_types = sorted(type_data.items())
-                            if sorted_types:
-                                # Primul tip → modific r2
-                                t_first, td_first = sorted_types[0]
-                                u_avg_first = td_first["u_sum_w"] / td_first["area"] if td_first["area"] > 0 else 0
-                                r_calc_first = 1 / u_avg_first if u_avg_first > 0 else 0
-                                r_norm_first = R_NORMAT.get(t_first, 0)
-                                tbl.rows[2].cells[0].text = TYPE_LABELS.get(t_first, t_first)
-                                tbl.rows[2].cells[1].text = format_ro(r_calc_first, 2)
-                                tbl.rows[2].cells[2].text = format_ro(r_norm_first, 2) if r_norm_first > 0 else "—"
-                                tbl.rows[2].cells[3].text = format_ro(td_first["area"], 1)
-                                # Setez font + alignment
-                                for ci in range(4):
-                                    for p in tbl.rows[2].cells[ci].paragraphs:
-                                        for r in p.runs:
-                                            r.font.size = Pt(9)
-                                # Adaug rânduri pentru restul tipurilor înainte de TOTAL (r3)
-                                from copy import deepcopy
-                                for t_id, td in sorted_types[1:]:
-                                    u_avg = td["u_sum_w"] / td["area"] if td["area"] > 0 else 0
-                                    r_calc = 1 / u_avg if u_avg > 0 else 0
-                                    r_norm = R_NORMAT.get(t_id, 0)
-                                    # Insert row before last (TOTAL)
-                                    new_row_xml = deepcopy(tbl.rows[2]._tr)
-                                    tbl.rows[-1]._tr.addprevious(new_row_xml)
-                                    # După insert, accesez rândul nou
-                                    new_row = tbl.rows[-2]
-                                    new_row.cells[0].text = TYPE_LABELS.get(t_id, t_id)
-                                    new_row.cells[1].text = format_ro(r_calc, 2)
-                                    new_row.cells[2].text = format_ro(r_norm, 2) if r_norm > 0 else "—"
-                                    new_row.cells[3].text = format_ro(td["area"], 1)
-                                    for ci in range(4):
-                                        for p in new_row.cells[ci].paragraphs:
-                                            for r in p.runs:
-                                                r.font.size = Pt(9)
-                                # TOTAL anvelopă SE — sumez ariile
-                                total_se = sum(td["area"] for _, td in sorted_types)
-                                tbl.rows[-1].cells[3].text = format_ro(total_se, 1)
-                                for p in tbl.rows[-1].cells[3].paragraphs:
-                                    for r in p.runs:
-                                        r.font.size = Pt(10)
-                                        r.bold = True
+                                if t and area > 0:
+                                    type_els[t].append({"area": area, "u": u_val})
+                            # Vitraj din glazing_area_total_m2
+                            if glaz_area_anv > 0:
+                                type_els["FE"].append({"area": glaz_area_anv, "u": glaz_u_anv})
+
+                            type_seen = defaultdict(int)
+                            entries = []  # (r_calc_str, r_norm_str, area_str) per paragraf c0
+                            for p0 in paras_c0:
+                                label = p0.text.strip()
+                                if not label or label == "...":
+                                    entries.append(("", "", ""))
+                                    continue
+                                matched_codes = _label_to_types(label)
+                                found = None
+                                for code in matched_codes:
+                                    occ = type_seen[code]
+                                    els = type_els.get(code, [])
+                                    if occ < len(els):
+                                        found = (code, els[occ])
+                                        type_seen[code] += 1
+                                        break
+                                if found:
+                                    code, el = found
+                                    u = el["u"]
+                                    area = el["area"]
+                                    r_calc = 1 / u if u > 0 else 0
+                                    r_norm = R_NORMAT.get(code, 0)
+                                    entries.append((
+                                        format_ro(r_calc, 2) if r_calc > 0 else "—",
+                                        format_ro(r_norm, 2) if r_norm > 0 else "—",
+                                        format_ro(area, 1),
+                                    ))
+                                else:
+                                    entries.append(("", "", ""))
+
+                            # Umple c1/c2/c3: primul paragraf existent + adaug restul
+                            for col_offset, val_idx in enumerate([0, 1, 2]):
+                                cell = cells_c[col_offset]
+                                for i, entry in enumerate(entries):
+                                    val = entry[val_idx]
+                                    if i == 0:
+                                        para = cell.paragraphs[0]
+                                        run = para.add_run(val)
+                                        run.font.size = Pt(9)
+                                    else:
+                                        para = cell.add_paragraph()
+                                        run = para.add_run(val)
+                                        run.font.size = Pt(9)
+
+                            # TOTAL arie în r2c3 (celula nemergică din rândul TOTAL)
+                            total_se = sum(
+                                el["area"] for els in type_els.values() for el in els
+                                if el["area"] > 0
+                            )
+                            r2_c3 = tbl.rows[2].cells[3]
+                            run_tot = r2_c3.paragraphs[0].add_run(format_ro(total_se, 1))
+                            run_tot.font.size = Pt(10)
+                            run_tot.bold = True
                             break
                 except Exception as e_t2:
                     print(f"[tabel_2_anvelopa] eroare: {e_t2}", flush=True)
 
                 # ── Tabel 3 — Consum specific 5 sisteme + clase + TOTAL ──
-                # Completez consum + CO2 + clasă pentru fiecare sistem (rândurile r2-r6).
-                # r7 = TOTAL/CLASA (din date globale ep_specific + co2_val + energy_class).
+                # Template apartament: 8 rânduri, 5 coloane, header r0c2="Apartament"
+                # (Vechea detecție era pentru template clădire: 8 col + "Clădirea reală" — GREȘIT)
                 try:
                     sistem_data = {
-                        "Încălzire":         {"ep": data.get("ep_incalzire", "")},
-                        "Apă caldă":         {"ep": data.get("ep_acm", "")},
-                        "Răcire":            {"ep": data.get("ep_racire", "")},
-                        "Ventilare":         {"ep": data.get("ep_ventilare", "")},
-                        "Iluminat":          {"ep": data.get("ep_iluminat", "")},
+                        "Încălzire":         data.get("ep_incalzire", ""),
+                        "Apă caldă":         data.get("ep_acm", ""),
+                        "Răcire":            data.get("ep_racire", ""),
+                        "Ventilare":         data.get("ep_ventilare", ""),
+                        "Iluminat":          data.get("ep_iluminat", ""),
                     }
-                    # CO2 pe sistem — proporțional cu EP (heuristic: ratio CO2_total / EP_total)
                     ep_total_val = float((data.get("ep_specific", "0") or "0").replace(",", "."))
                     co2_total_val = float((data.get("co2_val", "0") or "0").replace(",", "."))
                     co2_ratio = co2_total_val / ep_total_val if ep_total_val > 0 else 0
-                    for tbl in doc.tables:
-                        if len(tbl.rows) < 8 or len(tbl.columns) != 8:
-                            continue
-                        # Header r0c2 = "Clădirea reală", r1c2 = "Consum specific energie"
-                        h_check = tbl.rows[0].cells[2].text + " " + tbl.rows[1].cells[2].text
-                        if "Clădirea reală" not in h_check or "Consum" not in h_check:
-                            continue
-                        # Idempotency: skip dacă deja completat
-                        if tbl.rows[2].cells[2].text.strip():
-                            break
-                        # Mapare nume sistem → rând
-                        sistem_to_row = {
-                            "Încălzire": 2, "Apă caldă": 3, "Răcire": 4,
-                            "Ventilare": 5, "Iluminat": 6,
-                        }
-                        # FIX Etapa 7e: completez și coloanele clădire referință (proporțional)
-                        ep_ref_raw = (data.get("ep_ref", "") or "0").replace(",", ".")
-                        try:
-                            ep_ref_total = float(ep_ref_raw)
-                        except (ValueError, TypeError):
-                            ep_ref_total = 0
-                        # Raport ref/real pentru proporționalitate per sistem
-                        ratio_ref = (ep_ref_total / ep_total_val) if ep_total_val > 0 else 0
-                        # FIX 20 apr 2026: calculez clasă energetică per sistem
-                        # folosind scale-ul global EP (thresholds din data.s_ap, s_a, ..., s_f)
-                        # Scale: [A+, A, B, C, D, E, F] (7 praguri)
-                        try:
-                            ep_scale = [float((data.get(k, "0") or "0").replace(",", "."))
-                                        for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
-                        except (ValueError, TypeError):
-                            ep_scale = []
-                        def _class_from_ep(ep_val):
-                            """Returnează clasa A+/A/B/C/D/E/F/G bazată pe scale-ul EP."""
-                            if not ep_scale or all(v == 0 for v in ep_scale):
-                                return ""
-                            classes = ["A+", "A", "B", "C", "D", "E", "F"]
-                            for i, threshold in enumerate(ep_scale):
-                                if threshold > 0 and ep_val < threshold:
-                                    return classes[i]
-                            return "G"
+                    try:
+                        ep_scale = [float((data.get(k, "0") or "0").replace(",", "."))
+                                    for k in ["s_ap", "s_a", "s_b", "s_c", "s_d", "s_e", "s_f"]]
+                    except (ValueError, TypeError):
+                        ep_scale = []
+                    def _class_from_ep(ep_val):
+                        if not ep_scale or all(v == 0 for v in ep_scale):
+                            return ""
+                        classes = ["A+", "A", "B", "C", "D", "E", "F"]
+                        for i, threshold in enumerate(ep_scale):
+                            if threshold > 0 and ep_val < threshold:
+                                return classes[i]
+                        return "G"
 
+                    # Suportă ambele template-uri: apartament (5 col) și clădire (8 col)
+                    TABEL3_VARIANTS = [
+                        # (min_cols, max_cols, h_keyword, ep_col, co2_col, cls_col, tot_row)
+                        (5, 5, "Apartament",    2, 3, 4, 7),
+                        (8, 8, "Clădirea reală", 2, 3, 4, 7),
+                    ]
+                    sistem_to_row = {
+                        "Încălzire": 2, "Apă caldă": 3, "Răcire": 4,
+                        "Ventilare": 5, "Iluminat": 6,
+                    }
+                    for tbl in doc.tables:
+                        ncols = len(tbl.columns)
+                        nrows = len(tbl.rows)
+                        if nrows < 8:
+                            continue
+                        matched_variant = None
+                        for (mn, mx, kw, ec, cc, kc, tr) in TABEL3_VARIANTS:
+                            if mn <= ncols <= mx and kw in tbl.rows[0].cells[2].text:
+                                matched_variant = (ec, cc, kc, tr)
+                                break
+                        if not matched_variant:
+                            continue
+                        ep_col, co2_col, cls_col, tot_row = matched_variant
+                        # Idempotency
+                        if tbl.rows[2].cells[ep_col].text.strip():
+                            break
                         for nume, row_idx in sistem_to_row.items():
-                            sd = sistem_data.get(nume, {})
-                            ep_val_str = sd.get("ep", "")
-                            if not ep_val_str or ep_val_str == "0,0":
+                            ep_str = sistem_data.get(nume, "")
+                            if not ep_str or ep_str == "0,0":
                                 continue
                             try:
-                                ep_val = float(ep_val_str.replace(",", "."))
+                                ep_val = float(ep_str.replace(",", "."))
                             except (ValueError, TypeError):
                                 continue
                             row = tbl.rows[row_idx]
-                            # c2 — consum specific energie primară (EP real în kWh/m²·an)
-                            row.cells[2].text = format_ro(ep_val, 1)
-                            # c3 — emisii CO2 real (proporțional)
-                            row.cells[3].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
-                            # c4 — clasă energetică reală per sistem (FIX 20 apr)
-                            cls_real = _class_from_ep(ep_val)
-                            if cls_real:
-                                row.cells[4].text = cls_real
-                            # c5 — consum specific energie primară REFERINȚĂ (proporțional)
-                            if ratio_ref > 0:
-                                ep_val_ref = ep_val * ratio_ref
-                                row.cells[5].text = format_ro(ep_val_ref, 1)
-                                # c6 — CO2 referință (proporțional)
-                                row.cells[6].text = format_ro(ep_val_ref * co2_ratio, 1) if co2_ratio > 0 else "—"
-                                # c7 — clasa referință per sistem (FIX 20 apr)
-                                cls_ref = _class_from_ep(ep_val_ref)
-                                if cls_ref:
-                                    row.cells[7].text = cls_ref
-                            for ci in (2, 3, 4, 5, 6, 7):
+                            row.cells[ep_col].text  = format_ro(ep_val, 1)
+                            row.cells[co2_col].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
+                            cls = _class_from_ep(ep_val)
+                            if cls:
+                                row.cells[cls_col].text = cls
+                            for ci in (ep_col, co2_col, cls_col):
                                 for p in row.cells[ci].paragraphs:
                                     for r in p.runs:
                                         r.font.size = Pt(10)
-                        # r7 — TOTAL/CLASA
+                        # TOTAL
                         if ep_total_val > 0:
-                            tbl.rows[7].cells[2].text = format_ro(ep_total_val, 1)
-                            tbl.rows[7].cells[3].text = format_ro(co2_total_val, 1)
-                            tbl.rows[7].cells[4].text = data.get("energy_class", "") or ""
-                            # Coloane clădire referință
-                            ep_ref = (data.get("ep_ref", "") or "0").replace(",", ".")
-                            try:
-                                ep_ref_f = float(ep_ref)
-                                if ep_ref_f > 0:
-                                    tbl.rows[7].cells[5].text = format_ro(ep_ref_f, 1)
-                                    if co2_ratio > 0:
-                                        tbl.rows[7].cells[6].text = format_ro(ep_ref_f * co2_ratio, 1)
-                                    tbl.rows[7].cells[7].text = data.get("ep_class_ref", "") or ""
-                            except (ValueError, TypeError):
-                                pass
-                            for ci in range(2, 8):
-                                for p in tbl.rows[7].cells[ci].paragraphs:
+                            tbl.rows[tot_row].cells[ep_col].text  = format_ro(ep_total_val, 1)
+                            tbl.rows[tot_row].cells[co2_col].text = format_ro(co2_total_val, 1)
+                            tbl.rows[tot_row].cells[cls_col].text = data.get("energy_class", "") or ""
+                            for ci in (ep_col, co2_col, cls_col):
+                                for p in tbl.rows[tot_row].cells[ci].paragraphs:
                                     for r in p.runs:
                                         r.font.size = Pt(10)
                                         r.bold = True
                         break
                 except Exception as e_t3:
                     print(f"[tabel_3_sisteme] eroare: {e_t3}", flush=True)
+
+                # ── Layout: elimină paragrafe goale excesive înainte de titluri de secțiune ──
+                # Template-ul Anexa apartament are 4+ paragrafe goale înainte de "DATE TEHNICE",
+                # creând spațiu alb mare. Reducem la maxim 1 paragraf gol consecutiv.
+                try:
+                    WNS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+                    body = doc.element.body
+                    p_elems = list(body.iter(f"{WNS}p"))
+                    i = 0
+                    while i < len(p_elems):
+                        p_el = p_elems[i]
+                        txt = "".join(t.text or "" for t in p_el.iter(f"{WNS}t")).strip()
+                        if txt:  # paragraf cu conținut — reset
+                            i += 1
+                            continue
+                        # Paragraf gol — numărăm consecutivele
+                        consecutive_empty = [p_el]
+                        j = i + 1
+                        while j < len(p_elems):
+                            nxt = p_elems[j]
+                            nxt_txt = "".join(t.text or "" for t in nxt.iter(f"{WNS}t")).strip()
+                            if nxt_txt:
+                                break
+                            consecutive_empty.append(nxt)
+                            j += 1
+                        # Păstrăm 1, ștergem restul
+                        for extra in consecutive_empty[1:]:
+                            parent = extra.getparent()
+                            if parent is not None:
+                                parent.remove(extra)
+                        i = j
+                except Exception as e_layout:
+                    print(f"[layout_empty_paras] eroare: {e_layout}", flush=True)
+
+                # ── Cleanup: șterge punctele rămase după auto-fill în câmpuri "precizați" ──
+                # Regulă: dacă un paragraf cu "precizați" conține text real (valoare) ȘI
+                # mai are și "....." → scoatem punctele. Dacă e necompletat → le păstrăm.
+                try:
+                    for para in _iter_all_paragraphs(doc, include_txbx=True):
+                        low = para.text.lower()
+                        if "preciza" not in low:
+                            continue
+                        # Verifică dacă există text real după "precizați" (nu doar dots/spații)
+                        after_match = re.split(r"preciza[tț][ie]\s*", para.text, flags=re.IGNORECASE)
+                        if len(after_match) < 2:
+                            continue
+                        after_label = after_match[-1]
+                        real_text = re.sub(r"[\.\s\xa0 ]", "", after_label)
+                        if not real_text:
+                            continue  # Câmp necompletat — păstrăm dots
+                        # Are dots rămase → le ștergem
+                        for run in para.runs:
+                            if re.search(r"\.{4,}", run.text):
+                                run.text = re.sub(r"\.{4,}", "", run.text).rstrip()
+                except Exception as e_dots:
+                    print(f"[cleanup_precizati_dots] eroare: {e_dots}", flush=True)
 
                 # ══════════════════════════════════════════════════════════
                 # Sprint monolith (20 apr 2026) — Populare TABELE RĂMASE
@@ -5072,24 +5114,39 @@ class handler(BaseHTTPRequestHandler):
                                 run.text = run.text[:m.start()] + f" {acm_pts} " + run.text[m.end():]
                                 break
 
-                # ── Footer: Numărul certificatului în registrul auditorului ──
-                # Apare în footer DOCX, placeholder cu puncte ".........."
+                # ── Footer: afișează direct codul CPE, fără prefixul "Numărul certificatului..." ──
                 cpe_code_footer = data.get("cpe_code", "") or data.get("auditor_mdlpa", "")
                 if cpe_code_footer:
-                    # Short version pentru footer (max 30 chars)
-                    cpe_short = cpe_code_footer[:30] + ("..." if len(cpe_code_footer) > 30 else "")
+                    cpe_short = cpe_code_footer[:50] + ("..." if len(cpe_code_footer) > 50 else "")
                     try:
-                        # Footer-urile sunt în doc.sections[].footer
                         for section in doc.sections:
                             for footer_type in ("first_page_footer", "even_page_footer", "footer"):
                                 footer = getattr(section, footer_type, None)
                                 if footer is None:
                                     continue
                                 for p in footer.paragraphs:
-                                    if "registrul auditorului" in p.text:
+                                    if "registrul auditorului" not in p.text:
+                                        continue
+                                    # Înlocuiește ÎNTREGUL segment "Numărul certificatului în
+                                    # registrul auditorului ......" cu doar codul CPE.
+                                    replaced = False
+                                    for run in p.runs:
+                                        if "registrul auditorului" in run.text:
+                                            run.text = re.sub(
+                                                r"Num[ăa]rul certificatului [îi]n registrul auditorului[\s\.]*[\w\-_.]*",
+                                                cpe_short, run.text
+                                            )
+                                            replaced = True
+                                            break
+                                        if re.search(r"Num[ăa]rul|certificatului", run.text):
+                                            # Label în run separat — ștergem prefixul
+                                            run.text = ""
+                                            replaced = True
+                                    if not replaced:
+                                        # Fallback: înlocuiește dots dacă există
                                         for run in p.runs:
                                             if re.search(r"\.{4,}", run.text):
-                                                run.text = re.sub(r"\.{4,}", f" {cpe_short}", run.text, count=1)
+                                                run.text = re.sub(r"\.{4,}", cpe_short, run.text, count=1)
                                                 break
                     except Exception:
                         pass
