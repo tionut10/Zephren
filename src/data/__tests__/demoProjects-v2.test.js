@@ -215,7 +215,8 @@ describe("DEMO_PROJECTS v2 — schema completă pentru fiecare model", () => {
 
 describe("DEMO_PROJECTS v2 — diversitate scenarii (testare end-to-end)", () => {
   it("M1 (Constanța) folosește termoficare DH RADET", () => {
-    expect(DEMO_PROJECTS[0].heating.source).toBe("TERMOFICARE");
+    // P1 fix (29 apr 2026): cod actualizat de la "TERMOFICARE" la "TERMO" (HEAT_SOURCES id valid)
+    expect(DEMO_PROJECTS[0].heating.source).toBe("TERMO");
     // S29 fix — M1 e clasă G (apartament panou mare neanvelopat, EP=968 kWh/m²·an)
     expect(DEMO_PROJECTS[0].expectedResults.energyClass).toBe("G");
     expect(DEMO_PROJECTS[0].expectedResults.RER_pct).toBe(0);
@@ -252,7 +253,8 @@ describe("DEMO_PROJECTS v2 — diversitate scenarii (testare end-to-end)", () =>
   });
 
   it("M5 (Predeal) folosește biomasă peleți + solar termic + lipsa cooling activ", () => {
-    expect(DEMO_PROJECTS[4].heating.source).toBe("PELET");
+    // P1 fix (29 apr 2026): cod actualizat de la "PELET" la "BIO_AUT" (HEAT_SOURCES id valid — Cazan peleți automat)
+    expect(DEMO_PROJECTS[4].heating.source).toBe("BIO_AUT");
     expect(DEMO_PROJECTS[4].biomass.enabled).toBe(true);
     expect(DEMO_PROJECTS[4].solarThermal.enabled).toBe(true);
     expect(DEMO_PROJECTS[4].cooling.hasCooling).toBe(false);

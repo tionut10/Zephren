@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-27
+// Ultima generare: 2026-04-28
 
 export const APP_VERSION = "0.5.0";
 export const CHANGELOG = [
@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "💰",
-        "text": "pricing v7.1: elimină banner TVA global + actualizează descriere secțiune prețuri (CPE nelimitat, diferențiere"
+        "text": "Landing redesign: ierarhie vizuală + badge-uri plan + spațiere secțiuni"
       },
       {
-        "icon": "💰",
-        "text": "pricing v7.1: prețuri TVA inclus (IIci 599, Ici 1499, Expert 2999, Birou 5999, Enterprise 9999); elimină ofert"
+        "icon": "🔬",
+        "text": "normalizare ID-uri constants.js uppercase → legacy semantic (heating/acm/vent/lighting)"
       },
       {
-        "icon": "✨",
-        "text": "dezactivează Pașaport Renovare global până la EPBD 29 mai 2026"
+        "icon": "🔧",
+        "text": "ventilare Section E — VENT_HR_NO + HEAT/DHW sursa semantica + debit m3/h gap + vent_label guard"
       },
       {
-        "icon": "🔸",
-        "text": "landing: ascunde temporar banner Pașaport Renovare pay-per-doc"
+        "icon": "📄",
+        "text": "6 probleme Anexa apartament (checkboxes template 244cb, PELETI sectiune gresita, footer dots, T03 gol cu 0,0, "
       },
       {
-        "icon": "💰",
-        "text": "fix(pricing v7.0): sync PLAN_DISPLAY + TIERS la noile prețuri"
-      },
-      {
-        "icon": "💰",
-        "text": "landing v7.0: PlanComparisonTable interactiv pentru clienți"
-      },
-      {
-        "icon": "💰",
-        "text": "pricing v7.0: standardizare 30 CPE + diferențiere prin funcționalități"
+        "icon": "📄",
+        "text": "6 probleme generare Anexa DOCX (T02 anvelopa multi-para, T03 detectie 5col apartament, footer fara prefix, lay"
       },
       {
         "icon": "🎨",
-        "text": "Sprint v6.3 Stage 4 - teste comprehensive canEmitForBuilding + bug fix"
+        "text": "ANCPI verified checkbox nu persista in state (updateBuilding apelat cu obiect in loc de key/val)"
+      },
+      {
+        "icon": "✨",
+        "text": "landing: adaugă badge versiune lângă logo în navbar (identic footer)"
+      },
+      {
+        "icon": "⚡",
+        "text": "landing: optimizare spații hero — padding top 48→28px, gap logo→titlu 28→18px, stats margin 36→22px, subtitle "
       }
     ]
   },

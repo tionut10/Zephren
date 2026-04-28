@@ -1083,6 +1083,9 @@ export default function EnergyCalcApp({ cloud }) {
     setHeatPump({ ...INITIAL_HP, ...d.heatPump });
     setBiomass({ ...INITIAL_BIO, ...d.biomass });
     setOtherRenew({ ...INITIAL_OTHER, ...d.otherRenew });
+    // Fix P0 (28 apr 2026): bateria era omisă din loadDemoByIndex — M2 (60 kWh LFP) ignorată complet.
+    // Aliniat cu pattern-ul folosit de importProject (linia 512) și replayUndo (linia 601).
+    setBattery({ ...INITIAL_BATTERY, ...d.battery });
     setAuditor(prev => ({
       ...prev,
       ...d.auditor,
