@@ -406,20 +406,20 @@ export function validateStep1(building, lang = "RO") {
   }
 
   // Cross-field: volum vs. dimensiuni (doar warning)
+  // Mc 001-2022: Au e suprafața utilă TOTALĂ (sumată pe toate etajele), deci V_aşteptat = Au × h_etaj_mediu
+  // Sprint Demo Verification (29 apr 2026): eliminată multiplicarea cu nFloors care dubla volumul
+  // (ex. M2: 5400 m² × 3.20 m × 7 etaje = 120960 m³ — fals; corect: 5400 × 3.20 = 17280 m³)
   const Au = parseFloat(b.areaUseful);
   const hF = parseFloat(b.heightFloor);
   const V = parseFloat(b.volume);
-  // Fix audit 24 apr 2026: folosește parseFloorsRegime — numără corect S/D/P/M, nu doar E
-  const fr = parseFloorsRegime(b.floors, { basementHeated: !!b.basement, atticHeated: !!b.attic });
-  const nF = fr.heated;
-  if (Au > 0 && hF > 0 && V > 0 && nF > 0) {
-    const Vexpected = Au * hF * Math.max(1, nF);
+  if (Au > 0 && hF > 0 && V > 0) {
+    const Vexpected = Au * hF;
     const diff = Math.abs(V - Vexpected) / Vexpected;
     if (diff > 0.25) {
       warnings.volumeConsistency = L(
         lang,
-        `Volum ≠ Au·h·etaje (diferență ${Math.round(diff * 100)}%)`,
-        `Volume ≠ Au·h·floors (${Math.round(diff * 100)}% diff)`,
+        `Volum ≠ Au·h_etaj (diferență ${Math.round(diff * 100)}%)`,
+        `Volume ≠ Au·h_floor (${Math.round(diff * 100)}% diff)`,
       );
     }
   }
