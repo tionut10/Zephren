@@ -338,6 +338,18 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
     } catch { return "dark"; }
   });
 
+  // Fondator popover
+  const [showFounder, setShowFounder] = useState(false);
+  const founderRef = useRef(null);
+  useEffect(() => {
+    if (!showFounder) return;
+    const handler = (e) => {
+      if (founderRef.current && !founderRef.current.contains(e.target)) setShowFounder(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showFounder]);
+
   // Count-up animație stats
   const statsRef = useRef(null);
   const [statsVisible, setStatsVisible] = useState(false);
@@ -424,6 +436,69 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
             <a href="#features" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_features", "Funcționalități")}</a>
             <a href="#pricing" style={{ fontSize: "14px", color: textMuted, textDecoration: "none" }}>{T("nav_pricing", "Prețuri")}</a>
+
+            {/* ── Fondator popover ── */}
+            <div ref={founderRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowFounder(v => !v)}
+                aria-expanded={showFounder}
+                aria-haspopup="true"
+                style={{ fontSize: "14px", color: showFounder ? "#f59e0b" : textMuted, background: "transparent", border: "none", cursor: "pointer", padding: "0", display: "inline-flex", alignItems: "center", gap: "4px", transition: "color 0.2s", fontFamily: "inherit" }}
+              >
+                {lang === "EN" ? "Founder" : "Fondator"}
+                <span aria-hidden="true" style={{ fontSize: "10px", opacity: 0.55, display: "inline-block", transition: "transform 0.2s", transform: showFounder ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+              </button>
+
+              {showFounder && (
+                <div role="dialog" aria-label={lang === "EN" ? "Founder card" : "Card fondator"} style={{ position: "absolute", top: "calc(100% + 14px)", right: "-12px", width: "320px", background: isDark ? "#0d0d22" : "#ffffff", border: `1px solid ${cardBorder}`, borderRadius: "16px", boxShadow: isDark ? "0 24px 48px rgba(0,0,0,0.55)" : "0 24px 48px rgba(15,23,42,0.13)", padding: "24px", zIndex: 200 }}>
+                  {/* Vârf săgeată */}
+                  <div style={{ position: "absolute", top: "-6px", right: "28px", width: "12px", height: "12px", background: isDark ? "#0d0d22" : "#ffffff", border: `1px solid ${cardBorder}`, borderBottom: "none", borderRight: "none", transform: "rotate(45deg)" }} />
+
+                  {/* Avatar + Nume */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
+                    <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "800", color: "#000", flexShrink: 0, letterSpacing: "-0.5px" }}>IT</div>
+                    <div>
+                      <div style={{ fontWeight: "700", fontSize: "15px", color: text, lineHeight: 1.2 }}>ing. Ionuț Tunaru</div>
+                      <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "600", marginTop: "3px" }}>AE Ici · Auditor energetic atestat</div>
+                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "1px" }}>{lang === "EN" ? "Founder · ZEPHREN SRL" : "Fondator · ZEPHREN SRL"}</div>
+                    </div>
+                  </div>
+
+                  {/* Titlu academic */}
+                  <div style={{ fontSize: "12px", color: textMuted, background: isDark ? "rgba(245,158,11,0.06)" : "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.18)", borderRadius: "8px", padding: "9px 12px", marginBottom: "14px", lineHeight: "1.55" }}>
+                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>M.Sc.</span>{" "}Modernizare Energetică în Mediul Construit (MEMC)<br/>
+                    <span style={{ opacity: 0.75 }}>Traseu cercetare · Clădiri cu performanță energetică ridicată</span><br/>
+                    <span style={{ opacity: 0.55 }}>UNITBV · 2019</span>
+                  </div>
+
+                  {/* Bio */}
+                  <p style={{ fontSize: "13px", color: textMuted, lineHeight: "1.65", margin: "0 0 16px" }}>
+                    {lang === "EN"
+                      ? "Zephren was built from direct energy auditing experience — software designed by an auditor, for auditors. The M.Sc. research on high-performance buildings forms the methodological backbone, fully compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
+                      : "Zephren a apărut din experiența directă în auditare energetică — un software gândit de un auditor, pentru auditori. Cercetarea M.Sc. privind clădirile cu performanță ridicată a stat la baza metodologiei, conformă integral cu Mc 001-2022 și Ord. MDLPA 348/2026."}
+                  </p>
+
+                  {/* Badge-uri */}
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {[
+                      { label: "UTBv · 2019",   color: "#3b82f6" },
+                      { label: "M.Sc. MEMC",     color: "#8b5cf6" },
+                      { label: "AE Ici · MDLPA", color: "#10b981" },
+                      { label: "Mc 001-2022",    color: "#f59e0b" },
+                    ].map(b => (
+                      <span key={b.label} style={{ fontSize: "11px", fontWeight: "600", padding: "3px 9px", borderRadius: "6px", color: b.color, background: `${b.color}1a`, border: `1px solid ${b.color}35` }}>{b.label}</span>
+                    ))}
+                  </div>
+
+                  {/* Note diplome */}
+                  <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${border}`, fontSize: "11px", color: textFaint, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>📎</span>
+                    <span>{lang === "EN" ? "Diploma & dissertation — coming soon" : "Diplomă & disertație — în curând"}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <a href="#changelog" style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#f59e0b", textDecoration: "none", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)", transition: "background 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.16)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,158,11,0.08)"; }}>
@@ -460,6 +535,36 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         <div style={{ background: isDark ? "rgba(10,10,26,0.97)" : "rgba(245,247,250,0.97)", borderBottom: `1px solid ${border}`, padding: "16px 24px", display: "flex", flexDirection: "column", gap: "12px" }} className="nav-mobile-menu">
           <a href="#features" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_features", "Funcționalități")}</a>
           <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: textMuted, textDecoration: "none", padding: "8px 0" }}>{T("nav_pricing", "Prețuri")}</a>
+
+          {/* Fondator — mobil */}
+          <button onClick={() => setShowFounder(v => !v)} style={{ fontSize: "14px", color: showFounder ? "#f59e0b" : textMuted, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", padding: "8px 0", fontFamily: "inherit", display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>👤</span>{lang === "EN" ? "Founder" : "Fondator"}
+            <span style={{ fontSize: "10px", opacity: 0.55, marginLeft: "auto", transition: "transform 0.2s", transform: showFounder ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+          </button>
+          {showFounder && (
+            <div style={{ background: isDark ? "rgba(245,158,11,0.04)" : "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b, #d97706)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: "800", color: "#000", flexShrink: 0 }}>IT</div>
+                <div>
+                  <div style={{ fontWeight: "700", fontSize: "14px", color: text }}>ing. Ionuț Tunaru</div>
+                  <div style={{ fontSize: "11px", color: "#10b981", fontWeight: "600" }}>AE Ici · MDLPA</div>
+                </div>
+              </div>
+              <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.55" }}>
+                <span style={{ color: "#f59e0b", fontWeight: "700" }}>M.Sc.</span> MEMC · Traseu cercetare<br/>
+                <span style={{ opacity: 0.7 }}>Clădiri cu performanță energetică ridicată · UNITBV · 2019</span>
+              </div>
+              <p style={{ fontSize: "12px", color: textMuted, lineHeight: "1.6", margin: 0 }}>
+                {lang === "EN"
+                  ? "Software designed by an energy auditor, for energy auditors — built on M.Sc. research, Mc 001-2022 and MDLPA Ord. 348/2026."
+                  : "Software gândit de un auditor energetic, pentru auditori — fondat pe cercetare M.Sc., Mc 001-2022 și Ord. MDLPA 348/2026."}
+              </p>
+              <div style={{ fontSize: "11px", color: textFaint, display: "flex", alignItems: "center", gap: "5px" }}>
+                <span>📎</span><span>{lang === "EN" ? "Diploma & dissertation — coming soon" : "Diplomă & disertație — în curând"}</span>
+              </div>
+            </div>
+          )}
+
           <button onClick={() => { setMobileMenu(false); setShowLogin(true); }} style={{ fontSize: "13px", padding: "10px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textAlign: "left" }}>{T("nav_login", "Autentificare")}</button>
           <button onClick={() => { setMobileMenu(false); onStart(); }} style={{ fontSize: "13px", fontWeight: "600", padding: "10px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
         </div>
