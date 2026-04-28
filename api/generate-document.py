@@ -1644,12 +1644,121 @@ _U_REF_RES = {"PE":0.25,"PR":0.67,"PS":0.29,"PT":0.15,"PP":0.15,"PB":0.29,"PL":0
 _U_REF_NRES = {"PE":0.33,"PR":0.80,"PS":0.35,"PT":0.17,"PP":0.17,"PB":0.35,"PL":0.22,"SE":0.22}
 
 
+def _norm_heating_source(v):
+    """Normalizează heating_source: ID-uri noi constants.js (uppercase) → legacy semantic."""
+    if not v:
+        return ""
+    u = v.upper()
+    # Termoficare
+    if u.startswith("TERMO"):
+        return "termoficare"
+    # Pompe de căldură
+    if u.startswith("PC_") or u in ("PC_AERAER",):
+        return "pc_aer_apa"
+    # Electric direct
+    if u in ("ELEC", "ELEC_ACC", "ELEC_PANEL", "INFRARED_E"):
+        return "electric_direct"
+    # Sobe (foc lemn, teracotă, metalice) — tip emisie, nu cazan
+    if u.startswith("SOBA_"):
+        return "soba_teracota"
+    # Cazane biomasă / lemn / cărbune — tip cazan cu combustibil solid
+    if u.startswith("BIO_") or u in ("COCS_K", "CARBUNE", "CARBUNE_K", "LEMN"):
+        return "cazan_lemn"
+    # Gaz natural / GPL / motorină → CT proprie în clădire
+    if any(u.startswith(p) for p in ("GAZ_", "GPL_", "MOT_", "CONV_GAZ", "INFRARED_G")):
+        return "gaz_conv"
+    # Cazane în cascadă cu gaz (CASC) — tratăm ca gaz_conv
+    if "CASC" in u:
+        return "gaz_conv"
+    # Backward compat cu vechile valori lowercase
+    return v  # valori vechi: "gaz_conv", "termoficare", "electric_direct", etc.
+
+
+def _norm_acm_source(v):
+    """Normalizează acm_source: ID-uri noi constants.js → legacy semantic."""
+    if not v:
+        return ""
+    u = v.upper()
+    if u == "TERMO_ACM":
+        return "termoficare"
+    if u.startswith("SOLAR"):
+        return "solar_termic"
+    if u.startswith("PC_ACM"):
+        return "pc"
+    if u in ("BOILER_E", "BOILER_E_NOAPTE", "INSTANT_E", "DESUPERHEATER"):
+        return "boiler_electric"
+    if u in ("BOILER_G", "BOILER_G_COND", "BOILER_GPL", "INSTANT_G",
+             "CAZAN_H", "COGEN_ACM", "CENTRALIZAT_BLOC", "BOILER_BIOMASA"):
+        return "ct_prop"
+    return v  # backward compat
+
+
+def _norm_vent_type(v):
+    """Normalizează ventilation_type: ID-uri noi constants.js → legacy semantic."""
+    if not v:
+        return ""
+    u = v.upper()
+    if u == "NAT":
+        return "natural_neorg"
+    if u == "NAT_HIBRIDA":
+        return "natural_org"
+    # Mecanică cu recuperare de căldură (hasHR=true în constants.js)
+    if any(u.startswith(p) for p in ("MEC_HR", "MEC_ERV")) or u in (
+        "UTA", "UTA_ERV", "VRF_VENT", "VAV", "DOAS", "GEO_AER"
+    ):
+        return "mec_hr"
+    # Mecanică simplă (hasHR=false)
+    if any(u.startswith(p) for p in ("MEC_",)) or u in ("FCU", "ADIAB_VENT"):
+        return "mec"
+    return v  # backward compat: "natural_neorg", "natural_org", etc.
+
+
+def _norm_lighting_type(v):
+    """Normalizează lighting_type: ID-uri noi constants.js → legacy semantic."""
+    if not v:
+        return ""
+    u = v.upper()
+    if u.startswith("LED"):
+        return "led"
+    if u in ("CFL", "TUB_T8", "TUB_T8_HF", "TUB_T5", "TUB_T5_HO", "INDUCTIE"):
+        return "fluorescent"
+    if u in ("INCAND", "HALOGEN", "HAL_REFL", "HAL_MR16"):
+        return "incandescent"
+    # Metal halide, sodiu → tratăm ca "fluorescent" (eficiență medie, nu LED)
+    if u in ("METAL_HAL", "METAL_HAL_HB", "SODIU_IP", "SODIU_JP"):
+        return "fluorescent"
+    return v  # backward compat
+
+
+def _norm_lighting_control(v):
+    """Normalizează lighting_control: ID-uri noi constants.js → legacy semantic."""
+    if not v:
+        return ""
+    u = v.upper()
+    if u == "MAN":
+        return "manual"
+    if u in ("PREZ", "PREZ_MIC"):
+        return "sensor_presence"
+    if u in ("PREZ_DIM", "DAYLIGHT", "PREZ_DAY", "BMS", "DALI", "AUTO_INT", "TIMER"):
+        return "daylight_dimming"
+    return v  # backward compat
+
+
 def compute_checkboxes(data, category):
     """Compute checkbox indices to toggle based on building data.
     Returns list of 0-based indices for the 308-checkbox Anexa clădire template."""
     cbs = []
     is_res = category in ("RI", "RC", "RA")
     u_ref = _U_REF_RES if is_res else _U_REF_NRES
+
+    # Normalizare ID-uri constants.js (uppercase) → legacy semantic
+    _data = dict(data)
+    _data["heating_source"]     = _norm_heating_source(data.get("heating_source", ""))
+    _data["acm_source"]         = _norm_acm_source(data.get("acm_source", ""))
+    _data["ventilation_type"]   = _norm_vent_type(data.get("ventilation_type", ""))
+    _data["lighting_type"]      = _norm_lighting_type(data.get("lighting_type", ""))
+    _data["lighting_control"]   = _norm_lighting_control(data.get("lighting_control", ""))
+    data = _data
 
     # Parse opaque U-values
     try:
@@ -2344,6 +2453,16 @@ def compute_checkbox_keys(data, category):
     is_res = category in ("RI", "RC", "RA")
     u_ref = _U_REF_RES if is_res else _U_REF_NRES
 
+    # Normalizare ID-uri constants.js (uppercase) → legacy semantic
+    # Aplicată o singură dată la intrarea în funcție, înainte de orice logică.
+    _data = dict(data)
+    _data["heating_source"]     = _norm_heating_source(data.get("heating_source", ""))
+    _data["acm_source"]         = _norm_acm_source(data.get("acm_source", ""))
+    _data["ventilation_type"]   = _norm_vent_type(data.get("ventilation_type", ""))
+    _data["lighting_type"]      = _norm_lighting_type(data.get("lighting_type", ""))
+    _data["lighting_control"]   = _norm_lighting_control(data.get("lighting_control", ""))
+    data = _data
+
     # Parse opaque + glazing
     try:
         opaque_u = json.loads(data.get("opaque_u_values", "[]"))
@@ -2493,7 +2612,7 @@ def compute_checkbox_keys(data, category):
         vent_year = int(data.get("ventilation_year_installed", "0") or "0")
     except Exception:
         vent_year = 0
-    has_mechanical_vent = bool(vent_type) and vent_type not in ("natural_neorg", "natural_org")
+    has_mechanical_vent = bool(vent_type) and vent_type not in ("natural_neorg", "natural_org", "natural")
     if has_mechanical_vent and 0 < vent_year < 2010:
         keys.append("REC_VENT_EQUIP")
 
