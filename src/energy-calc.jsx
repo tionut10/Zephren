@@ -297,6 +297,9 @@ export default function EnergyCalcApp({ cloud }) {
       }
     } catch (e) { /* Stripe not configured, fall through to demo mode */ }
     // Demo mode fallback: activate locally
+    // Curăță flag demo-mode (mostre exemplu) pentru a aplica gating-ul real al planului
+    window.__demoModeActive = false;
+    try { sessionStorage.removeItem("zephren_demo_mode"); } catch (_e) { /* ignore */ }
     setUserTier(newTier);
     setShowUpgradeModal(false);
     setShowPricingPage(false);
