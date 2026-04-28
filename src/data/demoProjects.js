@@ -520,8 +520,8 @@ export const DEMO_PROJECTS = [
       shadingFactor: "0.78",              // Curtain wall sticlă cu jaluzele automate
       gwpLifecycle: "240",                // GWP redus — Level(s) compatibil
       solarReady: true,
-      evChargingPoints: "8",              // 8 stații EV 22 kW (8% locuri parcare per Art. 14 EPBD)
-      evChargingPrepared: "20",
+      evChargingPoints: "10",             // P2 fix: era 8 → 10 (cerință EPBD 2024 Art. 14 §4 non-rezidențial: minim 10 instalate la 100 locuri)
+      evChargingPrepared: "50",            // P2 fix: era 20 → 50 (cerință EPBD 2024 Art. 14 §4: minim 50% precablate la non-rezidențial >20 locuri)
       co2MaxPpm: "780",                   // EN 16798-1 cat. I (CO₂ < 800 ppm peste exterior)
       pm25Avg: "6",
       scaleVersion: "2023",

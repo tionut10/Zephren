@@ -55,18 +55,23 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("free", "bimPack")).toBe(false);
   });
 
-  it("Audit (199) are export oficial dar NU Step 7/8 nici AI Pack", () => {
+  it("AE IIci (audit, 499) are export oficial + AI Pack dar NU Step 7/8 nici BIM", () => {
+    // v7.0 update (29 apr 2026): AI Pack INCLUS pe TOATE planurile plătite (era doar Pro+ în v6.x)
     expect(canAccess("audit", "exportDOCX")).toBe(true);
     expect(canAccess("audit", "exportXML")).toBe(true);
     expect(canAccess("audit", "submitMDLPA")).toBe(true);
     expect(canAccess("audit", "auditorStamp")).toBe(true);
-    expect(canAccess("audit", "step7Audit")).toBe(false);   // diferențiator vs Pro
+    expect(canAccess("audit", "step7Audit")).toBe(false);   // diferențiator vs AE Ici
     expect(canAccess("audit", "step8Advanced")).toBe(false);
-    expect(canAccess("audit", "aiPack")).toBe(false);
+    expect(canAccess("audit", "aiPack")).toBe(true);        // v7.0: AI Pack INCLUS
+    expect(canAccess("audit", "ocrInvoice")).toBe(true);
+    expect(canAccess("audit", "ocrCPE")).toBe(true);
+    expect(canAccess("audit", "chatImport")).toBe(true);
     expect(canAccess("audit", "bimPack")).toBe(false);
   });
 
-  it("Pro (499) are Step 7 + AI Pack dar NU Step 8 nici BIM", () => {
+  it("AE Ici (pro, 1.299) are Step 7 + AI Pack dar NU Step 8 nici BIM", () => {
+    // Pașaport gated global de RENOVATION_PASSPORT_ENABLED kill-switch (false până la EPBD 29 mai 2026)
     expect(canAccess("pro", "step7Audit")).toBe(true);      // ✅ Pro distinctiv
     expect(canAccess("pro", "step8Advanced")).toBe(false);
     expect(canAccess("pro", "aiPack")).toBe(true);          // ✅ AI Pack inclus
@@ -74,14 +79,15 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("pro", "ocrCPE")).toBe(true);
     expect(canAccess("pro", "chatImport")).toBe(true);
     expect(canAccess("pro", "bimPack")).toBe(false);        // BIM doar Expert+
-    expect(canAccess("pro", "pasaportBasic")).toBe(true);
+    expect(canAccess("pro", "pasaportBasic")).toBe(false);  // kill-switch off până la lansare EPBD 29 mai 2026
     expect(canAccess("pro", "pasaportDetailed")).toBe(false);
     expect(canAccess("pro", "bacsSimple")).toBe(true);
     expect(canAccess("pro", "bacsDetailed")).toBe(false);   // detaliat doar Expert+
     expect(canAccess("pro", "gwpReport")).toBe(true);
   });
 
-  it("Expert (899) are Step 8 COMPLET + BIM Pack", () => {
+  it("Expert (2.499) are Step 8 COMPLET + BIM Pack", () => {
+    // v7.0 update: maxCertsPerMonth standardizat la 30 (era 60 în v6.x); diferențierea e prin features, nu volum
     expect(canAccess("expert", "step8Advanced")).toBe(true);
     expect(canAccess("expert", "bimPack")).toBe(true);      // ✅ BIM inclus
     expect(canAccess("expert", "ifcImport")).toBe(true);
@@ -92,7 +98,7 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("expert", "bacsDetailed")).toBe(true);
     expect(canAccess("expert", "sriDetailed")).toBe(true);
     expect(canAccess("expert", "mepsOptimizer")).toBe(true);
-    expect(canAccess("expert", "pasaportDetailed")).toBe(true);
+    expect(canAccess("expert", "pasaportDetailed")).toBe(false);  // kill-switch off până la lansare EPBD 29 mai 2026
     // Single user încă, fără team features
     expect(canAccess("expert", "teamDashboard")).toBe(false);
     expect(canAccess("expert", "whiteLabel")).toBe(false);
@@ -141,11 +147,13 @@ describe("canAccess — gating per feature", () => {
 
 describe("getLimit — limite numerice", () => {
   it("returnează corect maxCertsPerMonth", () => {
+    // v7.0 update: volum CPE/lună standardizat la 30 pentru audit/pro/expert
+    // (diferențierea e prin features funcționale, nu prin volum)
     expect(getLimit("free", "maxCertsPerMonth")).toBe(3);
     expect(getLimit("edu", "maxCertsPerMonth")).toBe(100);   // hard cap anti-abuse
-    expect(getLimit("audit", "maxCertsPerMonth")).toBe(8);
+    expect(getLimit("audit", "maxCertsPerMonth")).toBe(30);  // v7.0 (era 8 în v6.x)
     expect(getLimit("pro", "maxCertsPerMonth")).toBe(30);
-    expect(getLimit("expert", "maxCertsPerMonth")).toBe(60);
+    expect(getLimit("expert", "maxCertsPerMonth")).toBe(30); // v7.0 (era 60 în v6.x)
     expect(getLimit("birou", "maxCertsPerMonth")).toBe(9999);
     expect(getLimit("enterprise", "maxCertsPerMonth")).toBe(9999);
   });
@@ -176,38 +184,41 @@ describe("getOverageCost — tiered overage", () => {
     expect(getOverageCost("enterprise", 500)).toBe(0);
   });
 
-  it("Audit (8 + 2 burst = 10) nu cere overage până la CPE 10", () => {
+  it("AE IIci (audit, 30 + 6 burst = 36) tiered 39→69→99", () => {
+    // v7.0 update: 30 CPE/lună standard + burst 20% (era 8+2=10 în v6.x)
     expect(getOverageCost("audit", 1)).toBe(0);
-    expect(getOverageCost("audit", 8)).toBe(0);
-    expect(getOverageCost("audit", 10)).toBe(0);          // burst
-    expect(getOverageCost("audit", 11)).toBe(49);         // tier 1
-    expect(getOverageCost("audit", 15)).toBe(49);
-    expect(getOverageCost("audit", 16)).toBe(79);         // tier 2
-    expect(getOverageCost("audit", 20)).toBe(79);
-    expect(getOverageCost("audit", 21)).toBe(99);         // tier 3 → forțează Pro
-    expect(getOverageCost("audit", 50)).toBe(99);
+    expect(getOverageCost("audit", 30)).toBe(0);
+    expect(getOverageCost("audit", 36)).toBe(0);          // burst
+    expect(getOverageCost("audit", 37)).toBe(39);         // tier 1
+    expect(getOverageCost("audit", 50)).toBe(39);
+    expect(getOverageCost("audit", 51)).toBe(69);         // tier 2
+    expect(getOverageCost("audit", 65)).toBe(69);
+    expect(getOverageCost("audit", 66)).toBe(99);         // tier 3 → forțează AE Ici
+    expect(getOverageCost("audit", 100)).toBe(99);
   });
 
-  it("Pro (30 + 6 burst = 36) tiered 49→79→99", () => {
+  it("AE Ici (pro, 30 + 6 burst = 36) tiered 39→69→99", () => {
+    // v7.0 update: tier-uri 39→69→99 (era 49→79→99 în v6.x)
     expect(getOverageCost("pro", 30)).toBe(0);
     expect(getOverageCost("pro", 36)).toBe(0);            // burst
-    expect(getOverageCost("pro", 37)).toBe(49);           // tier 1
-    expect(getOverageCost("pro", 50)).toBe(49);
-    expect(getOverageCost("pro", 51)).toBe(79);           // tier 2
-    expect(getOverageCost("pro", 65)).toBe(79);
+    expect(getOverageCost("pro", 37)).toBe(39);           // tier 1 (v7.0)
+    expect(getOverageCost("pro", 50)).toBe(39);
+    expect(getOverageCost("pro", 51)).toBe(69);           // tier 2 (v7.0)
+    expect(getOverageCost("pro", 65)).toBe(69);
     expect(getOverageCost("pro", 66)).toBe(99);           // tier 3 → forțează Expert
     expect(getOverageCost("pro", 100)).toBe(99);
   });
 
-  it("Expert (60 + 12 burst = 72) tiered 39→69→99", () => {
-    expect(getOverageCost("expert", 60)).toBe(0);
-    expect(getOverageCost("expert", 72)).toBe(0);         // burst
-    expect(getOverageCost("expert", 73)).toBe(39);        // tier 1
-    expect(getOverageCost("expert", 100)).toBe(39);
-    expect(getOverageCost("expert", 101)).toBe(69);       // tier 2
-    expect(getOverageCost("expert", 130)).toBe(69);
-    expect(getOverageCost("expert", 131)).toBe(99);       // tier 3 → forțează Birou
-    expect(getOverageCost("expert", 200)).toBe(99);
+  it("Expert (30 + 6 burst = 36) tiered 39→69→99", () => {
+    // v7.0 update: maxCertsPerMonth standardizat la 30 (era 60 în v6.x)
+    expect(getOverageCost("expert", 30)).toBe(0);
+    expect(getOverageCost("expert", 36)).toBe(0);         // burst
+    expect(getOverageCost("expert", 37)).toBe(39);        // tier 1
+    expect(getOverageCost("expert", 50)).toBe(39);
+    expect(getOverageCost("expert", 51)).toBe(69);        // tier 2
+    expect(getOverageCost("expert", 65)).toBe(69);
+    expect(getOverageCost("expert", 66)).toBe(99);        // tier 3 → forțează Birou
+    expect(getOverageCost("expert", 100)).toBe(99);
   });
 });
 
