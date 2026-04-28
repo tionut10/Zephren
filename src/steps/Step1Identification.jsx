@@ -896,27 +896,28 @@ export default function Step1Identification({
                     onChange={v => updateBuilding("gwpLifecycle", v)}
                     type="number" unit="kgCO₂eq/m²a" step="0.1"
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <p className="text-xs opacity-40 -mt-1">Valori în kgCO₂eq/m²·an</p>
+                  <div className="grid grid-cols-3 gap-2">
                     <Input
                       label="A1–A3"
                       tooltip="A1-A3 (produse): Faza de producție — extracție materii prime, transport, fabricație"
                       value={building.gwpA1A3 || ""}
                       onChange={v => updateBuilding("gwpA1A3", v)}
-                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                      type="number" step="0.1"
                     />
                     <Input
                       label="B6"
                       tooltip="B6 (operațional): Consum energetic în utilizare — se calculează automat din Step 5"
                       value={building.gwpB6 || ""}
                       onChange={v => updateBuilding("gwpB6", v)}
-                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                      type="number" step="0.1"
                     />
                     <Input
                       label="C3–C4"
                       tooltip="C3-C4 (sfârșit de viață): Demolare + procesare deșeuri"
                       value={building.gwpC3C4 || ""}
                       onChange={v => updateBuilding("gwpC3C4", v)}
-                      type="number" unit="kgCO₂eq/m²a" step="0.1"
+                      type="number" step="0.1"
                     />
                   </div>
                 </div>
