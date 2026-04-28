@@ -3590,19 +3590,19 @@ class handler(BaseHTTPRequestHandler):
             # 4. CHECKBOXES (Anexa)
             # ═══════════════════════════════════════
             if mode in ("anexa", "anexa_bloc"):
-                # Etapa 3 (BUG-11) — DUAL-PASS bifare:
-                #   1. Vechiul flux: indici hardcodate (compute_checkboxes) —
-                #      funcționează pe template clădire (308 cb)
-                #   2. Flux nou: chei semantice (compute_checkbox_keys) — funcționează
-                #      pe orice template (clădire 308 cb / apartament 244 cb / viitor)
-                # Operațiile pe XML sunt idempotente — bifarea de 2x nu strică nimic.
-                cb_indices = compute_checkboxes(data, category)
-                # Client-side overrides (legacy)
-                client_cbs = body.get("checkboxes", [])
-                if client_cbs:
-                    cb_indices = list(set(cb_indices + client_cbs))
-                if cb_indices:
-                    toggle_checkboxes(doc, cb_indices)
+                # Template apartament (mode=anexa, 244 cb) are ordine diferită față de
+                # template clădire (mode=anexa_bloc, 308 cb). compute_checkboxes() folosește
+                # indici hardcod NUMAI pentru template clădire → bifează căsuțe greșite
+                # pe template apartament (ex: "Casă individuală" + "Cămin/internat" + "birouri").
+                # Soluție: pentru mode=anexa → SARI COMPLET peste indici hardcod,
+                # folosim EXCLUSIV semantic matching (funcționează pe orice template).
+                if mode == "anexa_bloc":
+                    cb_indices = compute_checkboxes(data, category)
+                    client_cbs = body.get("checkboxes", [])
+                    if client_cbs:
+                        cb_indices = list(set(cb_indices + client_cbs))
+                    if cb_indices:
+                        toggle_checkboxes(doc, cb_indices)
 
                 # Mapping dinamic — chei semantice rezolvate la runtime
                 try:
@@ -3899,8 +3899,11 @@ class handler(BaseHTTPRequestHandler):
                 if vent_hr:
                     _fill_para_blank("Există recuperator de căldură", vent_hr)
                 vent_hr_eff = data.get("ventilation_hr_efficiency_pct", "")
-                if vent_hr_eff:
+                if vent_hr_eff and vent_hr_eff not in ("0", "0,0", "0.0"):
                     _fill_para_blank("Eficiență declarată pe durata verii/iernii", f"{vent_hr_eff}% / {vent_hr_eff}%")
+                elif not vent_hr_eff or vent_hr_eff in ("0", "0,0", "0.0"):
+                    # Dacă eficiența nu e setată, înlocuiește placeholder-ul "0% / 0%" cu "—"
+                    replace_in_doc(doc, "0% / 0%", "—")
                 vent_label = data.get("ventilation_type_label", "")
                 if vent_label:
                     # Para 354 "Cu 2 circuite, echilibrată | Alt tip:" — adaug eticheta tip
@@ -4515,7 +4518,7 @@ class handler(BaseHTTPRequestHandler):
                             break
                         for nume, row_idx in sistem_to_row.items():
                             ep_str = sistem_data.get(nume, "")
-                            if not ep_str or ep_str == "0,0":
+                            if not ep_str:
                                 continue
                             try:
                                 ep_val = float(ep_str.replace(",", "."))
@@ -4548,32 +4551,33 @@ class handler(BaseHTTPRequestHandler):
                 # ── Layout: elimină paragrafe goale excesive înainte de titluri de secțiune ──
                 # Template-ul Anexa apartament are 4+ paragrafe goale înainte de "DATE TEHNICE",
                 # creând spațiu alb mare. Reducem la maxim 1 paragraf gol consecutiv.
+                # IMPORTANT: iterăm NUMAI copiii DIRECȚI ai body (nu interiorul tabelelor)
+                # — altfel ștergem rânduri din tabele.
                 try:
                     WNS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-                    body = doc.element.body
-                    p_elems = list(body.iter(f"{WNS}p"))
+                    _body = doc.element.body
+                    # Colectăm numai <w:p> copii direcți ai body (nu din <w:tbl>)
+                    _body_paras = [ch for ch in _body if ch.tag == f"{WNS}p"]
                     i = 0
-                    while i < len(p_elems):
-                        p_el = p_elems[i]
+                    while i < len(_body_paras):
+                        p_el = _body_paras[i]
                         txt = "".join(t.text or "" for t in p_el.iter(f"{WNS}t")).strip()
-                        if txt:  # paragraf cu conținut — reset
+                        if txt:
                             i += 1
                             continue
-                        # Paragraf gol — numărăm consecutivele
-                        consecutive_empty = [p_el]
+                        # Paragraf gol — colectăm consecutivele
+                        seq_empty = [p_el]
                         j = i + 1
-                        while j < len(p_elems):
-                            nxt = p_elems[j]
+                        while j < len(_body_paras):
+                            nxt = _body_paras[j]
                             nxt_txt = "".join(t.text or "" for t in nxt.iter(f"{WNS}t")).strip()
                             if nxt_txt:
                                 break
-                            consecutive_empty.append(nxt)
+                            seq_empty.append(nxt)
                             j += 1
-                        # Păstrăm 1, ștergem restul
-                        for extra in consecutive_empty[1:]:
-                            parent = extra.getparent()
-                            if parent is not None:
-                                parent.remove(extra)
+                        # Păstrăm maxim 1, ștergem restul
+                        for extra in seq_empty[1:]:
+                            _body.remove(extra)
                         i = j
                 except Exception as e_layout:
                     print(f"[layout_empty_paras] eroare: {e_layout}", flush=True)
@@ -4989,7 +4993,9 @@ class handler(BaseHTTPRequestHandler):
 
                 # ── Biomass: alt tip precizare + putere ───────────────
                 bio_type = data.get("biomass_type", "")
-                if bio_type and bio_type not in ("peleti", "brichete", ""):
+                # Case-insensitive: "PELETI"/"BRICHETE" (uppercase din Step3) → skip,
+                # altfel contamina prima apariție "alt tip, precizați" din building-type section.
+                if bio_type and bio_type.lower() not in ("peleti", "brichete", "lemn", "lemn tocat", ""):
                     _fill_para_blank("alt tip, precizați", bio_type)
 
                 # ── Wind centrals detail ──────────────────────────────
@@ -5127,22 +5133,30 @@ class handler(BaseHTTPRequestHandler):
                                 for p in footer.paragraphs:
                                     if "registrul auditorului" not in p.text:
                                         continue
-                                    # Înlocuiește ÎNTREGUL segment "Numărul certificatului în
-                                    # registrul auditorului ......" cu doar codul CPE.
-                                    replaced = False
-                                    for run in p.runs:
+                                    # Structura template: run0="Numărul certificatului în registrul auditorului"
+                                    # run1="............" (dots placeholder) → ambele trebuie tratate.
+                                    # Strategie: parcurgem TOATE run-urile paragrafului:
+                                    #   - run cu "registrul auditorului" → devine cpe_short
+                                    #   - run-uri ULTERIOARE cu NUMAI dots/spații → golim
+                                    #   - run-uri cu "Semnătura" sau conținut real → stop
+                                    replaced_idx = None
+                                    for ri, run in enumerate(p.runs):
                                         if "registrul auditorului" in run.text:
-                                            run.text = re.sub(
-                                                r"Num[ăa]rul certificatului [îi]n registrul auditorului[\s\.]*[\w\-_.]*",
-                                                cpe_short, run.text
-                                            )
-                                            replaced = True
+                                            run.text = cpe_short
+                                            replaced_idx = ri
                                             break
                                         if re.search(r"Num[ăa]rul|certificatului", run.text):
-                                            # Label în run separat — ștergem prefixul
-                                            run.text = ""
-                                            replaced = True
-                                    if not replaced:
+                                            run.text = cpe_short
+                                            replaced_idx = ri
+                                            break
+                                    if replaced_idx is not None:
+                                        # Curăță run-urile de dots care urmează imediat
+                                        for run in p.runs[replaced_idx + 1:]:
+                                            if re.match(r'^[.\s\xa0  \t]+$', run.text):
+                                                run.text = ""
+                                            elif run.text.strip():
+                                                break  # conținut real → stop
+                                    else:
                                         # Fallback: înlocuiește dots dacă există
                                         for run in p.runs:
                                             if re.search(r"\.{4,}", run.text):
