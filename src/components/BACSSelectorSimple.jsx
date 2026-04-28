@@ -42,7 +42,7 @@ export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO
       <Select
         label="Clasa BACS"
         value={value || "C"}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(v) => onChange?.(v)}
         options={Object.entries(BACS_CLASSES).map(([k, v]) => ({
           value: k,
           label: v.label,

@@ -1074,7 +1074,7 @@ export default function Step7Audit(props) {
               </Card>
 
               {/* ── MCCL — Catalog ponți termice extins ── */}
-              <Card title="MCCL — Catalog ponți termice ({MCCL_CATALOG.length} tipuri)" className="mb-4">
+              <Card title={`MCCL — Catalog ponți termice (${MCCL_CATALOG.length} tipuri)`} className="mb-4">
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
                     <div key={cat}>
