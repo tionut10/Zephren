@@ -3056,13 +3056,13 @@ export default function EnergyCalcApp({ cloud }) {
                 business→birou, asociatie→birou, professional→expert). */}
             {(() => {
               const TIER_BADGES = {
-                free:       { label: "FREE", full: "Zephren Free",       cls: "bg-white/15 text-white" },
-                edu:        { label: "EDU",  full: "Zephren Edu",        cls: "bg-emerald-500 text-white shadow-sm" },
-                audit:      { label: "AE II", full: "Zephren AE IIci",   cls: "bg-sky-400 text-white shadow-sm" },
-                pro:        { label: "⚡AE I", full: "Zephren AE Ici ⭐", cls: "bg-amber-500 text-black shadow-sm" },
-                expert:     { label: "EXP",  full: "Zephren Expert",     cls: "bg-violet-500 text-white shadow-sm" },
-                birou:      { label: "BIR",  full: "Zephren Birou",      cls: "bg-pink-500 text-white shadow-sm" },
-                enterprise: { label: "ENT",  full: "Zephren Enterprise", cls: "bg-red-500 text-white shadow-sm" },
+                free:       { label: "FREE",    full: "ZEPHREN Free",       cls: "bg-white/15 text-white" },
+                edu:        { label: "EDU",     full: "ZEPHREN EDU",        cls: "bg-emerald-500 text-white shadow-sm" },
+                audit:      { label: "AE IIci", full: "ZEPHREN AE IIci",   cls: "bg-sky-400 text-white shadow-sm" },
+                pro:        { label: "AE Ici",  full: "ZEPHREN AE Ici",    cls: "bg-amber-500 text-black shadow-sm" },
+                expert:     { label: "Expert",  full: "ZEPHREN Expert",     cls: "bg-violet-500 text-white shadow-sm" },
+                birou:      { label: "Birou",   full: "ZEPHREN Birou",      cls: "bg-pink-500 text-white shadow-sm" },
+                enterprise: { label: "Ent",     full: "ZEPHREN Enterprise", cls: "bg-red-500 text-white shadow-sm" },
               };
               const TIER_LEGACY_MAP = { starter: "audit", standard: "pro", business: "birou", asociatie: "birou", professional: "expert" };
               const activeTid = TIER_BADGES[userTier] ? userTier : (TIER_LEGACY_MAP[userTier] || "free");
