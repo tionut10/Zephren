@@ -154,17 +154,17 @@ export async function fetchClimateAutomatic(lat, lon, city = "", year) {
     longitude:  String(lon),
     start_date: startDate,
     end_date:   endDate,
-    monthly: [
-      "temperature_2m_mean",
-      "temperature_2m_min",
-      "temperature_2m_max",
-      "shortwave_radiation_sum",
-      "relative_humidity_2m_mean",
-      "wind_speed_10m_mean",
-      "precipitation_sum",
-    ].join(","),
     timezone: "Europe/Bucharest",
   });
+  for (const v of [
+    "temperature_2m_mean",
+    "temperature_2m_min",
+    "temperature_2m_max",
+    "shortwave_radiation_sum",
+    "relative_humidity_2m_mean",
+    "wind_speed_10m_mean",
+    "precipitation_sum",
+  ]) params.append("monthly", v);
 
   const url = `https://archive-api.open-meteo.com/v1/archive?${params.toString()}`;
 

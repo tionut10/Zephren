@@ -165,17 +165,17 @@ export async function fetchOpenMeteo(lat, lon, year = 2023) {
     longitude: String(lon),
     start_date: startDate,
     end_date: endDate,
-    monthly: [
-      "temperature_2m_mean",
-      "temperature_2m_min",
-      "temperature_2m_max",
-      "precipitation_sum",
-      "shortwave_radiation_sum",
-      "relative_humidity_2m_mean",
-      "wind_speed_10m_mean",
-    ].join(","),
     timezone: "Europe/Bucharest",
   });
+  for (const v of [
+    "temperature_2m_mean",
+    "temperature_2m_min",
+    "temperature_2m_max",
+    "precipitation_sum",
+    "shortwave_radiation_sum",
+    "relative_humidity_2m_mean",
+    "wind_speed_10m_mean",
+  ]) params.append("monthly", v);
 
   const url = `https://archive-api.open-meteo.com/v1/archive?${params.toString()}`;
 
