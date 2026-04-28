@@ -1289,14 +1289,13 @@ export default function Step1Identification({
               carteFunciara: building?.ancpi?.carteFunciara || building?.landBook || "",
             }}
             onUpdate={(fields) => {
-              const updates = { ancpi: { ...(building?.ancpi || {}), ...fields } };
+              updateBuilding("ancpi", { ...(building?.ancpi || {}), ...fields });
               if (Object.prototype.hasOwnProperty.call(fields, "cadastralNr")) {
-                updates.cadastralNumber = fields.cadastralNr;
+                updateBuilding("cadastralNumber", fields.cadastralNr);
               }
               if (Object.prototype.hasOwnProperty.call(fields, "carteFunciara")) {
-                updates.landBook = fields.carteFunciara;
+                updateBuilding("landBook", fields.carteFunciara);
               }
-              updateBuilding(updates);
             }}
             address={building?.address}
             lang={lang}
