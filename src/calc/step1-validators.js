@@ -117,7 +117,8 @@ export function isValidCadastral(raw) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Validare Carte Funciară (format: "CF nr. <număr> <localitate>")
 // ─────────────────────────────────────────────────────────────────────────────
-export const CF_REGEX = /^(CF\s*(nr\.?)?\s*)?\d{4,8}(\s*[\/\-\s]\s*[A-ZĂÂÎȘȚa-zăâîșț0-9\s.\-]+)?$/i;
+// Sprint Demo Verification (29 apr 2026): adăugat `,` în character class — formatul real ANCPI conține adesea „jud. X" separat prin virgulă
+export const CF_REGEX = /^(CF\s*(nr\.?)?\s*)?\d{4,8}(-[A-Z]\d*)*(-U\d+)?(\s*[\/\-\s]\s*[A-ZĂÂÎȘȚa-zăâîșț0-9\s.,\-]+)?$/i;
 
 export function isValidLandBook(raw) {
   if (!raw) return true;
