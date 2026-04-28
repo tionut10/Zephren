@@ -481,7 +481,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   {/* Badge-uri */}
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                     {[
-                      { label: "UTBv · 2019",   color: "#3b82f6" },
+                      { label: "UNITBV · 2019", color: "#3b82f6" },
                       { label: "M.Sc. MEMC",     color: "#8b5cf6" },
                       { label: "AE Ici · MDLPA", color: "#10b981" },
                       { label: "Mc 001-2022",    color: "#f59e0b" },
