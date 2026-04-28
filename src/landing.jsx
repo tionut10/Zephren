@@ -492,8 +492,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             </span>
             <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
               {lang === "EN"
-                ? "Research track · High-performance buildings · UTBv, 2019"
-                : "Traseu cercetare · Clădiri cu performanță energetică ridicată · UTBv, 2019"}
+                ? "Research track · High-performance buildings · UNITBV, 2019"
+                : "Traseu cercetare · Clădiri cu performanță energetică ridicată · UNITBV, 2019"}
             </span>
           </div>
         </div>
