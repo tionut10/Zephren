@@ -2885,5 +2885,968 @@
     "lambda": 0.6,
     "rho": 1400,
     "mu": 15
+  },
+  {
+    "cat": "Altele",
+    "name": "Foaie ETFE (perne pneumatice 3-strat)",
+    "lambda": 0.24,
+    "rho": 1750,
+    "mu": 8500,
+    "cp": 2100,
+    "src": "EN 16153; ETA 14/0144 generic"
+  },
+  {
+    "cat": "Altele",
+    "name": "Granule cauciuc reciclat (SBR rubber crumb)",
+    "lambda": 0.16,
+    "rho": 580,
+    "mu": 10000,
+    "cp": 1900,
+    "src": "ASTM D5644; UNI 11306"
+  },
+  {
+    "cat": "Altele",
+    "name": "Policarbonat alveolar 16 mm (5-wall multi)",
+    "lambda": 0.18,
+    "rho": 230,
+    "mu": 8500,
+    "cp": 1170,
+    "src": "EN 16153; PC multi-wall generic"
+  },
+  {
+    "cat": "Altele",
+    "name": "Policarbonat alveolar 32 mm (7-wall)",
+    "lambda": 0.16,
+    "rho": 290,
+    "mu": 8500,
+    "cp": 1170,
+    "src": "EN 16153"
+  },
+  {
+    "cat": "Altele",
+    "name": "Policarbonat alveolar 40 mm (X-structure)",
+    "lambda": 0.16,
+    "rho": 320,
+    "mu": 8500,
+    "cp": 1170,
+    "src": "EN 16153; PC class generic"
+  },
+  {
+    "cat": "Altele",
+    "name": "Țesătură PTFE/fibră sticlă (tensile fabric)",
+    "lambda": 0.26,
+    "rho": 1200,
+    "mu": 5000,
+    "cp": 1100,
+    "src": "ASCE 17-21; Sefar Architecture generic"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Agregat sticlă reciclată (recycled glass cullet)",
+    "lambda": 0.95,
+    "rho": 1450,
+    "mu": 30,
+    "cp": 800,
+    "src": "EN 12620; BRE IP 5/04"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton armat plastic reciclat (RPC)",
+    "lambda": 1.1,
+    "rho": 1900,
+    "mu": 60,
+    "cp": 950,
+    "src": "ACI Mat. J. 118-M125 (estimated)"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton auto-vindecător (Bacillus pseudofirmus)",
+    "lambda": 1.55,
+    "rho": 2350,
+    "mu": 80,
+    "cp": 1000,
+    "src": "TU Delft Jonkers 2020; RILEM TC 253-MCI"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton cu nano-argilă",
+    "lambda": 1.65,
+    "rho": 2380,
+    "mu": 80,
+    "cp": 1000,
+    "src": "ACI 241R-21; RILEM Bull. 2020 (estimated)"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton de cenușă vulcanică/piatră ponce",
+    "lambda": 0.5,
+    "rho": 1200,
+    "mu": 8,
+    "cp": 1000,
+    "src": "EN ISO 10456 Tabel 2 lightweight; DIN 4108-4 §5.3"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton fibrat oțel SFRC (steel fibre RC)",
+    "lambda": 1.95,
+    "rho": 2400,
+    "mu": 130,
+    "cp": 1000,
+    "src": "EN 14651:2005; EN ISO 10456 Tabel 2"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton geopolimeric (activat alcalin)",
+    "lambda": 1.05,
+    "rho": 2200,
+    "mu": 100,
+    "cp": 1000,
+    "src": "Provis 2014 RILEM TC 224 Springer (estimated)"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton translucid (LiTraCon-class fibre optic)",
+    "lambda": 0.81,
+    "rho": 2200,
+    "mu": 50,
+    "cp": 1000,
+    "src": "LiTraCon Bt TDS; UNI 11627 (estimated)"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Beton ultra-performant UHPC",
+    "lambda": 2.2,
+    "rho": 2500,
+    "mu": 130,
+    "cp": 850,
+    "src": "Habert 2013; AFGC-SETRA 2002"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Ciment armat nanotuburi carbon (CNT-OPC)",
+    "lambda": 1.8,
+    "rho": 2400,
+    "mu": 100,
+    "cp": 920,
+    "src": "ASHRAE TRP 1727; ACI 241R-21 (estimated)"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Șapă anhidrit autonivelantă (CA-C20-F4)",
+    "lambda": 1.2,
+    "rho": 2100,
+    "mu": 30,
+    "cp": 1000,
+    "src": "EN 13813; DIN 18560-7"
+  },
+  {
+    "cat": "Betoane",
+    "name": "Șapă cement-fibră armată (CT-C30-F5)",
+    "lambda": 1.4,
+    "rho": 2050,
+    "mu": 50,
+    "cp": 1000,
+    "src": "EN 13813; ÖNORM B 2232"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Mortar de pământ (clay mortar heritage)",
+    "lambda": 0.91,
+    "rho": 1800,
+    "mu": 10,
+    "cp": 1000,
+    "src": "DIN 18946:2013 §5"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Mortar var hidraulic NHL (vapour-permeable)",
+    "lambda": 0.8,
+    "rho": 1600,
+    "mu": 15,
+    "cp": 1000,
+    "src": "EN 998-2:2016; EN 459-1:2015"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Panou sandwich cementitios CSP (Aquapanel-class)",
+    "lambda": 0.45,
+    "rho": 1100,
+    "mu": 25,
+    "cp": 1000,
+    "src": "ETA 06/0010 generic; EN 12467"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Pardoseală oxiclorură magneziu (Sorel cement)",
+    "lambda": 0.5,
+    "rho": 1700,
+    "mu": 30,
+    "cp": 1000,
+    "src": "DIN 272; ÖNORM B 2210"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placă gips-carton cu PCM microîncapsulat (BASF Micronal-class)",
+    "lambda": 0.18,
+    "rho": 815,
+    "mu": 8,
+    "cp": 1200,
+    "src": "DIN 4108-4; BASF TDS Micronal DS 5040 X (generic class)"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placă perete PCM acid gras (T_m=28°C)",
+    "lambda": 0.21,
+    "rho": 870,
+    "mu": 9,
+    "cp": 1300,
+    "src": "ASHRAE Fundamentals 2021 ch.26 (estimated ρ)"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placă perete PCM hidrat sodiu (T_m=24°C)",
+    "lambda": 0.22,
+    "rho": 880,
+    "mu": 10,
+    "cp": 1400,
+    "src": "ASHRAE Fundamentals 2021 ch.26 Phase Change"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Placă perete PCM parafină (T_m=26°C)",
+    "lambda": 0.2,
+    "rho": 850,
+    "mu": 9,
+    "cp": 1300,
+    "src": "DuPont Energain TDS; PHPP 10 sec. PCM"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Plăci vata lemn 350 kg/m³ (acoustic ceiling)",
+    "lambda": 0.09,
+    "rho": 350,
+    "mu": 5,
+    "cp": 1810,
+    "src": "EN 13168; Heraklith TDS C-Klasse"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Plăci vata lemn 460 kg/m³ (mid density)",
+    "lambda": 0.095,
+    "rho": 460,
+    "mu": 5,
+    "cp": 1810,
+    "src": "EN 13168; Celenit N TDS"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Plăci vata lemn 570 kg/m³ (heavy density)",
+    "lambda": 0.11,
+    "rho": 570,
+    "mu": 5,
+    "cp": 1810,
+    "src": "EN 13168; Heraklith Tektalan"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Sistem rășină PMMA (polimethylmethacrylate floor)",
+    "lambda": 0.2,
+    "rho": 1180,
+    "mu": 10000,
+    "cp": 1500,
+    "src": "EN 13813 SR; FeRFA Type 8"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Sistem rășină epoxidică (epoxy resin floor)",
+    "lambda": 0.2,
+    "rho": 1600,
+    "mu": 10000,
+    "cp": 1700,
+    "src": "EN 13813 SR; ASTM C722"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Sistem rășină poliuretanică (PU resin floor)",
+    "lambda": 0.25,
+    "rho": 1500,
+    "mu": 8000,
+    "cp": 1800,
+    "src": "EN 13813 SR; FeRFA Type 7"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială higroscopică var-argilă (hygro-buffering)",
+    "lambda": 0.45,
+    "rho": 1500,
+    "mu": 8,
+    "cp": 1000,
+    "src": "IBO Passivhaus-Bauteilkatalog 2017; ÖNORM B 3346"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială lut-bălegar (clay-dung plaster)",
+    "lambda": 0.45,
+    "rho": 1400,
+    "mu": 7,
+    "cp": 1000,
+    "src": "DIN 18947:2018 (vernacular RO)"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Tencuială lut-pleavă (clay-chaff plaster)",
+    "lambda": 0.45,
+    "rho": 1400,
+    "mu": 7,
+    "cp": 1000,
+    "src": "DIN 18947:2018 Lehmputz"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Vopsea termo-cromică reflectivă (cool coating)",
+    "lambda": 0.3,
+    "rho": 1400,
+    "mu": 50,
+    "cp": 950,
+    "src": "ASHRAE Handbook HVAC Apps 2023 ch.46 (estimated)"
+  },
+  {
+    "cat": "Finisaje",
+    "name": "Văruire albă tradițională (whitewash)",
+    "lambda": 0.85,
+    "rho": 1500,
+    "mu": 25,
+    "cp": 900,
+    "src": "EN 459-1:2015; tradiție RO"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Acoperire elastomerică albă reflectivă",
+    "lambda": 0.19,
+    "rho": 1150,
+    "mu": 1500,
+    "cp": 1000,
+    "src": "ASTM D6083; CRRC"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Bandă etanșare butil (vapor seal generic)",
+    "lambda": 0.24,
+    "rho": 1500,
+    "mu": 200000,
+    "cp": 1400,
+    "src": "EN ISO 10456 §A asfalt"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Geocompozit hidroizolant TPO + geotextil",
+    "lambda": 0.2,
+    "rho": 950,
+    "mu": 50000,
+    "cp": 1500,
+    "src": "EN 13956:2012; EN 13967:2012"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană SBR/EPDM industrială (acoperiș)",
+    "lambda": 0.25,
+    "rho": 1150,
+    "mu": 10000,
+    "cp": 1000,
+    "src": "EN ISO 10456 §A; EN 13956:2012"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană auto-vindecătoare PUR-acrilică",
+    "lambda": 0.2,
+    "rho": 1100,
+    "mu": 50000,
+    "cp": 1500,
+    "src": "ETAG 005; Triflex BTS-P generic class (estimated)"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Membrană bentonitică GCL (geosynthetic clay liner)",
+    "lambda": 0.5,
+    "rho": 950,
+    "mu": 1500000,
+    "cp": 2000,
+    "src": "EN 13361; ASTM D5887"
+  },
+  {
+    "cat": "Hidroizolații",
+    "name": "Strat reflectiv 'cool roof' (TSR ≥ 0.78)",
+    "lambda": 0.18,
+    "rho": 1200,
+    "mu": 100,
+    "cp": 1000,
+    "src": "ASTM E1980; CRRC Rated Product Directory"
+  },
+  {
+    "cat": "Lemn",
+    "name": "Bârne lemn brut horizontal (blockhaus traditional)",
+    "lambda": 0.13,
+    "rho": 450,
+    "mu": 30,
+    "cp": 1600,
+    "src": "EN ISO 10456 Tabel 4; tradiție RO Maramureș"
+  },
+  {
+    "cat": "Lemn",
+    "name": "LSL Laminated Strand Lumber (engineered)",
+    "lambda": 0.13,
+    "rho": 650,
+    "mu": 30,
+    "cp": 1600,
+    "src": "EN 14279:2009; APA-Engineered Wood data"
+  },
+  {
+    "cat": "Lemn",
+    "name": "Lemn impregnat acetilizat (Accoya-class)",
+    "lambda": 0.12,
+    "rho": 500,
+    "mu": 50,
+    "cp": 1600,
+    "src": "EN ISO 10456 Tabel 4; Hill 2006 Wood Modification Wiley"
+  },
+  {
+    "cat": "Lemn",
+    "name": "Lemn termotratat foioase (stejar/fag ThermoWood)",
+    "lambda": 0.16,
+    "rho": 580,
+    "mu": 30,
+    "cp": 1600,
+    "src": "EN ISO 10456 Tabel 4 hardwood; ThermoWood class"
+  },
+  {
+    "cat": "Lemn",
+    "name": "WPC Wood Plastic Composite decking",
+    "lambda": 0.3,
+    "rho": 1200,
+    "mu": 100,
+    "cp": 1500,
+    "src": "Klyosov 2007 Wood-Plastic Composites Wiley §11"
+  },
+  {
+    "cat": "Metale",
+    "name": "Acoperire metalică Zn-Ti (VMZinc/Rheinzink-class)",
+    "lambda": 110,
+    "rho": 7200,
+    "mu": 1000000,
+    "cp": 380,
+    "src": "EN 988; VMZinc Pigmento generic"
+  },
+  {
+    "cat": "Metale",
+    "name": "Panou fagure aluminiu (honeycomb sandwich)",
+    "lambda": 0.85,
+    "rho": 850,
+    "mu": 1000000,
+    "cp": 920,
+    "src": "EN 13501-1; Plascore generic"
+  },
+  {
+    "cat": "Metale",
+    "name": "Tablă perforată metalică decorativă (50% perforare)",
+    "lambda": 25.0,
+    "rho": 7800,
+    "mu": 1,
+    "cp": 450,
+    "src": "EN ISO 10456 Tabel 4 oțel area-weighted"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Argilă expandată Leca/Liapor 250 (LWA)",
+    "lambda": 0.085,
+    "rho": 250,
+    "mu": 2,
+    "cp": 1000,
+    "src": "EN 13055; PHPP 10"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Argilă expandată Leca/Liapor 400",
+    "lambda": 0.105,
+    "rho": 400,
+    "mu": 3,
+    "cp": 1000,
+    "src": "EN 13055; Liapor TDS"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Bio-PCM acid gras (24°C)",
+    "lambda": 0.18,
+    "rho": 860,
+    "mu": 80,
+    "cp": 2100,
+    "src": "Sharma 2009 Renewable & Sustainable Energy Reviews 13(2)"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Bio-spumă din alge (algae bio-foam)",
+    "lambda": 0.045,
+    "rho": 95,
+    "mu": 4,
+    "cp": 1500,
+    "src": "Fraunhofer IBP 2023 trial reports (estimated)"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Folie multistrat reflectorizantă (R_eq≈1.9 m²K/W per 25mm)",
+    "lambda": 0.04,
+    "rho": 50,
+    "mu": 100000,
+    "cp": 1000,
+    "src": "DIN EN 16012:2015 §5; ETA-12/0303 generic"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Fân de pod (hay attic insulation, vernacular)",
+    "lambda": 0.055,
+    "rho": 65,
+    "mu": 2,
+    "cp": 1500,
+    "src": "DIN 4108-4 (estimated, vernacular)"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Granulat sticlă celulară Geocell (aerated glass)",
+    "lambda": 0.075,
+    "rho": 130,
+    "mu": 1,
+    "cp": 850,
+    "src": "EN 13055; Geocell ETA 13/0359 generic"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Granulat sticlă spongioasă vrac (foam glass loose-fill)",
+    "lambda": 0.08,
+    "rho": 150,
+    "mu": 1,
+    "cp": 850,
+    "src": "EN 13167; ETA 13/0212 Misapor generic"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Hempcrete cu liant pozzolanic (metakaolin + var)",
+    "lambda": 0.075,
+    "rho": 330,
+    "mu": 4,
+    "cp": 1700,
+    "src": "BRE IP 14/11 Hemp lime; RILEM TC 236-BBM"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Hempcrete cu liant var hidraulic NHL5",
+    "lambda": 0.085,
+    "rho": 410,
+    "mu": 5,
+    "cp": 1700,
+    "src": "BRE IP 14/11; Construire Chanvre"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Lipitură paie+lut (light-clay-straw, Strohlehm)",
+    "lambda": 0.18,
+    "rho": 600,
+    "mu": 5,
+    "cp": 1300,
+    "src": "Minke 2012 cap.5; DIN 18945"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Material cu schimbare de fază pe bază de parafină (PCM 22°C)",
+    "lambda": 0.2,
+    "rho": 880,
+    "mu": 80,
+    "cp": 2000,
+    "src": "EN ISO 10456 §A.7; Kuznik 2011 Energy & Buildings 43"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Material cu schimbare de fază săruri hidratate (PCM 25°C)",
+    "lambda": 0.6,
+    "rho": 1500,
+    "mu": 100,
+    "cp": 2200,
+    "src": "Mehling & Cabeza, Heat & Cold Storage Springer 2008 §3.4"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Paie de grâu legate (wheat thatch traditional)",
+    "lambda": 0.045,
+    "rho": 100,
+    "mu": 2,
+    "cp": 1500,
+    "src": "DIN 4108-4; Goodhew & Griffiths 2005"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Panou fibră cocos (coir board)",
+    "lambda": 0.045,
+    "rho": 90,
+    "mu": 2,
+    "cp": 1600,
+    "src": "EN 13171; IBO Bauteilkatalog cap.5.8"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Panou izolant sub vid VIP (λ_aged 25 ani)",
+    "lambda": 0.008,
+    "rho": 180,
+    "mu": 60000,
+    "cp": 800,
+    "src": "EN 16012:2015; EN 17140:2020"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Placă pământ diatomee (Diatomite)",
+    "lambda": 0.065,
+    "rho": 290,
+    "mu": 4,
+    "cp": 920,
+    "src": "DIN 4102 B1; Skamol Diatomite generic"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Placă silicat de calciu interioară (Skamol/Multipor-class)",
+    "lambda": 0.062,
+    "rho": 230,
+    "mu": 5,
+    "cp": 1000,
+    "src": "EN 12602; IBO Bauteilkatalog 2017 cap.4.6"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plută aglomerată albă (white cork agglomerate)",
+    "lambda": 0.045,
+    "rho": 130,
+    "mu": 7,
+    "cp": 1560,
+    "src": "EN 13170:2012"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plută granulată ICB Negru (autocombustă)",
+    "lambda": 0.04,
+    "rho": 110,
+    "mu": 5,
+    "cp": 1560,
+    "src": "EN 13170:2012; ICB ETA generic class"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plăci aglomerate magnezian (Heraklith-class)",
+    "lambda": 0.09,
+    "rho": 400,
+    "mu": 5,
+    "cp": 1470,
+    "src": "EN 13168:2012; ETA-08/0265 generic"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plăci celuloză rigide (Homatherm/Steico-class)",
+    "lambda": 0.04,
+    "rho": 70,
+    "mu": 3,
+    "cp": 2150,
+    "src": "EN 13171; IBO Bauteilkatalog 4.10"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Plăci fibră de in (flax fibre insulation)",
+    "lambda": 0.038,
+    "rho": 35,
+    "mu": 2,
+    "cp": 1550,
+    "src": "EN 13171; PHPP 10; ÖNORM B 6015-9"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Saltea aerogel 10 mm (blanket superinsulation)",
+    "lambda": 0.015,
+    "rho": 150,
+    "mu": 5,
+    "cp": 1000,
+    "src": "Passipedia Aerogel; EN ISO 10456 §6 declared"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Saltea aerogel 5 mm (subțire)",
+    "lambda": 0.014,
+    "rho": 150,
+    "mu": 5,
+    "cp": 1000,
+    "src": "Passipedia; Cuce 2014 RSER 34"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Saltea stuf comprimat (Phragmites australis, Delta Dunării)",
+    "lambda": 0.055,
+    "rho": 190,
+    "mu": 2,
+    "cp": 1600,
+    "src": "DIN 4108-4 Tab.4 Schilfrohrplatte; tradiție RO"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spume reciclate poliuretanice (Recyfoam class)",
+    "lambda": 0.04,
+    "rho": 80,
+    "mu": 30,
+    "cp": 1400,
+    "src": "ETA-19/0481 generic; EN 13165"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă PE celule închise (PE foam closed-cell)",
+    "lambda": 0.04,
+    "rho": 30,
+    "mu": 6000,
+    "cp": 2300,
+    "src": "EN ISO 10456 Tabel 3"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă PP celule închise (PP foam closed-cell)",
+    "lambda": 0.045,
+    "rho": 35,
+    "mu": 6000,
+    "cp": 1800,
+    "src": "EN ISO 10456 Tabel 3"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă fenolică ultra-fină λ=0.018",
+    "lambda": 0.018,
+    "rho": 40,
+    "mu": 50,
+    "cp": 1400,
+    "src": "EN 13166:2012; ETA spumă fenolică K100"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă miceliană (mushroom-based bio insulation)",
+    "lambda": 0.04,
+    "rho": 80,
+    "mu": 3,
+    "cp": 1700,
+    "src": "IBO Natureplus 2024; Ecovative class (estimated)"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Spumă ureic-formaldehidică (UF foam attic blow-in)",
+    "lambda": 0.038,
+    "rho": 12,
+    "mu": 2,
+    "cp": 1300,
+    "src": "EN ISO 10456 Tabel 3; DIN 4108-4 §6"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Sticlă celulară Floor (placă, comprimare 1.6 N/mm²)",
+    "lambda": 0.045,
+    "rho": 165,
+    "mu": 60000,
+    "cp": 1000,
+    "src": "EN 13167:2012"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Sticlă celulară T3+ (acoperiș grad)",
+    "lambda": 0.041,
+    "rho": 110,
+    "mu": 60000,
+    "cp": 1000,
+    "src": "EN 13167:2012 generic class"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Sticlă celulară T4+ (perete grad)",
+    "lambda": 0.041,
+    "rho": 115,
+    "mu": 60000,
+    "cp": 1000,
+    "src": "EN 13167:2012"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Stuf comprimat tradițional (reed mat Delta Dunării)",
+    "lambda": 0.055,
+    "rho": 110,
+    "mu": 2,
+    "cp": 1600,
+    "src": "DIN 4108-4 Tab.4; tradiție RO Delta (estimated)"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Vata PET reciclat (recycled PET fibre)",
+    "lambda": 0.038,
+    "rho": 30,
+    "mu": 1,
+    "cp": 1300,
+    "src": "EN 13162 analog; IBO 2022 PET-Recyclat"
+  },
+  {
+    "cat": "Termoizolații",
+    "name": "Țesătură impregnată aerogel (Pyrogel/Spaceloft generic)",
+    "lambda": 0.015,
+    "rho": 160,
+    "mu": 5,
+    "cp": 1000,
+    "src": "ASTM C1728; Aspen Aerogels generic class"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Argilă expandată Liapor 600 (structural LWA)",
+    "lambda": 0.16,
+    "rho": 600,
+    "mu": 4,
+    "cp": 1000,
+    "src": "EN 1745; Liapor blocuri"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA autoclavizat ρ=200 (ultra-ușor nZEB)",
+    "lambda": 0.062,
+    "rho": 200,
+    "mu": 6,
+    "cp": 1000,
+    "src": "EN 771-4:2011; EN ISO 10456 Tabel 2"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA autoclavizat ρ=250 (high-thermal)",
+    "lambda": 0.072,
+    "rho": 250,
+    "mu": 6,
+    "cp": 1000,
+    "src": "EN 771-4:2011"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA autoclavizat ρ=300 (RO market standard)",
+    "lambda": 0.084,
+    "rho": 300,
+    "mu": 6,
+    "cp": 1000,
+    "src": "EN 771-4:2011; Mc 001-2022 Anexa A.4"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "BCA autoclavizat ρ=350 (load-bearing extra)",
+    "lambda": 0.095,
+    "rho": 350,
+    "mu": 6,
+    "cp": 1000,
+    "src": "EN 771-4:2011"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cazac — paiantă cu nuiele și lut (wattle and daub)",
+    "lambda": 0.55,
+    "rho": 1300,
+    "mu": 7,
+    "cp": 1000,
+    "src": "Minke 2012; tradiție RO Banat (estimated, vernacular)"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Chirpici cu fân (long-fiber adobe, Moldova)",
+    "lambda": 0.5,
+    "rho": 1300,
+    "mu": 7,
+    "cp": 1000,
+    "src": "Minke 2012; Muzeul Satului Moldova"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Chirpici cu paie tăiate (adobe with cut straw, Oltenia)",
+    "lambda": 0.55,
+    "rho": 1500,
+    "mu": 8,
+    "cp": 1000,
+    "src": "Minke 2012; tradiție RO Oltenia"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Chirpici cu pleavă (adobe with chaff, Banat)",
+    "lambda": 0.5,
+    "rho": 1500,
+    "mu": 8,
+    "cp": 1000,
+    "src": "Minke Building with Earth 2012; DIN 18945:2013 (vernacular RO)"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă crudă (nearsă, sun-dried Transilvania)",
+    "lambda": 0.66,
+    "rho": 1700,
+    "mu": 10,
+    "cp": 1000,
+    "src": "DIN 18945:2013; tradiție RO Transilvania"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă cu camere vacuum (Plan-T λ=0.07)",
+    "lambda": 0.07,
+    "rho": 580,
+    "mu": 5,
+    "cp": 1000,
+    "src": "EN 1745 Tab.A.12; vacuum-perlit class"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă pumice ușoară (Bims-Hohlblock DIN)",
+    "lambda": 0.18,
+    "rho": 700,
+    "mu": 6,
+    "cp": 1000,
+    "src": "DIN 4108-4 Tab.2; DIN V 18152"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă silico-calcar ρ=1500 (lighter sand-lime)",
+    "lambda": 0.7,
+    "rho": 1500,
+    "mu": 10,
+    "cp": 1000,
+    "src": "EN 771-2:2011; DIN 4108-4 §5"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă silico-calcar ρ=1800 (BCS RO market)",
+    "lambda": 0.99,
+    "rho": 1800,
+    "mu": 15,
+    "cp": 1000,
+    "src": "EN 771-2:2011; EN ISO 10456"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Cărămidă silico-calcar ρ=2000 (heavy structural)",
+    "lambda": 1.2,
+    "rho": 2000,
+    "mu": 25,
+    "cp": 1000,
+    "src": "EN 771-2:2011; DIN 4108-4"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Pământ bătut (rammed earth, lut bătut subcarpați)",
+    "lambda": 1.1,
+    "rho": 2000,
+    "mu": 12,
+    "cp": 1000,
+    "src": "DIN 18945:2013; Mc 001-2022 A.4"
+  },
+  {
+    "cat": "Zidărie",
+    "name": "Pământ bătut subțire (rammed earth thin, Maramureș)",
+    "lambda": 1.0,
+    "rho": 1900,
+    "mu": 11,
+    "cp": 1000,
+    "src": "DIN 18945:2013 (vernacular RO)"
   }
 ]

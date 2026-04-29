@@ -1,25 +1,36 @@
 import { describe, it, expect } from "vitest";
 import {
   ELEMENT_TYPES_WIZARD,
+  ELEMENT_TYPES_WIZARD_FULL,
+  ELEMENT_TYPES,
   LAYER_PRESETS,
+  TYPICAL_SOLUTIONS,
   U_REF_NZEB_RES,
   U_REF_NZEB_NRES,
   getURefNZEB,
   buildLayerFromMaterialName,
+  applyTypicalSolution,
+  getSolutionsForElementType,
+  filterSolutions,
 } from "../utils/wizardOpaqueCalc.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Teste unitare — WizardOpaque: ELEMENT_TYPES_WIZARD, LAYER_PRESETS,
-//                               getURefNZEB, buildLayerFromMaterialName
+// Sprint 29 apr 2026: ELEMENT_TYPES extins (5 → 16) + TYPICAL_SOLUTIONS catalog
+// neutru (~73 soluții). Testele vechi refactorizate pentru noua structură.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ── ELEMENT_TYPES_WIZARD ──────────────────────────────────────────────────────
-describe("ELEMENT_TYPES_WIZARD — structură", () => {
-  it("conține exact 5 tipuri de elemente", () => {
+// ── ELEMENT_TYPES_WIZARD (legacy 5 — backward compat) ─────────────────────────
+describe("ELEMENT_TYPES_WIZARD — legacy compat (5 tipuri)", () => {
+  it("conține exact 5 tipuri (subset legacy)", () => {
     expect(ELEMENT_TYPES_WIZARD).toHaveLength(5);
   });
 
-  it("fiecare element are câmpurile obligatorii", () => {
+  it("ID-urile legacy sunt PE, PT, PP, PL, PB", () => {
+    const ids = ELEMENT_TYPES_WIZARD.map(t => t.id).sort();
+    expect(ids).toEqual(["PB", "PE", "PL", "PP", "PT"]);
+  });
+
+  it("fiecare element legacy are câmpurile obligatorii", () => {
     ELEMENT_TYPES_WIZARD.forEach(t => {
       expect(t).toHaveProperty("id");
       expect(t).toHaveProperty("label");
@@ -30,35 +41,145 @@ describe("ELEMENT_TYPES_WIZARD — structură", () => {
     });
   });
 
-  it("PE are tau=1.0 (fără reducere)", () => {
-    const pe = ELEMENT_TYPES_WIZARD.find(t => t.id === "PE");
-    expect(pe.tau).toBe(1.0);
-  });
-
-  it("PP are tau=0.9 (reducere pod)", () => {
-    const pp = ELEMENT_TYPES_WIZARD.find(t => t.id === "PP");
-    expect(pp.tau).toBe(0.9);
-  });
-
-  it("PL are tau=0.5 (reducere sol)", () => {
-    const pl = ELEMENT_TYPES_WIZARD.find(t => t.id === "PL");
-    expect(pl.tau).toBe(0.5);
-  });
-
-  it("PB are tau=0.5 (reducere subsol)", () => {
-    const pb = ELEMENT_TYPES_WIZARD.find(t => t.id === "PB");
-    expect(pb.tau).toBe(0.5);
-  });
-
-  it("ID-urile sunt: PE, PT, PP, PL, PB", () => {
-    const ids = ELEMENT_TYPES_WIZARD.map(t => t.id);
-    expect(ids).toEqual(["PE", "PT", "PP", "PL", "PB"]);
+  it("PE tau=1.0, PP tau=0.9, PL tau=0.5, PB tau=0.5", () => {
+    expect(ELEMENT_TYPES_WIZARD.find(t => t.id === "PE").tau).toBe(1.0);
+    expect(ELEMENT_TYPES_WIZARD.find(t => t.id === "PP").tau).toBe(0.9);
+    expect(ELEMENT_TYPES_WIZARD.find(t => t.id === "PL").tau).toBe(0.5);
+    expect(ELEMENT_TYPES_WIZARD.find(t => t.id === "PB").tau).toBe(0.5);
   });
 });
 
-// ── LAYER_PRESETS — structură generală ───────────────────────────────────────
-describe("LAYER_PRESETS — structură generală", () => {
-  it("are chei pentru toate cele 5 tipuri de element", () => {
+// ── ELEMENT_TYPES_WIZARD_FULL (16 tipuri extinse) ────────────────────────────
+describe("ELEMENT_TYPES_WIZARD_FULL — catalog complet 16 tipuri", () => {
+  it("conține 16 tipuri", () => {
+    expect(ELEMENT_TYPES_WIZARD_FULL).toHaveLength(16);
+  });
+
+  it("include toate categoriile noi: PI, PR, PS, PA, PM, PV, US, UN, AT, AC_VERDE, PI_INTERMED", () => {
+    const ids = ELEMENT_TYPES_WIZARD_FULL.map(t => t.id);
+    ["PI", "PR", "PS", "PA", "PM", "PV", "US", "UN", "AT", "AC_VERDE", "PI_INTERMED"].forEach(id => {
+      expect(ids).toContain(id);
+    });
+  });
+
+  it("PE, PR au inEnvelope=true în ELEMENT_TYPES", () => {
+    expect(ELEMENT_TYPES.find(t => t.id === "PE").inEnvelope).toBe(true);
+    expect(ELEMENT_TYPES.find(t => t.id === "PR").inEnvelope).toBe(true);
+  });
+
+  it("PI, PI_INTERMED au inEnvelope=false (interior — nu intră în calcul anvelopă)", () => {
+    expect(ELEMENT_TYPES.find(t => t.id === "PI").inEnvelope).toBe(false);
+    expect(ELEMENT_TYPES.find(t => t.id === "PI_INTERMED").inEnvelope).toBe(false);
+  });
+
+  it("AC_VERDE există cu uRefIndex=PT (verde tratat ca terasă)", () => {
+    const acVerde = ELEMENT_TYPES.find(t => t.id === "AC_VERDE");
+    expect(acVerde).toBeDefined();
+    expect(acVerde.uRefIndex).toBe("PT");
+  });
+});
+
+// ── TYPICAL_SOLUTIONS — catalog NEUTRU ────────────────────────────────────────
+describe("TYPICAL_SOLUTIONS — catalog neutru", () => {
+  it("conține minim 70 soluții", () => {
+    expect(TYPICAL_SOLUTIONS.length).toBeGreaterThanOrEqual(70);
+  });
+
+  it("toate soluțiile au câmpuri obligatorii", () => {
+    TYPICAL_SOLUTIONS.forEach(s => {
+      expect(s).toHaveProperty("id");
+      expect(s).toHaveProperty("elementType");
+      expect(s).toHaveProperty("label");
+      expect(s).toHaveProperty("era");
+      expect(s).toHaveProperty("structure");
+      expect(s).toHaveProperty("layers");
+      expect(s).toHaveProperty("source");
+      expect(Array.isArray(s.layers)).toBe(true);
+      expect(s.layers.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("toate soluțiile au câmpurile NEUTRE rezervate (brand=null, supplierId=null)", () => {
+    TYPICAL_SOLUTIONS.forEach(s => {
+      expect(s.brand).toBeNull();
+      expect(s.supplierId).toBeNull();
+      expect(s.affiliateUrl).toBeNull();
+      expect(s.sponsored).toBe(false);
+    });
+  });
+
+  it("toate soluțiile au sursă normativă citată (string non-empty)", () => {
+    TYPICAL_SOLUTIONS.forEach(s => {
+      expect(typeof s.source).toBe("string");
+      expect(s.source.length).toBeGreaterThan(5);
+    });
+  });
+
+  it("acoperă elemente PE (perete exterior) — minim 15 soluții", () => {
+    const pe = TYPICAL_SOLUTIONS.filter(s => s.elementType === "PE");
+    expect(pe.length).toBeGreaterThanOrEqual(15);
+  });
+
+  it("acoperă cel puțin 3 ere distincte (pre1970, 2010-2020, nzeb-2020+)", () => {
+    const eras = new Set(TYPICAL_SOLUTIONS.map(s => s.era));
+    expect(eras.has("pre1970")).toBe(true);
+    expect(eras.has("nzeb-2020+")).toBe(true);
+    expect(eras.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it("acoperă structura panou-mare (specific RO 1965-1990)", () => {
+    const pm = TYPICAL_SOLUTIONS.filter(s => s.structure === "panou-mare");
+    expect(pm.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("conține soluții vernaculare RO (chirpici/blockhaus)", () => {
+    const vernac = TYPICAL_SOLUTIONS.filter(s =>
+      s.tags?.includes("vernacular") || s.tags?.includes("ro-traditional")
+    );
+    expect(vernac.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("conține soluții Passivhaus / nZEB premium", () => {
+    const ph = TYPICAL_SOLUTIONS.filter(s =>
+      s.tags?.includes("passivhaus") || s.tags?.includes("enerphit")
+    );
+    expect(ph.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+// ── filterSolutions — helpers ─────────────────────────────────────────────────
+describe("filterSolutions / getSolutionsForElementType — helpers", () => {
+  it("filterSolutions({elementType: 'PE'}) returnează doar PE", () => {
+    const filtered = filterSolutions({ elementType: "PE" });
+    expect(filtered.length).toBeGreaterThan(0);
+    filtered.forEach(s => expect(s.elementType).toBe("PE"));
+  });
+
+  it("filterSolutions({era: 'pre1970'}) returnează doar pre-1970", () => {
+    const filtered = filterSolutions({ era: "pre1970" });
+    expect(filtered.length).toBeGreaterThan(0);
+    filtered.forEach(s => expect(s.era).toBe("pre1970"));
+  });
+
+  it("filterSolutions cu mai multe filtre combinate", () => {
+    const filtered = filterSolutions({ elementType: "PE", era: "nzeb-2020+", structure: "zidarie" });
+    filtered.forEach(s => {
+      expect(s.elementType).toBe("PE");
+      expect(s.era).toBe("nzeb-2020+");
+      expect(s.structure).toBe("zidarie");
+    });
+  });
+
+  it("getSolutionsForElementType('PA') returnează soluții acoperiș înclinat", () => {
+    const sols = getSolutionsForElementType("PA");
+    expect(sols.length).toBeGreaterThan(0);
+    sols.forEach(s => expect(s.elementType).toBe("PA"));
+  });
+});
+
+// ── LAYER_PRESETS legacy compat (3 preset-uri/tip generate dinamic) ──────────
+describe("LAYER_PRESETS — backward compat (legacy 5 tipuri)", () => {
+  it("are chei pentru toate cele 5 tipuri legacy", () => {
     ["PE", "PT", "PP", "PL", "PB"].forEach(key => {
       expect(LAYER_PRESETS).toHaveProperty(key);
       expect(Array.isArray(LAYER_PRESETS[key])).toBe(true);
@@ -75,99 +196,27 @@ describe("LAYER_PRESETS — structură generală", () => {
     });
   });
 
-  it("fiecare strat din preset are material și thickness", () => {
-    Object.values(LAYER_PRESETS).flat().forEach(preset => {
-      preset.layers.forEach(layer => {
-        expect(layer).toHaveProperty("material");
-        expect(layer).toHaveProperty("thickness");
-        expect(parseFloat(layer.thickness)).toBeGreaterThan(0);
-      });
+  it("PE conține minim 1 preset", () => {
+    expect(LAYER_PRESETS.PE.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ── applyTypicalSolution — convertește soluție tip la element complet ─────────
+describe("applyTypicalSolution — aplicare soluție catalog", () => {
+  it("returnează null pentru ID inexistent", () => {
+    expect(applyTypicalSolution("FAKE-ID")).toBeNull();
+  });
+
+  it("aplică o soluție existentă cu layers complete", () => {
+    const firstSol = TYPICAL_SOLUTIONS[0];
+    const result = applyTypicalSolution(firstSol.id);
+    expect(result).toBeDefined();
+    expect(result.layers.length).toBe(firstSol.layers.length);
+    result.layers.forEach(l => {
+      expect(l).toHaveProperty("material");
+      expect(l).toHaveProperty("thickness");
+      expect(l).toHaveProperty("lambda");
     });
-  });
-});
-
-// ── LAYER_PRESETS PE — 3 preset-uri ──────────────────────────────────────────
-describe("LAYER_PRESETS PE — 3 preset-uri standard", () => {
-  it("PE are exact 3 preset-uri", () => {
-    expect(LAYER_PRESETS.PE).toHaveLength(3);
-  });
-
-  it("PE-clasic are 4 straturi (tencuială + EPS + cărămidă + tencuială)", () => {
-    const clasic = LAYER_PRESETS.PE.find(p => p.id === "PE-clasic");
-    expect(clasic).toBeDefined();
-    expect(clasic.layers).toHaveLength(4);
-  });
-
-  it("PE-clasic conține EPS cu grosime 100mm", () => {
-    const clasic = LAYER_PRESETS.PE.find(p => p.id === "PE-clasic");
-    const epsLayer = clasic.layers.find(l => l.material.includes("EPS"));
-    expect(epsLayer).toBeDefined();
-    expect(epsLayer.thickness).toBe(100);
-  });
-
-  it("PE-bca conține BCA cu grosime 250mm", () => {
-    const bca = LAYER_PRESETS.PE.find(p => p.id === "PE-bca");
-    expect(bca).toBeDefined();
-    const bcaLayer = bca.layers.find(l => l.material.includes("BCA"));
-    expect(bcaLayer).toBeDefined();
-    expect(bcaLayer.thickness).toBe(250);
-  });
-
-  it("PE-prefab conține Beton armat cu grosime 250mm", () => {
-    const prefab = LAYER_PRESETS.PE.find(p => p.id === "PE-prefab");
-    expect(prefab).toBeDefined();
-    const baLayer = prefab.layers.find(l => l.material.includes("Beton armat"));
-    expect(baLayer).toBeDefined();
-    expect(baLayer.thickness).toBe(250);
-  });
-
-  it("PE-prefab are EPS cu grosime 150mm (mai gros decât PE-clasic)", () => {
-    const prefab = LAYER_PRESETS.PE.find(p => p.id === "PE-prefab");
-    const epsLayer = prefab.layers.find(l => l.material.includes("EPS"));
-    expect(epsLayer.thickness).toBe(150);
-    expect(epsLayer.thickness).toBeGreaterThan(
-      LAYER_PRESETS.PE.find(p => p.id === "PE-clasic").layers.find(l => l.material.includes("EPS")).thickness
-    );
-  });
-});
-
-// ── LAYER_PRESETS PT / PP / PL / PB ──────────────────────────────────────────
-describe("LAYER_PRESETS PT, PP, PL, PB — conținut", () => {
-  it("PT-clasic are 5 straturi (terasă completă)", () => {
-    const pt = LAYER_PRESETS.PT.find(p => p.id === "PT-clasic");
-    expect(pt).toBeDefined();
-    expect(pt.layers).toHaveLength(5);
-  });
-
-  it("PT-clasic conține EPS cu grosime 200mm", () => {
-    const pt = LAYER_PRESETS.PT.find(p => p.id === "PT-clasic");
-    const epsLayer = pt.layers.find(l => l.material.includes("EPS"));
-    expect(epsLayer).toBeDefined();
-    expect(epsLayer.thickness).toBe(200);
-  });
-
-  it("PP-pod conține vată bazaltică acoperiș cu grosime 200mm", () => {
-    const pp = LAYER_PRESETS.PP.find(p => p.id === "PP-pod");
-    expect(pp).toBeDefined();
-    const vataLayer = pp.layers.find(l => l.material.includes("Vată bazaltică"));
-    expect(vataLayer).toBeDefined();
-    expect(vataLayer.thickness).toBe(200);
-  });
-
-  it("PL-clasic conține XPS cu grosime 100mm", () => {
-    const pl = LAYER_PRESETS.PL.find(p => p.id === "PL-clasic");
-    expect(pl).toBeDefined();
-    const xpsLayer = pl.layers.find(l => l.material.includes("XPS"));
-    expect(xpsLayer).toBeDefined();
-    expect(xpsLayer.thickness).toBe(100);
-  });
-
-  it("PB-subsol conține EPS cu grosime 100mm", () => {
-    const pb = LAYER_PRESETS.PB.find(p => p.id === "PB-subsol");
-    expect(pb).toBeDefined();
-    const epsLayer = pb.layers.find(l => l.material.includes("EPS"));
-    expect(epsLayer).toBeDefined();
-    expect(epsLayer.thickness).toBe(100);
   });
 });
 

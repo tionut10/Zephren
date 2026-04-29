@@ -1,111 +1,52 @@
 /**
  * wizardOpaqueCalc.js — Funcții pure extrase din WizardOpaque.jsx.
  * Fără dependențe React — importabil direct în teste Vitest.
+ *
+ * Sprint 29 apr 2026: extindere de la 5 → 16 tipuri de element și de la 7 →
+ * 73+ soluții tip catalog NEUTRAL (typicalSolutions.json). Catalogul vechi
+ * `LAYER_PRESETS` rămâne ca fallback compat retroactiv pentru teste vechi —
+ * dar codul nou folosește direct `getSolutionsForElementType` din
+ * `typicalSolutions.js`.
  */
 
 import MATERIALS_DB from "../../../data/materials.json";
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../../../data/u-reference.js";
+import { ELEMENT_TYPES, ELEMENT_TYPES_LEGACY_5, getElementType } from "../../../data/elementTypes.js";
+import {
+  TYPICAL_SOLUTIONS,
+  filterSolutions,
+  getSolutionsForElementType,
+  buildLegacyLayerPresets,
+} from "../../../data/typicalSolutions.js";
+
 export { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB };
+export { ELEMENT_TYPES, getElementType };
+export { TYPICAL_SOLUTIONS, filterSolutions, getSolutionsForElementType };
 
-// ── Tipuri elemente (subset cu cele 5 tipice) ────────────────────────────────
-export const ELEMENT_TYPES_WIZARD = [
-  { id: "PE", label: "Perete exterior",         icon: "🧱", tau: 1.0, rsi: 0.13, rse: 0.04 },
-  { id: "PT", label: "Planșeu terasă",          icon: "🏛", tau: 1.0, rsi: 0.10, rse: 0.04 },
-  { id: "PP", label: "Planșeu sub pod",          icon: "🏠", tau: 0.9, rsi: 0.10, rse: 0.10 },
-  { id: "PL", label: "Placă pe sol",             icon: "🏗", tau: 0.5, rsi: 0.17, rse: 0.00 },
-  { id: "PB", label: "Planșeu peste subsol",     icon: "🕳", tau: 0.5, rsi: 0.17, rse: 0.17 },
-];
+// ── Wizard ELEMENT_TYPES (16 tipuri complete) ────────────────────────────────
+// Compat: ELEMENT_TYPES_WIZARD legacy = subset 5 tipuri (PE, PT, PP, PL, PB)
+//         ELEMENT_TYPES_WIZARD_FULL = toate 16 tipurile noi
+export const ELEMENT_TYPES_WIZARD_FULL = ELEMENT_TYPES.map(t => ({
+  id: t.id,
+  label: t.label,
+  shortLabel: t.shortLabel,
+  icon: t.icon,
+  category: t.category,
+  tau: t.tau,
+  rsi: t.rsi,
+  rse: t.rse,
+}));
 
-// ── Presets standard — straturi din exterior la interior ──────────────────────
-export const LAYER_PRESETS = {
-  PE: [
-    {
-      id: "PE-clasic",
-      label: "Cărămidă 30 + EPS 10",
-      desc: "Cel mai frecvent ansamblu rezidențial România",
-      layers: [
-        { material: "Tencuială acrilică (exterior)", thickness: 5 },
-        { material: "EPS 031 (λ=0.031 — Neopor/grafitat)", thickness: 100 },
-        { material: "Cărămidă plină", thickness: 300 },
-        { material: "Tencuială de ipsos", thickness: 15 },
-      ],
-    },
-    {
-      id: "PE-bca",
-      label: "BCA 25 + vată 10",
-      desc: "Ansamblu modern eficient energetic",
-      layers: [
-        { material: "Tencuială acrilică (exterior)", thickness: 5 },
-        { material: "Vată bazaltică fațadă", thickness: 100 },
-        { material: "BCA (beton celular autoclavizat)", thickness: 250 },
-        { material: "Tencuială de ipsos", thickness: 15 },
-      ],
-    },
-    {
-      id: "PE-prefab",
-      label: "BA 25 + EPS 15",
-      desc: "Panou prefabricat termoizolat (blocuri 1960-1990)",
-      layers: [
-        { material: "Tencuială acrilică (exterior)", thickness: 5 },
-        { material: "EPS 031 (λ=0.031 — Neopor/grafitat)", thickness: 150 },
-        { material: "Beton armat", thickness: 250 },
-        { material: "Tencuială de ipsos", thickness: 15 },
-      ],
-    },
-  ],
-  PT: [
-    {
-      id: "PT-clasic",
-      label: "Terasă BA + EPS 20",
-      desc: "Terasă circulabilă modernă",
-      layers: [
-        { material: "Mortar de pozare gresie (M15)", thickness: 30 },
-        { material: "EPS 031 (λ=0.031 — Neopor/grafitat)", thickness: 200 },
-        { material: "Membrană EPDM", thickness: 3 },
-        { material: "Beton armat", thickness: 180 },
-        { material: "Tencuială de ipsos", thickness: 15 },
-      ],
-    },
-  ],
-  PP: [
-    {
-      id: "PP-pod",
-      label: "Planșeu pod + vată 20",
-      desc: "Vată bazaltică în pod necirculabil",
-      layers: [
-        { material: "Vată bazaltică acoperiș", thickness: 200 },
-        { material: "Beton armat", thickness: 150 },
-        { material: "Tencuială de ipsos", thickness: 15 },
-      ],
-    },
-  ],
-  PL: [
-    {
-      id: "PL-clasic",
-      label: "Placă pe sol + XPS 10",
-      desc: "Placă monolită pe XPS sub șapă",
-      layers: [
-        { material: "Mortar de pozare gresie (M15)", thickness: 20 },
-        { material: "Șapă autonivelantă", thickness: 50 },
-        { material: "XPS 200 kPa (fundații ușoare, λ=0.034)", thickness: 100 },
-        { material: "Beton armat", thickness: 150 },
-      ],
-    },
-  ],
-  PB: [
-    {
-      id: "PB-subsol",
-      label: "Planșeu peste subsol + EPS 10",
-      desc: "Subsol neîncălzit",
-      layers: [
-        { material: "Mortar de pozare gresie (M15)", thickness: 20 },
-        { material: "Șapă autonivelantă", thickness: 50 },
-        { material: "EPS 031 (λ=0.031 — Neopor/grafitat)", thickness: 100 },
-        { material: "Beton armat", thickness: 200 },
-      ],
-    },
-  ],
-};
+// Subset legacy compat (5 tipuri originale) — pentru teste vechi care
+// verifică `expect(ELEMENT_TYPES_WIZARD).toHaveLength(5)`.
+export const ELEMENT_TYPES_WIZARD = ELEMENT_TYPES_WIZARD_FULL.filter(t =>
+  ELEMENT_TYPES_LEGACY_5.includes(t.id)
+);
+
+// ── LAYER_PRESETS legacy (compat retroactiv) ─────────────────────────────────
+// Generat dinamic din typicalSolutions.json — primele 3 soluții cu tag
+// `popular` sau `default` per tip element.
+export const LAYER_PRESETS = buildLegacyLayerPresets();
 
 /**
  * Construiește un strat din materials.json pe baza numelui — propagă TOATE câmpurile.
@@ -127,5 +68,22 @@ export function buildLayerFromMaterialName(name, thicknessMm) {
     mu: mat.mu ?? 0,
     cp: mat.cp ?? 0,
     src: mat.src ?? "",
+  };
+}
+
+/**
+ * Aplică o soluție tip din catalog peste un element nou — convertește
+ * layer-urile (material + thickness mm) la formatul wizard cu λ/ρ/μ/cp/src
+ * propagate din materials.json.
+ *
+ * @param {string} solutionId — ID din TYPICAL_SOLUTIONS (ex. "PE-zid-pre1970-30")
+ * @returns {Object|null} { id, label, layers: [...completeLayers] }
+ */
+export function applyTypicalSolution(solutionId) {
+  const sol = TYPICAL_SOLUTIONS.find(s => s.id === solutionId);
+  if (!sol) return null;
+  return {
+    ...sol,
+    layers: sol.layers.map(l => buildLayerFromMaterialName(l.material, l.thickness)),
   };
 }

@@ -1,0 +1,3486 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-04-29",
+  "description": "Catalog NEUTRU de soluții constructive tipice pentru audit energetic clădiri. Fără brand-uri — câmpurile brand/supplierId/affiliateUrl rezervate pentru parteneriate viitoare.",
+  "sources": [
+    "Mc 001-2022 — Calculul performanței energetice a clădirilor (Anexele I-IV, Anexele A-G)",
+    "C 107/0-2002 — Normativ termotehnic clădiri",
+    "C 107/1-2005 — Pereți exteriori",
+    "C 107/2-2005 — Acoperișuri",
+    "C 107/3-2005 — Calcul termotehnic elemente reprezentative",
+    "STAS 6472/3-89 — Fizica construcțiilor (referință pre-1990)",
+    "GP 058/2000 — Reabilitarea panoului mare",
+    "SR EN ISO 6946:2017 — Transmisia termică",
+    "SR EN ISO 13370:2017 — Pierderi prin sol",
+    "P118/2013 — Siguranța la foc",
+    "Ord. MDLPA 16/2023 — Anvelopă nZEB",
+    "ETA Generic ETICS class references (15/0667, 12/0303, 13/0184)"
+  ],
+  "solutions": [
+    {
+      "id": "PE-zid-pre1970-30",
+      "elementType": "PE",
+      "label": "Zidărie cărămidă plină 30 cm — neizolată (pre-1970)",
+      "shortLabel": "Cărămidă 30 neizolată",
+      "description": "Perete tradițional case rurale și urbane românești <1970, fără termoizolație, mortar gros var-ciment.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.85,
+      "uRange": {
+        "min": 1.6,
+        "max": 1.95
+      },
+      "uClass": "G",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "pre-1970",
+        "ro-clasic",
+        "rural",
+        "popular"
+      ],
+      "source": "C 107/1-2005 Anexa A1; STAS 6472/3-89",
+      "notes": "Tipic case rurale 1900-1970, fără barieră vapori, sensibilitate la condens.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 300
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-zid-pre1970-45",
+      "elementType": "PE",
+      "label": "Zidărie cărămidă plină 45 cm — neizolată (pre-1950)",
+      "shortLabel": "Cărămidă 45 neizolată",
+      "description": "Perete masiv case istorice/urbane interbelice, două rânduri cărămidă plină.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.45,
+      "uRange": {
+        "min": 1.3,
+        "max": 1.6
+      },
+      "uClass": "F",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "pre-1950",
+        "patrimoniu",
+        "ro-istoric"
+      ],
+      "source": "C 107/1-2005 Anexa A1; STAS 6472/3-89",
+      "notes": "Clădiri patrimoniu interbelice — protejate, restaurare cu ETICS interior.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 450
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 20
+        }
+      ]
+    },
+    {
+      "id": "PE-zid-1970-1990-30-gvp",
+      "elementType": "PE",
+      "label": "Cărămidă cu goluri verticale 30 cm — neizolată (1970-1990)",
+      "shortLabel": "GVP 30 neizolată",
+      "description": "Perete blocuri rezidențiale 1970-1990, cărămidă cu goluri verticale (GVP) sau eficientă.",
+      "era": "1970-1990",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.3,
+      "uRange": {
+        "min": 1.1,
+        "max": 1.5
+      },
+      "uClass": "F",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "1970-1990",
+        "ro-clasic",
+        "bloc",
+        "popular"
+      ],
+      "source": "C 107/1-2005 Anexa A1; OUG 18/2009",
+      "notes": "Standard apartamente 'Decembrie' anii 80, retrofit ETICS recomandat.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă cu goluri (GVP)",
+          "thickness": 300
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-prefab-1965-1980",
+      "elementType": "PE",
+      "label": "Panou mare prefabricat 1965-1980 — sandwich BA + EPS degradat",
+      "shortLabel": "Panou mare PMP 1965",
+      "description": "Panou mare prefabricat 3 straturi: BA dală subțire + miez polistiren + BA interior. Tipic blocuri P+4 - P+10 din anii 1965-1980.",
+      "era": "1970-1990",
+      "structure": "panou-mare",
+      "renovationStatus": "existent",
+      "uTypical": 0.95,
+      "uRange": {
+        "min": 0.8,
+        "max": 1.1
+      },
+      "uClass": "E",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "1965-1980",
+        "panou-mare",
+        "ipct",
+        "popular"
+      ],
+      "source": "GP 058/2000; teze doctorat panou mare RO; URBAN-INCERC",
+      "notes": "Punți termice masive la îmbinări verticale și orizontale (25-40% suprafață); izolația degradată după 40 ani.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 120
+        },
+        {
+          "material": "EPS 040 (standard λ=0.040)",
+          "thickness": 60
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 80
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-prefab-1975-1990",
+      "elementType": "PE",
+      "label": "Panou mare 1975-1990 — sandwich BA + EPS funcțional",
+      "shortLabel": "Panou mare PMP 1980",
+      "description": "Sandwich BA cu izolație consistentă, miez polistiren extrudat panel. Calitate superioară fata de pre-1975.",
+      "era": "1970-1990",
+      "structure": "panou-mare",
+      "renovationStatus": "existent",
+      "uTypical": 0.65,
+      "uRange": {
+        "min": 0.55,
+        "max": 0.75
+      },
+      "uClass": "D",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "1975-1990",
+        "panou-mare",
+        "ipct"
+      ],
+      "source": "GP 058/2000; Mc 001-1/2006 cap.7",
+      "notes": "Panourile tip casetate (Brașov, Cluj, București) — punți reduse la 5-15% suprafață.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 22
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 70
+        },
+        {
+          "material": "EPS 040 (standard λ=0.040)",
+          "thickness": 80
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 110
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-bca-1990-2010",
+      "elementType": "PE",
+      "label": "Zidărie BCA 25 cm — neizolată (1990-2010)",
+      "shortLabel": "BCA 25 neizolată",
+      "description": "Pereți zidărie BCA construcție 1990-2010, fără termoizolație continuă, tencuială simplă.",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.85,
+      "uRange": {
+        "min": 0.7,
+        "max": 1.0
+      },
+      "uClass": "E",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "1990-2010",
+        "ro-clasic",
+        "bca"
+      ],
+      "source": "C 107/1-2005 Anexa A2; Mc 001-2022",
+      "notes": "Casă unifamiliale 1990-2010, mortar var-ciment ușor, tencuială simplă.",
+      "layers": [
+        {
+          "material": "Tencuială acrilică (exterior)",
+          "thickness": 5
+        },
+        {
+          "material": "Mortar var-ciment",
+          "thickness": 20
+        },
+        {
+          "material": "BCA (beton celular autoclavizat)",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-eps-100-retrofit",
+      "elementType": "PE",
+      "label": "ETICS EPS 100 mm peste cărămidă/BCA existentă (retrofit major)",
+      "shortLabel": "ETICS EPS 100",
+      "description": "Termosistem retrofit standard Programul național termoizolare blocuri (POR/POIM/PNRR). Cel mai răspândit retrofit în România.",
+      "era": "2010-2020",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.34,
+      "uRange": {
+        "min": 0.3,
+        "max": 0.38
+      },
+      "uClass": "B",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "retrofit",
+        "etics",
+        "popular",
+        "default",
+        "low-cost"
+      ],
+      "source": "Programul național termoizolare MDLPA; ETA Generic ETICS",
+      "notes": "Pentru blocuri >25 m necesită lamela MW (clasa A1) — vezi PE-etics-mw-150-retrofit.",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "EPS 033 (plăci fațadă λ=0.033)",
+          "thickness": 100
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 7
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 300
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-eps-graphite-150-nzeb",
+      "elementType": "PE",
+      "label": "ETICS EPS grafitat 150 mm — proiect nou nZEB",
+      "shortLabel": "ETICS EPS-G 150",
+      "description": "Termosistem fațadă pentru proiecte nZEB rezidențiale standard EPBD post-2024.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.19,
+      "uRange": {
+        "min": 0.18,
+        "max": 0.21
+      },
+      "uClass": "A",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "etics",
+        "default",
+        "rezidential"
+      ],
+      "source": "Mc 001-2022 Tabel 2.4; Ord. MDLPA 16/2023; ETA Generic",
+      "notes": "Standard rezidențial nZEB. Pentru blocuri ≥28 m se înlocuiește cu vată minerală (foc clasa A1).",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 4
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 150
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 6
+        },
+        {
+          "material": "Cărămidă eficientă",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-eps-graphite-200-passive",
+      "elementType": "PE",
+      "label": "ETICS EPS grafitat 200 mm — Casă pasivă / nZEB+",
+      "shortLabel": "ETICS EPS-G 200",
+      "description": "Termosistem pentru clădiri Passivhaus și standard nZEB+ (post-2030).",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.14,
+      "uRange": {
+        "min": 0.13,
+        "max": 0.16
+      },
+      "uClass": "A+",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "etics",
+        "premium"
+      ],
+      "source": "Passivehouse Institute Darmstadt; Mc 001-2022",
+      "notes": "Necesită dibluri suplimentare 8/m². Pentru construcții cu cerință H'T ≤ 0,15 W/m²K.",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 4
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 200
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 8
+        },
+        {
+          "material": "BCA Ytong λ=0.09",
+          "thickness": 300
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-mw-150-retrofit",
+      "elementType": "PE",
+      "label": "ETICS Vată minerală 150 mm — blocuri H>28m (retrofit foc A1)",
+      "shortLabel": "ETICS MW 150",
+      "description": "Termosistem cu vată minerală bazaltică pentru blocuri P+10+ și clădiri publice — clasa de foc A1/A2-s1,d0.",
+      "era": "2010-2020",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.25,
+      "uRange": {
+        "min": 0.24,
+        "max": 0.27
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "retrofit",
+        "etics",
+        "fire-safe",
+        "publica",
+        "blocuri-inalte"
+      ],
+      "source": "P118/2013 art. 2.4.3; ETA Generic MW ETICS",
+      "notes": "OBLIGATORIU pentru blocuri ≥28 m și clădiri publice (școli, spitale, comerciale).",
+      "layers": [
+        {
+          "material": "Tencuială silicat calcotermic (Capatect)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Vată bazaltică fațadă",
+          "thickness": 150
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 8
+        },
+        {
+          "material": "Cărămidă cu goluri (GVP)",
+          "thickness": 300
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-phenolic-100-nzeb",
+      "elementType": "PE",
+      "label": "ETICS Spumă fenolică 100 mm — proiect nou compact (nZEB)",
+      "shortLabel": "ETICS Fenolică 100",
+      "description": "Termosistem pentru proiecte cu spațiu redus (oglinzi, balcoane, fronton); echivalent EPS 160 mm.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.17,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "etics",
+        "compact",
+        "premium"
+      ],
+      "source": "EN 13166:2012; ETA spumă fenolică",
+      "notes": "Cost ridicat vs EPS, dar grosime redusă cu 40%. Sensibil la apă — necesită protecție etanșă perfectă.",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 4
+        },
+        {
+          "material": "Spumă fenolică ultra-fină (λ=0.018)",
+          "thickness": 100
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 6
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-multipor-mineral-160",
+      "elementType": "PE",
+      "label": "ETICS Spumă minerală 160 mm — patrimoniu și nZEB difuziv",
+      "shortLabel": "ETICS Mineral 160",
+      "description": "Termosistem 100% mineral pentru clădiri istorice și nZEB cu cerințe difuzive perfecte.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.26,
+      "uRange": {
+        "min": 0.25,
+        "max": 0.28
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "patrimoniu",
+        "etics",
+        "fire-safe",
+        "ecologic"
+      ],
+      "source": "EN 13169 spumă minerală; ETA Multipor (generic class)",
+      "notes": "Compatibil cu fațade istorice; difuzie aproape perfectă la abur (μ≈3).",
+      "layers": [
+        {
+          "material": "Tencuială minerală (var+ciment+pulbere marmoră)",
+          "thickness": 5
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 6
+        },
+        {
+          "material": "BCA Xella Multipor (placi izolare)",
+          "thickness": 160
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 7
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-etics-woodfiber-160-eco",
+      "elementType": "PE",
+      "label": "ETICS Fibră lemn 160 mm — case ecologice/CLT",
+      "shortLabel": "ETICS Fibră lemn 160",
+      "description": "Termosistem cu fibră lemn — capacitate higroscopică ridicată, recomandat pentru construcții lemn/CLT.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.23,
+      "uRange": {
+        "min": 0.21,
+        "max": 0.25
+      },
+      "uClass": "B",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "etics",
+        "ecologic",
+        "lemn",
+        "clt"
+      ],
+      "source": "Steico Protect ETA-15/0667; Pavadentro generic class",
+      "notes": "Inerția termică sezonieră excelentă (φ≈12h). Comfort de vară ridicat.",
+      "layers": [
+        {
+          "material": "Tencuială silicat calcotermic (Capatect)",
+          "thickness": 8
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 6
+        },
+        {
+          "material": "Fibră de lemn rigidă (fațadă)",
+          "thickness": 160
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "CLT (Cross Laminated Timber)",
+          "thickness": 100
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 12
+        }
+      ]
+    },
+    {
+      "id": "PE-vf-mw-150-acm",
+      "elementType": "PE",
+      "label": "Fațadă ventilată ACM + vată minerală 150 mm",
+      "shortLabel": "VF ACM 150",
+      "description": "Fațadă ventilată cu panou compozit aluminiu pentru clădiri birouri/comerciale moderne.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.23,
+      "uRange": {
+        "min": 0.22,
+        "max": 0.25
+      },
+      "uClass": "B",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "nzeb",
+        "comercial",
+        "birouri",
+        "ventilata"
+      ],
+      "source": "Trespa Meteon; ROCKWOOL Ventirock; EAE ETICS guide",
+      "notes": "Strat ventilat 30-50 mm — protejează izolația de apă și condens. Subestructură Al cu rupturi termice.",
+      "layers": [
+        {
+          "material": "Tablă aluminiu (fațadă/acoperiș)",
+          "thickness": 4
+        },
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 40
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Vată bazaltică fațadă",
+          "thickness": 150
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-clt-3l-eps-160",
+      "elementType": "PE",
+      "label": "CLT 60 mm + EPS 160 + lambriu lemn (case lemn nZEB)",
+      "shortLabel": "CLT 3L + EPS 160",
+      "description": "Perete CLT cu izolație ETICS sau ventilat lambriu — case lemn moderne.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.17,
+        "max": 0.19
+      },
+      "uClass": "A",
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "nzeb",
+        "lemn",
+        "clt",
+        "ecologic",
+        "premium"
+      ],
+      "source": "KLH CLT manual; Stora Enso CLT design guide",
+      "notes": "Vizibilitate lemn interior. Strat ventilat opțional între lambriu și EPS pentru protecție umiditate.",
+      "layers": [
+        {
+          "material": "Lemn moale (brad/molid)",
+          "thickness": 22
+        },
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 30
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 160
+        },
+        {
+          "material": "CLT (Cross Laminated Timber)",
+          "thickness": 60
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "id": "PE-chirpici-pre1950",
+      "elementType": "PE",
+      "label": "Chirpici (lut + paie) 50 cm — case rurale tradiționale (pre-1950)",
+      "shortLabel": "Chirpici 50",
+      "description": "Case țărănești tradiționale Banat, Oltenia, Moldova — lut comprimat cu paie și fân.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.05,
+      "uRange": {
+        "min": 0.8,
+        "max": 1.3
+      },
+      "uClass": "F",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "ro-traditional",
+        "ecologic"
+      ],
+      "source": "DIN 18945:2013; Minke 'Building with Earth' 2012",
+      "notes": "Capacitate higroscopică ridicată (excelentă în vară). Sensibilitate la umiditate — degradare rapidă fără tencuială protectoare.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 20
+        },
+        {
+          "material": "Chirpici (pământ-paie nestabilizat)",
+          "thickness": 500
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PE-strawbale-450-eco",
+      "elementType": "PE",
+      "label": "Pereți baloți paie comprimate 450 mm + tencuială argilă",
+      "shortLabel": "Baloți paie 450",
+      "description": "Construcție ecologică modernă cu baloți de paie comprimate (load-bearing sau infill cadru lemn).",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.13,
+      "uRange": {
+        "min": 0.11,
+        "max": 0.16
+      },
+      "uClass": "A+",
+      "fireClass": "E",
+      "tags": [
+        "nzeb",
+        "ecologic",
+        "paie",
+        "carbon-negative"
+      ],
+      "source": "Goodhew & Griffiths 2005; EN 13171",
+      "notes": "Carbon-negative construction. Tencuială argilă/var minimum 30 mm pentru protecție foc + apă.",
+      "layers": [
+        {
+          "material": "Tencuială din argilă naturală",
+          "thickness": 35
+        },
+        {
+          "material": "Paie comprimate",
+          "thickness": 450
+        },
+        {
+          "material": "Tencuială din argilă naturală",
+          "thickness": 35
+        }
+      ]
+    },
+    {
+      "id": "PT-terasa-pre1990-neizolata",
+      "elementType": "PT",
+      "label": "Terasă plată BA — neizolată sau izolație degradată (pre-1990)",
+      "shortLabel": "Terasă neizolată",
+      "description": "Terasă blocuri 1965-1990, izolație inițială (zgură/poliuretan) degradată sau lipsă.",
+      "era": "1970-1990",
+      "structure": "panou-mare",
+      "renovationStatus": "existent",
+      "uTypical": 1.65,
+      "uRange": {
+        "min": 1.4,
+        "max": 2.0
+      },
+      "uClass": "G",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "1965-1990",
+        "terasa",
+        "popular"
+      ],
+      "source": "C 107/2-2005 Anexa A; GP 058/2000",
+      "notes": "Punte termică majoră — pierdere ascendentă mare. Retrofit prioritar.",
+      "layers": [
+        {
+          "material": "Pietriș",
+          "thickness": 50
+        },
+        {
+          "material": "Bitum (membrană)",
+          "thickness": 6
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PT-terasa-eps-200-nzeb",
+      "elementType": "PT",
+      "label": "Terasă plată EPS 200 mm + membrană PVC (proiect nou)",
+      "shortLabel": "Terasă EPS 200",
+      "description": "Terasă necirculabilă standard nZEB cu termoizolație EPS și etanșare PVC sau bituminoasă.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.16,
+      "uRange": {
+        "min": 0.14,
+        "max": 0.18
+      },
+      "uClass": "A",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "nzeb",
+        "terasa",
+        "default",
+        "rezidential"
+      ],
+      "source": "Mc 001-2022 Tabel 2.4; SR EN 1276-1; SR EN 1297",
+      "notes": "Pentru clădiri ≥28 m sau publice — înlocuiește EPS cu vată minerală.",
+      "layers": [
+        {
+          "material": "Pietriș",
+          "thickness": 50
+        },
+        {
+          "material": "Geotextil",
+          "thickness": 1
+        },
+        {
+          "material": "Membrană PVC",
+          "thickness": 2
+        },
+        {
+          "material": "EPS 200 (trafic greu)",
+          "thickness": 200
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PT-terasa-inversa-xps-140",
+      "elementType": "PT",
+      "label": "Terasă inversă XPS 140 mm + dale pavaj",
+      "shortLabel": "Terasă inversă XPS",
+      "description": "Terasă inversă (XPS deasupra membranei) — circulabilă cu pavaj sau pietriș.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.21,
+      "uRange": {
+        "min": 0.2,
+        "max": 0.22
+      },
+      "uClass": "B",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "nzeb",
+        "terasa",
+        "circulabila",
+        "inversa"
+      ],
+      "source": "Bauder PIR / SR EN 1297; Mc 001-2022",
+      "notes": "Membrana protejată de UV de XPS. Dalele/pietrișul protejează XPS de fluctuații termice.",
+      "layers": [
+        {
+          "material": "Pavele beton (pavaj)",
+          "thickness": 50
+        },
+        {
+          "material": "Geotextil",
+          "thickness": 1
+        },
+        {
+          "material": "Polistiren extrudat XPS",
+          "thickness": 140
+        },
+        {
+          "material": "Membrană EPDM",
+          "thickness": 3
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "id": "AC_VERDE-extensiv-180",
+      "elementType": "AC_VERDE",
+      "label": "Acoperiș verde extensiv (sedum, substrat 80) + EPS 180",
+      "shortLabel": "Verde extensiv",
+      "description": "Acoperiș vegetal extensiv pentru clădiri birouri, școli, blocuri — întreținere minimă.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.17,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "Broof(t1)",
+      "tags": [
+        "nzeb",
+        "ecologic",
+        "verde",
+        "biodiversitate"
+      ],
+      "source": "Bauder Green Roof; Optigrün; FLL Guidelines 2018",
+      "notes": "Bonus în Building Renovation Passport. Reduce efectul insulei de căldură urbane.",
+      "layers": [
+        {
+          "material": "Substrat acoperis verde (extensive, δ=80mm)",
+          "thickness": 80
+        },
+        {
+          "material": "Geotextil",
+          "thickness": 2
+        },
+        {
+          "material": "Strat de drenaj acoperis verde (granulat argila)",
+          "thickness": 30
+        },
+        {
+          "material": "Membrană EPDM",
+          "thickness": 3
+        },
+        {
+          "material": "EPS 200 (trafic greu)",
+          "thickness": 180
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "id": "AC_VERDE-intensiv-300",
+      "elementType": "AC_VERDE",
+      "label": "Acoperiș verde intensiv (substrat 300) + XPS 200",
+      "shortLabel": "Verde intensiv",
+      "description": "Grădină pe acoperiș cu copăcei, arbuști — sarcină statică 500-1000 kg/m².",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.16,
+      "uRange": {
+        "min": 0.15,
+        "max": 0.17
+      },
+      "uClass": "A",
+      "fireClass": "Broof(t1)",
+      "tags": [
+        "nzeb",
+        "ecologic",
+        "verde",
+        "premium",
+        "urban"
+      ],
+      "source": "FLL Guidelines 2018; Optigrün retention",
+      "notes": "Necesită planșeu BA dimensionat ≥250 mm. Tipic pentru parcuri urbane peste parcări subterane.",
+      "layers": [
+        {
+          "material": "Substrat acoperis verde (intensive, δ=200mm)",
+          "thickness": 300
+        },
+        {
+          "material": "Geotextil",
+          "thickness": 2
+        },
+        {
+          "material": "Strat de drenaj acoperis verde (granulat argila)",
+          "thickness": 80
+        },
+        {
+          "material": "Membrană EPDM",
+          "thickness": 3
+        },
+        {
+          "material": "Polistiren extrudat XPS",
+          "thickness": 200
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 250
+        }
+      ]
+    },
+    {
+      "id": "PA-mansarda-200-rafter",
+      "elementType": "PA",
+      "label": "Acoperiș înclinat — vată între căpriori 200 mm (mansardă)",
+      "shortLabel": "Mansardă VM 200",
+      "description": "Acoperiș înclinat clasic pentru mansardă locuibilă — vată minerală între căpriori.",
+      "era": "1990-2010",
+      "structure": "lemn",
+      "renovationStatus": "existent",
+      "uTypical": 0.22,
+      "uRange": {
+        "min": 0.2,
+        "max": 0.26
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "mansarda",
+        "popular",
+        "default"
+      ],
+      "source": "C 107/2-2005 Anexa A; Mc 001-2022",
+      "notes": "Punți termice prin căpriori reduc R cu 5-15%. Pentru retrofit major adaugă strat sarking.",
+      "layers": [
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 200
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Strat de aer neventilat (5cm)",
+          "thickness": 50
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "id": "PA-sarking-160-nzeb",
+      "elementType": "PA",
+      "label": "Sarking fibră lemn 160 + vată căpriori 200 mm (nZEB)",
+      "shortLabel": "Sarking + VM",
+      "description": "Acoperiș înclinat hibrid: izolație peste căpriori (sarking) + între căpriori — fără punți termice prin lemn.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.14,
+      "uRange": {
+        "min": 0.13,
+        "max": 0.16
+      },
+      "uClass": "A",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "sarking",
+        "ecologic",
+        "premium"
+      ],
+      "source": "Steico Universal sarking; Pavatherm-Plus",
+      "notes": "Standard Passivhaus mansardă locuibilă. Capacitate higroscopică excelentă.",
+      "layers": [
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Fibră de lemn rigidă acoperiș (Sarking)",
+          "thickness": 160
+        },
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 200
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "id": "PA-sandwich-pir-100-industrial",
+      "elementType": "PA",
+      "label": "Acoperiș sandwich PIR 100 mm — hală industrială",
+      "shortLabel": "Sandwich PIR 100",
+      "description": "Panou sandwich PIR pentru acoperiș industrial — montaj rapid, autoportant.",
+      "era": "nzeb-2020+",
+      "structure": "metal",
+      "renovationStatus": "nou",
+      "uTypical": 0.23,
+      "uRange": {
+        "min": 0.22,
+        "max": 0.25
+      },
+      "uClass": "B",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "industrial",
+        "sandwich",
+        "comercial"
+      ],
+      "source": "Kingspan KS1000 RW (generic class); ArcelorMittal Aérium",
+      "notes": "Standard hală producție/depozit. Deschidere 2-6 m.",
+      "layers": [
+        {
+          "material": "Tablă zincată",
+          "thickness": 0.6
+        },
+        {
+          "material": "PIR sandwich panel",
+          "thickness": 100
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Tablă zincată",
+          "thickness": 0.4
+        }
+      ]
+    },
+    {
+      "id": "PP-pod-300-blow",
+      "elementType": "PP",
+      "label": "Planșeu sub pod — vată suflată 300 mm (cold roof retrofit)",
+      "shortLabel": "Pod VM 300",
+      "description": "Cea mai bună soluție cost/performanță pentru retrofit case cu pod neamenajat.",
+      "era": "2010-2020",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.13,
+      "uRange": {
+        "min": 0.12,
+        "max": 0.14
+      },
+      "uClass": "A+",
+      "fireClass": "A1",
+      "tags": [
+        "retrofit",
+        "cold-roof",
+        "popular",
+        "low-cost",
+        "default"
+      ],
+      "source": "Mc 001-2022 P.III; ghid retrofit case",
+      "notes": "Cost retrofit ~50-70 RON/m² — cea mai eficientă investiție termoenergetică.",
+      "layers": [
+        {
+          "material": "Vată de sticlă insuflată (attic blown)",
+          "thickness": 300
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PP-pod-vm-200-default",
+      "elementType": "PP",
+      "label": "Planșeu sub pod — vată minerală 200 mm",
+      "shortLabel": "Pod VM 200",
+      "description": "Soluție standard pentru pod necirculabil — vată minerală în plăci.",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.2,
+      "uRange": {
+        "min": 0.18,
+        "max": 0.22
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "popular",
+        "default"
+      ],
+      "source": "C 107/2-2005",
+      "notes": "Pentru pod circulabil ocazional adaugă plăci OSB peste vată.",
+      "layers": [
+        {
+          "material": "Vată bazaltică acoperiș",
+          "thickness": 200
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PL-sol-pre1990-neizolata",
+      "elementType": "PL",
+      "label": "Placă pe sol BA — neizolată (pre-1990)",
+      "shortLabel": "Placă neizolată",
+      "description": "Placă BA pe sol fără termoizolație, tipică pentru clădiri pre-1990.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.85,
+      "uRange": {
+        "min": 0.5,
+        "max": 1.0
+      },
+      "uClass": "E",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "pre-1990",
+        "ro-clasic"
+      ],
+      "source": "C 107/3-2005; SR EN ISO 13370",
+      "notes": "Pierdere descendentă majoră. Pentru retrofit adaugă XPS perimetral 60 mm pe 1.5 m la margine + șapă termoizolantă.",
+      "layers": [
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 30
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "id": "PL-sol-xps-100-default",
+      "elementType": "PL",
+      "label": "Placă pe sol BA + XPS 100 mm",
+      "shortLabel": "Placă XPS 100",
+      "description": "Placă pe sol standard cu XPS sub șapă — minim modern pentru proiecte noi.",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.3,
+      "uRange": {
+        "min": 0.28,
+        "max": 0.32
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "popular",
+        "default"
+      ],
+      "source": "Mc 001-2022; SR EN ISO 13370",
+      "notes": "Pentru nZEB grosime XPS ≥150 mm.",
+      "layers": [
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "XPS 200 kPa (fundații ușoare, λ=0.034)",
+          "thickness": 100
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "id": "PL-sol-ufh-150-nzeb",
+      "elementType": "PL",
+      "label": "Placă pe sol cu încălzire în pardoseală + EPS-T 150 mm (nZEB)",
+      "shortLabel": "PL UFH 150",
+      "description": "Placă pe sol standard nZEB cu UFH și EPS-T în două straturi (acustic + termic).",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.16,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "ufh",
+        "premium"
+      ],
+      "source": "Uponor Tecto UFH; Mc 001-2022 Tabel 2.4",
+      "notes": "Centură EPS perimetral 50 mm pentru reducerea pierderilor pe contur.",
+      "layers": [
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 70
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
+          "thickness": 100
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 50
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.3
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "id": "PB-subsol-eps-100-default",
+      "elementType": "PB",
+      "label": "Planșeu peste subsol neîncălzit + EPS 100 mm (sub planșeu)",
+      "shortLabel": "PB EPS 100",
+      "description": "Standard pentru subsol neîncălzit — izolație sub planșeu (în subsol).",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.34,
+      "uRange": {
+        "min": 0.3,
+        "max": 0.4
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "popular",
+        "default",
+        "subsol"
+      ],
+      "source": "Mc 001-2022 Tabel 2.10a",
+      "notes": "Izolația dedesubt evită punte termică pe contur. Pentru nZEB grosime EPS ≥150 mm.",
+      "layers": [
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "EPS 100",
+          "thickness": 100
+        }
+      ]
+    },
+    {
+      "id": "PB-subsol-pir-120-nzeb",
+      "elementType": "PB",
+      "label": "Planșeu peste subsol + PIR 120 mm (nZEB)",
+      "shortLabel": "PB PIR 120",
+      "description": "Soluție compactă cu PIR pentru proiecte nZEB cu înălțime redusă subsol.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.2,
+      "uRange": {
+        "min": 0.19,
+        "max": 0.22
+      },
+      "uClass": "B",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "premium",
+        "subsol"
+      ],
+      "source": "EN 13165; Mc 001-2022",
+      "notes": "Echivalent EPS 200 mm la jumătate grosime.",
+      "layers": [
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 70
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 180
+        },
+        {
+          "material": "PIR cu folie alu",
+          "thickness": 120
+        }
+      ]
+    },
+    {
+      "id": "PI-bca-15",
+      "elementType": "PI",
+      "label": "Perete interior BCA 15 cm",
+      "shortLabel": "PI BCA 15",
+      "description": "Perete despărțitor între spații încălzite — masă termică medie + acustică acceptabilă.",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.95,
+      "uRange": {
+        "min": 0.85,
+        "max": 1.1
+      },
+      "uClass": null,
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "popular",
+        "interior"
+      ],
+      "source": "C 107/1-2005",
+      "notes": "Nu intră în calcul anvelopă termică — doar masă și acustică (Rw≈42 dB).",
+      "layers": [
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        },
+        {
+          "material": "BCA (beton celular autoclavizat)",
+          "thickness": 150
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PI-gips-carton-double",
+      "elementType": "PI",
+      "label": "Perete interior gips-carton dublu cu vată sticlă (W112)",
+      "shortLabel": "PI GK W112",
+      "description": "Sistem gips-carton cu structură metalică, vată sticlă în cavitate — soluția cea mai răspândită pentru spații birouri/comerciale.",
+      "era": "nzeb-2020+",
+      "structure": "metal",
+      "renovationStatus": "nou",
+      "uTypical": 0.45,
+      "uRange": {
+        "min": 0.4,
+        "max": 0.55
+      },
+      "uClass": null,
+      "fireClass": "EI 60",
+      "tags": [
+        "nou",
+        "popular",
+        "interior",
+        "birouri"
+      ],
+      "source": "Knauf W112; Rigips Standard",
+      "notes": "Ușor (~30 kg/m²), montaj rapid. Acustică Rw≈45-48 dB.",
+      "layers": [
+        {
+          "material": "Gips-carton Knauf Blue (standard 12.5mm)",
+          "thickness": 12.5
+        },
+        {
+          "material": "Gips-carton Knauf Blue (standard 12.5mm)",
+          "thickness": 12.5
+        },
+        {
+          "material": "Vată minerală de sticlă",
+          "thickness": 50
+        },
+        {
+          "material": "Strat de aer neventilat (1cm)",
+          "thickness": 25
+        },
+        {
+          "material": "Gips-carton Knauf Blue (standard 12.5mm)",
+          "thickness": 12.5
+        },
+        {
+          "material": "Gips-carton Knauf Blue (standard 12.5mm)",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "id": "US-lemn-masiv-pre1990",
+      "elementType": "US",
+      "label": "Ușă lemn masiv (pre-1990) — neizolată",
+      "shortLabel": "Ușă lemn neizolată",
+      "description": "Ușă tradițională lemn masiv, fără izolație — case rurale/urbane vechi.",
+      "era": "pre1970",
+      "structure": "lemn",
+      "renovationStatus": "existent",
+      "uTypical": 2.5,
+      "uRange": {
+        "min": 2.0,
+        "max": 3.0
+      },
+      "uClass": "G",
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "audit",
+        "lemn",
+        "rural"
+      ],
+      "source": "EN 14351-1; SR EN 12219",
+      "notes": "Recomandat înlocuire cu ușă PVC izolată sau lemn modern.",
+      "layers": [
+        {
+          "material": "Lemn tare (stejar)",
+          "thickness": 50
+        }
+      ]
+    },
+    {
+      "id": "US-pvc-izolata-nzeb",
+      "elementType": "US",
+      "label": "Ușă PVC izolată EPS 60 mm (modernă)",
+      "shortLabel": "Ușă PVC 60",
+      "description": "Ușă PVC cu spumă EPS interior — standard modern, montaj rapid.",
+      "era": "nzeb-2020+",
+      "structure": "metal",
+      "renovationStatus": "nou",
+      "uTypical": 1.1,
+      "uRange": {
+        "min": 0.8,
+        "max": 1.3
+      },
+      "uClass": "C",
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "nzeb",
+        "popular",
+        "default",
+        "rezidential"
+      ],
+      "source": "EN 14351-1; ETA-09/0040",
+      "notes": "U_ref = 1.30 W/m²K (Mc 001 Anexa SE) → CONFORM.",
+      "layers": [
+        {
+          "material": "PVC rigid (profile, evi)",
+          "thickness": 8
+        },
+        {
+          "material": "EPS 100",
+          "thickness": 60
+        },
+        {
+          "material": "PVC rigid (profile, evi)",
+          "thickness": 8
+        }
+      ]
+    },
+    {
+      "id": "US-metal-pir-40",
+      "elementType": "US",
+      "label": "Ușă metal + PIR 40 mm (industrial/comercial)",
+      "shortLabel": "Ușă metal PIR",
+      "description": "Ușă rapidă industrială — clase de foc înalte, stabilitate dimensională.",
+      "era": "nzeb-2020+",
+      "structure": "metal",
+      "renovationStatus": "nou",
+      "uTypical": 1.15,
+      "uRange": {
+        "min": 1.0,
+        "max": 1.3
+      },
+      "uClass": "C",
+      "fireClass": "EI 30",
+      "tags": [
+        "industrial",
+        "comercial",
+        "fire-safe"
+      ],
+      "source": "EN 14351-1; EN 13501-2 (clase foc)",
+      "notes": "Pentru clădiri publice/comerciale cu cerințe foc.",
+      "layers": [
+        {
+          "material": "Oțel",
+          "thickness": 1
+        },
+        {
+          "material": "Spumă poliizocianurică (PIR)",
+          "thickness": 40
+        },
+        {
+          "material": "Oțel",
+          "thickness": 1
+        }
+      ]
+    },
+    {
+      "id": "PR-casa-scarii-15",
+      "elementType": "PR",
+      "label": "Perete către casa scării — BCA 15 + EPS 50",
+      "shortLabel": "PR BCA+EPS 50",
+      "description": "Perete între apartament și casă scării/coridor neîncălzit.",
+      "era": "2010-2020",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.55,
+      "uRange": {
+        "min": 0.45,
+        "max": 0.65
+      },
+      "uClass": "C",
+      "fireClass": "A1",
+      "tags": [
+        "existent",
+        "popular",
+        "neincalzit"
+      ],
+      "source": "Mc 001-2022 Tabel 2.10a; C 107/1-2005",
+      "notes": "Coeficient τ=0.8 aplicat în calcul anvelopă (spațiu adiacent neîncălzit).",
+      "layers": [
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        },
+        {
+          "material": "EPS 100",
+          "thickness": 50
+        },
+        {
+          "material": "BCA (beton celular autoclavizat)",
+          "thickness": 150
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "PS-subsol-xps-80",
+      "elementType": "PS",
+      "label": "Perete subteran subsol — XPS 80 mm exterior + BA",
+      "shortLabel": "PS XPS 80",
+      "description": "Perete subsol/demisol în contact cu pământul, izolație XPS exterioară (perimetrală).",
+      "era": "2010-2020",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.32,
+      "uRange": {
+        "min": 0.28,
+        "max": 0.4
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "nou",
+        "subsol",
+        "subteran"
+      ],
+      "source": "Mc 001-2022; SR EN ISO 13370",
+      "notes": "XPS rezistent apă obligatoriu sub CTS. Strat protecție membranic + drenaj.",
+      "layers": [
+        {
+          "material": "Pământ vegetal (sol de grădină)",
+          "thickness": 200
+        },
+        {
+          "material": "Geocompozit dren (polietilenă + geotextil)",
+          "thickness": 10
+        },
+        {
+          "material": "Membrana drenantă HDPE",
+          "thickness": 1
+        },
+        {
+          "material": "XPS 300 (fundații)",
+          "thickness": 80
+        },
+        {
+          "material": "Membrană EPDM",
+          "thickness": 3
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "id": "AT-atic-eps-150-nzeb",
+      "elementType": "AT",
+      "label": "Atic EPS 150 mm + tencuială siliconică",
+      "shortLabel": "Atic EPS 150",
+      "description": "Atic vertical deasupra terasei — termoizolat continuu cu fațada.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.2,
+      "uRange": {
+        "min": 0.18,
+        "max": 0.22
+      },
+      "uClass": "B",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "atic"
+      ],
+      "source": "Mc 001-2022; standardizare ETICS",
+      "notes": "Atic = continuitate ETICS fațadă. Capac inox sau membrană pentru protecție UV.",
+      "layers": [
+        {
+          "material": "Tablă zincată",
+          "thickness": 0.6
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 150
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 50
+        },
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 5
+        }
+      ]
+    },
+    {
+      "id": "PV-pasaj-pir-120",
+      "elementType": "PV",
+      "label": "Planșeu peste pasaj PIR 120 + tencuială siliconică (jos)",
+      "shortLabel": "Pasaj PIR 120",
+      "description": "Planșeu deasupra pasajului deschis sau spațiu exterior — izolație continuă pe ambele fețe ale planșeului.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.21,
+      "uRange": {
+        "min": 0.2,
+        "max": 0.23
+      },
+      "uClass": "B",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "nzeb",
+        "pasaj",
+        "exterior"
+      ],
+      "source": "Mc 001-2022 Tabel 2.4 (PB); SR EN 13165",
+      "notes": "Atenție la punte termică perimetrală — continuitate izolație cu fațada.",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 5
+        },
+        {
+          "material": "PIR cu folie alu",
+          "thickness": 120
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
+        },
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-zid-cp42-1950",
+      "elementType": "PE",
+      "label": "Zidărie cărămidă plină 42 cm interbelic",
+      "shortLabel": "Cărămidă 42",
+      "description": "Pereți masivi case istorice/urbane interbelice, zidărie 2 rânduri cărămidă plină.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.4,
+      "uRange": {
+        "min": 1.3,
+        "max": 1.55
+      },
+      "uClass": "F",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "interbelic",
+        "ro-istoric"
+      ],
+      "source": "C 107/3-2005; arhitectură interbelică",
+      "notes": "Restaurare cu IWI fibrolemn (interior wall insulation).",
+      "layers": [
+        {
+          "material": "Tencuială ciment",
+          "thickness": 30
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 420
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-pm-eps5-1985",
+      "elementType": "PE",
+      "label": "Panou mare cu strat EPS 50 mm intermediar (1980)",
+      "shortLabel": "PMP EPS50 1985",
+      "description": "Panou mare anii 80 cu izolație EPS intermediară de 5 cm.",
+      "era": "1970-1990",
+      "structure": "panou-mare",
+      "renovationStatus": "existent",
+      "uTypical": 0.62,
+      "uRange": {
+        "min": 0.55,
+        "max": 0.75
+      },
+      "uClass": "D",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "panou-mare",
+        "ipct"
+      ],
+      "source": "UPT teză Fofiu 2018; IPCT 770/86",
+      "notes": "Izolația EPS 5 cm depășită; retrofit ETICS recomandat.",
+      "layers": [
+        {
+          "material": "Beton armat",
+          "thickness": 60
+        },
+        {
+          "material": "EPS 040 (standard λ=0.040)",
+          "thickness": 50
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 120
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 10
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-zid-cp25-eps5-2005",
+      "elementType": "PE",
+      "label": "Cărămidă goluri 25 cm + ETICS EPS 50 mm (renovare timpurie)",
+      "shortLabel": "Cărămidă+EPS50",
+      "description": "Renovare timpurie 2000-2010 cu ETICS subțire.",
+      "era": "1990-2010",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.51,
+      "uRange": {
+        "min": 0.45,
+        "max": 0.58
+      },
+      "uClass": "C",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "renovat",
+        "etics",
+        "low-cost"
+      ],
+      "source": "GP 058-2000; OPAQUE_WALL_TYPES",
+      "notes": "Sub-grosime izolație vs. cerințe Mc 001-2022; recomandat upgrade la 100+ mm.",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 5
+        },
+        {
+          "material": "EPS 040 (standard λ=0.040)",
+          "thickness": 50
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Cărămidă cu goluri (GVP)",
+          "thickness": 240
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-pm-vata15-2018",
+      "elementType": "PE",
+      "label": "Panou mare reabilitat cu ETICS vată bazaltică 150 mm",
+      "shortLabel": "Panou+VM150",
+      "description": "Reabilitare termică panou mare cu vată minerală fațadă (clasa A1 obligatorie >P+10).",
+      "era": "2010-2020",
+      "structure": "panou-mare",
+      "renovationStatus": "renovat",
+      "uTypical": 0.25,
+      "uRange": {
+        "min": 0.22,
+        "max": 0.28
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "retrofit",
+        "etics",
+        "panou-mare",
+        "fire-safe"
+      ],
+      "source": "GP 123-2013; P118/1-2025",
+      "notes": "Obligatoriu vată minerală pentru blocuri >P+10 (P118).",
+      "layers": [
+        {
+          "material": "Tencuială silicat calcotermic (Capatect)",
+          "thickness": 5
+        },
+        {
+          "material": "Vată bazaltică fațadă",
+          "thickness": 150
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 180
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 10
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-cadru-vata20-nzeb",
+      "elementType": "PE",
+      "label": "Cadre BA + zidărie închidere + vată 200 mm (clădire publică nZEB)",
+      "shortLabel": "Cadre+VM200",
+      "description": "Construcție nouă nZEB pentru clădiri publice cu cerințe foc clasa A1.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.16,
+      "uRange": {
+        "min": 0.15,
+        "max": 0.18
+      },
+      "uClass": "A",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "publica",
+        "fire-safe"
+      ],
+      "source": "Mc 001-2022; ISOVER RO ghid nZEB",
+      "notes": "Standard pentru școli, spitale, sedii publice.",
+      "layers": [
+        {
+          "material": "Tencuială minerală (var+ciment+pulbere marmoră)",
+          "thickness": 8
+        },
+        {
+          "material": "Vată bazaltică fațadă",
+          "thickness": 200
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Bloc ceramic Porotherm 25",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-PH-cellulose-300-tjj",
+      "elementType": "PE",
+      "label": "Perete cadru lemn TJI cu celuloză insuflată 300 mm (Passivhaus)",
+      "shortLabel": "PH cellulose 300",
+      "description": "Sistem Timber Joist I cu celuloză insuflată — punte termică minimă.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.12,
+      "uRange": {
+        "min": 0.11,
+        "max": 0.13
+      },
+      "uClass": "A+",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "ecologic",
+        "premium"
+      ],
+      "source": "Passivhaus Institute; Component Database",
+      "notes": "Densitate celuloză 55 kg/m³. Compatibil cu certificare PHI Classic.",
+      "layers": [
+        {
+          "material": "Fibră de lemn rigidă (fațadă)",
+          "thickness": 18
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Celuloză insuflată",
+          "thickness": 300
+        },
+        {
+          "material": "OSB",
+          "thickness": 15
+        },
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 50
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-PH-bca-monolitic-365",
+      "elementType": "PE",
+      "label": "Perete monolitic BCA λ=0.07 — 365 mm (Passivhaus monolitic)",
+      "shortLabel": "BCA mono 365",
+      "description": "Perete monolitic fără ETICS, BCA ultra-ușor structural.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.17,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "monolitic",
+        "premium"
+      ],
+      "source": "Passivhaus Classic; SR EN 771-4",
+      "notes": "Bloc densitate 300 kg/m³. Soluție single-leaf fără termoizolație suplimentară.",
+      "layers": [
+        {
+          "material": "Tencuială minerală (var+ciment+pulbere marmoră)",
+          "thickness": 8
+        },
+        {
+          "material": "BCA Xella Ytong PP2/0,35 (λ=0.08)",
+          "thickness": 365
+        },
+        {
+          "material": "Tencuială var-ghips (interior)",
+          "thickness": 12
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-PH-etics-eps-graf-300",
+      "elementType": "PE",
+      "label": "ETICS heavy-duty EPS grafitat 300 mm (Passivhaus Plus)",
+      "shortLabel": "ETICS EPS-G 300",
+      "description": "Termosistem extrem pentru clădiri Passivhaus Plus.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.1,
+      "uRange": {
+        "min": 0.09,
+        "max": 0.12
+      },
+      "uClass": "A+",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus-plus",
+        "premium",
+        "etics"
+      ],
+      "source": "Passivhaus Plus; ETA Generic ETICS",
+      "notes": "Necesită profil pornire reinforced + min. 8 dibluri/m².",
+      "layers": [
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 3
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 300
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 8
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 240
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-EPH-iwi-fibrolemn-220",
+      "elementType": "PE",
+      "label": "ENERPHIT IWI fibrolemn 220 mm + tencuială var (interior wall insulation)",
+      "shortLabel": "IWI fibrolemn",
+      "description": "Izolație interioară pentru clădiri istorice cu fațadă protejată.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.16,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "enerphit",
+        "patrimoniu",
+        "iwi",
+        "ecologic"
+      ],
+      "source": "ENERPHIT IWI; PHI capillary active components",
+      "notes": "Capillary active — fără barieră vapori. Risc condens igrosc redus prin difuzie controlată.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 380
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Fibră de lemn flexibilă",
+          "thickness": 220
+        },
+        {
+          "material": "Fibră de lemn rigidă (fațadă)",
+          "thickness": 40
+        },
+        {
+          "material": "Tencuială var hidraulic natural NHL 3.5",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-EPH-iwi-calsil-100",
+      "elementType": "PE",
+      "label": "ENERPHIT IWI silicat de calciu 100 mm (clădiri istorice)",
+      "shortLabel": "IWI CalSil 100",
+      "description": "Izolație interioară cu silicat de calciu pentru fațade protejate.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.42,
+      "uRange": {
+        "min": 0.38,
+        "max": 0.48
+      },
+      "uClass": "C",
+      "fireClass": "A1",
+      "tags": [
+        "enerphit",
+        "patrimoniu",
+        "iwi",
+        "antimucegai"
+      ],
+      "source": "ENERPHIT Component Database PHI",
+      "notes": "sd = 5 m. Capillary active extrem — antimucegai.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 380
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Placă silicat de calciu interioară (Skamol/Multipor-class)",
+          "thickness": 100
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-EPH-iwi-aerogel-40",
+      "elementType": "PE",
+      "label": "ENERPHIT IWI aerogel covor 40 mm (slim heritage)",
+      "shortLabel": "IWI Aerogel 40",
+      "description": "Soluție slim pentru fațade cu retragere stradă < 100 mm.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.3,
+      "uRange": {
+        "min": 0.28,
+        "max": 0.34
+      },
+      "uClass": "B",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "enerphit",
+        "premium",
+        "patrimoniu",
+        "iwi",
+        "slim"
+      ],
+      "source": "ENERPHIT Component; EN 16783",
+      "notes": "Cost 8× EPS. Pentru fațade istorice protejate fără spațiu interior.",
+      "layers": [
+        {
+          "material": "Tencuială mortar drișcuit (renovare)",
+          "thickness": 25
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 380
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 3
+        },
+        {
+          "material": "Saltea aerogel 10 mm (blanket superinsulation)",
+          "thickness": 40
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-MIN-fibrolemn-280",
+      "elementType": "PE",
+      "label": "Minergie-P perete cadru lemn fibrolemn 280 mm",
+      "shortLabel": "Minergie fibrolemn",
+      "description": "Perete bio-based 100% pentru certificare Minergie-P.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.14,
+      "uRange": {
+        "min": 0.13,
+        "max": 0.16
+      },
+      "uClass": "A",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "minergie",
+        "ecologic",
+        "lemn",
+        "bio-based"
+      ],
+      "source": "Minergie-P; SIA 380/1",
+      "notes": "Densitate fibrolemn 50 kg/m³. Difuziv μ=3.",
+      "layers": [
+        {
+          "material": "Lemn moale (brad/molid)",
+          "thickness": 22
+        },
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 30
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Fibră de lemn rigidă (fațadă)",
+          "thickness": 60
+        },
+        {
+          "material": "Fibră de lemn flexibilă",
+          "thickness": 200
+        },
+        {
+          "material": "OSB",
+          "thickness": 18
+        },
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 50
+        },
+        {
+          "material": "Tencuială din argilă naturală",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-LCA-hempcrete-450",
+      "elementType": "PE",
+      "label": "Perete monolitic hempcrete 450 mm (carbon-negative)",
+      "shortLabel": "Hempcrete 450",
+      "description": "Perete bio-based monolitic carbon-negativ — sechestrare CO₂ 50 ani.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.14,
+      "uRange": {
+        "min": 0.13,
+        "max": 0.16
+      },
+      "uClass": "A",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "ecologic",
+        "carbon-negative",
+        "monolitic"
+      ],
+      "source": "EN 15804; ACAN-RBC; BRE IP 14/11",
+      "notes": "Difuziv μ=4. SR EN 16798 confort excelent. GWP -85 kgCO2/m².",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        },
+        {
+          "material": "Hempcrete cu liant pozzolanic (metakaolin + var)",
+          "thickness": 450
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 20
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-LCA-rammed-earth-600",
+      "elementType": "PE",
+      "label": "Pământ bătut 600 mm cu izolație miez fibrolemn",
+      "shortLabel": "Pământ bătut 600",
+      "description": "Perete pământ bătut sandwich cu izolație miez — inerție extremă.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.28,
+      "uRange": {
+        "min": 0.25,
+        "max": 0.32
+      },
+      "uClass": "B",
+      "fireClass": "A1",
+      "tags": [
+        "ecologic",
+        "rammed-earth",
+        "inertie-mare",
+        "bio-based"
+      ],
+      "source": "DIN 18945; RT 2012 RE",
+      "notes": "Inerție 380 kJ/m²K. Difuziv extrem μ=6.",
+      "layers": [
+        {
+          "material": "Pământ bătut (rammed earth, lut bătut subcarpați)",
+          "thickness": 200
+        },
+        {
+          "material": "Fibră de lemn flexibilă",
+          "thickness": 200
+        },
+        {
+          "material": "Pământ bătut (rammed earth, lut bătut subcarpați)",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-CLM-fatada-ventilata-cosos",
+      "elementType": "PE",
+      "label": "Fațadă ventilată cu efect coș de cooling (climate-resilient)",
+      "shortLabel": "Fațadă ventilată cooling",
+      "description": "Fațadă ventilată proiectată pentru răcire pasivă prin chimney effect.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "nou",
+      "uTypical": 0.15,
+      "uRange": {
+        "min": 0.14,
+        "max": 0.17
+      },
+      "uClass": "A",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "climate-resilient",
+        "cooling",
+        "ventilata"
+      ],
+      "source": "EN ISO 6946 + CFD analysis",
+      "notes": "Δp natural 8 Pa. Răcire pasivă 5-8 W/m² zile caniculă RCP 4.5/8.5.",
+      "layers": [
+        {
+          "material": "Faianță ceramică",
+          "thickness": 25
+        },
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 80
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Vată minerală λ=0.032 (premium)",
+          "thickness": 200
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 250
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 15
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-CLM-pcm-gips",
+      "elementType": "PE",
+      "label": "Strat interior PCM gips 25 mm peste perete existent",
+      "shortLabel": "PCM gips 25",
+      "description": "Retrofit pasiv cu PCM pentru reducere vârf temp vară.",
+      "era": "nzeb-2020+",
+      "structure": "zidarie",
+      "renovationStatus": "renovat",
+      "uTypical": 0.32,
+      "uRange": {
+        "min": 0.28,
+        "max": 0.4
+      },
+      "uClass": "B",
+      "fireClass": "A2-s1,d0",
+      "tags": [
+        "climate-resilient",
+        "pcm",
+        "retrofit-pasiv",
+        "vara"
+      ],
+      "source": "EN ISO 13786 (decrement)",
+      "notes": "Capacitate latentă 70 Wh/m²K. Reduce vârf temp 3°C în zile caniculă.",
+      "layers": [
+        {
+          "material": "Placă perete PCM parafină (T_m=26°C)",
+          "thickness": 25
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 3
+        },
+        {
+          "material": "Cărămidă plină",
+          "thickness": 250
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 100
+        },
+        {
+          "material": "Tencuială siliconică (exterior)",
+          "thickness": 5
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-chirpici-pleava-banat",
+      "elementType": "PE",
+      "label": "Chirpici cu pleavă 50 cm (case țărănești Banat)",
+      "shortLabel": "Chirpici Banat",
+      "description": "Pereți tradiționali chirpici cu pleavă, regiunea Banat.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.93,
+      "uRange": {
+        "min": 0.8,
+        "max": 1.1
+      },
+      "uClass": "E",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "vernacular",
+        "ro-traditional",
+        "banat"
+      ],
+      "source": "Minke 2012; DIN 18945:2013; Muzeul Satului",
+      "notes": "Sensibil umiditate. Recomandare retrofit cu var hidraulic.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        },
+        {
+          "material": "Chirpici cu pleavă (adobe with chaff, Banat)",
+          "thickness": 500
+        },
+        {
+          "material": "Tencuială lut-pleavă (clay-chaff plaster)",
+          "thickness": 30
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-chirpici-fan-moldova",
+      "elementType": "PE",
+      "label": "Chirpici cu fân 60 cm (case Moldova)",
+      "shortLabel": "Chirpici Moldova",
+      "description": "Pereți tradiționali chirpici cu fân, densitate scăzută, Moldova.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 0.71,
+      "uRange": {
+        "min": 0.65,
+        "max": 0.85
+      },
+      "uClass": "D",
+      "fireClass": "C-s2,d0",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "vernacular",
+        "moldova"
+      ],
+      "source": "Minke 2012; tradiție RO Moldova",
+      "notes": "Densitate ρ=1300 kg/m³, izolație termică superioară prin fibre fân.",
+      "layers": [
+        {
+          "material": "Tencuială lut-bălegar (clay-dung plaster)",
+          "thickness": 30
+        },
+        {
+          "material": "Chirpici cu fân (long-fiber adobe, Moldova)",
+          "thickness": 600
+        },
+        {
+          "material": "Tencuială lut-pleavă (clay-chaff plaster)",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-pamant-batut-subcarpati",
+      "elementType": "PE",
+      "label": "Pământ bătut 70 cm (lut bătut subcarpați)",
+      "shortLabel": "Pământ bătut 70",
+      "description": "Construcție tradițională pământ bătut subcarpați (Argeș, Prahova).",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.3,
+      "uRange": {
+        "min": 1.15,
+        "max": 1.5
+      },
+      "uClass": "F",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "vernacular",
+        "subcarpati"
+      ],
+      "source": "DIN 18945; Mc 001-2022 A.4",
+      "notes": "Inerție termică >50h. Masă termică excelentă, λ ridicat.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        },
+        {
+          "material": "Pământ bătut (rammed earth, lut bătut subcarpați)",
+          "thickness": 700
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 30
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-piatra-rau-maramures",
+      "elementType": "PE",
+      "label": "Piatră de râu 60 cm + mortar var (Maramureș, Bucovina)",
+      "shortLabel": "Piatră 60 Maramureș",
+      "description": "Zidărie din piatră de râu cu mortar var, regiuni montane.",
+      "era": "pre1970",
+      "structure": "zidarie",
+      "renovationStatus": "existent",
+      "uTypical": 1.85,
+      "uRange": {
+        "min": 1.6,
+        "max": 2.05
+      },
+      "uClass": "G",
+      "fireClass": "A1",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "vernacular",
+        "munte"
+      ],
+      "source": "EN ISO 10456 Tabel 4; INMI",
+      "notes": "Mortar în rosturi mari. Punți termice prin pietre individuale.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 20
+        },
+        {
+          "material": "Piatră naturală",
+          "thickness": 600
+        },
+        {
+          "material": "Tencuială lut-pleavă (clay-chaff plaster)",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-fachwerk-sibiu",
+      "elementType": "PE",
+      "label": "Fachwerk: schelet stejar + chirpici (case săsești)",
+      "shortLabel": "Fachwerk",
+      "description": "Schelet structural stejar cu umplutură chirpici, case săsești Transilvania.",
+      "era": "pre1970",
+      "structure": "lemn",
+      "renovationStatus": "existent",
+      "uTypical": 1.2,
+      "uRange": {
+        "min": 1.0,
+        "max": 1.4
+      },
+      "uClass": "F",
+      "fireClass": "C-s2,d0",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "saxon",
+        "transilvania"
+      ],
+      "source": "DIN 18945; Muzeul ASTRA Sibiu",
+      "notes": "Calcul ponderat ~70% chirpici + 30% lemn structural.",
+      "layers": [
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        },
+        {
+          "material": "Chirpici cu paie tăiate (adobe with cut straw, Oltenia)",
+          "thickness": 350
+        },
+        {
+          "material": "Tencuială var (hidratat)",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-blockhaus-maramures",
+      "elementType": "PE",
+      "label": "Bârne lemn brut horizontal 25 cm (blockhaus Maramureș)",
+      "shortLabel": "Blockhaus",
+      "description": "Pereți tradiționali din bârne brute orizontale, case țărănești.",
+      "era": "pre1970",
+      "structure": "lemn",
+      "renovationStatus": "existent",
+      "uTypical": 0.49,
+      "uRange": {
+        "min": 0.45,
+        "max": 0.55
+      },
+      "uClass": "C",
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "audit",
+        "patrimoniu",
+        "rural",
+        "vernacular",
+        "maramures",
+        "unesco"
+      ],
+      "source": "EN ISO 10456 Tabel 4; UTCN Cobârzan 2015",
+      "notes": "Patrimoniu UNESCO (biserici de lemn). Etanșeitate prin 'muscă' la colțuri.",
+      "layers": [
+        {
+          "material": "Bârne lemn brut horizontal (blockhaus traditional)",
+          "thickness": 250
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PE-strawbale-paie-450",
+      "elementType": "PE",
+      "label": "Pereți baloți paie comprimate 450 mm + tencuială argilă (Nebraska style)",
+      "shortLabel": "Baloți paie 450",
+      "description": "Construcție ecologică modernă cu baloți de paie comprimate.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.13,
+      "uRange": {
+        "min": 0.11,
+        "max": 0.16
+      },
+      "uClass": "A+",
+      "fireClass": "E",
+      "tags": [
+        "nzeb",
+        "ecologic",
+        "carbon-negative",
+        "minergie",
+        "paie"
+      ],
+      "source": "Goodhew & Griffiths 2005; EN 13171; Minergie-A-ECO",
+      "notes": "Carbon-negative -120 kgCO2/m². Loadbearing — Nebraska style.",
+      "layers": [
+        {
+          "material": "Tencuială din argilă naturală",
+          "thickness": 35
+        },
+        {
+          "material": "Paie comprimate ρ=110 (medium density)",
+          "thickness": 450
+        },
+        {
+          "material": "Tencuială din argilă naturală",
+          "thickness": 30
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PT-PH-warm-pir-280",
+      "elementType": "PT",
+      "label": "Acoperiș terasă caldă PIR 280 mm (Passivhaus Plus)",
+      "shortLabel": "Terasă PIR 280",
+      "description": "Warm flat roof — fără punct rouă, pentru certificare Passivhaus Plus.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.09,
+      "uRange": {
+        "min": 0.08,
+        "max": 0.1
+      },
+      "uClass": "A+",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus-plus",
+        "premium"
+      ],
+      "source": "Passivhaus Plus; PIR R=12.7 m²K/W",
+      "notes": "PIR cu R = 12.7 m²K/W. Fără punct rouă în interior.",
+      "layers": [
+        {
+          "material": "Membrană PVC",
+          "thickness": 1.5
+        },
+        {
+          "material": "PIR cu folie alu",
+          "thickness": 280
+        },
+        {
+          "material": "Folie HDPE (membrane impermeabilă)",
+          "thickness": 0.5
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        },
+        {
+          "material": "Tencuială de ipsos",
+          "thickness": 12
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PA-PH-cellulose-350-sarking",
+      "elementType": "PA",
+      "label": "Acoperiș înclinat celuloză 350 mm + sarking fibrolemn (Passivhaus)",
+      "shortLabel": "PA cellulose+sarking",
+      "description": "Acoperiș Passivhaus cu sarking fibrolemn + celuloză insuflată între căpriori.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.1,
+      "uRange": {
+        "min": 0.09,
+        "max": 0.12
+      },
+      "uClass": "A+",
+      "fireClass": "B-s2,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "ecologic",
+        "sarking",
+        "premium"
+      ],
+      "source": "Passivhaus Classic; sarking standard",
+      "notes": "Sarking elimină punte termică căprior. Membrană sd ≤ 0.1 m.",
+      "layers": [
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 40
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "Fibră de lemn rigidă acoperiș (Sarking)",
+          "thickness": 60
+        },
+        {
+          "material": "Celuloză insuflată",
+          "thickness": 350
+        },
+        {
+          "material": "OSB",
+          "thickness": 15
+        },
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 50
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PA-EPH-sarking-200-100",
+      "elementType": "PA",
+      "label": "Sarking PIR 200 + vată căpriori 100 mm (ENERPHIT retrofit)",
+      "shortLabel": "ENERPHIT sarking",
+      "description": "Strategia cea mai eficientă pentru retrofit pod cu căpriori existenți.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "renovat",
+      "uTypical": 0.11,
+      "uRange": {
+        "min": 0.1,
+        "max": 0.13
+      },
+      "uClass": "A",
+      "fireClass": "B-s1,d0",
+      "tags": [
+        "enerphit",
+        "retrofit",
+        "sarking",
+        "premium"
+      ],
+      "source": "ENERPHIT retrofit details PHI Darmstadt",
+      "notes": "Căpriori existenți păstrați. Cea mai bună strategie retrofit pod.",
+      "layers": [
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 40
+        },
+        {
+          "material": "Folie microperforată (anticondens acoperiș)",
+          "thickness": 1
+        },
+        {
+          "material": "PIR cu folie alu",
+          "thickness": 200
+        },
+        {
+          "material": "Vată minerală bazaltică",
+          "thickness": 100
+        },
+        {
+          "material": "OSB",
+          "thickness": 15
+        },
+        {
+          "material": "Gips-carton",
+          "thickness": 12.5
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PA-DGN-extensiv-vegetal",
+      "elementType": "AC_VERDE",
+      "label": "Acoperiș verde extensiv + vată minerală 240 mm (DGNB Platinum)",
+      "shortLabel": "DGNB verde",
+      "description": "Acoperiș verde extensiv pentru certificare DGNB Platinum.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.14,
+      "uRange": {
+        "min": 0.13,
+        "max": 0.16
+      },
+      "uClass": "A",
+      "fireClass": "Broof(t1)",
+      "tags": [
+        "nzeb",
+        "dgnb",
+        "ecologic",
+        "verde",
+        "premium"
+      ],
+      "source": "DGNB Platinum (ENV1.3); FLL Guidelines",
+      "notes": "Reduce SUHI (urban heat island). Retenție pluvială 70%. LCA 50 ani.",
+      "layers": [
+        {
+          "material": "Substrat acoperis verde (extensive, δ=80mm)",
+          "thickness": 80
+        },
+        {
+          "material": "Geotextil",
+          "thickness": 2
+        },
+        {
+          "material": "Strat de drenaj acoperis verde (granulat argila)",
+          "thickness": 30
+        },
+        {
+          "material": "Membrană EPDM",
+          "thickness": 3
+        },
+        {
+          "material": "Vată bazaltică acoperiș",
+          "thickness": 240
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PB-PH-eps-perimetru-300",
+      "elementType": "PL",
+      "label": "Placă pe sol cu EPS perimetru 300 mm (Passivhaus)",
+      "shortLabel": "PL EPS perimetru 300",
+      "description": "Placă pe sol cu izolație perimetru XPS până -1.2 m pentru continuitate.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.11,
+      "uRange": {
+        "min": 0.1,
+        "max": 0.13
+      },
+      "uClass": "A+",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "premium",
+        "perimetru"
+      ],
+      "source": "Passivhaus Classic; EN ISO 13370",
+      "notes": "XPS perimetru previne punte termică soclu. EPS-T tasare ≤ 2%.",
+      "layers": [
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 60
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
+          "thickness": 300
+        },
+        {
+          "material": "Membrană auto-adezivă SBS (fundații)",
+          "thickness": 4
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 250
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PB-PH-foamglass-200",
+      "elementType": "PL",
+      "label": "Radier pe sticlă spumantă 200 mm (DGNB Platinum)",
+      "shortLabel": "PL foamglass",
+      "description": "Soluție portant + termoizolant pentru placă pe sol DGNB.",
+      "era": "nzeb-2020+",
+      "structure": "cadre-ba",
+      "renovationStatus": "nou",
+      "uTypical": 0.18,
+      "uRange": {
+        "min": 0.16,
+        "max": 0.2
+      },
+      "uClass": "A",
+      "fireClass": "A1",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "dgnb",
+        "ecologic"
+      ],
+      "source": "Passivhaus Classic; EN 13167; DGNB",
+      "notes": "Cellular glass aggregate — portant + termoizolant + circular.",
+      "layers": [
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 80
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Granulat sticlă spongioasă vrac (foam glass loose-fill)",
+          "thickness": 200
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 200
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "PI-clt-100-aparent",
+      "elementType": "PI",
+      "label": "Pereți interior CLT 100 mm aparent (mass timber)",
+      "shortLabel": "PI CLT 100",
+      "description": "Pereți despărțitori CLT structurali, finisaj lemn aparent.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.95,
+      "uRange": {
+        "min": 0.85,
+        "max": 1.05
+      },
+      "uClass": null,
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "nou",
+        "clt",
+        "interior",
+        "mass-timber",
+        "ecologic"
+      ],
+      "source": "KLH; Stora Enso CLT",
+      "notes": "Vizibil decorativ. Acustică Rw≈40-44 dB cu strat fonoizolare.",
+      "layers": [
+        {
+          "material": "CLT (Cross Laminated Timber)",
+          "thickness": 100
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "US-passive-pu-100",
+      "elementType": "US",
+      "label": "Ușă lemn masiv + miez PU 100 mm (Passive House certificată)",
+      "shortLabel": "Ușă PH PU100",
+      "description": "Ușă certificată PHI cu miez PU 100 mm + 3 garnituri + prag termic.",
+      "era": "nzeb-2020+",
+      "structure": "lemn",
+      "renovationStatus": "nou",
+      "uTypical": 0.8,
+      "uRange": {
+        "min": 0.7,
+        "max": 0.95
+      },
+      "uClass": "A",
+      "fireClass": "D-s2,d0",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "premium"
+      ],
+      "source": "Passipedia certified components",
+      "notes": "U_ref Passive House ≤ 0.80 W/m²K. 3 garnituri + prag termic.",
+      "layers": [
+        {
+          "material": "Lemn moale (brad/molid)",
+          "thickness": 25
+        },
+        {
+          "material": "Spumă poliuretanică (PUR)",
+          "thickness": 100
+        },
+        {
+          "material": "Lemn moale (brad/molid)",
+          "thickness": 25
+        }
+      ]
+    },
+    {
+      "brand": null,
+      "supplierId": null,
+      "affiliateUrl": null,
+      "sponsored": false,
+      "id": "US-alu-pu-80-publica",
+      "elementType": "US",
+      "label": "Ușă aluminiu cu rupere termică + PU 80 mm (clădiri publice nZEB)",
+      "shortLabel": "Ușă alu PU80",
+      "description": "Ușă pentru clădiri publice nZEB cu rupere termică complexă.",
+      "era": "nzeb-2020+",
+      "structure": "metal",
+      "renovationStatus": "nou",
+      "uTypical": 0.95,
+      "uRange": {
+        "min": 0.85,
+        "max": 1.1
+      },
+      "uClass": "B",
+      "fireClass": "EI 30",
+      "tags": [
+        "nzeb",
+        "publica",
+        "tertiar"
+      ],
+      "source": "EN 14351-1; Mc 001-2022",
+      "notes": "Profil aluminiu cu rupere termică >24mm + miez PU 80mm + 3 garnituri.",
+      "layers": [
+        {
+          "material": "Aluminiu",
+          "thickness": 5
+        },
+        {
+          "material": "Spumă poliuretanică (PUR)",
+          "thickness": 80
+        },
+        {
+          "material": "Aluminiu",
+          "thickness": 5
+        }
+      ]
+    }
+  ]
+}
