@@ -104,7 +104,7 @@ export default function ElementSectionModal({
             </span>
             <div className="min-w-0">
               <div className="text-sm font-bold truncate">{title}</div>
-              <div className="text-[11px] opacity-50 mt-0.5">
+              <div className="text-[11px] opacity-65 mt-0.5">
                 {type === "opaque" ? "Secțiune verticală la scală · cote · profil termic"
                   : type === "glazing" ? "Secțiune plan · ramă + pachet sticlă + camere gaz · Low-E"
                   : "Secțiune constructivă · flux termic · zone condens"}
@@ -196,7 +196,7 @@ export default function ElementSectionModal({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-2 border-t border-white/10 bg-white/[0.02] flex justify-between text-[10px] opacity-50">
+        <div className="px-5 py-2 border-t border-white/10 bg-white/[0.02] flex justify-between text-[10px] opacity-65">
           <span>Click afară sau Esc pentru închidere</span>
           <span>
             {type === "opaque" ? "SR EN ISO 6946 · C107/3"

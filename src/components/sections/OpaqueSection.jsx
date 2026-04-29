@@ -154,7 +154,7 @@ export default function OpaqueSection({
 
       {showLegend && !compact && (
         <div>
-          <div className="text-[10px] opacity-50 mb-1 uppercase tracking-wider">Legendă materiale (ordinea: exterior → interior)</div>
+          <div className="text-[10px] opacity-65 mb-1 uppercase tracking-wider">Legendă materiale (ordinea: exterior → interior)</div>
           <MaterialLegend items={legendItems} layout="grid" />
         </div>
       )}
@@ -211,9 +211,9 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         const availableSpace = shouldRotate ? (height - 20) : (w - 8);
         const displayName = truncateLabel(l.name, availableSpace);
         return (
-          <text key={`lbl-${i}`} x={xc} y={height / 2} fontSize="9" fill="#0f172a" textAnchor="middle" fontWeight="700"
+          <text key={`lbl-${i}`} x={xc} y={height / 2} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
             transform={shouldRotate ? `rotate(-90 ${xc} ${height / 2})` : ""}
-            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.85)", strokeWidth: "2.5px", pointerEvents: "none" }}>
+            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
             {displayName}
           </text>
         );
@@ -240,15 +240,16 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
             {pts.map((p, i) => (
               <g key={i}>
                 <circle cx={p.x} cy={tToY(p.t)} r="2.2" fill="#ef4444" />
-                <text x={p.x} y={tToY(p.t) - 5} fontSize="7" fill="#ef4444" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+                <rect x={p.x - 13} y={tToY(p.t) - 15} width="26" height="12" rx="2" fill="rgba(255,255,255,0.92)" />
+                <text x={p.x} y={tToY(p.t) - 6} fontSize="8" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
               </g>
             ))}
             {!compact && (
               <g>
-                <rect x="4" y="4" width="120" height="26" fill="rgba(255,255,255,0.88)" rx="3" />
-                <circle cx="12" cy="12" r="3" fill="#ef4444" />
-                <text x="18" y="14.5" fontSize="8" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°) iarnă</text>
-                <text x="8" y="25" fontSize="7" fill="#374151" opacity="0.7">EXT {pts[0].t.toFixed(1)}° → {pts[pts.length - 1].t.toFixed(1)}° INT</text>
+                <rect x="4" y="4" width="128" height="28" fill="rgba(255,255,255,0.95)" rx="3" />
+                <circle cx="12" cy="13" r="3" fill="#ef4444" />
+                <text x="19" y="15" fontSize="8.5" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°) iarnă</text>
+                <text x="8" y="26" fontSize="7.5" fill="#374151" fontWeight="600">EXT {pts[0].t.toFixed(1)}° → {pts[pts.length - 1].t.toFixed(1)}° INT</text>
               </g>
             )}
           </g>
@@ -353,9 +354,9 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         const availableSpace = shouldRotate ? (width - 20) : (width - 40);
         const displayName = truncateLabel(l.name, availableSpace);
         return (
-          <text key={`lbl-${i}`} x={width / 2} y={yc + 3} fontSize="9" fill="#0f172a" textAnchor="middle" fontWeight="700"
+          <text key={`lbl-${i}`} x={width / 2} y={yc + 3} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
             transform={shouldRotate ? "" : ""}
-            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.85)", strokeWidth: "2.5px", pointerEvents: "none" }}>
+            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
             {displayName}
           </text>
         );
@@ -417,7 +418,7 @@ function Metric({ label, value, accent }) {
   return (
     <div className={`p-2 rounded-lg ${accent ? "bg-amber-500/10 border border-amber-500/20" : "bg-white/[0.03]"}`}>
       <div className={`font-mono font-bold ${accent ? "text-amber-400" : ""}`}>{value}</div>
-      <div className="text-[9px] opacity-50 mt-0.5">{label}</div>
+      <div className="text-[9px] opacity-65 mt-0.5">{label}</div>
     </div>
   );
 }

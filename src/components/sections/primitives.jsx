@@ -462,7 +462,7 @@ export function MaterialLegend({ items = [], layout = "grid" }) {
             </svg>
             <div className="min-w-0 flex-1">
               <div className="font-medium truncate">{it.name || cat.label}</div>
-              <div className="text-[10px] opacity-50 font-mono flex gap-2 flex-wrap">
+              <div className="text-[10px] opacity-70 font-mono flex gap-2 flex-wrap">
                 {it.thickness != null && <span>{it.thickness}mm</span>}
                 {it.lambda != null && <span>λ={it.lambda}</span>}
                 {it.mu != null && <span>μ={it.mu}</span>}
