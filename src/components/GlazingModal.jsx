@@ -35,6 +35,18 @@ const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
  *   - lang: "RO" | "EN"
  *   - buildingCategory: building.category string (e.g. "RI","RC",...)
  */
+// Inferă frameType din câmpul name/type (ex: "Termopan PVC …" → "PVC (5 camere)")
+function inferFrameType(base) {
+  if (base.frameType && FRAME_DB.find(f => f.name === base.frameType)) return base.frameType;
+  const s = ((base.name || "") + " " + (base.type || "")).toLowerCase();
+  if (s.includes("pvc")) return "PVC (5 camere)";
+  if (s.includes("curtain wall") || (s.includes("aluminiu") && (s.includes("rpt") || s.includes("rupere")))) return "Aluminiu cu RPT";
+  if (s.includes("aluminiu")) return "Aluminiu fără RPT";
+  if (s.includes("lemn-aluminiu") || (s.includes("lemn") && s.includes("aluminiu"))) return "Lemn-aluminiu";
+  if (s.includes("lemn")) return "Lemn stratificat";
+  return "";
+}
+
 // Inferă glazingType din câmpul legacy `type` (ex: "Dublu vitraj clasic" → "Dublu vitraj (4-12-4)")
 function inferGlazingType(base) {
   if (base.glazingType && GLAZING_DB.find(g => g.name === base.glazingType)) return base.glazingType;
@@ -60,7 +72,7 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
       return {
         ...base,
         glazingType: inferGlazingType(base),
-        frameType: base.frameType || "",
+        frameType: inferFrameType(base),
         shading: base.shading || { overhang_cm: "", fin_cm: "", hasMobile: false },
       };
     });
