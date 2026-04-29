@@ -409,7 +409,7 @@ export function HeatFlowArrow({ x1, y1, x2, y2, label, color = "#ef4444" }) {
   const labelW = label ? label.length * 5.2 + 12 : 0;
   return (
     <g style={{ pointerEvents: "none" }}>
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="1.8" markerEnd="url(#sec-arrow-heat)" opacity="0.9" />
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="2.5" markerEnd="url(#sec-arrow-heat)" opacity="0.95" />
       {label && (
         <g>
           <rect x={mx - labelW / 2} y={my - 17} width={labelW} height="13" rx="3" fill="rgba(255,255,255,0.92)" />

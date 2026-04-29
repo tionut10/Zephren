@@ -236,10 +236,10 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         const path = pts.map((p, i) => (i === 0 ? "M" : "L") + p.x.toFixed(1) + "," + tToY(p.t).toFixed(1)).join(" ");
         return (
           <g style={{ pointerEvents: "none" }}>
-            <path d={path} fill="none" stroke="#ef4444" strokeWidth="1.8" opacity="0.85" />
+            <path d={path} fill="none" stroke="#ef4444" strokeWidth="2.5" opacity="0.95" />
             {pts.map((p, i) => (
               <g key={i}>
-                <circle cx={p.x} cy={tToY(p.t)} r="2.2" fill="#ef4444" />
+                <circle cx={p.x} cy={tToY(p.t)} r="3" fill="#ef4444" />
                 <rect x={p.x - 13} y={tToY(p.t) - 15} width="26" height="12" rx="2" fill="rgba(255,255,255,0.92)" />
                 <text x={p.x} y={tToY(p.t) - 6} fontSize="8" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
               </g>
