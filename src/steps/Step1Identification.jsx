@@ -937,10 +937,94 @@ export default function Step1Identification({
               })()}
             </div>
           </Card>
+
+          {/* Scop CPE + Solar-ready + Albedo + n50 badge — mutate din Dimensiuni */}
+          <Card title={lang === "EN" ? "CPE Purpose & Building Flags" : "Scop CPE & Caracteristici"}>
+            <div className="space-y-3">
+              <Select
+                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
+                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
+                value={building.scopCpe}
+                onChange={v => updateBuilding("scopCpe", v)}
+                error={fieldErr("scopCpe")}
+                options={SCOP_CPE_OPTIONS.map(o => ({ value: o.value, label: lang === "EN" ? o.labelEN : o.label }))}
+              />
+              {building.scopCpe === "renovare" && (
+                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
+                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
+                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
+                </label>
+                <Input
+                  label={t("Albedo override (teren)", lang)}
+                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
+                  value={building.albedoOverride || ""}
+                  onChange={v => updateBuilding("albedoOverride", v)}
+                  type="number" step="0.01" min="0" max="1"
+                  placeholder="auto"
+                />
+              </div>
+              {(() => {
+                const classification = classifyN50(building.n50, building.category);
+                if (!classification) return <div className="text-[10px] opacity-40 italic">Etanșeitate n50: introduceți valoarea în Dimensiuni pentru evaluare nZEB.</div>;
+                const { label, color, value, ref } = classification;
+                return (
+                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                    <span className="opacity-40">Etanșeitate n50:</span>
+                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
+                    <span className="opacity-30">nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹</span>
+                  </div>
+                );
+              })()}
+            </div>
+          </Card>
         </div>
 
         {/* Coloana 2: Geometrie */}
         <div className="space-y-4">
+          <Card title={t("Vizualizare clădire",lang)}>
+            <svg
+              viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80"
+              role="img"
+              aria-label={(() => {
+                const fr = parseFloorsRegime(building.floors, { basementHeated: !!building.basement, atticHeated: !!building.attic });
+                const nF = Math.max(1, fr.aboveGround || 1);
+                const extras = [];
+                if (building.basement) extras.push(lang === "EN" ? "with basement" : "cu subsol");
+                if (building.attic) extras.push(lang === "EN" ? "with attic" : "cu mansardă");
+                return lang === "EN"
+                  ? `Building preview: ${building.floors || "P"} (${nF} floor${nF>1?"s":""}) ${extras.join(", ")}`
+                  : `Preview clădire: ${building.floors || "P"} (${nF} nivel${nF>1?"uri":""}) ${extras.join(", ")}`;
+              })()}
+            >
+              {(() => {
+                var fr = parseFloorsRegime(building.floors, { basementHeated: !!building.basement, atticHeated: !!building.attic });
+                var nF = Math.max(1, fr.aboveGround || 1);
+                var fH = Math.min(20, 100/nF), bW = 90, bX = 45, gY = 125;
+                var topY = gY - nF * fH;
+                var els = [];
+                els.push(<line key="g" x1="10" y1={gY} x2="170" y2={gY} stroke="#555" strokeWidth="0.5" strokeDasharray="3 2"/>);
+                if (building.basement) {
+                  els.push(<rect key="bs" x={bX} y={gY} width={bW} height={15} fill="#4a3728" stroke="#6b5744" strokeWidth="0.5" rx="1"/>);
+                  els.push(<text key="bt" x={bX+bW/2} y={gY+10} textAnchor="middle" fontSize="6" fill="#a08060">S</text>);
+                }
+                for (var f = 0; f < nF; f++) {
+                  var fy = gY - (f+1)*fH;
+                  els.push(<rect key={"f"+f} x={bX} y={fy} width={bW} height={fH} fill={f===0?"#2a3a4a":"#1e2d3d"} stroke="#3a5060" strokeWidth="0.5"/>);
+                  for (var w = 0; w < 4; w++) els.push(<rect key={"w"+f+"-"+w} x={bX+10+w*20} y={fy+fH*0.2} width={7} height={fH*0.5} fill="#4a8ab5" rx="0.5" opacity="0.6"/>);
+                  if (f===0) els.push(<rect key="dr" x={bX+bW/2-5} y={fy+fH*0.3} width={10} height={fH*0.65} fill="#6b4423" rx="1"/>);
+                }
+                if (building.attic) els.push(<polygon key="rf" points={bX+","+topY+" "+(bX+bW/2)+","+(topY-20)+" "+(bX+bW)+","+topY} fill="#5a3a2a" stroke="#7a5a4a" strokeWidth="0.5"/>);
+                else els.push(<rect key="tr" x={bX-2} y={topY-2} width={bW+4} height={3} fill="#4a4a4a" rx="1"/>);
+                els.push(<text key="fl" x={bX+bW+8} y={(topY+gY)/2+3} fontSize="8" fill="#f59e0b">{building.floors||"P"}</text>);
+                return els;
+              })()}
+            </svg>
+          </Card>
           <Card title={t("Geometrie",lang)}>
             <div className="space-y-3">
               <Input label={t("Regim de înălțime",lang)} value={building.floors} onChange={v => updateBuilding("floors",v)} placeholder="P+4E, S+P+2E+M" error={fieldErr("floors")} />
@@ -1031,21 +1115,6 @@ export default function Step1Identification({
                   </div>
                 </div>
               </details>
-              {/* Solar-ready + albedo override (Sprint 21 #23) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
-                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
-                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
-                </label>
-                <Input
-                  label={t("Albedo override (teren)", lang)}
-                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
-                  value={building.albedoOverride || ""}
-                  onChange={v => updateBuilding("albedoOverride", v)}
-                  type="number" step="0.01" min="0" max="1"
-                  placeholder="auto"
-                />
-              </div>
               {/* Sprint 21 #28 — shadingFactor per-orientare */}
               <details className="bg-white/[0.02] rounded-lg border border-white/5">
                 <summary className="cursor-pointer px-3 py-2 text-xs opacity-80 hover:opacity-100 select-none">
@@ -1091,46 +1160,6 @@ export default function Step1Identification({
                 </div>
               </details>
 
-              {/* Scop CPE — L.372/2005 Art. 8¹ + extensii post-2024 (Sprint 21 #10) */}
-              <Select
-                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
-                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
-                value={building.scopCpe}
-                onChange={v => updateBuilding("scopCpe", v)}
-                error={fieldErr("scopCpe")}
-                options={SCOP_CPE_OPTIONS.map(o => ({
-                  value: o.value,
-                  label: lang === "EN" ? o.labelEN : o.label,
-                }))}
-              />
-              {building.scopCpe === "renovare" && (
-                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
-                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
-                </div>
-              )}
-
-              {/* Sprint 21 #9 — n50 diferențiat rezidențial vs. non-rezidențial (Ord. MDLPA 161/2022) */}
-              {(() => {
-                const classification = classifyN50(building.n50, building.category);
-                if (!classification) {
-                  return (
-                    <div className="text-[10px] opacity-40 italic">
-                      Etanșeitate n50: introduceți valoarea pentru evaluare nZEB.
-                    </div>
-                  );
-                }
-                const { label, color, value, ref } = classification;
-                return (
-                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                    <span className="opacity-40">Etanșeitate n50:</span>
-                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
-                    <span className="opacity-30">
-                      nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹
-                    </span>
-                  </div>
-                );
-              })()}
-
               {avRatio !== "—" && (
                 <div className="bg-white/[0.03] rounded-lg p-3 flex items-center justify-between">
                   <span className="text-xs opacity-50">Raport A/V (compacitate)</span>
@@ -1142,55 +1171,8 @@ export default function Step1Identification({
 
         </div>
 
-        {/* Coloana 3: Vizualizare + Date climatice */}
+        {/* Coloana 3: Date climatice + ANCPI */}
         <div className="space-y-4">
-          <Card title={t("Vizualizare clădire",lang)}>
-            <svg
-              viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80"
-              role="img"
-              aria-label={(() => {
-                // Fix audit 24 apr 2026: parseFloorsRegime numără corect S+P+4E+M (7), nu doar "4"
-                const fr = parseFloorsRegime(building.floors, {
-                  basementHeated: !!building.basement,
-                  atticHeated: !!building.attic,
-                });
-                const nF = Math.max(1, fr.aboveGround || 1);
-                const extras = [];
-                if (building.basement) extras.push(lang === "EN" ? "with basement" : "cu subsol");
-                if (building.attic) extras.push(lang === "EN" ? "with attic" : "cu mansardă");
-                return lang === "EN"
-                  ? `Building preview: ${building.floors || "P"} (${nF} floor${nF>1?"s":""}) ${extras.join(", ")}`
-                  : `Preview clădire: ${building.floors || "P"} (${nF} nivel${nF>1?"uri":""}) ${extras.join(", ")}`;
-              })()}
-            >
-              {(() => {
-                // Fix audit 24 apr 2026: parseFloorsRegime pentru SVG viz niveluri deasupra solului
-                var fr = parseFloorsRegime(building.floors, {
-                  basementHeated: !!building.basement,
-                  atticHeated: !!building.attic,
-                });
-                var nF = Math.max(1, fr.aboveGround || 1);
-                var fH = Math.min(20, 100/nF), bW = 90, bX = 45, gY = 125;
-                var topY = gY - nF * fH;
-                var els = [];
-                els.push(<line key="g" x1="10" y1={gY} x2="170" y2={gY} stroke="#555" strokeWidth="0.5" strokeDasharray="3 2"/>);
-                if (building.basement) {
-                  els.push(<rect key="bs" x={bX} y={gY} width={bW} height={15} fill="#4a3728" stroke="#6b5744" strokeWidth="0.5" rx="1"/>);
-                  els.push(<text key="bt" x={bX+bW/2} y={gY+10} textAnchor="middle" fontSize="6" fill="#a08060">S</text>);
-                }
-                for (var f = 0; f < nF; f++) {
-                  var fy = gY - (f+1)*fH;
-                  els.push(<rect key={"f"+f} x={bX} y={fy} width={bW} height={fH} fill={f===0?"#2a3a4a":"#1e2d3d"} stroke="#3a5060" strokeWidth="0.5"/>);
-                  for (var w = 0; w < 4; w++) els.push(<rect key={"w"+f+"-"+w} x={bX+10+w*20} y={fy+fH*0.2} width={7} height={fH*0.5} fill="#4a8ab5" rx="0.5" opacity="0.6"/>);
-                  if (f===0) els.push(<rect key="dr" x={bX+bW/2-5} y={fy+fH*0.3} width={10} height={fH*0.65} fill="#6b4423" rx="1"/>);
-                }
-                if (building.attic) els.push(<polygon key="rf" points={bX+","+topY+" "+(bX+bW/2)+","+(topY-20)+" "+(bX+bW)+","+topY} fill="#5a3a2a" stroke="#7a5a4a" strokeWidth="0.5"/>);
-                else els.push(<rect key="tr" x={bX-2} y={topY-2} width={bW+4} height={3} fill="#4a4a4a" rx="1"/>);
-                els.push(<text key="fl" x={bX+bW+8} y={(topY+gY)/2+3} fontSize="8" fill="#f59e0b">{building.floors||"P"}</text>);
-                return els;
-              })()}
-            </svg>
-          </Card>
           <Card title={t("Localizare climatică",lang)} badge={selectedClimate && <Badge color="blue">Auto-detectat</Badge>}>
             <div className="space-y-3">
               <Select
