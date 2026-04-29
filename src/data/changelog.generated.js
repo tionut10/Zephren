@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "echilibrare Col 1/2/3 Step 1 — Scop CPE+Solar+n50→Col1, SVG Viz→Col2, Col 1 fără spațiu gol"
-      },
-      {
         "icon": "🎨",
-        "text": "redistribuire Step 1 — IAQ+EV→Col1, Versiune scală+Scenariu→Col3, lg:3col, gap-4"
-      },
-      {
-        "icon": "🔧",
-        "text": "dragLeave flicker la hover peste elemente copil în dropzone"
-      },
-      {
-        "icon": "🔧",
-        "text": "TooltipIcon mutat în afara label opacity-60 — tooltip complet opac acum"
-      },
-      {
-        "icon": "🔧",
-        "text": "tooltip contrast — normal-case + culori explicite (#111827 bg, #f9fafb text)"
-      },
-      {
-        "icon": "🎨",
-        "text": "tooltip custom hover pe ⓘ (înlocuit title nativ cu popup CSS)"
-      },
-      {
-        "icon": "🔧",
-        "text": "deduplicare rezultate OSM în autocomplete stradă (Nominatim returnează segmente identice)"
+        "text": "ui: aliniere câmpuri input/select în grid — min-h-[2rem] pe label"
       },
       {
         "icon": "✨",
-        "text": "feat(PV): calibrare formula fotovoltaic vs PVGIS v5.2 SARAH-2 reference"
+        "text": "redesign tehnic ISO 128 + straturi realiste TOATE 22 ilustrații punți"
+      },
+      {
+        "icon": "🎨",
+        "text": "ui: reducere padding input/select — py-2.5 → py-1.5"
+      },
+      {
+        "icon": "🎨",
+        "text": "ui: optimizare spațiu Step 3 Instalații"
+      },
+      {
+        "icon": "🎨",
+        "text": "sugestii HVAC/vent/iluminat contextuale pe datele proiectului"
+      },
+      {
+        "icon": "✨",
+        "text": "aspect tehnic ISO 128 + straturi realiste — Defs + primitive + PrecastPanel"
+      },
+      {
+        "icon": "✨",
+        "text": "ilustrații distincte per tip punte termică PAFP + rutare după name"
+      },
+      {
+        "icon": "🔧",
+        "text": "Escape închide ElementSectionModal (useEffect keydown)"
       }
     ]
   },
