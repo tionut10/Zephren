@@ -40,20 +40,39 @@ export default function Step3Systems({
     });
   }, [heating?.power]);
 
-  const coolingSuggestions = useMemo(
-    () => filterByCategory("hvac-cooling").slice(0, 3),
-    []
-  );
+  const coolingSuggestions = useMemo(() => {
+    const cat = building?.category || "";
+    const isResSmall = ["RI", "RA"].includes(cat);
+    const isResMed = cat === "RC";
+    const peakLoad = parseFloat(cooling?.power) || 0;
+    const tags = isResSmall
+      ? ["rezidential", "low-cost"]
+      : isResMed
+      ? ["modular", "rezidential"]
+      : ["birouri", "comercial"];
+    return suggestHVAC({
+      functionType: "cooling",
+      peakLoad_kW: peakLoad > 0 ? peakLoad : undefined,
+      preferredTags: tags,
+      limit: 3,
+    });
+  }, [building?.category, cooling?.power]);
 
-  const ventilationSuggestions = useMemo(
-    () => filterByCategory("ventilation"),
-    []
-  );
+  const ventilationSuggestions = useMemo(() => {
+    const type = ventilation?.type || "";
+    if (!type || type === "NAT" || type === "NAT_HIBRIDA") return [];
+    const hasHR = VENTILATION_TYPES.find(v => v.id === type)?.hasHR ?? false;
+    if (hasHR) return filterByCategory("ventilation").filter(s => s.id === "vmc-dual-90");
+    return filterByCategory("ventilation");
+  }, [ventilation?.type]);
 
-  const lightingSuggestions = useMemo(
-    () => filterByCategory("lighting"),
-    []
-  );
+  const lightingSuggestions = useMemo(() => {
+    const cat = building?.category || "";
+    const isResidential = ["RI", "RC", "RA"].includes(cat);
+    const all = filterByCategory("lighting");
+    if (isResidential) return all.filter(s => s.id === "led-control-presence");
+    return all;
+  }, [building?.category]);
 
   const handleOCRApply = useCallback((data) => {
     try {

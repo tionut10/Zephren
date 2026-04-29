@@ -710,7 +710,21 @@ export function suggestHVAC({
         ? s.tags.filter(t => preferredTags.includes(t)).length
         : 0;
       const avgPrice = (s.priceRange.min + s.priceRange.max) / 2;
-      return { ...s, _matchLoad: matchLoad, tagMatch, _avgPrice: avgPrice };
+
+      // meetsTarget: prag nZEB Mc 001-2022 / EPBD 2024
+      let meetsTarget = true;
+      if (functionType === "heating" || functionType === "both") {
+        const scop = s.tech?.SCOP ?? s.tech?.COP;
+        if (scop != null) meetsTarget = scop >= 3.5;
+        else if (s.tech?.efficiency != null) meetsTarget = false; // cazane gaz — nu pot atinge nZEB singure
+        if (s.tech?.fuelType === "gaz-natural") meetsTarget = false;
+      }
+      if (functionType === "cooling") {
+        const seer = s.tech?.SEER ?? s.tech?.EER;
+        if (seer != null) meetsTarget = seer >= 5.0;
+      }
+
+      return { ...s, meetsTarget, _matchLoad: matchLoad, tagMatch, _avgPrice: avgPrice };
     })
     .sort((a, b) => {
       if (a.tagMatch !== b.tagMatch) return b.tagMatch - a.tagMatch;
