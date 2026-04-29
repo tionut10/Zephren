@@ -54,9 +54,9 @@ export function Select({ label, value, onChange, options, placeholder, className
         aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId.current}
         aria-describedby={describedBy}
         aria-invalid={error ? "true" : undefined}
-        className={cn("bg-white/5 border rounded-lg px-3 py-2.5 text-sm text-left focus:outline-none focus:ring-1 transition-all flex items-center justify-between gap-2",
+        className={cn("bg-white/5 border rounded-lg px-3 py-1.5 text-sm text-left focus:outline-none focus:ring-1 transition-all flex items-center justify-between gap-2",
           error ? "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30" : "border-white/10 focus:border-amber-500/50 focus:ring-amber-500/30")}
-        style={{minHeight:"38px"}}>
+        style={{minHeight:"32px"}}>
         <span className={!selected && placeholder ? "opacity-40" : ""}>{selectedLabel}</span>
         <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{flexShrink:0,transform:open?"rotate(180deg)":"",transition:"transform 0.15s"}}><path d="M6 9l6 6 6-6"/></svg>
       </button>
@@ -109,7 +109,7 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
           aria-label={ariaLabel || (label ? undefined : placeholder)}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={describedBy}
-          className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
+          className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
             unit && "pr-12", disabled && "opacity-40 cursor-not-allowed",
             error && "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30")} />
         {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40" aria-hidden="true">{unit}</span>}
