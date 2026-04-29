@@ -113,7 +113,7 @@
       ],
       "U_total": 0.143,
       "R_total": 7.18,
-      "notes": "Atinge nZEB U≤0.18 pentru pereți exteriori. Vata minerală oferă și protecție la foc."
+      "notes": "Atinge nZEB (U≤0.25 per Mc 001-2022). U=0.143 depășește chiar cerința Passivhaus (≤0.15 W/(m²·K)). Vata minerală oferă și protecție la foc."
     },
 
     "PE-05-beton-monolit-EPS15": {
@@ -240,9 +240,9 @@
         { "material": "Beton armat planșeu", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
         { "material": "Tencuială interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
       ],
-      "U_total": 0.292,
-      "R_total": 3.42,
-      "notes": "Terasă plată cu izolație peste planșeu (warm roof). Aticul e punte majoră de luat în considerare separat."
+      "U_total": 0.296,
+      "R_total": 3.38,
+      "notes": "Terasă plată cu izolație peste planșeu (warm roof). Rsi=0.10 (flux ascendent, ISO 6946:2017 Tab.1). Aticul e punte majoră de luat în considerare separat."
     },
 
     "PT-02-terasa-XPS20-passivhaus": {
@@ -259,9 +259,9 @@
         { "material": "Beton armat", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
         { "material": "Tencuială", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
       ],
-      "U_total": 0.155,
-      "R_total": 6.44,
-      "notes": "Satisface nZEB U≤0.15 acoperiș. Membrană EPDM recomandată pentru durata ≥30 ani."
+      "U_total": 0.159,
+      "R_total": 6.31,
+      "notes": "Satisface nZEB U≤0.15 acoperiș (Mc 001-2022). Rsi=0.10 (flux ascendent, ISO 6946:2017 Tab.1). Membrană EPDM recomandată pentru durata ≥30 ani."
     },
 
     "PT-03-acoperis-verde-extensiv": {
