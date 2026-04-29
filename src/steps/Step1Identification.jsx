@@ -558,9 +558,9 @@ export default function Step1Identification({
         showToast={showToast}
       />
 
-      <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Coloana 1: Adresă & Clasificare */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           <Card title={t("Adresa clădirii",lang)}>
             <div className="space-y-3">
               <AutocompleteInput
@@ -829,10 +829,118 @@ export default function Step1Identification({
             </div>
           </Card>
 
+          {/* EV Charging (EPBD 2024 Art. 14) — mutat din Dimensiuni */}
+          {building.category !== "RA" && (
+            <Card title={lang === "EN" ? "EV Charging (EPBD Art. 14)" : "Încărcare EV (EPBD Art. 14)"}>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Input label="Nr. locuri parcare" value={building.parkingSpaces} onChange={v => updateBuilding("parkingSpaces",v)} type="number" min="0" />
+                  <Input
+                    label="Pct. EV instalate"
+                    tooltip="Puncte EV funcționale — EPBD 2024 Art. 14"
+                    value={building.evChargingPoints || "0"}
+                    onChange={v => updateBuilding("evChargingPoints",v)}
+                    type="number" min="0"
+                  />
+                  <Input
+                    label="Locuri EV precablate"
+                    tooltip="Rezidențial §3: ≥50% · Non-rez §4: 1/5 (existent) sau 1/2 (renovare majoră)"
+                    value={building.evChargingPrepared || "0"}
+                    onChange={v => updateBuilding("evChargingPrepared",v)}
+                    type="number" min="0"
+                  />
+                </div>
+                {(() => {
+                  const isRecent = (parseInt(building.yearRenov) || parseInt(building.yearBuilt) || 0) >= 2024;
+                  const req = getEVRequirements({ parkingSpaces: building.parkingSpaces, category: building.category, isRecent });
+                  if (!req) return null;
+                  const iHave = parseInt(building.evChargingPoints) || 0;
+                  const pHave = parseInt(building.evChargingPrepared) || 0;
+                  const iOk = iHave >= req.installedMin;
+                  const pOk = pHave >= req.preparedMin;
+                  const gaps = [];
+                  if (!iOk) gaps.push(`${req.installedMin - iHave} instalate`);
+                  if (!pOk) gaps.push(`${req.preparedMin - pHave} precablate`);
+                  return (
+                    <div className={cn("text-[10px] rounded-lg p-2 border", iOk && pOk ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300/80" : "bg-amber-500/5 border-amber-500/20 text-amber-400/80")}>
+                      ⚡ {req.reference}: {req.description}
+                      {iOk && pOk ? " — ✓ conform" : ` — lipsă ${gaps.join(" + ")}`}
+                    </div>
+                  );
+                })()}
+              </div>
+            </Card>
+          )}
+
+          {/* Calitate aer interior (IAQ) — mutat din Dimensiuni */}
+          <Card title={lang === "EN" ? "Indoor Air Quality (IAQ)" : "Calitate aer interior (IAQ)"} badge={<Badge color="blue">EN 16798-1</Badge>}>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label={t("CO₂ max interior", lang)}
+                  tooltip="CO₂ max în spațiu ocupat (ppm). EN 16798-1 Cat. II: ≤1200 ppm. Se măsoară cu senzor calibrat."
+                  value={building.co2MaxPpm || ""}
+                  onChange={v => updateBuilding("co2MaxPpm",v)}
+                  type="number" unit="ppm" min="0" step="10"
+                  placeholder="800"
+                />
+                <Input
+                  label={t("PM2.5 mediu anual", lang)}
+                  tooltip="PM2.5 mediu anual (μg/m³). OMS 2021: ≤5, UE 2030: ≤10, UE actual: ≤25"
+                  value={building.pm25Avg || ""}
+                  onChange={v => updateBuilding("pm25Avg",v)}
+                  type="number" unit="μg/m³" min="0" step="0.1"
+                  placeholder="7.5"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label={t("PM10 mediu anual", lang)}
+                  tooltip="PM10 mediu anual (μg/m³). OMS 2021: ≤15, UE 2030: ≤20, UE actual: ≤45"
+                  value={building.pm10Avg || ""}
+                  onChange={v => updateBuilding("pm10Avg", v)}
+                  type="number" unit="μg/m³" min="0" step="0.1"
+                  placeholder="15"
+                />
+                <Input
+                  label={t("NO₂ mediu anual", lang)}
+                  tooltip="NO₂ mediu anual (μg/m³). EN 16798-1 Cat. II: ≤40. OMS 2021: ≤10"
+                  value={building.no2Avg || ""}
+                  onChange={v => updateBuilding("no2Avg", v)}
+                  type="number" unit="μg/m³" min="0" step="0.1"
+                  placeholder="20"
+                />
+              </div>
+              {(building.co2MaxPpm || building.pm25Avg || building.pm10Avg || building.no2Avg) && (() => {
+                const co2 = parseFloat(building.co2MaxPpm);
+                const pm25 = parseFloat(building.pm25Avg);
+                const pm10 = parseFloat(building.pm10Avg);
+                const no2 = parseFloat(building.no2Avg);
+                const out = [];
+                if (!isNaN(co2) && co2 > 0) {
+                  const c = co2 <= 950 ? { label: "Cat. I ✓", color: "text-emerald-400" } : co2 <= 1200 ? { label: "Cat. II ✓", color: "text-lime-400" } : co2 <= 1750 ? { label: "Cat. III", color: "text-amber-400" } : { label: "Cat. IV ✗", color: "text-red-400" };
+                  out.push(<span key="co2">CO₂: <span className={c.color}>{c.label}</span></span>);
+                }
+                if (!isNaN(pm25) && pm25 >= 0) {
+                  const c = pm25 <= 5 ? { label: "OMS 2021 ✓", color: "text-emerald-400" } : pm25 <= 10 ? { label: "UE 2030 ✓", color: "text-lime-400" } : pm25 <= 25 ? { label: "UE actual", color: "text-amber-400" } : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="pm25">PM2.5: <span className={c.color}>{c.label}</span></span>);
+                }
+                if (!isNaN(pm10) && pm10 >= 0) {
+                  const c = pm10 <= 15 ? { label: "OMS ✓", color: "text-emerald-400" } : pm10 <= 20 ? { label: "UE 2030 ✓", color: "text-lime-400" } : pm10 <= 45 ? { label: "UE actual", color: "text-amber-400" } : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="pm10">PM10: <span className={c.color}>{c.label}</span></span>);
+                }
+                if (!isNaN(no2) && no2 >= 0) {
+                  const c = no2 <= 10 ? { label: "OMS ✓", color: "text-emerald-400" } : no2 <= 40 ? { label: "EN 16798 Cat. II ✓", color: "text-lime-400" } : { label: "✗", color: "text-red-400" };
+                  out.push(<span key="no2">NO₂: <span className={c.color}>{c.label}</span></span>);
+                }
+                return <div className="text-[10px] flex flex-wrap gap-x-3 gap-y-1 px-1">{out}</div>;
+              })()}
+            </div>
+          </Card>
         </div>
 
         {/* Coloana 2: Geometrie */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           <Card title={t("Geometrie",lang)}>
             <div className="space-y-3">
               <Input label={t("Regim de înălțime",lang)} value={building.floors} onChange={v => updateBuilding("floors",v)} placeholder="P+4E, S+P+2E+M" error={fieldErr("floors")} />
@@ -1023,159 +1131,6 @@ export default function Step1Identification({
                 );
               })()}
 
-              {/* Sprint 21 #11 — EV Charging diferențiat rezidențial §3 vs non-rez §4 (EPBD 2024 Art. 14) */}
-              {building.category !== "RA" && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <Input label="Nr. locuri parcare" value={building.parkingSpaces} onChange={v => updateBuilding("parkingSpaces",v)} type="number" min="0" />
-                    <Input
-                      label="Pct. încărcare EV instalate"
-                      tooltip="Puncte EV funcționale — EPBD 2024 Art. 14"
-                      value={building.evChargingPoints || "0"}
-                      onChange={v => updateBuilding("evChargingPoints",v)}
-                      type="number" min="0"
-                    />
-                    <Input
-                      label="Locuri EV precablate"
-                      tooltip="Rezidențial §3: ≥50% · Non-rez §4: 1/5 (existent) sau 1/2 (renovare majoră)"
-                      value={building.evChargingPrepared || "0"}
-                      onChange={v => updateBuilding("evChargingPrepared",v)}
-                      type="number" min="0"
-                    />
-                  </div>
-                  {(() => {
-                    const isRecent = (parseInt(building.yearRenov) || parseInt(building.yearBuilt) || 0) >= 2024;
-                    const req = getEVRequirements({
-                      parkingSpaces: building.parkingSpaces,
-                      category: building.category,
-                      isRecent,
-                    });
-                    if (!req) return null;
-                    const iHave = parseInt(building.evChargingPoints) || 0;
-                    const pHave = parseInt(building.evChargingPrepared) || 0;
-                    const iOk = iHave >= req.installedMin;
-                    const pOk = pHave >= req.preparedMin;
-                    const gaps = [];
-                    if (!iOk) gaps.push(`${req.installedMin - iHave} instalate`);
-                    if (!pOk) gaps.push(`${req.preparedMin - pHave} precablate`);
-                    return (
-                      <div className={cn(
-                        "text-[10px] rounded-lg p-2 border",
-                        iOk && pOk ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300/80" : "bg-amber-500/5 border-amber-500/20 text-amber-400/80"
-                      )}>
-                        ⚡ {req.reference}: {req.description}
-                        {iOk && pOk ? " — ✓ conform" : ` — lipsă ${gaps.join(" + ")}`}
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
-
-              {/* Sprint 15 + 21 #13 — IAQ (EN 16798-1 + EPBD 2024 Art. 11 + OMS 2021) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
-                <Input
-                  label={t("CO₂ max interior", lang)}
-                  tooltip="CO₂ max în spațiu ocupat (ppm). EN 16798-1 Cat. II: ≤1200 ppm. Se măsoară cu senzor calibrat."
-                  value={building.co2MaxPpm || ""}
-                  onChange={v => updateBuilding("co2MaxPpm",v)}
-                  type="number" unit="ppm" min="0" step="10"
-                  placeholder="800"
-                />
-                <Input
-                  label={t("PM2.5 mediu anual", lang)}
-                  tooltip="PM2.5 mediu anual (μg/m³). OMS 2021: ≤5, UE 2030: ≤10, UE actual: ≤25"
-                  value={building.pm25Avg || ""}
-                  onChange={v => updateBuilding("pm25Avg",v)}
-                  type="number" unit="μg/m³" min="0" step="0.1"
-                  placeholder="7.5"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input
-                  label={t("PM10 mediu anual", lang)}
-                  tooltip="PM10 mediu anual (μg/m³). OMS 2021: ≤15, UE 2030: ≤20, UE actual: ≤45"
-                  value={building.pm10Avg || ""}
-                  onChange={v => updateBuilding("pm10Avg", v)}
-                  type="number" unit="μg/m³" min="0" step="0.1"
-                  placeholder="15"
-                />
-                <Input
-                  label={t("NO₂ mediu anual", lang)}
-                  tooltip="NO₂ mediu anual (μg/m³). EN 16798-1 Cat. II: ≤40. OMS 2021: ≤10"
-                  value={building.no2Avg || ""}
-                  onChange={v => updateBuilding("no2Avg", v)}
-                  type="number" unit="μg/m³" min="0" step="0.1"
-                  placeholder="20"
-                />
-              </div>
-              {(building.co2MaxPpm || building.pm25Avg || building.pm10Avg || building.no2Avg) && (() => {
-                const co2 = parseFloat(building.co2MaxPpm);
-                const pm25 = parseFloat(building.pm25Avg);
-                const pm10 = parseFloat(building.pm10Avg);
-                const no2 = parseFloat(building.no2Avg);
-                const out = [];
-                if (!isNaN(co2) && co2 > 0) {
-                  const c = co2 <= 950 ? { label: "Cat. I ✓", color: "text-emerald-400" }
-                    : co2 <= 1200 ? { label: "Cat. II ✓", color: "text-lime-400" }
-                    : co2 <= 1750 ? { label: "Cat. III", color: "text-amber-400" }
-                    : { label: "Cat. IV ✗", color: "text-red-400" };
-                  out.push(<span key="co2">CO₂: <span className={c.color}>{c.label}</span></span>);
-                }
-                if (!isNaN(pm25) && pm25 >= 0) {
-                  const c = pm25 <= 5 ? { label: "OMS 2021 ✓", color: "text-emerald-400" }
-                    : pm25 <= 10 ? { label: "UE 2030 ✓", color: "text-lime-400" }
-                    : pm25 <= 25 ? { label: "UE actual", color: "text-amber-400" }
-                    : { label: "✗", color: "text-red-400" };
-                  out.push(<span key="pm25">PM2.5: <span className={c.color}>{c.label}</span></span>);
-                }
-                if (!isNaN(pm10) && pm10 >= 0) {
-                  const c = pm10 <= 15 ? { label: "OMS ✓", color: "text-emerald-400" }
-                    : pm10 <= 20 ? { label: "UE 2030 ✓", color: "text-lime-400" }
-                    : pm10 <= 45 ? { label: "UE actual", color: "text-amber-400" }
-                    : { label: "✗", color: "text-red-400" };
-                  out.push(<span key="pm10">PM10: <span className={c.color}>{c.label}</span></span>);
-                }
-                if (!isNaN(no2) && no2 >= 0) {
-                  const c = no2 <= 10 ? { label: "OMS ✓", color: "text-emerald-400" }
-                    : no2 <= 40 ? { label: "EN 16798 Cat. II ✓", color: "text-lime-400" }
-                    : { label: "✗", color: "text-red-400" };
-                  out.push(<span key="no2">NO₂: <span className={c.color}>{c.label}</span></span>);
-                }
-                return (
-                  <div className="text-[10px] flex flex-wrap gap-x-3 gap-y-1 px-1">
-                    {out}
-                  </div>
-                );
-              })()}
-
-              {/* Sprint 15 — Rescalare A-G ZEB=A (EPBD 2024 Art. 19, din 2030) */}
-              <Select
-                label={t("Versiune scală energetică", lang)}
-                tooltip="2023 = Mc 001-2022 (A+..G) · 2030_zeb = EPBD 2024 Art. 19 (ZEB=A, clasele existente shifted)"
-                value={building.scaleVersion || "2023"}
-                onChange={v => updateBuilding("scaleVersion", v)}
-                options={[
-                  { value: "2023", label: "2023 — Mc 001-2022 (A+..G)" },
-                  { value: "2030_zeb", label: "2030 — EPBD 2024 Art. 19 (ZEB=A)" },
-                ]}
-              />
-              {building.scaleVersion === "2030_zeb" && (
-                <div className="text-[10px] text-violet-300/80 bg-violet-500/5 border border-violet-500/20 rounded-lg p-2">
-                  ℹ EPBD 2024 Art. 19: din 1 ian 2030, ZEB = clasa A (shift). Clasele actuale A→B, B→C etc.
-                </div>
-              )}
-              {/* Sprint 21 #25 — Scenariu climatic viitor (EPBD 2024 Art. 11 adaptare) */}
-              <Select
-                label={t("Scenariu climatic proiecție", lang)}
-                tooltip="EPBD 2024 Art. 11 cere adaptare la schimbări climatice. Scenariile CORDEX RCP 4.5/8.5 modifică temperaturile medii și radiația solară pentru prognoză 2050."
-                value={building.climateScenario || "current"}
-                onChange={v => updateBuilding("climateScenario", v)}
-                options={[
-                  { value: "current", label: lang === "EN" ? "Current (TMY)" : "Curent (TMY)" },
-                  { value: "rcp45_2050", label: "RCP 4.5 · 2050 (moderat)" },
-                  { value: "rcp85_2050", label: "RCP 8.5 · 2050 (pesimist)" },
-                ]}
-              />
               {avRatio !== "—" && (
                 <div className="bg-white/[0.03] rounded-lg p-3 flex items-center justify-between">
                   <span className="text-xs opacity-50">Raport A/V (compacitate)</span>
@@ -1188,7 +1143,7 @@ export default function Step1Identification({
         </div>
 
         {/* Coloana 3: Vizualizare + Date climatice */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           <Card title={t("Vizualizare clădire",lang)}>
             <svg
               viewBox="0 0 180 150" width="180" height="130" className="mx-auto block opacity-80"
@@ -1266,6 +1221,36 @@ export default function Step1Identification({
               <div className="text-[10px] text-slate-500 italic mt-0.5">
                 {/* S30B·B7 — referință standard RO pentru grade-zile */}
                 Sursa Grade-Zile: SR 4839:2014 — Calculul gradelor-zile de încălzire.
+              </div>
+
+              {/* Versiune scală + Scenariu climatic — mutate din Dimensiuni */}
+              <div className="pt-2 border-t border-white/5 space-y-3">
+                <Select
+                  label={t("Versiune scală energetică", lang)}
+                  tooltip="2023 = Mc 001-2022 (A+..G) · 2030_zeb = EPBD 2024 Art. 19 (ZEB=A, clasele existente shifted)"
+                  value={building.scaleVersion || "2023"}
+                  onChange={v => updateBuilding("scaleVersion", v)}
+                  options={[
+                    { value: "2023", label: "2023 — Mc 001-2022 (A+..G)" },
+                    { value: "2030_zeb", label: "2030 — EPBD 2024 Art. 19 (ZEB=A)" },
+                  ]}
+                />
+                {building.scaleVersion === "2030_zeb" && (
+                  <div className="text-[10px] text-violet-300/80 bg-violet-500/5 border border-violet-500/20 rounded-lg p-2">
+                    ℹ EPBD 2024 Art. 19: din 1 ian 2030, ZEB = clasa A (shift). Clasele actuale A→B, B→C etc.
+                  </div>
+                )}
+                <Select
+                  label={t("Scenariu climatic proiecție", lang)}
+                  tooltip="EPBD 2024 Art. 11 cere adaptare la schimbări climatice. Scenariile CORDEX RCP 4.5/8.5 modifică temperaturile medii și radiația solară pentru prognoză 2050."
+                  value={building.climateScenario || "current"}
+                  onChange={v => updateBuilding("climateScenario", v)}
+                  options={[
+                    { value: "current", label: lang === "EN" ? "Current (TMY)" : "Curent (TMY)" },
+                    { value: "rcp45_2050", label: "RCP 4.5 · 2050 (moderat)" },
+                    { value: "rcp85_2050", label: "RCP 8.5 · 2050 (pesimist)" },
+                  ]}
+                />
               </div>
             </div>
           </Card>
