@@ -27,6 +27,7 @@ export default function Step3Systems({
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [showOCR, setShowOCR] = useState(false);
+  const [showMultiZone, setShowMultiZone] = useState(false);
 
   // ── Sugestii orientative (fără brand) per tab ───────────────────────────
   // Filtrare statică din catalog — afișate în fiecare sub-tab Step 3.
@@ -84,26 +85,24 @@ export default function Step3Systems({
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <button onClick={() => setStep(2)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 2</button>
-          <h2 className="text-xl font-bold">{lang==="EN"?"Building systems":"Instalații"}</h2>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="flex items-center gap-3 mb-0.5">
+            <button onClick={() => setStep(2)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 2</button>
+            <h2 className="text-xl font-bold">{lang==="EN"?"Building systems":"Instalații"}</h2>
+          </div>
+          <p className="text-xs opacity-40">Capitolul 3 Mc 001-2022 — Încălzire, ACM, Climatizare, Ventilare, Iluminat</p>
         </div>
-        <p className="text-xs opacity-40">Capitolul 3 Mc 001-2022 — Încălzire, ACM, Climatizare, Ventilare, Iluminat</p>
-      </div>
-
-      {/* OCR Factură */}
-      <div className="mb-4 flex justify-end">
         <button
           onClick={() => setShowOCR(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium transition-all shrink-0"
         >
-          <span aria-hidden="true">📄</span> OCR Factură — import consum
+          <span aria-hidden="true">📄</span> OCR Factură
         </button>
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex gap-1 mb-6 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 mb-4 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] overflow-x-auto no-scrollbar">
         {[
           {id:"heating",label:t("Încălzire"),icon:"🔥"},
           {id:"acm",label:"ACM",icon:"🚿"},
@@ -119,9 +118,9 @@ export default function Step3Systems({
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Main content area */}
-        <div className="xl:col-span-2 space-y-5">
+        <div className="xl:col-span-2 space-y-3">
 
           {/* ── ÎNCĂLZIRE ── */}
           {instSubTab === "heating" && (
@@ -186,14 +185,23 @@ export default function Step3Systems({
                     options={[{value:"continuu",label:t("Continuu 24h")},{value:"intermitent",label:t("Intermitent (reducere nocturnă)")},{value:"oprire",label:t("Intermitent (oprire nocturnă)")}]} />
                   <Input label={t("Temp. confort (theta_int)",lang)} value={heating.theta_int} onChange={v => setHeating(p=>({...p,theta_int:v}))} type="number" unit="°C" tooltip="Temperatura interioară de calcul — Mc 001 Tabel 1.2: 20°C rezidențial, 18°C depozite, 24°C sănătate" />
                   <Input label={t("Reducere nocturnă",lang)} value={heating.nightReduction} onChange={v => setHeating(p=>({...p,nightReduction:v}))} type="number" unit="°C" />
-                  {/* #7 Multi-zonă simplificată */}
+                  {/* #7 Multi-zonă simplificată — collapsible */}
                   <div className="col-span-full border-t border-white/5 pt-2 mt-1">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Zone termice adiacente (multi-zonă simplificată)")}</div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <Input label="T scară/hol comun" value={heating.tStaircase || "15"} onChange={v => setHeating(p=>({...p,tStaircase:v}))} type="number" unit="°C" tooltip="Temperatura medie a scării/holului comun neîncălzit (afectează τ perete interior)" />
-                      <Input label="T subsol" value={heating.tBasement || "10"} onChange={v => setHeating(p=>({...p,tBasement:v}))} type="number" unit="°C" tooltip="Temperatura medie a subsolului neîncălzit" />
-                      <Input label="T pod" value={heating.tAttic || "5"} onChange={v => setHeating(p=>({...p,tAttic:v}))} type="number" unit="°C" tooltip="Temperatura medie a podului neîncălzit" />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMultiZone(v => !v)}
+                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest opacity-40 hover:opacity-70 transition-opacity"
+                    >
+                      <span>{showMultiZone ? "▾" : "▸"}</span>
+                      {t("Zone termice adiacente (multi-zonă simplificată)")}
+                    </button>
+                    {showMultiZone && (
+                      <div className="grid grid-cols-3 gap-3 mt-2">
+                        <Input label="T scară/hol comun" value={heating.tStaircase || "15"} onChange={v => setHeating(p=>({...p,tStaircase:v}))} type="number" unit="°C" tooltip="Temperatura medie a scării/holului comun neîncălzit (afectează τ perete interior)" />
+                        <Input label="T subsol" value={heating.tBasement || "10"} onChange={v => setHeating(p=>({...p,tBasement:v}))} type="number" unit="°C" tooltip="Temperatura medie a subsolului neîncălzit" />
+                        <Input label="T pod" value={heating.tAttic || "5"} onChange={v => setHeating(p=>({...p,tAttic:v}))} type="number" unit="°C" tooltip="Temperatura medie a podului neîncălzit" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -962,13 +970,13 @@ export default function Step3Systems({
         </div>
 
         {/* ── RIGHT PANEL: SUMAR ENERGIE ── */}
-        <div className="space-y-5">
+        <div className="space-y-3">
           <Card title={t("Sumar energetic",lang)}>
             {instSummary ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Energie primară totală */}
-                <div className="text-center py-3">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Energie primară specifică")}</div>
+                <div className="text-center py-1.5">
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">{t("Energie primară specifică")}</div>
                   <div className={cn("text-3xl font-bold font-mono",
                     instSummary.ep_total_m2 < 120 ? "text-emerald-400" : instSummary.ep_total_m2 < 250 ? "text-amber-400" : "text-red-400")}>
                     {instSummary.ep_total_m2.toFixed(0)}
@@ -980,7 +988,7 @@ export default function Step3Systems({
 
                 {/* Defalcare energie finală */}
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Energie finală per utilitate")}</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Energie finală per utilitate")}</div>
                   {[
                     {label:"Încălzire", val:instSummary.qf_h, color:"#ef4444"},
                     {label:"ACM", val:instSummary.qf_w, color:"#f97316"},
@@ -1030,7 +1038,7 @@ export default function Step3Systems({
 
                 {/* Randament global */}
                 <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Randamente instalație încălzire</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Randamente instalație încălzire</div>
                   <ResultRow label={instSummary.isCOP ? "COP/SCOP" : "eta generare"} value={parseFloat(heating.eta_gen).toFixed(2)} />
                   <ResultRow label="eta emisie" value={parseFloat(heating.eta_em).toFixed(2)} />
                   <ResultRow label="eta distribuție" value={parseFloat(heating.eta_dist).toFixed(2)} />
@@ -1052,7 +1060,7 @@ export default function Step3Systems({
       {showOCR && <InvoiceOCR userPlan={userPlan} onApply={handleOCRApply} onClose={() => setShowOCR(false)} />}
 
       {/* Navigation */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4 sm:mt-5">
         <button onClick={() => setStep(2)}
           className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
           ← Pas 2: Anvelopă
