@@ -938,6 +938,26 @@ export default function Step1Identification({
             </div>
           </Card>
 
+          {/* Radiație solară anuală — umple golul Col 1 */}
+          {selectedClimate && (
+            <Card title={t("Radiație solară anuală",lang)}>
+              <div className="space-y-1">
+                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
+                  <div key={dir} className="flex items-center justify-between py-1">
+                    <span className="text-xs opacity-50">{dir}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
+                      </div>
+                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
+              </div>
+            </Card>
+          )}
+
         </div>
 
         {/* Coloana 2: Geometrie */}
@@ -1282,55 +1302,6 @@ export default function Step1Identification({
             </Card>
           )}
 
-          {selectedClimate && (
-            <Card title={t("Radiație solară anuală",lang)}>
-              <div className="space-y-1">
-                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
-                  <div key={dir} className="flex items-center justify-between py-1">
-                    <span className="text-xs opacity-50">{dir}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
-                      </div>
-                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
-              </div>
-            </Card>
-          )}
-
-          {/* TMY orar (Pro+) — colapsabil, col 3 */}
-          {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
-            <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4">
-              <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base">🌡️</span>
-                  <span className="text-sm font-semibold text-white">
-                    {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
-                  </span>
-                  <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
-                    Pro+ · PVGIS / EPW / CSV
-                  </span>
-                </div>
-                <span className="text-slate-500 text-xs group-open:hidden">▼</span>
-                <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
-              </summary>
-              <div className="mt-3 space-y-3">
-                <p className="text-[11px] text-slate-400">
-                  {lang === "EN"
-                    ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
-                    : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
-                </p>
-                <TMYPanel
-                  climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
-                  building={building}
-                  lang={lang}
-                />
-              </div>
-            </details>
-          )}
         </div>
       </div>
 
@@ -1355,6 +1326,37 @@ export default function Step1Identification({
           lang={lang}
         />
       </div>
+
+      {/* TMY orar (Pro+) — full-width după ANCPI */}
+      {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
+        <details className="mt-3 group rounded-xl border border-white/10 bg-slate-800/40 p-4">
+          <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base">🌡️</span>
+              <span className="text-sm font-semibold text-white">
+                {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
+              </span>
+              <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
+                Pro+ · PVGIS / EPW / CSV
+              </span>
+            </div>
+            <span className="text-slate-500 text-xs group-open:hidden">▼</span>
+            <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
+          </summary>
+          <div className="mt-3 space-y-3">
+            <p className="text-[11px] text-slate-400">
+              {lang === "EN"
+                ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
+                : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
+            </p>
+            <TMYPanel
+              climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
+              building={building}
+              lang={lang}
+            />
+          </div>
+        </details>
+      )}
 
       {/* ── Documentare vizuală (fotografii clădire) ─────────────────────── */}
       <div className="mt-6">
