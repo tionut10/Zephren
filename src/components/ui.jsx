@@ -2,6 +2,29 @@ import { useState, useEffect, useRef } from "react";
 
 export const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+function TooltipIcon({ text }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span
+      className="relative ml-1 inline-block cursor-help"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+      tabIndex={0}
+      aria-label={text}
+    >
+      <span className="opacity-40 text-xs select-none">ⓘ</span>
+      {visible && (
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-56 rounded-lg bg-gray-900 border border-white/15 text-white text-xs px-3 py-2 shadow-xl pointer-events-none whitespace-normal leading-relaxed" style={{minWidth:"180px"}}>
+          {text}
+          <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-900" />
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function Select({ label, value, onChange, options, placeholder, className="", tooltip="", error="" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -22,7 +45,7 @@ export function Select({ label, value, onChange, options, placeholder, className
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
       {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
         {label}
-        {tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip} aria-hidden="true">ⓘ</span>}
+        {tooltip && <TooltipIcon text={tooltip} />}
       </label>}
       {tooltip && <span id={tooltipId.current} className="sr-only">{tooltip}</span>}
       <button type="button" onClick={() => setOpen(!open)}
@@ -72,7 +95,7 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
     <div className={cn("flex flex-col gap-1", className)}>
       {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
         {label}
-        {tooltip && <span className="ml-1 opacity-30 cursor-help" title={tooltip} aria-hidden="true">ⓘ</span>}
+        {tooltip && <TooltipIcon text={tooltip} />}
       </label>}
       {tooltip && <span id={tipId.current} className="sr-only">{tooltip}</span>}
       <div className="relative">
