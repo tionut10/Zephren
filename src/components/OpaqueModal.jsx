@@ -270,27 +270,58 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
           {/* Secțiune transversală strat-cu-strat */}
           {el.layers.length > 0 && (
             <Card title={t("Secțiune transversală",lang)} className="mb-4">
-              <svg viewBox="0 0 300 120" width="100%" height="100">
-                {(() => {
-                  var totalD = el.layers.reduce(function(s,l){return s+(parseFloat(l.thickness)||0);},0);
-                  if (totalD <= 0) return null;
-                  var x = 40, maxW = 220, els = [];
-                  var catColors = {"Zidărie":"#b0b0b0","Betoane":"#808080","Termoizolații":"#fdd835","Finisaje":"#d4c4a8","Hidroizolații":"#333","Lemn":"#a1887f","Metale":"#90a4ae","Altele":"#e0e0e0"};
-                  els.push(<text key="int" x="10" y="65" fontSize="8" fill="#4caf50">INT</text>);
-                  els.push(<text key="ext" x="275" y="65" fontSize="8" fill="#2196f3">EXT</text>);
-                  el.layers.forEach(function(l, idx) {
-                    var d = parseFloat(l.thickness) || 0;
-                    var w = (d / totalD) * maxW;
-                    var mat = MATERIALS_DB.find(function(m){return m.name === l.material;});
-                    var color = mat ? (catColors[mat.cat] || "#999") : "#999";
-                    els.push(<rect key={"r"+idx} x={x} y={15} width={Math.max(2,w)} height={80} fill={color} stroke="#555" strokeWidth="0.5"/>);
-                    if (w > 15) els.push(<text key={"t"+idx} x={x+w/2} y={60} textAnchor="middle" fontSize="6" fill="#333" transform={"rotate(-90,"+(x+w/2)+",60)"}>{(l.matName||l.material||"?").substring(0,15)}</text>);
-                    els.push(<text key={"d"+idx} x={x+w/2} y={105} textAnchor="middle" fontSize="6" fill="#888">{d}mm</text>);
-                    x += w;
+              {(() => {
+                const SLAB_TYPES = ["PT","PP","PB","PI","PL","SE"];
+                const SLAB_TOP_INT = ["PB","PL"]; // camera deasupra → INT sus, EXT jos
+                const isSlab = SLAB_TYPES.includes(el.type);
+                const catColors = {"Zidărie":"#b0b0b0","Betoane":"#808080","Termoizolații":"#fdd835","Finisaje":"#d4c4a8","Hidroizolații":"#333","Lemn":"#a1887f","Metale":"#90a4ae","Altele":"#e0e0e0"};
+                const totalD = el.layers.reduce((s,l) => s + (parseFloat(l.thickness)||0), 0);
+                if (totalD <= 0) return <div className="text-xs opacity-30 py-4 text-center">Introdu grosimi pentru previzualizare</div>;
+                const svgEls = [];
+
+                if (isSlab) {
+                  // Layout vertical — benzi orizontale de sus în jos
+                  const isTopInt = SLAB_TOP_INT.includes(el.type);
+                  const isPi = el.type === "PI";
+                  const displayLayers = isTopInt ? [...el.layers].reverse() : el.layers;
+                  const topLabel = isPi ? "INT" : isTopInt ? "INT" : "EXT";
+                  const botLabel = isPi ? "INT" : isTopInt ? "EXT" : "INT";
+                  const topColor = topLabel === "INT" ? "#4caf50" : "#2196f3";
+                  const botColor = botLabel === "INT" ? "#4caf50" : "#2196f3";
+                  svgEls.push(<text key="lbl-top" x="150" y="10" textAnchor="middle" fontSize="8" fontWeight="bold" fill={topColor}>{topLabel}</text>);
+                  svgEls.push(<text key="lbl-bot" x="150" y="128" textAnchor="middle" fontSize="8" fontWeight="bold" fill={botColor}>{botLabel}</text>);
+                  let y = 14;
+                  const maxH = 106;
+                  displayLayers.forEach((l, idx) => {
+                    const d = parseFloat(l.thickness) || 0;
+                    const h = Math.max(3, (d / totalD) * maxH);
+                    const mat = MATERIALS_DB.find(m => m.name === l.material);
+                    const color = mat ? (catColors[mat.cat] || "#999") : "#999";
+                    svgEls.push(<rect key={"r"+idx} x={40} y={y} width={220} height={h} fill={color} stroke="#555" strokeWidth="0.5"/>);
+                    if (h > 10) svgEls.push(<text key={"t"+idx} x={150} y={y + h/2 + 2.5} textAnchor="middle" fontSize="7" fill="#333">{(l.matName||l.material||"?").substring(0,30)}</text>);
+                    svgEls.push(<text key={"d"+idx} x={268} y={y + h/2 + 2.5} textAnchor="start" fontSize="6" fill="#888">{d}mm</text>);
+                    y += h;
                   });
-                  return els;
-                })()}
-              </svg>
+                  return <svg viewBox="0 0 300 132" width="100%" height="120">{svgEls}</svg>;
+                }
+
+                // Layout orizontal — benzi verticale de la EXT (stânga) la INT (dreapta)
+                svgEls.push(<text key="lbl-ext" x="10" y="65" fontSize="8" fontWeight="bold" fill="#2196f3">EXT</text>);
+                svgEls.push(<text key="lbl-int" x="275" y="65" fontSize="8" fontWeight="bold" fill="#4caf50">INT</text>);
+                let x = 40;
+                const maxW = 220;
+                el.layers.forEach((l, idx) => {
+                  const d = parseFloat(l.thickness) || 0;
+                  const w = Math.max(2, (d / totalD) * maxW);
+                  const mat = MATERIALS_DB.find(m => m.name === l.material);
+                  const color = mat ? (catColors[mat.cat] || "#999") : "#999";
+                  svgEls.push(<rect key={"r"+idx} x={x} y={15} width={w} height={80} fill={color} stroke="#555" strokeWidth="0.5"/>);
+                  if (w > 15) svgEls.push(<text key={"t"+idx} x={x+w/2} y={60} textAnchor="middle" fontSize="6" fill="#333" transform={"rotate(-90,"+(x+w/2)+",60)"}>{(l.matName||l.material||"?").substring(0,15)}</text>);
+                  svgEls.push(<text key={"d"+idx} x={x+w/2} y={105} textAnchor="middle" fontSize="6" fill="#888">{d}mm</text>);
+                  x += w;
+                });
+                return <svg viewBox="0 0 300 120" width="100%" height="100">{svgEls}</svg>;
+              })()}
             </Card>
           )}
 
