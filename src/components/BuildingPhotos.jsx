@@ -205,6 +205,7 @@ export default function BuildingPhotos({ buildingPhotos, setBuildingPhotos, show
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
     setIsDragging(false);
   }, []);
 
