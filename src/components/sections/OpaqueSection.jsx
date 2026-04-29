@@ -374,13 +374,13 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
             // Flux de la INT (sus) spre EXT (jos)
             <>
               <line x1={width + 20} y1={10} x2={width + 20} y2={height - 10} stroke="#ef4444" strokeWidth="1.8" markerEnd="url(#sec-arrow-heat)" opacity="0.9" />
-              <text x={width + 30} y={height / 2} fontSize="8" fill="#ef4444" fontWeight="700" transform={`rotate(-90 ${width + 30} ${height / 2})`}>Flux termic ↓ (iarnă)</text>
+              <text x={width + 30} y={height / 2} fontSize="8" fill="#b91c1c" fontWeight="700" stroke="white" strokeWidth="3" paintOrder="stroke" transform={`rotate(-90 ${width + 30} ${height / 2})`}>Flux termic ↓ (iarnă)</text>
             </>
           ) : (
             // Flux de la INT (jos) spre EXT (sus)
             <>
               <line x1={width + 20} y1={height - 10} x2={width + 20} y2={10} stroke="#ef4444" strokeWidth="1.8" markerEnd="url(#sec-arrow-heat)" opacity="0.9" />
-              <text x={width + 30} y={height / 2} fontSize="8" fill="#ef4444" fontWeight="700" transform={`rotate(-90 ${width + 30} ${height / 2})`}>Flux termic ↑ (iarnă)</text>
+              <text x={width + 30} y={height / 2} fontSize="8" fill="#b91c1c" fontWeight="700" stroke="white" strokeWidth="3" paintOrder="stroke" transform={`rotate(-90 ${width + 30} ${height / 2})`}>Flux termic ↑ (iarnă)</text>
             </>
           )}
         </g>
@@ -397,7 +397,8 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
             {yPts.map((p, i) => (
               <g key={i}>
                 <circle cx={tToX(p.t)} cy={p.y} r="2.2" fill="#ef4444" />
-                <text x={tToX(p.t) + 6} y={p.y + 3} fontSize="7" fill="#ef4444" fontWeight="700">{p.t.toFixed(1)}°</text>
+                <rect x={tToX(p.t) + 4} y={p.y - 7} width="28" height="12" rx="2" fill="rgba(255,255,255,0.93)" />
+                <text x={tToX(p.t) + 18} y={p.y + 2.5} fontSize="7.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
               </g>
             ))}
             {!compact && (

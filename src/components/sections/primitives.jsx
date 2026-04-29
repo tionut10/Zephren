@@ -441,7 +441,8 @@ export function TemperatureProfile({ points, xStart, xEnd, yTop, yBottom, tMin, 
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={tToY(p.t)} r="2.2" fill={color} />
-          <text x={p.x} y={tToY(p.t) - 5} fontSize="7" fill={color} textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+          <rect x={p.x - 13} y={tToY(p.t) - 16} width="26" height="13" rx="2" fill="rgba(255,255,255,0.93)" />
+          <text x={p.x} y={tToY(p.t) - 6} fontSize="7.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
         </g>
       ))}
     </g>
