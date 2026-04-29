@@ -938,26 +938,6 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* Radiație solară anuală — umple golul Col 1 */}
-          {selectedClimate && (
-            <Card title={t("Radiație solară anuală",lang)}>
-              <div className="space-y-1">
-                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
-                  <div key={dir} className="flex items-center justify-between py-1">
-                    <span className="text-xs opacity-50">{dir}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
-                      </div>
-                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
-              </div>
-            </Card>
-          )}
-
         </div>
 
         {/* Coloana 2: Geometrie */}
@@ -1299,6 +1279,25 @@ export default function Step1Identification({
                   return els;
                 })()}
               </svg>
+            </Card>
+          )}
+
+          {selectedClimate && (
+            <Card title={t("Radiație solară anuală",lang)}>
+              <div className="space-y-1">
+                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
+                  <div key={dir} className="flex items-center justify-between py-1">
+                    <span className="text-xs opacity-50">{dir}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
+                      </div>
+                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
+              </div>
             </Card>
           )}
 
