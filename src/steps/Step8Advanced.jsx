@@ -64,6 +64,7 @@ import FAQ from "../components/FAQ.jsx";
 import AppDiagnostic from "../components/AppDiagnostic.jsx";
 import Sandbox from "../components/Sandbox.jsx";
 import TMYPanel from "../components/TMYPanel.jsx";
+import ThermalVizButton from "../components/SmartEnvelopeHub/ThermalViz/ThermalVizButton.jsx";
 import { useCPEAlerts } from "../hooks/useCPEAlerts.js";
 // Sprint B Task 1+2: tab usage tracker + mod expert
 import { trackTabClick, getFrequentTabs, togglePin, isPinned } from "../utils/tab-usage.js";
@@ -3194,8 +3195,22 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {/* ═══ HARTĂ TERMICĂ ═══ */}
       {activeTab === "thermal_map" && (
         <Card className="p-4">
-          <SectionHeader icon="🌡️" title="Hartă termică anvelopă"
-            subtitle="Vizualizare flux termic per element — albastru (pierderi mici) → roșu (pierderi mari)" />
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <SectionHeader icon="🌡️" title="Hartă termică anvelopă"
+              subtitle="Vizualizare flux termic per element — albastru (pierderi mici) → roșu (pierderi mari)" />
+            <ThermalVizButton
+              opaqueElements={opaqueElements}
+              glazingElements={glazingElements}
+              thermalBridges={thermalBridges}
+              building={building}
+              climate={{
+                T_int: parseFloat(building?.theta_int) || 20,
+                T_ext: Array.isArray(climate?.temp_month) && climate.temp_month.length > 0
+                  ? Math.min(...climate.temp_month)
+                  : (climate?.theta_e ?? -15),
+              }}
+            />
+          </div>
           {thermalMap?.svg ? (
             <div className="space-y-4">
               <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(thermalMap.svg) }} className="rounded-lg overflow-hidden" />

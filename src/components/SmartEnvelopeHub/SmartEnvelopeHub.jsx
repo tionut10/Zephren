@@ -29,7 +29,6 @@ import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
-import ThermalVizButton from "./ThermalViz/ThermalVizButton.jsx";
 import ElementSectionModal from "../sections/ElementSectionModal.jsx";
 import EnvelopeHealthCheck from "./EnvelopeHealthCheck.jsx";
 import { getBridgeDetails, classifyIsoLevel } from "../../calc/thermal-bridges-metadata.js";
@@ -419,20 +418,6 @@ export default function SmartEnvelopeHub({
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ThermalVizButton
-              variant="compact"
-              opaqueElements={opaqueElements}
-              glazingElements={glazingElements}
-              thermalBridges={thermalBridges}
-              building={building}
-              climate={{
-                T_int: parseFloat(building?.theta_int) || 20,
-                T_ext: Array.isArray(selectedClimate?.temp_month) && selectedClimate.temp_month.length > 0
-                  ? Math.min(...selectedClimate.temp_month)
-                  : -15,
-              }}
-              calcOpaqueR={calcOpaqueR}
-            />
             <span className="text-[10px] text-slate-400">
               Step 2: <span className={
                 progress.pct >= 80 ? "text-green-400 font-semibold"
