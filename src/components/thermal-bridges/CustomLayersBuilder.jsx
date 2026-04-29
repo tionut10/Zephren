@@ -160,8 +160,8 @@ export default function CustomLayersBuilder({ orientation = "perete_vertical", o
         const lam = Number(layer.lambda) || 0;
         const R = isAir ? layer.R_override : (d > 0 && lam > 0 ? Math.round((d / 1000 / lam) * 1000) / 1000 : 0);
         return (
-          <div key={layer._id} style={{ display: "grid", gridTemplateColumns: "28px 1fr 72px 72px 72px 28px", gap: 4, alignItems: "center", padding: "3px 2px", borderRadius: 4, background: idx % 2 ? "rgba(255,255,255,0.015)" : "transparent" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <div key={layer._id} style={{ display: "grid", gridTemplateColumns: "28px 1fr 72px 72px 72px 28px", gap: 4, alignItems: "center", padding: "3px 2px", borderRadius: 4, background: idx === 0 ? "rgba(59,130,246,0.05)" : idx === layers.length - 1 ? "rgba(34,197,94,0.05)" : idx % 2 ? "rgba(255,255,255,0.015)" : "transparent", outline: idx === 0 ? "1px solid rgba(59,130,246,0.22)" : idx === layers.length - 1 ? "1px solid rgba(34,197,94,0.22)" : "none" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
               <button
                 onClick={() => moveLayer(layer._id, "up")}
                 disabled={idx === 0}
@@ -174,6 +174,12 @@ export default function CustomLayersBuilder({ orientation = "perete_vertical", o
                 aria-label="Mută jos"
                 style={{ fontSize: 8, padding: "0 3px", lineHeight: 1, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 2, color: idx === layers.length - 1 ? "#555" : "#9ca3af", cursor: idx === layers.length - 1 ? "default" : "pointer" }}
               >▼</button>
+              {idx === 0 && (
+                <span style={{ fontSize: 6.5, fontWeight: 700, color: "#60a5fa", lineHeight: 1, marginTop: 2, letterSpacing: 0.3 }}>EXT</span>
+              )}
+              {idx === layers.length - 1 && layers.length > 1 && (
+                <span style={{ fontSize: 6.5, fontWeight: 700, color: "#4ade80", lineHeight: 1, marginTop: 2, letterSpacing: 0.3 }}>INT</span>
+              )}
             </div>
 
             <select

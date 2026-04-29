@@ -136,14 +136,17 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
 
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium uppercase tracking-wider opacity-60">Straturi constructive (int → ext)</span>
+              <span className="text-xs font-medium uppercase tracking-wider opacity-60">Straturi constructive (ext → int)</span>
 <div className="flex gap-2"><button onClick={addLayer} className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30 transition-colors">+ Strat</button><select onChange={function(e){var sol=CONSTRUCTION_SOLUTIONS.find(function(s){return s.id===e.target.value});if(sol){setEl(function(p){return Object.assign({},p,{name:sol.name,type:sol.type,layers:sol.layers.map(function(l){return Object.assign({},l)})})});e.target.value="";}}} className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-amber-400"><option value="">Soluții tip...</option>{CONSTRUCTION_SOLUTIONS.map(function(s){return <option key={s.id} value={s.id}>{s.name}</option>})}</select></div>
             </div>
 
             {el.layers.map((layer, idx) => (
-              <div key={idx} className="bg-white/[0.03] border border-white/5 rounded-lg p-3 mb-2">
+              <div key={idx} className={`border rounded-lg p-3 mb-2 ${idx === 0 ? "bg-blue-500/[0.04] border-blue-500/25" : idx === el.layers.length - 1 ? "bg-green-500/[0.04] border-green-500/25" : "bg-white/[0.03] border-white/5"}`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="flex flex-col gap-0.5 mr-1">{idx > 0 && <button onClick={function(){setEl(function(p){var ls=[].concat(p.layers);var tmp=ls[idx];ls[idx]=ls[idx-1];ls[idx-1]=tmp;return Object.assign({},p,{layers:ls})});}} className="text-[8px] opacity-30 hover:opacity-70 leading-none">▲</button>}{idx < el.layers.length-1 && <button onClick={function(){setEl(function(p){var ls=[].concat(p.layers);var tmp=ls[idx];ls[idx]=ls[idx+1];ls[idx+1]=tmp;return Object.assign({},p,{layers:ls})});}} className="text-[8px] opacity-30 hover:opacity-70 leading-none">▼</button>}</div><span className="text-xs opacity-30 w-5">{idx+1}.</span>
+                  <div className="flex flex-col gap-0.5 mr-1">{idx > 0 && <button onClick={function(){setEl(function(p){var ls=[].concat(p.layers);var tmp=ls[idx];ls[idx]=ls[idx-1];ls[idx-1]=tmp;return Object.assign({},p,{layers:ls})});}} className="text-[8px] opacity-30 hover:opacity-70 leading-none">▲</button>}{idx < el.layers.length-1 && <button onClick={function(){setEl(function(p){var ls=[].concat(p.layers);var tmp=ls[idx];ls[idx]=ls[idx+1];ls[idx+1]=tmp;return Object.assign({},p,{layers:ls})});}} className="text-[8px] opacity-30 hover:opacity-70 leading-none">▼</button>}</div>
+                  <span className="text-xs opacity-30 w-5">{idx+1}.</span>
+                  {idx === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold shrink-0">EXT</span>}
+                  {idx === el.layers.length - 1 && idx !== 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 font-semibold shrink-0">INT</span>}
                   <div className="flex-1 relative">
                     <input value={layer.matName || ""} placeholder="Caută material..."
                       onChange={e => { updateLayer(idx, "matName", e.target.value); setMatSearch(e.target.value); setActiveLayerIdx(idx); }}

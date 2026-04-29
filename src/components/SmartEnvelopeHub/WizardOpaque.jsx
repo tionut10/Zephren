@@ -351,6 +351,23 @@ export default function WizardOpaque({
               <div className="h-px flex-1 bg-white/10" />
             </div>
 
+            {/* Mini-diagramă orientativă EXT → INT */}
+            {element.layers.length > 0 && (
+              <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-white/8 text-[10px] font-semibold">
+                <div className="bg-blue-900/40 text-blue-300 px-2.5 py-1.5 flex items-center gap-1.5 shrink-0">
+                  <span>🌡</span><span>EXT</span>
+                </div>
+                <div className="flex-1 bg-white/[0.02] flex items-center justify-center gap-1 text-white/25 tracking-widest">
+                  {element.layers.map((_, i) => (
+                    <span key={i}>{"▸"}</span>
+                  ))}
+                </div>
+                <div className="bg-green-900/40 text-green-300 px-2.5 py-1.5 flex items-center gap-1.5 shrink-0">
+                  <span>INT</span><span>🏠</span>
+                </div>
+              </div>
+            )}
+
             {/* Listă straturi curentă */}
             {element.layers.length === 0 ? (
               <div className="text-center py-6 opacity-30 text-xs">
@@ -361,10 +378,20 @@ export default function WizardOpaque({
                 {element.layers.map((layer, idx) => (
                   <div
                     key={idx}
-                    className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                    className={`rounded-lg border p-3 ${
+                      idx === 0 ? "border-blue-500/30 bg-blue-500/[0.04]"
+                      : idx === element.layers.length - 1 ? "border-green-500/30 bg-green-500/[0.04]"
+                      : "border-white/10 bg-white/[0.02]"
+                    }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[10px] text-white/40 font-mono">#{idx + 1}</span>
+                      {idx === 0 && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold">EXT</span>
+                      )}
+                      {idx === element.layers.length - 1 && idx !== 0 && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 font-semibold">INT</span>
+                      )}
                       <div className="flex-1 text-xs font-medium truncate">
                         {layer.material || <span className="text-white/30 italic">(fără material)</span>}
                       </div>
@@ -441,9 +468,10 @@ export default function WizardOpaque({
 
             <button
               onClick={addEmptyLayer}
+              title="Straturile se introduc de la exterior (aer/sol/subsol) spre interior (finisaj cameră)"
               className="w-full py-2 rounded-lg border border-dashed border-white/15 hover:border-violet-500/40 hover:bg-violet-500/5 text-xs text-white/50 hover:text-violet-300 transition-all"
             >
-              + Adaugă strat gol
+              + Adaugă strat <span className="text-[9px] opacity-60">(EXT → INT)</span>
             </button>
 
             {/* Buttons */}
