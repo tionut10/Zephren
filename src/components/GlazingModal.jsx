@@ -35,6 +35,21 @@ const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
  *   - lang: "RO" | "EN"
  *   - buildingCategory: building.category string (e.g. "RI","RC",...)
  */
+// Inferă glazingType din câmpul legacy `type` (ex: "Dublu vitraj clasic" → "Dublu vitraj (4-12-4)")
+function inferGlazingType(base) {
+  if (base.glazingType && GLAZING_DB.find(g => g.name === base.glazingType)) return base.glazingType;
+  const t = (base.type || "").toLowerCase();
+  if (!t) return "";
+  if (t.includes("triplu") && (t.includes("low-e") || t.includes("lowe") || t.includes("argon") || t.includes("2×"))) return "Triplu vitraj 2×Low-E";
+  if (t.includes("triplu") && t.includes("low")) return "Triplu vitraj Low-E";
+  if (t.includes("triplu")) return "Triplu vitraj";
+  if (t.includes("dublu") && (t.includes("low-e") || t.includes("lowe"))) return "Dublu vitraj Low-E";
+  if (t.includes("dublu") && (t.includes("termoiz") || t.includes("argon") || t.includes("1.6") || t.includes("izol"))) return "Dublu vitraj termoizolant";
+  if (t.includes("dublu")) return "Dublu vitraj (4-12-4)";
+  if (t.includes("simplu")) return "Simplu vitraj";
+  return "";
+}
+
 export default function GlazingModal({ element, onSave, onClose, lang, buildingCategory }) {
     const [el, setEl] = useState(() => {
       const base = element || {
@@ -44,6 +59,8 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
       // Sprint 22 #15 — asigură shading default (Mc 001-2022 Anexa E)
       return {
         ...base,
+        glazingType: inferGlazingType(base),
+        frameType: base.frameType || "",
         shading: base.shading || { overhang_cm: "", fin_cm: "", hasMobile: false },
       };
     });
