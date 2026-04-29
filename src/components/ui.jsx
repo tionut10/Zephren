@@ -43,10 +43,12 @@ export function Select({ label, value, onChange, options, placeholder, className
 
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
-      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
-        {label}
-        {tooltip && <TooltipIcon text={tooltip} />}
-      </label>}
+      {label && (
+        <div className="flex items-center gap-1">
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
+          {tooltip && <TooltipIcon text={tooltip} />}
+        </div>
+      )}
       {tooltip && <span id={tooltipId.current} className="sr-only">{tooltip}</span>}
       <button type="button" onClick={() => setOpen(!open)}
         aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId.current}
@@ -93,10 +95,12 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
   const describedBy = [tooltip ? tipId.current : null, error ? errId.current : null].filter(Boolean).join(" ") || undefined;
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      {label && <label className="text-xs font-medium uppercase tracking-wider opacity-60">
-        {label}
-        {tooltip && <TooltipIcon text={tooltip} />}
-      </label>}
+      {label && (
+        <div className="flex items-center gap-1">
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
+          {tooltip && <TooltipIcon text={tooltip} />}
+        </div>
+      )}
       {tooltip && <span id={tipId.current} className="sr-only">{tooltip}</span>}
       <div className="relative">
         <input type={type} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
