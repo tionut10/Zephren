@@ -11,7 +11,7 @@
  *   onClose: handler închidere
  */
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import OpaqueSection from "./OpaqueSection.jsx";
 import GlazingSection from "./GlazingSection.jsx";
 import BridgeIllustration from "../thermal-bridges/bridgeIllustrations.jsx";
@@ -25,6 +25,12 @@ export default function ElementSectionModal({
   onClose,
 }) {
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
 
   function handleExportSVG() {
     const svg = containerRef.current?.querySelector("svg");
