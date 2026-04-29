@@ -67,6 +67,8 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
     const uRef = ["RI","RC","RA"].includes(buildingCategory) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
     const uVal = parseFloat(el.u) || 0;
     const uStatus = uVal <= uRef ? "ok" : uVal <= 1.40 ? "warn" : "fail";
+    const uGlazingVal = GLAZING_DB.find(g => g.name === el.glazingType)?.u;
+    const uFrameVal = FRAME_DB.find(f => f.name === el.frameType)?.u;
 
     // Sprint 22 #15 — F_sh protecție solară (Mc 001-2022 Anexa E)
     const shadingRes = calcFsh(el);
@@ -132,8 +134,8 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
           </Card>
 
           <Card title={t("Rezultate",lang)} className="mb-4">
-            <ResultRow label="U vitraj" value={(GLAZING_DB.find(g=>g.name===el.glazingType)?.u || 0).toFixed(2)} unit="W/(m²·K)" />
-            <ResultRow label="U ramă" value={(FRAME_DB.find(f=>f.name===el.frameType)?.u || 0).toFixed(2)} unit="W/(m²·K)" />
+            <ResultRow label="U vitraj" value={uGlazingVal != null ? uGlazingVal.toFixed(2) : "—"} unit={uGlazingVal != null ? "W/(m²·K)" : ""} />
+            <ResultRow label="U ramă" value={uFrameVal != null ? uFrameVal.toFixed(2) : "—"} unit={uFrameVal != null ? "W/(m²·K)" : ""} />
             <ResultRow label="U total fereastră" value={el.u} unit="W/(m²·K)" status={uStatus} />
             <ResultRow label="Factor solar g efectiv" value={el.g} />
             <ResultRow label="F_sh protecție solară" value={shadingRes.fsh.toFixed(3)} />
