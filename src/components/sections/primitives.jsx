@@ -404,11 +404,17 @@ export function DimensionCote({ x1, y1, x2, y2, label, offset = 14, orientation 
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function HeatFlowArrow({ x1, y1, x2, y2, label, color = "#ef4444" }) {
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const labelW = label ? label.length * 5.2 + 12 : 0;
   return (
     <g style={{ pointerEvents: "none" }}>
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="1.8" markerEnd="url(#sec-arrow-heat)" opacity="0.9" />
       {label && (
-        <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 4} fontSize="8" fill={color} textAnchor="middle" fontWeight="700">{label}</text>
+        <g>
+          <rect x={mx - labelW / 2} y={my - 17} width={labelW} height="13" rx="3" fill="rgba(255,255,255,0.92)" />
+          <text x={mx} y={my - 7} fontSize="8.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{label}</text>
+        </g>
       )}
     </g>
   );
