@@ -394,1292 +394,1783 @@ export { Dimension, CondensationZone, IsothermHint, IsoClassBadge, PriorityBadge
 
 // ── Ilustrații per categorie ─────────────────────────────────────────────────
 
+/**
+ * Vertical section — perete + planșeu intermediar BA penetrant
+ * conf. Mc 001-2022 § 4.4 (ψ_pl) + SR EN ISO 14683:2017 IF-pl
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Hașuri ISO 128-50 · ψ tipic: 0.40-0.85 W/(m·K) clasa C/D ISO 14683
+ */
 function IllustrationWallFloorIntermediate({ bridge }) {
-  // Perete cu ETICS + planșeu beton intermediar penetrant
+  // Geometrie perete (de la EXT la INT) — proporțional Mc 001-2022
+  const xExt = W * 0.18;
+  const tFinExt = 5;        // tencuială exterioară 5mm
+  const tEPS = 28;          // izolație EPS 100mm
+  const tBrick = 38;        // zidărie GVP 250mm
+  const tFinInt = 6;        // tencuială interioară 15mm
+  const xFinExt = xExt;
+  const xEPS = xFinExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yFloor = H * 0.48;
+  const tFloor = 22;        // planșeu BA 200mm
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.38} y="0" width={W * 0.62} height={H} fill="url(#g-int)" />
-      {/* Planșeu beton (interior) */}
-      <rect x={W * 0.38} y={H / 2 - 11} width={W * 0.62} height="22" fill="url(#p-conc)" />
-      <rect x={W * 0.38} y={H / 2 - 11} width={W * 0.62} height="22" fill="url(#p-rebar)" opacity="0.4" />
-      {/* Perete zidărie + ETICS */}
-      <rect x={W * 0.32} y="10" width={W * 0.08} height={H - 20} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y="10" width={W * 0.10} height={H - 20} fill="url(#p-eps)" />
-      {/* Tencuială exterioară */}
-      <rect x={W * 0.205} y="10" width="4" height={H - 20} fill="#e8e3d5" />
-      {/* Plintă soclu */}
-      <rect x={W * 0.2} y={H - 10} width={W * 0.22} height="10" fill="#78716c" />
-      {/* Punte termică zona planșeu–perete */}
-      <HeatZone x={W * 0.2} y={H / 2 - 20} w={W * 0.25} h={40} />
-      <HeatArrow x1={W * 0.37} y1={H / 2} x2={W * 0.23} y2={H / 2} />
-      {/* Linie punctată pentru întreruperea izolației */}
-      <path d={`M${W * 0.34},${H / 2 - 11} L${W * 0.34},${H / 2 + 11}`} stroke="#ff4b2b" strokeWidth="1.5" strokeDasharray="3 2" />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXTERIOR</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INTERIOR</Label>
-      <Label x={W * 0.23} y="30" color="#6b4800" size="8">EPS</Label>
-      <Label x={W * 0.33} y="30" color="#6d2818" size="8">zidărie</Label>
-      <Label x={W - 15} y={H / 2 + 4} anchor="end" color="#37474f" size="8">planșeu beton</Label>
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* === PERETE: 4 straturi proporționale === */}
+      <rect x={xFinExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === PLANȘEU BA INTERIOR (penetrare în zidărie, izolația continuă) === */}
+      <rect x={xBrick} y={yFloor - tFloor / 2} width={W - xBrick} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xBrick} y={yFloor - tFloor / 2} width={W - xBrick} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+      {/* === PARDOSEALĂ (parchet + șapă peste planșeu) === */}
+      <rect x={xFinInt} y={yFloor - tFloor / 2 - 8} width={W - xFinInt} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xFinInt} y={yFloor - tFloor / 2 - 12} width={W - xFinInt} height="4" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* === ZONA PUNTE TERMICĂ (la pătrunderea planșeului în zidărie) === */}
+      <HeatZone x={xEPS - 2} y={yFloor - 18} w={tEPS + tBrick + 4} h={36} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yFloor} x2={xEPS - 4} y2={yFloor} />
+      {/* === BANNERS EXT / INT === */}
+      <EnvBanner x="0" y="0" w={xExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      {/* === LEADERS === */}
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
+      <Leader x1={(xBrick + W) / 2} y1={yFloor + 1} x2={W - 6} y2={yFloor + 28} label="planșeu BA 200" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical section — perete + planșeu terasă cu atic
+ * conf. Mc 001-2022 § 4.4 (ψ_at) + SR EN ISO 14683:2017 R-cor
+ * Straturi terasă (de sus): hidroizolație 4 + XPS 150 + BA 200 + tenc.int 15 mm
+ * Atic BA 250mm + capac metalic
+ * ψ tipic: 0.50-0.95 W/(m·K) atic neizolat, 0.10-0.25 W/(m·K) izolat clasa B
+ */
 function IllustrationWallFloorRoof({ bridge }) {
-  // Perete + planșeu terasă cu atic
+  const xWallExt = W * 0.18;
+  const tFinExt = 5;
+  const tEPS = 28;
+  const tBrick = 38;
+  const tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  // Terasă (top-down)
+  const yMembrane = H * 0.30;
+  const yXPS = yMembrane + 3;
+  const yConcTop = yXPS + 22;
+  const tConc = 22;
+  const yScreed = yConcTop + tConc;
   return (
     <>
-      <rect x="0" y="0" width={W} height={H * 0.55} fill="url(#g-ext)" />
-      <rect x="0" y={H * 0.55} width={W} height={H * 0.45} fill="url(#g-int)" />
-      {/* Planșeu beton terasă */}
-      <rect x={W * 0.22} y={H * 0.48} width={W - W * 0.22} height="18" fill="url(#p-conc)" />
-      <rect x={W * 0.22} y={H * 0.48} width={W - W * 0.22} height="18" fill="url(#p-rebar)" opacity="0.4" />
-      {/* Izolație terasă (peste planșeu) */}
-      <rect x={W * 0.22} y={H * 0.35} width={W - W * 0.22} height="18" fill="url(#p-xps)" />
-      {/* Membrană hidroizolație */}
-      <rect x={W * 0.22} y={H * 0.33} width={W - W * 0.22} height="3" fill="#263238" />
-      {/* Perete zidărie + ETICS */}
-      <rect x={W * 0.32} y={H * 0.56} width={W * 0.08} height={H * 0.4} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y={H * 0.33} width={W * 0.10} height={H * 0.63} fill="url(#p-eps)" />
-      {/* Atic */}
-      <rect x={W * 0.22} y={H * 0.20} width={W * 0.18} height={H * 0.18} fill="url(#p-conc)" />
-      <rect x={W * 0.20} y={H * 0.18} width="4" height={H * 0.20} fill="#e8e3d5" />
-      {/* Punte termică */}
-      <HeatZone x={W * 0.18} y={H * 0.42} w={W * 0.28} h={H * 0.2} />
-      <HeatArrow x1={W * 0.37} y1={H * 0.55} x2={W * 0.21} y2={H * 0.55} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (pod/terasă)</Label>
-      <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INTERIOR</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+      <rect x="0" y={yScreed + 6} width={W} height={H - yScreed - 6} fill="url(#g-int)" />
+      {/* === PERETE === */}
+      <rect x={xWallExt} y={yMembrane} width={tFinExt} height={H - yMembrane} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y={yMembrane} width={tEPS} height={H - yMembrane} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yScreed} width={tBrick} height={H - yScreed} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yScreed} width={tFinInt} height={H - yScreed} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === TERASA (de sus în jos): hidroizolație → XPS → BA → șapă → tenc.int === */}
+      <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xWallExt} y={yXPS} width={W - xWallExt} height="22" fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xWallExt} y={yMembrane} width={W - xWallExt} height="3" fill="url(#p-membrane)" />
+      <rect x={xFinInt} y={yScreed} width={W - xFinInt} height="6" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* === ATIC === */}
+      <rect x={xWallExt} y="14" width={tFinExt + tEPS + tBrick * 0.6} height={yMembrane - 14} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xWallExt} y="14" width={tFinExt + tEPS + tBrick * 0.6} height={yMembrane - 14} fill="url(#p-rebar)" opacity="0.45" />
+      <rect x={xWallExt - 2} y="10" width={tFinExt + tEPS + tBrick * 0.6 + 4} height="5" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === ZONA PUNTE === */}
+      <HeatZone x={xWallExt - 4} y={yMembrane - 6} w={tFinExt + tEPS + tBrick + 4} h={tConc + 18} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yConcTop + tConc / 2} x2={xEPS - 4} y2={yConcTop + tConc / 2} />
+      {/* === BANNERS === */}
+      <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      {/* === LEADERS === */}
+      <Leader x1={xEPS + tEPS / 2} y1={yScreed + 20} x2={xEPS + tEPS / 2 - 12} y2={H - 14} label="EPS 100" anchor="end" />
+      <Leader x1={(xBrick + W) / 2} y1={yMembrane + 1} x2={W - 6} y2={yMembrane - 4} label="hidroizol. 4" anchor="end" />
+      <Leader x1={(xBrick + W) / 2} y1={yXPS + 11} x2={W - 6} y2={yXPS - 8} label="XPS 150" anchor="end" />
+      <Leader x1={(xBrick + W) / 2} y1={yConcTop + tConc / 2} x2={W - 6} y2={yConcTop + tConc + 16} label="BA 200" anchor="end" />
+      <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
     </>
   );
 }
 
+/**
+ * Vertical section — perete + placă pe sol/peste subsol cu izolație perimetrală
+ * conf. Mc 001-2022 § 4.4 (ψ_sol) + SR EN ISO 13370 + SR EN ISO 14683 GF
+ * Straturi placă (sus→jos): parchet 10 + șapă 50 + EPS 80 + BA 200
+ * Izolație perimetrală XPS 80mm coborâtă min. 600mm sub CTS
+ * ψ tipic: 0.40-0.80 W/(m·K) neizolat, 0.10-0.25 W/(m·K) cu XPS perim. (clasa B-C)
+ */
 function IllustrationWallGround({ bridge, asSoil = true }) {
-  // Perete + planșeu pe sol sau peste subsol
+  const xWallExt = W * 0.18;
+  const tFinExt = 5;
+  const tEPS = 28;
+  const tBrick = 38;
+  const tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yCTS = H * 0.42;     // cota teren sistematizat
+  const yFloorTop = H * 0.40; // cota pardoseală finită
+  // straturi placă (sus în jos)
+  const tParchet = 4;
+  const tScreed = 8;
+  const tEPSFloor = 12;
+  const tBA = 20;
   return (
     <>
-      <rect x="0" y="0" width={W} height={H / 2} fill="url(#g-ext)" />
-      <rect x={W * 0.38} y="0" width={W * 0.62} height={H / 2} fill="url(#g-int)" />
-      {/* Sol sau subsol */}
-      <rect x="0" y={H / 2} width={W} height={H / 2} fill={asSoil ? "url(#p-soil)" : "url(#g-int)"} opacity="0.95" />
-      {/* Fundație beton */}
-      <rect x={W * 0.22} y={H / 2 - 4} width={W * 0.25} height={H * 0.35} fill="url(#p-conc)" />
-      {/* Placă pe sol */}
-      <rect x={W * 0.38} y={H / 2 - 8} width={W * 0.62} height="14" fill="url(#p-conc)" />
-      <rect x={W * 0.38} y={H / 2 - 8} width={W * 0.62} height="14" fill="url(#p-rebar)" opacity="0.4" />
-      {/* Izolație sub placă */}
-      <rect x={W * 0.38} y={H / 2 + 6} width={W * 0.62} height="10" fill="url(#p-xps)" />
-      {/* Izolație perimetrală XPS */}
-      <rect x={W * 0.19} y={H / 2 - 8} width="8" height={H * 0.35} fill="url(#p-xps)" />
-      {/* Perete + ETICS */}
-      <rect x={W * 0.32} y="10" width={W * 0.08} height={H / 2 - 4} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y="10" width={W * 0.10} height={H / 2 - 4} fill="url(#p-eps)" />
-      <rect x={W * 0.205} y="10" width="4" height={H / 2 - 4} fill="#e8e3d5" />
-      {/* Zonă punte */}
-      <HeatZone x={W * 0.18} y={H / 2 - 18} w={W * 0.28} h={35} />
-      <HeatArrow x1={W * 0.37} y1={H / 2} x2={W * 0.21} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXTERIOR</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INTERIOR</Label>
-      <Label x="10" y={H - 10} color={asSoil ? "#5d4638" : "#546e7a"} size="9" bold>{asSoil ? "SOL" : "SUBSOL"}</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+      {/* === SOL / SUBSOL === */}
+      <rect x="0" y={yCTS} width={W} height={H - yCTS} fill={asSoil ? "url(#p-soil)" : "url(#g-int)"} />
+      {!asSoil && <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="rgba(50,55,60,0.18)" />}
+      {/* === PERETE === */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={yFloorTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === FUNDAȚIE BA (cu armătură) === */}
+      <rect x={xEPS} y={yCTS - 6} width={tEPS + tBrick + tFinInt} height={H * 0.30} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xEPS} y={yCTS - 6} width={tEPS + tBrick + tFinInt} height={H * 0.30} fill="url(#p-rebar)" opacity="0.45" />
+      {/* === IZOLAȚIE PERIMETRALĂ XPS 80mm coborâtă === */}
+      <rect x={xWallExt - 8} y={yFloorTop - 4} width="10" height={H * 0.32} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === PLACA PE SOL: parchet → șapă → EPS → BA === */}
+      <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height={tBA} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height={tBA} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xFinInt} y={yFloorTop - tEPSFloor} width={W - xFinInt} height={tEPSFloor} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yFloorTop - tEPSFloor - tScreed} width={W - xFinInt} height={tScreed} fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xFinInt} y={yFloorTop - tEPSFloor - tScreed - tParchet} width={W - xFinInt} height={tParchet} fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* === ZONA PUNTE === */}
+      <HeatZone x={xWallExt - 10} y={yFloorTop - 16} w={tFinExt + tEPS + tBrick + tFinInt + 16} h={32} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yFloorTop} x2={xEPS - 10} y2={yFloorTop} />
+      {/* === BANNERS === */}
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label={asSoil ? "SOL" : "SUBSOL NEÎNCĂLZIT"} fill={asSoil ? "#d6c4a8" : "#cfd8dc"} color="#3a2a1a" />
+      {/* === LEADERS === */}
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
+      <Leader x1={xWallExt - 3} y1={yFloorTop + 30} x2={xWallExt - 24} y2={yFloorTop + 50} label="XPS perim. 80" anchor="end" />
+      <Leader x1={W - 30} y1={yFloorTop + tBA / 2} x2={W - 6} y2={yFloorTop + tBA + 22} label="BA placă 200" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
     </>
   );
 }
 
+/**
+ * Plan view section — colț 90° (exterior convex sau interior concav)
+ * conf. Mc 001-2022 § 4.4 (ψ_e/ψ_i) + SR EN ISO 14683 C
+ * Straturi (din EXT spre INT): tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Hașuri ISO 128-50 · ψ tipic ext: 0.05-0.15 W/(m·K) izolat,
+ * 0.30-0.55 W/(m·K) neizolat · ψ tipic int: -0.05 ÷ 0.10 W/(m·K) (clasa A-C)
+ */
 function IllustrationCorner({ bridge, internal = false }) {
-  // Colț exterior / interior — vedere în plan
-  const cx = W / 2, cy = H / 2;
+  const cx = W / 2;
+  const cy = H / 2;
+  const tFinExt = 4;
+  const tEPS = 14;
+  const tBrick = 26;
+  const tFinInt = 5;
+
   if (internal) {
+    // Colț INTERIOR (concav) — interior se află în L
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-int)" />
         <path d={`M0,0 L${cx},0 L${cx},${cy} L${W},${cy} L${W},${H} L0,${H} Z`} fill="url(#g-ext)" />
-        <rect x={cx - 14} y="0" width="14" height={cy} fill="url(#p-brick)" />
-        <rect x="0" y={cy - 14} width={cx} height="14" fill="url(#p-brick)" />
-        <rect x={cx} y="0" width="10" height={cy + 10} fill="url(#p-eps)" />
-        <rect x="0" y={cy} width={cx + 10} height="10" fill="url(#p-eps)" />
-        <circle cx={cx} cy={cy} r="18" fill="url(#g-heat)" opacity="0.7" />
-        <Label x="10" y="18" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W - 10} y={H - 10} anchor="end" color="#1976d2" size="10" bold>EXT</Label>
+        {/* Stratificare brațul vertical (perete cu EXT la stânga, INT la dreapta) */}
+        <rect x={cx - tFinExt - tEPS - tBrick - tFinInt} y="0" width={tFinExt} height={cy + tFinInt + tBrick + tEPS + tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx - tEPS - tBrick - tFinInt} y="0" width={tEPS} height={cy + tBrick + tFinInt + tEPS} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx - tBrick - tFinInt} y="0" width={tBrick} height={cy + tFinInt + tBrick} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx - tFinInt} y="0" width={tFinInt} height={cy + tFinInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Stratificare brațul orizontal */}
+        <rect x="0" y={cy - tFinExt - tEPS - tBrick - tFinInt} width={cx + tFinInt + tBrick + tEPS + tFinExt} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x="0" y={cy - tEPS - tBrick - tFinInt} width={cx + tBrick + tFinInt + tEPS} height={tEPS} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x="0" y={cy - tBrick - tFinInt} width={cx + tFinInt + tBrick} height={tBrick} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x="0" y={cy - tFinInt} width={cx + tFinInt} height={tFinInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* HeatZone la unghiul intern */}
+        <HeatZone x={cx - 4} y={cy - 4} w="34" h="34" />
+        <HeatArrow x1={cx + 28} y1={cy + 14} x2={cx + 4} y2={cy + 4} />
+        <EnvBanner x={W - 70} y="6" w="60" h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x="6" y={H - 20} w="60" h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <Leader x1={cx - tEPS / 2 - tBrick - tFinInt} y1="20" x2={cx - 90} y2="6" label="EPS 100" anchor="start" />
+        <Leader x1={cx - tBrick / 2 - tFinInt} y1="20" x2={cx + 6} y2="6" label="zidărie 250" anchor="start" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
-  // exterior — un colț convex al clădirii
+
+  // Colț EXTERIOR (convex) — exterior înconjoară unghiul, INT în colțul dreapta-jos
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
       <rect x={cx} y={cy} width={W - cx} height={H - cy} fill="url(#g-int)" />
-      <rect x={cx - 14} y={cy} width="14" height={H - cy} fill="url(#p-brick)" />
-      <rect x={cx} y={cy - 14} width={W - cx} height="14" fill="url(#p-brick)" />
-      <rect x={cx - 24} y={cy} width="10" height={H - cy + 5} fill="url(#p-eps)" />
-      <rect x={cx - 14} y={cy - 24} width={W - cx + 10} height="10" fill="url(#p-eps)" />
-      <circle cx={cx - 7} cy={cy - 7} r="22" fill="url(#g-heat)" />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXTERIOR</Label>
-      <Label x={W - 10} y={H - 10} anchor="end" color="#2e7d32" size="10" bold>INTERIOR</Label>
+      {/* Brațul vertical (jos, perete) */}
+      <rect x={cx - tFinExt - tEPS - tBrick - tFinInt} y={cy - tFinExt - tEPS - tBrick - tFinInt} width={tFinExt} height={H} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tEPS - tBrick - tFinInt} y={cy - tEPS - tBrick - tFinInt} width={tEPS} height={H} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tBrick - tFinInt} y={cy - tBrick - tFinInt} width={tBrick} height={H} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tFinInt} y={cy - tFinInt} width={tFinInt} height={H} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Brațul orizontal (sus, perete) */}
+      <rect x={cx - tFinExt - tEPS - tBrick - tFinInt} y={cy - tFinExt - tEPS - tBrick - tFinInt} width={W} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tEPS - tBrick - tFinInt} y={cy - tEPS - tBrick - tFinInt} width={W} height={tEPS} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tBrick - tFinInt} y={cy - tBrick - tFinInt} width={W} height={tBrick} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={cx - tFinInt} y={cy - tFinInt} width={W} height={tFinInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* HeatZone la unghi convex (pe partea INT) */}
+      <HeatZone x={cx - 6} y={cy - 6} w="34" h="34" />
+      <HeatArrow x1={cx + 24} y1={cy + 24} x2={cx - 8} y2={cy - 8} />
+      <EnvBanner x="6" y="6" w="60" h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={W - 70} y={H - 20} w="60" h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={cx + 40} y1={cy - tEPS / 2 - tBrick - tFinInt} x2={W - 30} y2={cy - tBrick - tFinInt - 16} label="EPS 100" anchor="end" />
+      <Leader x1={cx + 40} y1={cy - tBrick / 2 - tFinInt} x2={W - 30} y2={cy + 12} label="zidărie 250" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical section — joncțiune ramă fereastră / ușă cu perete (jamb/threshold/sill)
+ * conf. Mc 001-2022 § 4.4 (ψ_f) + SR EN ISO 14683 W + SR EN ISO 10077-2
+ * Straturi perete: tenc.ext 5 + EPS 100-150 + zidărie 250 + tenc.int 15 mm
+ * Variante: standard (ramă în planul zidăriei) / in-insulation (montaj RAL în EPS)
+ *           deep-ph (Passivhaus cu consolă Compacfoam) / sill (pervaz) / threshold (prag)
+ * ψ tipic: 0.05-0.12 W/(m·K) Passivhaus, 0.10-0.25 W/(m·K) RAL în izolație,
+ *          0.30-0.55 W/(m·K) standard (clasa A-C ISO 14683)
+ */
 function IllustrationWindow({ bridge, variant }) {
-  // variant: "standard" | "in-insulation" | "deep-ph" | "sill" | "threshold" | "deep-metal-sill"
   const v = variant || "standard";
+  const xWallExt = W * 0.16;
+  const tFinExt = 5;
+  const tEPS = v === "deep-ph" ? 38 : 28;
+  const tBrick = 38;
+  const tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
 
-  // Poziția ramei în perete (în-plan zidărie vs. în izolație vs. foarte adânc în izolație)
+  // Poziția ramei (centrul):
   const frameX =
-    v === "deep-ph" ? W * 0.19 :
-    v === "in-insulation" ? W * 0.23 :
-    v === "deep-metal-sill" ? W * 0.23 :
-    W * 0.33; // standard — în planul zidăriei
+    v === "deep-ph" ? xEPS + 6 :
+    v === "in-insulation" ? xEPS + tEPS / 2 - 8 :
+    v === "deep-metal-sill" ? xEPS + 4 :
+    xBrick + 4; // standard — în planul zidăriei
 
-  const showHeatZone = v !== "deep-ph"; // Passivhaus aproape zero punte
+  const showHeatZone = v !== "deep-ph";
   const showPrecompBand = v === "in-insulation" || v === "deep-ph";
 
-  // Varianta "sill" = pervazul sub fereastră (vedere secțiune orizontală)
+  // SILL — secțiune orizontală sub fereastră (parapet)
   if (v === "sill") {
+    const ySill = H * 0.40;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.45} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.45} width={W} height={H * 0.55} fill="url(#g-int)" />
-        {/* Perete + ETICS */}
-        <rect x={W * 0.22} y={H * 0.45} width={W * 0.10} height={H * 0.55} fill="url(#p-eps)" />
-        <rect x={W * 0.32} y={H * 0.45} width={W * 0.08} height={H * 0.55} fill="url(#p-brick)" />
-        {/* Zidărie sub fereastră */}
-        <rect x={W * 0.32} y={H * 0.45} width={W * 0.68} height={H * 0.28} fill="url(#p-brick)" />
-        {/* Izolație continuă peste pervaz */}
-        <rect x={W * 0.22} y={H * 0.4} width={W * 0.78} height="8" fill="url(#p-eps)" />
-        {/* Glaf metalic exterior (cu scurgere apei) */}
-        <path d={`M${W * 0.22},${H * 0.4} L${W - 10},${H * 0.4} L${W - 10},${H * 0.38} L${W * 0.22},${H * 0.42} Z`} fill="url(#g-metal)" />
-        {/* Rama fereastră (vedere secțiune orizontală) */}
-        <rect x={frameX - 2} y={H * 0.3} width="22" height="14" fill="#f4f1eb" stroke="#5a5550" strokeWidth="1" />
-        {/* Radiator sub fereastră (nișă) */}
-        <rect x={W * 0.45} y={H * 0.60} width={W * 0.25} height={H * 0.25} fill="none" stroke="#607d8b" strokeWidth="1" />
-        <Label x={W / 2} y={H * 0.73} color="#607d8b" size="8" anchor="middle">radiator</Label>
-        <HeatZone x={frameX - 8} y={H * 0.35} w="32" h={H * 0.16} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (sub glaf)</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INTERIOR</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={ySill} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y={ySill} width={W - xWallEnd} height={H - ySill} fill="url(#g-int)" />
+        {/* Perete sub pervaz */}
+        <rect x={xWallExt} y={ySill - 4} width={tFinExt} height={H - ySill + 4} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y={ySill - 4} width={tEPS} height={H - ySill + 4} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y={ySill - 4} width={tBrick} height={H - ySill + 4} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={ySill - 4} width={tFinInt} height={H - ySill + 4} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Bandă EPS continuă sub glaf (anti-punte) */}
+        <rect x={xWallExt} y={ySill - 12} width={W - xWallExt} height="8" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Glaf metalic exterior (panta scurgerii apei) */}
+        <path d={`M${xWallExt - 4},${ySill - 12} L${W - 10},${ySill - 14} L${W - 10},${ySill - 10} L${xWallExt - 4},${ySill - 8} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Ramă (parțial vizibilă deasupra) */}
+        <rect x={frameX - 4} y={H * 0.20} width="22" height="16" fill="#f0ece4" stroke="#5a5550" strokeWidth="0.8" />
+        <rect x={frameX} y={H * 0.20 - 8} width="14" height="8" fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {showHeatZone && <HeatZone x={xEPS - 6} y={ySill - 18} w={tEPS + tBrick + 12} h="22" />}
+        <EnvBanner x="0" y="0" w={W} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS + tEPS / 2 - 12} y2={H - 18} label="EPS 100" anchor="end" />
+        <Leader x1={(xWallExt + W) / 2} y1={ySill - 8} x2={W - 6} y2={ySill - 24} label="bandă EPS" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Varianta "threshold" = prag ușă exterioară
+  // THRESHOLD — prag ușă exterioară (secțiune verticală)
   if (v === "threshold") {
+    const yFloor = H * 0.50;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.5} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.5} width={W} height={H * 0.5} fill="url(#g-int)" />
-        {/* Planșeu */}
-        <rect x={W * 0.38} y={H * 0.5} width={W * 0.62} height="16" fill="url(#p-conc)" />
-        <rect x={W * 0.38} y={H * 0.5 + 16} width={W * 0.62} height="8" fill="url(#p-xps)" />
-        {/* Trotuar exterior */}
-        <rect x="0" y={H * 0.52} width={W * 0.22} height={H * 0.1} fill="#9e9e9e" />
-        <rect x="0" y={H * 0.62} width={W * 0.22} height={H * 0.38} fill="url(#p-soil)" />
+        <rect x="0" y="0" width={W} height={yFloor} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        {/* Trotuar exterior + sol */}
+        <rect x="0" y={yFloor + 4} width={xWallExt} height="6" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x="0" y={yFloor + 10} width={xWallExt} height={H - yFloor - 10} fill="url(#p-soil)" />
         {/* Perete */}
-        <rect x={W * 0.32} y="0" width={W * 0.08} height={H * 0.5} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y="0" width={W * 0.10} height={H * 0.5} fill="url(#p-eps)" />
+        <rect x={xWallExt} y="14" width={tFinExt} height={yFloor - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={yFloor - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={yFloor - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={yFloor - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Planșeu BA + finisare interioară */}
+        <rect x={xFinInt} y={yFloor} width={W - xFinInt} height="20" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xFinInt} y={yFloor} width={W - xFinInt} height="20" fill="url(#p-rebar)" opacity="0.5" />
+        <rect x={xFinInt} y={yFloor + 20} width={W - xFinInt} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
         {/* Ușa */}
-        <rect x={W * 0.40} y={H * 0.15} width="6" height={H * 0.35} fill="#6d4c41" />
-        <rect x={W * 0.40 + 6} y={H * 0.15} width="12" height={H * 0.35} fill="url(#g-glass)" stroke="#3a6ea8" strokeWidth="0.4" />
-        {/* Pragul metalic */}
-        <rect x={W * 0.35} y={H * 0.49} width={W * 0.18} height="6" fill="url(#g-metal)" stroke="#333" strokeWidth="0.5" />
-        {/* Ruptură termică în prag (optional - verzica dacă are în nume) */}
+        <rect x={xBrick + 2} y={H * 0.16} width="6" height={yFloor - H * 0.16} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick + 8} y={H * 0.16} width="14" height={yFloor - H * 0.16 - 4} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Pragul metalic cu ruptură termică */}
+        <rect x={xBrick - 6} y={yFloor - 4} width={tBrick + 14} height="6" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
         {/Ruptur|ruptoare|thermal break/i.test(bridge.name) && (
-          <rect x={W * 0.42} y={H * 0.49} width="3" height="6" fill="#ff9800" />
+          <rect x={xBrick + 4} y={yFloor - 4} width="3" height="6" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />
         )}
-        <HeatZone x={W * 0.33} y={H * 0.45} w={W * 0.22} h="20" />
-        <HeatArrow x1={W * 0.5} y1={H * 0.52} x2={W * 0.36} y2={H * 0.52} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.40} y={H * 0.12} color="#37474f" size="8">ușă</Label>
+        <HeatZone x={xEPS - 4} y={yFloor - 16} w={tEPS + tBrick + 8} h="24" />
+        <HeatArrow x1={xBrick + tBrick / 2} y1={yFloor - 2} x2={xEPS - 6} y2={yFloor - 2} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xBrick + 12} y1={H * 0.20} x2={W - 30} y2={H * 0.06} label="ușă" anchor="end" />
+        <Leader x1={xBrick + 8} y1={yFloor - 1} x2={W - 30} y2={yFloor - 20} label="prag metalic" anchor="end" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // Standard vertical jamb variants
+  // STANDARD / IN-INSULATION / DEEP-PH / DEEP-METAL-SILL — secțiune verticală jamb
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.38} y="0" width={W * 0.62} height={H} fill="url(#g-int)" />
-      {/* Perete + ETICS */}
-      <rect x={W * 0.32} y="0" width={W * 0.08} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Perete (4 straturi) */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
       {/* Glaf exterior metalic */}
-      <rect x={W * 0.18} y={H * 0.58} width={W * 0.18} height="4" fill="url(#g-metal)" />
-      {/* Rama fereastră */}
-      <rect x={frameX - 2} y={H * 0.22} width="22" height={H * 0.4} fill={v === "deep-ph" ? "#2e2a24" : "#f4f1eb"} stroke="#5a5550" strokeWidth="1" />
+      <rect x={xWallExt - 4} y={H * 0.60} width={tFinExt + tEPS + 6} height="3" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Consolă Compacfoam pentru Passivhaus */}
       {v === "deep-ph" && (
         <>
-          {/* Consolă izolantă Compacfoam (portantă pt. Passivhaus RAL) */}
-          <rect x={frameX - 8} y={H * 0.21} width="6" height={H * 0.42} fill="#6b5a48" stroke="#3e352a" strokeWidth="0.4" />
-          <Label x={frameX - 5} y={H * 0.2} color="#3e352a" size="7" anchor="middle" bold>Compacfoam</Label>
+          <rect x={frameX - 6} y={H * 0.20} width="6" height={H * 0.46} fill="#7a6a52" stroke="#1a1c1f" strokeWidth="0.5" />
+          <Label x={frameX - 3} y={H * 0.18} size={7} anchor="middle" bg>Compacfoam</Label>
         </>
       )}
-      {/* Sticlă */}
-      <rect x={frameX + 2} y={H * 0.25} width="14" height={H * 0.35} fill="url(#g-glass)" stroke="#3a6ea8" strokeWidth="0.5" />
-      <line x1={frameX + 5} y1={H * 0.26} x2={frameX + 5} y2={H * 0.58} stroke="#ffffff" strokeWidth="1" opacity="0.7" />
-      {v === "deep-ph" && <line x1={frameX + 10} y1={H * 0.26} x2={frameX + 10} y2={H * 0.58} stroke="#ffffff" strokeWidth="0.8" opacity="0.6" />}
-      {/* Bandă precomprimată */}
-      {showPrecompBand && <rect x={frameX - 4} y={H * 0.22} width="2" height={H * 0.4} fill="#a0522d" />}
-      {/* Izolație care se revenește peste cercevea (deep PH) */}
-      {v === "deep-ph" && <rect x={frameX + 16} y={H * 0.22} width="6" height={H * 0.4} fill="url(#p-eps)" />}
-      {/* Punte termică */}
-      {showHeatZone && <HeatZone x={frameX - 10} y={H * 0.2} w="36" h={H * 0.44} />}
-      {showHeatZone && <HeatArrow x1={frameX + 25} y1={H * 0.42} x2={frameX - 6} y2={H * 0.42} />}
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x="10" y={H * 0.18} color="#37474f" size="8">
-        {v === "deep-ph" ? "Passivhaus RAL (console izolante)" :
-         v === "in-insulation" ? "montaj în izolație + bandă PE" :
-         "montaj standard (în planul zidăriei)"}
-      </Label>
+      {/* Ramă fereastră */}
+      <rect x={frameX - 2} y={H * 0.22} width="20" height={H * 0.42} fill={v === "deep-ph" ? "#2e2a24" : "#f0ece4"} stroke="#1a1c1f" strokeWidth="0.6" />
+      {/* Sticlă (dublu/triplu strat după variantă) */}
+      <rect x={frameX + 2} y={H * 0.25} width="14" height={H * 0.36} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <line x1={frameX + 6} y1={H * 0.26} x2={frameX + 6} y2={H * 0.60} stroke="#ffffff" strokeWidth="0.8" opacity="0.6" />
+      {v === "deep-ph" && <line x1={frameX + 11} y1={H * 0.26} x2={frameX + 11} y2={H * 0.60} stroke="#ffffff" strokeWidth="0.7" opacity="0.5" />}
+      {/* Bandă precomprimată / etanșare */}
+      {showPrecompBand && <rect x={frameX - 3} y={H * 0.22} width="2" height={H * 0.42} fill="#a0522d" stroke="#1a1c1f" strokeWidth="0.3" />}
+      {/* Izolație care se întoarce peste cercevea (deep-PH) */}
+      {v === "deep-ph" && <rect x={frameX + 18} y={H * 0.22} width="6" height={H * 0.42} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />}
+      {/* Punte */}
+      {showHeatZone && <HeatZone x={frameX - 10} y={H * 0.20} w="34" h={H * 0.46} />}
+      {showHeatZone && <HeatArrow x1={frameX + 22} y1={H * 0.42} x2={frameX - 6} y2={H * 0.42} />}
+      {/* Banners */}
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      {/* Leaders */}
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
+      <Leader x1={frameX + 8} y1={H * 0.78} x2={W - 30} y2={H * 0.92} label={
+        v === "deep-ph" ? "montaj Passivhaus" :
+        v === "in-insulation" ? "montaj RAL în EPS" :
+        v === "deep-metal-sill" ? "ramă cu glaf metalic" :
+        "montaj în zidărie"} anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
-// Velux — fereastră de mansardă în acoperiș înclinat
+/**
+ * Vertical section — fereastră de mansardă (Velux) în acoperiș înclinat
+ * conf. Mc 001-2022 § 4.4 (ψ_lum) + SR EN ISO 14683 W
+ * Straturi acoperiș (sus→jos): țigle 25 + folie 1 + aerare 30 + căpriori 200 cu MW + OSB 18 + placaj GK 12 mm
+ * Ramă Velux cu flashing perimetral integrat
+ * ψ tipic: 0.30-0.55 W/(m·K) montaj standard, 0.10-0.20 W/(m·K) montaj cu flashing termic
+ */
 function IllustrationVelux({ bridge }) {
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x="0" y={H * 0.7} width={W} height={H * 0.3} fill="url(#g-int)" />
-      {/* Şarpantă înclinată */}
-      <polygon points={`${W},20 30,${H * 0.65} ${W},${H * 0.65}`} fill="url(#p-wood)" stroke="#6d4c41" strokeWidth="1" />
-      {/* Ţigle */}
-      <polygon points={`${W},20 30,${H * 0.65} ${W},${H * 0.65}`} fill="#8d6e47" opacity="0.4" />
-      {[0.2, 0.35, 0.5, 0.65].map((fy, i) => (
-        <line key={i} x1={30 + i * 30} y1={H * 0.65 - i * 20} x2={W} y2={H * 0.65 - i * 20} stroke="#5d4433" strokeWidth="0.5" opacity="0.8" />
+      <rect x="0" y={H * 0.78} width={W} height={H * 0.22} fill="url(#g-int)" />
+      {/* === ȘARPANTĂ ÎNCLINATĂ - 6 straturi proporționale === */}
+      {/* Țigle ceramice exterior (sus pe pantă) */}
+      <polygon points={`${W},14 20,${H * 0.62} ${W},${H * 0.62}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Linii rosturi țigle */}
+      {[0.18, 0.30, 0.42, 0.54].map((fy, i) => (
+        <line key={i} x1={30 + i * 28} y1={H * 0.62 - i * 22} x2={W} y2={H * 0.62 - i * 22} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.6" />
       ))}
-      {/* Izolație între căpriori */}
-      <polygon points={`${W},32 44,${H * 0.59} ${W},${H * 0.59}`} fill="url(#p-mw)" />
-      {/* Fereastra Velux înclinată */}
-      <g transform={`rotate(-30, ${W * 0.6}, ${H * 0.42})`}>
-        <rect x={W * 0.55} y={H * 0.32} width="50" height="28" fill="#f4f1eb" stroke="#5a5550" strokeWidth="1" />
-        <rect x={W * 0.55 + 3} y={H * 0.32 + 3} width="44" height="22" fill="url(#g-glass)" stroke="#3a6ea8" strokeWidth="0.4" />
+      {/* Folie + aerare */}
+      <polygon points={`${W},22 30,${H * 0.59} ${W},${H * 0.59}`} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Căpriori lemn + izolație MW între */}
+      <polygon points={`${W},32 44,${H * 0.55} ${W},${H * 0.55}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Căpriori (vertical lemn vizibil ca dungi) */}
+      {[0.30, 0.50, 0.70, 0.88].map((fx, i) => (
+        <rect key={i} x={W * fx} y={H * 0.30 + i * 8} width="6" height="14" fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.4" transform={`rotate(-30, ${W * fx + 3}, ${H * 0.30 + i * 8 + 7})`} />
+      ))}
+      {/* OSB + placaj interior */}
+      <polygon points={`${W},${H * 0.55} 56,${H * 0.55} 56,${H * 0.59} ${W},${H * 0.59}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+      <polygon points={`${W},${H * 0.59} 60,${H * 0.59} 60,${H * 0.62} ${W},${H * 0.62}`} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* === FEREASTRA VELUX (rotită cu panta) === */}
+      <g transform={`rotate(-30, ${W * 0.58}, ${H * 0.40})`}>
+        <rect x={W * 0.50} y={H * 0.32} width="58" height="32" fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.8" />
+        <rect x={W * 0.50 + 3} y={H * 0.32 + 3} width="52" height="26" fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <line x1={W * 0.50 + 6} y1={H * 0.32 + 4} x2={W * 0.50 + 6} y2={H * 0.32 + 28} stroke="#ffffff" strokeWidth="0.6" opacity="0.6" />
       </g>
-      {/* Element de etanșare BBX */}
-      <path d={`M${W * 0.53},${H * 0.42} L${W * 0.62},${H * 0.35} L${W * 0.66},${H * 0.39} L${W * 0.57},${H * 0.46} Z`} fill="#37474f" opacity="0.7" />
-      <Label x={W * 0.62} y={H * 0.30} color="#e8e3d5" size="8" bold>Velux</Label>
-      <HeatZone x={W * 0.52} y={H * 0.35} w="55" h="30" />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (acoperiș)</Label>
-      <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT (mansardă)</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      {/* Flashing BBX (etanșare metalică perimetrală) */}
+      <path d={`M${W * 0.52},${H * 0.42} L${W * 0.61},${H * 0.34} L${W * 0.66},${H * 0.38} L${W * 0.56},${H * 0.46} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === PUNTE TERMICĂ === */}
+      <HeatZone x={W * 0.48} y={H * 0.34} w="50" h="32" />
+      <HeatArrow x1={W * 0.62} y1={H * 0.50} x2={W * 0.50} y2={H * 0.45} />
+      <EnvBanner x="0" y="0" w={W} h="12" label="EXT (acoperiș)" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (mansardă)" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={(W * 0.58)} y1={H * 0.20} x2={W - 6} y2={H * 0.10} label="Velux + flashing BBX" anchor="end" />
+      <Leader x1={(W * 0.92)} y1={H * 0.45} x2={W - 6} y2={H * 0.74} label="MW 200 + căpriori" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
     </>
   );
 }
 
+/**
+ * Vertical section — placă consolă balcon + perete cu/fără ruptor termic
+ * conf. Mc 001-2022 § 4.4 (ψ_b) + SR EN ISO 14683 B + SR EN ISO 10211
+ * Variante: uninterrupted (placă continuă, punte majoră) / loggia (semi-închis) /
+ *           isokorb-k/ks/kxt (Schöck) / halfen-hit / steel-pendant (tiranți inox) / precast-gfrp
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Placă consolă BA 200mm
+ * ψ tipic: 0.80-1.15 W/(m·K) neîntrerupt, 0.10-0.30 W/(m·K) cu Isokorb (clasa A-B)
+ */
 function IllustrationBalcony({ bridge, variant }) {
-  // variant: "uninterrupted" | "isokorb-k" | "isokorb-kxt" | "isokorb-ks"
-  //          | "halfen-hit" | "steel-pendant" | "loggia" | "precast-gfrp"
   const v = variant || "uninterrupted";
   const name = bridge.name.toLowerCase();
   const hasBreak = v !== "uninterrupted" && v !== "loggia";
 
-  // Steel pendant — balcon suspendat pe cabluri/tiranti metalici
+  // Geometrie comună perete
+  const xWallExt = W * 0.18;
+  const tFinExt = 5;
+  const tEPS = 28;
+  const tBrick = 38;
+  const tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yFloor = H * 0.48;
+  const tFloor = 22;
+
+  // Steel pendant — balcon suspendat pe tiranți inox
   if (v === "steel-pendant") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.42} y="0" width={W * 0.58} height={H} fill="url(#g-int)" />
-        <rect x={W * 0.36} y="0" width={W * 0.08} height={H} fill="url(#p-brick)" />
-        <rect x={W * 0.26} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-        {/* Planșeu interior */}
-        <rect x={W * 0.26} y={H / 2 - 9} width={W * 0.74} height="18" fill="url(#p-conc)" />
-        <rect x={W * 0.26} y={H / 2 - 9} width={W * 0.74} height="18" fill="url(#p-rebar)" opacity="0.35" />
-        {/* Placa balcon MAI JOS (suspendată) */}
-        <rect x="20" y={H * 0.62} width={W * 0.24} height="14" fill="url(#p-conc)" />
-        <rect x="20" y={H * 0.62} width={W * 0.24} height="14" fill="url(#p-rebar)" opacity="0.35" />
-        {/* Tiranti oțel inox */}
-        <line x1={W * 0.05} y1={H * 0.62} x2={W * 0.32} y2={H / 2 - 9} stroke="url(#g-metal)" strokeWidth="3" />
-        <line x1={W * 0.15} y1={H * 0.62} x2={W * 0.4} y2={H / 2 - 9} stroke="url(#g-metal)" strokeWidth="3" />
-        <circle cx={W * 0.32} cy={H / 2 - 9} r="2.5" fill="#444" />
-        <circle cx={W * 0.4} cy={H / 2 - 9} r="2.5" fill="#444" />
-        <Label x={W * 0.1} y={H * 0.55} color="#37474f" size="7" bold>tiranți oțel</Label>
-        <HeatZone x={W * 0.25} y={H / 2 - 16} w={W * 0.12} h={24} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (balcon suspendat)</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        {/* Perete */}
+        <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Planșeu interior (continuu, FĂRĂ extensie balcon) */}
+        <rect x={xFinInt} y={yFloor - tFloor / 2} width={W - xFinInt} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xFinInt} y={yFloor - tFloor / 2} width={W - xFinInt} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+        {/* Placa balcon SUSPENDATĂ (separată de perete, mai jos) */}
+        <rect x="6" y={H * 0.65} width={xWallExt - 14} height="14" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x="6" y={H * 0.65} width={xWallExt - 14} height="14" fill="url(#p-rebar)" opacity="0.55" />
+        {/* Tiranți oțel inox (2 cabluri) */}
+        <line x1={W * 0.04} y1={H * 0.65} x2={xEPS - 2} y2={yFloor - tFloor / 2} stroke="url(#g-metal)" strokeWidth="2.5" />
+        <line x1={W * 0.10} y1={H * 0.65} x2={xBrick - 2} y2={yFloor - tFloor / 2} stroke="url(#g-metal)" strokeWidth="2.5" />
+        <circle cx={xEPS - 2} cy={yFloor - tFloor / 2} r="2" fill="#1a1c1f" />
+        <circle cx={xBrick - 2} cy={yFloor - tFloor / 2} r="2" fill="#1a1c1f" />
+        <HeatZone x={xEPS - 4} y={yFloor - 18} w={tEPS + tBrick + 4} h="20" />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={W * 0.07} y1={H * 0.62} x2={W * 0.04} y2={H * 0.50} label="tiranți inox" anchor="start" />
+        <Leader x1={W * 0.10} y1={H * 0.66} x2={W - 30} y2={H * 0.92} label="placă suspendată" anchor="end" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // Loggia — spațiu semi-închis între apartament și perete exterior
+  // Loggia — spațiu semi-închis tampon
   if (v === "loggia") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        {/* Zona loggia (semi-închisă, neîncălzită) */}
-        <rect x={W * 0.06} y="0" width={W * 0.35} height={H} fill="#e8dab0" opacity="0.5" />
-        <rect x={W * 0.45} y="0" width={W * 0.55} height={H} fill="url(#g-int)" />
-        {/* Parapet beton loggia */}
-        <rect x={W * 0.06} y={H / 2 - 40} width="8" height="48" fill="url(#p-conc)" />
-        <rect x={W * 0.06} y={H / 2 - 44} width={W * 0.35} height="5" fill="url(#p-conc)" />
-        {/* Planșeu balcon-loggia (continuu) */}
-        <rect x={W * 0.06} y={H / 2 - 9} width={W * 0.94} height="18" fill="url(#p-conc)" />
-        <rect x={W * 0.06} y={H / 2 - 9} width={W * 0.94} height="18" fill="url(#p-rebar)" opacity="0.35" />
-        {/* Perete spate loggia */}
-        <rect x={W * 0.36} y="0" width={W * 0.08} height={H} fill="url(#p-brick)" />
-        <rect x={W * 0.26} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-        {/* Fereastră/ușă spre apartament */}
-        <rect x={W * 0.43} y={H * 0.15} width="10" height={H * 0.33} fill="#f4f1eb" stroke="#5a5550" strokeWidth="0.8" />
-        <rect x={W * 0.44} y={H * 0.17} width="6" height={H * 0.29} fill="url(#g-glass)" />
-        <HeatZone x={W * 0.24} y={H / 2 - 16} w={W * 0.22} h="32" />
-        <HeatArrow x1={W * 0.46} y1={H / 2} x2={W * 0.25} y2={H / 2} />
-        <Label x="10" y="18" color="#8c6a00" size="10" bold>LOGGIA</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+        {/* Zonă loggia (tampon) */}
+        <rect x="0" y="0" width={xWallExt} height={H} fill="#ece4d2" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        {/* Parapet loggia */}
+        <rect x="6" y={yFloor - 40} width="8" height="48" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x="6" y={yFloor - 44} width="22" height="6" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Planșeu continuu (loggia + interior) */}
+        <rect x="6" y={yFloor - tFloor / 2} width={W - 6} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x="6" y={yFloor - tFloor / 2} width={W - 6} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+        {/* Perete spate loggia (4 straturi) */}
+        <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Ușă/fereastră spre apartament */}
+        <rect x={xWallEnd + 2} y={H * 0.16} width="10" height={H * 0.30} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xWallEnd + 4} y={H * 0.18} width="6" height={H * 0.26} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <HeatZone x={xEPS - 4} y={yFloor - 18} w={tEPS + tBrick + 8} h="20" />
+        <HeatArrow x1={xBrick + tBrick / 2} y1={yFloor} x2={xEPS - 6} y2={yFloor} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="LOGGIA" fill="#e9dcb8" color="#5a3a14" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={(xBrick + W) / 2} y1={yFloor + 1} x2={W - 6} y2={H * 0.92} label="planșeu BA 200" anchor="end" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // Variante cu placă balcon în continuarea planșeului + opțional ruptor
-  const isIsokorbKXT = v === "isokorb-kxt"; // 120mm Passivhaus
-  const isIsokorbKS = v === "isokorb-ks"; // oțel-beton
+  // Variante cu placă balcon continuă cu planșeul + ruptor termic opțional
+  const isIsokorbKXT = v === "isokorb-kxt";
+  const isIsokorbKS = v === "isokorb-ks";
   const isHalfen = v === "halfen-hit";
   const isGFRP = v === "precast-gfrp";
 
-  const breakWidth = isIsokorbKXT ? 12 : isIsokorbKS ? 10 : isHalfen ? 9 : hasBreak ? 8 : 0;
-  const breakColor = isIsokorbKS ? "#bfbfc4" : isGFRP ? "#00897b" : "#ff9800";
+  const breakWidth = isIsokorbKXT ? 14 : isIsokorbKS ? 11 : isHalfen ? 10 : hasBreak ? 9 : 0;
   const breakLabel =
-    isIsokorbKXT ? "Isokorb KXT (120)" :
-    isIsokorbKS ? "Isokorb KS (oțel)" :
+    isIsokorbKXT ? "Isokorb KXT 120" :
+    isIsokorbKS ? "Isokorb KS oțel" :
     isHalfen ? "Halfen HIT" :
-    isGFRP ? "conectori GFRP" :
-    v === "isokorb-k" ? "Isokorb K (80)" : null;
+    isGFRP ? "GFRP" :
+    v === "isokorb-k" ? "Isokorb K 80" : null;
+
+  // Ruptorul se inserează exact în zidărie, păstrând EPS continuu pe exterior
+  const xBreak = xBrick;
 
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.42} y="0" width={W * 0.58} height={H} fill="url(#g-int)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
       {/* Perete */}
-      <rect x={W * 0.36} y="0" width={W * 0.08} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.26} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-      {/* Placa balcon exterior + planșeu interior */}
-      <rect x="20" y={H / 2 - 9} width={W * 0.26} height="18" fill="url(#p-conc)" />
-      <rect x={W * 0.36 + (hasBreak ? breakWidth : 0)} y={H / 2 - 9} width={W * 0.64 - (hasBreak ? breakWidth : 0)} height="18" fill="url(#p-conc)" />
-      <rect x="20" y={H / 2 - 9} width={W - 40} height="18" fill="url(#p-rebar)" opacity="0.35" />
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Placa exterioară balcon (consolă) */}
+      <rect x="8" y={yFloor - tFloor / 2} width={xWallExt - 6} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x="8" y={yFloor - tFloor / 2} width={xWallExt - 6} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+      {/* Planșeu interior (după ruptor) */}
+      <rect x={xBreak + breakWidth} y={yFloor - tFloor / 2} width={W - xBreak - breakWidth} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xBreak + breakWidth} y={yFloor - tFloor / 2} width={W - xBreak - breakWidth} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+      {/* Continuarea plăcii prin EPS (când fără ruptor) */}
+      {!hasBreak && (
+        <>
+          <rect x={xWallExt} y={yFloor - tFloor / 2} width={xBrick - xWallExt} height={tFloor} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+          <rect x={xWallExt} y={yFloor - tFloor / 2} width={xBrick - xWallExt} height={tFloor} fill="url(#p-rebar)" opacity="0.55" />
+        </>
+      )}
       {/* Parapet */}
-      <rect x="22" y={H / 2 - 40} width="5" height="32" fill="#999" />
-      <rect x="22" y={H / 2 - 44} width={W * 0.24} height="5" fill="#b0b0b0" />
-      {/* Ruptor termic (cu tip diferit) */}
+      <rect x="10" y={yFloor - 38} width="6" height={tFloor + 14} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x="10" y={yFloor - 44} width={xWallExt - 8} height="5" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Ruptor termic */}
       {hasBreak && (
         <g>
-          <rect x={W * 0.36} y={H / 2 - 9} width={breakWidth} height="18" fill={breakColor} />
-          {/* Izolație Neopor în ruptor */}
-          <rect x={W * 0.36} y={H / 2 - 9} width={breakWidth} height="18" fill="url(#p-mw)" opacity="0.45" />
-          {/* Armături orizontale vizibile (oțel inox pt KS/KXT) */}
+          <rect x={xBreak} y={yFloor - tFloor / 2 - 2} width={breakWidth} height={tFloor + 4} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
           {(isIsokorbKS || isIsokorbKXT || isHalfen) && (
             <>
-              <line x1={W * 0.3} y1={H / 2 - 4} x2={W * 0.5} y2={H / 2 - 4} stroke="#222" strokeWidth="0.9" />
-              <line x1={W * 0.3} y1={H / 2 + 4} x2={W * 0.5} y2={H / 2 + 4} stroke="#222" strokeWidth="0.9" />
+              <line x1={xBreak - 14} y1={yFloor - 5} x2={xBreak + breakWidth + 14} y2={yFloor - 5} stroke="#1a1c1f" strokeWidth="1.1" />
+              <line x1={xBreak - 14} y1={yFloor + 5} x2={xBreak + breakWidth + 14} y2={yFloor + 5} stroke="#1a1c1f" strokeWidth="1.1" />
+              <circle cx={xBreak - 10} cy={yFloor - 5} r="1.2" fill="#1a1c1f" />
+              <circle cx={xBreak + breakWidth + 10} cy={yFloor - 5} r="1.2" fill="#1a1c1f" />
             </>
           )}
-          {/* Profil metalic oțel (pt KS) */}
-          {isIsokorbKS && <rect x={W * 0.36} y={H / 2 - 2} width={breakWidth} height="4" fill="url(#g-metal)" />}
-          <Label x={W * 0.36 + breakWidth / 2} y={H / 2 - 16} color={isGFRP ? "#00695c" : "#e65100"} size="7" bold anchor="middle">{breakLabel}</Label>
+          {isIsokorbKS && <rect x={xBreak} y={yFloor - 1} width={breakWidth} height="3" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />}
         </g>
       )}
-      {/* Punte termică (mare dacă neîntrerupt, ~70% mai mică cu ruptor) */}
-      <HeatZone x={W * 0.24} y={H / 2 - 18} w={hasBreak ? W * 0.13 : W * 0.22} h={36} />
-      {!hasBreak && <HeatArrow x1={W * 0.43} y1={H / 2} x2={W * 0.26} y2={H / 2} />}
-      {hasBreak && <Label x={W * 0.7} y={H * 0.15} color="#2e7d32" size="8" bold>−{isIsokorbKXT ? 90 : isIsokorbKS ? 65 : isHalfen ? 80 : 75}% pierderi</Label>}
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (balcon)</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+      {/* Punte termică */}
+      <HeatZone x={xEPS - 4} y={yFloor - 18} w={hasBreak ? tEPS + 6 : tEPS + tBrick + 8} h="36" />
+      {!hasBreak && <HeatArrow x1={xBrick + tBrick / 2} y1={yFloor} x2={xEPS - 6} y2={yFloor} />}
+      {/* Banners */}
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT (balcon)" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      {hasBreak && breakLabel && (
+        <Leader x1={xBreak + breakWidth / 2} y1={yFloor - tFloor / 2 - 4} x2={xBreak + breakWidth / 2 + 30} y2={H * 0.18} label={breakLabel} anchor="start" />
+      )}
+      {hasBreak && (
+        <Leader x1={(W + xWallEnd) / 2} y1={yFloor - 12} x2={W - 6} y2={H * 0.92} label={`-${isIsokorbKXT ? 90 : isIsokorbKS ? 65 : isHalfen ? 80 : 75}% pierderi`} anchor="end" />
+      )}
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical sections — variante de acoperiș + perete (streașină, coamă, atic, etc.)
+ * conf. Mc 001-2022 § 4.4 + SR EN ISO 14683 R/E + SR EN 15026 (acoperiș verde)
+ * Variante: eaves (streașină) / ridge (coamă) / parapet (atic plat) / gable (calcan)
+ *           dormer (lucarnă) / skylight (luminator) / green-ext|int (verde)
+ * Straturi acoperiș plat: hidroiz. 4 + XPS 150 + BA 200 + tenc.int 15 mm
+ * Straturi acoperiș înclinat: țigle 25 + folie + aerare 30 + MW 200 + OSB 18 + GK 12 mm
+ * ψ tipic: 0.10-0.25 W/(m·K) eaves izolat, 0.50-0.95 W/(m·K) parapet neizolat (clasa A-D)
+ */
 function IllustrationRoof({ bridge, variant }) {
-  // variant: "eaves" | "ridge" | "skylight" | "parapet" | "dormer"
-  //          | "green-extensive" | "green-intensive" | "gable"
   const v = variant || "eaves";
 
-  // Coamă — vârful acoperișului în două pante
+  // RIDGE — coamă acoperiș cu două pante
   if (v === "ridge") {
+    const yEave = H * 0.68;
+    const yRidge = 18;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
         <rect x="0" y={H * 0.78} width={W} height={H * 0.22} fill="url(#g-int)" />
-        {/* Două pante de acoperiș */}
-        <polygon points={`${W / 2},20 30,${H * 0.72} ${W / 2},${H * 0.72}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
-        <polygon points={`${W / 2},20 ${W - 30},${H * 0.72} ${W / 2},${H * 0.72}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
         {/* Țigle ambele pante */}
-        {[0.15, 0.3, 0.45, 0.6].map((fy, i) => (
-          <g key={i}>
-            <line x1={W / 2 - 40 + i * 15} y1={60 + i * 25} x2={W / 2} y2={60 + i * 25} stroke="#5d4433" strokeWidth="0.4" opacity="0.7" />
-            <line x1={W / 2} y1={60 + i * 25} x2={W / 2 + 40 - i * 15} y2={60 + i * 25} stroke="#5d4433" strokeWidth="0.4" opacity="0.7" />
-          </g>
-        ))}
-        {/* Izolație ambele pante */}
-        <polygon points={`${W / 2},34 44,${H * 0.70} ${W / 2},${H * 0.70}`} fill="url(#p-mw)" />
-        <polygon points={`${W / 2},34 ${W - 44},${H * 0.70} ${W / 2},${H * 0.70}`} fill="url(#p-mw)" />
-        {/* Coama — capac metalic */}
-        <polygon points={`${W / 2 - 8},22 ${W / 2 + 8},22 ${W / 2 + 5},15 ${W / 2 - 5},15`} fill="url(#g-metal)" />
-        {/* Ventilație la coamă (opțional) */}
+        <polygon points={`${W / 2},${yRidge} 30,${yEave} ${W / 2},${yEave}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
+        <polygon points={`${W / 2},${yRidge} ${W - 30},${yEave} ${W / 2},${yEave}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
+        {/* Linii rosturi țigle */}
+        {[0.18, 0.36, 0.54, 0.72, 0.90].map((fy, i) => {
+          const yL = yRidge + (yEave - yRidge) * fy;
+          const dxL = (yL - yRidge) * 0.55;
+          return (
+            <g key={i}>
+              <line x1={W / 2 - dxL} y1={yL} x2={W / 2} y2={yL} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.5" />
+              <line x1={W / 2} y1={yL} x2={W / 2 + dxL} y2={yL} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.5" />
+            </g>
+          );
+        })}
+        {/* Folie + aerare */}
+        <polygon points={`${W / 2},${yRidge + 4} 38,${yEave - 4} ${W / 2},${yEave - 4}`} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+        <polygon points={`${W / 2},${yRidge + 4} ${W - 38},${yEave - 4} ${W / 2},${yEave - 4}`} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Izolație MW între căpriori */}
+        <polygon points={`${W / 2},${yRidge + 12} 50,${yEave - 10} ${W / 2},${yEave - 10}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <polygon points={`${W / 2},${yRidge + 12} ${W - 50},${yEave - 10} ${W / 2},${yEave - 10}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* OSB intrados */}
+        <polygon points={`${W / 2},${yRidge + 18} 56,${yEave - 4} ${W / 2 + 1},${yEave - 4}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+        <polygon points={`${W / 2},${yRidge + 18} ${W - 56},${yEave - 4} ${W / 2 - 1},${yEave - 4}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Capac coamă metalic */}
+        <polygon points={`${W / 2 - 10},${yRidge + 4} ${W / 2 + 10},${yRidge + 4} ${W / 2 + 6},${yRidge - 6} ${W / 2 - 6},${yRidge - 6}`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
         {bridge.name.toLowerCase().includes("vent") && (
           <>
-            <rect x={W / 2 - 6} y="26" width="12" height="3" fill="#263238" />
-            <Label x={W / 2} y="40" color="#37474f" size="7" anchor="middle">aerisire</Label>
+            <rect x={W / 2 - 6} y={yRidge + 6} width="12" height="3" fill="#1a1c1f" />
+            <Leader x1={W / 2} y1={yRidge + 6} x2={W - 30} y2={yRidge - 4} label="aerisire coamă" anchor="end" />
           </>
         )}
-        <HeatZone x={W / 2 - 24} y="20" w="48" h="32" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT (pod)</Label>
-        <Label x={W / 2} y={H * 0.78} color="#37474f" size="8" anchor="middle" bold>coamă</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <HeatZone x={W / 2 - 24} y={yRidge - 4} w="48" h="36" />
+        <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (pod)" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={W * 0.30} y1={H * 0.40} x2="6" y2={H * 0.55} label="MW 200" anchor="start" />
+        <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
   }
 
-  // Atic / parapet — acoperiș plat cu parapet
+  // PARAPET — acoperiș plat cu atic (punte majoră la parapetul neîntrerupt)
   if (v === "parapet") {
+    const xWallExt = W * 0.18;
+    const tFinExt = 5, tEPS = 22, tBrick = 30, tFinInt = 6;
+    const xEPS = xWallExt + tFinExt;
+    const xBrick = xEPS + tEPS;
+    const xFinInt = xBrick + tBrick;
+    const xWallEnd = xFinInt + tFinInt;
+    const yMembrane = H * 0.28;
+    const yXPS = yMembrane + 3;
+    const yConcTop = yXPS + 18;
+    const tConc = 22;
+    const yScreed = yConcTop + tConc;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.4} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.4} width={W} height={H * 0.6} fill="url(#g-int)" />
-        {/* Planșeu terasă */}
-        <rect x={W * 0.24} y={H * 0.42} width={W - W * 0.24} height="18" fill="url(#p-conc)" />
-        <rect x={W * 0.24} y={H * 0.42} width={W - W * 0.24} height="18" fill="url(#p-rebar)" opacity="0.4" />
-        {/* Izolație XPS peste planșeu */}
-        <rect x={W * 0.24} y={H * 0.30} width={W - W * 0.24} height="18" fill="url(#p-xps)" />
-        {/* Membrană hidroizolație */}
-        <rect x={W * 0.22} y={H * 0.28} width={W - W * 0.22} height="3" fill="#263238" />
-        <path d={`M${W * 0.22},${H * 0.28} Q${W * 0.22},${H * 0.05} ${W * 0.30},${H * 0.05} L${W * 0.30},${H * 0.08}`} stroke="#263238" strokeWidth="3" fill="none" />
-        {/* Parapet (atic) */}
-        <rect x={W * 0.22} y={H * 0.05} width="18" height={H * 0.25} fill="url(#p-conc)" />
-        <rect x={W * 0.20} y={H * 0.04} width="4" height={H * 0.27} fill="#e8e3d5" />
-        <rect x={W * 0.22} y={H * 0.03} width="18" height="4" fill="url(#g-metal)" />
-        {/* Perete */}
-        <rect x={W * 0.32} y={H * 0.42} width="22" height={H * 0.58} fill="url(#p-brick)" />
-        <rect x={W * 0.24} y={H * 0.42} width="8" height={H * 0.58} fill="url(#p-eps)" />
-        {/* Punte majoră la parapet */}
-        <HeatZone x={W * 0.18} y={H * 0.1} w="32" h={H * 0.32} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.31} y={H * 0.04} color="#37474f" size="8" bold>parapet</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+        <rect x="0" y={yScreed + 6} width={W} height={H - yScreed - 6} fill="url(#g-int)" />
+        {/* Atic BA */}
+        <rect x={xWallExt} y={H * 0.06} width={tFinExt + tEPS + tBrick * 0.7} height={yMembrane - H * 0.06} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xWallExt} y={H * 0.06} width={tFinExt + tEPS + tBrick * 0.7} height={yMembrane - H * 0.06} fill="url(#p-rebar)" opacity="0.45" />
+        {/* Capac metalic atic */}
+        <rect x={xWallExt - 3} y={H * 0.04} width={tFinExt + tEPS + tBrick * 0.7 + 6} height="4" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Perete (continuă sub atic) */}
+        <rect x={xWallExt} y={yMembrane} width={tFinExt} height={H - yMembrane} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y={yMembrane} width={tEPS} height={H - yMembrane} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y={yScreed} width={tBrick} height={H - yScreed} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yScreed} width={tFinInt} height={H - yScreed} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Terasă: BA + XPS + hidroizolație + șapă/tenc.int */}
+        <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-rebar)" opacity="0.55" />
+        <rect x={xWallExt} y={yXPS} width={W - xWallExt} height="18" fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xWallExt} y={yMembrane} width={W - xWallExt} height="3" fill="url(#p-membrane)" />
+        {/* Hidroizolație urcată pe atic */}
+        <path d={`M${xWallExt},${yMembrane + 1.5} L${xWallExt},${H * 0.07} L${xWallExt + tFinExt + tEPS + tBrick * 0.7 + 4},${H * 0.07}`} stroke="#1a1c1f" strokeWidth="2.5" fill="none" />
+        <rect x={xFinInt} y={yScreed} width={W - xFinInt} height="6" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Punte majoră atic */}
+        <HeatZone x={xWallExt - 4} y={H * 0.10} w={tFinExt + tEPS + tBrick + 6} h={yConcTop - H * 0.10 + 16} />
+        <HeatArrow x1={xBrick + 4} y1={yConcTop + 6} x2={xWallExt - 6} y2={yConcTop - 4} />
+        <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xWallExt + 4} y1={H * 0.16} x2={W - 30} y2={H * 0.06} label="atic BA neizolat" anchor="end" />
+        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yScreed - 28} label="XPS 150" anchor="end" />
+        <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
   }
 
-  // Luminator / skylight — cadru aluminiu în acoperiș plat
+  // SKYLIGHT — luminator cu cadru Al pe acoperiș plat
   if (v === "skylight") {
+    const yMembrane = H * 0.42;
+    const tConc = 20, tXPS = 16;
+    const yConcTop = yMembrane + 3;
+    const yBaseInt = yConcTop + tConc;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.55} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.55} width={W} height={H * 0.45} fill="url(#g-int)" />
-        {/* Planșeu terasă */}
-        <rect x="0" y={H * 0.55} width={W} height="16" fill="url(#p-conc)" />
-        <rect x="0" y={H * 0.42} width={W} height="14" fill="url(#p-xps)" />
-        <rect x="0" y={H * 0.40} width={W} height="3" fill="#263238" />
-        {/* Cadru luminator (guler ridicat) */}
-        <rect x={W * 0.35} y={H * 0.2} width="8" height={H * 0.25} fill="url(#p-conc)" />
-        <rect x={W * 0.57} y={H * 0.2} width="8" height={H * 0.25} fill="url(#p-conc)" />
-        {/* Izolație pe guler */}
-        <rect x={W * 0.33} y={H * 0.2} width="4" height={H * 0.25} fill="url(#p-eps)" />
-        <rect x={W * 0.63} y={H * 0.2} width="4" height={H * 0.25} fill="url(#p-eps)" />
-        {/* Cadru aluminium */}
-        <rect x={W * 0.35} y={H * 0.18} width={W * 0.3} height="6" fill="url(#g-metal)" />
-        <rect x={W * 0.35} y={H * 0.18 - 4} width={W * 0.3} height="4" fill="#455a64" />
-        {/* Sticlă dome/plată */}
-        <rect x={W * 0.37} y={H * 0.15} width={W * 0.26} height="4" fill="url(#g-glass)" />
-        {/* Punte la cadru aluminium */}
-        <HeatZone x={W * 0.32} y={H * 0.15} w="36" h="30" />
-        <HeatZone x={W * 0.60} y={H * 0.15} w="36" h="30" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (terasă)</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W / 2} y={H * 0.15} color="#455a64" size="8" anchor="middle" bold>skylight Al</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+        <rect x="0" y={yBaseInt + 6} width={W} height={H - yBaseInt - 6} fill="url(#g-int)" />
+        {/* Acoperiș plat: BA + XPS + hidroizolație + tenc.int */}
+        <rect x="0" y={yConcTop} width={W} height={tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x="0" y={yConcTop} width={W} height={tConc} fill="url(#p-rebar)" opacity="0.55" />
+        <rect x="0" y={yMembrane + 3} width={W} height={tXPS} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x="0" y={yMembrane} width={W} height="3" fill="url(#p-membrane)" />
+        <rect x="0" y={yBaseInt} width={W} height="6" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Guler beton ridicat (curb) — 2 laturi */}
+        <rect x={W * 0.32} y={H * 0.20} width="8" height={yConcTop - H * 0.20 + tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={W * 0.32} y={H * 0.20} width="8" height={yConcTop - H * 0.20 + tConc} fill="url(#p-rebar)" opacity="0.45" />
+        <rect x={W * 0.62} y={H * 0.20} width="8" height={yConcTop - H * 0.20 + tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={W * 0.62} y={H * 0.20} width="8" height={yConcTop - H * 0.20 + tConc} fill="url(#p-rebar)" opacity="0.45" />
+        {/* Izolație urcată pe guler */}
+        <rect x={W * 0.30} y={H * 0.20} width="3" height={yConcTop - H * 0.20 + 4} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={W * 0.70} y={H * 0.20} width="3" height={yConcTop - H * 0.20 + 4} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Hidroizolație urcată pe guler */}
+        <path d={`M${W * 0.27},${yMembrane + 1.5} L${W * 0.27},${H * 0.21} L${W * 0.32},${H * 0.21}`} stroke="#1a1c1f" strokeWidth="2" fill="none" />
+        <path d={`M${W * 0.73},${yMembrane + 1.5} L${W * 0.73},${H * 0.21} L${W * 0.70},${H * 0.21}`} stroke="#1a1c1f" strokeWidth="2" fill="none" />
+        {/* Cadru aluminiu */}
+        <rect x={W * 0.32} y={H * 0.16} width={W * 0.38} height="5" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Sticlă (dublu strat) */}
+        <rect x={W * 0.34} y={H * 0.13} width={W * 0.34} height="4" fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <HeatZone x={W * 0.28} y={H * 0.16} w="38" h="34" />
+        <HeatZone x={W * 0.62} y={H * 0.16} w="38" h="34" />
+        <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={W / 2} y1={H * 0.14} x2={W - 30} y2={H * 0.04} label="cadru Al" anchor="end" />
+        <Leader x1={W * 0.52} y1={yMembrane + 12} x2={W - 30} y2={H - 18} label="XPS 150" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Lucarnă / dormer — proeminență verticală din acoperișul înclinat
+  // DORMER — lucarnă (proeminență verticală în acoperiș înclinat)
   if (v === "dormer") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.8} width={W} height={H * 0.2} fill="url(#g-int)" />
-        {/* Pantă acoperiș principală */}
-        <polygon points={`${W},15 20,${H * 0.75} ${W},${H * 0.75}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
-        <polygon points={`${W},15 20,${H * 0.75} ${W},${H * 0.75}`} fill="#8d6e47" opacity="0.5" />
-        {/* Dormer box (proeminență verticală) */}
-        <rect x={W * 0.3} y={H * 0.25} width={W * 0.35} height={H * 0.30} fill="#d4c3a8" stroke="#6d4c41" strokeWidth="0.8" />
-        {/* Acoperiș dormer */}
-        <polygon points={`${W * 0.3},${H * 0.25} ${W * 0.48},${H * 0.1} ${W * 0.65},${H * 0.25}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
+        <rect x="0" y={H * 0.82} width={W} height={H * 0.18} fill="url(#g-int)" />
+        {/* Pantă principală - țigle */}
+        <polygon points={`${W},15 20,${H * 0.78} ${W},${H * 0.78}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
+        {[0.20, 0.40, 0.60, 0.80].map((fy, i) => (
+          <line key={i} x1={30 + i * 30} y1={H * 0.78 - i * 22} x2={W} y2={H * 0.78 - i * 22} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.5" />
+        ))}
+        {/* Izolație MW pantă */}
+        <polygon points={`${W},32 50,${H * 0.74} ${W},${H * 0.74}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* OSB intrados pantă */}
+        <polygon points={`${W},${H * 0.74} 56,${H * 0.74} 56,${H * 0.78} ${W},${H * 0.78}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Lucarnă - perete frontal lemn cu izolație */}
+        <rect x={W * 0.30} y={H * 0.26} width={W * 0.36} height={H * 0.32} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={W * 0.32} y={H * 0.28} width={W * 0.32} height="6" fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Acoperiș lucarnă (țigle) */}
+        <polygon points={`${W * 0.30},${H * 0.26} ${W * 0.48},${H * 0.10} ${W * 0.66},${H * 0.26}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
+        <polygon points={`${W * 0.32},${H * 0.27} ${W * 0.48},${H * 0.13} ${W * 0.64},${H * 0.27}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
         {/* Fereastră dormer */}
-        <rect x={W * 0.37} y={H * 0.32} width={W * 0.21} height={H * 0.18} fill="#f4f1eb" stroke="#5a5550" strokeWidth="0.8" />
-        <rect x={W * 0.39} y={H * 0.34} width={W * 0.17} height={H * 0.14} fill="url(#g-glass)" />
-        {/* Punte la joncțiunea dormer-acoperiș principal */}
-        <HeatZone x={W * 0.25} y={H * 0.23} w="35" h="40" />
-        <HeatZone x={W * 0.60} y={H * 0.23} w="35" h="40" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT (mansardă)</Label>
-        <Label x={W * 0.48} y={H * 0.24} color="#37474f" size="8" anchor="middle" bold>lucarnă</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x={W * 0.37} y={H * 0.34} width={W * 0.22} height={H * 0.20} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={W * 0.39} y={H * 0.36} width={W * 0.18} height={H * 0.16} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <line x1={W * 0.48} y1={H * 0.36} x2={W * 0.48} y2={H * 0.52} stroke="#ffffff" strokeWidth="0.6" opacity="0.6" />
+        {/* Joncțiuni laterale (punți) */}
+        <HeatZone x={W * 0.24} y={H * 0.22} w="32" h="42" />
+        <HeatZone x={W * 0.62} y={H * 0.22} w="32" h="42" />
+        <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (mansardă)" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={W * 0.48} y1={H * 0.20} x2={W - 30} y2={H * 0.06} label="lucarnă" anchor="end" />
+        <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
   }
 
-  // Acoperiș verde
+  // GREEN ROOF — extensiv (sedum) sau intensiv (arbuști)
   if (v === "green-extensive" || v === "green-intensive") {
     const isIntensive = v === "green-intensive";
+    const xWallExt = W * 0.18;
+    const tFinExt = 5, tEPS = 22, tBrick = 30, tFinInt = 6;
+    const xEPS = xWallExt + tFinExt;
+    const xBrick = xEPS + tEPS;
+    const xFinInt = xBrick + tBrick;
+    const xWallEnd = xFinInt + tFinInt;
+    // Straturi terasă verde (de sus): substrat + drenaj + filtru + anti-rădăcină + hidroiz + XPS + BA
+    const ySubst = isIntensive ? H * 0.16 : H * 0.30;
+    const tSubst = isIntensive ? 22 : 14;
+    const yDrain = ySubst + tSubst;
+    const yMembrane = yDrain + 6;
+    const yXPS = yMembrane + 3;
+    const yConcTop = yXPS + 18;
+    const tConc = 22;
+    const yBaseInt = yConcTop + tConc;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.5} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.5} width={W} height={H * 0.5} fill="url(#g-int)" />
-        {/* Planșeu beton */}
-        <rect x={W * 0.2} y={H * 0.52} width={W * 0.8} height="16" fill="url(#p-conc)" />
-        {/* Izolație */}
-        <rect x={W * 0.2} y={H * 0.42} width={W * 0.8} height="12" fill="url(#p-xps)" />
-        {/* Membrană anti-rădăcină */}
-        <rect x={W * 0.2} y={H * 0.40} width={W * 0.8} height="3" fill="#263238" />
-        {/* Strat drenaj (pietriș) */}
-        <rect x={W * 0.2} y={H * 0.37} width={W * 0.8} height="5" fill="url(#p-gravel)" />
-        {/* Substrat (gradient verde-maro) */}
-        <rect x={W * 0.2} y={H * 0.25 + (isIntensive ? 0 : 6)} width={W * 0.8} height={isIntensive ? "22" : "16"} fill="#8d7b52" />
+        <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+        <rect x="0" y={yBaseInt + 6} width={W} height={H - yBaseInt - 6} fill="url(#g-int)" />
+        {/* Atic */}
+        <rect x={xWallExt} y={H * 0.06} width={tFinExt + tEPS + tBrick * 0.7} height={ySubst - H * 0.06} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xWallExt} y={H * 0.06} width={tFinExt + tEPS + tBrick * 0.7} height={ySubst - H * 0.06} fill="url(#p-rebar)" opacity="0.45" />
+        {/* Perete */}
+        <rect x={xWallExt} y={ySubst} width={tFinExt} height={H - ySubst} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y={ySubst} width={tEPS} height={H - ySubst} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y={yBaseInt} width={tBrick} height={H - yBaseInt} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yBaseInt} width={tFinInt} height={H - yBaseInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* BA acoperiș */}
+        <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xBrick} y={yConcTop} width={W - xBrick} height={tConc} fill="url(#p-rebar)" opacity="0.55" />
+        {/* XPS */}
+        <rect x={xWallExt} y={yXPS} width={W - xWallExt} height="18" fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Hidroizolație + anti-rădăcină */}
+        <rect x={xWallExt} y={yMembrane} width={W - xWallExt} height="3" fill="url(#p-membrane)" />
+        {/* Drenaj pietriș */}
+        <rect x={xWallExt} y={yDrain} width={W - xWallExt} height="6" fill="url(#p-gravel)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Substrat */}
+        <rect x={xWallExt} y={ySubst} width={W - xWallExt} height={tSubst} fill="#8d7b52" stroke="#1a1c1f" strokeWidth="0.4" />
         {/* Vegetație */}
         {isIntensive ? (
           <>
-            {/* Arbust */}
-            <circle cx={W * 0.4} cy={H * 0.2} r="12" fill="#558b2f" />
-            <circle cx={W * 0.4} cy={H * 0.17} r="10" fill="#689f38" />
-            <rect x={W * 0.39} y={H * 0.22} width="2" height="8" fill="#5d4037" />
-            {/* Plante mici */}
-            <circle cx={W * 0.6} cy={H * 0.27} r="4" fill="#7cb342" />
-            <circle cx={W * 0.75} cy={H * 0.26} r="5" fill="#689f38" />
+            <circle cx={W * 0.42} cy={ySubst - 8} r="14" fill="#4e7c1f" stroke="#1a1c1f" strokeWidth="0.4" />
+            <circle cx={W * 0.42} cy={ySubst - 12} r="11" fill="#689f38" />
+            <rect x={W * 0.41} y={ySubst - 4} width="2" height="6" fill="#5d4037" />
+            <circle cx={W * 0.66} cy={ySubst - 4} r="6" fill="#7cb342" stroke="#1a1c1f" strokeWidth="0.4" />
+            <circle cx={W * 0.84} cy={ySubst - 5} r="7" fill="#689f38" stroke="#1a1c1f" strokeWidth="0.4" />
           </>
         ) : (
-          <>
-            {/* Sedum / vegetație joasă */}
-            {[0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85].map((fx, i) => (
-              <circle key={i} cx={W * fx} cy={H * 0.28 + (i % 2) * 2} r="2.5" fill={i % 2 ? "#8bc34a" : "#689f38"} />
-            ))}
-          </>
+          [0.28, 0.40, 0.52, 0.64, 0.76, 0.88].map((fx, i) => (
+            <circle key={i} cx={W * fx} cy={ySubst - 1 + (i % 2) * 2} r="2.5" fill={i % 2 ? "#8bc34a" : "#689f38"} stroke="#1a1c1f" strokeWidth="0.3" />
+          ))
         )}
-        {/* Atic */}
-        <rect x={W * 0.18} y={H * 0.15} width="4" height={H * 0.37} fill="#e8e3d5" />
-        <rect x={W * 0.20} y={H * 0.13} width="8" height={H * 0.22} fill="url(#p-conc)" />
-        {/* Perete */}
-        <rect x={W * 0.30} y={H * 0.52} width="22" height={H * 0.48} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y={H * 0.52} width="8" height={H * 0.48} fill="url(#p-eps)" />
-        <HeatZone x={W * 0.16} y={H * 0.38} w="32" h="28" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.55} y={H * 0.12} color="#33691e" size="8" bold>{isIntensive ? "acoperiș verde INTENSIV" : "acoperiș verde EXTENSIV"}</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        {/* Hidroizolație urcată pe atic */}
+        <path d={`M${xWallExt},${yMembrane + 1.5} L${xWallExt},${H * 0.07} L${xWallExt + tFinExt + tEPS + tBrick * 0.7 + 4},${H * 0.07}`} stroke="#1a1c1f" strokeWidth="2.5" fill="none" />
+        <HeatZone x={xWallExt - 4} y={yMembrane - 6} w={tFinExt + tEPS + tBrick + 6} h={tConc + 18} />
+        <EnvBanner x="0" y="0" w={W} h="10" label={`EXT (verde ${isIntensive ? "intensiv" : "extensiv"})`} fill="#dcefdc" color="#15803d" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={(xBrick + W) / 2} y1={ySubst + 4} x2={W - 6} y2={ySubst - 8} label={`substrat ${tSubst * 5}`} anchor="end" />
+        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yBaseInt - 6} label="XPS 150" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Calcan/gable (perete median racord cu acoperiș)
+  // GABLE / CALCAN — perete median proeminent deasupra acoperișului
   if (v === "gable") {
+    const cx = W / 2;
+    const tGable = 30;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.5} y={H * 0.3} width={W * 0.5} height={H * 0.7} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.3} width={W * 0.5} height={H * 0.7} fill="url(#g-int)" opacity="0.7" />
-        {/* Calcan vertical gros */}
-        <rect x={W * 0.45} y="0" width={W * 0.1} height={H} fill="url(#p-brick)" />
-        {/* Acoperișuri înclinate pe ambele părți */}
-        <polygon points={`${W / 2},20 20,${H * 0.3} ${W - 20},${H * 0.3}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
-        <polygon points={`${W / 2},35 36,${H * 0.28} ${W - 36},${H * 0.28}`} fill="url(#p-mw)" />
-        {/* Coronament calcan (proeminent deasupra acoperișului) */}
-        <rect x={W * 0.44} y="0" width={W * 0.12} height="40" fill="url(#p-brick)" />
-        <rect x={W * 0.44} y="0" width={W * 0.12} height="3" fill="url(#g-metal)" />
-        <HeatZone x={W * 0.4} y="30" w="38" h="40" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y={H - 10} anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W / 2} y={H * 0.5} color="#6d2818" size="8" anchor="middle" bold>calcan</Label>
+        <rect x={cx + tGable / 2} y={H * 0.30} width={W - cx - tGable / 2} height={H - H * 0.30} fill="url(#g-int)" />
+        <rect x="0" y={H * 0.30} width={cx - tGable / 2} height={H - H * 0.30} fill="url(#g-int)" opacity="0.7" />
+        {/* Calcan zidărie proeminent */}
+        <rect x={cx - tGable / 2} y="0" width={tGable} height={H} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.6" />
+        {/* Coronament calcan + capac metalic */}
+        <rect x={cx - tGable / 2 - 3} y="6" width={tGable + 6} height="6" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Acoperiș înclinat 2 pante (țigle) */}
+        <polygon points={`${cx},${H * 0.28} 20,${H * 0.32} 20,${H * 0.30 - 2} ${cx},${H * 0.26}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.5" />
+        <polygon points={`${cx},${H * 0.28} ${W - 20},${H * 0.32} ${W - 20},${H * 0.30 - 2} ${cx},${H * 0.26}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Izolație MW între căpriori */}
+        <polygon points={`${cx},${H * 0.30} 36,${H * 0.32} 36,${H * 0.34} ${cx},${H * 0.32}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <polygon points={`${cx},${H * 0.30} ${W - 36},${H * 0.32} ${W - 36},${H * 0.34} ${cx},${H * 0.32}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Punte: calcan lipsit de izolație */}
+        <HeatZone x={cx - tGable / 2 - 4} y={H * 0.28} w={tGable + 8} h="50" />
+        <HeatArrow x1={cx} y1={H * 0.40} x2={cx + 24} y2={H * 0.50} />
+        <EnvBanner x="0" y="0" w={W} h="12" label="EXT (calcan)" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={cx + tGable / 2} y={H - 12} w={W - cx - tGable / 2} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={cx} y1={H * 0.50} x2={cx + 60} y2={H * 0.70} label="zidărie 250 (neizolat)" anchor="start" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // Default: "eaves" — streașină clasică
+  // EAVES — streașină acoperiș înclinat (default)
+  const xWallExt = W * 0.32;
+  const tFinExt = 5, tEPS = 22, tBrick = 30, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yEave = H * 0.50;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x="0" y={H * 0.6} width={W} height={H * 0.4} fill="url(#g-int)" />
-      {/* Şarpantă (triunghi simplu, jumătate) */}
-      <polygon points={`${W / 2},15 25,${H * 0.52} ${W - 25},${H * 0.52}`} fill="#a1887f" stroke="#6d4c41" strokeWidth="1" />
-      {/* Țigle */}
-      <polygon points={`${W / 2},15 25,${H * 0.52} ${W - 25},${H * 0.52}`} fill="#8d6e47" opacity="0.7" />
-      <line x1={W / 2 - 25} y1="37" x2={W / 2 + 25} y2="37" stroke="#5d4433" strokeWidth="0.5" opacity="0.8" />
-      <line x1={W / 2 - 40} y1="55" x2={W / 2 + 40} y2="55" stroke="#5d4433" strokeWidth="0.5" opacity="0.8" />
-      <line x1={W / 2 - 55} y1="75" x2={W / 2 + 55} y2="75" stroke="#5d4433" strokeWidth="0.5" opacity="0.8" />
-      {/* Izolație între căpriori */}
-      <polygon points={`${W / 2},28 38,${H * 0.50} ${W - 38},${H * 0.50} ${W / 2},28`} fill="url(#p-mw)" />
-      {/* Perete */}
-      <rect x={W * 0.38} y={H * 0.52} width="22" height={H * 0.5} fill="url(#p-brick)" />
-      <rect x={W * 0.30} y={H * 0.52} width="24" height={H * 0.5} fill="url(#p-eps)" />
-      {/* Streașină */}
-      <rect x={W * 0.22} y={H * 0.48} width={W * 0.18} height="6" fill="#c8a47b" />
+      <rect x={xWallEnd} y={yEave} width={W - xWallEnd} height={H - yEave} fill="url(#g-int)" />
+      <rect x="0" y={yEave + 4} width={xWallExt} height={H - yEave - 4} fill="url(#g-ext)" />
+      {/* Țigle exterior */}
+      <polygon points={`${W / 2},14 ${W * 0.20},${yEave - 4} ${W - 20},${yEave - 4}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
+      {[0.18, 0.36, 0.54, 0.72].map((fy, i) => {
+        const yL = 14 + (yEave - 18) * fy;
+        const dxL = (yL - 14) * 0.65;
+        return <line key={i} x1={W / 2 - dxL} y1={yL} x2={W / 2 + dxL} y2={yL} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.5" />;
+      })}
+      {/* Folie + aerare */}
+      <polygon points={`${W / 2},22 ${W * 0.22},${yEave - 8} ${W - 28},${yEave - 8}`} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Izolație MW între căpriori */}
+      <polygon points={`${W / 2},30 ${W * 0.24},${yEave - 12} ${W - 36},${yEave - 12}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* OSB/placaj intrados */}
+      <polygon points={`${W / 2},36 ${W * 0.26},${yEave - 16} ${W - 42},${yEave - 16}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Streașină — placa lemnoasă orizontală */}
+      <rect x={xWallExt - 30} y={yEave - 6} width={xEPS - xWallExt + 30 + 2} height="5" fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.4" />
       {/* Jgheab metalic (opțional) */}
       {bridge.name.toLowerCase().includes("jgheab") && (
-        <path d={`M${W * 0.2},${H * 0.5} Q${W * 0.18},${H * 0.54} ${W * 0.22},${H * 0.56} L${W * 0.38},${H * 0.56} Q${W * 0.4},${H * 0.54} ${W * 0.38},${H * 0.5}`} fill="url(#g-metal)" stroke="#555" strokeWidth="0.6" />
+        <path d={`M${xWallExt - 28},${yEave - 1} Q${xWallExt - 32},${yEave + 4} ${xWallExt - 26},${yEave + 6} L${xWallExt - 4},${yEave + 6} Q${xWallExt + 2},${yEave + 4} ${xWallExt - 2},${yEave - 1}`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
       )}
-      {/* Punte termică la streașină */}
-      <HeatZone x={W * 0.25} y={H * 0.44} w={W * 0.22} h={30} />
-      <HeatArrow x1={W * 0.40} y1={H * 0.55} x2={W * 0.28} y2={H * 0.52} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.3} y={H * 0.62} color="#37474f" size="8">streașină</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      {/* Perete */}
+      <rect x={xWallExt} y={yEave - 6} width={tFinExt} height={H - yEave + 6} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y={yEave - 12} width={tEPS} height={H - yEave + 12} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yEave} width={tBrick} height={H - yEave} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yEave} width={tFinInt} height={H - yEave} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Planșeu BA */}
+      <rect x={xBrick} y={yEave - 10} width={W - xBrick} height="22" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yEave - 10} width={W - xBrick} height="22" fill="url(#p-rebar)" opacity="0.55" />
+      {/* Punte la streașină */}
+      <HeatZone x={xWallExt - 4} y={yEave - 18} w={tFinExt + tEPS + tBrick + 8} h="32" />
+      <HeatArrow x1={xBrick + 4} y1={yEave - 2} x2={xWallExt - 6} y2={yEave - 8} />
+      <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={W * 0.48} y1={H * 0.30} x2="6" y2={H * 0.20} label="MW 200 căpriori" anchor="start" />
+      <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS - 14} y2={H - 16} label="EPS 100" anchor="end" />
+      <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
     </>
   );
 }
 
+/**
+ * Vertical section — stâlp BA / metalic penetrant prin izolația perete
+ * conf. Mc 001-2022 § 4.4 (ψ_st) + SR EN ISO 14683 IF + SR EN ISO 10211
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Stâlp BA 300×300 sau profil metalic HEA 200 încorporat în zidărie
+ * ψ tipic: 0.35-0.65 W/(m·K) BA neizolat, 0.05-0.15 W/(m·K) cu izolație continuă (clasa A-C)
+ */
 function IllustrationColumnBeam({ bridge }) {
-  const isMetal = bridge.name.toLowerCase().includes("metalic") || bridge.name.toLowerCase().includes("oțel") || bridge.name.toLowerCase().includes("hea") || bridge.name.toLowerCase().includes("heb");
+  const isMetal = /metalic|oțel|otel|hea|heb|ipe/.test(bridge.name.toLowerCase());
+  const xWallExt = W * 0.18;
+  const tFinExt = 5;
+  const tEPS = 28;
+  const tBrick = 38;
+  const tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yColTop = H * 0.16;
+  const yColBot = H * 0.84;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.55} y="0" width={W * 0.45} height={H} fill="url(#g-int)" />
-      {/* Perete zidărie */}
-      <rect x={W * 0.45} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-      {/* ETICS */}
-      <rect x={W * 0.35} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-      {/* Element structural */}
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Perete (4 straturi) */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Stâlp penetrant — încorporat în grosimea zidăriei (întrerupe izolația) */}
       {isMetal ? (
         <g>
-          {/* Profil HEA simplificat */}
-          <rect x={W * 0.46} y={H * 0.15} width={W * 0.08} height={H * 0.7} fill="url(#g-metal)" stroke="#2a2c2f" strokeWidth="0.6" />
-          <rect x={W * 0.46} y={H * 0.15} width={W * 0.08} height="4" fill="#2a2c2f" />
-          <rect x={W * 0.46} y={H * 0.85 - 4} width={W * 0.08} height="4" fill="#2a2c2f" />
-          <Label x={W * 0.50} y={H * 0.10} color="#37474f" size="8" anchor="middle" bold>HEA</Label>
+          {/* HEA 200 — secțiune simplificată */}
+          <rect x={xEPS - 4} y={yColTop} width={tEPS + tBrick - 4} height={yColBot - yColTop} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.6" />
+          <rect x={xEPS - 4} y={yColTop} width={tEPS + tBrick - 4} height="4" fill="#1a1c1f" />
+          <rect x={xEPS - 4} y={yColBot - 4} width={tEPS + tBrick - 4} height="4" fill="#1a1c1f" />
         </g>
       ) : (
         <g>
-          <rect x={W * 0.46} y={H * 0.15} width={W * 0.08} height={H * 0.7} fill="url(#p-conc)" />
-          <rect x={W * 0.46} y={H * 0.15} width={W * 0.08} height={H * 0.7} fill="url(#p-rebar)" opacity="0.4" />
-          <Label x={W * 0.50} y={H * 0.10} color="#37474f" size="8" anchor="middle" bold>beton armat</Label>
+          <rect x={xEPS - 4} y={yColTop} width={tEPS + tBrick - 4} height={yColBot - yColTop} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+          <rect x={xEPS - 4} y={yColTop} width={tEPS + tBrick - 4} height={yColBot - yColTop} fill="url(#p-rebar)" opacity="0.6" />
         </g>
       )}
-      {/* Punte termică */}
-      <HeatZone x={W * 0.34} y={H * 0.3} w={W * 0.22} h={H * 0.4} />
-      <HeatArrow x1={W * 0.56} y1={H * 0.5} x2={W * 0.35} y2={H * 0.5} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+      {/* Punte */}
+      <HeatZone x={xWallExt - 2} y={H * 0.32} w={tFinExt + tEPS + tBrick + 4} h={H * 0.36} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={H / 2} x2={xWallExt - 4} y2={H / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={(xEPS + xBrick + tBrick) / 2} y1={yColTop + 6} x2={W - 30} y2="6" label={isMetal ? "stâlp HEA 200" : "stâlp BA 300"} anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={H - 32} x2={xEPS - 14} y2={H - 18} label="EPS întrerupt" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical section — trecere instalație (țeavă/canal/cablu) prin perete izolat
+ * conf. Mc 001-2022 § 4.4 (χ punct) + SR EN ISO 14683 P + SR EN ISO 10211
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Trecere etanșă cu mufă din material izolant (PIR) sau bandă elastomeric
+ * χ tipic: 0.05-0.15 W/K țeavă izolată, 0.15-0.35 W/K canal ventilație neetanș
+ */
 function IllustrationService({ bridge }) {
-  const isChimney = bridge.name.toLowerCase().includes("coș");
-  const isDuct = bridge.name.toLowerCase().includes("canal") || bridge.name.toLowerCase().includes("ventila");
-  const isCable = bridge.name.toLowerCase().includes("cablu");
+  const lname = bridge.name.toLowerCase();
+  const isChimney = lname.includes("coș");
+  const isDuct = lname.includes("canal") || lname.includes("ventila");
+  const isCable = lname.includes("cablu");
+  const xWallExt = W * 0.30;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.52} y="0" width={W * 0.48} height={H} fill="url(#g-int)" />
-      <rect x={W * 0.42} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.32} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Perete */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Element care traversează */}
       {isChimney ? (
         <g>
-          <rect x={W * 0.1} y={H * 0.1} width="22" height={H * 0.85} fill="url(#p-brick)" />
-          <rect x={W * 0.1 + 4} y={H * 0.1} width="14" height={H * 0.85} fill="#3a342c" />
-          <Label x={W * 0.1 + 11} y={H * 0.06} color="#37474f" size="8" anchor="middle" bold>coș</Label>
+          <rect x="14" y={H * 0.10} width="26" height={H - 16} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <rect x="20" y={H * 0.10} width="14" height={H - 16} fill="#3a342c" stroke="#1a1c1f" strokeWidth="0.4" />
+          {/* Trecere prin perete */}
+          <rect x="14" y={H / 2 - 14} width={xWallEnd - 14} height="28" fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <rect x="20" y={H / 2 - 7} width={xWallEnd - 20} height="14" fill="#3a342c" stroke="#1a1c1f" strokeWidth="0.4" />
         </g>
       ) : isDuct ? (
         <g>
-          <rect x="20" y={H / 2 - 12} width={W - 40} height="24" fill="url(#g-metal)" stroke="#444" strokeWidth="0.6" />
-          <line x1="20" y1={H / 2} x2={W - 20} y2={H / 2} stroke="#888" strokeDasharray="2 2" strokeWidth="0.5" />
-          <Label x="30" y={H / 2 - 16} color="#37474f" size="8" bold>canal ventilație</Label>
+          {/* Canal metalic + izolație MW perim. */}
+          <rect x="14" y={H / 2 - 16} width={W - 28} height="32" fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <rect x="14" y={H / 2 - 12} width={W - 28} height="24" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <line x1="14" y1={H / 2} x2={W - 14} y2={H / 2} stroke="#1a1c1f" strokeDasharray="3 2" strokeWidth="0.5" />
         </g>
       ) : isCable ? (
         <g>
-          <line x1="20" y1={H / 2} x2={W - 20} y2={H / 2} stroke="#2a2a2a" strokeWidth="3" />
-          <line x1="20" y1={H / 2} x2={W - 20} y2={H / 2} stroke="#c0392b" strokeWidth="1" />
-          <Label x="30" y={H / 2 - 6} color="#37474f" size="8" bold>cablu electric</Label>
+          {/* Tub CK + cablu */}
+          <rect x="14" y={H / 2 - 8} width={W - 28} height="16" fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.5" />
+          <line x1="14" y1={H / 2} x2={W - 14} y2={H / 2} stroke="#1a1c1f" strokeWidth="2" />
+          <line x1="14" y1={H / 2} x2={W - 14} y2={H / 2} stroke="#c62828" strokeWidth="0.8" />
         </g>
       ) : (
         <g>
-          {/* Țeavă generică */}
-          <rect x="20" y={H / 2 - 7} width={W - 40} height="14" fill="url(#g-metal)" rx="7" />
-          <Label x="30" y={H / 2 - 10} color="#37474f" size="8" bold>țeavă</Label>
+          {/* Țeavă cu izolație termică */}
+          <rect x="14" y={H / 2 - 14} width={W - 28} height="28" rx="14" fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <rect x="14" y={H / 2 - 7} width={W - 28} height="14" rx="7" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+          <line x1="14" y1={H / 2} x2={W - 14} y2={H / 2} stroke="#1a1c1f" strokeDasharray="3 2" strokeWidth="0.4" />
         </g>
       )}
-      <HeatZone x={W * 0.30} y={H / 2 - 24} w={W * 0.22} h={48} />
-      <HeatArrow x1={W * 0.53} y1={H / 2} x2={W * 0.32} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+      {/* Mufă etanșare în trecerea prin EPS */}
+      <rect x={xEPS - 1} y={H / 2 - 16} width={tEPS + 2} height="32" fill="none" stroke="#c62828" strokeWidth="0.7" strokeDasharray="2 2" />
+      <HeatZone x={xEPS - 4} y={H / 2 - 22} w={tEPS + tBrick + 8} h="44" />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={H / 2} x2={xEPS - 6} y2={H / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={W / 2} y1={H / 2 - 14} x2={W - 30} y2={H * 0.06} label={isChimney ? "coș fum" : isDuct ? "canal ventilație" : isCable ? "cablu electric" : "țeavă apă"} anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={H / 2 + 16} x2={xEPS - 14} y2={H - 18} label="mufă etanșare" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical sections — fundații (bandă/radier/piloți/Passivhaus-L/subsol)
+ * conf. Mc 001-2022 § 4.4 + SR EN ISO 13370 + SR EN ISO 14683 GF
+ * Variante: strip (fundație bandă) / mat (radier) / passivhaus-l (XPS în L)
+ *           raft-basement (radier + subsol) / piles (piloți forați)
+ * Straturi placă: parchet 10 + șapă 50 + EPS 80 + BA 200 mm
+ * ψ tipic: 0.40-0.80 W/(m·K) neizolat, 0.05-0.15 W/(m·K) Passivhaus (clasa A-D)
+ */
 function IllustrationFoundation({ bridge, variant }) {
-  // variant: "mat" (radier) | "strip" (bandă) | "passivhaus-l" | "raft-basement" | "piles"
   const v = variant || "strip";
+  const xWallExt = W * 0.18;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
 
-  // Passivhaus-L — izolație XPS în formă de L (sub radier + perimetrală)
+  // PASSIVHAUS-L — izolație XPS în L (orizontal sub radier + perimetral coborât)
   if (v === "passivhaus-l") {
+    const yCTS = H * 0.32;
+    const yFloorTop = H * 0.36;
+    const yXPSBottom = H * 0.62;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.3} fill="url(#g-ext)" />
-        <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.4} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.3} width={W} height={H * 0.7} fill="url(#p-soil)" />
-        {/* XPS în L — orizontal sub radier */}
-        <rect x="0" y={H * 0.58} width={W} height="22" fill="url(#p-xps)" />
-        {/* XPS vertical (perimetral coborât) */}
-        <rect x={W * 0.20} y={H * 0.35} width="14" height={H * 0.32} fill="url(#p-xps)" />
-        {/* Radier beton */}
-        <rect x={W * 0.24} y={H * 0.48} width={W - W * 0.24} height="22" fill="url(#p-conc)" />
-        <rect x={W * 0.24} y={H * 0.48} width={W - W * 0.24} height="22" fill="url(#p-rebar)" opacity="0.4" />
-        {/* Perete + ETICS */}
-        <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.38} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.38} fill="url(#p-eps)" />
-        {/* Pietriș sub XPS */}
-        <rect x="0" y={H * 0.8} width={W} height="12" fill="url(#p-gravel)" />
-        <HeatZone x={W * 0.18} y={H * 0.35} w={W * 0.32} h={H * 0.2} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x="10" y={H - 10} color="#5d4638" size="9" bold>SOL</Label>
-        <Label x={W * 0.55} y={H * 0.32} color="#c2410c" size="8" bold anchor="middle">Passivhaus XPS-L</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+        <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+        <rect x="0" y={H * 0.85} width={W} height="14" fill="url(#p-gravel)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x="0" y={yXPSBottom} width={W} height="22" fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xWallExt - 8} y={yFloorTop - 4} width="10" height={yXPSBottom - yFloorTop + 4} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xWallExt} y={yXPSBottom - 22} width={W - xWallExt} height="22" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xWallExt} y={yXPSBottom - 22} width={W - xWallExt} height="22" fill="url(#p-rebar)" opacity="0.55" />
+        <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={yFloorTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={xFinInt} y={yFloorTop - 4} width={W - xFinInt} height="4" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <HeatZone x={xWallExt - 12} y={yFloorTop - 8} w={tFinExt + tEPS + tBrick + 18} h="20" />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="SOL" fill="#d6c4a8" color="#3a2a1a" />
+        <Leader x1={xWallExt - 3} y1={yFloorTop + 30} x2={xWallExt - 24} y2={yFloorTop + 50} label="XPS perim. 100" anchor="end" />
+        <Leader x1={W * 0.7} y1={yXPSBottom + 11} x2={W - 6} y2={yXPSBottom + 32} label="XPS sub radier 200" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Mat foundation (radier) — plan orizontal continuu
+  // MAT — radier general continuu (punte majoră perimetral)
   if (v === "mat") {
+    const yCTS = H * 0.36;
+    const yFloorTop = H * 0.40;
+    const yMatTop = H * 0.55;
+    const tMat = H * 0.28;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.35} fill="url(#g-ext)" />
-        <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.45} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.35} width={W} height={H * 0.65} fill="url(#p-soil)" />
-        {/* Radier gros continuu */}
-        <rect x="0" y={H * 0.55} width={W} height={H * 0.3} fill="url(#p-conc)" />
-        <rect x="0" y={H * 0.55} width={W} height={H * 0.3} fill="url(#p-rebar)" opacity="0.4" />
-        {/* Perete + ETICS */}
-        <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.55} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.45} fill="url(#p-eps)" />
-        {/* Lipsă izolație sub radier — punte majoră */}
-        <HeatZone x="0" y={H * 0.5} w={W * 0.5} h={H * 0.3} />
-        <HeatArrow x1={W * 0.37} y1={H * 0.55} x2={W * 0.23} y2={H * 0.55} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x="10" y={H - 10} color="#5d4638" size="9" bold>SOL</Label>
-        <Label x={W * 0.55} y={H * 0.72} color="#e8e3d5" size="8" bold anchor="middle">radier general beton armat</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+        <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+        <rect x="0" y={yMatTop} width={W} height={tMat} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x="0" y={yMatTop} width={W} height={tMat} fill="url(#p-rebar)" opacity="0.55" />
+        <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={yMatTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={yMatTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yMatTop - 6} width={W - xFinInt} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={xFinInt} y={yMatTop - 10} width={W - xFinInt} height="4" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <HeatZone x="0" y={yMatTop - 14} w={W * 0.45} h="36" />
+        <HeatArrow x1={xBrick + tBrick / 2} y1={yMatTop} x2={xWallExt - 6} y2={yMatTop} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="SOL" fill="#d6c4a8" color="#3a2a1a" />
+        <Leader x1={W * 0.65} y1={yMatTop + tMat / 2} x2={W - 6} y2={H - 18} label="radier BA 350" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Piles — fundație pe piloți
+  // PILES — piloți forați
   if (v === "piles") {
+    const yCTS = H * 0.36;
+    const yFloorTop = H * 0.40;
+    const yBeamTop = H * 0.45;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.35} fill="url(#g-ext)" />
-        <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.45} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.35} width={W} height={H * 0.65} fill="url(#p-soil)" />
-        {/* Grindă de fundație pe piloți */}
-        <rect x={W * 0.10} y={H * 0.4} width={W * 0.85} height="18" fill="url(#p-conc)" />
-        {/* 3 piloți în sol */}
-        {[0.2, 0.5, 0.8].map((fx, i) => (
-          <rect key={i} x={W * fx - 6} y={H * 0.58} width="12" height={H * 0.4} fill="url(#p-conc)" />
+        <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+        <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+        <rect x="0" y={yBeamTop} width={W} height="20" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x="0" y={yBeamTop} width={W} height="20" fill="url(#p-rebar)" opacity="0.55" />
+        {[0.18, 0.50, 0.82].map((fx, i) => (
+          <g key={i}>
+            <rect x={W * fx - 7} y={yBeamTop + 20} width="14" height={H - yBeamTop - 20} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+            <rect x={W * fx - 7} y={yBeamTop + 20} width="14" height={H - yBeamTop - 20} fill="url(#p-rebar)" opacity="0.55" />
+          </g>
         ))}
-        {/* Perete + ETICS */}
-        <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.4} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.4} fill="url(#p-eps)" />
-        <HeatZone x={W * 0.18} y={H * 0.32} w={W * 0.3} h={H * 0.2} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W / 2} y={H * 0.94} color="#e8e3d5" size="8" anchor="middle" bold>piloți forați</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={yFloorTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="14" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="14" fill="url(#p-rebar)" opacity="0.55" />
+        <HeatZone x={xWallExt - 4} y={yBeamTop - 4} w={tFinExt + tEPS + tBrick + 8} h="32" />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="SOL" fill="#d6c4a8" color="#3a2a1a" />
+        <Leader x1={W * 0.50} y1={H - 30} x2={W - 30} y2={H - 18} label="piloți forați Ø600" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Raft + basement — radier + perete subsol
+  // RAFT-BASEMENT — radier + perete subsol cu izolație XPS perim.
   if (v === "raft-basement") {
+    const yCTS = H * 0.20;
+    const yFloorTop = H * 0.24;
+    const yBaseSlab = H * 0.78;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.2} fill="url(#g-ext)" />
-        <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.25} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.2} width={W} height={H * 0.8} fill="url(#p-soil)" />
-        {/* Subsol spațiu (se umple cu gradient mai întunecat) */}
-        <rect x={W * 0.22} y={H * 0.3} width={W - W * 0.22} height={H * 0.5} fill="#37474f" opacity="0.4" />
-        {/* Perete subsol vertical */}
-        <rect x={W * 0.22} y={H * 0.2} width="14" height={H * 0.65} fill="url(#p-conc)" />
-        {/* Izolație XPS perimetrală */}
-        <rect x={W * 0.17} y={H * 0.2} width="5" height={H * 0.65} fill="url(#p-xps)" />
-        {/* Radier */}
-        <rect x={W * 0.17} y={H * 0.78} width={W - W * 0.17} height="14" fill="url(#p-conc)" />
-        {/* Placă peste subsol */}
-        <rect x={W * 0.22} y={H * 0.25} width={W - W * 0.22} height="14" fill="url(#p-conc)" />
-        <rect x={W * 0.22} y={H * 0.25 + 14} width={W - W * 0.22} height="6" fill="url(#p-xps)" />
-        {/* Perete superior */}
-        <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.25 - 10} fill="url(#p-brick)" />
-        <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.25 - 10} fill="url(#p-eps)" />
-        <HeatZone x={W * 0.14} y={H * 0.22} w="44" h="30" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.6} y={H * 0.58} color="#eceff1" size="8" anchor="middle">SUBSOL NEÎNCĂLZIT</Label>
-        <Label x="10" y={H - 10} color="#5d4638" size="9" bold>SOL</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+        <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+        <rect x={xBrick} y={yFloorTop + 14} width={W - xBrick} height={yBaseSlab - yFloorTop - 14} fill="rgba(60,72,82,0.32)" />
+        <rect x={xBrick} y={yFloorTop} width={tBrick} height={yBaseSlab - yFloorTop + 6} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xBrick} y={yFloorTop} width={tBrick} height={yBaseSlab - yFloorTop + 6} fill="url(#p-rebar)" opacity="0.45" />
+        <rect x={xEPS} y={yFloorTop + 4} width={tEPS} height={yBaseSlab - yFloorTop} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y={yBaseSlab} width={W - xEPS} height="14" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xEPS} y={yBaseSlab} width={W - xEPS} height="14" fill="url(#p-rebar)" opacity="0.55" />
+        <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="14" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="14" fill="url(#p-rebar)" opacity="0.55" />
+        <rect x={xFinInt} y={yFloorTop + 14} width={W - xFinInt} height="6" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y="14" width={tBrick} height={yFloorTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y="14" width={tFinInt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <HeatZone x={xWallExt - 4} y={yFloorTop - 6} w={tFinExt + tEPS + tBrick + 8} h="30" />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x={xBrick + 6} y={H * 0.50} w={W - xBrick - 12} h="12" label="SUBSOL NEÎNCĂLZIT" fill="#cfd8dc" color="#1a1c1f" />
+        <Leader x1={xEPS + tEPS / 2} y1={H * 0.55} x2={xEPS - 26} y2={H * 0.46} label="XPS subsol" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Default: "strip" — fundație bandă cu placă pe sol + izolație perimetrală
+  // STRIP (default) — fundație bandă + placă pe sol cu XPS perimetral
+  const yCTS = H * 0.36;
+  const yFloorTop = H * 0.40;
   return (
     <>
-      <rect x="0" y="0" width={W} height={H * 0.35} fill="url(#g-ext)" />
-      <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.45} fill="url(#g-int)" />
-      <rect x="0" y={H * 0.35} width={W} height={H * 0.65} fill="url(#p-soil)" />
-      <rect x={W * 0.05} y={H * 0.68} width={W * 0.25} height="14" fill="url(#p-gravel)" />
-      {/* Fundație bandă (cu talpa lărgită) */}
-      <rect x={W * 0.23} y={H * 0.4} width={W * 0.15} height={H * 0.35} fill="url(#p-conc)" />
-      <rect x={W * 0.19} y={H * 0.7} width={W * 0.23} height={H * 0.12} fill="url(#p-conc)" />
-      {/* Placă beton */}
-      <rect x={W * 0.38} y={H * 0.40} width={W * 0.62} height="16" fill="url(#p-conc)" />
-      <rect x={W * 0.38} y={H * 0.40} width={W * 0.62} height="16" fill="url(#p-rebar)" opacity="0.4" />
-      {/* Izolație sub placă */}
-      <rect x={W * 0.38} y={H * 0.40 + 16} width={W * 0.62} height="12" fill="url(#p-xps)" />
-      {/* Izolație perimetrală XPS 60cm */}
-      <rect x={W * 0.21} y={H * 0.4} width="10" height={H * 0.4} fill="url(#p-xps)" />
-      {/* Perete + ETICS */}
-      <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.30} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.30} fill="url(#p-eps)" />
-      <HeatZone x={W * 0.19} y={H * 0.3} w={W * 0.3} h={H * 0.22} />
-      <HeatArrow x1={W * 0.37} y1={H * 0.4} x2={W * 0.23} y2={H * 0.4} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x="10" y={H - 10} color="#5d4638" size="9" bold>SOL</Label>
-      <Label x={W * 0.55} y={H * 0.9} color="#e8e3d5" size="8" anchor="middle">fundație bandă + XPS perimetral</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yFloorTop} fill="url(#g-int)" />
+      <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+      <rect x="0" y={H * 0.74} width={W * 0.18} height="12" fill="url(#p-gravel)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Fundație bandă (talpa lărgită) */}
+      <rect x={xEPS} y={yCTS - 4} width={tEPS + tBrick + tFinInt} height={H * 0.30} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xEPS - 6} y={H * 0.66} width={tEPS + tBrick + tFinInt + 12} height={H * 0.10} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xEPS} y={yCTS - 4} width={tEPS + tBrick + tFinInt} height={H * 0.40} fill="url(#p-rebar)" opacity="0.45" />
+      {/* Placă pe sol */}
+      <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="20" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xFinInt} y={yFloorTop} width={W - xFinInt} height="20" fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xFinInt} y={yFloorTop - 12} width={W - xFinInt} height="12" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yFloorTop - 18} width={W - xFinInt} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xFinInt} y={yFloorTop - 22} width={W - xFinInt} height="4" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* XPS perimetral */}
+      <rect x={xWallExt - 8} y={yFloorTop - 4} width="10" height={H * 0.32} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Perete */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={yFloorTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={yFloorTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={yFloorTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <HeatZone x={xWallExt - 10} y={yFloorTop - 16} w={tFinExt + tEPS + tBrick + tFinInt + 16} h="30" />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yFloorTop} x2={xWallExt - 10} y2={yFloorTop} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label="SOL" fill="#d6c4a8" color="#3a2a1a" />
+      <Leader x1={xWallExt - 3} y1={yFloorTop + 30} x2={xWallExt - 24} y2={yFloorTop + 50} label="XPS perim. 80" anchor="end" />
+      <Leader x1={(xEPS + xWallEnd) / 2} y1={H * 0.62} x2={W - 30} y2={H - 16} label="fundație bandă BA" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
     </>
   );
 }
 
+/**
+ * Vertical sections — structuri din lemn (timber-frame / CLT / SIP / rafters)
+ * conf. Mc 001-2022 § 4.4 + SR EN ISO 14683 IF + DIN 4108-2
+ * Variante: timber-frame (rim joist), CLT (panou solid), SIP (sandwich OSB-EPS-OSB), rafters (căpriori)
+ * Straturi timber-frame: tenc.ext 5 + placaj 4 + MW 160 între montanți + OSB 18 + GK 12 mm
+ * ψ tipic: 0.05-0.12 W/(m·K) montanți izolați, 0.20-0.35 W/(m·K) rim joist (clasa A-C)
+ */
 function IllustrationTimber({ bridge, variant }) {
-  // variant: "timber-frame" | "clt" | "sip" | "rafters"
   const v = variant || "timber-frame";
 
-  // CLT — panouri solide din lemn stratificat încrucișat
+  // CLT — panouri solide lemn stratificat încrucișat
   if (v === "clt") {
+    const xWallExt = W * 0.18;
+    const tFinExt = 5, tEPS = 22, tCLT = 30, tGK = 5;
+    const xEPS = xWallExt + tFinExt;
+    const xCLT = xEPS + tEPS;
+    const xGK = xCLT + tCLT;
+    const xWallEnd = xGK + tGK;
+    const yFloor = H * 0.48;
+    const tFloorCLT = 22;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.5} y="0" width={W * 0.5} height={H} fill="url(#g-int)" />
-        {/* ETICS exterior */}
-        <rect x={W * 0.30} y="10" width={W * 0.12} height={H - 20} fill="url(#p-eps)" />
-        {/* Panou CLT vertical (perete) — 3 lamelе vizibile */}
-        <rect x={W * 0.42} y="10" width="6" height={H - 20} fill="url(#p-wood)" />
-        <rect x={W * 0.48} y="10" width="6" height={H - 20} fill="#b88c5a" />
-        <path d={`M${W * 0.48},10 L${W * 0.48},${H - 10}`} stroke="#6d4c41" strokeWidth="0.4" />
-        {/* Lamele încrucișate (orizontale vizibile prin culoare) */}
-        {[0.2, 0.35, 0.5, 0.65, 0.8].map((fy, i) => (
-          <line key={i} x1={W * 0.48} y1={H * fy} x2={W * 0.54} y2={H * fy} stroke="#6d4c41" strokeWidth="0.5" opacity="0.6" />
-        ))}
-        {/* Panou CLT orizontal (planșeu) */}
-        <rect x={W * 0.42} y={H / 2 - 10} width={W * 0.58} height="18" fill="url(#p-wood)" />
-        <rect x={W * 0.42} y={H / 2 - 10} width={W * 0.58} height="6" fill="#b88c5a" />
-        <rect x={W * 0.42} y={H / 2 + 2} width={W * 0.58} height="6" fill="#b88c5a" />
-        {/* Conectori metalici */}
-        <rect x={W * 0.48} y={H / 2 - 12} width="4" height="4" fill="url(#g-metal)" />
-        <rect x={W * 0.48} y={H / 2 + 8} width="4" height="4" fill="url(#g-metal)" />
-        <HeatZone x={W * 0.38} y={H / 2 - 18} w="30" h="36" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.48} y={H * 0.12} color="#7a5320" size="8" anchor="middle" bold>CLT solid</Label>
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        {/* Perete CLT */}
+        <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xCLT} y="14" width={tCLT} height={H - 14} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Linii lamele CLT (3 vizibile) */}
+        <line x1={xCLT + tCLT / 3} y1="14" x2={xCLT + tCLT / 3} y2={H} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.6" />
+        <line x1={xCLT + 2 * tCLT / 3} y1="14" x2={xCLT + 2 * tCLT / 3} y2={H} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.6" />
+        <rect x={xGK} y="14" width={tGK} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Planșeu CLT orizontal */}
+        <rect x={xCLT} y={yFloor - tFloorCLT / 2} width={W - xCLT} height={tFloorCLT} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <line x1={xCLT} y1={yFloor - tFloorCLT / 4} x2={W} y2={yFloor - tFloorCLT / 4} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.6" />
+        <line x1={xCLT} y1={yFloor + tFloorCLT / 4} x2={W} y2={yFloor + tFloorCLT / 4} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.6" />
+        {/* Conectori inox */}
+        <rect x={xCLT + 6} y={yFloor - tFloorCLT / 2 - 3} width="3" height="3" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.3" />
+        <rect x={xCLT + 6} y={yFloor + tFloorCLT / 2} width="3" height="3" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.3" />
+        <HeatZone x={xEPS - 4} y={yFloor - tFloorCLT / 2 - 6} w={tEPS + tCLT + 8} h={tFloorCLT + 12} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xCLT + tCLT / 2} y1="22" x2={xCLT + tCLT / 2 + 14} y2="6" label="CLT 100" anchor="start" />
+        <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="MW 80" anchor="end" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // SIP — Structural Insulated Panel (sandwich OSB + EPS + OSB)
+  // SIP — sandwich OSB + EPS + OSB
   if (v === "sip") {
+    const xWallExt = W * 0.22;
+    const tFinExt = 4, tOSB1 = 5, tEPS = 36, tOSB2 = 5, tGK = 5;
+    const xOSB1 = xWallExt + tFinExt;
+    const xEPSCore = xOSB1 + tOSB1;
+    const xOSB2 = xEPSCore + tEPS;
+    const xGK = xOSB2 + tOSB2;
+    const xWallEnd = xGK + tGK;
+    const xJoint = xEPSCore + tEPS / 2;
+    const yFloor = H * 0.48;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.5} y="0" width={W * 0.5} height={H} fill="url(#g-int)" />
-        {/* Tencuială exterioară */}
-        <rect x={W * 0.28} y="10" width="4" height={H - 20} fill="#e8e3d5" />
-        {/* OSB exterior */}
-        <rect x={W * 0.32} y="10" width="6" height={H - 20} fill="#c9a575" />
-        {/* Miez EPS */}
-        <rect x={W * 0.38} y="10" width={W * 0.08} height={H - 20} fill="url(#p-eps)" />
-        {/* OSB interior */}
-        <rect x={W * 0.46} y="10" width="6" height={H - 20} fill="#c9a575" />
-        {/* Joncțiune dintre 2 panouri SIP (linie verticală sus) */}
-        <line x1={W * 0.42} y1="10" x2={W * 0.42} y2={H - 10} stroke="#6d2818" strokeWidth="1" strokeDasharray="5 3" />
-        <Label x={W * 0.42} y={H * 0.06} color="#c62828" size="8" anchor="middle" bold>joncțiune SIP</Label>
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xOSB1} y="14" width={tOSB1} height={H - 14} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPSCore} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xOSB2} y="14" width={tOSB2} height={H - 14} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xGK} y="14" width={tGK} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Joncțiune SIP - punte repetitivă */}
+        <line x1={xJoint} y1="14" x2={xJoint} y2={H} stroke="#c62828" strokeWidth="1" strokeDasharray="4 2" />
         {/* Planșeu SIP orizontal */}
-        <rect x={W * 0.46} y={H / 2 - 10} width={W * 0.54} height="4" fill="#c9a575" />
-        <rect x={W * 0.46} y={H / 2 - 6} width={W * 0.54} height="12" fill="url(#p-eps)" />
-        <rect x={W * 0.46} y={H / 2 + 6} width={W * 0.54} height="4" fill="#c9a575" />
-        <HeatZone x={W * 0.38} y={H / 2 - 14} w="32" h="28" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.42} y={H - 12} color="#c9a575" size="8" anchor="middle">OSB + EPS + OSB</Label>
+        <rect x={xOSB2} y={yFloor - 10} width={W - xOSB2} height="4" fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={xOSB2} y={yFloor - 6} width={W - xOSB2} height="12" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <rect x={xOSB2} y={yFloor + 6} width={W - xOSB2} height="4" fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+        <HeatZone x={xJoint - 6} y={H * 0.30} w="12" h={H * 0.40} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xJoint} y1={H * 0.20} x2={xJoint + 30} y2={H * 0.10} label="joncțiune SIP" anchor="start" />
+        <Leader x1={xEPSCore + tEPS / 2} y1={H - 30} x2={xEPSCore + tEPS / 2 + 14} y2={H - 18} label="OSB+EPS 200+OSB" anchor="start" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
   }
 
-  // Rafters — căpriori înclinați cu izolație între
+  // RAFTERS — căpriori înclinați cu izolație MW între
   if (v === "rafters") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.7} width={W} height={H * 0.3} fill="url(#g-int)" />
-        {/* Plan acoperiș înclinat, vedere perpendicular pe pantă */}
-        <g transform={`skewX(-15)`}>
+        <rect x="0" y={H * 0.74} width={W} height={H * 0.26} fill="url(#g-int)" />
+        <g transform="skewX(-15)">
           {/* Țiglă */}
-          <rect x={-10} y={H * 0.1} width={W + 20} height="10" fill="#8d6e47" />
-          {/* Aerare */}
-          <rect x={-10} y={H * 0.2} width={W + 20} height="4" fill="#fff" opacity="0.3" />
-          {/* Căpriori 45×200mm (repetitiv) */}
+          <rect x={-10} y={H * 0.10} width={W + 20} height="8" fill="#a06448" stroke="#1a1c1f" strokeWidth="0.5" />
+          {/* Folie + aerare */}
+          <rect x={-10} y={H * 0.18} width={W + 20} height="4" fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+          {/* Căpriori 60×200mm (repetitivi) */}
           {[0.05, 0.25, 0.45, 0.65, 0.85].map((fx, i) => (
-            <rect key={i} x={W * fx} y={H * 0.24} width="12" height="22" fill="url(#p-wood)" />
+            <rect key={i} x={W * fx} y={H * 0.22} width="14" height="26" fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.4" />
           ))}
-          {/* Izolație vată între căpriori */}
-          {[0.12, 0.32, 0.52, 0.72, 0.92].map((fx, i) => (
-            <rect key={i} x={W * fx} y={H * 0.24} width={W * 0.13} height="22" fill="url(#p-mw)" />
+          {/* Izolație MW între căpriori */}
+          {[0.10, 0.30, 0.50, 0.70, 0.90].map((fx, i) => (
+            <rect key={i} x={W * fx + 4} y={H * 0.22} width={W * 0.15} height="26" fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
           ))}
-          {/* Folie + OSB intrados */}
-          <rect x={-10} y={H * 0.46} width={W + 20} height="2" fill="#263238" />
-          <rect x={-10} y={H * 0.48} width={W + 20} height="4" fill="#c9a575" />
+          {/* Membrană etanșă */}
+          <rect x={-10} y={H * 0.48} width={W + 20} height="2" fill="url(#p-membrane)" />
+          {/* OSB intrados */}
+          <rect x={-10} y={H * 0.50} width={W + 20} height="4" fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+          {/* GK */}
+          <rect x={-10} y={H * 0.54} width={W + 20} height="3" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
         </g>
-        {/* Săgeți flux prin căpriori (punte repetitivă) */}
-        {[0.1, 0.3, 0.5, 0.7, 0.9].map((fx, i) => (
-          <HeatArrow key={i} x1={W * fx + 5} y1={H * 0.55} x2={W * fx - 5} y2={H * 0.35} />
+        {/* Săgeți flux prin căpriori */}
+        {[0.18, 0.42, 0.66, 0.88].map((fx, i) => (
+          <HeatArrow key={i} x1={W * fx + 4} y1={H * 0.55} x2={W * fx - 6} y2={H * 0.30} />
         ))}
-        <HeatZone x={W * 0.05} y={H * 0.2} w={W * 0.9} h="32" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT (exterior)</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT (mansardă)</Label>
-        <Label x={W / 2} y={H * 0.67} color="#7a5320" size="8" anchor="middle" bold>căpriori lemn 45×200mm (punte repetitivă)</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <HeatZone x="0" y={H * 0.20} w={W} h="34" />
+        <EnvBanner x="0" y="0" w={W} h="12" label="EXT (acoperiș)" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (mansardă)" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={W * 0.30} y1={H * 0.62} x2="6" y2={H * 0.70} label="căpriori 60×200" anchor="start" />
+        <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
   }
 
-  // Default: timber-frame (rim joist)
+  // TIMBER-FRAME (default) — rim joist, perete pe cadru lemn cu MW între montanți
+  const xWallExt = W * 0.20;
+  const tFinExt = 4, tCladding = 5, tMW = 28, tOSB = 5, tGK = 5;
+  const xCladding = xWallExt + tFinExt;
+  const xMW = xCladding + tCladding;
+  const xOSB = xMW + tMW;
+  const xGK = xOSB + tOSB;
+  const xWallEnd = xGK + tGK;
+  const yFloor = H * 0.48;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.45} y="0" width={W * 0.55} height={H} fill="url(#g-int)" />
-      {/* Tencuială + placaj exterior */}
-      <rect x={W * 0.24} y="10" width="3" height={H - 20} fill="#e8e3d5" />
-      <rect x={W * 0.27} y="10" width="4" height={H - 20} fill="url(#p-wood)" />
-      {/* Rigle/montanți verticali */}
-      <rect x={W * 0.35} y="10" width="10" height={H - 20} fill="url(#p-wood)" />
-      <rect x={W * 0.42} y="10" width="10" height={H - 20} fill="url(#p-wood)" />
-      {/* Izolație vată între montanți */}
-      <rect x={W * 0.31} y="10" width={W * 0.04} height={H - 20} fill="url(#p-mw)" />
-      <rect x={W * 0.35 + 10} y="10" width={W * 0.02} height={H - 20} fill="url(#p-mw)" />
-      {/* OSB + placă gips-carton interior */}
-      <rect x={W * 0.52} y="10" width="4" height={H - 20} fill="#c9a575" />
-      <rect x={W * 0.56} y="10" width="4" height={H - 20} fill="#f5f5f5" />
-      {/* Rim joist — grinda perimetrală (punte principală) */}
-      <rect x={W * 0.35} y={H / 2 - 10} width="30" height="20" fill="#a07843" stroke="#6d4c41" strokeWidth="0.6" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Tencuială + placaj */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xCladding} y="14" width={tCladding} height={H - 14} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Câmp izolație MW + montanți */}
+      <rect x={xMW} y="14" width={tMW} height={H - 14} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Montanți verticali (2 vizibili) */}
+      <rect x={xMW + 6} y="14" width="6" height={H - 14} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xMW + tMW - 12} y="14" width="6" height={H - 14} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* OSB + GK */}
+      <rect x={xOSB} y="14" width={tOSB} height={H - 14} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xGK} y="14" width={tGK} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Rim joist — grindă perimetrală (punte) */}
+      <rect x={xMW} y={yFloor - 12} width={tMW + tOSB + tGK} height="24" fill="#a07843" stroke="#1a1c1f" strokeWidth="0.6" />
       {/* Planșeu lemn intermediar */}
-      <rect x={W * 0.45} y={H / 2 - 7} width={W * 0.55} height="14" fill="url(#p-wood)" />
-      <HeatZone x={W * 0.31} y={H / 2 - 14} w="38" h="28" />
-      <HeatArrow x1={W * 0.46} y1={H / 2} x2={W * 0.29} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.33} y="30" color="#8f7a4e" size="8">vată</Label>
-      <Label x={W * 0.40} y="30" color="#7a5320" size="8">montanți</Label>
-      <Label x={W * 0.50} y={H - 8} color="#a07843" size="8" bold>rim joist</Label>
+      <rect x={xWallEnd} y={yFloor - 8} width={W - xWallEnd} height="16" fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <HeatZone x={xMW - 4} y={yFloor - 18} w={tMW + tOSB + 12} h="36" />
+      <HeatArrow x1={xWallEnd + 4} y1={yFloor} x2={xMW - 4} y2={yFloor} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={xMW + tMW / 2} y1="22" x2={xMW + tMW / 2 + 16} y2="6" label="MW 160 + montanți" anchor="start" />
+      <Leader x1={xMW + tMW / 2} y1={yFloor + 4} x2={W - 30} y2={H - 18} label="rim joist" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
 }
 
+/**
+ * Vertical/Plan sections — ETICS (External Thermal Insulation Composite System)
+ * conf. Mc 001-2022 § 4.4 (χ punct) + SR EN ISO 14683 P + ETAG 004 + EAD 040083-00-0404
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Variante: anchor-metal (diblu metalic 6-8/m², χ≈0.003 W/K), anchor-plastic (diblu plastic
+ *   cu ac metalic în vârf, χ≈0.001 W/K — clasa A), plinth-drip (soclu cu drip + XPS perim.),
+ *   corner-profile (plan colț cu profil L Al + plasă), window-band (bandă continuă sub
+ *   fereastră), expansion-joint (rost dilatare cu profil + mastic), sandwich-tie (conector
+ *   panou sandwich — GFRP sau inox, χ≈0.005-0.015 W/K)
+ */
 function IllustrationETICS({ bridge, variant }) {
-  // variant: "anchor-metal" | "anchor-plastic" | "plinth-drip" | "corner-profile"
-  //          | "window-band" | "expansion-joint" | "sandwich-tie"
   const v = variant || "anchor-metal";
+  const xWallExt = W * 0.18;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
 
-  // Diblu plastic cu ac metalic (pointed tip)
+  function WallStack({ y0 = 14, h = H - 14 }) {
+    return (
+      <>
+        <rect x={xWallExt} y={y0} width={tFinExt} height={h} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xEPS} y={y0} width={tEPS} height={h} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBrick} y={y0} width={tBrick} height={h} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xFinInt} y={y0} width={tFinInt} height={h} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      </>
+    );
+  }
+
+  // ANCHOR PLASTIC — diblu plastic cu ac metalic doar în vârf (punte termică minimă)
   if (v === "anchor-plastic") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.55} y="0" width={W * 0.45} height={H} fill="url(#g-int)" />
-        <rect x={W * 0.45} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-        <rect x={W * 0.30} y="0" width={W * 0.15} height={H} fill="url(#p-eps)" />
-        <rect x={W * 0.285} y="0" width="5" height={H} fill="#e8e3d5" />
-        {/* Câteva dibluri plastic — tijă albă + ac metalic doar în vârf */}
-        {[0.2, 0.45, 0.7].map((fy) => (
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        <WallStack />
+        {[0.24, 0.46, 0.68].map((fy) => (
           <g key={fy}>
-            <line x1={W * 0.29} y1={H * fy} x2={W * 0.52} y2={H * fy} stroke="#f5f5f5" strokeWidth="2" />
-            {/* Ac metalic doar în vârf (capăt interior) */}
-            <line x1={W * 0.48} y1={H * fy} x2={W * 0.52} y2={H * fy} stroke="#333" strokeWidth="1.5" />
-            <circle cx={W * 0.29} cy={H * fy} r="2.5" fill="#f5f5f5" stroke="#888" strokeWidth="0.5" />
+            <line x1={xWallExt + 1} y1={H * fy} x2={xBrick + 14} y2={H * fy} stroke="#f0ece4" strokeWidth="1.6" stroke-linecap="round" />
+            <line x1={xBrick + 10} y1={H * fy} x2={xBrick + 14} y2={H * fy} stroke="#1a1c1f" strokeWidth="1.4" />
+            <circle cx={xWallExt + 1} cy={H * fy} r="2.4" fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.5" />
           </g>
         ))}
-        <HeatZone x={W * 0.28} y={H * 0.3} w={W * 0.24} h={H * 0.4} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.41} y={H * 0.13} color="#37474f" size="8" anchor="middle" bold>diblu plastic (ac metalic)</Label>
-        <Label x={W * 0.5} y={H * 0.88} color="#2e7d32" size="7" anchor="middle">χ ≈ 0.001 W/K — clasă A</Label>
-        <PsiBadge psi={bridge.psi} />
+        <HeatZone x={xEPS - 4} y={H * 0.18} w={tEPS + tBrick + 8} h={H * 0.64} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xBrick + 4} y1={H * 0.46} x2={W - 30} y2="6" label="diblu plastic + ac" anchor="end" />
+        <Leader x1={(xWallExt + xBrick) / 2} y1={H * 0.92} x2={W - 30} y2={H - 8} label="χ≈0.001 W/K (A)" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
       </>
     );
   }
 
-  // Plinth-drip — soclu ETICS cu profil picurător + izolație perimetrală
+  // PLINTH-DRIP — soclu ETICS cu profil drip + XPS perimetral coborât sub CTS
   if (v === "plinth-drip") {
+    const yCTS = H * 0.52;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.55} fill="url(#g-ext)" />
-        <rect x={W * 0.38} y="0" width={W * 0.62} height={H * 0.55} fill="url(#g-int)" />
-        <rect x="0" y={H * 0.55} width={W} height={H * 0.45} fill="url(#p-soil)" />
-        {/* Placă + subplacă */}
-        <rect x={W * 0.38} y={H * 0.5} width={W * 0.62} height="14" fill="url(#p-conc)" />
-        {/* Perete */}
-        <rect x={W * 0.32} y="10" width={W * 0.08} height={H * 0.5} fill="url(#p-brick)" />
-        {/* ETICS deasupra soclu */}
-        <rect x={W * 0.22} y="10" width={W * 0.10} height={H * 0.55} fill="url(#p-eps)" />
-        {/* Izolație soclu XPS (coborâtă sub CTS) */}
-        <rect x={W * 0.24} y={H * 0.55} width={W * 0.08} height={H * 0.35} fill="url(#p-xps)" />
-        {/* Tencuială exterioară */}
-        <rect x={W * 0.205} y="10" width="4" height={H * 0.55} fill="#e8e3d5" />
-        <rect x={W * 0.225} y={H * 0.55} width="4" height={H * 0.35} fill="#c9c4b4" />
-        {/* Profil drip (picurător) la linia de tranziție */}
-        <path d={`M${W * 0.18},${H * 0.55} L${W * 0.32},${H * 0.55} L${W * 0.32},${H * 0.57} L${W * 0.22},${H * 0.57} L${W * 0.18},${H * 0.6} Z`} fill="url(#g-metal)" stroke="#333" strokeWidth="0.4" />
-        <HeatZone x={W * 0.16} y={H * 0.48} w={W * 0.28} h={H * 0.18} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x="10" y={H - 10} color="#5d4638" size="9" bold>SOL</Label>
-        <Label x={W * 0.08} y={H * 0.62} color="#455a64" size="8" bold>drip</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <rect x="0" y="0" width={W} height={yCTS} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yCTS} fill="url(#g-int)" />
+        <rect x="0" y={yCTS} width={W} height={H - yCTS} fill="url(#p-soil)" />
+        <WallStack y0="14" h={yCTS - 14} />
+        {/* Fundație BA */}
+        <rect x={xEPS} y={yCTS - 4} width={tEPS + tBrick + tFinInt} height={H * 0.36} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xEPS} y={yCTS - 4} width={tEPS + tBrick + tFinInt} height={H * 0.36} fill="url(#p-rebar)" opacity="0.45" />
+        {/* XPS perimetral (continuat sub CTS, peste fundație) */}
+        <rect x={xWallExt - 6} y={yCTS - 4} width="9" height={H * 0.32} fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Profil drip metalic la cota CTS */}
+        <path d={`M${xWallExt - 10},${yCTS - 2} L${xWallExt + tFinExt + 2},${yCTS - 2} L${xWallExt + tFinExt + 2},${yCTS} L${xWallExt - 8},${yCTS} L${xWallExt - 10},${yCTS + 4} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <HeatZone x={xWallExt - 10} y={yCTS - 16} w={tFinExt + tEPS + tBrick + 18} h="28" />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="SOL" fill="#d6c4a8" color="#3a2a1a" />
+        <Leader x1={xWallExt - 10} y1={yCTS} x2={xWallExt - 30} y2={yCTS - 14} label="drip Al" anchor="end" />
+        <Leader x1={xWallExt - 2} y1={yCTS + 30} x2={xWallExt - 24} y2={yCTS + 50} label="XPS perim. 80" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Corner profile — profil de colț ETICS (vedere plan colț)
+  // CORNER-PROFILE — plan colț cu profil L aluminiu + plasă armare
   if (v === "corner-profile") {
+    const cx = W * 0.50, cy = H * 0.50;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.55} y={H * 0.45} width={W * 0.45} height={H * 0.55} fill="url(#g-int)" />
-        {/* Colț zidărie */}
-        <rect x={W * 0.45} y={H * 0.45} width="14" height={H * 0.55} fill="url(#p-brick)" />
-        <rect x={W * 0.45} y={H * 0.45} width={W * 0.55} height="14" fill="url(#p-brick)" />
-        {/* ETICS pe colț */}
-        <rect x={W * 0.30} y={H * 0.45} width={W * 0.15} height={H * 0.55} fill="url(#p-eps)" />
-        <rect x={W * 0.30} y={H * 0.30} width={W * 0.70} height={W * 0.15} fill="url(#p-eps)" />
-        {/* Profil de colț metalic (L-profil cu plasă) */}
-        <path d={`M${W * 0.28},${H * 0.28} L${W * 0.28},${H * 0.98} L${W * 0.30},${H * 0.98} L${W * 0.30},${H * 0.3} L${W - 10},${H * 0.3} L${W - 10},${H * 0.28} Z`} fill="url(#g-metal)" />
-        {/* Plasă de armare */}
-        {[0.32, 0.4, 0.48, 0.56, 0.64, 0.72, 0.8, 0.88].map((fx, i) => (
-          <circle key={i} cx={W * fx} cy={H * 0.32} r="1" fill="none" stroke="#666" strokeWidth="0.4" />
+        <rect x={cx + tFinExt + tEPS + tFinInt} y={cy + tFinExt + tEPS + tFinInt} width={W - cx - tFinExt - tEPS - tFinInt} height={H - cy - tFinExt - tEPS - tFinInt} fill="url(#g-int)" />
+        {/* Brațul vertical perete (dreapta jos perete) */}
+        <rect x={cx + tFinExt + tEPS} y={cy} width={tBrick} height={H - cy} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx + tFinExt} y={cy} width={tEPS} height={H - cy} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx} y={cy} width={tFinExt} height={H - cy} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx + tFinExt + tEPS + tBrick} y={cy} width={tFinInt} height={H - cy} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Brațul orizontal */}
+        <rect x={cx} y={cy + tFinExt + tEPS} width={W - cx} height={tBrick} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx} y={cy + tFinExt} width={W - cx} height={tEPS} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx} y={cy} width={W - cx} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={cx} y={cy + tFinExt + tEPS + tBrick} width={W - cx} height={tFinInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Profil L aluminiu pe colț */}
+        <path d={`M${cx},${cy} L${cx},${cy + tFinExt + 1} L${cx + tFinExt + 1},${cy + tFinExt + 1} L${cx + tFinExt + 1},${cy} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.6" />
+        {/* Plasă armare (puncte mici regulate) */}
+        {[0.55, 0.65, 0.75, 0.85, 0.95].map((fx, i) => (
+          <circle key={i} cx={W * fx} cy={cy + 2.5} r="0.7" fill="#1a1c1f" />
         ))}
-        <HeatZone x={W * 0.22} y={H * 0.22} w="32" h="32" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y={H - 10} anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.6} y={H * 0.25} color="#455a64" size="8" anchor="middle" bold>profil colț Al + plasă</Label>
-        <PsiBadge psi={bridge.psi} />
+        {[0.55, 0.65, 0.75, 0.85, 0.95].map((fy, i) => (
+          <circle key={i} cx={cx + 2.5} cy={H * fy} r="0.7" fill="#1a1c1f" />
+        ))}
+        <HeatZone x={cx - 6} y={cy - 6} w={tFinExt + tEPS + 14} h={tFinExt + tEPS + 14} />
+        <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={W - 50} y={H - 14} w="48" h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={cx + tFinExt / 2} y1={cy + tFinExt / 2} x2={W - 30} y2="20" label="profil L Al + plasă" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
       </>
     );
   }
 
-  // Window-band — bandă ETICS la baza ferestrelor
+  // WINDOW-BAND — bandă EPS continuă sub fereastră
   if (v === "window-band") {
+    const ySill = H * 0.42;
     return (
       <>
-        <rect x="0" y="0" width={W} height={H * 0.4} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.4} width={W} height={H * 0.6} fill="url(#g-int)" />
-        {/* Zidărie sub fereastră */}
-        <rect x={W * 0.32} y={H * 0.4} width={W * 0.68} height={H * 0.4} fill="url(#p-brick)" />
-        {/* ETICS continuă sub glaf */}
-        <rect x={W * 0.22} y={H * 0.4} width={W * 0.78} height="6" fill="url(#p-eps)" />
-        <rect x={W * 0.22} y={H * 0.4} width={W * 0.10} height={H * 0.6} fill="url(#p-eps)" />
-        {/* Bandă suplimentară sub fereastră (continuă peste nișa radiator) */}
-        <rect x={W * 0.32} y={H * 0.4} width={W * 0.68} height="10" fill="#ffd54f" />
-        <Label x={W * 0.65} y={H * 0.48} color="#f57c00" size="8" anchor="middle" bold>bandă EPS sub fereastră</Label>
+        <rect x="0" y="0" width={W} height={ySill} fill="url(#g-ext)" />
+        <rect x={xWallEnd} y={ySill} width={W - xWallEnd} height={H - ySill} fill="url(#g-int)" />
+        {/* Perete sub bandă */}
+        <WallStack y0={ySill - 2} h={H - ySill + 2} />
+        {/* Bandă EPS (peste glaf, continuă) */}
+        <rect x={xWallExt} y={ySill - 12} width={W - xWallExt} height="9" fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
         {/* Glaf metalic */}
-        <rect x={W * 0.22} y={H * 0.4} width={W * 0.78} height="3" fill="url(#g-metal)" />
-        {/* Fereastră (rama parțial vizibilă) */}
-        <rect x={W * 0.33} y={H * 0.25} width="22" height={H * 0.15} fill="#f4f1eb" stroke="#5a5550" strokeWidth="0.8" />
-        <rect x={W * 0.33 + 3} y={H * 0.27} width="16" height={H * 0.11} fill="url(#g-glass)" />
-        {/* Nișă radiator (dedesubtul benzii) */}
-        <rect x={W * 0.45} y={H * 0.55} width={W * 0.3} height={H * 0.25} fill="none" stroke="#607d8b" strokeWidth="1" strokeDasharray="3 2" />
-        <HeatZone x={W * 0.3} y={H * 0.38} w="40" h="16" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x="10" y={H - 10} color="#2e7d32" size="10" bold>INT</Label>
-        <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+        <path d={`M${xWallExt - 4},${ySill - 12} L${W - 8},${ySill - 14} L${W - 8},${ySill - 10} L${xWallExt - 4},${ySill - 8} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* Ramă fereastră deasupra */}
+        <rect x={xBrick - 2} y={H * 0.18} width="14" height={ySill - H * 0.20 - 4} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.6" />
+        <rect x={xBrick + 2} y={H * 0.20} width="6" height={ySill - H * 0.22 - 8} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+        <line x1={xBrick + 5} y1={H * 0.21} x2={xBrick + 5} y2={ySill - 16} stroke="#ffffff" strokeWidth="0.6" opacity="0.55" />
+        <HeatZone x={xEPS - 4} y={ySill - 18} w={tEPS + tBrick + 10} h="22" />
+        <EnvBanner x="0" y="0" w={W} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={(xWallExt + W) / 2} y1={ySill - 8} x2={W - 30} y2={ySill - 24} label="bandă EPS continuă" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
   }
 
-  // Expansion joint — rost de dilatare ETICS
+  // EXPANSION-JOINT — rost de dilatare ETICS cu profil + mastic
   if (v === "expansion-joint") {
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.55} y="0" width={W * 0.45} height={H} fill="url(#g-int)" />
-        <rect x={W * 0.45} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-        {/* 2 panouri ETICS cu rost */}
-        <rect x={W * 0.30} y="0" width={W * 0.08} height={H} fill="url(#p-eps)" />
-        <rect x={W * 0.39} y="0" width={W * 0.06} height={H} fill="url(#p-eps)" />
-        {/* Rostul (vizibil ca bandă verticală) */}
-        <rect x={W * 0.38} y="0" width="2" height={H} fill="#263238" />
-        {/* Profil rost de dilatare (în zig-zag) */}
-        <path d={`M${W * 0.375},5 L${W * 0.375},${H - 5} M${W * 0.395},5 L${W * 0.395},${H - 5}`} stroke="url(#g-metal)" strokeWidth="2" />
-        {/* Mastic/mastichet elastic între profile */}
-        <rect x={W * 0.383} y="0" width="6" height={H} fill="#ff6f00" opacity="0.3" />
-        <HeatZone x={W * 0.33} y={H * 0.3} w="30" h="40" />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.39} y={H * 0.14} color="#e65100" size="8" anchor="middle" bold>rost dilatare</Label>
-        <PsiBadge psi={bridge.psi} />
+        <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+        <WallStack />
+        {/* Întrerupere izolație + profil rost */}
+        <rect x={xEPS + tEPS / 2 - 3} y="14" width="6" height={H - 14} fill="#1a1c1f" />
+        <rect x={xEPS + tEPS / 2 - 2} y="14" width="4" height={H - 14} fill="url(#g-metal)" />
+        {/* Mastic elastic */}
+        <rect x={xEPS + tEPS / 2 - 1} y="14" width="2" height={H - 14} fill="#7a4520" />
+        <HeatZone x={xEPS + tEPS / 2 - 8} y="14" w="16" h={H - 14} />
+        <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xEPS + tEPS / 2} y1="22" x2={W - 30} y2="6" label="rost dilatare + mastic" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
       </>
     );
   }
 
-  // Sandwich-tie — tijă/conector panou sandwich
+  // SANDWICH-TIE — conector GFRP/inox panou sandwich (BA-EPS-BA)
   if (v === "sandwich-tie") {
+    const xS1 = W * 0.18;
+    const tBetExt = 18, tCore = 32, tBetInt = 40;
+    const xCore = xS1 + tBetExt, xBetIn = xCore + tCore, xS1End = xBetIn + tBetInt;
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x={W * 0.62} y="0" width={W * 0.38} height={H} fill="url(#g-int)" />
-        {/* Strat exterior beton */}
-        <rect x={W * 0.22} y="10" width={W * 0.08} height={H - 20} fill="url(#p-conc)" />
-        {/* Miez EPS/PIR */}
-        <rect x={W * 0.30} y="10" width={W * 0.22} height={H - 20} fill="url(#p-eps)" />
-        {/* Strat interior beton */}
-        <rect x={W * 0.52} y="10" width={W * 0.10} height={H - 20} fill="url(#p-conc)" />
-        {/* Tije/conectori traversând izolația */}
-        {[0.2, 0.4, 0.6, 0.8].map((fy, i) => (
+        <rect x={xS1End} y="0" width={W - xS1End} height={H} fill="url(#g-int)" />
+        <rect x={xS1} y="14" width={tBetExt} height={H - 14} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xCore} y="14" width={tCore} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBetIn} y="14" width={tBetInt} height={H - 14} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+        <rect x={xBetIn} y="14" width={tBetInt} height={H - 14} fill="url(#p-rebar)" opacity="0.55" />
+        {/* Conectori GFRP traversând stratul izolant */}
+        {[0.22, 0.45, 0.68, 0.88].map((fy, i) => (
           <g key={i}>
-            <line x1={W * 0.25} y1={H * fy} x2={W * 0.57} y2={H * fy} stroke={i % 2 ? "#00897b" : "#bfbfc4"} strokeWidth="1.8" />
-            <circle cx={W * 0.25} cy={H * fy} r="1.5" fill="#263238" />
-            <circle cx={W * 0.57} cy={H * fy} r="1.5" fill="#263238" />
+            <rect x={xS1 + 6} y={H * fy - 1.5} width={tBetExt + tCore + tBetInt - 12} height="3" fill={i % 2 ? "#7a8a3a" : "#5a6066"} stroke="#1a1c1f" strokeWidth="0.4" />
+            <circle cx={xS1 + 6} cy={H * fy} r="2" fill="#1a1c1f" />
+            <circle cx={xS1End - 6} cy={H * fy} r="2" fill="#1a1c1f" />
           </g>
         ))}
-        <HeatZone x={W * 0.23} y="10" w={W * 0.34} h={H - 20} />
-        <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-        <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-        <Label x={W * 0.4} y={H * 0.12} color="#37474f" size="8" anchor="middle" bold>conectori GFRP/inox</Label>
-        <PsiBadge psi={bridge.psi} />
+        <HeatZone x={xS1 - 4} y="10" w={xS1End - xS1 + 8} h={H - 16} />
+        <EnvBanner x="0" y="0" w={xS1} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+        <EnvBanner x={xS1End} y="0" w={W - xS1End} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={(xCore + xBetIn) / 2} y1={H * 0.32} x2={W - 30} y2="6" label="conector GFRP / inox" anchor="end" />
+        <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
       </>
     );
   }
 
-  // Default: anchor-metal — diblu metalic clasic EPS
+  // ANCHOR-METAL (default) — diblu metalic cu cap (EJOT/Fischer), 6-8/m²
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.55} y="0" width={W * 0.45} height={H} fill="url(#g-int)" />
-      <rect x={W * 0.45} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.30} y="0" width={W * 0.15} height={H} fill="url(#p-eps)" />
-      <rect x={W * 0.285} y="0" width="5" height={H} fill="#e8e3d5" />
-      {/* Dibluri metalice cu cap galben (EJOT/Fischer) */}
-      {[0.18, 0.35, 0.52, 0.7, 0.88].map((fy) => (
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      <WallStack />
+      {[0.20, 0.36, 0.52, 0.68, 0.84].map((fy) => (
         <g key={fy}>
-          <line x1={W * 0.29} y1={H * fy} x2={W * 0.52} y2={H * fy} stroke="#333" strokeWidth="1.8" />
-          <circle cx={W * 0.29} cy={H * fy} r="3" fill="#ffd54f" stroke="#e65100" strokeWidth="0.5" />
+          <line x1={xWallExt + 1} y1={H * fy} x2={xBrick + 14} y2={H * fy} stroke="#1a1c1f" strokeWidth="1.6" />
+          <circle cx={xWallExt + 1} cy={H * fy} r="2.6" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.6" />
+          <circle cx={xWallExt + 1} cy={H * fy} r="1.2" fill="#1a1c1f" />
         </g>
       ))}
-      <HeatZone x={W * 0.27} y="10" w="50" h={H - 20} opacity="0.4" />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.41} y={H * 0.09} color="#e65100" size="8" anchor="middle" bold>dibluri metalice (χ)</Label>
-      <Label x={W * 0.5} y={H * 0.95} color="#455a64" size="7" anchor="middle">6-8/m² × χ ≈ 0.003 W/K</Label>
-      <PsiBadge psi={bridge.psi} />
+      <HeatZone x={xEPS - 4} y="14" w={tEPS + tBrick + 8} h={H - 18} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={xBrick + 6} y1={H * 0.20} x2={W - 30} y2="6" label="diblu metal (χ)" anchor="end" />
+      <Leader x1={(xWallExt + xBrick) / 2} y1={H * 0.94} x2={W - 30} y2={H - 6} label="6–8/m² · χ≈0.003" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
 }
 
-// Coș de fum zidărie penetrant
+/**
+ * Vertical section — coș fum zidărie penetrant prin perete exterior
+ * conf. Mc 001-2022 § 4.4 (χ punct cos) + SR EN ISO 14683 P + NP 086-05 (instalații fum)
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Coș 38×38 cm cu canal Ø150 + tub inox interior + spațiu aer
+ * χ tipic: 0.10–0.25 W/K coș izolat, 0.25–0.50 W/K coș neizolat
+ */
 function IllustrationChimneyMasonry({ bridge }) {
+  const xWallExt = W * 0.40;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.55} y="0" width={W * 0.45} height={H} fill="url(#g-int)" />
-      {/* Perete */}
-      <rect x={W * 0.45} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.30} y="0" width={W * 0.15} height={H} fill="url(#p-eps)" />
-      {/* Coș (bloc zidărie independent, încorporat în perete) */}
-      <rect x={W * 0.08} y="15" width="40" height={H - 30} fill="url(#p-brick)" />
-      {/* Canal fum (interior coș) */}
-      <rect x={W * 0.08 + 6} y="15" width="28" height={H - 30} fill="#3a342c" />
-      <rect x={W * 0.08 + 10} y="15" width="20" height={H - 30} fill="#ff5722" opacity="0.3" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Perete (4 straturi proporționale) */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Coș zidărie încorporat (penetrare perete) */}
+      <rect x="14" y="14" width="56" height={H - 28} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.6" />
+      {/* Spațiu aer + tub inox interior */}
+      <rect x="22" y="14" width="40" height={H - 28} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.3" />
+      <rect x="30" y="14" width="24" height={H - 28} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x="34" y="14" width="16" height={H - 28} fill="#3a342c" stroke="#1a1c1f" strokeWidth="0.3" />
       {/* Coroamament metalic */}
-      <rect x={W * 0.08 - 2} y="10" width="44" height="6" fill="url(#g-metal)" />
-      {/* Punte de la coș prin perete spre interior */}
-      <HeatZone x={W * 0.25} y={H * 0.3} w="34" h={H * 0.4} />
-      <HeatArrow x1={W * 0.47} y1={H / 2} x2={W * 0.28} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.14} y={H - 10} color="#37474f" size="8" anchor="middle" bold>coș zidărie</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
+      <rect x="10" y="10" width="64" height="5" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Penetrare coș în zidărie */}
+      <rect x="70" y={H / 2 - 18} width={xWallEnd - 70} height="36" fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x="78" y={H / 2 - 9} width={xWallEnd - 76} height="18" fill="#3a342c" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Zonă punte termică */}
+      <HeatZone x={xEPS - 4} y={H / 2 - 24} w={tEPS + tBrick + 8} h="48" />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={H / 2} x2={xEPS - 6} y2={H / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1="42" y1="22" x2="6" y2="6" label="coș zidărie 380" anchor="start" />
+      <Leader x1={xEPS + tEPS / 2} y1={H - 24} x2={xEPS - 14} y2={H - 8} label="EPS 100" anchor="end" />
+      <PsiBadge psi={bridge.psi} x={W - 106} y={H - 6} />
     </>
   );
 }
 
-// Roletă — casetă integrată în perete
+/**
+ * Vertical section — casetă roletă deasupra ferestrei (suprabuiandrug exterior)
+ * conf. Mc 001-2022 § 4.4 (ψ_rol) + SR EN ISO 14683 W
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Casetă PVC 200×200mm cu axul rolei + ghidaj lateral aluminiu
+ * ψ tipic: 0.45–0.95 W/(m·K) casetă neizolată, 0.15–0.30 izolată cu PUR (clasa B-D)
+ */
 function IllustrationRollerShutter({ bridge }) {
-  return (
-    <>
-      <rect x="0" y="0" width={W} height={H * 0.35} fill="url(#g-ext)" />
-      <rect x="0" y={H * 0.35} width={W} height={H * 0.65} fill="url(#g-int)" />
-      {/* Perete + ETICS sub casetă */}
-      <rect x={W * 0.32} y={H * 0.35} width={W * 0.08} height={H * 0.65} fill="url(#p-brick)" />
-      <rect x={W * 0.22} y={H * 0.35} width={W * 0.10} height={H * 0.65} fill="url(#p-eps)" />
-      {/* Casetă roletă (cutie goală sau parțial izolată) */}
-      <rect x={W * 0.22} y={H * 0.1} width={W * 0.78} height={H * 0.25} fill="#d7d1be" stroke="#5a5550" strokeWidth="1" />
-      {/* Izolație PUR în cutie (parțial) */}
-      <rect x={W * 0.22} y={H * 0.1} width={W * 0.78} height="6" fill="url(#p-xps)" />
-      {/* Rol înfășurat */}
-      <circle cx={W * 0.5} cy={H * 0.22} r="12" fill="#7a7a7a" />
-      <circle cx={W * 0.5} cy={H * 0.22} r="8" fill="#5a5a5a" />
-      {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-        <line key={i} x1={W * 0.5} y1={H * 0.22} x2={W * 0.5 + 11 * Math.cos(deg * Math.PI / 180)} y2={H * 0.22 + 11 * Math.sin(deg * Math.PI / 180)} stroke="#333" strokeWidth="0.6" />
-      ))}
-      {/* Ghidaj rolete */}
-      <rect x={W * 0.33} y={H * 0.32} width="3" height={H * 0.25} fill="url(#g-metal)" />
-      {/* Fereastră mai jos */}
-      <rect x={W * 0.33} y={H * 0.57} width="22" height={H * 0.3} fill="#f4f1eb" stroke="#5a5550" strokeWidth="0.8" />
-      <rect x={W * 0.33 + 3} y={H * 0.59} width="16" height={H * 0.26} fill="url(#g-glass)" />
-      <HeatZone x={W * 0.22} y={H * 0.1} w={W * 0.6} h={H * 0.25} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.5} y={H * 0.08} color="#37474f" size="8" anchor="middle" bold>casetă roletă</Label>
-      <PsiBadge psi={bridge.psi} x={W - 96} y={H - 10} />
-    </>
-  );
-}
-
-// Radiator niche — nișă pentru radiator în perete exterior
-function IllustrationRadiatorNiche({ bridge }) {
+  const xWallExt = W * 0.18;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yBox = 18;
+  const boxH = 38;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.42} y="0" width={W * 0.58} height={H} fill="url(#g-int)" />
-      {/* Perete */}
-      <rect x={W * 0.36} y="0" width={W * 0.08} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.26} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-      {/* Nișă (grosime redusă perete în spatele radiatorului) */}
-      <rect x={W * 0.36} y={H * 0.3} width={W * 0.04} height={H * 0.4} fill="url(#p-brick)" />
-      <rect x={W * 0.33} y={H * 0.3} width="3" height={H * 0.4} fill="#e8e3d5" />
-      {/* Radiator */}
-      <rect x={W * 0.43} y={H * 0.35} width={W * 0.2} height={H * 0.3} fill="#b0bec5" stroke="#546e7a" strokeWidth="0.6" />
-      {[0.37, 0.42, 0.47, 0.52, 0.57, 0.62].map((fx, i) => (
-        <line key={i} x1={W * fx} y1={H * 0.36} x2={W * fx} y2={H * 0.64} stroke="#546e7a" strokeWidth="1.2" />
+      <rect x={xWallEnd} y={yBox + boxH} width={W - xWallEnd} height={H - yBox - boxH} fill="url(#g-int)" />
+      {/* Perete sub casetă */}
+      <rect x={xWallExt} y={yBox + boxH} width={tFinExt} height={H - yBox - boxH} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y={yBox + boxH} width={tEPS} height={H - yBox - boxH} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yBox + boxH} width={tBrick} height={H - yBox - boxH} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yBox + boxH} width={tFinInt} height={H - yBox - boxH} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Buiandrug BA deasupra ferestrei */}
+      <rect x={xBrick - 4} y={yBox + boxH - 14} width={tBrick + 8} height="14" fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xBrick - 4} y={yBox + boxH - 14} width={tBrick + 8} height="14" fill="url(#p-rebar)" opacity="0.5" />
+      {/* Casetă PVC roletă (deasupra ferestrei) */}
+      <rect x={xWallExt} y={yBox} width={xWallEnd - xWallExt} height={boxH} fill="#e8e2d4" stroke="#1a1c1f" strokeWidth="0.7" />
+      {/* Izolație PUR parțială în casetă (sub capac) */}
+      <rect x={xWallExt + 2} y={yBox + 2} width={xWallEnd - xWallExt - 4} height="6" fill="url(#p-xps)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Rol înfășurat (cilindru) */}
+      <circle cx={(xWallExt + xWallEnd) / 2} cy={yBox + boxH / 2 + 2} r="10" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <circle cx={(xWallExt + xWallEnd) / 2} cy={yBox + boxH / 2 + 2} r="3" fill="#1a1c1f" />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+        <line key={i} x1={(xWallExt + xWallEnd) / 2} y1={yBox + boxH / 2 + 2} x2={(xWallExt + xWallEnd) / 2 + 9 * Math.cos(deg * Math.PI / 180)} y2={yBox + boxH / 2 + 2 + 9 * Math.sin(deg * Math.PI / 180)} stroke="#1a1c1f" strokeWidth="0.4" />
       ))}
-      {/* Conducte apă caldă */}
-      <path d={`M${W * 0.43},${H * 0.36} L${W * 0.43},${H * 0.28}`} stroke="#c62828" strokeWidth="2" />
-      <path d={`M${W * 0.43},${H * 0.64} L${W * 0.43},${H * 0.72}`} stroke="#1565c0" strokeWidth="2" />
-      <HeatZone x={W * 0.27} y={H * 0.32} w={W * 0.14} h={H * 0.36} />
-      <HeatArrow x1={W * 0.43} y1={H * 0.5} x2={W * 0.29} y2={H * 0.5} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.53} y={H * 0.33} color="#37474f" size="8" anchor="middle" bold>nișă radiator</Label>
-      <Label x={W * 0.53} y={H * 0.95} color="#c62828" size="7" anchor="middle">perete subțiat ≈ 50% grosime</Label>
-      <PsiBadge psi={bridge.psi} />
+      {/* Ghidaj lateral aluminiu */}
+      <rect x={xBrick - 2} y={yBox + boxH} width="3" height={H * 0.30} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Ramă fereastră dedesubt */}
+      <rect x={xBrick} y={yBox + boxH + 2} width="22" height={H * 0.32} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick + 3} y={yBox + boxH + 5} width="16" height={H * 0.28} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Punte termică */}
+      <HeatZone x={xWallExt - 4} y={yBox - 4} w={xWallEnd - xWallExt + 8} h={boxH + 18} />
+      <HeatArrow x1={(xWallExt + xWallEnd) / 2 + 8} y1={yBox + boxH / 2} x2={xWallExt - 6} y2={yBox + boxH / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={(xWallExt + xWallEnd) / 2} y1={yBox - 1} x2={W - 30} y2="6" label="casetă PVC roletă" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1={yBox + boxH - 7} x2={W - 30} y2={yBox + boxH + 30} label="buiandrug BA" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
+    </>
+  );
+}
+
+/**
+ * Vertical section — nișă radiator în perete exterior (perete subțiat ≈ 50%)
+ * conf. Mc 001-2022 § 4.4 (ψ_n) + SR EN ISO 14683 P
+ * Straturi perete normal: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * În zona nișei: zidărie redusă la ≈ 120mm + EPS exterior
+ * ψ tipic: 0.30–0.65 W/(m·K) nișă neizolată (clasa C-D ISO 14683)
+ */
+function IllustrationRadiatorNiche({ bridge }) {
+  const xWallExt = W * 0.18;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yNicheTop = H * 0.30;
+  const yNicheBot = H * 0.70;
+  const tBrickReduced = 16; // perete subțiat la nișă (≈ 120mm)
+  return (
+    <>
+      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      {/* Perete normal sus și jos */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Zidărie completă deasupra și sub nișă */}
+      <rect x={xBrick} y="14" width={tBrick} height={yNicheTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yNicheBot} width={tBrick} height={H - yNicheBot} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Zidărie SUBȚIATĂ în zona nișei (doar fașa exterioară) */}
+      <rect x={xBrick} y={yNicheTop} width={tBrickReduced} height={yNicheBot - yNicheTop} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Tencuială interioară (continuă pe profil cu ștraif în nișă) */}
+      <rect x={xFinInt} y="14" width={tFinInt} height={yNicheTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yNicheBot} width={tFinInt} height={H - yNicheBot} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick + tBrickReduced} y={yNicheTop} width="3" height={yNicheBot - yNicheTop} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Cotă conturul nișei */}
+      <line x1={xBrick + tBrickReduced + 3} y1={yNicheTop} x2={xWallEnd} y2={yNicheTop} stroke="#1a1c1f" strokeWidth="0.4" strokeDasharray="3 2" />
+      <line x1={xBrick + tBrickReduced + 3} y1={yNicheBot} x2={xWallEnd} y2={yNicheBot} stroke="#1a1c1f" strokeWidth="0.4" strokeDasharray="3 2" />
+      {/* Radiator (oțel, profil vertical) */}
+      <rect x={xWallEnd + 4} y={H * 0.36} width={W * 0.16} height={H * 0.28} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.6" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <line key={i} x1={xWallEnd + 4 + i * 8} y1={H * 0.37} x2={xWallEnd + 4 + i * 8} y2={H * 0.63} stroke="#1a1c1f" strokeWidth="0.7" />
+      ))}
+      {/* Conducte apă (tur/retur) */}
+      <line x1={xWallEnd + 4} y1={H * 0.36} x2={xWallEnd + 4} y2={H * 0.30} stroke="#c62828" strokeWidth="1.6" />
+      <line x1={xWallEnd + 4} y1={H * 0.64} x2={xWallEnd + 4} y2={H * 0.72} stroke="#1565c0" strokeWidth="1.6" />
+      <HeatZone x={xEPS - 4} y={yNicheTop - 4} w={tEPS + tBrick + 8} h={yNicheBot - yNicheTop + 8} />
+      <HeatArrow x1={xBrick + tBrickReduced + 4} y1={H / 2} x2={xEPS - 6} y2={H / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={xBrick + tBrickReduced / 2} y1={H / 2} x2={xWallEnd + 60} y2={H * 0.92} label="zidărie subțiată 120" anchor="end" />
+      <Leader x1={xWallEnd + 16} y1={H * 0.50} x2={W - 30} y2={H * 0.18} label="radiator oțel" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
 }
@@ -1761,156 +2252,247 @@ function IllustrationPrecastPanel({ bridge }) {
   );
 }
 
+/**
+ * Vertical section — fațadă cortină (curtain wall) cu mullion aluminiu × planșeu BA
+ * conf. Mc 001-2022 § 4.4 (ψ_cw) + SR EN ISO 14683 W + EN 13830 (curtain wall)
+ * Straturi cortină: sticlă triplă 4-16-4-16-4 + spacer warm-edge + mullion Al cu ruptură termică
+ * Spandrel: panou aluminiu 3mm + MW 80mm + tablă galv. interior
+ * ψ tipic: 0.10–0.20 W/(m·K) cu ruptură termică, 0.40–0.85 fără (clasa A-D)
+ */
 function IllustrationCurtainWall({ bridge }) {
+  const ySlabTop = H * 0.46;
+  const tSlab = 22;
+  const xMull = W * 0.42;
+  const tMull = 10;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.45} y="0" width={W * 0.55} height={H} fill="url(#g-int)" />
-      {/* Planșeu beton */}
-      <rect x={W * 0.15} y={H / 2 - 10} width={W - W * 0.15} height="20" fill="url(#p-conc)" />
-      <rect x={W * 0.15} y={H / 2 - 10} width={W - W * 0.15} height="20" fill="url(#p-rebar)" opacity="0.4" />
-      {/* Mullion vertical aluminium */}
-      <rect x={W * 0.38} y="10" width="8" height={H - 20} fill="url(#g-metal)" />
-      {/* Sticlă panouri */}
-      <rect x={W * 0.15} y="20" width={W * 0.22} height={H / 2 - 32} fill="url(#g-glass)" stroke="#3a6ea8" strokeWidth="0.6" />
-      <rect x={W * 0.15} y={H / 2 + 12} width={W * 0.22} height={H / 2 - 32} fill="url(#g-glass)" stroke="#3a6ea8" strokeWidth="0.6" />
-      {/* Panou spandrel (opac între etaje) */}
-      <rect x={W * 0.15} y={H / 2 - 10} width={W * 0.22} height="20" fill="#546e7a" />
-      {/* Punte la mullion × planșeu */}
-      <HeatZone x={W * 0.32} y={H / 2 - 20} w={W * 0.2} h="40" />
-      <HeatArrow x1={W * 0.47} y1={H / 2} x2={W * 0.36} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.40} y="30" color="#37474f" size="7" anchor="middle">mullion Al</Label>
-      <PsiBadge psi={bridge.psi} />
+      <rect x={xMull + tMull + 14} y="0" width={W - xMull - tMull - 14} height={H} fill="url(#g-int)" />
+      {/* Sticlă superioară + inferioară */}
+      <rect x={xMull - 80} y="14" width="78" height={ySlabTop - 18} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <line x1={xMull - 76} y1="14" x2={xMull - 76} y2={ySlabTop - 4} stroke="#ffffff" strokeWidth="0.7" opacity="0.55" />
+      <line x1={xMull - 6} y1="14" x2={xMull - 6} y2={ySlabTop - 4} stroke="#ffffff" strokeWidth="0.7" opacity="0.55" />
+      <rect x={xMull - 80} y={ySlabTop + tSlab + 4} width="78" height={H - ySlabTop - tSlab - 18} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <line x1={xMull - 76} y1={ySlabTop + tSlab + 4} x2={xMull - 76} y2={H - 14} stroke="#ffffff" strokeWidth="0.7" opacity="0.55" />
+      <line x1={xMull - 6} y1={ySlabTop + tSlab + 4} x2={xMull - 6} y2={H - 14} stroke="#ffffff" strokeWidth="0.7" opacity="0.55" />
+      {/* Spandrel (panou opac între etaje) */}
+      <rect x={xMull - 80} y={ySlabTop - 4} width="78" height={tSlab + 8} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xMull - 78} y={ySlabTop - 2} width="74" height={tSlab + 4} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Mullion vertical Al cu ruptură termică */}
+      <rect x={xMull} y="6" width={tMull} height={H - 12} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xMull + 3} y="6" width="4" height={H - 12} fill="#3a342c" />
+      <rect x={xMull + 4} y="6" width="2" height={H - 12} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.3" />
+      {/* Planșeu BA */}
+      <rect x={xMull + tMull} y={ySlabTop} width={W - xMull - tMull} height={tSlab} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xMull + tMull} y={ySlabTop} width={W - xMull - tMull} height={tSlab} fill="url(#p-rebar)" opacity="0.55" />
+      {/* Pardoseală + tavan */}
+      <rect x={xMull + tMull + 14} y={ySlabTop - 8} width={W - xMull - tMull - 14} height="6" fill="url(#p-screed)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xMull + tMull + 14} y={ySlabTop - 12} width={W - xMull - tMull - 14} height="4" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xMull + tMull + 14} y={ySlabTop + tSlab} width={W - xMull - tMull - 14} height="3" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Console fixare cortină pe planșeu */}
+      <rect x={xMull + tMull} y={ySlabTop + 4} width="10" height="6" fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <rect x={xMull + tMull + 10} y={ySlabTop + 4} width="3" height="3" fill="#1a1c1f" />
+      <HeatZone x={xMull - 8} y={ySlabTop - 12} w={tMull + 28} h={tSlab + 24} />
+      <HeatArrow x1={xMull + tMull + 8} y1={ySlabTop + tSlab / 2} x2={xMull - 4} y2={ySlabTop + tSlab / 2} />
+      <EnvBanner x="0" y="0" w={xMull - 80} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xMull + tMull + 14} y="0" w={W - xMull - tMull - 14} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={xMull + 5} y1="20" x2={xMull + 28} y2="6" label="mullion Al" anchor="start" />
+      <Leader x1={(xMull - 40)} y1={ySlabTop + tSlab / 2} x2="6" y2={H - 18} label="spandrel + MW" anchor="start" />
+      <Leader x1={(xMull + tMull + 50)} y1={ySlabTop + tSlab / 2} x2={W - 30} y2={H - 18} label="planșeu BA 200" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
 }
 
-// Rost vertical panou prefabricat PAFP — vedere în PLAN (secțiune orizontală)
-// Stâlpișor beton între două panouri adiacente
+/**
+ * Plan view section — rost vertical PAFP cu stâlpișor BA monolit între panouri
+ * conf. Mc 001-2022 § 4.4 (ψ_e) + SR EN ISO 14683 C + STAS 2614/4-77 (panouri prefab)
+ * Vedere în plan: EXT sus, INT jos. Panouri PAFP (5 straturi în plan): tenc.ext 5 + BA ext 60 + izolație MW 80 + BA int 130 + tenc.int 15 mm
+ * Stâlpișor monolit BA Ø 250mm turnat în șliț (cuplaj structural panouri)
+ * ψ tipic: 0.45–0.85 W/(m·K) stâlpișor neizolat (clasa D ISO 14683)
+ */
 function IllustrationPrecastVerticalJoint({ bridge }) {
-  const colW = W * 0.10; // lățime stâlpișor
   const cx = W / 2;
-  const panelW = W * 0.26; // lățime jumătate panou
+  const colW = 28;          // stâlpișor BA Ø 250mm
+  // Strat panou (de sus = EXT spre jos = INT)
+  const yWall0 = H * 0.18;
+  const tFinExt = 5, tBetExt = 14, tInsul = 22, tBetInt = 30, tFinInt = 5;
+  const yBetExt = yWall0 + tFinExt;
+  const yInsul = yBetExt + tBetExt;
+  const yBetInt = yInsul + tInsul;
+  const yFinInt = yBetInt + tBetInt;
+  const yWallEnd = yFinInt + tFinInt;
+  const xPanelLstart = 8;
+  const xPanelLend = cx - colW / 2;
+  const xPanelRstart = cx + colW / 2;
+  const xPanelRend = W - 8;
   return (
     <>
-      {/* EXT sus, INT jos */}
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.10} y={H * 0.35} width={W * 0.80} height={H * 0.30} fill="url(#g-int)" />
-      {/* Panou stânga — 3 straturi in plan: strat ext BA + izolație + strat int BA */}
-      <rect x={W * 0.10} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-conc)" />
-      <rect x={W * 0.10} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-rebar)" opacity="0.25" />
-      <rect x={W * 0.10} y={H * 0.35 + 2} width={panelW} height={H * 0.18} fill="#e6d2a8" opacity="0.85" />
-      <rect x={W * 0.10} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-conc)" />
-      <rect x={W * 0.10} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-rebar)" opacity="0.25" />
-      {/* Panou dreapta — simetric */}
-      <rect x={cx + colW / 2} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-conc)" />
-      <rect x={cx + colW / 2} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-rebar)" opacity="0.25" />
-      <rect x={cx + colW / 2} y={H * 0.35 + 2} width={panelW} height={H * 0.18} fill="#e6d2a8" opacity="0.85" />
-      <rect x={cx + colW / 2} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-conc)" />
-      <rect x={cx + colW / 2} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-rebar)" opacity="0.25" />
-      {/* Stâlpișor beton — vertical, în mijloc */}
-      <rect x={cx - colW / 2} y="0" width={colW} height={H} fill="url(#p-conc)" />
-      <rect x={cx - colW / 2} y="0" width={colW} height={H} fill="url(#p-rebar)" opacity="0.5" />
-      {/* Rosturi mastic (linii subțiri) */}
-      <line x1={cx - colW / 2} y1="0" x2={cx - colW / 2} y2={H} stroke="#37474f" strokeWidth="1.5" />
-      <line x1={cx + colW / 2} y1="0" x2={cx + colW / 2} y2={H} stroke="#37474f" strokeWidth="1.5" />
-      {/* Zonă punte termică */}
-      <HeatZone x={cx - colW / 2 - 6} y="0" w={colW + 12} h={H} rx={0} />
-      <HeatArrow x1={cx} y1={H * 0.18} x2={cx} y2="8" />
-      <Label x={W / 2} y="14" anchor="middle" color="#1976d2" size="10" bold>EXTERIOR</Label>
-      <Label x={W / 2} y={H - 6} anchor="middle" color="#2e7d32" size="10" bold>INTERIOR</Label>
-      <Label x={cx} y={H * 0.50} anchor="middle" color="#c62828" size="8" bold>stâlpișor BA</Label>
-      <Label x={W * 0.24} y={H * 0.50} anchor="middle" color="#37474f" size="7">PAFP stg</Label>
-      <Label x={W * 0.74} y={H * 0.50} anchor="middle" color="#37474f" size="7">PAFP dr</Label>
-      <PsiBadge psi={bridge.psi} />
+      <rect x="0" y={yWallEnd} width={W} height={H - yWallEnd} fill="url(#g-int)" />
+      {/* === PANOU STÂNGA (5 straturi) === */}
+      <rect x={xPanelLstart} y={yWall0} width={xPanelLend - xPanelLstart} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelLstart} y={yBetExt} width={xPanelLend - xPanelLstart} height={tBetExt} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelLstart} y={yBetExt} width={xPanelLend - xPanelLstart} height={tBetExt} fill="url(#p-rebar)" opacity="0.45" />
+      <rect x={xPanelLstart} y={yInsul} width={xPanelLend - xPanelLstart} height={tInsul} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelLstart} y={yBetInt} width={xPanelLend - xPanelLstart} height={tBetInt} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelLstart} y={yBetInt} width={xPanelLend - xPanelLstart} height={tBetInt} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xPanelLstart} y={yFinInt} width={xPanelLend - xPanelLstart} height={tFinInt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === PANOU DREAPTA (simetric) === */}
+      <rect x={xPanelRstart} y={yWall0} width={xPanelRend - xPanelRstart} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelRstart} y={yBetExt} width={xPanelRend - xPanelRstart} height={tBetExt} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelRstart} y={yBetExt} width={xPanelRend - xPanelRstart} height={tBetExt} fill="url(#p-rebar)" opacity="0.45" />
+      <rect x={xPanelRstart} y={yInsul} width={xPanelRend - xPanelRstart} height={tInsul} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelRstart} y={yBetInt} width={xPanelRend - xPanelRstart} height={tBetInt} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xPanelRstart} y={yBetInt} width={xPanelRend - xPanelRstart} height={tBetInt} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xPanelRstart} y={yFinInt} width={xPanelRend - xPanelRstart} height={tFinExt} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* === STÂLPIȘOR BA MONOLIT (în șliț, ocupă întreaga grosime panou) === */}
+      <rect x={cx - colW / 2} y={yWall0} width={colW} height={yWallEnd - yWall0} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={cx - colW / 2} y={yWall0} width={colW} height={yWallEnd - yWall0} fill="url(#p-rebar)" opacity="0.7" />
+      {/* Mastic etanșare rost ext (cap de panou) */}
+      <rect x={cx - colW / 2 - 1} y={yWall0} width="2" height={yWallEnd - yWall0} fill="#1a1c1f" />
+      <rect x={cx + colW / 2 - 1} y={yWall0} width="2" height={yWallEnd - yWall0} fill="#1a1c1f" />
+      {/* Punte termică (stâlpișor = punte continuă pe toată grosimea) */}
+      <HeatZone x={cx - colW / 2 - 4} y={yWall0 - 4} w={colW + 8} h={yWallEnd - yWall0 + 8} />
+      <HeatArrow x1={cx} y1={yFinInt + 2} x2={cx} y2={yWall0 - 8} />
+      <EnvBanner x="0" y="0" w={W} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={cx} y1={yWall0 - 1} x2={W - 30} y2={yWall0 - 12} label="stâlpișor BA Ø250" anchor="end" />
+      <Leader x1={(xPanelLstart + xPanelLend) / 2} y1={yInsul + tInsul / 2} x2="6" y2={H - 16} label="MW 80 (panou)" anchor="start" />
+      <Leader x1={(xPanelRstart + xPanelRend) / 2} y1={yBetInt + tBetInt / 2} x2={W - 6} y2={H - 16} label="BA int 130" anchor="end" />
+      <PsiBadge psi={bridge.psi} x={W / 2 - 50} y={H - 6} />
     </>
   );
 }
 
-// Buiandrug deasupra ferestrei — secțiune verticală
+/**
+ * Vertical section — buiandrug BA deasupra golului ferestrei
+ * conf. Mc 001-2022 § 4.4 (ψ_b sup) + SR EN ISO 14683 W
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Buiandrug BA 250×200mm întrerupe izolația pe lățimea zidăriei
+ * ψ tipic: 0.30–0.55 W/(m·K) standard, 0.12–0.25 W/(m·K) cu izolație continuă (clasa B-C)
+ */
 function IllustrationWindowLintel({ bridge }) {
-  const wallX = W * 0.30;
-  const epsW = W * 0.10;
-  const wallW = W * 0.08;
+  const xWallExt = W * 0.20;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yLintelTop = H * 0.20;
+  const tLintel = 22; // 200mm
+  const yLintelBot = yLintelTop + tLintel;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={wallX + wallW} y="0" width={W - wallX - wallW} height={H} fill="url(#g-int)" />
-      {/* Perete zidărie + EPS deasupra */}
-      <rect x={wallX} y="0" width={wallW} height={H} fill="url(#p-brick)" />
-      <rect x={wallX - epsW} y="0" width={epsW} height={H} fill="url(#p-eps)" />
-      {/* Buiandrug beton armat — tăie izolația */}
-      <rect x={wallX - epsW * 0.4} y={H * 0.10} width={wallW + epsW * 0.4 + W * 0.22} height={H * 0.22} fill="url(#p-conc)" />
-      <rect x={wallX - epsW * 0.4} y={H * 0.10} width={wallW + epsW * 0.4 + W * 0.22} height={H * 0.22} fill="url(#p-rebar)" opacity="0.4" />
-      {/* Gol fereastră sub buiandrug */}
-      <rect x={wallX + wallW} y={H * 0.32} width={W * 0.22} height={H * 0.60} fill="url(#g-ext)" opacity="0.7" />
-      {/* Ramă fereastră */}
-      <rect x={wallX + wallW - 2} y={H * 0.32} width="8" height={H * 0.60} fill="url(#g-metal)" />
-      <rect x={wallX + wallW + W * 0.20} y={H * 0.32} width="8" height={H * 0.60} fill="url(#g-metal)" />
-      {/* Sticlă */}
-      <rect x={wallX + wallW + 6} y={H * 0.34} width={W * 0.20 - 4} height={H * 0.56} fill="url(#g-glass)" opacity="0.7" />
-      {/* Zonă punte termică la buiandrug */}
-      <HeatZone x={wallX - epsW * 0.5} y={H * 0.08} w={wallW + epsW * 0.6 + W * 0.10} h={H * 0.26} />
-      <HeatArrow x1={wallX + wallW * 0.5} y1={H * 0.21} x2={wallX - epsW * 0.3} y2={H * 0.21} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={wallX + W * 0.06} y={H * 0.09} anchor="middle" color="#37474f" size="8" bold>buiandrug BA</Label>
-      <Label x={wallX + W * 0.10} y={H * 0.70} anchor="middle" color="#1976d2" size="8">fereastră</Label>
-      <PsiBadge psi={bridge.psi} />
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={yLintelBot} fill="url(#g-int)" />
+      <rect x="0" y={yLintelBot} width={W} height={H - yLintelBot} fill="url(#g-ext)" opacity="0.4" />
+      {/* Perete deasupra (4 straturi) */}
+      <rect x={xWallExt} y="14" width={tFinExt} height={yLintelTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={yLintelTop - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={yLintelTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={yLintelTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Buiandrug BA — tăie izolația */}
+      <rect x={xWallExt} y={yLintelTop} width={xWallEnd - xWallExt} height={tLintel} fill="url(#p-conc)" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xWallExt} y={yLintelTop} width={xWallEnd - xWallExt} height={tLintel} fill="url(#p-rebar)" opacity="0.6" />
+      {/* Tencuială intradosul buiandrugului */}
+      <rect x={xWallExt} y={yLintelBot} width={xWallEnd - xWallExt} height="3" fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Gol fereastră (sub buiandrug, vizibil ca aer) */}
+      <rect x={xWallExt} y={yLintelBot + 3} width={xWallEnd - xWallExt} height={H - yLintelBot - 3} fill="url(#g-ext)" opacity="0.4" />
+      {/* Ramă fereastră (parțial vizibilă, în partea de sus a golului) */}
+      <rect x={xBrick - 2} y={yLintelBot + 4} width="14" height={H - yLintelBot - 6} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.6" />
+      <rect x={xBrick + 2} y={yLintelBot + 8} width="6" height={H - yLintelBot - 14} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <line x1={xBrick + 5} y1={yLintelBot + 9} x2={xBrick + 5} y2={H - 8} stroke="#ffffff" strokeWidth="0.6" opacity="0.55" />
+      {/* Punte termică la buiandrug */}
+      <HeatZone x={xEPS - 4} y={yLintelTop - 4} w={tEPS + tBrick + tFinInt + 4} h={tLintel + 8} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yLintelTop + tLintel / 2} x2={xEPS - 6} y2={yLintelTop + tLintel / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={(xEPS + xBrick + tBrick) / 2} y1={yLintelTop + tLintel / 2} x2={W - 30} y2="6" label="buiandrug BA 200" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="EPS 100" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
 }
 
-// Parapet sub fereastră — secțiune verticală prin zona sub glaf
+/**
+ * Vertical section — parapet sub fereastră (alegere zonă fără izolație continuă)
+ * conf. Mc 001-2022 § 4.4 (ψ_b inf) + SR EN ISO 14683 W
+ * Straturi perete normal (sub parapet): tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Parapet (sub fereastră): zidărie redusă cu izolație lipsă/întreruptă pe glaf exterior
+ * ψ tipic: 0.25–0.45 W/(m·K) standard, 0.10–0.20 W/(m·K) cu bandă EPS continuă (clasa B-C)
+ */
 function IllustrationWindowParapet({ bridge }) {
-  const wallX = W * 0.30;
-  const epsW = W * 0.10;
-  const wallW = W * 0.08;
+  const xWallExt = W * 0.20;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
+  const yParapetTop = H * 0.46;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={wallX + wallW} y="0" width={W - wallX - wallW} height={H} fill="url(#g-int)" />
-      {/* Perete zidărie + EPS */}
-      <rect x={wallX} y={H * 0.45} width={wallW} height={H * 0.55} fill="url(#p-brick)" />
-      <rect x={wallX - epsW} y={H * 0.45} width={epsW} height={H * 0.55} fill="url(#p-eps)" />
-      {/* Parapet (zona de zidărie sub fereastră, fără izolație sau cu izolație întreruptă) */}
-      <rect x={wallX} y="0" width={wallW} height={H * 0.45} fill="url(#p-brick)" />
-      <rect x={wallX - epsW} y="0" width={epsW * 0.0} height={H * 0.45} fill="url(#p-eps)" /> {/* fără izolație pe parapet */}
-      {/* Tencuială parapet exterior */}
-      <rect x={wallX - 4} y="0" width="4" height={H * 0.45} fill="#e8e3d5" />
-      {/* Ramă fereastră la partea de sus a parapetului */}
-      <rect x={wallX + wallW - 2} y="0" width="8" height={H * 0.45} fill="url(#g-metal)" />
-      {/* Sticlă fereastră sus */}
-      <rect x={wallX + wallW + 6} y="0" width={W * 0.20} height={H * 0.43} fill="url(#g-glass)" opacity="0.7" />
-      {/* Glaf interior */}
-      <rect x={wallX + wallW} y={H * 0.43} width={W * 0.18} height="6" fill="#d4a574" />
-      {/* Zonă punte termică la baza ferestrei */}
-      <HeatZone x={wallX - 6} y={H * 0.35} w={wallW + epsW + 14} h={H * 0.20} />
-      <HeatArrow x1={wallX + wallW * 0.5} y1={H * 0.45} x2={wallX - epsW * 0.2} y2={H * 0.45} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={wallX - epsW / 2} y={H * 0.30} anchor="middle" color="#c62828" size="7" bold>fără izolație</Label>
-      <Label x={wallX + W * 0.10} y={H * 0.22} anchor="middle" color="#1976d2" size="8">fereastră</Label>
-      <PsiBadge psi={bridge.psi} />
+      <rect x={xWallEnd} y={yParapetTop} width={W - xWallEnd} height={H - yParapetTop} fill="url(#g-int)" />
+      <rect x="0" y="0" width={W} height={yParapetTop} fill="url(#g-ext)" />
+      {/* Perete sub parapet (4 straturi normale) */}
+      <rect x={xWallExt} y={yParapetTop} width={tFinExt} height={H - yParapetTop} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y={yParapetTop} width={tEPS} height={H - yParapetTop} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y={yParapetTop} width={tBrick} height={H - yParapetTop} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y={yParapetTop} width={tFinInt} height={H - yParapetTop} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Parapet — zidărie redusă (fără EPS pe parapet în acest exemplu) */}
+      <rect x={xBrick} y="14" width={tBrick} height={yParapetTop - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={yParapetTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      {/* Tencuială ext pe parapet (mai subțire, fără EPS — punte termică) */}
+      <rect x={xBrick - 4} y="14" width="4" height={yParapetTop - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Glaf exterior metalic (panta) */}
+      <path d={`M${xBrick - 6},${yParapetTop - 8} L${W - 10},${yParapetTop - 11} L${W - 10},${yParapetTop - 7} L${xBrick - 6},${yParapetTop - 4} Z`} fill="url(#g-metal)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Ramă fereastră (la partea de sus a parapetului, parțial vizibilă) */}
+      <rect x={xBrick - 2} y="14" width="14" height={yParapetTop - 14 - 8} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick + 2} y="18" width="6" height={yParapetTop - 26} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
+      <line x1={xBrick + 5} y1="20" x2={xBrick + 5} y2={yParapetTop - 12} stroke="#ffffff" strokeWidth="0.6" opacity="0.55" />
+      {/* Glaf interior (lemn) */}
+      <rect x={xFinInt + 1} y={yParapetTop - 5} width={W * 0.20} height="5" fill="url(#p-floor)" stroke="#1a1c1f" strokeWidth="0.4" />
+      {/* Zonă punte termică (zidărie subțiată, fără EPS) */}
+      <HeatZone x={xBrick - 6} y={H * 0.16} w={tBrick + 14} h={yParapetTop - H * 0.16 - 4} />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={yParapetTop - 26} x2={xBrick - 8} y2={yParapetTop - 26} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      <Leader x1={xBrick + 4} y1={H * 0.32} x2={W - 30} y2="6" label="parapet fără EPS" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={yParapetTop + 26} x2={xEPS - 14} y2={H - 18} label="EPS 100" anchor="end" />
+      <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
 }
 
+/**
+ * Vertical section — fallback generic (perete tip + punte centrală)
+ * conf. Mc 001-2022 § 4.4 + SR EN ISO 14683
+ * Straturi perete: tenc.ext 5 + EPS 100 + zidărie 250 + tenc.int 15 mm
+ * Punte termică indicativă în mijlocul peretelui (poziție și natură nespecificate)
+ */
 function IllustrationGenericFallback({ bridge }) {
-  // Fallback — perete + punte centrală generică
+  const xWallExt = W * 0.34;
+  const tFinExt = 5, tEPS = 28, tBrick = 38, tFinInt = 6;
+  const xEPS = xWallExt + tFinExt;
+  const xBrick = xEPS + tEPS;
+  const xFinInt = xBrick + tBrick;
+  const xWallEnd = xFinInt + tFinInt;
   return (
     <>
       <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.5} y="0" width={W * 0.5} height={H} fill="url(#g-int)" />
-      <rect x={W * 0.40} y="0" width={W * 0.10} height={H} fill="url(#p-brick)" />
-      <rect x={W * 0.30} y="0" width={W * 0.10} height={H} fill="url(#p-eps)" />
-      <HeatZone x={W * 0.28} y={H / 2 - 28} w={W * 0.24} h={56} />
-      <HeatArrow x1={W * 0.51} y1={H / 2} x2={W * 0.32} y2={H / 2} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W / 2} y={H / 2 + 4} anchor="middle" color="#c62828" size="8" bold>{bridge.cat}</Label>
+      <rect x={xWallEnd} y="0" width={W - xWallEnd} height={H} fill="url(#g-int)" />
+      <rect x={xWallExt} y="14" width={tFinExt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xEPS} y="14" width={tEPS} height={H - 14} fill="url(#p-eps)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xBrick} y="14" width={tBrick} height={H - 14} fill="url(#p-brick)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <rect x={xFinInt} y="14" width={tFinInt} height={H - 14} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <HeatZone x={xWallExt - 4} y={H / 2 - 30} w={xWallEnd - xWallExt + 8} h="60" />
+      <HeatArrow x1={xBrick + tBrick / 2} y1={H / 2} x2={xWallExt - 6} y2={H / 2} />
+      <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+      {bridge.cat && <Label x={W / 2} y={H * 0.92} size={8} anchor="middle" bold bg>{bridge.cat}</Label>}
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 10} y2="6" label="EPS 100" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
