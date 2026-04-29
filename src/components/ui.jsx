@@ -44,7 +44,7 @@ export function Select({ label, value, onChange, options, placeholder, className
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
       {label && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-h-[2rem]">
           <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
@@ -96,7 +96,7 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       {label && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-h-[2rem]">
           <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
