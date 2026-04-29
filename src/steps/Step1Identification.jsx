@@ -64,7 +64,8 @@ async function searchStreetOSM(query, city, county) {
         const label = [road, houseNr].filter(Boolean).join(", nr. ") || r.display_name.split(",")[0];
         return { label, value: label, sub: a.city || a.town || a.village || "" };
       })
-      .filter(r => r.label);
+      .filter(r => r.label)
+      .filter((r, i, arr) => arr.findIndex(x => x.label === r.label && x.sub === r.sub) === i);
   } catch {
     return [];
   }
