@@ -300,7 +300,7 @@ export const DEMO_PROJECTS = [
       },
       {
         name: "Planșeu peste subsol neîncălzit (pivnițe)",
-        type: "PL", area: "65", orientation: "H", tau: "0.5",
+        type: "PB", area: "65", orientation: "H", tau: "0.5",
         layers: [
           { matName: "Parchet", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 700 },
           { matName: "Șapă mortar", material: "Șapă ciment", thickness: "30", lambda: 1.40, rho: 2000 },
@@ -588,7 +588,7 @@ export const DEMO_PROJECTS = [
           { matName: "Aluminiu compozit ACM", material: "Aluminiu", thickness: "4", lambda: 200, rho: 2700 },
           { matName: "Vată minerală densă fațadă", material: "Vată minerală bazaltică", thickness: "180", lambda: 0.036, rho: 80 },
           { matName: "Tablă spandrel oțel", material: "Oțel", thickness: "2", lambda: 50, rho: 7800 },
-          { matName: "Cameră aer ventilat", material: "Aer", thickness: "30", lambda: 0.025, rho: 1.2 },
+          { matName: "Cameră aer ventilat", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
           { matName: "Gips-carton interior", material: "Gips-carton", thickness: "13", lambda: 0.21, rho: 800 },
         ],
       },
@@ -950,7 +950,7 @@ export const DEMO_PROJECTS = [
       { name: "PVC 5 camere dublu Low-E argon — Est",                  area: "5",  u: "1.35", g: "0.62", orientation: "E", frameRatio: "22", type: "Dublu Low-E argon" },
       { name: "PVC 5 camere dublu Low-E argon — Vest",                  area: "5",  u: "1.35", g: "0.62", orientation: "V", frameRatio: "22", type: "Dublu Low-E argon" },
       { name: "PVC 5 camere dublu Low-E argon — Nord",                  area: "8",  u: "1.35", g: "0.62", orientation: "N", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "Ușă intrare lemn stratificat",                            area: "2.2", u: "1.80", g: "0.40", orientation: "S", frameRatio: "100", type: "Ușă lemn stratificat" },
+      { name: "Ușă intrare lemn stratificat",                            area: "2.2", u: "1.80", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn stratificat" },
     ],
     thermalBridges: [
       { name: "Stâlpișori BA în zidărie BCA",         type: "SB", psi: "0.18", length: "32" },
@@ -1252,7 +1252,7 @@ export const DEMO_PROJECTS = [
       },
       {
         name: "Planșeu peste subsol nelocuit + EPS 8 cm (reab. 2022)",
-        type: "PL", area: "620", orientation: "H", tau: "0.6",
+        type: "PB", area: "620", orientation: "H", tau: "0.6",
         layers: [
           { matName: "Pardoseală linoleum", material: "Linoleum", thickness: "5", lambda: 0.17, rho: 1200 },
           { matName: "Șapă autonivel", material: "Șapă ciment autonivel", thickness: "50", lambda: 1.40, rho: 2000 },
@@ -1534,7 +1534,7 @@ export const DEMO_PROJECTS = [
         type: "PE", area: "180", orientation: "S", tau: "1",
         layers: [
           { matName: "Lemn rindeluit decorativ exterior", material: "Lemn brad", thickness: "25", lambda: 0.13, rho: 450 },
-          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.025, rho: 1.2 },
+          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
           { matName: "Lemn masiv brad 20 cm (bârne machetate)", material: "Lemn brad masiv", thickness: "200", lambda: 0.13, rho: 450 },
           { matName: "Vată minerală 15 cm — termoizolație internă", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 60 },
           { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
@@ -1546,7 +1546,7 @@ export const DEMO_PROJECTS = [
         type: "PE", area: "140", orientation: "N", tau: "1",
         layers: [
           { matName: "Lemn rindeluit decorativ exterior", material: "Lemn brad", thickness: "25", lambda: 0.13, rho: 450 },
-          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.025, rho: 1.2 },
+          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
           { matName: "Lemn masiv brad 20 cm (bârne machetate)", material: "Lemn brad masiv", thickness: "200", lambda: 0.13, rho: 450 },
           { matName: "Vată minerală 15 cm — termoizolație internă", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 60 },
           { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
@@ -1558,7 +1558,7 @@ export const DEMO_PROJECTS = [
         type: "PT", area: "165", orientation: "H", tau: "1",
         layers: [
           { matName: "Țiglă ceramică", material: "Țiglă ceramică", thickness: "25", lambda: 1.00, rho: 1900 },
-          { matName: "Strat ventilat sub țiglă", material: "Aer", thickness: "30", lambda: 0.025, rho: 1.2 },
+          { matName: "Strat ventilat sub țiglă", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
           { matName: "Folie hidroizolatoare permeabilă", material: "Membrană traspirabilă", thickness: "1", lambda: 0.20, rho: 950 },
           { matName: "Vată minerală 25 cm între căpriori", material: "Vată minerală bazaltică", thickness: "250", lambda: 0.038, rho: 60 },
           { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
@@ -1582,7 +1582,7 @@ export const DEMO_PROJECTS = [
       { name: "PVC 5 camere dublu Low-E argon — Est",                  area: "12", u: "1.30", g: "0.62", orientation: "E", frameRatio: "22", type: "Dublu Low-E argon" },
       { name: "PVC 5 camere dublu Low-E argon — Vest",                  area: "12", u: "1.30", g: "0.62", orientation: "V", frameRatio: "22", type: "Dublu Low-E argon" },
       { name: "PVC 5 camere dublu Low-E argon — Nord (mai mici)",       area: "8",  u: "1.30", g: "0.62", orientation: "N", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "Ușă intrare lemn masiv termoizolat",                       area: "3.5", u: "1.60", g: "0.45", orientation: "S", frameRatio: "100", type: "Ușă lemn termoizolat" },
+      { name: "Ușă intrare lemn masiv termoizolat",                       area: "3.5", u: "1.60", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn termoizolat" },
     ],
     thermalBridges: [
       { name: "Îmbinare bârne lemn în colț 90°",          type: "SB", psi: "0.06", length: "38" },
