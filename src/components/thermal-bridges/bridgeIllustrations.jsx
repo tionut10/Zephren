@@ -1645,6 +1645,117 @@ function IllustrationCurtainWall({ bridge }) {
   );
 }
 
+// Rost vertical panou prefabricat PAFP — vedere în PLAN (secțiune orizontală)
+// Stâlpișor beton între două panouri adiacente
+function IllustrationPrecastVerticalJoint({ bridge }) {
+  const colW = W * 0.10; // lățime stâlpișor
+  const cx = W / 2;
+  const panelW = W * 0.26; // lățime jumătate panou
+  return (
+    <>
+      {/* EXT sus, INT jos */}
+      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+      <rect x={W * 0.10} y={H * 0.35} width={W * 0.80} height={H * 0.30} fill="url(#g-int)" />
+      {/* Panou stânga — 3 straturi in plan: strat ext BA + izolație + strat int BA */}
+      <rect x={W * 0.10} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-conc)" />
+      <rect x={W * 0.10} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-rebar)" opacity="0.25" />
+      <rect x={W * 0.10} y={H * 0.35 + 2} width={panelW} height={H * 0.18} fill="#e6d2a8" opacity="0.85" />
+      <rect x={W * 0.10} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-conc)" />
+      <rect x={W * 0.10} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-rebar)" opacity="0.25" />
+      {/* Panou dreapta — simetric */}
+      <rect x={cx + colW / 2} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-conc)" />
+      <rect x={cx + colW / 2} y="0" width={panelW} height={H * 0.35 + 2} fill="url(#p-rebar)" opacity="0.25" />
+      <rect x={cx + colW / 2} y={H * 0.35 + 2} width={panelW} height={H * 0.18} fill="#e6d2a8" opacity="0.85" />
+      <rect x={cx + colW / 2} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-conc)" />
+      <rect x={cx + colW / 2} y={H * 0.53} width={panelW} height={H * 0.47} fill="url(#p-rebar)" opacity="0.25" />
+      {/* Stâlpișor beton — vertical, în mijloc */}
+      <rect x={cx - colW / 2} y="0" width={colW} height={H} fill="url(#p-conc)" />
+      <rect x={cx - colW / 2} y="0" width={colW} height={H} fill="url(#p-rebar)" opacity="0.5" />
+      {/* Rosturi mastic (linii subțiri) */}
+      <line x1={cx - colW / 2} y1="0" x2={cx - colW / 2} y2={H} stroke="#37474f" strokeWidth="1.5" />
+      <line x1={cx + colW / 2} y1="0" x2={cx + colW / 2} y2={H} stroke="#37474f" strokeWidth="1.5" />
+      {/* Zonă punte termică */}
+      <HeatZone x={cx - colW / 2 - 6} y="0" w={colW + 12} h={H} rx={0} />
+      <HeatArrow x1={cx} y1={H * 0.18} x2={cx} y2="8" />
+      <Label x={W / 2} y="14" anchor="middle" color="#1976d2" size="10" bold>EXTERIOR</Label>
+      <Label x={W / 2} y={H - 6} anchor="middle" color="#2e7d32" size="10" bold>INTERIOR</Label>
+      <Label x={cx} y={H * 0.50} anchor="middle" color="#c62828" size="8" bold>stâlpișor BA</Label>
+      <Label x={W * 0.24} y={H * 0.50} anchor="middle" color="#37474f" size="7">PAFP stg</Label>
+      <Label x={W * 0.74} y={H * 0.50} anchor="middle" color="#37474f" size="7">PAFP dr</Label>
+      <PsiBadge psi={bridge.psi} />
+    </>
+  );
+}
+
+// Buiandrug deasupra ferestrei — secțiune verticală
+function IllustrationWindowLintel({ bridge }) {
+  const wallX = W * 0.30;
+  const epsW = W * 0.10;
+  const wallW = W * 0.08;
+  return (
+    <>
+      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+      <rect x={wallX + wallW} y="0" width={W - wallX - wallW} height={H} fill="url(#g-int)" />
+      {/* Perete zidărie + EPS deasupra */}
+      <rect x={wallX} y="0" width={wallW} height={H} fill="url(#p-brick)" />
+      <rect x={wallX - epsW} y="0" width={epsW} height={H} fill="url(#p-eps)" />
+      {/* Buiandrug beton armat — tăie izolația */}
+      <rect x={wallX - epsW * 0.4} y={H * 0.10} width={wallW + epsW * 0.4 + W * 0.22} height={H * 0.22} fill="url(#p-conc)" />
+      <rect x={wallX - epsW * 0.4} y={H * 0.10} width={wallW + epsW * 0.4 + W * 0.22} height={H * 0.22} fill="url(#p-rebar)" opacity="0.4" />
+      {/* Gol fereastră sub buiandrug */}
+      <rect x={wallX + wallW} y={H * 0.32} width={W * 0.22} height={H * 0.60} fill="url(#g-ext)" opacity="0.7" />
+      {/* Ramă fereastră */}
+      <rect x={wallX + wallW - 2} y={H * 0.32} width="8" height={H * 0.60} fill="url(#g-metal)" />
+      <rect x={wallX + wallW + W * 0.20} y={H * 0.32} width="8" height={H * 0.60} fill="url(#g-metal)" />
+      {/* Sticlă */}
+      <rect x={wallX + wallW + 6} y={H * 0.34} width={W * 0.20 - 4} height={H * 0.56} fill="url(#g-glass)" opacity="0.7" />
+      {/* Zonă punte termică la buiandrug */}
+      <HeatZone x={wallX - epsW * 0.5} y={H * 0.08} w={wallW + epsW * 0.6 + W * 0.10} h={H * 0.26} />
+      <HeatArrow x1={wallX + wallW * 0.5} y1={H * 0.21} x2={wallX - epsW * 0.3} y2={H * 0.21} />
+      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
+      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+      <Label x={wallX + W * 0.06} y={H * 0.09} anchor="middle" color="#37474f" size="8" bold>buiandrug BA</Label>
+      <Label x={wallX + W * 0.10} y={H * 0.70} anchor="middle" color="#1976d2" size="8">fereastră</Label>
+      <PsiBadge psi={bridge.psi} />
+    </>
+  );
+}
+
+// Parapet sub fereastră — secțiune verticală prin zona sub glaf
+function IllustrationWindowParapet({ bridge }) {
+  const wallX = W * 0.30;
+  const epsW = W * 0.10;
+  const wallW = W * 0.08;
+  return (
+    <>
+      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
+      <rect x={wallX + wallW} y="0" width={W - wallX - wallW} height={H} fill="url(#g-int)" />
+      {/* Perete zidărie + EPS */}
+      <rect x={wallX} y={H * 0.45} width={wallW} height={H * 0.55} fill="url(#p-brick)" />
+      <rect x={wallX - epsW} y={H * 0.45} width={epsW} height={H * 0.55} fill="url(#p-eps)" />
+      {/* Parapet (zona de zidărie sub fereastră, fără izolație sau cu izolație întreruptă) */}
+      <rect x={wallX} y="0" width={wallW} height={H * 0.45} fill="url(#p-brick)" />
+      <rect x={wallX - epsW} y="0" width={epsW * 0.0} height={H * 0.45} fill="url(#p-eps)" /> {/* fără izolație pe parapet */}
+      {/* Tencuială parapet exterior */}
+      <rect x={wallX - 4} y="0" width="4" height={H * 0.45} fill="#e8e3d5" />
+      {/* Ramă fereastră la partea de sus a parapetului */}
+      <rect x={wallX + wallW - 2} y="0" width="8" height={H * 0.45} fill="url(#g-metal)" />
+      {/* Sticlă fereastră sus */}
+      <rect x={wallX + wallW + 6} y="0" width={W * 0.20} height={H * 0.43} fill="url(#g-glass)" opacity="0.7" />
+      {/* Glaf interior */}
+      <rect x={wallX + wallW} y={H * 0.43} width={W * 0.18} height="6" fill="#d4a574" />
+      {/* Zonă punte termică la baza ferestrei */}
+      <HeatZone x={wallX - 6} y={H * 0.35} w={wallW + epsW + 14} h={H * 0.20} />
+      <HeatArrow x1={wallX + wallW * 0.5} y1={H * 0.45} x2={wallX - epsW * 0.2} y2={H * 0.45} />
+      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
+      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
+      <Label x={wallX - epsW / 2} y={H * 0.30} anchor="middle" color="#c62828" size="7" bold>fără izolație</Label>
+      <Label x={wallX + W * 0.10} y={H * 0.22} anchor="middle" color="#1976d2" size="8">fereastră</Label>
+      <PsiBadge psi={bridge.psi} />
+    </>
+  );
+}
+
 function IllustrationGenericFallback({ bridge }) {
   // Fallback — perete + punte centrală generică
   return (
@@ -1779,6 +1890,17 @@ function pickIllustration(bridge) {
     if (name.includes("ancoră") || name.includes("ancora") || name.includes("cavity")) return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
     return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
   }
+
+  // Rutare după cuvinte-cheie din nume (pentru punți fără câmp cat, ex: demo PAFP)
+  if (name.includes("rost orizontal") || (name.includes("centură") && name.includes("panou"))) return <IllustrationPrecastPanel bridge={bridge} />;
+  if (name.includes("rost vertical") || name.includes("stâlpișor") || name.includes("stalpisor")) return <IllustrationPrecastVerticalJoint bridge={bridge} />;
+  if (name.includes("buiandrug")) return <IllustrationWindowLintel bridge={bridge} />;
+  if (name.includes("parapet sub")) return <IllustrationWindowParapet bridge={bridge} />;
+  if (name.includes("glaf")) return <IllustrationWindow bridge={bridge} variant="sill" />;
+  if (name.includes("colț") || name.includes("colt") || name.includes("corner")) return <IllustrationCorner bridge={bridge} internal={false} />;
+  if (name.includes("soclu")) return <IllustrationWallGround bridge={bridge} asSoil={false} />;
+  if (name.includes("cornișă") || name.includes("cornisa") || name.includes("coamă") || name.includes("coama")) return <IllustrationWallFloorRoof bridge={bridge} />;
+  if (name.includes("terasă") || name.includes("terasa")) return <IllustrationWallFloorRoof bridge={bridge} />;
 
   return <IllustrationGenericFallback bridge={bridge} />;
 }
