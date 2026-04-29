@@ -24,125 +24,172 @@
 const W = 320;
 const H = 200;
 
-// ── Defs globale (o singură dată per SVG) ────────────────────────────────────
+// ── Defs globale — pattern-uri tehnice ISO 128 (desen de execuție) ───────────
 function Defs() {
   return (
     <defs>
-      {/* EPS (galben diagonal stripes) */}
-      <pattern id="p-eps" patternUnits="userSpaceOnUse" width="7" height="7">
-        <rect width="7" height="7" fill="#f5c518" />
-        <path d="M0,7 L7,0" stroke="#e3a70e" strokeWidth="0.6" />
-        <path d="M-1,2 L2,-1 M5,8 L8,5" stroke="#fff6b0" strokeWidth="0.4" opacity="0.6" />
+      {/* EPS — triunghiuri (convenție desen tehnic pentru polistiren) */}
+      <pattern id="p-eps" patternUnits="userSpaceOnUse" width="10" height="10">
+        <rect width="10" height="10" fill="#fef9e7" />
+        <path d="M0,5 L5,0 L10,5 L5,10 Z" fill="none" stroke="#7a6a1a" strokeWidth="0.45" />
+        <path d="M2,5 L5,2 L8,5 L5,8 Z" fill="none" stroke="#7a6a1a" strokeWidth="0.35" opacity="0.7" />
       </pattern>
 
-      {/* XPS (roz-portocaliu stripes) */}
-      <pattern id="p-xps" patternUnits="userSpaceOnUse" width="7" height="7">
-        <rect width="7" height="7" fill="#ff9472" />
-        <path d="M0,7 L7,0" stroke="#e07050" strokeWidth="0.6" />
-        <path d="M-1,2 L2,-1 M5,8 L8,5" stroke="#ffd8c3" strokeWidth="0.4" opacity="0.7" />
+      {/* XPS — triunghiuri mai dense (extrudat) cu tentă portocalie subtilă */}
+      <pattern id="p-xps" patternUnits="userSpaceOnUse" width="9" height="9">
+        <rect width="9" height="9" fill="#fbe9e1" />
+        <path d="M0,4.5 L4.5,0 L9,4.5 L4.5,9 Z" fill="none" stroke="#9a4f30" strokeWidth="0.45" />
+        <path d="M2,4.5 L4.5,2 L7,4.5 L4.5,7 Z" fill="none" stroke="#9a4f30" strokeWidth="0.35" opacity="0.7" />
       </pattern>
 
-      {/* Vată minerală (crem noise) */}
-      <pattern id="p-mw" patternUnits="userSpaceOnUse" width="6" height="6">
-        <rect width="6" height="6" fill="#d9c89a" />
-        <circle cx="1.5" cy="2" r="0.5" fill="#8f7a4e" opacity="0.5" />
-        <circle cx="4" cy="4.5" r="0.4" fill="#8f7a4e" opacity="0.5" />
-        <circle cx="5" cy="1" r="0.3" fill="#fff5cd" opacity="0.7" />
+      {/* Vată minerală — linii ondulate (convenție desen tehnic) */}
+      <pattern id="p-mw" patternUnits="userSpaceOnUse" width="14" height="6">
+        <rect width="14" height="6" fill="#f4efe1" />
+        <path d="M0,3 Q3.5,0 7,3 T14,3" fill="none" stroke="#7d6b3a" strokeWidth="0.45" />
+        <path d="M0,5 Q3.5,2 7,5 T14,5" fill="none" stroke="#7d6b3a" strokeWidth="0.35" opacity="0.7" />
       </pattern>
 
-      {/* Cărămidă zidărie */}
-      <pattern id="p-brick" patternUnits="userSpaceOnUse" width="16" height="8">
-        <rect width="16" height="8" fill="#b5614d" />
-        <line x1="0" y1="0" x2="16" y2="0" stroke="#e3d1b3" strokeWidth="0.8" />
-        <line x1="0" y1="4" x2="16" y2="4" stroke="#e3d1b3" strokeWidth="0.8" />
-        <line x1="8" y1="0" x2="8" y2="4" stroke="#e3d1b3" strokeWidth="0.7" />
-        <line x1="0" y1="4" x2="0" y2="8" stroke="#e3d1b3" strokeWidth="0.7" />
-        <line x1="16" y1="4" x2="16" y2="8" stroke="#e3d1b3" strokeWidth="0.7" />
+      {/* Cărămidă zidărie — pattern realist cu rosturi alternante */}
+      <pattern id="p-brick" patternUnits="userSpaceOnUse" width="20" height="10">
+        <rect width="20" height="10" fill="#c08672" />
+        {/* mortar joints */}
+        <line x1="0" y1="0" x2="20" y2="0" stroke="#3a2820" strokeWidth="0.7" />
+        <line x1="0" y1="5" x2="20" y2="5" stroke="#3a2820" strokeWidth="0.7" />
+        <line x1="0" y1="10" x2="20" y2="10" stroke="#3a2820" strokeWidth="0.7" />
+        <line x1="10" y1="0" x2="10" y2="5" stroke="#3a2820" strokeWidth="0.6" />
+        <line x1="0" y1="5" x2="0" y2="10" stroke="#3a2820" strokeWidth="0.6" />
+        <line x1="20" y1="5" x2="20" y2="10" stroke="#3a2820" strokeWidth="0.6" />
       </pattern>
 
-      {/* BCA zidărie */}
-      <pattern id="p-bca" patternUnits="userSpaceOnUse" width="14" height="7">
-        <rect width="14" height="7" fill="#e6e1d4" />
-        <line x1="0" y1="0" x2="14" y2="0" stroke="#c4bdaa" strokeWidth="0.5" />
-        <line x1="7" y1="0" x2="7" y2="7" stroke="#c4bdaa" strokeWidth="0.5" />
+      {/* BCA zidărie — blocuri mari cu hașuri fine */}
+      <pattern id="p-bca" patternUnits="userSpaceOnUse" width="20" height="10">
+        <rect width="20" height="10" fill="#ecdfc4" />
+        <line x1="0" y1="0" x2="20" y2="0" stroke="#7a6a45" strokeWidth="0.5" />
+        <line x1="0" y1="10" x2="20" y2="10" stroke="#7a6a45" strokeWidth="0.5" />
+        <line x1="10" y1="0" x2="10" y2="10" stroke="#7a6a45" strokeWidth="0.5" />
+        <line x1="0" y1="0" x2="3" y2="3" stroke="#a9956c" strokeWidth="0.25" opacity="0.5" />
+        <line x1="10" y1="0" x2="13" y2="3" stroke="#a9956c" strokeWidth="0.25" opacity="0.5" />
       </pattern>
 
-      {/* Beton armat (gri granulat) */}
-      <pattern id="p-conc" patternUnits="userSpaceOnUse" width="10" height="10">
-        <rect width="10" height="10" fill="#6f7378" />
-        <circle cx="2" cy="3" r="0.6" fill="#55585c" />
-        <circle cx="7" cy="7" r="0.5" fill="#8b9095" />
-        <circle cx="5" cy="2" r="0.4" fill="#424549" />
-        <circle cx="8" cy="4" r="0.3" fill="#8b9095" opacity="0.6" />
-        <circle cx="3" cy="8" r="0.4" fill="#55585c" />
+      {/* Beton armat — diagonale 45° (ISO 128 — beton) */}
+      <pattern id="p-conc" patternUnits="userSpaceOnUse" width="6" height="6">
+        <rect width="6" height="6" fill="#cdd1d4" />
+        <path d="M0,6 L6,0" stroke="#5a5d62" strokeWidth="0.45" />
       </pattern>
 
-      {/* Lemn (fibre verticale) */}
-      <pattern id="p-wood" patternUnits="userSpaceOnUse" width="10" height="12">
-        <rect width="10" height="12" fill="#c8a171" />
-        <path d="M2,0 L2,12" stroke="#a07843" strokeWidth="0.6" opacity="0.7" />
-        <path d="M5,0 L5,12" stroke="#8d6b3a" strokeWidth="0.5" opacity="0.6" />
-        <path d="M8,0 L8,12" stroke="#a07843" strokeWidth="0.5" opacity="0.6" />
+      {/* Beton simplu — diagonale + puncte (ISO 128 — beton de fundație) */}
+      <pattern id="p-conc-plain" patternUnits="userSpaceOnUse" width="8" height="8">
+        <rect width="8" height="8" fill="#d6d8da" />
+        <path d="M0,8 L8,0" stroke="#5a5d62" strokeWidth="0.4" />
+        <circle cx="2" cy="2" r="0.4" fill="#5a5d62" />
+        <circle cx="6" cy="6" r="0.4" fill="#5a5d62" />
       </pattern>
 
-      {/* Sol (hașură) */}
-      <pattern id="p-soil" patternUnits="userSpaceOnUse" width="8" height="8">
-        <rect width="8" height="8" fill="#8d6e5a" />
-        <path d="M0,8 L8,0" stroke="#5d4638" strokeWidth="0.7" opacity="0.5" />
-        <circle cx="3" cy="3" r="0.5" fill="#6d5243" opacity="0.6" />
-        <circle cx="6" cy="6" r="0.4" fill="#4a3628" opacity="0.7" />
+      {/* Tencuială / mortar — stipple fin */}
+      <pattern id="p-plaster" patternUnits="userSpaceOnUse" width="6" height="6">
+        <rect width="6" height="6" fill="#f0e9d8" />
+        <circle cx="1.5" cy="1.5" r="0.25" fill="#8a7d56" />
+        <circle cx="4.5" cy="4.5" r="0.25" fill="#8a7d56" />
+        <circle cx="3" cy="3" r="0.18" fill="#8a7d56" opacity="0.7" />
       </pattern>
 
-      {/* Pietriș drenaj */}
-      <pattern id="p-gravel" patternUnits="userSpaceOnUse" width="10" height="10">
-        <rect width="10" height="10" fill="#c4b89f" />
-        <circle cx="2" cy="3" r="1.2" fill="#9c8d74" />
-        <circle cx="6" cy="6" r="1" fill="#a59977" />
-        <circle cx="8.5" cy="2" r="0.8" fill="#877659" />
+      {/* Șapă — granulație medie */}
+      <pattern id="p-screed" patternUnits="userSpaceOnUse" width="7" height="7">
+        <rect width="7" height="7" fill="#dcd6cc" />
+        <circle cx="1.5" cy="2" r="0.4" fill="#7a7368" />
+        <circle cx="5" cy="4.5" r="0.4" fill="#7a7368" />
+        <circle cx="3" cy="6" r="0.3" fill="#7a7368" opacity="0.7" />
       </pattern>
 
-      {/* Metal (gradient vertical) */}
+      {/* Lemn — fibre paralele (ISO 128 — lemn în secțiune longitudinală) */}
+      <pattern id="p-wood" patternUnits="userSpaceOnUse" width="14" height="14">
+        <rect width="14" height="14" fill="#d2b07c" />
+        <path d="M0,3 Q7,1 14,3" fill="none" stroke="#7a5530" strokeWidth="0.5" />
+        <path d="M0,7 Q7,5 14,7" fill="none" stroke="#7a5530" strokeWidth="0.5" />
+        <path d="M0,11 Q7,9 14,11" fill="none" stroke="#7a5530" strokeWidth="0.5" />
+      </pattern>
+
+      {/* Sol — hașură ISO (sol natural) */}
+      <pattern id="p-soil" patternUnits="userSpaceOnUse" width="12" height="12">
+        <rect width="12" height="12" fill="#a8896d" />
+        <path d="M0,12 L12,0" stroke="#5d4638" strokeWidth="0.6" />
+        <path d="M0,6 L6,0" stroke="#5d4638" strokeWidth="0.5" opacity="0.7" />
+        <path d="M6,12 L12,6" stroke="#5d4638" strokeWidth="0.5" opacity="0.7" />
+      </pattern>
+
+      {/* Pietriș drenaj — cercuri mici realiste */}
+      <pattern id="p-gravel" patternUnits="userSpaceOnUse" width="14" height="14">
+        <rect width="14" height="14" fill="#dcd2bc" />
+        <circle cx="3" cy="3" r="1.4" fill="none" stroke="#6f6353" strokeWidth="0.4" />
+        <circle cx="9" cy="5" r="1.1" fill="none" stroke="#6f6353" strokeWidth="0.4" />
+        <circle cx="5" cy="10" r="1.3" fill="none" stroke="#6f6353" strokeWidth="0.4" />
+        <circle cx="11" cy="11" r="1" fill="none" stroke="#6f6353" strokeWidth="0.4" />
+      </pattern>
+
+      {/* Metal — solid cu margine întunecată (oțel/aluminiu) */}
       <linearGradient id="g-metal" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#d0d3d7" />
-        <stop offset="50%" stopColor="#8a8e94" />
-        <stop offset="100%" stopColor="#5f6267" />
+        <stop offset="0%" stopColor="#9aa1a8" />
+        <stop offset="50%" stopColor="#6c727a" />
+        <stop offset="100%" stopColor="#444a52" />
       </linearGradient>
 
-      {/* Sticlă (albastru reflex) */}
+      {/* Sticlă — gradient subtil albastru-cenușiu */}
       <linearGradient id="g-glass" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stopColor="#7fb8e0" stopOpacity="0.6" />
-        <stop offset="50%" stopColor="#b8dff5" stopOpacity="0.75" />
-        <stop offset="100%" stopColor="#5a9fd0" stopOpacity="0.6" />
+        <stop offset="0%" stopColor="#a8c5d8" stopOpacity="0.45" />
+        <stop offset="50%" stopColor="#cfdde6" stopOpacity="0.6" />
+        <stop offset="100%" stopColor="#86a0b3" stopOpacity="0.45" />
       </linearGradient>
 
-      {/* Aer exterior (albastru pal) */}
+      {/* Aer exterior — gri foarte deschis cu tentă rece */}
       <linearGradient id="g-ext" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#e3f2fd" />
-        <stop offset="100%" stopColor="#c4e0f5" />
+        <stop offset="0%" stopColor="#f4f6f8" />
+        <stop offset="100%" stopColor="#e2e7ec" />
       </linearGradient>
 
-      {/* Aer interior (crem cald) */}
+      {/* Aer interior — gri foarte deschis cu tentă caldă */}
       <linearGradient id="g-int" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff8e7" />
-        <stop offset="100%" stopColor="#ffe8cc" />
+        <stop offset="0%" stopColor="#fbf8f3" />
+        <stop offset="100%" stopColor="#f3ede2" />
       </linearGradient>
 
-      {/* Overlay căldură punte */}
+      {/* Overlay căldură punte — subtil, doar margine roșie pentru a marca zona */}
       <radialGradient id="g-heat" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#ff4b2b" stopOpacity="0.55" />
-        <stop offset="60%" stopColor="#ff8c42" stopOpacity="0.3" />
-        <stop offset="100%" stopColor="#ff8c42" stopOpacity="0" />
+        <stop offset="0%" stopColor="#d63b1f" stopOpacity="0.30" />
+        <stop offset="70%" stopColor="#d63b1f" stopOpacity="0.10" />
+        <stop offset="100%" stopColor="#d63b1f" stopOpacity="0" />
       </radialGradient>
 
-      {/* Săgeată flux termic */}
+      {/* Săgeată flux termic — tehnic, capăt închis */}
       <marker id="arrow-heat" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-        <path d="M0,0 L10,5 L0,10 L2,5 Z" fill="#ff4b2b" />
+        <path d="M0,0 L10,5 L0,10 Z" fill="#c62828" />
       </marker>
 
-      {/* Armătură (linii punctate peste beton) */}
-      <pattern id="p-rebar" patternUnits="userSpaceOnUse" width="6" height="6">
-        <rect width="6" height="6" fill="transparent" />
-        <circle cx="3" cy="3" r="0.7" fill="none" stroke="#2a2c2f" strokeWidth="0.4" strokeDasharray="0.8 0.8" />
+      {/* Armătură — cercuri pline (secțiune bară) */}
+      <pattern id="p-rebar" patternUnits="userSpaceOnUse" width="14" height="14">
+        <rect width="14" height="14" fill="transparent" />
+        <circle cx="3" cy="3" r="1" fill="#1a1c1f" stroke="#1a1c1f" strokeWidth="0.4" />
+        <circle cx="3" cy="3" r="0.4" fill="#cdd1d4" />
+        <circle cx="11" cy="11" r="1" fill="#1a1c1f" stroke="#1a1c1f" strokeWidth="0.4" />
+        <circle cx="11" cy="11" r="0.4" fill="#cdd1d4" />
+      </pattern>
+
+      {/* Membrană / barieră — linie groasă neagră (ISO membrane) */}
+      <pattern id="p-membrane" patternUnits="userSpaceOnUse" width="6" height="3">
+        <rect width="6" height="3" fill="#1f2126" />
+        <line x1="0" y1="1.5" x2="6" y2="1.5" stroke="#5a5d62" strokeWidth="0.3" />
+      </pattern>
+
+      {/* Pardoseală finită (parchet) — dungi paralele lungi */}
+      <pattern id="p-floor" patternUnits="userSpaceOnUse" width="20" height="6">
+        <rect width="20" height="6" fill="#c8a06a" />
+        <line x1="0" y1="0" x2="20" y2="0" stroke="#6b4d28" strokeWidth="0.5" />
+        <line x1="0" y1="6" x2="20" y2="6" stroke="#6b4d28" strokeWidth="0.5" />
+        <line x1="10" y1="0" x2="10" y2="6" stroke="#6b4d28" strokeWidth="0.4" />
+      </pattern>
+
+      {/* Hașură condens (dungi diagonale albastre — risc) */}
+      <pattern id="p-cond" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#0c75a8" strokeWidth="1" opacity="0.55" />
       </pattern>
     </defs>
   );
@@ -150,27 +197,76 @@ function Defs() {
 
 // ── Primitive reutilizabile ──────────────────────────────────────────────────
 
-function Label({ x, y, children, color = "#37474f", size = 9, anchor = "start", bold = false }) {
+// Label tehnic — font monospace, label-leader subtil cu fundal alb
+function Label({ x, y, children, color = "#1a1c1f", size = 8, anchor = "start", bold = false, bg = false }) {
+  if (bg) {
+    const text = String(children);
+    const w = text.length * size * 0.55 + 6;
+    const ax = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x - 3;
+    return (
+      <g style={{ pointerEvents: "none" }}>
+        <rect x={ax} y={y - size + 1} width={w} height={size + 3} fill="rgba(255,255,255,0.92)" stroke="#5a5d62" strokeWidth="0.25" />
+        <text x={x} y={y + 1} fontSize={size} fill={color} textAnchor={anchor} fontWeight={bold ? 700 : 500} fontFamily="ui-monospace, Menlo, Consolas, monospace" style={{ letterSpacing: "0.2px" }}>
+          {children}
+        </text>
+      </g>
+    );
+  }
   return (
-    <text x={x} y={y} fontSize={size} fill={color} textAnchor={anchor} fontWeight={bold ? 700 : 400} style={{ letterSpacing: "0.3px" }}>
+    <text x={x} y={y} fontSize={size} fill={color} textAnchor={anchor} fontWeight={bold ? 700 : 500} fontFamily="ui-monospace, Menlo, Consolas, monospace" style={{ letterSpacing: "0.2px" }}>
       {children}
     </text>
   );
 }
 
-function HeatZone({ x, y, w, h, rx = 4 }) {
-  return <rect x={x} y={y} width={w} height={h} rx={rx} fill="url(#g-heat)" />;
-}
-
-function HeatArrow({ x1, y1, x2, y2 }) {
-  return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ff4b2b" strokeWidth="1.4" markerEnd="url(#arrow-heat)" opacity="0.85" />;
-}
-
-function PsiBadge({ psi, x = 10, y = H - 10 }) {
+// Banner EXT/INT pe margine (stil cartuș tehnic)
+function EnvBanner({ x, y, w, h, label, side = "top", fill = "#dde3e9", color = "#1a3858" }) {
   return (
-    <g transform={`translate(${x}, ${y})`}>
-      <rect x="-4" y="-10" width="92" height="14" rx="3" fill="rgba(255,255,255,0.92)" stroke="#ff4b2b" strokeWidth="0.8" />
-      <text x="0" y="0" fontSize="10" fontWeight="700" fill="#c62828">Ψ = {psi} W/(m·K)</text>
+    <g style={{ pointerEvents: "none" }}>
+      <rect x={x} y={y} width={w} height={h} fill={fill} stroke="#1a1c1f" strokeWidth="0.4" />
+      <text x={x + w / 2} y={y + h / 2 + 2.5} fontSize="7.5" fill={color} textAnchor="middle" fontWeight="700" fontFamily="ui-monospace, Menlo, Consolas, monospace" style={{ letterSpacing: "1.2px" }}>
+        {label}
+      </text>
+    </g>
+  );
+}
+
+// Zona punte termică — overlay subtil + contur dashed (marcare tehnică)
+function HeatZone({ x, y, w, h, rx = 0 }) {
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <rect x={x} y={y} width={w} height={h} rx={rx} fill="url(#g-heat)" />
+      <rect x={x} y={y} width={w} height={h} rx={rx} fill="none" stroke="#c62828" strokeWidth="0.7" strokeDasharray="3 2" opacity="0.7" />
+    </g>
+  );
+}
+
+// Săgeată flux termic — linie continuă subțire cu cap închis tehnic
+function HeatArrow({ x1, y1, x2, y2 }) {
+  return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#c62828" strokeWidth="1.2" markerEnd="url(#arrow-heat)" />;
+}
+
+// Badge Ψ în stil cartuș tehnic (cot dreaptă-jos)
+function PsiBadge({ psi, x = 6, y = H - 6 }) {
+  return (
+    <g transform={`translate(${x}, ${y})`} style={{ pointerEvents: "none" }}>
+      <rect x="0" y="-12" width="100" height="14" fill="rgba(255,255,255,0.95)" stroke="#1a1c1f" strokeWidth="0.5" />
+      <line x1="22" y1="-12" x2="22" y2="2" stroke="#1a1c1f" strokeWidth="0.4" />
+      <text x="11" y="-2" fontSize="9" fontWeight="700" fill="#1a1c1f" textAnchor="middle" fontFamily="ui-monospace, Menlo, Consolas, monospace">Ψ</text>
+      <text x="26" y="-2" fontSize="8.5" fontWeight="600" fill="#c62828" fontFamily="ui-monospace, Menlo, Consolas, monospace">{psi} W/(m·K)</text>
+    </g>
+  );
+}
+
+// Linie indicatoare cu leader (label la capătul liniei)
+function Leader({ x1, y1, x2, y2, label, anchor = "start", color = "#1a1c1f", size = 7 }) {
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="0.4" />
+      <circle cx={x1} cy={y1} r="0.9" fill={color} />
+      <text x={x2 + (anchor === "end" ? -2 : 2)} y={y2 - 1} fontSize={size} fill={color} textAnchor={anchor} fontFamily="ui-monospace, Menlo, Consolas, monospace" fontWeight="500">
+        {label}
+      </text>
     </g>
   );
 }
@@ -1588,32 +1684,78 @@ function IllustrationRadiatorNiche({ bridge }) {
   );
 }
 
-// Panou prefabricat mare (IPCT '70-'80) — rost prefabricat cu izolație slabă
+// Panou prefabricat mare (PAFP / IPCT '70-'80) — rost ORIZONTAL cu centură BA
+// Secțiune verticală: 2 panouri suprapuse + centură + planșeu interior
 function IllustrationPrecastPanel({ bridge }) {
+  // Geometrie panou (de la EXT la INT) — proporțional
+  const xPanel0 = W * 0.16;     // start panou
+  const tFinExt = 6;             // tencuială exterioară 5mm
+  const tBetExt = 14;            // strat ext BA 60mm
+  const tInsul  = 18;            // izolație miez 80mm
+  const tBetInt = 28;            // strat int BA 120mm
+  const tFinInt = 4;             // tencuială int
+  const xFinExt = xPanel0;
+  const xBetExt = xFinExt + tFinExt;
+  const xInsul  = xBetExt + tBetExt;
+  const xBetInt = xInsul + tInsul;
+  const xFinInt = xBetInt + tBetInt;
+  const xPanelEnd = xFinInt + tFinInt;
+  const yJoint = H * 0.50;
+  const jointH = 8;
+
   return (
     <>
-      <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-      <rect x={W * 0.5} y="0" width={W * 0.5} height={H} fill="url(#g-int)" />
-      {/* Panou sandwich prefabricat — strat ext. beton */}
-      <rect x={W * 0.22} y="10" width={W * 0.06} height={H - 20} fill="url(#p-conc)" />
-      {/* Miez izolant slab (stiropor vechi / vată deteriorată) */}
-      <rect x={W * 0.28} y="10" width={W * 0.08} height={H - 20} fill="#e6d2a8" opacity="0.8" />
-      {/* Strat interior beton */}
-      <rect x={W * 0.36} y="10" width={W * 0.14} height={H - 20} fill="url(#p-conc)" />
-      <rect x={W * 0.36} y="10" width={W * 0.14} height={H - 20} fill="url(#p-rebar)" opacity="0.3" />
-      {/* Rost orizontal (între panouri — cu mastic degradat) */}
-      <rect x={W * 0.22} y={H / 2 - 3} width={W * 0.28} height="6" fill="#37474f" />
-      <path d={`M${W * 0.22},${H / 2} L${W * 0.5},${H / 2}`} stroke="#c62828" strokeWidth="0.8" strokeDasharray="3 2" />
-      {/* Planșeu interior */}
-      <rect x={W * 0.5} y={H / 2 - 9} width={W * 0.5} height="18" fill="url(#p-conc)" />
-      {/* Ancore metalice corodate */}
-      <circle cx={W * 0.32} cy={H * 0.3} r="2" fill="#8d6e47" />
-      <circle cx={W * 0.32} cy={H * 0.7} r="2" fill="#8d6e47" />
-      <HeatZone x={W * 0.2} y="5" w={W * 0.32} h={H - 10} />
-      <Label x="10" y="18" color="#1976d2" size="10" bold>EXT</Label>
-      <Label x={W - 10} y="18" anchor="end" color="#2e7d32" size="10" bold>INT</Label>
-      <Label x={W * 0.36} y={H * 0.12} color="#c62828" size="8" anchor="middle" bold>panou prefab IPCT</Label>
-      <Label x={W * 0.36} y={H * 0.95} color="#37474f" size="7" anchor="middle">izolație degradată — bloc '70-'80</Label>
+      {/* Fundal EXT/INT (ambient aer) */}
+      <rect x="0" y="0" width={xPanel0} height={H} fill="url(#g-ext)" />
+      <rect x={xPanelEnd} y="0" width={W - xPanelEnd} height={H} fill="url(#g-int)" />
+
+      {/* === PANOU SUPERIOR (deasupra rostului) === */}
+      <rect x={xFinExt} y="0" width={tFinExt} height={yJoint - jointH / 2} fill="url(#p-plaster)" />
+      <rect x={xBetExt} y="0" width={tBetExt} height={yJoint - jointH / 2} fill="url(#p-conc)" />
+      <rect x={xInsul}  y="0" width={tInsul}  height={yJoint - jointH / 2} fill="url(#p-mw)" />
+      <rect x={xBetInt} y="0" width={tBetInt} height={yJoint - jointH / 2} fill="url(#p-conc)" />
+      <rect x={xBetInt} y="0" width={tBetInt} height={yJoint - jointH / 2} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xFinInt} y="0" width={tFinInt} height={yJoint - jointH / 2} fill="url(#p-plaster)" />
+
+      {/* === ROST ORIZONTAL CU CENTURĂ BA === */}
+      {/* Centură beton (ocupă întreaga grosime — punte termică majoră) */}
+      <rect x={xPanel0} y={yJoint - jointH / 2} width={xPanelEnd - xPanel0} height={jointH} fill="url(#p-conc)" />
+      <rect x={xPanel0} y={yJoint - jointH / 2} width={xPanelEnd - xPanel0} height={jointH} fill="url(#p-rebar)" opacity="0.7" />
+      {/* Mastic rost ext */}
+      <rect x={xFinExt - 1} y={yJoint - jointH / 2} width="2" height={jointH} fill="#1a1c1f" />
+
+      {/* === PANOU INFERIOR === */}
+      <rect x={xFinExt} y={yJoint + jointH / 2} width={tFinExt} height={H - yJoint - jointH / 2} fill="url(#p-plaster)" />
+      <rect x={xBetExt} y={yJoint + jointH / 2} width={tBetExt} height={H - yJoint - jointH / 2} fill="url(#p-conc)" />
+      <rect x={xInsul}  y={yJoint + jointH / 2} width={tInsul}  height={H - yJoint - jointH / 2} fill="url(#p-mw)" />
+      <rect x={xBetInt} y={yJoint + jointH / 2} width={tBetInt} height={H - yJoint - jointH / 2} fill="url(#p-conc)" />
+      <rect x={xBetInt} y={yJoint + jointH / 2} width={tBetInt} height={H - yJoint - jointH / 2} fill="url(#p-rebar)" opacity="0.55" />
+      <rect x={xFinInt} y={yJoint + jointH / 2} width={tFinInt} height={H - yJoint - jointH / 2} fill="url(#p-plaster)" />
+
+      {/* === PLANȘEU BA INTERIOR (intră în centură) === */}
+      <rect x={xFinInt} y={yJoint - 11} width={W - xFinInt} height="22" fill="url(#p-conc)" />
+      <rect x={xFinInt} y={yJoint - 11} width={W - xFinInt} height="22" fill="url(#p-rebar)" opacity="0.55" />
+
+      {/* === ZONA PUNTE TERMICĂ === */}
+      <HeatZone x={xPanel0 - 4} y={yJoint - 18} w={xPanelEnd - xPanel0 + 8} h="36" />
+      <HeatArrow x1={xFinInt - 1} y1={yJoint} x2={xFinExt - 6} y2={yJoint} />
+
+      {/* === LINII PRINCIPALE (contururi tehnice) === */}
+      <line x1={xPanel0} y1="0" x2={xPanel0} y2={H} stroke="#1a1c1f" strokeWidth="0.5" />
+      <line x1={xPanelEnd} y1="0" x2={xPanelEnd} y2={H} stroke="#1a1c1f" strokeWidth="0.5" />
+      <line x1={xPanel0} y1={yJoint - jointH / 2} x2={xPanelEnd} y2={yJoint - jointH / 2} stroke="#1a1c1f" strokeWidth="0.6" />
+      <line x1={xPanel0} y1={yJoint + jointH / 2} x2={xPanelEnd} y2={yJoint + jointH / 2} stroke="#1a1c1f" strokeWidth="0.6" />
+
+      {/* === BANNER EXT / INT === */}
+      <EnvBanner x="0" y="0" w={xPanel0} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
+      <EnvBanner x={xPanelEnd} y="0" w={W - xPanelEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
+
+      {/* === LEADERS (linii indicatoare) === */}
+      <Leader x1={xBetExt + tBetExt / 2} y1="20" x2={xBetExt + tBetExt / 2 - 12} y2="6" label="BA ext" anchor="end" />
+      <Leader x1={xInsul + tInsul / 2} y1="22" x2={xInsul + tInsul / 2 + 8} y2="8" label="izolație degradată" anchor="start" />
+      <Leader x1={xBetInt + tBetInt / 2} y1="20" x2={xBetInt + tBetInt / 2 + 12} y2="6" label="BA int" anchor="start" />
+      <Leader x1={(xPanel0 + xPanelEnd) / 2} y1={yJoint + 1} x2={W - 22} y2={yJoint + 22} label="centură BA + planșeu" anchor="end" />
+
       <PsiBadge psi={bridge.psi} />
     </>
   );
