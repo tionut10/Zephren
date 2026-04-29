@@ -1300,11 +1300,42 @@ export default function Step1Identification({
               </div>
             </Card>
           )}
+
+          {/* TMY orar (Pro+) — colapsabil, col 3 */}
+          {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
+            <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4">
+              <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base">🌡️</span>
+                  <span className="text-sm font-semibold text-white">
+                    {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
+                  </span>
+                  <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
+                    Pro+ · PVGIS / EPW / CSV
+                  </span>
+                </div>
+                <span className="text-slate-500 text-xs group-open:hidden">▼</span>
+                <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
+              </summary>
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] text-slate-400">
+                  {lang === "EN"
+                    ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
+                    : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
+                </p>
+                <TMYPanel
+                  climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
+                  building={building}
+                  lang={lang}
+                />
+              </div>
+            </details>
+          )}
         </div>
       </div>
 
-      {/* ── ANCPI + TMY — full-width sub grid ───────────────────────────── */}
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* ── ANCPI — full-width sub grid ──────────────────────────────────── */}
+      <div className="mt-4">
         <ANCPIVerificationPanel
           data={{
             ...(building?.ancpi || {}),
@@ -1323,35 +1354,6 @@ export default function Step1Identification({
           address={building?.address}
           lang={lang}
         />
-        {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
-          <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4 self-start">
-            <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base">🌡️</span>
-                <span className="text-sm font-semibold text-white">
-                  {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
-                </span>
-                <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
-                  Pro+ · PVGIS / EPW / CSV
-                </span>
-              </div>
-              <span className="text-slate-500 text-xs group-open:hidden">▼</span>
-              <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
-            </summary>
-            <div className="mt-3 space-y-3">
-              <p className="text-[11px] text-slate-400">
-                {lang === "EN"
-                  ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
-                  : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
-              </p>
-              <TMYPanel
-                climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
-                building={building}
-                lang={lang}
-              />
-            </div>
-          </details>
-        )}
       </div>
 
       {/* ── Documentare vizuală (fotografii clădire) ─────────────────────── */}
