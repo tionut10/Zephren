@@ -288,21 +288,21 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
                   const botLabel = isPi ? "INT" : isTopInt ? "EXT" : "INT";
                   const topColor = topLabel === "INT" ? "#4caf50" : "#2196f3";
                   const botColor = botLabel === "INT" ? "#4caf50" : "#2196f3";
-                  svgEls.push(<text key="lbl-top" x="150" y="10" textAnchor="middle" fontSize="8" fontWeight="bold" fill={topColor}>{topLabel}</text>);
-                  svgEls.push(<text key="lbl-bot" x="150" y="128" textAnchor="middle" fontSize="8" fontWeight="bold" fill={botColor}>{botLabel}</text>);
-                  let y = 14;
-                  const maxH = 106;
+                  svgEls.push(<text key="lbl-top" x="150" y="14" textAnchor="middle" fontSize="10" fontWeight="bold" fill={topColor}>{topLabel}</text>);
+                  svgEls.push(<text key="lbl-bot" x="150" y="236" textAnchor="middle" fontSize="10" fontWeight="bold" fill={botColor}>{botLabel}</text>);
+                  let y = 20;
+                  const maxH = 210;
                   displayLayers.forEach((l, idx) => {
                     const d = parseFloat(l.thickness) || 0;
-                    const h = Math.max(3, (d / totalD) * maxH);
+                    const h = Math.max(4, (d / totalD) * maxH);
                     const mat = MATERIALS_DB.find(m => m.name === l.material);
                     const color = mat ? (catColors[mat.cat] || "#999") : "#999";
                     svgEls.push(<rect key={"r"+idx} x={40} y={y} width={220} height={h} fill={color} stroke="#555" strokeWidth="0.5"/>);
-                    if (h > 10) svgEls.push(<text key={"t"+idx} x={150} y={y + h/2 + 2.5} textAnchor="middle" fontSize="7" fill="#333">{(l.matName||l.material||"?").substring(0,30)}</text>);
-                    svgEls.push(<text key={"d"+idx} x={268} y={y + h/2 + 2.5} textAnchor="start" fontSize="6" fill="#888">{d}mm</text>);
+                    if (h > 14) svgEls.push(<text key={"t"+idx} x={150} y={y + h/2 + 3.5} textAnchor="middle" fontSize="9" fill="#333">{(l.matName||l.material||"?").substring(0,30)}</text>);
+                    svgEls.push(<text key={"d"+idx} x={268} y={y + h/2 + 3.5} textAnchor="start" fontSize="8" fill="#999">{d}mm</text>);
                     y += h;
                   });
-                  return <svg viewBox="0 0 300 132" width="100%" height="120">{svgEls}</svg>;
+                  return <svg viewBox="0 0 300 244" width="100%" height="220">{svgEls}</svg>;
                 }
 
                 // Layout orizontal — benzi verticale de la EXT (stânga) la INT (dreapta)
