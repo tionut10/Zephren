@@ -938,50 +938,6 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* Scop CPE + Solar-ready + Albedo + n50 badge — mutate din Dimensiuni */}
-          <Card title={lang === "EN" ? "CPE Purpose & Building Flags" : "Scop CPE & Caracteristici"}>
-            <div className="space-y-3">
-              <Select
-                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
-                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
-                value={building.scopCpe}
-                onChange={v => updateBuilding("scopCpe", v)}
-                error={fieldErr("scopCpe")}
-                options={SCOP_CPE_OPTIONS.map(o => ({ value: o.value, label: lang === "EN" ? o.labelEN : o.label }))}
-              />
-              {building.scopCpe === "renovare" && (
-                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
-                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
-                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
-                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
-                </label>
-                <Input
-                  label={t("Albedo override (teren)", lang)}
-                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
-                  value={building.albedoOverride || ""}
-                  onChange={v => updateBuilding("albedoOverride", v)}
-                  type="number" step="0.01" min="0" max="1"
-                  placeholder="auto"
-                />
-              </div>
-              {(() => {
-                const classification = classifyN50(building.n50, building.category);
-                if (!classification) return <div className="text-[10px] opacity-40 italic">Etanșeitate n50: introduceți valoarea în Dimensiuni pentru evaluare nZEB.</div>;
-                const { label, color, value, ref } = classification;
-                return (
-                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                    <span className="opacity-40">Etanșeitate n50:</span>
-                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
-                    <span className="opacity-30">nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹</span>
-                  </div>
-                );
-              })()}
-            </div>
-          </Card>
         </div>
 
         {/* Coloana 2: Geometrie */}
@@ -1169,6 +1125,51 @@ export default function Step1Identification({
             </div>
           </Card>
 
+          {/* Scop CPE + Solar-ready + Albedo + n50 badge */}
+          <Card title={lang === "EN" ? "CPE Purpose & Building Flags" : "Scop CPE & Caracteristici"}>
+            <div className="space-y-3">
+              <Select
+                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
+                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
+                value={building.scopCpe}
+                onChange={v => updateBuilding("scopCpe", v)}
+                error={fieldErr("scopCpe")}
+                options={SCOP_CPE_OPTIONS.map(o => ({ value: o.value, label: lang === "EN" ? o.labelEN : o.label }))}
+              />
+              {building.scopCpe === "renovare" && (
+                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
+                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
+                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
+                </label>
+                <Input
+                  label={t("Albedo override (teren)", lang)}
+                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
+                  value={building.albedoOverride || ""}
+                  onChange={v => updateBuilding("albedoOverride", v)}
+                  type="number" step="0.01" min="0" max="1"
+                  placeholder="auto"
+                />
+              </div>
+              {(() => {
+                const classification = classifyN50(building.n50, building.category);
+                if (!classification) return <div className="text-[10px] opacity-40 italic">Etanșeitate n50: introduceți valoarea în Dimensiuni pentru evaluare nZEB.</div>;
+                const { label, color, value, ref } = classification;
+                return (
+                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                    <span className="opacity-40">Etanșeitate n50:</span>
+                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
+                    <span className="opacity-30">nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹</span>
+                  </div>
+                );
+              })()}
+            </div>
+          </Card>
+
         </div>
 
         {/* Coloana 3: Date climatice + ANCPI */}
@@ -1248,59 +1249,6 @@ export default function Step1Identification({
             />
           )}
 
-          {/* Sprint D Task 1: verificare cadastru ANCPI (upload PDF + checkbox + redirect epay) */}
-          {/* Sincronizăm bidirecțional cadastralNr/carteFunciara cu cadastralNumber/landBook
-              din Anexa 1 MDLPA pentru a evita re-introducerea acelorași date. */}
-          <ANCPIVerificationPanel
-            data={{
-              ...(building?.ancpi || {}),
-              cadastralNr: building?.ancpi?.cadastralNr || building?.cadastralNumber || "",
-              carteFunciara: building?.ancpi?.carteFunciara || building?.landBook || "",
-            }}
-            onUpdate={(fields) => {
-              updateBuilding("ancpi", { ...(building?.ancpi || {}), ...fields });
-              if (Object.prototype.hasOwnProperty.call(fields, "cadastralNr")) {
-                updateBuilding("cadastralNumber", fields.cadastralNr);
-              }
-              if (Object.prototype.hasOwnProperty.call(fields, "carteFunciara")) {
-                updateBuilding("landBook", fields.carteFunciara);
-              }
-            }}
-            address={building?.address}
-            lang={lang}
-          />
-
-          {/* Sprint B Task 2: TMY orar (Pro+) — secțiune colapsabilă sub graficele climate */}
-          {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
-            <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4">
-              <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base">🌡️</span>
-                  <span className="text-sm font-semibold text-white">
-                    {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
-                  </span>
-                  <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
-                    Pro+ · PVGIS / EPW / CSV
-                  </span>
-                </div>
-                <span className="text-slate-500 text-xs group-open:hidden">▼</span>
-                <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
-              </summary>
-              <div className="mt-3 space-y-3">
-                <p className="text-[11px] text-slate-400">
-                  {lang === "EN"
-                    ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
-                    : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
-                </p>
-                <TMYPanel
-                  climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
-                  building={building}
-                  lang={lang}
-                />
-              </div>
-            </details>
-          )}
-
           {selectedClimate && (
             <Card title={t("Profil temperatură lunară",lang)}>
               <svg viewBox="0 0 280 100" width="100%" height="90">
@@ -1353,6 +1301,57 @@ export default function Step1Identification({
             </Card>
           )}
         </div>
+      </div>
+
+      {/* ── ANCPI + TMY — full-width sub grid ───────────────────────────── */}
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ANCPIVerificationPanel
+          data={{
+            ...(building?.ancpi || {}),
+            cadastralNr: building?.ancpi?.cadastralNr || building?.cadastralNumber || "",
+            carteFunciara: building?.ancpi?.carteFunciara || building?.landBook || "",
+          }}
+          onUpdate={(fields) => {
+            updateBuilding("ancpi", { ...(building?.ancpi || {}), ...fields });
+            if (Object.prototype.hasOwnProperty.call(fields, "cadastralNr")) {
+              updateBuilding("cadastralNumber", fields.cadastralNr);
+            }
+            if (Object.prototype.hasOwnProperty.call(fields, "carteFunciara")) {
+              updateBuilding("landBook", fields.carteFunciara);
+            }
+          }}
+          address={building?.address}
+          lang={lang}
+        />
+        {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
+          <details className="group rounded-xl border border-white/10 bg-slate-800/40 p-4 self-start">
+            <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base">🌡️</span>
+                <span className="text-sm font-semibold text-white">
+                  {lang === "EN" ? "Hourly TMY climate data (advanced)" : "Date climatice orare TMY (avansat)"}
+                </span>
+                <span className="text-[10px] text-violet-300 px-1.5 py-0.5 rounded bg-violet-500/20 border border-violet-500/30">
+                  Pro+ · PVGIS / EPW / CSV
+                </span>
+              </div>
+              <span className="text-slate-500 text-xs group-open:hidden">▼</span>
+              <span className="text-slate-500 text-xs hidden group-open:inline">▲</span>
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-[11px] text-slate-400">
+                {lang === "EN"
+                  ? "Optional 8760-hour Typical Meteorological Year — useful for hourly cooling, BACS / SRI dynamic calculations and EPBD 2024 reporting."
+                  : "Datele orare TMY (8760 ore) sunt opționale — utile pentru răcire orară, calcule dinamice BACS / SRI și raportare EPBD 2024."}
+              </p>
+              <TMYPanel
+                climate={{ lat: selectedClimate.lat, lon: selectedClimate.lon, name: selectedClimate.name }}
+                building={building}
+                lang={lang}
+              />
+            </div>
+          </details>
+        )}
       </div>
 
       {/* ── Documentare vizuală (fotografii clădire) ─────────────────────── */}
