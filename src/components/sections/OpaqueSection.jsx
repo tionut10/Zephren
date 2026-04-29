@@ -174,11 +174,12 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
   let tempPoints = null;
   if (showTemperatureProfile && climate?.theta_e !== undefined) {
     const tExt = climate.theta_e;
-    let rCum = rsi;
-    const pts = [{ x: 0, t: tInt - (tInt - tExt) * rsi / rTotal }];
+    // Acumulare EXT→INT: pornim cu rse (rezistența suprafeței exterioare)
+    let rCum = rse;
+    const pts = [{ x: 0, t: tExt + (tInt - tExt) * rse / rTotal }];
     layers.forEach((_, i) => {
       rCum += rLayers[i];
-      pts.push({ x: xStarts[i + 1], t: tInt - (tInt - tExt) * rCum / rTotal });
+      pts.push({ x: xStarts[i + 1], t: tExt + (tInt - tExt) * rCum / rTotal });
     });
     const tMin = Math.min(tExt, ...pts.map(p => p.t)) - 1;
     const tMax = Math.max(tInt, ...pts.map(p => p.t)) + 1;
@@ -247,7 +248,7 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
                 <rect x="4" y="4" width="120" height="26" fill="rgba(255,255,255,0.88)" rx="3" />
                 <circle cx="12" cy="12" r="3" fill="#ef4444" />
                 <text x="18" y="14.5" fontSize="8" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°) iarnă</text>
-                <text x="8" y="25" fontSize="7" fill="#374151" opacity="0.7">EXT ← {pts[0].t.toFixed(1)}° ... {pts[pts.length - 1].t.toFixed(1)}° → INT</text>
+                <text x="8" y="25" fontSize="7" fill="#374151" opacity="0.7">EXT {pts[0].t.toFixed(1)}° → {pts[pts.length - 1].t.toFixed(1)}° INT</text>
               </g>
             )}
           </g>
@@ -275,14 +276,13 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
   let tempPoints = null;
   if (showTemperatureProfile && climate?.theta_e !== undefined && config.layout !== "slab_both_int") {
     const tExt = climate.theta_e;
-    let rCum = rsi;
-    // Construim punctele mergând EXT → INT (în ordinea fizică), apoi mapăm la poziții vizuale
+    // Acumulare EXT→INT: pornim cu rse (rezistența suprafeței exterioare)
+    let rCum = rse;
     const pts = [];
-    // interior surface (EXT side)
-    pts.push({ rPos: 0, t: tInt - (tInt - tExt) * rsi / rTotal });
+    pts.push({ rPos: 0, t: tExt + (tInt - tExt) * rse / rTotal });
     rLayers.forEach((r, i) => {
       rCum += r;
-      pts.push({ rPos: i + 1, t: tInt - (tInt - tExt) * rCum / rTotal });
+      pts.push({ rPos: i + 1, t: tExt + (tInt - tExt) * rCum / rTotal });
     });
     // Convert rPos → Y coordinate
     const layerYs = reversed ? yStarts.slice().reverse() : yStarts;
