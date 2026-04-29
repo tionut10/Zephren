@@ -87,7 +87,7 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
               options={GLAZING_DB.map(g=>g.name)} />
             <Select label={t("Tip ramă",lang)} value={el.frameType} onChange={v => setEl(p=>({...p,frameType:v}))}
               options={FRAME_DB.map(f=>f.name)} />
-            <Input label={t("Fracție ramă",lang)} value={el.frameRatio} onChange={v => setEl(p=>({...p,frameRatio:v}))} type="number" unit="%" min="10" max="50" />
+            <Input label={t("Fracție ramă",lang)} value={el.frameRatio} onChange={v => setEl(p=>({...p,frameRatio:v}))} type="number" unit="%" min="10" max="50" className="col-span-2" />
           </div>
 
           {/* Sprint 22 #15 — Protecție solară (Mc 001-2022 Anexa E) */}
@@ -95,33 +95,30 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
             <div className="text-[11px] opacity-60 mb-3">
               F_sh = F_h × F_f × F_mobile. Reduce aporturile solare conform Mc 001-2022 §10.4.2.
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <Input
-                label={t("Streașină (proiecție orizontală)",lang)}
+                label={t("Streașină",lang)}
                 value={el.shading?.overhang_cm ?? ""}
                 onChange={v => setEl(p => ({...p, shading: {...(p.shading||{}), overhang_cm: v}}))}
                 type="number" unit="cm" min="0" step="5"
                 placeholder="0"
               />
               <Input
-                label={t("Aripi laterale (fins)",lang)}
+                label={t("Aripi laterale",lang)}
                 value={el.shading?.fin_cm ?? ""}
                 onChange={v => setEl(p => ({...p, shading: {...(p.shading||{}), fin_cm: v}}))}
                 type="number" unit="cm" min="0" step="5"
                 placeholder="0"
               />
-              <div className="flex flex-col gap-1">
-                <span className="text-xs opacity-60">{t("Protecție mobilă",lang)}</span>
-                <label className="flex items-center gap-2 text-xs cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!el.shading?.hasMobile}
-                    onChange={e => setEl(p => ({...p, shading: {...(p.shading||{}), hasMobile: e.target.checked}}))}
-                    className="accent-amber-500"
-                  />
-                  {t("Obloane / rulouri / screen",lang)}
-                </label>
-              </div>
+              <label className="flex items-center gap-2 text-xs cursor-pointer pb-1">
+                <input
+                  type="checkbox"
+                  checked={!!el.shading?.hasMobile}
+                  onChange={e => setEl(p => ({...p, shading: {...(p.shading||{}), hasMobile: e.target.checked}}))}
+                  className="accent-amber-500"
+                />
+                <span>{t("Obloane / rulouri",lang)}</span>
+              </label>
             </div>
             <div className="mt-3 flex items-center gap-2 text-[11px] flex-wrap">
               <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-medium">
