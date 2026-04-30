@@ -1004,42 +1004,42 @@
   {
     "cat": "Balcoane și logii – tipuri speciale",
     "name": "Ruptoare termice Schöck Isokorb tip K (beton-beton, 80 mm)",
-    "psi": 0.85,
-    "psi_izolat": 0.19,
+    "psi": 0.19,
+    "psi_baseline_no_break": 0.85,
     "desc": "Element Isokorb tip K pentru balcoane în consolă beton-beton, izolație 80 mm, tije inox",
-    "detail": "Schöck Isokorb tip K: izolație 80 mm, tije de inox. Consolă neizolată de referință: Ψ = 0.85 W/mK. Cu Isokorb K (80 mm): Ψ ≈ 0.19 W/mK. Certificat ETA-06/0134. Sursă: Schöck Isokorb Technical Data, Thermal Bridging Guide 2018."
+    "detail": "Schöck Isokorb tip K: izolație 80 mm, tije de inox. Cu Isokorb K montat: Ψ ≈ 0.19 W/(m·K) (valoarea afișată). Consolă fără ruptor (referință): Ψ = 0.85 W/(m·K). Reducere ≈78%. Certificat ETA-06/0134. Sursă: Schöck Isokorb Technical Data, Thermal Bridging Guide 2018."
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
     "name": "Ruptoare termice Schöck Isokorb tip KXT (beton-beton, 120 mm, Passivhaus)",
-    "psi": 0.85,
-    "psi_izolat": 0.11,
+    "psi": 0.11,
+    "psi_baseline_no_break": 0.85,
     "desc": "Element Isokorb KXT pentru balcoane în consolă, izolație 120 mm, nivel Passivhaus",
-    "detail": "Schöck Isokorb KXT: izolație 120 mm, tije de inox, performanță Passivhaus. Cu element montat: Ψ ≈ 0.11 W/mK (față de 0.19 W/mK tip K). Certificat BBA. Sursă: Schöck Isokorb XT type K datasheet, passipedia.org."
+    "detail": "Schöck Isokorb KXT: izolație 120 mm, tije de inox, performanță Passivhaus. Cu element montat: Ψ ≈ 0.11 W/(m·K) (afișată). Consolă fără ruptor: Ψ = 0.85 W/(m·K). Reducere ≈87%. Certificat BBA. Sursă: Schöck Isokorb XT datasheet, passipedia.org."
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
     "name": "Ruptoare termice Schöck Isokorb tip KS (oțel-beton)",
-    "psi": 0.85,
-    "psi_izolat": 0.15,
+    "psi": 0.15,
+    "psi_baseline_no_break": 0.85,
     "desc": "Element Isokorb KS pentru conectarea elementelor metalice la structura de beton",
-    "detail": "Schöck Isokorb KS: conectori pentru profile de oțel la planșeu de beton, balcoane metalice sau structuri hibride metal-beton. Ψ cu element ≈ 0.15 W/mK. Sursă: Schöck USA KS product page, Thermal Bridging Guide."
+    "detail": "Schöck Isokorb KS: conectori pentru profile de oțel la planșeu de beton, balcoane metalice sau structuri hibride metal-beton. Ψ cu element montat ≈ 0.15 W/(m·K). Consolă fără ruptor: 0.85 W/(m·K). Reducere ≈82%. Sursă: Schöck USA KS product page, Thermal Bridging Guide."
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
     "name": "Ruptoare termice Halfen HIT-HP (80 mm) și HIT-SP (120 mm)",
-    "psi": 0.85,
-    "psi_izolat": 0.15,
+    "psi": 0.15,
+    "psi_baseline_no_break": 0.85,
     "desc": "Element Halfen HIT-HP/SP pentru izolarea termică a consolelor de balcon",
-    "detail": "Halfen HIT: bare din inox și fibră de bazalt. HIT-HP (80 mm): Ψ ≈ 0.18 W/mK; HIT-SP (120 mm): Ψ ≈ 0.12–0.15 W/mK. REI 120 certificat. Sursă: Halfen HIT catalog, Leviat NBS Source."
+    "detail": "Halfen HIT: bare din inox și fibră de bazalt. Cu element montat: HIT-HP (80 mm) Ψ ≈ 0.18 W/(m·K); HIT-SP (120 mm) Ψ ≈ 0.12–0.15 W/(m·K). Valoarea afișată = 0.15 (medie). Consolă fără ruptor: 0.85 W/(m·K). Reducere ≈82%. REI 120 certificat. Sursă: Halfen HIT catalog, Leviat NBS Source."
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
     "name": "Ruptoare termice Leviat Ancon Isotec (oțel inox, beton-beton)",
-    "psi": 0.85,
-    "psi_izolat": 0.16,
+    "psi": 0.16,
+    "psi_baseline_no_break": 0.85,
     "desc": "Ancon Isotec: ruptori termici din oțel inox și nylon pentru console de balcon beton-beton",
-    "detail": "Leviat Ancon Isotec: bare din oțel inox (λ = 17 W/mK) cu pad termic din nylon la interfață. Ψ cu element ≈ 0.16 W/mK. Certificat ETA. Sursă: Leviat Ancon Isotec NBS Source, thermal modeling."
+    "detail": "Leviat Ancon Isotec: bare din oțel inox (λ = 17 W/(m·K)) cu pad termic din nylon la interfață. Ψ cu element montat ≈ 0.16 W/(m·K). Consolă fără ruptor: 0.85 W/(m·K). Reducere ≈81%. Certificat ETA. Sursă: Leviat Ancon Isotec NBS Source, thermal modeling."
   },
   {
     "cat": "Fundații și subsol",
@@ -1076,10 +1076,9 @@
   {
     "cat": "Fundații și subsol",
     "name": "Fundație izolată tip Passivhaus (XPS sub radier + perimetrală în L)",
-    "psi": 0,
-    "psi_izolat": -0.06,
+    "psi": -0.06,
     "desc": "Fundație complet izolată Passivhaus: XPS sub radier + perimetrală în formă de L",
-    "detail": "XPS 20+ cm sub radier + izolație verticală 10 cm pe exterior + izolație orizontală 100 cm la exterior. Ψ = -0.06 W/mK (efect geometric favorabil, confirmat prin calcul FEM). Sursă: passipedia.org exemplu calcul Ψ = -0.062 W/mK."
+    "detail": "XPS 20+ cm sub radier + izolație verticală 10 cm pe exterior + izolație orizontală 100 cm la exterior. Ψ = -0.06 W/(m·K) (efect geometric favorabil, valoare negativă acceptată per ISO 14683 §C.2). Sursă: passipedia.org exemplu calcul Ψ = -0.062 W/mK."
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1205,37 +1204,37 @@
     "cat": "Instalații – tipuri speciale",
     "name": "Trecere conductă termică (Cu/OL) prin perete exterior (chi)",
     "psi": 0,
-    "psi_izolat": 0.03,
-    "chi": true,
-    "desc": "Punte termică punctuală (chi) a conductei metalice de termoficare prin perete exterior",
-    "detail": "Conductă oțel sau cupru φ 20–40 mm prin perete exterior. Chi (χ) = 0.015–0.050 W/K per trecere. Conductă Cu φ 22 mm neizolată: χ ≈ 0.030 W/K; cu manșon termoizolant la trecere (50 mm EPS tubular): χ ≈ 0.005 W/K. Sursă: ISO 10211, EN 1264, calcule FEM."
+    "chi": 0.03,
+    "is_point_bridge": true,
+    "desc": "Punte termică punctuală (χ) a conductei metalice de termoficare prin perete exterior",
+    "detail": "Conductă oțel sau cupru φ 20–40 mm prin perete exterior. χ = 0.015–0.050 W/K per trecere. Valoare afișată = 0.030 W/K (Cu φ 22 mm neizolată). Cu manșon termoizolant la trecere (50 mm EPS tubular): χ ≈ 0.005 W/K. Sursă: ISO 10211, EN 1264, calcule FEM."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Trecere cablu electric prin perete exterior (chi)",
     "psi": 0,
-    "psi_izolat": 0.002,
-    "chi": true,
-    "desc": "Punte termică punctuală (chi) a cablurilor electrice prin peretele exterior",
+    "chi": 0.002,
+    "is_point_bridge": true,
+    "desc": "Punte termică punctuală (χ) a cablurilor electrice prin peretele exterior",
     "detail": "Grupuri de cabluri PVC φ 16–25 mm prin perete exterior. χ ≈ 0.002 W/K per trecere; cu dopuri de etanșare termoizolante: χ ≈ 0.001 W/K. Important și pentru etanșeitate la aer (airtightness). Sursă: ISO 10211, practici Passivhaus."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Suport metalic panou solar termic – ancorare pe acoperiș (chi)",
     "psi": 0,
-    "psi_izolat": 0.025,
-    "chi": true,
-    "desc": "Punte termică punctuală (chi) a suportului metalic al panoului solar penetrând învelitoarea",
-    "detail": "Suportul de montaj (oțel inox, aluminiu) penetrează învelitoarea și eventual izolația acoperișului. Chi per suport: χ = 0.010–0.040 W/K; la 4 suporturi/panou, 1 panou/10 m²: ΔU ≈ 0.004–0.016 W/(m²K). Cu suporturi termoizolate: χ ≈ 0.005–0.010 W/K. Sursă: EOTA TR 025, EN ISO 6946."
+    "chi": 0.025,
+    "is_point_bridge": true,
+    "desc": "Punte termică punctuală (χ) a suportului metalic al panoului solar penetrând învelitoarea",
+    "detail": "Suportul de montaj (oțel inox, aluminiu) penetrează învelitoarea și eventual izolația acoperișului. χ per suport: 0.010–0.040 W/K (afișat 0.025); la 4 suporturi/panou, 1 panou/10 m²: ΔU ≈ 0.004–0.016 W/(m²K). Cu suporturi termoizolate: χ ≈ 0.005–0.010 W/K. Sursă: EOTA TR 025, EN ISO 6946."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Priză de aer exterior HVAC prin perete (chi)",
     "psi": 0,
-    "psi_izolat": 0.08,
-    "chi": true,
+    "chi": 0.08,
+    "is_point_bridge": true,
     "desc": "Punte termică la caseta dreptunghiulară a prizei de aer proaspăt HVAC prin peretele exterior",
-    "detail": "Casetă metalică (oțel zincat) 200×200 mm prin perete exterior. Chi echivalent = 0.05–0.12 W/K; cu izolație locală pe periferia casetei la traversarea izolației + garnitură EPDM: χ ≈ 0.020–0.040 W/K. Sursă: practici constructive Passivhaus, ISO 10211."
+    "detail": "Casetă metalică (oțel zincat) 200×200 mm prin perete exterior. χ echivalent = 0.05–0.12 W/K (afișat 0.08); cu izolație locală pe periferia casetei la traversarea izolației + garnitură EPDM: χ ≈ 0.020–0.040 W/K. Sursă: practici constructive Passivhaus, ISO 10211."
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -1249,10 +1248,10 @@
     "cat": "Instalații – tipuri speciale",
     "name": "Coș metalic dublu perete penetrant acoperiș/perete (chi)",
     "psi": 0,
-    "psi_izolat": 0.05,
-    "chi": true,
+    "chi": 0.05,
+    "is_point_bridge": true,
     "desc": "Coș metalic izolat (inox dublu perete) penetrând perete sau acoperiș",
-    "detail": "Coș de fum metalic dublu perete (inox + izolație 25 mm) penetrând acoperiș/perete. Chi la penetrare: χ = 0.030–0.080 W/K (Ø100–200 mm); cu manșon termoizolant la trecere + garnitură: χ ≈ 0.010–0.030 W/K. Sursă: ISO 10211, norme instalații."
+    "detail": "Coș de fum metalic dublu perete (inox + izolație 25 mm) penetrând acoperiș/perete. χ la penetrare: 0.030–0.080 W/K (Ø100–200 mm, afișat 0.05); cu manșon termoizolant la trecere + garnitură: χ ≈ 0.010–0.030 W/K. Sursă: ISO 10211, norme instalații."
   },
   {
     "cat": "Joncțiuni speciale",

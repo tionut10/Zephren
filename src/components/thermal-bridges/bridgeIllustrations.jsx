@@ -21,8 +21,14 @@
  * Sigur fără `dangerouslySetInnerHTML` (nu e conținut user-provided).
  */
 
+import { createContext, useContext } from "react";
+
 const W = 320;
 const H = 200;
+
+// Context care permite ascunderea elementelor redundante (PsiBadge, EnvBanners simple)
+// când ilustrațiile sunt randate în mod card/detail (în catalog/modal)
+export const BridgeRenderContext = createContext({ mode: "legacy" });
 
 // ── Defs globale — pattern-uri tehnice ISO 128 (desen de execuție) ───────────
 function Defs() {
@@ -219,12 +225,22 @@ function Label({ x, y, children, color = "#1a1c1f", size = 8, anchor = "start", 
   );
 }
 
-// Banner EXT/INT pe margine (stil cartuș tehnic)
+// Banner EXT/INT pe margine (stil cartuș tehnic) — în card/detail mode, banner-ele
+// simple "EXT"/"INT"/"INTERIOR" sunt ascunse pentru că le afișăm prominent în modal.
+// Banner-ele cu detalii specifice ("POD", "SOL", "SUBSOL", "EXT (terasă)" etc.) rămân.
 function EnvBanner({ x, y, w, h, label, side = "top", fill = "#dde3e9", color = "#1a3858" }) {
+  const { mode } = useContext(BridgeRenderContext);
+  if (mode === "card" || mode === "detail") {
+    // Etichete redundante (acoperite de banner-ul extern al modalului) — ascunde
+    if (/^(ext|exterior|int|interior)$/i.test((label || "").trim())) return null;
+  }
+  // În card/detail, dimensiuni mai mari + culori mai puternice pentru lizibilitate
+  const isCardOrDetail = mode === "card" || mode === "detail";
+  const fontSize = isCardOrDetail ? 9 : 7.5;
   return (
     <g style={{ pointerEvents: "none" }}>
-      <rect x={x} y={y} width={w} height={h} fill={fill} stroke="#1a1c1f" strokeWidth="0.4" />
-      <text x={x + w / 2} y={y + h / 2 + 2.5} fontSize="7.5" fill={color} textAnchor="middle" fontWeight="700" fontFamily="ui-monospace, Menlo, Consolas, monospace" style={{ letterSpacing: "1.2px" }}>
+      <rect x={x} y={y} width={w} height={h} fill={fill} stroke="#1a1c1f" strokeWidth={isCardOrDetail ? 0.6 : 0.4} />
+      <text x={x + w / 2} y={y + h / 2 + 3} fontSize={fontSize} fill={color} textAnchor="middle" fontWeight="700" fontFamily="ui-monospace, Menlo, Consolas, monospace" style={{ letterSpacing: "1px" }}>
         {label}
       </text>
     </g>
@@ -246,8 +262,11 @@ function HeatArrow({ x1, y1, x2, y2 }) {
   return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#c62828" strokeWidth="1.2" markerEnd="url(#arrow-heat)" />;
 }
 
-// Badge Ψ în stil cartuș tehnic (cot dreaptă-jos)
+// Badge Ψ în stil cartuș tehnic (col dreapta-jos)
+// În card/detail mode (catalog/modal), Ψ se afișează în afara SVG-ului — ascundem badge-ul.
 function PsiBadge({ psi, x = 6, y = H - 6 }) {
+  const { mode } = useContext(BridgeRenderContext);
+  if (mode === "card" || mode === "detail") return null;
   return (
     <g transform={`translate(${x}, ${y})`} style={{ pointerEvents: "none" }}>
       <rect x="0" y="-12" width="100" height="14" fill="rgba(255,255,255,0.95)" stroke="#1a1c1f" strokeWidth="0.5" />
@@ -258,13 +277,20 @@ function PsiBadge({ psi, x = 6, y = H - 6 }) {
   );
 }
 
-// Linie indicatoare cu leader (label la capătul liniei)
+// Linie indicatoare cu leader (label la capătul liniei) — cu fundal pentru lizibilitate
 function Leader({ x1, y1, x2, y2, label, anchor = "start", color = "#1a1c1f", size = 7 }) {
+  // Estimare lățime text (caractere monospace ~0.6em)
+  const textW = Math.max(18, label.length * size * 0.62 + 6);
+  const textH = size + 4;
+  const textX = x2 + (anchor === "end" ? -2 : 2);
+  const rectX = anchor === "end" ? textX - textW + 2 : textX - 3;
+  const rectY = y2 - size - 1;
   return (
     <g style={{ pointerEvents: "none" }}>
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="0.4" />
-      <circle cx={x1} cy={y1} r="0.9" fill={color} />
-      <text x={x2 + (anchor === "end" ? -2 : 2)} y={y2 - 1} fontSize={size} fill={color} textAnchor={anchor} fontFamily="ui-monospace, Menlo, Consolas, monospace" fontWeight="500">
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="0.5" opacity="0.9" />
+      <circle cx={x1} cy={y1} r="1.1" fill={color} />
+      <rect x={rectX} y={rectY} width={textW} height={textH} fill="rgba(255,255,255,0.94)" stroke={color} strokeWidth="0.25" rx="1.5" />
+      <text x={textX} y={y2 - 1} fontSize={size} fill={color} textAnchor={anchor} fontFamily="ui-monospace, Menlo, Consolas, monospace" fontWeight="600">
         {label}
       </text>
     </g>
@@ -492,11 +518,11 @@ function IllustrationWallFloorRoof({ bridge }) {
       {/* === BANNERS === */}
       <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      {/* === LEADERS === */}
-      <Leader x1={xEPS + tEPS / 2} y1={yScreed + 20} x2={xEPS + tEPS / 2 - 12} y2={H - 14} label="EPS 100" anchor="end" />
-      <Leader x1={(xBrick + W) / 2} y1={yMembrane + 1} x2={W - 6} y2={yMembrane - 4} label="hidroizol. 4" anchor="end" />
-      <Leader x1={(xBrick + W) / 2} y1={yXPS + 11} x2={W - 6} y2={yXPS - 8} label="XPS 150" anchor="end" />
-      <Leader x1={(xBrick + W) / 2} y1={yConcTop + tConc / 2} x2={W - 6} y2={yConcTop + tConc + 16} label="BA 200" anchor="end" />
+      {/* === LEADERS === pozițiile y2 sunt scalonate pentru a evita suprapunerea */}
+      <Leader x1={xEPS + tEPS / 2} y1={yScreed + 18} x2={xEPS + tEPS / 2 - 14} y2={H - 16} label="EPS 100" anchor="end" />
+      <Leader x1={(xBrick + W) * 0.55} y1={yMembrane + 1} x2={W - 6} y2={yMembrane - 14} label="hidroizol. 4" anchor="end" />
+      <Leader x1={(xBrick + W) * 0.65} y1={yXPS + 11} x2={W - 6} y2={yXPS + 32} label="XPS 150" anchor="end" />
+      <Leader x1={(xBrick + W) / 2} y1={yConcTop + tConc / 2} x2={W - 6} y2={yConcTop + tConc + 22} label="BA 200" anchor="end" />
       <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
     </>
   );
@@ -2615,6 +2641,78 @@ function pickIllustration(bridge) {
     return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
   }
 
+  // ── Retrofit ETICS ────────────────────────────────────────────────────────
+  if (cat === "Retrofit ETICS") {
+    if (name.includes("balcon")) return <IllustrationBalcony bridge={bridge} variant="uninterrupted" />;
+    if (name.includes("atic") || name.includes("parapet")) return <IllustrationRoof bridge={bridge} variant="parapet" />;
+    if (name.includes("soclu") || name.includes("drip") || name.includes("cts")) return <IllustrationETICS bridge={bridge} variant="plinth-drip" />;
+    if (name.includes("colț") || name.includes("colt")) return <IllustrationETICS bridge={bridge} variant="corner-profile" />;
+    if (name.includes("fereastră") || name.includes("fereastra") || name.includes("aliniat") || name.includes("tăietură") || name.includes("taietura")) return <IllustrationWindow bridge={bridge} variant="in-insulation" />;
+    if (name.includes("rost") || name.includes("dilatare")) return <IllustrationETICS bridge={bridge} variant="expansion-joint" />;
+    return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
+  }
+
+  // ── Passivhaus / nZEB ─────────────────────────────────────────────────────
+  if (cat === "Passivhaus / nZEB") {
+    if (name.includes("fundație") || name.includes("fundatie")) return <IllustrationFoundation bridge={bridge} variant="passivhaus-l" />;
+    if (name.includes("ușă") || name.includes("usa") || name.includes("prag") || name.includes("intrare")) return <IllustrationWindow bridge={bridge} variant="threshold" />;
+    if (name.includes("fereastră") || name.includes("fereastra") || name.includes("tilt&turn") || name.includes("tilt-turn") || name.includes("oculus") || name.includes("bullseye") || name.includes("punctual")) return <IllustrationWindow bridge={bridge} variant="deep-ph" />;
+    if (name.includes("balcon")) return <IllustrationBalcony bridge={bridge} variant="isokorb-kxt" />;
+    if (name.includes("centură") || name.includes("centura") || name.includes("planșeu") || name.includes("planseu") || name.includes("intermediar")) return <IllustrationWallFloorIntermediate bridge={bridge} />;
+    if (name.includes("acoperiș") || name.includes("acoperis") || name.includes("atic")) return <IllustrationRoof bridge={bridge} variant="parapet" />;
+    return <IllustrationWallFloorIntermediate bridge={bridge} />;
+  }
+
+  // ── CLT / Mass Timber ─────────────────────────────────────────────────────
+  if (cat === "CLT / Mass Timber") {
+    if (name.includes("acoperiș") || name.includes("acoperis") || name.includes("cosoroabă") || name.includes("cosoroaba")) return <IllustrationTimber bridge={bridge} variant="rafters" />;
+    if (name.includes("fereastră") || name.includes("fereastra") || name.includes("pivot") || name.includes("ușă") || name.includes("usa")) return <IllustrationWindow bridge={bridge} variant="deep-ph" />;
+    return <IllustrationTimber bridge={bridge} variant="clt" />;
+  }
+
+  // ── Sandwich panel ────────────────────────────────────────────────────────
+  if (cat === "Sandwich panel") {
+    if (name.includes("colț") || name.includes("colt")) return <IllustrationETICS bridge={bridge} variant="corner-profile" />;
+    if (name.includes("rost") || name.includes("nut-feder") || name.includes("îmbinare") || name.includes("imbinare")) return <IllustrationPrecastVerticalJoint bridge={bridge} />;
+    return <IllustrationETICS bridge={bridge} variant="sandwich-tie" />;
+  }
+
+  // ── Balcoane moderne ──────────────────────────────────────────────────────
+  if (cat === "Balcoane moderne") {
+    if (name.includes("ruptor") || name.includes("isokorb")) return <IllustrationBalcony bridge={bridge} variant="isokorb-k" />;
+    if (name.includes("suspendat") || name.includes("metalic") || name.includes("ancorat")) return <IllustrationBalcony bridge={bridge} variant="steel-pendant" />;
+    if (name.includes("cornisă") || name.includes("cornisa")) return <IllustrationWallFloorRoof bridge={bridge} />;
+    return <IllustrationBalcony bridge={bridge} variant="uninterrupted" />;
+  }
+
+  // ── Fundații moderne ──────────────────────────────────────────────────────
+  if (cat === "Fundații moderne") {
+    if (name.includes("centură") || name.includes("centura") || name.includes("anti-seismică") || name.includes("antiseismica")) return <IllustrationWallGround bridge={bridge} asSoil={false} />;
+    if (name.includes("split-level") || name.includes("cts") || name.includes("cota") || name.includes("cotă")) return <IllustrationFoundation bridge={bridge} variant="strip" />;
+    return <IllustrationWallGround bridge={bridge} asSoil={false} />;
+  }
+
+  // ── Curtain wall ──────────────────────────────────────────────────────────
+  if (cat === "Curtain wall") {
+    return <IllustrationCurtainWall bridge={bridge} />;
+  }
+
+  // ── Acoperiș complex ──────────────────────────────────────────────────────
+  if (cat === "Acoperiș complex") {
+    if (name.includes("lucarnă") || name.includes("lucarna") || name.includes("dormer")) return <IllustrationRoof bridge={bridge} variant="dormer" />;
+    if (name.includes("coș") || name.includes("cos") || name.includes("chimney")) return <IllustrationChimneyMasonry bridge={bridge} />;
+    if (name.includes("skydome") || name.includes("cupolă") || name.includes("cupola")) return <IllustrationRoof bridge={bridge} variant="skylight" />;
+    return <IllustrationRoof bridge={bridge} variant="eaves" />;
+  }
+
+  // ── Vernacular RO ─────────────────────────────────────────────────────────
+  if (cat === "Vernacular RO") {
+    if (name.includes("cosoroabă") || name.includes("cosoroaba") || name.includes("wallplate")) return <IllustrationTimber bridge={bridge} variant="rafters" />;
+    if (name.includes("piatră") || name.includes("piatra") || name.includes("soclu")) return <IllustrationWallGround bridge={bridge} asSoil={true} />;
+    if (name.includes("buiandrug") || name.includes("lemn vechi")) return <IllustrationWindowLintel bridge={bridge} />;
+    return <IllustrationGenericFallback bridge={bridge} />;
+  }
+
   // Rutare după cuvinte-cheie din nume (pentru punți fără câmp cat, ex: demo PAFP)
   if (name.includes("rost orizontal") || (name.includes("centură") && name.includes("panou"))) return <IllustrationPrecastPanel bridge={bridge} />;
   if (name.includes("rost vertical") || name.includes("stâlpișor") || name.includes("stalpisor")) return <IllustrationPrecastVerticalJoint bridge={bridge} />;
@@ -2650,65 +2748,33 @@ export default function BridgeIllustration({ bridge, details, showOverlays = tru
   // Card mode: strip extern EXT/INT adaptiv per categorie + clip inferior pentru a ascunde PsiBadge-urile interne;
   // NU se adaugă IllustrationOverlay (IsoClassBadge + PriorityBadge) — afișate în cardul părinte.
   if (mode === "card" || mode === "detail") {
-    // Detectare orientare per categorie/nume punte — unde este cazul
-    const cat = (bridge.cat || "").toLowerCase();
-    const name = (bridge.name || "").toLowerCase();
-    const isRoof = /acoperiș|acoperis|terasă|terasa|atic|coamă|coama|streașină|streasina|cornișă|cornisa/.test(cat + " " + name);
-    const isGround = /sol|subsol|fundație|fundatie|radier|soclu|piloți|piloti|pe sol|peste subsol/.test(cat + " " + name);
-    const isCorner = /colț|colt|corner/.test(name);
+    // Banner-ele interne (EnvBanner) ale ilustrațiilor sunt ACCURATE per layout —
+    // nu mai impunem un banner extern stânga/dreapta care e greșit pentru ground/roof.
+    // PsiBadge se ascunde prin Context (vezi BridgeRenderContext) — Ψ se afișează în modal.
+    // Astfel nu mai avem nevoie de clipBottom — toate leader-ele rămân vizibile.
 
-    // 3 layout-uri: standard (EXT stg / INT dr), roof (EXT sus / INT jos), ground (INT sus / SOL jos)
-    const layout = isRoof ? "roof" : isGround ? "ground" : isCorner ? "corner" : "standard";
-
-    const padTop = 24;
-    const padBottom = 6;
-    const clipBottom = 22;
-    const clipId = `clip-bridge-${(bridge.name || "x").replace(/\W/g, "").slice(0, 16)}`;
-
-    // Etichete + culori per layout
-    let leftLabel, rightLabel, leftColor, rightColor, leftFill, rightFill;
-    if (layout === "roof") {
-      leftLabel = "EXTERIOR (acoperiș)"; rightLabel = "INTERIOR";
-      leftColor = "#1e40af"; rightColor = "#15803d";
-      leftFill = "#dbeafe"; rightFill = "#dcfce7";
-    } else if (layout === "ground") {
-      leftLabel = "INTERIOR"; rightLabel = "SOL / SUBSOL";
-      leftColor = "#15803d"; rightColor = "#78350f";
-      leftFill = "#dcfce7"; rightFill = "#fef3c7";
-    } else if (layout === "corner") {
-      leftLabel = "EXTERIOR"; rightLabel = "INTERIOR (colț)";
-      leftColor = "#1e40af"; rightColor = "#15803d";
-      leftFill = "#dbeafe"; rightFill = "#dcfce7";
-    } else {
-      leftLabel = "EXTERIOR"; rightLabel = "INTERIOR";
-      leftColor = "#1e40af"; rightColor = "#15803d";
-      leftFill = "#dbeafe"; rightFill = "#dcfce7";
-    }
+    // Mic padding pentru aer vizual (nu mai există conflicte cu PsiBadge)
+    const padTop = 4;
+    const padBottom = 4;
 
     return (
-      <svg
-        viewBox={`0 ${-padTop} ${W} ${H - clipBottom + padTop + padBottom}`}
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }}
-        role="img"
-        aria-label={`Secțiune ilustrativă: ${bridge.name}`}
-      >
-        <Defs />
-        <defs>
-          <clipPath id={clipId}>
-            <rect x="0" y="0" width={W} height={H - clipBottom} />
-          </clipPath>
-        </defs>
-
-        {/* Strip extern adaptiv — deasupra zonei desenate */}
-        <rect x="0" y={-padTop} width={W / 2} height={padTop} fill={leftFill} />
-        <rect x={W / 2} y={-padTop} width={W / 2} height={padTop} fill={rightFill} />
-        <text x={W / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill={leftColor} textAnchor="middle" style={{ letterSpacing: "0.5px" }}>{leftLabel}</text>
-        <text x={(3 * W) / 4} y={-padTop / 2 + 4} fontSize="10" fontWeight="700" fill={rightColor} textAnchor="middle" style={{ letterSpacing: "0.5px" }}>{rightLabel}</text>
-        <line x1={W / 2} y1={-padTop} x2={W / 2} y2={0} stroke="rgba(0,0,0,0.2)" strokeWidth="0.5" strokeDasharray="2 2" />
-
-        {/* Ilustrația originală — clipped pentru a exclude PsiBadge-urile interne */}
-        <g clipPath={`url(#${clipId})`}>
+      <BridgeRenderContext.Provider value={{ mode }}>
+        <svg
+          viewBox={`0 ${-padTop} ${W} ${H + padTop + padBottom}`}
+          xmlns="http://www.w3.org/2000/svg"
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block",
+            borderRadius: 6,
+            minHeight: mode === "detail" ? 520 : undefined,
+            background: "#fafaf5"
+          }}
+          role="img"
+          aria-label={`Secțiune ilustrativă: ${bridge.name}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <Defs />
           {pickIllustration(bridge)}
           {mode === "detail" && details && (
             <IllustrationOverlay
@@ -2718,8 +2784,8 @@ export default function BridgeIllustration({ bridge, details, showOverlays = tru
               condZone={condZone}
             />
           )}
-        </g>
-      </svg>
+        </svg>
+      </BridgeRenderContext.Provider>
     );
   }
 

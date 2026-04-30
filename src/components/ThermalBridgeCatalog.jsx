@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import THERMAL_BRIDGES_DB from "../data/thermal-bridges.json";
 import BridgeIllustration from "./thermal-bridges/bridgeIllustrations.jsx";
+import ElementSectionModal from "./sections/ElementSectionModal.jsx";
 import {
   getBridgeSource,
   classifyIsoLevel,
@@ -56,6 +57,7 @@ const ISO_CLASS_COLOR = {
 export default function ThermalBridgeCatalog({ onSelect, onClose }) {
   const [selectedCat, setSelectedCat] = useState("Joncțiuni pereți");
   const [selectedBridge, setSelectedBridge] = useState(null);
+  const [detailBridge, setDetailBridge] = useState(null);  // bridge pentru modalul mare de detaliu
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedConstruction, setSelectedConstruction] = useState("");
@@ -88,20 +90,26 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") {
+        // Dacă modalul de detaliu e deschis, lasă-l pe el să gestioneze Escape
+        if (detailBridge) return;
         if (pickerOpen) setPickerOpen(false);
         else onClose?.();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pickerOpen, onClose]);
+  }, [pickerOpen, onClose, detailBridge]);
 
   const activeCat = categoriesWithCount.find(c => c.cat === selectedCat);
 
   return (
     <div
       style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-      onClick={onClose}
+      onClick={(e) => {
+        // Nu închide catalogul dacă e deschis modalul de detaliu
+        if (detailBridge) return;
+        onClose?.();
+      }}
     >
       <div
         style={{ background: "#12141f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", width: "100%", maxWidth: "960px", height: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
@@ -239,12 +247,30 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       transition: "background 0.1s, border 0.1s"
                     }}
                   >
-                    <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 12, background: "#f7f3e8" }}>
+                    <div
+                      style={{ borderRadius: 8, overflow: "hidden", marginBottom: 12, background: "#f7f3e8", position: "relative", cursor: "zoom-in" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailBridge({
+                          bridge,
+                          details: details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass },
+                        });
+                      }}
+                      title="Click pentru a deschide secțiunea în fereastră mare"
+                    >
                       <BridgeIllustration
                         bridge={bridge}
                         details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
                         mode="card"
                       />
+                      <div style={{
+                        position: "absolute", top: 6, right: 6, padding: "3px 8px",
+                        background: "rgba(15,23,42,0.85)", color: "#fbbf24",
+                        fontSize: 10, fontWeight: 700, borderRadius: 5,
+                        pointerEvents: "none", letterSpacing: "0.3px"
+                      }}>
+                        🔍 Click pentru detaliu
+                      </div>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
@@ -270,8 +296,17 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                         </div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: color.fg }}>Ψ = {bridge.psi}</div>
-                        <div style={{ fontSize: 9, opacity: 0.3 }}>W/(m·K)</div>
+                        {bridge.is_point_bridge ? (
+                          <>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: color.fg }}>χ = {bridge.chi ?? 0}</div>
+                            <div style={{ fontSize: 9, opacity: 0.3 }}>W/K · punctual</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: color.fg }}>Ψ = {bridge.psi}</div>
+                            <div style={{ fontSize: 9, opacity: 0.3 }}>W/(m·K)</div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -279,7 +314,20 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                         <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.55 }}>{bridge.detail}</div>
 
-                        {bridge.psi_izolat !== undefined && (
+                        {/* Comparație baseline pentru ruptoare termice (produs vs consolă fără ruptor) */}
+                        {bridge.psi_baseline_no_break !== undefined && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, marginTop: 10, padding: "6px 10px", background: "rgba(34,197,94,0.06)", borderRadius: 6, flexWrap: "wrap" }}>
+                            <span style={{ opacity: 0.5 }}>Fără ruptor:</span>
+                            <span style={{ fontWeight: 700, color: "#f87171" }}>{bridge.psi_baseline_no_break}</span>
+                            <span style={{ opacity: 0.3 }}>→</span>
+                            <span style={{ opacity: 0.5 }}>Cu produs:</span>
+                            <span style={{ fontWeight: 700, color: "#4ade80" }}>{bridge.psi}</span>
+                            <span style={{ opacity: 0.3 }}>W/(m·K)</span>
+                            <span style={{ opacity: 0.5, marginLeft: "auto", fontSize: 10 }}>−{Math.round((1 - bridge.psi / bridge.psi_baseline_no_break) * 100)}%</span>
+                          </div>
+                        )}
+                        {/* Comparație psi-izolat pentru punți cu retrofit posibil */}
+                        {bridge.psi_izolat !== undefined && bridge.psi_baseline_no_break === undefined && !bridge.is_point_bridge && (
                           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, marginTop: 10, padding: "6px 10px", background: "rgba(34,197,94,0.06)", borderRadius: 6 }}>
                             <span style={{ opacity: 0.5 }}>Neizolat:</span>
                             <span style={{ fontWeight: 700, color: "#f87171" }}>{bridge.psi}</span>
@@ -482,6 +530,16 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
           <span>Total catalog: {THERMAL_BRIDGES_DB.length} tipuri</span>
         </div>
       </div>
+
+      {/* Modal mare de detaliu pentru punte termică (deasupra catalogului) */}
+      {detailBridge && (
+        <ElementSectionModal
+          type="bridge"
+          element={detailBridge.bridge}
+          bridgeDetails={detailBridge.details}
+          onClose={() => setDetailBridge(null)}
+        />
+      )}
     </div>
   );
 }

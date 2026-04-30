@@ -23,6 +23,52 @@ import { SectionFrame, MaterialLayer, DimensionCote, HeatFlowArrow, MaterialLege
 
 const MIN_LAYER_DRAW = 14; // pixels — grosimea minimă vizuală pentru lizibilitate
 
+// Anti-coliziune 2D — împinge etichetele doar dacă bbox-urile lor se suprapun realmente.
+// Două etichete cu X-uri foarte diferite (chiar dacă au Y similar) NU sunt mutate,
+// astfel încât rămân lângă punctul lor de origine.
+//
+// rects: [{x, y, w, h, anchorX, anchorY, minY?, maxY?}]
+// axis: "y" — împinge pe Y (default pentru wall section); "x" — pe X (slab section)
+function avoidLabelCollisions2D(rects, axis = "y", maxIter = 30) {
+  if (rects.length <= 1) return rects.map(r => ({ ...r }));
+  const adj = rects.map(r => ({ ...r }));
+  for (let iter = 0; iter < maxIter; iter++) {
+    let moved = false;
+    for (let i = 0; i < adj.length - 1; i++) {
+      for (let j = i + 1; j < adj.length; j++) {
+        const a = adj[i], b = adj[j];
+        const xOver = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        const yOver = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        // Coliziune 2D doar dacă AMBELE axe au suprapunere
+        if (xOver > 0 && yOver > 0) {
+          if (axis === "y") {
+            const push = yOver / 2 + 0.5;
+            if (a.y <= b.y) { a.y -= push; b.y += push; }
+            else { a.y += push; b.y -= push; }
+          } else {
+            const push = xOver / 2 + 0.5;
+            if (a.x <= b.x) { a.x -= push; b.x += push; }
+            else { a.x += push; b.x -= push; }
+          }
+          moved = true;
+        }
+      }
+    }
+    // Constrângere în interval [minY, maxY] / [minX, maxX] dacă specificat
+    for (const r of adj) {
+      if (axis === "y") {
+        if (r.minY != null && r.y < r.minY) { r.y = r.minY; moved = true; }
+        if (r.maxY != null && r.y + r.h > r.maxY) { r.y = r.maxY - r.h; moved = true; }
+      } else {
+        if (r.minX != null && r.x < r.minX) { r.x = r.minX; moved = true; }
+        if (r.maxX != null && r.x + r.w > r.maxX) { r.x = r.maxX - r.w; moved = true; }
+      }
+    }
+    if (!moved) break;
+  }
+  return adj;
+}
+
 // ── Configurație orientare per tip element ───────────────────────────────────
 const ELEMENT_SECTION_CONFIG = {
   // Pereți verticali — orientare orizontală (EXT stânga, INT dreapta)
@@ -208,14 +254,41 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         const w = drawWidths[i];
         const xc = xStarts[i] + w / 2;
         const shouldRotate = w < 70;
-        const availableSpace = shouldRotate ? (height - 20) : (w - 8);
+        const availableSpace = shouldRotate ? (height - 80) : (w - 8);
         const displayName = truncateLabel(l.name, availableSpace);
         return (
-          <text key={`lbl-${i}`} x={xc} y={height / 2} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
-            transform={shouldRotate ? `rotate(-90 ${xc} ${height / 2})` : ""}
+          <text key={`lbl-${i}`} x={xc} y={height / 2 + 8} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
+            transform={shouldRotate ? `rotate(-90 ${xc} ${height / 2 + 8})` : ""}
             style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
             {displayName}
           </text>
+        );
+      })}
+
+      {/* Numere index strat (1, 2, 3...) — badge mic în partea de jos a fiecărui strat */}
+      {!compact && layers.map((l, i) => {
+        const w = drawWidths[i];
+        const xc = xStarts[i] + w / 2;
+        if (w < 14) return null;
+        return (
+          <g key={`idx-${i}`} style={{ pointerEvents: "none" }}>
+            <circle cx={xc} cy={height - 14} r="7" fill="#1e293b" stroke="white" strokeWidth="1" />
+            <text x={xc} y={height - 11} fontSize="8" fill="white" textAnchor="middle" fontWeight="800">{i + 1}</text>
+          </g>
+        );
+      })}
+
+      {/* R% per strat — badge mic deasupra fiecărui strat */}
+      {!compact && layers.map((l, i) => {
+        const w = drawWidths[i];
+        const xc = xStarts[i] + w / 2;
+        if (w < 28) return null;
+        const rPct = rTotal > 0 ? (rLayers[i] / rTotal) * 100 : 0;
+        return (
+          <g key={`r-${i}`} style={{ pointerEvents: "none" }}>
+            <rect x={xc - 18} y={6} width="36" height="11" rx="2" fill="rgba(15,23,42,0.85)" />
+            <text x={xc} y={14} fontSize="7.5" fill="#fbbf24" textAnchor="middle" fontWeight="700" fontFamily="monospace">R {rPct.toFixed(0)}%</text>
+          </g>
         );
       })}
 
@@ -224,9 +297,9 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         <DimensionCote key={`dim-${i}`} x1={xStarts[i]} y1={height + 6} x2={xStarts[i + 1]} y2={height + 6} label={`${l.thickness}`} offset={10} orientation="h" />
       ))}
 
-      {/* Flux termic INT → EXT */}
+      {/* Flux termic INT → EXT — sub zona profilului T pentru a evita suprapunerea */}
       {!compact && (
-        <HeatFlowArrow x1={width - 15} y1={height / 2 + 65} x2={15} y2={height / 2 + 65} label="Flux termic (iarnă)" />
+        <HeatFlowArrow x1={width - 15} y1={height - 18} x2={15} y2={height - 18} label="Flux termic (iarnă)" />
       )}
 
       {/* Profil T */}
@@ -234,19 +307,73 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         const { pts, tMin, tMax, yTop, yBottom } = tempPoints;
         const tToY = (t) => yBottom - ((t - tMin) / (tMax - tMin)) * (yBottom - yTop);
         const path = pts.map((p, i) => (i === 0 ? "M" : "L") + p.x.toFixed(1) + "," + tToY(p.t).toFixed(1)).join(" ");
+
+        // Anti-coliziune 2D: etichetele rămân lângă punctul lor (poziție naturală deasupra),
+        // doar dacă bbox-urile chiar se suprapun, una se mută (preferabil sub punct, dacă cealaltă e deasupra).
+        const labelW = 30, labelH = 14;
+        // Limite verticale: deasupra legendei (32) și deasupra fluxului termic (height - 28)
+        const minY = compact ? 4 : 36;
+        const maxY = height - 28;
+        const rawLabels = pts.map((p, i) => {
+          const py = tToY(p.t);
+          // Plasare alternantă: punctele cu T mare (sus) → eticheta deasupra; T mic (jos) → eticheta deasupra tot
+          // Default: deasupra punctului. Se poate ajusta la coliziune.
+          const naturalY = py - labelH - 3;
+          return {
+            x: p.x - labelW / 2,
+            y: Math.max(minY, Math.min(maxY - labelH, naturalY)),
+            w: labelW,
+            h: labelH,
+            anchorX: p.x,
+            anchorY: py,
+            naturalY,
+            minY,
+            maxY,
+          };
+        });
+        // Dacă două etichete consecutive au X-uri foarte apropiate (overlap iminent), pune una dedesubt
+        for (let i = 0; i < rawLabels.length - 1; i++) {
+          const a = rawLabels[i], b = rawLabels[i + 1];
+          const xOver = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+          const yOver = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+          if (xOver > 0 && yOver > 0) {
+            // Pune eticheta cu T mai mare dedesubt (nu peste linie)
+            const candidate = a.anchorY < b.anchorY ? b : a;
+            const altY = candidate.anchorY + 4;
+            if (altY + candidate.h <= maxY) {
+              candidate.y = altY;
+            }
+          }
+        }
+        const adjLabels = avoidLabelCollisions2D(rawLabels, "y");
+
         return (
           <g style={{ pointerEvents: "none" }}>
             <path d={path} fill="none" stroke="#ef4444" strokeWidth="2.5" opacity="0.95" />
-            {pts.map((p, i) => (
-              <g key={i}>
-                <circle cx={p.x} cy={tToY(p.t)} r="3" fill="#ef4444" />
-                <rect x={p.x - 13} y={tToY(p.t) - 15} width="26" height="12" rx="2" fill="rgba(255,255,255,0.92)" />
-                <text x={p.x} y={tToY(p.t) - 6} fontSize="8" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
-              </g>
-            ))}
+            {pts.map((p, i) => {
+              const pointY = tToY(p.t);
+              const lab = adjLabels[i];
+              const labelCenterY = lab.y + lab.h / 2;
+              // Conector dacă centrul etichetei e departe de punct
+              const dx = (lab.x + lab.w / 2) - p.x;
+              const dy = labelCenterY - pointY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const moved = dist > 18;
+              return (
+                <g key={i}>
+                  <circle cx={p.x} cy={pointY} r="3" fill="#ef4444" />
+                  {moved && (
+                    <line x1={p.x} y1={pointY} x2={lab.x + lab.w / 2} y2={labelCenterY > pointY ? lab.y : lab.y + lab.h}
+                      stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2,2" opacity="0.55" />
+                  )}
+                  <rect x={lab.x} y={lab.y} width={lab.w} height={lab.h} rx="2.5" fill="rgba(255,255,255,0.96)" stroke="#ef4444" strokeWidth="0.4" />
+                  <text x={lab.x + lab.w / 2} y={lab.y + lab.h - 4} fontSize="8.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+                </g>
+              );
+            })}
             {!compact && (
               <g>
-                <rect x="4" y="4" width="128" height="28" fill="rgba(255,255,255,0.95)" rx="3" />
+                <rect x="4" y="4" width="128" height="28" fill="rgba(255,255,255,0.95)" rx="3" stroke="#ef4444" strokeWidth="0.4" />
                 <circle cx="12" cy="13" r="3" fill="#ef4444" />
                 <text x="19" y="15" fontSize="8.5" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°) iarnă</text>
                 <text x="8" y="26" fontSize="7.5" fill="#374151" fontWeight="600">EXT {pts[0].t.toFixed(1)}° → {pts[pts.length - 1].t.toFixed(1)}° INT</text>
@@ -351,7 +478,7 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         const h = drawHeights[i];
         const yc = yStarts[i] + h / 2;
         const shouldRotate = h < 22; // când stratul e prea îngust vertical, rotim textul
-        const availableSpace = shouldRotate ? (width - 20) : (width - 40);
+        const availableSpace = shouldRotate ? (width - 20) : (width - 80);
         const displayName = truncateLabel(l.name, availableSpace);
         return (
           <text key={`lbl-${i}`} x={width / 2} y={yc + 3} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
@@ -359,6 +486,36 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
             style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
             {displayName}
           </text>
+        );
+      })}
+
+      {/* Numere index strat (1, 2, 3...) — badge mic în partea dreaptă a fiecărui rând */}
+      {!compact && displayLayers.map((l, i) => {
+        const h = drawHeights[i];
+        const yc = yStarts[i] + h / 2;
+        if (h < 14) return null;
+        const idx = reversed ? (displayLayers.length - i) : (i + 1);
+        return (
+          <g key={`idx-${i}`} style={{ pointerEvents: "none" }}>
+            <circle cx={width - 14} cy={yc} r="7" fill="#1e293b" stroke="white" strokeWidth="1" />
+            <text x={width - 14} y={yc + 3} fontSize="8" fill="white" textAnchor="middle" fontWeight="800">{idx}</text>
+          </g>
+        );
+      })}
+
+      {/* R% per strat — badge stânga */}
+      {!compact && displayLayers.map((l, i) => {
+        const h = drawHeights[i];
+        const yc = yStarts[i] + h / 2;
+        if (h < 22) return null;
+        // mapare displayLayers index → rLayers index original
+        const origIdx = reversed ? (displayLayers.length - 1 - i) : i;
+        const rPct = rTotal > 0 ? (rLayers[origIdx] / rTotal) * 100 : 0;
+        return (
+          <g key={`r-${i}`} style={{ pointerEvents: "none" }}>
+            <rect x={6} y={yc - 5} width="38" height="11" rx="2" fill="rgba(15,23,42,0.85)" />
+            <text x={25} y={yc + 3} fontSize="7.5" fill="#fbbf24" textAnchor="middle" fontWeight="700" fontFamily="monospace">R {rPct.toFixed(0)}%</text>
+          </g>
         );
       })}
 
@@ -391,19 +548,64 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         const { yPts, tMin, tMax, xLeft, xRight } = tempPoints;
         const tToX = (t) => xLeft + ((t - tMin) / (tMax - tMin)) * (xRight - xLeft);
         const path = yPts.map((p, i) => (i === 0 ? "M" : "L") + tToX(p.t).toFixed(1) + "," + p.y.toFixed(1)).join(" ");
+
+        // Anti-coliziune 2D: eticheta rămâne lângă punct, mută doar dacă bbox-urile se suprapun
+        const labelW = 30, labelH = 14;
+        const xMid = (xLeft + xRight) / 2;
+        const rawLabels = yPts.map((p, i) => {
+          const px = tToX(p.t);
+          // Latura: dacă punctul e în jumătatea dreaptă, etichetă în stânga
+          const side = px > xMid - 10 ? "left" : "right";
+          const naturalX = side === "left" ? px - labelW - 4 : px + 4;
+          return {
+            x: Math.max(2, Math.min(width - labelW - 2, naturalX)),
+            y: p.y - labelH / 2,
+            w: labelW,
+            h: labelH,
+            anchorX: px,
+            anchorY: p.y,
+            side,
+          };
+        });
+        // Coliziune 2D: dacă două etichete se suprapun, mută una pe cealaltă latură
+        for (let i = 0; i < rawLabels.length - 1; i++) {
+          const a = rawLabels[i], b = rawLabels[i + 1];
+          const xOver = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+          const yOver = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+          if (xOver > 0 && yOver > 0) {
+            // Mută eticheta a doua pe cealaltă latură
+            b.side = b.side === "left" ? "right" : "left";
+            b.x = b.side === "left" ? b.anchorX - labelW - 4 : b.anchorX + 4;
+            b.x = Math.max(2, Math.min(width - labelW - 2, b.x));
+          }
+        }
+        const adjLabels = avoidLabelCollisions2D(rawLabels, "y");
+
         return (
           <g style={{ pointerEvents: "none" }}>
             <path d={path} fill="none" stroke="#ef4444" strokeWidth="1.8" opacity="0.85" />
-            {yPts.map((p, i) => (
-              <g key={i}>
-                <circle cx={tToX(p.t)} cy={p.y} r="2.2" fill="#ef4444" />
-                <rect x={tToX(p.t) + 4} y={p.y - 7} width="28" height="12" rx="2" fill="rgba(255,255,255,0.93)" />
-                <text x={tToX(p.t) + 18} y={p.y + 2.5} fontSize="7.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
-              </g>
-            ))}
+            {yPts.map((p, i) => {
+              const px = tToX(p.t);
+              const lab = adjLabels[i];
+              const labCenterY = lab.y + lab.h / 2;
+              const labCenterX = lab.x + lab.w / 2;
+              const dist = Math.sqrt((labCenterX - px) ** 2 + (labCenterY - p.y) ** 2);
+              const moved = dist > 24;
+              return (
+                <g key={i}>
+                  <circle cx={px} cy={p.y} r="2.4" fill="#ef4444" />
+                  {moved && (
+                    <line x1={px} y1={p.y} x2={lab.side === "left" ? lab.x + lab.w : lab.x} y2={labCenterY}
+                      stroke="#ef4444" strokeWidth="0.7" strokeDasharray="2,2" opacity="0.55" />
+                  )}
+                  <rect x={lab.x} y={lab.y} width={lab.w} height={lab.h} rx="2.5" fill="rgba(255,255,255,0.96)" stroke="#ef4444" strokeWidth="0.4" />
+                  <text x={lab.x + lab.w / 2} y={lab.y + lab.h - 4} fontSize="8.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+                </g>
+              );
+            })}
             {!compact && (
               <g>
-                <rect x="4" y={height - 28} width="120" height="24" fill="rgba(255,255,255,0.88)" rx="3" />
+                <rect x="4" y={height - 28} width="120" height="24" fill="rgba(255,255,255,0.88)" rx="3" stroke="#ef4444" strokeWidth="0.4" />
                 <circle cx="12" cy={height - 16} r="3" fill="#ef4444" />
                 <text x="18" y={height - 13.5} fontSize="8" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°)</text>
               </g>

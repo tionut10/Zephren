@@ -100,61 +100,66 @@ function LayerStack({ layers }) {
   const totalMm = layers.reduce((s, l) => s + (parseFloat(l.thickness) || 0), 0);
 
   return (
-    <div className="rounded border border-slate-700/50 overflow-hidden text-[9px] font-mono select-none">
+    <div className="rounded-lg border border-slate-700/50 overflow-hidden font-mono select-none">
       {/* Etichetă */}
-      <div className="flex items-center bg-slate-800/70 border-b border-slate-700/40 px-2 py-0.5 text-[8px] text-slate-600 uppercase tracking-widest">
-        <span className="text-sky-600/80 mr-1">EXT</span>
-        <div className="flex-1 text-center">SECȚIUNE TRANSVERSALĂ · ISO 6946:2017</div>
-        <span className="text-emerald-600/80 ml-1">INT</span>
+      <div className="flex items-center bg-slate-800/80 border-b border-slate-700/40 px-3 py-1 text-[10px] text-slate-400 uppercase tracking-widest">
+        <span className="text-sky-400 mr-2 font-bold">◀ EXT</span>
+        <div className="flex-1 text-center text-slate-500">SECȚIUNE TRANSVERSALĂ · ISO 6946:2017</div>
+        <span className="text-emerald-400 ml-2 font-bold">INT ▶</span>
       </div>
       {/* Bara proporțională */}
-      <div className="flex h-11 items-stretch">
+      <div className="flex h-24 items-stretch">
         {/* Rse */}
-        <div className="flex flex-col items-center justify-center w-9 bg-sky-900/20 border-r border-slate-700/40 shrink-0 gap-0.5">
-          <span className="text-sky-400/50">↔</span>
-          <span className="text-[7px] text-sky-500/50 leading-none">Rse</span>
-          <span className="text-[7px] text-sky-400/40 leading-none">0.04</span>
+        <div className="flex flex-col items-center justify-center w-14 bg-sky-900/30 border-r border-slate-700/40 shrink-0 gap-1">
+          <span className="text-sky-400 text-base leading-none">↔</span>
+          <span className="text-[10px] text-sky-300 leading-none font-bold">Rse</span>
+          <span className="text-[9px] text-sky-400/70 leading-none">0.04</span>
+          <span className="text-[8px] text-sky-500/60 leading-none">m²K/W</span>
         </div>
         {/* Straturi */}
         {layers.map((layer, i) => {
           const mm  = parseFloat(layer.thickness) || 0;
           const pct = totalMm > 0 ? Math.max(5, (mm / totalMm) * 100) : 100 / layers.length;
           const c   = getMatColors(layer.material || "");
+          const matName = layer.material || `Strat ${i + 1}`;
+          const shortName = matName.length > 14 ? matName.slice(0, 13) + "…" : matName;
           return (
             <div
               key={i}
               style={{ width: `${pct}%` }}
               className={cn(
-                "flex flex-col items-center justify-center border-r border-slate-700/30 transition-all px-0.5 gap-0.5",
+                "flex flex-col items-center justify-center border-r border-slate-700/30 transition-all px-1 gap-1 relative overflow-hidden",
                 c.bg
               )}
-              title={`${layer.material} — ${mm} mm`}
+              title={`${matName} — ${mm} mm`}
             >
-              <div className={cn("w-1.5 h-1.5 rounded-full", c.dot)} />
-              <span className="text-white/40 text-[7px] leading-none">{mm}mm</span>
+              <div className={cn("w-2 h-2 rounded-full ring-1 ring-white/20", c.dot)} />
+              <span className="text-white/85 text-[10px] leading-tight font-semibold text-center truncate w-full px-0.5">{shortName}</span>
+              <span className="text-white/55 text-[9px] leading-none font-mono">{mm}<span className="text-white/35">mm</span></span>
             </div>
           );
         })}
         {/* Rsi */}
-        <div className="flex flex-col items-center justify-center w-9 bg-emerald-900/20 border-l border-slate-700/40 shrink-0 gap-0.5">
-          <span className="text-emerald-400/50">↔</span>
-          <span className="text-[7px] text-emerald-500/50 leading-none">Rsi</span>
-          <span className="text-[7px] text-emerald-400/40 leading-none">0.13</span>
+        <div className="flex flex-col items-center justify-center w-14 bg-emerald-900/30 border-l border-slate-700/40 shrink-0 gap-1">
+          <span className="text-emerald-400 text-base leading-none">↔</span>
+          <span className="text-[10px] text-emerald-300 leading-none font-bold">Rsi</span>
+          <span className="text-[9px] text-emerald-400/70 leading-none">0.13</span>
+          <span className="text-[8px] text-emerald-500/60 leading-none">m²K/W</span>
         </div>
       </div>
       {/* Indici straturi */}
-      <div className="flex items-stretch bg-slate-800/30 border-t border-slate-700/30">
-        <div className="w-9 shrink-0" />
+      <div className="flex items-stretch bg-slate-800/40 border-t border-slate-700/30">
+        <div className="w-14 shrink-0 text-[8px] text-sky-500/60 text-center py-1">aer ext</div>
         {layers.map((layer, i) => {
           const mm  = parseFloat(layer.thickness) || 0;
           const pct = totalMm > 0 ? Math.max(5, (mm / totalMm) * 100) : 100 / layers.length;
           return (
-            <div key={i} style={{ width: `${pct}%` }} className="text-[7px] text-slate-700 text-center py-0.5 overflow-hidden">
+            <div key={i} style={{ width: `${pct}%` }} className="text-[9px] text-slate-400 text-center py-1 overflow-hidden font-bold border-r border-slate-700/20">
               #{i + 1}
             </div>
           );
         })}
-        <div className="w-9 shrink-0" />
+        <div className="w-14 shrink-0 text-[8px] text-emerald-500/60 text-center py-1">aer int</div>
       </div>
     </div>
   );

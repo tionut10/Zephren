@@ -27,9 +27,16 @@ export default function ElementSectionModal({
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose?.(); };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();        // împiedică propagarea spre handler-ul catalogului
+        e.preventDefault();
+        onClose?.();
+      }
+    };
+    // capture-phase ca să prindem Escape ÎNAINTEA altor handler-e (ex. catalogul de punți)
+    document.addEventListener("keydown", handleKey, { capture: true });
+    return () => document.removeEventListener("keydown", handleKey, { capture: true });
   }, [onClose]);
 
   function handleExportSVG() {
@@ -90,16 +97,23 @@ export default function ElementSectionModal({
     type === "bridge" ? `Secțiune punte termică: ${element?.name || "—"}` :
     "Secțiune element";
 
+  // Punțile termice au nevoie de mai mult spațiu — folosim aproape întreg ecranul
+  const widthClass =
+    type === "bridge" ? "max-w-[96vw] xl:max-w-[1400px]" :
+    type === "opaque" ? "max-w-6xl" :
+    "max-w-5xl";
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-      onClick={onClose}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 backdrop-blur-sm p-2 sm:p-4"
+      onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+      onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div
-        className="bg-[#0f1220] border border-white/10 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl"
+        className={`bg-[#0f1220] border border-white/10 rounded-2xl w-full ${widthClass} max-h-[96vh] flex flex-col overflow-hidden shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -169,32 +183,42 @@ export default function ElementSectionModal({
           )}
           {type === "bridge" && element && (
             <div className="space-y-4">
-              <div className="bg-[#f7f3e8] rounded-xl overflow-hidden border border-white/5">
+              <div className="bg-[#f7f3e8] rounded-xl overflow-hidden border border-white/5 max-w-[1280px] mx-auto">
                 <BridgeIllustration
                   bridge={element}
                   details={bridgeDetails}
                   mode="detail"
                 />
               </div>
-              {bridgeDetails && (
-                <div className="grid grid-cols-3 gap-2 text-[11px]">
-                  {bridgeDetails.isoClass && (
-                    <div className="p-2 rounded bg-white/[0.03]"><b>ISO 14683:</b> clasa {bridgeDetails.isoClass}</div>
-                  )}
-                  {bridgeDetails.fRsi != null && (
-                    <div className="p-2 rounded bg-white/[0.03]"><b>fRsi:</b> {bridgeDetails.fRsi.toFixed(2)}</div>
-                  )}
-                  {bridgeDetails.priority != null && (
-                    <div className="p-2 rounded bg-white/[0.03]"><b>Prioritate:</b> {bridgeDetails.priority}/5</div>
-                  )}
-                </div>
-              )}
-              {element.psi != null && (
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                  <div className="font-mono font-bold text-amber-400 text-lg">Ψ = {element.psi} W/(m·K)</div>
-                  {element.psi_izolat != null && (
-                    <div className="text-[11px] opacity-70 mt-1">Izolat: Ψ = {element.psi_izolat} (−{Math.round((1 - element.psi_izolat / element.psi) * 100)}%)</div>
-                  )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[1280px] mx-auto">
+                {/* Card metadata stânga */}
+                {bridgeDetails && (
+                  <div className="grid grid-cols-3 gap-2 text-[11px]">
+                    {bridgeDetails.isoClass && (
+                      <div className="p-2 rounded bg-white/[0.03] border border-white/5"><b>ISO 14683:</b> clasa {bridgeDetails.isoClass}</div>
+                    )}
+                    {bridgeDetails.fRsi != null && (
+                      <div className="p-2 rounded bg-white/[0.03] border border-white/5"><b>fRsi:</b> {bridgeDetails.fRsi.toFixed(2)}</div>
+                    )}
+                    {bridgeDetails.priority != null && (
+                      <div className="p-2 rounded bg-white/[0.03] border border-white/5"><b>Prioritate:</b> {bridgeDetails.priority}/5</div>
+                    )}
+                  </div>
+                )}
+                {/* Card Ψ — badge mare lizibil dreapta */}
+                {element.psi != null && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                    <div className="font-mono font-bold text-amber-400 text-lg">Ψ = {element.psi} W/(m·K)</div>
+                    {element.psi_izolat != null && (
+                      <div className="text-[11px] opacity-70 mt-1">Izolat: Ψ = {element.psi_izolat} (−{Math.round((1 - element.psi_izolat / element.psi) * 100)}%)</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Descriere normativă */}
+              {element.description && (
+                <div className="max-w-[1280px] mx-auto p-3 rounded-lg bg-white/[0.02] border border-white/5 text-[12px] leading-relaxed">
+                  {element.description}
                 </div>
               )}
             </div>
