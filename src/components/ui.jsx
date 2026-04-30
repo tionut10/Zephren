@@ -44,8 +44,8 @@ export function Select({ label, value, onChange, options, placeholder, className
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
       {label && (
-        <div className="flex items-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60 w-full text-center">{label}</label>
+        <div className="flex items-center justify-center gap-1 min-h-[2rem]">
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
       )}
@@ -96,8 +96,8 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       {label && (
-        <div className="flex items-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60 w-full text-center">{label}</label>
+        <div className="flex items-center justify-center gap-1 min-h-[2rem]">
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
       )}
@@ -130,9 +130,9 @@ export function Badge({ children, color="amber" }) {
 export function Card({ children, className="", title, badge }) {
   return (
     <div className={cn("bg-white/[0.03] border border-white/[0.06] rounded-xl p-5", className)}>
-      {(title||badge) && <div className="flex items-center justify-between mb-4">
-        {title && <h3 className="text-sm font-semibold uppercase tracking-wider opacity-70 w-full text-center">{title}</h3>}
-        {badge}
+      {(title||badge) && <div className="relative flex items-center justify-center mb-4">
+        {title && <h3 className="text-sm font-semibold uppercase tracking-wider opacity-70 text-center">{title}</h3>}
+        {badge && <div className="absolute right-0">{badge}</div>}
       </div>}
       {children}
     </div>
