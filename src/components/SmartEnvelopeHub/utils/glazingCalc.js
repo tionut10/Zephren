@@ -3,10 +3,17 @@
  * Fără dependențe React — importabil direct în teste Vitest.
  *
  * Formula U total = U_vitraj*(1-fr) + U_ramă*fr + ΔU_spacer  (ISO 10077-1)
+ *
+ * Sprint Catalog NEUTRAL 30 apr 2026: extindere GLAZING_DB + FRAME_DB cu
+ * intrările din glazingTypes.json (22) + frameTypes.json (17), mapate la
+ * schema legacy (icon + desc generate automat dacă lipsesc).
  */
 
-// ── Baze de date vitraj / ramă ─────────────────────────────────────────────
-export const GLAZING_DB = [
+import GLAZING_TYPES_DATA from "../../../data/glazingTypes.json";
+import FRAME_TYPES_DATA from "../../../data/frameTypes.json";
+
+// ── Legacy entries (păstrate pentru backward compat + UI rich) ──────────────
+const _LEGACY_GLAZING = [
   { name: "Simplu vitraj",                u: 5.80, g: 0.85, icon: "⬜", desc: "Vechi / ne-izolant — renovare urgentă recomandată" },
   { name: "Dublu vitraj (4-12-4)",        u: 2.80, g: 0.75, icon: "🟦", desc: "Standard anii '90 — nu atinge nZEB" },
   { name: "Dublu vitraj termoizolant",    u: 1.60, g: 0.65, icon: "🟦", desc: "Minim acceptabil renovare" },
@@ -16,13 +23,73 @@ export const GLAZING_DB = [
   { name: "Triplu vitraj 2×Low-E",        u: 0.50, g: 0.40, icon: "🟩", desc: "Top performanță — casa pasivă" },
 ];
 
-export const FRAME_DB = [
+const _LEGACY_FRAMES = [
   { name: "PVC (5 camere)",       u: 1.30, icon: "◽", desc: "Cel mai folosit — raport bun preț/performanță" },
   { name: "PVC (6-7 camere)",     u: 1.10, icon: "◽", desc: "Premium PVC — nZEB-ready" },
   { name: "Lemn stratificat",     u: 1.40, icon: "🟫", desc: "Estetic — întreținere periodică" },
   { name: "Aluminiu fără RPT",    u: 5.00, icon: "▫️", desc: "NU folosi în climă rece — punte termică majoră" },
   { name: "Aluminiu cu RPT",      u: 2.00, icon: "▫️", desc: "Acceptabil — RPT = ruperea punții termice" },
   { name: "Lemn-aluminiu",        u: 1.20, icon: "🟫", desc: "Premium combo — lemn interior, aluminiu exterior" },
+];
+
+// ── Helper: pictograma generată automat după Ug (vitraje) sau material (rame)
+function _autoIconGlazing(ug) {
+  if (ug >= 3) return "⬜";
+  if (ug >= 1.5) return "🟦";
+  return "🟩";
+}
+function _autoIconFrame(material) {
+  if (material === "lemn") return "🟫";
+  if (material === "aluminiu") return "▫️";
+  if (material === "compozit") return "🟪";
+  if (material === "hibrid") return "🟧";
+  return "◽";
+}
+
+// ── Extindere din glazingTypes.json (22 entries, deduplicate după name) ────
+const _EXTENDED_GLAZING = (GLAZING_TYPES_DATA.glazings || []).map(gl => ({
+  id: gl.id,
+  name: gl.label,
+  shortLabel: gl.shortLabel,
+  u: gl.ug,
+  g: gl.g,
+  tlight: gl.tlight,
+  composition: gl.composition,
+  era: gl.era,
+  icon: _autoIconGlazing(gl.ug),
+  desc: gl.notes ? gl.notes.slice(0, 100) : (gl.composition || ""),
+  tags: gl.tags || [],
+  source: gl.source,
+  brand: null, supplierId: null, affiliateUrl: null, sponsored: false,
+}));
+
+const _glazingNames = new Set(_LEGACY_GLAZING.map(g => g.name.toLowerCase()));
+export const GLAZING_DB = [
+  ..._LEGACY_GLAZING,
+  ..._EXTENDED_GLAZING.filter(g => !_glazingNames.has(g.name.toLowerCase())),
+];
+
+// ── Extindere din frameTypes.json (17 entries, deduplicate după name) ──────
+const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
+  id: fr.id,
+  name: fr.label,
+  shortLabel: fr.shortLabel,
+  u: fr.uf,
+  material: fr.material,
+  thickness_mm: fr.thickness_mm,
+  chambers: fr.chambers,
+  era: fr.era,
+  icon: _autoIconFrame(fr.material),
+  desc: fr.notes ? fr.notes.slice(0, 100) : (fr.material || ""),
+  tags: fr.tags || [],
+  source: fr.source,
+  brand: null, supplierId: null, affiliateUrl: null, sponsored: false,
+}));
+
+const _frameNames = new Set(_LEGACY_FRAMES.map(f => f.name.toLowerCase()));
+export const FRAME_DB = [
+  ..._LEGACY_FRAMES,
+  ..._EXTENDED_FRAMES.filter(f => !_frameNames.has(f.name.toLowerCase())),
 ];
 
 // ── U_REF vitraj (Mc 001-2022) ────────────────────────────────────────────

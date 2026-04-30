@@ -3,27 +3,11 @@ import { T } from "../data/translations.js";
 import { Select, Input, Card, ResultRow } from "./ui.jsx";
 import { U_REF_GLAZING } from "../data/u-reference.js";
 import { calcFsh } from "../calc/shading-factor.js";
+// Sprint Catalog NEUTRAL 30 apr 2026: import GLAZING_DB + FRAME_DB extinse
+// din building-catalog.js (28 vitraje + 23 rame, sincronizate cu JSON-uri).
+import { GLAZING_DB, FRAME_DB } from "../data/building-catalog.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
-
-const GLAZING_DB = [
-  { name:"Simplu vitraj", u:5.80, g:0.85 },
-  { name:"Dublu vitraj (4-12-4)", u:2.80, g:0.75 },
-  { name:"Dublu vitraj termoizolant", u:1.60, g:0.65 },
-  { name:"Dublu vitraj Low-E", u:1.10, g:0.50 },
-  { name:"Triplu vitraj", u:0.90, g:0.50 },
-  { name:"Triplu vitraj Low-E", u:0.70, g:0.45 },
-  { name:"Triplu vitraj 2×Low-E", u:0.50, g:0.40 },
-];
-
-const FRAME_DB = [
-  { name:"PVC (5 camere)", u:1.30 },
-  { name:"PVC (6-7 camere)", u:1.10 },
-  { name:"Lemn stratificat", u:1.40 },
-  { name:"Aluminiu fără RPT", u:5.00 },
-  { name:"Aluminiu cu RPT", u:2.00 },
-  { name:"Lemn-aluminiu", u:1.20 },
-];
 
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
 

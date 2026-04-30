@@ -149,7 +149,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="🔍 Caută în toate cele 165 tipuri (nume, categorie, descriere)…"
+              placeholder={`🔍 Caută în toate cele ${THERMAL_BRIDGES_DB.length} tipuri (nume, categorie, descriere)…`}
               aria-label="Caută punți termice"
               style={{
                 width: "100%", padding: "9px 12px 9px 12px", borderRadius: 10,

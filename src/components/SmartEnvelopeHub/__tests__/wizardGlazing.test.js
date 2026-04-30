@@ -13,19 +13,22 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── GLAZING_DB — structură ────────────────────────────────────────────────────
+// Sprint Catalog NEUTRAL 30 apr 2026: GLAZING_DB conține legacy 7 + 22 noi
+// din glazingTypes.json (deduplicate). Legacy 7 păstrate la index 0-6.
 describe("GLAZING_DB — structură și valori", () => {
-  it("conține exact 7 tipuri de vitraj", () => {
-    expect(GLAZING_DB).toHaveLength(7);
+  it("conține minim 7 tipuri legacy + extindere catalog (>= 20 total)", () => {
+    expect(GLAZING_DB.length).toBeGreaterThanOrEqual(7);
+    expect(GLAZING_DB.length).toBeGreaterThanOrEqual(20);
   });
 
-  it("fiecare intrare are name, u, g, icon, desc", () => {
-    GLAZING_DB.forEach(gl => {
-      expect(gl).toHaveProperty("name");
-      expect(gl).toHaveProperty("u");
-      expect(gl).toHaveProperty("g");
-      expect(gl).toHaveProperty("icon");
-      expect(gl).toHaveProperty("desc");
-    });
+  it("legacy: primele 7 entries păstrate cu name/u/g/icon/desc", () => {
+    for (let i = 0; i < 7; i++) {
+      expect(GLAZING_DB[i]).toHaveProperty("name");
+      expect(GLAZING_DB[i]).toHaveProperty("u");
+      expect(GLAZING_DB[i]).toHaveProperty("g");
+      expect(GLAZING_DB[i]).toHaveProperty("icon");
+      expect(GLAZING_DB[i]).toHaveProperty("desc");
+    }
   });
 
   it("prima intrare este 'Simplu vitraj' cu U=5.80 (cel mai slab)", () => {
@@ -33,14 +36,13 @@ describe("GLAZING_DB — structură și valori", () => {
     expect(GLAZING_DB[0].u).toBe(5.80);
   });
 
-  it("ultima intrare este 'Triplu vitraj 2×Low-E' cu U=0.50 (cel mai performant)", () => {
-    const last = GLAZING_DB[GLAZING_DB.length - 1];
-    expect(last.name).toBe("Triplu vitraj 2×Low-E");
-    expect(last.u).toBe(0.50);
+  it("legacy: la index 6 este 'Triplu vitraj 2×Low-E' cu U=0.50 (top legacy)", () => {
+    expect(GLAZING_DB[6].name).toBe("Triplu vitraj 2×Low-E");
+    expect(GLAZING_DB[6].u).toBe(0.50);
   });
 
-  it("U valorile sunt în ordine descrescătoare (performanță crescătoare)", () => {
-    for (let i = 0; i < GLAZING_DB.length - 1; i++) {
+  it("legacy: U valorile sunt în ordine descrescătoare (performanță crescătoare) în primele 7", () => {
+    for (let i = 0; i < 6; i++) {
       expect(GLAZING_DB[i].u).toBeGreaterThanOrEqual(GLAZING_DB[i + 1].u);
     }
   });
@@ -58,21 +60,28 @@ describe("GLAZING_DB — structură și valori", () => {
       expect(gl.g).toBeLessThanOrEqual(1);
     });
   });
+
+  it("conține entries noi din glazingTypes.json (BIPV, VIG, electrocrom)", () => {
+    const names = GLAZING_DB.map(g => g.name);
+    const hasInnovation = names.some(n => /BIPV|VIG|electrocrom|fotocrom/i.test(n));
+    expect(hasInnovation).toBe(true);
+  });
 });
 
 // ── FRAME_DB — structură ──────────────────────────────────────────────────────
 describe("FRAME_DB — structură și valori", () => {
-  it("conține exact 6 tipuri de ramă", () => {
-    expect(FRAME_DB).toHaveLength(6);
+  it("conține minim 6 legacy + extindere (>= 15 total)", () => {
+    expect(FRAME_DB.length).toBeGreaterThanOrEqual(6);
+    expect(FRAME_DB.length).toBeGreaterThanOrEqual(15);
   });
 
-  it("fiecare intrare are name, u, icon, desc", () => {
-    FRAME_DB.forEach(fr => {
-      expect(fr).toHaveProperty("name");
-      expect(fr).toHaveProperty("u");
-      expect(fr).toHaveProperty("icon");
-      expect(fr).toHaveProperty("desc");
-    });
+  it("legacy: primele 6 entries păstrate cu name/u/icon/desc", () => {
+    for (let i = 0; i < 6; i++) {
+      expect(FRAME_DB[i]).toHaveProperty("name");
+      expect(FRAME_DB[i]).toHaveProperty("u");
+      expect(FRAME_DB[i]).toHaveProperty("icon");
+      expect(FRAME_DB[i]).toHaveProperty("desc");
+    }
   });
 
   it("'Aluminiu fără RPT' are U=5.0 (cea mai slabă performanță)", () => {
@@ -91,6 +100,12 @@ describe("FRAME_DB — structură și valori", () => {
     FRAME_DB.forEach(fr => {
       expect(fr.u).toBeGreaterThan(0);
     });
+  });
+
+  it("conține entries noi din frameTypes.json (PVC 7/8 camere, GFRP, Accoya)", () => {
+    const names = FRAME_DB.map(f => f.name);
+    const hasModern = names.some(n => /7 camere|8 camere|GFRP|Accoya|modificat termic/i.test(n));
+    expect(hasModern).toBe(true);
   });
 });
 
