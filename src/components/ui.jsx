@@ -127,13 +127,14 @@ export function Badge({ children, color="amber" }) {
   return <span className={cn("inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border", colors[color])}>{children}</span>;
 }
 
-export function Card({ children, className="", title, badge }) {
+export function Card({ children, className="", title, badge, subtitle }) {
   return (
     <div className={cn("bg-white/[0.03] border border-white/[0.06] rounded-xl p-5", className)}>
-      {(title||badge) && <div className="flex items-center mb-4">
-        {badge && <div className="invisible pointer-events-none shrink-0">{badge}</div>}
+      {(title||badge||subtitle) && <div className={cn("mb-4", subtitle ? "flex flex-col items-center gap-1" : "flex items-center")}>
+        {!subtitle && badge && <div className="invisible pointer-events-none shrink-0">{badge}</div>}
         {title && <h3 className="flex-1 text-sm font-semibold uppercase tracking-wider opacity-70 text-center">{title}</h3>}
-        {badge && <div className="shrink-0">{badge}</div>}
+        {subtitle && <div className="shrink-0">{subtitle}</div>}
+        {!subtitle && badge && <div className="shrink-0">{badge}</div>}
       </div>}
       {children}
     </div>

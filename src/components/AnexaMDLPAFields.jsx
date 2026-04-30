@@ -262,7 +262,7 @@ export default function AnexaMDLPAFields({
   return (
     <Card
       title="Anexa 1+2 MDLPA — Completare automată detaliată"
-      badge={<Badge color="blue">Ord. 16/2023</Badge>}
+      subtitle={<Badge color="blue">Ord. 16/2023</Badge>}
       className="mb-4"
     >
       <div className="text-[11px] opacity-50 mb-4">

@@ -773,7 +773,7 @@ export default function Step1Identification({
           </Card>
 
           {/* Sprint 15 + 21 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1) */}
-          <Card title={t("Identificare juridică",lang)} badge={<Badge color="amber">Ord. 16/2023</Badge>}>
+          <Card title={t("Identificare juridică",lang)} subtitle={<Badge color="amber">Ord. 16/2023</Badge>}>
             <div className="space-y-3">
               {/* Sprint 21 #8 — tip proprietar + CUI validat */}
               <Select
