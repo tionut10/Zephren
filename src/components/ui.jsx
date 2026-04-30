@@ -44,9 +44,9 @@ export function Select({ label, value, onChange, options, placeholder, className
   return (
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
       {label && (
-        <div className="flex items-center justify-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
-          {tooltip && <TooltipIcon text={tooltip} />}
+        <div className="relative flex items-center min-h-[2rem]">
+          <label className="w-full text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
+          {tooltip && <span className="absolute right-0"><TooltipIcon text={tooltip} /></span>}
         </div>
       )}
       {tooltip && <span id={tooltipId.current} className="sr-only">{tooltip}</span>}
@@ -54,11 +54,11 @@ export function Select({ label, value, onChange, options, placeholder, className
         aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId.current}
         aria-describedby={describedBy}
         aria-invalid={error ? "true" : undefined}
-        className={cn("bg-white/5 border rounded-lg px-3 py-1.5 text-sm text-left focus:outline-none focus:ring-1 transition-all flex items-center justify-between gap-2",
+        className={cn("bg-white/5 border rounded-lg px-3 pr-8 py-1.5 text-sm text-center focus:outline-none focus:ring-1 transition-all relative flex items-center justify-center",
           error ? "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30" : "border-white/10 focus:border-amber-500/50 focus:ring-amber-500/30")}
         style={{minHeight:"32px"}}>
-        <span className={!selected && placeholder ? "opacity-40" : ""}>{selectedLabel}</span>
-        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{flexShrink:0,transform:open?"rotate(180deg)":"",transition:"transform 0.15s"}}><path d="M6 9l6 6 6-6"/></svg>
+        <span className={cn("truncate", !selected && placeholder ? "opacity-40" : "")}>{selectedLabel}</span>
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{position:"absolute",right:"12px",flexShrink:0,transform:open?"rotate(180deg)":"",transition:"transform 0.15s"}}><path d="M6 9l6 6 6-6"/></svg>
       </button>
       {open && (
         <div id={listboxId.current} role="listbox" aria-label={label || "Opțiuni"}
@@ -96,9 +96,9 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       {label && (
-        <div className="flex items-center justify-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
-          {tooltip && <TooltipIcon text={tooltip} />}
+        <div className="relative flex items-center min-h-[2rem]">
+          <label className="w-full text-xs font-medium uppercase tracking-wider opacity-60 text-center">{label}</label>
+          {tooltip && <span className="absolute right-0"><TooltipIcon text={tooltip} /></span>}
         </div>
       )}
       {tooltip && <span id={tipId.current} className="sr-only">{tooltip}</span>}
@@ -130,9 +130,10 @@ export function Badge({ children, color="amber" }) {
 export function Card({ children, className="", title, badge }) {
   return (
     <div className={cn("bg-white/[0.03] border border-white/[0.06] rounded-xl p-5", className)}>
-      {(title||badge) && <div className="relative flex items-center justify-center mb-4">
-        {title && <h3 className="text-sm font-semibold uppercase tracking-wider opacity-70 text-center">{title}</h3>}
-        {badge && <div className="absolute right-0">{badge}</div>}
+      {(title||badge) && <div className="flex items-center mb-4">
+        {badge && <div className="invisible pointer-events-none shrink-0">{badge}</div>}
+        {title && <h3 className="flex-1 text-sm font-semibold uppercase tracking-wider opacity-70 text-center">{title}</h3>}
+        {badge && <div className="shrink-0">{badge}</div>}
       </div>}
       {children}
     </div>
