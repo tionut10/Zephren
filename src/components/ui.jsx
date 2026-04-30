@@ -45,7 +45,7 @@ export function Select({ label, value, onChange, options, placeholder, className
     <div className={cn("flex flex-col gap-1", className)} ref={ref} style={{position:"relative"}}>
       {label && (
         <div className="flex items-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60 w-full text-center">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
       )}
@@ -97,7 +97,7 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
     <div className={cn("flex flex-col gap-1", className)}>
       {label && (
         <div className="flex items-center gap-1 min-h-[2rem]">
-          <label className="text-xs font-medium uppercase tracking-wider opacity-60">{label}</label>
+          <label className="text-xs font-medium uppercase tracking-wider opacity-60 w-full text-center">{label}</label>
           {tooltip && <TooltipIcon text={tooltip} />}
         </div>
       )}
@@ -109,7 +109,7 @@ export function Input({ label, value, onChange, type="text", unit, placeholder, 
           aria-label={ariaLabel || (label ? undefined : placeholder)}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={describedBy}
-          className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
+          className={cn("w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 transition-all",
             unit && "pr-12", disabled && "opacity-40 cursor-not-allowed",
             error && "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30")} />
         {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40" aria-hidden="true">{unit}</span>}
@@ -131,7 +131,7 @@ export function Card({ children, className="", title, badge }) {
   return (
     <div className={cn("bg-white/[0.03] border border-white/[0.06] rounded-xl p-5", className)}>
       {(title||badge) && <div className="flex items-center justify-between mb-4">
-        {title && <h3 className="text-sm font-semibold uppercase tracking-wider opacity-70">{title}</h3>}
+        {title && <h3 className="text-sm font-semibold uppercase tracking-wider opacity-70 w-full text-center">{title}</h3>}
         {badge}
       </div>}
       {children}

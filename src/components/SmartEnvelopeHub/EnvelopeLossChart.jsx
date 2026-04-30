@@ -104,7 +104,7 @@ export default function EnvelopeLossChart({
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center justify-center gap-3">
       <svg
         viewBox={`0 0 ${dim.px === 120 ? 120 : 90} ${dim.px === 120 ? 120 : 90}`}
         width={dim.px}
