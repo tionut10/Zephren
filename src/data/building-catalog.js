@@ -2,9 +2,50 @@
  * building-catalog.js — Catalogul complet al tipurilor de clădiri, soluții constructive,
  * vitrajuri, rame, orientări, tipuri elemente, structuri și șabloane CPE.
  * Extras din energy-calc.jsx pentru reutilizare și mentenabilitate.
+ *
+ * Sprint 30 apr 2026 (catalog NEUTRU):
+ *   - CONSTRUCTION_SOLUTIONS = legacy 8 + 73 din typicalSolutions.json
+ *   - GLAZING_DB = legacy 7 + 22 din glazingTypes.json (deduplicat după name)
+ *   - FRAME_DB = legacy 6 + 17 din frameTypes.json (deduplicat după name)
+ *   Câmpurile brand/supplierId/affiliateUrl rezervate (null) — politica
+ *   neutralitate (Sprint Catalog Sugestii Orientative 25 apr 2026).
  */
 
-export const CONSTRUCTION_SOLUTIONS = [
+import MATERIALS_DB from "./materials.json";
+import TYPICAL_SOLUTIONS_DATA from "./typicalSolutions.json";
+import GLAZING_TYPES_DATA from "./glazingTypes.json";
+import FRAME_TYPES_DATA from "./frameTypes.json";
+
+// ── Helper: enrich layer cu lambda/rho/mu/cp/src din materials.json ─────────
+function _enrichLayer(layer) {
+  const mat = MATERIALS_DB.find(m => m.name === layer.material);
+  return {
+    material: layer.material,
+    matName: layer.material,
+    thickness: String(layer.thickness),
+    lambda: mat?.lambda ?? 0,
+    rho: mat?.rho ?? 0,
+    mu: mat?.mu ?? 0,
+    cp: mat?.cp ?? 0,
+    src: mat?.src ?? "",
+  };
+}
+
+// ── Map elementType din typicalSolutions → tipuri OpaqueModal ELEMENT_TYPES ─
+//    AC_VERDE/PA/PM → PT (acoperiș plat referință)
+//    AT (atic) → PE | PV (peste pasaj) → PB | US/UN → PE/PR
+//    PI_INTERMED → PI
+function _mapElementType(typ) {
+  const map = {
+    "AC_VERDE": "PT", "PA": "PT", "PM": "PT",
+    "AT": "PE", "PV": "PB",
+    "US": "PE", "UN": "PR",
+    "PI_INTERMED": "PI",
+  };
+  return map[typ] || typ;
+}
+
+const _LEGACY_SOLUTIONS = [
   { id:"PE_BCA30_EPS10", name:"Perete BCA 30cm + EPS 10cm", type:"PE",
     layers:[{material:"Tencuială decorativă",thickness:"5",lambda:0.70,rho:1600,matName:"Tencuială decorativă"},{material:"Polistiren expandat EPS 100",thickness:"100",lambda:0.036,rho:25,matName:"Polistiren expandat EPS 100"},{material:"BCA (beton celular autoclavizat)",thickness:"300",lambda:0.22,rho:600,matName:"BCA (beton celular autoclavizat)"},{material:"Tencuială var-ciment",thickness:"15",lambda:0.87,rho:1800,matName:"Tencuială var-ciment"}] },
   { id:"PE_GVP25_EPS15", name:"Perete GVP 25cm + EPS 15cm", type:"PE",
@@ -23,23 +64,93 @@ export const CONSTRUCTION_SOLUTIONS = [
     layers:[{material:"Parchet lemn",thickness:"15",lambda:0.18,rho:600,matName:"Parchet lemn"},{material:"Șapă ciment",thickness:"50",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Polistiren expandat EPS 80",thickness:"50",lambda:0.039,rho:20,matName:"Polistiren expandat EPS 80"},{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"}] },
 ];
 
-export const GLAZING_DB = [
+// Extindere CONSTRUCTION_SOLUTIONS din typicalSolutions.json (73 entries)
+const _EXTENDED_SOLUTIONS = (TYPICAL_SOLUTIONS_DATA.solutions || []).map(s => ({
+  id: s.id,
+  name: s.label || s.shortLabel,
+  shortLabel: s.shortLabel,
+  type: _mapElementType(s.elementType),
+  era: s.era,
+  structure: s.structure,
+  uTypical: s.uTypical,
+  source: s.source,
+  tags: s.tags || [],
+  layers: (s.layers || []).map(_enrichLayer),
+  brand: null,
+  supplierId: null,
+  affiliateUrl: null,
+  sponsored: false,
+}));
+
+export const CONSTRUCTION_SOLUTIONS = [..._LEGACY_SOLUTIONS, ..._EXTENDED_SOLUTIONS];
+
+const _LEGACY_GLAZING = [
   { name:"Simplu vitraj", u:5.80, g:0.85 },
   { name:"Dublu vitraj (4-12-4)", u:2.80, g:0.75 },
   { name:"Dublu vitraj termoizolant", u:1.60, g:0.65 },
   { name:"Dublu vitraj Low-E", u:1.10, g:0.50 },
   { name:"Triplu vitraj", u:0.90, g:0.50 },
   { name:"Triplu vitraj Low-E", u:0.70, g:0.45 },
-  { name:"Triplu vitraj 2\u00d7Low-E", u:0.50, g:0.40 },
+  { name:"Triplu vitraj 2×Low-E", u:0.50, g:0.40 },
 ];
 
-export const FRAME_DB = [
+// Extindere GLAZING_DB din glazingTypes.json (22 entries, deduplicate)
+const _EXTENDED_GLAZING = (GLAZING_TYPES_DATA.glazings || []).map(gl => ({
+  id: gl.id,
+  name: gl.label,
+  shortLabel: gl.shortLabel,
+  u: gl.ug,
+  g: gl.g,
+  tlight: gl.tlight,
+  composition: gl.composition,
+  era: gl.era,
+  tags: gl.tags || [],
+  source: gl.source,
+  notes: gl.notes,
+  brand: null,
+  supplierId: null,
+  affiliateUrl: null,
+  sponsored: false,
+}));
+
+const _glazingNames = new Set(_LEGACY_GLAZING.map(g => g.name.toLowerCase()));
+export const GLAZING_DB = [
+  ..._LEGACY_GLAZING,
+  ..._EXTENDED_GLAZING.filter(g => !_glazingNames.has(g.name.toLowerCase())),
+];
+
+const _LEGACY_FRAMES = [
   { name:"PVC (5 camere)", u:1.30 },
   { name:"PVC (6-7 camere)", u:1.10 },
   { name:"Lemn stratificat", u:1.40 },
-  { name:"Aluminiu f\u0103r\u0103 RPT", u:5.00 },
+  { name:"Aluminiu fără RPT", u:5.00 },
   { name:"Aluminiu cu RPT", u:2.00 },
   { name:"Lemn-aluminiu", u:1.20 },
+];
+
+// Extindere FRAME_DB din frameTypes.json (17 entries, deduplicate)
+const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
+  id: fr.id,
+  name: fr.label,
+  shortLabel: fr.shortLabel,
+  u: fr.uf,
+  material: fr.material,
+  thickness_mm: fr.thickness_mm,
+  chambers: fr.chambers,
+  era: fr.era,
+  tags: fr.tags || [],
+  source: fr.source,
+  notes: fr.notes,
+  brand: null,
+  supplierId: null,
+  affiliateUrl: null,
+  sponsored: false,
+}));
+
+const _frameNames = new Set(_LEGACY_FRAMES.map(f => f.name.toLowerCase()));
+export const FRAME_DB = [
+  ..._LEGACY_FRAMES,
+  ..._EXTENDED_FRAMES.filter(f => !_frameNames.has(f.name.toLowerCase())),
 ];
 
 export const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
@@ -185,15 +296,28 @@ export const STRUCTURE_TYPES = [
 ];
 
 export const ELEMENT_TYPES = [
-  { id:"PE", label:"Perete exterior", tau:1.0, rsi:0.13, rse:0.04 },
-  { id:"PR", label:"Perete la rost \u00eenchis", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PS", label:"Perete subsol (sub CTS)", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PT", label:"Plan\u0219eu teras\u0103", tau:1.0, rsi:0.10, rse:0.04 },
-  { id:"PP", label:"Plan\u0219eu sub pod ne\u00eenc\u0103lzit", tau:0.9, rsi:0.10, rse:0.10 },
-  { id:"PB", label:"Plan\u0219eu peste subsol ne\u00eenc\u0103lzit", tau:0.5, rsi:0.17, rse:0.17 },
-  { id:"PI", label:"Plan\u0219eu intermediar", tau:0.0, rsi:0.17, rse:0.17 },
-  { id:"PL", label:"Plac\u0103 pe sol", tau:0.5, rsi:0.17, rse:0.00 },
-  { id:"SE", label:"Plan\u0219eu separator ext. (bow-window)", tau:1.0, rsi:0.17, rse:0.04 },
+  // Pereți
+  { id:"PE", label:"Perete exterior", category:"perete", tau:1.0, rsi:0.13, rse:0.04 },
+  { id:"PR", label:"Perete către spațiu neîncălzit (rost închis)", category:"perete", tau:0.8, rsi:0.13, rse:0.13 },
+  { id:"PS", label:"Perete subteran (sub CTS)", category:"perete", tau:0.5, rsi:0.13, rse:0.0 },
+  { id:"PI", label:"Perete interior (între spații încălzite)", category:"perete", tau:0.0, rsi:0.13, rse:0.13 },
+  { id:"AT", label:"Atic / parapet", category:"atic", tau:1.0, rsi:0.10, rse:0.04 },
+  // Acoperișuri
+  { id:"PT", label:"Planșeu terasă (acoperiș plat)", category:"acoperis", tau:1.0, rsi:0.10, rse:0.04 },
+  { id:"PA", label:"Acoperiș înclinat (între căpriori)", category:"acoperis", tau:1.0, rsi:0.10, rse:0.04 },
+  { id:"PM", label:"Mansardă (plan înclinat sub învelitoare)", category:"acoperis", tau:1.0, rsi:0.10, rse:0.04 },
+  { id:"PP", label:"Planșeu sub pod neîncălzit", category:"acoperis", tau:0.9, rsi:0.10, rse:0.10 },
+  { id:"AC_VERDE", label:"Acoperiș verde (extensiv/intensiv)", category:"acoperis", tau:1.0, rsi:0.10, rse:0.04 },
+  // Planșee inferioare / plăci
+  { id:"PL", label:"Placă pe sol", category:"placa", tau:0.5, rsi:0.17, rse:0.0 },
+  { id:"PB", label:"Planșeu peste subsol neîncălzit", category:"planseu", tau:0.5, rsi:0.17, rse:0.17 },
+  { id:"PV", label:"Planșeu peste pasaj/exterior", category:"planseu", tau:1.0, rsi:0.17, rse:0.04 },
+  { id:"PI_INTERMED", label:"Planșeu intermediar (între nivele încălzite)", category:"planseu", tau:0.0, rsi:0.17, rse:0.17 },
+  // Uși opace
+  { id:"US", label:"Ușă opacă exterior", category:"usa", tau:1.0, rsi:0.13, rse:0.04 },
+  { id:"UN", label:"Ușă către spațiu neîncălzit", category:"usa", tau:0.8, rsi:0.13, rse:0.13 },
+  // Compat retroactiv
+  { id:"SE", label:"Planșeu separator ext. (bow-window)", category:"planseu", tau:1.0, rsi:0.17, rse:0.04 },
 ];
 
 // Mapare sub-categorie → categorie de bază Mc 001-2022 (ENERGY_CLASSES_DB, CO2_CLASSES_DB, NZEB_THRESHOLDS)

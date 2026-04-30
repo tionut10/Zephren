@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-29
+// Ultima generare: 2026-04-30
 
 export const APP_VERSION = "0.5.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🎨",
-        "text": "ui: aliniere câmpuri input/select în grid — min-h-[2rem] pe label"
-      },
-      {
         "icon": "✨",
-        "text": "redesign tehnic ISO 128 + straturi realiste TOATE 22 ilustrații punți"
+        "text": "feat(catalog): extindere masivă catalog NEUTRU constructiv (~270 entries noi)"
       },
       {
         "icon": "🎨",
-        "text": "ui: reducere padding input/select — py-2.5 → py-1.5"
-      },
-      {
-        "icon": "🎨",
-        "text": "ui: optimizare spațiu Step 3 Instalații"
-      },
-      {
-        "icon": "🎨",
-        "text": "sugestii HVAC/vent/iluminat contextuale pe datele proiectului"
-      },
-      {
-        "icon": "✨",
-        "text": "aspect tehnic ISO 128 + straturi realiste — Defs + primitive + PrecastPanel"
-      },
-      {
-        "icon": "✨",
-        "text": "ilustrații distincte per tip punte termică PAFP + rutare după name"
+        "text": "inferă frameType din numele elementului (PVC/aluminiu/lemn) la deschiderea GlazingModal"
       },
       {
         "icon": "🔧",
-        "text": "Escape închide ElementSectionModal (useEffect keydown)"
+        "text": "inferă glazingType din câmpul legacy type la deschiderea GlazingModal"
+      },
+      {
+        "icon": "🔧",
+        "text": "U vitraj/ramă afișează — în loc de 0.00 când tipul nu e selectat din dropdown"
+      },
+      {
+        "icon": "🔧",
+        "text": "aliniere câmpuri GlazingModal — Fracție ramă col-span-2 + label protecție solară pe o linie"
+      },
+      {
+        "icon": "💰",
+        "text": "mărire secțiune transversală planșeu — viewBox 132→244, height 120→220"
+      },
+      {
+        "icon": "💰",
+        "text": "secțiune transversală verticală pentru elemente planșeu în OpaqueModal"
+      },
+      {
+        "icon": "🔸",
+        "text": "UX: ghidaj EXT→INT în toate editoarele de straturi opace"
       }
     ]
   },

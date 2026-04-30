@@ -7,22 +7,11 @@ import { U_REF_NZEB_RES, U_REF_NZEB_NRES, getURefNZEB } from "../data/u-referenc
 import { FASTENER_TYPES } from "../calc/opaque.js";
 import { THETA_U_DEFAULT, calcDynamicTau } from "../calc/tau-dynamic.js";
 import { checkFireSafety, getRequiredFireClass } from "../calc/fire-safety.js";
+// Sprint Catalog NEUTRAL 30 apr 2026: import ELEMENT_TYPES extins (17 tipuri)
+// din building-catalog.js — sincronizat cu elementTypes.js (16 tipuri + SE legacy).
+import { ELEMENT_TYPES } from "../data/building-catalog.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
-
-// These constants are duplicated here from the main file to keep the component self-contained.
-// They are small and stable (normative references).
-const ELEMENT_TYPES = [
-  { id:"PE", label:"Perete exterior", tau:1.0, rsi:0.13, rse:0.04 },
-  { id:"PR", label:"Perete la rost închis", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PS", label:"Perete subsol (sub CTS)", tau:0.5, rsi:0.13, rse:0.13 },
-  { id:"PT", label:"Planșeu terasă", tau:1.0, rsi:0.10, rse:0.04 },
-  { id:"PP", label:"Planșeu sub pod neîncălzit", tau:0.9, rsi:0.10, rse:0.10 },
-  { id:"PB", label:"Planșeu peste subsol neîncălzit", tau:0.5, rsi:0.17, rse:0.17 },
-  { id:"PI", label:"Planșeu intermediar", tau:0.0, rsi:0.17, rse:0.17 },
-  { id:"PL", label:"Placă pe sol", tau:0.5, rsi:0.17, rse:0.00 },
-  { id:"SE", label:"Planșeu separator ext. (bow-window)", tau:1.0, rsi:0.17, rse:0.04 },
-];
 
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
 
