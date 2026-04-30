@@ -180,14 +180,17 @@ export function calcGlaserMonthly(layers, climate, tInt, rhInt) {
       interfaces.push({ layer: k, temp: Math.round(tK * 10) / 10, pv: Math.round(pvK), ps: Math.round(psK), condensing: condensing });
     }
 
-    cumulativeCondensation += monthCondensation - monthEvaporation;
+    // Evaporarea reală e limitată la condensul efectiv disponibil (ISO 13788 §4.4)
+    // Fără această limitare, se afișează evaporare teoretică chiar când nu există condensat
+    var actualEvaporation = Math.min(monthEvaporation, cumulativeCondensation + monthCondensation);
+    cumulativeCondensation += monthCondensation - actualEvaporation;
     if (cumulativeCondensation < 0) cumulativeCondensation = 0;
     if (cumulativeCondensation > maxCondensation) maxCondensation = cumulativeCondensation;
 
     monthlyResults.push({
       month: months[m], tExt: tExt, interfaces: interfaces,
       condensation: Math.round(monthCondensation),
-      evaporation: Math.round(monthEvaporation),
+      evaporation: Math.round(actualEvaporation),
       cumulative: Math.round(cumulativeCondensation),
     });
   }

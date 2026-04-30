@@ -13,15 +13,18 @@ export function calcSummerComfort(layers, climate, orientation) {
     var lam = layers[i].lambda || 0.5;
     var rho = layers[i].rho || 1500;
     var c = 1000; // capacitate termică specifică [J/(kg·K)]
-    var s = Math.sqrt(lam * rho * c); // coef. asimilare termică
+    // D_i = d × √(π × ρ × c / (λ × T)) — EN ISO 13786 §6, C107/7-2002 Anexa F
+    // T_period = 86400s (ciclu diurn 24h); fără acest factor D e de ~165× prea mare
+    var T_period = 86400;
+    var s = Math.sqrt(Math.PI * lam * rho * c / T_period);
     var R = d > 0 && lam > 0 ? d / lam : 0;
     totalD += R * s;
     rCum += R;
   }
 
-  // Factor amortizare ν = e^(-D/2) — aproximare C107/7-2002 Anexa F
-  var dampingFactor = Math.exp(-totalD / 2);
-  // Defazaj Δφ ≈ D / (2π) × 24 [ore]
+  // Factor amortizare ν = e^(-D) — C107/7-2022 Anexa F / EN ISO 13786
+  var dampingFactor = Math.exp(-totalD);
+  // Defazaj Δφ = D × T/(2π) [ore] = D × 24/(2π)
   var phaseShift = (totalD / (2 * Math.PI)) * 24;
 
   // Temperatura maximă și minimă exterioară din date climatice lunare reale (C107/7-2002 §3.2)
