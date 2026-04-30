@@ -16,9 +16,9 @@ function TooltipIcon({ text }) {
     >
       <span className="opacity-40 text-xs select-none">ⓘ</span>
       {visible && (
-        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-56 rounded-lg border border-white/20 text-xs px-3 py-2 shadow-xl pointer-events-none whitespace-normal leading-relaxed normal-case tracking-normal font-normal opacity-100" style={{minWidth:"180px", background:"#111827", color:"#f9fafb"}}>
+        <span className="absolute right-0 bottom-full mb-2 z-50 w-48 max-w-[min(12rem,calc(100vw-1rem))] rounded-lg border border-white/20 text-xs px-3 py-2 shadow-xl pointer-events-none whitespace-normal leading-relaxed normal-case tracking-normal font-normal opacity-100" style={{background:"#111827", color:"#f9fafb"}}>
           {text}
-          <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4" style={{borderTopColor:"#111827"}} />
+          <span className="absolute right-2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4" style={{borderTopColor:"#111827"}} />
         </span>
       )}
     </span>

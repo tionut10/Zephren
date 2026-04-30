@@ -171,7 +171,7 @@ export default function AutocompleteInput({
             if (!mouseDownRef.current) setOpen(false);
           }}
           className={cn(
-            "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm",
+            "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-center",
             "focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.06] transition-all",
             "placeholder:opacity-20",
             disabled && "opacity-40 cursor-not-allowed"
