@@ -26,13 +26,14 @@ function fmtW(w) {
 }
 
 // ── Detectare template ────────────────────────────────────────────────────────
-function detectTemplate(cat) {
-  const c = String(cat || "").toLowerCase();
+// Detectează template după câmpul `cat` și, ca fallback, după `name`
+function detectTemplate(cat, name = "") {
+  const c = (String(cat || "") + " " + String(name || "")).toLowerCase();
   if (c.includes("balcon") || c.includes("logii") || c.includes("consolă")) return "balcony";
-  if (c.includes("acoperi") || c.includes("coamă") || c.includes("cornișă") || c.includes("atic")) return "roof";
-  if (c.includes("ferestr") || c.includes("glaf") || c.includes("prag") || c.includes("buiandrug")) return "window";
-  if (c.includes("soclu") || c.includes("subsol") || c.includes("fundație")) return "base";
-  if (c.includes("stâlp") || c.includes("grindă")) return "structural";
+  if (c.includes("acoperi") || c.includes("coamă") || c.includes("cornișă") || c.includes("atic") || c.includes("cornisa")) return "roof";
+  if (c.includes("ferestr") || c.includes("glaf") || c.includes("prag") || c.includes("buiandrug") || c.includes("parapet sub") || c.includes("tâmplărie") || c.includes("tamplarie")) return "window";
+  if (c.includes("soclu") || c.includes("subsol") || c.includes("fundație") || c.includes("fundatie") || c.includes("radier")) return "base";
+  if (c.includes("stâlp") || c.includes("stalp") || c.includes("grindă") || c.includes("grinda") || c.includes("panou") || c.includes("rost")) return "structural";
   return "corner";
 }
 
@@ -297,7 +298,7 @@ export default function BridgeIsotherms({
   const T_ext = Number.isFinite(climate.T_ext) ? climate.T_ext : -15;
   const dT    = T_int - T_ext;
 
-  const template  = useMemo(() => detectTemplate(bridge?.cat), [bridge]);
+  const template  = useMemo(() => detectTemplate(bridge?.cat, bridge?.name), [bridge]);
   const isotherms = useMemo(() => buildIsotherms(template, T_int, T_ext), [template, T_int, T_ext]);
 
   if (!thermalBridges.length) {
