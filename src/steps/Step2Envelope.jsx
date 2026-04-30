@@ -48,22 +48,21 @@ export default function Step2Envelope({
   const currentSectionEl = sectionElements[Math.min(sectionElementIdx, sectionElements.length - 1)] || null;
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
+    <div className="space-y-5">
+      <div>
+        <div className="flex items-center gap-3 mb-2">
           <button onClick={() => setStep(1)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 1</button>
           <h2 className="text-xl font-bold">{lang==="EN"?"Building thermal envelope":"Anvelopa termică a clădirii"}</h2>
         </div>
         <p className="text-xs opacity-40">Capitolul 2 Mc 001-2022 — Elemente opace, vitraje, punți termice</p>
-            <div className="flex gap-2 mt-3">
-              <button onClick={function(){csvImportRef.current && csvImportRef.current.click();}}
-                className="text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
-                📄 Import CSV
-              </button>
-              <input ref={csvImportRef} type="file" accept=".csv" className="hidden"
-                onChange={function(e){if(e.target.files[0]){importCSV(e.target.files[0]);e.target.value="";}}} />
-            </div>
-
+        <div className="flex gap-2 mt-3">
+          <button onClick={function(){csvImportRef.current && csvImportRef.current.click();}}
+            className="text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 transition-colors">
+            📄 Import CSV
+          </button>
+          <input ref={csvImportRef} type="file" accept=".csv" className="hidden"
+            onChange={function(e){if(e.target.files[0]){importCSV(e.target.files[0]);e.target.value="";}}} />
+        </div>
       </div>
 
       {/* SmartEnvelopeHub — S4 GA (default ON; ?envelopeHub=0 → legacy grid fallback). */}
@@ -371,9 +370,9 @@ export default function Step2Envelope({
 
                 <div className="h-px bg-white/[0.06]" />
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Distribuție pierderi",lang)}</div>
-                  <div className="flex items-center gap-3">
-                    <svg viewBox="0 0 90 90" width="80" height="80" className="shrink-0">
+                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2 text-center">{t("Distribuție pierderi",lang)}</div>
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <svg viewBox="0 0 90 90" width="90" height="90" className="shrink-0">
                       {(() => {
                         var oL = opaqueElements.reduce(function(s,el){ var r = calcOpaqueR(el.layers,el.type); var tau = (ELEMENT_TYPES.find(function(t){return t.id===el.type})||{}).tau||1; return s+tau*(parseFloat(el.area)||0)*r.u; },0);
                         var gL = glazingElements.reduce(function(s,el){ return s+(parseFloat(el.area)||0)*(parseFloat(el.u)||0); },0);
@@ -392,8 +391,8 @@ export default function Step2Envelope({
                         return res;
                       })()}
                     </svg>
-                    <div className="space-y-1">
-                      {[{l:"Opace",c:"#ef4444"},{l:"Vitraje",c:"#3b82f6"},{l:"Punți",c:"#f97316"},{l:"Ventilare",c:"#8b5cf6"}].map(function(it){ return <div key={it.l} className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor:it.c}}/><span className="text-[10px] opacity-60">{t(it.l,lang)}</span></div>; })}
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+                      {[{l:"Opace",c:"#ef4444"},{l:"Vitraje",c:"#3b82f6"},{l:"Punți",c:"#f97316"},{l:"Ventilare",c:"#8b5cf6"}].map(function(it){ return <div key={it.l} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor:it.c}}/><span className="text-[10px] opacity-60">{t(it.l,lang)}</span></div>; })}
                     </div>
                   </div>
                 </div>
@@ -434,7 +433,7 @@ export default function Step2Envelope({
 
       {/* ── CONFORMITATE U — tabel complet (data-compliance-table pt. scroll din asistent) ── */}
       {(opaqueElements.length > 0 || glazingElements.length > 0) && U_REF_NZEB_RES && (
-        <div className="mt-5" data-compliance-table>
+        <div data-compliance-table>
           <Card title={t("Conformitate U față de referințe Mc 001-2022", lang)}>
             <UComplianceTable
               opaqueElements={opaqueElements}
@@ -455,7 +454,7 @@ export default function Step2Envelope({
 
       {/* ── SECȚIUNI TRANSVERSALE DETALIATE (opac + vitrat) ── */}
       {(opaqueElements.length > 0 || glazingElements.length > 0) && (
-        <div className="mt-5">
+        <div>
           <Card
             title={t("Secțiuni transversale detaliate", lang)}
             badge={<Badge color="amber">ISO 128 · ISO 6946 · ISO 10077</Badge>}
@@ -565,7 +564,7 @@ export default function Step2Envelope({
       )}
 
       {/* ── ANALIZE DETALIATE (sub grid, full-width) ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
           {/* ── VERIFICARE CONDENS GLASER (ISO 13788) ── */}
           {opaqueElements.length > 0 && selectedClimate && (
@@ -689,14 +688,12 @@ export default function Step2Envelope({
           {glaserResult && glaserResult.monthly && glaserResult.layers && glaserResult.layers.length > 0 && (
             <Card title={t("Diagramă Glaser — presiuni vapori (ISO 13788)", lang)}>
               {(() => {
-                // Luna critică: max condensation, fallback ianuarie
                 const worstIdx = glaserResult.monthly.reduce((best, m, i, arr) => (m.condensation || 0) > (arr[best].condensation || 0) ? i : best, 0);
                 const month = glaserResult.monthly[worstIdx];
                 const layers = glaserResult.layers;
                 const iFaces = month?.interfaces || [];
                 if (!iFaces.length) return <div className="text-[11px] opacity-40 text-center py-4">Interfețe indisponibile — reîncearcă după completarea straturilor.</div>;
 
-                // sd cumulativ [m]
                 const sdTotal = layers.reduce((s, l) => s + (l.sd || 0), 0);
                 if (sdTotal <= 0) return <div className="text-[11px] opacity-40 text-center py-4">sd = 0 — verifică μ și grosimile straturilor.</div>;
                 const sdCum = [0];
@@ -704,81 +701,153 @@ export default function Step2Envelope({
 
                 const psVals = iFaces.map(p => p.ps || 0);
                 const pvVals = iFaces.map(p => p.pv || 0);
-                const pMax = Math.max(...psVals, ...pvVals, 100) * 1.1;
+                const pMax = Math.max(...psVals, ...pvVals, 100) * 1.15;
 
-                // Geometrie chart
-                const cL = 52, cR = 378, cT = 28, cB = 148;
+                // Chart bounds — spațiu sus pentru chips legende straturi
+                const chipsPerRow = Math.min(4, layers.length);
+                const chipRows = Math.ceil(layers.length / chipsPerRow);
+                const cL = 52, cR = 500, cT = 14 + chipRows * 22, cB = cT + 140;
                 const cW = cR - cL, cH = cB - cT;
+                const svgH = cB + 52;
                 const sdToX = (sd) => cL + (sd / sdTotal) * cW;
-                const pToY = (p) => cB - (p / pMax) * cH;
+                const pToY  = (p)  => cB - (p  / pMax)  * cH;
 
-                // Layer backgrounds + etichete rotite -45°
-                const colors = ["rgba(239,68,68,0.08)", "rgba(59,130,246,0.08)", "rgba(234,179,8,0.08)", "rgba(139,92,246,0.08)", "rgba(34,197,94,0.08)"];
-                const layerRects = layers.map((l, i) => {
-                  const x1 = sdToX(sdCum[i]);
-                  const x2 = sdToX(sdCum[i + 1]);
-                  const xc = (x1 + x2) / 2;
-                  const labelText = `${(l.name || ("Strat " + (i + 1))).slice(0, 20)} (${(l.d * 1000).toFixed(0)}mm · sd=${(l.sd || 0).toFixed(2)}m)`;
+                // Culori straturi
+                const lColors = ["#ef4444","#3b82f6","#f59e0b","#8b5cf6","#10b981","#f97316","#06b6d4"];
+
+                // Chips legende straturi (deasupra graficului)
+                const chipW = (cW - 4) / chipsPerRow;
+                const layerChips = layers.map((l, i) => {
+                  const row = Math.floor(i / chipsPerRow);
+                  const col = i % chipsPerRow;
+                  const cx = cL + col * chipW;
+                  const cy = 10 + row * 22;
+                  const label = (l.name || "Strat "+(i+1)).slice(0,22)+" ("+((l.d||0)*1000).toFixed(0)+"mm · sd="+((l.sd||0).toFixed(2))+"m)";
                   return (
-                    <g key={"lg" + i}>
-                      <rect x={x1} y={cT} width={x2 - x1} height={cH} fill={colors[i % colors.length]} stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
-                      <text x={xc} y={cB + 4} fill="rgba(255,255,255,0.45)" fontSize="5.5" textAnchor="end" transform={`rotate(-45 ${xc} ${cB + 4})`}>{labelText}</text>
+                    <g key={"chip"+i}>
+                      <rect x={cx} y={cy} width="9" height="9" rx="2" fill={lColors[i % lColors.length]} opacity="0.8" />
+                      <text x={cx+13} y={cy+8} fill="rgba(255,255,255,0.65)" fontSize="8">{label}</text>
                     </g>
                   );
                 });
 
-                // Grid Y + etichete Pa
+                // Fundaluri colorate pe straturi (fără etichete)
+                const layerRects = layers.map((l, i) => {
+                  const x1 = sdToX(sdCum[i]);
+                  const x2 = sdToX(sdCum[i+1]);
+                  return (
+                    <g key={"lr"+i}>
+                      <rect x={x1} y={cT} width={Math.max(x2-x1,0)} height={cH}
+                        fill={lColors[i % lColors.length]+"1a"} stroke={lColors[i % lColors.length]}
+                        strokeWidth="0.6" strokeOpacity="0.3" />
+                      {/* Linie separatoare verticală */}
+                      {i > 0 && <line x1={x1} y1={cT} x2={x1} y2={cB} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" strokeDasharray="3,2" />}
+                    </g>
+                  );
+                });
+
+                // Grilă orizontală + etichete Y
                 const yGrid = [];
                 for (let i = 0; i <= 4; i++) {
                   const p = (pMax * i) / 4;
                   const y = pToY(p);
                   yGrid.push(
-                    <g key={"yg" + i}>
-                      <line x1={cL} y1={y} x2={cR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                      <text x={cL - 3} y={y + 2} textAnchor="end" fill="rgba(255,255,255,0.35)" fontSize="6">{Math.round(p)}</text>
+                    <g key={"yg"+i}>
+                      <line x1={cL} y1={y} x2={cR} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="0.7" />
+                      <text x={cL-4} y={y+3} textAnchor="end" fill="rgba(255,255,255,0.4)" fontSize="8">{Math.round(p)}</text>
                     </g>
                   );
                 }
 
+                // Zonă umplută condens (p_v ≥ p_sat)
+                const condFill = iFaces.slice(0,-1).map((p, i) => {
+                  const p2 = iFaces[i+1];
+                  if ((p.pv||0) < (p.ps||0) && (p2.pv||0) < (p2.ps||0)) return null;
+                  const x1 = sdToX(sdCum[i]), x2 = sdToX(sdCum[i+1]);
+                  return <polygon key={"cf"+i}
+                    points={`${x1},${pToY(p.pv)} ${x2},${pToY(p2.pv)} ${x2},${pToY(p2.ps)} ${x1},${pToY(p.ps)}`}
+                    fill="rgba(239,68,68,0.15)" />;
+                }).filter(Boolean);
+
                 // Curbe
-                const psPath = iFaces.map((p, i) => (i === 0 ? "M" : "L") + sdToX(sdCum[i]).toFixed(1) + "," + pToY(p.ps).toFixed(1)).join(" ");
-                const pvPath = iFaces.map((p, i) => (i === 0 ? "M" : "L") + sdToX(sdCum[i]).toFixed(1) + "," + pToY(p.pv).toFixed(1)).join(" ");
+                const psPath = iFaces.map((p, i) => (i===0?"M":"L")+sdToX(sdCum[i]).toFixed(1)+","+pToY(p.ps).toFixed(1)).join(" ");
+                const pvPath = iFaces.map((p, i) => (i===0?"M":"L")+sdToX(sdCum[i]).toFixed(1)+","+pToY(p.pv).toFixed(1)).join(" ");
 
                 // Marcatoare condens
                 const condMarkers = iFaces.map((p, i) => p.condensing ? (
-                  <circle key={"cz" + i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="4" fill="#ef4444" opacity="0.5" />
+                  <circle key={"cz"+i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="6" fill="#ef4444" opacity="0.35" />
                 ) : null).filter(Boolean);
+
+                // Ticks axă X (sd cumulativ)
+                const xTicks = sdCum.map((sd, i) => (
+                  <g key={"xt"+i}>
+                    <line x1={sdToX(sd)} y1={cB} x2={sdToX(sd)} y2={cB+4} stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                    <text x={sdToX(sd)} y={cB+14} fill="rgba(255,255,255,0.4)" fontSize="7.5" textAnchor="middle">{sd.toFixed(2)}</text>
+                  </g>
+                ));
 
                 return (
                   <>
-                    <div className="text-[10px] opacity-50 mb-1 flex gap-3 flex-wrap">
+                    <div className="text-[10px] opacity-55 mb-2 flex gap-4 flex-wrap">
                       <span>Luna critică: <b>{month.month}</b></span>
                       <span>θ<sub>e</sub> = <b>{month.tExt?.toFixed(1)}°C</b></span>
                       <span>sd<sub>total</sub> = <b>{sdTotal.toFixed(2)} m</b></span>
-                      {condMarkers.length > 0 && <span className="text-red-400">⚠ {condMarkers.length} interfață cu condens</span>}
+                      {condMarkers.length > 0
+                        ? <span className="text-red-400 font-medium">⚠ {condMarkers.length} interfață cu condens</span>
+                        : <span className="text-emerald-400">✓ Fără condens</span>}
                     </div>
-                    <svg viewBox="0 0 400 200" className="w-full" style={{ minHeight: "190px" }}>
-                      <text x="200" y="12" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8">Diagramă Glaser — p_sat (verde) vs p_v (albastru)</text>
-                      <text x={cL - 38} y={cT - 6} fill="rgba(255,255,255,0.4)" fontSize="6">p [Pa]</text>
-                      <text x={cR + 2} y={cB + 3} fill="rgba(255,255,255,0.4)" fontSize="6">sd→</text>
-                      {layerRects}
+                    <svg viewBox={`0 0 520 ${svgH}`} className="w-full" style={{ minHeight: "220px" }}>
+                      {/* Chips straturi (sus) */}
+                      {layerChips}
+
+                      {/* EXT / INT */}
+                      <text x={cL+2} y={cT-4} fill="rgba(255,255,255,0.35)" fontSize="8">← EXT</text>
+                      <text x={cR-2} y={cT-4} fill="rgba(255,255,255,0.35)" fontSize="8" textAnchor="end">INT →</text>
+
+                      {/* Etichetă axă Y */}
+                      <text x="10" y={cT + cH/2} fill="rgba(255,255,255,0.35)" fontSize="8" textAnchor="middle"
+                        transform={`rotate(-90,10,${cT + cH/2})`}>p [Pa]</text>
+
+                      {/* Grilă */}
                       {yGrid}
-                      <path d={psPath} fill="none" stroke="#22c55e" strokeWidth="2" />
-                      <path d={pvPath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,2" />
-                      {iFaces.map((p, i) => <circle key={"psc" + i} cx={sdToX(sdCum[i])} cy={pToY(p.ps)} r="1.8" fill="#22c55e" />)}
-                      {iFaces.map((p, i) => <circle key={"pvc" + i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="1.8" fill="#3b82f6" />)}
+
+                      {/* Bordură grafic */}
+                      <rect x={cL} y={cT} width={cW} height={cH} fill="none"
+                        stroke="rgba(255,255,255,0.1)" strokeWidth="0.8" rx="1" />
+
+                      {/* Straturi + divizoare */}
+                      {layerRects}
+
+                      {/* Zonă condens */}
+                      {condFill}
+
+                      {/* Curbe */}
+                      <path d={psPath} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinejoin="round" />
+                      <path d={pvPath} fill="none" stroke="#60a5fa" strokeWidth="2.5" strokeDasharray="8,3" strokeLinejoin="round" />
+
+                      {/* Puncte pe curbe */}
+                      {iFaces.map((p, i) => <circle key={"psc"+i} cx={sdToX(sdCum[i])} cy={pToY(p.ps)} r="3" fill="#22c55e" stroke="#0f172a" strokeWidth="1" />)}
+                      {iFaces.map((p, i) => <circle key={"pvc"+i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="3" fill="#60a5fa" stroke="#0f172a" strokeWidth="1" />)}
                       {condMarkers}
-                      {/* Legendă */}
-                      <line x1={cL} y1={194} x2={cL + 12} y2={194} stroke="#22c55e" strokeWidth="2" />
-                      <text x={cL + 15} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">p_sat (saturație)</text>
-                      <line x1={cL + 95} y1={194} x2={cL + 107} y2={194} stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,2" />
-                      <text x={cL + 110} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">p_v (vapori reali)</text>
-                      <circle cx={cL + 195} cy={194} r="3" fill="#ef4444" opacity="0.5" />
-                      <text x={cL + 200} y={196} fill="rgba(255,255,255,0.5)" fontSize="6">Condens (p_v ≥ p_sat)</text>
+
+                      {/* Axă X — valori sd */}
+                      {xTicks}
+                      <text x={cR} y={cB+25} fill="rgba(255,255,255,0.35)" fontSize="8" textAnchor="end">sd [m]</text>
+
+                      {/* Legendă curbe */}
+                      <line x1={cL} y1={cB+40} x2={cL+20} y2={cB+40} stroke="#22c55e" strokeWidth="2.5" />
+                      <circle cx={cL+10} cy={cB+40} r="3" fill="#22c55e" stroke="#0f172a" strokeWidth="1" />
+                      <text x={cL+25} y={cB+44} fill="rgba(255,255,255,0.6)" fontSize="9">p_sat (saturație)</text>
+
+                      <line x1={cL+135} y1={cB+40} x2={cL+155} y2={cB+40} stroke="#60a5fa" strokeWidth="2.5" strokeDasharray="8,3" />
+                      <circle cx={cL+145} cy={cB+40} r="3" fill="#60a5fa" stroke="#0f172a" strokeWidth="1" />
+                      <text x={cL+160} y={cB+44} fill="rgba(255,255,255,0.6)" fontSize="9">p_v (vapori reali)</text>
+
+                      {condMarkers.length > 0 && <>
+                        <circle cx={cL+278} cy={cB+40} r="5" fill="#ef4444" opacity="0.4" />
+                        <text x={cL+287} y={cB+44} fill="rgba(239,68,68,0.85)" fontSize="9">Condens (p_v ≥ p_sat)</text>
+                      </>}
                     </svg>
-                    <div className="text-[10px] opacity-40 mt-1 text-center">
-                      Condens apare unde linia albastră (p_v) atinge sau depășește linia verde (p_sat)
-                    </div>
                   </>
                 );
               })()}
@@ -828,7 +897,7 @@ export default function Step2Envelope({
       </div>
 
       {/* Navigation */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-2">
         <button onClick={() => setStep(1)}
           className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm">
           ← Pas 1: Identificare

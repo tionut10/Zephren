@@ -12,6 +12,14 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📦",
+        "text": "fix(catalog-ui): sincronizare 3 spoturi cu cataloage NEUTRU extinse"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(catalog-ui): integrare UI cataloage NEUTRU în OpaqueModal + GlazingModal"
+      },
+      {
         "icon": "✨",
         "text": "feat(catalog): extindere masivă catalog NEUTRU constructiv (~270 entries noi)"
       },
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "mărire secțiune transversală planșeu — viewBox 132→244, height 120→220"
-      },
-      {
-        "icon": "💰",
-        "text": "secțiune transversală verticală pentru elemente planșeu în OpaqueModal"
-      },
-      {
-        "icon": "🔸",
-        "text": "UX: ghidaj EXT→INT în toate editoarele de straturi opace"
       }
     ]
   },
