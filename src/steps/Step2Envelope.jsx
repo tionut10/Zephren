@@ -703,30 +703,26 @@ export default function Step2Envelope({
                 const pvVals = iFaces.map(p => p.pv || 0);
                 const pMax = Math.max(...psVals, ...pvVals, 100) * 1.15;
 
-                // Chart bounds — spațiu sus pentru chips legende straturi
-                const chipsPerRow = Math.min(4, layers.length);
-                const chipRows = Math.ceil(layers.length / chipsPerRow);
-                const cL = 52, cR = 500, cT = 14 + chipRows * 22, cB = cT + 140;
+                // Culori straturi
+                const lColors = ["#ef4444","#3b82f6","#f59e0b","#8b5cf6","#10b981","#f97316","#06b6d4"];
+
+                // Chips legende straturi — câte unul pe linie (fără overflow/suprapunere text)
+                const ROW_H = 16;
+                const cL = 52, cR = 500, cT = 8 + layers.length * ROW_H + 6, cB = cT + 140;
                 const cW = cR - cL, cH = cB - cT;
                 const svgH = cB + 52;
                 const sdToX = (sd) => cL + (sd / sdTotal) * cW;
                 const pToY  = (p)  => cB - (p  / pMax)  * cH;
 
-                // Culori straturi
-                const lColors = ["#ef4444","#3b82f6","#f59e0b","#8b5cf6","#10b981","#f97316","#06b6d4"];
-
-                // Chips legende straturi (deasupra graficului)
-                const chipW = (cW - 4) / chipsPerRow;
                 const layerChips = layers.map((l, i) => {
-                  const row = Math.floor(i / chipsPerRow);
-                  const col = i % chipsPerRow;
-                  const cx = cL + col * chipW;
-                  const cy = 10 + row * 22;
-                  const label = (l.name || "Strat "+(i+1)).slice(0,22)+" ("+((l.d||0)*1000).toFixed(0)+"mm · sd="+((l.sd||0).toFixed(2))+"m)";
+                  const cy = 8 + i * ROW_H;
+                  // truncăm label la max 70 chars pentru a nu depăși lățimea SVG
+                  const name = (l.name || "Strat "+(i+1)).slice(0, 40);
+                  const label = `${name} (${((l.d||0)*1000).toFixed(0)}mm · sd=${((l.sd||0).toFixed(2))}m)`;
                   return (
                     <g key={"chip"+i}>
-                      <rect x={cx} y={cy} width="9" height="9" rx="2" fill={lColors[i % lColors.length]} opacity="0.8" />
-                      <text x={cx+13} y={cy+8} fill="rgba(255,255,255,0.65)" fontSize="8">{label}</text>
+                      <rect x={cL} y={cy+1} width="9" height="9" rx="2" fill={lColors[i % lColors.length]} opacity="0.85" />
+                      <text x={cL+14} y={cy+9} fill="rgba(255,255,255,0.65)" fontSize="8">{label}</text>
                     </g>
                   );
                 });
@@ -778,13 +774,19 @@ export default function Step2Envelope({
                   <circle key={"cz"+i} cx={sdToX(sdCum[i])} cy={pToY(p.pv)} r="6" fill="#ef4444" opacity="0.35" />
                 ) : null).filter(Boolean);
 
-                // Ticks axă X (sd cumulativ)
-                const xTicks = sdCum.map((sd, i) => (
-                  <g key={"xt"+i}>
-                    <line x1={sdToX(sd)} y1={cB} x2={sdToX(sd)} y2={cB+4} stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-                    <text x={sdToX(sd)} y={cB+14} fill="rgba(255,255,255,0.4)" fontSize="7.5" textAnchor="middle">{sd.toFixed(2)}</text>
-                  </g>
-                ));
+                // Ticks axă X (sd cumulativ) — suprimă eticheta dacă gap < 5% din sdTotal pentru a evita suprapunerea
+                const xTicks = sdCum.map((sd, i) => {
+                  const prevSd = i > 0 ? sdCum[i - 1] : null;
+                  const tooClose = prevSd !== null && sdTotal > 0 && (sd - prevSd) / sdTotal < 0.05;
+                  return (
+                    <g key={"xt"+i}>
+                      <line x1={sdToX(sd)} y1={cB} x2={sdToX(sd)} y2={cB + (tooClose ? 3 : 5)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                      {!tooClose && (
+                        <text x={sdToX(sd)} y={cB+14} fill="rgba(255,255,255,0.4)" fontSize="7.5" textAnchor="middle">{sd.toFixed(2)}</text>
+                      )}
+                    </g>
+                  );
+                });
 
                 return (
                   <>
