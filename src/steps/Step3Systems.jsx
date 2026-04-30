@@ -976,7 +976,7 @@ export default function Step3Systems({
               <div className="space-y-3">
                 {/* Energie primară totală */}
                 <div className="text-center py-1.5">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">{t("Energie primară specifică")}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5 text-center">{t("Energie primară specifică")}</div>
                   <div className={cn("text-3xl font-bold font-mono",
                     instSummary.ep_total_m2 < 120 ? "text-emerald-400" : instSummary.ep_total_m2 < 250 ? "text-amber-400" : "text-red-400")}>
                     {instSummary.ep_total_m2.toFixed(0)}
@@ -988,7 +988,7 @@ export default function Step3Systems({
 
                 {/* Defalcare energie finală */}
                 <div>
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">{t("Energie finală per utilitate")}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1 text-center">{t("Energie finală per utilitate")}</div>
                   {[
                     {label:"Încălzire", val:instSummary.qf_h, color:"#ef4444"},
                     {label:"ACM", val:instSummary.qf_w, color:"#f97316"},
@@ -1038,7 +1038,7 @@ export default function Step3Systems({
 
                 {/* Randament global */}
                 <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Randamente instalație încălzire</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5 text-center">Randamente instalație încălzire</div>
                   <ResultRow label={instSummary.isCOP ? "COP/SCOP" : "eta generare"} value={parseFloat(heating.eta_gen).toFixed(2)} />
                   <ResultRow label="eta emisie" value={parseFloat(heating.eta_em).toFixed(2)} />
                   <ResultRow label="eta distribuție" value={parseFloat(heating.eta_dist).toFixed(2)} />
