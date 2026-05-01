@@ -680,8 +680,9 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ═══ NEW: EV CHARGER (A6) ═══ */}
+              {/* ═══ NEW: EV CHARGER (A6) ═══ (Faza B — recomandare proiectare, EPBD Art. 12: ascuns la IIci) */}
               {evChargerCalc && evChargerCalc.required && (
+              <GradeGate feature="evCharger" plan={userPlan} auditorGrad={auditorGrad}>
                 <Card title="Puncte încărcare EV (EPBD Art.12)" className="mb-6" badge={<Badge color="blue">obligatoriu</Badge>}>
                   <div className="space-y-2">
                     <div className="text-xs opacity-60">{evChargerCalc.desc}</div>
@@ -693,6 +694,7 @@ export default function Step5Calculation(props) {
                     <ResultRow label="Cost estimat" value={evChargerCalc.costEstimate.toLocaleString("ro-RO")} unit="EUR" />
                   </div>
                 </Card>
+              </GradeGate>
               )}
 
               {/* ═══ NEW: SOLAR-READY CHECK (A7) ═══ */}
@@ -771,8 +773,9 @@ export default function Step5Calculation(props) {
               </Card>
 
 
-              {/* ── Benchmarking — comparație cu referințe ── */}
+              {/* ── Benchmarking — comparație cu referințe ── (Faza B — context audit, ascuns la IIci) */}
               {instSummary && (
+              <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
                 <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
                   <div className="space-y-2">
                     {(function() {
@@ -809,6 +812,7 @@ export default function Step5Calculation(props) {
                     <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
                   </div>
                 </Card>
+              </GradeGate>
               )}
 
 
