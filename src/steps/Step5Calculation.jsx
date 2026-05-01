@@ -867,56 +867,112 @@ export default function Step5Calculation(props) {
                 ];
                 const discount = 0.05;
                 const years = 20;
+
+                // Curbe NPV cumulative în RON (pornesc negativ = -cost investiție)
+                const curves = measures.map(m => {
+                  const annSave = annualCost * m.savePct;
+                  const pts = [{ yr: 0, npv: -m.cost }];
+                  let cumNPV = -m.cost;
+                  for (let yr = 1; yr <= years; yr++) {
+                    if (annSave > 0) cumNPV += annSave / Math.pow(1 + discount, yr);
+                    pts.push({ yr, npv: cumNPV });
+                  }
+                  const paybackYr = annSave > 0 ? pts.findIndex(p => p.npv >= 0) : -1;
+                  return { ...m, pts, paybackYr, annSave };
+                });
+
+                // Scala Y dinamică cu tick-uri rotunde
+                const allNPV = curves.flatMap(c => c.pts.map(p => p.npv));
+                const rawMin = Math.min(...allNPV), rawMax = Math.max(...allNPV);
+                const pad = (rawMax - rawMin) * 0.08;
+                const yMin = rawMin - pad, yMax = rawMax + pad;
+                const rawStep = (yMax - yMin) / 4;
+                const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
+                const niceStep = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= rawStep) || rawStep;
+                const niceMin = Math.floor(yMin / niceStep) * niceStep;
+                const yTicks = [];
+                for (let v = niceMin; v <= yMax + niceStep * 0.01; v += niceStep) yTicks.push(Math.round(v));
+
+                const W = 500, H = 195;
+                const pL = 68, pR = 18, pT = 12, pB = 22;
+                const cW = W - pL - pR, cH = H - pT - pB;
+                const toX = yr => pL + (yr / years) * cW;
+                const toY = v => pT + cH - ((v - yMin) / (yMax - yMin)) * cH;
+                const fmtRON = v => { const a = Math.abs(v); return `${v < 0 ? "-" : ""}${a >= 1000 ? (a / 1000).toFixed(0) + "k" : Math.round(a)}`; };
+                const breakY = toY(0);
+
                 return (
                 <Card title={lang==="EN"?"Investment payback (NPV 20 years)":"Amortizare investiție (NPV 20 ani)"} className="mb-6 border-amber-500/20">
                   <div className="overflow-x-auto">
-                  <svg viewBox="0 0 500 200" width="100%" height="180" className="overflow-visible">
-                    {/* Grid */}
-                    {[0,1,2,3,4].map(i => {
-                      const y = 170 - i * 35;
-                      return <g key={"g"+i}><line x1="60" y1={y} x2="490" y2={y} stroke={theme==="dark"?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.06)"} /><text x="56" y={y+3} textAnchor="end" fontSize="7" fill="#666">{(i*25)}%</text></g>;
+                  <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="overflow-visible">
+                    {/* Y grid + etichete RON */}
+                    {yTicks.map((v, i) => {
+                      const y = toY(v);
+                      if (y < pT - 2 || y > pT + cH + 2) return null;
+                      const isZero = v === 0;
+                      return (
+                        <g key={"yt"+i}>
+                          <line x1={pL} y1={y} x2={pL+cW} y2={y}
+                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"}
+                            strokeWidth={isZero ? 0.8 : 0.4}
+                            strokeDasharray={isZero ? "4 2" : undefined} />
+                          <text x={pL-3} y={y+3} textAnchor="end" fontSize="6.5" fill={isZero ? "#f59e0b" : "#666"}>{fmtRON(v)}</text>
+                        </g>
+                      );
                     })}
-                    {/* Year labels */}
+                    {/* X grid + etichete ani */}
                     {[0,5,10,15,20].map(yr => {
-                      const x = 60 + yr/20*430;
-                      return <text key={"y"+yr} x={x} y={186} textAnchor="middle" fontSize="7" fill="#666">{yr}</text>;
+                      const x = toX(yr);
+                      return (
+                        <g key={"xt"+yr}>
+                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)"} strokeWidth="0.4" />
+                          <text x={x} y={pT+cH+13} textAnchor="middle" fontSize="7" fill="#666">{yr}</text>
+                        </g>
+                      );
                     })}
-                    <text x="275" y="198" textAnchor="middle" fontSize="8" fill="#888">Ani</text>
-                    {/* Cumulative savings lines per measure */}
-                    {measures.map((m, mi) => {
-                      const annSave = annualCost * m.savePct;
-                      const points = [];
-                      let cumNPV = -m.cost;
-                      for (let yr = 0; yr <= years; yr++) {
-                        if (yr > 0) cumNPV += annSave / Math.pow(1 + discount, yr);
-                        const x = 60 + yr/years*430;
-                        const pct = (cumNPV / m.cost) * 100;
-                        const y = 170 - Math.max(-35, Math.min(140, (pct + 100) / 200 * 140));
-                        points.push(`${x},${y}`);
-                      }
-                      const paybackYr = m.cost > 0 && annSave > 0 ? Math.ceil(m.cost / annSave) : 99;
-                      return <g key={"m"+mi}>
-                        <polyline points={points.join(" ")} fill="none" stroke={m.color} strokeWidth="1.5" opacity="0.8" />
-                        <text x="492" y={parseFloat(points[points.length-1].split(",")[1])+3} fontSize="6" fill={m.color}>{m.name.slice(0,12)}</text>
-                        {paybackYr <= 20 && <circle cx={60+paybackYr/20*430} cy={170-0} r="3" fill={m.color} />}
-                      </g>;
+                    {/* Axe */}
+                    <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="#444" strokeWidth="0.6" />
+                    <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="#444" strokeWidth="0.6" />
+                    <text x={pL+cW/2} y={H-1} textAnchor="middle" fontSize="7" fill="#777">Ani</text>
+                    <text x={pL-3} y={pT-3} textAnchor="end" fontSize="6" fill="#555">RON</text>
+                    {/* Curbe + marcatori break-even */}
+                    {curves.map((c, ci) => {
+                      const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                      const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
+                      return (
+                        <g key={"c"+ci}>
+                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="1.5" opacity="0.85" />
+                          {pbX && (
+                            <>
+                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="0.6" strokeDasharray="3 2" opacity="0.35" />
+                              <circle cx={pbX} cy={breakY} r="2.5" fill={c.color} />
+                            </>
+                          )}
+                          <circle cx={toX(0)} cy={toY(-c.cost)} r="1.8" fill={c.color} opacity="0.6" />
+                        </g>
+                      );
                     })}
-                    {/* Zero line */}
-                    <line x1="60" y1="170" x2="490" y2="170" stroke="#666" strokeWidth="0.5" strokeDasharray="4 2" />
-                    <text x="56" y="173" textAnchor="end" fontSize="7" fill="#f59e0b">0</text>
+                    {/* Etichetă break-even */}
+                    {breakY > pT && breakY < pT+cH && (
+                      <text x={pL+cW-2} y={breakY-3} textAnchor="end" fontSize="6" fill="#f59e0b" opacity="0.7">break-even</text>
+                    )}
                   </svg>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {measures.map((m,i) => {
-                      const payback = annualCost * m.savePct > 0 ? Math.ceil(m.cost / (annualCost * m.savePct)) : "—";
-                      return <div key={i} className="flex items-center gap-1.5 text-[10px]">
-                        <div className="w-2 h-2 rounded-full" style={{background:m.color}} />
-                        <span className="opacity-60">{m.name}:</span>
-                        <span className="font-bold">{payback} ani</span>
-                      </div>;
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    {curves.map((m, i) => {
+                      const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
+                      const npv20 = m.pts[m.pts.length-1].npv;
+                      return (
+                        <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                          <div className="w-3 h-[1.5px] rounded" style={{background: m.color}} />
+                          <span className="opacity-60">{m.name}:</span>
+                          <span className="font-bold">{payback}</span>
+                          <span className="opacity-35">· {fmtRON(npv20)} RON</span>
+                        </div>
+                      );
                     })}
                   </div>
-                  <div className="text-[10px] opacity-25 mt-1">NPV cu rată discount 5%/an, prețuri constante {(costKwh).toFixed(2)} RON/kWh</div>
+                  <div className="text-[10px] opacity-25 mt-1">NPV cu rată discount 5%/an, prețuri constante {costKwh.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
                 </Card>
                 );
               })()}
