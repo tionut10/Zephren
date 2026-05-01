@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import SuggestionPanel from "../components/SuggestionPanel.jsx";
@@ -79,19 +79,46 @@ export default function Step4Renewables({
   renewSummary, instSummary,
   ORIENTATIONS, getNzebEpMax,
   setStep, goToStep,
+  showToast,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
-  // ── Sugestii PV orientative (fără brand) ────────────────────────────────
-  // Folosim peakPower curent ca țintă; dacă nu există, sortare după default.
+  // ── Sugestii PV orientative (fără brand) — Task 3 cu buildingArea fallback ───
   const pvSuggestions = useMemo(() => {
     const targetKWp = parseFloat(photovoltaic?.peakPower) || undefined;
+    const buildingArea = parseFloat(building?.areaUseful) || undefined;
     return suggestPV({
       targetKWp,
+      buildingArea,
       preferredTags: ["nZEB", "regenerabil"],
       limit: 3,
     });
-  }, [photovoltaic?.peakPower]);
+  }, [photovoltaic?.peakPower, building?.areaUseful]);
+
+  // ── Task 2 — onSelect handler PV: aplică kWp + panelCount + suprafață ─────
+  const handleApplyPVSuggestion = useCallback((entry) => {
+    setPhotovoltaic(p => ({
+      ...p,
+      enabled: true,
+      peakPower: entry.tech?.kWp != null ? String(entry.tech.kWp) : p.peakPower,
+      area: entry.tech?.panelCount != null && entry.tech?.panelW != null
+        ? String((entry.tech.panelCount * entry.tech.panelW) / 200) // ~2 m²/panou × număr panouri (proxy)
+        : entry.tech?.kWp != null
+        ? String(Math.round(entry.tech.kWp * 6)) // proxy ~6 m²/kWp panouri 400W moderne
+        : p.area,
+    }));
+    showToast?.("Sistem PV aplicat din catalog orientativ", "success");
+  }, [setPhotovoltaic, showToast]);
+
+  // ── Task 6 — Compliance status PV: kWp ales >= kWp recomandat → ok ────────
+  const pvComplianceStatus = useMemo(() => {
+    if (!photovoltaic?.enabled) return null;
+    const chosenKWp = parseFloat(photovoltaic?.peakPower) || 0;
+    if (chosenKWp === 0) return null;
+    const recommendedKWp = pvSuggestions[0]?.tech?.kWp || 0;
+    if (recommendedKWp === 0) return null;
+    return chosenKWp >= recommendedKWp * 0.9 ? "ok" : "warning";
+  }, [photovoltaic?.enabled, photovoltaic?.peakPower, pvSuggestions]);
 
   return (
     <div>
@@ -263,14 +290,27 @@ export default function Step4Renewables({
                 </div>
               </Card>
 
-              {/* Sugestii orientative sisteme PV (fără brand) */}
+              {/* Sugestii orientative sisteme PV (fără brand) — Task 2 onSelect activ */}
               <SuggestionPanel
                 suggestions={pvSuggestions}
                 title={t("Soluții recomandate sisteme fotovoltaice",lang)}
-                subtitle={t("Sisteme PV tipice piață RO 2025-2026 — eligibile Casa Verde Fotovoltaice / Programul Național.",lang)}
+                subtitle={t("Sisteme PV tipice — eligibile Casa Verde Fotovoltaice. Click pe un card pentru a aplica.",lang)}
                 mode="card"
+                onSelect={handleApplyPVSuggestion}
                 lang={lang}
               />
+              {pvComplianceStatus === "ok" && (
+                <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">✅</span>
+                  <span>kWp ales ≥ kWp recomandat orientativ (≥ 90% țintă)</span>
+                </div>
+              )}
+              {pvComplianceStatus === "warning" && (
+                <div className="text-[11px] text-amber-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">⚠</span>
+                  <span>kWp ales sub țintă — considerați o sugestie din catalog pentru autonomie maximă</span>
+                </div>
+              )}
 
               {/* ── Configurare avansată: tracker / carport / pergolă / balcon ── */}
               {photovoltaic.enabled && (

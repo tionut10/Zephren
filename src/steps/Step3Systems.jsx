@@ -3,8 +3,8 @@ import { cn, Select, Input, Card, ResultRow } from "../components/ui.jsx";
 import { T } from "../data/translations.js";
 import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import SuggestionPanel from "../components/SuggestionPanel.jsx";
-import { suggestHVAC, filterByCategory } from "../data/suggestions-catalog.js";
-import { FUELS, LIGHTING_HOURS } from "../data/constants.js";
+import { suggestHVAC, suggestACM, filterByCategory } from "../data/suggestions-catalog.js";
+import { FUELS, LIGHTING_HOURS, HEAT_SOURCES as HEAT_SOURCES_LEGACY } from "../data/constants.js";
 // HVAC Extended Catalog — Sprint 30 apr 2026: 424 entries noi bilingv RO+EN, ~165 brand-uri în registry
 import {
   HEAT_SOURCES_EXT as HEAT_SOURCES,
@@ -83,6 +83,61 @@ function trackAndSet(field, context, setter) {
   };
 }
 
+// ── Task 5 — Tags derivate contextual din clădire+climă, NU hardcodate ────────
+// Înlocuiește preferredTags=["nZEB"] generic cu tag-uri reale per scenariu.
+function deriveHeatingTags(building, climate) {
+  const tags = [];
+  const cat = building?.category || "";
+  const zone = climate?.zone;
+  const isPublic = ["BCC", "BCA", "BC", "BI"].includes(cat);
+  const isResSmall = ["RI", "RA"].includes(cat);
+  if (isPublic) tags.push("fire-safe", "publica");
+  if (isResSmall) tags.push("rezidential");
+  // Zona I/II = nevoie mare → soluție premium prioritară (HP sol-apă SCOP 4.5+)
+  if (zone === "I" || zone === "II") tags.push("premium");
+  else tags.push("nZEB");
+  return tags;
+}
+
+function deriveCoolingTags(building) {
+  const cat = building?.category || "";
+  const isResSmall = ["RI", "RA"].includes(cat);
+  const isResMed = cat === "RC";
+  if (isResSmall) return ["rezidential", "low-cost"];
+  if (isResMed) return ["modular", "rezidential"];
+  return ["birouri", "comercial"];
+}
+
+function deriveVentilationTags(building) {
+  const cat = building?.category || "";
+  const isPublic = ["BCC", "BCA", "BC", "BI"].includes(cat);
+  if (isPublic) return ["nZEB", "comercial", "passivhaus"];
+  return ["nZEB", "rezidential"];
+}
+
+// ── Task 2 — Mapping subcategory → ID din constants.js ────────────────────────
+// Aplicăm cea mai bună potrivire entry catalog → câmp setat în heating/cooling/ventilation/lighting.
+const HEATING_SUBCAT_TO_ID = {
+  "pompa-caldura-aer-apa": "PC_AA_INV",
+  "pompa-caldura-sol-apa": "PC_SA",
+  "centrala-condensatie": "GAZ_COND",
+};
+const COOLING_SUBCAT_TO_ID = {
+  "VRF": "VRF",
+  "split-inverter": "SPLIT_INV",
+};
+const VENTILATION_SUBCAT_TO_ID = {
+  "VMC-dual-flow-recuperare": "MEC_HR90",
+  "VMC-dual-flow-small": "MEC_HR85",
+  "VMC-single-flow": "MEC_EXT",
+  "DOAS": "DOAS",
+};
+const ACM_SUBCAT_TO_SOURCE = {
+  "boiler-pompa-caldura": "PC_AA",
+  "solar-termic-acm": "TERMO",
+  "boiler-electric": "ELEC",
+};
+
 export default function Step3Systems({
   building, lang, selectedClimate,
   heating, setHeating,
@@ -106,43 +161,62 @@ export default function Step3Systems({
   // Forțăm dezactivare filtru dacă nu mai există parteneri activi (după reset overrides)
   useMemo(() => { if (activePartnersCount === 0 && onlyPartners) setOnlyPartners(false); }, [activePartnersCount]);
 
-  // ── Sugestii orientative (fără brand) per tab ───────────────────────────
-  // Filtrare statică din catalog — afișate în fiecare sub-tab Step 3.
+  // ── Sugestii orientative (fără brand) per tab — Task 3+5 cu semnale + tags derivate ────
   const heatingSuggestions = useMemo(() => {
     const peakLoad = parseFloat(heating?.power) || 0;
+    const buildingArea = parseFloat(building?.areaUseful) || undefined;
     return suggestHVAC({
       functionType: "heating",
       peakLoad_kW: peakLoad > 0 ? peakLoad : undefined,
-      preferredTags: ["nZEB"],
+      climateZone: selectedClimate?.zone,
+      buildingCategory: building?.category,
+      buildingArea,
+      preferredTags: deriveHeatingTags(building, selectedClimate),
       limit: 3,
     });
-  }, [heating?.power]);
+  }, [heating?.power, selectedClimate?.zone, building?.category, building?.areaUseful]);
 
   const coolingSuggestions = useMemo(() => {
-    const cat = building?.category || "";
-    const isResSmall = ["RI", "RA"].includes(cat);
-    const isResMed = cat === "RC";
     const peakLoad = parseFloat(cooling?.power) || 0;
-    const tags = isResSmall
-      ? ["rezidential", "low-cost"]
-      : isResMed
-      ? ["modular", "rezidential"]
-      : ["birouri", "comercial"];
+    const buildingArea = parseFloat(building?.areaUseful) || undefined;
     return suggestHVAC({
       functionType: "cooling",
       peakLoad_kW: peakLoad > 0 ? peakLoad : undefined,
-      preferredTags: tags,
+      climateZone: selectedClimate?.zone,
+      buildingCategory: building?.category,
+      buildingArea,
+      preferredTags: deriveCoolingTags(building),
       limit: 3,
     });
-  }, [building?.category, cooling?.power]);
+  }, [building?.category, building?.areaUseful, cooling?.power, selectedClimate?.zone]);
 
   const ventilationSuggestions = useMemo(() => {
     const type = ventilation?.type || "";
     if (!type || type === "NAT" || type === "NAT_HIBRIDA") return [];
+    const buildingArea = parseFloat(building?.areaUseful) || 0;
+    // Task 7 — dimensionare automată per suprafață: small <120m² / medium 120-500 / large ≥500
+    let sizeFilter;
+    if (buildingArea > 0) {
+      if (buildingArea < 120) sizeFilter = "small";
+      else if (buildingArea < 500) sizeFilter = "medium";
+      else sizeFilter = "large";
+    }
     const hasHR = VENTILATION_TYPES.find(v => v.id === type)?.hasHR ?? false;
-    if (hasHR) return filterByCategory("ventilation").filter(s => s.id === "vmc-dual-90");
-    return filterByCategory("ventilation");
-  }, [ventilation?.type]);
+    let pool = filterByCategory("ventilation");
+    if (!hasHR) {
+      // Sistem fără recuperare → afișăm și entries fără HR
+      pool = pool.filter(s => s.id === "vmc-single" || (sizeFilter && s.tech.sizeTag === sizeFilter));
+    } else {
+      // VMC cu HR → filtrare după sizeTag dacă e disponibil
+      if (sizeFilter) {
+        const sized = pool.filter(s => s.tech.sizeTag === sizeFilter && s.tech.recoveryEff > 0);
+        pool = sized.length > 0 ? sized : pool.filter(s => s.tech.recoveryEff > 0);
+      } else {
+        pool = pool.filter(s => s.tech.recoveryEff > 0);
+      }
+    }
+    return pool.slice(0, 3);
+  }, [ventilation?.type, building?.areaUseful]);
 
   const lightingSuggestions = useMemo(() => {
     const cat = building?.category || "";
@@ -152,6 +226,51 @@ export default function Step3Systems({
     return all;
   }, [building?.category]);
 
+  // Task 4 — Sugestii ACM per consumatori
+  const acmSuggestions = useMemo(() => {
+    const residents = parseInt(acm?.consumers, 10) || 0;
+    return suggestACM({
+      residents: residents > 0 ? residents : undefined,
+      preferredTags: ["nZEB", "regenerabil-partial", "casa-verde"],
+      limit: 3,
+    });
+  }, [acm?.consumers]);
+
+  // ── Task 6 — Status conformitate sistem selectat (compliance feedback) ─────
+  const heatingComplianceStatus = useMemo(() => {
+    if (!heating?.source) return null;
+    const src = HEAT_SOURCES_LEGACY.find(h => h.id === heating.source);
+    if (!src) return null;
+    // Pompe căldură → eta_gen reprezintă SCOP/COP; cazane → eta_gen e randament termic
+    if (src.isCOP) {
+      const scop = src.eta_gen;
+      return scop >= 3.5 ? "ok" : "warning";
+    }
+    // Cazane fosile / electric → fail nZEB
+    if (src.fuel === "gaz" || src.fuel === "gpl" || src.fuel === "motorina" || src.fuel === "carbune") {
+      return "warning";
+    }
+    if (src.fuel === "biomasa" || src.fuel === "lemn_foc" || src.fuel === "termoficare") {
+      return src.eta_gen >= 0.85 ? "ok" : "warning";
+    }
+    return null;
+  }, [heating?.source]);
+
+  const coolingComplianceStatus = useMemo(() => {
+    if (!cooling?.hasCooling || !cooling?.system) return null;
+    const seer = parseFloat(cooling.seer) || 0;
+    if (seer === 0) return null;
+    return seer >= 5.0 ? "ok" : "warning";
+  }, [cooling?.hasCooling, cooling?.system, cooling?.seer]);
+
+  const ventilationComplianceStatus = useMemo(() => {
+    if (!ventilation?.type || ventilation.type === "NAT") return null;
+    const vt = VENTILATION_TYPES.find(v => v.id === ventilation.type);
+    if (!vt) return null;
+    if (!vt.hasHR) return "warning";
+    return (vt.hrEta || 0) >= 0.85 ? "ok" : "warning";
+  }, [ventilation?.type]);
+
   const handleOCRApply = useCallback((data) => {
     try {
       localStorage.setItem("zephren_measured_consumption", JSON.stringify(data));
@@ -159,6 +278,69 @@ export default function Step3Systems({
     setShowOCR(false);
     showToast?.("Date consum din factură salvate", "success");
   }, [showToast]);
+
+  // ── Task 2 — onSelect handlers: aplică sugestii din catalog la formular ───
+  const handleApplyHeatingSuggestion = useCallback((entry) => {
+    const newSource = HEATING_SUBCAT_TO_ID[entry.subcategory];
+    setHeating(p => ({
+      ...p,
+      ...(newSource ? { source: newSource } : {}),
+      power: entry.tech?.capacity_kW != null ? String(entry.tech.capacity_kW) : p.power,
+      eta_gen: entry.tech?.SCOP != null
+        ? String(entry.tech.SCOP)
+        : entry.tech?.COP != null
+        ? String(entry.tech.COP)
+        : entry.tech?.efficiency != null
+        ? String(entry.tech.efficiency)
+        : p.eta_gen,
+    }));
+    showToast?.("Soluție aplicată din catalog orientativ", "success");
+  }, [setHeating, showToast]);
+
+  const handleApplyCoolingSuggestion = useCallback((entry) => {
+    const newSystem = COOLING_SUBCAT_TO_ID[entry.subcategory];
+    setCooling(p => ({
+      ...p,
+      hasCooling: true,
+      ...(newSystem ? { system: newSystem } : {}),
+      power: entry.tech?.capacity_kW != null ? String(entry.tech.capacity_kW) : p.power,
+      eer: entry.tech?.EER != null ? String(entry.tech.EER) : p.eer,
+      seer: entry.tech?.SEER != null ? String(entry.tech.SEER) : p.seer,
+    }));
+    showToast?.("Sistem răcire aplicat din catalog orientativ", "success");
+  }, [setCooling, showToast]);
+
+  const handleApplyVentilationSuggestion = useCallback((entry) => {
+    const newType = VENTILATION_SUBCAT_TO_ID[entry.subcategory];
+    setVentilation(p => ({
+      ...p,
+      ...(newType ? { type: newType } : {}),
+      hrEfficiency: entry.tech?.recoveryEff != null
+        ? String(Math.round(entry.tech.recoveryEff * 100))
+        : p.hrEfficiency,
+    }));
+    showToast?.("Sistem ventilare aplicat din catalog orientativ", "success");
+  }, [setVentilation, showToast]);
+
+  const handleApplyLightingSuggestion = useCallback((entry) => {
+    setLighting(p => ({
+      ...p,
+      type: entry.subcategory === "control-prezenta" ? p.type : "LED",
+      controlType: entry.subcategory === "control-prezenta" ? "PREZ_DIM" : p.controlType,
+      pDensity: entry.tech?.power_W != null ? String(entry.tech.power_W / 10) : p.pDensity,
+    }));
+    showToast?.("Soluție iluminat aplicată din catalog orientativ", "success");
+  }, [setLighting, showToast]);
+
+  const handleApplyACMSuggestion = useCallback((entry) => {
+    const newSource = ACM_SUBCAT_TO_SOURCE[entry.subcategory];
+    setAcm(p => ({
+      ...p,
+      ...(newSource ? { source: newSource } : {}),
+      storageVolume: entry.tech?.capacity_L != null ? String(entry.tech.capacity_L) : p.storageVolume,
+    }));
+    showToast?.("Soluție ACM aplicată din catalog orientativ", "success");
+  }, [setAcm, showToast]);
 
   return (
     <div>
@@ -302,14 +484,28 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              {/* Sugestii orientative HVAC încălzire (fără brand) */}
+              {/* Sugestii orientative HVAC încălzire (fără brand) — Task 2 onSelect activ */}
               <SuggestionPanel
                 suggestions={heatingSuggestions}
                 title={t("Soluții recomandate pentru sursa de căldură",lang)}
-                subtitle={t("Echipamente tipice piață RO 2025-2026 — fără nume de marcă. Pentru oferte concrete contactați furnizori autorizați.",lang)}
+                subtitle={t("Echipamente tipice piață RO 2025-2026 — fără nume de marcă. Click pe un card pentru a aplica.",lang)}
                 mode="card"
+                onSelect={handleApplyHeatingSuggestion}
                 lang={lang}
               />
+              {/* Task 6 — feedback compliance după selecție */}
+              {heatingComplianceStatus === "ok" && (
+                <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">✅</span>
+                  <span>Sistemul ales îndeplinește pragul nZEB (SCOP ≥ 3.5 sau η ≥ 0.85)</span>
+                </div>
+              )}
+              {heatingComplianceStatus === "warning" && (
+                <div className="text-[11px] text-amber-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">⚠</span>
+                  <span>Sistemul ales poate să nu atingă clasa nZEB — verificați SCOP / eligibilitate combustibil EPBD 2024</span>
+                </div>
+              )}
             </>
           )}
 
@@ -492,6 +688,16 @@ export default function Step3Systems({
                   </div>
                 </Card>
               )}
+
+              {/* Sugestii orientative ACM (fără brand) — Task 4 onSelect activ */}
+              <SuggestionPanel
+                suggestions={acmSuggestions}
+                title={t("Soluții recomandate pentru preparare ACM",lang)}
+                subtitle={t("HPWH / solar termic / boiler electric — click pe un card pentru a aplica.",lang)}
+                mode="card"
+                onSelect={handleApplyACMSuggestion}
+                lang={lang}
+              />
 
               {/* Sprint P2 — panouri avansate ACM cu cataloage extinse (Storage + Anti-Legionella + Pipe Insulation) */}
               <Card title={t("⚙️ Configurare avansată ACM (catalog extins)",lang)}>
@@ -939,15 +1145,30 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              {/* Sugestii orientative climatizare (fără brand) */}
+              {/* Sugestii orientative climatizare (fără brand) — Task 2 onSelect activ */}
               {cooling.hasCooling !== false && (
-                <SuggestionPanel
-                  suggestions={coolingSuggestions}
-                  title={t("Soluții recomandate pentru climatizare",lang)}
-                  subtitle={t("Sisteme de răcire orientative pentru rezidențial/comercial — fără nume de marcă.",lang)}
-                  mode="card"
-                  lang={lang}
-                />
+                <>
+                  <SuggestionPanel
+                    suggestions={coolingSuggestions}
+                    title={t("Soluții recomandate pentru climatizare",lang)}
+                    subtitle={t("Sisteme răcire orientative — click pe un card pentru a aplica.",lang)}
+                    mode="card"
+                    onSelect={handleApplyCoolingSuggestion}
+                    lang={lang}
+                  />
+                  {coolingComplianceStatus === "ok" && (
+                    <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-1 px-2">
+                      <span aria-hidden="true">✅</span>
+                      <span>Sistem răcire conform nZEB (SEER ≥ 5.0)</span>
+                    </div>
+                  )}
+                  {coolingComplianceStatus === "warning" && (
+                    <div className="text-[11px] text-amber-400 flex items-center gap-1.5 mt-1 px-2">
+                      <span aria-hidden="true">⚠</span>
+                      <span>SEER {parseFloat(cooling.seer).toFixed(1)} sub pragul nZEB 5.0 — considerați un sistem inverter premium</span>
+                    </div>
+                  )}
+                </>
               )}
             </>
             );
@@ -1023,14 +1244,27 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              {/* Sugestii orientative ventilare (fără brand) */}
+              {/* Sugestii orientative ventilare (fără brand) — Task 2+7 activ */}
               <SuggestionPanel
                 suggestions={ventilationSuggestions}
                 title={t("Soluții recomandate pentru ventilare mecanică",lang)}
-                subtitle={t("Sisteme VMC tipice — VMC dual-flux cu recuperare ≥ 90% e obligatoriu pentru nZEB.",lang)}
+                subtitle={t("VMC dimensionat automat după suprafață — click pe un card pentru a aplica.",lang)}
                 mode="card"
+                onSelect={handleApplyVentilationSuggestion}
                 lang={lang}
               />
+              {ventilationComplianceStatus === "ok" && (
+                <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">✅</span>
+                  <span>VMC cu recuperare ≥ 85% — conform nZEB / Passivhaus</span>
+                </div>
+              )}
+              {ventilationComplianceStatus === "warning" && (
+                <div className="text-[11px] text-amber-400 flex items-center gap-1.5 mt-1 px-2">
+                  <span aria-hidden="true">⚠</span>
+                  <span>Ventilare fără recuperare suficientă — nZEB cere η ≥ 85% (preferați MEC_HR85+ sau DOAS)</span>
+                </div>
+              )}
             </>
             );
           })()}
@@ -1149,12 +1383,13 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              {/* Sugestii orientative iluminat (fără brand) */}
+              {/* Sugestii orientative iluminat (fără brand) — Task 2 onSelect activ */}
               <SuggestionPanel
                 suggestions={lightingSuggestions}
                 title={t("Soluții recomandate pentru iluminat",lang)}
-                subtitle={t("Corpuri LED + control prezență — reduc LENI cu 30-50%, BACS clasă C obligatoriu nZEB.",lang)}
+                subtitle={t("Corpuri LED + control prezență — click pe un card pentru a aplica.",lang)}
                 mode="card"
+                onSelect={handleApplyLightingSuggestion}
                 lang={lang}
               />
             </>

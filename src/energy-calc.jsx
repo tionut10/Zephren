@@ -3560,6 +3560,7 @@ export default function EnergyCalcApp({ cloud }) {
             renewSummary={renewSummary} instSummary={instSummary}
             ORIENTATIONS={ORIENTATIONS} getNzebEpMax={getNzebEpMax}
             setStep={setStep} goToStep={goToStep}
+            showToast={showToast}
           /></Suspense>}
 
 
