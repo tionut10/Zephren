@@ -228,10 +228,146 @@ Brand-uri excluse explicit din nameRo/nameEn (validat de teste):
 ## Restanțe & next steps (sprinturi viitoare)
 
 1. **Bilingv complet pentru entries existente din `constants.js`**: în prezent entries vechi au doar `label` (RO); trebuie traduse `nameEn` (sprint dedicat — ~290 entries × 1-2 min = ~10h).
-2. **Integrare UI completă în `Step3Systems.jsx`**: dropdown-urile actuale folosesc arrays din `constants.js`. Migrarea la `*_EXT` cu render bilingv via `getLabel()` și grouping pe categorii (~6h, P1).
-3. **Cataloage NOI separate**: ACM_STORAGE_TYPES, ACM_ANTI_LEGIONELLA, PIPE_INSULATION_TYPES — adăugare panouri UI dedicate în Step 3 sub-tab ACM (~4h, P1).
+2. ~~Integrare UI completă în `Step3Systems.jsx`~~ ✅ **FINALIZAT 30 apr 2026 (sprint P1)** — dropdown-urile folosesc `*_EXT` cu `buildOptions()` helper: bilingv + grouping pe categorii + applicability filter + partner sort + tooltip source.
+3. **Cataloage NOI separate**: ACM_STORAGE_TYPES, ACM_ANTI_LEGIONELLA, PIPE_INSULATION_TYPES — exportate din loader, panouri UI dedicate în Step 3 sub-tab ACM rămân de adăugat (~4h, P2).
 4. **Lookup wizard**: filtru "compatibil cu această sursă" pentru emisie (compatibleHeatSources) și pentru distribuție/control (~3h, P2).
-5. **Brand opt-in**: după parteneriate semnate, populare câmp `brand` + filtru "afișează doar brand-uri partenere" (~5h, post-lansare).
+5. **Activare parteneriate brand-uri**: registry pregătit (~165 brand-uri); pentru activare, vezi secțiunea **Brand Registry — Activare Parteneriate** mai jos.
+
+---
+
+## Brand Registry — pregătire parteneriate post-lansare
+
+### Sumar
+
+Sprint P1 (30 apr 2026) a adăugat un registru intern cu **~165 brand-uri majore HVAC** organizate în 12 categorii. Politica curentă: UI-ul rămâne **100% NEUTRU**; brand-urile NU se afișează până la activarea explicită a unui parteneriat.
+
+### Acoperire
+
+| Categorie | Brand-uri | Exemple cheie |
+|---|---|---|
+| **heating** | ~35 | Viessmann, Vaillant, Bosch, Buderus, Junkers, Wolf, Weishaupt, Brötje, Ariston, Immergas, Ferroli, Baxi, Beretta, Riello, Saunier Duval, De Dietrich, Atlantic, Protherm, Termet, Fröling, Hargassner, ÖkoFEN, Atmos, Centrometal |
+| **heat-pumps** (în heating) | ~25 | Daikin, Mitsubishi Electric, Panasonic, Samsung, LG, Fujitsu, Hitachi, Toshiba, NIBE, IVT, CTC, Thermia, Stiebel Eltron, Dimplex, Waterkotte, Ochsner, Heliotherm |
+| **cooling** | ~30 | Carrier, Trane, York/JCI, Lennox, Midea, Gree, Haier, Hisense, Sinclair, Inventor, Olimpia Splendid, Aermec, Galletti, Clivet |
+| **acm** | ~12 | Ariston Thermo, Tesy, Eldom, Drazice, Reflex, Galmet, Hajdu, Styleboiler |
+| **ventilation** | ~12 | Zehnder, Vallox, Helios, Lunos, Aldes, Brink, Komfovent, Paul, Vortice, Blauberg, Drexel und Weiss, Swegon, Systemair, TROX |
+| **lighting** | ~15 | Philips Signify, Osram, Ledvance, Tridonic, Lutron, Casambi, Thorn, Trilux, Zumtobel, ERCO, Fagerhult, iGuzzini, Flos, Artemide, Schréder, Helvar, Cree |
+| **smart-home** | ~18 | Honeywell, Siemens, Danfoss, tado, Nest, Ecobee, Schneider Electric, ABB, WAGO, Jung, Gira, Busch-Jaeger, Fibaro, Shelly, Sonoff, Eltako, Kieback&Peter, Distech Controls |
+| **distribution** | ~14 | Uponor, REHAU, Roth, COMAP, Herz Armaturen, Heimeier, Flamco, Armacell, Kaiflex, ISOVER, ROCKWOOL, PAROC, Logstor, Brugg Pipes |
+| **solar** | ~13 | Viessmann Solar, Vaillant Solar, Fronius, SMA, SolarEdge, Enphase, Huawei FusionSolar, Kostal, Trina, Jinko, LONGi, JA Solar, Canadian Solar |
+| **battery** | ~10 | Tesla Powerwall, LG RESU, BYD, Pylontech, sonnen, Growatt, Victron, Studer, Deye, GoodWe, Sungrow |
+| **fuels** (RO) | ~8 | Romgaz, OMV Petrom, Engie Romania, E.ON, Hidroelectrica, Nuclearelectrica, Restart Energy, Transgex, ELCEN București |
+
+**Total: ~165 brand-uri** (după consolidare cross-categorii — multe brand-uri apar în mai multe categorii, ex: Viessmann e în heating + acm + cooling + solar).
+
+### Schema brand entry
+
+```typescript
+interface BrandEntry {
+  id: string;                    // snake_case unic (ex: "viessmann", "lg_resu")
+  name: string;                  // display name (ex: "Viessmann", "LG Energy Solution")
+  country: string;               // ISO-3166 2-letter (DE/IT/JP/RO/...)
+  categories: string[];          // ["heating", "cooling", "acm", "ventilation", ...]
+  productLines: string[];        // ["Vitodens 200-W", "Vitocal 350-A", ...]
+  matchesEntries: string[];      // ID-uri din *_EXT (ex: ["GAZ_COND", "PC_AA_R290"])
+  partnerStatus: "none" | "pending" | "active" | "discontinued";
+  partnerSince: string | null;   // ISO date "2026-08-15" sau null
+  partnerTier: null | "basic" | "premium" | "exclusive";
+  affiliateUrl: string | null;   // URL tracked sau null
+  contactEmail: string | null;   // email comercial sau null
+  notes: string;                 // 1-line context piață RO
+}
+```
+
+### Activarea unui parteneriat (de către administratorul Zephren)
+
+**Exemplu**: Semnezi contract cu Viessmann pe 15 august 2026, tier premium.
+
+1. Editează `src/data/catalogs/brands-registry.json`:
+   ```json
+   {
+     "id": "viessmann",
+     "partnerStatus": "active",
+     "partnerSince": "2026-08-15",
+     "partnerTier": "premium",
+     "affiliateUrl": "https://zephren.ro/go/viessmann?utm=catalog",
+     "contactEmail": "vanzari@viessmann.ro"
+   }
+   ```
+
+2. Comită modificarea (zero deploy required — JSON e static asset Vite).
+
+3. Helper-ul `applyPartnerSorting()` din `hvac-catalog.js` va prioritiza automat entries Viessmann (GAZ_COND, GAZ_PREMIX, PC_AA_INV, PC_AA_R290, etc.) la începutul fiecărui dropdown din `Step3Systems.jsx`.
+
+4. UI-ul afișează badge "🤝" pe entries cu parteneri activi (`partnerBadge: true` în opțiuni).
+
+5. Multiple parteneriate paralele: poți activa **simultan** Viessmann (heating) + Daikin (cooling) + Zehnder (ventilation) + Philips (lighting) — fiecare prioritizează în categoria proprie.
+
+### Helpers loader pentru brand registry
+
+```js
+import {
+  BRANDS,
+  BRANDS_BY_ID,
+  getBrandsByCategory,
+  getActivePartners,
+  getBrandsForEntry,
+  getEntriesByBrand,
+  prioritizeBrand,
+  applyPartnerSorting,
+  getActivePartnersForEntry,
+} from "../data/catalogs/hvac-catalog.js";
+
+// Lista brand-urilor pentru o categorie HVAC
+const heatingBrands = getBrandsByCategory("heating");
+
+// Brand-urile care matchează un entry specific
+const matches = getBrandsForEntry("GAZ_COND");
+// → ["viessmann", "vaillant", "bosch", "buderus", ...]
+
+// Entries dintr-un catalog matchate de un brand
+const viessmannEntries = getEntriesByBrand("viessmann", HEAT_SOURCES_EXT);
+
+// Sortare manuală cu un brand prioritar
+const sorted = prioritizeBrand(HEAT_SOURCES_EXT, "viessmann");
+
+// Sortare automată folosind toți partenerii activi
+const autoSorted = applyPartnerSorting(HEAT_SOURCES_EXT);
+
+// Lista parteneri activi care matchează un entry (pentru badge UI)
+const partners = getActivePartnersForEntry("GAZ_COND");
+// → [{id:"viessmann", name:"Viessmann", partnerTier:"premium"}]
+```
+
+### Cum funcționează `buildOptions()` în UI
+
+Helper-ul din `Step3Systems.jsx` aplică în ordine:
+
+1. **filterByBuildingCategory** — păstrează doar entries aplicabile pentru `building.category` (ex: pentru o școală păstrăm doar entries cu `applicableCategories` includes "ED" sau "all")
+2. **applyPartnerSorting** — mută entries cu parteneri activi în top
+3. **groupByCategory(lang)** — grupează pe categoria entry (RO sau EN)
+4. **format options** — pentru fiecare entry: label bilingv via `getLabel(e, lang)`, tooltip cu source EN/SR/ISO + notes, `partnerBadge: true` dacă există parteneri activi
+5. **isGroupHeader: true** — separator non-clickabil între categorii (afișat ca header subtle uppercase)
+
+### Politica zero brand-uri în UI implicit
+
+- La inițializare, **toți** ~165 brand-uri au `partnerStatus: "none"`
+- Helperul `applyPartnerSorting()` returnează ordine originală când nu există parteneri activi
+- Helperul `getActivePartnersForEntry()` returnează listă goală
+- UI-ul nu afișează badge-uri sau brand-uri în nameRo/nameEn
+- Schema validată de teste: zero brand-uri în labels (Daikin/Mitsubishi/Viessmann/Bosch/Zehnder/Philips/etc. excluse)
+
+### Restanțe brand registry (sprinturi viitoare, P2)
+
+1. **UI admin** pentru activare parteneriate (modal cu form pentru editare partnerStatus/Since/Tier/affiliateUrl) — alternativă la editare manuală JSON
+2. **Tooltip extins** pentru entries cu parteneri: nume brand + product line specific + link afiliat
+3. **Filtru "Doar brand-uri partenere"** opțional în dropdown (ascunde entries fără partner match)
+4. **Telemetrie click** pe entries cu parteneri → tracking conversii pentru contracte affiliate
+5. **Importator brand-uri batch** din CSV pentru update masiv post-parteneriate
+
+## Update teste — sprint P1
+
+- 52 teste noi în `__tests__/brands-registry.test.js` (acoperire 12 categorii, ~165 brand-uri, helpers, schema)
+- Suite completă: 2315 → **2367 PASS** (zero regresii)
 
 ## Surse autoritare folosite
 

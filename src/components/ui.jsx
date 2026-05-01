@@ -69,14 +69,29 @@ export function Select({ label, value, onChange, options, placeholder, className
               className="px-3 py-2 text-sm cursor-pointer hover:bg-white/10 transition-colors opacity-40">{placeholder}</div>
           )}
           {options.map((o, i) => {
+            // Group header (non-selectable, optgroup-like)
+            if (typeof o === "object" && o.isGroupHeader) {
+              return (
+                <div key={i} role="presentation"
+                  className="px-3 py-1.5 text-[10px] uppercase tracking-widest font-semibold opacity-50 bg-white/[0.02] border-t border-b border-white/[0.05]"
+                  style={{cursor:"default"}}>
+                  {o.label}
+                </div>
+              );
+            }
             const val = typeof o === "string" ? o : o.value;
             const lab = typeof o === "string" ? o : o.label;
+            const tip = typeof o === "object" ? o.tooltip : null;
+            const partner = typeof o === "object" && o.partnerBadge;
             const isActive = val === value;
             return (
-              <div key={i} role="option" aria-selected={isActive} onClick={() => { onChange(val); setOpen(false); }}
-                className={cn("px-3 py-2 text-sm cursor-pointer transition-colors",
+              <div key={i} role="option" aria-selected={isActive}
+                title={tip || undefined}
+                onClick={() => { onChange(val); setOpen(false); }}
+                className={cn("px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2",
                   isActive ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/10")}>
-                {lab}
+                <span className="truncate">{lab}</span>
+                {partner && <span className="text-[9px] opacity-70 shrink-0" title="Brand partener">🤝</span>}
               </div>
             );
           })}

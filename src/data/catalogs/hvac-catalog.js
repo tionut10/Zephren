@@ -47,6 +47,7 @@ import rawA5 from "./_raw_a5_cooling.json";
 import rawA6 from "./_raw_a6_ventilation.json";
 import rawA7 from "./_raw_a7_lighting.json";
 import rawA8 from "./_raw_a8_fuels.json";
+import brandsRegistry from "./brands-registry.json";
 
 // ── Helper pentru normalizare entries: asigură `label` (RO) și `nameRo`/`nameEn` ──
 function normalize(entry, fallbackCategory) {
@@ -59,6 +60,22 @@ function normalize(entry, fallbackCategory) {
     nameEn,
     label: entry.label ?? nameRo,
     category: entry.category ?? fallbackCategory ?? "",
+    // Aliase snake_case ↔ camelCase pentru compat constants.js (eta_gen) ↔ extensions (etaGen)
+    eta_gen: entry.eta_gen ?? entry.etaGen,
+    etaGen: entry.etaGen ?? entry.eta_gen,
+    eta_em: entry.eta_em ?? entry.etaEm,
+    etaEm: entry.etaEm ?? entry.eta_em,
+    eta_dist: entry.eta_dist ?? entry.etaDist,
+    etaDist: entry.etaDist ?? entry.eta_dist,
+    eta_ctrl: entry.eta_ctrl ?? entry.etaCtrl,
+    etaCtrl: entry.etaCtrl ?? entry.eta_ctrl,
+    // Aliase răcire / iluminat / ACM
+    p_density: entry.p_density ?? entry.pDensity,
+    pDensity: entry.pDensity ?? entry.p_density,
+    fctrl: entry.fctrl ?? entry.fCtrl,
+    fCtrl: entry.fCtrl ?? entry.fctrl,
+    // Categorie alias `cat` ↔ `category` pentru cod existent
+    cat: entry.cat ?? entry.category ?? fallbackCategory ?? "",
   };
 }
 
@@ -224,3 +241,120 @@ export const HVAC_CATALOG = {
   lightingControl: LIGHTING_CONTROL_EXT,
   fuels: FUELS_EXT,
 };
+
+// ═══════════════════════════════════════════════════════════════
+// BRAND REGISTRY — pregătire parteneriate post-lansare
+// ═══════════════════════════════════════════════════════════════
+//
+// Registry intern cu ~165 brand-uri majore HVAC organizate per categorie.
+// La inițializare, toate brand-urile au `partnerStatus: "none"` și UI-ul
+// rămâne 100% NEUTRU (nu se afișează brand-uri în dropdown-uri).
+//
+// Pentru activarea unui parteneriat:
+//   1. Editează `brands-registry.json` → setează `partnerStatus: "active"`
+//      + `partnerSince: "2026-MM-DD"` + `partnerTier: "premium"` etc.
+//   2. Helper-ul `applyPartnerSorting(entries)` va prioritiza automat entries
+//      legate de acel brand (via `matchesEntries`) la începutul listei.
+//   3. UI poate afișa badge "🤝 Partener" pentru aceste entries.
+//
+// Politica: zero brand-uri în nameRo/nameEn al entries; doar legătură via
+// `matchesEntries` din registry. Schema permite multiple parteneriate paralele.
+
+export const BRANDS = brandsRegistry.brands;
+
+export const BRANDS_BY_ID = Object.fromEntries(BRANDS.map(b => [b.id, b]));
+
+/**
+ * Returnează lista de brand-uri filtrată per categorie HVAC.
+ * @param {string} category - "heating" | "cooling" | "acm" | "ventilation" | "lighting" | "smart-home" | "distribution" | "solar" | "battery" | "fuels"
+ */
+export function getBrandsByCategory(category) {
+  return BRANDS.filter(b => b.categories.includes(category));
+}
+
+/**
+ * Returnează brand-urile cu parteneriat activ.
+ * @returns {Array<Brand>} brand-uri cu partnerStatus === "active"
+ */
+export function getActivePartners() {
+  return BRANDS.filter(b => b.partnerStatus === "active");
+}
+
+/**
+ * Returnează ID-urile brand-urilor care matchează un entry catalog.
+ * @param {string} entryId - ID-ul entry-ului (ex: "GAZ_COND", "PC_CO2")
+ * @returns {Array<string>} IDs brand-uri (ex: ["viessmann", "vaillant"])
+ */
+export function getBrandsForEntry(entryId) {
+  return BRANDS
+    .filter(b => Array.isArray(b.matchesEntries) && b.matchesEntries.includes(entryId))
+    .map(b => b.id);
+}
+
+/**
+ * Returnează entries din catalog matchate de un brand.
+ * @param {string} brandId - ID-ul brand-ului (ex: "viessmann")
+ * @param {Array} entries - Lista de entries în care căutăm (ex: HEAT_SOURCES_EXT)
+ * @returns {Array} entries care apar în brand.matchesEntries
+ */
+export function getEntriesByBrand(brandId, entries) {
+  const brand = BRANDS_BY_ID[brandId];
+  if (!brand || !Array.isArray(brand.matchesEntries)) return [];
+  const ids = new Set(brand.matchesEntries);
+  return entries.filter(e => ids.has(e.id));
+}
+
+/**
+ * Sortează entries punând la început pe cele matchate de brandul partener.
+ * Util pentru parteneriate exclusive sau premium.
+ * @param {Array} entries - Lista de entries
+ * @param {string} partnerBrandId - ID brand partener
+ * @returns {Array} sortată — entries partener mai întâi, apoi restul
+ */
+export function prioritizeBrand(entries, partnerBrandId) {
+  if (!partnerBrandId) return entries;
+  const brand = BRANDS_BY_ID[partnerBrandId];
+  if (!brand || !Array.isArray(brand.matchesEntries)) return entries;
+  const matchSet = new Set(brand.matchesEntries);
+  const partner = entries.filter(e => matchSet.has(e.id));
+  const rest = entries.filter(e => !matchSet.has(e.id));
+  return [...partner, ...rest];
+}
+
+/**
+ * Aplică sortare automată pentru toți partenerii activi (cumulativ).
+ * Entries matchate de orice partener activ apar primele.
+ * @param {Array} entries - Lista de entries
+ * @returns {Array} sortată
+ */
+export function applyPartnerSorting(entries) {
+  const partners = getActivePartners();
+  if (partners.length === 0) return entries;
+  const matchSet = new Set();
+  for (const p of partners) {
+    if (Array.isArray(p.matchesEntries)) {
+      for (const id of p.matchesEntries) matchSet.add(id);
+    }
+  }
+  if (matchSet.size === 0) return entries;
+  const partner = entries.filter(e => matchSet.has(e.id));
+  const rest = entries.filter(e => !matchSet.has(e.id));
+  return [...partner, ...rest];
+}
+
+/**
+ * Returnează numele brand-urilor partenere active care matchează un entry.
+ * Util pentru badge UI.
+ * @param {string} entryId
+ * @returns {Array<{id, name, partnerTier}>}
+ */
+export function getActivePartnersForEntry(entryId) {
+  return getActivePartners()
+    .filter(b => Array.isArray(b.matchesEntries) && b.matchesEntries.includes(entryId))
+    .map(b => ({ id: b.id, name: b.name, partnerTier: b.partnerTier }));
+}
+
+// Statistici registry
+CATALOG_META.brandCount = BRANDS.length;
+CATALOG_META.brandActivePartners = getActivePartners().length;
+CATALOG_META.brandCategories = [...new Set(BRANDS.flatMap(b => b.categories))].sort();

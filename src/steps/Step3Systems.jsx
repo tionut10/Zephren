@@ -4,13 +4,54 @@ import { T } from "../data/translations.js";
 import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import SuggestionPanel from "../components/SuggestionPanel.jsx";
 import { suggestHVAC, filterByCategory } from "../data/suggestions-catalog.js";
+import { FUELS, LIGHTING_HOURS } from "../data/constants.js";
+// HVAC Extended Catalog — Sprint 30 apr 2026: 424 entries noi bilingv RO+EN, ~165 brand-uri în registry
 import {
-  HEAT_SOURCES, FUELS, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY,
-  CONTROL_TYPES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES,
-  LIGHTING_TYPES, LIGHTING_CONTROL, LIGHTING_HOURS,
-  COOLING_EMISSION_EFFICIENCY, COOLING_DISTRIBUTION_EFFICIENCY, COOLING_CONTROL_EFFICIENCY,
-} from "../data/constants.js";
+  HEAT_SOURCES_EXT as HEAT_SOURCES,
+  EMISSION_SYSTEMS_EXT as EMISSION_SYSTEMS,
+  DISTRIBUTION_QUALITY_EXT as DISTRIBUTION_QUALITY,
+  CONTROL_TYPES_EXT as CONTROL_TYPES,
+  ACM_SOURCES_EXT as ACM_SOURCES,
+  COOLING_SYSTEMS_EXT as COOLING_SYSTEMS,
+  COOLING_EMISSION_EXT as COOLING_EMISSION_EFFICIENCY,
+  COOLING_DISTRIBUTION_EXT as COOLING_DISTRIBUTION_EFFICIENCY,
+  COOLING_CONTROL_EXT as COOLING_CONTROL_EFFICIENCY,
+  VENTILATION_TYPES_EXT as VENTILATION_TYPES,
+  LIGHTING_TYPES_EXT as LIGHTING_TYPES,
+  LIGHTING_CONTROL_EXT as LIGHTING_CONTROL,
+  ACM_STORAGE_TYPES,
+  ACM_ANTI_LEGIONELLA,
+  PIPE_INSULATION_TYPES,
+  getLabel,
+  filterByBuildingCategory,
+  groupByCategory,
+  applyPartnerSorting,
+  getActivePartnersForEntry,
+} from "../data/catalogs/hvac-catalog.js";
 import { validateACMInputs, summarizeValidation } from "../calc/acm-validation.js";
+
+// ── Helper pentru construire opțiuni dropdown cu: grouping pe categorii (optgroup),
+//    bilingv RO/EN via getLabel, filter applicabilitate per building.category,
+//    sortare prioritate parteneri activi, tooltip cu source EN/SR/ISO.
+function buildOptions(entries, lang, buildingCategory, applyFilter = true) {
+  const filtered = applyFilter ? filterByBuildingCategory(entries, buildingCategory) : entries;
+  const sorted = applyPartnerSorting(filtered);
+  const grouped = groupByCategory(sorted, lang);
+  const out = [];
+  for (const [cat, items] of Object.entries(grouped)) {
+    if (cat && cat !== "Altele" && cat !== "Other") {
+      out.push({ label: cat, isGroupHeader: true });
+    }
+    for (const e of items) {
+      const label = getLabel(e, lang);
+      const partners = getActivePartnersForEntry(e.id);
+      const partnerBadge = partners.length > 0;
+      const tooltip = e.source ? `${e.source}${e.notes ? " — " + e.notes : ""}` : (e.notes || undefined);
+      out.push({ value: e.id, label, tooltip, partnerBadge });
+    }
+  }
+  return out;
+}
 
 export default function Step3Systems({
   building, lang, selectedClimate,
@@ -128,7 +169,7 @@ export default function Step3Systems({
               <Card title={t("Sursa de căldură (generare)",lang)}>
                 <div className="space-y-3">
                   <Select label={t("Tip sursă",lang)} value={heating.source} onChange={v => setHeating(p=>({...p,source:v}))}
-                    options={HEAT_SOURCES.map(s=>({value:s.id, label:`${s.label} (${s.cat})`}))} />
+                    options={buildOptions(HEAT_SOURCES, lang, building?.category)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Putere nominală",lang)} value={heating.power} onChange={v => setHeating(p=>({...p,power:v}))} type="number" unit="kW" min="0" step="0.1" tooltip="Puterea termică nominală a generatorului — Mc 001 Cap.3, valoare de pe plăcuța echipamentului" />
                     <Input label={HEAT_SOURCES.find(s=>s.id===heating.source)?.isCOP ? "COP/SCOP" : "Randament generare (eta_gen)"}
@@ -163,7 +204,7 @@ export default function Step3Systems({
               <Card title={t("Sistem de emisie",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select label={t("Tip corpuri de încălzire",lang)} value={heating.emission} onChange={v => setHeating(p=>({...p,emission:v}))}
-                    options={EMISSION_SYSTEMS.map(s=>({value:s.id,label:s.label}))} />
+                    options={buildOptions(EMISSION_SYSTEMS, lang, building?.category)} />
                   <Input label={t("Randament emisie (eta_em)",lang)} value={heating.eta_em} onChange={v => setHeating(p=>({...p,eta_em:v}))} type="number" step="0.01" />
                 </div>
               </Card>
@@ -171,10 +212,10 @@ export default function Step3Systems({
               <Card title={t("Distribuție și control",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select label={t("Calitate distribuție",lang)} value={heating.distribution} onChange={v => setHeating(p=>({...p,distribution:v}))}
-                    options={DISTRIBUTION_QUALITY.map(s=>({value:s.id,label:s.label}))} />
+                    options={buildOptions(DISTRIBUTION_QUALITY, lang, building?.category)} />
                   <Input label={t("Randament distribuție (eta_dist)",lang)} value={heating.eta_dist} onChange={v => setHeating(p=>({...p,eta_dist:v}))} type="number" step="0.01" />
                   <Select label={t("Tip reglaj/control",lang)} value={heating.control} onChange={v => setHeating(p=>({...p,control:v}))}
-                    options={CONTROL_TYPES.map(s=>({value:s.id,label:s.label}))} />
+                    options={buildOptions(CONTROL_TYPES, lang, building?.category)} />
                   <Input label={t("Randament reglaj (eta_ctrl)",lang)} value={heating.eta_ctrl} onChange={v => setHeating(p=>({...p,eta_ctrl:v}))} type="number" step="0.01" />
                 </div>
               </Card>
@@ -229,7 +270,7 @@ export default function Step3Systems({
               <Card title={t("Preparare apă caldă de consum",lang)}>
                 <div className="space-y-3">
                   <Select label={t("Sursa ACM",lang)} value={acm.source} onChange={v => setAcm(p=>({...p,source:v}))}
-                    options={ACM_SOURCES.map(s=>({value:s.id,label:s.label}))} />
+                    options={buildOptions(ACM_SOURCES, lang, building?.category)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select label={t("Nivel de consum",lang)} value={acm.consumptionLevel || "med"} onChange={v => setAcm(p=>({...p,consumptionLevel:v}))}
                       options={[
@@ -522,7 +563,7 @@ export default function Step3Systems({
                             eer:sys?.eer.toString()||"",
                             seer:sys?.seer && sys.seer > 0 ? sys.seer.toString() : "",
                           }));
-                        }} options={COOLING_SYSTEMS.filter(s=>s.id!=="NONE").map(s=>({value:s.id,label:s.label}))} />
+                        }} options={buildOptions(COOLING_SYSTEMS.filter(s=>s.id!=="NONE"), lang, building?.category, false)} />
                         <Input label={t("EER nominal",lang)} value={cooling.eer || (coolSysSelected?.eer||"").toString()}
                           onChange={v => setCooling(p=>({...p,eer:v}))} type="number" step="0.1" min="0" max="20"
                           tooltip="EER = Energy Efficiency Ratio la sarcina nominală (ISO 5151 / EN 14511, punct A = 27/35 °C). Valoare etichetă echipament." />
@@ -560,7 +601,7 @@ export default function Step3Systems({
                           <Select label={t("Tip emisie răcire",lang)} value={cooling.emissionType || "fan_coil"} onChange={v => {
                             const em = COOLING_EMISSION_EFFICIENCY.find(e=>e.id===v);
                             setCooling(p=>({...p,emissionType:v,eta_em:em?.eta.toString()||"0.97"}));
-                          }} options={COOLING_EMISSION_EFFICIENCY.map(e=>({value:e.id,label:`${e.label} (η=${e.eta})`}))} />
+                          }} options={buildOptions(COOLING_EMISSION_EFFICIENCY, lang, building?.category, false)} />
                           <Input label="η emisie" value={cooling.eta_em || "0.97"} onChange={v => setCooling(p=>({...p,eta_em:v}))}
                             type="number" step="0.01" min="0.70" max="1.00"
                             tooltip="Randament emisie răcire (0.70–1.00). Conform EN 15316-2 Tab.7." />
@@ -568,7 +609,7 @@ export default function Step3Systems({
                           <Select label={t("Tip distribuție răcire",lang)} value={cooling.distributionType || "apa_rece_izolat_int"} onChange={v => {
                             const di = COOLING_DISTRIBUTION_EFFICIENCY.find(d=>d.id===v);
                             setCooling(p=>({...p,distributionType:v,eta_dist:di?.eta.toString()||"0.95"}));
-                          }} options={COOLING_DISTRIBUTION_EFFICIENCY.map(d=>({value:d.id,label:`${d.label} (η=${d.eta})`}))} />
+                          }} options={buildOptions(COOLING_DISTRIBUTION_EFFICIENCY, lang, building?.category, false)} />
                           <Input label="η distribuție" value={cooling.eta_dist || "0.95"} onChange={v => setCooling(p=>({...p,eta_dist:v}))}
                             type="number" step="0.01" min="0.70" max="1.00"
                             tooltip="Randament distribuție răcire (0.70–1.00). Conform EN 15316-3 Tab.7." />
@@ -576,7 +617,7 @@ export default function Step3Systems({
                           <Select label={t("Reglare răcire",lang)} value={cooling.controlType || "termostat_prop"} onChange={v => {
                             const ct = COOLING_CONTROL_EFFICIENCY.find(c=>c.id===v);
                             setCooling(p=>({...p,controlType:v,eta_ctrl:ct?.eta.toString()||"0.96"}));
-                          }} options={COOLING_CONTROL_EFFICIENCY.map(c=>({value:c.id,label:`${c.label} (η=${c.eta})`}))} />
+                          }} options={buildOptions(COOLING_CONTROL_EFFICIENCY, lang, building?.category, false)} />
                           <Input label="η control" value={cooling.eta_ctrl || "0.96"} onChange={v => setCooling(p=>({...p,eta_ctrl:v}))}
                             type="number" step="0.01" min="0.70" max="1.10"
                             tooltip="Randament control răcire (0.70–1.10). BACS clasa A/B poate >1.00 (EN 15232-1 / ISO 52120-1)." />
@@ -735,7 +776,7 @@ export default function Step3Systems({
                       {/* Distribuție legacy — păstrat pentru compatibilitate */}
                       <div className="mt-3">
                         <Select label={t("Calitate izolație distribuție (legacy)",lang)} value={cooling.distribution} onChange={v => setCooling(p=>({...p,distribution:v}))}
-                          options={DISTRIBUTION_QUALITY.slice(0,4).map(s=>({value:s.id,label:s.label}))} />
+                          options={buildOptions(DISTRIBUTION_QUALITY.slice(0,4), lang, building?.category, false)} />
                       </div>
                     </>
                   )}
@@ -792,7 +833,7 @@ export default function Step3Systems({
                   <Select label={t("Tip ventilare",lang)} value={ventilation.type} onChange={v => {
                     const vt = VENTILATION_TYPES.find(t=>t.id===v);
                     setVentilation(p=>({...p,type:v,hrEfficiency:vt?.hrEta ? (vt.hrEta*100).toFixed(0) : ""}));
-                  }} options={VENTILATION_TYPES.map(s=>({value:s.id,label:s.label}))} />
+                  }} options={buildOptions(VENTILATION_TYPES, lang, building?.category)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Debit aer proaspăt",lang)} value={ventilation.airflow} onChange={v => setVentilation(p=>({...p,airflow:v}))} type="number" unit="m3/h"
                       min="0" max="100000" step="1"
@@ -884,14 +925,14 @@ export default function Step3Systems({
                       const lt = LIGHTING_TYPES.find(t=>t.id===v);
                       setLighting(p=>({...p, type:v, pDensity: lt?.pDensity?.toString() || p.pDensity}));
                     }}
-                      options={LIGHTING_TYPES.map(s=>({value:s.id,label:`${s.label} (${s.efficacy} lm/W)`}))} />
+                      options={buildOptions(LIGHTING_TYPES, lang, building?.category)} />
                     <Input label={t("Densitate putere instalată",lang)} value={lighting.pDensity} onChange={v => setLighting(p=>({...p,pDensity:v}))} type="number" unit="W/m2" step="0.1" min="0" max="50"
                       tooltip="EN 15193-1: tipic rezidențial 3–8 W/m², birouri 8–12 W/m², industrial 10–20 W/m²" />
                     <Select label={t("Sistem de control",lang)} value={lighting.controlType} onChange={v => {
                       const ctrl = LIGHTING_CONTROL.find(c=>c.id===v);
                       setLighting(p=>({...p, controlType:v, fCtrl: ctrl?.fCtrl?.toString() || p.fCtrl}));
                     }}
-                      options={LIGHTING_CONTROL.map(s=>({value:s.id,label:s.label}))} />
+                      options={buildOptions(LIGHTING_CONTROL, lang, building?.category)} />
                     <Input label={t("Factor control (F_C)",lang)} value={lighting.fCtrl} onChange={v => setLighting(p=>({...p,fCtrl:v}))} type="number" step="0.01" min="0.3" max="1.0"
                       tooltip="EN 15193-1 Tab. B.6: manual 1.00, PIR 0.80, DALI 0.45, auto integral 0.40" />
                     <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" min="0" max="8760"
