@@ -197,27 +197,27 @@ export default function AnexaMDLPAFields({
   const fixturesEmpty = isFixturesEmpty(fixtures);
 
   // ── Common UI atoms ──
-  const SectionHeader = ({ id, title, subtitle, visible = true, helpText }) => (
+  const SectionHeader = ({ id, title, subtitle, visible = true }) => (
     <button
       type="button"
       onClick={() => toggle(id)}
       aria-expanded={expanded[id]}
       aria-controls={`mdlpa-section-${id}`}
       className={cn(
-        "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all",
+        "w-full flex items-start justify-between gap-2 px-3 py-2 rounded-lg transition-all",
         visible ? "bg-white/5 hover:bg-white/10" : "bg-white/[0.02] opacity-60"
       )}
     >
-      <div className="text-left">
-        <div className="text-sm font-semibold flex items-center gap-2">
-          {title}
-          {!visible && <Badge color="amber">Inactiv</Badge>}
-        </div>
-        {subtitle && <div className="text-[11px] opacity-40 mt-0.5">{subtitle}</div>}
+      <div className="text-left min-w-0">
+        <div className="text-xs font-semibold leading-snug">{title}</div>
+        {subtitle && <div className="text-[11px] opacity-40 mt-0.5 leading-snug">{subtitle}</div>}
       </div>
-      <span className="text-lg opacity-50" aria-hidden="true">
-        {expanded[id] ? "−" : "+"}
-      </span>
+      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+        {!visible && <Badge color="amber">Inactiv</Badge>}
+        <span className="text-base opacity-50" aria-hidden="true">
+          {expanded[id] ? "−" : "+"}
+        </span>
+      </div>
     </button>
   );
 
@@ -249,11 +249,13 @@ export default function AnexaMDLPAFields({
   );
 
   const FieldWrap = ({ label, children, help, className = "" }) => (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <label className="text-[11px] font-medium opacity-60 leading-tight">
-        {label}
-        {help && <span className="ml-1 opacity-40 cursor-help" title={help}>ⓘ</span>}
-      </label>
+    <div className={cn("flex flex-col justify-between gap-1.5", className)}>
+      <div className="text-[11px] font-medium opacity-60 leading-tight min-h-[2.5rem] flex items-start">
+        <span>
+          {label}
+          {help && <span className="ml-1 opacity-40 cursor-help" title={help}>ⓘ</span>}
+        </span>
+      </div>
       {children}
     </div>
   );
@@ -762,7 +764,7 @@ export default function AnexaMDLPAFields({
           <SectionHeader
             id="D"
             title="D. Răcire / Climatizare — detalii sursă + control"
-            subtitle="Agent frigorific, unități split, dezumidificare, control umiditate"
+            subtitle="Agent frigorific, unități split, control umiditate"
             visible={hasCooling}
           />
           {expanded.D && hasCooling && (
