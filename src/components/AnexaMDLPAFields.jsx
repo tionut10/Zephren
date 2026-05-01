@@ -425,75 +425,80 @@ export default function AnexaMDLPAFields({
                       Fără radiatoare — apasă &quot;Adaugă rând&quot; pentru primul
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="text-left py-1.5 px-2 font-medium opacity-60">Tip</th>
-                            <th className="text-right py-1.5 px-2 font-medium opacity-60">Nr. spațiu privat</th>
-                            <th className="text-right py-1.5 px-2 font-medium opacity-60">Nr. spațiu comun</th>
-                            <th className="text-right py-1.5 px-2 font-medium opacity-60">Putere [kW]</th>
-                            <th className="w-8" />
+                    <table className="w-full table-fixed text-xs">
+                      <colgroup>
+                        <col className="w-[40%]" />
+                        <col className="w-[20%]" />
+                        <col className="w-[20%]" />
+                        <col className="w-[15%]" />
+                        <col className="w-[5%]" />
+                      </colgroup>
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="text-left py-1.5 px-2 font-medium opacity-60">Tip</th>
+                          <th className="text-center py-1.5 px-1 font-medium opacity-60">Nr. spațiu privat</th>
+                          <th className="text-center py-1.5 px-1 font-medium opacity-60">Nr. spațiu comun</th>
+                          <th className="text-center py-1.5 px-1 font-medium opacity-60">Putere [kW]</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {radiators.map((r, i) => (
+                          <tr key={i} className="border-b border-white/5">
+                            <td className="py-1 px-1">
+                              <input
+                                type="text"
+                                value={r.type || ""}
+                                onChange={(e) => updateRadiator(i, "type", e.target.value)}
+                                className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500/50"
+                                aria-label={`Tip radiator rândul ${i + 1}`}
+                              />
+                            </td>
+                            <td className="py-1 px-1">
+                              <input
+                                type="number"
+                                value={r.count_private || ""}
+                                onChange={(e) => updateRadiator(i, "count_private", e.target.value)}
+                                className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                                min={0}
+                                aria-label={`Număr privat rândul ${i + 1}`}
+                              />
+                            </td>
+                            <td className="py-1 px-1">
+                              <input
+                                type="number"
+                                value={r.count_common || ""}
+                                onChange={(e) => updateRadiator(i, "count_common", e.target.value)}
+                                className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                                min={0}
+                                aria-label={`Număr comun rândul ${i + 1}`}
+                              />
+                            </td>
+                            <td className="py-1 px-1">
+                              <input
+                                type="number"
+                                value={r.power_kw || ""}
+                                onChange={(e) => updateRadiator(i, "power_kw", e.target.value)}
+                                className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                                min={0}
+                                step={0.1}
+                                aria-label={`Putere radiator rândul ${i + 1}`}
+                              />
+                            </td>
+                            <td className="py-1 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeRadiator(i)}
+                                className="text-red-400/70 hover:text-red-400 text-lg"
+                                aria-label={`Șterge rândul ${i + 1}`}
+                              >
+                                ×
+                              </button>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {radiators.map((r, i) => (
-                            <tr key={i} className="border-b border-white/5">
-                              <td className="py-1 px-1">
-                                <input
-                                  type="text"
-                                  value={r.type || ""}
-                                  onChange={(e) => updateRadiator(i, "type", e.target.value)}
-                                  className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500/50"
-                                  aria-label={`Tip radiator rândul ${i + 1}`}
-                                />
-                              </td>
-                              <td className="py-1 px-1">
-                                <input
-                                  type="number"
-                                  value={r.count_private || ""}
-                                  onChange={(e) => updateRadiator(i, "count_private", e.target.value)}
-                                  className="w-20 bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-amber-500/50"
-                                  min={0}
-                                  aria-label={`Număr privat rândul ${i + 1}`}
-                                />
-                              </td>
-                              <td className="py-1 px-1">
-                                <input
-                                  type="number"
-                                  value={r.count_common || ""}
-                                  onChange={(e) => updateRadiator(i, "count_common", e.target.value)}
-                                  className="w-20 bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-amber-500/50"
-                                  min={0}
-                                  aria-label={`Număr comun rândul ${i + 1}`}
-                                />
-                              </td>
-                              <td className="py-1 px-1">
-                                <input
-                                  type="number"
-                                  value={r.power_kw || ""}
-                                  onChange={(e) => updateRadiator(i, "power_kw", e.target.value)}
-                                  className="w-24 bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-amber-500/50"
-                                  min={0}
-                                  step={0.1}
-                                  aria-label={`Putere radiator rândul ${i + 1}`}
-                                />
-                              </td>
-                              <td className="py-1 px-1">
-                                <button
-                                  type="button"
-                                  onClick={() => removeRadiator(i)}
-                                  className="text-red-400/70 hover:text-red-400 text-lg px-1"
-                                  aria-label={`Șterge rândul ${i + 1}`}
-                                >
-                                  ×
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
                 </div>
               )}
@@ -530,65 +535,69 @@ export default function AnexaMDLPAFields({
                     Fără spații neîncălzite declarate
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-white/10">
-                          <th className="text-left py-1.5 px-2 font-medium opacity-60">Cod zonă</th>
-                          <th className="text-right py-1.5 px-2 font-medium opacity-60">Diametru tronson [mm]</th>
-                          <th className="text-right py-1.5 px-2 font-medium opacity-60">Lungime tronson [m]</th>
-                          <th className="w-8" />
+                  <table className="w-full table-fixed text-xs">
+                    <colgroup>
+                      <col className="w-[28%]" />
+                      <col className="w-[33%]" />
+                      <col className="w-[33%]" />
+                      <col className="w-[6%]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left py-1.5 px-2 font-medium opacity-60">Cod zonă</th>
+                        <th className="text-center py-1.5 px-1 font-medium opacity-60">Diametru tronson [mm]</th>
+                        <th className="text-center py-1.5 px-1 font-medium opacity-60">Lungime tronson [m]</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {unheatedSpaces.map((s, i) => (
+                        <tr key={i} className="border-b border-white/5">
+                          <td className="py-1 px-1">
+                            <input
+                              type="text"
+                              value={s.code || ""}
+                              onChange={(e) => updateUnheatedSpace(i, "code", e.target.value)}
+                              className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500/50"
+                              aria-label={`Cod zonă rândul ${i + 1}`}
+                            />
+                          </td>
+                          <td className="py-1 px-1">
+                            <input
+                              type="number"
+                              value={s.diameter_mm || ""}
+                              onChange={(e) => updateUnheatedSpace(i, "diameter_mm", e.target.value)}
+                              className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                              min={10}
+                              max={500}
+                              aria-label={`Diametru rândul ${i + 1}`}
+                            />
+                          </td>
+                          <td className="py-1 px-1">
+                            <input
+                              type="number"
+                              value={s.length_m || ""}
+                              onChange={(e) => updateUnheatedSpace(i, "length_m", e.target.value)}
+                              className="w-full bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-amber-500/50"
+                              min={0}
+                              step={0.5}
+                              aria-label={`Lungime rândul ${i + 1}`}
+                            />
+                          </td>
+                          <td className="py-1 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeUnheatedSpace(i)}
+                              className="text-red-400/70 hover:text-red-400 text-lg"
+                              aria-label={`Șterge rândul ${i + 1}`}
+                            >
+                              ×
+                            </button>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {unheatedSpaces.map((s, i) => (
-                          <tr key={i} className="border-b border-white/5">
-                            <td className="py-1 px-1">
-                              <input
-                                type="text"
-                                value={s.code || ""}
-                                onChange={(e) => updateUnheatedSpace(i, "code", e.target.value)}
-                                className="w-24 bg-transparent border border-white/10 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500/50"
-                                aria-label={`Cod zonă rândul ${i + 1}`}
-                              />
-                            </td>
-                            <td className="py-1 px-1">
-                              <input
-                                type="number"
-                                value={s.diameter_mm || ""}
-                                onChange={(e) => updateUnheatedSpace(i, "diameter_mm", e.target.value)}
-                                className="w-24 bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-amber-500/50"
-                                min={10}
-                                max={500}
-                                aria-label={`Diametru rândul ${i + 1}`}
-                              />
-                            </td>
-                            <td className="py-1 px-1">
-                              <input
-                                type="number"
-                                value={s.length_m || ""}
-                                onChange={(e) => updateUnheatedSpace(i, "length_m", e.target.value)}
-                                className="w-24 bg-transparent border border-white/10 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-amber-500/50"
-                                min={0}
-                                step={0.5}
-                                aria-label={`Lungime rândul ${i + 1}`}
-                              />
-                            </td>
-                            <td className="py-1 px-1">
-                              <button
-                                type="button"
-                                onClick={() => removeUnheatedSpace(i)}
-                                className="text-red-400/70 hover:text-red-400 text-lg px-1"
-                                aria-label={`Șterge rândul ${i + 1}`}
-                              >
-                                ×
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
 
