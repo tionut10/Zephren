@@ -1,12 +1,17 @@
 /**
  * effectiveGate.test.js — Sprint Refactor Pas 5 Faza 0 (1 mai 2026)
+ * Update Opțiunea B (2 mai 2026): teste pentru SOFT WARNING în perioada de tranziție.
  *
  * Acoperă:
  *   - Matricea STEP_FEATURE_GRADE_MATRIX — integritate (mode valid, count minim)
  *   - gradeAtLeast / planAtLeast — semantica cumulativă
  *   - computeEffectiveGrade — regula Sprint v6.3 (atestat real domină)
- *   - evaluateGate — verdict combinat plan + grad pentru cele 6 scenarii cheie
+ *   - evaluateGate — verdict POST-tranziție (strict) + ÎN-tranziție (soft warning)
  *   - getAccessibleFeatures — listing per grad
+ *
+ * Notă: Folosim `now` parametru pentru a controla fereastra:
+ *   - IN_TRANSITION: 2026-05-15 (înainte de 11.X.2026 → soft warning activ)
+ *   - POST_TRANSITION: 2027-01-01 (după 11.X.2026 → gating strict activ)
  */
 
 import { describe, it, expect } from "vitest";
@@ -20,6 +25,10 @@ import {
   GRADE_RANK,
   PLAN_RANK,
 } from "../../data/grade-features.js";
+
+// ── Constante temporale pentru testare deterministă ──
+const IN_TRANSITION   = new Date("2026-05-15T00:00:00.000Z");  // în fereastră
+const POST_TRANSITION = new Date("2027-01-01T00:00:00.000Z");  // după abrogare
 
 // ════════════════════════════════════════════════════════════════
 // Matricea — integritate
@@ -140,8 +149,6 @@ describe("computeEffectiveGrade — atestat real domină", () => {
   });
 
   it("auditor Ici pe plan audit → effectiveGrade = IIci (plan limitează)", () => {
-    // Sprint v6.3 rule: cel mai restrictiv. Atestatul Ici pe plan IIci
-    // rămâne IIci pentru drepturile UI (plan-ul comercial limitează accesul).
     expect(computeEffectiveGrade("Ici", "audit")).toBe("IIci");
   });
 
@@ -159,118 +166,171 @@ describe("computeEffectiveGrade — atestat real domină", () => {
 });
 
 // ════════════════════════════════════════════════════════════════
-// evaluateGate — scenarii AE IIci
+// evaluateGate — POST tranziție (strict, după 11.X.2026)
 // ════════════════════════════════════════════════════════════════
-describe("evaluateGate — IIci pe plan audit (Art. 6 alin. 2)", () => {
+describe("evaluateGate — IIci STRICT post-11.X.2026 (Art. 6 alin. 2)", () => {
   it("VEDE costAnnualSimple (vizibil la IIci pentru vânzare locuință)", () => {
-    const v = evaluateGate({ feature: "costAnnualSimple", plan: "audit", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "costAnnualSimple", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(true);
     expect(v.effectiveGrade).toBe("IIci");
   });
 
   it("VEDE benchmarkSimple (% vs. județ)", () => {
-    expect(evaluateGate({ feature: "benchmarkSimple", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "benchmarkSimple", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(true);
   });
 
   it("VEDE bacsSimple (selector A-D, EPBD obligatoriu)", () => {
-    expect(evaluateGate({ feature: "bacsSimple", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "bacsSimple", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(true);
   });
 
   it("NU VEDE costAnnualDetail (ANRE preseturi → AE Ici+)", () => {
-    const v = evaluateGate({ feature: "costAnnualDetail", plan: "audit", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "costAnnualDetail", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(false);
     expect(v.requiredGrade).toBe("Ici");
     expect(v.blockedBy).toBe("grade");
+    expect(v.softWarning).toBe(null);
+    expect(v.inTransition).toBe(false);
   });
 
   it("NU VEDE npvCurve (audit-only, mode=hide)", () => {
-    const v = evaluateGate({ feature: "npvCurve", plan: "audit", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "npvCurve", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(false);
     expect(v.mode).toBe("hide");
     expect(v.legalRef).toMatch(/EN 15459/);
   });
 
   it("NU VEDE rehabScenarios (Cap. 8 audit)", () => {
-    expect(evaluateGate({ feature: "rehabScenarios", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "rehabScenarios", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(false);
   });
 
   it("NU VEDE gwpSimple sau gwpDetail (rezidențial mic neobligatoriu)", () => {
-    expect(evaluateGate({ feature: "gwpSimple", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(false);
-    expect(evaluateGate({ feature: "gwpDetail", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "gwpSimple", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "gwpDetail", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(false);
   });
 
   it("NU VEDE bacsDetail (ISO 52120 Anexa B → Step 8 Expert)", () => {
-    const v = evaluateGate({ feature: "bacsDetail", plan: "audit", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "bacsDetail", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(false);
   });
 
   it("NU VEDE penaltiesBreakdown (UI listă p0-p11 → audit)", () => {
-    expect(evaluateGate({ feature: "penaltiesBreakdown", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "penaltiesBreakdown", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(false);
   });
 
   it("NU VEDE evCharger (EPBD Art. 12 = recomandare audit)", () => {
-    expect(evaluateGate({ feature: "evCharger", plan: "audit", auditorGrad: "IIci" }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "evCharger", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION }).allowed).toBe(false);
   });
 });
 
-// ════════════════════════════════════════════════════════════════
-// evaluateGate — scenarii AE Ici
-// ════════════════════════════════════════════════════════════════
-describe("evaluateGate — Ici pe plan pro (Art. 6 alin. 1)", () => {
+describe("evaluateGate — Ici STRICT post-11.X.2026 (Art. 6 alin. 1)", () => {
   it("VEDE costAnnualDetail, npvCurve, rehabScenarios", () => {
-    expect(evaluateGate({ feature: "costAnnualDetail", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
-    expect(evaluateGate({ feature: "npvCurve", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
-    expect(evaluateGate({ feature: "rehabScenarios", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "costAnnualDetail", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "npvCurve", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "rehabScenarios", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
   });
 
   it("VEDE penaltiesBreakdown, evCharger, gwpSimple", () => {
-    expect(evaluateGate({ feature: "penaltiesBreakdown", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
-    expect(evaluateGate({ feature: "evCharger", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
-    expect(evaluateGate({ feature: "gwpSimple", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "penaltiesBreakdown", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "evCharger", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "gwpSimple", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(true);
   });
 
   it("NU VEDE gwpDetail / bacsDetail / compareProjects (Step 8 Expert)", () => {
-    const v1 = evaluateGate({ feature: "gwpDetail", plan: "pro", auditorGrad: "Ici" });
+    const v1 = evaluateGate({ feature: "gwpDetail", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION });
     expect(v1.allowed).toBe(false);
     expect(v1.blockedBy).toBe("plan");
     expect(v1.requiredPlan).toBe("expert");
 
-    expect(evaluateGate({ feature: "bacsDetail", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(false);
-    expect(evaluateGate({ feature: "compareProjects", plan: "pro", auditorGrad: "Ici" }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "bacsDetail", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "compareProjects", plan: "pro", auditorGrad: "Ici", now: POST_TRANSITION }).allowed).toBe(false);
   });
 
   it("Ici pe plan expert vede TOATE features", () => {
     Object.keys(STEP_FEATURE_GRADE_MATRIX).forEach(feature => {
-      const v = evaluateGate({ feature, plan: "expert", auditorGrad: "Ici" });
+      const v = evaluateGate({ feature, plan: "expert", auditorGrad: "Ici", now: POST_TRANSITION });
       expect(v.allowed).toBe(true);
     });
   });
 });
 
 // ════════════════════════════════════════════════════════════════
-// evaluateGate — edge case: atestat real domină plan
+// evaluateGate — atestat real domină plan superior (post-tranziție)
 // ════════════════════════════════════════════════════════════════
-describe("evaluateGate — atestat real IIci pe plan superior", () => {
+describe("evaluateGate — atestat real IIci pe plan superior (post-tranziție)", () => {
   it("auditor IIci pe plan pro NU vede npvCurve (gradul real domină)", () => {
-    const v = evaluateGate({ feature: "npvCurve", plan: "pro", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "npvCurve", plan: "pro", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.effectiveGrade).toBe("IIci");
     expect(v.allowed).toBe(false);
     expect(v.blockedBy).toBe("grade");
   });
 
   it("auditor IIci pe plan expert NU vede gwpDetail", () => {
-    const v = evaluateGate({ feature: "gwpDetail", plan: "expert", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "gwpDetail", plan: "expert", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.effectiveGrade).toBe("IIci");
     expect(v.allowed).toBe(false);
   });
 
   it("auditor Ici pe plan audit limitat de PLAN la IIci pentru gwpDetail", () => {
-    // Sprint v6.3 rule: plan audit dă maxim drepturi IIci, chiar dacă atestat real e Ici.
-    // gwpDetail cere minGrade=Ici și minPlan=expert → effectiveGrade=IIci blochează prin grad.
-    const v = evaluateGate({ feature: "gwpDetail", plan: "audit", auditorGrad: "Ici" });
+    const v = evaluateGate({ feature: "gwpDetail", plan: "audit", auditorGrad: "Ici", now: POST_TRANSITION });
     expect(v.effectiveGrade).toBe("IIci");
     expect(v.allowed).toBe(false);
     expect(v.blockedBy).toBe("grade");
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// evaluateGate — SOFT WARNING în fereastra de tranziție (Opțiunea B)
+// ════════════════════════════════════════════════════════════════
+describe("evaluateGate — SOFT WARNING în tranziție 14.IV.2026 → 11.X.2026", () => {
+  it("inTransition=true în fereastra de tranziție", () => {
+    const v = evaluateGate({ feature: "energyClass", plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+    expect(v.inTransition).toBe(true);
+  });
+
+  it("inTransition=false după 11.X.2026", () => {
+    const v = evaluateGate({ feature: "energyClass", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
+    expect(v.inTransition).toBe(false);
+  });
+
+  it("IIci VEDE npvCurve în tranziție (allowed=true + softWarning)", () => {
+    const v = evaluateGate({ feature: "npvCurve", plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+    expect(v.allowed).toBe(true);
+    expect(v.softWarning).toMatch(/AE Ici/);
+    expect(v.softWarning).toMatch(/octombrie 2026/);
+    expect(v.blockedBy).toBe(null);
+    expect(v.strictAllowedFromDate).toBeInstanceOf(Date);
+  });
+
+  it("IIci VEDE costAnnualDetail, rehabScenarios, gwpSimple, bacsDetail, evCharger în tranziție", () => {
+    ["costAnnualDetail", "rehabScenarios", "gwpSimple", "evCharger", "penaltiesBreakdown"].forEach(feature => {
+      const v = evaluateGate({ feature, plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+      expect(v.allowed).toBe(true);
+      expect(v.softWarning).toBeTruthy();
+    });
+  });
+
+  it("Plan-ul rămâne strict ÎN TRANZIȚIE (separare comercială, nu legală)", () => {
+    // Auditor Ici pe plan audit cere gwpDetail (minPlan=expert) — blocat de plan,
+    // NU se relaxează în tranziție (e diferențiator comercial Zephren, nu legal).
+    const v = evaluateGate({ feature: "gwpDetail", plan: "pro", auditorGrad: "Ici", now: IN_TRANSITION });
+    expect(v.allowed).toBe(false);
+    expect(v.blockedBy).toBe("plan");
+    expect(v.requiredPlan).toBe("expert");
+    expect(v.softWarning).toBe(null);  // doar grad-blocking primește soft warning
+  });
+
+  it("Feature deja permis (energyClass) NU primește softWarning", () => {
+    const v = evaluateGate({ feature: "energyClass", plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+    expect(v.allowed).toBe(true);
+    expect(v.softWarning).toBe(null);
+  });
+
+  it("strictAllowedFromDate = 11.X.2026 când în tranziție și grad-blocked", () => {
+    const v = evaluateGate({ feature: "npvCurve", plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+    expect(v.strictAllowedFromDate).toBeInstanceOf(Date);
+    expect(v.strictAllowedFromDate.getUTCFullYear()).toBe(2026);
+    expect(v.strictAllowedFromDate.getUTCMonth()).toBe(9);   // October (0-indexed)
+    expect(v.strictAllowedFromDate.getUTCDate()).toBe(11);
   });
 });
 
@@ -279,17 +339,17 @@ describe("evaluateGate — atestat real IIci pe plan superior", () => {
 // ════════════════════════════════════════════════════════════════
 describe("evaluateGate — free plan & feature necunoscut", () => {
   it("free vede feature-uri de bază (energyClass, monthlyBalance)", () => {
-    expect(evaluateGate({ feature: "energyClass", plan: "free", auditorGrad: null }).allowed).toBe(true);
-    expect(evaluateGate({ feature: "monthlyBalance", plan: "free", auditorGrad: null }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "energyClass", plan: "free", auditorGrad: null, now: POST_TRANSITION }).allowed).toBe(true);
+    expect(evaluateGate({ feature: "monthlyBalance", plan: "free", auditorGrad: null, now: POST_TRANSITION }).allowed).toBe(true);
   });
 
-  it("free NU vede features audit-only", () => {
-    expect(evaluateGate({ feature: "npvCurve", plan: "free", auditorGrad: null }).allowed).toBe(false);
-    expect(evaluateGate({ feature: "rehabScenarios", plan: "free", auditorGrad: null }).allowed).toBe(false);
+  it("free NU vede features audit-only POST tranziție", () => {
+    expect(evaluateGate({ feature: "npvCurve", plan: "free", auditorGrad: null, now: POST_TRANSITION }).allowed).toBe(false);
+    expect(evaluateGate({ feature: "rehabScenarios", plan: "free", auditorGrad: null, now: POST_TRANSITION }).allowed).toBe(false);
   });
 
   it("feature necunoscut → fail-open (allowed=true)", () => {
-    const v = evaluateGate({ feature: "_nonexistent_", plan: "audit", auditorGrad: "IIci" });
+    const v = evaluateGate({ feature: "_nonexistent_", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(true);
     expect(v.mode).toBe("show");
   });

@@ -70,6 +70,31 @@ export default function GradeGate({
 }) {
   const verdict = evaluateGate({ feature, plan, auditorGrad });
 
+  // Opțiunea B (2 mai 2026) — în perioada de tranziție 14.IV.2026 → 11.X.2026,
+  // afișăm children + un banner soft warning în loc să blocăm. Vezi
+  // effectiveGate.js care setează allowed=true + softWarning în tranziție.
+  if (verdict.allowed && verdict.softWarning) {
+    return (
+      <div className="relative">
+        {children}
+        <div
+          role="note"
+          aria-label="Notă tranziție legală"
+          className="mt-1 mb-3 px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] text-[10px] leading-snug flex items-start gap-2"
+        >
+          <span aria-hidden="true" className="text-xs mt-px">⏳</span>
+          <div className="flex-1 opacity-70">
+            <strong className="text-amber-300/90">Tranziție legală:</strong>{" "}
+            {verdict.softWarning}
+            {verdict.legalRef && (
+              <span className="ml-1 opacity-60">· {verdict.legalRef}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (verdict.allowed) return <>{children}</>;
 
   // Caller a furnizat versiune simplificată — o folosim întotdeauna ca fallback
