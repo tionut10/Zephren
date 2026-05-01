@@ -108,7 +108,43 @@ git commit -m "<mesaj relevant>"
 
 ---
 
-## 💰 PRICING v7.0 FINAL (27 apr 2026 — Volum standardizat 30 CPE + Diferențiere prin funcționalități)
+## 💰 PRICING v7.1 FINAL (2 mai 2026 — Sursă autoritară: src/data/landingData.js)
+
+> **REGULĂ:** Înainte de a cita prețuri în răspunsuri, verifică ÎNTOTDEAUNA `src/data/landingData.js` (PLANS array). LandingPage = sursa de adevăr. Dacă găsești discrepanțe între cod și acest CLAUDE.md, prioritate la cod.
+
+### Prețuri actuale (verificat 2 mai 2026):
+
+| Plan | Preț fără TVA | Notes |
+|---|---:|---|
+| Zephren Free | 0 RON | 3 CPE/lună hard cap, watermark DEMO |
+| Zephren EDU | 0 RON | cu dovadă · studenți + doctoranzi + atestare în curs |
+| **Zephren AE IIci** | **599 RON/lună** | Step 1-6 · CPE locuințe (Art. 6 alin. 2) |
+| **Zephren AE Ici** ⭐ | **1.499 RON/lună** | Step 1-7 · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1) |
+| **Zephren Expert** | **2.999 RON/lună** | Step 1-8 · 18 module avansate + BIM |
+| **Zephren Birou** | **5.999 RON/lună** | 2-5 useri · CPE + audit NELIMITAT |
+| **Zephren Enterprise** | **9.999 RON/lună** | 6-100+ useri · SLA 99.9% |
+
+### Filozofie diferențiere (CRITIC pentru gating UI):
+
+**Plan-urile sunt orientate FUNCȚIONAL, NU pe gradul atestatului.**
+
+- AE IIci 599 = pentru orice auditor care face DOAR CPE + Anexa 1+2 (gradul Ici care face doar CPE poate folosi acest plan, economisind 900 RON/lună)
+- AE Ici 1.499 = pentru auditorii AE Ici care fac CPE + audit energetic + nZEB
+- Expert 2.999 = pentru auditori AE Ici senior + consultanți (Step 8 + BIM)
+
+**Plan = ce vede în UI** (limită comercială Zephren)
+**Atestat MDLPA = ce poate semna LEGAL pe CPE-uri** (Ord. 348/2026 Art. 6)
+
+### TVA RO 2026: 21% standard (afișat „cu TVA 21%: X RON" pe fiecare card)
+
+### Fișiere sincron cu landingData.js:
+- `src/data/landingData.js` — **SURSA DE ADEVĂR** (PLANS array)
+- `src/lib/planGating.js` — PLAN_FEATURES (limite tehnice)
+- `supabase/migrations/*pricing*.sql` — Stripe price IDs
+
+---
+
+## 💰 PRICING v7.0 (înlocuit — păstrat ca istoric pentru context legacy)
 
 ### Filozofie v7.0
 - **Volum CPE/lună standardizat la 30** pe IIci, Ici, Expert (acoperă media aritmetică națională ~32 CPE/lună)
