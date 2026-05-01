@@ -19,6 +19,8 @@ import { BACS_CLASS_LABELS } from "../calc/bacs-iso52120.js";
 import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
 import { FUELS } from "../data/constants.js";
 import { T } from "../data/translations.js";
+// Sprint Refactor Pas 5 Faza 0 (1 mai 2026) — gating dual grad MDLPA + plan
+import GradeGate from "../components/GradeGate.jsx";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -42,7 +44,10 @@ export default function Step5Calculation(props) {
     rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
     setStep, goToStep, step,
     financialAnalysis, rehabCostEstimate,
+    // Faza A — gating dual (Sprint v6.3 + Ord. MDLPA 348/2026 Art. 6)
+    userPlan, auditor,
   } = props;
+  const auditorGrad = auditor?.grade || null;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
             const Au = parseFloat(building.areaUseful) || 0;
@@ -289,8 +294,9 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ── COST ESTIMATIV REABILITARE ── */}
+              {/* ── COST ESTIMATIV REABILITARE ── (Faza A — ascuns la IIci, Art. 6 alin. 2) */}
               {rehabCostEstimate && (
+              <GradeGate feature="rehabCostEstimate" plan={userPlan} auditorGrad={auditorGrad}>
                 <Card title="Cost estimativ reabilitare termică" className="mb-6">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-center">
@@ -346,6 +352,7 @@ export default function Step5Calculation(props) {
                   )}
                   <div className="mt-3 text-[10px] opacity-25">{rehabCostEstimate.meta.note}</div>
                 </Card>
+              </GradeGate>
               )}
 
               {/* ── VERIFICARE nZEB / ZEB ── */}
@@ -815,8 +822,10 @@ export default function Step5Calculation(props) {
                 </div>
               )}
 
-              {/* ── GRAFIC AMORTIZARE INVESTIȚIE (NPV 20 ani) ── */}
-              {instSummary && renewSummary && envelopeSummary && (() => {
+              {/* ── GRAFIC AMORTIZARE INVESTIȚIE (NPV 20 ani) ── (Faza A — ascuns la IIci, Mc 001-2022 §8.5) */}
+              {instSummary && renewSummary && envelopeSummary && (
+              <GradeGate feature="npvCurve" plan={userPlan} auditorGrad={auditorGrad}>
+              {(() => {
                 const Au = parseFloat(building.areaUseful) || 1;
                 const costKwh = instSummary.fuel?.id === "electricitate" ? 1.30 : instSummary.fuel?.id === "gaz" ? 0.32 : 0.30;
                 const annualCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh;
@@ -939,6 +948,8 @@ export default function Step5Calculation(props) {
                 </Card>
                 );
               })()}
+              </GradeGate>
+              )}
 
               {/* ── CONFORMITATE nZEB / ZEB / L.238/2024 ── */}
               {instSummary && renewSummary && (
@@ -1079,8 +1090,9 @@ export default function Step5Calculation(props) {
               )}
 
 
-              {/* ── ESTIMARE COST ENERGIE ANUAL ── */}
+              {/* ── ESTIMARE COST ENERGIE ANUAL ── (Faza A — Preseturi ANRE + tarife custom: ascuns la IIci) */}
               {instSummary && (
+              <GradeGate feature="costAnnualDetail" plan={userPlan} auditorGrad={auditorGrad}>
                 <Card title={t("Estimare cost energie anual",lang)} className="mb-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {(() => {
@@ -1145,6 +1157,7 @@ export default function Step5Calculation(props) {
                     </div>
                   </div>
                 </Card>
+              </GradeGate>
               )}
 
               {/* ── DEFALCARE ENERGIE FINALĂ & PRIMARĂ ── */}
@@ -1571,7 +1584,8 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ── COMPARAȚIE SCENARII ── */}
+              {/* ── COMPARAȚIE SCENARII ── (Faza A — ascuns la IIci, Mc 001-2022 Cap. 8 audit) */}
+              <GradeGate feature="rehabScenarios" plan={userPlan} auditorGrad={auditorGrad}>
               <Card title={t("Comparație scenarii",lang)} badge={
                 <button onClick={() => setShowScenarioCompare(!showScenarioCompare)}
                   className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30">
@@ -1647,6 +1661,7 @@ export default function Step5Calculation(props) {
                   <div className="text-center py-6 opacity-30 text-xs">Completează pașii 1-4 pentru comparație scenarii</div>
                 )}
               </Card>
+              </GradeGate>
 
               {/* ═══ BENCHMARK NAȚIONAL ═══ */}
               {epFinal > 0 && (

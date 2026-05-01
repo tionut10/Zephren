@@ -3602,6 +3602,7 @@ export default function EnergyCalcApp({ cloud }) {
             rehabScenarioInputs, setRehabScenarioInputs, rehabComparison,
             setStep, goToStep, step,
             financialAnalysis, rehabCostEstimate,
+            userPlan, auditor, // Faza A — pentru GradeGate (Ord. 348/2026 Art. 6)
           }} /></Suspense>}
 
           {/* ═══ STEP 6: CERTIFICAT ENERGETIC ═══ */}
