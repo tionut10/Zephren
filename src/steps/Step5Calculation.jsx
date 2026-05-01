@@ -1714,6 +1714,54 @@ export default function Step5Calculation(props) {
                 </div>
               </div>
 
+              {/* Faza E.1 — Banner contextual AE IIci (Ord. MDLPA 348/2026 Art. 6 alin. 2)
+                  Vizibil DOAR pentru auditorii AE IIci pe plan audit. Explică limitarea
+                  legală + opțiunea de upgrade la AE Ici pentru audit + nZEB + LCC. */}
+              {auditorGrad === "IIci" && (
+                <div className="mt-6 mb-2 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4 text-xs">
+                  <div className="flex items-start gap-3">
+                    <span aria-hidden="true" className="text-base shrink-0 mt-0.5">ℹ️</span>
+                    <div className="flex-1">
+                      <div className="font-semibold text-blue-200/90 mb-1">
+                        {lang === "EN"
+                          ? "You are an AE IIci auditor (residential CPE only)"
+                          : "Ești auditor AE IIci (CPE locuințe)"}
+                      </div>
+                      <div className="opacity-70 leading-relaxed">
+                        {lang === "EN" ? (
+                          <>Per Order MDLPA 348/2026 Art. 6 para. 2, you may issue CPE for
+                          residential buildings (single-family / blocks / apartments) at
+                          construction, sale or lease only. Energy audit (Mc 001 §8), nZEB
+                          conformance report (Art. 6 lit. c) and LCC analyses are reserved
+                          for AE Ici auditors.</>
+                        ) : (
+                          <>Conform Ord. MDLPA 348/2026 Art. 6 alin. (2), poți emite CPE
+                          pentru locuințe (case unifamiliale / blocuri / apartamente) la
+                          construire, vânzare sau închiriere. Auditul energetic (Mc 001
+                          §8), raportul de conformare nZEB (Art. 6 lit. c) și analizele
+                          LCC sunt rezervate auditorilor AE Ici.</>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center gap-3 flex-wrap">
+                        <a
+                          href="/#pricing"
+                          className="text-amber-400 hover:text-amber-300 font-medium underline-offset-2 hover:underline"
+                        >
+                          {lang === "EN"
+                            ? "Promote to AE Ici (1.299 RON/month) →"
+                            : "Promovează la AE Ici (1.299 RON/lună) →"}
+                        </a>
+                        <span className="text-[10px] opacity-40">
+                          {lang === "EN"
+                            ? "Step 7 audit + nZEB report + LCC included"
+                            : "Audit Pas 7 + raport nZEB + LCC incluse"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
                 <button onClick={() => setStep(4)}
