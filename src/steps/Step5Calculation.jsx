@@ -893,8 +893,8 @@ export default function Step5Calculation(props) {
                 const yTicks = [];
                 for (let v = niceMin; v <= yMax + niceStep * 0.01; v += niceStep) yTicks.push(Math.round(v));
 
-                const W = 500, H = 195;
-                const pL = 68, pR = 18, pT = 12, pB = 22;
+                const W = 600, H = 300;
+                const pL = 80, pR = 24, pT = 16, pB = 32;
                 const cW = W - pL - pR, cH = H - pT - pB;
                 const toX = yr => pL + (yr / years) * cW;
                 const toY = v => pT + cH - ((v - yMin) / (yMax - yMin)) * cH;
@@ -913,10 +913,10 @@ export default function Step5Calculation(props) {
                       return (
                         <g key={"yt"+i}>
                           <line x1={pL} y1={y} x2={pL+cW} y2={y}
-                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)"}
-                            strokeWidth={isZero ? 0.8 : 0.4}
-                            strokeDasharray={isZero ? "4 2" : undefined} />
-                          <text x={pL-3} y={y+3} textAnchor="end" fontSize="6.5" fill={isZero ? "#f59e0b" : "#666"}>{fmtRON(v)}</text>
+                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"}
+                            strokeWidth={isZero ? 1.2 : 0.6}
+                            strokeDasharray={isZero ? "5 3" : undefined} />
+                          <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#f59e0b" : "#888"}>{fmtRON(v)}</text>
                         </g>
                       );
                     })}
@@ -925,54 +925,55 @@ export default function Step5Calculation(props) {
                       const x = toX(yr);
                       return (
                         <g key={"xt"+yr}>
-                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)"} strokeWidth="0.4" />
-                          <text x={x} y={pT+cH+13} textAnchor="middle" fontSize="7" fill="#666">{yr}</text>
+                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"} strokeWidth="0.6" />
+                          <text x={x} y={pT+cH+18} textAnchor="middle" fontSize="10" fill="#888">{yr}</text>
                         </g>
                       );
                     })}
                     {/* Axe */}
-                    <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="#444" strokeWidth="0.6" />
-                    <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="#444" strokeWidth="0.6" />
-                    <text x={pL+cW/2} y={H-1} textAnchor="middle" fontSize="7" fill="#777">Ani</text>
-                    <text x={pL-3} y={pT-3} textAnchor="end" fontSize="6" fill="#555">RON</text>
+                    <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="#555" strokeWidth="1" />
+                    <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="#555" strokeWidth="1" />
+                    <text x={pL+cW/2} y={H-2} textAnchor="middle" fontSize="10" fill="#999">Ani</text>
+                    <text x={pL-6} y={pT-4} textAnchor="end" fontSize="9" fill="#666">RON</text>
                     {/* Curbe + marcatori break-even */}
                     {curves.map((c, ci) => {
                       const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
                       const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
                       return (
                         <g key={"c"+ci}>
-                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="1.5" opacity="0.85" />
+                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" opacity="0.9" />
                           {pbX && (
                             <>
-                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="0.6" strokeDasharray="3 2" opacity="0.35" />
-                              <circle cx={pbX} cy={breakY} r="2.5" fill={c.color} />
+                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
+                              <circle cx={pbX} cy={breakY} r="4" fill={c.color} />
                             </>
                           )}
-                          <circle cx={toX(0)} cy={toY(-c.cost)} r="1.8" fill={c.color} opacity="0.6" />
+                          <circle cx={toX(0)} cy={toY(-c.cost)} r="3" fill={c.color} opacity="0.7" />
                         </g>
                       );
                     })}
                     {/* Etichetă break-even */}
                     {breakY > pT && breakY < pT+cH && (
-                      <text x={pL+cW-2} y={breakY-3} textAnchor="end" fontSize="6" fill="#f59e0b" opacity="0.7">break-even</text>
+                      <text x={pL+cW-4} y={breakY-5} textAnchor="end" fontSize="9" fill="#f59e0b" opacity="0.8">break-even</text>
                     )}
                   </svg>
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                  {/* Legendă */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 mt-4">
                     {curves.map((m, i) => {
                       const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
                       const npv20 = m.pts[m.pts.length-1].npv;
                       return (
-                        <div key={i} className="flex items-center gap-1.5 text-[10px]">
-                          <div className="w-3 h-[1.5px] rounded" style={{background: m.color}} />
-                          <span className="opacity-60">{m.name}:</span>
-                          <span className="font-bold">{payback}</span>
-                          <span className="opacity-35">· {fmtRON(npv20)} RON</span>
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <div className="w-4 h-[2.5px] rounded flex-shrink-0" style={{background: m.color}} />
+                          <span className="opacity-70">{m.name}</span>
+                          <span className="font-bold ml-auto">{payback}</span>
+                          <span className="opacity-40 text-[11px]">{fmtRON(npv20)} RON</span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="text-[10px] opacity-25 mt-1">NPV cu rată discount 5%/an, prețuri constante {costKwh.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
+                  <div className="text-xs opacity-30 mt-2">NPV cu rată discount 5%/an · prețuri constante {costKwh.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
                 </Card>
                 );
               })()}
