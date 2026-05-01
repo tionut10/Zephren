@@ -101,7 +101,7 @@ export default function AnexaMDLPAFields({
 }) {
   // Grupa expandat-colapsat pentru ergonomie (toate deschise default)
   const [expanded, setExpanded] = useState({
-    A: true, B: true, C: true, D: true, E: true, F: true,
+    A: true, B: false, C: false, D: false, E: false, F: false,
   });
   const toggle = useCallback((key) => {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -249,10 +249,10 @@ export default function AnexaMDLPAFields({
   );
 
   const FieldWrap = ({ label, children, help, className = "" }) => (
-    <div className={cn("flex flex-col gap-1", className)}>
-      <label className="text-xs font-medium uppercase tracking-wider opacity-60">
+    <div className={cn("flex flex-col gap-1.5", className)}>
+      <label className="text-[11px] font-medium opacity-60 leading-tight">
         {label}
-        {help && <span className="ml-1 opacity-30 cursor-help" title={help}>ⓘ</span>}
+        {help && <span className="ml-1 opacity-40 cursor-help" title={help}>ⓘ</span>}
       </label>
       {children}
     </div>
@@ -280,7 +280,7 @@ export default function AnexaMDLPAFields({
             subtitle="Locație generator, radiatoare, contor, diametre racord centralizat"
           />
           {expanded.A && (
-            <div id="mdlpa-section-A" className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div id="mdlpa-section-A" className="mt-3 grid grid-cols-2 lg:grid-cols-3 gap-4">
               <FieldWrap
                 label="Locație generator căldură"
                 help="Unde este amplasat generatorul principal"
@@ -336,7 +336,7 @@ export default function AnexaMDLPAFields({
                   options={[
                     { value: "da", label: "Există" },
                     { value: "nu", label: "Nu există" },
-                    { value: "nu_caz", label: "Nu este cazul" },
+                    { value: "nu_caz", label: "N/A" },
                   ]}
                 />
               </FieldWrap>
@@ -352,7 +352,7 @@ export default function AnexaMDLPAFields({
                   options={[
                     { value: "da", label: "Există" },
                     { value: "nu", label: "Nu există" },
-                    { value: "nu_caz", label: "Nu este cazul" },
+                    { value: "nu_caz", label: "N/A" },
                   ]}
                 />
               </FieldWrap>
@@ -603,8 +603,8 @@ export default function AnexaMDLPAFields({
                     value={building?.buildingHasDisconnectedApartments || ""}
                     onChange={(v) => update("buildingHasDisconnectedApartments", v)}
                     options={[
-                      { value: "da", label: "Există apartamente debranșate" },
-                      { value: "nu", label: "Nu există apartamente debranșate" },
+                      { value: "da", label: "Există debranșate" },
+                      { value: "nu", label: "Fără debranșate" },
                     ]}
                   />
                 </FieldWrap>
@@ -622,7 +622,7 @@ export default function AnexaMDLPAFields({
           />
           {expanded.C && (
             <div id="mdlpa-section-C" className="mt-3 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <FieldWrap label="Număr total puncte consum ACM">
                   <Input
                     type="number"
@@ -670,7 +670,7 @@ export default function AnexaMDLPAFields({
                     options={[
                       { value: "da", label: "Există" },
                       { value: "nu", label: "Nu există" },
-                      { value: "nu_caz", label: "Nu este cazul" },
+                      { value: "nu_caz", label: "N/A" },
                     ]}
                   />
                 </FieldWrap>
@@ -695,7 +695,7 @@ export default function AnexaMDLPAFields({
                     onChange={(v) => update("acmRecirculation", v)}
                     options={[
                       { value: "functionala", label: "Funcțională" },
-                      { value: "nu_functioneaza", label: "Există dar nu funcționează" },
+                      { value: "nu_functioneaza", label: "Nefuncțională" },
                       { value: "nu_exista", label: "Nu există" },
                     ]}
                   />
@@ -757,7 +757,7 @@ export default function AnexaMDLPAFields({
             visible={hasCooling}
           />
           {expanded.D && hasCooling && (
-            <div id="mdlpa-section-D" className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div id="mdlpa-section-D" className="mt-3 grid grid-cols-2 lg:grid-cols-3 gap-4">
               <FieldWrap label="Agent frigorific utilizat (cod)">
                 <Select
                   value={building?.coolingRefrigerant || ""}
@@ -825,8 +825,8 @@ export default function AnexaMDLPAFields({
                   value={building?.coolingSpaceScope || ""}
                   onChange={(v) => update("coolingSpaceScope", v)}
                   options={[
-                    { value: "complet", label: "Complet (exclusiv spații comune)" },
-                    { value: "global", label: "Global (inclusiv spații comune)" },
+                    { value: "complet", label: "Complet (excl. comune)" },
+                    { value: "global", label: "Global (incl. comune)" },
                     { value: "partial", label: "Parțial" },
                   ]}
                 />
@@ -840,7 +840,7 @@ export default function AnexaMDLPAFields({
                   options={[
                     { value: "fara", label: "Fără control" },
                     { value: "cu_control", label: "Cu control" },
-                    { value: "cu_partial", label: "Control parțial (ex: numai iarna)" },
+                    { value: "cu_partial", label: "Parțial (ex: iarna)" },
                   ]}
                 />
               </FieldWrap>
@@ -868,7 +868,7 @@ export default function AnexaMDLPAFields({
             subtitle="Număr ventilatoare, tip recuperator, control ventilare, stare rețea iluminat"
           />
           {expanded.E && (
-            <div id="mdlpa-section-E" className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div id="mdlpa-section-E" className="mt-3 grid grid-cols-2 lg:grid-cols-3 gap-4">
               <FieldWrap label="Număr total ventilatoare">
                 <Input
                   type="number"
@@ -967,7 +967,7 @@ export default function AnexaMDLPAFields({
             visible={hasWind}
           />
           {expanded.F && hasWind && (
-            <div id="mdlpa-section-F" className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div id="mdlpa-section-F" className="mt-3 grid grid-cols-2 lg:grid-cols-3 gap-4">
               <FieldWrap label="Număr centrale eoliene">
                 <Input
                   type="number"
