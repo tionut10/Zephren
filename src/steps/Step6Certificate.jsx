@@ -2262,33 +2262,6 @@ ${(() => {
                     </details>
                   )}
 
-                  {/* ── Sprint v6.2 (27 apr 2026) — Anexa 1+2 MDLPA ────────────────
-                      Mutat din Step 7 conform Ord. MDLPA 348/2026 (MO 292/14.IV.2026):
-                      Step 6 devine self-sufficient pentru CPE + Anexa 1+2 completă.
-                      Auditorii AE Ic și AE IIc completează aceleași 35 câmpuri extinse
-                      direct la generarea CPE, fără dependență de Step 7 (audit complet). */}
-                  {setBuilding && (
-                    <details className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 group">
-                      <summary className="cursor-pointer flex items-center gap-2 text-xs opacity-80 hover:opacity-100 list-none [&::-webkit-details-marker]:hidden">
-                        <span className="text-base">📋</span>
-                        <span>{lang === "EN" ? "Annex 1+2 MDLPA — extended fields" : "Anexa 1+2 MDLPA — câmpuri extinse"}</span>
-                        <span className="text-[9px] opacity-60 ml-auto">{lang === "EN" ? "auto-fill DOCX" : "completare automată DOCX"}</span>
-                      </summary>
-                      <div className="mt-2">
-                        <AnexaMDLPAFields
-                          building={building}
-                          setBuilding={setBuilding}
-                          heating={heating}
-                          cooling={cooling}
-                          ventilation={ventilation}
-                          acm={acm}
-                          otherRenew={otherRenew}
-                          lighting={lighting}
-                          lang={lang}
-                        />
-                      </div>
-                    </details>
-                  )}
 
                   {/* MDLPA Registry info */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
@@ -2913,6 +2886,23 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       </div>
                     </Card>
                   </div>
+
+                  {/* ── Anexa 1+2 MDLPA — câmpuri extinse (full-width între preview-uri) ── */}
+                  {setBuilding && (
+                    <Card title={lang === "EN" ? "📋 Annex 1+2 MDLPA — Extended Fields" : "📋 Anexa 1+2 MDLPA — câmpuri extinse"}>
+                      <AnexaMDLPAFields
+                        building={building}
+                        setBuilding={setBuilding}
+                        heating={heating}
+                        cooling={cooling}
+                        ventilation={ventilation}
+                        acm={acm}
+                        otherRenew={otherRenew}
+                        lighting={lighting}
+                        lang={lang}
+                      />
+                    </Card>
+                  )}
 
                   {/* Anexa 1 + 2 preview — sub preview CPE */}
                   {instSummary && (

@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "fix(AnexaMDLPA): aliniere completă — FieldWrap min-h label, badge Inactiv mutat lângă toggle, subtitlu D scurt"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(Step5): Faza D — curățare 3 secțiuni duplicate (-108 linii)"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(AnexaMDLPA): tabele fără scroll orizontal — table-fixed cu colgroup proporțional, inputs w-full, valori ce"
+      },
+      {
+        "icon": "🎨",
+        "text": "fix(AnexaMDLPA): layout mai puțin înghesuit — colaps implicit B-F, labeluri compacte, texte Radio scurte, grid"
+      },
+      {
+        "icon": "📄",
+        "text": "centrează titlu + badge Card RaportConformareNZEB"
+      },
+      {
+        "icon": "📄",
+        "text": "Sprint Reorganizare Pas 5/6 — focalizare Pas 6 pe CPE + Anexe"
+      },
+      {
         "icon": "🎨",
         "text": "grafic amortizare mai mare (600x300), fonturi 10px, linii 2.5px, legendă grid"
       },
       {
         "icon": "🎨",
         "text": "grafic amortizare NPV cu axă RON, curbe continue post-amortizare și markeri break-even"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(step3,step4): onSelect handlers + tags derivate + feedback compliance"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(suggestions): catalog ACM + VMC dimensionare + semnale extinse"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(suggestions): sort suggestHVAC prioritizează meetsTarget primul"
-      },
-      {
-        "icon": "📦",
-        "text": "Sprint Catalog Regenerabile NEUTRU 2026 — Pas 4 (210 entries + 126 brand-uri)"
-      },
-      {
-        "icon": "🎨",
-        "text": "Sprint P2 — Brand Admin UI + ACM panels + tooltip/filtru/telemetrie complete"
-      },
-      {
-        "icon": "🎨",
-        "text": "Sprint P1 — Brand registry ~165 entries + integrare UI Step3Systems bilingv RO/EN"
       }
     ]
   },
