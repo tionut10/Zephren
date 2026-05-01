@@ -194,7 +194,7 @@ export default function CpeAnexa({
           {/* Secțiunea I — Date generale */}
           <div>
             {/* Badge nZEB prominent */}
-            <div className="mb-3 p-3 rounded-lg border-2" style={{
+            <div className="mb-3 p-3 rounded-lg border-2 text-center" style={{
               borderColor: nzebOk ? "#22c55e" : "#ef4444",
               backgroundColor: nzebOk ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
             }}>

@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🎨",
+        "text": "grafic amortizare mai mare (600x300), fonturi 10px, linii 2.5px, legendă grid"
+      },
+      {
+        "icon": "🎨",
+        "text": "grafic amortizare NPV cu axă RON, curbe continue post-amortizare și markeri break-even"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step3,step4): onSelect handlers + tags derivate + feedback compliance"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(suggestions): catalog ACM + VMC dimensionare + semnale extinse"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(suggestions): sort suggestHVAC prioritizează meetsTarget primul"
+      },
+      {
+        "icon": "📦",
+        "text": "Sprint Catalog Regenerabile NEUTRU 2026 — Pas 4 (210 entries + 126 brand-uri)"
+      },
+      {
+        "icon": "🎨",
         "text": "Sprint P2 — Brand Admin UI + ACM panels + tooltip/filtru/telemetrie complete"
       },
       {
         "icon": "🎨",
         "text": "Sprint P1 — Brand registry ~165 entries + integrare UI Step3Systems bilingv RO/EN"
-      },
-      {
-        "icon": "📦",
-        "text": "Sprint cercetare HVAC — 424 entries noi catalog NEUTRAL bilingv RO+EN"
-      },
-      {
-        "icon": "🗺️",
-        "text": "tooltip aliniat right (nu iese din ecran) + text-center în AutocompleteInput (Localitate/Județ)"
-      },
-      {
-        "icon": "🔸",
-        "text": "repoziționează badge Ord. 16/2023 centrat sub titlu în Card (prop subtitle)"
-      },
-      {
-        "icon": "🎨",
-        "text": "centrează și bolduiește titlurile de secțiune din sumarul energetic (Energie finală per utilitate, Energie pri"
-      },
-      {
-        "icon": "🎨",
-        "text": "UI: fix aliniere centrata - label cu icon absolut dreapta, dropdown text centrat, Card title mirror-spacer bad"
-      },
-      {
-        "icon": "🎨",
-        "text": "UI: aliniere centrata label+icon si titlu Card cu badge (justify-center + absolute badge)"
       }
     ]
   },

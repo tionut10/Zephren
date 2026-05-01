@@ -62,6 +62,8 @@ import { useProjectHistory } from "./hooks/useProjectHistory.js";
 
 // ── Component imports ──
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
+// Sprint Reorganizare Pas 5/6 (1 mai 2026) — Statistici auditor mutate din Pas 6 → Sidebar global.
+import AuditorStatsBadge from "./components/AuditorStatsBadge.jsx";
 // ── Envelope modals — lazy loaded (S6.2) ──
 const ThermalBridgeCatalog = lazy(() => import("./components/ThermalBridgeCatalog.jsx"));
 const OpaqueModal = lazy(() => import("./components/OpaqueModal.jsx"));
@@ -3425,6 +3427,25 @@ export default function EnergyCalcApp({ cloud }) {
               <div className="text-[9px] lg:text-[10px] opacity-30 mt-0.5">W/(m³·K)</div>
             </div>
           )}
+
+          {/* Statistici auditor (mutat din Pas 6 — 1 mai 2026): vizibil global în sidebar */}
+          {(() => {
+            const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
+            const baseCat = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
+            const catKey = baseCat + (["RI","RC","RA"].includes(baseCat) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "");
+            const enClassObj = epFinal > 0 ? getEnergyClass(epFinal, catKey) : null;
+            return (
+              <AuditorStatsBadge
+                certCount={certCount}
+                projectsCount={projectList.length}
+                currentClass={enClassObj?.cls || "—"}
+                currentClassColor={enClassObj?.color || "#94a3b8"}
+                rer={renewSummary?.rer || 0}
+                lang={lang}
+              />
+            );
+          })()}
+
           {/* Formular Date Client */}
           <button onClick={() => { setShowClientForm(true); setSidebarOpen(false); }}
             aria-label={lang==="EN"?"Open client data form":"Deschide formular date client"}

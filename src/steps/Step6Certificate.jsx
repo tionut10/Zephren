@@ -3,9 +3,8 @@ import { renderAsync } from "docx-preview";
 const PDFViewer = lazy(() => import("../components/PDFViewer.jsx"));
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
-import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
-import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
-import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
+// Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACSSelectorSimple/SRIScoreAuto/MEPSCheckBinar
+// imports eliminate; secțiunea "Conformitate EPBD 2024" e acum în Step5Calculation.jsx.
 import { APP_VERSION as TECH_VERSION } from "../data/landingData.js";
 // S30A·A5 — versiune document marketing (v3.5) pentru CPE/Anexe, separată de tech_version (0.5.0).
 import { APP_VERSION } from "../data/app-version.js";
@@ -2301,55 +2300,9 @@ ${(() => {
                     </div>
                   </div>
 
-                  {/* Cost-optim quick summary */}
-                  {instSummary && renewSummary && (
-                    <Card title="Analiză cost-optimă rapidă" className="border-blue-500/20">
-                      <div className="space-y-2">
-                        {(() => {
-                          const Au = parseFloat(building.areaUseful) || 1;
-                          const costKwh = instSummary.fuel?.id === "electricitate" ? 1.30 : instSummary.fuel?.id === "gaz" ? 0.32 : 0.30;
-                          const annCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh / 4.95;
-                          const epF = renewSummary.ep_adjusted_m2;
-                          const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
-                          const gap = Math.max(0, epF - getNzebEpMax(building.category, selectedClimate?.zone));
-                          const rerGap = Math.max(0, nzeb.rer_min - renewSummary.rer);
-                          return (<>
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              <div className="p-2 rounded bg-white/[0.03]">
-                                <div className="text-lg font-bold">{annCost.toFixed(0)} €</div>
-                                <div className="text-[10px] opacity-40">Cost energie/an</div>
-                              </div>
-                              <div className="p-2 rounded bg-white/[0.03]">
-                                <div className="text-lg font-bold">{epF.toFixed(0)}</div>
-                                <div className="text-[10px] opacity-40">Ep [kWh/m²a]</div>
-                              </div>
-                              <div className="p-2 rounded bg-white/[0.03]">
-                                <div className="text-lg font-bold">{renewSummary.co2_adjusted_m2.toFixed(1)}</div>
-                                <div className="text-[10px] opacity-40">CO₂ [kg/m²a]</div>
-                              </div>
-                            </div>
-                            {gap > 0 && (
-                              <div className="text-[10px] text-amber-400/80 bg-amber-500/5 rounded p-2">
-                                ⚠ Depășire prag nZEB cu <strong>{gap.toFixed(0)} kWh/m²a</strong>. 
-                                Prioritate: termoizolarea anvelopei + pompa de căldură.
-                              </div>
-                            )}
-                            {rerGap > 0 && (
-                              <div className="text-[10px] text-amber-400/80 bg-amber-500/5 rounded p-2">
-                                ⚠ RER insuficient: mai sunt necesare <strong>{rerGap.toFixed(0)}%</strong> surse regenerabile.
-                                Soluție: PV {(rerGap*Au*epF/100/350).toFixed(0)} m² panouri.
-                              </div>
-                            )}
-                            {gap <= 0 && rerGap <= 0 && (
-                              <div className="text-[10px] text-emerald-400/80 bg-emerald-500/5 rounded p-2">
-                                ✓ Clădirea îndeplinește pragurile nZEB. Economie față de clasă G: ~{Math.round(annCost * 0.6)} €/an.
-                              </div>
-                            )}
-                          </>);
-                        })()}
-                      </div>
-                    </Card>
-                  )}
+                  {/* Sprint Reorganizare Pas 5/6 (1 mai 2026) — Card "Analiză cost-optimă rapidă"
+                      mutat în Pas 7 Audit (apropriat de CostOptimalCurve detaliat).
+                      Costul anual € + recomandările PV/anvelopă aparțin auditului, nu CPE. */}
 
                   <Card title={t("Observatii suplimentare",lang)}>
                     <textarea value={auditor.observations} onChange={e => setAuditor(p=>({...p,observations:e.target.value}))}
@@ -2357,27 +2310,8 @@ ${(() => {
                       placeholder="Observatii privind starea cladirii, limitari ale evaluarii, etc." />
                   </Card>
 
-                  {/* Dashboard auditor statistici */}
-                  <Card title="Statistici auditor">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-amber-400">{certCount}</div>
-                        <div className="text-[10px] opacity-40">Certificate luna</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-emerald-400">{projectList.length}</div>
-                        <div className="text-[10px] opacity-40">Proiecte salvate</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold" style={{color:enClass.color}}>{enClass.cls}</div>
-                        <div className="text-[10px] opacity-40">Clasă curentă</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-blue-400">{rer.toFixed(0)}%</div>
-                        <div className="text-[10px] opacity-40">RER</div>
-                      </div>
-                    </div>
-                  </Card>
+                  {/* Sprint Reorganizare Pas 5/6 (1 mai 2026) — Card "Statistici auditor"
+                      mutat în AuditorStatsBadge (sidebar global). Vizibil pe orice pas. */}
 
                   {/* Google Maps localizare — skip în DEV (Claude Preview blochează URL-uri externe) */}
                   {building.city && !import.meta.env.DEV && (
@@ -3258,41 +3192,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 );
               })()}
 
-              {/* Sprint Pricing v6.0 — Conformitate EPBD obligatorie (BACS + SRI + MEPS)
-                  Versiune simplă inclusă în Pro 499. Pentru calculator detaliat (200 factori
-                  BACS, 42 servicii SRI, optimizator MEPS roadmap 2050) → Step 8 Expert. */}
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                  <span>📋</span>
-                  <span>{lang === "EN" ? "EPBD 2024 mandatory compliance" : "Conformitate EPBD 2024 obligatorie"}</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <BACSSelectorSimple
-                    value={bacsClass}
-                    onChange={setBacsClass}
-                    epBase={instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0}
-                    lang={lang}
-                  />
-                  <SRIScoreAuto
-                    building={building}
-                    heating={heating}
-                    cooling={cooling}
-                    ventilation={ventilation}
-                    lighting={lighting}
-                    acm={acm}
-                    photovoltaic={photovoltaic}
-                  />
-                  <MEPSCheckBinar
-                    energyClass={getEnergyClass(
-                      renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0,
-                      (CATEGORY_BASE_MAP?.[building.category] || building.category) +
-                        (["RI","RC","RA"].includes(CATEGORY_BASE_MAP?.[building.category] || building.category)
-                          ? (cooling?.hasCooling ? "_cool" : "_nocool") : "")
-                    )?.cls}
-                    buildingCategory={CATEGORY_BASE_MAP?.[building.category] || building.category}
-                  />
-                </div>
-              </div>
+              {/* Sprint Reorganizare Pas 5/6 (1 mai 2026) — secțiunea
+                  "Conformitate EPBD 2024" (BACS+SRI+MEPS) mutată în Pas 5 (Calcul).
+                  f_BAC ajustează EP final, deci aparține bilanțului energetic. */}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">

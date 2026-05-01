@@ -3,6 +3,11 @@ import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-
 import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
+// Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
+// Justificare: f_BAC ajustează EP final → aparține bilanțului energetic (Pas 5), nu emiterii CPE.
+import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
+import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
+import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
 import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
@@ -1798,6 +1803,38 @@ export default function Step5Calculation(props) {
                   />
                 </Card>
               )}
+
+              {/* ═══ CONFORMITATE EPBD 2024 OBLIGATORIE (BACS + SRI + MEPS Simple) ═══
+                  Mutat din Pas 6 → Pas 5 (1 mai 2026): f_BAC ajustează EP final, deci aparține
+                  bilanțului energetic. SRI auto + MEPS binar decurg din bilanț.
+                  Versiune detaliată (200 factori BACS, 42 servicii SRI, optimizator MEPS) → Pas 8 Expert. */}
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>{lang === "EN" ? "EPBD 2024 mandatory compliance" : "Conformitate EPBD 2024 obligatorie"}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <BACSSelectorSimple
+                    value={bacsClass}
+                    onChange={setBacsClass}
+                    epBase={instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0}
+                    lang={lang}
+                  />
+                  <SRIScoreAuto
+                    building={building}
+                    heating={heating}
+                    cooling={cooling}
+                    ventilation={ventilation}
+                    lighting={lighting}
+                    acm={acm}
+                    photovoltaic={photovoltaic}
+                  />
+                  <MEPSCheckBinar
+                    energyClass={enClass?.cls}
+                    buildingCategory={baseCatResolved}
+                  />
+                </div>
+              </div>
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">

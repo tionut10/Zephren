@@ -391,6 +391,58 @@ export default function Step7Audit(props) {
                   </div>
                 </Card>
 
+                {/* ── Analiză cost-optimă rapidă ──
+                    Mutat din Pas 6 → Pas 7 (1 mai 2026): costul anual €/an + recomandările
+                    de remediere (PV m², termoizolare anvelopă) sunt parte din auditul energetic,
+                    nu din emiterea CPE. Cuplată cu CostOptimalCurve detaliată mai jos. */}
+                {instSummary && renewSummary && (
+                  <Card title={t("Analiză cost-optimă rapidă",lang)} className="border-blue-500/20">
+                    <div className="space-y-2">
+                      {(() => {
+                        const costKwh = instSummary.fuel?.id === "electricitate" ? 1.30 : instSummary.fuel?.id === "gaz" ? 0.32 : 0.30;
+                        const annCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh / 4.95;
+                        const epF = renewSummary.ep_adjusted_m2;
+                        const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
+                        const gap = Math.max(0, epF - getNzebEpMax(building.category, selectedClimate?.zone));
+                        const rerGap = Math.max(0, nzeb.rer_min - renewSummary.rer);
+                        return (<>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-2 rounded bg-white/[0.03]">
+                              <div className="text-lg font-bold">{annCost.toFixed(0)} €</div>
+                              <div className="text-[10px] opacity-40">Cost energie/an</div>
+                            </div>
+                            <div className="p-2 rounded bg-white/[0.03]">
+                              <div className="text-lg font-bold">{epF.toFixed(0)}</div>
+                              <div className="text-[10px] opacity-40">Ep [kWh/m²a]</div>
+                            </div>
+                            <div className="p-2 rounded bg-white/[0.03]">
+                              <div className="text-lg font-bold">{renewSummary.co2_adjusted_m2.toFixed(1)}</div>
+                              <div className="text-[10px] opacity-40">CO₂ [kg/m²a]</div>
+                            </div>
+                          </div>
+                          {gap > 0 && (
+                            <div className="text-[10px] text-amber-400/80 bg-amber-500/5 rounded p-2">
+                              ⚠ Depășire prag nZEB cu <strong>{gap.toFixed(0)} kWh/m²a</strong>.
+                              Prioritate: termoizolarea anvelopei + pompa de căldură.
+                            </div>
+                          )}
+                          {rerGap > 0 && (
+                            <div className="text-[10px] text-amber-400/80 bg-amber-500/5 rounded p-2">
+                              ⚠ RER insuficient: mai sunt necesare <strong>{rerGap.toFixed(0)}%</strong> surse regenerabile.
+                              Soluție: PV {(rerGap*Au*epF/100/350).toFixed(0)} m² panouri.
+                            </div>
+                          )}
+                          {gap <= 0 && rerGap <= 0 && (
+                            <div className="text-[10px] text-emerald-400/80 bg-emerald-500/5 rounded p-2">
+                              ✓ Clădirea îndeplinește pragurile nZEB. Economie față de clasă G: ~{Math.round(annCost * 0.6)} €/an.
+                            </div>
+                          )}
+                        </>);
+                      })()}
+                    </div>
+                  </Card>
+                )}
+
                 {/* ── Recomandari Anvelopa ── */}
                 {envelopeAnalysis.length > 0 && (
                 <Card title={t("R1 — Recomandari Anvelopa Termica",lang)}>
