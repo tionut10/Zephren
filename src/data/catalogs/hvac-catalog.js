@@ -260,24 +260,56 @@ export const HVAC_CATALOG = {
 // Politica: zero brand-uri în nameRo/nameEn al entries; doar legătură via
 // `matchesEntries` din registry. Schema permite multiple parteneriate paralele.
 
+// Layer overrides din localStorage — permite activare instant fără redeploy
+import { applyOverride } from "./partner-overrides.js";
+
+// Brand registry static (snapshot din JSON la module load)
 export const BRANDS = brandsRegistry.brands;
 
-export const BRANDS_BY_ID = Object.fromEntries(BRANDS.map(b => [b.id, b]));
+// Index static pe id (matchesEntries nu se schimbă prin overrides, doar partnerStatus/Since/Tier/URL)
+const BRANDS_BY_ID_BASE = Object.fromEntries(BRANDS.map(b => [b.id, b]));
+
+/**
+ * Returnează un brand cu overrides aplicate (live din localStorage).
+ * @param {string} brandId
+ * @returns {Object|undefined}
+ */
+function getBrandLive(brandId) {
+  const base = BRANDS_BY_ID_BASE[brandId];
+  if (!base) return undefined;
+  return applyOverride(base);
+}
+
+// Index live cu Proxy doar pentru property access (tests use BRANDS_BY_ID.viessmann)
+export const BRANDS_BY_ID = new Proxy(BRANDS_BY_ID_BASE, {
+  get(target, brandId) {
+    if (typeof brandId !== "string") return target[brandId];
+    return getBrandLive(brandId) ?? target[brandId];
+  },
+});
+
+/**
+ * Returnează lista live de brand-uri cu overrides aplicate.
+ * Recalculat la fiecare apel ca să reflecte modificările din localStorage.
+ */
+export function getBrands() {
+  return BRANDS.map(b => applyOverride(b));
+}
 
 /**
  * Returnează lista de brand-uri filtrată per categorie HVAC.
  * @param {string} category - "heating" | "cooling" | "acm" | "ventilation" | "lighting" | "smart-home" | "distribution" | "solar" | "battery" | "fuels"
  */
 export function getBrandsByCategory(category) {
-  return BRANDS.filter(b => b.categories.includes(category));
+  return getBrands().filter(b => b.categories.includes(category));
 }
 
 /**
- * Returnează brand-urile cu parteneriat activ.
+ * Returnează brand-urile cu parteneriat activ (după aplicare overrides localStorage).
  * @returns {Array<Brand>} brand-uri cu partnerStatus === "active"
  */
 export function getActivePartners() {
-  return BRANDS.filter(b => b.partnerStatus === "active");
+  return getBrands().filter(b => b.partnerStatus === "active");
 }
 
 /**
@@ -286,7 +318,7 @@ export function getActivePartners() {
  * @returns {Array<string>} IDs brand-uri (ex: ["viessmann", "vaillant"])
  */
 export function getBrandsForEntry(entryId) {
-  return BRANDS
+  return getBrands()
     .filter(b => Array.isArray(b.matchesEntries) && b.matchesEntries.includes(entryId))
     .map(b => b.id);
 }
@@ -322,6 +354,24 @@ export function prioritizeBrand(entries, partnerBrandId) {
 }
 
 /**
+ * Filtru: păstrează doar entries matchate de cel puțin un brand partener activ.
+ * Util pentru filtru "Doar brand-uri partenere" în UI.
+ * @param {Array} entries
+ * @returns {Array} entries cu cel puțin un partener activ care le matchează
+ */
+export function filterByActivePartner(entries) {
+  const partners = getActivePartners();
+  if (partners.length === 0) return [];
+  const matchSet = new Set();
+  for (const p of partners) {
+    if (Array.isArray(p.matchesEntries)) {
+      for (const id of p.matchesEntries) matchSet.add(id);
+    }
+  }
+  return entries.filter(e => matchSet.has(e.id));
+}
+
+/**
  * Aplică sortare automată pentru toți partenerii activi (cumulativ).
  * Entries matchate de orice partener activ apar primele.
  * @param {Array} entries - Lista de entries
@@ -354,7 +404,25 @@ export function getActivePartnersForEntry(entryId) {
     .map(b => ({ id: b.id, name: b.name, partnerTier: b.partnerTier }));
 }
 
-// Statistici registry
+// Statistici registry — recalculate din BRANDS (snapshot static) pentru numărători stabile
 CATALOG_META.brandCount = BRANDS.length;
 CATALOG_META.brandActivePartners = getActivePartners().length;
 CATALOG_META.brandCategories = [...new Set(BRANDS.flatMap(b => b.categories))].sort();
+
+// Re-exporturi pentru parteneri
+export {
+  getOverrides,
+  setOverride,
+  clearOverride,
+  clearAllOverrides,
+  exportOverridesJson,
+  importOverridesJson,
+  importOverridesCsv,
+  exportOverridesCsv,
+  parseCsv,
+  logPartnerClick,
+  getTelemetryEvents,
+  getTelemetryByBrand,
+  clearTelemetry,
+  exportTelemetryCsv,
+} from "./partner-overrides.js";

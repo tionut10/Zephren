@@ -356,13 +356,182 @@ Helper-ul din `Step3Systems.jsx` aplică în ordine:
 - UI-ul nu afișează badge-uri sau brand-uri în nameRo/nameEn
 - Schema validată de teste: zero brand-uri în labels (Daikin/Mitsubishi/Viessmann/Bosch/Zehnder/Philips/etc. excluse)
 
-### Restanțe brand registry (sprinturi viitoare, P2)
+### ~~Restanțe brand registry~~ → ✅ FINALIZAT P2 (30 apr 2026)
 
-1. **UI admin** pentru activare parteneriate (modal cu form pentru editare partnerStatus/Since/Tier/affiliateUrl) — alternativă la editare manuală JSON
-2. **Tooltip extins** pentru entries cu parteneri: nume brand + product line specific + link afiliat
-3. **Filtru "Doar brand-uri partenere"** opțional în dropdown (ascunde entries fără partner match)
-4. **Telemetrie click** pe entries cu parteneri → tracking conversii pentru contracte affiliate
-5. **Importator brand-uri batch** din CSV pentru update masiv post-parteneriate
+1. ✅ **UI admin** pentru activare parteneriate — `BrandPartnersAdmin.jsx` cu modal complet (listare, editare per brand, tabs Brands/Telemetry/Import)
+2. ✅ **Tooltip extins** pentru entries cu parteneri — buildOptions adaugă "🤝 Partener: {name} ({tier}), ..." sub source
+3. ✅ **Filtru "Doar brand-uri partenere"** — toggle în Step3 sub-tab, vizibil doar dacă există parteneri activi
+4. ✅ **Telemetrie click** — `logPartnerClick()` în localStorage cu pattern `Step3.{tab}.{field}`, agregare per brand, export CSV
+5. ✅ **Importator brand-uri batch** din CSV — UI admin tab "Import / Export" cu file picker JSON sau CSV
+
+---
+
+## Sprint P2 — Brand Admin UI + ACM Panels (30 apr 2026)
+
+### 1. Strat override localStorage (`partner-overrides.js`)
+
+Mecanism cheie pentru activare instantă parteneriate **fără commit + redeploy**: stratul de overrides salvează modificările în `localStorage.zephren_partner_overrides`. Helperele din `hvac-catalog.js` (`getActivePartners`, `getActivePartnersForEntry`, `getBrands`) merge automat overrides peste valorile din `brands-registry.json`.
+
+```js
+// Activare partener instant (din admin UI):
+setOverride("viessmann", {
+  partnerStatus: "active",
+  partnerSince: "2026-08-15",
+  partnerTier: "premium",
+  affiliateUrl: "https://zephren.ro/go/viessmann",
+  contactEmail: "vanzari@viessmann.ro"
+});
+// → toate dropdown-urile reflectă instant: prioritizare + badge '🤝' + tooltip extins
+```
+
+**Promovare la production**: admin UI permite export JSON cu overrides curente, care poate fi pasted în `brands-registry.json` și commit pentru persistență cross-browser.
+
+### 2. `BrandPartnersAdmin.jsx` — UI Admin completă
+
+Modal full-screen cu 3 tabs:
+- **Brand-uri**: listare ~165 brand-uri cu filtre (search + categorie + status), inline edit form per brand (partnerStatus / partnerSince / partnerTier / affiliateUrl / contactEmail), badge "OVERRIDE" pe brand-uri modificate localStorage, butoane Edit / Reset / Anulează
+- **Telemetrie click**: lista evenimente (entryId + brandIds + context + timestamp) + agregare top brand-uri (counts), export CSV pentru analiză externă, refresh auto la 5s
+- **Import / Export**: butoane Export JSON, Export CSV, file picker pentru import (acceptă .json și .csv); buton Reset complet overrides
+
+### 3. Helpers loader noi (`hvac-catalog.js`)
+
+```js
+// Re-exports din partner-overrides.js disponibile direct prin hvac-catalog.js
+import {
+  getOverrides, setOverride, clearOverride, clearAllOverrides,
+  exportOverridesJson, importOverridesJson,
+  exportOverridesCsv, importOverridesCsv, parseCsv,
+  logPartnerClick, getTelemetryEvents, getTelemetryByBrand,
+  exportTelemetryCsv, clearTelemetry,
+  filterByActivePartner, // NOU: păstrează doar entries cu parteneri activi
+  getBrands, // live brands cu overrides aplicate (vs BRANDS care e snapshot static)
+} from "../data/catalogs/hvac-catalog.js";
+```
+
+Nou: **`filterByActivePartner(entries)`** — folosit de filtru "Doar parteneri" în Step3.
+
+### 4. Integrare Step3Systems.jsx — Tooltip + Filtru + Telemetrie
+
+#### Tooltip extins
+`buildOptions()` include partener info sub source standard:
+```
+SR EN 15316-4-1:2017 §5.4.3 + EU 813/2013 — Modulație 10-100%, ideal sarcini parțiale
+
+🤝 Partener: Viessmann (premium), Vaillant (basic)
+```
+
+#### Filtru "Doar brand-uri partenere"
+Banner toggle vizibil **doar** când există parteneri activi:
+```
+🤝 3 brand-uri partenere active — entries linkate apar primele cu badge
+[ ] Afișează doar brand-uri partenere
+```
+
+#### Telemetrie click
+Fiecare schimbare valoare în dropdown verifică dacă entry-ul ales are parteneri activi → log în `localStorage.zephren_partner_telemetry`:
+```json
+{
+  "entryId": "GAZ_COND",
+  "partnerBrandIds": ["viessmann"],
+  "context": "Step3.heating.source",
+  "timestamp": "2026-08-20T14:32:11.234Z"
+}
+```
+Limită 1000 events (auto-trim FIFO). Admin UI permite export CSV pentru analiză.
+
+### 5. Panouri UI avansate ACM (Phase D)
+
+Card nou "⚙️ Configurare avansată ACM (catalog extins)" în sub-tab ACM cu **3 selectoare bilingv** + display info dinamic:
+
+#### A) Tip stocare ACM (`ACM_STORAGE_TYPES` — 12 tipologii)
+- Buffer stratificat multi-strat
+- Two-tank (preîncălzire + final)
+- VIP vacuum-insulated tank (clasa A++)
+- PCM phase-change storage
+- Ice/water dual-tank (heating + cooling)
+- BTES sezonier subteran (foraj 30-200m)
+- ATES acvifer
+- PIT thermal energy storage groapă mare
+- Direct electric tank
+- Indirect dual-coil tank
+- Tank-in-tank inox 304/316
+- Bladder presurizat
+
+Display dinamic per selecție: clasă energetică, pierderi/zi, sursă standard, notes.
+
+#### B) Metodă anti-Legionella (`ACM_ANTI_LEGIONELLA` — 5 metode)
+- UV in-line 254 nm (overhead 2%)
+- Ionizare Cu-Ag (overhead 1%)
+- Dozare ClO₂ continuu (overhead 1.5%)
+- Pasteurizare zilnică 60°C/30min (overhead 5%, HG 1425/2006)
+- Șoc termic săptămânal 70°C/3min (overhead 3%)
+
+#### C) Tip izolație conducte (`PIPE_INSULATION_TYPES` — 10 tipologii)
+- Elastomerică Armaflex-class (λ 0.037)
+- Spumă PE (λ 0.040)
+- Vată minerală cu vapor barrier (λ 0.035)
+- Aerogel ultra-subțire (λ 0.014)
+- PUR pre-izolate (λ 0.026)
+- Sticlă celulară HT (λ 0.043, până 430°C)
+- UV-PVC outdoor
+- ⚠ **Azbest legacy** (FLAG REMOVE — HG 124/2003 + Directiva 2009/148/CE) — display roșu cu avertisment îndepărtare prin firmă autorizată ANSESM
+- ⚠ **Bare/none** (FLAG retrofit P0 obligatoriu) — display amber
+- Perlit/vermiculit istoric
+
+Display per selecție: λ, clasă grosime ISO 12241, η_pipe, limită temp, sursă, notes.
+
+### 6. Componenta `Select` extensă (ui.jsx)
+
+- ✅ Suport `isGroupHeader: true` pentru optgroup-like
+- ✅ Suport `tooltip` per opțiune (HTML title)
+- ✅ Suport `partnerBadge` (afișează '🤝')
+
+### 7. Validare
+
+- **30 teste noi** în `__tests__/partner-overrides.test.js` (override storage, JSON/CSV export-import, parse CSV cu quoted values + escape, telemetrie click + agregare + auto-trim 1000)
+- Suite completă: 2367 → **2397 PASS** (+30, zero regresii)
+
+### Workflow tipic activare parteneriat (30 apr 2026)
+
+```
+1. Negociere comercială cu producător (ex: Viessmann RO)
+2. Semnare contract → primesti URL afiliat + email contact + tier (basic/premium/exclusive)
+3. Deschizi Zephren admin → Brand Partners Admin
+4. Caută "Viessmann" → click "Editare"
+5. Setezi:
+   - partnerStatus: "active"
+   - partnerSince: "2026-08-15"
+   - partnerTier: "premium"
+   - affiliateUrl: "https://zephren.ro/go/viessmann?utm=catalog"
+   - contactEmail: "vanzari@viessmann.ro"
+6. Click "Salvează" → instant:
+   - Toate dropdown-urile Step 3 prioritizează entries Viessmann (GAZ_COND, GAZ_PREMIX,
+     PC_AA_INV, SOLAR_COMBI etc.)
+   - Badge '🤝' apare pe entries linkate
+   - Tooltip extins arată "Partener: Viessmann (premium)"
+   - Banner toggle "🤝 1 brand activ" apare în sub-tab heading
+   - Filtru "Doar brand-uri partenere" disponibil
+7. (Opțional) Export JSON overrides → commit la production prin update brands-registry.json
+8. Periodic: deschizi tab Telemetry → vezi câte clicks au avut entries Viessmann
+   → export CSV pentru raport conversii lunar
+```
+
+### Promovare overrides la production (post MVP)
+
+Două căi:
+
+**A) Manual**: admin UI → Export JSON → developer face PR cu override aplicat în `brands-registry.json` → merge → deploy → toate browser-ele văd noile valori (fără localStorage).
+
+**B) Backend (post-launch)**: Supabase tabel `partner_overrides` + migration; helperul `getOverrides()` cheamă API endpoint (cu fallback localStorage). Permite admin centralizat multi-user.
+
+### Restanțe P3 (sprinturi viitoare)
+
+1. Backend Supabase pentru parteneriate centralizate (fără localStorage limit per browser)
+2. Tooltip cu link clickabil afiliat direct în dropdown (în prezent doar text)
+3. Calcul revenue affiliate per partener din telemetrie + report financiar
+4. A/B testing parteneriate (ex: 50% useri văd Viessmann prima, 50% văd Vaillant)
+5. Notificări email automatizate pentru threshold conversii (ex: "Viessmann a depășit 100 clicks/lună")
+6. Analytics dashboard cross-tenant (când Zephren va avea multi-tenant cu mai multe firme audit)
 
 ## Update teste — sprint P1
 

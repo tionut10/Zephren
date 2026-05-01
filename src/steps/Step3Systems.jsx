@@ -26,15 +26,22 @@ import {
   filterByBuildingCategory,
   groupByCategory,
   applyPartnerSorting,
+  filterByActivePartner,
   getActivePartnersForEntry,
+  getActivePartners,
+  logPartnerClick,
 } from "../data/catalogs/hvac-catalog.js";
 import { validateACMInputs, summarizeValidation } from "../calc/acm-validation.js";
 
 // ── Helper pentru construire opțiuni dropdown cu: grouping pe categorii (optgroup),
 //    bilingv RO/EN via getLabel, filter applicabilitate per building.category,
-//    sortare prioritate parteneri activi, tooltip cu source EN/SR/ISO.
-function buildOptions(entries, lang, buildingCategory, applyFilter = true) {
-  const filtered = applyFilter ? filterByBuildingCategory(entries, buildingCategory) : entries;
+//    sortare prioritate parteneri activi, tooltip cu source EN/SR/ISO + parteneri.
+//    Suport filtru "Doar brand-uri partenere" via parametrul onlyPartners.
+function buildOptions(entries, lang, buildingCategory, applyFilter = true, onlyPartners = false) {
+  let filtered = applyFilter ? filterByBuildingCategory(entries, buildingCategory) : entries;
+  if (onlyPartners) {
+    filtered = filterByActivePartner(filtered);
+  }
   const sorted = applyPartnerSorting(filtered);
   const grouped = groupByCategory(sorted, lang);
   const out = [];
@@ -46,11 +53,34 @@ function buildOptions(entries, lang, buildingCategory, applyFilter = true) {
       const label = getLabel(e, lang);
       const partners = getActivePartnersForEntry(e.id);
       const partnerBadge = partners.length > 0;
-      const tooltip = e.source ? `${e.source}${e.notes ? " — " + e.notes : ""}` : (e.notes || undefined);
+      const baseTip = e.source ? `${e.source}${e.notes ? " — " + e.notes : ""}` : (e.notes || "");
+      // Tooltip extins cu info partener: nume + tier + product line + URL afiliat
+      let partnerInfo = "";
+      if (partnerBadge) {
+        partnerInfo = "\n\n🤝 Partener: " + partners
+          .map(p => `${p.name}${p.partnerTier ? ` (${p.partnerTier})` : ""}`)
+          .join(", ");
+      }
+      const tooltip = (baseTip + partnerInfo) || undefined;
       out.push({ value: e.id, label, tooltip, partnerBadge });
     }
   }
   return out;
+}
+
+// ── Wrapper onChange pentru telemetrie click: dacă entry ales are parteneri activi,
+//    logăm event-ul (entryId + partnerBrandIds + context) în localStorage analytics.
+//    Returnează handler care face și set state.
+function trackAndSet(field, context, setter) {
+  return (v) => {
+    if (v) {
+      const partners = getActivePartnersForEntry(v);
+      if (partners.length > 0) {
+        logPartnerClick(v, partners.map(p => p.id), context);
+      }
+    }
+    setter(p => ({ ...p, [field]: v }));
+  };
 }
 
 export default function Step3Systems({
@@ -69,6 +99,12 @@ export default function Step3Systems({
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [showOCR, setShowOCR] = useState(false);
   const [showMultiZone, setShowMultiZone] = useState(false);
+
+  // ── Filtru "Doar brand-uri partenere" — Sprint P2 — afișat doar dacă există parteneri activi
+  const [onlyPartners, setOnlyPartners] = useState(false);
+  const activePartnersCount = useMemo(() => getActivePartners().length, []);
+  // Forțăm dezactivare filtru dacă nu mai există parteneri activi (după reset overrides)
+  useMemo(() => { if (activePartnersCount === 0 && onlyPartners) setOnlyPartners(false); }, [activePartnersCount]);
 
   // ── Sugestii orientative (fără brand) per tab ───────────────────────────
   // Filtrare statică din catalog — afișate în fiecare sub-tab Step 3.
@@ -159,6 +195,25 @@ export default function Step3Systems({
         ))}
       </div>
 
+      {/* Filtru parteneri — afișat doar dacă există parteneri activi (Sprint P2) */}
+      {activePartnersCount > 0 && (
+        <div className="mb-3 flex items-center justify-between bg-amber-500/[0.04] border border-amber-500/15 rounded-lg px-3 py-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="opacity-70">🤝 {activePartnersCount} brand-uri partenere active</span>
+            <span className="text-[10px] opacity-40">— entries linkate apar primele cu badge</span>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={onlyPartners}
+              onChange={e => setOnlyPartners(e.target.checked)}
+              className="accent-amber-500"
+            />
+            <span className="font-medium">{t("Afișează doar brand-uri partenere")}</span>
+          </label>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Main content area */}
         <div className="xl:col-span-2 space-y-3">
@@ -168,8 +223,8 @@ export default function Step3Systems({
             <>
               <Card title={t("Sursa de căldură (generare)",lang)}>
                 <div className="space-y-3">
-                  <Select label={t("Tip sursă",lang)} value={heating.source} onChange={v => setHeating(p=>({...p,source:v}))}
-                    options={buildOptions(HEAT_SOURCES, lang, building?.category)} />
+                  <Select label={t("Tip sursă",lang)} value={heating.source} onChange={trackAndSet("source", "Step3.heating.source", setHeating)}
+                    options={buildOptions(HEAT_SOURCES, lang, building?.category, true, onlyPartners)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Putere nominală",lang)} value={heating.power} onChange={v => setHeating(p=>({...p,power:v}))} type="number" unit="kW" min="0" step="0.1" tooltip="Puterea termică nominală a generatorului — Mc 001 Cap.3, valoare de pe plăcuța echipamentului" />
                     <Input label={HEAT_SOURCES.find(s=>s.id===heating.source)?.isCOP ? "COP/SCOP" : "Randament generare (eta_gen)"}
@@ -203,19 +258,19 @@ export default function Step3Systems({
 
               <Card title={t("Sistem de emisie",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select label={t("Tip corpuri de încălzire",lang)} value={heating.emission} onChange={v => setHeating(p=>({...p,emission:v}))}
-                    options={buildOptions(EMISSION_SYSTEMS, lang, building?.category)} />
+                  <Select label={t("Tip corpuri de încălzire",lang)} value={heating.emission} onChange={trackAndSet("emission", "Step3.heating.emission", setHeating)}
+                    options={buildOptions(EMISSION_SYSTEMS, lang, building?.category, true, onlyPartners)} />
                   <Input label={t("Randament emisie (eta_em)",lang)} value={heating.eta_em} onChange={v => setHeating(p=>({...p,eta_em:v}))} type="number" step="0.01" />
                 </div>
               </Card>
 
               <Card title={t("Distribuție și control",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select label={t("Calitate distribuție",lang)} value={heating.distribution} onChange={v => setHeating(p=>({...p,distribution:v}))}
-                    options={buildOptions(DISTRIBUTION_QUALITY, lang, building?.category)} />
+                  <Select label={t("Calitate distribuție",lang)} value={heating.distribution} onChange={trackAndSet("distribution", "Step3.heating.distribution", setHeating)}
+                    options={buildOptions(DISTRIBUTION_QUALITY, lang, building?.category, true, onlyPartners)} />
                   <Input label={t("Randament distribuție (eta_dist)",lang)} value={heating.eta_dist} onChange={v => setHeating(p=>({...p,eta_dist:v}))} type="number" step="0.01" />
-                  <Select label={t("Tip reglaj/control",lang)} value={heating.control} onChange={v => setHeating(p=>({...p,control:v}))}
-                    options={buildOptions(CONTROL_TYPES, lang, building?.category)} />
+                  <Select label={t("Tip reglaj/control",lang)} value={heating.control} onChange={trackAndSet("control", "Step3.heating.control", setHeating)}
+                    options={buildOptions(CONTROL_TYPES, lang, building?.category, true, onlyPartners)} />
                   <Input label={t("Randament reglaj (eta_ctrl)",lang)} value={heating.eta_ctrl} onChange={v => setHeating(p=>({...p,eta_ctrl:v}))} type="number" step="0.01" />
                 </div>
               </Card>
@@ -269,8 +324,8 @@ export default function Step3Systems({
             <>
               <Card title={t("Preparare apă caldă de consum",lang)}>
                 <div className="space-y-3">
-                  <Select label={t("Sursa ACM",lang)} value={acm.source} onChange={v => setAcm(p=>({...p,source:v}))}
-                    options={buildOptions(ACM_SOURCES, lang, building?.category)} />
+                  <Select label={t("Sursa ACM",lang)} value={acm.source} onChange={trackAndSet("source", "Step3.acm.source", setAcm)}
+                    options={buildOptions(ACM_SOURCES, lang, building?.category, true, onlyPartners)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select label={t("Nivel de consum",lang)} value={acm.consumptionLevel || "med"} onChange={v => setAcm(p=>({...p,consumptionLevel:v}))}
                       options={[
@@ -438,6 +493,100 @@ export default function Step3Systems({
                 </Card>
               )}
 
+              {/* Sprint P2 — panouri avansate ACM cu cataloage extinse (Storage + Anti-Legionella + Pipe Insulation) */}
+              <Card title={t("⚙️ Configurare avansată ACM (catalog extins)",lang)}>
+                <div className="space-y-4">
+                  <div className="text-[11px] opacity-50 leading-relaxed">
+                    {t("Cataloage detaliate post-Sprint HVAC 30 apr 2026 — tipologii avansate cu surse autoritare EN/SR/ISO. Selecțiile sunt opționale; dacă lipsesc, se folosesc valorile simple din panourile de mai sus.")}
+                  </div>
+
+                  {/* ── Tip stocare ACM (12 tipologii: buffer stratificat / VIP / PCM / BTES / ATES / etc.) ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select
+                      label={t("Tip stocare ACM (avansat)",lang)}
+                      value={acm.storageType || ""}
+                      placeholder={t("Selectează (opțional)")}
+                      onChange={trackAndSet("storageType", "Step3.acm.storageType", setAcm)}
+                      options={buildOptions(ACM_STORAGE_TYPES, lang, building?.category, false, onlyPartners)}
+                      tooltip="EN 12977-3, EN 50440, IEA SHC Task 42 — buffer stratificat, two-tank, VIP vacuum, PCM phase-change, gheață/apă dual, BTES sezonier subteran, ATES acvifer, PIT groapă mare, tank-in-tank inox 304/316, bladder presurizat etc."
+                    />
+                    {acm.storageType && (() => {
+                      const st = ACM_STORAGE_TYPES.find(s => s.id === acm.storageType);
+                      if (!st) return null;
+                      return (
+                        <div className="bg-white/[0.02] rounded-lg p-3 text-[11px] space-y-1">
+                          <div className="flex justify-between"><span className="opacity-50">Clasa energetică</span><span className="font-mono text-amber-400">{st.energyClassDefault}</span></div>
+                          <div className="flex justify-between"><span className="opacity-50">Pierderi/zi</span><span className="font-mono">{st.lossKwhPerLDay} kWh/L</span></div>
+                          <div className="flex justify-between gap-2"><span className="opacity-50 shrink-0">Sursă</span><span className="font-mono opacity-70 text-[10px] text-right truncate" title={st.source}>{st.source}</span></div>
+                          {st.notes && <div className="text-[10px] opacity-60 pt-1 border-t border-white/5">{st.notes}</div>}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* ── Metodă anti-Legionella (5 metode: UV, Cu-Ag, ClO₂, pasteurizare, șoc termic) ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select
+                      label={t("Metodă anti-Legionella (avansat)",lang)}
+                      value={acm.legionellaMethod || ""}
+                      placeholder={t("Selectează (opțional)")}
+                      onChange={trackAndSet("legionellaMethod", "Step3.acm.legionellaMethod", setAcm)}
+                      options={buildOptions(ACM_ANTI_LEGIONELLA, lang, building?.category, false, onlyPartners)}
+                      tooltip="HG 1425/2006 + Ord. MS 1002/2015 + EN 14897 + ISO 15858 — termic (pasteurizare 60°C/30min, șoc 70°C/3min), chimic (Cu-Ag ionizare, ClO₂ dozare), UV-C 254 nm in-line"
+                    />
+                    {acm.legionellaMethod && (() => {
+                      const lm = ACM_ANTI_LEGIONELLA.find(l => l.id === acm.legionellaMethod);
+                      if (!lm) return null;
+                      return (
+                        <div className="bg-white/[0.02] rounded-lg p-3 text-[11px] space-y-1">
+                          <div className="flex justify-between"><span className="opacity-50">Metodă</span><span className="font-mono text-amber-400 capitalize">{lm.method}</span></div>
+                          <div className="flex justify-between"><span className="opacity-50">Supliment energetic</span><span className="font-mono">{(lm.energyOverhead * 100).toFixed(1)}% / an</span></div>
+                          <div className="flex justify-between gap-2"><span className="opacity-50 shrink-0">Sursă</span><span className="font-mono opacity-70 text-[10px] text-right truncate" title={lm.source}>{lm.source}</span></div>
+                          {lm.notes && <div className="text-[10px] opacity-60 pt-1 border-t border-white/5">{lm.notes}</div>}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* ── Tip izolație conducte (10 tipologii: elastomeric / PE / vată / aerogel / PUR pre-izolat / azbest legacy) ── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Select
+                      label={t("Tip izolație conducte (avansat)",lang)}
+                      value={acm.pipeInsulationType || ""}
+                      placeholder={t("Selectează (opțional)")}
+                      onChange={trackAndSet("pipeInsulationType", "Step3.acm.pipeInsulationType", setAcm)}
+                      options={buildOptions(PIPE_INSULATION_TYPES, lang, building?.category, false, onlyPartners)}
+                      tooltip="SR EN ISO 12241 + SR EN 14304/14313/14303 + ISO 8497 — elastomerică Armaflex-class, spumă PE, vată minerală cu vapor barrier, aerogel ultra-subțire, PUR pre-izolate, sticlă celulară HT, UV-PVC outdoor, azbest legacy (FLAG REMOVE), bare/none, perlit istoric"
+                    />
+                    {acm.pipeInsulationType && (() => {
+                      const it = PIPE_INSULATION_TYPES.find(i => i.id === acm.pipeInsulationType);
+                      if (!it) return null;
+                      const isAsbestos = it.id === "INS_ASBESTOS_LEGACY";
+                      const isBare = it.id === "INS_BARE";
+                      return (
+                        <div className={cn("rounded-lg p-3 text-[11px] space-y-1",
+                          isAsbestos ? "bg-red-500/10 border border-red-500/30" :
+                          isBare ? "bg-amber-500/10 border border-amber-500/20" :
+                          "bg-white/[0.02]")}>
+                          {isAsbestos && (
+                            <div className="font-bold text-red-400 mb-1.5">⚠ FLAG CRITIC: AZBEST — necesită îndepărtare prin firmă autorizată ANSESM (HG 124/2003)</div>
+                          )}
+                          {isBare && (
+                            <div className="font-bold text-amber-400 mb-1.5">⚠ FLAG: țeavă neizolată — măsură P0 retrofit obligatorie</div>
+                          )}
+                          <div className="flex justify-between"><span className="opacity-50">λ izolație</span><span className="font-mono text-amber-400">{it.lambda ?? "—"} W/(m·K)</span></div>
+                          <div className="flex justify-between"><span className="opacity-50">Clasă grosime ISO 12241</span><span className="font-mono">{it.thicknessClass}</span></div>
+                          <div className="flex justify-between"><span className="opacity-50">Randament conducte η_pipe</span><span className="font-mono">{it.etaPipe}</span></div>
+                          <div className="flex justify-between"><span className="opacity-50">Limită temp.</span><span className="font-mono">{it.tempLimit ?? "—"} °C</span></div>
+                          <div className="flex justify-between gap-2"><span className="opacity-50 shrink-0">Sursă</span><span className="font-mono opacity-70 text-[10px] text-right truncate" title={it.source}>{it.source}</span></div>
+                          {it.notes && <div className="text-[10px] opacity-60 pt-1 border-t border-white/5">{it.notes}</div>}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </Card>
+
               {/* Sprint 4b — panou validări input ACM (error / warning / info) */}
               {(acmValidation.errors.length > 0 || acmValidation.warnings.length > 0 || acmValidation.info.length > 0) && (
                 <Card title={t("Validări intrări ACM",lang)}>
@@ -563,7 +712,7 @@ export default function Step3Systems({
                             eer:sys?.eer.toString()||"",
                             seer:sys?.seer && sys.seer > 0 ? sys.seer.toString() : "",
                           }));
-                        }} options={buildOptions(COOLING_SYSTEMS.filter(s=>s.id!=="NONE"), lang, building?.category, false)} />
+                        }} options={buildOptions(COOLING_SYSTEMS.filter(s=>s.id!=="NONE"), lang, building?.category, false, onlyPartners)} />
                         <Input label={t("EER nominal",lang)} value={cooling.eer || (coolSysSelected?.eer||"").toString()}
                           onChange={v => setCooling(p=>({...p,eer:v}))} type="number" step="0.1" min="0" max="20"
                           tooltip="EER = Energy Efficiency Ratio la sarcina nominală (ISO 5151 / EN 14511, punct A = 27/35 °C). Valoare etichetă echipament." />
@@ -601,7 +750,7 @@ export default function Step3Systems({
                           <Select label={t("Tip emisie răcire",lang)} value={cooling.emissionType || "fan_coil"} onChange={v => {
                             const em = COOLING_EMISSION_EFFICIENCY.find(e=>e.id===v);
                             setCooling(p=>({...p,emissionType:v,eta_em:em?.eta.toString()||"0.97"}));
-                          }} options={buildOptions(COOLING_EMISSION_EFFICIENCY, lang, building?.category, false)} />
+                          }} options={buildOptions(COOLING_EMISSION_EFFICIENCY, lang, building?.category, false, onlyPartners)} />
                           <Input label="η emisie" value={cooling.eta_em || "0.97"} onChange={v => setCooling(p=>({...p,eta_em:v}))}
                             type="number" step="0.01" min="0.70" max="1.00"
                             tooltip="Randament emisie răcire (0.70–1.00). Conform EN 15316-2 Tab.7." />
@@ -609,7 +758,7 @@ export default function Step3Systems({
                           <Select label={t("Tip distribuție răcire",lang)} value={cooling.distributionType || "apa_rece_izolat_int"} onChange={v => {
                             const di = COOLING_DISTRIBUTION_EFFICIENCY.find(d=>d.id===v);
                             setCooling(p=>({...p,distributionType:v,eta_dist:di?.eta.toString()||"0.95"}));
-                          }} options={buildOptions(COOLING_DISTRIBUTION_EFFICIENCY, lang, building?.category, false)} />
+                          }} options={buildOptions(COOLING_DISTRIBUTION_EFFICIENCY, lang, building?.category, false, onlyPartners)} />
                           <Input label="η distribuție" value={cooling.eta_dist || "0.95"} onChange={v => setCooling(p=>({...p,eta_dist:v}))}
                             type="number" step="0.01" min="0.70" max="1.00"
                             tooltip="Randament distribuție răcire (0.70–1.00). Conform EN 15316-3 Tab.7." />
@@ -617,7 +766,7 @@ export default function Step3Systems({
                           <Select label={t("Reglare răcire",lang)} value={cooling.controlType || "termostat_prop"} onChange={v => {
                             const ct = COOLING_CONTROL_EFFICIENCY.find(c=>c.id===v);
                             setCooling(p=>({...p,controlType:v,eta_ctrl:ct?.eta.toString()||"0.96"}));
-                          }} options={buildOptions(COOLING_CONTROL_EFFICIENCY, lang, building?.category, false)} />
+                          }} options={buildOptions(COOLING_CONTROL_EFFICIENCY, lang, building?.category, false, onlyPartners)} />
                           <Input label="η control" value={cooling.eta_ctrl || "0.96"} onChange={v => setCooling(p=>({...p,eta_ctrl:v}))}
                             type="number" step="0.01" min="0.70" max="1.10"
                             tooltip="Randament control răcire (0.70–1.10). BACS clasa A/B poate >1.00 (EN 15232-1 / ISO 52120-1)." />
@@ -776,7 +925,7 @@ export default function Step3Systems({
                       {/* Distribuție legacy — păstrat pentru compatibilitate */}
                       <div className="mt-3">
                         <Select label={t("Calitate izolație distribuție (legacy)",lang)} value={cooling.distribution} onChange={v => setCooling(p=>({...p,distribution:v}))}
-                          options={buildOptions(DISTRIBUTION_QUALITY.slice(0,4), lang, building?.category, false)} />
+                          options={buildOptions(DISTRIBUTION_QUALITY.slice(0,4), lang, building?.category, false, onlyPartners)} />
                       </div>
                     </>
                   )}
@@ -831,9 +980,10 @@ export default function Step3Systems({
               <Card title={t("Sistem de ventilare",lang)}>
                 <div className="space-y-3">
                   <Select label={t("Tip ventilare",lang)} value={ventilation.type} onChange={v => {
+                    if (v) { const ps = getActivePartnersForEntry(v); if (ps.length > 0) logPartnerClick(v, ps.map(p=>p.id), "Step3.ventilation.type"); }
                     const vt = VENTILATION_TYPES.find(t=>t.id===v);
                     setVentilation(p=>({...p,type:v,hrEfficiency:vt?.hrEta ? (vt.hrEta*100).toFixed(0) : ""}));
-                  }} options={buildOptions(VENTILATION_TYPES, lang, building?.category)} />
+                  }} options={buildOptions(VENTILATION_TYPES, lang, building?.category, true, onlyPartners)} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input label={t("Debit aer proaspăt",lang)} value={ventilation.airflow} onChange={v => setVentilation(p=>({...p,airflow:v}))} type="number" unit="m3/h"
                       min="0" max="100000" step="1"
@@ -922,17 +1072,19 @@ export default function Step3Systems({
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select label={t("Tip sursă de lumină predominantă",lang)} value={lighting.type} onChange={v => {
+                      if (v) { const ps = getActivePartnersForEntry(v); if (ps.length > 0) logPartnerClick(v, ps.map(p=>p.id), "Step3.lighting.type"); }
                       const lt = LIGHTING_TYPES.find(t=>t.id===v);
                       setLighting(p=>({...p, type:v, pDensity: lt?.pDensity?.toString() || p.pDensity}));
                     }}
-                      options={buildOptions(LIGHTING_TYPES, lang, building?.category)} />
+                      options={buildOptions(LIGHTING_TYPES, lang, building?.category, true, onlyPartners)} />
                     <Input label={t("Densitate putere instalată",lang)} value={lighting.pDensity} onChange={v => setLighting(p=>({...p,pDensity:v}))} type="number" unit="W/m2" step="0.1" min="0" max="50"
                       tooltip="EN 15193-1: tipic rezidențial 3–8 W/m², birouri 8–12 W/m², industrial 10–20 W/m²" />
                     <Select label={t("Sistem de control",lang)} value={lighting.controlType} onChange={v => {
+                      if (v) { const ps = getActivePartnersForEntry(v); if (ps.length > 0) logPartnerClick(v, ps.map(p=>p.id), "Step3.lighting.controlType"); }
                       const ctrl = LIGHTING_CONTROL.find(c=>c.id===v);
                       setLighting(p=>({...p, controlType:v, fCtrl: ctrl?.fCtrl?.toString() || p.fCtrl}));
                     }}
-                      options={buildOptions(LIGHTING_CONTROL, lang, building?.category)} />
+                      options={buildOptions(LIGHTING_CONTROL, lang, building?.category, true, onlyPartners)} />
                     <Input label={t("Factor control (F_C)",lang)} value={lighting.fCtrl} onChange={v => setLighting(p=>({...p,fCtrl:v}))} type="number" step="0.01" min="0.3" max="1.0"
                       tooltip="EN 15193-1 Tab. B.6: manual 1.00, PIR 0.80, DALI 0.45, auto integral 0.40" />
                     <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" min="0" max="8760"
