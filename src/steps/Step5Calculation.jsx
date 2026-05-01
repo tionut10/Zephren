@@ -18,7 +18,6 @@ import { ZEB_THRESHOLDS, ZEB_FACTOR, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW 
 import { BACS_CLASS_LABELS } from "../calc/bacs-iso52120.js";
 import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
 import { FUELS } from "../data/constants.js";
-import { BENCHMARKS } from "../data/benchmarks.js";
 import { T } from "../data/translations.js";
 
 /**
@@ -806,48 +805,6 @@ export default function Step5Calculation(props) {
               )}
 
 
-              {/* ── BENCHMARK COMPARATIV — medie națională ── */}
-              {instSummary && renewSummary && (() => {
-                const bm = BENCHMARKS[building.category] || BENCHMARKS.AL;
-                const epF = renewSummary.ep_adjusted_m2;
-                const co2F = renewSummary.co2_adjusted_m2;
-                const pctVsAvg = bm.avgEp > 0 ? Math.round((1 - epF / bm.avgEp) * 100) : 0;
-                return (
-                <Card title={lang==="EN"?"Benchmark — national average":"Benchmark — medie națională"} className="mb-6 border-blue-500/20">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-                      <div className="text-lg font-bold text-amber-400">{epF.toFixed(0)}</div>
-                      <div className="text-[10px] opacity-40">Ep clădire</div>
-                    </div>
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-                      <div className="text-lg font-bold opacity-50">{bm.avgEp}</div>
-                      <div className="text-[10px] opacity-40">Ep medie {bm.label}</div>
-                    </div>
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-                      <div className="text-lg font-bold text-emerald-400">{bm.bestEp}</div>
-                      <div className="text-[10px] opacity-40">Best in class</div>
-                    </div>
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03]">
-                      <div className={cn("text-lg font-bold", pctVsAvg > 0 ? "text-emerald-400" : "text-red-400")}>{pctVsAvg > 0 ? "-" : "+"}{Math.abs(pctVsAvg)}%</div>
-                      <div className="text-[10px] opacity-40">vs medie</div>
-                    </div>
-                  </div>
-                  {/* Vizual bar benchmark */}
-                  <svg viewBox="0 0 400 50" width="100%" height="45" className="overflow-visible">
-                    <rect x="0" y="20" width="400" height="10" rx="5" fill={theme==="dark"?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.06)"} />
-                    <rect x="0" y="20" width={Math.min(400, epF / bm.worstEp * 400)} height="10" rx="5" fill={epF < bm.avgEp ? "#22c55e" : epF < bm.worstEp * 0.7 ? "#eab308" : "#ef4444"} opacity="0.8" />
-                    {/* Markers */}
-                    <line x1={bm.bestEp/bm.worstEp*400} y1="16" x2={bm.bestEp/bm.worstEp*400} y2="34" stroke="#22c55e" strokeWidth="2" />
-                    <text x={bm.bestEp/bm.worstEp*400} y="13" textAnchor="middle" fontSize="7" fill="#22c55e">Best {bm.bestEp}</text>
-                    <line x1={bm.avgEp/bm.worstEp*400} y1="16" x2={bm.avgEp/bm.worstEp*400} y2="34" stroke="#888" strokeWidth="2" strokeDasharray="3 2" />
-                    <text x={bm.avgEp/bm.worstEp*400} y="44" textAnchor="middle" fontSize="7" fill="#888">Medie {bm.avgEp}</text>
-                    <circle cx={Math.min(395, epF/bm.worstEp*400)} cy="25" r="5" fill="#f59e0b" stroke="#000" strokeWidth="1" />
-                    <text x={Math.min(395, epF/bm.worstEp*400)} y="13" textAnchor="middle" fontSize="8" fill="#f59e0b" fontWeight="bold">{epF.toFixed(0)}</text>
-                  </svg>
-                  <div className="text-[10px] opacity-30 mt-1">Stoc {bm.label}: {bm.stock} clădiri | An mediu constr.: {bm.avgYear} | {bm.nzebPct}% nZEB</div>
-                </Card>
-                );
-              })()}
 
               {/* ── A/V FACTOR VALIDATION ── */}
               {avValidation && avValidation.msg && (
@@ -1121,47 +1078,6 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-
-              {/* ── Flux energetic Sankey simplificat ── */}
-              {instSummary && (
-                <Card title={lang==="EN"?"Energy flow diagram":"Flux energetic"} className="mb-6">
-                  <svg viewBox="0 0 500 140" width="100%" height="130">
-                    {(() => {
-                      var total = instSummary.ep_total || 1;
-                      var utils = [
-                        {l:"Încălzire",v:instSummary.ep_h,c:"#ef4444"},
-                        {l:"ACM",v:instSummary.ep_w,c:"#f97316"},
-                        {l:"Răcire",v:instSummary.ep_c,c:"#3b82f6"},
-                        {l:"Ventilare",v:instSummary.ep_v,c:"#8b5cf6"},
-                        {l:"Iluminat",v:instSummary.ep_l,c:"#eab308"},
-                      ];
-                      var els = [];
-                      // Source bar (left)
-                      els.push(<rect key="src" x="5" y="10" width="35" height="120" fill="#f59e0b" rx="4" opacity="0.3"/>);
-                      els.push(<text key="srct" x="22" y="75" textAnchor="middle" fontSize="7" fill="#f59e0b" transform="rotate(-90,22,75)">EP Total</text>);
-                      els.push(<text key="srcv" x="22" y="135" textAnchor="middle" fontSize="6" fill="#f59e0b">{total.toFixed(0)}</text>);
-                      // Flow paths to utilities
-                      var cumY = 10;
-                      utils.forEach(function(u, i) {
-                        var pct = u.v / total;
-                        var h = Math.max(4, pct * 120);
-                        var targetX = 380, targetY = 10 + i * 25;
-                        var srcY = cumY + h/2;
-                        els.push(<path key={"f"+i} d={"M40,"+srcY+" C200,"+srcY+" 250,"+((targetY+10))+" "+targetX+","+(targetY+10)} fill="none" stroke={u.c} strokeWidth={Math.max(1.5,h*0.3)} opacity="0.4"/>);
-                        els.push(<rect key={"u"+i} x={targetX} y={targetY} width="110" height="20" fill={u.c} rx="3" opacity="0.2"/>);
-                        els.push(<text key={"ul"+i} x={targetX+5} y={targetY+13} fontSize="7" fill={u.c}>{u.l}: {u.v.toFixed(0)} kWh ({(pct*100).toFixed(0)}%)</text>);
-                        cumY += h;
-                      });
-                      // Renewable offset
-                      if (renewSummary && renewSummary.ep_reduction > 0) {
-                        els.push(<rect key="ren" x="5" y="132" width="35" height="4" fill="#22c55e" rx="1"/>);
-                        els.push(<text key="rent" x="45" y="136" fontSize="6" fill="#22c55e">-{renewSummary.ep_reduction.toFixed(0)} regenerabile</text>);
-                      }
-                      return els;
-                    })()}
-                  </svg>
-                </Card>
-              )}
 
               {/* ── ESTIMARE COST ENERGIE ANUAL ── */}
               {instSummary && (
@@ -1438,67 +1354,6 @@ export default function Step5Calculation(props) {
                     ELEMENT_TYPES={ELEMENT_TYPES}
                     lang={lang}
                   />
-                </Card>
-              )}
-
-              {/* ── COMPARAȚIE REAL vs. REFERINȚĂ ── */}
-              {instSummary && (
-                <Card title="Comparație clădire reală vs. clădire de referință (nZEB)">
-                  {(() => {
-                    const epRef = getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 148;
-                    const ratios = [0.45, 0.25, 0.10, 0.08, 0.12];
-                    const labels = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
-                    const colors = ["#ef4444","#f97316","#3b82f6","#8b5cf6","#eab308"];
-                    const realVals = [instSummary.ep_h, instSummary.ep_w, instSummary.ep_c, instSummary.ep_v, instSummary.ep_l].map(v => Au > 0 ? v/Au : 0);
-                    const refVals = ratios.map(r => epRef * r);
-                    const maxVal = Math.max(...realVals, ...refVals, 1);
-                    return (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-7 gap-1 text-[10px] font-medium opacity-60 mb-2">
-                          <div className="col-span-2">Utilitate</div>
-                          <div className="text-right">Real</div>
-                          <div className="col-span-2 text-center">Comparație</div>
-                          <div className="text-right">Ref. nZEB</div>
-                          <div className="text-right">Diferență</div>
-                        </div>
-                        {labels.map((label, i) => {
-                          const diff = realVals[i] - refVals[i];
-                          const pctDiff = refVals[i] > 0 ? (diff / refVals[i] * 100) : 0;
-                          return (
-                            <div key={label} className="grid grid-cols-7 gap-1 items-center text-xs">
-                              <div className="col-span-2 flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full" style={{backgroundColor:colors[i]}} />
-                                {label}
-                              </div>
-                              <div className="text-right font-mono">{realVals[i].toFixed(1)}</div>
-                              <div className="col-span-2 flex items-center gap-0.5 h-4">
-                                <div className="h-full rounded-l" style={{width:`${realVals[i]/maxVal*100}%`,backgroundColor:colors[i],opacity:0.8,minWidth:"2px"}} />
-                                <div className="h-full rounded-r border border-dashed border-emerald-500/50" style={{width:`${refVals[i]/maxVal*100}%`,backgroundColor:"#22c55e20",minWidth:"2px"}} />
-                              </div>
-                              <div className="text-right font-mono text-emerald-400/70">{refVals[i].toFixed(1)}</div>
-                              <div className={`text-right font-mono font-bold ${diff > 0 ? "text-red-400" : "text-emerald-400"}`}>
-                                {diff > 0 ? "+" : ""}{pctDiff.toFixed(0)}%
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div className="pt-2 border-t border-white/10 grid grid-cols-7 gap-1 items-center text-xs font-bold">
-                          <div className="col-span-2">TOTAL EP</div>
-                          <div className="text-right font-mono">{epFinal.toFixed(1)}</div>
-                          <div className="col-span-2" />
-                          <div className="text-right font-mono text-emerald-400">{epRef.toFixed(1)}</div>
-                          <div className={`text-right font-mono ${epFinal > epRef ? "text-red-400" : "text-emerald-400"}`}>
-                            {epFinal > epRef ? "+" : ""}{((epFinal - epRef) / epRef * 100).toFixed(0)}%
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-[10px] opacity-40 pt-1">
-                          <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-amber-500/60" /> Clădire reală</span>
-                          <span className="flex items-center gap-1"><span className="w-3 h-2 rounded border border-dashed border-emerald-500" /> Referință nZEB</span>
-                          <span>Valori în kWh/(m²·an)</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </Card>
               )}
 
