@@ -1,1 +1,1 @@
-{"version":"0.0.1","configurations":[{"name":"zephren-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev","--","--port","5173","--host"],"port":5173}]}
+{"version":"0.0.1","configurations":[{"name":"zephren-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev","--","--port","5175"],"port":5175}]}

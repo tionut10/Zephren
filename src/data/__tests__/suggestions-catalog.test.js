@@ -230,6 +230,37 @@ describe("suggestHVAC", () => {
     expect(boilerEntries[0].warnings).toBeDefined();
     expect(boilerEntries[0].warnings.length).toBeGreaterThan(0);
   });
+
+  it("centrală pe gaz (meetsTarget=false) NU poate depăși o pompă căldură (meetsTarget=true)", () => {
+    const r = suggestHVAC({
+      functionType: "heating",
+      peakLoad_kW: 24,
+      preferredTags: ["legacy"],
+      limit: 5,
+    });
+    const firstFalseIdx = r.findIndex(s => s.meetsTarget === false);
+    if (firstFalseIdx !== -1) {
+      for (let i = 0; i < firstFalseIdx; i++) {
+        expect(r[i].meetsTarget).toBe(true);
+      }
+      for (let i = firstFalseIdx; i < r.length; i++) {
+        expect(r[i].meetsTarget).toBe(false);
+      }
+    }
+  });
+
+  it("sort prioritizează meetsTarget chiar când tagMatch concurent ar fi mai mare la o entry false", () => {
+    const r = suggestHVAC({
+      functionType: "heating",
+      peakLoad_kW: 24,
+      preferredTags: ["legacy", "fade-out-2030"],
+      limit: 10,
+    });
+    expect(r.length).toBeGreaterThan(0);
+    const firstMeets = r[0].meetsTarget;
+    const anyTrue = r.some(s => s.meetsTarget === true);
+    if (anyTrue) expect(firstMeets).toBe(true);
+  });
 });
 
 describe("suggestPV", () => {

@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-04-30
+// Ultima generare: 2026-05-01
 
 export const APP_VERSION = "0.5.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📦",
-        "text": "fix(catalog-ui): sincronizare 3 spoturi cu cataloage NEUTRU extinse"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(catalog-ui): integrare UI cataloage NEUTRU în OpaqueModal + GlazingModal"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(catalog): extindere masivă catalog NEUTRU constructiv (~270 entries noi)"
+        "icon": "🎨",
+        "text": "Sprint P2 — Brand Admin UI + ACM panels + tooltip/filtru/telemetrie complete"
       },
       {
         "icon": "🎨",
-        "text": "inferă frameType din numele elementului (PVC/aluminiu/lemn) la deschiderea GlazingModal"
+        "text": "Sprint P1 — Brand registry ~165 entries + integrare UI Step3Systems bilingv RO/EN"
       },
       {
-        "icon": "🔧",
-        "text": "inferă glazingType din câmpul legacy type la deschiderea GlazingModal"
+        "icon": "📦",
+        "text": "Sprint cercetare HVAC — 424 entries noi catalog NEUTRAL bilingv RO+EN"
       },
       {
-        "icon": "🔧",
-        "text": "U vitraj/ramă afișează — în loc de 0.00 când tipul nu e selectat din dropdown"
+        "icon": "🗺️",
+        "text": "tooltip aliniat right (nu iese din ecran) + text-center în AutocompleteInput (Localitate/Județ)"
       },
       {
-        "icon": "🔧",
-        "text": "aliniere câmpuri GlazingModal — Fracție ramă col-span-2 + label protecție solară pe o linie"
+        "icon": "🔸",
+        "text": "repoziționează badge Ord. 16/2023 centrat sub titlu în Card (prop subtitle)"
       },
       {
-        "icon": "💰",
-        "text": "mărire secțiune transversală planșeu — viewBox 132→244, height 120→220"
+        "icon": "🎨",
+        "text": "centrează și bolduiește titlurile de secțiune din sumarul energetic (Energie finală per utilitate, Energie pri"
+      },
+      {
+        "icon": "🎨",
+        "text": "UI: fix aliniere centrata - label cu icon absolut dreapta, dropdown text centrat, Card title mirror-spacer bad"
+      },
+      {
+        "icon": "🎨",
+        "text": "UI: aliniere centrata label+icon si titlu Card cu badge (justify-center + absolute badge)"
       }
     ]
   },

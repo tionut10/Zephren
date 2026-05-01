@@ -727,6 +727,7 @@ export function suggestHVAC({
       return { ...s, meetsTarget, _matchLoad: matchLoad, tagMatch, _avgPrice: avgPrice };
     })
     .sort((a, b) => {
+      if (a.meetsTarget !== b.meetsTarget) return a.meetsTarget ? -1 : 1;
       if (a.tagMatch !== b.tagMatch) return b.tagMatch - a.tagMatch;
       if (Math.abs(a._matchLoad - b._matchLoad) > 0.01) return a._matchLoad - b._matchLoad;
       return a._avgPrice - b._avgPrice;
