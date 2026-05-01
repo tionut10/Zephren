@@ -20,7 +20,7 @@ import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
 import { FUELS } from "../data/constants.js";
 import { T } from "../data/translations.js";
 // Sprint Refactor Pas 5 Faza 0 (1 mai 2026) — gating dual grad MDLPA + plan
-import GradeGate from "../components/GradeGate.jsx";
+import GradeGate, { useGradeGate } from "../components/GradeGate.jsx";
 
 /**
  * Step5Calculation — Extracted from energy-calc.jsx lines 8900-10208
@@ -48,6 +48,8 @@ export default function Step5Calculation(props) {
     userPlan, auditor,
   } = props;
   const auditorGrad = auditor?.grade || null;
+  // Faza C — verdict-uri inline pentru badge-uri din Dashboard sumar (fragment)
+  const gwpGate = useGradeGate("gwpSimple", userPlan, auditorGrad);
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
             const Au = parseFloat(building.areaUseful) || 0;
@@ -436,7 +438,7 @@ export default function Step5Calculation(props) {
                         <Badge color={isNZEB ? "green" : "red"}>{isNZEB ? "✓" : "✗"} nZEB</Badge>
                         <Badge color={isZEB ? "green" : "red"}>{isZEB ? "✓" : "✗"} ZEB</Badge>
                         {annualEnergyCost && <Badge color="amber">Cost: {annualEnergyCost.total.toLocaleString("ro-RO")} lei/an</Badge>}
-                        {gwpDetailed && <Badge color={gwpDetailed.gwpPerM2Year <= 15 ? "green" : "amber"}>GWP: {gwpDetailed.gwpPerM2Year} kgCO₂eq/(m²·an)</Badge>}
+                        {gwpDetailed && gwpGate.allowed && <Badge color={gwpDetailed.gwpPerM2Year <= 15 ? "green" : "amber"}>GWP: {gwpDetailed.gwpPerM2Year} kgCO₂eq/(m²·an)</Badge>}
                       </>;
                     })()}
                   </div>
@@ -481,8 +483,9 @@ export default function Step5Calculation(props) {
                 </Card>
               )}
 
-              {/* ═══ NEW: GWP LIFECYCLE (A4) ═══ */}
+              {/* ═══ NEW: GWP LIFECYCLE (A4) ═══ (Faza C — EN 15978 carbon înglobat: ascuns la IIci, EPBD Art. 7) */}
               {gwpDetailed && (
+              <GradeGate feature="gwpSimple" plan={userPlan} auditorGrad={auditorGrad}>
                 <Card title={t("GWP — Amprenta de carbon a clădirii",lang)} className="mb-6" badge={<Badge color={gwpDetailed.gwpPerM2Year <= 15 ? "green" : "amber"}>{gwpDetailed.classification}</Badge>}>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="text-center p-2 rounded bg-white/[0.03]">
@@ -530,6 +533,7 @@ export default function Step5Calculation(props) {
                   )}
                   <div className="text-[10px] opacity-20 mt-2">Conform EN 15978. Ref. nZEB: ≤{gwpDetailed.benchmarkNZEB} kgCO₂eq/(m²·an). Faza D (credit reciclare): {gwpDetailed.gwp_D > 0 ? "-"+gwpDetailed.gwp_D+" kgCO₂eq" : "N/A"}.</div>
                 </Card>
+              </GradeGate>
               )}
 
               {/* ═══ BACS — SR EN ISO 52120-1:2022 (A5) — Sprint 5 ═══ */}
