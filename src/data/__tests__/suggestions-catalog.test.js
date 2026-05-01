@@ -14,6 +14,8 @@ import {
   GLAZING_SUGGESTIONS,
   FRAME_SUGGESTIONS,
   HEATING_SUGGESTIONS,
+  VENTILATION_SUGGESTIONS,
+  ACM_SUGGESTIONS,
   PV_SUGGESTIONS,
   CATALOG_VERSION,
   CATALOG_DISCLAIMER,
@@ -23,6 +25,7 @@ import {
   suggestForGlazingElement,
   suggestHVAC,
   suggestPV,
+  suggestACM,
   formatPriceRange,
 } from "../suggestions-catalog.js";
 
@@ -289,6 +292,129 @@ describe("formatPriceRange", () => {
     expect(formatPriceRange(null)).toBe("—");
     expect(formatPriceRange(undefined)).toBe("—");
     expect(formatPriceRange({})).toBe("—");
+  });
+});
+
+describe("suggestHVAC — semnale extinse (Task 3)", () => {
+  it("auto peakLoad din buildingArea (~70 W/m²)", () => {
+    const r = suggestHVAC({
+      functionType: "heating",
+      buildingArea: 100,
+      limit: 10,
+    });
+    expect(r.length).toBeGreaterThan(0);
+    // Cu 100 m² × 0.07 = 7 kW → entry HP 8 kW ar trebui să fie cel mai apropiat
+    const top = r[0];
+    expect(top.tech.capacity_kW).toBeDefined();
+  });
+
+  it("zona I impune SCOP ≥ 3.8 (HP aer-apă 8kW SCOP=4.0 trece)", () => {
+    const r = suggestHVAC({
+      functionType: "heating",
+      peakLoad_kW: 8,
+      climateZone: "I",
+      limit: 10,
+    });
+    const hpAerApa = r.find(s => s.id === "hp-aer-apa-8");
+    expect(hpAerApa?.meetsTarget).toBe(true);
+    // HP aer-apă 16kW (SCOP 3.8) trece pe pragul exact 3.8
+    const hpAerApa16 = r.find(s => s.id === "hp-aer-apa-16");
+    expect(hpAerApa16?.meetsTarget).toBe(true);
+  });
+
+  it("clădire publică (BCC) fără tag fire-safe → meetsTarget=false", () => {
+    const r = suggestHVAC({
+      functionType: "heating",
+      peakLoad_kW: 16,
+      buildingCategory: "BCC",
+      limit: 10,
+    });
+    expect(r.length).toBeGreaterThan(0);
+    // HEATING_SUGGESTIONS nu include tag fire-safe → toate ar trebui să nu treacă
+    for (const s of r) {
+      if (s.tags.includes("fire-safe")) continue;
+      expect(s.meetsTarget).toBe(false);
+    }
+  });
+});
+
+describe("suggestPV — semnale extinse (Task 3)", () => {
+  it("auto targetKWp din buildingArea (~50 Wp/m²)", () => {
+    const r = suggestPV({ buildingArea: 120, limit: 5 });
+    expect(r.length).toBeGreaterThan(0);
+    // 120 × 0.05 = 6 kWp → entry pv-6kwp-rezidential ar trebui pe primul loc
+    expect(r[0].id).toBe("pv-6kwp-rezidential");
+  });
+
+  it("targetKWp explicit override-uie buildingArea", () => {
+    const r = suggestPV({ targetKWp: 30, buildingArea: 120, limit: 5 });
+    // 30 kWp explicit → pv-30kwp-comercial primul
+    expect(r[0].id).toBe("pv-30kwp-comercial");
+  });
+});
+
+describe("suggestACM — Task 4 catalog ACM dedicat", () => {
+  it("ACM_SUGGESTIONS conține minim 3 entries (HPWH + solar + electric)", () => {
+    expect(ACM_SUGGESTIONS.length).toBeGreaterThanOrEqual(3);
+    const ids = ACM_SUGGESTIONS.map(s => s.id);
+    expect(ids).toContain("hpwh-200l");
+    expect(ids).toContain("solar-acm-flat-2m2");
+    expect(ids).toContain("boiler-electric-100l");
+  });
+
+  it("schema NEUTRĂ — toate ACM_SUGGESTIONS au brand=null", () => {
+    for (const s of ACM_SUGGESTIONS) {
+      expect(s.brand).toBeNull();
+      expect(s.affiliateUrl).toBeNull();
+    }
+  });
+
+  it("filtrare după residents: 4 persoane → minim 200L", () => {
+    const r = suggestACM({ residents: 4, limit: 5 });
+    expect(r.length).toBeGreaterThan(0);
+    // hpwh-200l (200L) trece, solar-150L NU
+    for (const s of r) {
+      expect(s.tech.capacity_L).toBeGreaterThanOrEqual(200);
+    }
+  });
+
+  it("residents=0 sau undefined → fără filtru", () => {
+    const r = suggestACM({ limit: 10 });
+    expect(r.length).toBe(ACM_SUGGESTIONS.length);
+  });
+
+  it("HPWH (COP=3.2) prioritar față de electric (COP=0.99 + legacy)", () => {
+    const r = suggestACM({ residents: 2, limit: 3 });
+    const hpwh = r.find(s => s.id === "hpwh-200l");
+    const electric = r.find(s => s.id === "boiler-electric-100l");
+    expect(hpwh?.meetsTarget).toBe(true);
+    expect(electric?.meetsTarget).toBe(false);
+    // hpwh înainte de electric când amândouă sunt în lista
+    if (hpwh && electric) {
+      const idxHpwh = r.indexOf(hpwh);
+      const idxElec = r.indexOf(electric);
+      expect(idxHpwh).toBeLessThan(idxElec);
+    }
+  });
+});
+
+describe("VENTILATION_SUGGESTIONS — Task 7 dimensionare per suprafață", () => {
+  it("conține 4 entries cu sizeTag (small/medium/large + single)", () => {
+    expect(VENTILATION_SUGGESTIONS.length).toBe(4);
+    const tags = VENTILATION_SUGGESTIONS.map(v => v.tech.sizeTag);
+    expect(tags).toContain("small");
+    expect(tags).toContain("medium");
+    expect(tags).toContain("large");
+  });
+
+  it("VMC compact small are debit ≤ 200 m³/h", () => {
+    const small = VENTILATION_SUGGESTIONS.find(v => v.id === "vmc-dual-small");
+    expect(small?.tech.airflow_m3h_max).toBeLessThanOrEqual(200);
+  });
+
+  it("DOAS commercial are debit ≥ 1000 m³/h", () => {
+    const large = VENTILATION_SUGGESTIONS.find(v => v.id === "vmc-doas-commercial");
+    expect(large?.tech.airflow_m3h_max).toBeGreaterThanOrEqual(1000);
   });
 });
 

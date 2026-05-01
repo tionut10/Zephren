@@ -380,19 +380,48 @@ export const COOLING_SUGGESTIONS = [
 ];
 
 // ── Soluții ventilare ────────────────────────────────────────────────────────
+// Sprint mai 2026 — sizeTag pentru filtrare per suprafață clădire
 export const VENTILATION_SUGGESTIONS = [
+  {
+    id: "vmc-dual-small",
+    category: "ventilation",
+    subcategory: "VMC-dual-flow-small",
+    label: "VMC dual-flux compact (apartament ≤ 120 m²)",
+    labelEN: "Compact MVHR dual-flow (apartment ≤ 120 m²)",
+    description: "Dimensiune redusă — debit 100-200 m³/h, recuperare ≥ 85%, instalare bucătărie/dressing.",
+    tech: { recoveryEff: 0.85, sfp_kW_per_m3s: 0.40, airflow_m3h_max: 200, sizeTag: "small", filterClass: "F7" },
+    useCase: ["nZEB", "rezidential-mic", "rezidential-existent"],
+    priceRange: { min: 6000, max: 12000, unit: "RON/sistem", currency: "RON" },
+    normRefs: ["EN 13141-7", "EN 16798-3"],
+    tags: ["nZEB", "rezidential", "compact"],
+    ...T_NULL,
+  },
   {
     id: "vmc-dual-90",
     category: "ventilation",
     subcategory: "VMC-dual-flow-recuperare",
-    label: "VMC dual-flux cu recuperare ≥ 90%",
-    labelEN: "MVHR dual-flow ≥ 90% recovery",
+    label: "VMC dual-flux cu recuperare ≥ 90% (medium)",
+    labelEN: "MVHR dual-flow ≥ 90% recovery (medium)",
     description: "Obligatoriu nZEB — recuperator căldură entalpic, filtre F7+, SFP < 0.45 W/(l/s).",
-    tech: { recoveryEff: 0.92, sfp_kW_per_m3s: 0.42, filterClass: "F7" },
+    tech: { recoveryEff: 0.92, sfp_kW_per_m3s: 0.42, airflow_m3h_max: 1000, sizeTag: "medium", filterClass: "F7" },
     useCase: ["nZEB", "passivhaus"],
     priceRange: { min: 12000, max: 24000, unit: "RON/sistem", currency: "RON" },
     normRefs: ["EN 13141", "EN 16798-3", "Mc 001-2022 §VI"],
     tags: ["nZEB", "passivhaus", "obligatoriu"],
+    ...T_NULL,
+  },
+  {
+    id: "vmc-doas-commercial",
+    category: "ventilation",
+    subcategory: "DOAS",
+    label: "DOAS comercial (clădiri ≥ 500 m²)",
+    labelEN: "DOAS commercial (buildings ≥ 500 m²)",
+    description: "Sistem dedicat aer proaspăt — debit 1000-5000 m³/h, recuperare entalpică 80%, decuplat de încălzire/răcire.",
+    tech: { recoveryEff: 0.80, sfp_kW_per_m3s: 1.80, airflow_m3h_max: 5000, sizeTag: "large", hasEnthalpy: true, filterClass: "F9" },
+    useCase: ["birouri", "comercial", "publica"],
+    priceRange: { min: 35000, max: 80000, unit: "RON/sistem", currency: "RON" },
+    normRefs: ["EN 16798-3", "ASHRAE 62.1"],
+    tags: ["nZEB", "comercial", "passivhaus"],
     ...T_NULL,
   },
   {
@@ -402,11 +431,59 @@ export const VENTILATION_SUGGESTIONS = [
     label: "VMC simplu flux (extragere centralizată)",
     labelEN: "MEV single-flow (central extraction)",
     description: "Soluție economică pentru rezidențial mic — fără recuperare căldură.",
-    tech: { recoveryEff: 0, sfp_kW_per_m3s: 0.30 },
+    tech: { recoveryEff: 0, sfp_kW_per_m3s: 0.30, airflow_m3h_max: 500, sizeTag: "small" },
     useCase: ["rezidential-existent"],
     priceRange: { min: 3500, max: 6500, unit: "RON/sistem", currency: "RON" },
     normRefs: ["EN 13141"],
     tags: ["low-cost", "renovare-usoara"],
+    ...T_NULL,
+  },
+];
+
+// ── Soluții ACM ──────────────────────────────────────────────────────────────
+// Sprint mai 2026 — Task 4 catalog dedicat preparare apă caldă consum
+export const ACM_SUGGESTIONS = [
+  {
+    id: "hpwh-200l",
+    category: "hvac-acm",
+    subcategory: "boiler-pompa-caldura",
+    label: "Boiler pompă căldură 200L (HPWH)",
+    labelEN: "Heat pump water heater 200L",
+    description: "COP = 3.2 cu agent R290 — autonomie ridicată locuință 4 persoane, eligibil Casa Verde.",
+    tech: { capacity_L: 200, COP: 3.2, refrigerant: "R290", powerInput_kW: 0.6 },
+    useCase: ["rezidential-locuinta", "rezidential-bloc-mic"],
+    priceRange: { min: 1500, max: 3500, unit: "RON/buc", currency: "RON" },
+    normRefs: ["EN 16147", "ErP Reg. 814/2013"],
+    tags: ["nZEB", "regenerabil-partial", "casa-verde"],
+    ...T_NULL,
+  },
+  {
+    id: "solar-acm-flat-2m2",
+    category: "hvac-acm",
+    subcategory: "solar-termic-acm",
+    label: "Sistem solar termic 2 m² + boiler 150L",
+    labelEN: "Solar thermal 2 m² + 150L tank",
+    description: "Acoperă 50-65% necesar ACM anual — colector plat selectiv, boiler bivalent dublu serpentine.",
+    tech: { capacity_L: 150, collectorArea_m2: 2, solarFraction: 0.6, COP: 3.5 },
+    useCase: ["rezidential-locuinta", "nZEB"],
+    priceRange: { min: 4000, max: 7000, unit: "RON/sistem", currency: "RON" },
+    normRefs: ["EN 12975", "EN 12976", "Solar Keymark"],
+    tags: ["nZEB", "regenerabil", "passivhaus"],
+    ...T_NULL,
+  },
+  {
+    id: "boiler-electric-100l",
+    category: "hvac-acm",
+    subcategory: "boiler-electric",
+    label: "Boiler electric 100L (rezistor)",
+    labelEN: "Electric resistance water heater 100L",
+    description: "Soluție tranzitorie low-cost — randament 99% conversie dar fP ridicat, NU recomandat nZEB.",
+    tech: { capacity_L: 100, COP: 0.99, fuelType: "electricitate" },
+    useCase: ["rezidential", "tranzitoriu"],
+    priceRange: { min: 600, max: 1800, unit: "RON/buc", currency: "RON" },
+    normRefs: ["EN 60335-2-21"],
+    tags: ["legacy", "low-cost"],
+    warnings: ["fP_ren = 2.0 → consum primar mare; preferați HPWH sau solar termic pentru nZEB."],
     ...T_NULL,
   },
 ];
@@ -529,6 +606,7 @@ export const ALL_SUGGESTIONS = [
   ...HEATING_SUGGESTIONS,
   ...COOLING_SUGGESTIONS,
   ...VENTILATION_SUGGESTIONS,
+  ...ACM_SUGGESTIONS,
   ...PV_SUGGESTIONS,
   ...LIGHTING_SUGGESTIONS,
   ...BRIDGE_SUGGESTIONS,
@@ -688,16 +766,40 @@ export function suggestForGlazingElement({
  *
  * @param {object} params
  * @param {"heating"|"cooling"|"both"} params.functionType
- * @param {number} params.peakLoad_kW — sarcină maximă
+ * @param {number} params.peakLoad_kW — sarcină maximă (opțional, auto din area)
+ * @param {string} params.climateZone — "I"|"II"|"III"|"IV"|"V" (Mc 001-2022)
+ * @param {string} params.buildingCategory — categorie clădire (RI/RC/BCC/BI/...)
+ * @param {number} params.buildingArea — Au m² (pentru estimare load orientativă)
  * @param {string[]} params.preferredTags
  * @param {number} params.limit
  */
 export function suggestHVAC({
   functionType = "heating",
   peakLoad_kW,
+  climateZone,
+  buildingCategory,
+  buildingArea,
   preferredTags = [],
   limit = 3,
 }) {
+  // Auto peakLoad din suprafață (orientativ ~70 W/m² locuință medie zonă III)
+  let effectiveLoad = peakLoad_kW;
+  if (!effectiveLoad && buildingArea > 0) {
+    effectiveLoad = buildingArea * 0.07;
+  }
+
+  // Prag SCOP dinamic per zonă climatică Mc 001-2022:
+  //   Zona I (Tg-Mureș/Suceava, design −21 °C): 3.8 (HP sol-apă preferred)
+  //   Zona II-III (Cluj/București): 3.6
+  //   Zona IV-V (litoral/Dobrogea-sud): 3.5
+  let scopThreshold = 3.5;
+  if (climateZone === "I") scopThreshold = 3.8;
+  else if (climateZone === "II" || climateZone === "III") scopThreshold = 3.6;
+
+  // Clădire publică (cf. P118/2013): EPS-baseline interzis pe pereți H>28m,
+  // soluțiile fără tag "fire-safe" pierd meetsTarget chiar dacă SCOP e suficient.
+  const isPublic = ["BCC", "BCA", "BC", "BI"].includes(buildingCategory || "");
+
   const pools = [];
   if (functionType === "heating" || functionType === "both") pools.push(...HEATING_SUGGESTIONS);
   if (functionType === "cooling" || functionType === "both") pools.push(...COOLING_SUGGESTIONS);
@@ -705,23 +807,27 @@ export function suggestHVAC({
   const scored = pools
     .map(s => {
       const cap = s.tech.capacity_kW || 0;
-      const matchLoad = peakLoad_kW ? Math.abs(cap - peakLoad_kW) / peakLoad_kW : 0;
+      const matchLoad = effectiveLoad ? Math.abs(cap - effectiveLoad) / effectiveLoad : 0;
       const tagMatch = preferredTags.length
         ? s.tags.filter(t => preferredTags.includes(t)).length
         : 0;
       const avgPrice = (s.priceRange.min + s.priceRange.max) / 2;
 
-      // meetsTarget: prag nZEB Mc 001-2022 / EPBD 2024
+      // meetsTarget: prag nZEB Mc 001-2022 / EPBD 2024 cu ajustare zonă
       let meetsTarget = true;
       if (functionType === "heating" || functionType === "both") {
         const scop = s.tech?.SCOP ?? s.tech?.COP;
-        if (scop != null) meetsTarget = scop >= 3.5;
-        else if (s.tech?.efficiency != null) meetsTarget = false; // cazane gaz — nu pot atinge nZEB singure
+        if (scop != null) meetsTarget = scop >= scopThreshold;
+        else if (s.tech?.efficiency != null) meetsTarget = false;
         if (s.tech?.fuelType === "gaz-natural") meetsTarget = false;
       }
       if (functionType === "cooling") {
         const seer = s.tech?.SEER ?? s.tech?.EER;
         if (seer != null) meetsTarget = seer >= 5.0;
+      }
+      // Constrângere foc clădire publică (P118/2013)
+      if (isPublic && meetsTarget && !s.tags.includes("fire-safe")) {
+        meetsTarget = false;
       }
 
       return { ...s, meetsTarget, _matchLoad: matchLoad, tagMatch, _avgPrice: avgPrice };
@@ -741,13 +847,20 @@ export function suggestHVAC({
  * suggestPV — Sugerează sisteme PV bazate pe consum / suprafață disponibilă.
  *
  * @param {object} params
- * @param {number} params.targetKWp — kWp orientativ
+ * @param {number} params.targetKWp — kWp orientativ (opțional, auto din area)
+ * @param {number} params.buildingArea — Au m² pentru estimare ~50 Wp/m²
  * @param {string[]} params.preferredTags
  * @param {number} params.limit
  */
-export function suggestPV({ targetKWp, preferredTags = [], limit = 3 }) {
+export function suggestPV({ targetKWp, buildingArea, preferredTags = [], limit = 3 }) {
+  // Auto targetKWp din suprafață utilă (~50 Wp/m² regulă orientativă RO 2026)
+  let effectiveTarget = targetKWp;
+  if (!effectiveTarget && buildingArea > 0) {
+    effectiveTarget = buildingArea * 0.05;
+  }
+
   const scored = PV_SUGGESTIONS.map(s => {
-    const match = targetKWp ? Math.abs(s.tech.kWp - targetKWp) / targetKWp : 0;
+    const match = effectiveTarget ? Math.abs(s.tech.kWp - effectiveTarget) / effectiveTarget : 0;
     const tagMatch = preferredTags.length
       ? s.tags.filter(t => preferredTags.includes(t)).length
       : 0;
@@ -761,6 +874,50 @@ export function suggestPV({ targetKWp, preferredTags = [], limit = 3 }) {
     })
     .slice(0, limit);
   return scored;
+}
+
+/**
+ * suggestACM — Sugerează soluții preparare apă caldă consum.
+ *
+ * @param {object} params
+ * @param {number} params.residents — număr locatari (filtrare capacity_L ≥ 50L × residents)
+ * @param {string[]} params.preferredTags
+ * @param {number} params.limit
+ */
+export function suggestACM({ residents, preferredTags = [], limit = 3 }) {
+  const minCapacity = residents > 0 ? residents * 50 : 0;
+
+  const scored = ACM_SUGGESTIONS.map(s => {
+    const cap = s.tech.capacity_L || 0;
+    const matchSize = minCapacity > 0
+      ? Math.abs(cap - minCapacity) / Math.max(minCapacity, 1)
+      : 0;
+    const tagMatch = preferredTags.length
+      ? s.tags.filter(t => preferredTags.includes(t)).length
+      : 0;
+    const avgPrice = (s.priceRange.min + s.priceRange.max) / 2;
+    // meetsTarget pentru nZEB: COP ≥ 2.5 (HPWH/solar) și fără tag legacy
+    const cop = s.tech?.COP ?? 1.0;
+    const meetsTarget = cop >= 2.5 && !s.tags.includes("legacy");
+    return { ...s, meetsTarget, _matchSize: matchSize, tagMatch, _avgPrice: avgPrice };
+  });
+
+  // Filtrare soft: dacă residents furnizat și există entries cu capacitate suficientă,
+  // ascundem entries sub-dimensionate; altfel păstrăm tot pool-ul
+  let pool = scored;
+  if (minCapacity > 0) {
+    const sized = scored.filter(s => (s.tech.capacity_L || 0) >= minCapacity);
+    if (sized.length > 0) pool = sized;
+  }
+
+  return pool
+    .sort((a, b) => {
+      if (a.meetsTarget !== b.meetsTarget) return a.meetsTarget ? -1 : 1;
+      if (a.tagMatch !== b.tagMatch) return b.tagMatch - a.tagMatch;
+      if (Math.abs(a._matchSize - b._matchSize) > 0.05) return a._matchSize - b._matchSize;
+      return a._avgPrice - b._avgPrice;
+    })
+    .slice(0, limit);
 }
 
 /**
@@ -782,5 +939,6 @@ export default {
   suggestForGlazingElement,
   suggestHVAC,
   suggestPV,
+  suggestACM,
   formatPriceRange,
 };
