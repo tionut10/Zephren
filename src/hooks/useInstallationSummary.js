@@ -502,9 +502,11 @@ export function useInstallationSummary({
       ep_nren_w = qf_w * fP_elec_nren;
       ep_ren_w = qf_w * fP_elec_ren + qAmbient_w * (useNA2023 ? 1.0 : 0);
     } else {
-      ep_w = qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
-      ep_nren_w = qf_w * (acmFuel?.fP_nren ?? fuel?.fP_nren ?? 1.10);
-      ep_ren_w = qf_w * (acmFuel?.fP_ren ?? fuel?.fP_ren ?? 0.07);
+      // ACM electric (boiler electric, instant electric) → factor NA:2023 gated, nu din FUELS legacy
+      const acmFuelIsElec = !isCazanH && (acmSrc?.fuel === "electricitate");
+      ep_w = acmFuelIsElec ? qf_w * fP_elec_tot : qf_w * (acmFuel?.fP_tot || fuel?.fP_tot || 1.17);
+      ep_nren_w = acmFuelIsElec ? qf_w * fP_elec_nren : qf_w * (acmFuel?.fP_nren ?? fuel?.fP_nren ?? 1.10);
+      ep_ren_w = acmFuelIsElec ? qf_w * fP_elec_ren : qf_w * (acmFuel?.fP_ren ?? fuel?.fP_ren ?? 0.07);
     }
     // Răcire — mereu electric (chiller/PC). coolFuel păstrat pentru non-electrice (rarisim).
     const coolIsElec = !coolFuel || coolFuel.id === "electricitate";

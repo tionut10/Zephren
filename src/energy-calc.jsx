@@ -1682,8 +1682,8 @@ export default function EnergyCalcApp({ cloud }) {
       const qf_v = (instSummary.qf_v || 0) * daysInMonth[i] / 365;
       const qf_l = (instSummary.qf_l || 0) * daysInMonth[i] / 365;
       const qf_total = qf_h + qf_w + qf_c + qf_v + qf_l;
-      const acmFuel = acm.source === "CAZAN_H" ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz") : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
-      const fP_acm = (FUELS.find(f => f.id === acmFuel) || FUELS[0]).fP_tot;
+      const acmFuelId = acm.source === "CAZAN_H" ? (HEAT_SOURCES.find(h => h.id === heating.source)?.fuel || "gaz") : (ACM_SOURCES.find(a => a.id === acm.source)?.fuel || "gaz");
+      const fP_acm = acmFuelId === "electricitate" ? fP_elec_m : ((FUELS.find(f => f.id === acmFuelId) || FUELS[0]).fP_tot);
       const ep = qf_h * fP + qf_w * fP_acm + qf_c * fP_elec_m + qf_v * fP_elec_m + qf_l * fP_elec_m;
       return { name, tExt, deltaT, qf_h, qf_w, qf_c, qf_v, qf_l, qf_total, ep, daysInMonth: daysInMonth[i] };
     });
@@ -2103,8 +2103,8 @@ export default function EnergyCalcApp({ cloud }) {
     if (!instSummary) return null;
     const Au = parseFloat(building.areaUseful) || 1;
     const totalLoss = (envelopeSummary?.totalLoss || 0) + (instSummary.qf_v || 0);
-    const solarGain = monthlyISO ? monthlyISO.reduce((s,m) => s + (m?.qSol || 0), 0) / Au : 0;
-    const intGain = monthlyISO ? monthlyISO.reduce((s,m) => s + (m?.qInt || 0), 0) / Au : 0;
+    const solarGain = monthlyISO ? monthlyISO.reduce((s,m) => s + (m?.Q_sol || 0), 0) / Au : 0;
+    const intGain = monthlyISO ? monthlyISO.reduce((s,m) => s + (m?.Q_int || 0), 0) / Au : 0;
     return {
       inputs: [
         { label:"Încălzire", value: instSummary.qf_h / Au, color:"#ef4444" },
@@ -3650,6 +3650,10 @@ export default function EnergyCalcApp({ cloud }) {
             setThermalBridges,
             setBuilding,
             userPlan,            // Sprint Pricing v6.0 — pentru gating Step 7 audit + Pașaport basic
+            // Sprint mutare A.5 (1 mai 2026) — props pentru cele 7 carduri mutate din Pas 5
+            rehabCostEstimate, annualEnergyCost, evChargerCalc, gwpDetailed,
+            energyPrices, setEnergyPrices,
+            showScenarioCompare, setShowScenarioCompare,
           }} /></Suspense>}
 
           {/* ═══ STEP 8: ANALIZĂ AVANSATĂ ═══ */}

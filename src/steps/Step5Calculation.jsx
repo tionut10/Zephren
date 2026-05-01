@@ -72,7 +72,7 @@ export default function Step5Calculation(props) {
               const tExt = selectedClimate?.temp_month?.[i] ?? 5;
               const deltaT = Math.max(0, tInt - tExt);
               if (monthlyISO && monthlyISO[i]) {
-                return { month:m, tExt, deltaT, qLoss: monthlyISO[i].qLoss || 0, solarGain: monthlyISO[i].solarGain || 0, intGain: monthlyISO[i].intGain || 0, qHeat: monthlyISO[i].qH_nd, qCool: monthlyISO[i].qC_nd };
+                return { month:m, tExt, deltaT, qLoss: monthlyISO[i].Q_loss || 0, solarGain: monthlyISO[i].Q_sol || 0, intGain: monthlyISO[i].Q_int || 0, qHeat: monthlyISO[i].qH_nd, qCool: monthlyISO[i].qC_nd };
               }
               const G = envelopeSummary?.G || 0.5;
               const V = parseFloat(building.volume) || 100;
