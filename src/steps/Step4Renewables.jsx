@@ -11,6 +11,61 @@ import {
   TILT_FACTORS, BIOMASS_TYPES, BATTERY_STORAGE_TYPES,
 } from "../data/constants.js";
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
+// ── Catalog extins 2026 — surse regenerabile NEUTRE bilingv (~210 entries) ──
+import {
+  SOLAR_THERMAL_EXT, PV_CELLS_EXT, PV_INVERTERS_EXT, PV_SYSTEMS_EXT,
+  HEAT_PUMPS_EXT, BIOMASS_FUELS_EXT, BIOMASS_BOILERS_EXT,
+  WIND_TURBINES_EXT, CHP_TYPES_EXT, ENERGY_STORAGE_EXT,
+  DISTRICT_HEATING_EXT,
+  getLabel, RENEWABLE_META,
+} from "../data/catalogs/renewable-catalog.js";
+
+// Helper local: construiește opțiuni grupate pentru dropdown bilingv
+// Fuzionează entries existente (constants.js) + entries EXT (catalog 2026)
+function buildMergedOptions(legacyArr, extArr, lang = "RO", legacyLabelKey = "label") {
+  const opts = [];
+  // Grupa 1: catalog standard (existing)
+  if (legacyArr && legacyArr.length > 0) {
+    opts.push({ value: "__group_standard", label: lang === "EN" ? "Standard catalog" : "Catalog standard", isGroupHeader: true });
+    legacyArr.forEach(e => {
+      opts.push({ value: e.id, label: e[legacyLabelKey] || e.label || e.nameRo || e.id });
+    });
+  }
+  // Grupa 2: catalog extins 2026 — grupate per sub-categorie
+  if (extArr && extArr.length > 0) {
+    const grouped = {};
+    extArr.forEach(e => {
+      const cat = lang === "EN" ? (e.categoryEn || e.category) : (e.category || "Altele");
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(e);
+    });
+    Object.entries(grouped).forEach(([cat, items]) => {
+      opts.push({ value: `__group_ext_${cat}`, label: `🆕 ${cat}`, isGroupHeader: true });
+      items.forEach(e => {
+        opts.push({ value: e.id, label: getLabel(e, lang), tooltip: e.standard });
+      });
+    });
+  }
+  return opts;
+}
+
+// Helper: construiește opțiuni pentru un singur catalog EXT (grupat per categorie)
+function buildExtOptions(extArr, lang = "RO") {
+  const grouped = {};
+  extArr.forEach(e => {
+    const cat = lang === "EN" ? (e.categoryEn || e.category) : (e.category || "Altele");
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(e);
+  });
+  const opts = [];
+  Object.entries(grouped).forEach(([cat, items]) => {
+    opts.push({ value: `__group_${cat}`, label: cat, isGroupHeader: true });
+    items.forEach(e => {
+      opts.push({ value: e.id, label: getLabel(e, lang), tooltip: e.standard });
+    });
+  });
+  return opts;
+}
 
 export default function Step4Renewables({
   building, lang, selectedClimate,
@@ -44,8 +99,11 @@ export default function Step4Renewables({
         <div className="flex items-center gap-3 mb-1">
           <button onClick={() => setStep(3)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 3</button>
           <h2 className="text-xl font-bold">Surse regenerabile de energie</h2>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+            Catalog 2026 · {RENEWABLE_META.totalEntries} entries
+          </span>
         </div>
-        <p className="text-xs opacity-40">Capitolul 4 Mc 001-2022 — Solar termic, Fotovoltaic, Pompe de căldură, Biomasă, Eolian, Cogenerare</p>
+        <p className="text-xs opacity-40">Capitolul 4 Mc 001-2022 — Solar termic, Fotovoltaic, Pompe de căldură, Biomasă, Eolian, Cogenerare. Catalog NEUTRU bilingv RO+EN ({RENEWABLE_META.totalEntries} entries în 11 categorii) — afișare fără brand, parteneriate viitoare în brands-registry.json.</p>
       </div>
 
       {/* Sub-tabs */}
@@ -81,7 +139,7 @@ export default function Step4Renewables({
                   {solarThermal.enabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <Select label={t("Tip colector",lang)} value={solarThermal.type} onChange={v => setSolarThermal(p=>({...p,type:v}))}
-                        options={SOLAR_THERMAL_TYPES.map(s=>({value:s.id,label:s.label}))} />
+                        options={buildMergedOptions(SOLAR_THERMAL_TYPES, SOLAR_THERMAL_EXT, lang)} />
                       <Input label={t("Suprafață colectoare",lang)} value={solarThermal.area} onChange={v => setSolarThermal(p=>({...p,area:v}))} type="number" unit="m2" min="0" step="0.1" />
                       <Select label={t("Orientare",lang)} value={solarThermal.orientation} onChange={v => setSolarThermal(p=>({...p,orientation:v}))}
                         options={ORIENTATIONS.filter(o=>o!=="Orizontal")} />
@@ -164,7 +222,11 @@ export default function Step4Renewables({
                   {photovoltaic.enabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <Select label={t("Tip celule PV",lang)} value={photovoltaic.type} onChange={v => setPhotovoltaic(p=>({...p,type:v}))}
-                        options={PV_TYPES.map(s=>({value:s.id,label:`${s.label} (eta=${(s.eta*100).toFixed(0)}%)`}))} />
+                        options={buildMergedOptions(
+                          PV_TYPES.map(s => ({...s, label: `${s.label} (eta=${(s.eta*100).toFixed(0)}%)`})),
+                          PV_CELLS_EXT,
+                          lang
+                        )} />
                       <Input label={t("Suprafață panouri",lang)} value={photovoltaic.area} onChange={v => setPhotovoltaic(p=>({...p,area:v}))} type="number" unit="m2" min="0" step="0.1" />
                       <Input label={t("Putere de varf instalată",lang)} value={photovoltaic.peakPower} onChange={v => setPhotovoltaic(p=>({...p,peakPower:v}))} type="number" unit="kWp" step="0.01" />
                       <Select label={t("Orientare",lang)} value={photovoltaic.orientation} onChange={v => setPhotovoltaic(p=>({...p,orientation:v}))}
@@ -172,7 +234,11 @@ export default function Step4Renewables({
                       <Select label={t("Inclinare",lang)} value={photovoltaic.tilt} onChange={v => setPhotovoltaic(p=>({...p,tilt:v}))}
                         options={Object.keys(TILT_FACTORS).map(k=>({value:k,label:`${k}° (factor ${TILT_FACTORS[k]})`}))} />
                       <Select label={t("Tip invertor",lang)} value={photovoltaic.inverterType} onChange={v => setPhotovoltaic(p=>({...p,inverterType:v}))}
-                        options={PV_INVERTER_ETA.map(s=>({value:s.id,label:`${s.label} (${(s.eta*100).toFixed(0)}%)`}))} />
+                        options={buildMergedOptions(
+                          PV_INVERTER_ETA.map(s => ({...s, label: `${s.label} (${(s.eta*100).toFixed(0)}%)`})),
+                          PV_INVERTERS_EXT,
+                          lang
+                        )} />
                       <Select label={t("Utilizare energie",lang)} value={photovoltaic.usage} onChange={v => setPhotovoltaic(p=>({...p,usage:v}))}
                         options={[{value:"all",label:t("Toate utilitățile",lang)},{value:"lighting",label:t("Doar iluminat",lang)},{value:"hvac",label:t("HVAC + ventilare",lang)},{value:"export",label:t("Export în rețea",lang)}]} />
                     </div>
@@ -205,6 +271,32 @@ export default function Step4Renewables({
                 mode="card"
                 lang={lang}
               />
+
+              {/* ── Configurare avansată: tracker / carport / pergolă / balcon ── */}
+              {photovoltaic.enabled && (
+                <Card title={t("Configurare avansată instalație PV",lang)}>
+                  <div className="space-y-3">
+                    <div className="text-[11px] opacity-50">
+                      {t("Selectează tipul de structură montaj pentru estimare gain de producție vs. fix-tilt standard.",lang)}
+                    </div>
+                    <Select label={t("Tip structură / configurare",lang)} value={photovoltaic.systemType || ""} onChange={v => setPhotovoltaic(p=>({...p,systemType:v}))}
+                      options={[{value:"",label:t("— Standard fix-tilt (factor 1.0) —",lang)}, ...buildExtOptions(PV_SYSTEMS_EXT, lang)]} />
+
+                    {photovoltaic.systemType && (() => {
+                      const ext = PV_SYSTEMS_EXT.find(e => e.id === photovoltaic.systemType);
+                      if (!ext) return null;
+                      return (
+                        <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                          <div><div className="opacity-40">{t("Gain producție",lang)}</div><div className="font-mono font-bold text-blue-400">×{ext.yieldGain}</div></div>
+                          <div><div className="opacity-40">{t("Putere",lang)}</div><div className="font-mono">{ext.powerKwMin}-{ext.powerKwMax} kW</div></div>
+                          <div><div className="opacity-40">{t("Standard",lang)}</div><div className="text-[10px] opacity-70">{ext.standard}</div></div>
+                          <div><div className="opacity-40">{t("Aplicabilitate",lang)}</div><div className="text-[10px] opacity-70">{ext.applicableCategories.join(", ")}</div></div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </Card>
+              )}
             </>
           )}
 
@@ -219,7 +311,11 @@ export default function Step4Renewables({
                 {battery.enabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                     <Select label={t("Tip baterie",lang)} value={battery.type} onChange={v => setBattery(p=>({...p,type:v}))}
-                      options={BATTERY_STORAGE_TYPES.map(b=>({value:b.id,label:`${b.label} (η=${(b.efficiency*100).toFixed(0)}%)`}))} />
+                      options={buildMergedOptions(
+                        BATTERY_STORAGE_TYPES.map(b => ({...b, label: `${b.label} (η=${(b.efficiency*100).toFixed(0)}%)`})),
+                        ENERGY_STORAGE_EXT,
+                        lang
+                      )} />
                     <Input label={t("Capacitate nominală",lang)} value={battery.capacity} onChange={v => setBattery(p=>({...p,capacity:v}))} type="number" unit="kWh" min="0" step="0.5" />
                     <Input label={t("Putere maximă",lang)} value={battery.power} onChange={v => setBattery(p=>({...p,power:v}))} type="number" unit="kW" step="0.5" />
                     <Input label={t("Adâncime descărcare (DoD)",lang)} value={battery.dod} onChange={v => setBattery(p=>({...p,dod:v}))} type="number" step="0.01" placeholder="0.80–0.95" />
@@ -260,8 +356,14 @@ export default function Step4Renewables({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <Select label={t("Tip pompă de căldură",lang)} value={heatPump.type} onChange={v => {
                         const pc = HEAT_SOURCES.find(s=>s.id===v);
-                        setHeatPump(p=>({...p,type:v,cop:pc?.eta_gen.toString()||"3.50"}));
-                      }} options={HEAT_SOURCES.filter(s=>s.isCOP).map(s=>({value:s.id,label:s.label}))} />
+                        const ext = HEAT_PUMPS_EXT.find(e => e.id === v);
+                        const defaultCop = ext?.copNominal || pc?.eta_gen || 3.50;
+                        setHeatPump(p=>({...p,type:v,cop:defaultCop.toString()}));
+                      }} options={buildMergedOptions(
+                        HEAT_SOURCES.filter(s=>s.isCOP),
+                        HEAT_PUMPS_EXT,
+                        lang
+                      )} />
                       <Input label={t("COP nominal",lang)} value={heatPump.cop} onChange={v => setHeatPump(p=>({...p,cop:v}))} type="number" step="0.1" />
                       <Input label={t("SCOP sezonier incalzire",lang)} value={heatPump.scopHeating} onChange={v => setHeatPump(p=>({...p,scopHeating:v}))} type="number" step="0.1"
                         placeholder={`~${(parseFloat(heatPump.cop)*0.85).toFixed(1)}`} />
@@ -309,7 +411,11 @@ export default function Step4Renewables({
                   {biomass.enabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <Select label={t("Tip combustibil biomasă",lang)} value={biomass.type} onChange={v => setBiomass(p=>({...p,type:v}))}
-                        options={BIOMASS_TYPES.map(s=>({value:s.id,label:`${s.label} (PCI=${s.pci} MJ/kg)`}))} />
+                        options={buildMergedOptions(
+                          BIOMASS_TYPES.map(s => ({...s, label: `${s.label} (PCI=${s.pci} MJ/kg)`})),
+                          BIOMASS_FUELS_EXT,
+                          lang
+                        )} />
                       <Input label={t("Randament cazan",lang)} value={biomass.boilerEta} onChange={v => setBiomass(p=>({...p,boilerEta:v}))} type="number" step="0.01" />
                       <Input label={t("Putere nominală",lang)} value={biomass.power} onChange={v => setBiomass(p=>({...p,power:v}))} type="number" unit="kW" />
                       <Select label={t("Acoperire",lang)} value={biomass.covers} onChange={v => setBiomass(p=>({...p,covers:v}))}
@@ -334,6 +440,39 @@ export default function Step4Renewables({
                   )}
                 </div>
               </Card>
+
+              {/* ── Selector tip cazan / sobă biomasă (informativ) ── */}
+              {biomass.enabled && (
+                <Card title={t("Tip cazan / sobă biomasă",lang)}>
+                  <div className="space-y-3">
+                    <div className="text-[11px] opacity-50">
+                      {t("Selectează tipul de cazan sau sobă pentru a obține parametri tehnici (η, clasa EN 303-5, emisii PM).",lang)}
+                    </div>
+                    <Select label={t("Tip echipament",lang)} value={biomass.boilerType || ""} onChange={v => {
+                      const ext = BIOMASS_BOILERS_EXT.find(e => e.id === v);
+                      setBiomass(p => ({
+                        ...p,
+                        boilerType: v,
+                        ...(ext?.etaNominal && !p.boilerEta ? { boilerEta: ext.etaNominal.toString() } : {}),
+                      }));
+                    }} options={[{value:"",label:t("— Selectează —",lang)}, ...buildExtOptions(BIOMASS_BOILERS_EXT, lang)]} />
+
+                    {biomass.boilerType && (() => {
+                      const ext = BIOMASS_BOILERS_EXT.find(e => e.id === biomass.boilerType);
+                      if (!ext) return null;
+                      return (
+                        <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                          <div><div className="opacity-40">η nominal</div><div className="font-mono font-bold text-emerald-400">{(ext.etaNominal*100).toFixed(0)}%</div></div>
+                          <div><div className="opacity-40">EN 303-5 cls.</div><div className="font-mono font-bold">{ext.en303_5_class || "—"}</div></div>
+                          <div><div className="opacity-40">PM emisii</div><div className="font-mono">{ext.pmEmission} mg/Nm³</div></div>
+                          <div><div className="opacity-40">Putere</div><div className="font-mono">{ext.powerKwMin}-{ext.powerKwMax} kW</div></div>
+                          <div className="col-span-2 sm:col-span-4 text-[10px] opacity-60">{ext.standard}</div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </Card>
+              )}
             </>
           )}
 
@@ -347,10 +486,61 @@ export default function Step4Renewables({
                     <span className="font-medium">{t("Turbină eoliană",lang)}</span>
                   </label>
                   {otherRenew.windEnabled && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                      <Input label={t("Capacitate instalată",lang)} value={otherRenew.windCapacity} onChange={v => setOtherRenew(p=>({...p,windCapacity:v}))} type="number" unit="kW" />
-                      <Input label={t("Producție anuală estimată",lang)} value={otherRenew.windProduction} onChange={v => setOtherRenew(p=>({...p,windProduction:v}))} type="number" unit="kWh/an" />
-                    </div>
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Select label={t("Tip turbină",lang)} value={otherRenew.windType || ""} onChange={v => {
+                          const ext = WIND_TURBINES_EXT.find(e => e.id === v);
+                          const avgKwh = ext ? Math.round((ext.aey5MinKWh + ext.aey5MaxKWh) / 2) : null;
+                          const avgPowerKw = ext ? ((ext.powerKwMin + ext.powerKwMax) / 2).toFixed(1) : null;
+                          setOtherRenew(p => ({
+                            ...p,
+                            windType: v,
+                            ...(avgPowerKw && !p.windCapacity ? { windCapacity: avgPowerKw } : {}),
+                            ...(avgKwh && !p.windProduction ? { windProduction: avgKwh.toString() } : {}),
+                          }));
+                        }} options={buildExtOptions(WIND_TURBINES_EXT, lang)} />
+                        <div /> {/* spacer */}
+                        <Input label={t("Capacitate instalată",lang)} value={otherRenew.windCapacity} onChange={v => setOtherRenew(p=>({...p,windCapacity:v}))} type="number" unit="kW" />
+                        <Input label={t("Producție anuală estimată",lang)} value={otherRenew.windProduction} onChange={v => setOtherRenew(p=>({...p,windProduction:v}))} type="number" unit="kWh/an" />
+                      </div>
+
+                      {/* Detalii turbină selectată */}
+                      {otherRenew.windType && (() => {
+                        const ext = WIND_TURBINES_EXT.find(e => e.id === otherRenew.windType);
+                        if (!ext) return null;
+                        return (
+                          <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-lg p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">{t("Specificații tehnice",lang)} — IEC 61400-2 cls. {ext.iecClass || "—"}</div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Putere",lang)}</div>
+                                <div className="font-mono">{ext.powerKwMin}-{ext.powerKwMax} kW</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Cut-in / nominal",lang)}</div>
+                                <div className="font-mono">{ext.cutIn} / {ext.rated} m/s</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Diametru rotor",lang)}</div>
+                                <div className="font-mono">{ext.rotorMin}-{ext.rotorMax} m</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Înălțime hub",lang)}</div>
+                                <div className="font-mono">{ext.hubMin}-{ext.hubMax} m</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Producție @ 5 m/s",lang)}</div>
+                                <div className="font-mono">{ext.aey5MinKWh.toLocaleString("ro-RO")}-{ext.aey5MaxKWh.toLocaleString("ro-RO")} kWh/an</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Zgomot la 25 m",lang)}</div>
+                                <div className="font-mono">{ext.noiseDb} dB(A)</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </>
                   )}
                 </div>
               </Card>
@@ -365,7 +555,11 @@ export default function Step4Renewables({
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                         <Select label={t("Tip CHP",lang)} value={otherRenew.cogenType || "mini_ice"} onChange={v => setOtherRenew(p=>({...p,cogenType:v}))}
-                          options={Object.entries(CHP_TYPES_CATALOG).map(([id,c])=>({value:id,label:c.label}))} />
+                          options={buildMergedOptions(
+                            Object.entries(CHP_TYPES_CATALOG).map(([id,c]) => ({id, label: c.label})),
+                            CHP_TYPES_EXT,
+                            lang
+                          )} />
                         <Select label={t("Combustibil CHP",lang)} value={otherRenew.cogenFuel} onChange={v => setOtherRenew(p=>({...p,cogenFuel:v}))}
                           options={FUELS.filter(f=>["gaz","biogas","hidrogen","gpl","motorina"].includes(f.id)).map(f=>({value:f.id,label:f.label}))} />
                         <Input label={t("Putere electrică",lang)} value={otherRenew.cogenPowerEl} onChange={v => setOtherRenew(p=>({...p,cogenPowerEl:v}))} type="number" unit="kW" step="0.5" />
@@ -438,13 +632,17 @@ export default function Step4Renewables({
                   {otherRenew.proximityEnabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
                       <Select label={t("Tip sursă",lang)} value={otherRenew.proximitySource || "solar"} onChange={v => setOtherRenew(p=>({...p,proximitySource:v}))}
-                        options={[
-                          {value:"solar",label:"Parc fotovoltaic"},
-                          {value:"wind",label:"Parc eolian"},
-                          {value:"biomass",label:"Centrală biomasă"},
-                          {value:"chp_bio",label:"CHP biogaz"},
-                          {value:"dh_renewable",label:"Termoficare regenerabilă"},
-                        ]} />
+                        options={buildMergedOptions(
+                          [
+                            {id:"solar",label:"Parc fotovoltaic"},
+                            {id:"wind",label:"Parc eolian"},
+                            {id:"biomass",label:"Centrală biomasă"},
+                            {id:"chp_bio",label:"CHP biogaz"},
+                            {id:"dh_renewable",label:"Termoficare regenerabilă"},
+                          ],
+                          DISTRICT_HEATING_EXT,
+                          lang
+                        )} />
                       <Input label={t("Distanță GPS",lang)} value={otherRenew.proximityDistanceKm} onChange={v => setOtherRenew(p=>({...p,proximityDistanceKm:v}))} type="number" unit="km" step="0.5" min="0" max="30"
                         placeholder="≤30 km obligatoriu" />
                       <Input label={t("Producție atribuită",lang)} value={otherRenew.proximityProduction} onChange={v => setOtherRenew(p=>({...p,proximityProduction:v}))} type="number" unit="kWh/an"
