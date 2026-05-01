@@ -231,7 +231,7 @@ export default function RaportConformareNZEB({
   return (
     <Card
       title={lang === "EN" ? "nZEB Conformance Report (design phase)" : "Raport conformare nZEB (fază de proiectare)"}
-      badge={<Badge color="emerald">Art. 6 alin. (1) lit. c</Badge>}
+      subtitle={<Badge color="emerald">Art. 6 alin. (1) lit. c</Badge>}
       className="mb-4"
     >
       <div className="space-y-4">
