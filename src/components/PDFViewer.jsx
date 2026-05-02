@@ -4,7 +4,21 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-export default function PDFViewer({ url, height = "85vh", title = "PDF" }) {
+/**
+ * PDFViewer — randare PDF cu PDF.js + canvas inline.
+ *
+ * Audit 2 mai 2026 — P0.5: pe Vercel HTTPS cu CSP strict, range requests pe
+ * blob:// eșuează cu "Unexpected server response (0)". Soluția:
+ *   1. Acceptă alternativ `data` (ArrayBuffer) pe lângă `url`. Pentru blob-uri
+ *      generate local (preview CPE), apelantul transferă buffer-ul direct,
+ *      evitând round-trip-ul HTTP cu range/stream.
+ *   2. Setează `disableRange: true, disableStream: true` pentru ambele forme,
+ *      ca PDF.js să facă o singură citire integrală în loc de range partials.
+ *
+ * Backward compat: prop-ul `url` rămâne suportat (când disponibil URL stabil
+ * non-blob, ex. un PDF servit dintr-un endpoint regulat).
+ */
+export default function PDFViewer({ data, url, height = "85vh", title = "PDF" }) {
   const containerRef = useRef(null);
   const [pdf, setPdf] = useState(null);
   const [numPages, setNumPages] = useState(0);
@@ -12,13 +26,18 @@ export default function PDFViewer({ url, height = "85vh", title = "PDF" }) {
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    if (!url) return;
+    if (!data && !url) return;
     let cancelled = false;
     setLoadError(null);
     setPdf(null);
     setNumPages(0);
 
-    const task = pdfjsLib.getDocument({ url, isEvalSupported: false });
+    const task = pdfjsLib.getDocument({
+      ...(data ? { data } : { url }),
+      isEvalSupported: false,
+      disableRange: true,
+      disableStream: true,
+    });
     task.promise.then(
       (loadedPdf) => {
         if (cancelled) return;
@@ -35,7 +54,7 @@ export default function PDFViewer({ url, height = "85vh", title = "PDF" }) {
       cancelled = true;
       try { task.destroy(); } catch { /* ignore */ }
     };
-  }, [url]);
+  }, [data, url]);
 
   useEffect(() => {
     if (!pdf || !containerRef.current) return;

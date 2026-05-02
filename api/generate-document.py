@@ -3661,6 +3661,10 @@ class handler(BaseHTTPRequestHandler):
                 ("{{VALIDITY_LABEL}}", data.get("validity_label", "")),
                 ("{{PASSPORT_UUID}}", data.get("passport_uuid", "")),
                 ("{{PASSPORT_URL}}", data.get("passport_url", "")),
+                # Audit 2 mai 2026 — P0.4: placeholder observații auditor.
+                # Daca template-ul nu contine {{AUDITOR_OBSERVATIONS}}, replace_in_doc
+                # face no-op (val gol oricum sare cu `if val` de mai jos).
+                ("{{AUDITOR_OBSERVATIONS}}", data.get("auditor_observations", "")),
             ]:
                 if val:
                     replace_in_doc(doc, ph_key, val)

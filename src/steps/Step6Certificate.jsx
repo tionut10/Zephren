@@ -80,6 +80,11 @@ export default function Step6Certificate(props) {
             // Previne payload-uri concurente identice → reduce risc de System Rule
             // challenge la Vercel edge când user-ul dă click rapid pe buton.
             const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+            // Audit 2 mai 2026 — P0.5: pe Vercel HTTPS cu CSP strict, range requests pe
+            // blob:// eșuează cu „Unexpected server response (0)". Pasăm ArrayBuffer-ul
+            // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
+            // Păstrăm și pdfPreviewUrl ca prop legacy pentru fallback Office Online iframe.
+            const [pdfPreviewBuffer, setPdfPreviewBuffer] = useState(null);
 
             // Auto-generare preview la prima deschidere a Pasului 6
             useEffect(() => {
@@ -282,6 +287,10 @@ export default function Step6Certificate(props) {
                     auditor_email: auditor.email || "",
                     auditor_date: auditor.date ? auditor.date.split("-").reverse().join(".") : "",
                     auditor_mdlpa: auditor.mdlpaCode || "",
+                    // Audit 2 mai 2026 — P0.4: observațiile auditorului trimise în payload
+                    // pentru export DOCX. Fallback identic cu cel din preview HTML pag. 3
+                    // (linia ~2024) ca să avem aceleași defaults în UI și document.
+                    auditor_observations: auditor.observations || "Clădirea a fost evaluată conform Mc 001-2022 (Ord. MDLPA 16/2023). Valorile sunt calculate pe baza datelor furnizate și a inspecției vizuale.",
                     // Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
                     cpe_code: auditor.cpeCode || "",
                     registry_index: auditor.registryIndex || "1",
@@ -2873,6 +2882,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     try {
                       setDocxRendering(true);
                       setDocxRendered(false);
+                      // Audit 2 mai 2026 — P0.5: reset buffer la fiecare regenerare,
+                      // ca să nu păstrăm stale data dintr-un preview anterior.
+                      setPdfPreviewBuffer(null);
                       showToast("Se generează preview CPE...", "info", 4000);
                       const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                       const buf = await fetchTemplate(tpl.cpe);
@@ -2905,7 +2917,12 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             const ct = previewResp.headers.get("content-type") || "";
                             if (ct.includes("application/pdf")) {
                               // Gotenberg → PDF direct
+                              // Audit 2 mai 2026 — P0.5: pasăm ArrayBuffer la PDFViewer
+                              // (evită range requests pe blob URL care eșuează pe Vercel HTTPS).
+                              // Păstrăm și blob URL pentru orice path de download legacy.
                               const pdfBlob = await previewResp.blob();
+                              const pdfBuf = await pdfBlob.arrayBuffer();
+                              setPdfPreviewBuffer(pdfBuf);
                               if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
                               const url = URL.createObjectURL(pdfBlob);
                               setPdfPreviewUrl(url);
@@ -2918,6 +2935,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                               const json = await previewResp.json();
                               if (json.viewerUrl) {
                                 if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                                setPdfPreviewBuffer(null); // viewer URL → nu folosim PDFViewer cu data
                                 setPdfPreviewUrl(json.viewerUrl);
                                 setDocxRendered(true);
                                 setDocxRendering(false);
@@ -3048,8 +3066,19 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                               rămâne pe butoanele "Generează CPE DOCX" / "Export PDF cu
                               QR" care includ codul unic CPE și restul aparatului).
                          */}
-                        {docxRendered && pdfPreviewUrl && (
-                          pdfPreviewUrl.startsWith("blob:") ? (
+                        {docxRendered && (pdfPreviewBuffer || pdfPreviewUrl) && (
+                          // Audit 2 mai 2026 — P0.5: prioritizăm ArrayBuffer (data) peste blob URL.
+                          // PDF.js cu data + disableRange/disableStream evită eroarea
+                          // „Unexpected server response (0)" pe Vercel HTTPS cu CSP strict.
+                          pdfPreviewBuffer ? (
+                            <Suspense fallback={
+                              <div className="w-full flex items-center justify-center text-xs opacity-60" style={{height: "85vh"}}>
+                                Se încarcă preview-ul…
+                              </div>
+                            }>
+                              <PDFViewer data={pdfPreviewBuffer} height="85vh" title="Preview CPE" />
+                            </Suspense>
+                          ) : pdfPreviewUrl && pdfPreviewUrl.startsWith("blob:") ? (
                             <Suspense fallback={
                               <div className="w-full flex items-center justify-center text-xs opacity-60" style={{height: "85vh"}}>
                                 Se încarcă preview-ul…

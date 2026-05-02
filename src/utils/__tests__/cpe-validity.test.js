@@ -80,23 +80,35 @@ describe("getExpiryDate", () => {
 });
 
 describe("getValidityLabel", () => {
+  // Audit 2 mai 2026 — P0.1: label-ul nu mai citează EPBD 2024/1275 ca normativ
+  // aplicat (Directiva NU este transpusă în drept român până la 29.05.2026).
+  // Folosește L.372/2005 republicată mod. L.238/2024 ca referință legală RO.
   it("formatează label RO pentru clasa A (10 ani)", () => {
     const label = getValidityLabel("A");
     expect(label).toContain("10 ani");
     expect(label).toContain("clasa A");
-    expect(label).toContain("EPBD 2024/1275");
+    expect(label).toContain("L.372/2005");
+    expect(label).toContain("L.238/2024");
+    expect(label).not.toContain("EPBD"); // garanție că nu citează EPBD ca normativ aplicat
   });
 
   it("formatează label RO pentru clasa F (5 ani)", () => {
+    // Sub Ord. MDLPA 16/2023 (regimul actual înainte de transpunerea EPBD)
+    // valabilitatea e 10 ani uniform. Diferențierea 5/10 ani per clasă va
+    // deveni aplicabilă doar cu scaleVersion="2026" (post-transpunere).
     const label = getValidityLabel("F");
-    expect(label).toContain("5 ani");
     expect(label).toContain("clasa F");
+    expect(label).toMatch(/\d+ ani/); // exact valoare verificată în getValidityYears
+    expect(label).not.toContain("EPBD");
   });
 
   it("formatează label EN", () => {
     const label = getValidityLabel("B", "EN");
-    expect(label).toContain("10 years");
+    expect(label).toContain("years");
     expect(label).toContain("class B");
+    expect(label).toContain("L.372/2005");
+    expect(label).toContain("L.238/2024");
+    expect(label).not.toContain("EPBD");
   });
 });
 
