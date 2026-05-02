@@ -4865,7 +4865,12 @@ class handler(BaseHTTPRequestHandler):
                                         format_ro(area, 1),
                                     ))
                                 else:
-                                    entries.append(("", "", ""))
+                                    # Audit 2 mai 2026 — element cu label în template dar
+                                    # NEEXISTENT în clădirea reală (ex. UE/TE/CS pentru
+                                    # apartament fără ușă exterioară directă, fără terasă,
+                                    # fără casa scării). Afișez „—" pentru claritate vizuală
+                                    # în loc să las celulele goale.
+                                    entries.append(("—", "—", "—"))
 
                             # Umple c1/c2/c3: primul paragraf existent + adaug restul
                             for col_offset, val_idx in enumerate([0, 1, 2]):
@@ -6009,14 +6014,13 @@ class handler(BaseHTTPRequestHandler):
                                 break
 
             # ═══════════════════════════════════════
-            # 6. ANEXĂ FOTOGRAFII CLĂDIRE (doar în modul "anexa")
+            # 6. ANEXĂ FOTOGRAFII CLĂDIRE — Secțiunea H (doar în modul "anexa")
             # ═══════════════════════════════════════
+            # Audit 2 mai 2026 — Secțiunea H se generează ÎNTOTDEAUNA pentru Anexa
+            # 1+2, indiferent dacă auditorul a încărcat poze sau nu. Dacă nu sunt
+            # poze, afișăm un placeholder cu instrucțiuni pentru auditor.
             building_photos = body.get("buildingPhotos", [])
-            if mode in ("anexa", "anexa_bloc") and building_photos:
-                # Pt, Inches deja imported global la linia 20.
-                # Re-importul aici cauza Python să trateze Pt/Inches ca LOCAL VARIABLES
-                # în întregul scope al do_POST → "cannot access local variable 'Pt'"
-                # error la utilizare în Etapa 7c+7d înainte de această ramură.
+            if mode in ("anexa", "anexa_bloc"):
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
                 from docx.oxml.ns import qn as docx_qn
                 from docx.oxml import OxmlElement
@@ -6030,6 +6034,47 @@ class handler(BaseHTTPRequestHandler):
                 title_run = title_p.add_run("H. DOCUMENTARE FOTOGRAFICĂ A CLĂDIRII")
                 title_run.bold = True
                 title_run.font.size = Pt(11)
+
+                if not building_photos:
+                    # Placeholder când auditorul nu a încărcat poze
+                    sub_p = doc.add_paragraph()
+                    sub_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    sub_run = sub_p.add_run(
+                        "Auditorul energetic va atașa aici fotografii reprezentative ale clădirii\n"
+                        "(exterior, interior, instalații, eventuale defecte/degradări, termoviziune IR)."
+                    )
+                    sub_run.italic = True
+                    sub_run.font.size = Pt(9)
+                    sub_run.font.color.rgb = None  # default
+                    # Adaug 6 spații rezervate (placeholder casete) cu chenar gri
+                    placeholder_p = doc.add_paragraph()
+                    placeholder_p.add_run("\n").font.size = Pt(8)
+                    for _ in range(3):
+                        ph_tbl = doc.add_table(rows=1, cols=2)
+                        # Stilizare chenar punctat
+                        tbl_pr = ph_tbl._tbl.tblPr
+                        if tbl_pr is None:
+                            tbl_pr = OxmlElement("w:tblPr")
+                            ph_tbl._tbl.insert(0, tbl_pr)
+                        tbl_borders = OxmlElement("w:tblBorders")
+                        for bn in ("top", "left", "bottom", "right", "insideH", "insideV"):
+                            be = OxmlElement(f"w:{bn}")
+                            be.set(docx_qn("w:val"), "dotted")
+                            be.set(docx_qn("w:sz"), "8")
+                            be.set(docx_qn("w:color"), "999999")
+                            tbl_borders.append(be)
+                        tbl_pr.append(tbl_borders)
+                        for cell in ph_tbl.rows[0].cells:
+                            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            placeholder_run = cell.paragraphs[0].add_run("[Spațiu rezervat foto]")
+                            placeholder_run.font.size = Pt(8)
+                            placeholder_run.italic = True
+                            # Înălțime fixă rând ~5 cm
+                            tc_pr = cell._tc.get_or_add_tcPr()
+                            for _ in range(7):  # 7 paragrafe goale pentru înălțime
+                                cell.add_paragraph()
+                    # Skip restul logicii foto (gruparea + tabela)
+                    building_photos = []  # asigur skip al loop-ului următor
 
                 cat_labels = {
                     "exterior": "Exterior",

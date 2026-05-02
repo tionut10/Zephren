@@ -41,6 +41,7 @@ import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUplo
 import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { canAccess as canAccessFn, resolvePlan } from "../lib/planGating.js";
+import { detectIncoherences, summarizeIncoherences } from "../utils/incoherence-detector.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validity.js";
 import { mapLegacyGradeToNew } from "../calc/auditor-grad-validation.js";
@@ -98,6 +99,13 @@ export default function Step6Certificate(props) {
             // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
             // Păstrăm și pdfPreviewUrl ca prop legacy pentru fallback Office Online iframe.
             const [pdfPreviewBuffer, setPdfPreviewBuffer] = useState(null);
+            // Audit 2 mai 2026 — preview live pentru Anexa 1+2 (similar cu CPE preview)
+            const [anexaPreviewBuffer, setAnexaPreviewBuffer] = useState(null);
+            const [anexaPreviewUrl, setAnexaPreviewUrl] = useState(null);
+            const [anexaRendered, setAnexaRendered] = useState(false);
+            const [anexaRendering, setAnexaRendering] = useState(false);
+            const anexaPreviewBtnRef = useRef(null);
+            const anexaDocxPreviewRef = useRef(null);
             // Audit 2 mai 2026 — P1.3: QR code real (înlocuiește Code128 vechi din
             // preview HTML). Pre-generat ca dataURL pentru a fi folosit în template
             // literal sync — librăria `qrcode` are doar API async (toDataURL).
@@ -2734,6 +2742,54 @@ ${(() => {
                     );
                   })()}
 
+                  {/* Audit 2 mai 2026 — detector incoerențe valori (anul, U, RER, n50, etc.) */}
+                  {(() => {
+                    const issues = detectIncoherences({
+                      building,
+                      opaqueElements,
+                      glazingElements,
+                      heating,
+                      acm,
+                      results: { rer: parseFloat(renewSummary?.rer || 0), epReal: parseFloat(renewSummary?.ep_adjusted_m2 || 0) },
+                    });
+                    if (!issues.length) return null;
+                    const sum = summarizeIncoherences(issues);
+                    const colorMap = { error: "rose", warn: "amber", info: "sky" };
+                    const iconMap = { error: "🚫", warn: "⚠️", info: "ℹ️" };
+                    return (
+                      <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 mt-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs font-bold text-rose-300">🔍 Detector incoerențe — {sum.total} {sum.total === 1 ? "observație" : "observații"}</div>
+                          <div className="flex gap-1.5 text-[10px]">
+                            {sum.error > 0 && <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">{sum.error} erori</span>}
+                            {sum.warn > 0 && <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">{sum.warn} avertismente</span>}
+                            {sum.info > 0 && <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">{sum.info} info</span>}
+                          </div>
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {issues.map((iss, i) => (
+                            <div
+                              key={iss.code + i}
+                              className={`text-[10.5px] flex gap-1.5 leading-tight ${
+                                iss.severity === "error" ? "text-rose-300" :
+                                iss.severity === "warn" ? "text-amber-300/90" :
+                                "text-sky-300/70"
+                              }`}
+                            >
+                              <span className="flex-shrink-0">{iconMap[iss.severity]}</span>
+                              <span>{iss.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {sum.error > 0 && (
+                          <div className="text-[10px] text-rose-300/70 mt-2 pt-2 border-t border-rose-500/20">
+                            Erorile blocante recomandă să nu emiteți CPE — corectați datele înainte de export.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
 
                   <button onClick={function() {
                     if (!canNzebReport) { requireUpgrade("Raport nZEB necesită plan Pro"); return; }
@@ -3266,9 +3322,187 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </Card>
                   )}
 
-                  {/* Anexa 1 + 2 preview — sub preview CPE */}
+                  {/* Audit 2 mai 2026 — Buton + preview DOCX live Anexa 1+2 (similar cu CPE) */}
+                  <button
+                    ref={anexaPreviewBtnRef}
+                    onClick={async function () {
+                      try {
+                        setAnexaRendering(true);
+                        setAnexaRendered(false);
+                        setAnexaPreviewBuffer(null);
+                        showToast("Se generează preview Anexa 1+2...", "info", 4000);
+                        const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
+                        const anexaTplName = tpl.anexa;
+                        const buf = await fetchTemplate(anexaTplName);
+                        const docxBlob = await generateDocxCPE(buf, "anexa", { download: false });
+                        let authToken = null;
+                        try {
+                          if (supabase) {
+                            const { data: { session } } = await supabase.auth.getSession();
+                            authToken = session?.access_token || null;
+                          }
+                        } catch { /* ignore */ }
+                        if (docxBlob) {
+                          try {
+                            const apiBase = import.meta.env.DEV ? "https://energy-app-ruby.vercel.app" : "";
+                            const headers = {};
+                            if (authToken) headers.Authorization = `Bearer ${authToken}`;
+                            const previewResp = await fetch(apiBase + "/api/preview-document", {
+                              method: "POST",
+                              headers,
+                              body: docxBlob,
+                            });
+                            if (previewResp.ok) {
+                              const ct = previewResp.headers.get("content-type") || "";
+                              if (ct.includes("application/pdf")) {
+                                const pdfBlob = await previewResp.blob();
+                                const pdfBuf = await pdfBlob.arrayBuffer();
+                                setAnexaPreviewBuffer(pdfBuf);
+                                if (anexaPreviewUrl) URL.revokeObjectURL(anexaPreviewUrl);
+                                const url = URL.createObjectURL(pdfBlob);
+                                setAnexaPreviewUrl(url);
+                                setAnexaRendered(true);
+                                setAnexaRendering(false);
+                                showToast("Preview Anexa generat", "success", 1500);
+                                return;
+                              } else if (ct.includes("application/json")) {
+                                const json = await previewResp.json();
+                                if (json.viewerUrl) {
+                                  if (anexaPreviewUrl) URL.revokeObjectURL(anexaPreviewUrl);
+                                  setAnexaPreviewBuffer(null);
+                                  setAnexaPreviewUrl(json.viewerUrl);
+                                  setAnexaRendered(true);
+                                  setAnexaRendering(false);
+                                  showToast("Preview Anexa generat (Office Online)", "success", 1500);
+                                  return;
+                                }
+                              }
+                            }
+                          } catch (apiErr) {
+                            console.warn("preview-document Anexa: fallback la docx-preview:", apiErr.message);
+                          }
+                        }
+                        // Fallback: docx-preview în browser
+                        if (docxBlob && anexaDocxPreviewRef.current) {
+                          const container = anexaDocxPreviewRef.current;
+                          container.innerHTML = "";
+                          await renderAsync(docxBlob, container, null, {
+                            className: "docx-preview-content",
+                            inWrapper: true,
+                            ignoreWidth: false,
+                            ignoreHeight: true,
+                            ignoreFonts: false,
+                            breakPages: true,
+                            useBase64URL: true,
+                            experimental: true,
+                          });
+                          const styleEl = document.createElement('style');
+                          styleEl.textContent = `
+                            .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
+                            .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
+                          `;
+                          container.appendChild(styleEl);
+                          await new Promise(r => setTimeout(r, 120));
+                          const outerBox = container.closest('.docx-preview-outer-anexa') || container.parentElement;
+                          const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
+                          if (wrapper && outerBox) {
+                            const availW = outerBox.clientWidth - 8;
+                            const natW = wrapper.scrollWidth;
+                            if (natW > availW && availW > 0) {
+                              const sc = availW / natW;
+                              wrapper.style.transformOrigin = "top left";
+                              wrapper.style.transform = `scale(${sc})`;
+                              container.style.height = Math.ceil(wrapper.scrollHeight * sc) + "px";
+                              container.style.overflow = "hidden";
+                            }
+                          }
+                          setAnexaRendered(true);
+                          showToast("Preview Anexa generat", "success", 1500);
+                        }
+                      } catch (e) {
+                        showToast("Nu s-a putut genera preview-ul Anexa.", "error", 3000);
+                        console.error("Anexa preview error:", e);
+                      } finally {
+                        setAnexaRendering(false);
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 font-medium transition-all text-sm"
+                  >
+                    {anexaRendering
+                      ? <><span className="animate-spin">⏳</span> {lang === "EN" ? "Generating Annex preview..." : "Se generează preview Anexa..."}</>
+                      : <><span className="text-base">📋</span> {lang === "EN" ? "Generate Annex 1+2 Preview" : "Generează Preview Anexa 1+2"}</>
+                    }
+                  </button>
+
+                  {/* Container preview Anexa — similar cu CPE */}
+                  <Card title={lang === "EN" ? "📋 Annex 1+2 Live Preview" : "📋 Preview Anexa 1+2 (live)"} className="border-emerald-500/30">
+                    <div
+                      className="docx-preview-outer-anexa rounded-lg overflow-hidden"
+                      style={{
+                        minHeight: anexaRendered ? undefined : "320px",
+                        height: anexaRendered ? "85vh" : undefined,
+                        position: "relative",
+                        background: "#e8e8e8",
+                      }}
+                    >
+                      {!anexaRendered && !anexaRendering && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center pointer-events-none">
+                          <div className="text-5xl opacity-30">📋</div>
+                          <div className="text-sm opacity-40">
+                            {lang === "EN"
+                              ? "Click \"Generate Annex 1+2 Preview\" to see the document"
+                              : "Apasă \"Generează Preview Anexa 1+2\" pentru a vedea documentul"}
+                          </div>
+                        </div>
+                      )}
+                      {anexaRendering && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                          <div className="text-2xl animate-spin">⏳</div>
+                          <div className="text-sm opacity-60 animate-pulse">
+                            {lang === "EN" ? "Uploading & rendering Annex..." : "Se încarcă și randează Anexa..."}
+                          </div>
+                        </div>
+                      )}
+                      {anexaRendered && (anexaPreviewBuffer || anexaPreviewUrl) && (
+                        anexaPreviewBuffer ? (
+                          <Suspense fallback={
+                            <div className="w-full flex items-center justify-center text-xs opacity-60" style={{ height: "85vh" }}>
+                              Se încarcă preview-ul…
+                            </div>
+                          }>
+                            <PDFViewer data={anexaPreviewBuffer} height="85vh" title="Preview Anexa 1+2" />
+                          </Suspense>
+                        ) : anexaPreviewUrl && anexaPreviewUrl.startsWith("blob:") ? (
+                          <Suspense fallback={
+                            <div className="w-full flex items-center justify-center text-xs opacity-60" style={{ height: "85vh" }}>
+                              Se încarcă preview-ul…
+                            </div>
+                          }>
+                            <PDFViewer url={anexaPreviewUrl} height="85vh" title="Preview Anexa 1+2" />
+                          </Suspense>
+                        ) : (
+                          <iframe
+                            src={anexaPreviewUrl}
+                            className="w-full h-full border-0"
+                            title="Anexa Preview"
+                            style={{ display: "block", height: "85vh" }}
+                          />
+                        )
+                      )}
+                      {!anexaPreviewUrl && (
+                        <div
+                          className="w-full h-full overflow-auto"
+                          style={{ maxHeight: "85vh", display: anexaRendered ? "block" : "none" }}
+                        >
+                          <div ref={anexaDocxPreviewRef} className="docx-preview-wrapper" />
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  {/* Anexa 1 + 2 preview SUMAR (CpeAnexa) — sub preview live */}
                   {instSummary && (
-                    <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete">
+                    <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete (sumar)">
                       <CpeAnexa
                         building={building}
                         heating={heating} cooling={cooling} ventilation={ventilation}
