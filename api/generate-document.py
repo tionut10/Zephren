@@ -3686,7 +3686,12 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             signature_b64 = data.get("signature_png_b64", "")
             stamp_b64 = data.get("stamp_png_b64", "")
-            if signature_b64 or stamp_b64:
+            # Pentru CPE: injectează semnătură/ștampilă în paragraful existent din template.
+            # Pentru Anexa 1+2: SKIP — auditorul semnează manual pe printout (Ord. MDLPA 16/2023
+            # cere doar UN exemplar semnat fizic; Anexa nu are loc dedicat pentru semnătură
+            # injectată în corpul documentului — textul „Semnătura și ștampila auditorului"
+            # apare DEJA în footerul oficial al fiecărei pagini).
+            if (signature_b64 or stamp_b64) and mode == "cpe":
                 insert_signature_stamp(doc, signature_b64, stamp_b64)
 
             qr_url = data.get("qr_verify_url", "")
