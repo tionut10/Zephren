@@ -82,7 +82,17 @@ export function getExpiryDate(issueDate, energyClass) {
 }
 
 /**
- * Formatare label pentru UI/certificat: „valabil X ani (clasa Y, EPBD 2024/1275 Art. 17)"
+ * Formatare label pentru UI/certificat.
+ *
+ * Audit 2 mai 2026 — P0.1: EPBD 2024/1275 NU este transpus în drept român până
+ * la 29.05.2026, deci NU poate fi citat ca normativ APLICABIL pentru valabilitatea
+ * unui CPE emis înainte de această dată. Folosim L.372/2005 republicată
+ * mod. L.238/2024 (Art. 18 — valabilitate certificat) ca referință legală RO.
+ *
+ * Diferențierea 10 ani A+..C / 5 ani D..G provine intern din funcția
+ * `getValidityYears` (care la rândul ei e gated pe `scaleVersion === "2026"`).
+ * Pentru CPE-uri emise în regim Ord. MDLPA 16/2023 (10 ani uniform), label-ul
+ * exprimă doar valabilitatea efectivă, fără a induce un cadru normativ inexistent.
  *
  * @param {string} energyClass
  * @param {string} [lang="RO"]
@@ -91,9 +101,9 @@ export function getExpiryDate(issueDate, energyClass) {
 export function getValidityLabel(energyClass, lang = "RO") {
   const years = getValidityYears(energyClass);
   if (lang === "EN") {
-    return `valid ${years} years (class ${energyClass || "—"}, EPBD 2024/1275 Art. 17)`;
+    return `valid ${years} years (class ${energyClass || "—"}, L.372/2005 republished, modified by L.238/2024)`;
   }
-  return `valabil ${years} ani (clasa ${energyClass || "—"}, EPBD 2024/1275 Art. 17)`;
+  return `valabil ${years} ani (clasa ${energyClass || "—"}, L.372/2005 republicată mod. L.238/2024)`;
 }
 
 /**

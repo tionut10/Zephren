@@ -225,7 +225,9 @@ export default function Step6Certificate(props) {
                     year: yearStr,
                     expiry: expiryD.toLocaleDateString("ro-RO"),
                     validity_years: validYearsDocx,
-                    validity_label: `valabil ${validYearsDocx} ani (EPBD 2024 Art. 17)`,
+                    // Audit 2 mai 2026 — P0.1: EPBD 2024/1275 nu e transpus în RO până la
+                    // 29.05.2026; folosim L.372/2005 republicată mod. L.238/2024 ca referință legală.
+                    validity_label: `valabil ${validYearsDocx} ani (L.372/2005 mod. L.238/2024)`,
                     address: fullAddress,
                     gps: fmtRo(latV, 4) + " x " + fmtRo(lngV, 4),
                     regime: regimStr,
@@ -1293,7 +1295,7 @@ export default function Step6Certificate(props) {
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
     <ValabilitateAni>${validityYearsXml}</ValabilitateAni>
-    <NormativValabilitate>EPBD 2024/1275 Art. 17</NormativValabilitate>
+    <NormativValabilitate>L.372/2005 republicată mod. L.238/2024 Art. 18</NormativValabilitate>
     <ScopElaborare>${esc(building.scopCpe || "vanzare")}</ScopElaborare>
     <ProgramCalcul>ZEPHREN ${APP_VERSION}</ProgramCalcul>
   </DateIdentificare>
@@ -1654,7 +1656,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <tr>
   <td colspan="4" class="L"><strong>CPE num\u0103rul</strong></td>
   <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">${auditor.mdlpaCode || ".................."}</td>
-  <td colspan="2" class="L" style="text-align:right"><strong>valabil ${validYearsPreview} ani</strong><br><span style="font-size:5pt;color:#888">EPBD 2024 Art. 17 · clasa ${enClass?.cls || "—"}</span></td>
+  <td colspan="2" class="L" style="text-align:right"><strong>valabil ${validYearsPreview} ani</strong><br><span style="font-size:5pt;color:#888">L.372/2005 mod. L.238/2024 · clasa ${enClass?.cls || "—"}</span></td>
   <td colspan="5" class="L"><strong>Nume &amp; prenume auditor energetic</strong></td>
   <td colspan="5" class="L">${auditor.name || "________________"}</td>
 </tr>
@@ -1825,7 +1827,7 @@ ${[
   <div style="flex:1;line-height:1.5">
     <strong>Auditor energetic:</strong> ${auditor.name || "________"}<br>
     <strong>Firma:</strong> ${auditor.company || "________"} | <strong>Tel:</strong> ${auditor.phone || "____"} | <strong>Email:</strong> ${auditor.email || "________"}<br>
-    <strong>Data elabor\u0103rii:</strong> ${auditor.date || dateNow} | <strong>Valabil ${validYearsPreview} ani (EPBD 2024 Art. 17, clasa ${enClass?.cls || "—"}), p\u00e2n\u0103 la:</strong> ${expiryStr}
+    <strong>Data elabor\u0103rii:</strong> ${auditor.date || dateNow} | <strong>Valabil ${validYearsPreview} ani (L.372/2005 mod. L.238/2024, clasa ${enClass?.cls || "—"}), p\u00e2n\u0103 la:</strong> ${expiryStr}
   </div>
   <div style="text-align:center;width:120px">
     <div style="font-size:5.5pt;color:#999">${T.signature}</div>
@@ -2024,8 +2026,9 @@ ${(() => {
 
 <!-- Note legislative -->
 <div style="font-size:6pt;color:#666;margin-top:4px;line-height:1.4;padding:3px;border:1px solid #ddd;background:#fafafa">
-  <strong>Cadru legislativ:</strong> L.372/2005 (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023), C107/0-7, NP048, SR EN ISO 52000-1:2017/NA:2023, SR EN ISO 52003-1:2017/NA:2023, SR EN ISO 52016-1:2017/NA:2023, SR EN ISO 13790, SR EN 12831-1:2017/NA:2022, SR EN 16798-1:2019/NA:2019, Dir. UE 2024/1275 (EPBD IV).<br>
-  * Valori calculate. Valabilitate CPE: 10 ani clase A+..C / 5 ani clase D..G (EPBD 2024/1275 Art. 17) — prezent CPE ${validYearsPreview} ani. Nu garanteaz\u0103 consumul real.
+  <strong>Cadru legislativ aplicat:</strong> L.372/2005 republicată (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023), C107/0-7, NP048, SR EN ISO 52000-1:2017/NA:2023, SR EN ISO 52003-1:2017/NA:2023, SR EN ISO 52016-1:2017/NA:2023, SR EN ISO 13790, SR EN 12831-1:2017/NA:2022, SR EN 16798-1:2019/NA:2019.<br>
+  <strong>Cadru de referință viitor</strong> (termen transpunere RO: 29.05.2026): Directiva UE 2024/1275 (EPBD IV) — NU este transpus în drept român la data emiterii prezentului CPE.<br>
+  * Valori calculate. Valabilitate CPE: 10 ani uniform conform L.372/2005 republicată mod. L.238/2024 — prezent CPE ${validYearsPreview} ani. Diferențierea 10/5 ani per clasă energetică va deveni aplicabilă după transpunerea EPBD în drept român (estimat 29.05.2026). Nu garanteaz\u0103 consumul real.
 </div>
 
 <!-- Semn\u0103turi finale -->

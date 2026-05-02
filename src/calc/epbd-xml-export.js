@@ -120,7 +120,8 @@ ${(el.layers||[]).map(l => `          <Layer>
   const postalCode = building?.postalCode || building?.postal || "";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- Certificat Performanță Energetică — generat de Zephren ${APP_VERSION} -->
-<!-- Standard: SR EN ISO 52000-1:2017, Mc 001-2022, EPBD 2024/1275 -->
+<!-- Cadru legal aplicat: L.372/2005 republicată mod. L.238/2024, Mc 001-2022 (Ord. MDLPA 16/2023), SR EN ISO 52000-1:2017/NA:2023 -->
+<!-- Format derivat (cadru viitor): Directiva UE 2024/1275 (EPBD IV) — termen transpunere RO 29.05.2026; NU este transpus la data emiterii -->
 <EnergyPerformanceCertificate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   version="2024" country="RO" language="ro" generated="${today}">
 
