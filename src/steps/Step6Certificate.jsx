@@ -196,28 +196,21 @@ export default function Step6Certificate(props) {
               return () => clearTimeout(t);
             }, [instSummary]);
 
-            // Sprint 14 / Etapa 1 (19 apr 2026) — auto-generare cod unic CPE
-            // Fără click manual: când nume + cod MDLPA + data sunt complete și
-            // auditor.cpeCode e gol, generăm automat. Butonul "🔄 Generează automat"
-            // rămâne ca fallback dacă useEffect eșuează sau auditorul vrea regenerare.
+            // Persistență index registru local per auditor (localStorage keyed by mdlpaCode)
+            const LS_REG_IDX_KEY = `zephren_reg_idx_${auditor?.mdlpaCode || "anon"}`;
             useEffect(() => {
               if (!setAuditor) return;
-              if (auditor?.cpeCode) return;
-              if (!canAutoGenerateCPE(auditor)) return;
-              const code = autoGenerateCPECode({ auditor, building });
-              if (code) {
-                setAuditor((p) => ({ ...p, cpeCode: code }));
+              const saved = localStorage.getItem(LS_REG_IDX_KEY);
+              if (saved && !auditor?.registryIndex) {
+                setAuditor(p => ({ ...p, registryIndex: saved }));
               }
-            }, [
-              auditor?.name,
-              auditor?.mdlpaCode,
-              auditor?.date,
-              auditor?.atestat,
-              auditor?.registryIndex,
-              auditor?.cpeCode,
-              setAuditor,
-              building,
-            ]);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            }, [auditor?.mdlpaCode]);
+            useEffect(() => {
+              if (auditor?.registryIndex) {
+                localStorage.setItem(LS_REG_IDX_KEY, auditor.registryIndex);
+              }
+            }, [auditor?.registryIndex, LS_REG_IDX_KEY]);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
@@ -2457,44 +2450,10 @@ ${(() => {
                           <span>Format așteptat: CPE-XXXXX/AAAA sau numeric</span>
                         </div>
                       )}
-                      {/* Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024) */}
-                      <div className="mt-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-[11px] font-medium opacity-70">Cod unic CPE</div>
-                          <button
-                            type="button"
-                            className="text-[10px] px-2 py-1 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            disabled={!auditor.name || !auditor.mdlpaCode || !auditor.date}
-                            title={!auditor.name || !auditor.mdlpaCode || !auditor.date
-                              ? "Completează nume, cod MDLPA și dată mai întâi"
-                              : "Generează automat"}
-                            onClick={() => {
-                              try {
-                                const nameParts = String(auditor.name || "").trim().split(/\s+/);
-                                const lastName = nameParts[0] || "";
-                                const firstName = nameParts.slice(1).join(" ") || "";
-                                const code = generateCPECode({
-                                  auditor: {
-                                    lastName,
-                                    firstName,
-                                    atestat: auditor.atestat || "NONE",
-                                    mdlpaCode: auditor.mdlpaCode,
-                                  },
-                                  building,
-                                  date: auditor.date,
-                                  registryIndex: parseInt(auditor.registryIndex || "1", 10) || 1,
-                                });
-                                setAuditor(p => ({ ...p, cpeCode: code }));
-                              } catch (e) {
-                                alert("Eroare generare cod CPE: " + e.message);
-                              }
-                            }}
-                          >
-                            🔄 Generează automat
-                          </button>
-                        </div>
+                      {/* Index registru local — număr secvențial în arhiva auditorului */}
+                      <div className="mt-3">
                         <Input
-                          label={t("Index registru local", lang)}
+                          label="Index registru local"
                           value={auditor.registryIndex || "1"}
                           onChange={v => {
                             const cleaned = v.replace(/[^0-9]/g, "").slice(0, 6) || "1";
@@ -2502,21 +2461,9 @@ ${(() => {
                           }}
                           placeholder="1"
                         />
-                        {auditor.cpeCode && (
-                          <div className="mt-2">
-                            <div className="text-[9px] opacity-40 mb-1">Cod generat:</div>
-                            <div className="text-[10px] font-mono break-all p-2 rounded bg-black/30 border border-white/5">
-                              {auditor.cpeCode}
-                            </div>
-                            <div className="text-[9px] mt-1 flex items-center gap-1">
-                              {validateCPECode(auditor.cpeCode) ? (
-                                <span className="text-emerald-400/80">✓ Format valid (Ord. MDLPA 16/2023)</span>
-                              ) : (
-                                <span className="text-amber-400/80">⚠ Format nestandard — verifică manual</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+                        <div className="text-[9px] opacity-40 mt-1">
+                          Se incrementează automat la fiecare CPE exportat · salvat în arhiva Zephren
+                        </div>
                       </div>
 
                       {/* Sprint 17 — Pașaport renovare asociat
@@ -3667,6 +3614,27 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           showToast("Se generează CPE DOCX...", "info", 2000);
                           const buf = await fetchTemplate(tpl.cpe);
                           await generateDocxCPE(buf, "cpe");
+                          // Auto-increment index registru + înregistrare în arhiva locală
+                          const nextIdx = String((parseInt(auditor.registryIndex || "1", 10) || 1) + 1);
+                          setAuditor(p => ({ ...p, registryIndex: nextIdx }));
+                          const LS_CPE_KEY = "zephren_cpe_registry";
+                          try {
+                            const existing = JSON.parse(localStorage.getItem(LS_CPE_KEY) || "[]");
+                            existing.unshift({
+                              id: crypto.randomUUID(),
+                              address: building.address || "",
+                              category: building.category || "",
+                              au: String(building.areaUseful || ""),
+                              energyClass: enClass || "",
+                              issueDate: auditor.date || new Date().toISOString().slice(0, 10),
+                              certNr: auditor.mdlpaCode || "",
+                              notes: "",
+                              auditorName: auditor.name || "",
+                              certNrAuditor: auditor.atestat || "",
+                              registryIndex: auditor.registryIndex || "1",
+                            });
+                            localStorage.setItem(LS_CPE_KEY, JSON.stringify(existing));
+                          } catch { /* ignore */ }
                         } catch(e) {
                           showToast("Eroare: " + e.message, "error", 5000);
                         } finally {

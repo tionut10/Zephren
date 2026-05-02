@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "✨",
-        "text": "Sprint 4 final P1 (P1.11-P1.17) — Python audit comment + bacs simplificat + factor < 1.0 + commonSystems UI + "
-      },
-      {
-        "icon": "✨",
-        "text": "Sprint 3 (P1.6-P1.10) — auto-populare + ANCPI scop + ref building + XML lipsuri + nZEB fallback"
-      },
-      {
-        "icon": "✨",
-        "text": "QR real + motor unificat recomandari + grup G EPBD detalii (P1.3 + P1.4 + P1.5)"
-      },
-      {
-        "icon": "✨",
-        "text": "completeness score unificat (23 itemi) + eliminare Pagina 2 preview HTML (P1.1 + P1.2)"
-      },
-      {
-        "icon": "📄",
-        "text": "auditor.observations in payload DOCX + PDF blob viewer pe Vercel HTTPS (P0.4 + P0.5)"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(legal): pasaport renovare PREVIEW + barcode local + landing verify (P0.2 + P0.3)"
-      },
-      {
-        "icon": "📄",
-        "text": "fix(legal): elimina EPBD 2024 Art. 17 ca normativ aplicat in CPE oficial (P0.1)"
-      },
-      {
         "icon": "🔸",
-        "text": "T9 Sprint Tranziție 2026 — FAQ tranziție 2026 (docs)"
+        "text": "ux: butoanele 'Generează Preview' identice ca stil + mutate deasupra Card-urilor preview"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(sprint avansat): tabel anvelopa 'em-dash' + preview DOCX live Anexa + validari cross-cell + sectiune H fo"
+      },
+      {
+        "icon": "✨",
+        "text": "pre-populare M2-M5 + bifare ACM recirculare/contor/debitmetre"
+      },
+      {
+        "icon": "📄",
+        "text": "fix CRITIC: nu mai sterg/modific celula 'Anul construirii/renovarii majore' in CPE"
+      },
+      {
+        "icon": "📄",
+        "text": "'no tc element at grid_offset=1' la generare CPE - inlocuiesc vMerge cu cleanup text simplu"
+      },
+      {
+        "icon": "📄",
+        "text": "ReferenceError 'climate is not defined' la generare DOCX (folosesc selectedClimate)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(P0+P1+P2): bifare auto checkbox-uri Anexa + ștampilă 40mm + vMerge CPE + clasă A+ fix + numerotare X/Y + "
+      },
+      {
+        "icon": "📄",
+        "text": "skip injecție semnătură/ștampilă pentru Anexa 1+2 (apare doar în CPE)"
       }
     ]
   },
