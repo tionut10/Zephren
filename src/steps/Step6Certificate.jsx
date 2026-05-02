@@ -22,6 +22,13 @@ import { T } from "../data/translations.js";
 import { generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";
 import { autoGenerateCPECode, canAutoGenerateCPE } from "../utils/cpe-auto-gen.js";
+// Audit 2 mai 2026 — P1.1: completeness centralizat (sursă unică de adevăr)
+import {
+  getCpeCompletenessItems,
+  getCpeCompletenessScore,
+  groupCompletenessItems,
+  ANCPI_REQUIRED_SCOPES,
+} from "../utils/cpe-completeness.js";
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
@@ -1923,85 +1930,31 @@ ${[
   ctx.fillText(data.substring(0, 35), c.width / 2, c.height - 2);
 })();
 </script>
-<div class="ft">Pagina 1/3 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren ${APP_VERSION} | ${dateNow}</div>
+<div class="ft">Pagina 1/2 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren ${APP_VERSION} | ${dateNow}</div>
 
 
-<!-- ======== PAGINA 2 ======== -->
+<!-- \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+     Audit 2 mai 2026 \u2014 P1.2: Pagina 2 \u201eDetalii tehnice" eliminat\u0103.
+     Con\u021binutul (anvelop\u0103 tabelar\u0103 + bilan\u021b instala\u021bii + sintez\u0103 utilit\u0103\u021bi)
+     era duplicat \u0219i nu face parte din formularul oficial CPE Ord. MDLPA
+     16/2023. Vizualiz\u0103rile tabelare detaliate sunt disponibile separat
+     prin:
+       - Anexa 1+2 DOCX export (tab dedicat \u00een UI Pas 6)
+       - CpeAnexa.jsx preview UI (Card \u201eAnexa 1+2 oficial\u0103")
+     CPE-ul oficial r\u0103m\u00e2ne acum 2 pagini: Pag.1 = identificare + scal\u0103
+     EP/CO\u2082 + tabel utilit\u0103\u021bi + barcode; Pag.2 (fost\u0103 3) = recomand\u0103ri
+     + observa\u021bii + cadru legislativ + semn\u0103turi.
+     \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 -->
+
+<!-- (Anvelop\u0103 tabelar\u0103 eliminat\u0103 \u2014 vezi Anexa 1+2 DOCX export pentru detalii oficiale) -->
+
+<!-- (Bilan\u021b instala\u021bii + sintez\u0103 utilit\u0103\u021bi eliminate \u2014 vezi Anexa 1+2 DOCX export pentru tabele oficiale MDLPA) -->
+
+
+<!-- ======== PAGINA 2 (recomand\u0103ri + observa\u021bii + cadru legislativ) ======== -->
 <div class="page-break"></div>
 <div class="hdr">
-  <h1 style="font-size:10pt">${T.p2title}</h1>
-  <div class="ref">CPE nr. ${auditor.mdlpaCode || "......"} | ${building.address || "\u2014"} | ${catLabel}</div>
-</div>
-
-<!-- A. ANVELOP\u0102 -->
-<table class="d">
-<tr><td colspan="6" class="dh">${T.envTitle}</td></tr>
-<tr><td colspan="6" class="ds">${T.opaqueEl}</td></tr>
-<tr>
-  <td class="ds" style="width:5%">Nr.</td>
-  <td class="ds" style="width:24%">${T.name}</td>
-  <td class="ds" style="width:18%">${T.type}</td>
-  <td class="ds" style="width:14%">Aria [m\u00b2]</td>
-  <td class="ds" style="width:17%">U [W/m\u00b2K]</td>
-  <td class="ds" style="width:17%">R [m\u00b2K/W]</td>
-</tr>
-${envRows.length > 0 ? envRows.map((r, i) => '<tr><td style="text-align:center">' + (i+1) + '</td><td>' + r.name + '</td><td>' + r.type + '</td><td class="dv">' + r.area + '</td><td class="dv">' + r.u + '</td><td class="dv">' + r.r + '</td></tr>').join("") : '<tr><td colspan="6" style="text-align:center;color:#999">\u2014 Nu sunt definite \u2014</td></tr>'}
-<tr><td colspan="6" class="ds">${T.glazEl}</td></tr>
-<tr>
-  <td class="ds">Nr.</td>
-  <td class="ds" colspan="2">${T.name}</td>
-  <td class="ds">Aria [m\u00b2]</td>
-  <td class="ds">U [W/m\u00b2K]</td>
-  <td class="ds">g [-]</td>
-</tr>
-${glazRows.length > 0 ? glazRows.map((r, i) => '<tr><td style="text-align:center">' + (i+1) + '</td><td colspan="2">' + r.name + '</td><td class="dv">' + r.area + '</td><td class="dv">' + r.u + '</td><td class="dv">' + r.g + '</td></tr>').join("") : '<tr><td colspan="6" style="text-align:center;color:#999">\u2014 Nu sunt definite \u2014</td></tr>'}
-<tr><td colspan="6" class="ds">${T.bridges}</td></tr>
-<tr>
-  <td colspan="2"><strong>Pierderi pun\u021bi [W/K]:</strong></td><td class="dv">${envBridgeLoss}</td>
-  <td><strong>Arie total\u0103 [m\u00b2]:</strong></td><td class="dv">${envTotalArea}</td>
-  <td></td>
-</tr>
-<tr>
-  <td colspan="2"><strong>G [W/m\u00b3K]:</strong></td><td class="dv">${envG}</td>
-  <td><strong>V [m\u00b3]:</strong></td><td class="dv">${building.volume || "\u2014"}</td>
-  <td></td>
-</tr>
-</table>
-
-<!-- B. INSTALA\u021aII -->
-<table class="d">
-<tr><td colspan="4" class="dh">${T.instTitle}</td></tr>
-<tr><td class="ds" style="width:22%">${T.utility}</td><td class="ds" style="width:28%">Sistem / Surs\u0103</td><td class="ds" style="width:22%">Combustibil</td><td class="ds" style="width:28%">Randament / COP</td></tr>
-<tr><td><strong>\u00CEnc\u0103lzire</strong></td><td>${heatDesc}</td><td>${heatFuel}</td><td class="dv">${instSummary?.isCOP ? 'COP ' + (parseFloat(heating.eta_gen)||0).toFixed(2) : '\u03b7=' + ((instSummary?.eta_total_h||0)*100).toFixed(1) + '%'}</td></tr>
-<tr><td><strong>ACC</strong></td><td>${acmDesc}</td><td>${acm.source === 'CAZAN_H' ? heatFuel : 'Electricitate'}</td><td class="dv">${acmSrc ? (acmSrc.isCOP ? 'COP ' + (acmSrc.eta||0).toFixed(2) : '\u03b7=' + ((acmSrc.eta||0)*100).toFixed(1) + '%') : '\u2014'}</td></tr>
-<tr><td><strong>R\u0103cire</strong></td><td>${coolDesc}</td><td>${cooling.hasCooling ? 'Electricitate' : '\u2014'}</td><td class="dv">${cooling.hasCooling ? 'EER ' + (parseFloat(cooling.eer) || coolSys?.eer || 0).toFixed(2) : '\u2014'}</td></tr>
-<tr><td><strong>Ventilare</strong></td><td>${ventDesc}</td><td>${ventilation.type !== 'NAT' ? 'Electricitate' : '\u2014'}</td><td class="dv">${instSummary?.hrEta > 0 ? 'HR \u03b7=' + (instSummary.hrEta*100).toFixed(0) + '%' : '\u2014'}</td></tr>
-<tr><td><strong>Iluminat</strong></td><td>${lightDesc}</td><td>Electricitate</td><td class="dv">LENI=${instSummary?.leni?.toFixed(1) || '\u2014'} kWh/m\u00b2\u00b7an</td></tr>
-</table>
-
-<!-- C. BILAN\u021a SINTEZ\u0102 -->
-<table class="d">
-<tr><td colspan="6" class="dh">${T.balTitle}</td></tr>
-<tr><td class="ds">Indicator</td><td class="ds" style="text-align:center">\u00CEnc\u0103lzire</td><td class="ds" style="text-align:center">ACC</td><td class="ds" style="text-align:center">R\u0103cire</td><td class="ds" style="text-align:center">Ventilare</td><td class="ds" style="text-align:center">Iluminat</td></tr>
-<tr><td><strong>Qf [kWh/m\u00b2\u00b7an]</strong></td><td class="dv">${qf_h_m2.toFixed(1)}</td><td class="dv">${qf_w_m2.toFixed(1)}</td><td class="dv">${qf_c_m2.toFixed(1)}</td><td class="dv">${qf_v_m2.toFixed(1)}</td><td class="dv">${qf_l_m2.toFixed(1)}</td></tr>
-<tr><td><strong>Ep [kWh/m\u00b2\u00b7an]</strong></td><td class="dv">${ep_h_m2.toFixed(1)}</td><td class="dv">${ep_w_m2.toFixed(1)}</td><td class="dv">${ep_c_m2.toFixed(1)}</td><td class="dv">${ep_v_m2.toFixed(1)}</td><td class="dv">${ep_l_m2.toFixed(1)}</td></tr>
-<tr><td><strong>CO\u2082 [kg/m\u00b2\u00b7an]</strong></td><td class="dv">${co2_h_m2.toFixed(1)}</td><td class="dv">${co2_w_m2.toFixed(1)}</td><td class="dv">${co2_c_m2.toFixed(1)}</td><td class="dv">${co2_v_m2.toFixed(1)}</td><td class="dv">${co2_l_m2.toFixed(1)}</td></tr>
-<tr><td><strong>Clas\u0103 Ep</strong></td>
-<td class="dv" style="background:${scaleColors[CLASS_LABELS.indexOf(utilClassH)]||'#999'};color:#fff">${utilClassH}</td>
-<td class="dv" style="background:${scaleColors[CLASS_LABELS.indexOf(utilClassW)]||'#999'};color:#fff">${utilClassW}</td>
-<td class="dv" style="background:${scaleColors[CLASS_LABELS.indexOf(utilClassC)]||'#999'};color:#fff">${utilClassC}</td>
-<td class="dv" style="background:${scaleColors[CLASS_LABELS.indexOf(utilClassV)]||'#999'};color:#fff">${utilClassV}</td>
-<td class="dv" style="background:${scaleColors[CLASS_LABELS.indexOf(utilClassL)]||'#999'};color:#fff">${utilClassL}</td>
-</tr>
-</table>
-
-<div class="ft">Pagina 2/3 | CPE nr. ${auditor.mdlpaCode || "......"} | ${building.address || "\u2014"} | ${dateNow}</div>
-
-
-<!-- ======== PAGINA 3 ======== -->
-<div class="page-break"></div>
-<div class="hdr">
-  <h1 style="font-size:10pt">${T.p3title}</h1>
+  <h1 style="font-size:10pt">${T.p3title || T.p2title}</h1>
   <div class="ref">CPE nr. ${auditor.mdlpaCode || "......"} | ${building.address || "\u2014"} | ${catLabel}</div>
 </div>
 
@@ -2055,7 +2008,7 @@ ${(() => {
   <div style="text-align:center"><div style="font-size:5.5pt;color:#999">${T.benefSig}</div><div class="stmp" style="width:120px;height:40px"></div></div>
 </div>
 
-<div class="ft">Pagina 3/3 | CPE nr. ${auditor.mdlpaCode || "......"} | ${building.address || "\u2014"} | ${dateNow}</div>
+<div class="ft">Pagina 2/2 | CPE nr. ${auditor.mdlpaCode || "......"} | ${building.address || "\u2014"} | ${dateNow}</div>
 
 </body></html>`;
               // Show in state-driven overlay iframe via srcdoc
@@ -2562,14 +2515,14 @@ ${(() => {
                     if (renewSummary && renewSummary.rer < 30) infos.push("ℹ RER < 30% — clădirea nu îndeplinește cerința nZEB");
                     if (thermalBridges.length === 0) infos.push("ℹ Punțile termice nu sunt definite (se folosesc valori forfetare)");
                     if (!photovoltaic.enabled && !solarThermal.enabled && !heatPump.enabled && !biomass.enabled) infos.push("ℹ Nicio sursă regenerabilă configurată — Pasul 4");
-                    // Completitudine
-                    const totalChecks = 12;
-                    const passedChecks = [
-                      Au > 0, !!building.locality, !!building.category, opaqueElements.length > 0,
-                      glazingElements.length > 0, !!heating.source, !!instSummary, !!auditor.name,
-                      !!auditor.atestat, !!building.yearBuilt, !!building.address, !!auditor.date
-                    ].filter(Boolean).length;
-                    const completePct = Math.round(passedChecks / totalChecks * 100);
+                    // Audit 2 mai 2026 — P1.1: scor unic via cpe-completeness.js
+                    // (înainte: 12 check-uri inline aici + 6 în block 2 → divergență).
+                    // Acum: o singură sursă de adevăr, identică în ambele blocuri.
+                    const completenessResult = getCpeCompletenessScore({
+                      building, selectedClimate, opaqueElements, glazingElements,
+                      heating, acm, instSummary, renewSummary, auditor,
+                    });
+                    const completePct = completenessResult.pct;
 
                     if (warns.length === 0 && infos.length === 0) return (
                       <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
@@ -3154,53 +3107,75 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 </div>
               </div>
 
-              {/* ═══ CHECKLIST COMPLETITUDINE CPE ═══ */}
+              {/* ═══ CHECKLIST COMPLETITUDINE CPE ═══
+                  Audit 2 mai 2026 — P1.1: 6 itemi → 23 itemi (21 standard + 2 condiționali)
+                  via modul centralizat `cpe-completeness.js`. Scorul include doar itemii
+                  obligatorii (filtru `optional`), iar UI-ul afișează grupat pe 9 secțiuni
+                  cu hint contextual pentru itemii condiționali (Cadastru, Apartamente). */}
               {(() => {
-                const completenessItems = [
-                  { label: "Date identificare clădire", ok: !!(building?.address && building?.city) },
-                  { label: "Date climatice selectate", ok: !!(selectedClimate?.name || selectedClimate?.zone) },
-                  { label: "Elemente anvelopă introduse", ok: (opaqueElements?.length ?? 0) > 0 },
-                  { label: "Sistem încălzire configurat", ok: !!(heating?.source && heating.source !== "NONE" && heating.source !== "none") },
-                  { label: "Calcul energetic efectuat", ok: !!instSummary },
-                  { label: "Date auditor completate", ok: !!(auditor?.name && auditor?.atestat) },
+                const ctx = {
+                  building, selectedClimate, opaqueElements, glazingElements,
+                  heating, acm, instSummary, renewSummary, auditor,
+                };
+                const r = getCpeCompletenessScore(ctx);
+                const groups = groupCompletenessItems(r.items);
+                const groupOrder = [
+                  "Identificare", "Geometrie", "Climatică",
+                  "Anvelopă", "Instalații", "Calcul",
+                  "Auditor", "Cadastru", "Multi-apartament",
                 ];
-                const completenessScore = completenessItems.filter(i => i.ok).length;
-                const completenessTotal = completenessItems.length;
-                const completenessPct = Math.round((completenessScore / completenessTotal) * 100);
-                const allDone = completenessScore === completenessTotal;
-                const barColor = allDone ? "#22c55e" : completenessScore >= 4 ? "#eab308" : "#f97316";
+                const barColor = r.allDone ? "#22c55e" : r.pct >= 70 ? "#eab308" : "#f97316";
 
                 return (
-                  <div className={`mt-5 rounded-xl border p-4 ${allDone ? "border-emerald-500/25 bg-emerald-500/5" : "border-amber-500/20 bg-white/[0.02]"}`}>
+                  <div className={`mt-5 rounded-xl border p-4 ${r.allDone ? "border-emerald-500/25 bg-emerald-500/5" : "border-amber-500/20 bg-white/[0.02]"}`}>
                     <div className="flex items-center justify-between mb-3">
-                      <div className={`text-xs font-semibold ${allDone ? "text-emerald-400" : "text-amber-400"}`}>
-                        {allDone ? "✓ Date complete pentru generare CPE" : "Completitudine date CPE DOCX"}
+                      <div className={`text-xs font-semibold ${r.allDone ? "text-emerald-400" : "text-amber-400"}`}>
+                        {r.allDone ? "✓ Date complete pentru generare CPE" : "Completitudine date CPE DOCX"}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-bold" style={{color: barColor}}>
-                          {completenessScore}/{completenessTotal} câmpuri completate
+                          {r.score}/{r.total} câmpuri obligatorii completate
                         </span>
-                        <span className="text-[10px] opacity-40">({completenessPct}%)</span>
+                        <span className="text-[10px] opacity-40">({r.pct}%)</span>
                       </div>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
                       <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ width: completenessPct + "%", background: barColor }}
+                        style={{ width: r.pct + "%", background: barColor }}
                       />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-                      {completenessItems.map((item, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <span className={`text-[11px] flex-shrink-0 ${item.ok ? "text-emerald-400" : "text-red-400/70"}`}>
-                            {item.ok ? "✓" : "○"}
-                          </span>
-                          <span className={`text-[11px] ${item.ok ? "opacity-70" : "opacity-45"}`}>
-                            {item.label}
-                          </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {groupOrder.filter((g) => groups[g]).map((g) => (
+                        <div key={g} className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-2">
+                          <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1.5">{g}</div>
+                          <div className="space-y-0.5">
+                            {groups[g].map((item, i) => (
+                              <div key={i} className="flex items-start gap-1.5" title={item.hint || ""}>
+                                <span className={`text-[11px] flex-shrink-0 mt-px ${
+                                  item.optional
+                                    ? (item.ok ? "text-emerald-400/60" : "text-white/25")
+                                    : (item.ok ? "text-emerald-400" : "text-red-400/70")
+                                }`}>
+                                  {item.optional ? (item.ok ? "✓" : "○") : (item.ok ? "✓" : "○")}
+                                </span>
+                                <span className={`text-[11px] leading-snug ${
+                                  item.optional ? "opacity-40 italic" : (item.ok ? "opacity-75" : "opacity-50")
+                                }`}>
+                                  {item.label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       ))}
                     </div>
+                    {r.missing.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.06] text-[10px] opacity-50">
+                        <strong className="opacity-80">Lipsă obligatorie ({r.missing.length}):</strong>{" "}
+                        {r.missing.map((m) => m.label).join(" · ")}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
