@@ -292,16 +292,16 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
 
         try:
             if target_para is not None:
-                # Curăț textul existent din paragraf păstrând rPr-ul
-                from docx.oxml.ns import qn as _qn_sig
-                saved_rPr = None
-                if target_para.runs:
-                    rPr = target_para.runs[0]._r.find(_qn_sig("w:rPr"))
-                    if rPr is not None:
-                        saved_rPr = copy.deepcopy(rPr)
-                for run in list(target_para.runs):
-                    run._r.getparent().remove(run._r)
-                # Adaug imaginile inline
+                # Păstrez textul „Semnătura și ștampila auditorului" intact (etichetă
+                # conform modelului oficial MDLPA în colțul dreapta) și adaug imaginile
+                # SUB text printr-un line break în același paragraf — astfel ele rămân
+                # în aceeași poziție pe pagină, fără a crea o pagină nouă.
+                from docx.oxml import OxmlElement as _OxEl_sig
+                # Adaug w:br pentru new line în paragraf
+                br = _OxEl_sig("w:br")
+                last_run = target_para.runs[-1] if target_para.runs else target_para.add_run()
+                last_run._r.append(br)
+                # Acum adaug imaginile ca run-uri noi (vor fi pe linia următoare)
                 if signature_b64:
                     sig_bytes = base64.b64decode(signature_b64)
                     target_para.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
