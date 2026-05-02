@@ -3076,140 +3076,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </div>
                   )}
 
-                  <button onClick={async function() {
-                    try {
-                      setDocxRendering(true);
-                      setDocxRendered(false);
-                      // Audit 2 mai 2026 — P0.5: reset buffer la fiecare regenerare,
-                      // ca să nu păstrăm stale data dintr-un preview anterior.
-                      setPdfPreviewBuffer(null);
-                      showToast("Se generează preview CPE...", "info", 4000);
-                      const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
-                      const buf = await fetchTemplate(tpl.cpe);
-                      const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
-
-                      // ── Încearcă preview server-side (Gotenberg PDF sau Office Online) ──
-                      // PUBLIC_API_MODE=1 pe server bypass-ează auth → trimitem request
-                      // fără token. Dacă user e logat, trimitem și token (viitor util).
-                      let authToken = null;
-                      try {
-                        if (supabase) {
-                          const { data: { session } } = await supabase.auth.getSession();
-                          authToken = session?.access_token || null;
-                        }
-                      } catch { /* ignore */ }
-
-                      if (docxBlob) {
-                        try {
-                          // În DEV local (Vite) endpoint-ul /api/* nu e servit → folosim
-                          // prod direct (CORS allowlist include localhost:5173).
-                          const apiBase = import.meta.env.DEV ? "https://energy-app-ruby.vercel.app" : "";
-                          const headers = {};
-                          if (authToken) headers.Authorization = `Bearer ${authToken}`;
-                          const previewResp = await fetch(apiBase + "/api/preview-document", {
-                            method: "POST",
-                            headers,
-                            body: docxBlob,
-                          });
-                          if (previewResp.ok) {
-                            const ct = previewResp.headers.get("content-type") || "";
-                            if (ct.includes("application/pdf")) {
-                              // Gotenberg → PDF direct
-                              // Audit 2 mai 2026 — P0.5: pasăm ArrayBuffer la PDFViewer
-                              // (evită range requests pe blob URL care eșuează pe Vercel HTTPS).
-                              // Păstrăm și blob URL pentru orice path de download legacy.
-                              const pdfBlob = await previewResp.blob();
-                              const pdfBuf = await pdfBlob.arrayBuffer();
-                              setPdfPreviewBuffer(pdfBuf);
-                              if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                              const url = URL.createObjectURL(pdfBlob);
-                              setPdfPreviewUrl(url);
-                              setDocxRendered(true);
-                              setDocxRendering(false);
-                              showToast("Preview PDF generat", "success", 1500);
-                              return;
-                            } else if (ct.includes("application/json")) {
-                              // Vercel Blob → Office Online Viewer
-                              const json = await previewResp.json();
-                              if (json.viewerUrl) {
-                                if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                                setPdfPreviewBuffer(null); // viewer URL → nu folosim PDFViewer cu data
-                                setPdfPreviewUrl(json.viewerUrl);
-                                setDocxRendered(true);
-                                setDocxRendering(false);
-                                showToast("Preview generat (Office Online)", "success", 1500);
-                                return;
-                              }
-                            }
-                          }
-                        } catch (apiErr) {
-                          console.warn("preview-document API error, falling back to docx-preview:", apiErr.message);
-                        }
-                      }
-
-                      // ── Fallback: docx-preview în browser ──
-                      if (docxBlob && docxPreviewRef.current) {
-                        const container = docxPreviewRef.current;
-                        container.innerHTML = "";
-                        await renderAsync(docxBlob, container, null, {
-                          className: "docx-preview-content",
-                          inWrapper: true,
-                          ignoreWidth: false,
-                          ignoreHeight: true,
-                          ignoreFonts: false,
-                          breakPages: true,
-                          useBase64URL: true,
-                          experimental: true,
-                        });
-
-                        // Stilizare fundal
-                        const styleEl = document.createElement('style');
-                        styleEl.textContent = `
-                          .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
-                          .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
-                        `;
-                        container.appendChild(styleEl);
-
-                        // Așteptăm render complet
-                        await new Promise(r => setTimeout(r, 120));
-
-                        // ── SCALARE RESPONSIVĂ ──
-                        const outerBox = container.closest('.docx-preview-outer') || container.parentElement;
-                        const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
-                        if (wrapper) {
-                          const availW = outerBox.clientWidth - 8;
-                          const natW = wrapper.scrollWidth;
-                          if (natW > availW && availW > 0) {
-                            const sc = availW / natW;
-                            wrapper.style.transformOrigin = "top left";
-                            wrapper.style.transform = `scale(${sc})`;
-                            container.style.height = Math.ceil(wrapper.scrollHeight * sc) + "px";
-                            container.style.overflow = "hidden";
-                          }
-                        }
-
-                        // Săgețile EP / REF / CO2 sunt randate nativ din template-ul DOCX.
-                        // Nu mai facem overlay JS — calculul de poziții era incompatibil cu
-                        // transform:scale aplicat pe wrapper (rect-uri post-scalare + dublă scalare).
-
-                        setDocxRendered(true);
-                        showToast("Preview generat", "success", 1500);
-                      }
-                    } catch(e) {
-                      showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
-                      console.error("DOCX preview error:", e);
-                    } finally {
-                      setDocxRendering(false);
-                    }
-                  }}
-                    ref={previewBtnRef}
-                    data-auto-preview="true"
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-all text-sm">
-                    {docxRendering
-                      ? <><span className="animate-spin">⏳</span> {lang==="EN"?"Generating preview...":"Se generează preview..."}</>
-                      : <><span className="text-lg">📄</span> {lang==="EN"?"Generate EPC Preview":"Generează Preview CPE"}</>
-                    }
-                  </button>
+                  {/* Audit 2 mai 2026 — Buton "Generează Preview CPE" mutat în coloana dreaptă, deasupra Card-ului Preview Certificat */}
 
                   {/* Certificate counter */}
                   {userTier !== "free" && (
@@ -3230,6 +3097,115 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                 {/* Preview CPE + Anexa preview — coloana 2+3 */}
                 <div className="xl:col-span-2 space-y-5">
+                  {/* Buton Generează Preview CPE — direct deasupra Card-ului Preview Certificat */}
+                  <button onClick={async function() {
+                    try {
+                      setDocxRendering(true);
+                      setDocxRendered(false);
+                      setPdfPreviewBuffer(null);
+                      showToast("Se generează preview CPE...", "info", 4000);
+                      const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
+                      const buf = await fetchTemplate(tpl.cpe);
+                      const docxBlob = await generateDocxCPE(buf, "cpe", {download: false});
+                      let authToken = null;
+                      try {
+                        if (supabase) {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          authToken = session?.access_token || null;
+                        }
+                      } catch { /* ignore */ }
+                      if (docxBlob) {
+                        try {
+                          const apiBase = import.meta.env.DEV ? "https://energy-app-ruby.vercel.app" : "";
+                          const headers = {};
+                          if (authToken) headers.Authorization = `Bearer ${authToken}`;
+                          const previewResp = await fetch(apiBase + "/api/preview-document", {
+                            method: "POST",
+                            headers,
+                            body: docxBlob,
+                          });
+                          if (previewResp.ok) {
+                            const ct = previewResp.headers.get("content-type") || "";
+                            if (ct.includes("application/pdf")) {
+                              const pdfBlob = await previewResp.blob();
+                              const pdfBuf = await pdfBlob.arrayBuffer();
+                              setPdfPreviewBuffer(pdfBuf);
+                              if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                              const url = URL.createObjectURL(pdfBlob);
+                              setPdfPreviewUrl(url);
+                              setDocxRendered(true);
+                              setDocxRendering(false);
+                              showToast("Preview PDF generat", "success", 1500);
+                              return;
+                            } else if (ct.includes("application/json")) {
+                              const json = await previewResp.json();
+                              if (json.viewerUrl) {
+                                if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                                setPdfPreviewBuffer(null);
+                                setPdfPreviewUrl(json.viewerUrl);
+                                setDocxRendered(true);
+                                setDocxRendering(false);
+                                showToast("Preview generat (Office Online)", "success", 1500);
+                                return;
+                              }
+                            }
+                          }
+                        } catch (apiErr) {
+                          console.warn("preview-document API error, falling back to docx-preview:", apiErr.message);
+                        }
+                      }
+                      if (docxBlob && docxPreviewRef.current) {
+                        const container = docxPreviewRef.current;
+                        container.innerHTML = "";
+                        await renderAsync(docxBlob, container, null, {
+                          className: "docx-preview-content",
+                          inWrapper: true,
+                          ignoreWidth: false,
+                          ignoreHeight: true,
+                          ignoreFonts: false,
+                          breakPages: true,
+                          useBase64URL: true,
+                          experimental: true,
+                        });
+                        const styleEl = document.createElement('style');
+                        styleEl.textContent = `
+                          .docx-preview-content .docx-wrapper { background:#e8e8e8!important; padding:12px!important; min-width:0!important; }
+                          .docx-preview-content .docx-wrapper section.page { position:relative!important; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:12px!important; overflow:visible!important; }
+                        `;
+                        container.appendChild(styleEl);
+                        await new Promise(r => setTimeout(r, 120));
+                        const outerBox = container.closest('.docx-preview-outer') || container.parentElement;
+                        const wrapper = container.querySelector('.docx-preview-content-wrapper') || container.firstElementChild;
+                        if (wrapper) {
+                          const availW = outerBox.clientWidth - 8;
+                          const natW = wrapper.scrollWidth;
+                          if (natW > availW && availW > 0) {
+                            const sc = availW / natW;
+                            wrapper.style.transformOrigin = "top left";
+                            wrapper.style.transform = `scale(${sc})`;
+                            container.style.height = Math.ceil(wrapper.scrollHeight * sc) + "px";
+                            container.style.overflow = "hidden";
+                          }
+                        }
+                        setDocxRendered(true);
+                        showToast("Preview generat", "success", 1500);
+                      }
+                    } catch(e) {
+                      showToast("Nu s-a putut genera preview-ul CPE.", "error", 3000);
+                      console.error("DOCX preview error:", e);
+                    } finally {
+                      setDocxRendering(false);
+                    }
+                  }}
+                    ref={previewBtnRef}
+                    data-auto-preview="true"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-all text-sm">
+                    {docxRendering
+                      ? <><span className="animate-spin">⏳</span> {lang==="EN"?"Generating preview...":"Se generează preview..."}</>
+                      : <><span className="text-lg">📄</span> {lang==="EN"?"Generate EPC Preview":"Generează Preview CPE"}</>
+                    }
+                  </button>
+
                   <div>
                     <Card title={t("Preview Certificat",lang)} className="border-amber-500/30 shadow-lg shadow-amber-500/5">
                       <div className="docx-preview-outer rounded-lg overflow-hidden"
@@ -3305,24 +3281,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </Card>
                   </div>
 
-                  {/* ── Anexa 1+2 MDLPA — câmpuri extinse (full-width între preview-uri) ── */}
-                  {setBuilding && (
-                    <Card title={lang === "EN" ? "📋 Annex 1+2 MDLPA — Extended Fields" : "📋 Anexa 1+2 MDLPA — câmpuri extinse"}>
-                      <AnexaMDLPAFields
-                        building={building}
-                        setBuilding={setBuilding}
-                        heating={heating}
-                        cooling={cooling}
-                        ventilation={ventilation}
-                        acm={acm}
-                        otherRenew={otherRenew}
-                        lighting={lighting}
-                        lang={lang}
-                      />
-                    </Card>
-                  )}
-
-                  {/* Audit 2 mai 2026 — Buton + preview DOCX live Anexa 1+2 (similar cu CPE) */}
+                  {/* Audit 2 mai 2026 — Buton + preview DOCX live Anexa 1+2 (mutat sub CPE preview) */}
                   <button
                     ref={anexaPreviewBtnRef}
                     onClick={async function () {
@@ -3426,11 +3385,11 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         setAnexaRendering(false);
                       }
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-300 font-medium transition-all text-sm"
+                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-all text-sm"
                   >
                     {anexaRendering
                       ? <><span className="animate-spin">⏳</span> {lang === "EN" ? "Generating Annex preview..." : "Se generează preview Anexa..."}</>
-                      : <><span className="text-base">📋</span> {lang === "EN" ? "Generate Annex 1+2 Preview" : "Generează Preview Anexa 1+2"}</>
+                      : <><span className="text-lg">📋</span> {lang === "EN" ? "Generate Annex 1+2 Preview" : "Generează Preview Anexa 1+2"}</>
                     }
                   </button>
 
@@ -3500,7 +3459,24 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     </div>
                   </Card>
 
-                  {/* Anexa 1 + 2 preview SUMAR (CpeAnexa) — sub preview live */}
+                  {/* ── Anexa 1+2 MDLPA — câmpuri extinse (mutat sub preview live Anexa) ── */}
+                  {setBuilding && (
+                    <Card title={lang === "EN" ? "📋 Annex 1+2 MDLPA — Extended Fields" : "📋 Anexa 1+2 MDLPA — câmpuri extinse"}>
+                      <AnexaMDLPAFields
+                        building={building}
+                        setBuilding={setBuilding}
+                        heating={heating}
+                        cooling={cooling}
+                        ventilation={ventilation}
+                        acm={acm}
+                        otherRenew={otherRenew}
+                        lighting={lighting}
+                        lang={lang}
+                      />
+                    </Card>
+                  )}
+
+                  {/* Anexa 1 + 2 preview SUMAR (CpeAnexa) — sub câmpurile extinse */}
                   {instSummary && (
                     <Card title="📋 Anexa 1 + Anexa 2 CPE — Preview date complete (sumar)">
                       <CpeAnexa
