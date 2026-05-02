@@ -161,4 +161,45 @@ describe("auditor-attestation-validity — Sprint v6.2 (Ord. MDLPA 348/2026)", (
     });
   });
 
+  describe("getAttestationOrdinanceLabel — T3 Sprint Tranziție 2026", () => {
+    it("atestat emis înainte de 14.IV.2026 → Ord. MDLPA 2237/2010", async () => {
+      const { getAttestationOrdinanceLabel } = await import(
+        "../auditor-attestation-validity.js"
+      );
+      const label = getAttestationOrdinanceLabel(new Date("2024-06-15"));
+      expect(label.short).toBe("Ord. MDLPA 2237/2010");
+      expect(label.version).toBe("legacy_2237");
+      expect(label.full).toMatch(/2237\/2010/);
+      expect(label.full).toMatch(/tranziție/);
+    });
+
+    it("atestat emis după 14.IV.2026 → Ord. MDLPA 348/2026", async () => {
+      const { getAttestationOrdinanceLabel } = await import(
+        "../auditor-attestation-validity.js"
+      );
+      const label = getAttestationOrdinanceLabel(new Date("2026-05-20"));
+      expect(label.short).toBe("Ord. MDLPA 348/2026");
+      expect(label.version).toBe("new_348");
+      expect(label.full).toMatch(/MO nr\. 292/);
+    });
+
+    it("atestat emis exact pe 14.IV.2026 → Ord. MDLPA 348/2026 (data publicării)", async () => {
+      const { getAttestationOrdinanceLabel } = await import(
+        "../auditor-attestation-validity.js"
+      );
+      const label = getAttestationOrdinanceLabel(new Date("2026-04-14T00:00:00.000Z"));
+      expect(label.version).toBe("new_348");
+    });
+
+    it("atestat fără dată → fallback generic", async () => {
+      const { getAttestationOrdinanceLabel } = await import(
+        "../auditor-attestation-validity.js"
+      );
+      const label = getAttestationOrdinanceLabel(null);
+      expect(label.version).toBe(null);
+      expect(label.short).toBe("Ord. MDLPA aplicabil");
+      expect(label.full).toMatch(/completează data/);
+    });
+  });
+
 });

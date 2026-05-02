@@ -29,6 +29,7 @@ import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { canAccess as canAccessFn, resolvePlan } from "../lib/planGating.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
+import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validity.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
 import { getCityCoordinates } from "../utils/city-coordinates.js";
@@ -2068,6 +2069,53 @@ ${(() => {
                   <div className="text-amber-300/80">Termen: {bacsCheck.deadline} · {bacsCheck.epbdRef}</div>
                 </div>
               )}
+
+              {/* T3 Sprint Tranziție 2026 — citare ordin atestare auditor.
+                  Pe baza datei emiterii atestatului, citează ordinul prin care
+                  auditorul a fost atestat (Ord. 2237/2010 vs Ord. 348/2026). */}
+              {(() => {
+                const ordLabel = getAttestationOrdinanceLabel(auditor?.attestationIssueDate);
+                if (!ordLabel.version) {
+                  // Fără dată completată — invitație discretă
+                  return (
+                    <div
+                      className="mb-3 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-[11px] opacity-60 italic"
+                      role="note"
+                    >
+                      {lang === "EN"
+                        ? "💡 Add attestation issue date in auditor profile to cite the correct ordinance on the EPC."
+                        : "💡 Adaugă data emiterii atestatului în profilul auditorului pentru a cita ordinul corect pe CPE."}
+                    </div>
+                  );
+                }
+                const isLegacy = ordLabel.version === "legacy_2237";
+                return (
+                  <div
+                    className={`mb-3 px-3 py-2 rounded-lg text-[11px] flex items-center gap-2 ${
+                      isLegacy
+                        ? "bg-violet-500/10 border border-violet-500/30 text-violet-200"
+                        : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-200"
+                    }`}
+                    role="note"
+                  >
+                    <span className="text-base">{isLegacy ? "📜" : "🆕"}</span>
+                    <div className="flex-1">
+                      <strong>{ordLabel.short}</strong>
+                      {" — "}
+                      {lang === "EN"
+                        ? "the EPC will cite this ordinance per your attestation."
+                        : "CPE va cita acest ordin conform atestatului tău."}
+                      {isLegacy && (
+                        <span className="opacity-70 italic ml-1">
+                          {lang === "EN"
+                            ? "(transition regime, valid until natural attestation expiry)"
+                            : "(regim tranziție, valabil până la expirarea naturală a atestatului)"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* T1.7 Sprint Tranziție 2026 — banner informativ pentru plan AE IIci.
                   Filozofie: plan-urile sunt orientate FUNCȚIONAL (nu pe grad atestat).

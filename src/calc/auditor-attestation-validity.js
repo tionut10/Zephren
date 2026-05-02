@@ -231,6 +231,42 @@ export function getAttestationOrdinanceVersion(attestationIssueDate) {
 }
 
 /**
+ * Returnează eticheta umană a ordinului prin care auditorul a fost atestat.
+ *
+ * Pentru atestate emise:
+ *   - înainte de 14.IV.2026 → Ord. MDLPA 2237/2010 (vechiul regim, valabil
+ *     până la expirarea naturală a atestatului)
+ *   - de la 14.IV.2026 încolo → Ord. MDLPA 348/2026 (regim nou, în vigoare)
+ *
+ * Folosit pentru citare corectă în CPE DOCX/XML/PDF (T3 Sprint Tranziție 2026).
+ *
+ * @param {Date|string|null} attestationIssueDate
+ * @returns {{ short: string, full: string, version: string|null }}
+ */
+export function getAttestationOrdinanceLabel(attestationIssueDate) {
+  const v = getAttestationOrdinanceVersion(attestationIssueDate);
+  if (v === "legacy_2237") {
+    return {
+      short: "Ord. MDLPA 2237/2010",
+      full: "Ordinul MDLPA nr. 2237/2010 (regim de tranziție, valabil până la expirarea naturală a atestatului conform Art. 7 Ord. 348/2026)",
+      version: "legacy_2237",
+    };
+  }
+  if (v === "new_348") {
+    return {
+      short: "Ord. MDLPA 348/2026",
+      full: "Ordinul MDLPA nr. 348/2026 (MO nr. 292/14.IV.2026)",
+      version: "new_348",
+    };
+  }
+  return {
+    short: "Ord. MDLPA aplicabil",
+    full: "Ordin MDLPA aplicabil — completează data emiterii atestatului în profil pentru citare exactă",
+    version: null,
+  };
+}
+
+/**
  * Pentru perioada de tranziție (până la 11 oct 2026), atestatele vechi rămân
  * valabile. Verifică dacă suntem încă în fereastra de tranziție.
  *
