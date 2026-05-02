@@ -796,18 +796,18 @@ export default function Step6Certificate(props) {
                     repartitoare_costuri: building.heatingCostAllocator === "da" ? "exista" : "nu_exista",
                     acm_recirculare: building.acmRecirculation || "nu_exista",
                     iluminat_control: (() => {
-                      const c = String(lighting?.control || "").toLowerCase();
+                      const c = String(lighting?.controlType || lighting?.control || "").toLowerCase();
                       if (c.includes("auto") || c.includes("dali") || c.includes("knx")) return "automat";
                       if (c.includes("manu")) return "manuala";
                       return "fara_reglare";
                     })(),
                     zona_climatica: (() => {
                       // Mc 001-2022: 5 zone climatice România (I-V)
-                      const z = String(building.climateZone || climate?.zone || "").toUpperCase().replace(/[^IVX]/g, "");
+                      const z = String(building.climateZone || selectedClimate?.zone || "").toUpperCase().replace(/[^IVX]/g, "");
                       return ["I", "II", "III", "IV", "V"].includes(z) ? z : "II";
                     })(),
                     zona_eoliana: (() => {
-                      const z = String(building.windZone || climate?.windZone || "").toUpperCase().replace(/[^IV]/g, "");
+                      const z = String(building.windZone || selectedClimate?.windZone || "").toUpperCase().replace(/[^IV]/g, "");
                       return ["I", "II", "III", "IV"].includes(z) ? z : "II";
                     })(),
                     regim_inaltime: building.floors || "P",
