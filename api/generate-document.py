@@ -4134,9 +4134,35 @@ class handler(BaseHTTPRequestHandler):
                     is_res = category in ("RI", "RC", "RA")
                     nr_pers = max(1, round(au_f / (30 if is_res else 15)))
                     nr_pers_str = str(nr_pers)
-                    # Încearcă ambele variante; _fill_para_blank inserează valoarea în
-                    # locul placeholder-ului de spații/nbsp din paragraf
-                    filled = _fill_para_blank("persoane din apartament", nr_pers_str, " pers.")
+                    # Folosesc preferat valoarea trimisă din frontend, dacă există
+                    nr_pers_user = (data.get("nr_persoane") or "").strip()
+                    if nr_pers_user:
+                        nr_pers_str = nr_pers_user
+                    # Strategie robustă: caut paragraful (incl. în tabele) și înlocuiesc
+                    # placeholder-ul de DOTS sau SPAȚII cu numărul de persoane.
+                    # Bug anterior: `_fill_para_blank` căuta doar spații/nbsp, dar
+                    # template-ul foloseste „..................." (dots) ca placeholder.
+                    import re as _re_pers
+                    _pers_re = _re_pers.compile(r"[\xa0\s]*\.{3,}[\xa0\s]*|[\xa0\s]{6,}")
+                    filled = False
+                    for _p in _iter_all_paragraphs(doc):
+                        pt = _p.text
+                        if "persoane din apartament" not in pt and \
+                           "persoane din clădire" not in pt and \
+                           "persoane din unitatea" not in pt:
+                            continue
+                        # Sărim dacă valoarea e deja prezentă (idempotent)
+                        if f": {nr_pers_str}" in pt or f" {nr_pers_str} pers" in pt:
+                            filled = True
+                            break
+                        m = _pers_re.search(pt)
+                        if not m:
+                            continue
+                        matched = pt[m.start():m.end()]
+                        n = replace_in_paragraph(_p, matched, " " + nr_pers_str + " ", count=1)
+                        if n:
+                            filled = True
+                            break
                     if not filled:
                         _replace_full_para(
                             "Numărul normat de persoane",
@@ -5676,23 +5702,41 @@ class handler(BaseHTTPRequestHandler):
                 has_hot_air = "aer_cald" in heating_src_key or "generator_aer" in heating_src_key
                 has_electric_radiant = "electric_radiant" in heating_src_key or "cable" in heating_src_key
 
-                # Pentru secțiuni NEAPLICABILE, marchez cu "—" în placeholder
+                # Pentru secțiuni NEAPLICABILE, marchez cu "—" în placeholder.
+                # Fix 2 mai 2026: normalizare diacritice (ș/ş, ț/ţ) + iterație ÎN TABELE
+                # (template-ul oficial pune multe placeholder-uri în celule de tabel).
+                import unicodedata as _ud
+                def _norm_diacritics(s):
+                    """Normalizează ş→ș, ţ→ț pentru match tolerant."""
+                    return s.replace("ş", "ș").replace("Ş", "Ș") \
+                            .replace("ţ", "ț").replace("Ţ", "Ț")
                 def _fill_na_placeholder(label, marker="—"):
-                    """Înlocuiește placeholder "..." cu marker "—" pentru secțiuni neaplicabile."""
-                    for p in doc.paragraphs:
-                        if label in p.text:
-                            for run in p.runs:
-                                if re.search(r"[\xa0\s]{3,}|\.{4,}", run.text):
-                                    run.text = re.sub(r"[\xa0\s]{3,}|\.{4,}", f" {marker} ", run.text, count=1)
-                                    return True
+                    """Înlocuiește placeholder "..." sau spații cu marker "—" pentru
+                    secțiuni neaplicabile. Caută în corp + tabele, tolerant la diacritice.
+                    """
+                    label_n = _norm_diacritics(label)
+                    for p in _iter_all_paragraphs(doc):
+                        pt_n = _norm_diacritics(p.text)
+                        if label_n not in pt_n:
+                            continue
+                        for run in p.runs:
+                            rt = run.text
+                            if not rt:
+                                continue
+                            if re.search(r"[\xa0\s]{3,}|\.{4,}", rt):
+                                run.text = re.sub(
+                                    r"[\xa0\s]{3,}|\.{4,}",
+                                    f" {marker} ", rt, count=1)
+                                return True
                     return False
 
-                # Planșeu/plafon/perete încălzitor — dacă nu e activ, marchez "—"
+                # Planșeu/plafon/perete încălzitor — labels potrivite cu textul EXACT
+                # din template (verificat 2 mai 2026 prin docx inspection)
                 if not has_radiant:
-                    _fill_na_placeholder("Aria planșeelor/plafoanelor/pereților")
+                    _fill_na_placeholder("Aria planşeelor/plafoanelor/pereților")
                 # Cabluri electrice încălzitoare — dacă nu e activ
                 if not has_electric_radiant:
-                    _fill_na_placeholder("Lungimea și tipul cablurilor electrice")
+                    _fill_na_placeholder("Lungimea şi tipul cablurilor electrice")
                 # Tuburi radiante
                 if not has_radiant_tube:
                     _fill_na_placeholder("Tip/putere tub radiant")
@@ -5701,6 +5745,13 @@ class handler(BaseHTTPRequestHandler):
                 if not has_hot_air:
                     _fill_na_placeholder("Tip/putere generator aer cald")
                     _fill_na_placeholder("Număr/debit aer")
+
+                # Debit nominal agent termic (pt. încălzire) — placeholder înainte de l/h
+                heating_flow = data.get("heating_flow_lh", "") or data.get("heating_flow_rate", "")
+                if heating_flow:
+                    _fill_para_blank("Debitul nominal de agent termic", str(heating_flow), " l/h")
+                else:
+                    _fill_na_placeholder("Debitul nominal de agent termic")
 
                 # Similar pentru necesar umidificare (rar aplicabil)
                 humid_power_val = data.get("humidification_power_kw", "")
