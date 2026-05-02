@@ -2563,10 +2563,25 @@ ${(() => {
                   {/* MDLPA Registry info */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
                     <div className="text-[10px] opacity-50 font-medium mb-1">Registru MDLPA</div>
-                    <div className="text-[10px] opacity-35 space-y-1">
+                    <div className="text-[10px] opacity-35 space-y-1.5">
                       <div>Codul unic se obține după înregistrarea CPE pe platforma electronică a MDLPA.</div>
                       <div>Platforma: <strong>https://www.mdlpa.ro</strong> → Registru certificate energetice</div>
-                      <div>Conform Art.19 L.372/2005 mod. L.238/2024, CPE se înregistrează în max 30 zile de la elaborare.</div>
+                      <div>Conform Art.19 L.372/2005 mod. L.238/2024, CPE se înregistrează în max <strong>30 zile</strong> de la elaborare.</div>
+                      <div className="border-t border-white/[0.06] pt-1.5 space-y-1">
+                        <div><strong>Modalitate transmitere</strong> (la alegere):</div>
+                        <div>① Email: <strong>atestari@mdlpa.ro</strong></div>
+                        <div>② Upload portal cloud ministerial (link personalizat)</div>
+                      </div>
+                      <div className="border-t border-white/[0.06] pt-1.5">
+                        <div><strong>Format cod unic:</strong></div>
+                        <div className="font-mono text-[9px] opacity-70 mt-0.5 break-all">Nr. MDLPA_Data_Prenume_Nume_Serie_Nr_NrRegistru_CPE</div>
+                      </div>
+                      <div className="border-t border-white/[0.06] pt-1.5 text-red-400/60">
+                        ⚠️ CPE fără cod unic MDLPA este <strong>invalid</strong> și nu poate fi utilizat.
+                      </div>
+                      <div className="border-t border-white/[0.06] pt-1.5 text-amber-400/60">
+                        Amendă pentru netransmitere: <strong>5.000–20.000 lei</strong> (L. 238/2024)
+                      </div>
                     </div>
                   </div>
 
