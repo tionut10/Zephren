@@ -457,51 +457,12 @@ def check_box_in_table(doc, table_idx, row_idx, col_idx):
     return check_form_checkbox_in_cell(tbl.rows[row_idx].cells[col_idx])
 
 
-def merge_duplicate_year_cells(doc):
-    """Pentru tabelul CPE „DATE PRIVIND APARTAMENTUL/CLĂDIREA", dacă R1C1 și R2C1
-    conțin același placeholder-anchor („Anul construirii"), GOLEȘTE conținutul
-    duplicatului din R2C1 pentru a evita afișarea redundantă.
-
-    Audit 2 mai 2026 — fix aliniere tabel raportat de utilizator.
-    NOTĂ: am încercat inițial vMerge (commit 3970604) dar python-docx aruncă
-    'no tc element at grid_offset=1' la accesări ulterioare ale tabelului
-    pentru tabele cu gridSpan-uri complexe (template MDLPA). Soluția safer:
-    doar curăț textul din R2C1 — gap-ul rămâne dar evităm crash.
-    """
-    for tbl in doc.tables:
-        is_data_table = any(
-            ("DATE PRIVIND APARTAMENTUL" in cell.text or
-             "DATE PRIVIND CLĂDIREA" in cell.text or
-             "DATE PRIVIND IDENTIFICAREA" in cell.text)
-            for row in tbl.rows for cell in row.cells
-        )
-        if not is_data_table or len(tbl.rows) < 3:
-            continue
-        try:
-            r1c1 = tbl.rows[1].cells[1]
-            r2c1 = tbl.rows[2].cells[1]
-        except (IndexError, ValueError):
-            continue
-        try:
-            t1 = r1c1.text.strip()
-            t2 = r2c1.text.strip()
-        except (ValueError, AttributeError):
-            continue
-        # Verific dacă R2C1 e duplicat al R1C1 (același „Anul construirii AAAA")
-        is_duplicate = (
-            t1 and t2 and t1 == t2
-        ) or (
-            t1.startswith("Anul construirii") and t2.startswith("Anul construirii")
-        )
-        if not is_duplicate:
-            continue
-        # Golesc R2C1 (păstrez celula vidă pentru a nu strica grid_offset)
-        try:
-            for p in r2c1.paragraphs:
-                for run in list(p.runs):
-                    run._r.getparent().remove(run._r)
-        except (ValueError, AttributeError):
-            continue
+# NOTĂ 2 mai 2026: am eliminat funcțiile merge_duplicate_year_cells +
+# label_year_cells_as_built_vs_renov după ce am descoperit că template-ul
+# oficial MDLPA are deja vMerge aplicat pe celula „Anul construirii/renovării
+# majore" (R1C1._tc IS R2C1._tc). Eticheta apare O SINGURĂ DATĂ — nu există
+# duplicate de eliminat. Populare normală a template-ului (replace AAAA →
+# yearBuilt) funcționează corect fără intervenție suplimentară.
 
 
 # ═══════════════════════════════════════════════════════
@@ -3834,13 +3795,12 @@ class handler(BaseHTTPRequestHandler):
             if (signature_b64 or stamp_b64) and mode == "cpe":
                 insert_signature_stamp(doc, signature_b64, stamp_b64)
 
-            # Audit 2 mai 2026 — fix aliniere tabel CPE: vMerge R1C1+R2C1 unde
-            # template-ul are „Anul construirii" duplicat (cauzează gap vizual).
-            if mode == "cpe":
-                try:
-                    merge_duplicate_year_cells(doc)
-                except Exception as e:
-                    print(f"⚠️ merge_duplicate_year_cells: {e}", file=sys.stderr)
+            # Audit 2 mai 2026 — NU MAI MODIFICĂM celula „Anul construirii/renovării majore":
+            # template-ul oficial MDLPA are deja celula vertical-merged între R1+R2
+            # (R1C1._tc IS R2C1._tc), deci eticheta apare O SINGURĂ DATĂ cu o singură
+            # valoare AAAA care se înlocuiește în populare normală cu yearBuilt.
+            # NU EXISTĂ duplicate de eliminat — versiunea anterioară (vMerge sau
+            # cleanup text) STRICA template-ul oficial. Las flow-ul de populare nativ.
 
             qr_url = data.get("qr_verify_url", "")
             if qr_url:

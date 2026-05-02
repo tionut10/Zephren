@@ -546,6 +546,7 @@ export default function Step6Certificate(props) {
                     wind_enabled: (otherRenew && otherRenew.windEnabled) ? "true" : "false",
                     structure: building.structure || "",
                     year_built: building.yearBuilt || "",
+                    year_renov: building.yearRenov || "",
                     climate_zone_num: String(parseInt(selectedClimate?.zone) || 3),
                     opaque_u_values: JSON.stringify(opaqueElements.map(function(el) {
                       // FIX 21 apr 2026: trimit și `area` (lipsea înainte) — Python avea
