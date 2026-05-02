@@ -100,8 +100,9 @@ export default function AnexaMDLPAFields({
   lang = "RO",
 }) {
   // Grupa expandat-colapsat pentru ergonomie (toate deschise default)
+  // Audit 2 mai 2026 — P1.5: grup G „Detalii tehnice extinse" (EPBD 2024 indicatori)
   const [expanded, setExpanded] = useState({
-    A: true, B: false, C: false, D: false, E: false, F: false,
+    A: true, B: false, C: false, D: false, E: false, F: false, G: false,
   });
   const toggle = useCallback((key) => {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1027,6 +1028,208 @@ export default function AnexaMDLPAFields({
             </div>
           )}
         </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          G. Detalii tehnice extinse (EPBD 2024 + ani echipamente)
+          Audit 2 mai 2026 — P1.5: înainte 8+ câmpuri erau trimise mereu
+          goale în payload Step6Certificate (no UI). Acum expuse explicit:
+            - Calitate aer interior (CO₂ ppm, PM2.5)
+            - EV charging (puncte instalate + pre-cablate)
+            - Vechime echipamente (an instalare HVAC)
+            - Detalii distribuție (izolație conducte, valve echilibrare)
+            - Mod operare confort (factor umbrire, atic încălzit)
+          ════════════════════════════════════════════════════════════ */}
+      <div className="mt-3">
+        <SectionHeader
+          id="G"
+          title="G. Detalii tehnice extinse (EPBD 2024 + vechime echipamente)"
+          subtitle="Calitate aer · EV charging · ani instalare HVAC/ACM/ventilare · izolație conducte · factor umbrire"
+        />
+        {expanded.G && (
+          <div id="mdlpa-section-G" className="grid grid-cols-2 gap-4 px-3 pt-3 pb-1">
+            {/* Calitate aer interior — EPBD Art. 14 (IAQ) */}
+            <FieldWrap
+              label="CO₂ maxim încăpere de referință [ppm]"
+              help="Indicator IAQ EPBD 2024 Art. 14. Standard SR EN 16798-1: cat. I ≤ 750, cat. II ≤ 950, cat. III ≤ 1200 ppm."
+            >
+              <Input
+                type="number"
+                value={building?.co2MaxPpm || ""}
+                onChange={(v) => update("co2MaxPpm", v)}
+                min={400} max={5000} step={10}
+                placeholder="ex: 950"
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="PM2.5 mediu interior [µg/m³]"
+              help="Pulberi fine — EPBD 2024 IAQ. WHO 2021: media anuală ≤ 5 µg/m³."
+            >
+              <Input
+                type="number"
+                value={building?.pm25Avg || ""}
+                onChange={(v) => update("pm25Avg", v)}
+                min={0} max={500} step={0.5}
+                placeholder="ex: 8"
+              />
+            </FieldWrap>
+
+            {/* EV charging — EPBD Art. 14 (clădiri rezidențiale + nerezidențiale > 5 locuri) */}
+            <FieldWrap
+              label="Puncte încărcare EV instalate"
+              help="EPBD 2024 Art. 14: parcări asociate clădirii — min. 1 punct la 10 locuri (nerezidențial existent), 1 punct la 5 (nou). Rezidențial nou: min. 50% locuri pre-cablate."
+            >
+              <Input
+                type="number"
+                value={building?.evChargingPoints || ""}
+                onChange={(v) => update("evChargingPoints", v)}
+                min={0} step={1}
+                placeholder="ex: 2"
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="Locuri pre-cablate EV (fără echipament)"
+              help="Pre-pregătire infrastructură EV — instalare ulterioară punct fără re-săpături."
+            >
+              <Input
+                type="number"
+                value={building?.evChargingPrepared || ""}
+                onChange={(v) => update("evChargingPrepared", v)}
+                min={0} step={1}
+                placeholder="ex: 6"
+              />
+            </FieldWrap>
+
+            {/* Vechime echipamente HVAC */}
+            <FieldWrap
+              label="An instalare echipament încălzire"
+              help="Pentru evaluare vechime și recomandare modernizare. Cazane > 15 ani au randament real semnificativ degradat."
+            >
+              <Input
+                type="number"
+                value={building?.heatingYearInstalled || ""}
+                onChange={(v) => update("heatingYearInstalled", v)}
+                min={1950} max={new Date().getFullYear()} step={1}
+                placeholder="ex: 2008"
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="An instalare boiler/sistem ACM"
+              help="Boilere ACM > 10 ani prezintă pierderi de stocare crescute (corodare, izolație degradată)."
+            >
+              <Input
+                type="number"
+                value={building?.acmYearInstalled || ""}
+                onChange={(v) => update("acmYearInstalled", v)}
+                min={1950} max={new Date().getFullYear()} step={1}
+                placeholder="ex: 2015"
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="An instalare ventilație mecanică"
+              help="HRV > 10 ani: degradare schimbător căldură (eficiență tipic −10–20%)."
+            >
+              <Input
+                type="number"
+                value={building?.ventilationYearInstalled || ""}
+                onChange={(v) => update("ventilationYearInstalled", v)}
+                min={1990} max={new Date().getFullYear()} step={1}
+                placeholder="ex: 2018"
+              />
+            </FieldWrap>
+
+            {/* Detalii distribuție */}
+            <FieldWrap
+              label="Conducte încălzire izolate?"
+              help="Distribuție termică izolată reduce pierderi cu 5–15% (Mc 001-2022 Cap. 6)."
+            >
+              <Radio
+                value={building?.heatingPipeInsulated || ""}
+                onChange={(v) => update("heatingPipeInsulated", v)}
+                ariaLabel="Conducte încălzire izolate"
+                options={[
+                  { value: "yes", label: "Da" },
+                  { value: "partial", label: "Parțial" },
+                  { value: "no", label: "Nu" },
+                ]}
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="Conducte ACM izolate?"
+              help="Conducte ACM neizolate: pierderi de stand-by 10–25% din consumul anual ACM."
+            >
+              <Radio
+                value={building?.acmPipeInsulated || ""}
+                onChange={(v) => update("acmPipeInsulated", v)}
+                ariaLabel="Conducte ACM izolate"
+                options={[
+                  { value: "yes", label: "Da" },
+                  { value: "partial", label: "Parțial" },
+                  { value: "no", label: "Nu" },
+                ]}
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="Robinete echilibrare circuit încălzire?"
+              help="Valve dinamice/statice de echilibrare — necesare pentru distribuție orizontală corectă (L.196/2018)."
+            >
+              <Radio
+                value={building?.heatingHasBalancingValves || ""}
+                onChange={(v) => update("heatingHasBalancingValves", v)}
+                ariaLabel="Robinete echilibrare"
+                options={[
+                  { value: "yes", label: "Da" },
+                  { value: "no", label: "Nu" },
+                  { value: "unknown", label: "Necunoscut" },
+                ]}
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="Baterii sanitare debit redus?"
+              help="Baterii cu aerator/limitator (5–8 L/min) reduc consumul ACM cu 20–30%."
+            >
+              <Radio
+                value={building?.acmFixturesLowFlow || ""}
+                onChange={(v) => update("acmFixturesLowFlow", v)}
+                ariaLabel="Baterii debit redus"
+                options={[
+                  { value: "yes", label: "Da" },
+                  { value: "partial", label: "Parțial" },
+                  { value: "no", label: "Nu" },
+                ]}
+              />
+            </FieldWrap>
+
+            {/* Confort vară + atic */}
+            <FieldWrap
+              label="Factor umbrire ferestre vară [0–1]"
+              help="Coeficient mediu reducere aporturi solare (jaluzele, copertine, copaci). 1 = fără umbrire, 0.3 = umbrire eficientă."
+            >
+              <Input
+                type="number"
+                value={building?.shadingFactor || ""}
+                onChange={(v) => update("shadingFactor", v)}
+                min={0} max={1} step={0.05}
+                placeholder="ex: 0.7"
+              />
+            </FieldWrap>
+            <FieldWrap
+              label="Atic / pod este încălzit?"
+              help="Dacă podul/aticul e încălzit, intră în volumul Vu și anvelopa termică. Altfel, planșeul superior e limita anvelopei."
+            >
+              <Radio
+                value={building?.atticHeated || ""}
+                onChange={(v) => update("atticHeated", v)}
+                ariaLabel="Atic încălzit"
+                options={[
+                  { value: "yes", label: "Încălzit" },
+                  { value: "no", label: "Neîncălzit" },
+                  { value: "na", label: "Nu există" },
+                ]}
+              />
+            </FieldWrap>
+          </div>
+        )}
       </div>
 
       {/* Footer help */}

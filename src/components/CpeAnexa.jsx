@@ -5,6 +5,8 @@ import { calcPenalties } from "../calc/penalties.js";
 import { computeAutoSRI } from "../calc/sri-auto-map.js";
 import { SRI_CLASS_LABELS } from "../calc/sri-indicator.js";
 import AnexaBloc from "./AnexaBloc.jsx";
+// Audit 2 mai 2026 — P1.4: motor unificat recomandări (înainte 2 motoare divergente)
+import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
@@ -116,71 +118,17 @@ export default function CpeAnexa({
     </div>
   );
 
-  // Generare recomandări Anexa 2
-  const recommendations = [];
-  if (envelopeSummary) {
-    if (envelopeSummary.G > 0.8) {
-      recommendations.push({
-        code: "A1", priority: "înaltă",
-        measure: "Termoizolare pereți exteriori",
-        detail: `G = ${fmtRo(envelopeSummary.G, 3)} W/(m³·K) — depășește 0.8. Aplicare sistem ETICS cu EPS 10-15 cm.`,
-        savings: "15-25%",
-      });
-    }
-    if (glazingElements?.some(g => parseFloat(g.u) > 2.5)) {
-      recommendations.push({
-        code: "A2", priority: "înaltă",
-        measure: "Înlocuire tâmplărie exterioară",
-        detail: "Ferestre cu U > 2.5 W/(m²·K). Înlocuire cu tâmplărie PVC/AL cu geam termoizolant Low-E (U ≤ 1.1).",
-        savings: "8-15%",
-      });
-    }
-    if (opaqueElements?.some(el => {
-      const r = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : null;
-      return r && r.u > 0.5 && ["PT", "PP"].includes(el.type);
-    })) {
-      recommendations.push({
-        code: "A3", priority: "medie",
-        measure: "Termoizolare planșeu superior (terasă/pod)",
-        detail: "Termoizolație insuficientă la planșeul superior. Aplicare vată minerală sau XPS ≥ 20 cm.",
-        savings: "8-12%",
-      });
-    }
-  }
-  if (instSummary) {
-    if (instSummary.isCOP === false && ["gaz_conv", "gaz_cond", "centrala_gpl"].includes(heating?.source)) {
-      recommendations.push({
-        code: "B1", priority: "medie",
-        measure: "Înlocuire cazan cu pompă de căldură",
-        detail: "Cazanul actual are η_gen < COP. Înlocuire cu pompă de căldură aer-apă SCOP ≥ 3.0.",
-        savings: "20-40%",
-      });
-    }
-    if (!solarThermal?.enabled) {
-      recommendations.push({
-        code: "B2", priority: "medie",
-        measure: "Instalare colectoare solare termice pentru ACM",
-        detail: "Nu există sistem solar termic. Instalare 4-8 m² colectoare plane → fracție solară 40-60%.",
-        savings: "5-10%",
-      });
-    }
-    if (!photovoltaic?.enabled) {
-      recommendations.push({
-        code: "C1", priority: "scăzută",
-        measure: "Instalare sistem fotovoltaic",
-        detail: "Producere locală energie electrică. Sistem 3-5 kWp → acoperire 30-50% consum electric.",
-        savings: "8-15%",
-      });
-    }
-    if (instSummary.leni > 15) {
-      recommendations.push({
-        code: "D1", priority: "medie",
-        measure: "Modernizare sistem iluminat",
-        detail: `LENI = ${fmtRo(instSummary.leni, 1)} kWh/(m²·an) — ridicat. Înlocuire corpuri luminoase cu LED + control prezență/luminozitate.`,
-        savings: "5-10%",
-      });
-    }
-  }
+  // Audit 2 mai 2026 — P1.4: motor unificat (înainte: 6 reguli inline divergente
+  // de Step6Certificate). Acum sursă unică în src/calc/cpe-recommendations.js.
+  const recommendations = generateCpeRecommendations({
+    building, envelopeSummary, opaqueElements, glazingElements,
+    thermalBridges: building?.thermalBridges,
+    heating, acm, cooling, ventilation, lighting,
+    solarThermal, photovoltaic,
+    instSummary, renewSummary,
+    rer: renewSummary?.rer,
+    calcOpaqueR,
+  });
 
   const priorityColor = { "înaltă": "#ef4444", "medie": "#eab308", "scăzută": "#22c55e" };
 

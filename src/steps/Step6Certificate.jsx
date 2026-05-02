@@ -29,6 +29,8 @@ import {
   groupCompletenessItems,
   ANCPI_REQUIRED_SCOPES,
 } from "../utils/cpe-completeness.js";
+// Audit 2 mai 2026 — P1.4: motor unificat recomandări CPE/Anexa 2
+import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
@@ -92,6 +94,27 @@ export default function Step6Certificate(props) {
             // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
             // Păstrăm și pdfPreviewUrl ca prop legacy pentru fallback Office Online iframe.
             const [pdfPreviewBuffer, setPdfPreviewBuffer] = useState(null);
+            // Audit 2 mai 2026 — P1.3: QR code real (înlocuiește Code128 vechi din
+            // preview HTML). Pre-generat ca dataURL pentru a fi folosit în template
+            // literal sync — librăria `qrcode` are doar API async (toDataURL).
+            // Server-side Python folosește deja `segno` pentru QR în DOCX.
+            const [qrVerifyDataUrl, setQrVerifyDataUrl] = useState("");
+            useEffect(() => {
+              const code = auditor?.cpeCode || auditor?.mdlpaCode || "";
+              if (!code) { setQrVerifyDataUrl(""); return; }
+              let cancelled = false;
+              const verifyUrl = `https://zephren.ro/cpe/verifica?cod=${encodeURIComponent(code)}`;
+              import("qrcode").then((mod) => {
+                if (cancelled) return;
+                const QRCode = mod.default || mod;
+                QRCode.toDataURL(verifyUrl, {
+                  width: 120, margin: 1, errorCorrectionLevel: "M",
+                  color: { dark: "#000000", light: "#FFFFFF" },
+                }).then((url) => { if (!cancelled) setQrVerifyDataUrl(url); })
+                  .catch(() => { if (!cancelled) setQrVerifyDataUrl(""); });
+              }).catch(() => { if (!cancelled) setQrVerifyDataUrl(""); });
+              return () => { cancelled = true; };
+            }, [auditor?.cpeCode, auditor?.mdlpaCode]);
 
             // Auto-generare preview la prima deschidere a Pasului 6
             useEffect(() => {
@@ -1401,6 +1424,17 @@ export default function Step6Certificate(props) {
               showToast("Generare CPE...", "info", 2000);
               // Build HTML string, then show in inline iframe via srcdoc
               const isEN = lang === "EN";
+              // Audit 2 mai 2026 — P1.4: motor unificat recomandări
+              // (eliminat motor inline divergent față de CpeAnexa.jsx)
+              const unifiedRecs = generateCpeRecommendations({
+                building, envelopeSummary, opaqueElements, glazingElements,
+                thermalBridges, heating, acm, cooling, ventilation, lighting,
+                solarThermal, photovoltaic,
+                instSummary, renewSummary,
+                rer: renewSummary?.rer,
+                calcOpaqueR,
+                financialAnalysis,
+              });
               const T = {
                 title: isEN ? "Energy Performance Certificate" : "Certificat de Performan\u021b\u0103 Energetic\u0103",
                 subtitle: isEN ? "of the building / building unit" : "a cl\u0103dirii / unit\u0103\u021bii de cl\u0103dire",
@@ -1858,76 +1892,22 @@ ${[
     <div class="stmp" style="min-height:35px"></div>
   </div>
 </div>
-<div class="bcd" id="qr-area">
+<div class="bcd" id="qr-area" style="text-align:center;padding:4px">
   <div style="margin-bottom:3px;font-size:7pt"><strong>${T.cpeCode}</strong></div>
-  <canvas id="qr-canvas" width="260" height="60" style="display:block;margin:0 auto 3px auto"></canvas>
-  <div style="font-size:6pt;letter-spacing:1px;color:#333">${auditor.mdlpaCode || "XXXXXX"}/${auditor.date||"AAAA-LL-ZZ"}/${auditor.atestat||"SERIE"}</div>
+  ${qrVerifyDataUrl
+    ? `<img src="${qrVerifyDataUrl}" alt="QR verificare CPE" style="display:block;margin:0 auto 3px auto;width:100px;height:100px" />`
+    : `<div style="display:inline-block;width:100px;height:100px;border:1px dashed #999;color:#999;font-size:6pt;line-height:100px;margin:0 auto 3px auto">QR în curs</div>`}
+  <div style="font-size:6pt;letter-spacing:1px;color:#333">${auditor.cpeCode || auditor.mdlpaCode || "XXXXXX"}</div>
+  <div style="font-size:5.5pt;color:#666;margin-top:1px">zephren.ro/cpe/verifica</div>
 </div>
 <script>
 (function(){
-  // Code128 barcode generator — real barcode, not pseudo-QR
-  var data = "${(auditor.mdlpaCode || 'XXXXXX') + '/' + (auditor.date||'0000-00-00') + '/' + (auditor.atestat||'00000')}";
-  var c = document.getElementById('qr-canvas');
-  if (!c) return;
-  c.width = 260; c.height = 60;
-  var ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
-  // Code128B encoding
-  var CODE128B = [
-    [2,1,2,2,2,2],[2,2,2,1,2,2],[2,2,2,2,2,1],[1,2,1,2,2,3],[1,2,1,3,2,2],
-    [1,3,1,2,2,2],[1,2,2,2,1,3],[1,2,2,3,1,2],[1,3,2,2,1,2],[2,2,1,2,1,3],
-    [2,2,1,3,1,2],[2,3,1,2,1,2],[1,1,2,2,3,2],[1,2,2,1,3,2],[1,2,2,2,3,1],
-    [1,1,3,2,2,2],[1,2,3,1,2,2],[1,2,3,2,2,1],[2,2,3,2,1,1],[2,2,1,1,3,2],
-    [2,2,1,2,3,1],[2,1,3,2,1,2],[2,2,3,1,1,2],[3,1,2,1,3,1],[3,1,1,2,2,2],
-    [3,2,1,1,2,2],[3,2,1,2,2,1],[3,1,2,2,1,2],[3,2,2,1,1,2],[3,2,2,2,1,1],
-    [2,1,2,1,2,3],[2,1,2,3,2,1],[2,3,2,1,2,1],[1,1,1,3,2,3],[1,3,1,1,2,3],
-    [1,3,1,3,2,1],[1,1,2,3,1,3],[1,3,2,1,1,3],[1,3,2,3,1,1],[2,1,1,3,1,3],
-    [2,3,1,1,1,3],[2,3,1,3,1,1],[1,1,2,1,3,3],[1,1,2,3,3,1],[1,3,2,1,3,1],
-    [1,1,3,1,2,3],[1,1,3,3,2,1],[1,3,3,1,2,1],[3,1,3,1,2,1],[2,1,1,3,3,1],
-    [2,3,1,1,3,1],[2,1,3,1,1,3],[2,1,3,3,1,1],[2,1,3,1,3,1],[3,1,1,1,2,3],
-    [3,1,1,3,2,1],[3,3,1,1,2,1],[3,1,2,1,1,3],[3,1,2,3,1,1],[3,3,2,1,1,1],
-    [3,1,4,1,1,1],[2,2,1,4,1,1],[4,3,1,1,1,1],[1,1,1,2,2,4],[1,1,1,4,2,2],
-    [1,2,1,1,2,4],[1,2,1,4,2,1],[1,4,1,1,2,2],[1,4,1,2,2,1],[1,1,2,2,1,4],
-    [1,1,2,4,1,2],[1,2,2,1,1,4],[1,2,2,4,1,1],[1,4,2,1,1,2],[1,4,2,2,1,1],
-    [2,4,1,2,1,1],[2,2,1,1,1,4],[4,1,3,1,1,1],[2,4,1,1,1,2],[1,3,4,1,1,1],
-    [1,1,1,2,4,2],[1,2,1,1,4,2],[1,2,1,2,4,1],[1,1,4,2,1,2],[1,2,4,1,1,2],
-    [1,2,4,2,1,1],[4,1,1,2,1,2],[4,2,1,1,1,2],[4,2,1,2,1,1],[2,1,2,1,4,1],
-    [2,1,4,1,2,1],[4,1,2,1,2,1],[1,1,1,1,4,3],[1,1,1,3,4,1],[1,3,1,1,4,1],
-    [1,1,4,1,1,3],[1,1,4,3,1,1],[4,1,1,1,1,3],[4,1,1,3,1,1],[1,1,3,1,4,1],
-    [1,1,4,1,3,1],[3,1,1,1,4,1],[4,1,1,1,3,1],[2,1,1,4,1,2],[2,1,1,2,1,4],
-    [2,1,1,2,3,2],[2,3,3,1,1,1,2]
-  ];
-  var START_B = 104, STOP = 106;
-  var codes = [START_B];
-  var checksum = START_B;
-  for (var i = 0; i < data.length && i < 30; i++) {
-    var cv = data.charCodeAt(i) - 32;
-    if (cv < 0 || cv > 94) cv = 0;
-    codes.push(cv);
-    checksum += cv * (i + 1);
-  }
-  codes.push(checksum % 103);
-  codes.push(STOP);
-  // Draw
-  var x = 10, bH = 45, y0 = 3;
-  var totalW = 0;
-  codes.forEach(function(code) {
-    var pat = CODE128B[code];
-    if (pat) for (var p = 0; p < pat.length; p++) totalW += pat[p];
-  });
-  var scale = Math.min(1.5, (c.width - 20) / totalW);
-  ctx.fillStyle = '#000000';
-  codes.forEach(function(code) {
-    var pat = CODE128B[code];
-    if (!pat) return;
-    for (var p = 0; p < pat.length; p++) {
-      var w = pat[p] * scale;
-      if (p % 2 === 0) ctx.fillRect(x, y0, w, bH);
-      x += w;
-    }
-  });
-  ctx.fillStyle = '#333'; ctx.font = '7px monospace'; ctx.textAlign = 'center';
-  ctx.fillText(data.substring(0, 35), c.width / 2, c.height - 2);
+  // Audit 2 mai 2026 — P1.3: Code128 vechi (1D barcode) eliminat. QR code real
+  // pre-generat în React (qrcode npm) și injectat ca <img> deasupra. Acest
+  // script-block rămâne pentru compatibilitate (no-op acum) — generarea
+  // tehnică și URL-ul de verificare sunt deja în <img> din DOM.
+  // Server-side Python foloseste segno pentru QR in DOCX (linia ~286).
+  return;
 })();
 </script>
 <div class="ft">Pagina 1/2 | Mc 001-2022 (Ord. MDLPA 16/2023) | Zephren ${APP_VERSION} | ${dateNow}</div>
@@ -1968,22 +1948,19 @@ ${[
   <td class="ds" style="width:22%">${T.priority}</td>
 </tr>
 ${(() => {
-  const recs = [];
-  let n = 1;
-  const avgUOp = envRows.length > 0 ? envRows.reduce((s,r) => s + parseFloat(r.u), 0) / envRows.length : 0;
-  const avgUGl = glazRows.length > 0 ? glazRows.reduce((s,r) => s + parseFloat(r.u), 0) / glazRows.length : 0;
-  if (avgUOp > 0.5) recs.push({n:n++, m:'Termoizolare pere\u021bi exteriori ETICS (EPS/vat\u0103 mineral\u0103, 10\u201315 cm) \u2014 U \u2264 0.30 W/m\u00b2K', d:'Anvelop\u0103', e:'15\u201330% Qf \u00eenc\u0103lzire', p:'RIDICAT\u0102'});
-  else if (avgUOp > 0.3) recs.push({n:n++, m:'Suplimentare termoizola\u021bie pere\u021bi (5\u201310 cm) pentru nivel nZEB', d:'Anvelop\u0103', e:'8\u201315% Qf \u00eenc\u0103lzire', p:'MEDIE'});
-  if (avgUGl > 1.3) recs.push({n:n++, m:'\u00cenlocuire t\u00e2mpl\u0103rie exterioar\u0103 cu ferestre tripan (U \u2264 1.0 W/m\u00b2K, g \u2265 0.50)', d:'Anvelop\u0103', e:'10\u201320% Qf \u00eenc\u0103lzire', p:'RIDICAT\u0102'});
-  const roofEl = envRows.find(r => r.type && (r.type.includes('Terasa') || r.type.includes('Pod') || r.type.includes('Acoperi')));
-  if (roofEl && parseFloat(roofEl.u) > 0.25) recs.push({n:n++, m:'Termoizolare plan\u0219eu superior/teras\u0103 (15\u201320 cm vat\u0103 mineral\u0103/XPS)', d:'Anvelop\u0103', e:'8\u201315% Qf \u00eenc\u0103lzire', p:'RIDICAT\u0102'});
-  if (instSummary && !instSummary.isCOP && instSummary.eta_total_h < 0.80) recs.push({n:n++, m:'\u00cenlocuire cazan cu condensare (\u03b7>95%) sau pomp\u0103 de c\u0103ldur\u0103 aer-ap\u0103 (COP>3.5)', d:'Instala\u021bii', e:'20\u201340% Qf \u00eenc\u0103lzire', p:'RIDICAT\u0102'});
-  if (instSummary?.isCOP && parseFloat(heating.eta_gen) < 3.0) recs.push({n:n++, m:'Modernizare pomp\u0103 de c\u0103ldur\u0103 (COP>4.0, inverter)', d:'Instala\u021bii', e:'10\u201320% Qf \u00eenc\u0103lzire', p:'MEDIE'});
-  if (ventilation.type === 'NAT') recs.push({n:n++, m:'Sistem ventilare mecanic\u0103 cu recuperare c\u0103ldur\u0103 (\u03b7 \u2265 75%)', d:'Instala\u021bii', e:'10\u201325% Qf total', p:'MEDIE'});
-  if (instSummary?.leni > 10) recs.push({n:n++, m:'\u00cenlocuire iluminat cu LED + senzori prezen\u021b\u0103', d:'Instala\u021bii', e:'30\u201360% Qf iluminat', p:'MEDIE'});
-  if (rer < 30) recs.push({n:n++, m:'Instalare sistem fotovoltaic (3\u20135 kWp) pentru RER \u2265 30%', d:'SRE', e:'RER +10\u201330%', p:'RIDICAT\u0102'});
-  if (sre_solar_th < 1 && qf_w_m2 > 10) recs.push({n:n++, m:'Panouri solare termice pentru ACC (2\u20134 m\u00b2)', d:'SRE', e:'40\u201370% Qf ACC', p:'MEDIE'});
-  if (recs.length === 0) recs.push({n:1, m:'Cl\u0103direa prezint\u0103 performan\u021b\u0103 energetic\u0103 bun\u0103. Men\u021binere \u00eentre\u021binere regulat\u0103.', d:'General', e:'\u2014', p:'\u2014'});
+  // Audit 2 mai 2026 — P1.4: folosește unifiedRecs (sursă unică).
+  // Mapăm la formatul vechi {n, m, d, e, p} pentru compatibilitate render HTML.
+  const PRIO_MAP = { "înaltă": "RIDICATĂ", "medie": "MEDIE", "scăzută": "SCĂZUTĂ" };
+  const recs = unifiedRecs.map((r, i) => ({
+    n: i + 1,
+    m: r.measure,
+    d: r.category,
+    e: r.savings,
+    p: PRIO_MAP[r.priority] || r.priority.toUpperCase(),
+  }));
+  // Variabile retained pentru compatibilitate cu cod legacy (no-op acum)
+  const avgUOp = 0; const avgUGl = 0;
+  void avgUOp; void avgUGl;
   return recs.map(r => '<tr><td style="text-align:center">' + r.n + '</td><td>' + r.m + '</td><td style="text-align:center">' + r.d + '</td><td style="text-align:center">' + r.e + '</td><td style="text-align:center;font-weight:bold;color:' + (r.p==='RIDICAT\u0102'?'#d42517':r.p==='MEDIE'?'#e17000':'#555') + '">' + r.p + '</td></tr>').join("");
 })()}
 </table>

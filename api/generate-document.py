@@ -303,7 +303,9 @@ def generate_qr_png(url, scale=5, border=2):
 def insert_qr_code(doc, verify_url, cpe_code=""):
     """Inserează QR code scanabil pentru URL verificare.
 
-    Sprint 15 — autentificare vizuală CPE. URL-ul: https://zephren.ro/verify/{cpeCode}
+    Sprint 15 — autentificare vizuală CPE.
+    Audit 2 mai 2026 — P0.3: URL-ul: https://zephren.ro/cpe/verifica?cod={cpeCode}
+    (registrul MDLPA central nu există — landing static cu form căutare manuală).
 
     Placeholder-uri suportate: {{QR_CODE}}, {{QR}}, [[QR_CODE]]
     Dacă template-ul nu are placeholder, QR nu se inserează (evită glitching DOCX).
@@ -3346,15 +3348,19 @@ class handler(BaseHTTPRequestHandler):
                         pass
 
             # Sprint 15 — QR code pentru verificare (dacă auditor.cpeCode există)
+            # Audit 2 mai 2026 — P0.3: URL pointează la landing static cu form
+            # de căutare manuală (registrul MDLPA central nu există încă).
             cpe_code_audit = auditor.get("cpeCode") or auditor.get("mdlpaCode") or ""
             if cpe_code_audit:
-                qr_bytes = generate_qr_png(f"https://zephren.ro/verify/{cpe_code_audit}")
+                from urllib.parse import quote
+                verify_url_audit = f"https://zephren.ro/cpe/verifica?cod={quote(cpe_code_audit)}"
+                qr_bytes = generate_qr_png(verify_url_audit)
                 if qr_bytes:
                     p_qr = doc.add_paragraph()
                     p_qr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                     try:
                         p_qr.add_run().add_picture(io.BytesIO(qr_bytes), width=Cm(2.5))
-                        p_qr.add_run(f"\nVerificare: zephren.ro/verify/{cpe_code_audit}")
+                        p_qr.add_run(f"\nVerificare: zephren.ro/cpe/verifica")
                     except Exception:
                         pass
 
