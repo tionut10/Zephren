@@ -84,8 +84,8 @@ function checkStampAspect(dataURL) {
       const w = img.width || 1;
       const h = img.height || 1;
       const ratio = w / h;
-      // Toleranță ±15% în jurul 1:1 (acceptăm crop ușor și anti-aliasing)
-      const ok = ratio >= 0.85 && ratio <= 1.18;
+      // Toleranță ±15% în jurul 1:1 (acceptăm crop ușor și anti-aliasing la scanare)
+      const ok = ratio >= 0.85 && ratio <= 1.15;
       resolve({ ok, ratio, width: w, height: h });
     };
     img.onerror = () => resolve({ ok: true, ratio: 1, width: 0, height: 0 });
