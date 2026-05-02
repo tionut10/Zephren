@@ -1839,8 +1839,10 @@ def compute_checkboxes(data, category):
         cbs.append(65)
 
     # Categoria clădirii (CB 68-111)
+    # Audit 2 mai 2026 — Sprint 6: BC (bloc colectiv mixt) adăugat
     cat_map = {
         "RI": [68, 69], "RC": [68, 71], "RA": [68, 71],
+        "BC": [68, 71],  # Sprint 6 — fix lipsă mapping (variantă RC)
         "BI": [79, 80], "ED": [74, 76], "SA": [86, 87],
         "HC": [94, 95], "CO": [103, 104], "SP": [99, 100],
         "AL": [108, 111],
@@ -2648,10 +2650,14 @@ def compute_checkbox_keys(data, category):
         keys.append(struct_key)
 
     # ── Anexa 2 — categoria clădirii ──
+    # Audit 2 mai 2026 — Sprint 6 P0: BC (bloc colectiv mixt) era lipsă →
+    # CPE generat fără bifa categorie funcțională. Adăugat mapare CAT_RES_BLOC
+    # (BC e variantă a clădirii colective rezidențiale cu spații funcționale mixte).
     cat_to_keys = {
         "RI": "CAT_RES_INDIV",
         "RC": "CAT_RES_BLOC",
         "RA": "CAT_RES_BLOC",
+        "BC": "CAT_RES_BLOC",  # Sprint 6 — fix lipsă mapping
         "BI": "CAT_OFFICE",
         "ED": "CAT_EDU_SCOALA",
         "SA": "CAT_HOSPITAL",
