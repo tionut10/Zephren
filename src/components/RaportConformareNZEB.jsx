@@ -1,5 +1,5 @@
 /**
- * RaportConformareNZEB.jsx — Sprint v6.2 (27 apr 2026)
+ * RaportConformareNZEB.jsx — Sprint Tranziție 2026 (2 mai 2026)
  *
  * Componentă UI pentru emiterea Raportului de conformare nZEB conform
  * Art. 6 alin. (1) lit. c) din Ordinul MDLPA nr. 348/2026:
@@ -15,25 +15,24 @@
  * COMPETENȚĂ EXCLUSIVĂ AE Ici:
  *   AE IIci nu poate emite acest raport (Art. 6 alin. 2 limitează AE IIci
  *   exclusiv la CPE pentru rezidențial). Componenta este gated cu feature
- *   `nzebReport` în planGating.js — disponibil doar pe planurile pro
- *   (Zephren AE Ici), expert, birou, enterprise, edu.
+ *   `nzebReport` în grade-features.js (minGrade: Ici, minPlan: pro).
+ *
+ * Tranziție (T1.6 Sprint Tranziție 2026):
+ *   În fereastra 14.IV.2026 → 11.X.2026 (`isInTransitionWindow`), dacă blocaj
+ *   se datorează gradului, randăm raportul cu banner amber soft. După 11.X.2026
+ *   sau cu `window.__forceStrictGrade=true`, gating-ul e strict.
+ *   Plan-restricția (minPlan: pro) rămâne strict comercial (nu e legată de
+ *   tranziția legală).
  *
  * Documentul generat (DOCX A4 portret) este destinat clădirilor în FAZA
  * DE PROIECTARE (înainte de execuție/recepție), nu pentru clădiri existente
  * (acelea folosesc CPE + Audit energetic Mc 001-2022).
- *
- * Tehnic: folosește `generateNZEBConformanceReport()` din lib/report-generators
- * (existent din Sprint 14-17). Această componentă este shell-ul UI care:
- *   1. Validează gating-ul (canAccess plan).
- *   2. Afișează preview status conformare nZEB (pass/fail + criterii).
- *   3. Solicită faza proiectului (DTAC / PT / DTOE / detalii execuție).
- *   4. Lansează generarea DOCX la apăsarea butonului.
  */
 
-import { useState, useMemo, useCallback } from "react";
-import { canAccess } from "../lib/planGating.js";
+import { useState, useCallback } from "react";
+import { evaluateGate } from "../lib/effectiveGate.js";
 import { generateNZEBConformanceReport } from "../lib/report-generators.js";
-import { Card, Badge, Select, Input, ResultRow, cn } from "./ui.jsx";
+import { Card, Badge, Select, cn } from "./ui.jsx";
 
 // ── Faze de proiectare conform Lege 50/1991 + HG 907/2016 ──
 const PROJECT_PHASES = [
@@ -97,27 +96,29 @@ export default function RaportConformareNZEB({
   const [lastError, setLastError] = useState("");
   const [lastSuccess, setLastSuccess] = useState(false);
 
-  const allowed = canAccess(userPlan, "nzebReport");
-  const gradOk = !auditor?.gradMdlpa || auditor.gradMdlpa === "Ici";
-  // Doar AE Ici poate emite raport conformare nZEB (Art. 6 alin. 1 lit. c)
+  // Verdict combinat plan + grad cu suport tranziție legală.
+  // În tranziție: dacă blocaj e doar pe grad → allowed=true + softWarning amber.
+  // Plan-restricția rămâne strict (e separare comercială, nu legală).
+  const verdict = evaluateGate({
+    feature: "nzebReport",
+    plan: userPlan,
+    auditorGrad: auditor?.gradMdlpa || null,
+  });
+  const allowed = verdict.allowed;
+  const inTransition = verdict.inTransition;
+  const blockedByPlan = verdict.blockedBy === "plan";
+  const showSoftWarning = inTransition && verdict.softWarning;
 
   const handleGenerate = useCallback(async () => {
     if (!allowed) {
-      showToast?.(
-        lang === "EN"
-          ? "nZEB conformance report requires AE Ici grade (upgrade plan)."
-          : "Raportul nZEB necesită gradul AE Ici (upgrade plan).",
-        "error",
-      );
-      return;
-    }
-    if (!gradOk) {
-      showToast?.(
-        lang === "EN"
-          ? "AE IIci auditors cannot issue nZEB conformance reports (Art. 6 par. 2 Ord. 348/2026)."
-          : "Auditorii AE IIci nu pot emite rapoarte de conformare nZEB (Art. 6 alin. 2 Ord. 348/2026).",
-        "error",
-      );
+      const msg = blockedByPlan
+        ? (lang === "EN"
+            ? "nZEB conformance report requires plan Zephren AE Ici or higher."
+            : "Raportul nZEB necesită planul Zephren AE Ici sau superior.")
+        : (lang === "EN"
+            ? "AE IIci auditors cannot issue nZEB conformance reports (Art. 6 par. 2 Ord. 348/2026)."
+            : "Auditorii AE IIci nu pot emite rapoarte de conformare nZEB (Art. 6 alin. 2 Ord. 348/2026).");
+      showToast?.(msg, "error");
       return;
     }
     if (!instSummary || !selectedClimate) {
@@ -157,17 +158,18 @@ export default function RaportConformareNZEB({
       setGenerating(false);
     }
   }, [
-    allowed, gradOk, instSummary, selectedClimate, building, renewSummary, envelopeSummary,
+    allowed, blockedByPlan, instSummary, selectedClimate, building, renewSummary, envelopeSummary,
     opaqueElements, glazingElements, heating, cooling, ventilation, lighting, acm,
     solarThermal, photovoltaic, heatPump, biomass, auditor, phase, lang, showToast,
   ]);
 
-  // ── Locked state — plan fără acces (AE IIci, Free) ──
+  // ── Locked state STRICT — blocaj plan sau grad post-tranziție ──
   if (!allowed) {
+    const isPlan = blockedByPlan;
     return (
       <Card
         title={lang === "EN" ? "nZEB Conformance Report" : "Raport conformare nZEB"}
-        badge={<Badge color="amber">AE Ici only</Badge>}
+        badge={<Badge color={isPlan ? "amber" : "red"}>{isPlan ? "Plan upgrade" : "Blocaj legal"}</Badge>}
         className="mb-4"
       >
         <div className="text-xs space-y-2 opacity-80">
@@ -189,39 +191,14 @@ export default function RaportConformareNZEB({
             )}
           </p>
           <div className="text-[11px] italic opacity-60">
-            {lang === "EN"
-              ? "Upgrade to Zephren AE Ici to unlock this feature."
-              : "Treci la planul Zephren AE Ici pentru acces la această funcționalitate."}
+            {isPlan
+              ? (lang === "EN"
+                  ? "Your plan does not include this feature. Upgrade to Zephren AE Ici 1.499 RON/lună."
+                  : "Planul curent nu include această funcționalitate. Upgrade la Zephren AE Ici 1.499 RON/lună.")
+              : (lang === "EN"
+                  ? "Your stamp grade is AE IIci. Update your auditor profile if your stamp is actually AE Ici."
+                  : "Ștampila ta este AE IIci. Actualizează profilul auditorului dacă ștampila ta este, de fapt, AE Ici.")}
           </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // ── Auditor pe AE IIci (grad declarat) — blocaj soft ──
-  if (!gradOk) {
-    return (
-      <Card
-        title={lang === "EN" ? "nZEB Conformance Report" : "Raport conformare nZEB"}
-        badge={<Badge color="red">Blocaj legal</Badge>}
-        className="mb-4"
-      >
-        <div className="text-xs text-red-300 leading-relaxed">
-          {lang === "EN" ? (
-            <>
-              Your stamp grade is AE IIci, restricted by Art. 6 par. (2) Ord. MDLPA
-              348/2026 to residential CPE only. The nZEB conformance report is
-              reserved exclusively for AE Ici (5+ years experience). Update your
-              auditor profile if your stamp is actually AE Ici.
-            </>
-          ) : (
-            <>
-              Ștampila ta este AE IIci, restricționată prin Art. 6 alin. (2) Ord.
-              MDLPA 348/2026 doar la CPE rezidențial. Raportul de conformare nZEB
-              este rezervat exclusiv AE Ici (vechime ≥ 5 ani). Actualizează profilul
-              auditorului dacă ștampila ta este, de fapt, AE Ici.
-            </>
-          )}
         </div>
       </Card>
     );
@@ -231,10 +208,40 @@ export default function RaportConformareNZEB({
   return (
     <Card
       title={lang === "EN" ? "nZEB Conformance Report (design phase)" : "Raport conformare nZEB (fază de proiectare)"}
-      subtitle={<Badge color="emerald">Art. 6 alin. (1) lit. c</Badge>}
+      subtitle={<Badge color={showSoftWarning ? "amber" : "emerald"}>Art. 6 alin. (1) lit. c</Badge>}
       className="mb-4"
     >
       <div className="space-y-4">
+        {showSoftWarning && (
+          <div
+            role="alert"
+            className="rounded-lg bg-amber-500/10 border border-amber-500/40 p-3 text-[11px] text-amber-200 leading-relaxed"
+          >
+            <div className="font-semibold mb-1">
+              {lang === "EN" ? "⏱️ Legal transition window" : "⏱️ Perioadă de tranziție legală"}
+            </div>
+            <p>
+              {lang === "EN" ? (
+                <>
+                  Your stamp grade (AE IIci) would normally block nZEB report generation
+                  under Art. 6 par. (1)(c) Ord. MDLPA 348/2026. During the legal transition
+                  period (until 11 October 2026, repeal of Ord. 2237/2010 per Art. 7 Ord.
+                  348/2026), this restriction is non-blocking. After that date, only AE Ici
+                  auditors will be able to issue this document.
+                </>
+              ) : (
+                <>
+                  Gradul ștampilei (AE IIci) ar bloca normal generarea raportului nZEB
+                  conform Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026. În perioada de
+                  tranziție legală (până la 11 octombrie 2026, abrogarea Ord. 2237/2010
+                  prin Art. 7 Ord. 348/2026), restricția este informativă. După acea dată,
+                  doar auditorii AE Ici vor putea emite acest document.
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
         <div className="text-xs opacity-70 leading-relaxed">
           {lang === "EN" ? (
             <>

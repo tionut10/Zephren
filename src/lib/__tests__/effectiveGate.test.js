@@ -184,10 +184,12 @@ describe("evaluateGate — IIci STRICT post-11.X.2026 (Art. 6 alin. 2)", () => {
   });
 
   it("NU VEDE costAnnualDetail (ANRE preseturi → AE Ici+)", () => {
+    // Plan audit (AE IIci 599 RON) NU include costAnnualDetail (minPlan: pro).
+    // După Sprint Tranziție 2026 (T1.6), ordinea verificării e plan FIRST.
     const v = evaluateGate({ feature: "costAnnualDetail", plan: "audit", auditorGrad: "IIci", now: POST_TRANSITION });
     expect(v.allowed).toBe(false);
     expect(v.requiredGrade).toBe("Ici");
-    expect(v.blockedBy).toBe("grade");
+    expect(v.blockedBy).toBe("plan"); // plan FIRST: AE IIci 599 < pro 1499
     expect(v.softWarning).toBe(null);
     expect(v.inTransition).toBe(false);
   });
@@ -270,11 +272,12 @@ describe("evaluateGate — atestat real IIci pe plan superior (post-tranziție)"
     expect(v.allowed).toBe(false);
   });
 
-  it("auditor Ici pe plan audit limitat de PLAN la IIci pentru gwpDetail", () => {
+  it("auditor Ici pe plan audit limitat de PLAN pentru gwpDetail", () => {
+    // gwpDetail are minPlan=expert. Plan audit < expert → blockedBy=plan FIRST.
     const v = evaluateGate({ feature: "gwpDetail", plan: "audit", auditorGrad: "Ici", now: POST_TRANSITION });
     expect(v.effectiveGrade).toBe("IIci");
     expect(v.allowed).toBe(false);
-    expect(v.blockedBy).toBe("grade");
+    expect(v.blockedBy).toBe("plan"); // plan FIRST: audit < expert
   });
 });
 
@@ -292,8 +295,10 @@ describe("evaluateGate — SOFT WARNING în tranziție 14.IV.2026 → 11.X.2026"
     expect(v.inTransition).toBe(false);
   });
 
-  it("IIci VEDE npvCurve în tranziție (allowed=true + softWarning)", () => {
-    const v = evaluateGate({ feature: "npvCurve", plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
+  it("IIci pe plan PRO VEDE npvCurve în tranziție (allowed=true + softWarning)", () => {
+    // Sprint Tranziție 2026 (T1.6): plan first. AE IIci pe plan PRO (cumpărat
+    // pentru că face și audit), atestatul ar bloca legal, dar în tranziție soft.
+    const v = evaluateGate({ feature: "npvCurve", plan: "pro", auditorGrad: "IIci", now: IN_TRANSITION });
     expect(v.allowed).toBe(true);
     expect(v.softWarning).toMatch(/AE Ici/);
     expect(v.softWarning).toMatch(/octombrie 2026/);
@@ -301,11 +306,11 @@ describe("evaluateGate — SOFT WARNING în tranziție 14.IV.2026 → 11.X.2026"
     expect(v.strictAllowedFromDate).toBeInstanceOf(Date);
   });
 
-  it("IIci VEDE costAnnualDetail, rehabScenarios, gwpSimple, bacsDetail, evCharger în tranziție", () => {
+  it("IIci pe plan PRO VEDE costAnnualDetail, rehabScenarios, gwpSimple, evCharger, penalties în tranziție", () => {
     ["costAnnualDetail", "rehabScenarios", "gwpSimple", "evCharger", "penaltiesBreakdown"].forEach(feature => {
-      const v = evaluateGate({ feature, plan: "audit", auditorGrad: "IIci", now: IN_TRANSITION });
-      expect(v.allowed).toBe(true);
-      expect(v.softWarning).toBeTruthy();
+      const v = evaluateGate({ feature, plan: "pro", auditorGrad: "IIci", now: IN_TRANSITION });
+      expect(v.allowed, `feature=${feature}`).toBe(true);
+      expect(v.softWarning, `feature=${feature}`).toBeTruthy();
     });
   });
 
@@ -393,5 +398,87 @@ describe("getFeatureConfig", () => {
 
   it("returnează null pentru feature inexistent", () => {
     expect(getFeatureConfig("_nope_")).toBe(null);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// Sprint Tranziție 2026 (T1.6) — entry nzebReport + auditEnergetic
+// ════════════════════════════════════════════════════════════════
+describe("Sprint Tranziție 2026 — features nzebReport și auditEnergetic", () => {
+  it("nzebReport: minGrade=Ici, minPlan=pro, mode=hide", () => {
+    const cfg = STEP_FEATURE_GRADE_MATRIX.nzebReport;
+    expect(cfg).toBeTruthy();
+    expect(cfg.minGrade).toBe("Ici");
+    expect(cfg.minPlan).toBe("pro");
+    expect(cfg.mode).toBe("hide");
+    expect(cfg.legalRef).toMatch(/Art\. 6 alin\. \(1\) lit\. c\)/);
+  });
+
+  it("auditEnergetic: minGrade=Ici, minPlan=pro, mode=hide", () => {
+    const cfg = STEP_FEATURE_GRADE_MATRIX.auditEnergetic;
+    expect(cfg).toBeTruthy();
+    expect(cfg.minGrade).toBe("Ici");
+    expect(cfg.minPlan).toBe("pro");
+    expect(cfg.mode).toBe("hide");
+    expect(cfg.legalRef).toMatch(/Art\. 6 alin\. \(1\) lit\. b\)/);
+  });
+
+  it("nzebReport în tranziție: AE IIci + plan pro → allowed=true + softWarning", () => {
+    // Plan pro acoperă restricția comercială; gradul IIci ar bloca legal,
+    // dar în tranziție devine soft warning.
+    const transitionDate = new Date("2026-05-01T00:00:00.000Z");
+    const r = evaluateGate({
+      feature: "nzebReport",
+      plan: "pro",
+      auditorGrad: "IIci",
+      now: transitionDate,
+    });
+    expect(r.allowed).toBe(true);
+    expect(r.inTransition).toBe(true);
+    expect(r.softWarning).toBeTruthy();
+    expect(r.blockedBy).toBeNull();
+  });
+
+  it("nzebReport post-tranziție: AE IIci + plan pro → blocked=true blockedBy=grade", () => {
+    const strictDate = new Date("2026-12-01T00:00:00.000Z");
+    const r = evaluateGate({
+      feature: "nzebReport",
+      plan: "pro",
+      auditorGrad: "IIci",
+      now: strictDate,
+    });
+    expect(r.allowed).toBe(false);
+    expect(r.blockedBy).toBe("grade");
+    expect(r.requiredGrade).toBe("Ici");
+  });
+
+  it("nzebReport pe plan AE IIci (audit): blockedBy=plan (comercial, NU se relaxează în tranziție)", () => {
+    const transitionDate = new Date("2026-05-01T00:00:00.000Z");
+    const r = evaluateGate({
+      feature: "nzebReport",
+      plan: "audit",
+      auditorGrad: "Ici",
+      now: transitionDate,
+    });
+    // Plan-ul audit (AE IIci 599 RON) NU include nzebReport (minPlan: pro)
+    // Atestatul Ici e suficient legal, dar planul îl blochează comercial.
+    // Plan-restricția nu se relaxează în tranziție.
+    expect(r.allowed).toBe(false);
+    expect(r.blockedBy).toBe("plan");
+  });
+
+  it("nzebReport: AE Ici real + plan pro → allowed în orice context", () => {
+    for (const date of [
+      new Date("2026-05-01T00:00:00.000Z"),
+      new Date("2026-12-01T00:00:00.000Z"),
+    ]) {
+      const r = evaluateGate({
+        feature: "nzebReport",
+        plan: "pro",
+        auditorGrad: "Ici",
+        now: date,
+      });
+      expect(r.allowed, `date=${date.toISOString()}`).toBe(true);
+    }
   });
 });

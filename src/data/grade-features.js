@@ -152,6 +152,16 @@ export const STEP_FEATURE_GRADE_MATRIX = {
   // ────────────────────────────────────────────────────────────
   compareProjects:    { minGrade: "Ici", minPlan: "expert", mode: "upgrade",
                         label: "Import JSON proiect referință" },
+
+  // ────────────────────────────────────────────────────────────
+  // Pas 7 — Documente exclusive AE Ici (Ord. MDLPA 348/2026 Art. 6 alin. 1)
+  // ────────────────────────────────────────────────────────────
+  nzebReport:         { minGrade: "Ici", minPlan: "pro", mode: "hide",
+                        label: "Raport conformare nZEB (fază proiectare)",
+                        legalRef: "Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026" },
+  auditEnergetic:     { minGrade: "Ici", minPlan: "pro", mode: "hide",
+                        label: "Audit energetic Mc 001-2022 + LCC + NPV",
+                        legalRef: "Art. 6 alin. (1) lit. b) Ord. MDLPA 348/2026" },
 };
 
 // ════════════════════════════════════════════════════════════════

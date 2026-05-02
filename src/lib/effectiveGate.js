@@ -119,16 +119,25 @@ export function evaluateGate({ feature, plan, auditorGrad = null, now = new Date
   const planOk = planAtLeast(planId, config.minPlan);
   const strictAllowed = gradeOk && planOk;
 
-  // În perioada de tranziție: dacă gating-ul ar fi blocat efectiv, returnăm
-  // allowed=true cu softWarning (vizibil pentru auditor, fără a bloca acțiunea).
-  // Plan-ul rămâne strict (nu e legat de tranziția legală — e separare comercială).
+  // În perioada de tranziție: dacă gating-ul ar fi blocat doar pe baza gradului
+  // (nu și a planului), returnăm allowed=true cu softWarning. Plan-ul rămâne
+  // strict (nu e legat de tranziția legală — e separare comercială).
+  //
+  // ORDINE VERIFICARE: plan FIRST (mai restrictiv UX-wise — CTA upgrade plan e
+  // mai actionable decât CTA luare atestat). Dacă plan blochează, niciodată
+  // soft warning de tranziție (oricum nu poate accesa funcționalitatea).
   let blockedBy = null;
   let reason = "";
   let softWarning = null;
   let allowed = strictAllowed;
 
   if (!strictAllowed) {
-    if (!gradeOk) {
+    if (!planOk) {
+      blockedBy = "plan";
+      reason = `Necesită plan Zephren ${config.minPlan} sau superior.`;
+      // Plan-ul NU se relaxează în tranziție (e separare comercială, nu legală)
+    } else {
+      // !gradeOk (planOk e true)
       blockedBy = "grade";
       reason = `Necesită grad MDLPA ${config.minGrade} (Ord. 348/2026 Art. 6).`;
       // În tranziție, nu blocăm pe baza gradului — afișăm soft warning
@@ -144,10 +153,6 @@ export function evaluateGate({ feature, plan, auditorGrad = null, now = new Date
         blockedBy = null;
         reason = "";
       }
-    } else {
-      blockedBy = "plan";
-      reason = `Necesită plan Zephren ${config.minPlan} sau superior.`;
-      // Plan-ul NU se relaxează în tranziție (e separare comercială, nu legală)
     }
   }
 
