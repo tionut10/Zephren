@@ -54,6 +54,7 @@ export function Select({ label, value, onChange, options, placeholder, className
         aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId.current}
         aria-describedby={describedBy}
         aria-invalid={error ? "true" : undefined}
+        title={selected ? selectedLabel : undefined}
         className={cn("bg-white/5 border rounded-lg px-3 pr-8 py-1.5 text-sm text-center focus:outline-none focus:ring-1 transition-all relative flex items-center justify-center",
           error ? "border-red-500/60 focus:border-red-500/80 focus:ring-red-500/30" : "border-white/10 focus:border-amber-500/50 focus:ring-amber-500/30")}
         style={{minHeight:"32px"}}>
