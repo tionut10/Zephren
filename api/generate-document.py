@@ -3843,29 +3843,24 @@ class handler(BaseHTTPRequestHandler):
                 for placeholder in ["[[CPE_CODE]]", "{{CPE_CODE}}", "CodUnicCPE"]:
                     replace_in_doc(doc, placeholder, cpe_code)
                 # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
-                # "ANEXA 2 la Certificatul de performanță energetică nr. ......"
+                # "ANEXA 1/2 la Certificatul de performanță energetică nr. ......"
+                # Textul e fragmentat în multe run-uri Word, deci folosim `replace_in_paragraph`
+                # (joacă pe textul COMBINAT al paragrafului) cu substring exact extras prin regex.
                 if mode in ("anexa", "anexa_bloc"):
                     import re as _re_cpe
-                    for p in doc.paragraphs:
+                    # Regex tolerant: NBSP, spațiu normal, sau zero spațiu între "nr." și dots
+                    _nr_pattern = _re_cpe.compile(r"nr\.[\s\xa0]*\.{3,}")
+                    for p in _iter_all_paragraphs(doc):
                         pt = p.text
-                        if ("Certificatul de performan" in pt or
-                                "certificatul de performan" in pt) and "nr." in pt:
-                            for run in p.runs:
-                                if _re_cpe.search(r"nr\.\s*\.{3,}", run.text):
-                                    run.text = _re_cpe.sub(r"nr\.\s*\.{3,}",
-                                                            "nr. " + cpe_code, run.text)
-                    # Fallback: parcurge toate tabelele (titluri în celule)
-                    for tbl in doc.tables:
-                        for row in tbl.rows:
-                            for cell in row.cells:
-                                for p in cell.paragraphs:
-                                    if ("Certificatul de performan" in p.text and
-                                            _re_cpe.search(r"nr\.\s*\.{3,}", p.text)):
-                                        for run in p.runs:
-                                            if _re_cpe.search(r"nr\.\s*\.{3,}", run.text):
-                                                run.text = _re_cpe.sub(
-                                                    r"nr\.\s*\.{3,}",
-                                                    "nr. " + cpe_code, run.text)
+                        if "Certificatul de performan" not in pt and \
+                           "certificatul de performan" not in pt.lower():
+                            continue
+                        m = _nr_pattern.search(pt)
+                        if not m:
+                            continue
+                        matched_text = pt[m.start():m.end()]
+                        # `replace_in_paragraph` știe să acopere run-uri multiple
+                        replace_in_paragraph(p, matched_text, "nr. " + cpe_code, count=1)
 
             # ═══════════════════════════════════════
             # Sprint 15 — Semnătură + ștampilă + QR code (Ord. MDLPA 16/2023)
@@ -6045,15 +6040,20 @@ class handler(BaseHTTPRequestHandler):
                         for ci, cell in enumerate(rows[4].cells):
                             if cell.text.strip() in regim_parts and ci > 0:
                                 check_form_checkbox_in_cell(rows[5].cells[ci])
-                        # Completează (nr) cu numărul de etaje în rândul 4 sau 5
+                        # Completează (nr) cu numărul de etaje — căutare GLOBALĂ
+                        # peste TOATE paragrafele documentului (placeholder-ul poate fi
+                        # în paragrafe top-level sau alte tabele, nu doar în rows[4]/[5])
                         if nr_etaje_val is not None and nr_etaje_val > 0:
-                            for r_idx in (4, 5):
-                                for cell in rows[r_idx].cells:
-                                    for p in cell.paragraphs:
-                                        if "(nr)" in p.text:
-                                            replace_in_paragraph(
-                                                p, "(nr)", str(nr_etaje_val)
-                                            )
+                            replaced_nr = 0
+                            for _p_global in _iter_all_paragraphs(doc):
+                                if "(nr)" in _p_global.text:
+                                    n = replace_in_paragraph(
+                                        _p_global, "(nr)", str(nr_etaje_val)
+                                    )
+                                    replaced_nr += n
+                            if replaced_nr:
+                                print(f"[regim] (nr) -> {nr_etaje_val} ({replaced_nr} loc)",
+                                      flush=True)
 
             # ═══════════════════════════════════════
             # 7b. PAGINĂ SUPLIMENT — dezactivat 2 mai 2026
