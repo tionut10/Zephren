@@ -32,6 +32,7 @@ import {
 } from "../calc/step1-validators.js";
 // Sprint v6.2 (27 apr 2026) — Validare grad MDLPA ↔ tip clădire (Ord. 348/2026 Art. 6)
 import { validateGradVsBuildingCategory } from "../calc/auditor-grad-validation.js";
+import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import { getRequiredMdlpaGrade } from "../lib/planGating.js";
 
 // ── Lazy-load localități România ───────────────────────────────────────────────
@@ -212,15 +213,32 @@ export default function Step1Identification({
   const fieldWarn = (key) => validationWarnings[key] || "";
   const progress = useMemo(() => computeStep1Progress(building, lang), [building, lang]);
 
-  // Sprint v6.2/v6.3 — Validare grad MDLPA ↔ tip clădire ↔ scop ↔ public
-  // (Ord. 348/2026 Art. 6 alin. 1 + 2). Recalculată reactiv.
-  const gradValidation = useMemo(() => validateGradVsBuildingCategory({
-    gradMdlpaRequired: getRequiredMdlpaGrade(userPlan),
-    auditorGrad: building?.auditorGrad || null,
-    buildingCategory: building?.category,
-    scopCpe: building?.scopCpe || null,
-    isPublic: building?.isPublic === true,
-  }), [userPlan, building?.auditorGrad, building?.category, building?.scopCpe, building?.isPublic]);
+  // Sprint Tranziție 2026 (T7) — folosește canEmitForBuilding cu suport tranziție.
+  // În fereastra 14.IV.2026 → 11.X.2026, blocările legale pentru AE IIci real
+  // devin soft warning (ok=true + severity=warning + softWarning text).
+  const gradValidation = useMemo(() => {
+    const verdict = canEmitForBuilding({
+      plan: userPlan,
+      auditorGrad: building?.auditorGrad || null,
+      building: {
+        category: building?.category,
+        scopCpe: building?.scopCpe || null,
+        isPublic: building?.isPublic === true,
+      },
+      operation: "cpe",
+    });
+    // Adaptare formă pentru compatibilitate cu render existent (proprietatea `message`)
+    return {
+      valid: verdict.ok,
+      severity: verdict.severity,
+      message: verdict.reason,
+      legalRef: verdict.legalRef,
+      upgradePath: verdict.upgradePath,
+      inTransition: verdict.inTransition,
+      softWarning: verdict.softWarning,
+      blockedBy: verdict.blockedBy,
+    };
+  }, [userPlan, building?.auditorGrad, building?.category, building?.scopCpe, building?.isPublic]);
 
   // ── State ERA5/TMY import ────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -700,10 +718,17 @@ export default function Step1Identification({
                   </div>
                 </div>
               )}
-              {gradValidation.severity === "warning" && gradValidation.message && (
-                <div role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-200/90">
-                  <span aria-hidden="true">⚠️ </span>
-                  {gradValidation.message}
+              {gradValidation.severity === "warning" && (gradValidation.softWarning || gradValidation.message) && (
+                <div role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] text-amber-200/90 space-y-1">
+                  <div>
+                    <span aria-hidden="true">{gradValidation.inTransition ? "⏱️ " : "⚠️ "}</span>
+                    {gradValidation.inTransition && gradValidation.softWarning
+                      ? (lang === "EN" ? "Legal transition window" : "Perioadă de tranziție legală")
+                      : gradValidation.message}
+                  </div>
+                  {gradValidation.inTransition && gradValidation.softWarning && (
+                    <div className="opacity-90 leading-relaxed">{gradValidation.softWarning}</div>
+                  )}
                 </div>
               )}
               <Select
