@@ -33,6 +33,8 @@ import {
 import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
 // Audit 2 mai 2026 — P1.9: bilanț clădire de referință cu echipamente standard
 import { calcReferenceBuilding } from "../calc/reference-building.js";
+// Audit 2 mai 2026 — P2.8: format dată per limbă (RO=dd.mm.yyyy, EN=yyyy-mm-dd)
+import { fmtDate } from "../utils/format.js";
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
@@ -1735,10 +1737,12 @@ export default function Step6Certificate(props) {
               const nzebLabel = nzebOk ? "DA" : "NU";
 
               // Dates — Sprint 15 — EPBD 2024 Art. 17 diferențiere 10/5 ani
+              // Audit 2 mai 2026 — P2.8: format dată per limbă în preview HTML
+              // (DOCX server-side rămâne RO indiferent — Ord. MDLPA 16/2023 dd.mm.yyyy).
               const validDate = new Date(auditor.date);
               const expiryDate = getExpiryDate(auditor.date, enClass?.cls) || new Date(validDate);
-              const expiryStr = expiryDate.toLocaleDateString("ro-RO");
-              const dateNow = new Date().toLocaleDateString("ro-RO");
+              const expiryStr = fmtDate(expiryDate, lang);
+              const dateNow = fmtDate(new Date(), lang);
               const validYearsPreview = getValidityYears(enClass?.cls);
 
               // Envelope
@@ -3514,6 +3518,143 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         <div className="text-left">
                           <div className="font-medium">Export XML MDLPA</div>
                           <div className="text-[10px] opacity-60">Registru electronic Ord. 16/2023</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Audit 2 mai 2026 — P2.7: Buton „Generează pachet complet"
+                        Bundlează toate exporturile într-un ZIP unic:
+                          - CPE DOCX (mereu)
+                          - Anexa 1+2 DOCX (mereu)
+                          - Anexa Bloc DOCX (dacă apartments > 0)
+                          - XML MDLPA (mereu)
+                          - Raport nZEB DOCX (dacă plan permite)
+                        Util pentru auditori care depun pachetul integral
+                        la beneficiar / OAR / Primărie într-o singură arhivă. */}
+                    <button
+                      disabled={!dataComplete || isGeneratingDocx}
+                      onClick={async () => {
+                        if (isGeneratingDocx) return;
+                        if (!canExportDocx) { requireUpgrade("Pachet complet necesită plan Standard sau superior"); return; }
+                        if (!dataComplete) { showToast("Completați datele obligatorii", "error"); return; }
+                        setIsGeneratingDocx(true);
+                        try {
+                          showToast(lang === "EN" ? "Building complete package…" : "Se construiește pachetul complet…", "info", 3000);
+                          const { default: JSZip } = await import("jszip");
+                          const zip = new JSZip();
+                          const dateSlug = new Date().toISOString().slice(0, 10);
+                          const addrSlug = (building.address || "proiect").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+
+                          // 1. CPE DOCX
+                          const tplBuf1 = await fetchTemplate(tpl.cpe);
+                          const cpeBlob = await generateDocxCPE(tplBuf1, "cpe", { download: false });
+                          if (cpeBlob) zip.file(`1_CPE_${addrSlug}_${dateSlug}.docx`, cpeBlob);
+
+                          // 2. Anexa 1+2 DOCX
+                          const tplBuf2 = await fetchTemplate(tpl.anexa);
+                          const anexaBlob = await generateDocxCPE(tplBuf2, "anexa", { download: false });
+                          if (anexaBlob) zip.file(`2_Anexa_${addrSlug}_${dateSlug}.docx`, anexaBlob);
+
+                          // 3. Anexa Bloc DOCX (dacă există apartamente)
+                          if ((building.apartments || []).length > 0) {
+                            const tplBuf3 = await fetchTemplate(tpl.anexa);
+                            const blocBlob = await generateDocxCPE(tplBuf3, "anexa_bloc", { download: false });
+                            if (blocBlob) zip.file(`3_Anexa_Bloc_${addrSlug}_${dateSlug}.docx`, blocBlob);
+                          }
+
+                          // 4. XML MDLPA — generez inline (replică generateXMLMDLPA fără download)
+                          try {
+                            const escx = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+                            const validDateXml = auditor.date ? auditor.date.split("-").reverse().join(".") : new Date().toISOString().slice(0, 10).split("-").reverse().join(".");
+                            const expDateObj2 = getExpiryDate(auditor.date || new Date(), enClass?.cls);
+                            const expDateXml = expDateObj2 ? expDateObj2.toISOString().slice(0, 10).split("-").reverse().join(".") : "";
+                            const validityYearsXml2 = getValidityYears(enClass?.cls);
+                            const xmlMin = `<?xml version="1.0" encoding="UTF-8"?>
+<CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
+  <DateIdentificare>
+    <CodUnic>${escx(auditor.mdlpaCode)}</CodUnic>
+    <CodCPE>${escx(auditor.cpeCode || auditor.mdlpaCode || "")}</CodCPE>
+    <DataElaborare>${validDateXml}</DataElaborare>
+    <DataExpirare>${expDateXml}</DataExpirare>
+    <ValabilitateAni>${validityYearsXml2}</ValabilitateAni>
+    <NormativValabilitate>L.372/2005 republicată mod. L.238/2024 Art. 18</NormativValabilitate>
+    <ScopElaborare>${escx(building.scopCpe || "vanzare")}</ScopElaborare>
+    <ProgramCalcul>ZEPHREN ${APP_VERSION}</ProgramCalcul>
+  </DateIdentificare>
+  <Cladire>
+    <Categorie>${escx(building.category)}</Categorie>
+    <Adresa>${escx(building.address)}</Adresa>
+    <ArieUtila unit="mp">${Au.toFixed(1)}</ArieUtila>
+  </Cladire>
+  <RezultateEnergetice>
+    <EnergiePrimaraSpecifica unit="kWh_per_mp_an">${epFinal.toFixed(1)}</EnergiePrimaraSpecifica>
+    <ClasaEnergetica>${enClass?.cls || ""}</ClasaEnergetica>
+  </RezultateEnergetice>
+</CertificatPerformantaEnergetica>`;
+                            zip.file(`4_XML_MDLPA_${addrSlug}_${dateSlug}.xml`, xmlMin);
+                          } catch { /* XML opt — ZIP rămâne valid fără el */ }
+
+                          // 5. Raport nZEB (dacă HTML deja generat în state — opțional)
+                          if (nzebReportHtml) {
+                            zip.file(`5_Raport_nZEB_${addrSlug}_${dateSlug}.html`, nzebReportHtml);
+                          }
+
+                          // README
+                          zip.file("README.txt", [
+                            "PACHET COMPLET CPE — generat de Zephren",
+                            `Data generare: ${new Date().toISOString()}`,
+                            `Adresă clădire: ${building.address || "—"}`,
+                            `Auditor: ${auditor.name || "—"} (atestat ${auditor.atestat || "—"})`,
+                            `Cod CPE: ${auditor.cpeCode || auditor.mdlpaCode || "—"}`,
+                            "",
+                            "Conținut:",
+                            "  1_CPE — Certificatul de Performanță Energetică (DOCX, format MDLPA)",
+                            "  2_Anexa — Anexa 1+2 (date tehnice + recomandări)",
+                            ((building.apartments || []).length > 0) ? "  3_Anexa_Bloc — Tabel multi-apartament (RC)" : "",
+                            "  4_XML_MDLPA — Format registru electronic (Ord. 16/2023)",
+                            nzebReportHtml ? "  5_Raport_nZEB — Raport conformare nZEB (HTML)" : "",
+                            "",
+                            "Cadru legal: L.372/2005 republicată (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023).",
+                            "Atestare auditor: Ord. MDLPA 348/2026 (intrat în vigoare 14.04.2026).",
+                            "",
+                            "Audit Zephren — 2 mai 2026 / P2.7 (pachet complet ZIP).",
+                          ].filter(Boolean).join("\n"));
+
+                          const zipBlob = await zip.generateAsync({ type: "blob" });
+                          const a = document.createElement("a");
+                          a.href = URL.createObjectURL(zipBlob);
+                          a.download = `CPE_pachet_complet_${addrSlug}_${dateSlug}.zip`;
+                          document.body.appendChild(a); a.click();
+                          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+                          showToast(lang === "EN" ? "Complete package generated ✓" : "Pachet complet generat ✓", "success", 3000);
+                        } catch (e) {
+                          console.error("complete package error:", e);
+                          showToast("Eroare pachet: " + e.message, "error", 5000);
+                        } finally {
+                          setIsGeneratingDocx(false);
+                        }
+                      }}
+                      className={`w-full rounded-xl border transition-all text-sm md:col-span-2 xl:col-span-3 ${
+                        !dataComplete || isGeneratingDocx
+                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                          : !canExportDocx
+                            ? "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                            : "border-cyan-500/40 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 text-cyan-300 cursor-pointer"
+                      }`}>
+                      <div className="flex items-center justify-center gap-2 px-4 py-3">
+                        <span className="text-lg">{isGeneratingDocx ? "⏳" : "📦"}</span>
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-1.5">
+                            {isGeneratingDocx
+                              ? (lang === "EN" ? "Generating package…" : "Se construiește pachetul…")
+                              : (lang === "EN" ? "Generate complete package (ZIP)" : "Generează pachet complet (ZIP)")}
+                            {!canExportDocx && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">STANDARD+</span>}
+                          </div>
+                          <div className="text-[10px] opacity-60">
+                            {lang === "EN"
+                              ? "CPE + Annex 1+2 + Block (if RC) + XML MDLPA + nZEB report (if available)"
+                              : "CPE + Anexa 1+2 + Bloc (dacă RC) + XML MDLPA + Raport nZEB (dacă disponibil)"}
+                          </div>
                         </div>
                       </div>
                     </button>

@@ -971,6 +971,30 @@ export default function Step1Identification({
                 {t("Estimare automată din Au + etaje", lang)}
               </button>
               <Input label={t("Suprafață utilă încălzită (Au)",lang)} tooltip="Suma suprafețelor utile ale tuturor spațiilor încălzite — Mc 001 Cap.1" value={building.areaUseful} onChange={v => updateBuilding("areaUseful",v)} type="number" unit="m²" min="0" step="0.1" error={fieldErr("areaUseful")} />
+              {/* Audit 2 mai 2026 — P2.1: areaBuilt (Acd) input dedicat.
+                  Înainte: payload Step6 calcula `areaBuilt = Au × 1.15` factor formă
+                  hardcoded fără bază normativă. Acum input direct pentru auditor;
+                  fallback Au × 1.15 doar dacă lipsește. Vizibil pentru toate scopurile,
+                  marcat „recomandat" pentru recepție/construire (necesar STAS 6932-89). */}
+              <Input
+                label={t("Suprafață construită desfășurată (Acd)", lang)}
+                tooltip={lang === "EN"
+                  ? "Total built-up area (Acd) per STAS 6932-89 — distinct from useful area (Au). Recommended for construction/reception scopes; otherwise auto-calculated as Au × 1.15."
+                  : "Arie construită desfășurată conform STAS 6932-89 — distinctă de aria utilă (Au). Recomandată pentru scop construire/recepție; altfel auto-calculată ca Au × 1.15."}
+                value={building.areaBuilt || ""}
+                onChange={v => updateBuilding("areaBuilt", v)}
+                type="number" unit="m²" min="0" step="0.1"
+                placeholder={building.areaUseful
+                  ? `auto: ${(parseFloat(building.areaUseful) * 1.15).toFixed(1)}`
+                  : ""}
+              />
+              {(building.scopCpe === "construire" || building.scopCpe === "receptie") && !building.areaBuilt && (
+                <div className="text-[10px] text-amber-300/70 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ℹ️ {lang === "EN"
+                    ? `For "${building.scopCpe === "construire" ? "construction" : "reception"}" scope, declaring Acd directly (vs. Au×1.15 fallback) is recommended for accurate matching with the construction documentation.`
+                    : `Pentru scop „${building.scopCpe === "construire" ? "construire" : "recepție"}", declararea directă a Acd (în loc de fallback Au×1.15) este recomandată pentru concordanța cu documentația proiectului tehnic.`}
+                </div>
+              )}
               <Input label={t("Volum încălzit (V)",lang)} tooltip="Volumul interior al spațiilor încălzite delimitat de anvelopa termică — m³" value={building.volume} onChange={v => updateBuilding("volume",v)} type="number" unit="m³" min="0" step="0.1" error={fieldErr("volume")} />
               {fieldWarn("volumeConsistency") && (
                 <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
