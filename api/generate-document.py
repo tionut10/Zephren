@@ -264,19 +264,62 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
             pass
 
     # Fallback: dacă template-ul nu are placeholder-uri pentru semnătură/ștampilă,
-    # adăugăm un paragraf final „Autentificat" cu ambele imagini — garantează
-    # că imaginile ajung în DOCX indiferent de starea template-ului.
+    # injectăm imaginile DIRECT în paragraful existent care conține textul
+    # „Semnătura și ștampila auditorului" (deja prezent în template-ele MDLPA).
+    # NU adăugăm paragraf nou la final — asta crea o pagină goală suplimentară
+    # pentru CPE (raportat 2 mai 2026, fix imediat după dezactivare append_legal_supplement).
     if (signature_b64 or stamp_b64) and sig_count == 0 and stamp_count == 0:
+        target_para = None
+        # Caut prima apariție în paragrafele de top-level (corp document, NU footere)
+        for p in doc.paragraphs:
+            t = (p.text or "").strip()
+            if "Semnătura" in t and "tampila" in t:
+                target_para = p
+                break
+        # Și în tabele (template-ul MDLPA poate avea textul în celulă)
+        if target_para is None:
+            for tbl in doc.tables:
+                for row in tbl.rows:
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            t = (p.text or "").strip()
+                            if "Semnătura" in t and "tampila" in t:
+                                target_para = p
+                                break
+                        if target_para: break
+                    if target_para: break
+                if target_para: break
+
         try:
-            p = doc.add_paragraph()
-            p.add_run("Semnătură auditor / Ștampilă: ")
-            if signature_b64:
-                sig_bytes = base64.b64decode(signature_b64)
-                p.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
-                p.add_run("  ")
-            if stamp_b64:
-                stamp_bytes = base64.b64decode(stamp_b64)
-                p.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
+            if target_para is not None:
+                # Curăț textul existent din paragraf păstrând rPr-ul
+                from docx.oxml.ns import qn as _qn_sig
+                saved_rPr = None
+                if target_para.runs:
+                    rPr = target_para.runs[0]._r.find(_qn_sig("w:rPr"))
+                    if rPr is not None:
+                        saved_rPr = copy.deepcopy(rPr)
+                for run in list(target_para.runs):
+                    run._r.getparent().remove(run._r)
+                # Adaug imaginile inline
+                if signature_b64:
+                    sig_bytes = base64.b64decode(signature_b64)
+                    target_para.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
+                    target_para.add_run("  ")
+                if stamp_b64:
+                    stamp_bytes = base64.b64decode(stamp_b64)
+                    target_para.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
+            else:
+                # Doar dacă NU există paragraf țintă în template — fallback legacy
+                p = doc.add_paragraph()
+                p.add_run("Semnătură auditor / Ștampilă: ")
+                if signature_b64:
+                    sig_bytes = base64.b64decode(signature_b64)
+                    p.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
+                    p.add_run("  ")
+                if stamp_b64:
+                    stamp_bytes = base64.b64decode(stamp_b64)
+                    p.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
         except Exception:
             pass
 
