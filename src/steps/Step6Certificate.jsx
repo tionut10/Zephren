@@ -766,6 +766,13 @@ export default function Step6Certificate(props) {
                     // Completate de auditor din formularul COMPLETARE AUTOMATĂ DETALIATĂ (Pas 6)
                     etape_implementare: building.etapeImplementare || "",
                     stimulente_financiare: building.stimulenteFinanciare || "",
+                    // 2 mai 2026 — Soluții și măsuri custom (Anexa secțiunile 1, 2, 3.A, 3.B + regenerabile)
+                    // Înlocuiesc placeholder-ele „Alte soluții: ..." din template Anexa
+                    solutii_anvelopa: building.solutiiAnvelopa || "",
+                    solutii_instalatii: building.solutiiInstalatii || "",
+                    masuri_organizare: building.masuriOrganizare || "",
+                    masuri_locale: building.masuriLocale || "",
+                    regenerabile_custom: building.regenerabileCustom || "",
                   },
                   // Fotografiile se trimit DOAR pentru Anexa (mode=anexa/anexa_bloc).
                   // Pentru CPE (mode=cpe) fotografiile nu sunt procesate de Python →

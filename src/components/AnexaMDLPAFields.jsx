@@ -1483,6 +1483,178 @@ export default function AnexaMDLPAFields({
               </div>
             </div>
 
+            {/* ─── Separator vizual: Soluții pe Anexa 1 + 2 + 3 ─── */}
+            <div className="mt-2 pt-3 border-t border-white/10">
+              <div className="text-[11px] font-semibold text-amber-300 mb-2">
+                📋 Soluții și măsuri recomandate (Anexa 1+2 secțiunile 1, 2, 3)
+              </div>
+              <div className="text-[10px] opacity-50 mb-3">
+                Texte custom care înlocuiesc placeholder-ele „Alte soluții: ..." din Anexa 1+2.
+                Auditorul poate genera un draft automat și apoi îl poate edita.
+              </div>
+            </div>
+
+            {/* 1. Soluții anvelopă */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  1. „Alte soluții" pentru anvelopă (Anexa secțiunea 1)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cat = building?.category || "RI";
+                    const lines = [
+                      "— Verificare la fața locului a stratificării reale a anvelopei (carotaje, termoviziune SR EN 13187).",
+                      "— Tratarea punților termice principale identificate (balcoane, atice, buiandrugi) — manșoane locale 5–10 cm.",
+                      "— Hidroizolație suplimentară la racord soclu / atic dacă lipsește (CR 0-2012, GP 070-2013).",
+                      cat === "RC"
+                        ? "— Decopertarea selectivă a fațadelor existente cu ETICS degradat și înlocuirea straturilor compromise."
+                        : "— Demontarea și reabilitarea jgheaburilor, burlanelor și parazăpezilor înainte de aplicarea ETICS.",
+                      "— Verificarea compatibilității coeficienților de difuzie a vaporilor (μ) între straturi (Glaser).",
+                    ];
+                    update("solutiiAnvelopa", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.solutiiAnvelopa || ""}
+                onChange={(e) => update("solutiiAnvelopa", e.target.value)}
+                rows={4}
+                placeholder={"Soluții suplimentare anvelopă (peste cele bifate). Lăsați gol pentru a păstra textul implicit din Anexa."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+            </div>
+
+            {/* 2. Soluții instalații */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  2. „Alte soluții" pentru instalații (Anexa secțiunea 2)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lines = [
+                      "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială).",
+                      "— Reglaj automat al temperaturii pe cameră prin termostate Smart (R²·D, controllers cu protocol Modbus/KNX).",
+                      "— Inspecție și curățare anuală a generatorului termic conform prescripțiilor producătorului (HG 1043/2007).",
+                      "— Recuperare căldură din apele uzate calde (drain water heat recovery) la dușurile cu debit mare.",
+                      "— Pompă de circulație ACM cu detecție de utilizare (eficiență ηₑₛ ≥ 0.27, EuP Lot 11).",
+                    ];
+                    update("solutiiInstalatii", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.solutiiInstalatii || ""}
+                onChange={(e) => update("solutiiInstalatii", e.target.value)}
+                rows={4}
+                placeholder={"Soluții suplimentare instalații (peste cele bifate). Lăsați gol pentru a păstra textul implicit."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+            </div>
+
+            {/* 3.A Măsuri organizare */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  3.A „Alte soluții" — Măsuri generale de organizare
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lines = [
+                      "— Întocmirea unui plan anual de monitorizare a consumurilor (electricitate, gaz, apă caldă) cu verificare lunară.",
+                      "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).",
+                      "— Audit energetic intermediar la fiecare 5 ani sau la modificarea regimului de utilizare (L.121/2014).",
+                      "— Stabilirea unei persoane responsabile cu eficiența energetică (manager energetic atestat ANRE pentru cl. publice).",
+                    ];
+                    update("masuriOrganizare", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.masuriOrganizare || ""}
+                onChange={(e) => update("masuriOrganizare", e.target.value)}
+                rows={4}
+                placeholder={"Măsuri suplimentare de organizare (peste cele bifate)."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+            </div>
+
+            {/* 3.B Măsuri locale */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  3.B „Alte soluții" — Măsuri locale pentru reducerea consumului
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lines = [
+                      "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.",
+                      "— Înlocuirea bateriilor sanitare clasice cu modele cu limitare debit / aerator (clasă A WELL).",
+                      "— Becuri inteligente cu senzor prezență/lumină naturală în spații tranzit (holuri, scări, depozite).",
+                      "— Programare orară a iluminatului și HVAC pe sezon și zi de săptămână (BMS sau timere standalone).",
+                      "— Curățarea periodică a recuperatorului de căldură ventilație (filtru G4/F7, schimb 6 luni).",
+                    ];
+                    update("masuriLocale", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.masuriLocale || ""}
+                onChange={(e) => update("masuriLocale", e.target.value)}
+                rows={4}
+                placeholder={"Măsuri locale suplimentare (peste cele bifate)."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+            </div>
+
+            {/* 4. Surse regenerabile — alte echipamente */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  4. „Alte echipamente" — Surse regenerabile (Anexa secțiunea finală)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lines = [
+                      "— Sistem fotovoltaic on-grid cu invertor hibrid și acumulatori Li-ion (autoconsum + injecție rețea).",
+                      "— Pompă de căldură aer-aer cu COP > 4.0 pentru încălzire/răcire (R290 propan, GWP < 3).",
+                      "— Sistem solar termic cu colectoare plane sau tuburi vidate pentru ACM (acoperire 50–70% an).",
+                      "— Recuperator căldură ape uzate (drain water heat exchanger) cuplat la circuitul ACM.",
+                    ];
+                    update("regenerabileCustom", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.regenerabileCustom || ""}
+                onChange={(e) => update("regenerabileCustom", e.target.value)}
+                rows={4}
+                placeholder={"Echipamente regenerabile suplimentare aplicabile clădirii."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+            </div>
+
           </div>
         )}
       </div>

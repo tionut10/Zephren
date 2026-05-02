@@ -5570,18 +5570,30 @@ class handler(BaseHTTPRequestHandler):
             if mode in ("anexa", "anexa_bloc"):
                 _etape = (data.get("etape_implementare") or "").strip()
                 _stimulente = (data.get("stimulente_financiare") or "").strip()
+                _solutii_anvelopa = (data.get("solutii_anvelopa") or "").strip()
+                _solutii_instalatii = (data.get("solutii_instalatii") or "").strip()
+                _masuri_organizare = (data.get("masuri_organizare") or "").strip()
+                _masuri_locale = (data.get("masuri_locale") or "").strip()
+                _regenerabile_custom = (data.get("regenerabile_custom") or "").strip()
 
-                def _replace_placeholder_para(marker_text, new_text):
+                def _replace_placeholder_para(marker_text, new_text, occurrence=1):
                     """Înlocuiește conținutul paragrafului care conține marker_text.
 
                     Textul nou poate conține newline-uri — fiecare linie devine
                     o pereche w:t/w:br în același run, pentru a păstra formatarea
                     originală a paragrafului (dimensiune font, stil).
+
+                    occurrence: 1-based index — care apariție a marker_text să fie
+                    înlocuită (util când același text apare la mai multe secțiuni).
                     """
                     from docx.oxml import OxmlElement
                     from docx.oxml.ns import qn
+                    seen = 0
                     for p in doc.paragraphs:
                         if marker_text in p.text:
+                            seen += 1
+                            if seen != occurrence:
+                                continue
                             # Salvăm rPr-ul primului run pentru a păstra formatarea
                             saved_rPr = None
                             if p.runs:
@@ -5619,6 +5631,27 @@ class handler(BaseHTTPRequestHandler):
                     _replace_placeholder_para(
                         "auditorul energetic va completa mai departe lista cu stimulentele financiare",
                         _stimulente,
+                    )
+                # Marker "soluții adaptate obiectivului certificat" apare de 3 ori:
+                # ocurența 1 = anvelopă (para [13]), 2 = instalații (para [38]), 3 = 3.A organizare (para [50])
+                MARKER_OBIECTIV = "soluții adaptate obiectivului certificat"
+                if _solutii_anvelopa:
+                    _replace_placeholder_para(MARKER_OBIECTIV, _solutii_anvelopa, occurrence=1)
+                if _solutii_instalatii:
+                    _replace_placeholder_para(MARKER_OBIECTIV, _solutii_instalatii, occurrence=2)
+                if _masuri_organizare:
+                    _replace_placeholder_para(MARKER_OBIECTIV, _masuri_organizare, occurrence=3)
+                # Marker pentru 3.B măsuri locale — text diferit ("clădirii certificate" + fără "obiectivului")
+                if _masuri_locale:
+                    _replace_placeholder_para(
+                        "soluții adaptate clădirii certificate",
+                        _masuri_locale,
+                    )
+                # Marker surse regenerabile — para [339/420]
+                if _regenerabile_custom:
+                    _replace_placeholder_para(
+                        "alte echipamente care utilizează sursele regenerabile",
+                        _regenerabile_custom,
                     )
 
             # ═══════════════════════════════════════
