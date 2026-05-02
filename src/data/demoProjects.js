@@ -278,6 +278,46 @@ export const DEMO_PROJECTS = [
         cadastralNr: "215680-C1-U18",
         carteFunciara: "CF nr. 215680-C1-U18 Constanța",
       },
+      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo Pas 6 ──
+      nrOcupanti: "4",                        // 4 persoane apartament 65 m² (cf. EN 16798-1 cat. III)
+      etapeImplementare:
+        "1. Identificați minimum 3 oferte comparative de la contractori autorizați.\n" +
+        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, Casa Verde Plus, fonduri locale).\n" +
+        "3. Obțineți acordul adunării generale a proprietarilor (L.196/2018) pentru lucrările pe părți comune (anvelopă, planșeu subsol).\n" +
+        "4. Implementați măsurile în ordinea priorităților: anvelopă → sisteme termice → surse regenerabile.\n" +
+        "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. (UE) 305/2011).\n" +
+        "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea clasei energetice (Ord. MDLPA 16/2023).",
+      stimulenteFinanciare:
+        "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice) — HG 209/2018 actualizat, ghid AFM 2024.\n" +
+        "— PNRR componenta C5 — Valul Renovării: granturi pentru renovarea energetică a apartamentelor în bloc până la standard nZEB.\n" +
+        "— Credite verzi: BRD Eco Home / ING Green Loan / BCR Casa Ta — dobânzi preferențiale (verifică ofertele active la momentul depunerii dosarului).\n" +
+        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
+      solutiiAnvelopa:
+        "— Verificare la fața locului a stratificării reale a anvelopei (carotaje, termoviziune SR EN 13187).\n" +
+        "— Tratarea punților termice principale identificate (balcoane, atice, buiandrugi) — manșoane locale 5–10 cm.\n" +
+        "— Decopertarea selectivă a fațadelor existente cu ETICS degradat și înlocuirea straturilor compromise.\n" +
+        "— Verificarea compatibilității coeficienților de difuzie a vaporilor (μ) între straturi (Glaser).",
+      solutiiInstalatii:
+        "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială).\n" +
+        "— Reglaj automat al temperaturii pe cameră prin termostate Smart (R²·D, controllers cu protocol Modbus/KNX).\n" +
+        "— Inspecție și curățare anuală a generatorului termic conform prescripțiilor producătorului (HG 1043/2007).\n" +
+        "— Recuperare căldură din apele uzate calde (drain water heat recovery) la dușurile cu debit mare.",
+      masuriOrganizare:
+        "— Întocmirea unui plan anual de monitorizare a consumurilor (electricitate, gaz, apă caldă) cu verificare lunară.\n" +
+        "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).\n" +
+        "— Audit energetic intermediar la fiecare 5 ani sau la modificarea regimului de utilizare (L.121/2014).\n" +
+        "— Stabilirea unei persoane responsabile cu eficiența energetică la nivelul asociației de proprietari.",
+      masuriLocale:
+        "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.\n" +
+        "— Înlocuirea bateriilor sanitare clasice cu modele cu limitare debit / aerator (clasă A WELL).\n" +
+        "— Becuri inteligente cu senzor prezență/lumină naturală în spații tranzit (holuri, scări, depozite).\n" +
+        "— Programare orară a iluminatului și HVAC pe sezon și zi de săptămână (timere standalone).\n" +
+        "— Curățarea periodică a recuperatorului de căldură ventilație (filtru G4/F7, schimb 6 luni).",
+      regenerabileCustom:
+        "— Sistem fotovoltaic on-grid 3 kWp pe acoperișul blocului (cota-parte 1/30 pentru apartament) cu invertor hibrid.\n" +
+        "— Pompă de căldură aer-aer COP > 4.0 pentru încălzire/răcire de vară (R290 propan, GWP < 3).\n" +
+        "— Sistem solar termic comun bloc cu colectoare plane pentru ACM (acoperire 50–70% an).\n" +
+        "— Recuperator căldură ape uzate (drain water heat exchanger) cuplat la circuitul ACM.",
     },
     opaqueElements: [
       {

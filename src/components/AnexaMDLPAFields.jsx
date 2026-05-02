@@ -1434,7 +1434,7 @@ export default function AnexaMDLPAFields({
                         "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice).",
                         "— PNRR C5.2 – Valul Renovării: granturi pentru renovarea energetică a caselor individuale până la standard nZEB.",
                         "— Credite verzi BRD Eco Home / ING Green Loan / BCR Casa Ta: dobânzi preferențiale 3–5% pe an.",
-                        "— Deducere din impozitul pe venit (L.227/2015 art. 68 ind.1) pentru instalații pe surse regenerabile.",
+                        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro și mfinante.gov.ro).",
                       ];
                     } else if (isBloc) {
                       lines = [

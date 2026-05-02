@@ -773,6 +773,44 @@ export default function Step6Certificate(props) {
                     masuri_organizare: building.masuriOrganizare || "",
                     masuri_locale: building.masuriLocale || "",
                     regenerabile_custom: building.regenerabileCustom || "",
+                    // 2 mai 2026 — câmpuri pentru bifare automată în Anexa 1+2
+                    nr_persoane: building.nrOcupanti || "",
+                    structure_code: (() => {
+                      const s = String(building.structure || "").toLowerCase();
+                      if (s.includes("zidăr") || s.includes("zidar") || s.includes("cărămid")) return "zidarie";
+                      if (s.includes("pafp") || s.includes("panou") || s.includes("beton armat")) return "beton_armat";
+                      if (s.includes("cadre")) return "cadre_ba";
+                      if (s.includes("stâlp") || s.includes("stalp") || s.includes("grin")) return "stalpi_grinzi";
+                      if (s.includes("lemn")) return "lemn";
+                      if (s.includes("metal")) return "metalica";
+                      return "alt_tip";
+                    })(),
+                    heating_source_type: (() => {
+                      const fuel = String(heating?.fuel || heating?.heatGenLocation || "").toLowerCase();
+                      if (fuel.includes("termo") || fuel.includes("dh") || fuel.includes("racord")) return "centrala_exterioara";
+                      if (fuel.includes("centrala") || fuel.includes("gaz") || fuel.includes("naftă")) return "centrala_proprie";
+                      if (fuel.includes("electr") || fuel.includes("calor")) return "aparate_independente";
+                      return "alt_tip";
+                    })(),
+                    contor_caldura: heating?.allocator === "da" ? "exista" : "nu_exista",
+                    repartitoare_costuri: building.heatingCostAllocator === "da" ? "exista" : "nu_exista",
+                    acm_recirculare: building.acmRecirculation || "nu_exista",
+                    iluminat_control: (() => {
+                      const c = String(lighting?.control || "").toLowerCase();
+                      if (c.includes("auto") || c.includes("dali") || c.includes("knx")) return "automat";
+                      if (c.includes("manu")) return "manuala";
+                      return "fara_reglare";
+                    })(),
+                    zona_climatica: (() => {
+                      // Mc 001-2022: 5 zone climatice România (I-V)
+                      const z = String(building.climateZone || climate?.zone || "").toUpperCase().replace(/[^IVX]/g, "");
+                      return ["I", "II", "III", "IV", "V"].includes(z) ? z : "II";
+                    })(),
+                    zona_eoliana: (() => {
+                      const z = String(building.windZone || climate?.windZone || "").toUpperCase().replace(/[^IV]/g, "");
+                      return ["I", "II", "III", "IV"].includes(z) ? z : "II";
+                    })(),
+                    regim_inaltime: building.floors || "P",
                   },
                   // Fotografiile se trimit DOAR pentru Anexa (mode=anexa/anexa_bloc).
                   // Pentru CPE (mode=cpe) fotografiile nu sunt procesate de Python →

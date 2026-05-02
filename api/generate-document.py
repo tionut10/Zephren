@@ -308,7 +308,8 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                     target_para.add_run("  ")
                 if stamp_b64:
                     stamp_bytes = base64.b64decode(stamp_b64)
-                    target_para.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
+                    # Ord. MDLPA 16/2023 Art. 12 alin. (3): ștampila auditorului = Ø 40 mm fix
+                    target_para.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(4.0), height=Cm(4.0))
             else:
                 # Doar dacă NU există paragraf țintă în template — fallback legacy
                 p = doc.add_paragraph()
@@ -319,7 +320,8 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                     p.add_run("  ")
                 if stamp_b64:
                     stamp_bytes = base64.b64decode(stamp_b64)
-                    p.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(3.0))
+                    # Ștampilă Ø 40 mm fix (Ord. MDLPA 16/2023 Art. 12 alin. 3)
+                    p.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(4.0), height=Cm(4.0))
         except Exception:
             pass
 
@@ -362,6 +364,158 @@ def insert_qr_code(doc, verify_url, cpe_code=""):
     for ph in ["{{QR_CODE}}", "{{QR}}", "[[QR_CODE]]", "{QR_CODE}"]:
         count += _replace_placeholder_with_image(doc, ph, qr_bytes, width_cm=2.5)
     return count
+
+
+# ═══════════════════════════════════════════════════════
+# Sprint 2 mai 2026 — BIFARE CHECKBOX-URI ÎN ANEXA 1+2
+# ═══════════════════════════════════════════════════════
+# Template-ele Anexa folosesc Word Form Fields legacy:
+#   <w:fldChar w:fldCharType="begin">
+#     <w:ffData>
+#       <w:checkBox>
+#         <w:default w:val="0"/>  ← 0 = unchecked, 1 = checked
+#       </w:checkBox>
+#     </w:ffData>
+#   </w:fldChar>
+# Bifarea = schimbare default w:val 0→1 + adăugare <w:checked w:val="1"/>.
+# ═══════════════════════════════════════════════════════
+
+def check_form_checkbox_in_para(para):
+    """Bifează PRIMUL checkbox legacy din paragraful dat.
+
+    Returnează True dacă a bifat, False dacă nu a găsit checkbox.
+    """
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+    W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    for fldChar in para._p.iter(qn("w:fldChar")):
+        ffData = fldChar.find(qn("w:ffData"))
+        if ffData is None:
+            continue
+        checkBox = ffData.find(qn("w:checkBox"))
+        if checkBox is None:
+            continue
+        # Setez default w:val="1"
+        default = checkBox.find(qn("w:default"))
+        if default is not None:
+            default.set(qn("w:val"), "1")
+        else:
+            d = OxmlElement("w:default")
+            d.set(qn("w:val"), "1")
+            checkBox.append(d)
+        # Adaug/actualizez checked w:val="1"
+        checked = checkBox.find(qn("w:checked"))
+        if checked is None:
+            c = OxmlElement("w:checked")
+            c.set(qn("w:val"), "1")
+            checkBox.append(c)
+        else:
+            checked.set(qn("w:val"), "1")
+        return True
+    return False
+
+
+def check_form_checkbox_in_cell(cell):
+    """Bifează PRIMUL checkbox din celula dată (toate paragrafele cellul)."""
+    for p in cell.paragraphs:
+        if check_form_checkbox_in_para(p):
+            return True
+    return False
+
+
+def find_paragraph_containing(doc, text_substring, start_idx=0):
+    """Returnează (idx, para) primul paragraf care conține text_substring."""
+    for i, p in enumerate(doc.paragraphs[start_idx:], start=start_idx):
+        if text_substring in p.text:
+            return (i, p)
+    return (-1, None)
+
+
+def check_box_for_text(doc, text_substring, occurrence=1):
+    """Bifează checkbox-ul DIN paragraful care conține text_substring.
+
+    occurrence: 1-based index pentru ocurențe multiple.
+
+    Returnează True dacă a bifat cu succes.
+    """
+    seen = 0
+    for p in doc.paragraphs:
+        if text_substring in p.text:
+            seen += 1
+            if seen == occurrence:
+                return check_form_checkbox_in_para(p)
+    return False
+
+
+def check_box_in_table(doc, table_idx, row_idx, col_idx):
+    """Bifează checkbox-ul din celula T[ti]R[ri]C[ci]."""
+    if table_idx >= len(doc.tables):
+        return False
+    tbl = doc.tables[table_idx]
+    if row_idx >= len(tbl.rows) or col_idx >= len(tbl.rows[row_idx].cells):
+        return False
+    return check_form_checkbox_in_cell(tbl.rows[row_idx].cells[col_idx])
+
+
+def merge_duplicate_year_cells(doc):
+    """Pentru tabelul CPE „DATE PRIVIND APARTAMENTUL/CLĂDIREA", dacă R1C1 și R2C1
+    conțin același placeholder-anchor („Anul construirii"), aplic vMerge să unifice
+    celulele vertical pentru a elimina gap-ul vizual.
+
+    Audit 2 mai 2026 — fix aliniere tabel raportat de utilizator.
+    """
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    for tbl in doc.tables:
+        is_data_table = any(
+            ("DATE PRIVIND APARTAMENTUL" in cell.text or
+             "DATE PRIVIND CLĂDIREA" in cell.text or
+             "DATE PRIVIND IDENTIFICAREA" in cell.text)
+            for row in tbl.rows for cell in row.cells
+        )
+        if not is_data_table or len(tbl.rows) < 3:
+            continue
+        try:
+            r1c1 = tbl.rows[1].cells[1]
+            r2c1 = tbl.rows[2].cells[1]
+        except IndexError:
+            continue
+        t1 = r1c1.text.strip()
+        t2 = r2c1.text.strip()
+        # Verific dacă R2C1 e duplicate-anchor („Anul construirii") sau golit
+        is_duplicate = (
+            t1 and t2 and t1 == t2
+        ) or (
+            t1 and not t2
+        ) or (
+            t1.startswith("Anul construirii") and t2.startswith("Anul construirii")
+        )
+        if not is_duplicate:
+            continue
+        # Apply vMerge restart pe R1C1
+        tcPr1 = r1c1._tc.find(qn("w:tcPr"))
+        if tcPr1 is None:
+            tcPr1 = OxmlElement("w:tcPr")
+            r1c1._tc.insert(0, tcPr1)
+        # Curăț vMerge-uri existente
+        for old in tcPr1.findall(qn("w:vMerge")):
+            tcPr1.remove(old)
+        vM1 = OxmlElement("w:vMerge")
+        vM1.set(qn("w:val"), "restart")
+        tcPr1.append(vM1)
+        # Apply vMerge continue pe R2C1
+        tcPr2 = r2c1._tc.find(qn("w:tcPr"))
+        if tcPr2 is None:
+            tcPr2 = OxmlElement("w:tcPr")
+            r2c1._tc.insert(0, tcPr2)
+        for old in tcPr2.findall(qn("w:vMerge")):
+            tcPr2.remove(old)
+        vM2 = OxmlElement("w:vMerge")  # No w:val = continue
+        tcPr2.append(vM2)
+        # Curăț conținutul R2C1 (celula merged nu trebuie să aibă conținut)
+        for p in r2c1.paragraphs:
+            for run in list(p.runs):
+                run._r.getparent().remove(run._r)
 
 
 # ═══════════════════════════════════════════════════════
@@ -3694,6 +3848,14 @@ class handler(BaseHTTPRequestHandler):
             if (signature_b64 or stamp_b64) and mode == "cpe":
                 insert_signature_stamp(doc, signature_b64, stamp_b64)
 
+            # Audit 2 mai 2026 — fix aliniere tabel CPE: vMerge R1C1+R2C1 unde
+            # template-ul are „Anul construirii" duplicat (cauzează gap vizual).
+            if mode == "cpe":
+                try:
+                    merge_duplicate_year_cells(doc)
+                except Exception as e:
+                    print(f"⚠️ merge_duplicate_year_cells: {e}", file=sys.stderr)
+
             qr_url = data.get("qr_verify_url", "")
             if qr_url:
                 insert_qr_code(doc, qr_url, cpe_code)
@@ -5701,6 +5863,122 @@ class handler(BaseHTTPRequestHandler):
                         "alte echipamente care utilizează sursele regenerabile",
                         _regenerabile_custom,
                     )
+
+                # ─── Nr. persoane apartament/clădire (para [120]) ───
+                _nr_persoane = (data.get("nr_persoane") or "").strip()
+                if _nr_persoane:
+                    _replace_placeholder_para(
+                        "Numărul maxim real/normat de persoane",
+                        f"Numărul maxim real/normat de persoane din apartament:             {_nr_persoane}       pers.",
+                    )
+
+                # ═══════════════════════════════════════
+                # 5c. BIFARE CHECKBOX-URI ÎN ANEXA (Sprint 2 mai 2026)
+                # ═══════════════════════════════════════
+                # Maparea code → text-anchor din template:
+                _structure = data.get("structure_code", "")
+                _structure_anchors = {
+                    "zidarie":        "pereţi structurali din zidărie",
+                    "beton_armat":    "pereţi structurali din beton armat",
+                    "cadre_ba":       "cadre din beton armat",
+                    "stalpi_grinzi":  "stâlpi şi grinzi",
+                    "lemn":           "structura de lemn",
+                    "metalica":       "structură metalică",
+                    "alt_tip":        None,  # nu bifez nimic
+                }
+                if _structure and _structure in _structure_anchors and _structure_anchors[_structure]:
+                    check_box_for_text(doc, _structure_anchors[_structure])
+
+                # Tip sistem încălzire
+                _heating = data.get("heating_source_type", "")
+                _heating_anchors = {
+                    "centrala_proprie":     "Centrală termică proprie în clădire",
+                    "centrala_exterioara":  "Centrală termică în exteriorul clădirii",
+                    "aparate_independente": "Încălzire cu alte aparate independente",
+                    "alt_tip":              None,
+                }
+                if _heating and _heating in _heating_anchors and _heating_anchors[_heating]:
+                    check_box_for_text(doc, _heating_anchors[_heating])
+
+                # Contor căldură + Repartitoare costuri
+                if data.get("contor_caldura") == "exista":
+                    # Caut paragraful „Contor de căldură" și bifez „există (cu/fără viză metrologică)"
+                    # Strategy: găsesc paragraful cu "Contor de căldură" și bifez primul checkbox după el
+                    for p in doc.paragraphs:
+                        if "Contor de căldură" in p.text:
+                            check_form_checkbox_in_para(p)
+                            break
+                if data.get("repartitoare_costuri") == "nu_exista":
+                    # Pentru repartitoare, bifez „nu există" (al doilea checkbox în paragraf)
+                    # Strategy simplă: găsesc paragraful și bifez primul (fallback)
+                    for p in doc.paragraphs:
+                        if "Repartitoare de costuri" in p.text:
+                            check_form_checkbox_in_para(p)
+                            break
+
+                # ACM recirculare
+                _acm_rec = data.get("acm_recirculare", "")
+                if _acm_rec == "nu_exista":
+                    check_box_for_text(doc, "Conducta de recirculare")
+                elif _acm_rec == "functionala":
+                    check_box_for_text(doc, "funcțională")
+
+                # Control iluminat
+                _ilum = data.get("iluminat_control", "")
+                if _ilum == "fara_reglare":
+                    check_box_for_text(doc, "Fără reglare (on/off)")
+                elif _ilum == "manuala":
+                    check_box_for_text(doc, "Reglare manuală")
+                elif _ilum == "automat":
+                    check_box_for_text(doc, "Automat funcție de")
+
+                # Bifare zone climatică/eoliană/regim înălțime în Tabel #0 al Anexa
+                # Tabelul are structura: 6 rânduri × 13 coloane (col 0 = label, col 1-12 = opțiuni)
+                # R0 = zone climatice (I/II/II/II/II/III/III/IV/IV/IV/V/V), R1 = celule bifare
+                # R2 = zone eoliene (I/I/I/II/II/II/III/III/III/IV/IV/IV), R3 = celule bifare
+                # R4 = regim înălțime (S/S/D/D/Mez/Mez/P/P/E/E/E/M/P), R5 = celule bifare
+                _climate = str(data.get("zona_climatica", "")).strip().upper()  # I, II, III, IV, V
+                _wind = str(data.get("zona_eoliana", "")).strip().upper()
+                _regim = str(data.get("regim_inaltime", "")).strip()
+                # Caut tabelul cu „Zona climatică în care este amplasată"
+                _zone_table = None
+                for tbl in doc.tables:
+                    if any("Zona climatică" in c.text for r in tbl.rows for c in r.cells):
+                        _zone_table = tbl
+                        break
+                if _zone_table is not None and len(_zone_table.rows) >= 6:
+                    rows = _zone_table.rows
+                    # R0: zone climatice headers; R1: bifare. Caut col cu zona corectă în R0
+                    if _climate:
+                        for ci, cell in enumerate(rows[0].cells):
+                            if cell.text.strip() == _climate and ci > 0:
+                                check_form_checkbox_in_cell(rows[1].cells[ci])
+                                break
+                    if _wind:
+                        for ci, cell in enumerate(rows[2].cells):
+                            if cell.text.strip() == _wind and ci > 0:
+                                check_form_checkbox_in_cell(rows[3].cells[ci])
+                                break
+                    # Regim înălțime: caut suficient de generic
+                    if _regim:
+                        # Mapare prefix: P+0..2 → P, P+3..5 → E, P+6+ → M/P, S→S, D→D, Mez→Mez
+                        regim_short = "P"
+                        if "S" in _regim and "+" not in _regim:
+                            regim_short = "S"
+                        elif "Mez" in _regim or "mezanin" in _regim.lower():
+                            regim_short = "Mez"
+                        elif _regim.startswith("D"):
+                            regim_short = "D"
+                        elif "P+" in _regim:
+                            try:
+                                etaje = int(_regim.split("P+")[1].split("E")[0].strip() or "0")
+                                regim_short = "P" if etaje <= 2 else "E" if etaje <= 5 else "M/P"
+                            except Exception:
+                                regim_short = "E"
+                        for ci, cell in enumerate(rows[4].cells):
+                            if cell.text.strip() == regim_short and ci > 0:
+                                check_form_checkbox_in_cell(rows[5].cells[ci])
+                                break
 
             # ═══════════════════════════════════════
             # 6. ANEXĂ FOTOGRAFII CLĂDIRE (doar în modul "anexa")
