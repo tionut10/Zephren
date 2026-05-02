@@ -5574,38 +5574,40 @@ class handler(BaseHTTPRequestHandler):
                 def _replace_placeholder_para(marker_text, new_text):
                     """Înlocuiește conținutul paragrafului care conține marker_text.
 
-                    Textul nou poate conține newline-uri — fiecare linie devine un
-                    run separat cu w:br (line break) în același paragraf, pentru a
-                    păstra formatarea originală a paragrafului (dimensiune font, stil).
+                    Textul nou poate conține newline-uri — fiecare linie devine
+                    o pereche w:t/w:br în același run, pentru a păstra formatarea
+                    originală a paragrafului (dimensiune font, stil).
                     """
+                    from docx.oxml import OxmlElement
+                    from docx.oxml.ns import qn
                     for p in doc.paragraphs:
                         if marker_text in p.text:
-                            # Curăță toate run-urile existente
-                            for run in p.runs:
-                                run.text = ""
-                            if not p.runs:
-                                p.add_run("")
-                            first_run = p.runs[0]
+                            # Salvăm rPr-ul primului run pentru a păstra formatarea
+                            saved_rPr = None
+                            if p.runs:
+                                rPr = p.runs[0]._r.find(qn("w:rPr"))
+                                if rPr is not None:
+                                    saved_rPr = copy.deepcopy(rPr)
+                            # Ștergem toate run-urile existente
+                            for run in list(p.runs):
+                                run._r.getparent().remove(run._r)
+                            # Adăugăm un run nou cu rPr păstrat + w:t/w:br alternând
+                            new_run = p.add_run("")
+                            # Eliminăm w:t implicit creat de add_run
+                            for child in list(new_run._r):
+                                new_run._r.remove(child)
+                            # Atașăm rPr salvat (dacă există)
+                            if saved_rPr is not None:
+                                new_run._r.append(saved_rPr)
+                            # Adăugăm fiecare linie ca w:t, separate prin w:br
                             lines = new_text.split("\n")
-                            first_run.text = lines[0]
-                            for line in lines[1:]:
-                                br = first_run._r.__class__(
-                                    '<w:br xmlns:w="http://schemas.openxmlformats.org/'
-                                    'wordprocessingml/2006/main"/>'
-                                )
-                                first_run._r.append(br)
-                                new_r = copy.deepcopy(first_run._r)
-                                # Resetăm textul noului run
-                                for t_el in new_r.findall(
-                                    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
-                                ):
-                                    t_el.text = line
-                                # Eliminăm br-ul duplicat din noul run (a fost copiat)
-                                for br_el in new_r.findall(
-                                    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br"
-                                ):
-                                    new_r.remove(br_el)
-                                first_run._r.addnext(new_r)
+                            for i, line in enumerate(lines):
+                                if i > 0:
+                                    new_run._r.append(OxmlElement("w:br"))
+                                t = OxmlElement("w:t")
+                                t.text = line
+                                t.set(qn("xml:space"), "preserve")
+                                new_run._r.append(t)
                             break
 
                 if _etape:
