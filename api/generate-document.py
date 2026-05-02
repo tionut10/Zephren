@@ -5562,6 +5562,64 @@ class handler(BaseHTTPRequestHandler):
                         temp_para._element.getparent().remove(temp_para._element)
 
             # ═══════════════════════════════════════
+            # 5b. ETAPE IMPLEMENTARE + STIMULENTE FINANCIARE (Anexa 1+2, secțiunea I)
+            # ═══════════════════════════════════════
+            # Înlocuiește textul placeholder al auditorului cu textul furnizat de
+            # auditor din formularul „Completare automată detaliată" din Pas 6.
+            # Dacă câmpul e gol, textul original din template rămâne neschimbat.
+            if mode in ("anexa", "anexa_bloc"):
+                _etape = (data.get("etape_implementare") or "").strip()
+                _stimulente = (data.get("stimulente_financiare") or "").strip()
+
+                def _replace_placeholder_para(marker_text, new_text):
+                    """Înlocuiește conținutul paragrafului care conține marker_text.
+
+                    Textul nou poate conține newline-uri — fiecare linie devine un
+                    run separat cu w:br (line break) în același paragraf, pentru a
+                    păstra formatarea originală a paragrafului (dimensiune font, stil).
+                    """
+                    for p in doc.paragraphs:
+                        if marker_text in p.text:
+                            # Curăță toate run-urile existente
+                            for run in p.runs:
+                                run.text = ""
+                            if not p.runs:
+                                p.add_run("")
+                            first_run = p.runs[0]
+                            lines = new_text.split("\n")
+                            first_run.text = lines[0]
+                            for line in lines[1:]:
+                                br = first_run._r.__class__(
+                                    '<w:br xmlns:w="http://schemas.openxmlformats.org/'
+                                    'wordprocessingml/2006/main"/>'
+                                )
+                                first_run._r.append(br)
+                                new_r = copy.deepcopy(first_run._r)
+                                # Resetăm textul noului run
+                                for t_el in new_r.findall(
+                                    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"
+                                ):
+                                    t_el.text = line
+                                # Eliminăm br-ul duplicat din noul run (a fost copiat)
+                                for br_el in new_r.findall(
+                                    "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br"
+                                ):
+                                    new_r.remove(br_el)
+                                first_run._r.addnext(new_r)
+                            break
+
+                if _etape:
+                    _replace_placeholder_para(
+                        "auditorul energetic va completa mai departe lista cu etapele adaptate",
+                        _etape,
+                    )
+                if _stimulente:
+                    _replace_placeholder_para(
+                        "auditorul energetic va completa mai departe lista cu stimulentele financiare",
+                        _stimulente,
+                    )
+
+            # ═══════════════════════════════════════
             # 6. ANEXĂ FOTOGRAFII CLĂDIRE (doar în modul "anexa")
             # ═══════════════════════════════════════
             building_photos = body.get("buildingPhotos", [])
@@ -5753,19 +5811,15 @@ class handler(BaseHTTPRequestHandler):
                                             sp2.set(attr, "0")
 
             # ═══════════════════════════════════════
-            # 7b. PAGINĂ SUPLIMENT — Sprint 14/15/17 metadata legale (Etapa 1)
+            # 7b. PAGINĂ SUPLIMENT — dezactivat 2 mai 2026
             # ═══════════════════════════════════════
-            # Doar pentru CPE (nu pentru anexa care are deja propria structură).
-            # Adaugă pagină A4 finală cu cod unic, QR, semnătură, ștampilă, cadastru,
-            # valabilitate, pașaport renovare, EPBD 2024 indicatori.
-            # Skip silent dacă cpe_code lipsește.
-            if mode == "cpe":
-                try:
-                    added = append_legal_supplement(doc, data)
-                    if not added:
-                        print("[supplement] cpe_code gol — pagină supliment omisă", flush=True)
-                except Exception as e_sup:
-                    print(f"[supplement] eroare: {e_sup}", flush=True)
+            # Pagina supliment (cod CPE, QR, EPBD 2024 Art.14) a fost eliminată din CPE:
+            # — CPE oficial (Ord. MDLPA 16/2023) are o singură pagină A4; pagina extra
+            #   nu face parte din modelul oficial și nu trebuie depusă la MDLPA.
+            # — EPBD 2024/1275 Art.14 nu este transpus în drept român (termen: 29.05.2026);
+            #   includerea sa prematură ar crea confuzie juridică.
+            # append_legal_supplement() rămâne disponibilă pentru export separat (viitor).
+            # if mode == "cpe": append_legal_supplement(doc, data)
 
             # ═══════════════════════════════════════
             # 7c. ANEXA BLOC — tabel apartamente + sisteme comune (Etapa 4, BUG-4)

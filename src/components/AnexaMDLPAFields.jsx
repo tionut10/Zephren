@@ -107,8 +107,9 @@ export default function AnexaMDLPAFields({
   // Grupa expandat-colapsat pentru ergonomie (toate deschise default)
   // Audit 2 mai 2026 — P1.5: grup G „Detalii tehnice extinse" (EPBD 2024 indicatori)
   // Audit 2 mai 2026 — P1.13: grup H „Sisteme comune bloc" (RC only)
+  // 2 mai 2026 — I „Etape implementare + Stimulente financiare"
   const [expanded, setExpanded] = useState({
-    A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false,
+    A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false, I: false,
   });
   const toggle = useCallback((key) => {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1358,6 +1359,133 @@ export default function AnexaMDLPAFields({
           )}
         </div>
       )}
+
+      {/* ─── I. Etape implementare + Stimulente financiare ─── */}
+      <div className="mt-2 rounded-xl border border-white/10 overflow-hidden">
+        <SectionHeader
+          id="I"
+          title="I. Etape de implementare + Stimulente financiare"
+          subtitle="Text liber transferat direct în Anexa 1+2 — auditorul poate edita"
+          visible
+        />
+        {expanded.I && (
+          <div className="px-3 pt-3 pb-4 flex flex-col gap-4">
+
+            {/* Etape implementare */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  Etapele de implementare a soluțiilor de creștere a performanței energetice
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cat = building?.category || "RI";
+                    const isBloc = cat === "RC";
+                    const isNonRes = ["BI","ED","SA","HC","CO","SP"].includes(cat);
+                    const lines = [
+                      "1. Identificați minimum 3 oferte comparative de la contractori autorizați.",
+                      "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, Casa Verde Plus, fonduri locale).",
+                      isBloc
+                        ? "3. Obțineți acordul adunării generale a proprietarilor (L.196/2018) și mandatați asociația de proprietari."
+                        : isNonRes
+                          ? "3. Aprobați planul de investiții prin decizia conducerii / consiliului de administrație."
+                          : "3. Obțineți autorizațiile legale necesare (AC, avize — dacă lucrările le impun).",
+                      "4. Implementați măsurile în ordinea priorităților: anvelopă → sisteme termice → surse regenerabile.",
+                      "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. 305/2011/UE).",
+                      "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea clasei energetice.",
+                    ];
+                    update("etapeImplementare", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.etapeImplementare || ""}
+                onChange={(e) => update("etapeImplementare", e.target.value)}
+                rows={6}
+                placeholder={"Completați etapele de implementare sau apăsați «Generează automat» pentru un text pre-completat.\n\nEx: 1. Obțineți oferte de la contractori autorizați.\n2. Verificați eligibilitatea pentru PNRR / Casa Verde Plus."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+              <div className="text-[10px] opacity-30">
+                Înlocuiește textul implicit din Anexa 1+2 Mc 001-2022 — secțiunea „Enunțarea etapelor".
+              </div>
+            </div>
+
+            {/* Stimulente financiare */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium opacity-60">
+                  Stimulente financiare și posibilități de finanțare disponibile
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cat = building?.category || "RI";
+                    const isResIndiv = ["RI","RA"].includes(cat);
+                    const isBloc = cat === "RC";
+                    const isPub = ["ED","SA","HC"].includes(cat);
+                    const isComm = ["BI","CO","SP"].includes(cat);
+                    let lines;
+                    if (isResIndiv) {
+                      lines = [
+                        "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice).",
+                        "— PNRR C5.2 – Valul Renovării: granturi pentru renovarea energetică a caselor individuale până la standard nZEB.",
+                        "— Credite verzi BRD Eco Home / ING Green Loan / BCR Casa Ta: dobânzi preferențiale 3–5% pe an.",
+                        "— Deducere din impozitul pe venit (L.227/2015 art. 68 ind.1) pentru instalații pe surse regenerabile.",
+                      ];
+                    } else if (isBloc) {
+                      lines = [
+                        "— PNRR C5.2 – Valul Renovării: granturi pentru asociații de proprietari — renovare energetică bloc până la standard nZEB.",
+                        "— Programul Național de Renovare Energetică a Blocurilor (ANL/MDLPA): cofinanțare 50–100%.",
+                        "— AFM Casa Verde Plus: pompe de căldură și panouri solare termice pentru sistemele comune ale blocului.",
+                        "— Credite ipotecare verzi colective (BERD/EIB prin băncile partenere).",
+                      ];
+                    } else if (isPub) {
+                      lines = [
+                        "— PNRR C5.1 – Eficiență energetică clădiri publice: finanțare 100% din fonduri europene (prioritate maximă ED/SA/HC).",
+                        "— PODD – Programul Operațional Dezvoltare Durabilă (FEDR): accesibil unităților administrativ-teritoriale.",
+                        "— Buget de stat și buget local: investiții în infrastructura publică (HG 907/2016 — expertiză tehnică + PT).",
+                      ];
+                    } else if (isComm) {
+                      lines = [
+                        "— PNRR C5 – Eficiență energetică clădiri comerciale și de birouri: granturi pentru companii private.",
+                        "— Schema de ajutor de stat pentru eficiență energetică (Regulamentul CE 651/2014, art. 38–39).",
+                        "— EIB/BERD: credite verzi directe sau prin intermediari bancari autorizați.",
+                        "— Deduceri fiscale pentru investiții în eficiență energetică (Codul fiscal, art. 25).",
+                      ];
+                    } else {
+                      lines = [
+                        "— PNRR C5 – Eficiență energetică: granturi pentru renovare energetică.",
+                        "— Fonduri structurale FEDR (PODD 2021–2027): finanțare investiții cu impact energetic.",
+                        "— Credite verzi prin intermediari bancari parteneri BERD/EIB.",
+                        "— Scheme ajutor de stat pentru eficiență energetică (CE 651/2014).",
+                      ];
+                    }
+                    update("stimulenteFinanciare", lines.join("\n"));
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+                >
+                  ↺ Generează automat
+                </button>
+              </div>
+              <textarea
+                value={building?.stimulenteFinanciare || ""}
+                onChange={(e) => update("stimulenteFinanciare", e.target.value)}
+                rows={5}
+                placeholder={"Completați stimulentele aplicabile sau apăsați «Generează automat» pentru lista recomandată.\n\nEx: — AFM Casa Verde Plus: finanțare 100% pompe de căldură.\n— PNRR C5.2 – Valul Renovării: granturi renovare energetică."}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-500/40 resize-y leading-relaxed"
+              />
+              <div className="text-[10px] opacity-30">
+                Înlocuiește textul implicit din Anexa 1+2 — secțiunea „Informații privind stimulentele financiare".
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
 
       {/* Footer help */}
       <div className="mt-4 pt-3 border-t border-white/5 text-[10px] opacity-30">

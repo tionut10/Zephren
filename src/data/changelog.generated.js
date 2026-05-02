@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-01
+// Ultima generare: 2026-05-02
 
 export const APP_VERSION = "0.5.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🔧",
-        "text": "fix(AnexaMDLPA): aliniere completă — FieldWrap min-h label, badge Inactiv mutat lângă toggle, subtitlu D scurt"
+        "icon": "✨",
+        "text": "Sprint 4 final P1 (P1.11-P1.17) — Python audit comment + bacs simplificat + factor < 1.0 + commonSystems UI + "
       },
       {
-        "icon": "🔀",
-        "text": "refactor(Step5): Faza D — curățare 3 secțiuni duplicate (-108 linii)"
+        "icon": "✨",
+        "text": "Sprint 3 (P1.6-P1.10) — auto-populare + ANCPI scop + ref building + XML lipsuri + nZEB fallback"
       },
       {
-        "icon": "🔧",
-        "text": "fix(AnexaMDLPA): tabele fără scroll orizontal — table-fixed cu colgroup proporțional, inputs w-full, valori ce"
+        "icon": "✨",
+        "text": "QR real + motor unificat recomandari + grup G EPBD detalii (P1.3 + P1.4 + P1.5)"
       },
       {
-        "icon": "🎨",
-        "text": "fix(AnexaMDLPA): layout mai puțin înghesuit — colaps implicit B-F, labeluri compacte, texte Radio scurte, grid"
-      },
-      {
-        "icon": "📄",
-        "text": "centrează titlu + badge Card RaportConformareNZEB"
+        "icon": "✨",
+        "text": "completeness score unificat (23 itemi) + eliminare Pagina 2 preview HTML (P1.1 + P1.2)"
       },
       {
         "icon": "📄",
-        "text": "Sprint Reorganizare Pas 5/6 — focalizare Pas 6 pe CPE + Anexe"
+        "text": "auditor.observations in payload DOCX + PDF blob viewer pe Vercel HTTPS (P0.4 + P0.5)"
       },
       {
-        "icon": "🎨",
-        "text": "grafic amortizare mai mare (600x300), fonturi 10px, linii 2.5px, legendă grid"
+        "icon": "🔧",
+        "text": "fix(legal): pasaport renovare PREVIEW + barcode local + landing verify (P0.2 + P0.3)"
       },
       {
-        "icon": "🎨",
-        "text": "grafic amortizare NPV cu axă RON, curbe continue post-amortizare și markeri break-even"
+        "icon": "📄",
+        "text": "fix(legal): elimina EPBD 2024 Art. 17 ca normativ aplicat in CPE oficial (P0.1)"
+      },
+      {
+        "icon": "🔸",
+        "text": "T9 Sprint Tranziție 2026 — FAQ tranziție 2026 (docs)"
       }
     ]
   },

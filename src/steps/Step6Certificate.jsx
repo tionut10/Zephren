@@ -762,6 +762,10 @@ export default function Step6Certificate(props) {
                     basement: building.basement ? "true" : "false",
                     attic: building.attic ? "true" : "false",
                     biomass_enabled: biomass?.enabled ? "true" : "false",
+                    // 2 mai 2026 — Etape implementare + Stimulente financiare (secțiunea I AnexaMDLPA)
+                    // Completate de auditor din formularul COMPLETARE AUTOMATĂ DETALIATĂ (Pas 6)
+                    etape_implementare: building.etapeImplementare || "",
+                    stimulente_financiare: building.stimulenteFinanciare || "",
                   },
                   // Fotografiile se trimit DOAR pentru Anexa (mode=anexa/anexa_bloc).
                   // Pentru CPE (mode=cpe) fotografiile nu sunt procesate de Python →
