@@ -12,6 +12,11 @@ import {
   MDLPA_EMAIL,
   MAX_EMAIL_ATTACHMENT_MB,
 } from "../lib/mdlpa-submit.js";
+import { generateCoverLetterPdf } from "../lib/cover-letter-pdf.js";
+
+// T4 Sprint Tranziție 2026 — data operaționalizării portalului electronic MDLPA
+// (60 zile lucrătoare de la publicarea Ord. 348/2026 pe 14.IV.2026 = 8.VII.2026).
+const MDLPA_PORTAL_GO_LIVE = new Date("2026-07-08T00:00:00.000Z");
 
 /**
  * MDLPASubmitPanel — Workflow producție submit CPE la MDLPA (Sprint 17).
@@ -124,11 +129,15 @@ function MDLPASubmitPanelInternal({ projectData = {}, cpeCode = "", attachments 
   const [submitError, setSubmitError] = useState(null);
   const [progressStage, setProgressStage] = useState("");
   const [tracking, setTracking] = useState(null);
+  const [coverLetterStatus, setCoverLetterStatus] = useState("idle"); // idle | generating | done | error
   const fileInputRef = useRef(null);
   const [extraFiles, setExtraFiles] = useState([]);
 
   const cpeId = projectData?.cpeId || cpeCode || "default";
   const buildingAddress = projectData?.building?.address || "";
+
+  // T4 Sprint Tranziție 2026 — verificare disponibilitate portal MDLPA
+  const portalAvailable = new Date() >= MDLPA_PORTAL_GO_LIVE;
 
   // Încarcă tracking la mount
   useEffect(() => {
@@ -249,6 +258,66 @@ function MDLPASubmitPanelInternal({ projectData = {}, cpeCode = "", attachments 
         </div>
       )}
 
+      {/* T4 Sprint Tranziție 2026 — Banner portal MDLPA indisponibil până 8.VII.2026 */}
+      {!portalAvailable && (
+        <div
+          role="alert"
+          className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 space-y-3"
+        >
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">⚠️</span>
+            <div className="flex-1 space-y-2 text-xs">
+              <div className="font-bold text-amber-200">
+                Portalul electronic MDLPA va fi operațional din 8 iulie 2026
+              </div>
+              <p className="text-amber-100/80 leading-relaxed">
+                Conform Art. 19 alin. (3) Ord. MDLPA 348/2026, portalul pentru
+                distincția AE Ici / AE IIci se operaționalizează în 60 zile lucrătoare
+                de la publicarea ordinului (14.IV.2026 → 8.VII.2026). Până atunci,
+                CPE-urile se trimit prin <strong>procedura veche</strong> (depunere
+                fizică / email la <code className="text-amber-200">{MDLPA_EMAIL}</code>).
+              </p>
+              <div className="pt-2 flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setCoverLetterStatus("generating");
+                    try {
+                      const fileMeta = allFiles.map(f => ({
+                        name: f.name,
+                        sizeMB: (f.size || 0) / 1048576,
+                      }));
+                      await generateCoverLetterPdf({
+                        auditor: projectData.auditor || {},
+                        building: projectData.building || {},
+                        cpeCode,
+                        attachments: fileMeta,
+                        download: true,
+                      });
+                      setCoverLetterStatus("done");
+                    } catch (e) {
+                      console.error("[CoverLetter]", e);
+                      setCoverLetterStatus("error");
+                    }
+                  }}
+                  disabled={coverLetterStatus === "generating"}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 border border-amber-500/40 text-amber-200 hover:bg-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {coverLetterStatus === "generating"
+                    ? "📄 Generez..."
+                    : coverLetterStatus === "done"
+                      ? "✓ Scrisoare descărcată"
+                      : "📄 Generează scrisoare de însoțire (PDF)"}
+                </button>
+                {coverLetterStatus === "error" && (
+                  <span className="text-[10px] text-red-300 italic">⚠ Eroare la generare. Verifică consola.</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Checklist validare */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-2">
@@ -321,12 +390,19 @@ function MDLPASubmitPanelInternal({ projectData = {}, cpeCode = "", attachments 
       {/* Acțiuni */}
       <div className="flex flex-wrap gap-2">
         <button onClick={handleSubmit}
-          disabled={!allPassed || submitStatus === "working"}
+          disabled={!allPassed || submitStatus === "working" || !portalAvailable}
+          title={!portalAvailable
+            ? "Portal MDLPA disponibil din 8 iulie 2026. Folosește scrisoarea de însoțire PDF pentru depunere fizică."
+            : undefined}
           className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-            allPassed && submitStatus !== "working"
+            allPassed && submitStatus !== "working" && portalAvailable
               ? "bg-amber-500 text-slate-900 hover:bg-amber-400"
               : "bg-white/10 text-white/30 cursor-not-allowed")}>
-          {submitStatus === "working" ? `Se procesează (${progressStage})...` : "Submit complet (cloud + email)"}
+          {submitStatus === "working"
+            ? `Se procesează (${progressStage})...`
+            : !portalAvailable
+              ? "🔒 Portal MDLPA — disponibil 8.VII.2026"
+              : "Submit complet (cloud + email)"}
         </button>
 
         <button onClick={openEmailOnly}
