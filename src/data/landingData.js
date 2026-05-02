@@ -151,7 +151,7 @@ export const PLANS = [
   {
     id: "audit",
     name: "ZEPHREN AE IIci",
-    subtitle: "Pentru auditori AE IIci · grad II civile · CPE locuințe (Art. 6 alin. 2)",
+    subtitle: "Pentru orice auditor (Ici sau IIci) care face DOAR CPE + Anexa 1+2 (Pas 1-6)",
     price: "599",
     period: "/lună",
     priceAn: null,
@@ -177,7 +177,7 @@ export const PLANS = [
   {
     id: "pro",
     name: "ZEPHREN AE Ici",
-    subtitle: "Pentru auditori AE Ici · grad I civile · CPE + audit + nZEB toate clădirile (Art. 6 alin. 1)",
+    subtitle: "Pentru auditori AE Ici care fac și audit energetic (Pas 1-7 + nZEB + LCC)",
     price: "1.499",
     period: "/lună",
     priceAn: null,
@@ -204,7 +204,7 @@ export const PLANS = [
   {
     id: "expert",
     name: "ZEPHREN Expert",
-    subtitle: "Pentru auditori AE Ici senior + consultanți · scop complet + 18 module avansate Step 8",
+    subtitle: "Pentru auditori senior + consultanți (Pas 1-8 · 18 module avansate · BIM)",
     price: "2.999",
     period: "/lună",
     priceAn: null,

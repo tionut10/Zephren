@@ -931,11 +931,35 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           </div>
         </div>
         <h2 style={{ fontSize: "32px", fontWeight: "800", textAlign: "center", marginBottom: "16px", color: text }}>{T("price_title", "Planuri și prețuri")}</h2>
-        <p style={{ textAlign: "center", fontSize: "14px", color: textFaint, marginBottom: "32px", maxWidth: "640px", margin: "0 auto 32px" }}>
+        <p style={{ textAlign: "center", fontSize: "14px", color: textFaint, marginBottom: "24px", maxWidth: "720px", margin: "0 auto 24px" }}>
           {lang === "EN"
-            ? "Choose the plan that matches your MDLPA grade and building type. All paid plans include unlimited EPC — the difference is in what you can issue and which modules you have access to."
-            : "Alege pachetul care se potrivește gradului tău MDLPA și tipului de clădiri pe care le certifici. Toate planurile plătite includ CPE nelimitat — diferența constă în ce poți emite și ce module ai la dispoziție."}
+            ? "Choose the plan that matches what you DO, not which grade you hold. Plans are organized FUNCTIONALLY (Step 1-6 vs 1-7 vs 1-8) — your MDLPA attestation determines what you can sign legally on EPCs."
+            : "Alege pachetul care se potrivește cu ce FACI, nu cu gradul atestatului tău. Plan-urile sunt orientate FUNCȚIONAL (Pas 1-6 vs 1-7 vs 1-8) — atestatul MDLPA determină ce poți semna legal pe CPE-uri."}
         </p>
+
+        {/* T2 Sprint Tranziție 2026 — banner orientare funcțională (NU pe grad) */}
+        <div style={{ maxWidth: "1140px", margin: "0 auto 32px", padding: "14px 20px", borderRadius: "12px", background: isDark ? "rgba(56,189,248,0.08)" : "rgba(14,165,233,0.06)", border: "1px solid rgba(56,189,248,0.25)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+            <div style={{ fontSize: "22px", lineHeight: 1, flexShrink: 0 }}>🧭</div>
+            <div style={{ flex: 1, fontSize: "12px", color: textFaint, lineHeight: 1.5 }}>
+              {lang === "EN" ? (
+                <>
+                  <strong style={{ color: text }}>Plans are organized by what you DO, not by your attestation grade.</strong>{" "}
+                  An <strong>AE Ici auditor who issues only EPCs</strong> may use the AE IIci plan (599 RON/lună), saving 900 RON/lună
+                  vs. the AE Ici plan. Your attestation grade determines what you can <em>sign legally</em> on EPCs (Ord. MDLPA 348/2026 Art. 6);
+                  the plan determines what <em>features you see</em> in the UI.
+                </>
+              ) : (
+                <>
+                  <strong style={{ color: text }}>Plan-urile sunt organizate după ce FACI, nu după gradul atestatului.</strong>{" "}
+                  Un <strong>auditor AE Ici care face doar CPE</strong> poate folosi planul AE IIci (599 RON/lună), economisind 900 RON/lună
+                  față de AE Ici. Gradul atestatului determină ce poți <em>semna legal</em> pe CPE-uri (Ord. MDLPA 348/2026 Art. 6);
+                  planul determină ce <em>funcționalități vezi</em> în UI.
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
 
         {/* ── Trust banner: Transparență prețuri — anunț 90 zile pentru orice modificare ── */}
