@@ -459,13 +459,15 @@ def check_box_in_table(doc, table_idx, row_idx, col_idx):
 
 def merge_duplicate_year_cells(doc):
     """Pentru tabelul CPE „DATE PRIVIND APARTAMENTUL/CLĂDIREA", dacă R1C1 și R2C1
-    conțin același placeholder-anchor („Anul construirii"), aplic vMerge să unifice
-    celulele vertical pentru a elimina gap-ul vizual.
+    conțin același placeholder-anchor („Anul construirii"), GOLEȘTE conținutul
+    duplicatului din R2C1 pentru a evita afișarea redundantă.
 
     Audit 2 mai 2026 — fix aliniere tabel raportat de utilizator.
+    NOTĂ: am încercat inițial vMerge (commit 3970604) dar python-docx aruncă
+    'no tc element at grid_offset=1' la accesări ulterioare ale tabelului
+    pentru tabele cu gridSpan-uri complexe (template MDLPA). Soluția safer:
+    doar curăț textul din R2C1 — gap-ul rămâne dar evităm crash.
     """
-    from docx.oxml import OxmlElement
-    from docx.oxml.ns import qn
     for tbl in doc.tables:
         is_data_table = any(
             ("DATE PRIVIND APARTAMENTUL" in cell.text or
@@ -478,44 +480,28 @@ def merge_duplicate_year_cells(doc):
         try:
             r1c1 = tbl.rows[1].cells[1]
             r2c1 = tbl.rows[2].cells[1]
-        except IndexError:
+        except (IndexError, ValueError):
             continue
-        t1 = r1c1.text.strip()
-        t2 = r2c1.text.strip()
-        # Verific dacă R2C1 e duplicate-anchor („Anul construirii") sau golit
+        try:
+            t1 = r1c1.text.strip()
+            t2 = r2c1.text.strip()
+        except (ValueError, AttributeError):
+            continue
+        # Verific dacă R2C1 e duplicat al R1C1 (același „Anul construirii AAAA")
         is_duplicate = (
             t1 and t2 and t1 == t2
-        ) or (
-            t1 and not t2
         ) or (
             t1.startswith("Anul construirii") and t2.startswith("Anul construirii")
         )
         if not is_duplicate:
             continue
-        # Apply vMerge restart pe R1C1
-        tcPr1 = r1c1._tc.find(qn("w:tcPr"))
-        if tcPr1 is None:
-            tcPr1 = OxmlElement("w:tcPr")
-            r1c1._tc.insert(0, tcPr1)
-        # Curăț vMerge-uri existente
-        for old in tcPr1.findall(qn("w:vMerge")):
-            tcPr1.remove(old)
-        vM1 = OxmlElement("w:vMerge")
-        vM1.set(qn("w:val"), "restart")
-        tcPr1.append(vM1)
-        # Apply vMerge continue pe R2C1
-        tcPr2 = r2c1._tc.find(qn("w:tcPr"))
-        if tcPr2 is None:
-            tcPr2 = OxmlElement("w:tcPr")
-            r2c1._tc.insert(0, tcPr2)
-        for old in tcPr2.findall(qn("w:vMerge")):
-            tcPr2.remove(old)
-        vM2 = OxmlElement("w:vMerge")  # No w:val = continue
-        tcPr2.append(vM2)
-        # Curăț conținutul R2C1 (celula merged nu trebuie să aibă conținut)
-        for p in r2c1.paragraphs:
-            for run in list(p.runs):
-                run._r.getparent().remove(run._r)
+        # Golesc R2C1 (păstrez celula vidă pentru a nu strica grid_offset)
+        try:
+            for p in r2c1.paragraphs:
+                for run in list(p.runs):
+                    run._r.getparent().remove(run._r)
+        except (ValueError, AttributeError):
+            continue
 
 
 # ═══════════════════════════════════════════════════════
