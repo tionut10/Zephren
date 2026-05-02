@@ -3842,6 +3842,30 @@ class handler(BaseHTTPRequestHandler):
             if cpe_code:
                 for placeholder in ["[[CPE_CODE]]", "{{CPE_CODE}}", "CodUnicCPE"]:
                     replace_in_doc(doc, placeholder, cpe_code)
+                # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
+                # "ANEXA 2 la Certificatul de performanță energetică nr. ......"
+                if mode in ("anexa", "anexa_bloc"):
+                    import re as _re_cpe
+                    for p in doc.paragraphs:
+                        pt = p.text
+                        if ("Certificatul de performan" in pt or
+                                "certificatul de performan" in pt) and "nr." in pt:
+                            for run in p.runs:
+                                if _re_cpe.search(r"nr\.\s*\.{3,}", run.text):
+                                    run.text = _re_cpe.sub(r"nr\.\s*\.{3,}",
+                                                            "nr. " + cpe_code, run.text)
+                    # Fallback: parcurge toate tabelele (titluri în celule)
+                    for tbl in doc.tables:
+                        for row in tbl.rows:
+                            for cell in row.cells:
+                                for p in cell.paragraphs:
+                                    if ("Certificatul de performan" in p.text and
+                                            _re_cpe.search(r"nr\.\s*\.{3,}", p.text)):
+                                        for run in p.runs:
+                                            if _re_cpe.search(r"nr\.\s*\.{3,}", run.text):
+                                                run.text = _re_cpe.sub(
+                                                    r"nr\.\s*\.{3,}",
+                                                    "nr. " + cpe_code, run.text)
 
             # ═══════════════════════════════════════
             # Sprint 15 — Semnătură + ștampilă + QR code (Ord. MDLPA 16/2023)
@@ -5992,33 +6016,75 @@ class handler(BaseHTTPRequestHandler):
                             if cell.text.strip() == _wind and ci > 0:
                                 check_form_checkbox_in_cell(rows[3].cells[ci])
                                 break
-                    # Regim înălțime: caut suficient de generic
+                    # Regim înălțime: bifează TOATE tipurile aplicabile
+                    # P+4E → bifează P și E; S → bifează S; completează (nr) cu nr. etaje
                     if _regim:
-                        # Mapare prefix: P+0..2 → P, P+3..5 → E, P+6+ → M/P, S→S, D→D, Mez→Mez
-                        regim_short = "P"
+                        regim_parts = set()
+                        nr_etaje_val = None
                         if "S" in _regim and "+" not in _regim:
-                            regim_short = "S"
+                            regim_parts.add("S")
                         elif "Mez" in _regim or "mezanin" in _regim.lower():
-                            regim_short = "Mez"
-                        elif _regim.startswith("D"):
-                            regim_short = "D"
+                            regim_parts.add("Mez")
+                        elif _regim.upper().startswith("D"):
+                            regim_parts.add("D")
                         elif "P+" in _regim:
+                            regim_parts.add("P")
                             try:
-                                etaje = int(_regim.split("P+")[1].split("E")[0].strip() or "0")
-                                regim_short = "P" if etaje <= 2 else "E" if etaje <= 5 else "M/P"
+                                nr_etaje_val = int(
+                                    _regim.split("P+")[1].split("E")[0].strip() or "0"
+                                )
+                                if nr_etaje_val >= 1:
+                                    regim_parts.add("E")
+                                if nr_etaje_val >= 6:
+                                    regim_parts.add("M/P")
                             except Exception:
-                                regim_short = "E"
+                                regim_parts.add("E")
+                        else:
+                            regim_parts.add("P")
+                        # Bifează toate coloanele care corespund tipurilor detectate
                         for ci, cell in enumerate(rows[4].cells):
-                            if cell.text.strip() == regim_short and ci > 0:
+                            if cell.text.strip() in regim_parts and ci > 0:
                                 check_form_checkbox_in_cell(rows[5].cells[ci])
-                                break
+                        # Completează (nr) cu numărul de etaje în rândul 4 sau 5
+                        if nr_etaje_val is not None and nr_etaje_val > 0:
+                            for r_idx in (4, 5):
+                                for cell in rows[r_idx].cells:
+                                    for p in cell.paragraphs:
+                                        if "(nr)" in p.text:
+                                            replace_in_paragraph(
+                                                p, "(nr)", str(nr_etaje_val)
+                                            )
 
             # ═══════════════════════════════════════
-            # 6. ANEXĂ FOTOGRAFII CLĂDIRE — Secțiunea H (doar în modul "anexa")
+            # 7b. PAGINĂ SUPLIMENT — dezactivat 2 mai 2026
             # ═══════════════════════════════════════
-            # Audit 2 mai 2026 — Secțiunea H se generează ÎNTOTDEAUNA pentru Anexa
-            # 1+2, indiferent dacă auditorul a încărcat poze sau nu. Dacă nu sunt
-            # poze, afișăm un placeholder cu instrucțiuni pentru auditor.
+            # if mode == "cpe": append_legal_supplement(doc, data)
+
+            # ═══════════════════════════════════════
+            # 7c. ANEXA BLOC — tabel apartamente + sisteme comune
+            # ═══════════════════════════════════════
+            # Injectat ÎNAINTE de secțiunea H pentru ca H să fie ULTIMA secțiune.
+            if mode == "anexa_bloc":
+                apartments = body.get("apartments", []) or []
+                apartment_summary = body.get("apartmentSummary") or {}
+                common_systems = body.get("commonSystems") or {}
+                try:
+                    if apartments:
+                        added_apts = insert_apartment_table(doc, apartments, apartment_summary)
+                        if added_apts:
+                            print(
+                                f"[anexa_bloc] tabel apartamente injectat: {len(apartments)} ap.",
+                                flush=True,
+                            )
+                    if common_systems:
+                        insert_common_systems_section(doc, common_systems)
+                except Exception as e_bloc:
+                    print(f"[anexa_bloc] eroare injecție: {e_bloc}", flush=True)
+
+            # ═══════════════════════════════════════
+            # 6. ANEXĂ FOTOGRAFII CLĂDIRE — Secțiunea H (ULTIMA secțiune)
+            # ═══════════════════════════════════════
+            # Mutat după 7c (apt. bloc) pentru ca H să fie mereu ultima pagină.
             building_photos = body.get("buildingPhotos", [])
             if mode in ("anexa", "anexa_bloc"):
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -6045,13 +6111,12 @@ class handler(BaseHTTPRequestHandler):
                     )
                     sub_run.italic = True
                     sub_run.font.size = Pt(9)
-                    sub_run.font.color.rgb = None  # default
-                    # Adaug 6 spații rezervate (placeholder casete) cu chenar gri
+                    sub_run.font.color.rgb = None
+                    # 6 casete rezervate cu chenar punctat (3 rânduri × 2 coloane)
                     placeholder_p = doc.add_paragraph()
                     placeholder_p.add_run("\n").font.size = Pt(8)
                     for _ in range(3):
                         ph_tbl = doc.add_table(rows=1, cols=2)
-                        # Stilizare chenar punctat
                         tbl_pr = ph_tbl._tbl.tblPr
                         if tbl_pr is None:
                             tbl_pr = OxmlElement("w:tblPr")
@@ -6069,12 +6134,10 @@ class handler(BaseHTTPRequestHandler):
                             placeholder_run = cell.paragraphs[0].add_run("[Spațiu rezervat foto]")
                             placeholder_run.font.size = Pt(8)
                             placeholder_run.italic = True
-                            # Înălțime fixă rând ~5 cm
-                            tc_pr = cell._tc.get_or_add_tcPr()
-                            for _ in range(7):  # 7 paragrafe goale pentru înălțime
+                            # 3 paragrafe goale per celulă (~3 cm înălțime, evită pagini goale)
+                            for _ in range(3):
                                 cell.add_paragraph()
-                    # Skip restul logicii foto (gruparea + tabela)
-                    building_photos = []  # asigur skip al loop-ului următor
+                    building_photos = []
 
                 cat_labels = {
                     "exterior": "Exterior",
@@ -6243,40 +6306,6 @@ class handler(BaseHTTPRequestHandler):
                                         val = sp2.get(attr)
                                         if val and int(val) > 0:
                                             sp2.set(attr, "0")
-
-            # ═══════════════════════════════════════
-            # 7b. PAGINĂ SUPLIMENT — dezactivat 2 mai 2026
-            # ═══════════════════════════════════════
-            # Pagina supliment (cod CPE, QR, EPBD 2024 Art.14) a fost eliminată din CPE:
-            # — CPE oficial (Ord. MDLPA 16/2023) are o singură pagină A4; pagina extra
-            #   nu face parte din modelul oficial și nu trebuie depusă la MDLPA.
-            # — EPBD 2024/1275 Art.14 nu este transpus în drept român (termen: 29.05.2026);
-            #   includerea sa prematură ar crea confuzie juridică.
-            # append_legal_supplement() rămâne disponibilă pentru export separat (viitor).
-            # if mode == "cpe": append_legal_supplement(doc, data)
-
-            # ═══════════════════════════════════════
-            # 7c. ANEXA BLOC — tabel apartamente + sisteme comune (Etapa 4, BUG-4)
-            # ═══════════════════════════════════════
-            # Doar pentru mode == "anexa_bloc" — injectăm la finalul Anexei standard
-            # un tabel detaliat cu apartamentele + lista sistemelor comune.
-            # Datele vin din body['apartments'], body['apartmentSummary'], body['commonSystems'].
-            if mode == "anexa_bloc":
-                apartments = body.get("apartments", []) or []
-                apartment_summary = body.get("apartmentSummary") or {}
-                common_systems = body.get("commonSystems") or {}
-                try:
-                    if apartments:
-                        added_apts = insert_apartment_table(doc, apartments, apartment_summary)
-                        if added_apts:
-                            print(
-                                f"[anexa_bloc] tabel apartamente injectat: {len(apartments)} ap.",
-                                flush=True,
-                            )
-                    if common_systems:
-                        insert_common_systems_section(doc, common_systems)
-                except Exception as e_bloc:
-                    print(f"[anexa_bloc] eroare injecție: {e_bloc}", flush=True)
 
             # ═══════════════════════════════════════
             # 8. SAVE & RETURN
