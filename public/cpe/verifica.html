@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verificare cod CPE — Zephren</title>
+  <meta name="description" content="Verificare cod unic CPE generat de Zephren. Registrul național MDLPA este în curs de implementare." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --fg: #0f172a;
+      --bg: #f8fafc;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #0ea5e9;
+      --warn-bg: #fef3c7;
+      --warn-fg: #92400e;
+      --warn-bd: #fcd34d;
+      --info-bg: #e0f2fe;
+      --info-fg: #075985;
+      --info-bd: #7dd3fc;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fg: #f1f5f9;
+        --bg: #0f172a;
+        --muted: #94a3b8;
+        --border: #334155;
+        --warn-bg: rgba(252, 211, 77, 0.10);
+        --warn-fg: #fcd34d;
+        --warn-bd: rgba(252, 211, 77, 0.35);
+        --info-bg: rgba(125, 211, 252, 0.10);
+        --info-fg: #7dd3fc;
+        --info-bd: rgba(125, 211, 252, 0.35);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Liberation Sans", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.55;
+    }
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 20px 64px 20px;
+    }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    header img { width: 32px; height: 32px; }
+    header strong { font-size: 18px; letter-spacing: -0.01em; }
+    h1 { font-size: 22px; margin: 0 0 4px 0; letter-spacing: -0.015em; }
+    .lead { color: var(--muted); font-size: 14px; margin: 0 0 24px 0; }
+    .banner {
+      padding: 12px 14px;
+      border: 1px solid var(--warn-bd);
+      background: var(--warn-bg);
+      color: var(--warn-fg);
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .banner strong { font-weight: 700; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 0 0 6px 0; }
+    input[type="text"] {
+      width: 100%;
+      font: 14px ui-monospace, "Cascadia Mono", "JetBrains Mono", "Liberation Mono", monospace;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      letter-spacing: 0.5px;
+    }
+    button[type="submit"] {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      margin-top: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover { filter: brightness(1.08); }
+    .result {
+      margin-top: 24px;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--info-bd);
+      background: var(--info-bg);
+      color: var(--info-fg);
+      font-size: 14px;
+      display: none;
+    }
+    .result.shown { display: block; }
+    .result code {
+      display: block;
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 4px;
+      font: 12px ui-monospace, monospace;
+      word-break: break-all;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="/logo.svg" alt="Zephren" />
+      <strong>Zephren — Verificare cod CPE</strong>
+    </header>
+
+    <h1>Verificare cod unic CPE</h1>
+    <p class="lead">Introduceți codul unic înscris pe Certificatul de Performanță Energetică pentru a verifica autenticitatea.</p>
+
+    <div class="banner" role="note">
+      <strong>⚠ Funcționalitate în curs de implementare.</strong>
+      Registrul național MDLPA pentru codurile CPE este în pregătire. La acest moment, codurile generate de Zephren sunt validate doar local, pe baza formatului definit în <em>Ordinul MDLPA nr. 16/2023</em>. Verificarea împotriva registrului oficial va fi disponibilă ulterior, după publicarea acestuia.
+    </div>
+
+    <form id="cpe-form" autocomplete="off" novalidate>
+      <label for="cod">Cod unic CPE</label>
+      <input type="text" id="cod" name="cod" placeholder="ex. CPE-RO-2026-XXXXX-XXXXX" inputmode="latin" autocapitalize="characters" />
+      <button type="submit">Verifică</button>
+    </form>
+
+    <div class="result" id="result" role="status" aria-live="polite"></div>
+
+    <footer>
+      <p>Pentru întrebări legate de un CPE specific, contactați auditorul energetic care l-a emis (datele de contact apar pe certificat).</p>
+      <p>© Zephren · <a href="/">Pagina principală</a> · <a href="mailto:contact@zephren.ro">contact@zephren.ro</a></p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var preset = params.get("cod") || "";
+      var input = document.getElementById("cod");
+      var form = document.getElementById("cpe-form");
+      var result = document.getElementById("result");
+
+      if (preset) {
+        input.value = preset;
+        showResult(preset, true);
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var val = (input.value || "").trim();
+        if (!val) {
+          showResult("", false);
+          return;
+        }
+        showResult(val, true);
+      });
+
+      function showResult(code, fromQuery) {
+        if (!code) {
+          result.className = "result shown";
+          result.innerHTML = "Introduceți un cod pentru a verifica.";
+          return;
+        }
+        // Validare format minim: ne-gol și conține cel puțin 8 caractere alfanumerice/separatori.
+        var formatOk = /^[A-Za-z0-9\-\/_.]{8,}$/.test(code);
+        result.className = "result shown";
+        result.innerHTML =
+          (fromQuery ? "<strong>Cod CPE primit din QR:</strong>" : "<strong>Cod CPE introdus:</strong>") +
+          "<code>" + escapeHtml(code) + "</code>" +
+          "<p style=\"margin:8px 0 0 0\">" +
+          (formatOk
+            ? "✓ Format compatibil <em>Ord. MDLPA 16/2023</em>. Validarea împotriva registrului oficial nu este încă disponibilă — solicitați auditorul energetic emitent pentru confirmare."
+            : "⚠ Formatul codului nu pare standard. Verificați transcrierea sau contactați auditorul emitent.") +
+          "</p>";
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

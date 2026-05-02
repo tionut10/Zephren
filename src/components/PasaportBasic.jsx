@@ -87,13 +87,15 @@ function PasaportBasicInternal({ building, energyClass, epFinal, auditor, onGene
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <h3 style={{ margin: 0, fontSize: "16px" }}>
-          📋 Pașaport Renovare EPBD (basic)
+          📋 Pașaport Renovare (preview EPBD 2024)
         </h3>
-        <Badge color="blue">EPBD 2024</Badge>
+        <Badge color="amber">PREVIEW</Badge>
       </div>
 
       <p style={{ fontSize: "13px", opacity: 0.75, marginTop: 0, marginBottom: "12px" }}>
-        Pașaport minimal EPBD obligatoriu de la 29 mai 2026 — format JSON/XML/PDF.
+        Pașaport minimal derivat din EPBD 2024/1275 Art. 12 — format JSON/XML/PDF.{" "}
+        <strong style={{ color: "#fbbf24" }}>Termen transpunere RO: 29.05.2026.</strong>{" "}
+        Documentul nu are valoare juridică în România până la actul național de transpunere.
         Pentru analiză LCC multi-fază + benchmark național → upgrade la{" "}
         <strong>Zephren Expert</strong>.
       </p>

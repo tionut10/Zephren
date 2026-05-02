@@ -107,7 +107,10 @@ export function exportPassportXML(passport, options = {}) {
 
 // ──────────────────────────────────────────────
 // PDF export — basic 1-page A4 (jsPDF + autoTable)
-// EPBD 2024 Art. 12 acceptă format vizual lizibil pentru beneficiar.
+// Format derivat din EPBD 2024/1275 Art. 12 (cadru european viitor).
+// Audit 2 mai 2026 — P0.2: EPBD Art. 12 NU este transpus în drept român
+// până la 29.05.2026. Documentul are caracter de PREVIEW intern Zephren
+// și NU produce efecte juridice în RO la data emiterii.
 // ──────────────────────────────────────────────
 
 export async function exportPassportPDF(passport, options = {}) {
@@ -171,20 +174,25 @@ export async function exportPassportPDF(passport, options = {}) {
   const h = doc.internal.pageSize.getHeight();
 
   // ── Header bandă albastră ──
-  doc.setFillColor(13, 71, 161); // blue-800
-  doc.rect(0, 0, w, 28, "F");
-  doc.setFont(undefined, "bold"); doc.setFontSize(16); doc.setTextColor(255, 255, 255);
-  doc.text("PAȘAPORT RENOVARE EPBD", w / 2, 13, { align: "center" });
-  doc.setFont(undefined, "normal"); doc.setFontSize(9);
-  doc.setTextColor(200, 220, 240);
-  doc.text("Directiva (UE) 2024/1275 Art. 12 — obligatoriu de la 29 mai 2026", w / 2, 20, { align: "center" });
+  // Audit 2 mai 2026 — P0.2: titlu marcat PREVIEW; subtitlu reformulat ca
+  // referință viitoare cu termen transpunere RO, nu ca obligație curentă.
+  // Banda extinsă la 36 mm pentru a încăpea disclaimer + ID fără suprapuneri.
+  doc.setFillColor(180, 83, 9); // amber-700 (preview marker, distinct de albastru CPE oficial)
+  doc.rect(0, 0, w, 36, "F");
+  doc.setFont(undefined, "bold"); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
+  doc.text("PAȘAPORT RENOVARE — PREVIEW", w / 2, 12, { align: "center" });
+  doc.setFont(undefined, "normal"); doc.setFontSize(8);
+  doc.setTextColor(254, 243, 199);
+  doc.text("Format derivat din EPBD 2024/1275 Art. 12 · termen transpunere RO 29.05.2026", w / 2, 18, { align: "center" });
+  doc.setFontSize(7); doc.setTextColor(254, 215, 170);
+  doc.text("Document fără valoare juridică în România la data emiterii", w / 2, 24, { align: "center" });
 
   // ── ID pașaport (subtitle) ──
-  doc.setFontSize(8); doc.setTextColor(180, 200, 220);
+  doc.setFontSize(8); doc.setTextColor(254, 243, 199);
   const passportId = passport?.passportId || passport?.generatedAt || "—";
-  doc.text(`ID: ${String(passportId).slice(0, 36)}`, w / 2, 25, { align: "center" });
+  doc.text(`ID: ${String(passportId).slice(0, 36)}`, w / 2, 31, { align: "center" });
 
-  let y = 38;
+  let y = 46;
 
   // ── Secțiune 1: Identificare clădire ──
   doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
@@ -280,7 +288,7 @@ export async function exportPassportPDF(passport, options = {}) {
   doc.setFontSize(7); doc.setTextColor(120, 120, 120);
   doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.2);
   doc.line(14, h - 14, w - 14, h - 14);
-  doc.text("Zephren · Pașaport Renovare EPBD basic · Format JSON+XML+PDF EPBD 2024-RO", 14, h - 10);
+  doc.text("Zephren · Pașaport intern (preview EPBD 2024) · Fără bază legală RO la data emiterii", 14, h - 10);
   doc.text(`Pag. 1/1`, w - 14, h - 10, { align: "right" });
 
   // Generează blob și descarcă

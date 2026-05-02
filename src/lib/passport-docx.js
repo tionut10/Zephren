@@ -82,15 +82,19 @@ export async function exportPassportDOCX(passport, options = {}) {
   const road = passport.roadmap || {};
   const audit = passport.auditor || {};
 
+  // Audit 2 mai 2026 — P0.2: titlu marcat PREVIEW + disclaimer prominent
+  // pe prima pagină. EPBD Art. 12 nu este transpus în drept român până la
+  // 29.05.2026, iar L.238/2024 NU transpune Art. 12 (transpune doar
+  // dispoziții EPBD anterioare 2024/1275). Documentul este intern Zephren.
   const sectionChildren = [
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.CENTER,
       children: [
         new TextRun({
-          text: "PAȘAPORT DE RENOVARE CLĂDIRE",
+          text: "PAȘAPORT DE RENOVARE — PREVIEW",
           bold: true,
-          size: 32,
+          size: 30,
         }),
       ],
     }),
@@ -98,9 +102,31 @@ export async function exportPassportDOCX(passport, options = {}) {
       alignment: AlignmentType.CENTER,
       children: [
         new TextRun({
-          text: `Conform EPBD 2024/1275 Art. 12 + L.238/2024  |  ID: ${passport.passportId}`,
+          text: "(fără valoare juridică în România la data emiterii)",
+          italics: true,
           size: 18,
+          color: "B45309",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: `Format derivat din EPBD 2024/1275 Art. 12 (cadru european viitor — termen transpunere RO 29.05.2026)  |  ID: ${passport.passportId}`,
+          size: 16,
           color: "666666",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "L.238/2024 NU transpune Art. 12 EPBD. Document intern Zephren — fără efecte juridice în RO.",
+          italics: true,
+          size: 14,
+          color: "B45309",
         }),
       ],
     }),
@@ -259,7 +285,7 @@ export async function exportPassportDOCX(passport, options = {}) {
       alignment: AlignmentType.CENTER,
       children: [
         new TextRun({
-          text: `Document generat ${new Date().toLocaleString("ro-RO")} de Zephren Energy Calculator. Referințe: EPBD 2024/1275 Art. 12 + Anexa VIII, L.238/2024, Ord. MDLPA 16/2023.`,
+          text: `Document generat ${new Date().toLocaleString("ro-RO")} de Zephren Energy Calculator. Referințe: EPBD 2024/1275 Art. 12 + Anexa VIII (cadru european viitor — termen transpunere RO 29.05.2026), Ord. MDLPA 16/2023 (referință CPE asociat). Document intern Zephren, fără valoare juridică în RO la data emiterii.`,
           size: 14,
           color: "999999",
           italics: true,

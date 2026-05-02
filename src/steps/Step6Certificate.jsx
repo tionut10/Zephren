@@ -289,7 +289,10 @@ export default function Step6Certificate(props) {
                     signature_png_b64: auditor.signatureDataURL ? (auditor.signatureDataURL.split(",")[1] || "") : "",
                     stamp_png_b64: auditor.stampDataURL ? (auditor.stampDataURL.split(",")[1] || "") : "",
                     // Sprint 15 — QR code URL verificare (va genera QR pe server)
-                    qr_verify_url: auditor.cpeCode ? `https://zephren.ro/verify/${auditor.cpeCode}` : "",
+                    // Audit 2 mai 2026 — P0.3: URL pointează la landing static cu form de
+                    // căutare manuală (registrul MDLPA central nu există încă). Cod-ul e
+                    // pasat ca query param `cod` ca să poată fi prepopulat în form.
+                    qr_verify_url: auditor.cpeCode ? `https://zephren.ro/cpe/verifica?cod=${encodeURIComponent(auditor.cpeCode)}` : "",
                     // Sprint 15 — EPBD 2024 indicatori
                     ev_charging_points: building.evChargingPoints || "0",
                     ev_charging_prepared: building.evChargingPrepared || "0",
@@ -315,9 +318,14 @@ export default function Step6Certificate(props) {
                       } catch { return "0"; }
                     })(),
                     // Sprint 17 — Pașaport renovare (EPBD 2024/1275 Art. 12)
-                    passport_uuid: building.passportUUID || "",
-                    passport_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
-                    passport_qr_url: building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : ""),
+                    // Audit 2 mai 2026 — P0.2: EPBD Art. 12 NU este transpus în drept român
+                    // până la 29.05.2026. Pașaportul rămâne disponibil ca PREVIEW intern Zephren
+                    // (export separat via passport-docx/passport-export), dar NU este integrat în
+                    // CPE oficial. Pentru `mode === "cpe"` trimitem string-uri goale (Python tratează
+                    // empty cu graceful fallback — fără QR pașaport, fără rânduri populate).
+                    passport_uuid: mode === "cpe" ? "" : (building.passportUUID || ""),
+                    passport_url: mode === "cpe" ? "" : (building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : "")),
+                    passport_qr_url: mode === "cpe" ? "" : (building.passportURL || (building.passportUUID ? `https://zephren.ro/passport/${building.passportUUID}` : "")),
                     // Arie construită desfășurată — fallback automat din Au × 1.15
                     // (standard RO: Acd ≈ Au × factor formă clădire ~1.15)
                     area_built: building.areaBuilt || (Aref > 0 ? fmtRo(Aref * 1.15, 1) : ""),
@@ -1819,7 +1827,7 @@ ${[
 
 <!-- TABLE 7: COD DE BARE -->
 <table class="c" style="margin-top:3px">
-<tr><td colspan="20" class="S3" style="background:#E7E6E6;text-align:center;font-size:7pt"><strong>COD UNIC DE BARE GENERAT DIN BAZA NA\u021aIONAL\u0102 DE CPE</strong></td></tr>
+<tr><td colspan="20" class="S3" style="background:#E7E6E6;text-align:center;font-size:7pt"><strong>COD UNIC DE IDENTIFICARE CPE (generat local de Zephren \u2014 registru MDLPA \u00een preg\u0103tire)</strong></td></tr>
 </table>
 
 <!-- Semnătură și validitate -->
@@ -2352,12 +2360,18 @@ ${(() => {
                         )}
                       </div>
 
-                      {/* Sprint 17 — Pașaport renovare asociat (EPBD 2024/1275 Art. 12) */}
+                      {/* Sprint 17 — Pașaport renovare asociat
+                          Audit 2 mai 2026 — P0.2: EPBD Art. 12 NU este transpus în drept român
+                          până la 29.05.2026. Pașaportul rămâne disponibil ca PREVIEW intern
+                          Zephren (export separat), dar NU mai este integrat automat în CPE oficial. */}
                       {building?.passportUUID && (
-                        <div className="mt-3 p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                        <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/30">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-[11px] font-medium opacity-70">🆔 Pașaport renovare asociat</div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">EPBD 2024 Art. 12</span>
+                            <div className="text-[11px] font-medium opacity-80">🆔 Pașaport renovare (preview Zephren)</div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold uppercase tracking-wider">PREVIEW</span>
+                          </div>
+                          <div className="text-[10px] mb-2 text-amber-200/90 leading-snug">
+                            ⚠ Format derivat din <strong>EPBD 2024/1275 Art. 12</strong> (cadru european viitor). <strong>L.238/2024 NU transpune Art. 12.</strong> Documentul nu are valoare juridică în România până la actul național de transpunere (estimat 29.05.2026).
                           </div>
                           <div className="text-[9px] opacity-40 mb-1">UUID:</div>
                           <div className="text-[10px] font-mono break-all p-2 rounded bg-black/30 border border-white/5">
@@ -2365,13 +2379,15 @@ ${(() => {
                           </div>
                           {building.passportURL && (
                             <div className="text-[9px] mt-2 flex items-center gap-1">
-                              <span className="opacity-50">URL verificare:</span>
-                              <a href={building.passportURL} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 underline truncate">
+                              <span className="opacity-50">URL preview:</span>
+                              <a href={building.passportURL} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 underline truncate">
                                 {building.passportURL}
                               </a>
                             </div>
                           )}
-                          <div className="text-[9px] opacity-40 mt-1">Link integrat în CPE DOCX + XML + QR code suplimentar.</div>
+                          <div className="text-[9px] opacity-50 mt-2 italic">
+                            Pașaportul NU mai este integrat automat în CPE DOCX/XML oficial (audit P0.2). Export separat disponibil prin meniul „Pașaport renovare".
+                          </div>
                         </div>
                       )}
                     </div>
