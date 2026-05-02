@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import {
   isResidentialCategory,
   validateGradVsBuildingCategory,
   validateAuditorGradMatchesPlan,
+  mapLegacyGradeToNew,
   RESIDENTIAL_CATEGORIES,
   NON_RESIDENTIAL_CATEGORIES,
 } from "../auditor-grad-validation.js";
@@ -216,6 +217,66 @@ describe("auditor-grad-validation — Sprint v6.2 (Ord. MDLPA 348/2026)", () => 
       const r = validateAuditorGradMatchesPlan({ auditorGrad: "IIci", gradMdlpaRequired: "Ici" });
       expect(r.valid).toBe(false);
       expect(r.severity).toBe("warning");
+    });
+  });
+
+  describe("mapLegacyGradeToNew — T5 Sprint Tranziție 2026", () => {
+    it("'grad I civile' → Ici cu confidence high", () => {
+      const r = mapLegacyGradeToNew("grad I civile");
+      expect(r.grade).toBe("Ici");
+      expect(r.confidence).toBe("high");
+    });
+
+    it("'grad II civile' → IIci cu confidence high", () => {
+      const r = mapLegacyGradeToNew("grad II civile");
+      expect(r.grade).toBe("IIci");
+      expect(r.confidence).toBe("high");
+    });
+
+    it("'GRADUL II CIVILE' (uppercase) → IIci", () => {
+      const r = mapLegacyGradeToNew("GRADUL II CIVILE");
+      expect(r.grade).toBe("IIci");
+    });
+
+    it("'grad I+II constructii' → Ici (permisiv) cu confidence high", () => {
+      const r = mapLegacyGradeToNew("grad I+II constructii");
+      expect(r.grade).toBe("Ici");
+      expect(r.confidence).toBe("high");
+      expect(r.interpretation).toMatch(/permisiv/);
+    });
+
+    it("'grad I și II civile' (combinație lingvistică) → Ici", () => {
+      const r = mapLegacyGradeToNew("grad I și II civile");
+      expect(r.grade).toBe("Ici");
+      expect(r.confidence).toBe("high");
+    });
+
+    it("'auditor energetic grad I instalații' → Ici", () => {
+      const r = mapLegacyGradeToNew("auditor energetic grad I instalații");
+      expect(r.grade).toBe("Ici");
+    });
+
+    it("text gol → null cu interpretare clarificare", () => {
+      const r = mapLegacyGradeToNew("");
+      expect(r.grade).toBe(null);
+      expect(r.confidence).toBe("low");
+      expect(r.interpretation).toMatch(/gol|lipsă/);
+    });
+
+    it("null sau undefined → null", () => {
+      expect(mapLegacyGradeToNew(null).grade).toBe(null);
+      expect(mapLegacyGradeToNew(undefined).grade).toBe(null);
+    });
+
+    it("text fără grade detectabile → null", () => {
+      const r = mapLegacyGradeToNew("auditor energetic atestat");
+      expect(r.grade).toBe(null);
+      expect(r.confidence).toBe("low");
+    });
+
+    it("input non-string → null safe", () => {
+      expect(mapLegacyGradeToNew(123).grade).toBe(null);
+      expect(mapLegacyGradeToNew({}).grade).toBe(null);
     });
   });
 

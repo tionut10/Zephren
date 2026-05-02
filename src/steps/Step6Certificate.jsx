@@ -30,6 +30,7 @@ import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { canAccess as canAccessFn, resolvePlan } from "../lib/planGating.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validity.js";
+import { mapLegacyGradeToNew } from "../calc/auditor-grad-validation.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
 import { getCityCoordinates } from "../utils/city-coordinates.js";
@@ -2165,9 +2166,92 @@ ${(() => {
                       <Input label={t("Nume complet auditor",lang)} value={auditor.name} onChange={v => setAuditor(p=>({...p,name:v}))} placeholder="Ing. Popescu Ion" />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input label={t("Nr. atestat MLPAT/MDLPA",lang)} value={auditor.atestat} onChange={v => setAuditor(p=>({...p,atestat:v}))} placeholder="12345" />
-                        <Select label={t("Grad atestat",lang)} value={auditor.grade} onChange={v => setAuditor(p=>({...p,grade:v}))}
-                          options={[{value:"AE Ici",label:"AE Ici — Grad I"},{value:"AE IIci",label:"AE IIci — Grad II"}]} />
+                        <Input
+                          label={t("Data emiterii atestatului",lang)}
+                          value={auditor.attestationIssueDate || ""}
+                          onChange={v => setAuditor(p => ({ ...p, attestationIssueDate: v }))}
+                          type="date"
+                        />
                       </div>
+
+                      {/* T5 Sprint Tranziție 2026 — selector ordin atestare + grad adaptat. */}
+                      {(() => {
+                        const issueDate = auditor.attestationIssueDate;
+                        const auto = issueDate
+                          ? (new Date(issueDate) < new Date("2026-04-14T00:00:00.000Z")
+                              ? "2237_2010"
+                              : "348_2026")
+                          : null;
+                        const ordinanceVal = auditor.attestationOrdinance || auto || "348_2026";
+                        const isLegacy = ordinanceVal === "2237_2010";
+                        const legacyText = auditor.attestationLegacyGrade || "";
+                        const legacyMap = isLegacy ? mapLegacyGradeToNew(legacyText) : null;
+
+                        return (
+                          <div className="space-y-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.08]">
+                            <div className="text-[10px] uppercase tracking-wider opacity-50">
+                              {lang === "EN" ? "Attestation regime" : "Regim atestare"}
+                            </div>
+                            <Select
+                              label={t("Ordin atestare",lang)}
+                              value={ordinanceVal}
+                              onChange={v => setAuditor(p => ({ ...p, attestationOrdinance: v }))}
+                              options={[
+                                { value: "348_2026", label: "Ord. MDLPA 348/2026 (după 14.IV.2026)" },
+                                { value: "2237_2010", label: "Ord. MDLPA 2237/2010 (regim tranziție)" },
+                              ]}
+                              tooltip={lang === "EN"
+                                ? "Auto-detected from attestation issue date if available"
+                                : "Auto-detectat din data emiterii atestatului dacă e completată"}
+                            />
+                            {isLegacy ? (
+                              <div className="space-y-2">
+                                <Input
+                                  label={t("Grad atestat (text exact din certificat)",lang)}
+                                  value={legacyText}
+                                  onChange={v => {
+                                    const mapped = mapLegacyGradeToNew(v);
+                                    setAuditor(p => ({
+                                      ...p,
+                                      attestationLegacyGrade: v,
+                                      grade: mapped.grade ? `AE ${mapped.grade}` : p.grade,
+                                    }));
+                                  }}
+                                  placeholder="grad I civile / grad II civile / grad I+II constructii"
+                                />
+                                {legacyText && (
+                                  <div
+                                    className={`text-[11px] p-2 rounded ${
+                                      legacyMap?.grade === "Ici"
+                                        ? "bg-emerald-500/10 text-emerald-200"
+                                        : legacyMap?.grade === "IIci"
+                                          ? "bg-amber-500/10 text-amber-200"
+                                          : "bg-red-500/10 text-red-200"
+                                    }`}
+                                  >
+                                    <strong>
+                                      {legacyMap?.grade
+                                        ? `→ AE ${legacyMap.grade} (${legacyMap.confidence})`
+                                        : "→ Necunoscut"}
+                                    </strong>
+                                    <span className="opacity-80 block mt-0.5">{legacyMap?.interpretation}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <Select
+                                label={t("Grad atestat",lang)}
+                                value={auditor.grade}
+                                onChange={v => setAuditor(p => ({ ...p, grade: v }))}
+                                options={[
+                                  { value: "AE Ici",  label: "AE Ici — Grad I civile (scop complet)" },
+                                  { value: "AE IIci", label: "AE IIci — Grad II civile (CPE locuințe)" },
+                                ]}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
                       <Input label={t("Firma / PFA",lang)} value={auditor.company} onChange={v => setAuditor(p=>({...p,company:v}))} />
                       {tier.brandingCPE && (
                         <div className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.03] border border-white/10">

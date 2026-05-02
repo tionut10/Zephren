@@ -265,3 +265,84 @@ export function validateAuditorGradMatchesPlan({ auditorGrad, gradMdlpaRequired 
   }
   return { valid: true, severity: "ok", message: "" };
 }
+
+/**
+ * T5 Sprint Tranziție 2026 — mapping grade vechi (Ord. 2237/2010) → nou.
+ *
+ * Atestatele Ord. 2237/2010 NU folosesc formatul „Ici/IIci" — au denumiri
+ * variate ca „grad I civile", „grad II civile", „grad I+II constructii",
+ * „grad I instalații" etc. Acest helper extrage gradul I/II din text liber
+ * și mapează la noul format.
+ *
+ * Reguli mapping (cea mai permisivă):
+ *   - text conține „I+II" (ambele) → "Ici" (gradul I e cel mai permisiv)
+ *   - text conține "II" și NU "I" simplu → "IIci"
+ *   - text conține "I" și NU "II" → "Ici"
+ *   - altfel → null (cere clarificare)
+ *
+ * @param {string|null|undefined} legacyGradeText — textul liber din certificat
+ * @returns {{ grade: "Ici"|"IIci"|null, confidence: "high"|"medium"|"low",
+ *             interpretation: string }}
+ */
+export function mapLegacyGradeToNew(legacyGradeText) {
+  if (!legacyGradeText || typeof legacyGradeText !== "string") {
+    return {
+      grade: null,
+      confidence: "low",
+      interpretation: "Text grad lipsă — completează gradul exact din atestat.",
+    };
+  }
+  const text = legacyGradeText.trim();
+  if (!text) {
+    return {
+      grade: null,
+      confidence: "low",
+      interpretation: "Text grad gol — completează gradul exact din atestat.",
+    };
+  }
+  const upper = text.toUpperCase();
+  const hasII = /\bII\b/.test(upper);
+  const hasI = /\bI\b/.test(upper);
+  const hasBoth =
+    /I\s*\+\s*II\b/.test(upper) ||
+    /\bI\s+(?:ȘI|SI|AND)\s+II\b/i.test(text);
+
+  if (hasBoth) {
+    return {
+      grade: "Ici",
+      confidence: "high",
+      interpretation:
+        "Atestat I+II → mapat la AE Ici (cel mai permisiv, acoperă și IIci).",
+    };
+  }
+  if (hasII && !hasI) {
+    return {
+      grade: "IIci",
+      confidence: "high",
+      interpretation: "Atestat grad II civile → AE IIci (CPE locuințe).",
+    };
+  }
+  if (hasII && hasI) {
+    return {
+      grade: "Ici",
+      confidence: "medium",
+      interpretation:
+        "Atestat grad I și II detectate — interpretat ca AE Ici (permisiv). " +
+        "Verifică textul exact din certificat.",
+    };
+  }
+  if (hasI) {
+    return {
+      grade: "Ici",
+      confidence: "high",
+      interpretation: "Atestat grad I civile → AE Ici (scop complet).",
+    };
+  }
+  return {
+    grade: null,
+    confidence: "low",
+    interpretation:
+      `Nu am putut detecta gradul (I sau II) în textul atestatului. ` +
+      `Completează exact denumirea („grad I civile", „grad II civile" etc.).`,
+  };
+}
