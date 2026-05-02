@@ -619,6 +619,45 @@ export const DEMO_PROJECTS = [
         cadastralNr: "263410-C1",
         carteFunciara: "CF nr. 263410 Voluntari, jud. Ilfov",
       },
+      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M2 — Birouri Pipera ──
+      nrOcupanti: "120",                       // ~5400 m² × 25 m²/persoană density birouri cat. III
+      etapeImplementare:
+        "1. Aprobați planul de investiții prin decizia consiliului de administrație al companiei.\n" +
+        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR componenta C5, scheme de ajutor de stat eficiență energetică).\n" +
+        "3. Obțineți autorizațiile legale necesare pentru lucrări (AC + avize ISU/Mediu/Apă).\n" +
+        "4. Implementați măsurile în ordinea priorităților: BMS optimizare → curtain wall etanșare → expansiune PV.\n" +
+        "5. Documentați performanța atinsă (m&v M&V IPMVP Opțiunea C — comparație consum baseline vs. post-implementare).\n" +
+        "6. Solicitați re-certificare CPE după 3 ani sau la modificarea regimului de funcționare (Mc 001-2022 art. 7.5).",
+      stimulenteFinanciare:
+        "— PNRR componenta C5 — Eficiență energetică clădiri comerciale și de birouri: granturi pentru companii private.\n" +
+        "— Schema de ajutor de stat pentru eficiență energetică (Regulamentul CE 651/2014, art. 38–39).\n" +
+        "— EIB/BERD: credite verzi directe sau prin intermediari bancari autorizați (BCR, Raiffeisen, ING Wholesale).\n" +
+        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
+      solutiiAnvelopa:
+        "— Auditul intermediar al curtain wall-ului la 5 ani (etanșeitate joints — testare cu fum trace + termoviziune SR EN 13187).\n" +
+        "— Reducerea G-value vitrajelor pe fațada Sud prin film solar suplimentar (ΔU < 0.05).\n" +
+        "— Verificare anuală fixări mecanice spandrel + ancorajul vatei minerale (CWCT TN 56).\n" +
+        "— Monitorizare condens curtain wall în zonele de bridge punct (psi-value local optimizat).",
+      solutiiInstalatii:
+        "— Optimizare program BMS Siemens Desigo (occupancy-based set-points, night setback agresiv 16-18°C).\n" +
+        "— Verificare anuală chiller centralizat (curățare condensator, încărcare R-32 / R-454B conform F-Gas).\n" +
+        "— Calibrare senzori CO₂ (cat. I confort EN 16798-1 implică ±50 ppm precizie).\n" +
+        "— Recuperator entalpic rotor: schimb sigilantă antimicrobiană la 5 ani (NSF/ANSI 50).",
+      masuriOrganizare:
+        "— Implementarea unui program ISO 50001 cu manager energetic atestat ANRE pentru clădirea de birouri.\n" +
+        "— Audit energetic intermediar la fiecare 4 ani (L.121/2014 art. 9 alin. 1 — clădire non-rezidențială > 500 m²).\n" +
+        "— Plan anual de monitorizare cu raport trimestrial către management (consum kWh/m²·an, intensitate CO₂).\n" +
+        "— Instruirea ocupanților privind setările optimale prin newsletter intern (best practices ENERGY STAR).",
+      masuriLocale:
+        "— Programare orară a iluminatului zonal cu DALI-2 D4i (8-19 zone tehnice, 6-22 zone publice).\n" +
+        "— Senzori prezență și lumină naturală în coridoare/băi/sălile de ședințe (cf. EN 15193-1).\n" +
+        "— Curățare lunară a filtrelor F7 ventilație și schimb anual G4 (debit aer cat. I = 50 m³/h·persoană).\n" +
+        "— Etanșeizarea trecerilor prin curtain wall (cabluri, conducte) cu mansetă EPDM + spumă PUR rezistentă la foc.",
+      regenerabileCustom:
+        "— Expansiune PV 100→250 kWp pe acoperiș (curent 80 kWp acoperiș, posibilă acoperire shed-uri).\n" +
+        "— CHP biogaz cogenerare pentru încălzire+electricitate la peak load iarnă.\n" +
+        "— Pompă de căldură geotermală (4 puțuri × 100 m) pentru baseload încălzire/răcire (COP > 4.5).\n" +
+        "— Sistem solar termic suplimentar (50 m² colectoare plane) pentru ACM birouri/cantină.",
     },
     opaqueElements: [
       {
@@ -942,6 +981,45 @@ export const DEMO_PROJECTS = [
         cadastralNr: "318745-C1",
         carteFunciara: "CF nr. 318745 Cluj-Napoca UAT Cluj",
       },
+      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M3 — Casă Cluj 1998 ──
+      nrOcupanti: "4",                         // familie 4 persoane în casă RI 165 m²
+      etapeImplementare:
+        "1. Identificați minimum 3 oferte comparative de la contractori autorizați.\n" +
+        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, AFM Casa Verde Plus, fonduri locale).\n" +
+        "3. Obțineți autorizațiile legale necesare (AC pentru extinderea ETICS, avize ISU dacă lucrările afectează căile de evacuare).\n" +
+        "4. Implementați măsurile în ordinea priorităților: continuare anvelopă (10→15 cm EPS) → upgrade CT condensare → expansiune PV.\n" +
+        "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. (UE) 305/2011).\n" +
+        "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea trecerii în clasa B/A.",
+      stimulenteFinanciare:
+        "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice, casă individuală).\n" +
+        "— PNRR componenta C5 — Valul Renovării: granturi pentru renovarea energetică a caselor individuale până la standard nZEB.\n" +
+        "— Credite verzi: BRD Eco Home / ING Green Loan / BCR Casa Ta — dobânzi preferențiale (verifică ofertele active la depunerea dosarului).\n" +
+        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
+      solutiiAnvelopa:
+        "— Continuare ETICS de la 5 cm la 15 cm EPS pe toate fațadele (peste actuala izolație degradată).\n" +
+        "— Tratarea punților termice principale identificate (atic, soclu, intersecție acoperiș-pereți) — manșoane locale 5–10 cm.\n" +
+        "— Înlocuire vitraje termopan vechi (anterior 2010) cu vitraj triplu Low-E argon (U_w < 1.0).\n" +
+        "— Verificare hidroizolație acoperiș tip șarpantă lemn — refacere dacă vârsta > 15 ani (CR 0-2012).",
+      solutiiInstalatii:
+        "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială, deja parțial echipate).\n" +
+        "— Reglaj automat al temperaturii pe cameră prin termostate Smart cu programare săptămânală.\n" +
+        "— Inspecție anuală obligatorie centrală termică condensare (HG 1043/2007 — orice cazan > 20 kW).\n" +
+        "— Adăugare pompă de circulație ACM cu detecție utilizare (eficiență ηₑₛ ≥ 0.27, EuP Lot 11).",
+      masuriOrganizare:
+        "— Plan anual de monitorizare consumuri (electricitate, gaz, apă caldă) cu verificare lunară.\n" +
+        "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).\n" +
+        "— Audit energetic intermediar la fiecare 5 ani sau la modificarea componenței familiei.\n" +
+        "— Documentare lucrări de renovare (foto, facturi, declarații conformitate produse) pentru următorul CPE.",
+      masuriLocale:
+        "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.\n" +
+        "— Înlocuirea bateriilor sanitare cu modele cu limitare debit (clasă A WELL — economie ~30% apă caldă).\n" +
+        "— Becuri LED inteligente cu senzor prezență în spații tranzit (hol, scară, baie).\n" +
+        "— Programare orară a iluminatului și CT pe sezon și zi de săptămână (termostate cu cronoprogramare).",
+      regenerabileCustom:
+        "— Expansiune PV de la 5 kWp la 10 kWp (capacitate acoperiș rămasă 30 m², orientare Sud).\n" +
+        "— Adăugare baterie stocare 10 kWh (Tesla Powerwall sau Pylontech) pentru autoconsum nocturn.\n" +
+        "— Pompă de căldură aer-apă pentru pre-încălzire CT condensare (COP > 4.0, R290 propan).\n" +
+        "— Sistem solar termic 4-6 m² colectoare plane pentru ACM (acoperire 50–70% an, DH cuplat la rezervor 200L).",
     },
     opaqueElements: [
       {
@@ -1257,6 +1335,45 @@ export const DEMO_PROJECTS = [
         cadastralNr: "104587-C1",
         carteFunciara: "CF nr. 104587 Brașov UAT Brașov",
       },
+      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M4 — Școală Brașov ──
+      nrOcupanti: "320",                       // ~320 elevi + 30 cadre didactice + personal auxiliar
+      etapeImplementare:
+        "1. Aprobați planul de investiții prin Consiliul de Administrație al școlii și Inspectoratul Școlar Județean.\n" +
+        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR componenta C5.1 Eficiență energetică clădiri publice, PODD FEDR).\n" +
+        "3. Obțineți autorizațiile legale necesare (AC, avize ISU pentru clădire publică, aprobări Direcția Sanitar-Veterinară pentru cantină).\n" +
+        "4. Implementați măsurile în vacanțele școlare (iulie-august) pentru a nu perturba activitatea didactică.\n" +
+        "5. Documentați performanța atinsă (m&v M&V IPMVP — comparație consum baseline vs. post-implementare prin facturare lunară).\n" +
+        "6. Solicitați re-certificare CPE după 3 ani sau la modificarea regimului de utilizare (Mc 001-2022 art. 7.5, L.121/2014).",
+      stimulenteFinanciare:
+        "— PNRR componenta C5.1 — Eficiență energetică clădiri publice: finanțare 100% din fonduri europene (prioritate maximă educație).\n" +
+        "— PODD — Programul Operațional Dezvoltare Durabilă (FEDR 2021-2027): accesibil unităților administrativ-teritoriale.\n" +
+        "— Buget de stat și buget local: investiții în infrastructura școlară (HG 907/2016 — expertiză tehnică + PT obligatoriu).\n" +
+        "— Granturi norvegiene/SEE pentru clădiri publice eficiente energetic (acord cu MMAP).",
+      solutiiAnvelopa:
+        "— Verificare anuală a stării ETICS aplicat în 2022 (termoviziune SR EN 13187 cf. ghid PNRR).\n" +
+        "— Tratarea punților termice principale identificate (atic, soclu, balcoane scării de incendiu) — manșoane locale 5–10 cm.\n" +
+        "— Refacere hidroizolație acoperiș tip terasă necirculabilă la 10 ani (CR 0-2012, GP 070-2013).\n" +
+        "— Verificarea integrității ferestrelor PVC 6 camere instalate în 2022 (etanșeitate joints, scurgere).",
+      solutiiInstalatii:
+        "— Optimizare program BMS pentru ocupare școlară (8-15 program normal, weekend setback 16°C, vacanțe shutdown).\n" +
+        "— Echilibrare hidraulică anuală a tronsoanelor cu utilizare neuniformă (sală sport, atelier, cantină).\n" +
+        "— Inspecție anuală obligatorie centrală termică (HG 1043/2007 — toate cazanele > 20 kW din clădire publică).\n" +
+        "— Calibrare senzori CO₂ pentru DCV (cf. EN 15251 cat. III școli — 800-1200 ppm setpoint).",
+      masuriOrganizare:
+        "— Implementare ISO 50001 cu manager energetic atestat ANRE (obligație clădire publică > 250 m²).\n" +
+        "— Audit energetic intermediar la fiecare 4 ani (L.121/2014 art. 9 alin. 1).\n" +
+        "— Plan anual monitorizare cu raport trimestrial către Direcția Tehnică a Primăriei (intensitate kWh/m²·an, kgCO₂/m²·an).\n" +
+        "— Instruirea cadrelor didactice și elevilor privind setările optimale (proiect educativ Erasmus+ Green Schools).",
+      masuriLocale:
+        "— Programare orară iluminat zonal cu DALI-2 (8-15 zone clase, 7-22 zone hol/cantină, weekend off).\n" +
+        "— Senzori prezență în săli de clasă neutilizate, băi, depozite (cf. EN 15193-1).\n" +
+        "— Curățare lunară filtre F7 ventilație și schimb anual G4 (debit aer cat. III școli = 25 m³/h·persoană).\n" +
+        "— Etanșeizarea trecerilor prin anvelopă (cabluri tablou electric, conducte gaz, evacuare hota cantină).",
+      regenerabileCustom:
+        "— Expansiune PV de la 60 kWp la 150 kWp (acoperiș terasă 1100 m² rămas neutilizat, sud-est).\n" +
+        "— Sistem solar termic suplimentar 100 m² colectoare plane pentru ACM cantină + dușuri sală sport.\n" +
+        "— Pompă de căldură geotermală (4 puțuri × 80 m) pentru baseload încălzire (COP > 4.5, R290 propan).\n" +
+        "— Stocare termică în rezervor 5000L cu PCM 30°C pentru shaving peak iarna (BTES alternativ).",
     },
     opaqueElements: [
       {
@@ -1567,6 +1684,45 @@ export const DEMO_PROJECTS = [
         cadastralNr: "104287-C1",
         carteFunciara: "CF nr. 104287 Predeal UAT Predeal",
       },
+      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M5 — Pensiune Predeal ──
+      nrOcupanti: "20",                        // 8 camere × 2.5 ocupanți/cameră (ocupare medie sezonieră)
+      etapeImplementare:
+        "1. Aprobați planul de investiții prin decizie SRL/PFA proprietar pensiune.\n" +
+        "2. Verificați eligibilitatea pentru programele de finanțare (PNRR componenta C5 turism, scheme ajutor de stat IMM eficiență energetică).\n" +
+        "3. Obțineți autorizațiile legale necesare (AC pentru extinderea solar termic, avize ISU pentru clădire turism, autorizații sanitar-veterinare bucătărie).\n" +
+        "4. Implementați măsurile în extra-sezon (mai-iunie, septembrie-octombrie) pentru a nu afecta perioada de vârf turistic.\n" +
+        "5. Documentați performanța atinsă (m&v IPMVP — comparație ocupare-corectată kWh/cameră vs. baseline).\n" +
+        "6. Solicitați re-certificare CPE după 5 ani sau la modificarea regimului de utilizare (Mc 001-2022 art. 7.5).",
+      stimulenteFinanciare:
+        "— PNRR componenta C5 — Eficiență energetică în turism: granturi pentru pensiuni și hoteluri.\n" +
+        "— Schema de ajutor de stat pentru eficiență energetică IMM (Regulamentul CE 651/2014, art. 38–39).\n" +
+        "— EIB/BERD: credite verzi prin intermediari bancari autorizați pentru sectorul HoReCa.\n" +
+        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
+      solutiiAnvelopa:
+        "— Verificare anuală a calafatuirii bârnelor lemn masiv (pasta de cânepă + ulei de in pe rosturi vizibile).\n" +
+        "— Tratare contra carii și mucegai cu produse certificate UE (boric acid + permetrină pe lemnul exterior).\n" +
+        "— Monitorizare condens cameră aer ventilată dintre lemn exterior și vată minerală (umiditate < 20%).\n" +
+        "— Verificare hidroizolație acoperiș țiglă ceramică + aerisire pod (CR 0-2012, GP 070-2013).",
+      solutiiInstalatii:
+        "— Curățare anuală cazan peleți obligatorie (cenușa + funingine — afectează randament cu 10%/an dacă neîntreținut).\n" +
+        "— Verificare etanșeitate sistem evacuare gaze arse (coș izolat termic, CO senzor pentru siguranță).\n" +
+        "— Optimizare program ACM solar termic + booster electric (priorizare panouri în zile însorite cu by-pass automat).\n" +
+        "— Echilibrare hidraulică circuite radiator/încălzire pardoseală (pensiunea are mix de sisteme).",
+      masuriOrganizare:
+        "— Plan anual de monitorizare consumuri (peleți tone/an, electricitate, apă) cu corelare la grad de ocupare.\n" +
+        "— Instruirea personalului privind setările optimale (recepție, cameristelor — programare termostate cameră goală vs ocupată).\n" +
+        "— Audit energetic intermediar la fiecare 5 ani sau la extindere (camere noi, restaurant, SPA).\n" +
+        "— Documentare provenienta peleți (certificare ENplus A1 sau DIN+ pentru calitate constantă).",
+      masuriLocale:
+        "— Etanșeizarea trecerilor prin anvelopă lemn (cabluri, conducte) cu materiale specifice lemn (silicon UV-stabil).\n" +
+        "— Înlocuirea bateriilor cabină duș cu modele cu limitator debit (clasă A WELL — economie 30% ACM solar).\n" +
+        "— Becuri LED dimmable cu senzor prezență în holuri/băi (compatibil rural — fără DALI complicat).\n" +
+        "— Programare orară încălzire pe zone (camere disponibile vs ocupate — sistem hotelier simplu Z-Wave).",
+      regenerabileCustom:
+        "— Expansiune solar termic 25→40 m² colectoare plane (acoperiș sud-vest 30° pantă optimă pentru zona V).\n" +
+        "— Adăugare PV 5-10 kWp pe acoperiș (autoconsum + injecție rețea Electrica Transilvania Sud).\n" +
+        "— Pompă de căldură aer-apă pentru pre-încălzire ACM (cuplată cu solar — COP > 3.5 la temperaturi joase Predeal).\n" +
+        "— Mini-hidro centrală 5-10 kW dacă proprietatea are pârâu cu cădere > 5 m (verificare debit minim sezonier).",
     },
     opaqueElements: [
       {

@@ -796,6 +796,18 @@ export default function Step6Certificate(props) {
                     contor_caldura: heating?.allocator === "da" ? "exista" : "nu_exista",
                     repartitoare_costuri: building.heatingCostAllocator === "da" ? "exista" : "nu_exista",
                     acm_recirculare: building.acmRecirculation || "nu_exista",
+                    contor_acm: (() => {
+                      const c = String(building.acmContorGeneral || "").toLowerCase();
+                      if (c.includes("exista") && !c.includes("nu")) return "exista";
+                      if (c.includes("nu_exista") || c === "nu") return "nu_exista";
+                      return "nu_este_cazul";
+                    })(),
+                    debitmetre: (() => {
+                      const d = String(building.acmDebitmetre || "").toLowerCase();
+                      if (d.includes("peste_tot") || d === "peste tot") return "peste_tot";
+                      if (d.includes("partial") || d === "parțial") return "partial";
+                      return "nu_exista";
+                    })(),
                     iluminat_control: (() => {
                       const c = String(lighting?.controlType || lighting?.control || "").toLowerCase();
                       if (c.includes("auto") || c.includes("dali") || c.includes("knx")) return "automat";

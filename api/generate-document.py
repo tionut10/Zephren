@@ -457,6 +457,69 @@ def check_box_in_table(doc, table_idx, row_idx, col_idx):
     return check_form_checkbox_in_cell(tbl.rows[row_idx].cells[col_idx])
 
 
+def check_nth_checkbox_in_para(para, n=0):
+    """Bifează al N-lea checkbox legacy din paragraf (0-based).
+
+    Returnează True dacă a găsit și bifat checkbox-ul indexat.
+    """
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+    seen = -1
+    for fldChar in para._p.iter(qn("w:fldChar")):
+        ffData = fldChar.find(qn("w:ffData"))
+        if ffData is None:
+            continue
+        checkBox = ffData.find(qn("w:checkBox"))
+        if checkBox is None:
+            continue
+        seen += 1
+        if seen != n:
+            continue
+        default = checkBox.find(qn("w:default"))
+        if default is not None:
+            default.set(qn("w:val"), "1")
+        else:
+            d = OxmlElement("w:default")
+            d.set(qn("w:val"), "1")
+            checkBox.append(d)
+        checked = checkBox.find(qn("w:checked"))
+        if checked is None:
+            c = OxmlElement("w:checked")
+            c.set(qn("w:val"), "1")
+            checkBox.append(c)
+        else:
+            checked.set(qn("w:val"), "1")
+        return True
+    return False
+
+
+def check_box_after_label(doc, label_text, option_idx=0):
+    """Caută paragraful cu label_text și bifează al option_idx-lea checkbox
+    din paragraful URMĂTOR (i+1). Pattern frecvent în Anexa MDLPA unde
+    eticheta și opțiunile sunt pe linii consecutive.
+
+    Audit 2 mai 2026 — pentru Conducta de recirculare a acc, Contor general
+    de căldură pentru acc, Debitmetre la nivelul punctelor de consum, etc.
+    """
+    paragraphs = doc.paragraphs
+    for i, p in enumerate(paragraphs):
+        if label_text in p.text:
+            # Caut în paragrafele următoare (până la 3 linii) după label
+            for j in range(i + 1, min(i + 4, len(paragraphs))):
+                next_p = paragraphs[j]
+                # Verific dacă next_p are checkbox-uri
+                from docx.oxml.ns import qn as _qn_local
+                has_cb = any(
+                    fc.find(_qn_local("w:ffData")) is not None and
+                    fc.find(_qn_local("w:ffData")).find(_qn_local("w:checkBox")) is not None
+                    for fc in next_p._p.iter(_qn_local("w:fldChar"))
+                )
+                if has_cb:
+                    return check_nth_checkbox_in_para(next_p, option_idx)
+            return False
+    return False
+
+
 # NOTĂ 2 mai 2026: am eliminat funcțiile merge_duplicate_year_cells +
 # label_year_cells_as_built_vs_renov după ce am descoperit că template-ul
 # oficial MDLPA are deja vMerge aplicat pe celula „Anul construirii/renovării
@@ -5846,28 +5909,47 @@ class handler(BaseHTTPRequestHandler):
                 if _heating and _heating in _heating_anchors and _heating_anchors[_heating]:
                     check_box_for_text(doc, _heating_anchors[_heating])
 
-                # Contor căldură + Repartitoare costuri
-                if data.get("contor_caldura") == "exista":
-                    # Caut paragraful „Contor de căldură" și bifez „există (cu/fără viză metrologică)"
-                    # Strategy: găsesc paragraful cu "Contor de căldură" și bifez primul checkbox după el
-                    for p in doc.paragraphs:
-                        if "Contor de căldură" in p.text:
-                            check_form_checkbox_in_para(p)
-                            break
-                if data.get("repartitoare_costuri") == "nu_exista":
-                    # Pentru repartitoare, bifez „nu există" (al doilea checkbox în paragraf)
-                    # Strategy simplă: găsesc paragraful și bifez primul (fallback)
-                    for p in doc.paragraphs:
-                        if "Repartitoare de costuri" in p.text:
-                            check_form_checkbox_in_para(p)
-                            break
+                # Contor căldură + Repartitoare costuri (paragrafele NEXT după label)
+                # Contor de căldură: există(0) / există fără viză(1) / nu există(2)
+                _contor_caldura = data.get("contor_caldura", "")
+                if _contor_caldura == "exista":
+                    check_box_after_label(doc, "Contor de căldură", option_idx=0)
+                elif _contor_caldura == "nu_exista":
+                    check_box_after_label(doc, "Contor de căldură", option_idx=2)
 
-                # ACM recirculare
+                # Repartitoare de costuri: există(0) / nu există(1)
+                _repartitoare = data.get("repartitoare_costuri", "")
+                if _repartitoare == "exista":
+                    check_box_after_label(doc, "Repartitoare de costuri", option_idx=0)
+                elif _repartitoare == "nu_exista":
+                    check_box_after_label(doc, "Repartitoare de costuri", option_idx=1)
+
+                # ACM Conducta recirculare: funcțională(0) / există dar nu funcționează(1) / nu există(2)
                 _acm_rec = data.get("acm_recirculare", "")
-                if _acm_rec == "nu_exista":
-                    check_box_for_text(doc, "Conducta de recirculare")
-                elif _acm_rec == "functionala":
-                    check_box_for_text(doc, "funcțională")
+                if _acm_rec == "functionala":
+                    check_box_after_label(doc, "Conducta de recirculare", option_idx=0)
+                elif _acm_rec == "exista_nefunctional":
+                    check_box_after_label(doc, "Conducta de recirculare", option_idx=1)
+                elif _acm_rec == "nu_exista":
+                    check_box_after_label(doc, "Conducta de recirculare", option_idx=2)
+
+                # Contor general căldură pentru ACM: există(0) / nu există(1) / nu este cazul(2)
+                _contor_acm = data.get("contor_acm", "")
+                if _contor_acm == "exista":
+                    check_box_after_label(doc, "Contor general de căldură pentru acc", option_idx=0)
+                elif _contor_acm == "nu_exista":
+                    check_box_after_label(doc, "Contor general de căldură pentru acc", option_idx=1)
+                elif _contor_acm == "nu_este_cazul":
+                    check_box_after_label(doc, "Contor general de căldură pentru acc", option_idx=2)
+
+                # Debitmetre puncte consum: nu există(0) / parțial(1) / peste tot(2)
+                _debitmetre = data.get("debitmetre", "")
+                if _debitmetre == "nu_exista":
+                    check_box_after_label(doc, "Debitmetre la nivelul punctelor de consum", option_idx=0)
+                elif _debitmetre == "partial":
+                    check_box_after_label(doc, "Debitmetre la nivelul punctelor de consum", option_idx=1)
+                elif _debitmetre == "peste_tot":
+                    check_box_after_label(doc, "Debitmetre la nivelul punctelor de consum", option_idx=2)
 
                 # Control iluminat
                 _ilum = data.get("iluminat_control", "")
