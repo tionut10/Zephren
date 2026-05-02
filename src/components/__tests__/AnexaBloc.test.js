@@ -33,13 +33,16 @@ describe("calcApartmentResults — clasificare multi-apartament", () => {
     expect(top.epAptM2).toBeCloseTo(115, 5);
   });
 
-  it("aplică corecție 1.00 pentru etaj curent interior", () => {
+  it("aplică corecție 0.95 pentru etaj curent interior (Mc 001-2022 Anexa 7)", () => {
+    // Audit 2 mai 2026 — P1.14: mid_interior 1.00 → 0.95
+    // Justificare: apt curent interior (4 vecini încălziți + planșee
+    // încălzite) are pierderi termice mai mici decât media blocului.
     const { results } = calcApartmentResults(baseApartments, 100, 30, "RC_nocool");
     const mid = results.filter((r) => r.posKey === "mid_interior");
     expect(mid).toHaveLength(2);
     mid.forEach((r) => {
-      expect(r.posFactor).toBe(1.00);
-      expect(r.epAptM2).toBe(100);
+      expect(r.posFactor).toBe(0.95);
+      expect(r.epAptM2).toBeCloseTo(95, 5);
     });
   });
 
@@ -47,8 +50,9 @@ describe("calcApartmentResults — clasificare multi-apartament", () => {
     const { summary } = calcApartmentResults(baseApartments, 100, 30, "RC_nocool");
     // 4 ap × 60 m² each → total 240 m²
     expect(summary.totalAu).toBe(240);
-    // Factori: 1.10 + 1.00 + 1.00 + 1.15 = 4.25 → media ponderată = 100 × 4.25/4 = 106.25
-    expect(summary.epAvgWeighted).toBeCloseTo(106.25, 1);
+    // Audit P1.14: factori actualizați 1.10 + 0.95 + 0.95 + 1.15 = 4.15
+    // → media ponderată = 100 × 4.15/4 = 103.75
+    expect(summary.epAvgWeighted).toBeCloseTo(103.75, 1);
   });
 
   it("returnează distribuția claselor", () => {

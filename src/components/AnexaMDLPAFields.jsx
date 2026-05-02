@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { cn, Card, Input, Select, Badge } from "./ui.jsx";
+// Audit 2 mai 2026 — P1.15: bilingv RO/EN — translations central
+import { T } from "../data/translations.js";
 
 // ═══════════════════════════════════════════════════════════════
 // Pure helpers exportate pentru testare (nu necesită DOM)
@@ -99,10 +101,14 @@ export default function AnexaMDLPAFields({
   heating, cooling, ventilation, acm, otherRenew, lighting,
   lang = "RO",
 }) {
+  // Audit 2 mai 2026 — P1.15: helper de traducere (RO=key, EN=T[key].EN)
+  const t = useCallback((key) => (lang === "EN" ? (T[key]?.EN || key) : key), [lang]);
+
   // Grupa expandat-colapsat pentru ergonomie (toate deschise default)
   // Audit 2 mai 2026 — P1.5: grup G „Detalii tehnice extinse" (EPBD 2024 indicatori)
+  // Audit 2 mai 2026 — P1.13: grup H „Sisteme comune bloc" (RC only)
   const [expanded, setExpanded] = useState({
-    A: true, B: false, C: false, D: false, E: false, F: false, G: false,
+    A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false,
   });
   const toggle = useCallback((key) => {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -118,6 +124,21 @@ export default function AnexaMDLPAFields({
     setBuilding((prev) => ({
       ...prev,
       [parent]: { ...(prev[parent] || {}), [key]: value },
+    }));
+  }, [setBuilding]);
+
+  // Audit 2 mai 2026 — P1.13: helper pentru commonSystems (nested 2x).
+  // Path: building.commonSystems[systemKey].field
+  const updateCommonSystem = useCallback((systemKey, field, value) => {
+    setBuilding((prev) => ({
+      ...prev,
+      commonSystems: {
+        ...(prev.commonSystems || {}),
+        [systemKey]: {
+          ...(prev.commonSystems?.[systemKey] || {}),
+          [field]: value,
+        },
+      },
     }));
   }, [setBuilding]);
 
@@ -1043,8 +1064,10 @@ export default function AnexaMDLPAFields({
       <div className="mt-3">
         <SectionHeader
           id="G"
-          title="G. Detalii tehnice extinse (EPBD 2024 + vechime echipamente)"
-          subtitle="Calitate aer · EV charging · ani instalare HVAC/ACM/ventilare · izolație conducte · factor umbrire"
+          title={t("G. Detalii tehnice extinse (EPBD 2024 + vechime echipamente)")}
+          subtitle={lang === "EN"
+            ? "Air quality · EV charging · HVAC/DHW/vent installation years · pipe insulation · shading factor"
+            : "Calitate aer · EV charging · ani instalare HVAC/ACM/ventilare · izolație conducte · factor umbrire"}
         />
         {expanded.G && (
           <div id="mdlpa-section-G" className="grid grid-cols-2 gap-4 px-3 pt-3 pb-1">
@@ -1231,6 +1254,110 @@ export default function AnexaMDLPAFields({
           </div>
         )}
       </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          H. Sisteme comune bloc (RC only)
+          Audit 2 mai 2026 — P1.13: înainte commonSystems era citit de
+          AnexaBloc.jsx dar nepopulat (mereu {} default → niciodată
+          afișat). Acum auditorul poate declara liftul, iluminat scări,
+          centrală termică comună, ventilație comună, grup pompe.
+          Fiecare sistem: instalat (toggle) + putere [kW] + ore/an +
+          combustibil (doar centrală termică).
+          ════════════════════════════════════════════════════════════ */}
+      {isBlock && (
+        <div className="mt-3">
+          <SectionHeader
+            id="H"
+            title={t("H. Sisteme comune bloc (multi-apartament)")}
+            subtitle={lang === "EN"
+              ? "Elevator · stairs lighting · common boiler · common ventilation · pump group"
+              : "Lift · iluminat scări · centrală termică comună · ventilație comună · grup pompe"}
+          />
+          {expanded.H && (
+            <div id="mdlpa-section-H" className="grid grid-cols-1 gap-3 px-3 pt-3 pb-1">
+              {[
+                { key: "elevator", label: t("🛗 Lift"), showFuel: false },
+                { key: "stairsLighting", label: t("💡 Iluminat scări/holuri"), showFuel: false },
+                { key: "centralHeating", label: t("🔥 Centrală termică comună"), showFuel: true },
+                { key: "commonVentilation", label: t("🌬️ Ventilație comună"), showFuel: false },
+                { key: "pumpGroup", label: t("💧 Grup pompe (booster apă)"), showFuel: false },
+              ].map(({ key, label, showFuel }) => {
+                const sys = building?.commonSystems?.[key] || {};
+                const installed = !!sys.installed;
+                return (
+                  <div
+                    key={key}
+                    className={cn(
+                      "rounded-lg border p-3 transition-all",
+                      installed
+                        ? "bg-emerald-500/[0.04] border-emerald-500/20"
+                        : "bg-white/[0.02] border-white/[0.06]"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium">{label}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateCommonSystem(key, "installed", !installed)}
+                        aria-pressed={installed}
+                        className={cn(
+                          "px-3 py-1 rounded-md text-[11px] font-medium border transition-all",
+                          installed
+                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                            : "bg-white/[0.03] border-white/[0.10] text-white/60 hover:bg-white/[0.06]"
+                        )}
+                      >
+                        {installed ? t("✓ Instalat") : t("Nu există")}
+                      </button>
+                    </div>
+                    {installed && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <FieldWrap label="Putere [kW]">
+                          <Input
+                            type="number"
+                            value={sys.powerKW || ""}
+                            onChange={(v) => updateCommonSystem(key, "powerKW", v)}
+                            min={0} step={0.1}
+                            placeholder="ex: 5"
+                          />
+                        </FieldWrap>
+                        <FieldWrap label="Ore funcționare/an">
+                          <Input
+                            type="number"
+                            value={sys.hoursYear || ""}
+                            onChange={(v) => updateCommonSystem(key, "hoursYear", v)}
+                            min={0} step={50}
+                            placeholder="ex: 1500"
+                          />
+                        </FieldWrap>
+                        {showFuel && (
+                          <FieldWrap label="Combustibil">
+                            <Select
+                              value={sys.fuel || ""}
+                              onChange={(v) => updateCommonSystem(key, "fuel", v)}
+                              placeholder="Selectează..."
+                              options={[
+                                { value: "gaz", label: "Gaz natural" },
+                                { value: "termoficare", label: "Termoficare" },
+                                { value: "electric", label: "Electric" },
+                                { value: "biomasa", label: "Biomasă" },
+                                { value: "alt", label: "Altul" },
+                              ]}
+                            />
+                          </FieldWrap>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="text-[10px] opacity-50 mt-1">
+                Sistemele declarate aici alimentează tabelul „Sisteme comune bloc" din Anexa 2 multi-apartament și calculul consumurilor comune (L.196/2018).
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer help */}
       <div className="mt-4 pt-3 border-t border-white/5 text-[10px] opacity-30">

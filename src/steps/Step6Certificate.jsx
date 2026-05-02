@@ -474,7 +474,8 @@ export default function Step6Certificate(props) {
                             heating: { eta_gen: parseFloat(heating?.eta_gen) || 0, eta_dist: parseFloat(heating?.eta_dist) || 0, controls: heating?.control || "" },
                             dhw: { eta_dhw: parseFloat(acm?.eta_dhw ?? acm?.eta_gen) || 0, storage: { volume: parseFloat(acm?.storageVolume) || 0, standing_loss: parseFloat(acm?.standingLoss) || 0 } },
                             lighting: { leni: parseFloat(instSummary?.leni) || 0 },
-                            bacs: bacsClass || heating?.bacsClass || "C",
+                            // Audit 2 mai 2026 — P1.17: bacs_class are o singură sursă (prop bacsClass)
+                            bacs: bacsClass || "D",
                           },
                           ventilation: { type: ventilation?.type || "", hrEfficiency: parseFloat(ventilation?.hrEfficiency) || 0 },
                           building: { category: building.category },
@@ -499,14 +500,16 @@ export default function Step6Certificate(props) {
                     gwp: fmtRo(gwpTotalDocx, 1),
                     // Etapa 2 — BACS class + SRI + n50 propagate corect (BUG-1, BUG-2, BUG-3)
                     // Python așteaptă bacs_class la line ~2447, sri_total la line ~2459, n50 la line ~2479
-                    bacs_class: bacsClass || heating?.bacsClass || "C",
+                    // Audit 2 mai 2026 — P1.17: bacs_class are o singură sursă (prop bacsClass).
+                    // Eliminat fallback-ul `heating?.bacsClass` (legacy nemaifolosit).
+                    bacs_class: bacsClass || "D",
                     n50: building.n50 || "",
                     sri_total: (() => {
                       try {
                         const s = calcSRI(
                           heating, cooling, ventilation, lighting,
                           solarThermal, photovoltaic, heatPump,
-                          bacsClass || heating?.bacsClass || "C"
+                          bacsClass || "D"
                         );
                         return String(s?.total ?? "");
                       } catch { return ""; }
@@ -516,7 +519,7 @@ export default function Step6Certificate(props) {
                         const s = calcSRI(
                           heating, cooling, ventilation, lighting,
                           solarThermal, photovoltaic, heatPump,
-                          bacsClass || heating?.bacsClass || "C"
+                          bacsClass || "D"
                         );
                         return s?.grade ?? "";
                       } catch { return ""; }
@@ -790,9 +793,11 @@ export default function Step6Certificate(props) {
                     return;
                   }
                   // Calcul EP/CO2 + clase per apartament (logică Mc 001-2022 Anexa 7)
+                  // Audit 2 mai 2026 — P1.14: mid_interior 1.00 → 0.95
+                  // (apt curent interior fără pereți exteriori → pierderi reduse).
                   const POSITION_FACTORS = {
                     ground_interior: 1.10, ground_corner: 1.18,
-                    mid_interior: 1.00,    mid_corner: 1.07,
+                    mid_interior: 0.95,    mid_corner: 1.07,
                     top_interior: 1.08,    top_corner: 1.15,
                   };
                   const totalAuApt = apartmentsRaw.reduce((s, a) => s + (parseFloat(a.areaUseful) || 0), 0);
@@ -868,6 +873,20 @@ export default function Step6Certificate(props) {
 
                 // [Checkpoint: tot codul vechi de post-processing (checkboxes, foto, repack) a fost eliminat]
                 // [Python API gestionează totul server-side]
+                //
+                // ════════════════════════════════════════════════════════════════════
+                // AUDIT 2 mai 2026 — P1.11: tot blocul de mai jos e DEZACTIVAT.
+                // python-docx (api/generate-document.py) este motorul real care
+                // gestionează checkbox-urile DOCX, foto, scale și repack.
+                //
+                // Pentru audit complet al acoperirii CB-urilor (verificare împotriva
+                // formularului oficial MDLPA Ord. 16/2023, mapare pe categoriile
+                // RI/RC/RA/BI/ED/SA/HC/CO/SP/AL/BC), vezi sprint dedicat:
+                //   docs/API_CHECKBOX_AUDIT.md  (de creat în Sprint 5+)
+                //
+                // Blocul rămâne aici ca referință istorică pentru cazuri în care
+                // se reactivează rendering client-side (ex: preview offline).
+                // ════════════════════════════════════════════════════════════════════
                 if (false && mode === "anexa_DISABLED") {
                   // TOT ACEST BLOC E DEZACTIVAT — python-docx face totul server-side
                   const checkCB = (n) => {
@@ -949,13 +968,19 @@ export default function Step6Certificate(props) {
                   else cbAnex1.push(53);
 
                   // Estimare economii energie (CB 54-59): <10%, 10-20, 20-30, 30-40, 40-50, >60%
-                  const savings = financialAnalysis?.energySavingsPercent || 20;
-                  if (savings < 10) cbAnex1.push(54);
-                  else if (savings < 20) cbAnex1.push(55);
-                  else if (savings < 30) cbAnex1.push(56);
-                  else if (savings < 40) cbAnex1.push(57);
-                  else if (savings < 50) cbAnex1.push(58);
-                  else cbAnex1.push(59);
+                  // Audit 2 mai 2026 — P1.12: NU mai folosim fallback `|| 20` (bias optimist).
+                  // Dacă financialAnalysis nu e calculat, marcăm explicit "necalculat" prin
+                  // a NU bifa niciun checkbox de economii — auditorul completează manual.
+                  // (Acest cod e oricum în blocul DEAD code dezactivat — vezi P1.11.)
+                  const savings = financialAnalysis?.energySavingsPercent;
+                  if (Number.isFinite(savings)) {
+                    if (savings < 10) cbAnex1.push(54);
+                    else if (savings < 20) cbAnex1.push(55);
+                    else if (savings < 30) cbAnex1.push(56);
+                    else if (savings < 40) cbAnex1.push(57);
+                    else if (savings < 50) cbAnex1.push(58);
+                    else cbAnex1.push(59);
+                  }
 
                   // Durată recuperare (CB 60-64): <1 an, 1-3, 3-7, 7-10, >10
                   const payback = financialAnalysis?.paybackYears || 5;

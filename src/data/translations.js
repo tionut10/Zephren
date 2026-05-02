@@ -1,4 +1,70 @@
 export const T = {
+  // ════════════════════════════════════════════════════════════════
+  // Audit 2 mai 2026 — P1.15: bilingv RO/EN extins pentru
+  // AnexaMDLPAFields, CpeAnexa, AnexaBloc, passport-docx/export.
+  // ════════════════════════════════════════════════════════════════
+  // AnexaMDLPAFields — section headers (Grup A-H)
+  "A. Detalii încălzire":{EN:"A. Heating details"},
+  "B. Detalii anvelopă":{EN:"B. Envelope details"},
+  "C. Detalii ACM":{EN:"C. DHW details"},
+  "D. Detalii răcire":{EN:"D. Cooling details"},
+  "E. Detalii ventilare":{EN:"E. Ventilation details"},
+  "F. Detalii regenerabile":{EN:"F. Renewables details"},
+  "G. Detalii tehnice extinse (EPBD 2024 + vechime echipamente)":{EN:"G. Extended technical details (EPBD 2024 + equipment age)"},
+  "H. Sisteme comune bloc (multi-apartament)":{EN:"H. Common building systems (multi-apartment)"},
+  // AnexaMDLPAFields — common labels
+  "Tip corp static dominant":{EN:"Dominant heat emitter type"},
+  "Radiator oțel":{EN:"Steel radiator"},"Radiator fontă":{EN:"Cast-iron radiator"},
+  "Radiator aluminiu":{EN:"Aluminum radiator"},"Convector":{EN:"Convector"},
+  "Fan-coil":{EN:"Fan-coil"},"Încălzire prin pardoseală":{EN:"Underfloor heating"},
+  "Alte":{EN:"Other"},"Selectează tip...":{EN:"Select type..."},
+  "An instalare echipament încălzire":{EN:"Heating equipment installation year"},
+  "An instalare boiler/sistem ACM":{EN:"DHW boiler/system installation year"},
+  "An instalare ventilație mecanică":{EN:"Mechanical ventilation installation year"},
+  "Conducte încălzire izolate?":{EN:"Heating pipes insulated?"},
+  "Conducte ACM izolate?":{EN:"DHW pipes insulated?"},
+  "Robinete echilibrare circuit încălzire?":{EN:"Heating circuit balancing valves?"},
+  "Baterii sanitare debit redus?":{EN:"Low-flow plumbing fixtures?"},
+  "Factor umbrire ferestre vară [0–1]":{EN:"Summer window shading factor [0–1]"},
+  "Atic / pod este încălzit?":{EN:"Attic heated?"},
+  "Da":{EN:"Yes"},"Nu":{EN:"No"},"Parțial":{EN:"Partial"},
+  "Necunoscut":{EN:"Unknown"},"Încălzit":{EN:"Heated"},"Neîncălzit":{EN:"Unheated"},
+  "Nu există":{EN:"None"},
+  "Selectează cod...":{EN:"Select code..."},
+  "Selectează...":{EN:"Select..."},
+  // AnexaMDLPAFields — Grup H Sisteme comune bloc
+  "🛗 Lift":{EN:"🛗 Elevator"},
+  "💡 Iluminat scări/holuri":{EN:"💡 Stairs/hallway lighting"},
+  "🔥 Centrală termică comună":{EN:"🔥 Common boiler"},
+  "🌬️ Ventilație comună":{EN:"🌬️ Common ventilation"},
+  "💧 Grup pompe (booster apă)":{EN:"💧 Pump group (water booster)"},
+  "✓ Instalat":{EN:"✓ Installed"},
+  "Putere [kW]":{EN:"Power [kW]"},
+  "Ore funcționare/an":{EN:"Operating hours/year"},
+  "Combustibil":{EN:"Fuel"},
+  "Gaz natural":{EN:"Natural gas"},"Termoficare":{EN:"District heating"},
+  "Electric":{EN:"Electric"},"Biomasă":{EN:"Biomass"},
+  "Altul":{EN:"Other"},
+  // CpeAnexa — section titles
+  "ANEXA 1 — Date generale și tehnice":{EN:"ANNEX 1 — General and technical data"},
+  "ANEXA 2 — Recomandări":{EN:"ANNEX 2 — Recommendations"},
+  "ÎNCĂLZIRE":{EN:"HEATING"},"PREPARARE ACM":{EN:"DHW PREPARATION"},
+  "RĂCIRE":{EN:"COOLING"},"VENTILARE":{EN:"VENTILATION"},
+  "ILUMINAT":{EN:"LIGHTING"},"REGENERABILE":{EN:"RENEWABLES"},
+  // AnexaBloc
+  "Sisteme comune bloc":{EN:"Common building systems"},
+  "Niciun sistem comun declarat.":{EN:"No common systems declared."},
+  // Passport (passport-docx + passport-export)
+  "PAȘAPORT DE RENOVARE — PREVIEW":{EN:"RENOVATION PASSPORT — PREVIEW"},
+  "(fără valoare juridică în România la data emiterii)":{EN:"(no legal validity in Romania at issuance date)"},
+  "PAȘAPORT RENOVARE — PREVIEW":{EN:"RENOVATION PASSPORT — PREVIEW"},
+  "Identificare clădire":{EN:"Building identification"},
+  "Stare energetică inițială (baseline)":{EN:"Initial energy state (baseline)"},
+  "Plan de renovare etapizat":{EN:"Phased renovation plan"},
+  "Stare țintă post-renovare":{EN:"Target state post-renovation"},
+  "Analiză financiară":{EN:"Financial analysis"},
+  "Auditor energetic":{EN:"Energy auditor"},
+
   // Navigation
   "Identificare":{EN:"Identification"},"Anvelopă":{EN:"Envelope"},"Instalații":{EN:"Systems"},
   "Regenerabile":{EN:"Renewables"},"Calcul":{EN:"Calculation"},"Certificat":{EN:"Certificate"},

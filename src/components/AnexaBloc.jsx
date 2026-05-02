@@ -24,10 +24,19 @@ import { CATEGORY_BASE_MAP } from "../data/building-catalog.js";
 // ═══════════════════════════════════════════════════════════════
 // Factori aplicați la EP_bloc pentru fiecare apartament, pe baza poziției
 // (interior/colț) × (parter/curent/ultim etaj).
+//
+// Audit 2 mai 2026 — P1.14: mid_interior 1.00 → 0.95.
+// Justificare: apartament curent interior, fără pereți exteriori
+// (4 vecini încălziți + planșeu jos încălzit + planșeu sus încălzit)
+// are pierderi termice MAI MICI decât media blocului. Mc 001-2022
+// Anexa 7 recunoaște acest scenariu (toate suprafețele de schimb
+// termic sunt cu zone încălzite ⇒ ΔT~0 pe pierderi anvelopă).
+// Praguri permise: factor minim 0.85 pentru cazuri extreme;
+// 0.95 e o estimare conservatoare pentru apartament tipic mid_interior.
 const POSITION_FACTORS = {
   ground_interior: 1.10,
   ground_corner: 1.18,
-  mid_interior: 1.00,
+  mid_interior: 0.95,   // < 1.0: pierderi reduse pentru apt complet interior
   mid_corner: 1.07,
   top_interior: 1.08,
   top_corner: 1.15,
