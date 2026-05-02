@@ -27,7 +27,7 @@ import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
-import { canAccess as canAccessFn } from "../lib/planGating.js";
+import { canAccess as canAccessFn, resolvePlan } from "../lib/planGating.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
@@ -2066,6 +2066,46 @@ ${(() => {
                   <div className="font-semibold">⚠️ BACS obligatoriu</div>
                   <div>{bacsCheck.reason}</div>
                   <div className="text-amber-300/80">Termen: {bacsCheck.deadline} · {bacsCheck.epbdRef}</div>
+                </div>
+              )}
+
+              {/* T1.7 Sprint Tranziție 2026 — banner informativ pentru plan AE IIci.
+                  Filozofie: plan-urile sunt orientate FUNCȚIONAL (nu pe grad atestat).
+                  Plan AE IIci 599 RON = produs valid pentru cei care fac DOAR CPE
+                  (Step 1-6). Pentru audit + nZEB + LCC → upgrade AE Ici 1.499 RON. */}
+              {resolvePlan(userPlan) === "audit" && (
+                <div
+                  className="mb-5 p-3 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-200 text-xs flex items-start gap-3"
+                  role="note"
+                >
+                  <span className="text-base shrink-0">💡</span>
+                  <div className="space-y-1 leading-relaxed">
+                    <div className="font-semibold">
+                      {lang === "EN"
+                        ? "Plan Zephren AE IIci · CPE only (Step 1-6)"
+                        : "Plan Zephren AE IIci · doar CPE (Pas 1-6)"}
+                    </div>
+                    <div className="opacity-80">
+                      {lang === "EN" ? (
+                        <>
+                          Your plan covers EPC issuance for residential buildings (Art. 6 par. (2)
+                          Ord. MDLPA 348/2026). For energy audit, nZEB conformance report, and LCC
+                          analysis (Step 7), upgrade to <strong>Zephren AE Ici · 1.499 RON/lună</strong>.
+                        </>
+                      ) : (
+                        <>
+                          Planul tău acoperă emiterea CPE pentru locuințe (Art. 6 alin. (2) Ord.
+                          MDLPA 348/2026). Pentru audit energetic, raport conformare nZEB și
+                          analiză LCC (Pas 7), upgrade la <strong>Zephren AE Ici · 1.499 RON/lună</strong>.
+                        </>
+                      )}
+                    </div>
+                    <div className="text-[10px] opacity-60 italic">
+                      {lang === "EN"
+                        ? "Note: plans are organized FUNCTIONALLY, not by attestation grade. An AE Ici auditor doing only EPC may use this plan."
+                        : "Notă: plan-urile sunt orientate FUNCȚIONAL, nu pe gradul atestatului. Un auditor AE Ici care face doar CPE poate folosi acest plan."}
+                    </div>
+                  </div>
                 </div>
               )}
 
