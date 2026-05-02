@@ -45,6 +45,11 @@ export function generateEPBDXML(data) {
     certDate,       // data certificat
     auditorName,    // nume auditor
     auditorCode,    // cod auditor
+    // Audit 2 mai 2026 — P1.8: câmpuri noi opționale
+    cpeCode,                // string — cod unic CPE (auditor.cpeCode)
+    bacsClass,              // "A"|"B"|"C"|"D" — clasă BACS EN 15232
+    sri,                    // { sri: number, grade: string } — Smart Readiness Indicator
+    penalties,              // { summary: { total_pct, count }, items: [...] } — calcPenalties output
   } = data;
 
   const today = certDate || new Date().toISOString().split('T')[0];
@@ -95,11 +100,22 @@ ${(el.layers||[]).map(l => `          <Layer>
       ${tag('HREfficiency', instSummary.hrEta)}
       ${tag('ACMSource', instSummary.acmSource)}
       ${tag('CoolingSystem', instSummary.coolingSystem)}
-      ${tag('LightingType', instSummary.lightingType)}
+      ${tag('LightingType', instSummary.lightingType)}${bacsClass ? `
+      <BACS class="${xmlEscape(bacsClass)}"/>` : ''}${sri ? `
+      <SRI total="${parseFloat(sri.sri || 0).toFixed(0)}" grade="${xmlEscape(sri.grade || '—')}"/>` : ''}
     </Systems>` : '';
 
   // ─── Secțiune energie ───
   // S30A·A8 — fmtSpec aplicat pentru toate valorile kWh/(m²·an) → 1 zecimală.
+  // Audit P1.8 — adăugat <Penalties> ca sub-element opțional.
+  const penaltiesXmlBlock = penalties ? `
+      <Penalties total_pct="${(parseFloat(penalties.summary?.total_pct) || 0).toFixed(1)}" count="${penalties.summary?.count || 0}">${
+        (penalties.items || []).filter(p => p.applied).map(p =>
+          `\n        <Penalty code="${xmlEscape(p.code)}" delta_ep_pct="${(parseFloat(p.delta_EP_pct) || 0).toFixed(2)}" reason="${xmlEscape(p.reason || p.label || '')}"/>`
+        ).join('')
+      }
+      </Penalties>` : '';
+
   const energyXML = `    <EnergyPerformance>
       ${tag('EP_total', fmtSpec(epTotal), {unit:'kWh/(m2.an)'})}
       ${tag('EP_heating', fmtSpec(instSummary?.ep_heating_m2), {unit:'kWh/(m2.an)'})}
@@ -108,7 +124,7 @@ ${(el.layers||[]).map(l => `          <Layer>
       ${tag('EP_lighting', fmtSpec(instSummary?.ep_light_m2), {unit:'kWh/(m2.an)'})}
       ${tag('RER', fmtSpec(rer), {unit:'pct'})}
       ${tag('EnergyClass', energyClass?.class || 'N/A')}
-      ${tag('CO2_specific', fmtSpec(instSummary?.co2_m2), {unit:'kgCO2eq/(m2.an)'})}
+      ${tag('CO2_specific', fmtSpec(instSummary?.co2_m2), {unit:'kgCO2eq/(m2.an)'})}${penaltiesXmlBlock}
     </EnergyPerformance>`;
 
   // S30A·A3 — valabilitate unificată: scaleVersion 2026 → EPBD (5/10), altfel Ord. 16/2023 (10).
@@ -153,6 +169,7 @@ ${(el.layers||[]).map(l => `          <Layer>
   <BuildingEnvelope>
 ${envelopeXML}
 ${glazingXML}
+    ${tag('n50', building?.n50, {unit:'1/h'})}
   </BuildingEnvelope>
 
 ${instXML}
@@ -161,6 +178,7 @@ ${energyXML}
 
   <Certification>
     ${tag('CertDate', today)}
+    ${tag('CpeCode', cpeCode || auditorCode)}
     ${/* S30A·A3 — valabilitate unificată: 10 ani uniform (Ord. 16/2023) sau 5/10 EPBD 2026 */''}
     ${tag('ValidityYears', validityYears, {unit:'ani'})}
     ${tag('ValidUntil', today.replace(/^(\d{4})/, y => String(parseInt(y) + validityYears)))}

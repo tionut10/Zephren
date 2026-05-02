@@ -14,7 +14,7 @@ import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcSummerComfort } from "../calc/summer-comfort.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
-import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB } from "../data/u-reference.js";
+import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB, NZEB_EP_FALLBACK, getNzebEpMaxWithFallback } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
 import { REHAB_COSTS } from "../data/rehab-costs.js";
@@ -31,6 +31,8 @@ import {
 } from "../utils/cpe-completeness.js";
 // Audit 2 mai 2026 — P1.4: motor unificat recomandări CPE/Anexa 2
 import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
+// Audit 2 mai 2026 — P1.9: bilanț clădire de referință cu echipamente standard
+import { calcReferenceBuilding } from "../calc/reference-building.js";
 import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
@@ -116,6 +118,64 @@ export default function Step6Certificate(props) {
               return () => { cancelled = true; };
             }, [auditor?.cpeCode, auditor?.mdlpaCode]);
 
+            // Audit 2 mai 2026 — P1.6: auto-populare câmpuri Step 6 din pașii 1-5.
+            // Auditorul nu trebuie să reintroducă date deja completate (heating
+            // emission, wind capacity, distribuție conducte). Doar setăm dacă
+            // câmpul Step 6 e gol (nu suprascriem alegeri explicite ale auditorului).
+            useEffect(() => {
+              if (!setBuilding) return;
+              const updates = {};
+
+              // Tip corp static dominant ← heating.emission (catalog Step 3)
+              if (!building?.heatingRadiatorType && heating?.emission) {
+                const e = String(heating.emission).toLowerCase();
+                let mapped = "";
+                if (e.includes("radiator") || e.startsWith("rad_")) {
+                  if (e.includes("otel") || e.includes("oțel") || e.includes("steel")) mapped = "Radiator oțel";
+                  else if (e.includes("font") || e.includes("cast")) mapped = "Radiator fontă";
+                  else if (e.includes("aluminiu") || e.includes("alu_")) mapped = "Radiator aluminiu";
+                  else mapped = "Radiator oțel";
+                } else if (e.includes("convector")) mapped = "Convector";
+                else if (e.includes("fan_coil") || e.includes("fan-coil") || e.includes("fcu")) mapped = "Fan-coil";
+                else if (e.includes("ufh") || e.includes("pardoseal") || e.includes("floor") || e.includes("tabs")) mapped = "Încălzire prin pardoseală";
+                else mapped = "Alte";
+                if (mapped) updates.heatingRadiatorType = mapped;
+              }
+
+              // Capacitate eoliană ← otherRenew.windCapacity (Pas 4)
+              if (!building?.windPowerKw && otherRenew?.windCapacity) {
+                updates.windPowerKw = String(otherRenew.windCapacity);
+              }
+
+              // Izolație conducte încălzire ← heating.distribution quality (Pas 3)
+              if (!building?.heatingPipeInsulated && heating?.distribution) {
+                const d = String(heating.distribution).toLowerCase();
+                if (d.includes("bun") || d.includes("good") || d.includes("izolat")) updates.heatingPipeInsulated = "yes";
+                else if (d.includes("med")) updates.heatingPipeInsulated = "partial";
+                else if (d.includes("slab") || d.includes("poor") || d.includes("neizolat")) updates.heatingPipeInsulated = "no";
+              }
+
+              // Izolație conducte ACM — același tipar dacă acm are distribuție explicită
+              if (!building?.acmPipeInsulated && acm?.distribution) {
+                const d = String(acm.distribution).toLowerCase();
+                if (d.includes("bun") || d.includes("good") || d.includes("izolat")) updates.acmPipeInsulated = "yes";
+                else if (d.includes("med")) updates.acmPipeInsulated = "partial";
+                else if (d.includes("slab") || d.includes("poor") || d.includes("neizolat")) updates.acmPipeInsulated = "no";
+              }
+
+              if (Object.keys(updates).length > 0) {
+                setBuilding((prev) => ({ ...prev, ...updates }));
+              }
+              // eslint-disable-next-line react-hooks/exhaustive-deps
+            }, [
+              heating?.emission, heating?.distribution,
+              otherRenew?.windCapacity,
+              acm?.distribution,
+              setBuilding,
+              // intentionally NOT including building.* — auto-populare doar la
+              // schimbarea sursei (Pas 3/4); altfel ar suprascrie editări manuale ale auditorului.
+            ]);
+
             // Auto-generare preview la prima deschidere a Pasului 6
             useEffect(() => {
               if (!instSummary || hasAutoPreviewd.current) return;
@@ -159,7 +219,8 @@ export default function Step6Certificate(props) {
             const rer = renewSummary?.rer || 0;
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[building.category];
             const catLabel = BUILDING_CATEGORIES.find(c=>c.id===building.category)?.label || "";
-            const epRefMax = getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 148;
+            // Audit 2 mai 2026 — P1.10: fallback per categorie (în loc de 148 hardcoded)
+            const epRefMax = getNzebEpMaxWithFallback(baseCatResolved, getNzebEpMax, selectedClimate?.zone);
 
             // ═══════════════════════════════════════════════════════════
             // GENERARE DOCX CU DOCXTEMPLATER + PIZZIP
@@ -223,11 +284,22 @@ export default function Step6Certificate(props) {
 
                 const baseCat = baseCatResolved; // sub-categorie rezolvată la baza Mc 001-2022
                 const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
-                const epRefMax = getNzebEpMax(baseCat, selectedClimate?.zone) || 148;
-                // Energie finală clădire referință — proporțională cu ep_ref / ep_specific
-                const qfScale = epFinal > 0 ? epRefMax / epFinal : 1;
-                const qfRef_t = qfFinal_t * qfScale;
-                const qfRef_e = qfFinal_e * qfScale;
+                // Audit 2 mai 2026 — P1.10: fallback per categorie (în loc de 148 hardcoded)
+                const epRefMax = getNzebEpMaxWithFallback(baseCat, getNzebEpMax, selectedClimate?.zone);
+
+                // Audit 2 mai 2026 — P1.9: bilanț clădire de referință cu echipamente
+                // standard Mc 001-2022 (η_ref=0.92 încălzire / 0.85 ACM, EER_ref=3.5,
+                // hrEta_ref=0, LENI_ref=8). Înainte: scalare proporțională epRef/epFinal
+                // care nu recunoștea că nevoia termică e identică pentru aceeași anvelopă.
+                // Fallback la scalare proporțională dacă instSummary lipsește.
+                const refBuilding = calcReferenceBuilding({
+                  building: { ...building, areaUseful: Aref },
+                  instSummary,
+                  epRefMax,
+                  epFinal,
+                });
+                const qfRef_t = refBuilding.qf_thermal;
+                const qfRef_e = refBuilding.qf_electric;
 
                 const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
@@ -1330,15 +1402,55 @@ export default function Step6Certificate(props) {
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
               const fmtD = (d) => d ? d.split("-").reverse().join(".") : "";
               const validDate = auditor.date ? fmtD(auditor.date) : new Date().toISOString().slice(0,10).split("-").reverse().join(".");
-              // Sprint 15 — valabilitate diferențiată EPBD 2024 Art. 17 (10 ani A+..C / 5 ani D..G)
+              // Sprint 15 — valabilitate diferențiată (acum L.372/2005 mod. L.238/2024)
               const expDateObj = getExpiryDate(auditor.date || new Date(), enClass?.cls);
               const expDate = expDateObj ? expDateObj.toISOString().slice(0,10).split("-").reverse().join(".") : "";
               const validityYearsXml = getValidityYears(enClass?.cls);
+
+              // Audit 2 mai 2026 — P1.8: lipsuri XML MDLPA
+              // Calculez penalități + SRI pentru includere în XML.
+              let penaltiesXml = { summary: { total_pct: 0, count: 0 }, items: [] };
+              try {
+                penaltiesXml = calcPenalties({
+                  envelope: {
+                    opaque: opaqueElements?.map((el) => {
+                      const r = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : null;
+                      return { type: el.type, area: parseFloat(el.area) || 0, u: r?.u || 0 };
+                    }) || [],
+                    glazing: glazingElements?.map((el) => ({ u: parseFloat(el.u) || 0 })) || [],
+                    bridges: thermalBridges?.map((b) => ({
+                      psi: parseFloat(b.psi) || 0,
+                      length: parseFloat(b.length) || 0,
+                      type: b.type || "",
+                    })) || [],
+                  },
+                  instSummary: {
+                    heating: { eta_gen: parseFloat(heating?.eta_gen) || 0, eta_dist: parseFloat(heating?.eta_dist) || 0, controls: heating?.control || "" },
+                    dhw: { eta_dhw: parseFloat(acm?.eta_dhw ?? acm?.eta_gen) || 0, storage: { volume: parseFloat(acm?.storageVolume) || 0, standing_loss: parseFloat(acm?.standingLoss) || 0 } },
+                    lighting: { leni: parseFloat(instSummary?.leni) || 0 },
+                    bacs: bacsClass || "D",
+                  },
+                  ventilation: { type: ventilation?.type || "", hrEfficiency: parseFloat(ventilation?.hrEta) || 0 },
+                  building: { category: building.category },
+                  renewables: { rer: parseFloat(rer) || 0 },
+                });
+              } catch { /* penalties opt — XML rămâne valid fără ele */ }
+
+              // SRI auto-mapped (Sprint 28 — calcSRI din epbd.js)
+              let sriResult = { sri: 0, grade: "—" };
+              try {
+                sriResult = calcSRI({
+                  building: { category: building.category },
+                  heating, cooling, ventilation, lighting, acm,
+                  bacsClass: bacsClass || "D",
+                });
+              } catch { /* SRI opt */ }
 
               const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
   <DateIdentificare>
     <CodUnic>${esc(auditor.mdlpaCode)}</CodUnic>
+    <CodCPE>${esc(auditor.cpeCode || auditor.mdlpaCode || "")}</CodCPE>
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
     <ValabilitateAni>${validityYearsXml}</ValabilitateAni>
@@ -1368,6 +1480,7 @@ export default function Step6Certificate(props) {
     <Volum unit="mc">${(parseFloat(building.volume)||0).toFixed(1)}</Volum>
     <ZonaClimatica>${esc(selectedClimate?.zone)}</ZonaClimatica>
     <Localitate_calcul>${esc(selectedClimate?.name)}</Localitate_calcul>
+    <n50 unit="1_per_h">${(parseFloat(building.n50)||0).toFixed(2)}</n50>
   </Cladire>
   <Anvelopa>
     <ElementeOpace>${opaqueElements.map(el => {
@@ -1390,6 +1503,8 @@ export default function Step6Certificate(props) {
     <ACM sursa="${esc(acm.source)}"/>
     <Racire activ="${instSummary.hasCool}" EER="${parseFloat(cooling.eer)||0}"/>
     <Ventilare tip="${esc(ventilation.type)}" recuperare="${instSummary.hrEta||0}"/>
+    <BACS clasa="${esc(bacsClass || "D")}"/>
+    <SRI total="${parseFloat(sriResult.sri||0).toFixed(0)}" grad="${esc(sriResult.grade || "—")}"/>
   </Instalatii>
   <RezultateEnergetice>
     <EnergiePrimaraSpecifica unit="kWh_per_mp_an">${epFinal.toFixed(1)}</EnergiePrimaraSpecifica>
@@ -1408,6 +1523,12 @@ export default function Step6Certificate(props) {
     </ConsumFinal>
     <nZEB indeplineste="${epFinal <= (getNzebEpMax(building.category, selectedClimate?.zone)||999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min||30)}"/>
   </RezultateEnergetice>
+  <Penalizari total_pct="${(parseFloat(penaltiesXml.summary?.total_pct)||0).toFixed(1)}" numar="${penaltiesXml.summary?.count||0}">${
+    (penaltiesXml.items || []).filter(p => p.applied).map(p =>
+      `\n    <Penalizare cod="${esc(p.code)}" delta_ep_pct="${(parseFloat(p.delta_EP_pct)||0).toFixed(2)}" motiv="${esc(p.reason || p.label || "")}"/>`
+    ).join("")
+  }
+  </Penalizari>
 </CertificatPerformantaEnergetica>`;
 
               const blob = new Blob([xmlContent], {type: "application/xml;charset=utf-8"});
@@ -3158,36 +3279,80 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               })()}
 
               {/* ═══ EXPORT DOCX OFICIAL — full-width sub grid ═══ */}
-              {/* Sprint D Task 2: blocaj hard export oficial dacă cadastru ANCPI neverificat */}
-              {!building?.ancpi?.verified && (
-                <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
-                  <div className="flex items-start gap-2">
-                    <span className="text-base shrink-0 mt-0.5">🏛️</span>
-                    <div className="text-xs text-amber-200">
-                      <div className="font-semibold mb-0.5">
-                        {lang === "EN" ? "Cadastre verification required" : "Verificare cadastru ANCPI obligatorie"}
+              {/* Sprint D Task 2: blocaj hard export oficial dacă cadastru ANCPI neverificat
+                  Audit 2 mai 2026 — P1.7: banner-ul amber apare DOAR pentru scopuri care
+                  necesită ANCPI (vânzare/închiriere/renovare). Pentru recepție/construire/
+                  informare/alt afișăm un info-banner discret (regim juridic nu se aplică). */}
+              {(() => {
+                const scop = building?.scopCpe || "vanzare";
+                const scopLabels = {
+                  vanzare: lang === "EN" ? "sale" : "vânzare",
+                  inchiriere: lang === "EN" ? "rental" : "închiriere",
+                  receptie: lang === "EN" ? "new building reception" : "recepție clădire nouă",
+                  construire: lang === "EN" ? "construction" : "construire",
+                  informare: lang === "EN" ? "owner information" : "informare proprietar",
+                  renovare: lang === "EN" ? "renovation" : "renovare",
+                  renovare_majora: lang === "EN" ? "major renovation" : "renovare majoră",
+                  alt: lang === "EN" ? "other" : "alt scop",
+                };
+                const scopLabel = scopLabels[scop] || scop;
+                const ancpiRequired = ANCPI_REQUIRED_SCOPES.includes(scop);
+                const ancpiVerified = !!building?.ancpi?.verified;
+
+                if (ancpiRequired && !ancpiVerified) {
+                  return (
+                    <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base shrink-0 mt-0.5">🏛️</span>
+                        <div className="text-xs text-amber-200">
+                          <div className="font-semibold mb-0.5">
+                            {lang === "EN" ? "Cadastre verification required" : "Verificare cadastru ANCPI obligatorie"}
+                            {" "}<span className="text-[10px] opacity-70">(scop: {scopLabel})</span>
+                          </div>
+                          <div className="text-[11px] text-amber-300/90 leading-relaxed">
+                            {lang === "EN"
+                              ? `Official CPE export is blocked until you upload the CF extract PDF and confirm manual verification in Step 1 (ANCPI panel). The legal regime of the building must be confirmed before issuing the certificate for "${scopLabel}".`
+                              : `Exportul CPE oficial este blocat până când încarci PDF-ul extrasului de carte funciară și confirmi verificarea manuală în Pas 1 (panou ANCPI). Regimul juridic al clădirii trebuie confirmat înainte de emiterea certificatului pentru „${scopLabel}".`}
+                          </div>
+                          {goToStep && (
+                            <button
+                              onClick={() => goToStep(1)}
+                              className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-100 transition-colors"
+                            >
+                              → {lang === "EN" ? "Go to Step 1 — ANCPI verification" : "Mergi la Pas 1 — verificare ANCPI"}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-amber-300/90 leading-relaxed">
-                        {lang === "EN"
-                          ? "Official CPE export is blocked until you upload the CF extract PDF and confirm manual verification in Step 1 (ANCPI panel). The legal regime of the building must be confirmed before issuing the certificate."
-                          : "Exportul CPE oficial este blocat până când încarci PDF-ul extrasului de carte funciară și confirmi verificarea manuală în Pas 1 (panou ANCPI). Regimul juridic al clădirii trebuie confirmat înainte de emiterea certificatului."}
-                      </div>
-                      {goToStep && (
-                        <button
-                          onClick={() => goToStep(1)}
-                          className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-100 transition-colors"
-                        >
-                          → {lang === "EN" ? "Go to Step 1 — ANCPI verification" : "Mergi la Pas 1 — verificare ANCPI"}
-                        </button>
-                      )}
                     </div>
-                  </div>
-                </div>
-              )}
+                  );
+                }
+                if (!ancpiRequired) {
+                  return (
+                    <div className="mt-4 rounded-lg bg-white/[0.02] border border-white/[0.06] px-3 py-2">
+                      <div className="text-[11px] opacity-60 italic flex items-center gap-2">
+                        <span className="text-sm">ℹ️</span>
+                        <span>
+                          {lang === "EN"
+                            ? `Cadastre verification (ANCPI) is optional for the selected scope ("${scopLabel}"). Export is unblocked.`
+                            : `Verificarea cadastrului ANCPI nu este obligatorie pentru scopul selectat („${scopLabel}"). Exportul este permis.`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {(() => {
                 const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
                 const ancpiVerified = !!building?.ancpi?.verified;
-                const dataComplete = Au > 0 && instSummary && building.locality && building.category && ancpiVerified;
+                // Audit 2 mai 2026 — P1.7: bypass ANCPI per scopCpe.
+                // Pentru recepție/construire/informare/alt, regimul juridic ANCPI nu e
+                // obligatoriu (clădirea e nouă/preliminar/uz intern). ANCPI rămâne
+                // obligatoriu doar pentru vânzare/închiriere/renovare(majoră).
+                const scop = building?.scopCpe || "vanzare";
+                const ancpiOk = !ANCPI_REQUIRED_SCOPES.includes(scop) || ancpiVerified;
+                const dataComplete = Au > 0 && instSummary && building.locality && building.category && ancpiOk;
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
                     <button

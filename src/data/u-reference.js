@@ -45,6 +45,48 @@ export const ZEB_THRESHOLDS = {
 export const ZEB_FACTOR = 0.9;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// nZEB EP fallback per categorie (Mc 001-2022)
+// ═══════════════════════════════════════════════════════════════════════════
+// Audit 2 mai 2026 — P1.10: înlocuiește hardcoded `|| 148` din docx-data-mapper
+// + Step6Certificate. Valoarea 148 era arbitrară (folosită fără sursă documentată).
+// Aceste fallback-uri sunt orientative — derivate din Mc 001-2022 Tabel 5.x prin
+// medie a pragurilor nZEB pe zone climatice (pentru când zona nu e cunoscută).
+//
+// Folosit DOAR ca ultim resort, când `getNzebEpMax(cat, climateZone)` returnează
+// undefined (zonă lipsă, categorie nestandard etc.).
+//
+// Surse: Mc 001-2022 Partea III §5.4 (clădiri rezidențiale + nerezidențiale),
+// HG 1593/2022 (modif. HG 1455/2022) — actualizare praguri nZEB.
+export const NZEB_EP_FALLBACK = Object.freeze({
+  RI: 105,  // Locuință individuală
+  RC: 110,  // Locuință colectivă (bloc)
+  RA: 105,  // Apartament din bloc (similar RI)
+  BI: 130,  // Birou
+  ED: 150,  // Educație (școală/grădiniță)
+  SA: 145,  // Sănătate (spital/cabinet)
+  HC: 145,  // Hotel/cazare
+  CO: 130,  // Comercial (magazin/mall)
+  SP: 145,  // Sport (sală/bazin)
+  AL: 175,  // Altele (clădiri specializate — fallback conservator)
+});
+
+/**
+ * Helper centralizat pentru obținerea pragului nZEB EP cu fallback documentat.
+ * @param {string} category — codul categoriei (RI/RC/RA/BI/ED/SA/HC/CO/SP/AL/...)
+ * @param {Function} [getNzebEpMaxFn] — funcția existentă din smart-rehab.js
+ * @param {string} [climateZone]
+ * @returns {number} prag EP în kWh/(m²·an)
+ */
+export function getNzebEpMaxWithFallback(category, getNzebEpMaxFn, climateZone) {
+  if (typeof getNzebEpMaxFn === "function") {
+    const v = getNzebEpMaxFn(category, climateZone);
+    if (Number.isFinite(v) && v > 0) return v;
+  }
+  // Fallback documentat per categorie; fallback final 175 (categorii AL).
+  return NZEB_EP_FALLBACK[category] || NZEB_EP_FALLBACK.AL;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // FACTORI ENERGIE PRIMARĂ ELECTRICITATE — SEN România
 // ═══════════════════════════════════════════════════════════════════════════
 // Mc 001-2022 Tabel 5.17 (legacy):         fP_nren = 2.62, fP_ren = 0.00 → fP_tot = 2.62

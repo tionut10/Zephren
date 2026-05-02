@@ -3,6 +3,7 @@
  * Completează Anexa 1 (date clădire) și Anexa 2 (date instalații)
  * conform structurii CPE Mc 001-2022 (Ord. MDLPA 16/2023)
  */
+import { NZEB_EP_FALLBACK } from "../data/u-reference.js";
 
 /**
  * Construiește payload-ul complet de date pentru template-ul CPE DOCX.
@@ -49,9 +50,12 @@ export function buildDocxPayload(params) {
     : { cls: "—" };
 
   // nZEB
+  // Audit 2 mai 2026 — P1.10: fallback per categorie (NZEB_EP_FALLBACK)
+  // în loc de 148 hardcoded fără sursă documentată.
+  const fallbackEp = NZEB_EP_FALLBACK[baseCat] || NZEB_EP_FALLBACK.AL;
   const epRefMax = getNzebEpMax
-    ? (getNzebEpMax(baseCat, clim?.zone) || 148)
-    : 148;
+    ? (getNzebEpMax(baseCat, clim?.zone) || fallbackEp)
+    : fallbackEp;
   const nzebOk = epF <= epRefMax && (renewSummary?.rer || 0) >= 30;
 
   // Categorie label
