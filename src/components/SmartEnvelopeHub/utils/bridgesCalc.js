@@ -408,3 +408,94 @@ export const PSI_SOURCES = [
 export function getPsiQualityClass(classId) {
   return PSI_QUALITY_CLASSES.find(c => c.id === classId) || null;
 }
+
+// ── Tooltip-uri educaționale per tip punte (P2-8 fix) ────────────────────────
+// Conțin: ce E punte, când APARE, cum se ELIMINĂ. Folosit ca tooltip pe
+// fiecare quick-pick din WizardBridges pentru a învăța auditorul.
+const EDUCATION_TOOLTIPS = [
+  {
+    match: (n) => /Plan[șs]eu intermediar/i.test(n),
+    text: "Punte la joncțiunea perete exterior cu planșeul intermediar (ex. între etaj 1-2). Apare când planșeul beton armat traversează izolația ETICS. Se elimină prin continuitatea izolației pe toată înălțimea fațadei (overlap ≥ 50 mm peste planșeu)."
+  },
+  {
+    match: (n) => /Plan[șs]eu teras[ăa]/i.test(n),
+    text: "Punte la joncțiunea perete-acoperiș plat. Apare prin întreruperea izolației la cota atic. Se elimină prin izolație continuă pe atic + ETICS care urcă peste cornișa atic-ului (terasă inversă reduce semnificativ ψ)."
+  },
+  {
+    match: (n) => /Plan[șs]eu peste subsol/i.test(n),
+    text: "Punte la joncțiunea perete-planșeu peste subsol neîncălzit. Apare la trecerea de la perete subteran la perete deasupra cotei ±0.00. Se elimină prin izolație perimetrală XPS 80-100 mm sub și peste planșeu (continuitate la nivel sol)."
+  },
+  {
+    match: (n) => /Soclu|Fundație|fundație/i.test(n),
+    text: "Punte la cota soclu — joncțiunea perete-fundație. Risc condens ridicat în zona inferioară. Se elimină prin izolație XPS perimetrală pe soclu (min. 50 cm sub cota teren) + ETICS continuu."
+  },
+  {
+    match: (n) => /Col[țt] exterior/i.test(n),
+    text: "Punte geometrică la colțurile exterioare ale clădirii (90° convex). Apare prin reducerea ariei exterioare cu izolație vs. aria interioară. Atenuată cu izolație continuă; valori mici (ψ≈0.05-0.10) — uneori chiar negative la colțuri concave (câștig)."
+  },
+  {
+    match: (n) => /Glaf|Pervaz|Buiandrug/i.test(n),
+    text: "Punte la perimetrul ferestrei (sus/jos/lateral). Apare prin întreruperea izolației ETICS la cadrul ferestrei. Se elimină prin retragerea ferestrei către exterior + ETICS care urcă pe ramă (≥ 30 mm) + bandă elastică etanșare."
+  },
+  {
+    match: (n) => /Jamb[ăa]|Montant/i.test(n),
+    text: "Punte verticală pe lateralul ferestrei. Soluție similară cu glaful: ETICS care continuă pe ramă + bandă etanșare elastică pe perimetru. Importantă pentru evitarea condensului la colțuri reci."
+  },
+  {
+    match: (n) => /Prag/i.test(n),
+    text: "Punte la pragul ușii exterioare. Apare prin trecerea pardoselii încălzite cu pragul rece. Se elimină prin prag termic (RTT) cu pad poliamidă + bandă elastică sub prag (sigilare PUR sau bentonita)."
+  },
+  {
+    match: (n) => /Consol[ăa]|Balcon/i.test(n),
+    text: "Punte termică majoră (ψ=0.50-0.74 W/m·K) la balcoane traversante. Element critic — pierdere echivalentă cu 8-12 m² perete. Se elimină prin: (1) ruptură termică Schöck/HALFEN Isokorb (ψ→0.06-0.10), sau (2) console suspendate cu izolație continuă perete-balcon."
+  },
+  {
+    match: (n) => /St[âa]lp|Coloan[ăa]/i.test(n),
+    text: "Punte verticală prin stâlp beton/metal în peretele exterior. Apare prin diferența λ stâlp (1.7-50 W/m·K) vs. zidărie BCA (0.15). Se elimină prin grosime ETICS suplimentară 30-50 mm pe traseul stâlpului sau placare cu izolație în jurul stâlpului."
+  },
+  {
+    match: (n) => /Grind[ăa]|Centur[ăa]/i.test(n),
+    text: "Punte orizontală la grinzi/centuri beton armat în perete. Similar cu stâlpii — λ-mismatch beton vs. zidărie. Se elimină prin overlap izolație 30-50 mm peste grindă, atenție la traseul firelor de armare."
+  },
+  {
+    match: (n) => /Coam[ăa]/i.test(n),
+    text: "Punte la vârful acoperișului șarpantă (coama). Apare prin întreruperea izolației între căpriori la coamă. Se elimină prin overlap izolație ≥ 30 mm + bandă auto-adezivă etanșă coamă (Klober Permo)."
+  },
+  {
+    match: (n) => /Corni[șs][ăa]|Strea[șs]in[ăa]/i.test(n),
+    text: "Punte la streașina/cornișa acoperișului în pantă. Apare la marginea acoperișului unde izolația între căpriori se întâlnește cu peretele exterior. Se elimină prin sarking continuu peste perete-streașină (cel mai eficient)."
+  },
+  {
+    match: (n) => /Atic/i.test(n),
+    text: "Punte la atic — element vertical deasupra terasei. Atic neizolat = pierdere semnificativă (efect thermal flag). Se elimină prin izolație ETICS atât pe interior cât și exterior atic + acoperire izolată pe top atic."
+  },
+  {
+    match: (n) => /Țeav[ăa]|Canal|Trecere/i.test(n),
+    text: "Punte prin trecerea conductelor (apa, gaze, ventilație) prin perete exterior. Apare prin întreruperea izolației și material conductor (oțel, PVC). Se elimină prin manșete ETICS perimetrale + spume PUR de etanșare."
+  },
+  {
+    match: (n) => /Co[șs]/i.test(n),
+    text: "Punte la coșul de fum/ventilație care străbate izolația. λ-mismatch zidărie coș (0.7-1.4) vs. izolație (0.04). Se elimină prin izolație radială 50-80 mm pe traseul coșului în pod + carcasă izolată."
+  },
+  {
+    match: (n) => /Rolet[ăa]|caset[ăa]/i.test(n),
+    text: "Punte la caseta rolete deasupra ferestrei. Apare prin volumul gol pentru rulou + perete subțire spre interior. Se elimină prin caseta cu izolație internă PIR/EPS (35 mm) + etanșare etoșă perimetrală."
+  },
+  {
+    match: (n) => /Rost/i.test(n),
+    text: "Punte la rost vertical/orizontal panou prefabricat (specific RO 1965-1990). λ-mismatch panou intern (BCA) vs. fâșie centrală oțel. Se elimină DIFICIL prin sigilarea rostului cu PU + ETICS overlap perimetral. Tipic ψ=0.20-0.40 (mare!)."
+  },
+];
+
+/**
+ * Returnează tooltip-ul educațional pentru o punte specifică.
+ * Diferit de getLengthRule() — explică ce ESTE punte și cum se elimină.
+ *
+ * @param {string} bridgeName - Numele punții
+ * @returns {string|null} Tooltip multi-linie sau null dacă nu match
+ */
+export function getEducationTooltip(bridgeName) {
+  if (!bridgeName) return null;
+  const tip = EDUCATION_TOOLTIPS.find(t => t.match(bridgeName));
+  return tip ? tip.text : null;
+}

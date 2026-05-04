@@ -24,6 +24,7 @@ import {
   computeGlobalTbLoss,
   PSI_QUALITY_CLASSES,
   PSI_SOURCES,
+  getEducationTooltip,
 } from "./utils/bridgesCalc.js";
 
 // ── TechBadge ─────────────────────────────────────────────────────────────────
@@ -411,6 +412,7 @@ export default function WizardBridges({
                       const isActiveCustom = showCustomLength === globalKey;
                       const suggested = suggestLength(bridge.name, building);
                       const lengthRule = getLengthRule(bridge.name);
+                      const eduTooltip = getEducationTooltip(bridge.name); // P2-8
                       const psiC = getPsiColors(bridge.psi);
 
                       return (
@@ -422,16 +424,29 @@ export default function WizardBridges({
                           )}
                         >
                           <div className="grid grid-cols-[1fr_64px_80px] gap-2 items-center px-2 py-2">
-                            {/* Denumire + ψ bar + tooltip lungime */}
+                            {/* Denumire + ψ bar + tooltip educational P2-8 */}
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[11px] font-medium text-slate-200 truncate" title={bridge.detail || bridge.desc || ""}>
+                                <span
+                                  className={cn(
+                                    "text-[11px] font-medium truncate",
+                                    eduTooltip ? "text-slate-200 cursor-help underline decoration-dotted decoration-slate-600/50 underline-offset-2" : "text-slate-200"
+                                  )}
+                                  title={
+                                    eduTooltip
+                                      ? `${bridge.name}\n\n${eduTooltip}\n\n[Catalog: ${bridge.detail || bridge.desc || "—"}]`
+                                      : (bridge.detail || bridge.desc || "")
+                                  }
+                                >
                                   {bridge.name}
                                 </span>
                                 {alreadyAdded > 0 && (
                                   <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded border border-amber-600/30 bg-amber-500/10 text-amber-300 font-mono">
                                     {alreadyAdded}×
                                   </span>
+                                )}
+                                {eduTooltip && (
+                                  <span className="shrink-0 text-[9px] text-violet-400/80" title={eduTooltip}>ⓘ</span>
                                 )}
                               </div>
                               <PsiBar psi={bridge.psi} />
@@ -464,9 +479,16 @@ export default function WizardBridges({
                             </div>
                           </div>
 
-                          {/* Câmp lungime custom + tooltip regulă măsurare */}
+                          {/* Câmp lungime custom + tooltip regulă măsurare + educational P2-8 */}
                           {isActiveCustom && (
                             <div className="mx-2 mb-2 pt-2 border-t border-slate-800/60 space-y-2">
+                              {/* P2-8: tooltip educațional permanent în panoul expand */}
+                              {eduTooltip && (
+                                <div className="flex items-start gap-1.5 px-1 py-1.5 rounded bg-violet-500/5 border border-violet-700/20 text-[9px] text-violet-200/80 leading-relaxed">
+                                  <span className="font-mono text-violet-400 shrink-0">ⓘ</span>
+                                  <span>{eduTooltip}</span>
+                                </div>
+                              )}
                               {/* Tooltip regulă lungime per tip */}
                               <div className="flex items-start gap-1.5 px-1 py-1 rounded bg-amber-500/5 border border-amber-700/20 text-[9px] text-amber-200/80 leading-snug">
                                 <span className="font-mono text-amber-400 shrink-0">📏</span>

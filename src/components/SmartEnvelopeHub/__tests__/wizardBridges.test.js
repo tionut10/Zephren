@@ -13,6 +13,7 @@ import {
   PSI_QUALITY_CLASSES,
   PSI_SOURCES,
   getPsiQualityClass,
+  getEducationTooltip,
 } from "../utils/bridgesCalc.js";
 import THERMAL_BRIDGES_DB from "../../../data/thermal-bridges.json";
 
@@ -505,5 +506,80 @@ describe("getPsiQualityClass — lookup helper", () => {
 
   it("ID inexistent → null", () => {
     expect(getPsiQualityClass("Z")).toBeNull();
+  });
+});
+
+// ── P2-8: Tooltip educațional pe quick-pick punți ────────────────────────────
+describe("getEducationTooltip — descriere tehnică punți (P2-8)", () => {
+  it("punte balcon traversant menționează ruptură termică Schöck/Isokorb", () => {
+    const tip = getEducationTooltip("Balcon traversant fără ruptură termică");
+    expect(tip).toMatch(/Schöck|Isokorb|HALFEN/i);
+    expect(tip).toMatch(/ruptur[ăa] termic/i);
+  });
+
+  it("punte planșeu intermediar explică ETICS continuitate", () => {
+    const tip = getEducationTooltip("Perete ext. — Planșeu intermediar");
+    expect(tip).toMatch(/continui|continuita|ETICS/i);
+  });
+
+  it("punte stâlp menționează λ-mismatch", () => {
+    const tip = getEducationTooltip("Stâlp beton armat în perete");
+    expect(tip).toMatch(/λ|lambda/i);
+  });
+
+  it("punte glaf menționează etanșare bandă elastică", () => {
+    const tip = getEducationTooltip("Glaf fereastră");
+    expect(tip).toMatch(/etan[șs]are|band[ăa] elastic/i);
+  });
+
+  it("punte coș menționează izolație radială", () => {
+    const tip = getEducationTooltip("Coș fum");
+    expect(tip).toMatch(/radial|coș|carcas/i);
+  });
+
+  it("punte rost prefabricat menționează specific RO", () => {
+    const tip = getEducationTooltip("Rost vertical panou prefabricat");
+    expect(tip).toMatch(/RO|prefabric|panou|sigilare/i);
+  });
+
+  it("punte necunoscută → null (nu fallback)", () => {
+    expect(getEducationTooltip("Punte fictivă")).toBeNull();
+  });
+
+  it("nume nul/undefined → null", () => {
+    expect(getEducationTooltip(null)).toBeNull();
+    expect(getEducationTooltip(undefined)).toBeNull();
+  });
+
+  it("toate tooltip-urile au minim 80 caractere (descriere completă)", () => {
+    const samples = [
+      "Perete ext. — Planșeu intermediar",
+      "Balcon traversant fără ruptură termică",
+      "Glaf fereastră",
+      "Stâlp beton armat",
+      "Atic terasă",
+      "Coamă acoperiș",
+      "Streașină acoperiș",
+      "Soclu fundație",
+      "Țeavă trecere perete",
+      "Roletă casetă",
+    ];
+    samples.forEach(name => {
+      const tip = getEducationTooltip(name);
+      if (tip) {
+        expect(tip.length).toBeGreaterThan(80);
+      }
+    });
+  });
+
+  it("acoperă minim 15 categorii distincte de punți", () => {
+    const samples = [
+      "Planșeu intermediar", "Planșeu terasă", "Planșeu peste subsol", "Soclu",
+      "Colț exterior", "Glaf", "Jambă", "Prag", "Consolă balcon",
+      "Stâlp beton", "Grindă", "Coamă", "Cornișă", "Atic",
+      "Țeavă", "Coș", "Roletă", "Rost",
+    ];
+    const matched = samples.filter(s => getEducationTooltip(s) !== null);
+    expect(matched.length).toBeGreaterThanOrEqual(15);
   });
 });

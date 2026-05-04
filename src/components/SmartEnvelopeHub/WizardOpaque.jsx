@@ -333,6 +333,18 @@ export default function WizardOpaque({
 
   const handleSave         = () => { if (!canSave) return; onSave?.(element); onClose?.(); };
   const handleOpenAdvanced = () => { onOpenAdvanced?.(element); onClose?.(); };
+  // P2-5: duplicare element — salvează curent + resetează la Pas 1 cu același tip/orientare
+  const handleSaveAndDuplicate = () => {
+    if (!canSave) return;
+    onSave?.(element);
+    setElement(p => ({
+      ...p,
+      // Păstrează tipul + structura strat ca șablon, doar incrementează numele
+      name: `${p.name} (copie)`,
+      area: "",
+    }));
+    setStep(1);
+  };
 
   const elTypeLabel = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === element.type)?.label || element.type;
 
@@ -1064,14 +1076,26 @@ export default function WizardOpaque({
 
               <div className="flex gap-2 justify-between pt-2 border-t border-slate-800/60">
                 <button onClick={() => setStep(2)} className="px-3 py-1.5 text-[11px] rounded border border-slate-700/50 hover:border-slate-600 text-slate-500 hover:text-slate-300 transition-colors">← Înapoi</button>
-                <button
-                  onClick={handleSave}
-                  disabled={!canSave}
-                  className={cn(
-                    "px-5 py-1.5 text-[11px] rounded font-semibold transition-all",
-                    canSave ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-slate-800 text-slate-600 cursor-not-allowed"
-                  )}
-                >✓ Salvează element opac</button>
+                <div className="flex gap-1.5">
+                  {/* P2-5: Salvează + duplică pentru a crea rapid mai multe orientări */}
+                  <button
+                    onClick={handleSaveAndDuplicate}
+                    disabled={!canSave}
+                    title="Salvează acest element și deschide din nou wizard cu aceleași straturi pentru duplicare rapidă (alta orientare/arie)"
+                    className={cn(
+                      "px-3 py-1.5 text-[11px] rounded font-medium transition-all",
+                      canSave ? "border border-violet-500/50 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20" : "border border-slate-800 bg-slate-800 text-slate-600 cursor-not-allowed"
+                    )}
+                  >+ Salvează & duplică</button>
+                  <button
+                    onClick={handleSave}
+                    disabled={!canSave}
+                    className={cn(
+                      "px-5 py-1.5 text-[11px] rounded font-semibold transition-all",
+                      canSave ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-slate-800 text-slate-600 cursor-not-allowed"
+                    )}
+                  >✓ Salvează element opac</button>
+                </div>
               </div>
             </div>
           )}

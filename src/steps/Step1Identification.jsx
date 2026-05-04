@@ -1001,7 +1001,14 @@ export default function Step1Identification({
                   ⚠ {fieldWarn("volumeConsistency")}
                 </div>
               )}
-              <Input label={t("Suprafață anvelopă (Aenv)",lang)} value={building.areaEnvelope} onChange={v => updateBuilding("areaEnvelope",v)} type="number" unit="m²" min="0" step="0.1" error={fieldErr("areaEnvelope")} />
+              <Input
+                label={t("Suprafață anvelopă (Aenv)",lang)}
+                tooltip="Convenție Mc 001-2022: dimensiuni INTERIOARE (până la fețele interioare ale anvelopei). Pentru ψ punți termice ISO 14683 §5 se folosesc dimensiuni EXTERIOARE — ele sunt calibrate corespunzător în catalogul Zephren. Suma A_env = pereți + planșee + acoperiș + uși/ferestre opace + planșeu pe sol."
+                value={building.areaEnvelope}
+                onChange={v => updateBuilding("areaEnvelope",v)}
+                type="number" unit="m²" min="0" step="0.1"
+                error={fieldErr("areaEnvelope")}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input label={t("Înălțime clădire",lang)} value={building.heightBuilding} onChange={v => updateBuilding("heightBuilding",v)} type="number" unit="m" step="0.1" />
                 <Input label={t("Înălțime etaj",lang)} value={building.heightFloor} onChange={v => updateBuilding("heightFloor",v)} type="number" unit="m" step="0.01" error={fieldErr("heightFloor")} />

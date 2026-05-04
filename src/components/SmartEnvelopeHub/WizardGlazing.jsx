@@ -208,7 +208,12 @@ export default function WizardGlazing({
     });
   }, [step, calcResult?.u, uRef, element.isDoor, uStatus]);
 
-  const handleSave = () => {
+  // P2-5: duplicare element vitrat — salvează + resetează la Pas 1 cu nume incrementat
+  const handleSaveAndDuplicate = () => {
+    if (!canSave) return;
+    handleSave({ duplicate: true });
+  };
+  const handleSave = (opts = {}) => {
     if (!canSave) return;
     // P1-10 + P2-6: dacă există H×L+units, calculăm area totală pentru salvare
     const finalArea = useDimensions
@@ -231,7 +236,18 @@ export default function WizardGlazing({
       uFrame:      calcResult.uFrame,
       psiSpacer:   calcResult.psiSpacer,
     });
-    onClose?.();
+    if (opts.duplicate) {
+      // Reset la Pas 1 cu nume incrementat — păstrează vitraj/ramă/spacer/dim
+      setElement(p => ({
+        ...p,
+        name: `${p.name} (copie)`,
+        area: "",
+        // păstrăm height/width — utilizator schimbă orientarea/lățimea
+      }));
+      setStep(1);
+    } else {
+      onClose?.();
+    }
   };
 
   // Date vitraj și ramă selectate curent
@@ -733,6 +749,66 @@ export default function WizardGlazing({
                   </div>
                 </div>
 
+                {/* P2-7: Detail vitraj — τ_vis + ε + breakdown grafic */}
+                {selGlazing && (
+                  <div className="border-t border-slate-700/40 px-3 py-2.5 space-y-2">
+                    <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono">
+                      Detalii optice & energetice vitraj
+                    </div>
+                    {/* Trei metrici: τ_vis, g, ε */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="px-2 py-1.5 rounded border border-slate-700/40 bg-slate-800/30">
+                        <div className="text-[8px] text-slate-600 font-mono uppercase tracking-wider">τ_vis (lumină)</div>
+                        <div className="text-sm font-bold font-mono text-sky-300 mt-0.5">
+                          {selGlazing.tlight ? selGlazing.tlight.toFixed(2) : "—"}
+                        </div>
+                        <div className="text-[8px] text-slate-700 font-mono">EN 410</div>
+                      </div>
+                      <div className="px-2 py-1.5 rounded border border-slate-700/40 bg-slate-800/30">
+                        <div className="text-[8px] text-slate-600 font-mono uppercase tracking-wider">g (SHGC)</div>
+                        <div className="text-sm font-bold font-mono text-amber-300 mt-0.5">
+                          {selGlazing.g ? selGlazing.g.toFixed(2) : "—"}
+                        </div>
+                        <div className="text-[8px] text-slate-700 font-mono">EN 410 / câștig solar</div>
+                      </div>
+                      <div className="px-2 py-1.5 rounded border border-slate-700/40 bg-slate-800/30">
+                        <div className="text-[8px] text-slate-600 font-mono uppercase tracking-wider">ε emisivitate</div>
+                        <div className="text-sm font-bold font-mono text-violet-300 mt-0.5">
+                          {/* ε derivat din Ug — Low-E ε≈0.04, std ε≈0.84 */}
+                          {selGlazing.u <= 1.5 ? "≈0.04" : selGlazing.u <= 2.5 ? "≈0.10" : "≈0.84"}
+                        </div>
+                        <div className="text-[8px] text-slate-700 font-mono">EN 1096-2</div>
+                      </div>
+                    </div>
+                    {/* Breakdown grafic ComponentBar */}
+                    <ComponentBar
+                      uGlass={calcResult.uGlass}
+                      uFrame={calcResult.uFrame}
+                      uSpacer={calcResult.deltaUSpacer}
+                      frameRatio={element.frameRatio}
+                      total={calcResult.u}
+                    />
+                    {/* Selectivity index (Le-T-rate) — pentru solar control */}
+                    {selGlazing.tlight && selGlazing.g && (
+                      <div className="px-2 py-1.5 rounded bg-slate-800/40 border border-slate-700/40 flex items-center justify-between text-[9px] font-mono">
+                        <span className="text-slate-500">
+                          Indice selectivitate τ_vis/g:
+                        </span>
+                        <span className="text-violet-300 font-semibold">
+                          {(selGlazing.tlight / selGlazing.g).toFixed(2)}
+                          <span className="text-slate-600 ml-1">
+                            {(selGlazing.tlight / selGlazing.g) > 1.5
+                              ? "(selectiv ✓ — bun pentru sud/est-vest)"
+                              : (selGlazing.tlight / selGlazing.g) < 1.0
+                                ? "(non-selectiv — preferat nord)"
+                                : "(neutru)"}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* U + ConformityGauge */}
                 <div className="p-4 border-t border-slate-700/40 bg-slate-800/20">
                   <div className="flex items-end justify-between mb-1">
@@ -813,14 +889,26 @@ export default function WizardGlazing({
 
               <div className="flex gap-2 justify-between pt-2 border-t border-slate-800/60">
                 <button onClick={() => setStep(2)} className="px-3 py-1.5 text-[11px] rounded border border-slate-700/50 hover:border-slate-600 text-slate-500 hover:text-slate-300 transition-colors">← Înapoi</button>
-                <button
-                  onClick={handleSave}
-                  disabled={!canSave}
-                  className={cn(
-                    "px-5 py-1.5 text-[11px] rounded font-semibold transition-all",
-                    canSave ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-slate-800 text-slate-600 cursor-not-allowed"
-                  )}
-                >✓ Salvează element vitrat</button>
+                <div className="flex gap-1.5">
+                  {/* P2-5: Salvează + duplică pentru a crea rapid mai multe ferestre identice pe alte orientări */}
+                  <button
+                    onClick={handleSaveAndDuplicate}
+                    disabled={!canSave}
+                    title="Salvează și deschide din nou wizard cu același vitraj/ramă/spacer pentru duplicare rapidă (alta orientare/dim)"
+                    className={cn(
+                      "px-3 py-1.5 text-[11px] rounded font-medium transition-all",
+                      canSave ? "border border-violet-500/50 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20" : "border border-slate-800 bg-slate-800 text-slate-600 cursor-not-allowed"
+                    )}
+                  >+ Salvează & duplică</button>
+                  <button
+                    onClick={() => handleSave()}
+                    disabled={!canSave}
+                    className={cn(
+                      "px-5 py-1.5 text-[11px] rounded font-semibold transition-all",
+                      canSave ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-slate-800 text-slate-600 cursor-not-allowed"
+                    )}
+                  >✓ Salvează element vitrat</button>
+                </div>
               </div>
             </div>
           )}
