@@ -46,7 +46,8 @@ function _autoIconFrame(material) {
   return "◽";
 }
 
-// ── Extindere din glazingTypes.json (22 entries, deduplicate după name) ────
+// ── Extindere din glazingTypes.json (41 entries v2.0, deduplicate după name)
+// Batch C (4 mai 2026): include uși/skylight/curtain wall via elementCategory.
 const _EXTENDED_GLAZING = (GLAZING_TYPES_DATA.glazings || []).map(gl => ({
   id: gl.id,
   name: gl.label,
@@ -60,8 +61,44 @@ const _EXTENDED_GLAZING = (GLAZING_TYPES_DATA.glazings || []).map(gl => ({
   desc: gl.notes ? gl.notes.slice(0, 100) : (gl.composition || ""),
   tags: gl.tags || [],
   source: gl.source,
+  // Batch C: propagă elementCategory pentru filtrare în UI
+  elementCategory: gl.elementCategory || "window",
   brand: null, supplierId: null, affiliateUrl: null, sponsored: false,
 }));
+
+// ── Categorii element vitrat — pentru filtrare UI (P1-3 fix) ─────────────
+// Sursă: glazingTypes.json v2.0 elementCategories[]
+export const ELEMENT_CATEGORIES = GLAZING_TYPES_DATA.elementCategories || [
+  { id: "window",      label: "Fereastră" },
+  { id: "door",        label: "Ușă exterioară" },
+  { id: "skylight",    label: "Skylight / luminator" },
+  { id: "curtainwall", label: "Perete cortină" },
+];
+
+/**
+ * Filtrează vitrajele (window/door/skylight/curtainwall).
+ * @param {string} category - "window" | "door" | "skylight" | "curtainwall"
+ * @returns {Array} entries cu elementCategory egal
+ */
+export function filterGlazingByCategory(category) {
+  return GLAZING_DB.filter(g =>
+    g.elementCategory === category ||
+    (!g.elementCategory && category === "window") // legacy fallback
+  );
+}
+
+/**
+ * Returnează numărul de intrări per categorie (pentru afișare statistică UI).
+ * @returns {Object} { window: N, door: N, skylight: N, curtainwall: N }
+ */
+export function countByCategory() {
+  const counts = { window: 0, door: 0, skylight: 0, curtainwall: 0 };
+  GLAZING_DB.forEach(g => {
+    const cat = g.elementCategory || "window";
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+  return counts;
+}
 
 const _glazingNames = new Set(_LEGACY_GLAZING.map(g => g.name.toLowerCase()));
 export const GLAZING_DB = [

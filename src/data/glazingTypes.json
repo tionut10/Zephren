@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2026-04-29",
-  "description": "Catalog NEUTRU de tipuri de vitraj — fără brand-uri. Compoziții, Ug, factor solar g, transmitanță luminoasă τv, eră utilizare. Câmpurile brand/supplierId rezervate pentru parteneriate viitoare.",
+  "version": "2.0.0",
+  "lastUpdated": "2026-05-04",
+  "description": "Catalog NEUTRU de tipuri vitraj/uși/skylight/curtain wall — fără brand-uri. Compoziții, Ug/Uw/Ud, factor solar g, transmitanță luminoasă τv, elementCategory. Câmpurile brand/supplierId rezervate pentru parteneriate viitoare. v2.0 (Batch C 4 mai 2026): atribut elementCategory + 10 uși + 6 skylights + 4 curtain wall.",
   "sources": [
     "SR EN 673:2011 — Determinarea Ug",
     "SR EN 410:2011 — Caracteristici luminoase și solare",
@@ -10,9 +10,30 @@
     "SR EN 14351-1+A2:2016 — Performanță ferestre/uși",
     "SR EN 1096-1...5 — Sticlă cu strat (Low-E, control solar)",
     "SR EN 12758:2019 — Sticlă acustică",
+    "SR EN 13830:2015+A1:2020 — Curtain wall",
+    "SR EN 1873:2014+A1:2016 — Roof skylights individuali",
+    "SR EN 14963:2006 — Roof light strips (luminatoare bandă)",
     "SR EN 50583-1/2:2016 — BIPV",
     "Mc 001-2022; OUG 13/2024 EPBD recast",
     "Passivhaus Institut Component Database; Glass for Europe statistics"
+  ],
+  "elementCategories": [
+    {
+      "id": "window",
+      "label": "Fereastră"
+    },
+    {
+      "id": "door",
+      "label": "Ușă exterioară"
+    },
+    {
+      "id": "skylight",
+      "label": "Skylight / luminator"
+    },
+    {
+      "id": "curtainwall",
+      "label": "Perete cortină"
+    }
   ],
   "glazings": [
     {
@@ -21,31 +42,51 @@
       "shortLabel": "Geam simplu 4",
       "composition": "4 mm float clar",
       "ug": 5.75,
-      "ugRange": { "min": 5.7, "max": 5.8 },
+      "ugRange": {
+        "min": 5.7,
+        "max": 5.8
+      },
       "g": 0.86,
       "tlight": 0.89,
       "era": "pre1990",
-      "tags": ["existent", "audit", "pre-1990", "neconform", "popular"],
+      "tags": [
+        "existent",
+        "audit",
+        "pre-1990",
+        "neconform",
+        "popular"
+      ],
       "source": "EN 673; EN 410",
       "notes": "Cca. 35-40% din fondul rezidențial pre-1990 încă în exploatare; demolat masiv 2007-2014 prin Casa Verde.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-coupled",
       "label": "Geam dublu cuplat tradițional (cadre lemn cuplate)",
       "shortLabel": "Dublu cuplat",
       "composition": "2× 4 mm float, ramă lemn cuplată",
-      "ug": 3.0,
-      "ugRange": { "min": 2.8, "max": 3.2 },
+      "ug": 3,
+      "ugRange": {
+        "min": 2.8,
+        "max": 3.2
+      },
       "g": 0.76,
-      "tlight": 0.80,
+      "tlight": 0.8,
       "era": "1970-1990",
-      "tags": ["existent", "audit", "1970-1990", "blocuri", "neconform"],
+      "tags": [
+        "existent",
+        "audit",
+        "1970-1990",
+        "blocuri",
+        "neconform"
+      ],
       "source": "EN 673; Mc 001-2022 Anexa A (estimat)",
       "notes": "Distinct de termopan modern. Etanșare deficitară, n50 > 8 h⁻¹.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-air-12",
@@ -53,15 +94,24 @@
       "shortLabel": "Dublu aer 12",
       "composition": "4-12-4 aer uscat",
       "ug": 2.8,
-      "ugRange": { "min": 2.7, "max": 2.9 },
+      "ugRange": {
+        "min": 2.7,
+        "max": 2.9
+      },
       "g": 0.77,
       "tlight": 0.81,
       "era": "1990-2010",
-      "tags": ["existent", "audit", "1990-2010", "neconform"],
+      "tags": [
+        "existent",
+        "audit",
+        "1990-2010",
+        "neconform"
+      ],
       "source": "EN 673; EN 1279-1",
       "notes": "Prima generație termopan RO. Sub Mc 001-2006.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-lowe-air-12",
@@ -69,15 +119,23 @@
       "shortLabel": "Dublu LowE aer",
       "composition": "4-12-4 cu strat magnetronic Low-E moale, aer",
       "ug": 1.8,
-      "ugRange": { "min": 1.7, "max": 1.9 },
+      "ugRange": {
+        "min": 1.7,
+        "max": 1.9
+      },
       "g": 0.64,
-      "tlight": 0.80,
+      "tlight": 0.8,
       "era": "1990-2010",
-      "tags": ["existent", "audit", "tranzitie"],
+      "tags": [
+        "existent",
+        "audit",
+        "tranzitie"
+      ],
       "source": "EN 673; EN 1096-1",
       "notes": "Tranziție către Argon. Rar comercializat astăzi.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-lowe-argon-16",
@@ -85,15 +143,24 @@
       "shortLabel": "Dublu LowE Ar 16",
       "composition": "4-16-4 Low-E moale + ≥90% Argon",
       "ug": 1.2,
-      "ugRange": { "min": 1.1, "max": 1.3 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.3
+      },
       "g": 0.58,
-      "tlight": 0.80,
+      "tlight": 0.8,
       "era": "2010-2020",
-      "tags": ["existent", "popular", "default", "standard-ro"],
+      "tags": [
+        "existent",
+        "popular",
+        "default",
+        "standard-ro"
+      ],
       "source": "EN 673; EN 1279-3; EN 410",
       "notes": "Standard piață RO 2024 (~50% pondere). Conform C 107/2010 dar SUB nZEB.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-lowe-argon-20",
@@ -101,15 +168,22 @@
       "shortLabel": "Dublu LowE Ar 20",
       "composition": "4-20-4 Low-E + Argon",
       "ug": 1.05,
-      "ugRange": { "min": 1.0, "max": 1.1 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.1
+      },
       "g": 0.57,
-      "tlight": 0.80,
+      "tlight": 0.8,
       "era": "2015-2020",
-      "tags": ["existent", "premium"],
+      "tags": [
+        "existent",
+        "premium"
+      ],
       "source": "EN 673",
       "notes": "Cavitate 16 mm = optim termic Argon; >18 mm pierderi convectie incipiente.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-double-lowe-krypton",
@@ -117,15 +191,21 @@
       "shortLabel": "Dublu LowE Kr",
       "composition": "4-10-4 sau 4-12-4 Low-E + Krypton",
       "ug": 1.1,
-      "ugRange": { "min": 1.0, "max": 1.2 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.2
+      },
       "g": 0.55,
       "tlight": 0.78,
       "era": "2015-2020",
-      "tags": ["premium"],
+      "tags": [
+        "premium"
+      ],
       "source": "EN 673; EN 1279-3 (estimat)",
       "notes": "Util când grosime totală < 24 mm impusă de ramă veche. Cost +60-80% vs Argon.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-triple-argon",
@@ -133,15 +213,22 @@
       "shortLabel": "Triplu Ar simplu",
       "composition": "4-12-4-12-4 Argon, fără Low-E",
       "ug": 1.6,
-      "ugRange": { "min": 1.5, "max": 1.7 },
-      "g": 0.70,
+      "ugRange": {
+        "min": 1.5,
+        "max": 1.7
+      },
+      "g": 0.7,
       "tlight": 0.74,
       "era": "2010-2020",
-      "tags": ["rar", "tranzitie"],
+      "tags": [
+        "rar",
+        "tranzitie"
+      ],
       "source": "EN 673 (estimat)",
       "notes": "Configurație rară comercial; triplu vitrajul implică obligatoriu cel puțin 1 Low-E.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-triple-1lowe-argon",
@@ -149,15 +236,21 @@
       "shortLabel": "Triplu 1×LowE Ar",
       "composition": "4-16-4-16-4 cu 1 Low-E pe poziția 5, Argon",
       "ug": 0.9,
-      "ugRange": { "min": 0.8, "max": 1.0 },
+      "ugRange": {
+        "min": 0.8,
+        "max": 1
+      },
       "g": 0.52,
       "tlight": 0.72,
       "era": "2015-2020",
-      "tags": ["intermediar"],
+      "tags": [
+        "intermediar"
+      ],
       "source": "EN 673; EN 1279-3",
       "notes": "Compromis cost/performanță; rar în RO (piața sare la 2× Low-E).",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-triple-2lowe-argon",
@@ -165,15 +258,23 @@
       "shortLabel": "Triplu 2×LowE Ar",
       "composition": "4-16-4-16-4 cu 2× Low-E (pozițiile 2, 5) + Argon ≥90%",
       "ug": 0.7,
-      "ugRange": { "min": 0.6, "max": 0.8 },
-      "g": 0.50,
-      "tlight": 0.70,
+      "ugRange": {
+        "min": 0.6,
+        "max": 0.8
+      },
+      "g": 0.5,
+      "tlight": 0.7,
       "era": "nzeb-2020+",
-      "tags": ["nzeb", "default", "popular"],
+      "tags": [
+        "nzeb",
+        "default",
+        "popular"
+      ],
       "source": "EN 673; EN 1279-3; EN ISO 10077-1",
       "notes": "Configurație țintă pentru OUG 13/2024 (nZEB). Pondere ~12-15% piață RO 2024.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-triple-2lowe-krypton",
@@ -181,15 +282,23 @@
       "shortLabel": "Triplu 2×LowE Kr",
       "composition": "4-12-4-12-4 cu 2× Low-E + Krypton",
       "ug": 0.6,
-      "ugRange": { "min": 0.5, "max": 0.7 },
-      "g": 0.50,
-      "tlight": 0.70,
+      "ugRange": {
+        "min": 0.5,
+        "max": 0.7
+      },
+      "g": 0.5,
+      "tlight": 0.7,
       "era": "nzeb-2020+",
-      "tags": ["nzeb", "passivhaus", "premium"],
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "premium"
+      ],
       "source": "EN 673; EN 1279-3",
       "notes": "Uw ≤ 0.80 W/m²K cu ramă PH. Cost +120-150% vs Argon. Import predominant DE/AT.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-vig-vacuum",
@@ -197,15 +306,23 @@
       "shortLabel": "VIG vacuum",
       "composition": "2× 3-4 mm cu interspațiu < 1 mm vid + microspaceri",
       "ug": 0.55,
-      "ugRange": { "min": 0.4, "max": 0.7 },
-      "g": 0.60,
+      "ugRange": {
+        "min": 0.4,
+        "max": 0.7
+      },
+      "g": 0.6,
       "tlight": 0.78,
       "era": "nzeb-2020+",
-      "tags": ["inovatie", "premium", "patrimoniu"],
+      "tags": [
+        "inovatie",
+        "premium",
+        "patrimoniu"
+      ],
       "source": "EN 1279-2 parțial; prEN VIG în lucru",
       "notes": "Grosime totală 6-10 mm — avantaj retrofit ramă patrimoniu. Cost 3-4× termopan. Durabilitate sigilare 20-25 ani.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-solar-control-low-g",
@@ -213,15 +330,24 @@
       "shortLabel": "Solar control",
       "composition": "6-16-4 cu strat selectiv pirolitic/magnetronic + Argon",
       "ug": 1.1,
-      "ugRange": { "min": 1.0, "max": 1.2 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.2
+      },
       "g": 0.33,
       "tlight": 0.62,
       "era": "nzeb-2020+",
-      "tags": ["nzeb", "tertiar", "control-solar", "sud"],
+      "tags": [
+        "nzeb",
+        "tertiar",
+        "control-solar",
+        "sud"
+      ],
       "source": "EN 410; EN 673; EN 14501",
       "notes": "Reduce Q_cooling 30-45%. Obligatoriu pentru WWR > 50% pe sud (Mc 001-2022 §11).",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-solar-thermal-hybrid",
@@ -229,15 +355,24 @@
       "shortLabel": "Solar+termic",
       "composition": "6-16-4 dublu strat (selectiv + Low-E) + Argon",
       "ug": 1.05,
-      "ugRange": { "min": 1.0, "max": 1.1 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.1
+      },
       "g": 0.38,
       "tlight": 0.65,
       "era": "nzeb-2020+",
-      "tags": ["nzeb", "birouri", "all-season", "premium"],
+      "tags": [
+        "nzeb",
+        "birouri",
+        "all-season",
+        "premium"
+      ],
       "source": "EN 410; EN 673",
       "notes": "Climă continentală + insolație ridicată. Pondere crescătoare în clădiri birouri post-2022.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-acoustic-laminated",
@@ -245,15 +380,23 @@
       "shortLabel": "Acustic",
       "composition": "6 (33.1)-12-4 Argon, PVB acustic 0.76 mm",
       "ug": 1.2,
-      "ugRange": { "min": 1.1, "max": 1.3 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.3
+      },
       "g": 0.54,
       "tlight": 0.78,
       "era": "2010-2020",
-      "tags": ["acustic", "urbana", "trafic"],
+      "tags": [
+        "acustic",
+        "urbana",
+        "trafic"
+      ],
       "source": "EN 410; EN ISO 10140-1; EN 12758",
       "notes": "R_w 38-42 dB (vs 30-32 dB termopan standard). +25-40% cost. Zone urbane > 65 dB(A), aeroporturi.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-safety-laminated",
@@ -261,15 +404,23 @@
       "shortLabel": "Siguranță",
       "composition": "4-16-(33.1) sau (44.2)-16-4 Low-E + Argon",
       "ug": 1.1,
-      "ugRange": { "min": 1.0, "max": 1.2 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.2
+      },
       "g": 0.51,
       "tlight": 0.78,
       "era": "2010-2020",
-      "tags": ["siguranta", "publice", "antiefractie"],
+      "tags": [
+        "siguranta",
+        "publice",
+        "antiefractie"
+      ],
       "source": "EN 14449; EN 356; EN 12600",
       "notes": "Obligatoriu școli, grădinițe, balustrade din sticlă (NP 067-2014).",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-self-cleaning",
@@ -277,15 +428,23 @@
       "shortLabel": "Autocurățare",
       "composition": "4 strat fotocataliz TiO₂ exterior - 16-4 Low-E + Argon",
       "ug": 1.2,
-      "ugRange": { "min": 1.1, "max": 1.3 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.3
+      },
       "g": 0.58,
       "tlight": 0.78,
       "era": "2010-2020",
-      "tags": ["autocuratare", "luminatoare", "fatade-inalte"],
+      "tags": [
+        "autocuratare",
+        "luminatoare",
+        "fatade-inalte"
+      ],
       "source": "EN 1096-5",
       "notes": "Activare UV + ploaie. Randament curățare scăzut sub strășină / pe orientare N.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-smart-pdlc",
@@ -293,15 +452,23 @@
       "shortLabel": "PDLC",
       "composition": "6 (laminat film PDLC)-12-4 Low-E + Argon",
       "ug": 1.25,
-      "ugRange": { "min": 1.1, "max": 1.4 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.4
+      },
       "g": 0.36,
       "tlight": 0.39,
       "era": "nzeb-2020+",
-      "tags": ["smart", "premium", "birouri"],
+      "tags": [
+        "smart",
+        "premium",
+        "birouri"
+      ],
       "source": "IEC 62788-7-2 parțial",
       "notes": "Comutare opac/transparent < 1 s. Cost 8-12× termopan. Alimentare 24-48 V AC continuu.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-electrochromic",
@@ -309,15 +476,23 @@
       "shortLabel": "Electrocrom",
       "composition": "6 strat WO₃ + electrolit-12-4 Low-E + Argon",
       "ug": 1.1,
-      "ugRange": { "min": 1.0, "max": 1.2 },
+      "ugRange": {
+        "min": 1,
+        "max": 1.2
+      },
       "g": 0.25,
       "tlight": 0.31,
       "era": "nzeb-2020+",
-      "tags": ["smart", "premium", "tertiar"],
+      "tags": [
+        "smart",
+        "premium",
+        "tertiar"
+      ],
       "source": "ASTM E2141; prEN comutabile",
       "notes": "4 trepte tipice. Comutare lentă (5-15 min). Durabilitate 20+ ani / 100k cicluri.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-photochromic",
@@ -325,15 +500,23 @@
       "shortLabel": "Fotocrom",
       "composition": "4 strat fotosensibil-16-4 Low-E + Argon",
       "ug": 1.2,
-      "ugRange": { "min": 1.1, "max": 1.3 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.3
+      },
       "g": 0.42,
       "tlight": 0.57,
       "era": "nzeb-2020+",
-      "tags": ["smart", "rezidential", "premium"],
+      "tags": [
+        "smart",
+        "rezidential",
+        "premium"
+      ],
       "source": "EN 410 parțial",
       "notes": "Auto-întunecare la UV. Reversibil. Durabilitate 10-15 ani fade.",
       "brand": null,
-      "supplierId": null
+      "supplierId": null,
+      "elementCategory": "window"
     },
     {
       "id": "GL-bipv-semi-transparent",
@@ -341,13 +524,515 @@
       "shortLabel": "BIPV",
       "composition": "6 strat celule a-Si/CIGS/OPV-12-4 Low-E + Argon",
       "ug": 1.3,
-      "ugRange": { "min": 1.1, "max": 1.5 },
+      "ugRange": {
+        "min": 1.1,
+        "max": 1.5
+      },
       "g": 0.27,
       "tlight": 0.25,
       "era": "nzeb-2020+",
-      "tags": ["bipv", "fotovoltaic", "fatade", "epbd"],
+      "tags": [
+        "bipv",
+        "fotovoltaic",
+        "fatade",
+        "epbd"
+      ],
       "source": "EN 50583-1/2:2016",
       "notes": "Producție 30-90 Wp/m². Randament 6-15%. Integrare pașaport renovare EPBD. Piață RO emergentă (2-3 proiecte 2024).",
+      "brand": null,
+      "supplierId": null,
+      "elementCategory": "window"
+    },
+    {
+      "id": "DR-otel-plina-fara-izol",
+      "label": "Usa otel plina fara izolatie (industrial vechi)",
+      "shortLabel": "Otel plina",
+      "composition": "Tabla otel 2-3mm fara strat izolant",
+      "ug": 5.5,
+      "ugRange": {
+        "min": 5,
+        "max": 6
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "pre1990",
+      "elementCategory": "door",
+      "tags": [
+        "existent",
+        "audit",
+        "industrial-vechi",
+        "neconform"
+      ],
+      "source": "EN 14351-1; EN 12519",
+      "notes": "Tipic usa acces hala, depozit pre-1990. Punte termica majora, condens frecvent. Interzis nZEB.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-aluminiu-fara-rt",
+      "label": "Usa aluminiu fara rupere termica (vitraj minor)",
+      "shortLabel": "Alu fara RT",
+      "composition": "Profil alu monolitic + vitraj DGU 4-12-4 aer",
+      "ug": 4,
+      "ugRange": {
+        "min": 3.5,
+        "max": 4.5
+      },
+      "g": 0.65,
+      "tlight": 0.75,
+      "era": "1990-2010",
+      "elementCategory": "door",
+      "tags": [
+        "existent",
+        "audit",
+        "comercial",
+        "neconform-nzeb"
+      ],
+      "source": "EN 14351-1; EN ISO 10077-2 Tab. F.3",
+      "notes": "Tipic intrari comerciale 1990-2010. Punte termica prin rama alu. Sub C 107/2010.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-sandwich-eps-50",
+      "label": "Usa plina sandwich EPS 50mm (rezidential standard)",
+      "shortLabel": "Sandwich EPS 50",
+      "composition": "Tabla otel + EPS 50mm + tabla otel",
+      "ug": 1.6,
+      "ugRange": {
+        "min": 1.4,
+        "max": 1.8
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "2010-2020",
+      "elementCategory": "door",
+      "tags": [
+        "existent",
+        "rezidential",
+        "popular",
+        "default"
+      ],
+      "source": "EN 14351-1; Mc 001-2022",
+      "notes": "Standard piata RO 2015-2025. Pondere ~40% case noi. Conform C 107/2010 dar peste U_ref nZEB 1.30.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-sandwich-pir-60-balcon",
+      "label": "Usa balcon plina PIR 60mm cu prag termic",
+      "shortLabel": "Usa balcon PIR",
+      "composition": "PVC 5cam + miez PIR 60mm + 2 garnituri + prag termic",
+      "ug": 1.3,
+      "ugRange": {
+        "min": 1.2,
+        "max": 1.4
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "2010-2020",
+      "elementCategory": "door",
+      "tags": [
+        "rezidential",
+        "balcon",
+        "popular"
+      ],
+      "source": "EN 14351-1; EN 16669",
+      "notes": "Tipic usa balcon apartament. Prag termic obligatoriu pentru evitarea condens podea.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-pvc-vitrata-50-50",
+      "label": "Usa PVC partial vitrata (50% geam termopan)",
+      "shortLabel": "PVC 50% vitraj",
+      "composition": "PVC 5cam + DGU Low-E argon (50% suprafata)",
+      "ug": 1.45,
+      "ugRange": {
+        "min": 1.3,
+        "max": 1.6
+      },
+      "g": 0.55,
+      "tlight": 0.75,
+      "era": "2010-2020",
+      "elementCategory": "door",
+      "tags": [
+        "rezidential",
+        "intrare-secundara",
+        "popular"
+      ],
+      "source": "EN 14351-1; ISO 10077-1",
+      "notes": "Calcul U mixt 50% vitraj + 50% panou opac. Tipic usa intrare laterala/curte.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-alu-rt-pu-80-publica",
+      "label": "Usa aluminiu RT cu miez PU 80mm (cladiri publice)",
+      "shortLabel": "Alu RT + PU 80",
+      "composition": "Alu cu rupere termica >24mm + PU 80mm + 3 garnituri",
+      "ug": 0.95,
+      "ugRange": {
+        "min": 0.85,
+        "max": 1.1
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "nzeb-2020+",
+      "elementCategory": "door",
+      "tags": [
+        "nzeb",
+        "publica",
+        "tertiar",
+        "antifoc"
+      ],
+      "source": "EN 14351-1; EN 13501-2",
+      "notes": "Standard cladiri publice nZEB. EI 30 / EI 60 disponibile. Cost 3-5x sandwich EPS.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-passive-pu-100-ph",
+      "label": "Usa Passivhaus certificata (PU 100mm + 3 garnituri)",
+      "shortLabel": "Usa PH",
+      "composition": "Lemn/alu + miez PU 100mm + 3 garnituri + prag termic",
+      "ug": 0.75,
+      "ugRange": {
+        "min": 0.65,
+        "max": 0.85
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "nzeb-2020+",
+      "elementCategory": "door",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "premium",
+        "rezidential"
+      ],
+      "source": "Passipedia certified components; EN 14351-1",
+      "notes": "U <= 0.80 W/m2K = prag PHI clasa A. Import predominant DE/AT.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-glisanta-auto-comerciala",
+      "label": "Usa automata glisanta comerciala (intrare mall/aeroport)",
+      "shortLabel": "Glisanta auto",
+      "composition": "Profil alu RT simpla + DGU 4-12-4 Low-E aer",
+      "ug": 2.5,
+      "ugRange": {
+        "min": 2.2,
+        "max": 2.8
+      },
+      "g": 0.62,
+      "tlight": 0.78,
+      "era": "2010-2020",
+      "elementCategory": "door",
+      "tags": [
+        "comercial",
+        "tertiar",
+        "automat"
+      ],
+      "source": "EN 14351-1; EN 16005",
+      "notes": "Tipic intrari mall, aeroport, supermarket. Senzor miscare. Pierderi mari prin ciclare.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-sas-doua-usi",
+      "label": "Sas cu doua usi in serie (intrare cladiri publice)",
+      "shortLabel": "Sas 2 usi",
+      "composition": "2x usa vitrate izolate cu camera intermediara 1.5-2m",
+      "ug": 1.5,
+      "ugRange": {
+        "min": 1.3,
+        "max": 1.7
+      },
+      "g": 0.55,
+      "tlight": 0.75,
+      "era": "2010-2020",
+      "elementCategory": "door",
+      "tags": [
+        "publica",
+        "tertiar",
+        "antiinfiltratii"
+      ],
+      "source": "EN 14351-1; Mc 001-2022 §5",
+      "notes": "Reduce infiltratiile cu 60-80%. Necesar cladiri publice mari (Mc 001 §5.3).",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "DR-otel-rt-vata-pir-tehnic",
+      "label": "Usa otel cu rupere termica + vata/PIR (tehnic / antifoc)",
+      "shortLabel": "Otel RT EI60",
+      "composition": "Otel inox + rupere termica + PIR/vata 80mm + EI 60",
+      "ug": 1.4,
+      "ugRange": {
+        "min": 1.2,
+        "max": 1.6
+      },
+      "g": 0,
+      "tlight": 0,
+      "era": "nzeb-2020+",
+      "elementCategory": "door",
+      "tags": [
+        "nzeb",
+        "tehnic",
+        "antifoc",
+        "industrial"
+      ],
+      "source": "EN 14351-1; EN 13501-2; P118/2013",
+      "notes": "Tipic usi camere tehnice, electricitate, gaz. EI 60 obligatoriu separari de risc P118.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-velux-mansarda-dgu-lowe",
+      "label": "Lucarna mansarda tip Velux DGU Low-E argon",
+      "shortLabel": "Velux DGU",
+      "composition": "Rama lemn-alu + DGU 4-16-4 Low-E argon",
+      "ug": 1,
+      "ugRange": {
+        "min": 0.9,
+        "max": 1.1
+      },
+      "g": 0.5,
+      "tlight": 0.75,
+      "era": "2010-2020",
+      "elementCategory": "skylight",
+      "tags": [
+        "rezidential",
+        "mansarda",
+        "popular",
+        "default"
+      ],
+      "source": "EN 14351-1; EN 1873",
+      "notes": "U_w fereastra intreaga ~ 1.30 W/m2K. Tipic mansarde locuite RO. Pondere ~70% piata.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-velux-passive-tgu",
+      "label": "Lucarna mansarda Passivhaus TGU 2x Low-E",
+      "shortLabel": "Velux PH TGU",
+      "composition": "Rama lemn + TGU 4-16-4-16-4 2x Low-E argon",
+      "ug": 0.65,
+      "ugRange": {
+        "min": 0.55,
+        "max": 0.75
+      },
+      "g": 0.5,
+      "tlight": 0.7,
+      "era": "nzeb-2020+",
+      "elementCategory": "skylight",
+      "tags": [
+        "nzeb",
+        "passivhaus",
+        "premium",
+        "mansarda"
+      ],
+      "source": "PHI Component DB; EN 1873",
+      "notes": "U_w <= 0.80 W/m2K. Cost +120% vs DGU Low-E. Pondere <5% piata RO.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-cupola-pmma-dome",
+      "label": "Cupola PMMA/PC translucida (acoperis plat)",
+      "shortLabel": "Cupola PMMA",
+      "composition": "Strat dublu PMMA/PC 4mm + camera aer",
+      "ug": 2.5,
+      "ugRange": {
+        "min": 2,
+        "max": 3
+      },
+      "g": 0.65,
+      "tlight": 0.85,
+      "era": "1990-2010",
+      "elementCategory": "skylight",
+      "tags": [
+        "existent",
+        "tertiar",
+        "industrial",
+        "neconform-nzeb"
+      ],
+      "source": "EN 1873; EN 14963",
+      "notes": "Tipic luminator hala industriala, mall, atriu. Cost mic. Sub nZEB. Risc fragilizare UV.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-luminator-acoperis-plat-tgu",
+      "label": "Luminator acoperis plat TGU Low-E argon (premium)",
+      "shortLabel": "Luminator plat TGU",
+      "composition": "Rama alu RT + TGU 6-16-4-16-6 Low-E argon",
+      "ug": 0.9,
+      "ugRange": {
+        "min": 0.8,
+        "max": 1
+      },
+      "g": 0.45,
+      "tlight": 0.65,
+      "era": "nzeb-2020+",
+      "elementCategory": "skylight",
+      "tags": [
+        "nzeb",
+        "premium",
+        "tertiar",
+        "rezidential"
+      ],
+      "source": "EN 1873; EN 14351-1",
+      "notes": "U_w <= 1.10 W/m2K. Tipic cladiri birouri / locuinte premium acoperis plat.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-fereastra-subsol-pivot",
+      "label": "Fereastra subsol pivotanta cu vitraj securizat",
+      "shortLabel": "Subsol pivot",
+      "composition": "Profil PVC 5cam + DGU 4-16-4 Low-E + grilaj antiefractie",
+      "ug": 1.3,
+      "ugRange": {
+        "min": 1.2,
+        "max": 1.5
+      },
+      "g": 0.55,
+      "tlight": 0.75,
+      "era": "2010-2020",
+      "elementCategory": "skylight",
+      "tags": [
+        "existent",
+        "rezidential",
+        "subsol"
+      ],
+      "source": "EN 14351-1; EN 1627",
+      "notes": "Tipic ferestre subsol case noi. RC2/RC3 antiefractie. Punte termica perimetrala importanta.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "SK-bandou-vitrat-orizontal",
+      "label": "Bandou vitrat orizontal continuu (ribbon window)",
+      "shortLabel": "Bandou orizontal",
+      "composition": "Profil alu RT complexa + DGU/TGU Low-E argon",
+      "ug": 1.1,
+      "ugRange": {
+        "min": 1,
+        "max": 1.4
+      },
+      "g": 0.45,
+      "tlight": 0.7,
+      "era": "2010-2020",
+      "elementCategory": "skylight",
+      "tags": [
+        "tertiar",
+        "birouri",
+        "arhitectura"
+      ],
+      "source": "EN 13830; EN 14351-1",
+      "notes": "Tipic cladiri birouri moderne. Calcul U pe sistem (mullion+transom). Cost ridicat.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "CW-stick-alu-rt-dgu",
+      "label": "Curtain wall stick aluminiu RT + DGU Low-E argon",
+      "shortLabel": "CW alu DGU",
+      "composition": "Profile mullion+transom alu RT + panouri DGU 6-16-6 Low-E argon",
+      "ug": 1.5,
+      "ugRange": {
+        "min": 1.4,
+        "max": 1.8
+      },
+      "g": 0.4,
+      "tlight": 0.65,
+      "era": "2010-2020",
+      "elementCategory": "curtainwall",
+      "tags": [
+        "tertiar",
+        "birouri",
+        "popular",
+        "standard"
+      ],
+      "source": "EN 13830; CWCT TN 73",
+      "notes": "Standard birouri RO 2015-2025. U_cw 1.4-2.0 W/m2K. Pondere ~60% sediu corporate Bucuresti.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "CW-unitized-alu-tgu",
+      "label": "Curtain wall unitized TGU 2x Low-E argon (premium)",
+      "shortLabel": "CW unitized TGU",
+      "composition": "Module prefabricate alu RT complexa + TGU 6-16-4-16-6 2x Low-E",
+      "ug": 0.9,
+      "ugRange": {
+        "min": 0.8,
+        "max": 1.1
+      },
+      "g": 0.3,
+      "tlight": 0.55,
+      "era": "nzeb-2020+",
+      "elementCategory": "curtainwall",
+      "tags": [
+        "nzeb",
+        "premium",
+        "tertiar",
+        "sediu-corporate"
+      ],
+      "source": "EN 13830; EN 14351-1",
+      "notes": "U_cw <= 1.20 W/m2K. Tipic cladiri high-end RO post-2020 (Bucuresti North, Cluj). Cost +50% vs stick.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "CW-vitrina-comerciala-mare",
+      "label": "Vitrina comerciala mare (>4m2 geam)",
+      "shortLabel": "Vitrina comercial",
+      "composition": "Profil alu RT simpla + DGU 6-12-6 Low-E aer",
+      "ug": 1.8,
+      "ugRange": {
+        "min": 1.5,
+        "max": 2.5
+      },
+      "g": 0.55,
+      "tlight": 0.8,
+      "era": "2010-2020",
+      "elementCategory": "curtainwall",
+      "tags": [
+        "comercial",
+        "tertiar",
+        "vitrina"
+      ],
+      "source": "EN 13830; EN 14351-1",
+      "notes": "Tipic vitrine retail/showroom. Performanta moderata - punti termice perimetrale dominante.",
+      "brand": null,
+      "supplierId": null
+    },
+    {
+      "id": "CW-atrium-structural",
+      "label": "Atrium structural cu luminator (mall, biroau atrium)",
+      "shortLabel": "Atrium structural",
+      "composition": "Sistem mixt vertical+orizontal alu/otel + DGU/TGU Low-E",
+      "ug": 1.4,
+      "ugRange": {
+        "min": 1,
+        "max": 2
+      },
+      "g": 0.4,
+      "tlight": 0.65,
+      "era": "2010-2020",
+      "elementCategory": "curtainwall",
+      "tags": [
+        "comercial",
+        "tertiar",
+        "atrium",
+        "arhitectura"
+      ],
+      "source": "EN 13830; CWCT TN 67",
+      "notes": "Sistem complex vertical + orizontal. Calcul U per element individual + Sigma punti. Risc supraincalzire.",
       "brand": null,
       "supplierId": null
     }

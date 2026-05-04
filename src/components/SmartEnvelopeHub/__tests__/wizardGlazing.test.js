@@ -4,9 +4,12 @@ import {
   FRAME_DB,
   SPACER_TYPES,
   U_REF_GLAZING,
+  ELEMENT_CATEGORIES,
   getURefGlazing,
   computeUTotal,
   resolveSpacer,
+  filterGlazingByCategory,
+  countByCategory,
 } from "../utils/glazingCalc.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -56,10 +59,20 @@ describe("GLAZING_DB — structură și valori", () => {
     expect(dw.g).toBe(0.50);
   });
 
-  it("toate valorile g sunt între 0 și 1", () => {
+  it("toate valorile g sunt între 0 și 1 (uși plino-opace pot avea g=0)", () => {
     GLAZING_DB.forEach(gl => {
-      expect(gl.g).toBeGreaterThan(0);
+      // Batch C (4 mai 2026): uși exterioare opace au g=0 — acceptat.
+      expect(gl.g).toBeGreaterThanOrEqual(0);
       expect(gl.g).toBeLessThanOrEqual(1);
+    });
+  });
+
+  it("toate vitrajele (window/skylight/curtainwall) au g > 0", () => {
+    GLAZING_DB.forEach(gl => {
+      const cat = gl.elementCategory || "window";
+      if (cat !== "door") {
+        expect(gl.g).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -281,6 +294,136 @@ describe("resolveSpacer — id explicit + fallback heuristic legacy", () => {
 
   it("id null + ramă null → warm_edge_std", () => {
     expect(resolveSpacer(null, null).id).toBe("warm_edge_std");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Batch C (4 mai 2026) — catalog vitraje extins cu elementCategory
+// 22 windows + 10 doors + 6 skylights + 4 curtain wall = 42 entries (1 legacy dedup)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("ELEMENT_CATEGORIES — schema 4 categorii (P1-3 fix)", () => {
+  it("conține 4 categorii (window, door, skylight, curtainwall)", () => {
+    expect(ELEMENT_CATEGORIES).toHaveLength(4);
+    const ids = ELEMENT_CATEGORIES.map(c => c.id);
+    expect(ids).toEqual(["window", "door", "skylight", "curtainwall"]);
+  });
+
+  it("fiecare categorie are id și label", () => {
+    ELEMENT_CATEGORIES.forEach(c => {
+      expect(c).toHaveProperty("id");
+      expect(c).toHaveProperty("label");
+    });
+  });
+});
+
+describe("filterGlazingByCategory — filtrare per tip element vitrat (P1-3)", () => {
+  it("category 'window' returnează minim 20 entries (vitraje + fallback legacy)", () => {
+    const windows = filterGlazingByCategory("window");
+    expect(windows.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it("category 'door' returnează minim 10 uși (P1-2)", () => {
+    const doors = filterGlazingByCategory("door");
+    expect(doors.length).toBeGreaterThanOrEqual(10);
+    doors.forEach(d => expect(d.elementCategory).toBe("door"));
+  });
+
+  it("category 'skylight' returnează minim 6 luminator/lucarne (P1-4)", () => {
+    const sk = filterGlazingByCategory("skylight");
+    expect(sk.length).toBeGreaterThanOrEqual(6);
+    sk.forEach(s => expect(s.elementCategory).toBe("skylight"));
+  });
+
+  it("category 'curtainwall' returnează minim 4 perete cortină (P1-4)", () => {
+    const cw = filterGlazingByCategory("curtainwall");
+    expect(cw.length).toBeGreaterThanOrEqual(4);
+    cw.forEach(c => expect(c.elementCategory).toBe("curtainwall"));
+  });
+
+  it("category necunoscută → array gol (sau doar fallback)", () => {
+    const r = filterGlazingByCategory("xxx");
+    expect(Array.isArray(r)).toBe(true);
+  });
+});
+
+describe("countByCategory — numărători per categorie", () => {
+  it("returnează obiect cu 4 chei: window/door/skylight/curtainwall", () => {
+    const counts = countByCategory();
+    expect(counts).toHaveProperty("window");
+    expect(counts).toHaveProperty("door");
+    expect(counts).toHaveProperty("skylight");
+    expect(counts).toHaveProperty("curtainwall");
+  });
+
+  it("door = 10 entries (P1-2 cerință minimă)", () => {
+    const counts = countByCategory();
+    expect(counts.door).toBeGreaterThanOrEqual(10);
+  });
+
+  it("skylight = 6 entries", () => {
+    const counts = countByCategory();
+    expect(counts.skylight).toBeGreaterThanOrEqual(6);
+  });
+
+  it("curtainwall = 4 entries", () => {
+    const counts = countByCategory();
+    expect(counts.curtainwall).toBeGreaterThanOrEqual(4);
+  });
+
+  it("total counts ≥ 40 (catalog v2.0 extins)", () => {
+    const counts = countByCategory();
+    const total = Object.values(counts).reduce((s, n) => s + n, 0);
+    expect(total).toBeGreaterThanOrEqual(40);
+  });
+});
+
+describe("Catalog vitraje v2.0 — coverage uși exterioare critice", () => {
+  it("acoperă uși standard (sandwich EPS), Passivhaus, automate, antifoc", () => {
+    const doors = filterGlazingByCategory("door");
+    const ids = doors.map(d => d.id);
+    expect(ids.some(id => /sandwich/i.test(id))).toBe(true); // ușă standard
+    expect(ids.some(id => /passive|ph/i.test(id))).toBe(true); // PH certif
+    expect(ids.some(id => /glisanta|auto/i.test(id))).toBe(true); // automată
+    expect(ids.some(id => /tehnic|antifoc/i.test(id))).toBe(true); // antifoc
+  });
+
+  it("Ud Passivhaus ≤ 0.85 W/m²K (PHI clasa A)", () => {
+    const ph = GLAZING_DB.find(g => g.id === "DR-passive-pu-100-ph");
+    expect(ph).toBeDefined();
+    expect(ph.u).toBeLessThanOrEqual(0.85);
+  });
+
+  it("toate ușile au g=0 (panou opac) sau g≤0.65 (parțial vitrate)", () => {
+    const doors = filterGlazingByCategory("door");
+    doors.forEach(d => {
+      expect(d.g).toBeLessThanOrEqual(0.66);
+    });
+  });
+});
+
+describe("Catalog vitraje v2.0 — coverage skylight/curtain wall", () => {
+  it("skylight include Velux + Cupolă PMMA + Subsol + bandou", () => {
+    const sk = filterGlazingByCategory("skylight");
+    const ids = sk.map(s => s.id);
+    expect(ids.some(id => /velux/i.test(id))).toBe(true);
+    expect(ids.some(id => /cupola|pmma/i.test(id))).toBe(true);
+    expect(ids.some(id => /subsol/i.test(id))).toBe(true);
+  });
+
+  it("curtainwall include stick + unitized + vitrină + atrium", () => {
+    const cw = filterGlazingByCategory("curtainwall");
+    const ids = cw.map(c => c.id);
+    expect(ids.some(id => /stick/i.test(id))).toBe(true);
+    expect(ids.some(id => /unitized/i.test(id))).toBe(true);
+    expect(ids.some(id => /vitrina/i.test(id))).toBe(true);
+    expect(ids.some(id => /atrium/i.test(id))).toBe(true);
+  });
+
+  it("CW unitized TGU performance: U ≤ 1.0 W/m²K (premium)", () => {
+    const cwUnitized = GLAZING_DB.find(g => g.id === "CW-unitized-alu-tgu");
+    expect(cwUnitized).toBeDefined();
+    expect(cwUnitized.u).toBeLessThanOrEqual(1.0);
   });
 });
 
