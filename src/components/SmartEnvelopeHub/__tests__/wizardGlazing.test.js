@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   GLAZING_DB,
   FRAME_DB,
+  SPACER_TYPES,
   U_REF_GLAZING,
   getURefGlazing,
   computeUTotal,
+  resolveSpacer,
 } from "../utils/glazingCalc.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -189,16 +191,117 @@ describe("computeUTotal — efect fracție ramă", () => {
   });
 });
 
-describe("computeUTotal — clampare arie minimă 0.5 m²", () => {
-  it("arie 0.1 m² (sub minim) → același rezultat ca 0.5 m²", () => {
-    const rMic = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 0.1);
-    const rClamp = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 0.5);
-    expect(rMic.u).toBeCloseTo(rClamp.u, 5);
+// ── computeUTotal — validări fără clamp tăcut (P2-2 refactor) ────────────────
+describe("computeUTotal — validări input fără clamp silentios", () => {
+  it("arie validă 0.1 m² → calculează NORMAL (nu mai face clamp la 0.5)", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 0.1);
+    expect(r.u).toBeGreaterThan(0);
+    expect(Number.isFinite(r.u)).toBe(true);
+    // 0.1 m² real produce U semnificativ mai mare decât 0.5 m² (perimetru relativ mai mare)
   });
 
-  it("arie 0 sau lipsă → clampat la 0.5, nu produce NaN", () => {
-    const r = computeUTotal("Duplu vitraj Low-E", "PVC (5 camere)", 30, 0);
-    expect(Number.isNaN(r.u)).toBe(false);
+  it("arie 0 → returnează rezultat invalid (u=0) cu warning explicit", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 0);
+    expect(r.u).toBe(0);
+    expect(Array.isArray(r.warnings)).toBe(true);
+    expect(r.warnings.some(w => /Suprafață|invalidă/i.test(w))).toBe(true);
+  });
+
+  it("arie negativă → warning explicit", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, -5);
+    expect(r.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("frameRatio invalid → fallback 30% cu warning", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", "abc", 2);
+    expect(r.warnings.some(w => /Fracție/i.test(w))).toBe(true);
+  });
+
+  it("input valid → array warnings gol", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 2);
+    expect(r.warnings).toEqual([]);
+  });
+});
+
+// ── SPACER_TYPES + resolveSpacer (P1-1) ──────────────────────────────────────
+describe("SPACER_TYPES — ψ_spacer parametrizat (EN ISO 10077-1 §E)", () => {
+  it("conține 5 tipuri (alu_clasic / alu_modern / warm_edge_std / warm_edge_premium / foam_passivhaus)", () => {
+    expect(SPACER_TYPES).toHaveLength(5);
+    const ids = SPACER_TYPES.map(s => s.id);
+    expect(ids).toContain("alu_clasic");
+    expect(ids).toContain("warm_edge_std");
+    expect(ids).toContain("foam_passivhaus");
+  });
+
+  it("ψ scade pe ordinea tipurilor (alu_clasic > foam_passivhaus)", () => {
+    const aluClasic = SPACER_TYPES.find(s => s.id === "alu_clasic");
+    const foam = SPACER_TYPES.find(s => s.id === "foam_passivhaus");
+    expect(aluClasic.psi).toBeGreaterThan(foam.psi);
+  });
+
+  it("toate au psiRange.min ≤ psi ≤ psiRange.max", () => {
+    SPACER_TYPES.forEach(s => {
+      expect(s.psiRange.min).toBeLessThanOrEqual(s.psi);
+      expect(s.psi).toBeLessThanOrEqual(s.psiRange.max);
+    });
+  });
+
+  it("toate au sursă normativă citată", () => {
+    SPACER_TYPES.forEach(s => {
+      expect(typeof s.source).toBe("string");
+      expect(s.source.length).toBeGreaterThan(10);
+    });
+  });
+
+  it("alu_clasic ψ ≈ 0.10 (EN ISO 10077-1 Tab E.1)", () => {
+    expect(SPACER_TYPES.find(s => s.id === "alu_clasic").psi).toBeCloseTo(0.10, 2);
+  });
+
+  it("warm_edge_std ψ ≈ 0.05 (TGI/Swisspacer V)", () => {
+    expect(SPACER_TYPES.find(s => s.id === "warm_edge_std").psi).toBeCloseTo(0.05, 2);
+  });
+
+  it("foam_passivhaus ψ ≤ 0.03 (PHI certified)", () => {
+    expect(SPACER_TYPES.find(s => s.id === "foam_passivhaus").psi).toBeLessThanOrEqual(0.03);
+  });
+});
+
+describe("resolveSpacer — id explicit + fallback heuristic legacy", () => {
+  it("id explicit 'warm_edge_premium' → returnează acel tip", () => {
+    expect(resolveSpacer("warm_edge_premium").id).toBe("warm_edge_premium");
+  });
+
+  it("id necunoscut + nume ramă conține 'Aluminiu' → alu_clasic (legacy compat)", () => {
+    expect(resolveSpacer("xxx", "Aluminiu cu RPT").id).toBe("alu_clasic");
+  });
+
+  it("id necunoscut + ramă PVC → warm_edge_std (default modern)", () => {
+    expect(resolveSpacer(undefined, "PVC (5 camere)").id).toBe("warm_edge_std");
+  });
+
+  it("id null + ramă null → warm_edge_std", () => {
+    expect(resolveSpacer(null, null).id).toBe("warm_edge_std");
+  });
+});
+
+describe("computeUTotal — spacerId parametru explicit", () => {
+  it("spacerId 'foam_passivhaus' → ΔU_spacer mai mic decât 'alu_clasic'", () => {
+    const rPh   = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 2, "foam_passivhaus");
+    const rAlu  = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 2, "alu_clasic");
+    expect(rPh.deltaUSpacer).toBeLessThan(rAlu.deltaUSpacer);
+    expect(rPh.psiSpacer).toBeLessThan(rAlu.psiSpacer);
+  });
+
+  it("rezultat include psiSpacer și spacerLabel", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 2, "warm_edge_std");
+    expect(r.psiSpacer).toBeGreaterThan(0);
+    expect(typeof r.spacerLabel).toBe("string");
+    expect(r.spacerId).toBe("warm_edge_std");
+  });
+
+  it("spacerId omis + ramă PVC → fallback legacy ψ=0.04 (warm_edge_std)", () => {
+    const r = computeUTotal("Dublu vitraj Low-E", "PVC (5 camere)", 30, 2);
+    expect(r.spacerId).toBe("warm_edge_std");
   });
 });
 

@@ -298,3 +298,56 @@ export function getLengthRule(bridgeName) {
   const rule = LENGTH_RULES.find(r => r.match(bridgeName));
   return rule ? rule.text : LENGTH_RULE_GLOBAL;
 }
+
+// ── Metoda globală ΔU_tb forfetar — Mc 001-2022 §3.2.6 ───────────────────────
+// Alternativă la calculul detaliat ψ × L pentru auditori care nu au atlas
+// punți disponibil. Aplicare: ΔU_tb se adaugă la fiecare U opac al elementelor
+// din anvelopă (efect echivalent cu pierdere globală suplimentară).
+//
+// Sursă: Mc 001-2022 §3.2.6 Tab. 3.18 + ISO 14683:2017 §6.4 metoda C.
+//
+// Trei niveluri de calitate execuție:
+//   A — execuție foarte bună (Passivhaus, atestat) → ΔU_tb = 0.05 W/m²K
+//   B — execuție bună (standard nZEB respectat)    → ΔU_tb = 0.10 W/m²K
+//   C — execuție medie (renovare pre-2010)         → ΔU_tb = 0.15 W/m²K
+export const GLOBAL_TB_LEVELS = [
+  {
+    id: "A",
+    label: "A — Execuție foarte bună",
+    deltaU: 0.05,
+    desc: "Passivhaus / clădiri certificate / atlas punți respectat",
+    source: "Mc 001-2022 §3.2.6 Tab. 3.18",
+  },
+  {
+    id: "B",
+    label: "B — Execuție bună",
+    deltaU: 0.10,
+    desc: "Standard nZEB respectat / detalii constructive corecte",
+    source: "Mc 001-2022 §3.2.6 Tab. 3.18",
+  },
+  {
+    id: "C",
+    label: "C — Execuție medie",
+    deltaU: 0.15,
+    desc: "Renovare pre-2010 / detalii constructive cu compromisuri",
+    source: "Mc 001-2022 §3.2.6 Tab. 3.18",
+  },
+];
+
+/**
+ * Calculează pierderea globală echivalentă (W/K) pentru metoda forfetar ΔU_tb.
+ * Folosit ca alternativă la Σ(ψ·L) când auditorul alege metoda globală.
+ *
+ * @param {string} levelId - "A" | "B" | "C"
+ * @param {number} areaEnvelope - Suprafață anvelopă opacă [m²]
+ * @returns {{ deltaU: number, totalLoss: number, level: object } | null}
+ */
+export function computeGlobalTbLoss(levelId, areaEnvelope) {
+  const level = GLOBAL_TB_LEVELS.find(l => l.id === levelId);
+  if (!level || !areaEnvelope || areaEnvelope <= 0) return null;
+  return {
+    deltaU: level.deltaU,
+    totalLoss: level.deltaU * areaEnvelope,
+    level,
+  };
+}

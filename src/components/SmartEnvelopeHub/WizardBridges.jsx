@@ -20,6 +20,8 @@ import {
   suggestLength,
   getLengthRule,
   LENGTH_RULE_GLOBAL,
+  GLOBAL_TB_LEVELS,
+  computeGlobalTbLoss,
 } from "./utils/bridgesCalc.js";
 
 // ── TechBadge ─────────────────────────────────────────────────────────────────
@@ -75,6 +77,9 @@ export default function WizardBridges({
   const [activeSubCat, setActiveSubCat] = useState("__all__");
   const [queue, setQueue]               = useState([]);
   const [showCustomLength, setShowCustomLength] = useState(null);
+  // P1-7: Metoda globală ΔU_tb (alternativă forfetar la Σ(ψ·L))
+  const [methodMode, setMethodMode] = useState("detailed"); // "detailed" | "global"
+  const [globalLevel, setGlobalLevel] = useState("B"); // A/B/C
 
   // Grupare punți pe sub-categorii din grupa activă (CATEGORY_GROUPS)
   const groupedPicks = useMemo(() => getGroupedInCategory(activeGroup), [activeGroup]);
@@ -95,11 +100,12 @@ export default function WizardBridges({
     const len = parseFloat(length) || 0;
     if (len <= 0) return;
     setQueue(prev => [...prev, {
-      name:  bridge.name,
-      cat:   bridge.cat,
-      psi:   bridge.psi,
-      length: len,
-      _key:  `${bridge.name}-${Date.now()}`,
+      name:    bridge.name,
+      cat:     bridge.cat,
+      psi:     bridge.psi,
+      psiCatalog: bridge.psi, // P2-3: păstrăm valoarea originală pentru detectare outlier
+      length:  len,
+      _key:    `${bridge.name}-${Date.now()}`,
     }]);
     setShowCustomLength(null);
   };
@@ -111,9 +117,21 @@ export default function WizardBridges({
     next[idx] = { ...next[idx], length: parseFloat(newLength) || 0 };
     return next;
   });
+  const updateQueuePsi    = (idx, newPsi)       => setQueue(prev => {
+    const next = [...prev];
+    next[idx] = { ...next[idx], psi: parseFloat(newPsi) || 0 };
+    return next;
+  });
 
   const totalLoss   = queue.reduce((s, q) => s + (q.psi * q.length), 0);
   const totalLength = queue.reduce((s, q) => s + q.length, 0);
+
+  // P1-7: Calcul echivalent metoda globală
+  const globalTbResult = useMemo(() => {
+    if (methodMode !== "global") return null;
+    const a = parseFloat(building?.areaEnvelope) || 0;
+    return computeGlobalTbLoss(globalLevel, a);
+  }, [methodMode, globalLevel, building?.areaEnvelope]);
 
   const bridgeSuggestions = useMemo(() => {
     if (!queue.some(q => q.psi >= 0.30)) return [];
@@ -195,6 +213,89 @@ export default function WizardBridges({
               <span className="font-semibold text-amber-300">Reguli măsurare lungime:</span>{" "}
               {LENGTH_RULE_GLOBAL}
             </span>
+          </div>
+
+          {/* P1-7: Toggle metodă calcul (detaliată vs. globală Mc 001 §3.2.6) */}
+          <div className="rounded border border-slate-700/50 bg-slate-800/20 p-2.5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                Metodă calcul punți termice
+              </span>
+              <TechBadge label="Mc 001-2022 §3.2.6" />
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setMethodMode("detailed")}
+                className={cn(
+                  "flex-1 px-2 py-1.5 rounded border text-[10px] transition-all",
+                  methodMode === "detailed"
+                    ? "border-violet-500/60 bg-violet-500/10 text-violet-300"
+                    : "border-slate-700/50 bg-slate-800/20 hover:border-slate-600 text-slate-500"
+                )}
+              >
+                <div className="font-semibold">📐 Detaliat (ψ × L)</div>
+                <div className="text-[8px] opacity-70 mt-0.5">Calcul pe punte din catalog · Σ(ψ·L) · ISO 14683</div>
+              </button>
+              <button
+                onClick={() => setMethodMode("global")}
+                className={cn(
+                  "flex-1 px-2 py-1.5 rounded border text-[10px] transition-all",
+                  methodMode === "global"
+                    ? "border-violet-500/60 bg-violet-500/10 text-violet-300"
+                    : "border-slate-700/50 bg-slate-800/20 hover:border-slate-600 text-slate-500"
+                )}
+              >
+                <div className="font-semibold">🌐 Forfetar ΔU_tb</div>
+                <div className="text-[8px] opacity-70 mt-0.5">Mc 001 §3.2.6 · A/B/C · ΔU × A_env</div>
+              </button>
+            </div>
+            {/* Selector nivel A/B/C — vizibil doar în mod global */}
+            {methodMode === "global" && (
+              <div className="mt-2 pt-2 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[8px] text-slate-600 uppercase tracking-wider font-mono">
+                  Calitate execuție anvelopă
+                </div>
+                {GLOBAL_TB_LEVELS.map(lvl => {
+                  const selected = globalLevel === lvl.id;
+                  return (
+                    <button
+                      key={lvl.id}
+                      onClick={() => setGlobalLevel(lvl.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 rounded border-2 text-left transition-all",
+                        selected
+                          ? "border-amber-500/60 bg-amber-500/8"
+                          : "border-transparent hover:border-slate-700/60 hover:bg-slate-800/30"
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-semibold text-slate-200">{lvl.label}</div>
+                        <div className="text-[8px] text-slate-600 font-mono truncate">{lvl.desc}</div>
+                      </div>
+                      <div className={cn(
+                        "shrink-0 font-mono px-1.5 py-0.5 rounded border text-[10px] font-bold",
+                        selected
+                          ? "border-amber-600/50 bg-amber-500/10 text-amber-300"
+                          : "border-slate-700/50 text-slate-500"
+                      )}>
+                        ΔU={lvl.deltaU.toFixed(2)}
+                      </div>
+                    </button>
+                  );
+                })}
+                {/* Rezultat calcul global */}
+                {globalTbResult ? (
+                  <div className="mt-1 px-2 py-1.5 rounded border border-violet-700/30 bg-violet-500/5 text-[9px] font-mono text-violet-200/80 flex items-center justify-between">
+                    <span>ΔU_tb × A_env = {globalTbResult.deltaU} × {parseFloat(building?.areaEnvelope || 0).toFixed(0)}</span>
+                    <span className="text-violet-300 font-bold">= {globalTbResult.totalLoss.toFixed(1)} W/K</span>
+                  </div>
+                ) : (
+                  <div className="mt-1 px-2 py-1 rounded border border-amber-700/30 bg-amber-500/5 text-[9px] text-amber-200/70 italic">
+                    ⚠ Lipsește A_envelope din Pas 1 — completează pentru calcul global.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -448,33 +549,71 @@ export default function WizardBridges({
                   {queue.map((q, idx) => {
                     const psiC = getPsiColors(q.psi);
                     const dH   = (q.psi * q.length).toFixed(3);
+                    // P2-3: detectare outlier — ψ în afara intervalului ±50% catalog
+                    const psiOrig = q.psiCatalog ?? q.psi;
+                    const outlierThreshold = 0.5;
+                    const psiOutlier = psiOrig > 0 && Math.abs(q.psi - psiOrig) / psiOrig > outlierThreshold;
                     return (
                       <div
                         key={q._key}
-                        className="grid grid-cols-[1fr_48px_52px_24px] gap-1 items-center px-2 py-1.5 rounded border border-slate-800/60 bg-slate-800/20 hover:bg-slate-800/30 transition-colors text-[10px] font-mono"
+                        className={cn(
+                          "rounded border transition-colors text-[10px] font-mono",
+                          psiOutlier
+                            ? "border-amber-600/50 bg-amber-500/5"
+                            : "border-slate-800/60 bg-slate-800/20 hover:bg-slate-800/30"
+                        )}
                       >
-                        <div className="min-w-0">
-                          <div className="text-slate-300 truncate text-[10px]">{q.name}</div>
-                          <div className={cn("text-[8px] mt-0.5", psiC.text)}>ψ={q.psi}</div>
+                        <div className="grid grid-cols-[1fr_50px_48px_52px_24px] gap-1 items-center px-2 py-1.5">
+                          <div className="min-w-0">
+                            <div className="text-slate-300 truncate text-[10px]">{q.name}</div>
+                            <div className="text-[8px] mt-0.5 text-slate-600">
+                              catalog: ψ={psiOrig.toFixed(3)}
+                            </div>
+                          </div>
+                          {/* ψ editabil — P2-3 */}
+                          <div>
+                            <input
+                              type="number"
+                              value={q.psi}
+                              onChange={e => updateQueuePsi(idx, e.target.value)}
+                              min="0"
+                              step="0.01"
+                              title="ψ editabil — atenție dacă diferă mult de catalog"
+                              className={cn(
+                                "w-full px-1 py-0.5 rounded text-[10px] font-mono text-right focus:outline-none transition-colors",
+                                psiOutlier
+                                  ? "bg-amber-500/10 border-2 border-amber-500/50 text-amber-300 focus:border-amber-400"
+                                  : "bg-slate-800/60 border border-slate-700/50 text-slate-200 focus:border-violet-500/50"
+                              )}
+                            />
+                          </div>
+                          <div>
+                            <input
+                              type="number"
+                              value={q.length}
+                              onChange={e => updateQueueLength(idx, e.target.value)}
+                              min="0"
+                              step="0.5"
+                              title="Lungime [m] — dimensiune EXTERIOARĂ ISO 14683 §5"
+                              className="w-full px-1 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50 text-right"
+                            />
+                          </div>
+                          <div className={cn("text-right font-semibold", psiC.text)}>
+                            {dH}
+                          </div>
+                          <button
+                            onClick={() => removeFromQueue(idx)}
+                            className="text-[8px] w-5 h-5 flex items-center justify-center rounded border border-red-600/30 bg-red-600/5 text-red-400 hover:bg-red-600/20 transition-colors"
+                            aria-label="Elimină"
+                          >✕</button>
                         </div>
-                        <div>
-                          <input
-                            type="number"
-                            value={q.length}
-                            onChange={e => updateQueueLength(idx, e.target.value)}
-                            min="0"
-                            step="0.5"
-                            className="w-full px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50 text-right"
-                          />
-                        </div>
-                        <div className={cn("text-right font-semibold", psiC.text)}>
-                          {dH}
-                        </div>
-                        <button
-                          onClick={() => removeFromQueue(idx)}
-                          className="text-[8px] w-5 h-5 flex items-center justify-center rounded border border-red-600/30 bg-red-600/5 text-red-400 hover:bg-red-600/20 transition-colors"
-                          aria-label="Elimină"
-                        >✕</button>
+                        {/* P2-3: warning outlier */}
+                        {psiOutlier && (
+                          <div className="px-2 pb-1 text-[8px] text-amber-300/80 font-mono italic flex items-center gap-1">
+                            <span>⚠</span>
+                            <span>ψ diferă cu &gt;{(outlierThreshold * 100).toFixed(0)}% față de catalog ({psiOrig.toFixed(3)}). Verifică sursa.</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

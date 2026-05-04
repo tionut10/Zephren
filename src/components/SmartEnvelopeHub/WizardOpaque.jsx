@@ -21,6 +21,7 @@ import {
   getURefNZEB,
   buildLayerFromMaterialName,
 } from "./utils/wizardOpaqueCalc.js";
+import { FASTENER_TYPES } from "../../calc/opaque.js";
 
 const ORIENTATIONS = ["N", "NE", "E", "SE", "S", "SV", "V", "NV", "Orizontal"];
 
@@ -229,6 +230,7 @@ export default function WizardOpaque({
     orientation: "S",
     area: "",
     layers: [],
+    fastener: { type: "default", n_f: undefined }, // P1-12: ΔU'' Annex F selector
   });
   const [selectedPresetId, setSelectedPresetId] = useState(null);
   const [matSearch, setMatSearch]               = useState("");
@@ -248,8 +250,15 @@ export default function WizardOpaque({
 
   const uResult = useMemo(() => {
     if (!calcOpaqueR || !element.layers.length) return null;
-    try { return calcOpaqueR(element.layers, element.type); } catch { return null; }
-  }, [element.layers, element.type, calcOpaqueR]);
+    // P1-12: pasăm fastener pentru calcul ΔU'' Annex F (forțează utilizarea selectorului)
+    try { return calcOpaqueR(element.layers, element.type, element.fastener); } catch { return null; }
+  }, [element.layers, element.type, element.fastener, calcOpaqueR]);
+
+  // Detectare strat izolant pentru afișare condiționată selector fastener
+  const hasInsulation = useMemo(
+    () => element.layers.some(l => (parseFloat(l.lambda) || 1) < 0.06),
+    [element.layers]
+  );
 
   const uRef    = getURefNZEB(buildingCategory, element.type);
   const uStatus = uResult?.u && uRef
@@ -545,6 +554,11 @@ export default function WizardOpaque({
                       const R   = lam > 0 && mm > 0 ? ((mm / 1000) / lam).toFixed(3) : null;
                       const c   = getMatColors(layer.material || "");
                       const isSearch = searchLayerIdx === idx;
+                      // P2-1: validări non-blocante (warning vizual)
+                      const dWarning = mm > 0 && (mm < 1 || mm > 1000);
+                      const lambdaWarning = lam > 0 && (lam < 0.01 || lam > 5.0);
+                      const dWarningMsg = mm < 1 ? "d < 1 mm — verifică unitatea" : mm > 1000 ? "d > 1000 mm — strat anormal de gros" : "";
+                      const lambdaWarningMsg = lam < 0.01 ? "λ < 0.01 W/(m·K) — sub vacuum-insulation panel; verifică sursa" : lam > 5.0 ? "λ > 5.0 W/(m·K) — peste oțel; verifică sursa" : "";
 
                       return (
                         <div
@@ -584,7 +598,7 @@ export default function WizardOpaque({
                                 {layer.src    && <span className="text-slate-700">[{layer.src}]</span>}
                               </div>
                             </div>
-                            {/* Grosime */}
+                            {/* Grosime — P2-1 validare ∈ (1, 1000) mm */}
                             <div>
                               <input
                                 type="number"
@@ -592,11 +606,25 @@ export default function WizardOpaque({
                                 onChange={e => updateLayer(idx, "thickness", e.target.value)}
                                 min="0"
                                 placeholder="0"
-                                className="w-full px-1.5 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-[11px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50 text-right"
+                                title={dWarningMsg || `Grosime [mm]${mm > 0 ? ` — recomandat 1-1000` : ""}`}
+                                className={cn(
+                                  "w-full px-1.5 py-1 rounded text-[11px] font-mono text-right focus:outline-none transition-colors",
+                                  dWarning
+                                    ? "bg-amber-500/10 border-2 border-amber-500/50 text-amber-300 focus:border-amber-400"
+                                    : "bg-slate-800/60 border border-slate-700/50 text-slate-200 focus:border-violet-500/50"
+                                )}
                               />
                             </div>
-                            {/* Lambda — read-only */}
-                            <div className="text-right px-1.5 py-1 rounded bg-slate-800/40 border border-slate-800 text-[11px] font-mono text-slate-400">
+                            {/* Lambda — read-only · P2-1 warning out-of-range */}
+                            <div
+                              title={lambdaWarningMsg || (lam > 0 ? `λ = ${lam.toFixed(3)} W/(m·K)` : "λ nedefinit")}
+                              className={cn(
+                                "text-right px-1.5 py-1 rounded text-[11px] font-mono transition-colors",
+                                lambdaWarning
+                                  ? "bg-amber-500/10 border-2 border-amber-500/50 text-amber-300"
+                                  : "bg-slate-800/40 border border-slate-800 text-slate-400"
+                              )}
+                            >
                               {lam > 0 ? lam.toFixed(3) : <span className="text-slate-700">—</span>}
                             </div>
                             {/* R strat */}
@@ -853,6 +881,56 @@ export default function WizardOpaque({
                   mode="card"
                   lang={lang}
                 />
+              )}
+
+              {/* P1-12: Selector fixări mecanice ΔU'' (Annex F) — vizibil DOAR cu izolație */}
+              {hasInsulation && (
+                <div className="rounded border border-slate-700/50 bg-slate-800/20 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                        Fixări mecanice (ΔU'' Annex F)
+                      </div>
+                      <div className="text-[8px] text-slate-700 font-mono mt-0.5">
+                        ISO 6946:2017 Annex F — corecție pentru fixatori în straturi izolante
+                      </div>
+                    </div>
+                    <TechBadge label="ISO 6946 §F" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                    {Object.entries(FASTENER_TYPES).map(([id, ft]) => {
+                      const selected = element.fastener?.type === id;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => setElement(p => ({ ...p, fastener: { ...p.fastener, type: id } }))}
+                          className={cn(
+                            "flex items-center gap-2 px-2 py-1.5 rounded border-2 text-left transition-all",
+                            selected
+                              ? "border-violet-500/60 bg-violet-500/8"
+                              : "border-transparent hover:border-slate-700/60 hover:bg-slate-800/30"
+                          )}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-semibold text-slate-200 truncate">
+                              {ft.label}
+                            </div>
+                            <div className="text-[8px] text-slate-600 font-mono">
+                              ΔU forfetar = {ft.deltaU_flat.toFixed(3)} W/(m²·K)
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Display rezultat ΔU' calculat exact (dacă există) */}
+                  {uResult?.deltaU > 0 && (
+                    <div className="mt-2 px-2 py-1 rounded border border-violet-700/30 bg-violet-500/5 text-[9px] font-mono text-violet-300/80 flex items-center justify-between">
+                      <span>ΔU calculat exact (Annex F): <strong>{uResult.deltaU.toFixed(3)}</strong> W/(m²·K)</span>
+                      <span className="text-[8px] text-slate-600 italic">{uResult.deltaU_method}</span>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Editor avansat */}

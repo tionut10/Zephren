@@ -18,6 +18,7 @@ import { suggestForGlazingElement } from "../../data/suggestions-catalog.js";
 import {
   GLAZING_DB,
   FRAME_DB,
+  SPACER_TYPES,
   getURefGlazing,
   computeUTotal,
 } from "./utils/glazingCalc.js";
@@ -159,11 +160,12 @@ export default function WizardGlazing({
     glazingType: "Dublu vitraj Low-E",
     frameType:   "PVC (5 camere)",
     frameRatio:  "30",
+    spacerId:    "warm_edge_std", // P1-1: ψ_spacer parametrizat
   });
 
   const calcResult = useMemo(
-    () => computeUTotal(element.glazingType, element.frameType, element.frameRatio, element.area),
-    [element.glazingType, element.frameType, element.frameRatio, element.area]
+    () => computeUTotal(element.glazingType, element.frameType, element.frameRatio, element.area, element.spacerId),
+    [element.glazingType, element.frameType, element.frameRatio, element.area, element.spacerId]
   );
 
   const uRef    = getURefGlazing(buildingCategory, element.isDoor);
@@ -202,9 +204,11 @@ export default function WizardGlazing({
       glazingType: element.glazingType,
       frameType:   element.frameType,
       frameRatio:  element.frameRatio,
+      spacerId:    element.spacerId,
       u:           calcResult.u.toFixed(2),
       g:           calcResult.g.toFixed(2),
       uFrame:      calcResult.uFrame,
+      psiSpacer:   calcResult.psiSpacer,
     });
     onClose?.();
   };
@@ -474,6 +478,47 @@ export default function WizardGlazing({
                   <span>10% min.</span>
                   <span className="text-slate-600">30% tipic</span>
                   <span>50% max.</span>
+                </div>
+              </div>
+
+              {/* ─ ψ_spacer (P1-1 fix: parametrizat în loc de heuristic 0.04/0.08) ─ */}
+              <div className="rounded border border-slate-700/50 bg-slate-800/20 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Distanțier vitraj (ψ_spacer)</div>
+                    <div className="text-[8px] text-slate-700 font-mono mt-0.5">EN ISO 10077-1:2017 Annex E — punte termică joncțiune ramă-geam</div>
+                  </div>
+                  <TechBadge label="ISO 10077-1 §E" />
+                </div>
+                <div className="space-y-1">
+                  {SPACER_TYPES.map(sp => {
+                    const selected = element.spacerId === sp.id;
+                    return (
+                      <button
+                        key={sp.id}
+                        onClick={() => setElement(p => ({ ...p, spacerId: sp.id }))}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded border-2 text-left transition-all",
+                          selected
+                            ? "border-amber-500/60 bg-amber-500/8"
+                            : "border-transparent hover:border-slate-700/60 hover:bg-slate-800/30"
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-semibold text-slate-200 truncate">{sp.label}</div>
+                          <div className="text-[8px] text-slate-600 font-mono truncate">{sp.desc}</div>
+                        </div>
+                        <div className={cn(
+                          "shrink-0 font-mono px-1.5 py-0.5 rounded border text-[10px] font-bold",
+                          selected
+                            ? "border-amber-600/50 bg-amber-500/10 text-amber-300"
+                            : "border-slate-700/50 text-slate-500"
+                        )}>
+                          ψ={sp.psi.toFixed(3)}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

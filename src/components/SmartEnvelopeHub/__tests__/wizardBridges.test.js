@@ -8,6 +8,8 @@ import {
   suggestLength,
   getLengthRule,
   LENGTH_RULE_GLOBAL,
+  GLOBAL_TB_LEVELS,
+  computeGlobalTbLoss,
 } from "../utils/bridgesCalc.js";
 import THERMAL_BRIDGES_DB from "../../../data/thermal-bridges.json";
 
@@ -371,5 +373,66 @@ describe("getLengthRule — reguli măsurare lungime ISO 14683 §5", () => {
       expect(rule.length).toBeGreaterThan(20); // tooltip non-trivial
       expect(rule).toMatch(/EXTERIOAR|perimetr|înălțim|lățim|lungim/i);
     });
+  });
+});
+
+// ── Metoda globală ΔU_tb forfetar (P1-7 — Mc 001-2022 §3.2.6) ────────────────
+describe("GLOBAL_TB_LEVELS — niveluri calitate execuție", () => {
+  it("conține exact 3 niveluri (A, B, C)", () => {
+    expect(GLOBAL_TB_LEVELS).toHaveLength(3);
+    expect(GLOBAL_TB_LEVELS.map(l => l.id)).toEqual(["A", "B", "C"]);
+  });
+
+  it("ΔU crește A < B < C (calitate scade)", () => {
+    const a = GLOBAL_TB_LEVELS.find(l => l.id === "A");
+    const b = GLOBAL_TB_LEVELS.find(l => l.id === "B");
+    const c = GLOBAL_TB_LEVELS.find(l => l.id === "C");
+    expect(a.deltaU).toBeLessThan(b.deltaU);
+    expect(b.deltaU).toBeLessThan(c.deltaU);
+  });
+
+  it("A = 0.05, B = 0.10, C = 0.15 W/(m²·K) — Mc 001 Tab 3.18", () => {
+    expect(GLOBAL_TB_LEVELS.find(l => l.id === "A").deltaU).toBe(0.05);
+    expect(GLOBAL_TB_LEVELS.find(l => l.id === "B").deltaU).toBe(0.10);
+    expect(GLOBAL_TB_LEVELS.find(l => l.id === "C").deltaU).toBe(0.15);
+  });
+
+  it("toate au sursă normativă (Mc 001-2022)", () => {
+    GLOBAL_TB_LEVELS.forEach(lvl => {
+      expect(lvl.source).toMatch(/Mc 001|ISO 14683/i);
+    });
+  });
+});
+
+describe("computeGlobalTbLoss — pierdere globală ΔU_tb × A_env", () => {
+  it("nivel B + 200 m² → 0.10 × 200 = 20 W/K", () => {
+    const r = computeGlobalTbLoss("B", 200);
+    expect(r.deltaU).toBe(0.10);
+    expect(r.totalLoss).toBeCloseTo(20.0, 1);
+  });
+
+  it("nivel A + 350 m² → 0.05 × 350 = 17.5 W/K", () => {
+    const r = computeGlobalTbLoss("A", 350);
+    expect(r.totalLoss).toBeCloseTo(17.5, 1);
+  });
+
+  it("nivel C + 1000 m² → 150 W/K (pierdere semnificativă)", () => {
+    const r = computeGlobalTbLoss("C", 1000);
+    expect(r.totalLoss).toBeCloseTo(150.0, 1);
+  });
+
+  it("nivel inexistent → null", () => {
+    expect(computeGlobalTbLoss("Z", 100)).toBeNull();
+  });
+
+  it("areaEnvelope 0 sau negativ → null", () => {
+    expect(computeGlobalTbLoss("B", 0)).toBeNull();
+    expect(computeGlobalTbLoss("B", -10)).toBeNull();
+  });
+
+  it("rezultat include level (referință completă pentru afișare)", () => {
+    const r = computeGlobalTbLoss("B", 100);
+    expect(r.level.id).toBe("B");
+    expect(r.level.label).toMatch(/Execuție bună/);
   });
 });

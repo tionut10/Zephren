@@ -83,7 +83,16 @@ export function useEnvelopeSummary({
     glazingElements.forEach(el => {
       const area = parseFloat(el.area) || 0;
       const u = parseFloat(el.u) || 0;
-      totalHeatLoss += 1.0 * area * u; // tau=1 for windows
+      // P1-9 fix: τ pentru vitraj urmează aceeași cascadă ca opacele.
+      //   Default 1.0 (fereastră directă către exterior).
+      //   Dacă utilizatorul setează el.tau (manual) sau el.unheatedSpace=true
+      //   (fereastră interioară către spațiu neîncălzit — bow window, glass loggia),
+      //   se aplică b_tr<1 conform ISO 13789 §8.4.
+      let tau = parseFloat(el.tau);
+      if (!Number.isFinite(tau) || tau <= 0) {
+        tau = el.unheatedSpace ? 0.8 : 1.0; // 0.8 = default ISO 13789 spațiu neîncălzit
+      }
+      totalHeatLoss += tau * area * u;
       totalArea += area;
     });
 

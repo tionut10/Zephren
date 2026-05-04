@@ -95,6 +95,79 @@ export const FRAME_DB = [
 // ── U_REF vitraj (Mc 001-2022) ────────────────────────────────────────────
 export const U_REF_GLAZING = { nzeb_res: 1.11, nzeb_nres: 1.20, renov: 1.20, door: 1.30 };
 
+// ── ψ_spacer parametrizat (EN ISO 10077-1:2017 §5.4 + Annex E) ─────────────
+// Valori bilingv RO/EN cu surse normative explicite. P1-1 fix.
+export const SPACER_TYPES = [
+  {
+    id: "alu_clasic",
+    label: "Aluminiu clasic (spacer rece)",
+    labelEn: "Aluminium classic (cold spacer)",
+    psi: 0.10,
+    psiRange: { min: 0.08, max: 0.11 },
+    desc: "Spacer aluminiu standard. Punte termică majoră — interzis nZEB.",
+    source: "EN ISO 10077-1:2017 Annex E Tab. E.1",
+    era: "pre1995",
+  },
+  {
+    id: "alu_modern",
+    label: "Aluminiu modificat (TGI/U-channel)",
+    labelEn: "Aluminium modified (TGI/U-channel)",
+    psi: 0.08,
+    psiRange: { min: 0.06, max: 0.09 },
+    desc: "Spacer alu cu profil U sau TGI. Tranziție 1995-2010.",
+    source: "EN ISO 10077-1:2017 Annex E Tab. E.1",
+    era: "1995-2010",
+  },
+  {
+    id: "warm_edge_std",
+    label: "Warm-edge standard (TGI / Swisspacer V / Thermix)",
+    labelEn: "Warm-edge standard",
+    psi: 0.05,
+    psiRange: { min: 0.04, max: 0.06 },
+    desc: "Spacer plastic/inox cu rupere termică. Tipic 2010-2020.",
+    source: "EN ISO 10077-1:2017 Annex E Tab. E.1",
+    era: "2010-2020",
+  },
+  {
+    id: "warm_edge_premium",
+    label: "Warm-edge premium (Swisspacer Ultimate / Super Spacer)",
+    labelEn: "Warm-edge premium",
+    psi: 0.03,
+    psiRange: { min: 0.025, max: 0.04 },
+    desc: "Spacer silicon/spumă cu performanță superioară. Standard nZEB.",
+    source: "EN ISO 10077-1:2017 Annex E + EN ISO 12567-1",
+    era: "nzeb-2020+",
+  },
+  {
+    id: "foam_passivhaus",
+    label: "Foam Passivhaus (Super Spacer TriSeal / Ödland)",
+    labelEn: "Foam Passivhaus-certified",
+    psi: 0.025,
+    psiRange: { min: 0.02, max: 0.03 },
+    desc: "Spacer foam certificat PHI. Necesar Uw ≤ 0.80 W/m²K.",
+    source: "Passivhaus Institut Component Database; EN ISO 10077-1",
+    era: "nzeb-2020+",
+  },
+];
+
+/**
+ * Returnează obiectul SPACER_TYPES pentru un id sau heuristic din numele ramei.
+ * Backward compat: numele ramei "Aluminiu" → alu_clasic; altfel → warm_edge_std.
+ *
+ * @param {string} spacerId - id explicit din SPACER_TYPES
+ * @param {string} frameName - fallback dacă spacerId lipsește
+ * @returns {object} entry SPACER_TYPES
+ */
+export function resolveSpacer(spacerId, frameName) {
+  if (spacerId) {
+    const found = SPACER_TYPES.find(s => s.id === spacerId);
+    if (found) return found;
+  }
+  // Heuristic legacy pentru compat retroactiv
+  const isAlu = (frameName || "").toLowerCase().includes("aluminiu");
+  return isAlu ? SPACER_TYPES[0] : SPACER_TYPES[2]; // alu_clasic / warm_edge_std
+}
+
 /**
  * Returnează U_ref nZEB pentru vitraj/ușă vitrată.
  * @param {string}  category - Categoria clădirii (RI, RC, RA = rezidențial)
@@ -110,25 +183,46 @@ export function getURefGlazing(category, isDoor) {
  * Calculează U total fereastră (ISO 10077-1).
  * U_total = U_vitraj*(1-fr) + U_ramă*fr + ψ_spacer*P_sticlă/A
  *
+ * P1-1 fix: spacerId parametru explicit (înlocuiește heuristic 0.04/0.08).
+ * Compat retroactiv: dacă spacerId lipsește, folosește euristica legacy.
+ *
  * @param {string} glazingName  - Numele din GLAZING_DB
  * @param {string} frameName    - Numele din FRAME_DB
  * @param {number|string} frameRatio - Fracție ramă în % (ex: 30 pentru 30%)
  * @param {number|string} area  - Suprafața totală în m²
- * @returns {{ u: number, g: number, uGlass: number, uFrame: number, deltaUSpacer: number }}
+ * @param {string} [spacerId]   - id SPACER_TYPES (alu_clasic, warm_edge_std, etc.)
+ * @returns {{ u, g, uGlass, uFrame, deltaUSpacer, psiSpacer, spacerLabel }}
  */
-export function computeUTotal(glazingName, frameName, frameRatio, area) {
+export function computeUTotal(glazingName, frameName, frameRatio, area, spacerId) {
   const gl = GLAZING_DB.find(g => g.name === glazingName);
   const fr = FRAME_DB.find(f => f.name === frameName);
-  if (!gl || !fr) return { u: 0, g: 0, uFrame: 0, deltaUSpacer: 0 };
+  if (!gl || !fr) return { u: 0, g: 0, uFrame: 0, deltaUSpacer: 0, psiSpacer: 0, spacerLabel: "", warnings: [] };
 
-  const fRatio = (parseFloat(frameRatio) || 30) / 100;
-  const a = Math.max(parseFloat(area) || 1, 0.5);
+  // P2-2: validări fără clamp tăcut — collect warnings, propagate input invalid
+  const warnings = [];
+  const fRatioRaw = parseFloat(frameRatio);
+  const aRaw = parseFloat(area);
+  if (!Number.isFinite(fRatioRaw) || fRatioRaw <= 0) warnings.push("Fracție ramă invalidă — folosit fallback 30%");
+  if (!Number.isFinite(aRaw) || aRaw <= 0) warnings.push("Suprafață invalidă — calcul dezactivat");
+  if (gl.u <= 0) warnings.push(`U_g=${gl.u} ≤ 0 — vitraj invalid`);
+  if (fr.u <= 0) warnings.push(`U_f=${fr.u} ≤ 0 — ramă invalidă`);
+
+  // Dacă A invalid, nu calculăm — întoarcem rezultat clar invalid
+  if (!Number.isFinite(aRaw) || aRaw <= 0) {
+    return { u: 0, g: 0, uFrame: fr.u, uGlass: gl.u, deltaUSpacer: 0, psiSpacer: 0, spacerLabel: "", warnings };
+  }
+
+  const fRatio = (Number.isFinite(fRatioRaw) && fRatioRaw > 0 ? fRatioRaw : 30) / 100;
+  const a = aRaw; // NU mai aplicăm Math.max(...,0.5) silentios
   const aspect = Math.sqrt(a);
   const perimGlass = aspect > 0 ? 2 * (aspect + aspect * 0.7) : 4;
-  const psiSpacer = fr.name?.includes("Aluminiu") ? 0.08 : 0.04;
+  const spacer = resolveSpacer(spacerId, fr.name);
+  const psiSpacer = spacer.psi;
   const deltaUSpacer = a > 0 ? psiSpacer * perimGlass / a : 0;
   const uTotal = gl.u * (1 - fRatio) + fr.u * fRatio + deltaUSpacer;
   const gEff = gl.g * (1 - fRatio);
+
+  if (uTotal < 0) warnings.push("U_total < 0 — verifică datele de intrare");
 
   return {
     u: uTotal,
@@ -136,5 +230,9 @@ export function computeUTotal(glazingName, frameName, frameRatio, area) {
     uFrame: fr.u,
     uGlass: gl.u,
     deltaUSpacer,
+    psiSpacer,
+    spacerLabel: spacer.label,
+    spacerId: spacer.id,
+    warnings,
   };
 }
