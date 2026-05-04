@@ -156,6 +156,9 @@ export default function WizardGlazing({
     name:        "Fereastră nouă",
     orientation: "S",
     area:        "",
+    height:      "", // P1-10: H separat (m)
+    width:       "", // P1-10: L separat (m)
+    units:       1,  // P2-6: număr unități identice pe orientare
     isDoor:      false,
     glazingType: "Dublu vitraj Low-E",
     frameType:   "PVC (5 camere)",
@@ -163,9 +166,19 @@ export default function WizardGlazing({
     spacerId:    "warm_edge_std", // P1-1: ψ_spacer parametrizat
   });
 
+  // P1-10: sincronizare H × L → area automată
+  const useDimensions = element.height && element.width;
+  const computedAreaSingle = useDimensions
+    ? (parseFloat(element.height) || 0) * (parseFloat(element.width) || 0)
+    : 0;
+  const computedAreaTotal = computedAreaSingle * (parseInt(element.units) || 1);
+
+  // Aria efectivă: dacă user a introdus H×L, le folosesc; altfel area direct
+  const effectiveArea = useDimensions ? computedAreaSingle : parseFloat(element.area) || 0;
+
   const calcResult = useMemo(
-    () => computeUTotal(element.glazingType, element.frameType, element.frameRatio, element.area, element.spacerId),
-    [element.glazingType, element.frameType, element.frameRatio, element.area, element.spacerId]
+    () => computeUTotal(element.glazingType, element.frameType, element.frameRatio, effectiveArea, element.spacerId),
+    [element.glazingType, element.frameType, element.frameRatio, effectiveArea, element.spacerId]
   );
 
   const uRef    = getURefGlazing(buildingCategory, element.isDoor);
@@ -173,7 +186,7 @@ export default function WizardGlazing({
     ? (calcResult.u <= uRef ? "ok" : calcResult.u <= uRef * 1.25 ? "warn" : "fail")
     : null;
 
-  const canGoStep2 = element.name.trim() && element.orientation && parseFloat(element.area) > 0;
+  const canGoStep2 = element.name.trim() && element.orientation && (parseFloat(element.area) > 0 || computedAreaSingle > 0);
   const canGoStep3 = element.glazingType && element.frameType && parseFloat(element.frameRatio) > 0;
   const canSave    = canGoStep3 && calcResult.u > 0;
 
@@ -197,10 +210,18 @@ export default function WizardGlazing({
 
   const handleSave = () => {
     if (!canSave) return;
+    // P1-10 + P2-6: dacă există H×L+units, calculăm area totală pentru salvare
+    const finalArea = useDimensions
+      ? (computedAreaTotal).toFixed(3)
+      : (parseFloat(element.area) * (parseInt(element.units) || 1)).toFixed(3);
     onSave?.({
       name:       element.name,
       orientation: element.orientation,
-      area:        element.area,
+      area:        finalArea,
+      // P1-10: păstrăm H/W pentru documentare CPE
+      height:      element.height,
+      width:       element.width,
+      units:       parseInt(element.units) || 1,
       glazingType: element.glazingType,
       frameType:   element.frameType,
       frameRatio:  element.frameRatio,
@@ -324,13 +345,61 @@ export default function WizardGlazing({
                 </div>
               </div>
 
-              {/* Parametri geometrici */}
+              {/* Parametri geometrici — P1-10 + P2-6: H×L separat + nr unități */}
               <div>
                 <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono mb-2">Parametri geometrici</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label="Denumire" value={element.name} onChange={v => setElement(p => ({ ...p, name: v }))} className="sm:col-span-2" />
                   <Select label="Orientare" value={element.orientation} onChange={v => setElement(p => ({ ...p, orientation: v }))} options={ORIENTATIONS} />
-                  <Input label="Suprafață totală (toc inclus)" value={element.area} onChange={v => setElement(p => ({ ...p, area: v }))} type="number" unit="m²" min="0" step="0.01" />
+                  <Input
+                    label="Număr unități identice"
+                    value={element.units}
+                    onChange={v => setElement(p => ({ ...p, units: v }))}
+                    type="number" min="1" step="1"
+                  />
+                </div>
+
+                {/* Modul: H×L sau Area direct — P1-10 fix */}
+                <div className="mt-3 p-2.5 rounded border border-slate-700/50 bg-slate-800/20">
+                  <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono mb-2">
+                    Dimensiuni (alege A SAU B)
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Input
+                      label="A · Înălțime H"
+                      value={element.height}
+                      onChange={v => setElement(p => ({ ...p, height: v, area: "" }))}
+                      type="number" unit="m" min="0" step="0.01"
+                    />
+                    <Input
+                      label="A · Lățime L"
+                      value={element.width}
+                      onChange={v => setElement(p => ({ ...p, width: v, area: "" }))}
+                      type="number" unit="m" min="0" step="0.01"
+                    />
+                  </div>
+                  <Input
+                    label="B · Suprafață per unitate (toc inclus)"
+                    value={element.area}
+                    onChange={v => setElement(p => ({ ...p, area: v, height: "", width: "" }))}
+                    type="number" unit="m²" min="0" step="0.01"
+                  />
+                  {/* Sumar live */}
+                  {(useDimensions || element.area) && (
+                    <div className="mt-2 px-2 py-1 rounded bg-slate-800/40 border border-slate-700/40 text-[9px] font-mono text-slate-400 flex items-center justify-between">
+                      <span>
+                        {useDimensions
+                          ? `${parseFloat(element.height || 0)} × ${parseFloat(element.width || 0)} m`
+                          : `${parseFloat(element.area || 0)} m²/unitate`}
+                        {parseInt(element.units) > 1 && ` × ${element.units} unități`}
+                      </span>
+                      <span className="text-violet-300 font-bold">
+                        Σ = {useDimensions
+                          ? computedAreaTotal.toFixed(2)
+                          : (parseFloat(element.area || 0) * (parseInt(element.units) || 1)).toFixed(2)} m²
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

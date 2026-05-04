@@ -10,6 +10,9 @@ import {
   LENGTH_RULE_GLOBAL,
   GLOBAL_TB_LEVELS,
   computeGlobalTbLoss,
+  PSI_QUALITY_CLASSES,
+  PSI_SOURCES,
+  getPsiQualityClass,
 } from "../utils/bridgesCalc.js";
 import THERMAL_BRIDGES_DB from "../../../data/thermal-bridges.json";
 
@@ -434,5 +437,73 @@ describe("computeGlobalTbLoss — pierdere globală ΔU_tb × A_env", () => {
     const r = computeGlobalTbLoss("B", 100);
     expect(r.level.id).toBe("B");
     expect(r.level.label).toMatch(/Execuție bună/);
+  });
+});
+
+// ── Câmpuri avansate punți (P1-8 — ISO 14683 §7.3) ──────────────────────────
+describe("PSI_QUALITY_CLASSES — clase calitate calcul ψ", () => {
+  it("conține 4 clase A/B/C/D", () => {
+    expect(PSI_QUALITY_CLASSES).toHaveLength(4);
+    expect(PSI_QUALITY_CLASSES.map(c => c.id)).toEqual(["A", "B", "C", "D"]);
+  });
+
+  it("fiecare clasă are id, label, desc, confidence", () => {
+    PSI_QUALITY_CLASSES.forEach(c => {
+      expect(c).toHaveProperty("id");
+      expect(c).toHaveProperty("label");
+      expect(c).toHaveProperty("desc");
+      expect(c).toHaveProperty("confidence");
+    });
+  });
+
+  it("clasa A menționează 'numeric 2D/3D' (THERM/Flixo)", () => {
+    expect(PSI_QUALITY_CLASSES[0].label).toMatch(/numeric|2D/i);
+  });
+
+  it("clasa C menționează ISO 14683 (default catalog)", () => {
+    expect(PSI_QUALITY_CLASSES[2].label).toMatch(/ISO 14683/i);
+  });
+
+  it("clasa D — confidence 'Redusă' (estimare empirică)", () => {
+    const d = PSI_QUALITY_CLASSES.find(c => c.id === "D");
+    expect(d.confidence).toMatch(/Redusă|empirică/i);
+  });
+});
+
+describe("PSI_SOURCES — surse referință pentru documentare", () => {
+  it("conține minim 8 surse standard", () => {
+    expect(PSI_SOURCES.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("include atlasele majore (ROCKWOOL, Schöck, NSAI, BRE, PHI)", () => {
+    const labels = PSI_SOURCES.map(s => s.label).join(" ");
+    expect(labels).toMatch(/ROCKWOOL/);
+    expect(labels).toMatch(/Schöck/);
+    expect(labels).toMatch(/NSAI/);
+    expect(labels).toMatch(/BRE/);
+    expect(labels).toMatch(/Passivhaus|PHI/);
+  });
+
+  it("include software calcul 2D/3D (THERM/Flixo, Heat3D/Bisco)", () => {
+    const labels = PSI_SOURCES.map(s => s.label).join(" ");
+    expect(labels).toMatch(/THERM|Flixo/);
+    expect(labels).toMatch(/Heat3D|Bisco/);
+  });
+
+  it("default ISO 14683 Annex C există", () => {
+    const def = PSI_SOURCES.find(s => s.id === "iso_14683_annex_c");
+    expect(def).toBeDefined();
+  });
+});
+
+describe("getPsiQualityClass — lookup helper", () => {
+  it("ID valid → returnează obiectul complet", () => {
+    const a = getPsiQualityClass("A");
+    expect(a.id).toBe("A");
+    expect(a.confidence).toMatch(/Foarte ridicată/i);
+  });
+
+  it("ID inexistent → null", () => {
+    expect(getPsiQualityClass("Z")).toBeNull();
   });
 });

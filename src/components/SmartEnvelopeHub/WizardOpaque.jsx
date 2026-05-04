@@ -22,6 +22,15 @@ import {
   buildLayerFromMaterialName,
 } from "./utils/wizardOpaqueCalc.js";
 import { FASTENER_TYPES } from "../../calc/opaque.js";
+import { calcGlaserCondens } from "../../calc/glaser-condens.js";
+
+// Climat default Zone II (București) pentru Glaser preview.
+// Surse: STAS 1907/1-97 + Mc 001-2022 Anexa C clima orientativă.
+const DEFAULT_CLIMATE_ZONE_II = {
+  temp_month: [-2.0, -0.5, 4.5, 11.0, 16.5, 20.0, 22.5, 22.0, 17.0, 11.0, 5.0, 0.0],
+  rh_month:   [85,    82,   75,   65,   60,   60,   58,   60,   65,   72,   80,   85],
+  zone: "II",
+};
 
 const ORIENTATIONS = ["N", "NE", "E", "SE", "S", "SV", "V", "NV", "Orizontal"];
 
@@ -221,6 +230,7 @@ export default function WizardOpaque({
   onOpenAdvanced,
   calcOpaqueR,
   buildingCategory,
+  selectedClimate, // P1-6: pentru Glaser cu climat real, fallback la Zone II
   lang = "RO",
 }) {
   const [step, setStep] = useState(1);
@@ -259,6 +269,24 @@ export default function WizardOpaque({
     () => element.layers.some(l => (parseFloat(l.lambda) || 1) < 0.06),
     [element.layers]
   );
+
+  // P1-6: Glaser condens — preview live cu climat real sau fallback Zone II
+  const glaserResult = useMemo(() => {
+    if (!element.layers.length || step !== 3) return null;
+    if (!element.layers.every(l => parseFloat(l.thickness) > 0 && parseFloat(l.lambda) > 0)) return null;
+    const climateData = selectedClimate?.temp_month
+      ? {
+          temp_month: selectedClimate.temp_month,
+          rh_month: selectedClimate.rh_month || DEFAULT_CLIMATE_ZONE_II.rh_month,
+          zone: selectedClimate.zone || "II",
+        }
+      : DEFAULT_CLIMATE_ZONE_II;
+    try {
+      return calcGlaserCondens(element, climateData);
+    } catch {
+      return null;
+    }
+  }, [element, step, selectedClimate]);
 
   const uRef    = getURefNZEB(buildingCategory, element.type);
   const uStatus = uResult?.u && uRef
@@ -928,6 +956,92 @@ export default function WizardOpaque({
                     <div className="mt-2 px-2 py-1 rounded border border-violet-700/30 bg-violet-500/5 text-[9px] font-mono text-violet-300/80 flex items-center justify-between">
                       <span>ΔU calculat exact (Annex F): <strong>{uResult.deltaU.toFixed(3)}</strong> W/(m²·K)</span>
                       <span className="text-[8px] text-slate-600 italic">{uResult.deltaU_method}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* P1-6: Verificare Glaser condens (SR EN ISO 13788) — afișat doar dacă layers complete */}
+              {glaserResult && (
+                <div className="rounded border border-slate-700/50 bg-slate-800/20 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                        Verificare condens vapori (Glaser)
+                      </div>
+                      <div className="text-[8px] text-slate-700 font-mono mt-0.5">
+                        SR EN ISO 13788:2012 + C 107/6-2002 · climat {selectedClimate?.zone || "II"} (București default)
+                      </div>
+                    </div>
+                    <TechBadge label="ISO 13788" />
+                  </div>
+
+                  {/* Verdict principal */}
+                  <div className={cn(
+                    "px-3 py-2 rounded border-2 flex items-center justify-between",
+                    glaserResult.hasCondens
+                      ? glaserResult.annualOk
+                        ? "border-amber-600/50 bg-amber-500/8"
+                        : "border-red-600/50 bg-red-500/8"
+                      : "border-emerald-600/50 bg-emerald-500/8"
+                  )}>
+                    <div>
+                      <div className={cn(
+                        "text-[11px] font-semibold",
+                        glaserResult.hasCondens
+                          ? glaserResult.annualOk ? "text-amber-300" : "text-red-300"
+                          : "text-emerald-300"
+                      )}>
+                        {glaserResult.hasCondens
+                          ? glaserResult.annualOk
+                            ? "⚠ Condens iarna, evaporează vara — ACCEPTABIL"
+                            : "✗ Condens net pozitiv anual — NECONFORM C 107/6"
+                          : "✓ Fără risc condens"}
+                      </div>
+                      <div className="text-[8px] font-mono text-slate-600 mt-0.5">
+                        {glaserResult.verdict || "—"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] font-mono text-slate-600 uppercase tracking-wider">
+                        Acumulat anual
+                      </div>
+                      <div className={cn(
+                        "text-sm font-mono font-bold",
+                        glaserResult.hasCondens ? "text-amber-300" : "text-emerald-300"
+                      )}>
+                        {glaserResult.totalCondensYear_kg_m2.toFixed(3)}
+                      </div>
+                      <div className="text-[8px] text-slate-700 font-mono">kg/m²·an</div>
+                    </div>
+                  </div>
+
+                  {/* Bilanț net (winter - summer evap) */}
+                  {glaserResult.hasCondens && (
+                    <div className="mt-2 px-2 py-1 rounded bg-slate-800/40 border border-slate-700/40 flex items-center justify-between text-[9px] font-mono">
+                      <span className="text-slate-500">
+                        Bilanț net (acumulat iarna − evaporat vara):
+                      </span>
+                      <span className={cn(
+                        "font-bold",
+                        glaserResult.balancePerYear_kg_m2 <= 0 ? "text-emerald-300" :
+                          glaserResult.balancePerYear_kg_m2 < 0.5 ? "text-amber-300" : "text-red-300"
+                      )}>
+                        {glaserResult.balancePerYear_kg_m2.toFixed(3)} kg/m²·an
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Notă μ lipsă (lipsă date — calc aproximativ) */}
+                  {element.layers.some(l => !l.mu) && (
+                    <div className="mt-2 px-2 py-1 rounded bg-amber-500/5 border border-amber-700/20 text-[8px] text-amber-200/70 font-mono italic">
+                      ⚠ Unele straturi nu au μ (permeabilitate vapori) definit — calculul Glaser folosește valori implicite. Pentru rezultate precise, completează μ în Editor avansat.
+                    </div>
+                  )}
+
+                  {!selectedClimate?.temp_month && (
+                    <div className="mt-2 px-2 py-1 rounded bg-slate-800/40 border border-slate-700/40 text-[8px] text-slate-600 font-mono italic">
+                      ℹ Folosit climat default Zone II (București). Pentru climat real, completează din Pas 1.
                     </div>
                   )}
                 </div>

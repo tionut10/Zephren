@@ -22,6 +22,8 @@ import {
   LENGTH_RULE_GLOBAL,
   GLOBAL_TB_LEVELS,
   computeGlobalTbLoss,
+  PSI_QUALITY_CLASSES,
+  PSI_SOURCES,
 } from "./utils/bridgesCalc.js";
 
 // ── TechBadge ─────────────────────────────────────────────────────────────────
@@ -100,15 +102,29 @@ export default function WizardBridges({
     const len = parseFloat(length) || 0;
     if (len <= 0) return;
     setQueue(prev => [...prev, {
-      name:    bridge.name,
-      cat:     bridge.cat,
-      psi:     bridge.psi,
-      psiCatalog: bridge.psi, // P2-3: păstrăm valoarea originală pentru detectare outlier
-      length:  len,
-      _key:    `${bridge.name}-${Date.now()}`,
+      name:        bridge.name,
+      cat:         bridge.cat,
+      psi:         bridge.psi,
+      psiCatalog:  bridge.psi, // P2-3: păstrăm valoarea originală pentru detectare outlier
+      length:      len,
+      // P1-8: câmpuri avansate documentare
+      qualityClass: "C",                // default C (ISO 14683 Annex C)
+      psiSource:    "iso_14683_annex_c", // sursa default
+      linkedElement: "",                // ID element opac asociat (umplut later)
+      note:         "",
+      // Sprint 22 #2 — punți punctuale χ × N (legacy)
+      _key:        `${bridge.name}-${Date.now()}`,
     }]);
     setShowCustomLength(null);
   };
+
+  // P1-8: editare câmpuri avansate per punte
+  const updateQueueField = (idx, key, value) => setQueue(prev => {
+    const next = [...prev];
+    next[idx] = { ...next[idx], [key]: value };
+    return next;
+  });
+  const [expandedQueueIdx, setExpandedQueueIdx] = useState(null);
 
   const addWithSuggested  = (bridge)            => addToQueue(bridge, suggestLength(bridge.name, building));
   const removeFromQueue   = (idx)               => setQueue(prev => prev.filter((_, i) => i !== idx));
@@ -601,17 +617,109 @@ export default function WizardBridges({
                           <div className={cn("text-right font-semibold", psiC.text)}>
                             {dH}
                           </div>
-                          <button
-                            onClick={() => removeFromQueue(idx)}
-                            className="text-[8px] w-5 h-5 flex items-center justify-center rounded border border-red-600/30 bg-red-600/5 text-red-400 hover:bg-red-600/20 transition-colors"
-                            aria-label="Elimină"
-                          >✕</button>
+                          <div className="flex flex-col gap-0.5">
+                            {/* P1-8: toggle expand pentru câmpuri avansate */}
+                            <button
+                              onClick={() => setExpandedQueueIdx(expandedQueueIdx === idx ? null : idx)}
+                              className={cn(
+                                "text-[8px] w-5 h-5 flex items-center justify-center rounded border transition-colors",
+                                expandedQueueIdx === idx
+                                  ? "border-violet-600/50 bg-violet-500/10 text-violet-300"
+                                  : "border-slate-700/50 bg-slate-800/30 text-slate-500 hover:border-slate-600"
+                              )}
+                              aria-label="Câmpuri avansate"
+                              title="Detaliu: clasă calitate + sursă + linkare element + notă"
+                            >{expandedQueueIdx === idx ? "−" : "⚙"}</button>
+                            <button
+                              onClick={() => removeFromQueue(idx)}
+                              className="text-[8px] w-5 h-5 flex items-center justify-center rounded border border-red-600/30 bg-red-600/5 text-red-400 hover:bg-red-600/20 transition-colors"
+                              aria-label="Elimină"
+                            >✕</button>
+                          </div>
                         </div>
                         {/* P2-3: warning outlier */}
                         {psiOutlier && (
                           <div className="px-2 pb-1 text-[8px] text-amber-300/80 font-mono italic flex items-center gap-1">
                             <span>⚠</span>
                             <span>ψ diferă cu &gt;{(outlierThreshold * 100).toFixed(0)}% față de catalog ({psiOrig.toFixed(3)}). Verifică sursa.</span>
+                          </div>
+                        )}
+                        {/* P1-8: Câmpuri avansate (expand) */}
+                        {expandedQueueIdx === idx && (
+                          <div className="px-2 pb-2 pt-1 space-y-1.5 border-t border-slate-800/40">
+                            {/* Clasă calitate A/B/C/D */}
+                            <div>
+                              <div className="text-[8px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">
+                                Clasă calitate ψ (ISO 14683 §7.3)
+                              </div>
+                              <div className="grid grid-cols-4 gap-0.5">
+                                {PSI_QUALITY_CLASSES.map(qc => {
+                                  const sel = q.qualityClass === qc.id;
+                                  return (
+                                    <button
+                                      key={qc.id}
+                                      onClick={() => updateQueueField(idx, "qualityClass", qc.id)}
+                                      title={qc.desc}
+                                      className={cn(
+                                        "text-[9px] px-1 py-0.5 rounded border font-mono transition-colors",
+                                        sel
+                                          ? `border-${qc.color}-500/60 bg-${qc.color}-500/10 text-${qc.color}-300`
+                                          : "border-slate-700/50 bg-slate-800/30 text-slate-600 hover:border-slate-600"
+                                      )}
+                                    >
+                                      {qc.id}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {q.qualityClass && (
+                                <div className="text-[7px] text-slate-700 font-mono mt-0.5 italic">
+                                  {PSI_QUALITY_CLASSES.find(c => c.id === q.qualityClass)?.desc}
+                                </div>
+                              )}
+                            </div>
+                            {/* Sursă referință */}
+                            <div>
+                              <div className="text-[8px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">
+                                Sursă referință ψ
+                              </div>
+                              <select
+                                value={q.psiSource || "iso_14683_annex_c"}
+                                onChange={e => updateQueueField(idx, "psiSource", e.target.value)}
+                                className="w-full px-1.5 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50"
+                              >
+                                {PSI_SOURCES.map(s => (
+                                  <option key={s.id} value={s.id}>{s.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Linkare element + Notă */}
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <div>
+                                <div className="text-[8px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">
+                                  Element asociat
+                                </div>
+                                <input
+                                  type="text"
+                                  value={q.linkedElement || ""}
+                                  onChange={e => updateQueueField(idx, "linkedElement", e.target.value)}
+                                  placeholder="ex: PE-N, PT-acoperis"
+                                  className="w-full px-1.5 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50"
+                                />
+                              </div>
+                              <div>
+                                <div className="text-[8px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">
+                                  Notă
+                                </div>
+                                <input
+                                  type="text"
+                                  value={q.note || ""}
+                                  onChange={e => updateQueueField(idx, "note", e.target.value)}
+                                  placeholder="observație"
+                                  className="w-full px-1.5 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-[9px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50"
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>

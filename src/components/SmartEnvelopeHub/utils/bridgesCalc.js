@@ -351,3 +351,60 @@ export function computeGlobalTbLoss(levelId, areaEnvelope) {
     level,
   };
 }
+
+// ── Clase calitate calcul Ψ (ISO 14683:2017 §7.3) ───────────────────────────
+// Folosit pentru documentarea sursei de date — afectează încrederea în Σ(ψ·L).
+// P1-8 fix: introducerea explicită a clasei A/B/C/D în queue.
+export const PSI_QUALITY_CLASSES = [
+  {
+    id: "A",
+    label: "A — Calcul numeric 2D/3D certificat",
+    desc: "THERM, Flixo, Heat3D, Bisco. Marja eroare ±0.005 W/(m·K).",
+    color: "emerald",
+    confidence: "Foarte ridicată",
+  },
+  {
+    id: "B",
+    label: "B — Atlas verificat",
+    desc: "ROCKWOOL, Schöck, NSAI TD, BRE. Calcule certificate per detaliu.",
+    color: "sky",
+    confidence: "Ridicată",
+  },
+  {
+    id: "C",
+    label: "C — Default ISO 14683 Annex C",
+    desc: "Valori conservative (~+50% vs A). Fallback când lipsesc detalii.",
+    color: "amber",
+    confidence: "Medie (conservativ)",
+  },
+  {
+    id: "D",
+    label: "D — Estimare empirică / nevalidată",
+    desc: "Fără sursă citabilă. Pentru audit indicativ, NU pentru certificare.",
+    color: "red",
+    confidence: "Redusă",
+  },
+];
+
+// ── Surse referință acceptate pentru ψ — UI dropdown ────────────────────────
+export const PSI_SOURCES = [
+  { id: "iso_14683_annex_c",  label: "ISO 14683:2017 Annex C (default catalog)" },
+  { id: "atlas_rockwool",     label: "ROCKWOOL Thermal Bridge Atlas" },
+  { id: "atlas_schock",       label: "Schöck Isokorb Catalogue" },
+  { id: "atlas_nsai_td",      label: "NSAI TD (Ireland)" },
+  { id: "atlas_bre",          label: "BRE 497 / BR 443 (UK)" },
+  { id: "calc_2d_therm",      label: "Calcul 2D — THERM/Flixo (proiectant)" },
+  { id: "calc_2d_heat3d",     label: "Calcul 3D — Heat3D / Bisco" },
+  { id: "passivhaus_db",      label: "Passivhaus Institut Component DB" },
+  { id: "experimental",       label: "Măsurare experimentală in situ" },
+  { id: "empiric",            label: "Estimare empirică (audit indicativ)" },
+];
+
+/**
+ * Returnează clasa de calitate per ID.
+ * @param {string} classId - "A" | "B" | "C" | "D"
+ * @returns {object|null}
+ */
+export function getPsiQualityClass(classId) {
+  return PSI_QUALITY_CLASSES.find(c => c.id === classId) || null;
+}
