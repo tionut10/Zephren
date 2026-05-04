@@ -1326,7 +1326,7 @@
     "detail": "Cutia de rulou (tablă λ = 50 W/mK, interior neizolat) în stratul de izolație. Ψ = 0.30 W/mK; cu cutie termoizolată intern (polistiren 20 mm) sau cutie preizolată: Ψ = 0.08 W/mK. Sursă: DIN 4108 Beiblatt 2 Rollladenkasten, C107/3 categoria J."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Tăietură fereastră existentă cu ETICS adăugat (cadru păstrat)",
     "psi": 0.18,
     "psi_izolat": 0.04,
@@ -1334,7 +1334,7 @@
     "detail": "EAE ETICS Guide §4.2 + ISO 14683 Annex C-W4 modificat. Retrofit blocuri Programul Național termoizolare."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Înlocuire fereastră aliniată în plan ETICS",
     "psi": 0.045,
     "psi_izolat": 0.03,
@@ -1342,7 +1342,7 @@
     "detail": "Optim Passivhaus. Necesită flansă consolă cantilever în EPS exterior."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Soclu ETICS la nivel CTS — retur 6-8 cm extrudat",
     "psi": 0.45,
     "psi_izolat": 0.2,
@@ -1350,7 +1350,7 @@
     "detail": "Mc 001-2022 Anexa C §C.4 + EAE."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Soclu ETICS cu izolație XPS continuă perimetru-fundație",
     "psi": 0.24,
     "psi_izolat": 0.15,
@@ -1358,7 +1358,7 @@
     "detail": "EAE + ISO 14683 GF1."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Bordură atic peste terasă cu ETICS și izolație continuă",
     "psi": 0.22,
     "psi_izolat": 0.1,
@@ -1366,7 +1366,7 @@
     "detail": "EAE §6.3 + Passipedia."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Atic vechi netermoizolat cu ETICS doar pe față exterioară",
     "psi": 0.7,
     "psi_izolat": 0.3,
@@ -1374,7 +1374,7 @@
     "detail": "Mc 001-2022 §4.5."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Conexiune balcon existent cu termoizolație ulterioară 360°",
     "psi": 0.5,
     "psi_izolat": 0.25,
@@ -1382,7 +1382,7 @@
     "detail": "EAE + BRE IP 1/06."
   },
   {
-    "cat": "Retrofit ETICS",
+    "cat": "Reabilitare ETICS",
     "name": "Colț extern existent cu ETICS și retur izolație în spaleți",
     "psi": 0.05,
     "psi_izolat": 0.02,
@@ -1390,7 +1390,7 @@
     "detail": "ISO 14683 C1 modificat + EAE."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Fereastră tilt&turn aliniată în plan izolație",
     "psi": 0.03,
     "psi_izolat": 0.02,
@@ -1398,7 +1398,7 @@
     "detail": "Passipedia 'Thermally optimised window installation'. Țintă PHI < 0.04."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Ușă glisantă terasă (lift-and-slide) cu prag termic certificat",
     "psi": 0.085,
     "psi_izolat": 0.05,
@@ -1406,7 +1406,7 @@
     "detail": "Passive House Database + producători generic."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Prag termic ușă intrare cu izolație XPS sub prag",
     "psi": 0.08,
     "psi_izolat": 0.05,
@@ -1414,7 +1414,7 @@
     "detail": "Passipedia + ISO 10211. Critic pentru certificare PH."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Ferestre fixe punctuale în fațadă (oculus/bullseye)",
     "psi": 0.115,
     "psi_izolat": 0.06,
@@ -1422,7 +1422,7 @@
     "detail": "Passive House Database."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Centură planșeu intermediar în izolație continuă ETICS",
     "psi": 0.05,
     "psi_izolat": 0.03,
@@ -1430,7 +1430,7 @@
     "detail": "Passipedia + Mc 001-2022 §C.5. Țintă nZEB."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Glafuri ferestre cu profil termic prefabricat",
     "psi": 0.02,
     "psi_izolat": 0.01,
@@ -1438,7 +1438,7 @@
     "detail": "Passipedia §Window. Adăugat la Ψ instalare cadru."
   },
   {
-    "cat": "Passivhaus / nZEB",
+    "cat": "Pasivhaus / nZEB",
     "name": "Conexiune ușă terasă pivotantă mare (>2.5 m h)",
     "psi": 0.115,
     "psi_izolat": 0.06,
@@ -1446,7 +1446,7 @@
     "detail": "Passive House Database."
   },
   {
-    "cat": "CLT / Mass Timber",
+    "cat": "CLT / Lemn masiv",
     "name": "Juncțiune CLT perete-planșeu T-joint cu izolație fibră lemn 24 cm",
     "psi": 0.035,
     "psi_izolat": 0.02,
@@ -1454,7 +1454,7 @@
     "detail": "Passive House Database 'Holzbau' + SIA 380/1; dataholz.eu."
   },
   {
-    "cat": "CLT / Mass Timber",
+    "cat": "CLT / Lemn masiv",
     "name": "Conexiune CLT perete-acoperiș cu cosoroabă CLT + izolație 30 cm",
     "psi": 0.045,
     "psi_izolat": 0.03,
@@ -1462,7 +1462,7 @@
     "detail": "Passive House Database."
   },
   {
-    "cat": "CLT / Mass Timber",
+    "cat": "CLT / Lemn masiv",
     "name": "Pivot fereastră în perete CLT cu prag montaj exterior",
     "psi": 0.04,
     "psi_izolat": 0.02,
@@ -1470,7 +1470,7 @@
     "detail": "Passipedia 'Timber construction'; dataholz.eu."
   },
   {
-    "cat": "CLT / Mass Timber",
+    "cat": "CLT / Lemn masiv",
     "name": "Colț CLT cu retur izolație fibră lemn 24-32 cm",
     "psi": 0.035,
     "psi_izolat": 0.02,
@@ -1478,7 +1478,7 @@
     "detail": "dataholz.eu catalog liber."
   },
   {
-    "cat": "Sandwich panel",
+    "cat": "Panou sandwich",
     "name": "Îmbinare panouri sandwich PIR/PUR nut-feder cu lambă metalică",
     "psi": 0.035,
     "psi_izolat": 0.02,
@@ -1486,7 +1486,7 @@
     "detail": "EN 14509 + producători generic."
   },
   {
-    "cat": "Sandwich panel",
+    "cat": "Panou sandwich",
     "name": "Colț extern panouri sandwich cu profil colț metalic continuu",
     "psi": 0.25,
     "psi_izolat": 0.15,
@@ -1494,7 +1494,7 @@
     "detail": "ISO 14683 C1 modificat + EN 14509."
   },
   {
-    "cat": "Sandwich panel",
+    "cat": "Panou sandwich",
     "name": "Colț extern sandwich cu retur izolație + profil rupere termică",
     "psi": 0.085,
     "psi_izolat": 0.05,
@@ -1502,7 +1502,7 @@
     "detail": "EN 14509 §Annex."
   },
   {
-    "cat": "Sandwich panel",
+    "cat": "Panou sandwich",
     "name": "Profil colț sandwich + grindă structurală metalică",
     "psi": 0.375,
     "psi_izolat": 0.2,
@@ -1510,7 +1510,7 @@
     "detail": "ISO 14683 P1 modificat."
   },
   {
-    "cat": "Sandwich panel",
+    "cat": "Panou sandwich",
     "name": "Coamă acoperiș sandwich (ridge) cu profil metalic",
     "psi": 0.175,
     "psi_izolat": 0.08,
@@ -1574,7 +1574,7 @@
     "detail": "EAE + ISO 14683 GF modificat."
   },
   {
-    "cat": "Curtain wall",
+    "cat": "Fațadă cortină",
     "name": "Panou spandrel termoizolat cu ramă aluminiu și sticlă opacă",
     "psi": 0.25,
     "psi_izolat": 0.12,
@@ -1582,7 +1582,7 @@
     "detail": "EN 13830 + atlas RT 2012 §6.4."
   },
   {
-    "cat": "Curtain wall",
+    "cat": "Fațadă cortină",
     "name": "Integrare ferestre punctuale în vitraj continuu (opening light)",
     "psi": 0.175,
     "psi_izolat": 0.08,
@@ -1614,7 +1614,7 @@
     "detail": "Atlas RT 2012 §6.5."
   },
   {
-    "cat": "Vernacular RO",
+    "cat": "Tradițional RO",
     "name": "Cosoroabă lemn pe zidărie veche (wallplate 14×14 cm)",
     "psi": 0.4,
     "psi_izolat": 0.2,
@@ -1622,7 +1622,7 @@
     "detail": "Mc 001-2022 §C.5 + atlas RT 2012."
   },
   {
-    "cat": "Vernacular RO",
+    "cat": "Tradițional RO",
     "name": "Soclu de piatră fundație case rurale (50 cm înălțime, fără izolație)",
     "psi": 0.875,
     "psi_izolat": 0.4,
@@ -1630,7 +1630,7 @@
     "detail": "Mc 001-2022 §4.5."
   },
   {
-    "cat": "Vernacular RO",
+    "cat": "Tradițional RO",
     "name": "Buiandrug lemn vechi (12×18 cm fără rupere termică)",
     "psi": 0.225,
     "psi_izolat": 0.1,
