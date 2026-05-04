@@ -223,16 +223,18 @@ export const FUELS = [
     price_lei_kwh:0.40, price_note:"Tarif mediu 2025, subvenționat local" },
 ];
 
-// Factor energie ambientală conform SR EN ISO 52000-1:2017/NA:2023 (Tabel A.16)
-// MDLPA: factor 0 pentru energia ambientală a pompelor de căldură (în loc de 1.0 din Mc001 original)
+// Factor energie ambientală — energie termică a mediului (aerotermală/geotermală/hidrotermală)
+// Sursa autoritară: SR EN ISO 52000-1:2017/NA:2023/C91:2026 Tabel A.16 (erata ASRO 30.04.2026)
+// C91:2026 aliniază Tab A.16 cu Mc001-2022 Tabel 5.17: fP_nren=0,00 fP_ren=1,00 fP_tot=1,00
 export const AMBIENT_ENERGY_FACTOR = {
-  mc001_original: { fP_nren: 1.0, fP_ren: 0.0, fP_tot: 1.0, fCO2: 0.0, label: "Mc001-2022 original (Tabel 5.17)" },
-  na2023:         { fP_nren: 0.0, fP_ren: 0.0, fP_tot: 0.0, fCO2: 0.0, label: "SR EN ISO 52000-1/NA:2023 (Tabel A.16)" },
+  mc001_original: { fP_nren: 1.0, fP_ren: 0.0, fP_tot: 1.0, fCO2: 0.0, label: "Mc001-2022 vechi (Tabel 5.17 — înainte de aliniere)" },
+  na2023:         { fP_nren: 0.0, fP_ren: 1.0, fP_tot: 1.0, fCO2: 0.0, label: "SR EN ISO 52000-1/NA:2023/C91:2026 (Tabel A.16)" },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FACTORI ENERGIE PRIMARĂ — SR EN ISO 52000-1:2017/NA:2023 Tabel A.16
+// FACTORI ENERGIE PRIMARĂ — SR EN ISO 52000-1:2017/NA:2023/C91:2026 Tabel A.16
 // Valori verificate din PDF (Licență ASRO TUNARU IONUȚ, Factură 148552 / 17.04.2026)
+// Erata C91:2026 (ASRO 30.04.2026): energie termică mediu → fP_nren=0,00 fP_ren=1,00 fP_tot=1,00
 // CRITIC: electricitate fP_nren = 2,00 (vs 2,62 în Mc001-2022 Tabel 5.17!)
 // ═══════════════════════════════════════════════════════════════════════════
 export const PE_FACTORS_TAB_A16_NA_2023 = {
@@ -255,11 +257,9 @@ export const PE_FACTORS_TAB_A16_NA_2023 = {
   biocombustibil_lic:{ fP_nren: 0.50, fP_ren: 1.00, fP_tot: 1.50, fCO2: 0.027, label: "Biocombustibil lichid" },
   // Energie termică din surse regenerabile
   solar_termic:      { fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie termică panouri solare termice" },
-  // Energie ambientală (pompă de căldură aerotermal/geotermal/hidrotermal)
-  // fP_nren = 0 și fP_ren = 0 pentru calcul EP (energie recuperată din mediu)
-  // fP_ren = 1,00 pentru CONTORIZARE CA ENERGIE DIN SURSE REGENERABILE (RES)
-  energie_ambientala:{ fP_nren: 0.00, fP_ren: 0.00, fP_tot: 0.00, fCO2: 0.000, label: "Energie termică mediu (aerotermal/geotermal/hidrotermal)" },
-  energie_amb_rer:   { fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie termică mediu — contorizat ca RES" },
+  // Energie ambientală (pompă de căldură aerotermală/geotermală/hidrotermală)
+  // C91:2026 Tab A.16: fP_nren=0,00 fP_ren=1,00 fP_tot=1,00 (RES integral)
+  energie_ambientala:{ fP_nren: 0.00, fP_ren: 1.00, fP_tot: 1.00, fCO2: 0.000, label: "Energie termică mediu (aerotermală/geotermală/hidrotermală) — C91:2026" },
   // Termoficare
   termoficare:       { fP_nren: 0.92, fP_ren: 0.00, fP_tot: 0.92, fCO2: 0.220, label: "Termoficare (cogenerare la distanță)" },
   // ELECTRICITATE — DIFERENȚĂ MAJORĂ față de Mc001 Tabel 5.17!
