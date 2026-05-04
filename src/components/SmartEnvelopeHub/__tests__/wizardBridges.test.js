@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
   MAIN_CATEGORIES,
+  CATEGORY_GROUPS,
   getQuickPicks,
+  getAllInGroup,
+  getGroupedInCategory,
   suggestLength,
+  getLengthRule,
+  LENGTH_RULE_GLOBAL,
 } from "../utils/bridgesCalc.js";
+import THERMAL_BRIDGES_DB from "../../../data/thermal-bridges.json";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Teste unitare — WizardBridges: MAIN_CATEGORIES, getQuickPicks, suggestLength
@@ -205,5 +211,165 @@ describe("suggestLength — lungimi sugerate pe baza geometriei", () => {
   it("returnează string (nu număr) — compatibil cu defaultValue input", () => {
     const val = suggestLength("Colț exterior", building100);
     expect(typeof val).toBe("string");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint Audit Pas 2 (4 mai 2026) — extindere acoperire wizard punți
+// CATEGORY_GROUPS + getAllInGroup + getGroupedInCategory + getLengthRule
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── CATEGORY_GROUPS — 8 grupe acoperă cele 31 sub-categorii reale ────────────
+describe("CATEGORY_GROUPS — structură extinsă", () => {
+  it("conține 8 grupe principale", () => {
+    expect(CATEGORY_GROUPS).toHaveLength(8);
+  });
+
+  it("fiecare grupă are key, icon, label, hint, subCats", () => {
+    CATEGORY_GROUPS.forEach(g => {
+      expect(g).toHaveProperty("key");
+      expect(g).toHaveProperty("icon");
+      expect(g).toHaveProperty("label");
+      expect(g).toHaveProperty("hint");
+      expect(g).toHaveProperty("subCats");
+      expect(Array.isArray(g.subCats)).toBe(true);
+      expect(g.subCats.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("acoperă toate cele 31 sub-categorii din thermal-bridges.json fără duplicate", () => {
+    const allSubCats = CATEGORY_GROUPS.flatMap(g => g.subCats);
+    const uniqueSubCats = new Set(allSubCats);
+    // Fără duplicate între grupe
+    expect(uniqueSubCats.size).toBe(allSubCats.length);
+    // Toate sub-categoriile reale din JSON sunt acoperite
+    const realCats = new Set(THERMAL_BRIDGES_DB.map(b => b.cat));
+    realCats.forEach(cat => {
+      expect(uniqueSubCats.has(cat)).toBe(true);
+    });
+  });
+
+  it("acoperirea totală a punților = 100% (toate cele 204 sunt accesibile)", () => {
+    const allBridgesInGroups = CATEGORY_GROUPS.flatMap(g => getAllInGroup(g.key));
+    expect(allBridgesInGroups.length).toBe(THERMAL_BRIDGES_DB.length);
+  });
+
+  it("grupa 'punctuale' conține EXACT categoria 'Elemente punctuale (chi)'", () => {
+    const punct = CATEGORY_GROUPS.find(g => g.key === "punctuale");
+    expect(punct.subCats).toEqual(["Elemente punctuale (chi)"]);
+  });
+
+  it("grupa 'passivhaus' conține Passivhaus / nZEB", () => {
+    const ph = CATEGORY_GROUPS.find(g => g.key === "passivhaus");
+    expect(ph.subCats).toContain("Passivhaus / nZEB");
+  });
+});
+
+// ── getAllInGroup ────────────────────────────────────────────────────────────
+describe("getAllInGroup — toate punțile dintr-o grupă", () => {
+  it("grupa 'perete' returnează > 50 punți (10 sub-categorii)", () => {
+    const all = getAllInGroup("perete");
+    expect(all.length).toBeGreaterThan(50);
+  });
+
+  it("grupa 'fereastra' returnează ≥ 25 punți (4 sub-categorii)", () => {
+    const all = getAllInGroup("fereastra");
+    expect(all.length).toBeGreaterThanOrEqual(25);
+  });
+
+  it("toate punțile returnate aparțin unei sub-categorii din grupă", () => {
+    const group = CATEGORY_GROUPS.find(g => g.key === "balcon");
+    const all = getAllInGroup("balcon");
+    all.forEach(b => {
+      expect(group.subCats).toContain(b.cat);
+    });
+  });
+
+  it("grupă inexistentă → array gol", () => {
+    expect(getAllInGroup("xxxxx")).toEqual([]);
+  });
+});
+
+// ── getGroupedInCategory ─────────────────────────────────────────────────────
+describe("getGroupedInCategory — grupare pe sub-categorie cu separatori", () => {
+  it("returnează array de { subCat, bridges }", () => {
+    const grouped = getGroupedInCategory("acoperis");
+    expect(Array.isArray(grouped)).toBe(true);
+    grouped.forEach(g => {
+      expect(g).toHaveProperty("subCat");
+      expect(g).toHaveProperty("bridges");
+      expect(Array.isArray(g.bridges)).toBe(true);
+      expect(g.bridges.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("toate bridge-urile au cat = subCat", () => {
+    const grouped = getGroupedInCategory("structura");
+    grouped.forEach(g => {
+      g.bridges.forEach(b => expect(b.cat).toBe(g.subCat));
+    });
+  });
+
+  it("nu returnează sub-categorii cu 0 punți", () => {
+    const grouped = getGroupedInCategory("perete");
+    grouped.forEach(g => expect(g.bridges.length).toBeGreaterThan(0));
+  });
+});
+
+// ── getLengthRule — ghidaj ISO 14683 §5 ──────────────────────────────────────
+describe("getLengthRule — reguli măsurare lungime ISO 14683 §5", () => {
+  it("LENGTH_RULE_GLOBAL menționează DIMENSIUNI EXTERIOARE și ISO 14683", () => {
+    expect(LENGTH_RULE_GLOBAL).toMatch(/EXTERIOARE/);
+    expect(LENGTH_RULE_GLOBAL).toMatch(/ISO 14683/);
+  });
+
+  it("punte 'Colț exterior' → menționează 'EXTERIOARĂ' și 'O SINGURĂ DATĂ'", () => {
+    const rule = getLengthRule("Colț exterior perete-perete");
+    expect(rule).toMatch(/EXTERIOAR/);
+    expect(rule).toMatch(/SINGURĂ DATĂ/);
+  });
+
+  it("punte 'Glaf' → menționează lățime fereastră", () => {
+    const rule = getLengthRule("Glaf fereastră");
+    expect(rule).toMatch(/lățim|fereastr/i);
+  });
+
+  it("punte 'Stâlp' → menționează înălțime", () => {
+    const rule = getLengthRule("Stâlp beton armat");
+    expect(rule).toMatch(/înălțim/i);
+  });
+
+  it("punte 'Consolă balcon' → menționează balcon", () => {
+    const rule = getLengthRule("Consolă balcon");
+    expect(rule).toMatch(/balcon/i);
+  });
+
+  it("punte 'Planșeu intermediar' → menționează perimetru exterior", () => {
+    const rule = getLengthRule("Perete ext. — Planșeu intermediar");
+    expect(rule).toMatch(/perimetr/i);
+    expect(rule).toMatch(/EXTERIOR/i);
+  });
+
+  it("punte necunoscută → fallback la regula globală", () => {
+    const rule = getLengthRule("Punte fictivă XYZ");
+    expect(rule).toBe(LENGTH_RULE_GLOBAL);
+  });
+
+  it("nume nul/undefined → fallback la regula globală", () => {
+    expect(getLengthRule(null)).toBe(LENGTH_RULE_GLOBAL);
+    expect(getLengthRule(undefined)).toBe(LENGTH_RULE_GLOBAL);
+  });
+
+  it("toate regulile menționează 'EXTERIOR' sau 'lungime' (consistență)", () => {
+    const samples = [
+      "Colț exterior", "Glaf fereastră", "Prag ușă", "Consolă balcon",
+      "Stâlp beton", "Grindă perete", "Coamă acoperiș", "Cornișă acoperiș",
+      "Perete ext. — Planșeu intermediar", "Atic terasă", "Soclu fundație",
+    ];
+    samples.forEach(name => {
+      const rule = getLengthRule(name);
+      expect(rule.length).toBeGreaterThan(20); // tooltip non-trivial
+      expect(rule).toMatch(/EXTERIOAR|perimetr|înălțim|lățim|lungim/i);
+    });
   });
 });

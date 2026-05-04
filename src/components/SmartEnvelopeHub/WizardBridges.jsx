@@ -15,9 +15,11 @@ import { cn, Input } from "../ui.jsx";
 import SuggestionPanel from "../SuggestionPanel.jsx";
 import { filterByCategory } from "../../data/suggestions-catalog.js";
 import {
-  MAIN_CATEGORIES,
-  getQuickPicks,
+  CATEGORY_GROUPS,
+  getGroupedInCategory,
   suggestLength,
+  getLengthRule,
+  LENGTH_RULE_GLOBAL,
 } from "./utils/bridgesCalc.js";
 
 // ── TechBadge ─────────────────────────────────────────────────────────────────
@@ -69,11 +71,25 @@ export default function WizardBridges({
   building,
   existingBridges = [],
 }) {
-  const [activeCat, setActiveCat]       = useState("Joncțiuni pereți");
+  const [activeGroup, setActiveGroup]   = useState("perete");
+  const [activeSubCat, setActiveSubCat] = useState("__all__");
   const [queue, setQueue]               = useState([]);
   const [showCustomLength, setShowCustomLength] = useState(null);
 
-  const quickPicks = useMemo(() => getQuickPicks(activeCat), [activeCat]);
+  // Grupare punți pe sub-categorii din grupa activă (CATEGORY_GROUPS)
+  const groupedPicks = useMemo(() => getGroupedInCategory(activeGroup), [activeGroup]);
+  const totalInGroup = useMemo(
+    () => groupedPicks.reduce((sum, g) => sum + g.bridges.length, 0),
+    [groupedPicks]
+  );
+
+  // Filtrare per sub-categorie (sau toate)
+  const visibleGroups = useMemo(() => {
+    if (activeSubCat === "__all__") return groupedPicks;
+    return groupedPicks.filter(g => g.subCat === activeSubCat);
+  }, [groupedPicks, activeSubCat]);
+
+  const activeGroupMeta = CATEGORY_GROUPS.find(g => g.key === activeGroup);
 
   const addToQueue = (bridge, length) => {
     const len = parseFloat(length) || 0;
@@ -162,14 +178,22 @@ export default function WizardBridges({
           >✕</button>
         </div>
 
-        {/* ── Notă normativă ──────────────────────────────────────────────── */}
-        <div className="px-5 pt-3">
+        {/* ── Notă normativă + ghidaj lungime ISO 14683 §5 ──────────────── */}
+        <div className="px-5 pt-3 space-y-2">
           <div className="flex items-center gap-2 p-2.5 rounded border border-slate-800/80 bg-slate-800/20 text-[10px] text-slate-500">
             <span className="font-mono text-amber-500/80 text-xs">ψ</span>
             <span>
               Coeficientul liniar ψ [W/(m·K)] per ISO 14683. Pierdere suplimentară:
               <span className="font-mono text-slate-400 mx-1">ΔH_TB = ψ × L [W/K]</span>
               se adaugă la pierderea globală a anvelopei.
+            </span>
+          </div>
+          {/* P0 fix: banner permanent reguli măsurare lungime */}
+          <div className="flex items-start gap-2 p-2.5 rounded border border-amber-700/30 bg-amber-500/5 text-[10px] text-amber-200/80">
+            <span className="font-mono text-amber-400 text-sm shrink-0">📏</span>
+            <span className="leading-relaxed">
+              <span className="font-semibold text-amber-300">Reguli măsurare lungime:</span>{" "}
+              {LENGTH_RULE_GLOBAL}
             </span>
           </div>
         </div>
@@ -180,129 +204,197 @@ export default function WizardBridges({
           {/* ── Coloana stângă: categorii + quick-picks ───────────────────── */}
           <div className="space-y-3 md:pr-4 md:border-r md:border-slate-800/60">
 
-            {/* Category tabs */}
+            {/* Tab-uri grupe principale (8 grupe acoperă 31 sub-categorii) */}
             <div>
-              <div className="text-[9px] text-slate-500 uppercase tracking-widest font-mono mb-2">
-                Categorii punți termice · ISO 14683 Anexa B
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                  Categorii punți termice · ISO 14683 Anexa B
+                </span>
+                <span className="text-[8px] text-slate-700 font-mono">
+                  {totalInGroup} punți în grupă
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {MAIN_CATEGORIES.map(cat => (
+                {CATEGORY_GROUPS.map(g => (
                   <button
-                    key={cat.id}
-                    onClick={() => setActiveCat(cat.id)}
+                    key={g.key}
+                    onClick={() => { setActiveGroup(g.key); setActiveSubCat("__all__"); }}
                     className={cn(
                       "flex items-center gap-1.5 px-2 py-1.5 rounded border text-[10px] transition-all",
-                      activeCat === cat.id
+                      activeGroup === g.key
                         ? "border-amber-600/50 bg-amber-500/10 text-amber-300"
                         : "border-slate-700/50 bg-slate-800/20 hover:border-slate-600 text-slate-500"
                     )}
                   >
-                    <span>{cat.icon}</span>
-                    <span className="font-medium">{cat.label}</span>
+                    <span>{g.icon}</span>
+                    <span className="font-medium">{g.label}</span>
                   </button>
                 ))}
               </div>
-              {MAIN_CATEGORIES.find(c => c.id === activeCat)?.hint && (
+              {activeGroupMeta?.hint && (
                 <div className="text-[9px] text-slate-700 font-mono mt-1.5 italic px-1">
-                  {MAIN_CATEGORIES.find(c => c.id === activeCat).hint}
+                  {activeGroupMeta.hint}
                 </div>
               )}
             </div>
 
-            {/* Header coloană quick-picks */}
+            {/* Sub-categorii filtru (chips) — afișate doar dacă grupa are >1 sub-cat */}
+            {groupedPicks.length > 1 && (
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => setActiveSubCat("__all__")}
+                  className={cn(
+                    "px-2 py-0.5 rounded border text-[9px] font-mono transition-all",
+                    activeSubCat === "__all__"
+                      ? "border-violet-500/50 bg-violet-500/10 text-violet-300"
+                      : "border-slate-700/50 text-slate-500 hover:border-slate-600"
+                  )}
+                >
+                  toate ({totalInGroup})
+                </button>
+                {groupedPicks.map(g => (
+                  <button
+                    key={g.subCat}
+                    onClick={() => setActiveSubCat(g.subCat)}
+                    className={cn(
+                      "px-2 py-0.5 rounded border text-[9px] font-mono transition-all",
+                      activeSubCat === g.subCat
+                        ? "border-violet-500/50 bg-violet-500/10 text-violet-300"
+                        : "border-slate-700/50 text-slate-500 hover:border-slate-600"
+                    )}
+                  >
+                    {g.subCat} ({g.bridges.length})
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Header coloană */}
             <div className="grid grid-cols-[1fr_64px_80px] gap-2 px-2 py-1 text-[8px] text-slate-600 uppercase tracking-widest font-mono border-b border-slate-800/60">
               <span>Tip punte termică</span>
               <span className="text-right">ψ (W/mK)</span>
               <span className="text-center">Adaugă</span>
             </div>
 
-            {/* Quick-picks list */}
-            <div className="space-y-1.5">
-              {quickPicks.map((bridge, idx) => {
-                const alreadyAdded = queue.filter(q => q.name === bridge.name).length;
-                const isActiveCustom = showCustomLength === idx;
-                const suggested = suggestLength(bridge.name, building);
-                const psiC = getPsiColors(bridge.psi);
+            {/* Listă cu separatori sub-categorie */}
+            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-0.5">
+              {visibleGroups.map(group => (
+                <div key={group.subCat}>
+                  {/* Header sub-categorie (afișat doar când avem >1 sub-cat sau filtru e __all__) */}
+                  {(activeSubCat === "__all__" && groupedPicks.length > 1) && (
+                    <div className="text-[8px] text-slate-500 uppercase tracking-widest font-mono px-1 py-1 border-b border-slate-800/40 mb-1.5 flex items-center justify-between">
+                      <span>{group.subCat}</span>
+                      <span className="text-slate-700 normal-case">{group.bridges.length} {group.bridges.length === 1 ? "punte" : "punți"}</span>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    {group.bridges.map((bridge, idx) => {
+                      const globalKey = `${group.subCat}-${idx}`;
+                      const alreadyAdded = queue.filter(q => q.name === bridge.name).length;
+                      const isActiveCustom = showCustomLength === globalKey;
+                      const suggested = suggestLength(bridge.name, building);
+                      const lengthRule = getLengthRule(bridge.name);
+                      const psiC = getPsiColors(bridge.psi);
 
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "rounded border transition-all",
-                      isActiveCustom ? "border-violet-500/40 bg-violet-500/5" : `${psiC.border} ${psiC.bg}`
-                    )}
-                  >
-                    <div className="grid grid-cols-[1fr_64px_80px] gap-2 items-center px-2 py-2">
-                      {/* Denumire + ψ bar */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span className="text-[11px] font-medium text-slate-200 truncate">{bridge.name}</span>
-                          {alreadyAdded > 0 && (
-                            <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded border border-amber-600/30 bg-amber-500/10 text-amber-300 font-mono">
-                              {alreadyAdded}×
-                            </span>
+                      return (
+                        <div
+                          key={globalKey}
+                          className={cn(
+                            "rounded border transition-all",
+                            isActiveCustom ? "border-violet-500/40 bg-violet-500/5" : `${psiC.border} ${psiC.bg}`
+                          )}
+                        >
+                          <div className="grid grid-cols-[1fr_64px_80px] gap-2 items-center px-2 py-2">
+                            {/* Denumire + ψ bar + tooltip lungime */}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[11px] font-medium text-slate-200 truncate" title={bridge.detail || bridge.desc || ""}>
+                                  {bridge.name}
+                                </span>
+                                {alreadyAdded > 0 && (
+                                  <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded border border-amber-600/30 bg-amber-500/10 text-amber-300 font-mono">
+                                    {alreadyAdded}×
+                                  </span>
+                                )}
+                              </div>
+                              <PsiBar psi={bridge.psi} />
+                            </div>
+
+                            {/* Valoare ψ */}
+                            <div className="text-right">
+                              <div className={cn("text-lg font-bold font-mono", psiC.text)}>
+                                {bridge.psi.toFixed(2)}
+                              </div>
+                              <div className="text-[7px] text-slate-700 font-mono">W/(m·K)</div>
+                            </div>
+
+                            {/* Butoane adăugare */}
+                            <div className="flex flex-col gap-1">
+                              <button
+                                onClick={() => addWithSuggested(bridge)}
+                                className="text-[9px] px-1.5 py-1 rounded border border-emerald-600/30 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 transition-colors font-mono"
+                                title={`Lungime sugerată: ${suggested} m\n${lengthRule}`}
+                              >
+                                ⚡ {suggested}m
+                              </button>
+                              <button
+                                onClick={() => setShowCustomLength(isActiveCustom ? null : globalKey)}
+                                className="text-[9px] px-1.5 py-1 rounded border border-slate-700/50 bg-slate-800/30 text-slate-500 hover:border-slate-600 hover:text-slate-300 transition-colors"
+                                title="Introducere lungime manuală"
+                              >
+                                ✏ manual
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Câmp lungime custom + tooltip regulă măsurare */}
+                          {isActiveCustom && (
+                            <div className="mx-2 mb-2 pt-2 border-t border-slate-800/60 space-y-2">
+                              {/* Tooltip regulă lungime per tip */}
+                              <div className="flex items-start gap-1.5 px-1 py-1 rounded bg-amber-500/5 border border-amber-700/20 text-[9px] text-amber-200/80 leading-snug">
+                                <span className="font-mono text-amber-400 shrink-0">📏</span>
+                                <span>{lengthRule}</span>
+                              </div>
+                              <div className="flex items-end gap-2">
+                                <div className="flex-1">
+                                  <div className="text-[8px] text-slate-600 font-mono mb-0.5 uppercase tracking-wider">
+                                    Lungime [m] · dimensiune EXTERIOARĂ ISO 14683 §5
+                                  </div>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.5"
+                                    defaultValue={suggested}
+                                    id={`bridge-len-${globalKey}`}
+                                    autoFocus
+                                    className="w-full px-2.5 py-1.5 rounded bg-slate-800 border border-slate-700/60 text-[11px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const val = document.getElementById(`bridge-len-${globalKey}`)?.value;
+                                    addToQueue(bridge, val);
+                                  }}
+                                  className="px-3 py-1.5 text-[10px] rounded border border-violet-600/50 bg-violet-600/15 text-violet-300 hover:bg-violet-600/25 font-medium transition-colors"
+                                >+ Adaugă</button>
+                                <button
+                                  onClick={() => setShowCustomLength(null)}
+                                  className="px-2 py-1.5 text-[10px] rounded border border-slate-700/50 text-slate-500 hover:border-slate-600 transition-colors"
+                                >✕</button>
+                              </div>
+                            </div>
                           )}
                         </div>
-                        <PsiBar psi={bridge.psi} />
-                      </div>
-
-                      {/* Valoare ψ */}
-                      <div className="text-right">
-                        <div className={cn("text-lg font-bold font-mono", psiC.text)}>
-                          {bridge.psi.toFixed(2)}
-                        </div>
-                        <div className="text-[7px] text-slate-700 font-mono">W/(m·K)</div>
-                      </div>
-
-                      {/* Butoane adăugare */}
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => addWithSuggested(bridge)}
-                          className="text-[9px] px-1.5 py-1 rounded border border-emerald-600/30 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 transition-colors font-mono"
-                          title={`Lungime sugerată: ${suggested} m`}
-                        >
-                          ⚡ {suggested}m
-                        </button>
-                        <button
-                          onClick={() => setShowCustomLength(isActiveCustom ? null : idx)}
-                          className="text-[9px] px-1.5 py-1 rounded border border-slate-700/50 bg-slate-800/30 text-slate-500 hover:border-slate-600 hover:text-slate-300 transition-colors"
-                        >
-                          ✏ manual
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Câmp lungime custom */}
-                    {isActiveCustom && (
-                      <div className="mx-2 mb-2 pt-2 border-t border-slate-800/60 flex items-end gap-2">
-                        <div className="flex-1">
-                          <div className="text-[8px] text-slate-600 font-mono mb-0.5 uppercase tracking-wider">Lungime (m)</div>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            defaultValue={suggested}
-                            id={`bridge-len-${idx}`}
-                            autoFocus
-                            className="w-full px-2.5 py-1.5 rounded bg-slate-800 border border-slate-700/60 text-[11px] font-mono text-slate-200 focus:outline-none focus:border-violet-500/50"
-                          />
-                        </div>
-                        <button
-                          onClick={() => {
-                            const val = document.getElementById(`bridge-len-${idx}`)?.value;
-                            addToQueue(bridge, val);
-                          }}
-                          className="px-3 py-1.5 text-[10px] rounded border border-violet-600/50 bg-violet-600/15 text-violet-300 hover:bg-violet-600/25 font-medium transition-colors"
-                        >+ Adaugă</button>
-                        <button
-                          onClick={() => setShowCustomLength(null)}
-                          className="px-2 py-1.5 text-[10px] rounded border border-slate-700/50 text-slate-500 hover:border-slate-600 transition-colors"
-                        >✕</button>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
+              {visibleGroups.length === 0 && (
+                <div className="rounded border border-dashed border-slate-800 py-6 text-center text-[10px] text-slate-700 font-mono">
+                  Nicio punte în filtrarea curentă.
+                </div>
+              )}
             </div>
 
             {/* Catalog extins */}

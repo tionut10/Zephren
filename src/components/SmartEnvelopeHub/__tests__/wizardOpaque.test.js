@@ -338,3 +338,98 @@ describe("U_REF_NZEB — valori constante", () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint Audit Pas 2 (4 mai 2026) — Rsi/Rse dinamic per tip element
+// Verifică valorile ISO 6946:2017 Tabel 7 pentru toate cele 16 tipuri
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("Rsi/Rse dinamic per tip element (ISO 6946:2017 Tabel 7)", () => {
+  it("PE (perete exterior): Rsi=0.13, Rse=0.04 — flux orizontal", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PE");
+    expect(t.rsi).toBe(0.13);
+    expect(t.rse).toBe(0.04);
+  });
+
+  it("PT (terasă): Rsi=0.10, Rse=0.04 — flux ascendent", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PT");
+    expect(t.rsi).toBe(0.10);
+    expect(t.rse).toBe(0.04);
+  });
+
+  it("PA (acoperiș înclinat): Rsi=0.10 — flux ascendent", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PA");
+    expect(t.rsi).toBe(0.10);
+  });
+
+  it("PB (peste subsol neîncălzit): Rsi=0.17, Rse=0.17 — flux descendent în spațiu neîncălzit", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PB");
+    expect(t.rsi).toBe(0.17);
+    expect(t.rse).toBe(0.17);
+  });
+
+  it("PP (sub pod neîncălzit): Rsi=0.10 (ascendent), Rse=0.10 (în spațiu neîncălzit)", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PP");
+    expect(t.rsi).toBe(0.10);
+    expect(t.rse).toBe(0.10);
+  });
+
+  it("PL (placă pe sol): Rsi=0.17, Rse=0.0 (sol)", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "PL");
+    expect(t.rsi).toBe(0.17);
+    expect(t.rse).toBe(0.0);
+  });
+
+  it("AT (atic): Rsi=0.10 — element vertical deasupra terasei", () => {
+    const t = ELEMENT_TYPES_WIZARD_FULL.find(e => e.id === "AT");
+    expect(t.rsi).toBe(0.10);
+  });
+
+  it("toate tipurile au Rsi ∈ [0.10, 0.17] (ISO 6946 Tabel 7)", () => {
+    ELEMENT_TYPES_WIZARD_FULL.forEach(t => {
+      expect(t.rsi).toBeGreaterThanOrEqual(0.10);
+      expect(t.rsi).toBeLessThanOrEqual(0.17);
+    });
+  });
+
+  it("toate tipurile au Rse ∈ [0.0, 0.17]", () => {
+    ELEMENT_TYPES_WIZARD_FULL.forEach(t => {
+      expect(t.rse).toBeGreaterThanOrEqual(0.0);
+      expect(t.rse).toBeLessThanOrEqual(0.17);
+    });
+  });
+});
+
+describe("ELEMENT_TYPES_WIZARD_FULL — câmpuri necesare pentru wizard UI", () => {
+  it("toate cele 16 tipuri au icon, label, shortLabel, category, tau, rsi, rse", () => {
+    expect(ELEMENT_TYPES_WIZARD_FULL).toHaveLength(16);
+    ELEMENT_TYPES_WIZARD_FULL.forEach(t => {
+      expect(t).toHaveProperty("id");
+      expect(t).toHaveProperty("icon");
+      expect(t).toHaveProperty("label");
+      expect(t).toHaveProperty("shortLabel");
+      expect(t).toHaveProperty("category");
+      expect(typeof t.tau).toBe("number");
+      expect(typeof t.rsi).toBe("number");
+      expect(typeof t.rse).toBe("number");
+    });
+  });
+
+  it("acoperă 6 categorii (perete, acoperis, planseu, placa, usa, atic)", () => {
+    const cats = new Set(ELEMENT_TYPES_WIZARD_FULL.map(t => t.category));
+    expect(cats.has("perete")).toBe(true);
+    expect(cats.has("acoperis")).toBe(true);
+    expect(cats.has("planseu")).toBe(true);
+    expect(cats.has("placa")).toBe(true);
+    expect(cats.has("usa")).toBe(true);
+    expect(cats.has("atic")).toBe(true);
+  });
+
+  it("PE și PT au shortLabel diferit (compatibil cu UI compactă)", () => {
+    const pe = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === "PE");
+    const pt = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === "PT");
+    expect(pe.shortLabel).toBeTruthy();
+    expect(pt.shortLabel).toBeTruthy();
+    expect(pe.shortLabel).not.toBe(pt.shortLabel);
+  });
+});

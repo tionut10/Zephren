@@ -16,13 +16,24 @@ import { Select, Input, cn } from "../ui.jsx";
 import SuggestionPanel from "../SuggestionPanel.jsx";
 import { suggestForOpaqueElement } from "../../data/suggestions-catalog.js";
 import {
-  ELEMENT_TYPES_WIZARD,
+  ELEMENT_TYPES_WIZARD_FULL,
   LAYER_PRESETS,
   getURefNZEB,
   buildLayerFromMaterialName,
 } from "./utils/wizardOpaqueCalc.js";
 
 const ORIENTATIONS = ["N", "NE", "E", "SE", "S", "SV", "V", "NV", "Orizontal"];
+
+// ── Grupare 16 tipuri pe categorie pentru UI compactă (P0 fix) ───────────────
+// Fiecare grup are titlu + listă tipuri din ELEMENT_TYPES_WIZARD_FULL.
+// `inEnvelope:false` (PI, PI_INTERMED) afișate la final, dezactivate vizual.
+const TYPE_GROUPS = [
+  { key: "perete",   label: "Pereți",         ids: ["PE", "PR", "PS", "AT"] },
+  { key: "acoperis", label: "Acoperișuri",    ids: ["PT", "PA", "PM", "PP", "AC_VERDE"] },
+  { key: "planseu",  label: "Planșee / plăci", ids: ["PL", "PB", "PV"] },
+  { key: "usa",      label: "Uși opace",      ids: ["US", "UN"] },
+  { key: "interior", label: "Interior (informativ — fără calcul anvelopă)", ids: ["PI", "PI_INTERMED"] },
+];
 
 // ── Culori per categorie material ─────────────────────────────────────────────
 function getMatColors(matName = "") {
@@ -95,7 +106,9 @@ function StepIndicator({ current, total, labels, sublabels }) {
 }
 
 // ── LayerStack — secțiune transversală proporțională ─────────────────────────
-function LayerStack({ layers }) {
+// P0 fix: Rsi/Rse dinamic per tip element (ISO 6946:2017 Tabel 7).
+// Default fallback PE (Rsi=0.13, Rse=0.04) dacă nu se primesc props.
+function LayerStack({ layers, rsi = 0.13, rse = 0.04 }) {
   if (!layers.length) return null;
   const totalMm = layers.reduce((s, l) => s + (parseFloat(l.thickness) || 0), 0);
 
@@ -113,7 +126,7 @@ function LayerStack({ layers }) {
         <div className="flex flex-col items-center justify-center w-14 bg-sky-900/30 border-r border-slate-700/40 shrink-0 gap-1">
           <span className="text-sky-400 text-base leading-none">↔</span>
           <span className="text-[10px] text-sky-300 leading-none font-bold">Rse</span>
-          <span className="text-[9px] text-sky-400/70 leading-none">0.04</span>
+          <span className="text-[9px] text-sky-400/70 leading-none">{rse.toFixed(2)}</span>
           <span className="text-[8px] text-sky-500/60 leading-none">m²K/W</span>
         </div>
         {/* Straturi */}
@@ -143,7 +156,7 @@ function LayerStack({ layers }) {
         <div className="flex flex-col items-center justify-center w-14 bg-emerald-900/30 border-l border-slate-700/40 shrink-0 gap-1">
           <span className="text-emerald-400 text-base leading-none">↔</span>
           <span className="text-[10px] text-emerald-300 leading-none font-bold">Rsi</span>
-          <span className="text-[9px] text-emerald-400/70 leading-none">0.13</span>
+          <span className="text-[9px] text-emerald-400/70 leading-none">{rsi.toFixed(2)}</span>
           <span className="text-[8px] text-emerald-500/60 leading-none">m²K/W</span>
         </div>
       </div>
@@ -222,11 +235,16 @@ export default function WizardOpaque({
   const [searchLayerIdx, setSearchLayerIdx]     = useState(null);
 
   useEffect(() => {
-    const elType = ELEMENT_TYPES_WIZARD.find(t => t.id === element.type);
+    const elType = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === element.type);
     if (elType && element.name === "Perete exterior" && element.type !== "PE") {
       setElement(p => ({ ...p, name: elType.label }));
     }
   }, [element.type]);
+
+  // ── P0 fix: Rsi/Rse dinamic din tipul element ────────────────────────────
+  const currentType = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === element.type);
+  const dynRsi = currentType?.rsi ?? 0.13;
+  const dynRse = currentType?.rse ?? 0.04;
 
   const uResult = useMemo(() => {
     if (!calcOpaqueR || !element.layers.length) return null;
@@ -279,7 +297,7 @@ export default function WizardOpaque({
   const handleSave         = () => { if (!canSave) return; onSave?.(element); onClose?.(); };
   const handleOpenAdvanced = () => { onOpenAdvanced?.(element); onClose?.(); };
 
-  const elTypeLabel = ELEMENT_TYPES_WIZARD.find(t => t.id === element.type)?.label || element.type;
+  const elTypeLabel = ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === element.type)?.label || element.type;
 
   const opaqueSuggestions = useMemo(() => {
     if (step !== 3 || !uResult?.u || !uRef || !element.type) return [];
@@ -287,15 +305,16 @@ export default function WizardOpaque({
   }, [step, uResult?.u, uRef, element.type, uStatus]);
 
   // ── Running R total în Pas 2 ──────────────────────────────────────────────
+  // P0 fix: Rsi/Rse dinamic per tip element (ISO 6946:2017 Tabel 7).
   const runningR = useMemo(() => {
-    const rSe = 0.04, rSi = 0.13;
+    const rSe = dynRse, rSi = dynRsi;
     const rLayers = element.layers.reduce((s, l) => {
       const d = parseFloat(l.thickness) || 0, lam = parseFloat(l.lambda) || 0;
       return s + (d > 0 && lam > 0 ? (d / 1000) / lam : 0);
     }, 0);
     const rTotal = rSe + rLayers + rSi;
     return { rSe, rSi, rLayers, rTotal, u: rTotal > 0 ? 1 / rTotal : 0 };
-  }, [element.layers]);
+  }, [element.layers, dynRsi, dynRse]);
 
   return (
     <div
@@ -352,41 +371,79 @@ export default function WizardOpaque({
                 <span>Selectează tipul elementului opac și parametrii geometrici de intrare.</span>
               </div>
 
-              {/* Tip element */}
+              {/* Tip element — 16 tipuri grupate pe categorii (P0 fix) ─────────── */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Tip element opac</span>
+                  <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+                    Tip element opac · {ELEMENT_TYPES_WIZARD_FULL.length} tipuri
+                  </span>
                   <TechBadge label="Mc 001-2022 §5" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                  {ELEMENT_TYPES_WIZARD.map(t => {
-                    const uR = getURefNZEB(buildingCategory, t.id);
+                <div className="space-y-2">
+                  {TYPE_GROUPS.map(group => {
+                    const types = group.ids
+                      .map(id => ELEMENT_TYPES_WIZARD_FULL.find(t => t.id === id))
+                      .filter(Boolean);
+                    if (!types.length) return null;
+                    const isInfo = group.key === "interior";
                     return (
-                      <button
-                        key={t.id}
-                        onClick={() => setElement(p => ({ ...p, type: t.id, layers: [] }))}
-                        className={cn(
-                          "flex flex-col items-center gap-1 p-2.5 rounded border-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50",
-                          element.type === t.id
-                            ? "border-violet-500/70 bg-violet-500/8 text-violet-200"
-                            : "border-slate-700/50 bg-slate-800/30 hover:border-slate-600 text-slate-400"
-                        )}
-                      >
-                        <span className="text-xl">{t.icon}</span>
-                        <span className="text-[9px] font-medium text-center leading-tight">{t.label}</span>
-                        {uR && (
-                          <span className="text-[8px] font-mono text-slate-600 mt-0.5">U≤{uR.toFixed(2)}</span>
-                        )}
-                        <span className={cn(
-                          "text-[8px] font-mono px-1 py-0 rounded border mt-0.5",
-                          element.type === t.id
-                            ? "border-violet-700/60 text-violet-400/80 bg-violet-500/10"
-                            : "border-slate-700/60 text-slate-600"
-                        )}>{t.id}</span>
-                      </button>
+                      <div key={group.key}>
+                        <div className={cn(
+                          "text-[8px] uppercase tracking-widest font-mono mb-1 px-0.5",
+                          isInfo ? "text-slate-600 italic" : "text-slate-500"
+                        )}>
+                          {group.label}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                          {types.map(t => {
+                            const uR = getURefNZEB(buildingCategory, t.id);
+                            const selected = element.type === t.id;
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => setElement(p => ({ ...p, type: t.id, layers: [] }))}
+                                title={t.description || t.label}
+                                className={cn(
+                                  "flex flex-col items-center gap-1 p-2 rounded border-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50",
+                                  selected
+                                    ? "border-violet-500/70 bg-violet-500/8 text-violet-200"
+                                    : isInfo
+                                      ? "border-slate-800/60 bg-slate-800/20 hover:border-slate-700 text-slate-600 opacity-70"
+                                      : "border-slate-700/50 bg-slate-800/30 hover:border-slate-600 text-slate-400"
+                                )}
+                              >
+                                <span className="text-lg">{t.icon}</span>
+                                <span className="text-[9px] font-medium text-center leading-tight line-clamp-2">{t.shortLabel || t.label}</span>
+                                {uR ? (
+                                  <span className="text-[8px] font-mono text-slate-600 leading-none">U≤{uR.toFixed(2)}</span>
+                                ) : (
+                                  <span className="text-[8px] font-mono text-slate-700 leading-none italic">—</span>
+                                )}
+                                <span className={cn(
+                                  "text-[8px] font-mono px-1 py-0 rounded border leading-tight",
+                                  selected
+                                    ? "border-violet-700/60 text-violet-400/80 bg-violet-500/10"
+                                    : "border-slate-700/60 text-slate-600"
+                                )}>{t.id}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
+                {/* Info Rsi/Rse dinamic per tip selectat */}
+                {currentType && (
+                  <div className="mt-2 px-3 py-1.5 rounded border border-slate-800/60 bg-slate-800/20 text-[9px] font-mono text-slate-500 flex items-center justify-between">
+                    <span>
+                      <span className="text-violet-400/80">{currentType.id}</span> · {currentType.label}
+                    </span>
+                    <span className="text-slate-600">
+                      Rsi=<span className="text-emerald-400/80">{dynRsi.toFixed(2)}</span> · Rse=<span className="text-sky-400/80">{dynRse.toFixed(2)}</span> m²K/W
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Parametri geometrici */}
@@ -462,7 +519,7 @@ export default function WizardOpaque({
               </div>
 
               {/* Diagramă secțiune transversală */}
-              <LayerStack layers={element.layers} />
+              <LayerStack layers={element.layers} rsi={dynRsi} rse={dynRse} />
 
               {/* Tabel straturi */}
               {element.layers.length === 0 ? (
@@ -606,11 +663,11 @@ export default function WizardOpaque({
                     })}
                   </div>
 
-                  {/* Running R total */}
+                  {/* Running R total — Rsi/Rse dinamic per tip element */}
                   {element.layers.length > 0 && (
                     <div className="mt-2 px-3 py-1.5 rounded border border-slate-700/40 bg-slate-800/30 flex items-center justify-between text-[9px] font-mono">
                       <span className="text-slate-600">
-                        R<sub>se</sub>(0.040) + Σ({runningR.rLayers.toFixed(3)}) + R<sub>si</sub>(0.130)
+                        R<sub>se</sub>({dynRse.toFixed(3)}) + Σ({runningR.rLayers.toFixed(3)}) + R<sub>si</sub>({dynRsi.toFixed(3)})
                       </span>
                       <span className="text-violet-400/80 font-semibold">
                         R = {runningR.rTotal.toFixed(3)} m²K/W → U ≈ {runningR.u.toFixed(3)} W/(m²·K)
@@ -686,14 +743,14 @@ export default function WizardOpaque({
                     <span className="text-right">%R</span>
                   </div>
 
-                  {/* Rse */}
+                  {/* Rse — dinamic per tip element */}
                   <div className="grid grid-cols-[1fr_52px_52px_64px_52px] gap-1 px-3 py-1 bg-sky-900/10 border-b border-slate-800/40 text-[10px] font-mono">
                     <span className="text-sky-400/50 italic">R_se — suprafață ext.</span>
                     <span className="text-right text-slate-700">—</span>
                     <span className="text-right text-slate-700">—</span>
-                    <span className="text-right text-sky-400/60">0.040</span>
+                    <span className="text-right text-sky-400/60">{dynRse.toFixed(3)}</span>
                     <span className="text-right text-slate-700">
-                      {uResult?.r_total ? `${((0.04 / uResult.r_total) * 100).toFixed(1)}%` : "—"}
+                      {uResult?.r_total ? `${((dynRse / uResult.r_total) * 100).toFixed(1)}%` : "—"}
                     </span>
                   </div>
 
@@ -718,14 +775,14 @@ export default function WizardOpaque({
                     );
                   })}
 
-                  {/* Rsi */}
+                  {/* Rsi — dinamic per tip element */}
                   <div className="grid grid-cols-[1fr_52px_52px_64px_52px] gap-1 px-3 py-1 bg-emerald-900/10 border-b border-slate-800/40 text-[10px] font-mono">
                     <span className="text-emerald-400/50 italic">R_si — suprafață int.</span>
                     <span className="text-right text-slate-700">—</span>
                     <span className="text-right text-slate-700">—</span>
-                    <span className="text-right text-emerald-400/60">0.130</span>
+                    <span className="text-right text-emerald-400/60">{dynRsi.toFixed(3)}</span>
                     <span className="text-right text-slate-700">
-                      {uResult?.r_total ? `${((0.13 / uResult.r_total) * 100).toFixed(1)}%` : "—"}
+                      {uResult?.r_total ? `${((dynRsi / uResult.r_total) * 100).toFixed(1)}%` : "—"}
                     </span>
                   </div>
 
