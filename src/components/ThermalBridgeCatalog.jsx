@@ -20,31 +20,107 @@ import {
 } from "../calc/thermal-bridges-layers.js";
 import CustomLayersBuilder from "./thermal-bridges/CustomLayersBuilder.jsx";
 
-// ── Mapping emoji per categorie ──────────────────────────────────────────────
-const CAT_ICONS = {
-  "Joncțiuni pereți": "🧱",
-  "Ferestre": "🪟",
-  "Balcoane": "🏗️",
-  "Acoperiș": "🏠",
-  "Stâlpi/grinzi": "🔩",
-  "Instalații": "⚙️",
-  "Fundații și subsol": "🧱",
-  "Structuri din lemn": "🪵",
-  "Structuri prefabricate": "🏭",
-  "Fațade și ferestre avansate": "🏢",
-  "Acoperiș avansat": "🏘️",
-  "Balcoane avansate": "🏛️",
-  "Sisteme ETICS": "🧊",
-  "Elemente punctuale (chi)": "📍",
-  "Instalații avansate": "🔧",
-  "Joncțiuni pereți – tipuri speciale": "🧱",
-  "Ferestre și uși – tipuri speciale": "🚪",
-  "Balcoane și logii – tipuri speciale": "🏛️",
-  "Acoperiș – tipuri speciale": "🏠",
-  "Structuri speciale": "🔩",
-  "Instalații – tipuri speciale": "⚙️",
-  "Joncțiuni speciale": "✨",
-};
+// ── SVG icon specific per categorie de punte termică ─────────────────────────
+function CatIcon({ cat, size = 16 }) {
+  const p = { width: size, height: size, viewBox: "0 0 16 16", fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { flexShrink: 0 } };
+  switch (cat) {
+    case "Joncțiuni pereți":
+      // Colț L — două pereți care se întâlnesc
+      return <svg {...p}><path d="M3 13V3H13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+    case "Ferestre":
+      // Tâmplărie — cadru cu 4 ochiuri
+      return <svg {...p}><rect x="2" y="2" width="12" height="12" rx="0.5" stroke="currentColor" strokeWidth="1.5"/><line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="1"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1"/></svg>;
+    case "Balcoane":
+      // Consolă planșeu — ieșire laterală
+      return <svg {...p}><rect x="1" y="6" width="6" height="4" fill="currentColor" opacity="0.9"/><rect x="7" y="6" width="6" height="4" fill="currentColor" opacity="0.3"/><rect x="1" y="2" width="2.5" height="12" fill="currentColor" opacity="0.55"/></svg>;
+    case "Acoperiș":
+      // Triunghi acoperiș simplu cu perete
+      return <svg {...p}><polyline points="1,11 8,3 15,11" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="3" y1="11" x2="13" y2="11" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "Stâlpi/grinzi":
+      // Profil I — grindă metalică sau BA
+      return <svg {...p}><rect x="2" y="1" width="12" height="2.5" fill="currentColor"/><rect x="6.5" y="3.5" width="3" height="9" fill="currentColor"/><rect x="2" y="12.5" width="12" height="2.5" fill="currentColor"/></svg>;
+    case "Instalații":
+      // Conductă circulară prin perete
+      return <svg {...p}><rect x="1" y="5" width="4" height="6" fill="currentColor" opacity="0.45"/><rect x="11" y="5" width="4" height="6" fill="currentColor" opacity="0.45"/><circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="1.5" fill="currentColor" opacity="0.4"/></svg>;
+    case "Fundații și subsol":
+      // Fundație T cu sol
+      return <svg {...p}><rect x="1" y="9" width="14" height="3" fill="currentColor"/><rect x="5.5" y="4" width="5" height="5" fill="currentColor" opacity="0.7"/><line x1="1" y1="12.5" x2="15" y2="12.5" stroke="currentColor" strokeWidth="1" opacity="0.35"/><line x1="3" y1="14" x2="13" y2="14" stroke="currentColor" strokeWidth="0.8" opacity="0.25"/></svg>;
+    case "Structuri din lemn":
+      // Cadru din lemn — 4 secțiuni pătrate
+      return <svg {...p}><rect x="2" y="2" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="2" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "Structuri prefabricate":
+      // Panouri prefabricate cu rosturi verticale
+      return <svg {...p}><rect x="1" y="3" width="6" height="10" stroke="currentColor" strokeWidth="1.5"/><rect x="9" y="3" width="6" height="10" stroke="currentColor" strokeWidth="1.5"/><path d="M7 6H9M7 8H9M7 10H9" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "Fațade și ferestre avansate":
+      // Grilă curtain wall
+      return <svg {...p}><rect x="1" y="1" width="14" height="14" stroke="currentColor" strokeWidth="1.2"/><line x1="6" y1="1" x2="6" y2="15" stroke="currentColor" strokeWidth="0.8"/><line x1="10" y1="1" x2="10" y2="15" stroke="currentColor" strokeWidth="0.8"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="0.8"/><line x1="1" y1="10" x2="15" y2="10" stroke="currentColor" strokeWidth="0.8"/></svg>;
+    case "Acoperiș avansat":
+      // Acoperiș cu straturi și parapet
+      return <svg {...p}><polyline points="1,10 8,3 15,10" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M3,10 L3,13 L13,13 L13,10" stroke="currentColor" strokeWidth="1.5"/><line x1="3" y1="11.5" x2="13" y2="11.5" stroke="currentColor" strokeWidth="0.8" opacity="0.55"/></svg>;
+    case "Balcoane avansate":
+      // Balcon cu ruptor termic (linie întreruptă la mijloc)
+      return <svg {...p}><rect x="1" y="6" width="5" height="4" fill="currentColor" opacity="0.9"/><path d="M6,6.5 L6,10.5" stroke="currentColor" strokeWidth="1.8" strokeDasharray="1.5,1"/><rect x="8" y="6" width="7" height="4" fill="currentColor" opacity="0.3"/><rect x="1" y="2" width="2" height="12" fill="currentColor" opacity="0.5"/></svg>;
+    case "Sisteme ETICS":
+      // Secțiune perete ETICS — 4 straturi vizibile
+      return <svg {...p}><rect x="1" y="2" width="3" height="12" fill="currentColor" opacity="0.85"/><rect x="4" y="2" width="5" height="12" fill="currentColor" opacity="0.3"/><rect x="9" y="2" width="2" height="12" fill="currentColor" opacity="0.6"/><rect x="11" y="3" width="4" height="10" stroke="currentColor" strokeWidth="1"/></svg>;
+    case "Elemente punctuale (chi)":
+      // Punct central cu 4 raze (chi = element punctual)
+      return <svg {...p}><circle cx="8" cy="8" r="2.5" fill="currentColor"/><line x1="8" y1="1.5" x2="8" y2="5.5" stroke="currentColor" strokeWidth="1.3"/><line x1="8" y1="10.5" x2="8" y2="14.5" stroke="currentColor" strokeWidth="1.3"/><line x1="1.5" y1="8" x2="5.5" y2="8" stroke="currentColor" strokeWidth="1.3"/><line x1="10.5" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.3"/></svg>;
+    case "Instalații avansate":
+      // Secțiune conductă dreptunghiulară cu interior
+      return <svg {...p}><rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.2"/><line x1="6" y1="4" x2="6" y2="12" stroke="currentColor" strokeWidth="0.7" opacity="0.45"/><line x1="10" y1="4" x2="10" y2="12" stroke="currentColor" strokeWidth="0.7" opacity="0.45"/></svg>;
+    case "Joncțiuni pereți – tipuri speciale":
+      // Colț L cu marcaj cerc (special)
+      return <svg {...p}><path d="M3 12V4H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><circle cx="13" cy="4" r="2.5" fill="currentColor" opacity="0.8"/></svg>;
+    case "Ferestre și uși – tipuri speciale":
+      // Ușă + fereastră combinată
+      return <svg {...p}><rect x="2" y="2" width="8" height="13" rx="0.5" stroke="currentColor" strokeWidth="1.5"/><path d="M10 5L14 5L14 15L10 15" stroke="currentColor" strokeWidth="1" opacity="0.5"/><circle cx="9.5" cy="8.5" r="0.9" fill="currentColor"/></svg>;
+    case "Balcoane și logii – tipuri speciale":
+      // Loggie — recesă cu 4 lame
+      return <svg {...p}><rect x="1" y="2" width="14" height="3.5" fill="currentColor" opacity="0.6"/><rect x="1" y="10.5" width="14" height="3.5" fill="currentColor" opacity="0.6"/><rect x="1" y="5.5" width="3" height="5" fill="currentColor" opacity="0.6"/><rect x="12" y="5.5" width="3" height="5" fill="currentColor" opacity="0.6"/></svg>;
+    case "Acoperiș – tipuri speciale":
+      // Acoperiș mansardă — linie frântă
+      return <svg {...p}><polyline points="1,13 4,7 8,4 12,7 15,13" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="3" y1="13" x2="13" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "Structuri speciale":
+      // Fermă triunghiulară
+      return <svg {...p}><rect x="1" y="12" width="14" height="2.5" fill="currentColor"/><polygon points="8,2 1,12 15,12" stroke="currentColor" strokeWidth="1.5" fill="none"/><line x1="8" y1="2" x2="8" y2="12" stroke="currentColor" strokeWidth="1"/></svg>;
+    case "Instalații – tipuri speciale":
+      // Trei conducte de dimensiuni diferite
+      return <svg {...p}><circle cx="5.5" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="11.5" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.2"/><circle cx="11.5" cy="11" r="2" stroke="currentColor" strokeWidth="1.2"/></svg>;
+    case "Joncțiuni speciale":
+      // Asterisk 8 brațe — joncțiune complexă
+      return <svg {...p}><circle cx="8" cy="8" r="2" fill="currentColor"/><line x1="8" y1="1.5" x2="8" y2="6" stroke="currentColor" strokeWidth="1.4"/><line x1="8" y1="10" x2="8" y2="14.5" stroke="currentColor" strokeWidth="1.4"/><line x1="1.5" y1="8" x2="6" y2="8" stroke="currentColor" strokeWidth="1.4"/><line x1="10" y1="8" x2="14.5" y2="8" stroke="currentColor" strokeWidth="1.4"/><line x1="3.3" y1="3.3" x2="6.3" y2="6.3" stroke="currentColor" strokeWidth="1.1"/><line x1="9.7" y1="9.7" x2="12.7" y2="12.7" stroke="currentColor" strokeWidth="1.1"/><line x1="12.7" y1="3.3" x2="9.7" y2="6.3" stroke="currentColor" strokeWidth="1.1"/><line x1="6.3" y1="9.7" x2="3.3" y2="12.7" stroke="currentColor" strokeWidth="1.1"/></svg>;
+    case "Retrofit ETICS":
+      // Straturi cu săgeată adăugare
+      return <svg {...p}><rect x="1" y="4" width="4" height="8" fill="currentColor" opacity="0.8"/><rect x="5" y="4" width="4" height="8" fill="currentColor" opacity="0.35"/><rect x="9" y="4" width="2" height="8" fill="currentColor" opacity="0.6"/><path d="M12 6L15 8L12 10" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>;
+    case "Passivhaus / nZEB":
+      // Casă cu simbol + (plus → nZEB)
+      return <svg {...p}><polyline points="1,9 8,2 15,9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><rect x="3.5" y="9" width="9" height="6" stroke="currentColor" strokeWidth="1.2"/><line x1="8" y1="10.5" x2="8" y2="13.5" stroke="currentColor" strokeWidth="1.5"/><line x1="6.5" y1="12" x2="9.5" y2="12" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "CLT / Mass Timber":
+      // Straturi lemn încrucișat CLT
+      return <svg {...p}><rect x="1" y="2" width="14" height="3" fill="currentColor" opacity="0.85"/><line x1="1" y1="5" x2="15" y2="5" stroke="currentColor" strokeWidth="0.5"/><rect x="1" y="5" width="14" height="3" fill="currentColor" opacity="0.45"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="0.5"/><rect x="1" y="8" width="14" height="3" fill="currentColor" opacity="0.85"/><line x1="1" y1="11" x2="15" y2="11" stroke="currentColor" strokeWidth="0.5"/><rect x="1" y="11" width="14" height="3" fill="currentColor" opacity="0.45"/></svg>;
+    case "Sandwich panel":
+      // Panou sandwich — 2 fețe + miez
+      return <svg {...p}><rect x="1" y="3" width="3" height="10" fill="currentColor" opacity="0.9"/><rect x="4" y="3" width="8" height="10" fill="currentColor" opacity="0.2"/><rect x="12" y="3" width="3" height="10" fill="currentColor" opacity="0.9"/><line x1="4" y1="5" x2="12" y2="5" stroke="currentColor" strokeWidth="0.5" opacity="0.4"/><line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" strokeWidth="0.5" opacity="0.4"/><line x1="4" y1="11" x2="12" y2="11" stroke="currentColor" strokeWidth="0.5" opacity="0.4"/></svg>;
+    case "Balcoane moderne":
+      // Balcon modern cu ruptor termic explicit
+      return <svg {...p}><rect x="1" y="6" width="5" height="4" fill="currentColor"/><path d="M6,6.5 L6,10.5" stroke="currentColor" strokeWidth="2" strokeDasharray="1.5,0.8"/><rect x="8" y="6" width="7" height="4" fill="currentColor" opacity="0.35"/><rect x="1" y="2" width="2.5" height="12" fill="currentColor" opacity="0.55"/></svg>;
+    case "Fundații moderne":
+      // Fundație pe piloți
+      return <svg {...p}><rect x="2" y="2" width="12" height="3.5" fill="currentColor" opacity="0.7"/><rect x="4.5" y="5.5" width="2.5" height="7" fill="currentColor" opacity="0.8"/><rect x="9" y="5.5" width="2.5" height="7" fill="currentColor" opacity="0.8"/><path d="M4.5 12.5L4.5 14.5" stroke="currentColor" strokeWidth="1.5"/><path d="M9 12.5L9 14.5" stroke="currentColor" strokeWidth="1.5"/><path d="M11.5 12.5L11.5 14.5" stroke="currentColor" strokeWidth="1.5"/></svg>;
+    case "Curtain wall":
+      // Fațadă cortină — grila verticală accentuată
+      return <svg {...p}><rect x="2" y="1" width="12" height="14" stroke="currentColor" strokeWidth="1.2"/><line x1="7" y1="1" x2="7" y2="15" stroke="currentColor" strokeWidth="1.6"/><line x1="11" y1="1" x2="11" y2="15" stroke="currentColor" strokeWidth="0.8"/><line x1="2" y1="5" x2="14" y2="5" stroke="currentColor" strokeWidth="0.8"/><line x1="2" y1="8.5" x2="14" y2="8.5" stroke="currentColor" strokeWidth="0.8"/><line x1="2" y1="12" x2="14" y2="12" stroke="currentColor" strokeWidth="0.8"/></svg>;
+    case "Acoperiș complex":
+      // Acoperiș cu mai multe straturi vizibile
+      return <svg {...p}><polyline points="1,9 8,2 15,9" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="2.5" y1="9" x2="13.5" y2="9" stroke="currentColor" strokeWidth="1.5"/><line x1="3.5" y1="10.5" x2="12.5" y2="10.5" stroke="currentColor" strokeWidth="1"/><line x1="4.5" y1="12" x2="11.5" y2="12" stroke="currentColor" strokeWidth="0.8" opacity="0.55"/></svg>;
+    case "Vernacular RO":
+      // Casă tradițională românească — acoperiș înalt cu ușiță
+      return <svg {...p}><polyline points="1,10 8,2 15,10" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><rect x="3" y="10" width="10" height="5" stroke="currentColor" strokeWidth="1.2"/><rect x="6.5" y="11.5" width="3" height="3.5" fill="currentColor" opacity="0.5"/></svg>;
+    default:
+      return <svg {...p}><path d="M2 4h4l2 2h6v8H2V4z" stroke="currentColor" strokeWidth="1.2"/></svg>;
+  }
+}
 
 const ISO_CLASS_COLOR = {
   A: { bg: "rgba(16,185,129,0.15)", fg: "#34d399", border: "rgba(16,185,129,0.35)" },
@@ -146,7 +222,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
               cursor: "pointer", fontSize: 13, fontWeight: 500, minWidth: 240
             }}
           >
-            <span style={{ fontSize: 16 }}>{CAT_ICONS[selectedCat] || "📁"}</span>
+            <CatIcon cat={selectedCat} size={16} />
             <span style={{ flex: 1, textAlign: "left" }}>{selectedCat}</span>
             <span style={{ opacity: 0.5, fontSize: 11 }}>({activeCat?.count || 0})</span>
             <span style={{ fontSize: 10, opacity: 0.6, transition: "transform 0.15s", transform: pickerOpen ? "rotate(180deg)" : "none" }}>▾</span>
@@ -207,7 +283,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                       onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                     >
-                      <span style={{ fontSize: 14 }}>{CAT_ICONS[cat] || "📁"}</span>
+                      <CatIcon cat={cat} size={14} />
                       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat}</span>
                       <span style={{ fontSize: 10, opacity: 0.5, fontFamily: "monospace" }}>{count}</span>
                     </button>
@@ -291,7 +367,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                           </div>
                         </div>
                         <div style={{ fontSize: 10, opacity: 0.45, marginTop: 2 }}>
-                          {search && <span style={{ opacity: 0.7, marginRight: 6 }}>{CAT_ICONS[bridge.cat]} {bridge.cat} · </span>}
+                          {search && <span style={{ opacity: 0.7, marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 }}><CatIcon cat={bridge.cat} size={12} /> {bridge.cat} · </span>}
                           {bridge.desc}
                         </div>
                       </div>
