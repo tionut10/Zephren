@@ -81,8 +81,8 @@ describe("ELEMENT_TYPES_WIZARD_FULL — catalog complet 16 tipuri", () => {
 
 // ── TYPICAL_SOLUTIONS — catalog NEUTRU ────────────────────────────────────────
 describe("TYPICAL_SOLUTIONS — catalog neutru", () => {
-  it("conține minim 70 soluții", () => {
-    expect(TYPICAL_SOLUTIONS.length).toBeGreaterThanOrEqual(70);
+  it("conține minim 80 soluții (Sprint Batch B 4 mai 2026: +9 → 82)", () => {
+    expect(TYPICAL_SOLUTIONS.length).toBeGreaterThanOrEqual(80);
   });
 
   it("toate soluțiile au câmpuri obligatorii", () => {
@@ -174,6 +174,43 @@ describe("filterSolutions / getSolutionsForElementType — helpers", () => {
     const sols = getSolutionsForElementType("PA");
     expect(sols.length).toBeGreaterThan(0);
     sols.forEach(s => expect(s.elementType).toBe("PA"));
+  });
+
+  // Sprint Batch B (4 mai 2026): coverage P1-5 + P1-11
+  it("PM (mansardă) — minim 3 soluții (P1-5 fix)", () => {
+    const sols = getSolutionsForElementType("PM");
+    expect(sols.length).toBeGreaterThanOrEqual(3);
+    sols.forEach(s => expect(s.elementType).toBe("PM"));
+  });
+
+  it("UN (ușă spațiu neîncălzit) — minim 3 soluții (P1-5 fix)", () => {
+    const sols = getSolutionsForElementType("UN");
+    expect(sols.length).toBeGreaterThanOrEqual(3);
+    sols.forEach(s => expect(s.elementType).toBe("UN"));
+  });
+
+  it("PB (planșeu peste subsol) — minim 5 soluții (P1-11 fix: +3)", () => {
+    const sols = getSolutionsForElementType("PB");
+    expect(sols.length).toBeGreaterThanOrEqual(5);
+    sols.forEach(s => expect(s.elementType).toBe("PB"));
+  });
+
+  it("PM acoperă 3 ere (pre1990, 2010-2020, nzeb-2020+)", () => {
+    const sols = getSolutionsForElementType("PM");
+    const eras = new Set(sols.map(s => s.era));
+    expect(eras.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("UN acoperă 2 perioade (existent legacy + modern renovat/nou)", () => {
+    const sols = getSolutionsForElementType("UN");
+    const statuses = new Set(sols.map(s => s.renovationStatus));
+    expect(statuses.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("PB nou — soluții moderne XPS sub radier și EPS perimetral", () => {
+    const sols = getSolutionsForElementType("PB");
+    const ids = sols.map(s => s.id);
+    expect(ids.some(id => /XPS|EPS/.test(id))).toBe(true);
   });
 });
 
