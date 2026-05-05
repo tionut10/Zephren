@@ -170,16 +170,14 @@ export default function GlazingSection({
           ? "overflow-hidden rounded-xl border border-slate-600/25"
           : "rounded-xl overflow-hidden border border-slate-600/40"}
         onClick={onClickExpand}
-        style={{
-          cursor: onClickExpand ? "pointer" : "default",
-          maxWidth: compact ? `${width}px` : undefined,
-        }}
+        style={{ cursor: onClickExpand ? "pointer" : "default" }}
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
           width="100%"
           height={compact ? height : undefined}
-          style={{ display: "block" }}
+          preserveAspectRatio={compact ? "xMidYMid meet" : undefined}
+          style={{ display: "block", background: compact ? "#f8fafc" : undefined }}
         >
           <defs>
             {/* Ramă PVC — hașură diagonală gri */}
