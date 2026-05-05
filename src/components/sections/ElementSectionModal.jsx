@@ -16,6 +16,8 @@ import OpaqueSection from "./OpaqueSection.jsx";
 import GlazingSection from "./GlazingSection.jsx";
 import BridgeIllustration from "../thermal-bridges/bridgeIllustrations.jsx";
 
+const SHOW_BRIDGE_ILLUSTRATIONS = false;
+
 export default function ElementSectionModal({
   type,
   element,
@@ -183,7 +185,7 @@ export default function ElementSectionModal({
           )}
           {type === "bridge" && element && (
             <div className="space-y-4">
-              {element.illustration !== false && (
+              {SHOW_BRIDGE_ILLUSTRATIONS && element.illustration !== false && (
                 <div className="bg-[#f7f3e8] rounded-xl overflow-hidden border border-white/5 max-w-[1280px] mx-auto">
                   <BridgeIllustration
                     bridge={element}

@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import THERMAL_BRIDGES_DB from "../data/thermal-bridges.json";
 import BridgeIllustration from "./thermal-bridges/bridgeIllustrations.jsx";
 import ElementSectionModal from "./sections/ElementSectionModal.jsx";
+
+const SHOW_BRIDGE_ILLUSTRATIONS = false;
 import {
   getBridgeSource,
   classifyIsoLevel,
@@ -334,7 +336,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       }}
                       title="Click pentru a deschide secțiunea în fereastră mare"
                     >
-                      {bridge.illustration !== false && (
+                      {SHOW_BRIDGE_ILLUSTRATIONS && bridge.illustration !== false && (
                         <BridgeIllustration
                           bridge={bridge}
                           details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
