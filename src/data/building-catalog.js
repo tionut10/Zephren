@@ -57,11 +57,14 @@ const _LEGACY_SOLUTIONS = [
   { id:"PT_TERASA_XPS10", name:"Terasă + XPS 10cm", type:"PT",
     layers:[{material:"Bitum (membrană)",thickness:"10",lambda:0.17,rho:1050,matName:"Bitum (membrană)"},{material:"Polistiren extrudat XPS",thickness:"100",lambda:0.034,rho:35,matName:"Polistiren extrudat XPS"},{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"}] },
   { id:"PP_POD_VATA25", name:"Pod + vată 25cm", type:"PP",
-    layers:[{material:"Gips-carton",thickness:"12",lambda:0.25,rho:900,matName:"Gips-carton"},{material:"Vată minerală bazaltică",thickness:"250",lambda:0.040,rho:100,matName:"Vată minerală bazaltică"},{material:"OSB",thickness:"18",lambda:0.13,rho:600,matName:"OSB"}] },
+    // EXT→INT: OSB (pod/exterior) → Vată → Gips-carton (cameră/interior)
+    layers:[{material:"OSB",thickness:"18",lambda:0.13,rho:600,matName:"OSB"},{material:"Vată minerală bazaltică",thickness:"250",lambda:0.040,rho:100,matName:"Vată minerală bazaltică"},{material:"Gips-carton",thickness:"12",lambda:0.25,rho:900,matName:"Gips-carton"}] },
   { id:"PL_SOL_XPS8", name:"Placă sol + XPS 8cm", type:"PL",
-    layers:[{material:"Gresie ceramică",thickness:"10",lambda:1.30,rho:2300,matName:"Gresie ceramică"},{material:"Șapă ciment",thickness:"60",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Polistiren extrudat XPS",thickness:"80",lambda:0.034,rho:35,matName:"Polistiren extrudat XPS"},{material:"Beton armat",thickness:"120",lambda:1.74,rho:2400,matName:"Beton armat"}] },
+    // EXT→INT: Beton (sol/exterior) → XPS → Șapă → Gresie (cameră/interior)
+    layers:[{material:"Beton armat",thickness:"120",lambda:1.74,rho:2400,matName:"Beton armat"},{material:"Polistiren extrudat XPS",thickness:"80",lambda:0.034,rho:35,matName:"Polistiren extrudat XPS"},{material:"Șapă ciment",thickness:"60",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Gresie ceramică",thickness:"10",lambda:1.30,rho:2300,matName:"Gresie ceramică"}] },
   { id:"PB_SUBSOL_EPS5", name:"Planșeu subsol + EPS 5cm", type:"PB",
-    layers:[{material:"Parchet lemn",thickness:"15",lambda:0.18,rho:600,matName:"Parchet lemn"},{material:"Șapă ciment",thickness:"50",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Polistiren expandat EPS 80",thickness:"50",lambda:0.039,rho:20,matName:"Polistiren expandat EPS 80"},{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"}] },
+    // EXT→INT: Beton (subsol/exterior) → EPS → Șapă → Parchet (cameră/interior)
+    layers:[{material:"Beton armat",thickness:"150",lambda:1.74,rho:2400,matName:"Beton armat"},{material:"Polistiren expandat EPS 80",thickness:"50",lambda:0.039,rho:20,matName:"Polistiren expandat EPS 80"},{material:"Șapă ciment",thickness:"50",lambda:1.40,rho:2000,matName:"Șapă ciment"},{material:"Parchet lemn",thickness:"15",lambda:0.18,rho:600,matName:"Parchet lemn"}] },
 ];
 
 // Extindere CONSTRUCTION_SOLUTIONS din typicalSolutions.json (73 entries)

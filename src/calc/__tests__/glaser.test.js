@@ -189,9 +189,10 @@ describe("calcGlaserMonthly", () => {
     const r = calcGlaserMonthly(wall, bucuresti, 20, 50);
     expect(r.layers).toHaveLength(4);
     // calcGlaserMonthly inversează EXT→INT la INT→EXT (ISO 13788 §4.2)
-    // wall[3]=5mm ajunge la layers[0] (INT), wall[0]=15mm la layers[3] (EXT)
-    expect(r.layers[0].d).toBeCloseTo(0.005, 3);  // INT: 5mm
-    expect(r.layers[3].d).toBeCloseTo(0.015, 3);  // EXT: 15mm
-    expect(r.layers[1].sd).toBeCloseTo(50 * 0.1, 3); // mu=50, d=0.1m (wall[2] → layers[1])
+    // wall (EXT→INT): [5mm_ext, 100mm_EPS, 300mm_BCA, 15mm_int]
+    // r.layers (INT→EXT după inversare): [15mm_int, 300mm_BCA, 100mm_EPS, 5mm_ext]
+    expect(r.layers[0].d).toBeCloseTo(0.015, 3);  // INT: tencuiala int 15mm (layers[0])
+    expect(r.layers[3].d).toBeCloseTo(0.005, 3);  // EXT: tencuiala ext 5mm (layers[3])
+    expect(r.layers[2].sd).toBeCloseTo(50 * 0.1, 3); // EPS la layers[2]: mu=50, d=0.1m → sd=5
   });
 });
