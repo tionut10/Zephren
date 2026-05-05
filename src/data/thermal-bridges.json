@@ -13,7 +13,7 @@
     "psi": 0.15,
     "psi_izolat": 0.06,
     "desc": "Joncțiune perete exterior cu planșeu terasă",
-    "detail": "Atic/cornișă unde planșeul terasă întâlnește peretele. Risc condensare. Cu izolație continuă: Ψ≈0,06. Ref: ISO 14683:2017 Tabel 1, tip RF."
+    "detail": "Atic/cornișă unde planșeul terasă întâlnește peretele. Risc condensare. Cu izolație continuă: Ψ≈0,06. Ref: ISO 14683:2017 Tabel 1, tip R."
   },
   {
     "cat": "Joncțiuni pereți",
@@ -43,9 +43,9 @@
     "cat": "Joncțiuni pereți",
     "name": "Colț interior",
     "psi": -0.05,
-    "psi_izolat": -0.03,
+    "psi_izolat": -0.07,
     "desc": "Colț interior al clădirii (favorabil)",
-    "detail": "Suprafața interioară mai mare decât cea exterioară → efect favorabil (Ψ negativ). Reduce pierderea totală. Ref: ISO 14683:2017 Tabel 1."
+    "detail": "Suprafața interioară mai mare decât cea exterioară → efect favorabil (Ψ negativ). Reduce pierderea totală. Cu ETICS continuă efectul geometric se intensifică: Ψ ≈ -0,07. Ref: ISO 14683:2017 Tabel 1 tip CO; ROCKWOOL EWIC01."
   },
   {
     "cat": "Joncțiuni pereți",
@@ -1203,36 +1203,48 @@
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Trecere conductă termică (Cu/OL) prin perete exterior (chi)",
-    "psi": 0,
+    "psi": 0.03,
+    "psi_izolat": 0.005,
     "chi": 0.03,
+    "chi_izolat": 0.005,
     "is_point_bridge": true,
+    "unit": "W/K",
     "desc": "Punte termică punctuală (χ) a conductei metalice de termoficare prin perete exterior",
     "detail": "Conductă oțel sau cupru φ 20–40 mm prin perete exterior. χ = 0.015–0.050 W/K per trecere. Valoare afișată = 0.030 W/K (Cu φ 22 mm neizolată). Cu manșon termoizolant la trecere (50 mm EPS tubular): χ ≈ 0.005 W/K. Sursă: ISO 10211, EN 1264, calcule FEM."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Trecere cablu electric prin perete exterior (chi)",
-    "psi": 0,
+    "psi": 0.002,
+    "psi_izolat": 0.001,
     "chi": 0.002,
+    "chi_izolat": 0.001,
     "is_point_bridge": true,
+    "unit": "W/K",
     "desc": "Punte termică punctuală (χ) a cablurilor electrice prin peretele exterior",
     "detail": "Grupuri de cabluri PVC φ 16–25 mm prin perete exterior. χ ≈ 0.002 W/K per trecere; cu dopuri de etanșare termoizolante: χ ≈ 0.001 W/K. Important și pentru etanșeitate la aer (airtightness). Sursă: ISO 10211, practici Passivhaus."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Suport metalic panou solar termic – ancorare pe acoperiș (chi)",
-    "psi": 0,
+    "psi": 0.025,
+    "psi_izolat": 0.008,
     "chi": 0.025,
+    "chi_izolat": 0.008,
     "is_point_bridge": true,
+    "unit": "W/K",
     "desc": "Punte termică punctuală (χ) a suportului metalic al panoului solar penetrând învelitoarea",
     "detail": "Suportul de montaj (oțel inox, aluminiu) penetrează învelitoarea și eventual izolația acoperișului. χ per suport: 0.010–0.040 W/K (afișat 0.025); la 4 suporturi/panou, 1 panou/10 m²: ΔU ≈ 0.004–0.016 W/(m²K). Cu suporturi termoizolate: χ ≈ 0.005–0.010 W/K. Sursă: EOTA TR 025, EN ISO 6946."
   },
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Priză de aer exterior HVAC prin perete (chi)",
-    "psi": 0,
+    "psi": 0.08,
+    "psi_izolat": 0.03,
     "chi": 0.08,
+    "chi_izolat": 0.03,
     "is_point_bridge": true,
+    "unit": "W/K",
     "desc": "Punte termică la caseta dreptunghiulară a prizei de aer proaspăt HVAC prin peretele exterior",
     "detail": "Casetă metalică (oțel zincat) 200×200 mm prin perete exterior. χ echivalent = 0.05–0.12 W/K (afișat 0.08); cu izolație locală pe periferia casetei la traversarea izolației + garnitură EPDM: χ ≈ 0.020–0.040 W/K. Sursă: practici constructive Passivhaus, ISO 10211."
   },
@@ -1247,9 +1259,12 @@
   {
     "cat": "Instalații – tipuri speciale",
     "name": "Coș metalic dublu perete penetrant acoperiș/perete (chi)",
-    "psi": 0,
+    "psi": 0.05,
+    "psi_izolat": 0.02,
     "chi": 0.05,
+    "chi_izolat": 0.02,
     "is_point_bridge": true,
+    "unit": "W/K",
     "desc": "Coș metalic izolat (inox dublu perete) penetrând perete sau acoperiș",
     "detail": "Coș de fum metalic dublu perete (inox + izolație 25 mm) penetrând acoperiș/perete. χ la penetrare: 0.030–0.080 W/K (Ø100–200 mm, afișat 0.05); cu manșon termoizolant la trecere + garnitură: χ ≈ 0.010–0.030 W/K. Sursă: ISO 10211, norme instalații."
   },
