@@ -265,9 +265,9 @@ describe("CATEGORY_GROUPS — structură extinsă", () => {
     expect(punct.subCats).toEqual(["Elemente punctuale (chi)"]);
   });
 
-  it("grupa 'passivhaus' conține Passivhaus / nZEB", () => {
+  it("grupa 'passivhaus' conține Pasivhaus / nZEB", () => {
     const ph = CATEGORY_GROUPS.find(g => g.key === "passivhaus");
-    expect(ph.subCats).toContain("Passivhaus / nZEB");
+    expect(ph.subCats).toContain("Pasivhaus / nZEB");
   });
 });
 

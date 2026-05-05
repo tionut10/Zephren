@@ -675,25 +675,25 @@
       "reference": "Ghiduri MDLPA pentru clădiri istorice; C107/4-1997 capitolul 5 (clădiri existente)",
       "description_ro": "Clădiri vechi: izolație interioară, fundații piatră, buiandrugi adânci, scări exterioare"
     },
-    "Retrofit ETICS": {
+    "Reabilitare ETICS": {
       "category_en": "ETICS Retrofit Bridges",
       "iso_type": "C/W/GF",
       "description": "Punți termice specifice retrofit ETICS — tăieturi ferestre existente, soclu CTS, atic vechi, balcon retrofit",
       "reference": "EAE European Association for ETICS Guide §4.2; ISO 14683:2017 Annex C; Mc 001-2022 Anexa C"
     },
-    "Passivhaus / nZEB": {
+    "Pasivhaus / nZEB": {
       "category_en": "Passivhaus / nZEB Bridges",
       "iso_type": "W/IF/GF/R",
       "description": "Punți termice optimizate pentru certificare PHI sau nZEB — Ψ ≤ 0.04 W/m·K țintă",
       "reference": "Passipedia 'Thermally optimised window installation'; Passive House Database; Mc 001-2022"
     },
-    "CLT / Mass Timber": {
+    "CLT / Lemn masiv": {
       "category_en": "CLT / Mass Timber Junctions",
       "iso_type": "IF/R/W/C",
       "description": "Joncțiuni specifice construcțiilor CLT — perete-planșeu, perete-acoperiș, fereastră în plan izolație fibră lemn",
       "reference": "dataholz.eu; Passive House Database 'Holzbau'; SIA 380/1; KLH/Stora Enso CLT manual"
     },
-    "Sandwich panel": {
+    "Panou sandwich": {
       "category_en": "Sandwich Panel Joints",
       "iso_type": "IW/C/P/R",
       "description": "Punți termice specifice fațadelor și acoperișurilor cu panouri sandwich PIR/PUR/MW + lambă metalică",
@@ -711,7 +711,7 @@
       "description": "Fundații nZEB cu izolație XPS perimetru-fundație, centură anti-seismică, cotă CTS variabilă",
       "reference": "ISO 14683 GF; Passipedia foundations; Mc 001-2022 + P 100-1/2025"
     },
-    "Curtain wall": {
+    "Fațadă cortină": {
       "category_en": "Curtain Wall Bridges",
       "iso_type": "W/P",
       "description": "Punți termice specifice pereților cortină stick mullion-transom — ancore, spandrel, opening lights",
@@ -723,7 +723,7 @@
       "description": "Punți termice complexe acoperiș — lucarnă (dormer), coș fum, cupolă lumină, penetrare antenă/aerisire",
       "reference": "ISO 14683 R modificat; atlas RT 2012 §6.5; Mc 001-2022 §C.5"
     },
-    "Vernacular RO": {
+    "Tradițional RO": {
       "category_en": "Romanian Vernacular Bridges",
       "iso_type": "C/GF/W",
       "description": "Punți termice specifice construcțiilor tradiționale RO pre-1950 — cosoroabă lemn, soclu piatră, buiandrug lemn",

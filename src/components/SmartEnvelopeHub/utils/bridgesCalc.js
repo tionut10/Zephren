@@ -59,10 +59,10 @@ export const CATEGORY_GROUPS = [
       "Fundații și subsol",
       "Fundații moderne",
       "Sisteme ETICS",
-      "Retrofit ETICS",
+      "Reabilitare ETICS",
       "Structuri prefabricate",
-      "Sandwich panel",
-      "Vernacular RO",
+      "Panou sandwich",
+      "Tradițional RO",
     ],
   },
   {
@@ -74,7 +74,7 @@ export const CATEGORY_GROUPS = [
       "Ferestre",
       "Ferestre și uși – tipuri speciale",
       "Fațade și ferestre avansate",
-      "Curtain wall",
+      "Fațadă cortină",
     ],
   },
   {
@@ -110,7 +110,7 @@ export const CATEGORY_GROUPS = [
       "Stâlpi/grinzi",
       "Structuri din lemn",
       "Structuri speciale",
-      "CLT / Mass Timber",
+      "CLT / Lemn masiv",
     ],
   },
   {
@@ -129,7 +129,7 @@ export const CATEGORY_GROUPS = [
     icon: "🌟",
     label: "Passivhaus / nZEB premium",
     hint: "Detalii ψ < 0.05 W/(m·K), certificate PHI",
-    subCats: ["Passivhaus / nZEB"],
+    subCats: ["Pasivhaus / nZEB"],
   },
   {
     key: "punctuale",
