@@ -175,7 +175,7 @@ export default function ElementSectionModal({
             <GlazingSection
               element={element}
               width={720}
-              height={280}
+              height={420}
               showDimensions={true}
               showLegend={true}
               compact={false}
