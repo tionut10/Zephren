@@ -156,6 +156,9 @@ export default function OpaqueSection({
   const uTotal = rTotal > 0 ? 1 / rTotal : 0;
   const massPerM2 = layers.reduce((s, l) => l.rho ? s + (l.thickness / 1000) * l.rho : s, 0);
 
+  // Lățimi vizuale pentru straturile de perete (folosite și în banda HTML de dedesubt)
+  const wallDrawWidths = isWall ? computeDrawSizes(layers, width) : null;
+
   // Legendă
   const legendItems = layers.map(l => ({
     category: l.category,
@@ -194,9 +197,36 @@ export default function OpaqueSection({
       )}
 
       <div className={compact ? "" : "bg-white/[0.02] rounded-xl p-2 border border-white/5"} onClick={onClickExpand} style={{ cursor: onClickExpand ? "pointer" : "default" }}>
-        {isWall ? renderWallSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal })
-               : renderSlabSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal })}
+        {isWall
+          ? renderWallSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal, wallDrawWidths })
+          : renderSlabSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal })}
       </div>
+
+      {/* ── Bandă denumiri straturi — dedesubt, în afara SVG-ului ──────────── */}
+      {isWall && !compact && wallDrawWidths && (
+        <div className="flex rounded-lg overflow-hidden border border-white/10" style={{ gap: 0 }}>
+          {layers.map((l, i) => {
+            const pct = (wallDrawWidths[i] / width) * 100;
+            return (
+              <div
+                key={i}
+                style={{ width: `${pct}%`, minWidth: "24px" }}
+                className="bg-white/[0.025] border-r border-white/10 last:border-r-0 px-1 py-1.5 text-center"
+                title={`${l.name} · ${l.thickness} mm · λ=${l.lambda}`}
+              >
+                <div className="text-[8px] font-bold text-white/40 mb-0.5">{i + 1}</div>
+                <div className="text-[8px] text-white/60 truncate leading-tight"
+                     style={{ writingMode: pct < 8 ? "vertical-lr" : "horizontal-tb" }}>
+                  {pct < 5 ? "" : truncateLabel(l.name, wallDrawWidths[i] - 8)}
+                </div>
+                {pct >= 8 && (
+                  <div className="text-[7px] text-white/35 font-mono mt-0.5">{l.thickness} mm</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {showLegend && !compact && (
         <div>
@@ -211,8 +241,8 @@ export default function OpaqueSection({
 // ═══════════════════════════════════════════════════════════════════════════
 // Secțiune WALL — layout orizontal (coloane de straturi)
 // ═══════════════════════════════════════════════════════════════════════════
-function renderWallSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal }) {
-  const drawWidths = computeDrawSizes(layers, width);
+function renderWallSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal, wallDrawWidths }) {
+  const drawWidths = wallDrawWidths || computeDrawSizes(layers, width);
   const xStarts = [0];
   drawWidths.forEach(w => xStarts.push(xStarts[xStarts.length - 1] + w));
 
@@ -249,21 +279,7 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         <MaterialLayer key={i} x={xStarts[i]} y={0} width={drawWidths[i]} height={height} category={l.category} name={l.name} />
       ))}
 
-      {/* Labels pe straturi */}
-      {!compact && layers.map((l, i) => {
-        const w = drawWidths[i];
-        const xc = xStarts[i] + w / 2;
-        const shouldRotate = w < 70;
-        const availableSpace = shouldRotate ? (height - 80) : (w - 8);
-        const displayName = truncateLabel(l.name, availableSpace);
-        return (
-          <text key={`lbl-${i}`} x={xc} y={height / 2 + 8} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
-            transform={shouldRotate ? `rotate(-90 ${xc} ${height / 2 + 8})` : ""}
-            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
-            {displayName}
-          </text>
-        );
-      })}
+      {/* Textele denumirilor straturilor sunt mutate în banda HTML de sub SVG (fără text rotit în interior) */}
 
       {/* Numere index strat (1, 2, 3...) — badge mic în partea de jos a fiecărui strat */}
       {!compact && layers.map((l, i) => {
@@ -347,34 +363,67 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
         }
         const adjLabels = avoidLabelCollisions2D(rawLabels, "y");
 
+        // Gradient cromatic pe linia termică (albastru→roșu per temperatură)
+        const tRange = tMax - tMin || 1;
+        const tempHsl = (t) => {
+          const frac = Math.max(0, Math.min(1, (t - tMin) / tRange));
+          return `hsl(${(240 - 240 * frac).toFixed(0)},78%,50%)`;
+        };
+
+        // Etichete T: alternare sus/jos width-aware
+        const LBL_W = 38, LBL_H = 17;
+        const STRIP_TOP = compact ? 2 : 30;     // zona de deasupra (unde se plasează etichete "sus")
+        const STRIP_BTM = height - 26;           // zona de dedesubt (etichete "jos")
+
+        const tLabels = pts.map((p, i) => {
+          const cx   = p.x;
+          const cy   = tToY(p.t);
+          const row  = i % 2; // 0=sus, 1=jos
+          const labelY = row === 0
+            ? Math.max(STRIP_TOP, cy - LBL_H - 6)
+            : Math.min(STRIP_BTM, cy + 6);
+          return { cx, cy, labelY, row, t: p.t };
+        });
+
         return (
           <g style={{ pointerEvents: "none" }}>
-            <path d={path} fill="none" stroke="#ef4444" strokeWidth="2.5" opacity="0.95" />
-            {pts.map((p, i) => {
-              const pointY = tToY(p.t);
-              const lab = adjLabels[i];
-              const labelCenterY = lab.y + lab.h / 2;
-              // Conector dacă centrul etichetei e departe de punct
-              const dx = (lab.x + lab.w / 2) - p.x;
-              const dy = labelCenterY - pointY;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              const moved = dist > 18;
+            {/* Gradient def */}
+            <defs>
+              <linearGradient id="wall-temp-line-grad" x1="0" y1="0" x2={width} y2="0"
+                              gradientUnits="userSpaceOnUse">
+                {pts.map((p, i) => (
+                  <stop key={i} offset={`${(p.x / width * 100).toFixed(1)}%`} stopColor={tempHsl(p.t)} />
+                ))}
+              </linearGradient>
+            </defs>
+            {/* Shadow */}
+            <path d={path} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="5" strokeLinejoin="round" />
+            {/* Linia principală cu gradient */}
+            <path d={path} fill="none" stroke="url(#wall-temp-line-grad)" strokeWidth="2.5" strokeLinejoin="round" opacity="0.95" />
+
+            {/* Etichete T alternante sus/jos cu leader-line */}
+            {tLabels.map(({ cx, cy, labelY, row, t }, i) => {
+              const color  = tempHsl(t);
+              const lx     = cx - LBL_W / 2;
+              const leaderY1 = row === 0 ? cy - 3 : cy + 3;
+              const leaderY2 = row === 0 ? labelY + LBL_H : labelY;
               return (
                 <g key={i}>
-                  <circle cx={p.x} cy={pointY} r="3" fill="#ef4444" />
-                  {moved && (
-                    <line x1={p.x} y1={pointY} x2={lab.x + lab.w / 2} y2={labelCenterY > pointY ? lab.y : lab.y + lab.h}
-                      stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2,2" opacity="0.55" />
-                  )}
-                  <rect x={lab.x} y={lab.y} width={lab.w} height={lab.h} rx="2.5" fill="rgba(255,255,255,0.96)" stroke="#ef4444" strokeWidth="0.4" />
-                  <text x={lab.x + lab.w / 2} y={lab.y + lab.h - 4} fontSize="8.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+                  <circle cx={cx} cy={cy} r="3.5" fill={color} stroke="rgba(255,255,255,0.9)" strokeWidth="1" />
+                  <line x1={cx} y1={leaderY1} x2={cx} y2={leaderY2}
+                        stroke={color} strokeWidth="0.8" strokeDasharray="2,2" opacity="0.6" />
+                  <rect x={lx} y={labelY} width={LBL_W} height={LBL_H} rx="3"
+                        fill="rgba(255,255,255,0.97)" stroke={color} strokeWidth="0.8" />
+                  <text x={cx} y={labelY + LBL_H - 5} fontSize="9.5" fill={color}
+                        textAnchor="middle" fontWeight="700">{t.toFixed(1)}°</text>
                 </g>
               );
             })}
+
             {!compact && (
               <g>
-                <rect x="4" y="4" width="128" height="28" fill="rgba(255,255,255,0.95)" rx="3" stroke="#ef4444" strokeWidth="0.4" />
-                <circle cx="12" cy="13" r="3" fill="#ef4444" />
+                <rect x="4" y="4" width="130" height="28" fill="rgba(255,255,255,0.95)" rx="3" stroke="rgba(180,0,0,0.3)" strokeWidth="0.5" />
+                <circle cx="12" cy="13" r="3" fill={tempHsl(pts[0].t)} />
                 <text x="19" y="15" fontSize="8.5" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°) iarnă</text>
                 <text x="8" y="26" fontSize="7.5" fill="#374151" fontWeight="600">EXT {pts[0].t.toFixed(1)}° → {pts[pts.length - 1].t.toFixed(1)}° INT</text>
               </g>
