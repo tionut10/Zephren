@@ -51,25 +51,73 @@ export const MATERIAL_CATEGORIES = {
  */
 export function classifyMaterial(name = "") {
   const n = name.toLowerCase();
-  if (/beton|bet\.? armat|rc|planșeu|planseu/.test(n)) return "concrete";
-  if (/bca|gaz.?beton|ytong|celcon/.test(n)) return "masonry_bca";
-  if (/cărămid|caramid|ceramic.*zidărie|porotherm/.test(n)) return "masonry_brick";
-  if (/eps|polistiren expandat/.test(n)) return "eps";
-  if (/xps|polistiren extrudat/.test(n)) return "xps";
-  if (/vat[ăa] *mineral[ăa]|mw|rockwool|knauf/.test(n)) return "mineral_wool";
-  if (/lemn|masiv|stratificat|clt|bsh/.test(n)) return "wood";
-  if (/osb|pal|pfl|plac[ăa].*fibre/.test(n)) return "osb";
-  if (/oțel|otel|metal|aluminiu|profil|al /.test(n)) return "metal";
-  if (/gips|rigips|knauf.*carton/.test(n)) return "gypsum";
-  if (/tencuial|glet|mortar(?! *ciment)/.test(n)) return "plaster";
-  if (/șap|sap/.test(n)) return "screed";
-  if (/membran[ăa] *hi|hidroizol|bituminos/.test(n)) return "membrane";
-  if (/barier[ăa] *vapori|folie *pe/.test(n)) return "vapor_barrier";
-  if (/aer|spațiu *aer|spatiu/.test(n)) return "air_gap";
-  if (/pietriș|pietris|drenaj/.test(n)) return "gravel";
-  if (/sol|p[ăa]m[âa]nt/.test(n)) return "soil";
-  if (/sticl[ăa]|glas/.test(n)) return "glass";
-  return "plaster"; // default benign
+
+  // ── Beton structural ──────────────────────────────────────────────────────
+  if (/beton|bet\.? armat|\brc\b|b[0-9]+\/[0-9]+|c[0-9]+\/[0-9]+|planșeu beton|planseu beton/.test(n)) return "concrete";
+
+  // ── Șapă / screed ─────────────────────────────────────────────────────────
+  if (/\bșap[ăa]|\bsap[ăa]\b|screed|autonivelant(?!.*polisti)/.test(n)) return "screed";
+
+  // ── BCA și betoane celulare ────────────────────────────────────────────────
+  if (/bca|gaz.?beton|ytong|celcon|multipor|autoclav(?!.*beton\s*arm)/.test(n)) return "masonry_bca";
+
+  // ── Zidărie cărămidă, blocuri ceramice, piatră naturală ──────────────────
+  if (/cărămid|caramid|porotherm|wienerberger|thermopor|unika|bloc ceramic|bloc lca|bloc ks|silico.?calcar/.test(n)) return "masonry_brick";
+  if (/piatr[ăa]|marmur[ăa]|granit|\bbazalt\b|calcar|gresie naturală|tuf vulcanic|gneis|slate|argilă expandată liapor|bloc liapor/.test(n)) return "masonry_brick";
+
+  // ── Membrană explicit — înainte de EPS/PUR pentru a prinde "Membrană PUR-acrilică" ──
+  if (/\bmembran[ăa]\b/.test(n)) return "membrane";
+
+  // ── EPS (polistiren expandat) + spume PIR/PUR/fenolice ────────────────────
+  if (/\beps\b|polistiren expandat|neopor|styrofoam/.test(n)) return "eps";
+  if (/\bxps\b|polistiren extrudat/.test(n)) return "xps";
+  if (/\bpir\b|\bpur\b|poliizocianurat|spum[ăa].*poliuretan|spum[ăa].*fenolic|spum[ăa].*ureic|kooltherm|kingspan|panou sandwich pir|panou sandwich pur|foam glass loose/.test(n)) return "eps";
+
+  // ── Vată minerală — bazaltică, sticlă, bio-materiale izolante ─────────────
+  if (/vat[ăa] *mineral[ăa]|vat[ăa] *bazaltic[ăa]|vat[ăa] *sticl[ăa]|\bmw\b|rockwool|knauf.*izol|isover|paroc|ursa|saint.?gobain.*izol|saltea.*vat[ăa]|vata pet/.test(n)) return "mineral_wool";
+  if (/celuloz[ăa]|cânep[ăa]|\bhemp\b|hempcrete|lân[ăa]|bumbac reciclat|iut[ăa]|\bplut[ăa]|\bcork\b|stuf comprimat|fân.*pod|paie.*legate|paie.*comprimate|paie.*grâu|fibr[ăa].*cocos|fibr[ăa].*in\b|mycelium|miceliană|spumă.*miceliană|alge marine|alge.*bio|cauciuc celular|armacell|aerogel|silicate dämm|silicate.*izol|minerite|mipolam/.test(n)) return "mineral_wool";
+  if (/perlboard|perlit[ăa]? expandat|vermiculit|argilă expandată leca|leca.*vrac|spum[ăa] pe celul|spum[ăa] pp celul|\bvip\b.*panou|\bvip\b.*panel|vacuum insulation|panou.*vacuum|aglomerate magnez|silicat de calciu|diatomit|hempcrete|spume reciclate.*poliuretan|recyfoam|paie.*lut|lipitură.*paie/.test(n)) return "mineral_wool";
+
+  // ── Lemn structural și derivate (specii + produse) ─────────────────────────
+  if (/parchet|lemn(?!.*fibr)|masiv(?!.*beton)|stratificat|clt\b|\bnlt\b|\blvl\b|\blsl\b|glulam|bsh\b|\bdlt\b|dlmt|plc.*bambus|bambus(?!.*izol|.*spum)/.test(n)) return "wood";
+  if (/brad\b|molid\b|stejar\b|fag\b|carpen\b|pin\b|larice\b|mesteacăn\b|plop\b|cedru|tei\b|nuc\b|frasin\b|duglasie|douglas|scândur|placaj|plăci din rumeguș|wpc\b|rumeguș/.test(n)) return "wood";
+  if (/\bmdf\b|\bhdf\b|fibr[ăa] de lemn|fibr[ăa].*lemn(?!.*izol)|plăci.*celuloză rigide/.test(n)) return "wood";
+
+  // ── OSB și plăci fibro-lemnoase ───────────────────────────────────────────
+  if (/\bosb[0-9]?\b|\bpal\b|pfl\b|plac[ăa].*fibre|egger|plăci.*rumeguș/.test(n)) return "osb";
+
+  // ── Folii difuzie și etanșare → membrană (înainte de vapor_barrier) ───────
+  if (/folie.*difuzie|folie.*pp\b|folie.*polipropil|\bbutil\b|band[ăa].*etanșare/.test(n)) return "membrane";
+
+  // ── Barieră vapori și folii — ÎNAINTE de metal (aluminiu în "folie+Al") ───
+  if (/barier[ăa].*vapori|folie *pe\b|folie.*aluminiu|folie.*\bal\b|folie.*anticondens|membran[ăa].*inteligen|folie multistr|folie *hdpe|izoterm reflectiv|folie bulles/.test(n)) return "vapor_barrier";
+
+  // ── Membrane hidroizolante ────────────────────────────────────────────────
+  if (/membran[ăa]|hidroizol|bituminos|\bbitum\b|bitum.*modif|\bepdm\b|membrana.*pvc|membrana.*tpo|membrana.*fpo|membrana.*sbr|geocompozit|geotextil|bentonit|sikalastic|folie.*difuzie|folie.*microperforat|folie *hdpe|polimer *lichid|acoperire.*elastomer|cool roof|strat reflectiv|auto.?vindecătoare/.test(n)) return "membrane";
+
+  // ── Metale ────────────────────────────────────────────────────────────────
+  if (/oțel|otel|\bmetal\b|aluminiu|profil[^e]|alamă|alama|bronz\b|cupru\b|fontă|fonta|plumb\b|zinc\b|titan\b|nichel|tablă|inox|fier[^este]|butil(?!.*folie)/.test(n)) return "metal";
+  if (/material.*schimbare.*faz[ăa]|pcm.*săruri|pcm.*parafin|bio.?pcm|stud argilă expandată liapor 600/.test(n)) return "metal";
+
+  // ── Gips-carton și plăci gips ─────────────────────────────────────────────
+  if (/gips|rigips|knauf.*carton|plăci.*gips|gips.?fibros/.test(n)) return "gypsum";
+
+  // ── Tencuieli și mortare ──────────────────────────────────────────────────
+  if (/tencuial|glet|mortar/.test(n)) return "plaster";
+
+  // ── Spațiu de aer ─────────────────────────────────────────────────────────
+  if (/\baer\b|spațiu *aer|strat *aer/.test(n)) return "air_gap";
+
+  // ── Pietriș, nisip și drenaj ─────────────────────────────────────────────
+  if (/pietriș|pietris|drenaj|\bnisip\b|\bbalast\b/.test(n)) return "gravel";
+
+  // ── Sol și pământ natural ─────────────────────────────────────────────────
+  if (/\bsol\b|p[ăa]m[âa]nt|argilă(?! expandată)|lut\b|chirpici|rammed earth|piscin/.test(n)) return "soil";
+
+  // ── Sticlă ────────────────────────────────────────────────────────────────
+  if (/sticl[ăa]|glas(?!ie)/.test(n)) return "glass";
+
+  return "plaster";
 }
 
 export function getMaterialMeta(name) {
@@ -454,15 +502,20 @@ export function TemperatureProfile({ points, xStart, xEnd, yTop, yBottom, tMin, 
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function MaterialLegend({ items = [], layout = "grid" }) {
-  // items: [{ category, name, thickness, lambda, mu, rho, extra }]
+  // items: [{ category, name, thickness, lambda, mu, rho, extra, displayIndex? }]
   if (!items.length) return null;
 
   return (
     <div className={layout === "grid" ? "grid grid-cols-1 sm:grid-cols-2 gap-1.5" : "space-y-1"}>
       {items.map((it, i) => {
         const cat = MATERIAL_CATEGORIES[it.category] || MATERIAL_CATEGORIES.plaster;
+        const num = it.displayIndex ?? (i + 1);
         return (
           <div key={i} className="flex items-center gap-2 text-[11px] bg-white/5 rounded px-2 py-1">
+            {/* Badge număr strat — corelat cu badge-ul din SVG */}
+            <span className="w-5 h-5 rounded-full bg-slate-700 border border-white/20 flex items-center justify-center text-[8px] font-bold text-white/80 flex-shrink-0">
+              {num}
+            </span>
             <svg width="14" height="14" viewBox="0 0 14 14" className="flex-shrink-0">
               <MaterialDefs />
               <rect x="0" y="0" width="14" height="14" fill={`url(#${cat.patternId})`} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />

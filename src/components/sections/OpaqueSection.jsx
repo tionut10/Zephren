@@ -159,14 +159,19 @@ export default function OpaqueSection({
   // Lățimi vizuale pentru straturile de perete (folosite și în banda HTML de dedesubt)
   const wallDrawWidths = isWall ? computeDrawSizes(layers, width) : null;
 
+  // Ordinea de afișare: pentru PB/PL/PI legenda urmează vizualul (INT sus = primul)
+  const isReversedSlab = isSoilOrientation || config.layout === "slab_both_int";
+  const legendLayerOrder = isReversedSlab ? [...layers].reverse() : layers;
+
   // Legendă
-  const legendItems = layers.map(l => ({
+  const legendItems = legendLayerOrder.map((l, i) => ({
     category: l.category,
     name: l.name,
     thickness: l.thickness,
     lambda: l.lambda || null,
     rho: l.rho,
     mu: l.mu,
+    displayIndex: i + 1,
   }));
 
   return (
@@ -205,10 +210,10 @@ export default function OpaqueSection({
       {/* ── Lista denumiri straturi planșeu (slab) — dedesubt ───────────── */}
       {!isWall && !compact && (
         <div className="flex flex-wrap gap-1.5">
-          {layers.map((l, i) => (
+          {legendLayerOrder.map((l, i) => (
             <div key={i}
               className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-md px-2 py-1 text-[10px]"
-              title={`λ=${l.lambda} W/mK · R=${((l.thickness/1000)/l.lambda).toFixed(3)} m²K/W`}>
+              title={`λ=${l.lambda} W/mK · R=${l.lambda > 0 ? ((l.thickness/1000)/l.lambda).toFixed(3) : "—"} m²K/W`}>
               <span className="w-4 h-4 rounded-full bg-slate-700 border border-white/20 flex items-center justify-center text-[7px] font-bold text-white/80 flex-shrink-0">
                 {i + 1}
               </span>
@@ -247,7 +252,14 @@ export default function OpaqueSection({
 
       {showLegend && !compact && (
         <div>
-          <div className="text-[10px] opacity-65 mb-1 uppercase tracking-wider">Legendă materiale (ordinea: exterior → interior)</div>
+          <div className="text-[10px] opacity-65 mb-1 uppercase tracking-wider">
+            Legendă materiale · ordinea:{" "}
+            {isWall
+              ? "exterior (E) → interior (I)"
+              : isReversedSlab
+                ? "interior (sus, ①) → exterior (jos)"
+                : "exterior (sus, ①) → interior (jos)"}
+          </div>
           <MaterialLegend items={legendItems} layout="grid" />
         </div>
       )}
@@ -550,7 +562,7 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         const h = drawHeights[i];
         const yc = yStarts[i] + h / 2;
         if (h < 14) return null;
-        const idx = reversed ? (displayLayers.length - i) : (i + 1);
+        const idx = i + 1; // mereu 1 = sus (INT pentru PB/PL, EXT pentru PT/PP)
         return (
           <g key={`idx-${i}`} style={{ pointerEvents: "none" }}>
             <circle cx={width - 14} cy={yc} r="7" fill="#1e293b" stroke="white" strokeWidth="1" />
