@@ -175,9 +175,7 @@ export default function GlazingSection({
         <svg
           viewBox={`0 0 ${width} ${height}`}
           width="100%"
-          height={compact ? height : undefined}
-          preserveAspectRatio={compact ? "xMidYMid meet" : undefined}
-          style={{ display: "block", background: compact ? "#f8fafc" : undefined }}
+          style={{ display: "block" }}
         >
           <defs>
             {/* Ramă PVC — hașură diagonală gri */}

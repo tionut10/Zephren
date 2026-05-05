@@ -534,7 +534,7 @@ export default function Step2Envelope({
                   <GlazingSection
                     element={currentSectionEl}
                     width={640}
-                    height={220}
+                    height={140}
                     compact={true}
                     showDimensions={false}
                     showLegend={false}
