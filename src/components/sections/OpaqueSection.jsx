@@ -202,6 +202,23 @@ export default function OpaqueSection({
           : renderSlabSection({ layers, width, height, climate, tInt, config, compact, showTemperatureProfile, showDimensions, rsi, rse, rLayers, rTotal })}
       </div>
 
+      {/* ── Lista denumiri straturi planșeu (slab) — dedesubt ───────────── */}
+      {!isWall && !compact && (
+        <div className="flex flex-wrap gap-1.5">
+          {layers.map((l, i) => (
+            <div key={i}
+              className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-md px-2 py-1 text-[10px]"
+              title={`λ=${l.lambda} W/mK · R=${((l.thickness/1000)/l.lambda).toFixed(3)} m²K/W`}>
+              <span className="w-4 h-4 rounded-full bg-slate-700 border border-white/20 flex items-center justify-center text-[7px] font-bold text-white/80 flex-shrink-0">
+                {i + 1}
+              </span>
+              <span className="text-white/70 font-medium">{l.name}</span>
+              <span className="text-white/35 font-mono">{l.thickness} mm</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Bandă denumiri straturi — dedesubt, în afara SVG-ului ──────────── */}
       {isWall && !compact && wallDrawWidths && (
         <div className="flex rounded-lg overflow-hidden border border-white/10" style={{ gap: 0 }}>
@@ -370,19 +387,23 @@ function renderWallSection({ layers, width, height, climate, tInt, config, compa
           return `hsl(${(240 - 240 * frac).toFixed(0)},78%,50%)`;
         };
 
-        // Etichete T: alternare sus/jos width-aware
+        // Etichete T: alternare sus/jos, filtrând duplicatele (ΔT < 0.3°)
         const LBL_W = 38, LBL_H = 17;
-        const STRIP_TOP = compact ? 2 : 30;     // zona de deasupra (unde se plasează etichete "sus")
-        const STRIP_BTM = height - 26;           // zona de dedesubt (etichete "jos")
+        const STRIP_TOP = compact ? 2 : 30;
+        const STRIP_BTM = height - 26;
 
-        const tLabels = pts.map((p, i) => {
+        const tLabels = [];
+        let lastWallT = null;
+        pts.forEach((p) => {
+          if (lastWallT !== null && Math.abs(p.t - lastWallT) < 0.3) return;
           const cx   = p.x;
           const cy   = tToY(p.t);
-          const row  = i % 2; // 0=sus, 1=jos
+          const row  = tLabels.length % 2;
           const labelY = row === 0
             ? Math.max(STRIP_TOP, cy - LBL_H - 6)
             : Math.min(STRIP_BTM, cy + 6);
-          return { cx, cy, labelY, row, t: p.t };
+          tLabels.push({ cx, cy, labelY, row, t: p.t });
+          lastWallT = p.t;
         });
 
         return (
@@ -522,21 +543,7 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         <MaterialLayer key={i} x={0} y={yStarts[i]} width={width} height={drawHeights[i]} category={l.category} name={l.name} />
       ))}
 
-      {/* Labels pe rânduri */}
-      {!compact && displayLayers.map((l, i) => {
-        const h = drawHeights[i];
-        const yc = yStarts[i] + h / 2;
-        const shouldRotate = h < 22; // când stratul e prea îngust vertical, rotim textul
-        const availableSpace = shouldRotate ? (width - 20) : (width - 80);
-        const displayName = truncateLabel(l.name, availableSpace);
-        return (
-          <text key={`lbl-${i}`} x={width / 2} y={yc + 3} fontSize="10" fill="#0f172a" textAnchor="middle" fontWeight="700"
-            transform={shouldRotate ? "" : ""}
-            style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,0.95)", strokeWidth: "4px", pointerEvents: "none" }}>
-            {displayName}
-          </text>
-        );
-      })}
+      {/* Textele denumirilor straturilor sunt mutate în lista HTML de sub SVG */}
 
       {/* Numere index strat (1, 2, 3...) — badge mic în partea dreaptă a fiecărui rând */}
       {!compact && displayLayers.map((l, i) => {
@@ -592,71 +599,87 @@ function renderSlabSection({ layers, width, height, climate, tInt, config, compa
         </g>
       )}
 
-      {/* Profil T orizontal (temperatură plotată ca o curbă de-a lungul secțiunii) */}
+      {/* Profil T orizontal cu gradient cromatic (albastru→roșu per temperatură) */}
       {tempPoints && (() => {
         const { yPts, tMin, tMax, xLeft, xRight } = tempPoints;
-        const tToX = (t) => xLeft + ((t - tMin) / (tMax - tMin)) * (xRight - xLeft);
+        const tRange  = tMax - tMin || 1;
+        const tToX    = (t) => xLeft + ((t - tMin) / tRange) * (xRight - xLeft);
+        const tempHsl = (t) => {
+          const f = Math.max(0, Math.min(1, (t - tMin) / tRange));
+          return `hsl(${(240 - 240 * f).toFixed(0)},78%,48%)`;
+        };
         const path = yPts.map((p, i) => (i === 0 ? "M" : "L") + tToX(p.t).toFixed(1) + "," + p.y.toFixed(1)).join(" ");
 
-        // Anti-coliziune 2D: eticheta rămâne lângă punct, mută doar dacă bbox-urile se suprapun
-        const labelW = 30, labelH = 14;
-        const xMid = (xLeft + xRight) / 2;
-        const rawLabels = yPts.map((p, i) => {
-          const px = tToX(p.t);
-          // Latura: dacă punctul e în jumătatea dreaptă, etichetă în stânga
-          const side = px > xMid - 10 ? "left" : "right";
-          const naturalX = side === "left" ? px - labelW - 4 : px + 4;
-          return {
-            x: Math.max(2, Math.min(width - labelW - 2, naturalX)),
-            y: p.y - labelH / 2,
-            w: labelW,
-            h: labelH,
-            anchorX: px,
-            anchorY: p.y,
-            side,
-          };
+        // Gradient vertical (Y-based) pentru linia termică verticală a planșeului
+        const gradId = "slab-temp-line-grad";
+
+        // Etichete T: alternare stânga/dreapta, filtrând duplicatele (ΔT < 0.3°)
+        const LBL_W = 40, LBL_H = 18;
+        const tLabels = [];
+        let lastLabelT = null;
+        yPts.forEach((p) => {
+          if (lastLabelT !== null && Math.abs(p.t - lastLabelT) < 0.3) return;
+          const px   = tToX(p.t);
+          const side = tLabels.length % 2 === 0 ? "left" : "right";
+          const lx   = side === "left"
+            ? Math.max(2, px - LBL_W - 6)
+            : Math.min(width - LBL_W - 2, px + 6);
+          tLabels.push({ px, py: p.y, lx, ly: p.y - LBL_H / 2, side, t: p.t });
+          lastLabelT = p.t;
         });
-        // Coliziune 2D: dacă două etichete se suprapun, mută una pe cealaltă latură
-        for (let i = 0; i < rawLabels.length - 1; i++) {
-          const a = rawLabels[i], b = rawLabels[i + 1];
-          const xOver = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-          const yOver = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-          if (xOver > 0 && yOver > 0) {
-            // Mută eticheta a doua pe cealaltă latură
-            b.side = b.side === "left" ? "right" : "left";
-            b.x = b.side === "left" ? b.anchorX - labelW - 4 : b.anchorX + 4;
-            b.x = Math.max(2, Math.min(width - labelW - 2, b.x));
+
+        // Coliziune Y pe aceeași latură: împinge în jos dacă se suprapun
+        for (let i = 0; i < tLabels.length - 1; i++) {
+          const a = tLabels[i], b = tLabels[i + 1];
+          if (a.side === b.side) {
+            const yOver = Math.min(a.ly + LBL_H, b.ly + LBL_H) - Math.max(a.ly, b.ly);
+            if (yOver > 0) b.ly += yOver + 2;
           }
         }
-        const adjLabels = avoidLabelCollisions2D(rawLabels, "y");
 
         return (
           <g style={{ pointerEvents: "none" }}>
-            <path d={path} fill="none" stroke="#ef4444" strokeWidth="1.8" opacity="0.85" />
-            {yPts.map((p, i) => {
-              const px = tToX(p.t);
-              const lab = adjLabels[i];
-              const labCenterY = lab.y + lab.h / 2;
-              const labCenterX = lab.x + lab.w / 2;
-              const dist = Math.sqrt((labCenterX - px) ** 2 + (labCenterY - p.y) ** 2);
-              const moved = dist > 24;
+            <defs>
+              {/* Gradient vertical: top=EXT-side, bottom=INT-side pentru slab reversed */}
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2={height}
+                              gradientUnits="userSpaceOnUse">
+                {yPts.map((p, i) => (
+                  <stop key={i}
+                    offset={`${(p.y / height * 100).toFixed(1)}%`}
+                    stopColor={tempHsl(p.t)} />
+                ))}
+              </linearGradient>
+            </defs>
+            {/* Shadow */}
+            <path d={path} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="5" strokeLinejoin="round" />
+            {/* Linia principală cu gradient */}
+            <path d={path} fill="none" stroke={`url(#${gradId})`} strokeWidth="2.5" strokeLinejoin="round" opacity="0.95" />
+
+            {/* Etichete T alternante stânga/dreapta */}
+            {tLabels.map(({ px, py, lx, ly, side, t }, i) => {
+              const color   = tempHsl(t);
+              const leaderX = side === "left" ? lx + LBL_W : lx;
               return (
                 <g key={i}>
-                  <circle cx={px} cy={p.y} r="2.4" fill="#ef4444" />
-                  {moved && (
-                    <line x1={px} y1={p.y} x2={lab.side === "left" ? lab.x + lab.w : lab.x} y2={labCenterY}
-                      stroke="#ef4444" strokeWidth="0.7" strokeDasharray="2,2" opacity="0.55" />
-                  )}
-                  <rect x={lab.x} y={lab.y} width={lab.w} height={lab.h} rx="2.5" fill="rgba(255,255,255,0.96)" stroke="#ef4444" strokeWidth="0.4" />
-                  <text x={lab.x + lab.w / 2} y={lab.y + lab.h - 4} fontSize="8.5" fill="#b91c1c" textAnchor="middle" fontWeight="700">{p.t.toFixed(1)}°</text>
+                  <circle cx={px} cy={py} r="3.5" fill={color} stroke="rgba(255,255,255,0.9)" strokeWidth="1" />
+                  <line x1={px} y1={py} x2={leaderX} y2={ly + LBL_H / 2}
+                        stroke={color} strokeWidth="0.8" strokeDasharray="2,2" opacity="0.6" />
+                  <rect x={lx} y={ly} width={LBL_W} height={LBL_H} rx="3"
+                        fill="rgba(255,255,255,0.97)" stroke={color} strokeWidth="0.8" />
+                  <text x={lx + LBL_W / 2} y={ly + LBL_H - 5} fontSize="9.5" fill={color}
+                        textAnchor="middle" fontWeight="700">{t.toFixed(1)}°</text>
                 </g>
               );
             })}
+
             {!compact && (
               <g>
-                <rect x="4" y={height - 28} width="120" height="24" fill="rgba(255,255,255,0.88)" rx="3" stroke="#ef4444" strokeWidth="0.4" />
-                <circle cx="12" cy={height - 16} r="3" fill="#ef4444" />
-                <text x="18" y={height - 13.5} fontSize="8" fill="#7f1d1d" fontWeight="700">T({tInt}° → {climate?.theta_e}°)</text>
+                <rect x="4" y={height - 28} width="130" height="24" fill="rgba(255,255,255,0.95)" rx="3"
+                      stroke="rgba(180,0,0,0.25)" strokeWidth="0.5" />
+                <circle cx="12" cy={height - 16} r="3" fill={tempHsl(yPts[0].t)} />
+                <text x="18" y={height - 13.5} fontSize="8" fill="#7f1d1d" fontWeight="700">
+                  T({tInt}° → {climate?.theta_e}°) iarnă
+                </text>
               </g>
             )}
           </g>
