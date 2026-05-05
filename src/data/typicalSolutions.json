@@ -1316,16 +1316,16 @@
       "notes": "Pierdere descendentă majoră. Pentru retrofit adaugă XPS perimetral 60 mm pe 1.5 m la margine + șapă termoizolantă.",
       "layers": [
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 30
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
         },
         {
           "material": "Beton armat",
           "thickness": 150
         },
         {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 200
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 30
         }
       ]
     },
@@ -1354,28 +1354,28 @@
       "notes": "Pentru nZEB grosime XPS ≥150 mm.",
       "layers": [
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 20
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 50
-        },
-        {
-          "material": "XPS 200 kPa (fundații ușoare, λ=0.034)",
-          "thickness": 100
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
         },
         {
           "material": "Beton armat",
           "thickness": 150
         },
         {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 200
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "XPS 200 kPa (fundații ușoare, λ=0.034)",
+          "thickness": 100
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
         }
       ]
     },
@@ -1404,40 +1404,40 @@
       "notes": "Centură EPS perimetral 50 mm pentru reducerea pierderilor pe contur.",
       "layers": [
         {
-          "material": "Gresie ceramică",
-          "thickness": 10
-        },
-        {
-          "material": "Mortar adeziv",
-          "thickness": 5
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 70
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
-        },
-        {
-          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
-          "thickness": 100
-        },
-        {
-          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
-          "thickness": 50
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.3
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
         },
         {
           "material": "Beton armat",
           "thickness": 150
         },
         {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 200
+          "material": "Folie PE",
+          "thickness": 0.3
+        },
+        {
+          "material": "EPS 031 (λ=0.031 — Neopor/grafitat)",
+          "thickness": 50
+        },
+        {
+          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
+          "thickness": 100
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 70
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
         }
       ]
     },
@@ -1467,24 +1467,24 @@
       "notes": "Izolația dedesubt evită punte termică pe contur. Pentru nZEB grosime EPS ≥150 mm.",
       "layers": [
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 20
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 50
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
+          "material": "EPS 100",
+          "thickness": 100
         },
         {
           "material": "Beton armat",
           "thickness": 200
         },
         {
-          "material": "EPS 100",
-          "thickness": 100
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
         }
       ]
     },
@@ -1513,28 +1513,28 @@
       "notes": "Echivalent EPS 200 mm la jumătate grosime.",
       "layers": [
         {
-          "material": "Gresie ceramică",
-          "thickness": 10
-        },
-        {
-          "material": "Mortar adeziv",
-          "thickness": 5
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 70
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
+          "material": "PIR cu folie alu",
+          "thickness": 120
         },
         {
           "material": "Beton armat",
           "thickness": 180
         },
         {
-          "material": "PIR cu folie alu",
-          "thickness": 120
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 70
+        },
+        {
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
         }
       ]
     },
@@ -3286,28 +3286,28 @@
       "notes": "XPS perimetru previne punte termică soclu. EPS-T tasare ≤ 2%.",
       "layers": [
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 20
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 60
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
-        },
-        {
-          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
-          "thickness": 300
+          "material": "Beton armat",
+          "thickness": 250
         },
         {
           "material": "Membrană auto-adezivă SBS (fundații)",
           "thickness": 4
         },
         {
-          "material": "Beton armat",
-          "thickness": 250
+          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
+          "thickness": 300
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 60
+        },
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
         }
       ]
     },
@@ -3341,24 +3341,24 @@
       "notes": "Cellular glass aggregate — portant + termoizolant + circular.",
       "layers": [
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 20
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 80
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
+          "material": "Beton armat",
+          "thickness": 200
         },
         {
           "material": "Granulat sticlă spongioasă vrac (foam glass loose-fill)",
           "thickness": 200
         },
         {
-          "material": "Beton armat",
-          "thickness": 200
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 80
+        },
+        {
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 20
         }
       ]
     },
@@ -3730,19 +3730,19 @@
       "notes": "Soluție case noi rurale cu subsol parțial neîncălzit. Conform nZEB rezidențial.",
       "layers": [
         {
-          "material": "OSB3 structural",
+          "material": "Lemn moale (brad/molid)",
           "thickness": 22
-        },
-        {
-          "material": "Vată minerală Knauf Insulation Ecobatt 035",
-          "thickness": 200
         },
         {
           "material": "Barieră vapori folie PE+Al (compusă)",
           "thickness": 1
         },
         {
-          "material": "Lemn moale (brad/molid)",
+          "material": "Vată minerală Knauf Insulation Ecobatt 035",
+          "thickness": 200
+        },
+        {
+          "material": "OSB3 structural",
           "thickness": 22
         }
       ]
@@ -5740,24 +5740,24 @@
       "notes": "Surse pierderi termice majore — eligibil retrofit cu PIR sub planșeu.",
       "layers": [
         {
-          "material": "Parchet lemn",
-          "thickness": 22
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
-        },
-        {
-          "material": "Mortar ciment-nisip M10",
-          "thickness": 30
+          "material": "Tencuială de ipsos",
+          "thickness": 15
         },
         {
           "material": "Beton armat",
           "thickness": 150
         },
         {
-          "material": "Tencuială de ipsos",
-          "thickness": 15
+          "material": "Mortar ciment-nisip M10",
+          "thickness": 30
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Parchet lemn",
+          "thickness": 22
         }
       ]
     },
@@ -5787,28 +5787,28 @@
       "notes": "XPS 300 kPa — adecvat trafic vehicul ușor (max 3.5 t).",
       "layers": [
         {
-          "material": "Parchet stratificat",
-          "thickness": 14
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 50
-        },
-        {
-          "material": "XPS 300 (fundații)",
-          "thickness": 100
+          "material": "Tencuială ipsos de proiecție",
+          "thickness": 15
         },
         {
           "material": "Beton armat",
           "thickness": 150
         },
         {
-          "material": "Tencuială ipsos de proiecție",
-          "thickness": 15
+          "material": "XPS 300 (fundații)",
+          "thickness": 100
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Parchet stratificat",
+          "thickness": 14
         }
       ]
     },
@@ -5838,32 +5838,32 @@
       "notes": "Tipic renovare majoră 2010-2020 case interbelice.",
       "layers": [
         {
-          "material": "Parchet lemn",
-          "thickness": 22
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 50
-        },
-        {
-          "material": "Polistiren expandat EPS 100",
-          "thickness": 150
-        },
-        {
-          "material": "Folie PE",
-          "thickness": 0.2
+          "material": "Tencuială de ipsos",
+          "thickness": 15
         },
         {
           "material": "Beton armat",
           "thickness": 200
         },
         {
-          "material": "Tencuială de ipsos",
-          "thickness": 15
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Polistiren expandat EPS 100",
+          "thickness": 150
+        },
+        {
+          "material": "Șapă autonivelantă",
+          "thickness": 50
+        },
+        {
+          "material": "Folie PE",
+          "thickness": 0.2
+        },
+        {
+          "material": "Parchet lemn",
+          "thickness": 22
         }
       ]
     },
@@ -5893,16 +5893,12 @@
       "notes": "Densitate VM ≥80 kg/m³ pentru sub planșeu (compresie redusă).",
       "layers": [
         {
-          "material": "Gresie ceramică",
-          "thickness": 10
+          "material": "Tencuială de ipsos",
+          "thickness": 15
         },
         {
-          "material": "Mortar adeziv",
-          "thickness": 5
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 60
+          "material": "Beton armat",
+          "thickness": 200
         },
         {
           "material": "Folie PE",
@@ -5917,12 +5913,16 @@
           "thickness": 0.2
         },
         {
-          "material": "Beton armat",
-          "thickness": 200
+          "material": "Șapă autonivelantă",
+          "thickness": 60
         },
         {
-          "material": "Tencuială de ipsos",
-          "thickness": 15
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
         }
       ]
     },
@@ -5952,15 +5952,11 @@
       "notes": "Indicat sub planșeu cu trafic intens — incompresibil, nu absoarbe apa.",
       "layers": [
         {
-          "material": "Dale de piatră naturală (teraso exterior)",
-          "thickness": 30
+          "material": "Tencuială de ipsos",
+          "thickness": 15
         },
         {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 30
-        },
-        {
-          "material": "Sticlă celulară Floor (placă, comprimare 1.6 N/mm²)",
+          "material": "Beton armat",
           "thickness": 200
         },
         {
@@ -5968,12 +5964,16 @@
           "thickness": 5
         },
         {
-          "material": "Beton armat",
+          "material": "Sticlă celulară Floor (placă, comprimare 1.6 N/mm²)",
           "thickness": 200
         },
         {
-          "material": "Tencuială de ipsos",
-          "thickness": 15
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 30
+        },
+        {
+          "material": "Dale de piatră naturală (teraso exterior)",
+          "thickness": 30
         }
       ]
     },
@@ -6003,24 +6003,24 @@
       "notes": "Bloc tipic anii 80 — Siporex 200 mm armat + vată retrofit.",
       "layers": [
         {
-          "material": "Parchet stratificat",
-          "thickness": 14
-        },
-        {
-          "material": "Mortar ciment-nisip M10",
-          "thickness": 50
-        },
-        {
-          "material": "BCA Siporex 500 (λ=0.13)",
-          "thickness": 200
+          "material": "Tencuială de ipsos",
+          "thickness": 15
         },
         {
           "material": "Vată minerală bazaltică",
           "thickness": 150
         },
         {
-          "material": "Tencuială de ipsos",
-          "thickness": 15
+          "material": "BCA Siporex 500 (λ=0.13)",
+          "thickness": 200
+        },
+        {
+          "material": "Mortar ciment-nisip M10",
+          "thickness": 50
+        },
+        {
+          "material": "Parchet stratificat",
+          "thickness": 14
         }
       ]
     },
@@ -6050,16 +6050,16 @@
       "notes": "Piatră așezată direct pe sol — eligibil retrofit XPS 100 mm sub placă nouă.",
       "layers": [
         {
-          "material": "Piatră de calcar (calc. compactat)",
-          "thickness": 100
+          "material": "Sol (pământ)",
+          "thickness": 500
         },
         {
           "material": "Nisip uscat",
           "thickness": 100
         },
         {
-          "material": "Sol (pământ)",
-          "thickness": 500
+          "material": "Piatră de calcar (calc. compactat)",
+          "thickness": 100
         }
       ]
     },
@@ -6088,16 +6088,12 @@
       "notes": "Insuficient nZEB 2026 — necesar retrofit cu placă suplimentară izolată sau XPS perimetru.",
       "layers": [
         {
-          "material": "Gresie ceramică",
-          "thickness": 10
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
         },
         {
-          "material": "Mortar adeziv",
-          "thickness": 5
-        },
-        {
-          "material": "Șapă autonivelantă",
-          "thickness": 50
+          "material": "Beton armat",
+          "thickness": 100
         },
         {
           "material": "Folie PE",
@@ -6112,12 +6108,16 @@
           "thickness": 0.2
         },
         {
-          "material": "Beton armat",
-          "thickness": 100
+          "material": "Șapă autonivelantă",
+          "thickness": 50
         },
         {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 200
+          "material": "Mortar adeziv",
+          "thickness": 5
+        },
+        {
+          "material": "Gresie ceramică",
+          "thickness": 10
         }
       ]
     },
@@ -6146,8 +6146,20 @@
       "notes": "Centură XPS perimetru 60 cm coboară Ψ_perimetru de la 0.45 la 0.05 W/(m·K).",
       "layers": [
         {
-          "material": "Parchet stratificat",
-          "thickness": 14
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 300
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 150
+        },
+        {
+          "material": "Membrană bentonitică (geosynthetic clay liner)",
+          "thickness": 6
+        },
+        {
+          "material": "Polistiren grafitat EPS Neo",
+          "thickness": 200
         },
         {
           "material": "Folie PE",
@@ -6162,20 +6174,8 @@
           "thickness": 0.2
         },
         {
-          "material": "Polistiren grafitat EPS Neo",
-          "thickness": 200
-        },
-        {
-          "material": "Membrană bentonitică (geosynthetic clay liner)",
-          "thickness": 6
-        },
-        {
-          "material": "Beton armat",
-          "thickness": 150
-        },
-        {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 300
+          "material": "Parchet stratificat",
+          "thickness": 14
         }
       ]
     },
@@ -6205,32 +6205,32 @@
       "notes": "Foamglas — bariera vapori încorporată. Indicat clădiri patrimoniu.",
       "layers": [
         {
-          "material": "Dale de piatră naturală (teraso exterior)",
-          "thickness": 30
-        },
-        {
-          "material": "Mortar de pozare gresie (M15)",
-          "thickness": 30
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 300
         },
         {
           "material": "Beton armat",
           "thickness": 100
-        },
-        {
-          "material": "Sticlă celulară Floor (placă, comprimare 1.6 N/mm²)",
-          "thickness": 200
         },
         {
           "material": "Bitum (membrană)",
           "thickness": 5
         },
         {
+          "material": "Sticlă celulară Floor (placă, comprimare 1.6 N/mm²)",
+          "thickness": 200
+        },
+        {
           "material": "Beton armat",
           "thickness": 100
         },
         {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 300
+          "material": "Mortar de pozare gresie (M15)",
+          "thickness": 30
+        },
+        {
+          "material": "Dale de piatră naturală (teraso exterior)",
+          "thickness": 30
         }
       ]
     },
@@ -6260,8 +6260,20 @@
       "notes": "Sistem ventilat sub placă — protecție anti-radon 222Rn (relevantă RO Cluj/Banat).",
       "layers": [
         {
-          "material": "Parchet stratificat",
-          "thickness": 14
+          "material": "Pietriș nisipos (compactat)",
+          "thickness": 200
+        },
+        {
+          "material": "Strat de aer ventilat (orice grosime)",
+          "thickness": 250
+        },
+        {
+          "material": "Beton armat",
+          "thickness": 100
+        },
+        {
+          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
+          "thickness": 160
         },
         {
           "material": "Folie PE",
@@ -6276,20 +6288,8 @@
           "thickness": 0.2
         },
         {
-          "material": "EPS Igloo (pardoseală radiante, λ=0.038)",
-          "thickness": 160
-        },
-        {
-          "material": "Beton armat",
-          "thickness": 100
-        },
-        {
-          "material": "Strat de aer ventilat (orice grosime)",
-          "thickness": 250
-        },
-        {
-          "material": "Pietriș nisipos (compactat)",
-          "thickness": 200
+          "material": "Parchet stratificat",
+          "thickness": 14
         }
       ]
     },

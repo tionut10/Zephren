@@ -14,9 +14,13 @@ export function glaserCheck(layers, theta_int, theta_ext, phi_int, phi_ext) {
       ? 610.5 * Math.exp(17.269 * t / (237.3 + t))   // over-water
       : 610.5 * Math.exp(21.875 * t / (265.5 + t));  // over-ice
   }
+  // Fix direcție straturi: Zephren stochează EXT→INT, ISO 13788 procesează INT→EXT
+  // Inversăm înainte de orice calcul Glaser (fix bug direcție 5 mai 2026)
+  var layersINT = layers.slice().reverse();
+
   // Rezistențe termice și temperaturi pe interfețe
   var rsi = 0.13, rse = 0.04;
-  var rLayers = layers.map(function(l) { var d = (parseFloat(l.thickness)||0)/1000; return d > 0 && l.lambda > 0 ? d/l.lambda : 0; });
+  var rLayers = layersINT.map(function(l) { var d = (parseFloat(l.thickness)||0)/1000; return d > 0 && l.lambda > 0 ? d/l.lambda : 0; });
   var rTotal = rsi + rLayers.reduce(function(s,r){return s+r;},0) + rse;
   // Temperaturi pe interfețe
   var temps = [tInt];
@@ -31,15 +35,18 @@ export function glaserCheck(layers, theta_int, theta_ext, phi_int, phi_ext) {
   var pvExt = phiE * pSat(tExt);
   // Rezistențe la difuzie (sd = mu * d)
   // Lookup mu: use layer.mu if available, else match from MATERIALS_DB by name, else fallback by lambda
+  // Fix mu-lookup 5 mai 2026: caută mai întâi după matName exact, apoi după material (fallback pentru
+  // materiale cu denumire personalizată, ex. "Beton armat panou mare PAFP" → fallback "Beton armat")
   var muFallback = {0.87:10, 0.70:10, 1.30:200, 0.18:50, 0.25:8, 0.90:10, 0.17:50000, 0.40:100000, 0.80:10, 0.46:8, 0.33:8, 0.22:6, 0.16:6, 0.044:30, 0.039:40, 0.036:50, 0.034:100, 0.040:1, 0.038:1, 0.025:60, 0.023:60, 0.045:15, 0.015:5, 0.042:3, 0.031:40, 1.74:100, 1.28:70, 0.52:8, 1.40:50, 0.14:30, 0.13:30, 0.15:25};
-  var sdLayers = layers.map(function(l) {
+  var sdLayers = layersINT.map(function(l) {
     var d = (parseFloat(l.thickness)||0)/1000;
     var mu;
     if (l.mu !== undefined && l.mu !== null) {
       mu = l.mu;
     } else {
-      var matMatch = MATERIALS_DB.find(function(m) { return m.name === (l.matName || l.material); });
-      mu = matMatch && matMatch.mu !== undefined ? matMatch.mu : (muFallback[l.lambda] || 10);
+      var matMatch = MATERIALS_DB.find(function(m) { return m.name === l.matName; })
+                  || MATERIALS_DB.find(function(m) { return m.name === l.material; });
+      mu = (matMatch && matMatch.mu !== undefined) ? matMatch.mu : (muFallback[l.lambda] || 10);
     }
     return mu * d;
   });
@@ -111,15 +118,26 @@ export function calcGlaserMonthly(layers, climate, tInt, rhInt) {
   var rhExt = climate.rh_month || RH_EXT_ZONE[climate.zone] || RH_EXT_ZONE["II"];
 
   // Build layer data
+  // Fix mu-lookup 5 mai 2026: caută mai întâi după matName exact, apoi după material (fallback)
+  // — ex. "Beton armat panou mare PAFP" nu există în DB, dar "Beton armat" (mu=100) există
+  // Fix direcție 5 mai 2026: Zephren stochează straturile EXT→INT; ISO 13788 §4.2 procesează INT→EXT
+  // Inversăm după construire pentru calcul corect al profilului de temperatură și presiune vapori
   var rsi = 0.13, rse = 0.04;
-  var layerData = layers.map(function(l) {
+  var layerDataRaw = layers.map(function(l) {
     var d = (parseFloat(l.thickness) || 0) / 1000;
     var lam = l.lambda || 0.5;
-    var mu = l.mu || 10;
-    var mat = MATERIALS_DB.find(function(m) { return m.name === (l.matName || l.material); });
-    if (mat && mat.mu) mu = mat.mu;
+    var mu;
+    if (l.mu !== undefined && l.mu !== null) {
+      mu = l.mu;
+    } else {
+      var mat = MATERIALS_DB.find(function(m) { return m.name === l.matName; })
+             || MATERIALS_DB.find(function(m) { return m.name === l.material; });
+      mu = (mat && mat.mu) ? mat.mu : 10;
+    }
     return { d: d, R: d > 0 && lam > 0 ? d / lam : 0, sd: mu * d, name: l.matName || l.material || "Strat" };
   });
+  // Inversare EXT→INT la INT→EXT pentru calcul Glaser conform ISO 13788
+  var layerData = layerDataRaw.slice().reverse();
 
   var rTotal = rsi + layerData.reduce(function(s, l) { return s + l.R; }, 0) + rse;
   var sdTotal = layerData.reduce(function(s, l) { return s + l.sd; }, 0);

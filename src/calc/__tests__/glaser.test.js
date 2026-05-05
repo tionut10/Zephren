@@ -49,11 +49,12 @@ describe("pSatMagnus", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("glaserCheck", () => {
+  // Convenție Zephren: EXT→INT (layers[0] = exterior). Funcția inversează intern la ISO 13788 INT→EXT.
   const simpleBrickWall = [
-    { thickness: 15, lambda: 0.87, mu: 10 },   // tencuială interioară
-    { thickness: 300, lambda: 0.22, mu: 6 },    // BCA 300mm
+    { thickness: 5, lambda: 0.70, mu: 10 },     // tencuială exterioară (EXT, layers[0])
     { thickness: 100, lambda: 0.036, mu: 50 },  // EPS 100mm
-    { thickness: 5, lambda: 0.70, mu: 10 },     // tencuială exterioară
+    { thickness: 300, lambda: 0.22, mu: 6 },    // BCA 300mm
+    { thickness: 15, lambda: 0.87, mu: 10 },    // tencuială interioară (INT, layers[3])
   ];
 
   it("returnează rezultat valid pentru perete simplu", () => {
@@ -87,11 +88,12 @@ describe("glaserCheck", () => {
   });
 
   it("perete bine izolat cu EPS gros nu condensează", () => {
+    // EXT→INT: tencuiala ext | EPS | BCA | tencuiala int
     const wellInsulated = [
-      { thickness: 15, lambda: 0.87, mu: 10 },
-      { thickness: 250, lambda: 0.22, mu: 6 },    // BCA 250mm
-      { thickness: 200, lambda: 0.036, mu: 50 },   // EPS 200mm — foarte gros
       { thickness: 5, lambda: 0.70, mu: 10 },
+      { thickness: 200, lambda: 0.036, mu: 50 },   // EPS 200mm — foarte gros (ext)
+      { thickness: 250, lambda: 0.22, mu: 6 },     // BCA 250mm
+      { thickness: 15, lambda: 0.87, mu: 10 },
     ];
     const r = glaserCheck(wellInsulated, 20, -5, 0.50, 0.80);
     // La -5°C cu izolație groasă, nu ar trebui să fie condens
@@ -132,11 +134,12 @@ describe("glaserCheck", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("calcGlaserMonthly", () => {
+  // Convenție Zephren: EXT→INT — tencuiala ext | EPS | BCA | tencuiala int
   const wall = [
-    { thickness: 15, lambda: 0.87, mu: 10 },
-    { thickness: 300, lambda: 0.22, mu: 6 },
-    { thickness: 100, lambda: 0.036, mu: 50 },
-    { thickness: 5, lambda: 0.70, mu: 10 },
+    { thickness: 5, lambda: 0.70, mu: 10 },     // tencuiala exterioară (EXT)
+    { thickness: 100, lambda: 0.036, mu: 50 },  // EPS 100mm
+    { thickness: 300, lambda: 0.22, mu: 6 },    // BCA 300mm
+    { thickness: 15, lambda: 0.87, mu: 10 },    // tencuiala interioară (INT)
   ];
 
   it("returnează 12 rezultate lunare", () => {
@@ -185,7 +188,10 @@ describe("calcGlaserMonthly", () => {
   it("conține informații despre straturi", () => {
     const r = calcGlaserMonthly(wall, bucuresti, 20, 50);
     expect(r.layers).toHaveLength(4);
-    expect(r.layers[0].d).toBeCloseTo(0.015, 3);
-    expect(r.layers[2].sd).toBeCloseTo(50 * 0.1, 3); // mu=50, d=0.1m
+    // calcGlaserMonthly inversează EXT→INT la INT→EXT (ISO 13788 §4.2)
+    // wall[3]=5mm ajunge la layers[0] (INT), wall[0]=15mm la layers[3] (EXT)
+    expect(r.layers[0].d).toBeCloseTo(0.005, 3);  // INT: 5mm
+    expect(r.layers[3].d).toBeCloseTo(0.015, 3);  // EXT: 15mm
+    expect(r.layers[1].sd).toBeCloseTo(50 * 0.1, 3); // mu=50, d=0.1m (wall[2] → layers[1])
   });
 });
