@@ -42,10 +42,15 @@
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FLAG GLOBAL — Pașaport Renovare dezactivat până la intrarea în vigoare a
-// Directivei EPBD (29 mai 2026). Setează true pentru reactivare.
+// FLAG GLOBAL — Pașaport Renovare EPBD 2024/1275 Art. 12 + Anexa VIII.
+//
+// Sprint P0-A (6 mai 2026): REACTIVAT pentru pregătirea termenului de transpunere
+// națională (29 mai 2026). Documentul are caracter PREVIEW (watermark obligatoriu
+// pe DOCX/PDF) și NU produce efecte juridice în RO până la actul național.
+//
+// Sursă completă context: memory/sprint_p0_a_pasaport_epbd_06may2026.md
 // ─────────────────────────────────────────────────────────────────────────────
-export const RENOVATION_PASSPORT_ENABLED = false;
+export const RENOVATION_PASSPORT_ENABLED = true;
 
 export const PLAN_FEATURES = {
   // ─────────────────────────── FREE ───────────────────────────
@@ -707,7 +712,9 @@ export function canAccess(plan, feature) {
     const sess = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("zephren_demo_mode") : null;
     if (window.__demoModeActive || sess === "1") return true;
   }
-  // Pașaport Renovare dezactivat global până la intrarea în vigoare a EPBD
+  // Sprint P0-A — Pașaport Renovare reactivat în mod PREVIEW EPBD 2024.
+  // Gating-ul revine la nivel de plan (PLAN_FEATURES.pasaportBasic / pasaportDetailed).
+  // Watermark juridic obligatoriu se aplică pe DOCX/PDF la export (passport-docx.js + passport-export.js).
   if (!RENOVATION_PASSPORT_ENABLED && (feature === "pasaportBasic" || feature === "pasaportDetailed")) return false;
   const tier = PLAN_FEATURES[resolvePlan(plan)];
   if (!tier) return false;

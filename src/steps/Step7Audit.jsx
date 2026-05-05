@@ -3,6 +3,11 @@ import { canAccess } from "../lib/planGating.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import PlanGate from "../components/PlanGate.jsx";
 import PasaportBasic from "../components/PasaportBasic.jsx";
+// Sprint P0-A (6 mai 2026) — refactor Card „Pașaport de Renovare" cu plan etapizat REAL.
+import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
+import { getMepsThresholdsFor } from "../components/MEPSCheck.jsx";
+import { buildRenovationPassport } from "../calc/renovation-passport.js";
+import { getEurRonSync } from "../data/rehab-prices.js";
 import { sanitizeSvg } from "../lib/sanitize-html.js";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -1047,34 +1052,190 @@ export default function Step7Audit(props) {
                 );
               })()}
 
-              {/* ── Pașaport de Renovare (EPBD Art.12) ── */}
-              {instSummary && (
-                <Card title="Pașaport de Renovare — Foaie de parcurs etapizată" className="mb-4">
-                  <div className="space-y-3">
-                    {RENOVATION_STAGES.map((stage, si) => {
-                      const epReductions = [0, 20, 40, 60]; // % reducere EP estimat per etapă
-                      const targetEp = Math.max(10, epFinal * (1 - epReductions[si] / 100));
-                      const targetClass = getEnergyClass(targetEp, catKey);
-                      return (
-                        <div key={stage.id} className="flex gap-3 items-start">
-                          <div className="flex flex-col items-center">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{background:targetClass.color+"30",color:targetClass.color}}>{si+1}</div>
-                            {si < 3 && <div className="w-0.5 h-8 bg-white/10" />}
+              {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
+                  Sprint P0-A (6 mai 2026) — refactor: plan REAL prin calcPhasedRehabPlan din
+                  smartSuggestions, în loc de reduceri fixe [0,20,40,60]%. Buget anual default
+                  50.000 RON, strategie balanced (mix anvelopă+sisteme), 20 ani orizont maxim. */}
+              {instSummary && (() => {
+                // Mapper inline smartSuggestions → measures format calcPhasedRehabPlan
+                const eurRon = getEurRonSync() || 5.05;
+                const measures = (smartSuggestions || []).map((s, i) => {
+                  const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                  const epSav = parseFloat(s.epSaving_m2) || 0;
+                  return {
+                    id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                    name: s.measure || `Măsură ${i + 1}`,
+                    category: s.system || "Nespecificat",
+                    system: s.system || "Nespecificat",
+                    cost_RON: Math.round(costEur * eurRon),
+                    ep_reduction_kWh_m2: epSav,
+                    co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                    lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
+                    priority: s.priority || 3,
+                  };
+                });
+
+                const energyPriceRON = 0.45;
+                const phasedPlan = measures.length > 0
+                  ? calcPhasedRehabPlan(
+                      measures,
+                      50000,
+                      "balanced",
+                      epFinal,
+                      building?.category || "AL",
+                      Au,
+                      energyPriceRON,
+                    )
+                  : null;
+
+                const mepsTh = getMepsThresholdsFor(building?.category);
+                const milestone1 = 2030;
+                const milestone2 = mepsTh.milestone2;
+
+                const exportRoadmapDOCX = async () => {
+                  try {
+                    const passport = buildRenovationPassport({
+                      cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                      building,
+                      instSummary,
+                      renewSummary,
+                      climate: selectedClimate,
+                      auditor,
+                      phasedPlan: phasedPlan ? {
+                        strategy: "balanced",
+                        totalYears: phasedPlan.totalYears,
+                        annualBudget: 50000,
+                        energyPrice: energyPriceRON,
+                        discountRate: 0.04,
+                        phases: phasedPlan.phases,
+                        epTrajectory: phasedPlan.epTrajectory,
+                        classTrajectory: phasedPlan.classTrajectory,
+                        summary: phasedPlan.summary,
+                      } : null,
+                      mepsStatus: { thresholds: mepsTh },
+                      changeReason: "Export Foaie de parcurs (Pas 7 Card pașaport)",
+                      changedBy: auditor?.name || "Auditor",
+                    });
+                    const docxLib = await import("../lib/passport-docx.js");
+                    await docxLib.exportPassportDOCX(passport);
+                    showToast("Foaia de parcurs DOCX descărcată", "success");
+                  } catch (err) {
+                    console.error("[Step7 Pașaport] export DOCX error:", err);
+                    showToast("Eroare la generarea DOCX: " + err.message, "error");
+                  }
+                };
+
+                return (
+                  <Card title="Pașaport de Renovare — Foaie de parcurs etapizată" className="mb-4">
+                    {/* Banner watermark juridic */}
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border-l-4 border-amber-600 text-[11px] text-amber-300">
+                      ⚠️ <strong>PREVIEW EPBD 2024</strong> — fără valoare juridică în RO până la actul național
+                      de transpunere (termen 29.05.2026). Document intern Zephren.
+                    </div>
+
+                    {/* Țintă MEPS dinamică EPBD Art. 9 */}
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-[11px] space-y-1">
+                      <div>
+                        🎯 <strong>Țintă {milestone1}:</strong> clasă {mepsTh.class2030} · EP ≤ {mepsTh.ep2030} kWh/(m²·an)
+                      </div>
+                      <div>
+                        🎯 <strong>Țintă {milestone2}:</strong> clasă {mepsTh.class2nd} · EP ≤ {mepsTh.ep2nd} kWh/(m²·an)
+                        {" "}({["RI", "RC", "RA"].includes(building?.category) ? "rezidențial Art. 9.1.a" : "nerezidențial Art. 9.1.b"})
+                      </div>
+                    </div>
+
+                    {!phasedPlan || phasedPlan.phases.length === 0 ? (
+                      <div className="text-[11px] opacity-50 italic">
+                        Nu există măsuri suficiente în „Sugestii inteligente reabilitare" pentru a construi un plan etapizat.
+                      </div>
+                    ) : (
+                      <>
+                        {/* Sumar plan */}
+                        <div className="mb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Faze</div>
+                            <div className="font-bold text-base">{phasedPlan.phases.length}</div>
                           </div>
-                          <div className="flex-1 bg-white/[0.03] rounded-lg p-3 border border-white/5">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold">{stage.label}</span>
-                              <span className="text-[10px] font-mono" style={{color:targetClass.color}}>→ {targetClass.cls} ({targetEp.toFixed(0)} kWh/m²)</span>
-                            </div>
-                            <div className="text-[10px] opacity-40">{stage.measures.join(" • ")}</div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Durată</div>
+                            <div className="font-bold text-base">{phasedPlan.totalYears} ani</div>
+                          </div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Investiție totală</div>
+                            <div className="font-bold text-sm">{phasedPlan.totalCost_RON.toLocaleString("ro-RO")} RON</div>
+                          </div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Clasă finală</div>
+                            <div className="font-bold text-base">{phasedPlan.summary?.class_final || "—"}</div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-3 text-[10px] opacity-30">Conform EPBD 2024/1275 Art.12, Anexa VIII — Building Renovation Passport</div>
-                </Card>
-              )}
+
+                        {/* Vizualizare faze cu măsuri reale */}
+                        <div className="space-y-3">
+                          {phasedPlan.phases.map((ph, idx) => {
+                            const cls = getEnergyClass(ph.ep_after, catKey);
+                            return (
+                              <div key={idx} className="flex gap-3 items-start">
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                                    style={{ background: cls.color + "30", color: cls.color }}
+                                  >
+                                    {idx + 1}
+                                  </div>
+                                  {idx < phasedPlan.phases.length - 1 && <div className="w-0.5 h-8 bg-white/10" />}
+                                </div>
+                                <div className="flex-1 bg-white/[0.03] rounded-lg p-3 border border-white/5">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-bold">
+                                      Faza {idx + 1} — Anul {ph.year}
+                                    </span>
+                                    <span className="text-[10px] font-mono" style={{ color: cls.color }}>
+                                      → {cls.cls} ({ph.ep_after.toFixed(0)} kWh/m²)
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] opacity-50 mb-1">
+                                    Cost fază: <strong>{ph.phaseCost_RON.toLocaleString("ro-RO")} RON</strong>
+                                    {" · "}Economie anuală: <strong>{ph.annualSaving_RON.toLocaleString("ro-RO")} RON/an</strong>
+                                    {" · "}{ph.measures.length} măsuri
+                                  </div>
+                                  <div className="text-[10px] opacity-40">
+                                    {ph.measures.map(m => m.name).join(" • ") || "—"}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Măsuri ne-alocate */}
+                        {phasedPlan.unscheduledMeasures && phasedPlan.unscheduledMeasures.length > 0 && (
+                          <div className="mt-3 p-2 rounded-lg bg-red-500/5 border border-red-500/20 text-[10px] text-red-300/80">
+                            ⚠️ {phasedPlan.unscheduledMeasures.length} măsuri nealocate (buget insuficient pe 20 ani):
+                            {" "}{phasedPlan.unscheduledMeasures.map(m => m.name).join(", ")}
+                          </div>
+                        )}
+
+                        {/* Buton export DOCX foaie de parcurs */}
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={exportRoadmapDOCX}
+                            className="px-4 py-2 rounded-lg bg-amber-600/20 border border-amber-600/40 hover:bg-amber-600/30 text-amber-300 text-xs font-medium transition-all"
+                          >
+                            📄 Export DOCX Foaie de Parcurs (A4)
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="mt-3 text-[10px] opacity-30">
+                      Conform EPBD 2024/1275 Art. 12 + Anexa VIII — Building Renovation Passport.
+                      Plan generat din {(smartSuggestions || []).length} măsuri (sugestii inteligente),
+                      strategie „balanced", buget anual 50.000 RON, preț energie 0,45 RON/kWh.
+                    </div>
+                  </Card>
+                );
+              })()}
 
               {/* ── MEPI — Consum calculat vs real ── */}
               <Card title="MEPI — Consum calculat vs. facturi reale" className="mb-4">
@@ -1471,8 +1632,10 @@ export default function Step7Audit(props) {
                 );
               })()}
 
-              {/* Sprint Pricing v6.0 — Pașaport Renovare basic (obligatoriu EPBD 29 mai 2026)
-                  Versiune simplă inclusă în Pro 499. Pentru LCC + multi-fază → Expert/Step 8. */}
+              {/* Sprint P0-A (6 mai 2026) — Pașaport Renovare EPBD 2024 cu schema completă Anexa VIII.
+                  Versiune basic inclusă în Pro/AE Ici (1.499 RON). Pentru LCC + multi-fază → Expert/Step 8.
+                  Pasăm cpeCode + instSummary + renewSummary + climate + smartSuggestions + financialSummary
+                  pentru a alimenta buildRenovationPassport cu schema completă (12 secțiuni). */}
               <div className="mt-6">
                 <PasaportBasic
                   building={building}
@@ -1480,9 +1643,23 @@ export default function Step7Audit(props) {
                   epFinal={epFinal}
                   auditor={auditor}
                   userPlan={userPlan}
+                  cpeCode={building?.cpeCode || building?.cpeNumber || null}
+                  instSummary={instSummary}
+                  renewSummary={renewSummary}
+                  climate={selectedClimate}
+                  smartSuggestions={smartSuggestions}
+                  financialSummary={financialAnalysis ? {
+                    totalInvest_RON: financialAnalysis.globalCost ? financialAnalysis.globalCost * 5.05 : 0,
+                    npv: financialAnalysis.npv || 0,
+                    irr: financialAnalysis.irr || 0,
+                    paybackSimple: financialAnalysis.paybackSimple || 0,
+                    paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
+                    perspective: "financial",
+                  } : null}
                   onGenerate={(passport) => {
                     if (setBuilding && passport) {
-                      setBuilding(prev => ({ ...prev, passportUUID: passport.id || passport.generatedAt }));
+                      // Sprint P0-A — passportId din schema EPBD Anexa VIII (UUID v5 deterministic).
+                      setBuilding(prev => ({ ...prev, passportUUID: passport.passportId || passport.generatedAt }));
                     }
                   }}
                 />

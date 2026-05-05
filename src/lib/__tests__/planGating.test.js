@@ -6,6 +6,7 @@
 import { describe, it, expect } from "vitest";
 import {
   PLAN_FEATURES,
+  RENOVATION_PASSPORT_ENABLED,
   resolvePlan,
   canAccess,
   getLimit,
@@ -44,6 +45,35 @@ describe("resolvePlan — backward compat", () => {
   });
 });
 
+describe("Sprint P0-A — Pașaport Renovare EPBD reactivat (PREVIEW)", () => {
+  it("flag RENOVATION_PASSPORT_ENABLED este activ (true)", () => {
+    expect(RENOVATION_PASSPORT_ENABLED).toBe(true);
+  });
+
+  it("free + audit (AE IIci) NU au acces la pașaport (gating per plan)", () => {
+    expect(canAccess("free", "pasaportBasic")).toBe(false);
+    expect(canAccess("free", "pasaportDetailed")).toBe(false);
+    expect(canAccess("audit", "pasaportBasic")).toBe(false);    // AE IIci doar Step 1-6 + CPE locuințe
+    expect(canAccess("audit", "pasaportDetailed")).toBe(false);
+  });
+
+  it("pro + edu au pasaportBasic (Sprint P0-A reactivare PREVIEW)", () => {
+    expect(canAccess("pro", "pasaportBasic")).toBe(true);
+    expect(canAccess("edu", "pasaportBasic")).toBe(true);
+  });
+
+  it("expert + birou + enterprise + edu au pasaportDetailed (LCC multi-fază)", () => {
+    expect(canAccess("expert", "pasaportDetailed")).toBe(true);
+    expect(canAccess("birou", "pasaportDetailed")).toBe(true);
+    expect(canAccess("enterprise", "pasaportDetailed")).toBe(true);
+    expect(canAccess("edu", "pasaportDetailed")).toBe(true);
+  });
+
+  it("pro NU are pasaportDetailed (rezervat Expert+)", () => {
+    expect(canAccess("pro", "pasaportDetailed")).toBe(false);
+  });
+});
+
 describe("canAccess — gating per feature", () => {
   it("Free are acces la calculator basic dar NU la export oficial", () => {
     expect(canAccess("free", "exportDOCX")).toBe(true);     // cu watermark
@@ -70,8 +100,9 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("audit", "bimPack")).toBe(false);
   });
 
-  it("AE Ici (pro, 1.299) are Step 7 + AI Pack dar NU Step 8 nici BIM", () => {
-    // Pașaport gated global de RENOVATION_PASSPORT_ENABLED kill-switch (false până la EPBD 29 mai 2026)
+  it("AE Ici (pro, 1.299) are Step 7 + AI Pack + Pașaport basic dar NU Step 8 nici BIM", () => {
+    // Sprint P0-A (6 mai 2026): RENOVATION_PASSPORT_ENABLED reactivat în mod PREVIEW EPBD 2024
+    // (watermark juridic obligatoriu pe DOCX/PDF). Gating revine la nivel de plan.
     expect(canAccess("pro", "step7Audit")).toBe(true);      // ✅ Pro distinctiv
     expect(canAccess("pro", "step8Advanced")).toBe(false);
     expect(canAccess("pro", "aiPack")).toBe(true);          // ✅ AI Pack inclus
@@ -79,8 +110,8 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("pro", "ocrCPE")).toBe(true);
     expect(canAccess("pro", "chatImport")).toBe(true);
     expect(canAccess("pro", "bimPack")).toBe(false);        // BIM doar Expert+
-    expect(canAccess("pro", "pasaportBasic")).toBe(false);  // kill-switch off până la lansare EPBD 29 mai 2026
-    expect(canAccess("pro", "pasaportDetailed")).toBe(false);
+    expect(canAccess("pro", "pasaportBasic")).toBe(true);   // ✅ reactivat Sprint P0-A (PREVIEW EPBD)
+    expect(canAccess("pro", "pasaportDetailed")).toBe(false); // detaliat doar Expert+
     expect(canAccess("pro", "bacsSimple")).toBe(true);
     expect(canAccess("pro", "bacsDetailed")).toBe(false);   // detaliat doar Expert+
     expect(canAccess("pro", "gwpReport")).toBe(true);
@@ -98,7 +129,7 @@ describe("canAccess — gating per feature", () => {
     expect(canAccess("expert", "bacsDetailed")).toBe(true);
     expect(canAccess("expert", "sriDetailed")).toBe(true);
     expect(canAccess("expert", "mepsOptimizer")).toBe(true);
-    expect(canAccess("expert", "pasaportDetailed")).toBe(false);  // kill-switch off până la lansare EPBD 29 mai 2026
+    expect(canAccess("expert", "pasaportDetailed")).toBe(true);   // ✅ reactivat Sprint P0-A (PREVIEW EPBD)
     // Single user încă, fără team features
     expect(canAccess("expert", "teamDashboard")).toBe(false);
     expect(canAccess("expert", "whiteLabel")).toBe(false);
