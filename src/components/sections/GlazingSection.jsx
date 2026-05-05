@@ -83,7 +83,7 @@ export default function GlazingSection({
   const SASH_W   = 20;   // cercevea
 
   // Lățime pachet sticlă: pane min 22px, gaz min 72px
-  const PANE_PX  = 22;
+  const PANE_PX  = 32;
   const GAS_PX   = config.gap > 0 ? Math.max(72, config.gap_mm * 4.5) : 0;
   const PKG_W    = config.panes * PANE_PX + config.gap * GAS_PX;
 
@@ -369,15 +369,15 @@ export default function GlazingSection({
                   {/* Reflexie */}
                   <rect x={e.x + e.w * 0.22} y={glassY + 8} width={e.w * 0.18} height={glassH - 16}
                     fill="white" opacity="0.5" rx="1" />
-                  {/* Numere față — plasate în zona de sticlă, sub distanțier */}
+                  {/* Numere față — la mijlocul vertical al secțiunii, fără conflict cu distanțierul */}
                   {!compact && (
                     <>
-                      <circle cx={e.x} cy={glassY + 13} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x} y={glassY + 16.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
+                      <circle cx={e.x} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+                      <text x={e.x} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
                         {e.idx * 2 + 1}
                       </text>
-                      <circle cx={e.x + e.w} cy={glassY + 13} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x + e.w} y={glassY + 16.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
+                      <circle cx={e.x + e.w} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+                      <text x={e.x + e.w} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
                         {e.idx * 2 + 2}
                       </text>
                     </>
