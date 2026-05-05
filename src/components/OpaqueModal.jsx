@@ -260,8 +260,8 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
           {el.layers.length > 0 && (
             <Card title={t("Secțiune transversală",lang)} className="mb-4">
               {(() => {
-                const SLAB_TYPES = ["PT","PP","PB","PI","PL","SE"];
-                const SLAB_TOP_INT = ["PB","PL"]; // camera deasupra → INT sus, EXT jos
+                const SLAB_TYPES = ["PT","PP","PB","PI","PL","PV","SE"];
+                const SLAB_TOP_INT = ["PB","PL","PV"]; // camera deasupra → INT sus, EXT jos
                 const isSlab = SLAB_TYPES.includes(el.type);
                 const catColors = {"Zidărie":"#b0b0b0","Betoane":"#808080","Termoizolații":"#fdd835","Finisaje":"#d4c4a8","Hidroizolații":"#333","Lemn":"#a1887f","Metale":"#90a4ae","Altele":"#e0e0e0"};
                 const totalD = el.layers.reduce((s,l) => s + (parseFloat(l.thickness)||0), 0);
@@ -271,12 +271,22 @@ export default function OpaqueModal({ element, onSave, onClose, lang, buildingCa
                 if (isSlab) {
                   // Layout vertical — benzi orizontale de sus în jos
                   const isTopInt = SLAB_TOP_INT.includes(el.type);
-                  const isPi = el.type === "PI";
                   const displayLayers = isTopInt ? [...el.layers].reverse() : el.layers;
-                  const topLabel = isPi ? "INT" : isTopInt ? "INT" : "EXT";
-                  const botLabel = isPi ? "INT" : isTopInt ? "EXT" : "INT";
-                  const topColor = topLabel === "INT" ? "#4caf50" : "#2196f3";
-                  const botColor = botLabel === "INT" ? "#4caf50" : "#2196f3";
+                  // Etichete contextuale per tip element (mai clare decât generic EXT/INT)
+                  const SLAB_CTX = {
+                    PB: { top:"CAMERĂ",   bot:"SUBSOL",   topInt:true  },
+                    PL: { top:"CAMERĂ",   bot:"SOL",      topInt:true  },
+                    PV: { top:"CAMERĂ",   bot:"PASAJ",    topInt:true  },
+                    PP: { top:"POD",      bot:"CAMERĂ",   topInt:false },
+                    PT: { top:"EXTERIOR", bot:"CAMERĂ",   topInt:false },
+                    PI: { top:"INT",      bot:"INT",      topInt:true  },
+                    SE: { top:"EXTERIOR", bot:"CAMERĂ",   topInt:false },
+                  };
+                  const ctx = SLAB_CTX[el.type] || { top:"EXT", bot:"INT", topInt:false };
+                  const topLabel = ctx.top;
+                  const botLabel = ctx.bot;
+                  const topColor = ctx.topInt ? "#4caf50" : "#2196f3";
+                  const botColor = ctx.topInt ? "#2196f3" : "#4caf50";
                   svgEls.push(<text key="lbl-top" x="150" y="14" textAnchor="middle" fontSize="10" fontWeight="bold" fill={topColor}>{topLabel}</text>);
                   svgEls.push(<text key="lbl-bot" x="150" y="236" textAnchor="middle" fontSize="10" fontWeight="bold" fill={botColor}>{botLabel}</text>);
                   let y = 20;
