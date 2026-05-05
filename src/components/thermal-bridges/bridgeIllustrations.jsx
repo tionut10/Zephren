@@ -458,13 +458,15 @@ function IllustrationWallFloorIntermediate({ bridge }) {
       {/* === ZONA PUNTE TERMICĂ (la pătrunderea planșeului în zidărie) === */}
       <HeatZone x={xEPS - 2} y={yFloor - 18} w={tEPS + tBrick + 4} h={36} />
       <HeatArrow x1={xBrick + tBrick / 2} y1={yFloor} x2={xEPS - 4} y2={yFloor} />
+      {/* Izotermă — deviere prin planșeu BA (vizualizare sugestivă) */}
+      <IsothermHint x={xEPS - 2} y={yFloor - 18} w={tEPS + tBrick + 4} h={36} />
       {/* === BANNERS EXT / INT === */}
       <EnvBanner x="0" y="0" w={xExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       {/* === LEADERS === */}
-      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
-      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
-      <Leader x1={(xBrick + W) / 2} y1={yFloor + 1} x2={W - 6} y2={yFloor + 28} label="planșeu BA 200" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100mm" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250mm" anchor="start" />
+      <Leader x1={(xBrick + W) / 2} y1={yFloor + 1} x2={W - 6} y2={yFloor + 28} label="planșeu BA 200mm" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
@@ -515,14 +517,16 @@ function IllustrationWallFloorRoof({ bridge }) {
       {/* === ZONA PUNTE === */}
       <HeatZone x={xWallExt - 4} y={yMembrane - 6} w={tFinExt + tEPS + tBrick + 4} h={tConc + 18} />
       <HeatArrow x1={xBrick + tBrick / 2} y1={yConcTop + tConc / 2} x2={xEPS - 4} y2={yConcTop + tConc / 2} />
+      {/* Izotermă — deviere prin atic/coltare terasă */}
+      <IsothermHint x={xWallExt - 4} y={yMembrane - 6} w={tFinExt + tEPS + tBrick + 4} h={tConc + 18} />
       {/* === BANNERS === */}
       <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      {/* === LEADERS === pozițiile y2 sunt scalonate pentru a evita suprapunerea */}
-      <Leader x1={xEPS + tEPS / 2} y1={yScreed + 18} x2={xEPS + tEPS / 2 - 14} y2={H - 16} label="EPS 100" anchor="end" />
-      <Leader x1={(xBrick + W) * 0.55} y1={yMembrane + 1} x2={W - 6} y2={yMembrane - 14} label="hidroizol. 4" anchor="end" />
-      <Leader x1={(xBrick + W) * 0.65} y1={yXPS + 11} x2={W - 6} y2={yXPS + 32} label="XPS 150" anchor="end" />
-      <Leader x1={(xBrick + W) / 2} y1={yConcTop + tConc / 2} x2={W - 6} y2={yConcTop + tConc + 22} label="BA 200" anchor="end" />
+      {/* === LEADERS — pozițiile y2 scalonate, etichete cu unități explicite === */}
+      <Leader x1={xEPS + tEPS / 2} y1={yScreed + 18} x2={xEPS + tEPS / 2 - 14} y2={H - 16} label="EPS 100mm" anchor="end" />
+      <Leader x1={(xBrick + W) * 0.55} y1={yMembrane + 1} x2={W - 6} y2={yMembrane - 14} label="hidroizol. 4mm" anchor="end" />
+      <Leader x1={(xBrick + W) * 0.65} y1={yXPS + 11} x2={W - 6} y2={yXPS + 32} label="XPS 150mm" anchor="end" />
+      <Leader x1={(xBrick + W) / 2} y1={yConcTop + tConc / 2} x2={W - 6} y2={yConcTop + tConc + 22} label="BA 200mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
     </>
   );
@@ -578,14 +582,16 @@ function IllustrationWallGround({ bridge, asSoil = true }) {
       {/* === ZONA PUNTE === */}
       <HeatZone x={xWallExt - 10} y={yFloorTop - 16} w={tFinExt + tEPS + tBrick + tFinInt + 16} h={32} />
       <HeatArrow x1={xBrick + tBrick / 2} y1={yFloorTop} x2={xEPS - 10} y2={yFloorTop} />
+      {/* Izotermă — deviere la racordul perete-placă (condens risc la colț interior) */}
+      <IsothermHint x={xWallExt - 10} y={yFloorTop - 16} w={tFinExt + tEPS + tBrick + tFinInt + 16} h={32} />
       {/* === BANNERS === */}
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       <EnvBanner x="0" y={H - 12} w={W} h="12" label={asSoil ? "SOL" : "SUBSOL NEÎNCĂLZIT"} fill={asSoil ? "#d6c4a8" : "#cfd8dc"} color="#3a2a1a" />
       {/* === LEADERS === */}
-      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
-      <Leader x1={xWallExt - 3} y1={yFloorTop + 30} x2={xWallExt - 24} y2={yFloorTop + 50} label="XPS perim. 80" anchor="end" />
-      <Leader x1={W - 30} y1={yFloorTop + tBA / 2} x2={W - 6} y2={yFloorTop + tBA + 22} label="BA placă 200" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100mm" anchor="end" />
+      <Leader x1={xWallExt - 3} y1={yFloorTop + 30} x2={xWallExt - 24} y2={yFloorTop + 50} label="XPS perim. 80mm" anchor="end" />
+      <Leader x1={W - 30} y1={yFloorTop + tBA / 2} x2={W - 6} y2={yFloorTop + tBA + 22} label="BA placă 200mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
     </>
   );
@@ -625,10 +631,12 @@ function IllustrationCorner({ bridge, internal = false }) {
         {/* HeatZone la unghiul intern */}
         <HeatZone x={cx - 4} y={cy - 4} w="34" h="34" />
         <HeatArrow x1={cx + 28} y1={cy + 14} x2={cx + 4} y2={cy + 4} />
+        {/* Izotermă — concentrare flux termic la colțul interior concav */}
+        <IsothermHint x={cx - 4} y={cy - 4} w={34} h={34} color="#3b82f6" />
         <EnvBanner x={W - 70} y="6" w="60" h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
         <EnvBanner x="6" y={H - 20} w="60" h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
-        <Leader x1={cx - tEPS / 2 - tBrick - tFinInt} y1="20" x2={cx - 90} y2="6" label="EPS 100" anchor="start" />
-        <Leader x1={cx - tBrick / 2 - tFinInt} y1="20" x2={cx + 6} y2="6" label="zidărie 250" anchor="start" />
+        <Leader x1={cx - tEPS / 2 - tBrick - tFinInt} y1="20" x2={cx - 90} y2="6" label="EPS 100mm" anchor="start" />
+        <Leader x1={cx - tBrick / 2 - tFinInt} y1="20" x2={cx + 6} y2="6" label="zidărie 250mm" anchor="start" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
@@ -652,10 +660,12 @@ function IllustrationCorner({ bridge, internal = false }) {
       {/* HeatZone la unghi convex (pe partea INT) */}
       <HeatZone x={cx - 6} y={cy - 6} w="34" h="34" />
       <HeatArrow x1={cx + 24} y1={cy + 24} x2={cx - 8} y2={cy - 8} />
+      {/* Izotermă — deviere la colțul exterior convex (risc mai mic vs. concav) */}
+      <IsothermHint x={cx - 6} y={cy - 6} w={34} h={34} color="#f59e0b" />
       <EnvBanner x="6" y="6" w="60" h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={W - 70} y={H - 20} w="60" h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      <Leader x1={cx + 40} y1={cy - tEPS / 2 - tBrick - tFinInt} x2={W - 30} y2={cy - tBrick - tFinInt - 16} label="EPS 100" anchor="end" />
-      <Leader x1={cx + 40} y1={cy - tBrick / 2 - tFinInt} x2={W - 30} y2={cy + 12} label="zidărie 250" anchor="end" />
+      <Leader x1={cx + 40} y1={cy - tEPS / 2 - tBrick - tFinInt} x2={W - 30} y2={cy - tBrick - tFinInt - 16} label="EPS 100mm" anchor="end" />
+      <Leader x1={cx + 40} y1={cy - tBrick / 2 - tFinInt} x2={W - 30} y2={cy + 12} label="zidărie 250mm" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
@@ -714,7 +724,7 @@ function IllustrationWindow({ bridge, variant }) {
         {showHeatZone && <HeatZone x={xEPS - 6} y={ySill - 18} w={tEPS + tBrick + 12} h="22" />}
         <EnvBanner x="0" y="0" w={W} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
-        <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS + tEPS / 2 - 12} y2={H - 18} label="EPS 100" anchor="end" />
+        <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS + tEPS / 2 - 12} y2={H - 18} label="EPS 100mm" anchor="end" />
         <Leader x1={(xWallExt + W) / 2} y1={ySill - 8} x2={W - 6} y2={ySill - 24} label="bandă EPS" anchor="end" />
         <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
@@ -795,8 +805,8 @@ function IllustrationWindow({ bridge, variant }) {
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       {/* Leaders */}
-      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100" anchor="end" />
-      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 8} y2="6" label="EPS 100mm" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250mm" anchor="start" />
       <Leader x1={frameX + 8} y1={H * 0.78} x2={W - 30} y2={H * 0.92} label={
         v === "deep-ph" ? "montaj Passivhaus" :
         v === "in-insulation" ? "montaj RAL în EPS" :
@@ -1076,7 +1086,7 @@ function IllustrationRoof({ bridge, variant }) {
         <HeatZone x={W / 2 - 24} y={yRidge - 4} w="48" h="36" />
         <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (pod)" fill="#f0e6d3" color="#5a3a14" />
-        <Leader x1={W * 0.30} y1={H * 0.40} x2="6" y2={H * 0.55} label="MW 200" anchor="start" />
+        <Leader x1={W * 0.30} y1={H * 0.40} x2="6" y2={H * 0.55} label="MW 200mm" anchor="start" />
         <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
@@ -1123,7 +1133,7 @@ function IllustrationRoof({ bridge, variant }) {
         <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
         <Leader x1={xWallExt + 4} y1={H * 0.16} x2={W - 30} y2={H * 0.06} label="atic BA neizolat" anchor="end" />
-        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yScreed - 28} label="XPS 150" anchor="end" />
+        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yScreed - 28} label="XPS 150mm" anchor="end" />
         <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
       </>
     );
@@ -1165,7 +1175,7 @@ function IllustrationRoof({ bridge, variant }) {
         <EnvBanner x="0" y="0" w={W} h="10" label="EXT (terasă)" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
         <Leader x1={W / 2} y1={H * 0.14} x2={W - 30} y2={H * 0.04} label="cadru Al" anchor="end" />
-        <Leader x1={W * 0.52} y1={yMembrane + 12} x2={W - 30} y2={H - 18} label="XPS 150" anchor="end" />
+        <Leader x1={W * 0.52} y1={yMembrane + 12} x2={W - 30} y2={H - 18} label="XPS 150mm" anchor="end" />
         <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
@@ -1268,7 +1278,7 @@ function IllustrationRoof({ bridge, variant }) {
         <EnvBanner x="0" y="0" w={W} h="10" label={`EXT (verde ${isIntensive ? "intensiv" : "extensiv"})`} fill="#dcefdc" color="#15803d" />
         <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
         <Leader x1={(xBrick + W) / 2} y1={ySubst + 4} x2={W - 6} y2={ySubst - 8} label={`substrat ${tSubst * 5}`} anchor="end" />
-        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yBaseInt - 6} label="XPS 150" anchor="end" />
+        <Leader x1={(xBrick + W) / 2} y1={yXPS + 9} x2={W - 6} y2={yBaseInt - 6} label="XPS 150mm" anchor="end" />
         <PsiBadge psi={bridge.psi} x="6" y={H - 18} />
       </>
     );
@@ -1298,7 +1308,7 @@ function IllustrationRoof({ bridge, variant }) {
         <HeatArrow x1={cx} y1={H * 0.40} x2={cx + 24} y2={H * 0.50} />
         <EnvBanner x="0" y="0" w={W} h="12" label="EXT (calcan)" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x={cx + tGable / 2} y={H - 12} w={W - cx - tGable / 2} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
-        <Leader x1={cx} y1={H * 0.50} x2={cx + 60} y2={H * 0.70} label="zidărie 250 (neizolat)" anchor="start" />
+        <Leader x1={cx} y1={H * 0.50} x2={cx + 60} y2={H * 0.70} label="zidărie 250mm (neizolat)" anchor="start" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
@@ -1350,7 +1360,7 @@ function IllustrationRoof({ bridge, variant }) {
       <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
       <Leader x1={W * 0.48} y1={H * 0.30} x2="6" y2={H * 0.20} label="MW 200 căpriori" anchor="start" />
-      <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS - 14} y2={H - 16} label="EPS 100" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={H - 30} x2={xEPS - 14} y2={H - 16} label="EPS 100mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
     </>
   );
@@ -1708,8 +1718,8 @@ function IllustrationTimber({ bridge, variant }) {
         <HeatZone x={xEPS - 4} y={yFloor - tFloorCLT / 2 - 6} w={tEPS + tCLT + 8} h={tFloorCLT + 12} />
         <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
         <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
-        <Leader x1={xCLT + tCLT / 2} y1="22" x2={xCLT + tCLT / 2 + 14} y2="6" label="CLT 100" anchor="start" />
-        <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="MW 80" anchor="end" />
+        <Leader x1={xCLT + tCLT / 2} y1="22" x2={xCLT + tCLT / 2 + 14} y2="6" label="CLT 100mm" anchor="start" />
+        <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="MW 80mm" anchor="end" />
         <PsiBadge psi={bridge.psi} />
       </>
     );
@@ -1822,7 +1832,7 @@ function IllustrationTimber({ bridge, variant }) {
       <HeatArrow x1={xWallEnd + 4} y1={yFloor} x2={xMW - 4} y2={yFloor} />
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      <Leader x1={xMW + tMW / 2} y1="22" x2={xMW + tMW / 2 + 16} y2="6" label="MW 160 + montanți" anchor="start" />
+      <Leader x1={xMW + tMW / 2} y1="22" x2={xMW + tMW / 2 + 16} y2="6" label="MW 160mm + montanți" anchor="start" />
       <Leader x1={xMW + tMW / 2} y1={yFloor + 4} x2={W - 30} y2={H - 18} label="rim joist" anchor="end" />
       <PsiBadge psi={bridge.psi} />
     </>
@@ -2085,7 +2095,7 @@ function IllustrationChimneyMasonry({ bridge }) {
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       <Leader x1="42" y1="22" x2="6" y2="6" label="coș zidărie 380" anchor="start" />
-      <Leader x1={xEPS + tEPS / 2} y1={H - 24} x2={xEPS - 14} y2={H - 8} label="EPS 100" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={H - 24} x2={xEPS - 14} y2={H - 8} label="EPS 100mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x={W - 106} y={H - 6} />
     </>
   );
@@ -2194,7 +2204,7 @@ function IllustrationRadiatorNiche({ bridge }) {
       <HeatArrow x1={xBrick + tBrickReduced + 4} y1={H / 2} x2={xEPS - 6} y2={H / 2} />
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      <Leader x1={xBrick + tBrickReduced / 2} y1={H / 2} x2={xWallEnd + 60} y2={H * 0.92} label="zidărie subțiată 120" anchor="end" />
+      <Leader x1={xBrick + tBrickReduced / 2} y1={H / 2} x2={xWallEnd + 60} y2={H * 0.92} label="zidărie subțiată 120mm" anchor="end" />
       <Leader x1={xWallEnd + 16} y1={H * 0.50} x2={W - 30} y2={H * 0.18} label="radiator oțel" anchor="end" />
       <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
@@ -2267,11 +2277,20 @@ function IllustrationPrecastPanel({ bridge }) {
       <EnvBanner x="0" y="0" w={xPanel0} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xPanelEnd} y="0" w={W - xPanelEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
 
-      {/* === LEADERS (linii indicatoare) === */}
-      <Leader x1={xBetExt + tBetExt / 2} y1="20" x2={xBetExt + tBetExt / 2 - 12} y2="6" label="BA ext" anchor="end" />
-      <Leader x1={xInsul + tInsul / 2} y1="22" x2={xInsul + tInsul / 2 + 8} y2="8" label="izolație degradată" anchor="start" />
-      <Leader x1={xBetInt + tBetInt / 2} y1="20" x2={xBetInt + tBetInt / 2 + 12} y2="6" label="BA int" anchor="start" />
-      <Leader x1={(xPanel0 + xPanelEnd) / 2} y1={yJoint + 1} x2={W - 22} y2={yJoint + 22} label="centură BA + planșeu" anchor="end" />
+      {/* === ISOTERMĂ — deviere prin centură (sugestiv) === */}
+      <IsothermHint x={xPanel0 - 4} y={yJoint - 18} w={xPanelEnd - xPanel0 + 8} h={36} />
+
+      {/* === LEADERS — staggerate în zona INT pentru a evita suprapunerea etichetelor === */}
+      {/* Stratul BA exterior 60mm — linia indicatoare pornește din panoul superior */}
+      <Leader x1={xBetExt + tBetExt / 2} y1={yJoint - 52} x2={132} y2={16}          label="BA ext 60mm"    anchor="start" />
+      {/* Miez vată minerală 80mm (adesea degradat în PAFP) */}
+      <Leader x1={xInsul  + tInsul  / 2} y1={yJoint - 48} x2={162} y2={34}          label="vată min. 80mm" anchor="start" />
+      {/* Stratul BA interior 120mm */}
+      <Leader x1={xBetInt + tBetInt / 2} y1={yJoint - 44} x2={192} y2={52}          label="BA int 120mm"   anchor="start" />
+      {/* Centură BA continuă + planșeu (zona puntii termice) */}
+      <Leader x1={(xPanel0 + xPanelEnd) / 2} y1={yJoint + 1} x2={W - 22} y2={yJoint + 28} label="centură BA + planșeu" anchor="end" />
+      {/* Grosime totală panou: tenc5+BA60+MW80+BA120+tenc15 = 280mm */}
+      <Label x={(xPanel0 + xPanelEnd) / 2} y={H - 6} size={6.5} anchor="middle" bg={true} color="#455a64">panou 280mm</Label>
 
       <PsiBadge psi={bridge.psi} />
     </>
@@ -2384,8 +2403,8 @@ function IllustrationPrecastVerticalJoint({ bridge }) {
       <EnvBanner x="0" y="0" w={W} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT" fill="#f0e6d3" color="#5a3a14" />
       <Leader x1={cx} y1={yWall0 - 1} x2={W - 30} y2={yWall0 - 12} label="stâlpișor BA Ø250" anchor="end" />
-      <Leader x1={(xPanelLstart + xPanelLend) / 2} y1={yInsul + tInsul / 2} x2="6" y2={H - 16} label="MW 80 (panou)" anchor="start" />
-      <Leader x1={(xPanelRstart + xPanelRend) / 2} y1={yBetInt + tBetInt / 2} x2={W - 6} y2={H - 16} label="BA int 130" anchor="end" />
+      <Leader x1={(xPanelLstart + xPanelLend) / 2} y1={yInsul + tInsul / 2} x2="6" y2={H - 16} label="MW 80mm (panou)" anchor="start" />
+      <Leader x1={(xPanelRstart + xPanelRend) / 2} y1={yBetInt + tBetInt / 2} x2={W - 6} y2={H - 16} label="BA int 130mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x={W / 2 - 50} y={H - 6} />
     </>
   );
@@ -2434,8 +2453,8 @@ function IllustrationWindowLintel({ bridge }) {
       <HeatArrow x1={xBrick + tBrick / 2} y1={yLintelTop + tLintel / 2} x2={xEPS - 6} y2={yLintelTop + tLintel / 2} />
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
-      <Leader x1={(xEPS + xBrick + tBrick) / 2} y1={yLintelTop + tLintel / 2} x2={W - 30} y2="6" label="buiandrug BA 200" anchor="end" />
-      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="EPS 100" anchor="end" />
+      <Leader x1={(xEPS + xBrick + tBrick) / 2} y1={yLintelTop + tLintel / 2} x2={W - 30} y2="6" label="buiandrug BA 200mm" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 12} y2="6" label="EPS 100mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
@@ -2485,7 +2504,7 @@ function IllustrationWindowParapet({ bridge }) {
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       <Leader x1={xBrick + 4} y1={H * 0.32} x2={W - 30} y2="6" label="parapet fără EPS" anchor="end" />
-      <Leader x1={xEPS + tEPS / 2} y1={yParapetTop + 26} x2={xEPS - 14} y2={H - 18} label="EPS 100" anchor="end" />
+      <Leader x1={xEPS + tEPS / 2} y1={yParapetTop + 26} x2={xEPS - 14} y2={H - 18} label="EPS 100mm" anchor="end" />
       <PsiBadge psi={bridge.psi} x="6" y={H - 6} />
     </>
   );
@@ -2517,8 +2536,8 @@ function IllustrationGenericFallback({ bridge }) {
       <EnvBanner x="0" y="0" w={xWallExt} h="14" label="EXT" fill="#dde3e9" color="#1a3858" />
       <EnvBanner x={xWallEnd} y="0" w={W - xWallEnd} h="14" label="INT" fill="#f0e6d3" color="#5a3a14" />
       {bridge.cat && <Label x={W / 2} y={H * 0.92} size={8} anchor="middle" bold bg>{bridge.cat}</Label>}
-      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 10} y2="6" label="EPS 100" anchor="end" />
-      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250" anchor="start" />
+      <Leader x1={xEPS + tEPS / 2} y1="22" x2={xEPS + tEPS / 2 - 10} y2="6" label="EPS 100mm" anchor="end" />
+      <Leader x1={xBrick + tBrick / 2} y1="22" x2={xBrick + tBrick / 2 + 10} y2="6" label="zidărie 250mm" anchor="start" />
       <PsiBadge psi={bridge.psi} />
     </>
   );
