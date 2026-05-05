@@ -1595,7 +1595,8 @@
     "psi": 0.275,
     "psi_izolat": 0.15,
     "desc": "Suma celor 4 muchii: 0.60 - 1.60 per lucarnă",
-    "detail": "ISO 14683 R modificat + atlas RT 2012."
+    "detail": "ISO 14683 R modificat + atlas RT 2012.",
+    "illustration": false
   },
   {
     "cat": "Acoperiș complex",

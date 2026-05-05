@@ -183,13 +183,15 @@ export default function ElementSectionModal({
           )}
           {type === "bridge" && element && (
             <div className="space-y-4">
-              <div className="bg-[#f7f3e8] rounded-xl overflow-hidden border border-white/5 max-w-[1280px] mx-auto">
-                <BridgeIllustration
-                  bridge={element}
-                  details={bridgeDetails}
-                  mode="detail"
-                />
-              </div>
+              {element.illustration !== false && (
+                <div className="bg-[#f7f3e8] rounded-xl overflow-hidden border border-white/5 max-w-[1280px] mx-auto">
+                  <BridgeIllustration
+                    bridge={element}
+                    details={bridgeDetails}
+                    mode="detail"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[1280px] mx-auto">
                 {/* Card metadata stânga */}
                 {bridgeDetails && (

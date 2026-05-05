@@ -334,11 +334,13 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                       }}
                       title="Click pentru a deschide secțiunea în fereastră mare"
                     >
-                      <BridgeIllustration
-                        bridge={bridge}
-                        details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
-                        mode="card"
-                      />
+                      {bridge.illustration !== false && (
+                        <BridgeIllustration
+                          bridge={bridge}
+                          details={details ? { fRsi: details.fRsi_typical, priority: details.repair_priority, isoClass } : { isoClass }}
+                          mode="card"
+                        />
+                      )}
                       <div style={{
                         position: "absolute", top: 6, right: 6, padding: "3px 8px",
                         background: "rgba(15,23,42,0.85)", color: "#fbbf24",
