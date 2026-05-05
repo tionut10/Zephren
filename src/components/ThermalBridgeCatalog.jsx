@@ -510,15 +510,26 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                           >
                             <option value="">— selectează stratigrafia peretelui/planșeului —</option>
                             <option value="__custom__">✏️ Stratigrafie personalizată (adaugă straturi manual)</option>
-                            {["PE", "PT", "PP", "PL"].map(cat => (
-                              <optgroup key={cat} label={cat === "PE" ? "Pereți exteriori" : cat === "PT" ? "Planșee terasă" : cat === "PP" ? "Planșee pod/șarpantă" : "Planșee pe sol"}>
-                                {allConstructions.filter(c => c.category === cat).map(c => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.id} · {c.name_ro} (U={c.U_total})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            ))}
+                            {["PE", "PT", "PP", "PL", "PB"].map(cat => {
+                              const CAT_LABELS = {
+                                PE: "Pereți exteriori",
+                                PT: "Planșee terasă",
+                                PP: "Planșee pod/șarpantă",
+                                PL: "Planșee pe sol",
+                                PB: "Planșee peste subsol neîncălzit",
+                              };
+                              const items = allConstructions.filter(c => c.category === cat);
+                              if (!items.length) return null;
+                              return (
+                                <optgroup key={cat} label={CAT_LABELS[cat]}>
+                                  {items.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.id} · {c.name_ro} (U={c.U_total})
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              );
+                            })}
                           </select>
 
                           {selectedConstruction === "__custom__" && (

@@ -1,47 +1,88 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-02
+// Ultima generare: 2026-05-05
 
-export const APP_VERSION = "0.5.0";
+export const APP_VERSION = "0.6.0";
 export const CHANGELOG = [
   {
-    "version": "0.5.0",
-    "week": "Săpt. 5",
-    "dateRange": "27 apr – 3 mai 2026",
+    "version": "0.6.0",
+    "week": "Săpt. 6",
+    "dateRange": "4 – 10 mai 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
+        "icon": "📦",
+        "text": "fix(catalog): românizare completă denumiri categorii punți termice"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(catalog): iconițe SVG arhitecturale specifice per categorie punți termice"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Batch E — finalizare P2 (tooltips A_env/educational + duplicare + detail vitraj)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Batch D — UI advanced wizards (Glaser + câmpuri punți + H×L)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(catalog): Batch C — vitraje v2.0 (+20 entries: uși/skylight/curtainwall)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(catalog): Batch B — soluții tipice PM/UN/PB (+9 entries)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(envelope): Batch A — fix-uri P1/P2 audit Pas 2 (calcul + UI)"
+      },
+      {
+        "icon": "📋",
+        "text": "fix(envelope): rezolvare 4 P0 audit Pas 2 — wizard opac + punți"
+      }
+    ]
+  },
+  {
+    "version": "0.5.0",
+    "week": "Săpt. 5",
+    "dateRange": "27 apr – 3 mai 2026",
+    "color": "#6366f1",
+    "label": "",
+    "items": [
+      {
+        "icon": "🔧",
+        "text": "fix(anexa): nr_persoane + secțiuni neaplicabile (radiant, debit nominal)"
+      },
+      {
+        "icon": "🎨",
+        "text": "fix(anexa): inlocuire 'nr. ......' si '(nr)' care erau split intre run-uri"
+      },
+      {
+        "icon": "🔧",
+        "text": "aliniere toleranta aspect ratio stampila 1.18→1.15 (simetric ±15%)"
+      },
+      {
+        "icon": "✨",
+        "text": "contrast panou Registru MDLPA (opacity-35→75, culori warning) + title tooltip pe Select la hover"
+      },
+      {
+        "icon": "✨",
+        "text": "Step6: completare panou Registru MDLPA — modalitate transmitere, format cod unic, invaliditate fără cod, amend"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(anexa): muta sectiunea H la final, corecteaza nr certificat si regim inaltime"
+      },
+      {
+        "icon": "📄",
+        "text": "Step6: elimină generare cod CPE local, păstrează doar index registru simplu cu persistență localStorage per au"
+      },
+      {
         "icon": "🔸",
         "text": "ux: butoanele 'Generează Preview' identice ca stil + mutate deasupra Card-urilor preview"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(sprint avansat): tabel anvelopa 'em-dash' + preview DOCX live Anexa + validari cross-cell + sectiune H fo"
-      },
-      {
-        "icon": "✨",
-        "text": "pre-populare M2-M5 + bifare ACM recirculare/contor/debitmetre"
-      },
-      {
-        "icon": "📄",
-        "text": "fix CRITIC: nu mai sterg/modific celula 'Anul construirii/renovarii majore' in CPE"
-      },
-      {
-        "icon": "📄",
-        "text": "'no tc element at grid_offset=1' la generare CPE - inlocuiesc vMerge cu cleanup text simplu"
-      },
-      {
-        "icon": "📄",
-        "text": "ReferenceError 'climate is not defined' la generare DOCX (folosesc selectedClimate)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(P0+P1+P2): bifare auto checkbox-uri Anexa + ștampilă 40mm + vMerge CPE + clasă A+ fix + numerotare X/Y + "
-      },
-      {
-        "icon": "📄",
-        "text": "skip injecție semnătură/ștampilă pentru Anexa 1+2 (apare doar în CPE)"
       }
     ]
   },
@@ -49,7 +90,7 @@ export const CHANGELOG = [
     "version": "0.4.0",
     "week": "Săpt. 4",
     "dateRange": "20 – 26 apr 2026",
-    "color": "#6366f1",
+    "color": "#10b981",
     "label": "",
     "items": [
       {
@@ -90,7 +131,7 @@ export const CHANGELOG = [
     "version": "0.3.0",
     "week": "Săpt. 3",
     "dateRange": "13 – 19 apr 2026",
-    "color": "#10b981",
+    "color": "#22c55e",
     "label": "",
     "items": [
       {
@@ -131,7 +172,7 @@ export const CHANGELOG = [
     "version": "0.2.0",
     "week": "Săpt. 2",
     "dateRange": "6 – 12 apr 2026",
-    "color": "#22c55e",
+    "color": "#8b5cf6",
     "label": "",
     "items": [
       {
@@ -172,7 +213,7 @@ export const CHANGELOG = [
     "version": "0.1.0",
     "week": "Săpt. 1",
     "dateRange": "30 mar – 5 apr 2026",
-    "color": "#8b5cf6",
+    "color": "#f97316",
     "label": "LANSARE",
     "items": [
       {

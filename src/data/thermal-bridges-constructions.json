@@ -360,6 +360,225 @@
       "U_total": 0.105,
       "R_total": 9.55,
       "notes": "Passivhaus standard. Eliminare aproape completă punte termică la soclu."
+    },
+
+    "PE-11-caramida-plina-30-EPS15": {
+      "id": "PE-11",
+      "category": "PE",
+      "name_ro": "Cărămidă plină 30 cm + EPS 15 cm (bloc reabilitat standard)",
+      "name_en": "Solid brick 300 + EPS 150 (refurbished block)",
+      "typical_year": "1960-1980 reabilitare 2008-2016",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă armare", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS alb fațadă (ρ=15-17 kg/m³)", "d_mm": 150, "lambda": 0.040, "R": 3.750 },
+        { "material": "Tencuială adezivă", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "Cărămidă plină", "d_mm": 300, "lambda": 0.80, "R": 0.375 },
+        { "material": "Tencuială var-ciment interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.231,
+      "R_total": 4.32,
+      "notes": "Variantă cu cărămidă mai groasă față de PE-01. Frecventă la blocuri interbelice reabilitate ETICS."
+    },
+
+    "PE-12-porotherm-38-fara-izo": {
+      "id": "PE-12",
+      "category": "PE",
+      "name_ro": "Porotherm 38 cm fără izolație exterioară (construcție 2000-2010)",
+      "name_en": "Porotherm 380 no ETICS (2000-2010 building)",
+      "typical_year": "2000-2010",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment exterior", "d_mm": 15, "lambda": 0.93, "R": 0.016 },
+        { "material": "Cărămidă Porotherm 38 (λ=0.14)", "d_mm": 380, "lambda": 0.14, "R": 2.714 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.344,
+      "R_total": 2.92,
+      "notes": "Fără izolație exterioară — U ≈ 0.34, sub standardul C107 actual (U_max=0.25). Necesită ETICS 10+ cm."
+    },
+
+    "PE-13-porotherm-38-EPS10": {
+      "id": "PE-13",
+      "category": "PE",
+      "name_ro": "Porotherm 38 cm + EPS 10 cm (locuință 2005-2015)",
+      "name_en": "Porotherm 380 + EPS 100 (house 2005-2015)",
+      "typical_year": "2005-2015",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă armare", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS alb fațadă (ρ=15-17 kg/m³)", "d_mm": 100, "lambda": 0.040, "R": 2.500 },
+        { "material": "Adeziv ETICS", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "Cărămidă Porotherm 38 (λ=0.14)", "d_mm": 380, "lambda": 0.14, "R": 2.714 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.185,
+      "R_total": 5.41,
+      "notes": "Soluție standard case individuale 2005-2015. U ≈ 0.19 satisface nZEB dacă EPS e grafitat."
+    },
+
+    "PE-14-BCA25-EPS12": {
+      "id": "PE-14",
+      "category": "PE",
+      "name_ro": "BCA 25 cm (ρ=500) + EPS 12 cm grafitat (construcție 2000-2015)",
+      "name_en": "AAC block 250 (ρ=500) + grey EPS 120",
+      "typical_year": "2000-2015",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS grafitat (ρ=15 kg/m³)", "d_mm": 120, "lambda": 0.032, "R": 3.750 },
+        { "material": "Adeziv", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "BCA ρ=500 kg/m³", "d_mm": 250, "lambda": 0.13, "R": 1.923 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.170,
+      "R_total": 5.87,
+      "notes": "Performanță bună cu BCA mai subțire + EPS grafitat. Economie materiale vs. PE-03."
+    },
+
+    "PE-15-cadre-BA-GVP25-EPS12": {
+      "id": "PE-15",
+      "category": "PE",
+      "name_ro": "Structură cadre BA + umplutură GVP 25 cm + EPS 12 cm (clădire mixtă)",
+      "name_en": "RC frame + hollow brick infill 250 + EPS 120",
+      "typical_year": "1995-2015 clădiri birouri/mixte",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS alb fațadă", "d_mm": 120, "lambda": 0.040, "R": 3.000 },
+        { "material": "Adeziv", "d_mm": 3, "lambda": 0.87, "R": 0.003 },
+        { "material": "Cărămidă GVP umplutură", "d_mm": 250, "lambda": 0.46, "R": 0.543 },
+        { "material": "Tencuială var interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.267,
+      "R_total": 3.74,
+      "notes": "Punți repetitive pe stâlpi BA (λ=1.74 vs. λ=0.46) reduc U real cu 10-15%. EPS acoperă și stâlpii."
+    },
+
+    "PE-16-IPCT-reabilitat-EPS10": {
+      "id": "PE-16",
+      "category": "PE",
+      "name_ro": "Panou prefabricat IPCT reabilitat + EPS 10 cm exterior (bloc '70-'90 reabilitat)",
+      "name_en": "IPCT precast sandwich + EPS 100 retrofit",
+      "typical_year": "1970-1990 reabilitare 2010+",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment + plasă", "d_mm": 5, "lambda": 0.93, "R": 0.005 },
+        { "material": "EPS reabilitare 10 cm", "d_mm": 100, "lambda": 0.040, "R": 2.500 },
+        { "material": "Beton exterior panou", "d_mm": 100, "lambda": 1.74, "R": 0.057 },
+        { "material": "EPS original degradat (ρ≈15)", "d_mm": 50, "lambda": 0.050, "R": 1.000 },
+        { "material": "Beton interior structural", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "Tencuială", "d_mm": 15, "lambda": 0.70, "R": 0.019 }
+      ],
+      "U_total": 0.261,
+      "R_total": 3.84,
+      "notes": "Reabilitare energetică bloc IPCT. Punțile la rosturi panouri (Ψ≈0.05-0.10) rămân semnificative chiar și cu ETICS."
+    },
+
+    "PE-17-zidarie-mixta-interbelica": {
+      "id": "PE-17",
+      "category": "PE",
+      "name_ro": "Zidărie mixtă piatră+cărămidă 50 cm fără izolație (clădire interbelică)",
+      "name_en": "Mixed stone+brick masonry 500 no insulation (interwar building)",
+      "typical_year": "Pre-1945",
+      "layers_ext_to_int": [
+        { "material": "Tencuială ciment exterior", "d_mm": 25, "lambda": 0.93, "R": 0.027 },
+        { "material": "Piatră naturală", "d_mm": 300, "lambda": 1.40, "R": 0.214 },
+        { "material": "Cărămidă plină interior", "d_mm": 200, "lambda": 0.80, "R": 0.250 },
+        { "material": "Tencuială var interior", "d_mm": 20, "lambda": 0.70, "R": 0.029 }
+      ],
+      "U_total": 1.449,
+      "R_total": 0.69,
+      "notes": "Zidărie istorică fără izolație — U extrem de slab. Reabilitare exclusiv pe interior (izolație interioară) sau ETICS exterior în zone neprotejate."
+    },
+
+    "PT-04-terasa-circulabila-XPS12": {
+      "id": "PT-04",
+      "category": "PT",
+      "name_ro": "Terasă circulabilă: placă beton 5 cm + XPS 12 cm + membrană + beton armat",
+      "name_en": "Trafficked flat roof: concrete slab 50 + XPS 120 + membrane + RC",
+      "typical_year": "2005+",
+      "layers_ext_to_int": [
+        { "material": "Placă beton circulabilă finisaj", "d_mm": 50, "lambda": 1.74, "R": 0.029 },
+        { "material": "Nisip nivelare", "d_mm": 20, "lambda": 1.40, "R": 0.014 },
+        { "material": "XPS terasă (ρ=30 kg/m³)", "d_mm": 120, "lambda": 0.034, "R": 3.529 },
+        { "material": "Membrană bituminoasă", "d_mm": 4, "lambda": 0.17, "R": 0.024 },
+        { "material": "Barieră vapori", "d_mm": 1, "lambda": 0.17, "R": 0.006 },
+        { "material": "Șapă pantă", "d_mm": 50, "lambda": 1.40, "R": 0.036 },
+        { "material": "Beton armat planșeu", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.257,
+      "R_total": 3.89,
+      "notes": "Terasă accesibilă (parcare, terasă restaurant). Placa de protecție crește U față de terasa necirculabilă."
+    },
+
+    "PT-05-terasa-inversata-XPS15": {
+      "id": "PT-05",
+      "category": "PT",
+      "name_ro": "Terasă inversată: pietriș + XPS 15 cm deasupra membranei + beton armat",
+      "name_en": "Inverted flat roof: gravel + XPS 150 above membrane + RC",
+      "typical_year": "2005+",
+      "layers_ext_to_int": [
+        { "material": "Pietriș protecție (≥5 cm)", "d_mm": 50, "lambda": null, "R": 0.100 },
+        { "material": "XPS terasă inversată (ρ=35 kg/m³)", "d_mm": 150, "lambda": 0.036, "R": 4.167 },
+        { "material": "Membrană bituminoasă", "d_mm": 4, "lambda": 0.17, "R": 0.024 },
+        { "material": "Șapă pantă", "d_mm": 40, "lambda": 1.40, "R": 0.029 },
+        { "material": "Beton armat planșeu", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Tencuială interior", "d_mm": 15, "lambda": 0.70, "R": 0.021 }
+      ],
+      "U_total": 0.217,
+      "R_total": 4.60,
+      "notes": "Inversată = membrana e protejată de XPS. XPS rezistent la umiditate (λ crește cu 5% umed). Recomandată pentru durabilitate ≥30 ani."
+    },
+
+    "PB-01-planseu-subsol-BA15-EPS8": {
+      "id": "PB-01",
+      "category": "PB",
+      "name_ro": "Planșeu peste subsol neîncălzit: BA 15 cm + EPS 8 cm aplicat pe dedesubt",
+      "name_en": "Floor above unheated basement: RC 150 + EPS 80 below",
+      "typical_year": "2000+",
+      "layers_ext_to_int": [
+        { "material": "Parchet lemn sau gresie", "d_mm": 12, "lambda": 0.16, "R": 0.075 },
+        { "material": "Șapă ciment", "d_mm": 50, "lambda": 1.40, "R": 0.036 },
+        { "material": "Beton armat planșeu", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "EPS aplicat pe sofitul planșeului", "d_mm": 80, "lambda": 0.040, "R": 2.000 },
+        { "material": "Tencuială protecție EPS", "d_mm": 5, "lambda": 0.87, "R": 0.006 }
+      ],
+      "U_total": 0.415,
+      "R_total": 2.41,
+      "notes": "Flux descendent (Rsi=0.17, Rse=0.04). Aplicare EPS pe sofitul planșeului — soluție frecventă reabilitare subsol. EPS minim 10 cm recomandat (C107)."
+    },
+
+    "PB-02-planseu-subsol-BA20-MW12": {
+      "id": "PB-02",
+      "category": "PB",
+      "name_ro": "Planșeu peste subsol neîncălzit: BA 20 cm + vată minerală 12 cm (reabilitare)",
+      "name_en": "Floor above unheated basement: RC 200 + MW 120 below",
+      "typical_year": "2005+",
+      "layers_ext_to_int": [
+        { "material": "Parchet sau gresie", "d_mm": 12, "lambda": 0.16, "R": 0.075 },
+        { "material": "Șapă ciment", "d_mm": 50, "lambda": 1.40, "R": 0.036 },
+        { "material": "Beton armat planșeu", "d_mm": 200, "lambda": 1.74, "R": 0.115 },
+        { "material": "Vată minerală bazaltică (ρ=150) pe sofit", "d_mm": 120, "lambda": 0.039, "R": 3.077 },
+        { "material": "Gips-carton protecție sofit", "d_mm": 12, "lambda": 0.21, "R": 0.057 }
+      ],
+      "U_total": 0.278,
+      "R_total": 3.59,
+      "notes": "Vată minerală bazaltică rezistentă la umiditate (λ≈0.039 umed). Gips rezistent la umiditate (tip H2) obligatoriu în subsol."
+    },
+
+    "PL-03-placa-sol-XPS12-standard": {
+      "id": "PL-03",
+      "category": "PL",
+      "name_ro": "Placă pe sol: XPS 12 cm sub placă + șapă + finisaj (casă nouă standard)",
+      "name_en": "Ground slab: XPS 120 below + screed + finish (standard new house)",
+      "typical_year": "2010+",
+      "layers_ext_to_int": [
+        { "material": "Sol compactat + pietriș", "d_mm": null, "lambda": null, "R": 0.100 },
+        { "material": "Folie PE (hidroizolație)", "d_mm": 0.2, "lambda": 0.35, "R": 0.001 },
+        { "material": "XPS sub placă (ρ=30 kg/m³)", "d_mm": 120, "lambda": 0.034, "R": 3.529 },
+        { "material": "Beton armat placă", "d_mm": 150, "lambda": 1.74, "R": 0.086 },
+        { "material": "Șapă cu tuburi încălzire pardoseală", "d_mm": 65, "lambda": 1.40, "R": 0.046 },
+        { "material": "Finisaj gresie sau parchet", "d_mm": 12, "lambda": 0.16, "R": 0.075 }
+      ],
+      "U_total": 0.250,
+      "R_total": 4.01,
+      "notes": "Soluție standard casă nouă cu încălzire în pardoseală. Fără contribuție sol (Rsol ≈ 0.5-1.0 adăugat la calcul complet ISO 13370). XPS 12 cm = minim recomandat C107 zona II-III climatic."
     }
   },
 
@@ -368,27 +587,39 @@
 
     "Colț exterior": {
       "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.5, "PE-05": 1.1,
-      "PE-06": 1.4, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.65, "PE-10": 1.3
+      "PE-06": 1.4, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.65, "PE-10": 1.3,
+      "PE-11": 0.95, "PE-12": 1.25, "PE-13": 0.90, "PE-14": 0.72, "PE-15": 1.05,
+      "PE-16": 1.15, "PE-17": 1.35
     },
     "Perete ext. — Planșeu intermediar": {
       "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.5, "PE-05": 1.2,
-      "PE-06": 1.5, "PE-07": 0.55, "PE-08": 0.6, "PE-09": 0.65, "PE-10": 1.4
+      "PE-06": 1.5, "PE-07": 0.55, "PE-08": 0.6, "PE-09": 0.65, "PE-10": 1.4,
+      "PE-11": 0.95, "PE-12": 1.30, "PE-13": 0.88, "PE-14": 0.72, "PE-15": 1.10,
+      "PE-16": 1.20, "PE-17": 1.40
     },
     "Perete ext. — Planșeu terasă": {
       "PE-01": 1.0, "PE-02": 0.85, "PE-03": 0.7, "PE-04": 0.45, "PE-05": 1.15,
-      "PE-06": 1.5, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.3
+      "PE-06": 1.5, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.3,
+      "PE-11": 0.95, "PE-12": 1.25, "PE-13": 0.88, "PE-14": 0.70, "PE-15": 1.10,
+      "PE-16": 1.18, "PE-17": 1.35
     },
     "Perete ext. — Planșeu pe sol": {
       "PE-01": 1.0, "PE-02": 0.9, "PE-03": 0.75, "PE-04": 0.5, "PE-05": 1.2,
-      "PE-06": 1.6, "PE-07": 0.65, "PE-08": 0.6, "PE-09": 0.7, "PE-10": 1.5
+      "PE-06": 1.6, "PE-07": 0.65, "PE-08": 0.6, "PE-09": 0.7, "PE-10": 1.5,
+      "PE-11": 0.95, "PE-12": 1.30, "PE-13": 0.90, "PE-14": 0.75, "PE-15": 1.12,
+      "PE-16": 1.22, "PE-17": 1.45
     },
     "Consolă balcon — beton neîntrerupt": {
       "PE-01": 1.0, "PE-02": 0.95, "PE-03": 0.9, "PE-04": 0.85, "PE-05": 1.1,
-      "PE-06": 1.3, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.2
+      "PE-06": 1.3, "PE-07": 0.6, "PE-08": 0.55, "PE-09": 0.7, "PE-10": 1.2,
+      "PE-11": 0.98, "PE-12": 1.20, "PE-13": 0.92, "PE-14": 0.88, "PE-15": 1.08,
+      "PE-16": 1.15, "PE-17": 1.25
     },
     "Glaf fereastră — montaj standard": {
       "PE-01": 1.0, "PE-02": 0.95, "PE-03": 0.85, "PE-04": 0.8, "PE-05": 1.05,
-      "PE-06": 1.2, "PE-07": 0.75, "PE-08": 0.7, "PE-09": 0.75, "PE-10": 1.15
+      "PE-06": 1.2, "PE-07": 0.75, "PE-08": 0.7, "PE-09": 0.75, "PE-10": 1.15,
+      "PE-11": 0.97, "PE-12": 1.18, "PE-13": 0.90, "PE-14": 0.83, "PE-15": 1.03,
+      "PE-16": 1.12, "PE-17": 1.20
     }
   }
 }
