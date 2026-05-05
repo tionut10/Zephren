@@ -3629,8 +3629,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         if (isGeneratingDocx) return;
                         if (!canExportDocx) { requireUpgrade("Export DOCX CPE necesită plan Standard sau superior"); return; }
                         if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
-                        // Sprint G4 — gate fRsi (SR EN ISO 13788) înainte de export
-                        if (!fRsiOverride) {
+                        // Sprint G4 — gate fRsi (SR EN ISO 13788) DEZACTIVAT temporar
+                        // (decizie 6 mai 2026: necesită îmbunătățiri UX înainte de re-activare —
+                        // metadata fRsi incompletă pe ~75% din intrări, false positives pe punți
+                        // tradiționale RO, lipsă escape hatch pentru auditori urgenți).
+                        // Re-activare: setează ENABLE_FRSI_GATE = true în const de mai jos.
+                        const ENABLE_FRSI_GATE = false;
+                        if (ENABLE_FRSI_GATE && !fRsiOverride) {
                           const fRsiCheck = validateBridgesFRsi(thermalBridges, { buildingCategory: building?.category });
                           if (!fRsiCheck.valid && (fRsiCheck.critical.length > 0 || fRsiCheck.warning.length > 0)) {
                             setFRsiModal({ open: true, validation: fRsiCheck, pendingExport: "cpe" });
