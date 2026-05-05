@@ -3945,6 +3945,7 @@ export default function EnergyCalcApp({ cloud }) {
       {showBridgeCatalog && (
         <Suspense fallback={null}>
           <ThermalBridgeCatalog
+            building={building}
             onSelect={(bridge) => {
               setThermalBridges(prev => [...prev, {
                 name: bridge.name,

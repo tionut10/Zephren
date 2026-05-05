@@ -13,6 +13,7 @@ import {
   classifyCondensationRisk,
   repairPriorityLabel,
 } from "../calc/thermal-bridges-metadata.js";
+import { getGzeConventional } from "../data/climate-data-na-2023.js";
 import {
   getAllConstructions,
   getConstructionById,
@@ -132,7 +133,15 @@ const ISO_CLASS_COLOR = {
 };
 
 // ── Component principal ──────────────────────────────────────────────────────
-export default function ThermalBridgeCatalog({ onSelect, onClose }) {
+export default function ThermalBridgeCatalog({ onSelect, onClose, building = null }) {
+  // DD dinamic per localitate (Mc 001-2022 Anexa NA + climate.json).
+  // Default: București GZE_conv = 3170 K·zi (Mc 001 §11).
+  const localityDD = (() => {
+    const loc = building?.locality || building?.location || null;
+    if (!loc) return 3170;
+    const gze = getGzeConventional(loc);
+    return Number.isFinite(gze) && gze > 0 ? gze : 3170;
+  })();
   const [selectedCat, setSelectedCat] = useState("Joncțiuni pereți");
   const [selectedBridge, setSelectedBridge] = useState(null);
   const [detailBridge, setDetailBridge] = useState(null);  // bridge pentru modalul mare de detaliu
@@ -198,7 +207,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
           <div>
             <div style={{ fontSize: "16px", fontWeight: 700 }}>Catalog Punți Termice</div>
             <div style={{ fontSize: "11px", opacity: 0.45, marginTop: 2 }}>
-              Secțiuni ilustrative — SR EN ISO 14683:2017, Mc 001-2022 · {THERMAL_BRIDGES_DB.length} tipuri
+              SR EN ISO 14683:2017 · Mc 001-2022 · {THERMAL_BRIDGES_DB.length} tipuri · DD={localityDD} K·zi {building?.locality ? `(${building.locality})` : "(default București)"}
             </div>
           </div>
           <button
@@ -312,7 +321,7 @@ export default function ThermalBridgeCatalog({ onSelect, onClose }) {
                 const validation = validatePsiRange(bridge.name, bridge.psi);
                 const details = getBridgeDetails(bridge.name);
                 const condRisk = details ? classifyCondensationRisk(details.fRsi_typical) : null;
-                const annualLoss = details ? calcAnnualLossPerMeter(bridge.psi, { factor: details.annual_loss_factor }) : null;
+                const annualLoss = details ? calcAnnualLossPerMeter(bridge.psi, { degreeDays: localityDD, factor: details.annual_loss_factor }) : null;
                 return (
                   <div
                     key={`${bridge.cat}-${bridge.name}-${i}`}

@@ -33,6 +33,49 @@
       "typical_remedies": "Soluții standard de remediere (ETICS continuă, ruptură termică structurală, izolație perimetrală)",
       "repair_priority": "Prioritate intervenție 1-5 (1=cosmetic, 3=energetic necesar, 5=risc structural/sanitar imediat)",
       "annual_loss_factor": "Factor pentru calcul pierderi anuale: Q_an[kWh/m·an] ≈ ψ × L × DD × 24 / 1000 × factor"
+    },
+    "priority_criteria": {
+      "_doc": "Criterii de încadrare a câmpului `repair_priority` (1-5) per intrare. Bazate pe combinația impact energetic + risc condens (ISO 13788) + risc structural/sanitar.",
+      "1": {
+        "label": "Cosmetic / efect minor",
+        "energy_impact_kwh_per_m_year": "< 2",
+        "fRsi_threshold": "≥ 0.80",
+        "condensation_risk": "fără",
+        "examples": ["Colț interior favorabil", "Diblu plastic cu ac metalic", "Detaliu Passivhaus optimizat"]
+      },
+      "2": {
+        "label": "Util de optimizat",
+        "energy_impact_kwh_per_m_year": "2 – 5",
+        "fRsi_threshold": "0.75 – 0.80",
+        "condensation_risk": "scăzut (HR ≤ 50%)",
+        "examples": ["Cornișă acoperiș cu ETICS", "Soclu fundație cu XPS"]
+      },
+      "3": {
+        "label": "Energetic necesar",
+        "energy_impact_kwh_per_m_year": "5 – 10",
+        "fRsi_threshold": "0.70 – 0.75",
+        "condensation_risk": "moderat (HR 50-60%)",
+        "examples": ["Planșeu intermediar fără ETICS", "Buiandrug fereastră BA neizolat"]
+      },
+      "4": {
+        "label": "Critic — pierderi majore",
+        "energy_impact_kwh_per_m_year": "10 – 20",
+        "fRsi_threshold": "0.65 – 0.70",
+        "condensation_risk": "ridicat (condens sezonier iarnă)",
+        "examples": ["Atic terasă neizolat", "Consolă balcon BA fără ruptor", "Stâlp BA penetrant"]
+      },
+      "5": {
+        "label": "Sanitar / structural urgent",
+        "energy_impact_kwh_per_m_year": "> 20",
+        "fRsi_threshold": "< 0.65",
+        "condensation_risk": "sever (mucegai Stachybotrys frecvent)",
+        "examples": ["Casetă jaluzele în nișă deschisă", "Consolă HEA160 penetrant", "Fundație piatră necontinuă"]
+      },
+      "_references": [
+        "SR EN ISO 13788:2012 §6 — pragul fRsi=0,75 pentru spații rezidențiale RO (HR 50%, T_int=20°C, T_ext=-15°C)",
+        "Mc 001-2022 §11 — clasificare pierderi liniare în CPE",
+        "WHO Guidelines for Indoor Air Quality: Dampness and Mould (2009) — corelare fRsi și risc Stachybotrys"
+      ]
     }
   },
   "detail_templates": {
