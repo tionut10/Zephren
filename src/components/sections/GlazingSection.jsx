@@ -350,7 +350,7 @@ export default function GlazingSection({
             <text x={pkgCX} y={MAIN_Y + SPACER_H / 2 + 4} fontSize="8.5"
               textAnchor="middle" fontWeight="700" fill="white"
               style={{ paintOrder: "stroke", stroke: isWarmEdge ? "#92400e" : "#1e293b", strokeWidth: "2px" }}>
-              {isWarmEdge ? "Distanțier warm edge (TGI)" : "Distanțier aluminiu · Ψg ≈ 0.08"}
+              {isWarmEdge ? "Warm edge (TGI)" : "Distanțier Al · Ψg ≈ 0.08"}
             </text>
           )}
 
@@ -369,15 +369,15 @@ export default function GlazingSection({
                   {/* Reflexie */}
                   <rect x={e.x + e.w * 0.22} y={glassY + 8} width={e.w * 0.18} height={glassH - 16}
                     fill="white" opacity="0.5" rx="1" />
-                  {/* Numere față în cercuri, plasate în spacer sus */}
+                  {/* Numere față — plasate în zona de sticlă, sub distanțier */}
                   {!compact && (
                     <>
-                      <circle cx={e.x} cy={MAIN_Y + 11} r="8.5" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x} y={MAIN_Y + 14.5} fontSize="9.5" textAnchor="middle" fill="white" fontWeight="900">
+                      <circle cx={e.x} cy={glassY + 13} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+                      <text x={e.x} y={glassY + 16.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
                         {e.idx * 2 + 1}
                       </text>
-                      <circle cx={e.x + e.w} cy={MAIN_Y + 11} r="8.5" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x + e.w} y={MAIN_Y + 14.5} fontSize="9.5" textAnchor="middle" fill="white" fontWeight="900">
+                      <circle cx={e.x + e.w} cy={glassY + 13} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+                      <text x={e.x + e.w} y={glassY + 16.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
                         {e.idx * 2 + 2}
                       </text>
                     </>
@@ -429,17 +429,6 @@ export default function GlazingSection({
             </g>
           ))}
 
-          {/* Label pachet sticlă jos */}
-          {!compact && (
-            <g>
-              <rect x={xPkgStart} y={MAIN_Y + MAIN_H - SPACER_H - 28} width={PKG_W} height="26" rx="5"
-                fill="rgba(12,74,110,0.88)" stroke="#0ea5e9" strokeWidth="1" />
-              <text x={pkgCX} y={MAIN_Y + MAIN_H - SPACER_H - 14} fontSize="9.5"
-                textAnchor="middle" fontWeight="700" fill="#bae6fd">
-                Pachet sticlă · {config.panes} foi · Ug = {config.u.toFixed(2)} W/m²K
-              </text>
-            </g>
-          )}
 
           {/* Iconiță elevație */}
           {!compact && <ElevationIcon x={xWallExt + 4} y={MAIN_Y + 6} />}
