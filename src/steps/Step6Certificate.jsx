@@ -47,6 +47,8 @@ import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validi
 import { mapLegacyGradeToNew } from "../calc/auditor-grad-validation.js";
 import { calcPenalties } from "../calc/penalties.js";
 import { calcSRI } from "../calc/epbd.js";
+import { validateBridgesFRsi } from "../calc/fRsi-validation.js";
+import FRsiValidationModal from "../components/FRsiValidationModal.jsx";
 import { getCityCoordinates } from "../utils/city-coordinates.js";
 
 /**
@@ -94,6 +96,9 @@ export default function Step6Certificate(props) {
             // Previne payload-uri concurente identice → reduce risc de System Rule
             // challenge la Vercel edge când user-ul dă click rapid pe buton.
             const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+            // Sprint G4 — fRsi validation gate (SR EN ISO 13788)
+            const [fRsiModal, setFRsiModal] = useState({ open: false, validation: null, pendingExport: null });
+            const [fRsiOverride, setFRsiOverride] = useState(null); // { rationale, problems, timestamp }
             // Audit 2 mai 2026 — P0.5: pe Vercel HTTPS cu CSP strict, range requests pe
             // blob:// eșuează cu „Unexpected server response (0)". Pasăm ArrayBuffer-ul
             // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
@@ -3624,6 +3629,14 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         if (isGeneratingDocx) return;
                         if (!canExportDocx) { requireUpgrade("Export DOCX CPE necesită plan Standard sau superior"); return; }
                         if (!dataComplete) { showToast("Completați datele obligatorii (Au, localitate, categorie, instalații)", "error"); return; }
+                        // Sprint G4 — gate fRsi (SR EN ISO 13788) înainte de export
+                        if (!fRsiOverride) {
+                          const fRsiCheck = validateBridgesFRsi(thermalBridges, { buildingCategory: building?.category });
+                          if (!fRsiCheck.valid && (fRsiCheck.critical.length > 0 || fRsiCheck.warning.length > 0)) {
+                            setFRsiModal({ open: true, validation: fRsiCheck, pendingExport: "cpe" });
+                            return;
+                          }
+                        }
                         setIsGeneratingDocx(true);
                         try {
                           showToast("Se generează CPE DOCX...", "info", 2000);
@@ -3955,6 +3968,22 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                   Pasul 7: Audit →
                 </button>
               </div>
+
+              {/* Sprint G4 — modal validare fRsi (SR EN ISO 13788) la export CPE */}
+              <FRsiValidationModal
+                open={fRsiModal.open}
+                validation={fRsiModal.validation}
+                onCancel={() => setFRsiModal({ open: false, validation: null, pendingExport: null })}
+                onConfirmOverride={(payload) => {
+                  setFRsiOverride({
+                    rationale: payload.rationale,
+                    problems: payload.problems,
+                    timestamp: new Date().toISOString(),
+                  });
+                  setFRsiModal({ open: false, validation: null, pendingExport: null });
+                  showToast("Override fRsi acceptat — continuați exportul (watermark va fi inclus în CPE).", "warning", 4500);
+                }}
+              />
             </div>
             );
 }

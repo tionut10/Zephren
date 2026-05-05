@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --reporter=list"
+    "test:e2e": "playwright test --reporter=list",
+    "validate:bridges": "node scripts/validate-cross-sources.cjs",
+    "validate:bridges:apply": "node scripts/validate-cross-sources.cjs --apply",
+    "migrate:bridges": "node scripts/migrate-thermal-bridges-v2.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

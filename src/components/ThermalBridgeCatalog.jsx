@@ -147,6 +147,24 @@ export default function ThermalBridgeCatalog({ onSelect, onClose, building = nul
   const [detailBridge, setDetailBridge] = useState(null);  // bridge pentru modalul mare de detaliu
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
+  // Sprint Filtru epocă — chip-uri pentru epoci constructive (vintage)
+  const VINTAGE_OPTIONS = [
+    { id: "pre-1950", label: "Pre-1950", desc: "case rurale, vernacular, monumente" },
+    { id: "1950-1989", label: "1950-1989", desc: "IPCT, panouri prefabricate, blocuri" },
+    { id: "1990-2010", label: "1990-2010", desc: "retrofit ETICS, post-decembriste" },
+    { id: "post-2010", label: "Post-2010", desc: "moderne, izolație continuă" },
+    { id: "passivhaus", label: "Passivhaus", desc: "PHI, nZEB, CLT, ruptori certificați" },
+  ];
+  const [selectedVintages, setSelectedVintages] = useState(() => {
+    try {
+      const saved = localStorage.getItem("zephren_bridge_vintages");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("zephren_bridge_vintages", JSON.stringify(selectedVintages)); } catch {}
+  }, [selectedVintages]);
+  const toggleVintage = (id) => setSelectedVintages(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const [selectedConstruction, setSelectedConstruction] = useState("");
   const [customLayers, setCustomLayers] = useState([]);
   const [customU, setCustomU] = useState(0);
@@ -159,18 +177,27 @@ export default function ThermalBridgeCatalog({ onSelect, onClose, building = nul
     return Object.entries(counts).map(([cat, count]) => ({ cat, count }));
   }, []);
 
+  const matchesVintage = (b) => {
+    if (selectedVintages.length === 0) return true;
+    if (!Array.isArray(b.vintage) || b.vintage.length === 0) return true;
+    return selectedVintages.some(v => b.vintage.includes(v));
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
+    let base;
     if (q) {
       // Căutare globală peste toate categoriile
-      return THERMAL_BRIDGES_DB.filter(b =>
+      base = THERMAL_BRIDGES_DB.filter(b =>
         b.name.toLowerCase().includes(q) ||
         b.cat.toLowerCase().includes(q) ||
         (b.desc || "").toLowerCase().includes(q)
       );
+    } else {
+      base = THERMAL_BRIDGES_DB.filter(b => b.cat === selectedCat);
     }
-    return THERMAL_BRIDGES_DB.filter(b => b.cat === selectedCat);
-  }, [search, selectedCat]);
+    return base.filter(matchesVintage);
+  }, [search, selectedCat, selectedVintages]);
 
   // Închide picker la Escape sau click afară
   const pickerRef = useRef(null);
@@ -261,6 +288,42 @@ export default function ThermalBridgeCatalog({ onSelect, onClose, building = nul
                 ✕
               </button>
             )}
+          </div>
+
+          {/* ── Sprint Filtru epocă — chip-uri vintage ──────────────────── */}
+          <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 10, opacity: 0.45, marginRight: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Epocă:</span>
+            {VINTAGE_OPTIONS.map(v => {
+              const active = selectedVintages.includes(v.id);
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => toggleVintage(v.id)}
+                  title={v.desc}
+                  style={{
+                    padding: "4px 10px", borderRadius: 999,
+                    border: active ? "1px solid rgba(245,158,11,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                    background: active ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.03)",
+                    color: active ? "#fbbf24" : "#cbd5e1",
+                    fontSize: 11, cursor: "pointer", transition: "all 0.1s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+            {selectedVintages.length > 0 && (
+              <button
+                onClick={() => setSelectedVintages([])}
+                style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#94a3b8", fontSize: 10, cursor: "pointer" }}
+              >
+                ✕ resetează
+              </button>
+            )}
+            <span style={{ fontSize: 10, opacity: 0.4, marginLeft: "auto" }}>
+              {selectedVintages.length === 0 ? "toate epocile" : `${selectedVintages.length} active`}
+            </span>
           </div>
 
           {/* ── Panou dropdown categorii ─────────────────────────────────── */}

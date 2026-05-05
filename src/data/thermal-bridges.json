@@ -10,7 +10,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -23,7 +29,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -36,7 +48,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -49,7 +67,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -62,7 +85,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CO",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.05 (interval ISO -0.15-0.03, gap 40%); psi_izolat=0.02 (interval -0.15-0, gap 40%)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -75,7 +104,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CO",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -88,7 +123,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -101,7 +142,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -114,7 +161,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -127,7 +180,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -140,7 +199,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -153,7 +218,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -166,7 +237,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Balcoane",
@@ -179,7 +255,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane",
@@ -192,7 +274,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane",
@@ -205,7 +293,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Balcoane",
@@ -218,7 +312,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -231,7 +331,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -244,7 +350,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -257,7 +369,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -270,7 +388,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -283,7 +407,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Stâlpi/grinzi",
@@ -296,7 +426,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Stâlpi/grinzi",
@@ -309,7 +445,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Stâlpi/grinzi",
@@ -322,7 +463,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Stâlpi/grinzi",
@@ -335,7 +482,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Instalații",
@@ -348,7 +501,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "punte punctuală fără unit W/K explicit",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații",
@@ -361,7 +520,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "punte punctuală fără unit W/K explicit",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Instalații",
@@ -374,7 +539,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "punte punctuală fără unit W/K explicit",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Instalații",
@@ -387,7 +557,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -400,7 +576,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -413,7 +595,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -426,7 +614,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -439,7 +633,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -452,7 +652,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -465,7 +670,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -478,7 +689,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -491,7 +708,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -504,7 +727,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -517,7 +746,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "BF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -530,7 +765,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -543,7 +784,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -556,7 +803,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -569,7 +822,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -582,7 +841,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -595,7 +860,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -608,7 +879,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri din lemn",
@@ -621,7 +898,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -634,7 +917,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -647,7 +935,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.4 (interval ISO 0.02-0.25, gap 60%); psi_izolat=0.1 (interval 0.005-0.1, gap 0%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -660,7 +955,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -673,7 +973,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -686,7 +991,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri prefabricate",
@@ -699,7 +1010,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -712,7 +1028,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -725,7 +1046,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -738,7 +1064,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -751,7 +1083,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -764,7 +1102,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WS",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -777,7 +1121,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -790,7 +1141,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -803,7 +1160,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -816,7 +1179,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -829,7 +1198,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WS",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -842,7 +1217,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -855,7 +1236,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -868,7 +1255,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "pre-1950"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -881,7 +1273,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -894,7 +1292,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -907,7 +1311,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -920,7 +1330,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș avansat",
@@ -933,7 +1349,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -946,7 +1368,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -959,7 +1387,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -972,7 +1406,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -985,7 +1426,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -998,7 +1446,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane avansate",
@@ -1011,7 +1465,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1025,7 +1485,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1039,7 +1505,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1052,7 +1524,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1065,7 +1543,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1078,7 +1563,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Sisteme ETICS",
@@ -1091,7 +1582,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1104,7 +1601,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1117,7 +1620,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1130,7 +1639,14 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "1990-2010",
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1143,7 +1659,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1156,7 +1678,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Elemente punctuale (chi)",
@@ -1169,7 +1697,13 @@
     "unit": "W/K",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1182,7 +1716,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "punte punctuală fără unit W/K explicit",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1195,7 +1735,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "chi-punctual",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "punte punctuală fără unit W/K explicit",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1208,7 +1754,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1221,7 +1773,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1234,7 +1792,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1247,7 +1811,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1260,7 +1830,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații avansate",
@@ -1273,7 +1849,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți",
@@ -1286,7 +1868,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre",
@@ -1299,7 +1887,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș",
@@ -1312,7 +1906,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Stâlpi/grinzi",
@@ -1325,7 +1925,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WH",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1338,7 +1945,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1351,7 +1964,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1364,7 +1983,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1377,7 +2002,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IW",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1390,7 +2021,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1403,7 +2040,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1416,7 +2059,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1429,7 +2079,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1442,7 +2097,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.9 (interval ISO 0.1-0.8, gap 12%); psi_izolat=0.15 (interval 0.04-0.25, gap 0%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1455,7 +2117,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.6 (interval ISO 0.1-1.2, gap 0%); psi_izolat=0.2 (interval 0.01-0.15, gap 33%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni pereți – tipuri speciale",
@@ -1468,7 +2137,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.3 (interval ISO 0.02-0.25, gap 20%); psi_izolat=0.08 (interval 0.005-0.1, gap 0%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1481,7 +2157,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1494,7 +2176,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1507,7 +2195,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1520,7 +2213,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.65 (interval ISO 0.1-1.2, gap 0%); psi_izolat=0.18 (interval 0.01-0.15, gap 20%)",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1533,7 +2231,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.5 (interval ISO 0.05-0.4, gap 25%); psi_izolat=0.14 (interval 0.02-0.2, gap 0%)",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1546,7 +2249,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1559,7 +2268,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1572,7 +2287,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -1585,7 +2306,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "W",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1598,7 +2325,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1611,7 +2344,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1624,7 +2363,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1637,7 +2382,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1650,7 +2401,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1663,7 +2420,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1676,7 +2439,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane și logii – tipuri speciale",
@@ -1689,7 +2458,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -1702,7 +2477,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -1715,7 +2495,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -1728,7 +2514,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -1741,7 +2532,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "FW",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Fundații și subsol",
@@ -1753,7 +2549,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1766,7 +2568,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1779,7 +2587,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1792,7 +2606,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1805,7 +2625,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1818,7 +2644,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1831,7 +2663,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1844,7 +2682,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Acoperiș – tipuri speciale",
@@ -1857,7 +2701,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1870,7 +2720,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=1.5 (interval ISO 0.1-0.8, gap 87%); psi_izolat=0.25 (interval 0.04-0.25, gap 0%)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1883,7 +2739,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1896,7 +2758,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1909,7 +2777,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1922,7 +2796,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1935,7 +2814,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Structuri speciale",
@@ -1948,7 +2834,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -1964,7 +2856,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -1980,7 +2878,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -1996,7 +2900,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2012,7 +2922,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2025,7 +2941,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.55 (interval ISO 0.1-1.2, gap 0%); psi_izolat=0.18 (interval 0.01-0.15, gap 20%)",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2041,7 +2963,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2054,7 +2982,15 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2067,7 +3003,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2080,7 +3022,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2093,7 +3042,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2106,7 +3061,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2119,7 +3081,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2132,7 +3101,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2145,7 +3120,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2158,7 +3140,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2171,7 +3160,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2184,7 +3179,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2197,7 +3199,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2210,7 +3218,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2223,7 +3237,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2236,7 +3256,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.7 (interval ISO 0.1-0.8, gap 0%); psi_izolat=0.3 (interval 0.04-0.25, gap 20%)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2249,7 +3275,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Reabilitare ETICS",
@@ -2262,7 +3294,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2275,7 +3313,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2288,7 +3332,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2301,7 +3351,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2314,7 +3370,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2327,7 +3389,14 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2340,7 +3409,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Pasivhaus / nZEB",
@@ -2353,7 +3428,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "CLT / Lemn masiv",
@@ -2366,7 +3447,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "CLT / Lemn masiv",
@@ -2379,7 +3465,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010",
+      "pre-1950"
+    ]
   },
   {
     "cat": "CLT / Lemn masiv",
@@ -2392,7 +3484,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "CLT / Lemn masiv",
@@ -2405,7 +3502,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Panou sandwich",
@@ -2418,7 +3520,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Panou sandwich",
@@ -2431,7 +3539,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.25 (interval ISO 0.02-0.25, gap 0%); psi_izolat=0.15 (interval 0.005-0.1, gap 50%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Panou sandwich",
@@ -2444,7 +3558,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Panou sandwich",
@@ -2457,7 +3577,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "C",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.375 (interval ISO 0.02-0.25, gap 50%); psi_izolat=0.2 (interval 0.005-0.1, gap 100%)",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Panou sandwich",
@@ -2470,7 +3596,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane moderne",
@@ -2483,7 +3615,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane moderne",
@@ -2496,7 +3634,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane moderne",
@@ -2509,7 +3652,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "B",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Balcoane moderne",
@@ -2522,7 +3670,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații moderne",
@@ -2535,7 +3689,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "FW",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații moderne",
@@ -2548,7 +3707,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Fundații moderne",
@@ -2561,7 +3726,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "D",
-    "method": "iso14683_default"
+    "method": "iso14683_default",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațadă cortină",
@@ -2574,7 +3744,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Fațadă cortină",
@@ -2587,7 +3762,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "expert_judgment"
+    "method": "expert_judgment",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș complex",
@@ -2601,7 +3781,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Acoperiș complex",
@@ -2614,7 +3800,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.55 (interval ISO 0.05-0.8, gap 0%); psi_izolat=0.3 (interval 0.01-0.2, gap 50%)",
+    "vintage": [
+      "1950-1989"
+    ]
   },
   {
     "cat": "Acoperiș complex",
@@ -2627,7 +3818,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "R",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.65 (interval ISO 0.05-0.8, gap 0%); psi_izolat=0.3 (interval 0.01-0.2, gap 50%)",
+    "vintage": [
+      "1950-1989",
+      "pre-1950"
+    ]
   },
   {
     "cat": "Tradițional RO",
@@ -2640,7 +3837,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.4 (interval ISO 0.1-1.2, gap 0%); psi_izolat=0.2 (interval 0.01-0.15, gap 33%)",
+    "vintage": [
+      "pre-1950"
+    ]
   },
   {
     "cat": "Tradițional RO",
@@ -2653,7 +3855,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "GF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "red",
+    "cross_source_reason": "psi=0.875 (interval ISO 0.1-1.4, gap 0%); psi_izolat=0.4 (interval 0.05-0.3, gap 33%)",
+    "vintage": [
+      "pre-1950"
+    ]
   },
   {
     "cat": "Tradițional RO",
@@ -2666,7 +3873,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WH",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "pre-1950"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2682,7 +3894,12 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2698,7 +3915,13 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Instalații – tipuri speciale",
@@ -2714,7 +3937,12 @@
     "bridge_type": "point",
     "dimension_system": "interior",
     "iso_14683_code": "CHI",
-    "method": "numeric_iso10211"
+    "method": "numeric_iso10211",
+    "cross_source_status": "na",
+    "cross_source_reason": "punte punctuală (χ în W/K — comparator linear nu se aplică)",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2727,7 +3955,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -2740,7 +3974,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "yellow",
+    "cross_source_reason": "psi=0.55 (interval ISO 0.03-0.5, gap 10%); psi_izolat=0.1 (interval 0.01-0.12, gap 0%)",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș complex",
@@ -2753,7 +3993,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Acoperiș complex",
@@ -2766,7 +4012,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "P",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   },
   {
     "cat": "Fațade și ferestre avansate",
@@ -2779,7 +4031,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "CW",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2792,7 +4049,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "BF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1990-2010",
+      "post-2010"
+    ]
   },
   {
     "cat": "Joncțiuni speciale",
@@ -2805,7 +4068,13 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "IF",
-    "method": "atlas_validated"
+    "method": "atlas_validated",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "passivhaus",
+      "post-2010"
+    ]
   },
   {
     "cat": "Ferestre și uși – tipuri speciale",
@@ -2818,6 +4087,12 @@
     "unit": "W/(m·K)",
     "dimension_system": "interior",
     "iso_14683_code": "WJ",
-    "method": "manufacturer_data"
+    "method": "manufacturer_data",
+    "cross_source_status": "green",
+    "cross_source_reason": "concordă cu ISO 14683 ±10%",
+    "vintage": [
+      "1950-1989",
+      "1990-2010"
+    ]
   }
 ]
