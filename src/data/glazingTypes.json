@@ -545,9 +545,9 @@
     },
     {
       "id": "DR-otel-plina-fara-izol",
-      "label": "Usa otel plina fara izolatie (industrial vechi)",
-      "shortLabel": "Otel plina",
-      "composition": "Tabla otel 2-3mm fara strat izolant",
+      "label": "Ușă oțel plină fără izolație (industrial vechi)",
+      "shortLabel": "Oțel plină",
+      "composition": "Tablă oțel 2-3mm fără strat izolant",
       "ug": 5.5,
       "ugRange": {
         "min": 5,
@@ -570,8 +570,8 @@
     },
     {
       "id": "DR-aluminiu-fara-rt",
-      "label": "Usa aluminiu fara rupere termica (vitraj minor)",
-      "shortLabel": "Alu fara RT",
+      "label": "Ușă aluminiu fără rupere termică (vitraj minor)",
+      "shortLabel": "Alu fără RT",
       "composition": "Profil alu monolitic + vitraj DGU 4-12-4 aer",
       "ug": 4,
       "ugRange": {
@@ -595,9 +595,9 @@
     },
     {
       "id": "DR-sandwich-eps-50",
-      "label": "Usa plina sandwich EPS 50mm (rezidential standard)",
+      "label": "Ușă plină sandwich EPS 50mm (rezidențial standard)",
       "shortLabel": "Sandwich EPS 50",
-      "composition": "Tabla otel + EPS 50mm + tabla otel",
+      "composition": "Tablă oțel + EPS 50mm + tablă oțel",
       "ug": 1.6,
       "ugRange": {
         "min": 1.4,
@@ -620,8 +620,8 @@
     },
     {
       "id": "DR-sandwich-pir-60-balcon",
-      "label": "Usa balcon plina PIR 60mm cu prag termic",
-      "shortLabel": "Usa balcon PIR",
+      "label": "Ușă balcon plină PIR 60mm cu prag termic",
+      "shortLabel": "Ușă balcon PIR",
       "composition": "PVC 5cam + miez PIR 60mm + 2 garnituri + prag termic",
       "ug": 1.3,
       "ugRange": {
@@ -644,9 +644,9 @@
     },
     {
       "id": "DR-pvc-vitrata-50-50",
-      "label": "Usa PVC partial vitrata (50% geam termopan)",
+      "label": "Ușă PVC parțial vitrată (50% geam termopan)",
       "shortLabel": "PVC 50% vitraj",
-      "composition": "PVC 5cam + DGU Low-E argon (50% suprafata)",
+      "composition": "PVC 5cam + DGU Low-E argon (50% suprafață)",
       "ug": 1.45,
       "ugRange": {
         "min": 1.3,
@@ -668,9 +668,9 @@
     },
     {
       "id": "DR-alu-rt-pu-80-publica",
-      "label": "Usa aluminiu RT cu miez PU 80mm (cladiri publice)",
+      "label": "Ușă aluminiu RT cu miez PU 80mm (clădiri publice)",
       "shortLabel": "Alu RT + PU 80",
-      "composition": "Alu cu rupere termica >24mm + PU 80mm + 3 garnituri",
+      "composition": "Alu cu rupere termică >24mm + PU 80mm + 3 garnituri",
       "ug": 0.95,
       "ugRange": {
         "min": 0.85,
@@ -693,8 +693,8 @@
     },
     {
       "id": "DR-passive-pu-100-ph",
-      "label": "Usa Passivhaus certificata (PU 100mm + 3 garnituri)",
-      "shortLabel": "Usa PH",
+      "label": "Ușă Passivhaus certificată (PU 100mm + 3 garnituri)",
+      "shortLabel": "Ușă PH",
       "composition": "Lemn/alu + miez PU 100mm + 3 garnituri + prag termic",
       "ug": 0.75,
       "ugRange": {
@@ -718,9 +718,9 @@
     },
     {
       "id": "DR-glisanta-auto-comerciala",
-      "label": "Usa automata glisanta comerciala (intrare mall/aeroport)",
-      "shortLabel": "Glisanta auto",
-      "composition": "Profil alu RT simpla + DGU 4-12-4 Low-E aer",
+      "label": "Ușă automată glisantă comercială (intrare mall/aeroport)",
+      "shortLabel": "Glisantă auto",
+      "composition": "Profil alu RT simplă + DGU 4-12-4 Low-E aer",
       "ug": 2.5,
       "ugRange": {
         "min": 2.2,
@@ -742,9 +742,9 @@
     },
     {
       "id": "DR-sas-doua-usi",
-      "label": "Sas cu doua usi in serie (intrare cladiri publice)",
-      "shortLabel": "Sas 2 usi",
-      "composition": "2x usa vitrate izolate cu camera intermediara 1.5-2m",
+      "label": "Sas cu două uși în serie (intrare clădiri publice)",
+      "shortLabel": "Sas 2 uși",
+      "composition": "2x uși vitrate izolate cu cameră intermediară 1.5-2m",
       "ug": 1.5,
       "ugRange": {
         "min": 1.3,
@@ -766,9 +766,9 @@
     },
     {
       "id": "DR-otel-rt-vata-pir-tehnic",
-      "label": "Usa otel cu rupere termica + vata/PIR (tehnic / antifoc)",
-      "shortLabel": "Otel RT EI60",
-      "composition": "Otel inox + rupere termica + PIR/vata 80mm + EI 60",
+      "label": "Ușă oțel cu rupere termică + vată/PIR (tehnic / antifoc)",
+      "shortLabel": "Oțel RT EI60",
+      "composition": "Oțel inox + rupere termică + PIR/vată 80mm + EI 60",
       "ug": 1.4,
       "ugRange": {
         "min": 1.2,
@@ -791,9 +791,9 @@
     },
     {
       "id": "SK-velux-mansarda-dgu-lowe",
-      "label": "Lucarna mansarda tip Velux DGU Low-E argon",
+      "label": "Lucarnă mansardă tip Velux DGU Low-E argon",
       "shortLabel": "Velux DGU",
-      "composition": "Rama lemn-alu + DGU 4-16-4 Low-E argon",
+      "composition": "Ramă lemn-alu + DGU 4-16-4 Low-E argon",
       "ug": 1,
       "ugRange": {
         "min": 0.9,
@@ -816,9 +816,9 @@
     },
     {
       "id": "SK-velux-passive-tgu",
-      "label": "Lucarna mansarda Passivhaus TGU 2x Low-E",
+      "label": "Lucarnă mansardă Passivhaus TGU 2x Low-E",
       "shortLabel": "Velux PH TGU",
-      "composition": "Rama lemn + TGU 4-16-4-16-4 2x Low-E argon",
+      "composition": "Ramă lemn + TGU 4-16-4-16-4 2x Low-E argon",
       "ug": 0.65,
       "ugRange": {
         "min": 0.55,
@@ -841,9 +841,9 @@
     },
     {
       "id": "SK-cupola-pmma-dome",
-      "label": "Cupola PMMA/PC translucida (acoperis plat)",
-      "shortLabel": "Cupola PMMA",
-      "composition": "Strat dublu PMMA/PC 4mm + camera aer",
+      "label": "Cupolă PMMA/PC translucidă (acoperiș plat)",
+      "shortLabel": "Cupolă PMMA",
+      "composition": "Strat dublu PMMA/PC 4mm + cameră aer",
       "ug": 2.5,
       "ugRange": {
         "min": 2,
@@ -866,9 +866,9 @@
     },
     {
       "id": "SK-luminator-acoperis-plat-tgu",
-      "label": "Luminator acoperis plat TGU Low-E argon (premium)",
+      "label": "Luminator acoperiș plat TGU Low-E argon (premium)",
       "shortLabel": "Luminator plat TGU",
-      "composition": "Rama alu RT + TGU 6-16-4-16-6 Low-E argon",
+      "composition": "Ramă alu RT + TGU 6-16-4-16-6 Low-E argon",
       "ug": 0.9,
       "ugRange": {
         "min": 0.8,
@@ -891,9 +891,9 @@
     },
     {
       "id": "SK-fereastra-subsol-pivot",
-      "label": "Fereastra subsol pivotanta cu vitraj securizat",
+      "label": "Fereastră subsol pivotantă cu vitraj securizat",
       "shortLabel": "Subsol pivot",
-      "composition": "Profil PVC 5cam + DGU 4-16-4 Low-E + grilaj antiefractie",
+      "composition": "Profil PVC 5cam + DGU 4-16-4 Low-E + grilaj antiefracție",
       "ug": 1.3,
       "ugRange": {
         "min": 1.2,
@@ -915,9 +915,9 @@
     },
     {
       "id": "SK-bandou-vitrat-orizontal",
-      "label": "Bandou vitrat orizontal continuu (ribbon window)",
+      "label": "Bandou vitrat orizontal continuu (fereastră bandou)",
       "shortLabel": "Bandou orizontal",
-      "composition": "Profil alu RT complexa + DGU/TGU Low-E argon",
+      "composition": "Profil alu RT complexă + DGU/TGU Low-E argon",
       "ug": 1.1,
       "ugRange": {
         "min": 1,
@@ -939,8 +939,8 @@
     },
     {
       "id": "CW-stick-alu-rt-dgu",
-      "label": "Curtain wall stick aluminiu RT + DGU Low-E argon",
-      "shortLabel": "CW alu DGU",
+      "label": "Perete cortină stick aluminiu RT + DGU Low-E argon",
+      "shortLabel": "PC alu DGU",
       "composition": "Profile mullion+transom alu RT + panouri DGU 6-16-6 Low-E argon",
       "ug": 1.5,
       "ugRange": {
@@ -964,9 +964,9 @@
     },
     {
       "id": "CW-unitized-alu-tgu",
-      "label": "Curtain wall unitized TGU 2x Low-E argon (premium)",
-      "shortLabel": "CW unitized TGU",
-      "composition": "Module prefabricate alu RT complexa + TGU 6-16-4-16-6 2x Low-E",
+      "label": "Perete cortină unitizat TGU 2x Low-E argon (premium)",
+      "shortLabel": "PC unitizat TGU",
+      "composition": "Module prefabricate alu RT complexă + TGU 6-16-4-16-6 2x Low-E",
       "ug": 0.9,
       "ugRange": {
         "min": 0.8,
@@ -989,9 +989,9 @@
     },
     {
       "id": "CW-vitrina-comerciala-mare",
-      "label": "Vitrina comerciala mare (>4m2 geam)",
-      "shortLabel": "Vitrina comercial",
-      "composition": "Profil alu RT simpla + DGU 6-12-6 Low-E aer",
+      "label": "Vitrină comercială mare (>4m² geam)",
+      "shortLabel": "Vitrină comercial",
+      "composition": "Profil alu RT simplă + DGU 6-12-6 Low-E aer",
       "ug": 1.8,
       "ugRange": {
         "min": 1.5,
@@ -1013,9 +1013,9 @@
     },
     {
       "id": "CW-atrium-structural",
-      "label": "Atrium structural cu luminator (mall, biroau atrium)",
+      "label": "Atrium structural cu luminator (mall, birou atrium)",
       "shortLabel": "Atrium structural",
-      "composition": "Sistem mixt vertical+orizontal alu/otel + DGU/TGU Low-E",
+      "composition": "Sistem mixt vertical+orizontal alu/oțel + DGU/TGU Low-E",
       "ug": 1.4,
       "ugRange": {
         "min": 1,

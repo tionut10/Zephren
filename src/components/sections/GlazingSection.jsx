@@ -369,19 +369,6 @@ export default function GlazingSection({
                   {/* Reflexie */}
                   <rect x={e.x + e.w * 0.22} y={glassY + 8} width={e.w * 0.18} height={glassH - 16}
                     fill="white" opacity="0.5" rx="1" />
-                  {/* Numere față — la mijlocul vertical al secțiunii, fără conflict cu distanțierul */}
-                  {!compact && (
-                    <>
-                      <circle cx={e.x} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
-                        {e.idx * 2 + 1}
-                      </text>
-                      <circle cx={e.x + e.w} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
-                      <text x={e.x + e.w} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
-                        {e.idx * 2 + 2}
-                      </text>
-                    </>
-                  )}
                 </g>
               );
             } else {
@@ -408,6 +395,20 @@ export default function GlazingSection({
               );
             }
           })}
+
+          {/* ── NUMERE FAȚĂ — desenate ultimele, deasupra tuturor rect-urilor ── */}
+          {!compact && pkgElems.filter(e => e.type === "glass").map((e) => (
+            <g key={`face-${e.idx}`}>
+              <circle cx={e.x} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+              <text x={e.x} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
+                {e.idx * 2 + 1}
+              </text>
+              <circle cx={e.x + e.w} cy={midY} r="8" fill="#1e40af" stroke="white" strokeWidth="1.5" />
+              <text x={e.x + e.w} y={midY + 3.5} fontSize="9" textAnchor="middle" fill="white" fontWeight="900">
+                {e.idx * 2 + 2}
+              </text>
+            </g>
+          ))}
 
           {/* ── LOW-E ── */}
           {lowEFaces.map((pos, i) => (
