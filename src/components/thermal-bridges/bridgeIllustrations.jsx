@@ -1181,38 +1181,66 @@ function IllustrationRoof({ bridge, variant }) {
     );
   }
 
-  // DORMER — lucarnă (proeminență verticală în acoperiș înclinat)
+  // DORMER — lucarnă: secțiune 2D transversală prin peretele lateral × acoperiș principal
+  // Orientare: EXT=sus+dreapta, INT(mansardă)=jos+stânga
+  // Panta acoperișului principal coboară din dreapta-sus (joncțiune) spre stânga-jos (streașină)
   if (v === "dormer") {
+    // ── Punct de joncțiune (baza peretelui lateral al lucarnei pe fața ext. a acoperișului) ──
+    const xJ = 174, yJ = 90;
+    // ── Linia exterioară a acoperișului: din (xL, yExtL) până la (xJ, yJ), pantă ~29° ──
+    const xL = 15, yExtL = 177;
+    // ── Normal spre INT (perpendicular pe pantă, spre mansardă) ──
+    // Calculat din direcția pantei (xJ-xL, yJ-yExtL)=(159,-87): n_INT = (87/len, 159/len)
+    const nIx = 0.482, nIy = 0.877;
+    // ── Offsets cumulative straturi acoperiș (de la ext spre int) ──
+    const tT = 8, tS = 11, tM = 31, tO = 36; // țigle / +folie / +MW / +OSB
+    // Helper offset: punct pe stratul la distanță d față de suprafața exterioară
+    const o = (d) => ({ x1: xL + nIx*d, y1: yExtL + nIy*d, x2: xJ + nIx*d, y2: yJ + nIy*d });
+    // Helper poligon strat între offset d1 și d2
+    const lp = (d1, d2) => { const a=o(d1),b=o(d2); return `${a.x1},${a.y1} ${a.x2},${a.y2} ${b.x2},${b.y2} ${b.x1},${b.y1}`; };
+    // ── Perete lateral lucarnă (vertical, fața ext la xJ) ──
+    const tCl = 5, tFr = 22, tFn = 4;  // placaj / cadru+MW / finisaj
+    const xIntW = xJ - tCl - tFr - tFn; // 143 — fața interioară a peretelui
+    // ── Spațiu INT(mansardă): sub intradosul acoperișului + stânga xIntW ──
+    // Suprafața intradosului la xIntW: y≈148; intersecție cu y=H-12: x≈70
     return (
       <>
         <rect x="0" y="0" width={W} height={H} fill="url(#g-ext)" />
-        <rect x="0" y={H * 0.82} width={W} height={H * 0.18} fill="url(#g-int)" />
-        {/* Pantă principală - țigle */}
-        <polygon points={`${W},15 20,${H * 0.78} ${W},${H * 0.78}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
-        {[0.20, 0.40, 0.60, 0.80].map((fy, i) => (
-          <line key={i} x1={30 + i * 30} y1={H * 0.78 - i * 22} x2={W} y2={H * 0.78 - i * 22} stroke="#1a1c1f" strokeWidth="0.4" opacity="0.5" />
-        ))}
-        {/* Izolație MW pantă */}
-        <polygon points={`${W},32 50,${H * 0.74} ${W},${H * 0.74}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
-        {/* OSB intrados pantă */}
-        <polygon points={`${W},${H * 0.74} 56,${H * 0.74} 56,${H * 0.78} ${W},${H * 0.78}`} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
-        {/* Lucarnă - perete frontal lemn cu izolație */}
-        <rect x={W * 0.30} y={H * 0.26} width={W * 0.36} height={H * 0.32} fill="url(#p-wood)" stroke="#1a1c1f" strokeWidth="0.6" />
-        <rect x={W * 0.32} y={H * 0.28} width={W * 0.32} height="6" fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
-        {/* Acoperiș lucarnă (țigle) */}
-        <polygon points={`${W * 0.30},${H * 0.26} ${W * 0.48},${H * 0.10} ${W * 0.66},${H * 0.26}`} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.6" />
-        <polygon points={`${W * 0.32},${H * 0.27} ${W * 0.48},${H * 0.13} ${W * 0.64},${H * 0.27}`} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
-        {/* Fereastră dormer */}
-        <rect x={W * 0.37} y={H * 0.34} width={W * 0.22} height={H * 0.20} fill="#f0ece4" stroke="#1a1c1f" strokeWidth="0.6" />
-        <rect x={W * 0.39} y={H * 0.36} width={W * 0.18} height={H * 0.16} fill="url(#g-glass)" stroke="#1a1c1f" strokeWidth="0.4" />
-        <line x1={W * 0.48} y1={H * 0.36} x2={W * 0.48} y2={H * 0.52} stroke="#ffffff" strokeWidth="0.6" opacity="0.6" />
-        {/* Joncțiuni laterale (punți) */}
-        <HeatZone x={W * 0.24} y={H * 0.22} w="32" h="42" />
-        <HeatZone x={W * 0.62} y={H * 0.22} w="32" h="42" />
+        {/* Spațiu INT (mansardă) */}
+        <polygon points={`0,${H-12} 70,${H-12} ${xIntW},148 ${xIntW},${H-12}`} fill="url(#g-int)" />
+
+        {/* ── Straturi acoperiș principal (EXT → INT) ── */}
+        {/* Țigle ceramice */}
+        <polygon points={lp(0, tT)} fill="#a06448" stroke="#1a1c1f" strokeWidth="0.5" />
+        {[0.25, 0.5, 0.75].map((f, i) => {
+          const x = xL + f*(xJ-xL), y = yExtL + f*(yJ-yExtL);
+          return <line key={i} x1={x} y1={y} x2={x+nIx*tT} y2={y+nIy*tT} stroke="#1a1c1f" strokeWidth="0.35" opacity="0.6" />;
+        })}
+        {/* Folie / membrană */}
+        <polygon points={lp(tT, tS)} fill="#cfd8dc" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* MW izolație între căpriori */}
+        <polygon points={lp(tS, tM)} fill="url(#p-mw)" stroke="#1a1c1f" strokeWidth="0.4" />
+        {/* OSB + placaj intrados */}
+        <polygon points={lp(tM, tO)} fill="#c9a575" stroke="#1a1c1f" strokeWidth="0.4" />
+
+        {/* ── Perete lateral lucarnă (vertical, secțiune) ── */}
+        {/* Placaj exterior (lemn) */}
+        <rect x={xJ-tCl}     y={12} width={tCl} height={yJ-12} fill="url(#p-wood)"    stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Cadru + MW izolație */}
+        <rect x={xJ-tCl-tFr} y={12} width={tFr} height={yJ-12} fill="url(#p-mw)"     stroke="#1a1c1f" strokeWidth="0.5" />
+        {/* Finisaj interior */}
+        <rect x={xIntW}       y={12} width={tFn} height={yJ-12} fill="url(#p-plaster)" stroke="#1a1c1f" strokeWidth="0.5" />
+
+        {/* ── Punte termică ψ la joncțiune ── */}
+        <HeatZone x={xJ-tCl-12} y={yJ-14} w="32" h="32" />
+        <HeatArrow x1={xJ+8} y1={yJ+16} x2={xJ-4} y2={yJ+4} />
+
         <EnvBanner x="0" y="0" w={W} h="12" label="EXT" fill="#dde3e9" color="#1a3858" />
-        <EnvBanner x="0" y={H - 12} w={W} h="12" label="INT (mansardă)" fill="#f0e6d3" color="#5a3a14" />
-        <Leader x1={W * 0.48} y1={H * 0.20} x2={W - 30} y2={H * 0.06} label="lucarnă" anchor="end" />
-        <PsiBadge psi={bridge.psi} x={W - 102} y={H - 16} />
+        <EnvBanner x="0" y={H-12} w={W} h="12" label="INT (mansardă)" fill="#f0e6d3" color="#5a3a14" />
+        <Leader x1={xJ-tCl/2}      y1={28}       x2={W-8} y2={18}       label="perete lucarnă"   anchor="end" />
+        <Leader x1={(xL+xJ)/2-10}  y1={(yExtL+yJ)/2-6} x2={8} y2={H*0.24} label="acoperiș principal" anchor="start" />
+        <Leader x1={xJ-tCl-tFr/2}  y1={50}       x2={W-8} y2={H*0.57}   label="MW izolație"      anchor="end" />
+        <PsiBadge psi={bridge.psi} x={W-102} y={H-16} />
       </>
     );
   }
