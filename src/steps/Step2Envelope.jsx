@@ -535,8 +535,9 @@ export default function Step2Envelope({
                     element={currentSectionEl}
                     width={640}
                     height={220}
-                    showDimensions={true}
-                    showLegend={true}
+                    compact={true}
+                    showDimensions={false}
+                    showLegend={false}
                     onClickExpand={() => setSectionModalOpen(true)}
                   />
                 )}
