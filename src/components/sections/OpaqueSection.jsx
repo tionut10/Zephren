@@ -193,10 +193,28 @@ export default function OpaqueSection({
             {isWall
               ? <>Secțiune <b>verticală</b> prin perete — EXTERIOR la stânga, INTERIOR la dreapta, straturile dispuse pe orizontală.</>
               : config.layout === "slab_top_ext"
-                ? <>Secțiune <b>orizontală</b> prin planșeu — exteriorul (cerul/pod) deasupra, interiorul camerei dedesubt, straturile stivuite vertical.</>
+                ? <>Secțiune <b>orizontală</b> prin planșeu — exteriorul (cerul/pod) deasupra, interiorul camerei dedesubt.</>
                 : config.layout === "slab_both_int"
                   ? <>Secțiune <b>orizontală</b> prin planșeu intermediar — ambele fețe sunt INTERIOR (etaje încălzite).</>
-                  : <>Secțiune <b>orizontală</b> prin placă pe sol — interiorul camerei deasupra, solul/subsolul dedesubt.</>}
+                  : <>Secțiune <b>orizontală</b> — interiorul camerei deasupra, {config.extLabelBottom?.toLowerCase() || "exteriorul"} dedesubt.</>}
+          </span>
+        </div>
+      )}
+
+      {/* Avertisment convenție introducere straturi pentru PB/PL/PI */}
+      {!compact && isReversedSlab && (
+        <div className="flex items-start gap-2 text-[11px] bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">
+          <span className="text-amber-400 mt-0.5 flex-shrink-0">⚠</span>
+          <span className="text-amber-200/80 leading-relaxed">
+            <b>Convenție introducere straturi:</b>{" "}
+            {element.type === "PL"
+              ? <>Stratul ① trebuie să fie cel <b>mai aproape de sol</b> (exterior), stratul{" "}
+                  <b>N cel mai aproape de cameră</b> (finisajul interior, ex. parchet).</>
+              : element.type === "PI"
+                ? <>Stratul ① = primul de sus (etajul superior), stratul N = ultimul (spre etajul inferior).</>
+                : <>Stratul ① trebuie să fie cel <b>mai aproape de subsol</b> (ex. tencuiala tavanului din subsol),
+                  stratul <b>N cel mai aproape de cameră</b> (finisajul podelei, ex. parchet).</>}
+            {" "}Ordinea în secțiune: ① sus → N jos (sau invers față de cum introduci în editor).
           </span>
         </div>
       )}
