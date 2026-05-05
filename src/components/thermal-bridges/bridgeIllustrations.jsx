@@ -2641,8 +2641,8 @@ function pickIllustration(bridge) {
     return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
   }
 
-  // ── Retrofit ETICS ────────────────────────────────────────────────────────
-  if (cat === "Retrofit ETICS") {
+  // ── Reabilitare ETICS ────────────────────────────────────────────────────────
+  if (cat === "Reabilitare ETICS") {
     if (name.includes("balcon")) return <IllustrationBalcony bridge={bridge} variant="uninterrupted" />;
     if (name.includes("atic") || name.includes("parapet")) return <IllustrationRoof bridge={bridge} variant="parapet" />;
     if (name.includes("soclu") || name.includes("drip") || name.includes("cts")) return <IllustrationETICS bridge={bridge} variant="plinth-drip" />;
@@ -2652,8 +2652,8 @@ function pickIllustration(bridge) {
     return <IllustrationETICS bridge={bridge} variant="anchor-metal" />;
   }
 
-  // ── Passivhaus / nZEB ─────────────────────────────────────────────────────
-  if (cat === "Passivhaus / nZEB") {
+  // ── Pasivhaus / nZEB ─────────────────────────────────────────────────────
+  if (cat === "Pasivhaus / nZEB") {
     if (name.includes("fundație") || name.includes("fundatie")) return <IllustrationFoundation bridge={bridge} variant="passivhaus-l" />;
     if (name.includes("ușă") || name.includes("usa") || name.includes("prag") || name.includes("intrare")) return <IllustrationWindow bridge={bridge} variant="threshold" />;
     if (name.includes("fereastră") || name.includes("fereastra") || name.includes("tilt&turn") || name.includes("tilt-turn") || name.includes("oculus") || name.includes("bullseye") || name.includes("punctual")) return <IllustrationWindow bridge={bridge} variant="deep-ph" />;
@@ -2663,15 +2663,15 @@ function pickIllustration(bridge) {
     return <IllustrationWallFloorIntermediate bridge={bridge} />;
   }
 
-  // ── CLT / Mass Timber ─────────────────────────────────────────────────────
-  if (cat === "CLT / Mass Timber") {
+  // ── CLT / Lemn masiv ─────────────────────────────────────────────────────
+  if (cat === "CLT / Lemn masiv") {
     if (name.includes("acoperiș") || name.includes("acoperis") || name.includes("cosoroabă") || name.includes("cosoroaba")) return <IllustrationTimber bridge={bridge} variant="rafters" />;
     if (name.includes("fereastră") || name.includes("fereastra") || name.includes("pivot") || name.includes("ușă") || name.includes("usa")) return <IllustrationWindow bridge={bridge} variant="deep-ph" />;
     return <IllustrationTimber bridge={bridge} variant="clt" />;
   }
 
-  // ── Sandwich panel ────────────────────────────────────────────────────────
-  if (cat === "Sandwich panel") {
+  // ── Panou sandwich ────────────────────────────────────────────────────────
+  if (cat === "Panou sandwich") {
     if (name.includes("colț") || name.includes("colt")) return <IllustrationETICS bridge={bridge} variant="corner-profile" />;
     if (name.includes("rost") || name.includes("nut-feder") || name.includes("îmbinare") || name.includes("imbinare")) return <IllustrationPrecastVerticalJoint bridge={bridge} />;
     return <IllustrationETICS bridge={bridge} variant="sandwich-tie" />;
@@ -2692,8 +2692,8 @@ function pickIllustration(bridge) {
     return <IllustrationWallGround bridge={bridge} asSoil={false} />;
   }
 
-  // ── Curtain wall ──────────────────────────────────────────────────────────
-  if (cat === "Curtain wall") {
+  // ── Fațadă cortină ──────────────────────────────────────────────────────────
+  if (cat === "Fațadă cortină") {
     return <IllustrationCurtainWall bridge={bridge} />;
   }
 
@@ -2705,8 +2705,8 @@ function pickIllustration(bridge) {
     return <IllustrationRoof bridge={bridge} variant="eaves" />;
   }
 
-  // ── Vernacular RO ─────────────────────────────────────────────────────────
-  if (cat === "Vernacular RO") {
+  // ── Tradițional RO ─────────────────────────────────────────────────────────
+  if (cat === "Tradițional RO") {
     if (name.includes("cosoroabă") || name.includes("cosoroaba") || name.includes("wallplate")) return <IllustrationTimber bridge={bridge} variant="rafters" />;
     if (name.includes("piatră") || name.includes("piatra") || name.includes("soclu")) return <IllustrationWallGround bridge={bridge} asSoil={true} />;
     if (name.includes("buiandrug") || name.includes("lemn vechi")) return <IllustrationWindowLintel bridge={bridge} />;
