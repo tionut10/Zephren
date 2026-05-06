@@ -430,7 +430,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: navBg, backdropFilter: "blur(12px)", borderBottom: `1px solid ${border}`, padding: "0 24px", transition: "background 0.3s" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ height: "40px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
+            <img src={lang === "RO" ? (isDark ? "/logo_ro_dark.png" : "/logo_ro.png") : (isDark ? "/logo-canva-dark.png" : "/logo-canva.png")} alt="Zephren" style={{ height: "40px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
             <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700", letterSpacing: "0.3px" }}>v{APP_VERSION}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }} className="nav-desktop">
@@ -556,7 +556,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       <section style={{ maxWidth: "1200px", margin: "0 auto", padding: "28px 24px 40px", textAlign: "center" }}>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginBottom: "56px" }}>
-          <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
+          <img src={lang === "RO" ? (isDark ? "/logo_ro_dark.png" : "/logo_ro.png") : (isDark ? "/logo-canva-dark.png" : "/logo-canva.png")} alt="Zephren" style={{ width: "min(400px, 80vw)", height: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
 
           {/* Separator vizual */}
           <div style={{ width: "160px", height: "1px", background: isDark ? "rgba(255,255,255,0.13)" : "rgba(15,23,42,0.13)", margin: "10px 0" }} />
@@ -1285,7 +1285,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
       {/* ═══ FOOTER ═══ */}
       <footer style={{ borderTop: `1px solid ${border}`, padding: "48px 24px 32px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
-          <img src={isDark ? "/logo-canva-dark.png" : "/logo-canva.png"} alt="Zephren" style={{ height: "32px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
+          <img src={lang === "RO" ? (isDark ? "/logo_ro_dark.png" : "/logo_ro.png") : (isDark ? "/logo-canva-dark.png" : "/logo-canva.png")} alt="Zephren" style={{ height: "32px", width: "auto", mixBlendMode: isDark ? "normal" : "multiply" }} />
           <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: "700" }}>v{APP_VERSION}</span>
         </div>
         <p style={{ fontSize: "12px", color: textFaint, maxWidth: "520px", margin: "0 auto 20px", lineHeight: 1.6 }}>
