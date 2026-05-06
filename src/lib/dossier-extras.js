@@ -392,6 +392,118 @@ export async function generateManifestSHA256({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 3.b. MANIFEST SHA-256 + CAdES B-T detașat (Sprint Conformitate P0-03, 6 mai 2026)
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Variantă semnată CAdES B-T detașat a manifestului SHA-256 — cerută pentru
+ * deduplicare strictă la registrul electronic MDLPA (Art. 11 Ord. 348/2026).
+ *
+ * Output: ZIP cu 2 fișiere:
+ *   - manifest_sha256.txt      — manifestul TXT (identic cu generateManifestSHA256)
+ *   - manifest_sha256.txt.p7s  — semnătura CAdES detașată PKCS#7 (RFC 5652)
+ *
+ * NOTĂ: păstrăm generateManifestSHA256 NEATINS pentru retrocompatibilitate cu
+ * codul existent în Step 7 (linia 506 + 1652). Această funcție e opțiune nouă.
+ *
+ * @param {object} args
+ * @param {Array<{name:string, blob:Blob}>} args.files — fișiere din dosar
+ * @param {object} args.auditor — { name, atestat, ... }
+ * @param {object} args.building — { address, cadastralNumber, ... }
+ * @param {string} [args.cpeCode]
+ * @param {object} [args.signerConfig] — { provider:"mock"|"certsign", credentials? }
+ * @param {boolean} [args.download=true]
+ * @returns {Promise<{
+ *   zipBlob: Blob,
+ *   manifestTxt: string,
+ *   p7sBytes: Uint8Array,
+ *   signerInfo: object,
+ *   filename: string
+ * }>}
+ */
+export async function generateManifestSHA256Signed({
+  files = [],
+  auditor = {},
+  building = {},
+  cpeCode = "",
+  signerConfig = { provider: "mock" },
+  download = true,
+} = {}) {
+  // 1. Generează manifestul TXT (folosește implementarea existentă, fără download)
+  const manifest = await generateManifestSHA256({
+    files, auditor, building, cpeCode, download: false,
+  });
+
+  // 2. Semnează TXT-ul cu CAdES B-T detașat
+  const { signCadesDetached } = await import("./cades-detached-sign.js");
+  const signResult = await signCadesDetached(
+    manifest.content,
+    signerConfig,
+    { contentType: "text/plain", signingTime: new Date() },
+  );
+
+  // 3. Construire ZIP cu .txt + .p7s
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  zip.file("manifest_sha256.txt", manifest.content);
+  zip.file("manifest_sha256.txt.p7s", signResult.p7sBytes);
+
+  // README explicativ pentru utilizator
+  const readme = [
+    "MANIFEST SEMNAT CAdES B-T DETAȘAT",
+    "Sprint Conformitate P0-03 (6 mai 2026) — Zephren",
+    "=".repeat(70),
+    "",
+    `Data semnare:    ${signResult.signedAt}`,
+    `Provider QTSP:   ${signResult.signerInfo.providerLabel}`,
+    `Subject cert:    ${signResult.signerInfo.certificateSubject || "—"}`,
+    `Issuer cert:     ${signResult.signerInfo.certificateIssuer || "—"}`,
+    `Hash conținut:   ${signResult.contentHashHex}`,
+    `Lungime .p7s:    ${signResult.p7sBytes.length} octeți`,
+    `Mock signer:     ${signResult.signerInfo.isMock ? "DA — fără valoare juridică eIDAS 2" : "NU"}`,
+    "",
+    "VERIFICARE:",
+    "1. Cititorul calculează SHA-256 al manifest_sha256.txt",
+    "2. Compară cu hash-ul din manifest_sha256.txt.p7s",
+    "3. Verifică certificate chain + timestamp + revocation status (CRL/OCSP)",
+    "",
+    "BAZĂ NORMATIVĂ:",
+    "  • ETSI EN 319 122-1 — CAdES baseline",
+    "  • RFC 5652 — Cryptographic Message Syntax (CMS)",
+    "  • eIDAS 2 (Reg. UE 910/2014 modif. 2024/1183)",
+    "  • Legea 214/2024 RO — transpunere eIDAS 2",
+    "  • Art. 11 Ord. MDLPA 348/2026 — deduplicare registru electronic",
+    "",
+    ...((signResult.signerInfo.warnings || []).length > 0
+      ? ["AVERTIZĂRI:", ...signResult.signerInfo.warnings.map(w => "  ⚠️ " + w), ""]
+      : []),
+  ].join("\r\n");
+  zip.file("README.txt", readme);
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+
+  // 4. Download
+  const fname = `manifest_sha256_signed_${_safeSlug(cpeCode || "dosar").slice(0, 40)}_${new Date().toISOString().slice(0, 10)}.zip`;
+  if (download) {
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  return {
+    zipBlob,
+    manifestTxt: manifest.content,
+    p7sBytes: signResult.p7sBytes,
+    signerInfo: signResult.signerInfo,
+    filename: fname,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 4. PLAN MONITORIZARE M&V — IPMVP Opțiunea C (consum total facturat)
 // ─────────────────────────────────────────────────────────────────────────────
 /**
