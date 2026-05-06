@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-05
+// Ultima generare: 2026-05-06
 
 export const APP_VERSION = "0.6.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📦",
-        "text": "fix(catalog): românizare completă denumiri categorii punți termice"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(catalog): iconițe SVG arhitecturale specifice per categorie punți termice"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(envelope): Batch E — finalizare P2 (tooltips A_env/educational + duplicare + detail vitraj)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(envelope): Batch D — UI advanced wizards (Glaser + câmpuri punți + H×L)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(catalog): Batch C — vitraje v2.0 (+20 entries: uși/skylight/curtainwall)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(catalog): Batch B — soluții tipice PM/UN/PB (+9 entries)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(envelope): Batch A — fix-uri P1/P2 audit Pas 2 (calcul + UI)"
+        "icon": "🔸",
+        "text": "Sprint P0-C — Coerență matematică recomandări + unificare SCENARIO_PRESETS"
       },
       {
         "icon": "📋",
-        "text": "fix(envelope): rezolvare 4 P0 audit Pas 2 — wizard opac + punți"
+        "text": "Sprint P0-B — Dosar Audit AAECR + U_REF anvelopă adaptiv"
+      },
+      {
+        "icon": "🔸",
+        "text": "Sprint P0-A — Reactivare Pașaport Renovare EPBD 2024 (PREVIEW)"
+      },
+      {
+        "icon": "🔸",
+        "text": "deactivate fRsi gate temporary - flag local ENABLE_FRSI_GATE=false"
+      },
+      {
+        "icon": "🔸",
+        "text": "G4 fRsi gate + G7 cross-source pipeline + filtru epoca constructiva"
+      },
+      {
+        "icon": "🔸",
+        "text": "Sprint 2+3+4: P2 lipsuri + Schema P3 migration + DD dinamic"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix P0 thermal bridges - psi_izolat negativ + chi:0 + cod ISO RF"
+      },
+      {
+        "icon": "📄",
+        "text": "audit normativ thermal-bridges.json - raport OPUS Max"
       }
     ]
   },

@@ -466,16 +466,17 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
                   {/* Titlu academic */}
                   <div style={{ fontSize: "12px", color: textMuted, background: isDark ? "rgba(245,158,11,0.06)" : "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.18)", borderRadius: "8px", padding: "9px 12px", marginBottom: "14px", lineHeight: "1.55" }}>
-                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>M.Sc.</span>{" "}Modernizare Energetică în Mediul Construit (MEMC)<br/>
-                    <span style={{ opacity: 0.75 }}>Traseu cercetare · Clădiri cu performanță energetică ridicată</span><br/>
-                    <span style={{ opacity: 0.55 }}>UNITBV · 2019</span>
+                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>Licență</span>{" "}· Construcții Civile, Industriale și Agrozootehnice<br/>
+                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>Masterat (traseu cercetare)</span>{" "}· Modernizare Energetică în Mediul Construit (MEMC)<br/>
+                    <span style={{ opacity: 0.75 }}>Facultatea de Construcții · Universitatea Transilvania din Brașov</span><br/>
+                    <span style={{ opacity: 0.55 }}>2019</span>
                   </div>
 
                   {/* Bio */}
                   <p style={{ fontSize: "13px", color: textMuted, lineHeight: "1.65", margin: "0 0 16px" }}>
                     {lang === "EN"
                       ? "Zephren was built from direct energy auditing experience — software designed by an auditor, for auditors. The M.Sc. research on high-performance buildings forms the methodological backbone, fully compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
-                      : "Zephren a apărut din experiența directă în auditare energetică — un software gândit de un auditor, pentru auditori. Cercetarea M.Sc. privind clădirile cu performanță ridicată a stat la baza metodologiei, conformă integral cu Mc 001-2022 și Ord. MDLPA 348/2026."}
+                      : "Zephren a apărut din experiența directă în auditare energetică — un software gândit de un auditor, pentru auditori. Cercetarea de masterat privind clădirile cu performanță ridicată a stat la baza metodologiei, conformă integral cu Mc 001-2022 și Ord. MDLPA 348/2026."}
                   </p>
 
                   {/* Badge-uri */}
@@ -551,13 +552,13 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                 </div>
               </div>
               <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.55" }}>
-                <span style={{ color: "#f59e0b", fontWeight: "700" }}>M.Sc.</span> MEMC · Traseu cercetare<br/>
+                <span style={{ color: "#f59e0b", fontWeight: "700" }}>Masterat</span> MEMC · Traseu cercetare<br/>
                 <span style={{ opacity: 0.7 }}>Clădiri cu performanță energetică ridicată · UNITBV · 2019</span>
               </div>
               <p style={{ fontSize: "12px", color: textMuted, lineHeight: "1.6", margin: 0 }}>
                 {lang === "EN"
                   ? "Software designed by an energy auditor, for energy auditors — built on M.Sc. research, Mc 001-2022 and MDLPA Ord. 348/2026."
-                  : "Software gândit de un auditor energetic, pentru auditori — fondat pe cercetare M.Sc., Mc 001-2022 și Ord. MDLPA 348/2026."}
+                  : "Software gândit de un auditor energetic, pentru auditori — fondat pe cercetare de masterat, Mc 001-2022 și Ord. MDLPA 348/2026."}
               </p>
               <div style={{ fontSize: "11px", color: textFaint, display: "flex", alignItems: "center", gap: "5px" }}>
                 <span>📎</span><span>{lang === "EN" ? "Diploma & dissertation — coming soon" : "Diplomă & disertație — în curând"}</span>
@@ -593,12 +594,12 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             <span style={{ fontSize: "13px", color: textMuted, fontWeight: "400" }}>
               {lang === "EN"
                 ? "M.Sc. Energy Efficiency in the Built Environment (MEMC)"
-                : "M.Sc. Modernizare Energetică în Mediul Construit (MEMC)"}
+                : "Masterat în Modernizare Energetică în Mediul Construit (MEMC)"}
             </span>
             <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
               {lang === "EN"
-                ? "Research track · High-performance buildings · UNITBV, 2019"
-                : "Traseu cercetare · Clădiri cu performanță energetică ridicată · UNITBV, 2019"}
+                ? "Licență CCIA · Masterat (research track) MEMC · Facultatea de Construcții · Universitatea Transilvania din Brașov · 2019"
+                : "Licență CCIA · Masterat (traseu cercetare) MEMC · Facultatea de Construcții · Universitatea Transilvania din Brașov · 2019"}
             </span>
           </div>
         </div>
