@@ -1,0 +1,37 @@
+# Fly.io config pentru Gotenberg (DOCX→PDF) — Zephren preview pipeline
+# Deploy: cd gotenberg && flyctl launch --copy-config --no-deploy && flyctl deploy
+#
+# După deploy, copiază https://APP_NAME.fly.dev și setează în Vercel:
+#   npx vercel env add GOTENBERG_URL production
+#   (paste URL fără trailing slash)
+
+app = "zephren-gotenberg"
+primary_region = "fra"  # Frankfurt - GDPR EU compliant
+
+[build]
+  image = "gotenberg/gotenberg:8"
+
+[experimental]
+  cmd = ["--api-port=3000", "--api-timeout=120s", "--libreoffice-restart-after=10"]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"      # auto-stop după inactivitate (cost zero idle)
+  auto_start_machines = true
+  min_machines_running = 0          # nu menținem instanță activă
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    type = "http"
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/health"
