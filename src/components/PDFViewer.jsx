@@ -111,34 +111,37 @@ export default function PDFViewer({ data, url, height = "85vh", title = "PDF" })
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "6px 12px",
-          background: "rgba(0,0,0,0.35)",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          color: "rgba(255,255,255,0.85)",
-          fontSize: "12px",
+          padding: "8px 14px",
+          background: "#1f2937",
+          borderBottom: "1px solid rgba(255,255,255,0.15)",
+          color: "#f3f4f6",
+          fontSize: "13px",
           flexShrink: 0,
         }}
       >
-        <span style={{ opacity: 0.7 }}>
+        <span style={{ opacity: 0.85, fontWeight: 500 }}>
           {numPages > 0 ? `${numPages} ${numPages === 1 ? "pagină" : "pagini"}` : "Se încarcă…"}
         </span>
-        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <button
             type="button"
             onClick={zoomOut}
             aria-label="Micșorează"
+            title="Micșorează (zoom out)"
             style={btnStyle}
           >−</button>
           <button
             type="button"
             onClick={reset}
             aria-label="Zoom la 125%"
-            style={{ ...btnStyle, minWidth: "60px" }}
+            title="Reset zoom la 125%"
+            style={{ ...btnStyle, minWidth: "64px", fontVariantNumeric: "tabular-nums" }}
           >{Math.round(scale * 100)}%</button>
           <button
             type="button"
             onClick={zoomIn}
             aria-label="Mărește"
+            title="Mărește (zoom in)"
             style={btnStyle}
           >+</button>
         </div>
@@ -167,12 +170,15 @@ export default function PDFViewer({ data, url, height = "85vh", title = "PDF" })
 }
 
 const btnStyle = {
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "rgba(255,255,255,0.85)",
-  padding: "3px 10px",
+  background: "#374151",
+  border: "1px solid #4b5563",
+  color: "#f9fafb",
+  padding: "5px 12px",
   borderRadius: "4px",
-  fontSize: "12px",
+  fontSize: "13px",
+  fontWeight: 600,
   cursor: "pointer",
   fontFamily: "inherit",
+  lineHeight: 1.2,
+  minWidth: "32px",
 };

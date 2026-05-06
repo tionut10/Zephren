@@ -104,6 +104,9 @@ export default function Step6Certificate(props) {
             // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
             // Păstrăm și pdfPreviewUrl ca prop legacy pentru fallback Office Online iframe.
             const [pdfPreviewBuffer, setPdfPreviewBuffer] = useState(null);
+            // Zoom pentru preview docx-preview (HTML render fallback când API PDF nu e disponibil)
+            const [cpePreviewZoom, setCpePreviewZoom] = useState(1.0);
+            const [anexaPreviewZoom, setAnexaPreviewZoom] = useState(1.0);
             // Audit 2 mai 2026 — preview live pentru Anexa 1+2 (similar cu CPE preview)
             const [anexaPreviewBuffer, setAnexaPreviewBuffer] = useState(null);
             const [anexaPreviewUrl, setAnexaPreviewUrl] = useState(null);
@@ -3264,9 +3267,17 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                         {/* Fallback: docx-preview în browser (fără pdfPreviewUrl) */}
                         {!pdfPreviewUrl && (
-                          <div className="w-full h-full overflow-auto"
-                               style={{maxHeight: "85vh", display: docxRendered ? "block" : "none"}}>
-                            <div ref={docxPreviewRef} className="docx-preview-wrapper" />
+                          <div className="w-full h-full flex flex-col" style={{height: docxRendered ? "85vh" : undefined, display: docxRendered ? "flex" : "none"}}>
+                            {/* Toolbar zoom (vizibil DOAR când avem preview HTML) */}
+                            <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#1f2937", color: "#f3f4f6", fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
+                              <span style={{opacity: 0.85, marginRight: "auto", fontWeight: 500}}>Preview HTML (docx-preview)</span>
+                              <button type="button" onClick={() => setCpePreviewZoom(z => Math.max(0.5, +(z - 0.1).toFixed(2)))} title="Micșorează" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>−</button>
+                              <button type="button" onClick={() => setCpePreviewZoom(1.0)} title="Reset 100%" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:64,fontVariantNumeric:"tabular-nums"}}>{Math.round(cpePreviewZoom*100)}%</button>
+                              <button type="button" onClick={() => setCpePreviewZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))} title="Mărește" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>+</button>
+                            </div>
+                            <div className="flex-1 overflow-auto" style={{background: "#e8e8e8"}}>
+                              <div ref={docxPreviewRef} className="docx-preview-wrapper" style={{transform: `scale(${cpePreviewZoom})`, transformOrigin: "top center", transition: "transform 120ms ease"}} />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -3441,11 +3452,16 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         )
                       )}
                       {!anexaPreviewUrl && (
-                        <div
-                          className="w-full h-full overflow-auto"
-                          style={{ maxHeight: "85vh", display: anexaRendered ? "block" : "none" }}
-                        >
-                          <div ref={anexaDocxPreviewRef} className="docx-preview-wrapper" />
+                        <div className="w-full h-full flex flex-col" style={{ height: anexaRendered ? "85vh" : undefined, display: anexaRendered ? "flex" : "none" }}>
+                          <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#1f2937", color: "#f3f4f6", fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
+                            <span style={{opacity: 0.85, marginRight: "auto", fontWeight: 500}}>Preview HTML (docx-preview)</span>
+                            <button type="button" onClick={() => setAnexaPreviewZoom(z => Math.max(0.5, +(z - 0.1).toFixed(2)))} title="Micșorează" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>−</button>
+                            <button type="button" onClick={() => setAnexaPreviewZoom(1.0)} title="Reset 100%" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:64,fontVariantNumeric:"tabular-nums"}}>{Math.round(anexaPreviewZoom*100)}%</button>
+                            <button type="button" onClick={() => setAnexaPreviewZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))} title="Mărește" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>+</button>
+                          </div>
+                          <div className="flex-1 overflow-auto" style={{background: "#e8e8e8"}}>
+                            <div ref={anexaDocxPreviewRef} className="docx-preview-wrapper" style={{transform: `scale(${anexaPreviewZoom})`, transformOrigin: "top center", transition: "transform 120ms ease"}} />
+                          </div>
                         </div>
                       )}
                     </div>
