@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🎨",
+        "text": "afișează 'Zona I' cu spațiu în badge header (era 'ZONAI' pe mobile)"
+      },
+      {
+        "icon": "🔸",
+        "text": "landing: descriere fondator actualizată cu motivul creării Zephren + funcții AI"
+      },
+      {
+        "icon": "🚀",
+        "text": "landing: restructurare footer fondator — Licență CCIA·2017 + Masterat MEMC·2019 pe rânduri separate, font unif"
+      },
+      {
+        "icon": "🔸",
+        "text": "clarificare Sprint P2 (commit logic in cc1ebd0)"
+      },
+      {
+        "icon": "🔸",
+        "text": "landing: eliminare badge-uri și rând diplomă din cardul fondator"
+      },
+      {
+        "icon": "💰",
+        "text": "landing: descriere fondator actualizată cu funcțiile AI integrate (OCR, planșe PDF, text liber, asistent reabi"
+      },
+      {
         "icon": "🔸",
         "text": "landing: mutat 2019 pe același rând cu Brașov în cardul fondator"
       },
       {
         "icon": "🚀",
         "text": "landing: eliminare linie AE Ici din cardul fondator"
-      },
-      {
-        "icon": "🚀",
-        "text": "landing: corecție denumire licență CCIA (Agricole, nu Agrozootehnice)"
-      },
-      {
-        "icon": "🎨",
-        "text": "landing: înlocuire M.Sc. cu titluri academice complete (Licență CCIA + Masterat traseu cercetare MEMC, Faculta"
-      },
-      {
-        "icon": "📄",
-        "text": "Sprint P1 cleanup — Costuri energie + curs EUR/RON live + MEPI redirect + RaportNZEB"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint P0-C — Coerență matematică recomandări + unificare SCENARIO_PRESETS"
-      },
-      {
-        "icon": "📋",
-        "text": "Sprint P0-B — Dosar Audit AAECR + U_REF anvelopă adaptiv"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint P0-A — Reactivare Pașaport Renovare EPBD 2024 (PREVIEW)"
       }
     ]
   },

@@ -1021,118 +1021,302 @@ export default function Step7Audit(props) {
               </div>
               )}
 
-              {/* #13 Deviz estimativ reabilitare — PDF (era .txt înainte) */}
-              <button onClick={async () => {
-                if (!rehabComparison) { showToast("Configurați scenariul de reabilitare în Pasul 5", "error"); return; }
-                try {
-                  showToast("Se generează devizul PDF...", "info", 2000);
-                  await generateRehabEstimatePDF({
-                    building, auditor,
-                    rehabScenarioInputs, glazingElements,
-                    rehabComparison,
-                    download: true,
-                  });
-                  showToast("✓ Deviz estimativ PDF descărcat", "success", 3000);
-                } catch (e) {
-                  showToast("Eroare generare deviz: " + e.message, "error", 5000);
-                }
-              }}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-sm mt-4">
-                <span>📋</span> Generează deviz estimativ reabilitare (PDF)
-              </button>
-
-              {/* ═══ EXPORT BUTTONS — consolidate Sprint P0-B (6 mai 2026) ═══
-                  Sprint P0-B P0-03 + P1-07: adăugat „Dosar Audit Energetic AAECR (DOCX)"
-                  ca buton primar — generează raport conform Cap. 1-8 AAECR Ghid 2014
-                  prin /api/generate-document?type=audit. Era accesibil DOAR în Step 8
-                  tab `raport_audit` (rezervat Expert), dar AE Ici 1.499 RON trebuie să
-                  poată genera Dosarul AAECR pentru clienți (risc legal+comercial).
-                  Sprint P0-B P1-11: extins „Anexe elemente DOCX" cu glazing + bridges
-                  + sisteme prin exportFullAnnexesDOCX. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-                <button
-                  onClick={async () => {
-                    try {
-                      showToast("Generare Dosar Audit AAECR în curs…", "info", 4000);
-                      const payload = {
-                        building, instSummary, renewSummary, auditor,
-                        opaqueElements, glazingElements, thermalBridges,
-                        energyClass: enClass?.cls || "—",
-                        measuredConsumption: (() => {
-                          try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); }
-                          catch { return {}; }
-                        })(),
-                        systems: { heating, cooling, ventilation, lighting, acm },
-                      };
-                      const res = await fetch("/api/generate-document?type=audit", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload),
-                      });
-                      if (!res.ok) throw new Error("API error " + res.status);
-                      const { docx, filename } = await res.json();
-                      const bytes = Uint8Array.from(atob(docx), c => c.charCodeAt(0));
-                      const blob = new Blob([bytes], {
-                        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                      });
-                      const a = document.createElement("a");
-                      a.href = URL.createObjectURL(blob);
-                      a.download = filename || `dosar_audit_AAECR_${new Date().toISOString().slice(0, 10)}.docx`;
-                      a.click();
-                      URL.revokeObjectURL(a.href);
-                      showToast("✓ Dosar Audit AAECR DOCX descărcat", "success", 4000);
-                    } catch (e) {
-                      console.error("[Step7] export Dosar Audit:", e);
-                      showToast("Eroare generare Dosar Audit: " + e.message, "error", 6000);
-                    }
-                  }}
-                  className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
-                  <span>📋</span> Generează Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8
-                </button>
-                <button onClick={exportXML}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
-                  <span>📄</span> Export XML MDLPA
-                </button>
-                <button onClick={exportExcelFull}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-green-500/20 bg-green-500/5 text-green-400/80 hover:bg-green-500/10 transition-all text-xs">
-                  <span>📊</span> Export Excel complet
-                </button>
-                <button onClick={exportFullReport}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
-                  <span>📊</span> Raport tehnic complet PDF
-                </button>
-                {/* Sprint 22 #23 + Sprint P0-B P1-11 — Anexe DOCX EXTINS:
-                    opaque + glazing + bridges + systems via exportFullAnnexesDOCX. */}
-                <button
-                  onClick={async () => {
-                    const hasAny = (opaqueElements?.length || 0) +
-                      (glazingElements?.length || 0) + (thermalBridges?.length || 0) > 0;
-                    if (!hasAny) {
-                      showToast("Nu există elemente — adaugă cel puțin unul în Pasul 2/3.", "warning", 5000);
-                      return;
-                    }
-                    try {
-                      const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
-                      const buildingName = (building?.name || building?.address || "cladire")
-                        .replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 40);
-                      const r = await exportFullAnnexesDOCX(
-                        { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges,
-                          systems: { heating, cooling, ventilation, lighting, acm } },
-                        {
-                          filename: `anexe_complete_${buildingName}_${new Date().toISOString().slice(0, 10)}.docx`,
-                          building,
+              {/* ═══════════════════════════════════════════════════════════════
+                  CARD CENTRAL — GENERARE DOCUMENTE PAS 7 (6 mai 2026)
+                  Toate butoanele de export într-un singur loc, grupate logic:
+                    A. Documente OFICIALE pentru client (Dosar AAECR + CPE estimat)
+                    B. Documente CLIENT orientative (Deviz + Pașaport renovare)
+                    C. Date tehnice export (XML MDLPA + Excel + PDF tehnic + anexe)
+                  Pașaportul de Renovare e mutat aici din locul vechi (era jos, izolat).
+              ═══════════════════════════════════════════════════════════════ */}
+              <Card title="📑 Generare documente — pachet client reabilitare" className="mt-6 border-2 border-amber-500/30 bg-amber-500/[0.03]">
+                {/* ── Secțiunea A: DOCUMENTE OFICIALE (auditor → client) ── */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-violet-500/30" />
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-violet-300">A · Documente oficiale</div>
+                    <div className="h-px flex-1 bg-violet-500/30" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Generare Dosar Audit AAECR în curs…", "info", 4000);
+                          const payload = {
+                            building, instSummary, renewSummary, auditor,
+                            opaqueElements, glazingElements, thermalBridges,
+                            energyClass: enClass || { cls: "—", color: "#888" },
+                            measuredConsumption: (() => {
+                              try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); }
+                              catch { return {}; }
+                            })(),
+                            systems: { heating, cooling, ventilation, lighting, acm },
+                          };
+                          const res = await fetch("/api/generate-document?type=audit", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                          });
+                          if (!res.ok) throw new Error("API error " + res.status);
+                          const { docx, filename } = await res.json();
+                          const bytes = Uint8Array.from(atob(docx), c => c.charCodeAt(0));
+                          const blob = new Blob([bytes], {
+                            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                          });
+                          const a = document.createElement("a");
+                          a.href = URL.createObjectURL(blob);
+                          a.download = filename || `dosar_audit_AAECR_${new Date().toISOString().slice(0, 10)}.docx`;
+                          a.click();
+                          URL.revokeObjectURL(a.href);
+                          showToast("✓ Dosar Audit AAECR DOCX descărcat", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] export Dosar Audit:", e);
+                          showToast("Eroare generare Dosar Audit: " + e.message, "error", 6000);
                         }
-                      );
-                      showToast(`Anexe DOCX complete exportate (${r.sectionsCount} secțiuni).`, "success", 4000);
-                    } catch (e) {
-                      console.error("Eroare export anexe:", e);
-                      showToast(`Eroare la export anexe: ${e.message}`, "error", 6000);
-                    }
-                  }}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
-                  <span>📘</span> Export anexe complete (DOCX) — opace + vitraj + punți + sisteme
-                </button>
-              </div>
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
+                      <span>📋</span> Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!rehabComparison) {
+                          showToast("Configurați scenariul de reabilitare în Pasul 5 înainte de generare.", "warning", 5000);
+                          return;
+                        }
+                        try {
+                          showToast("Se generează CPE estimat post-reabilitare...", "info", 3000);
+                          const { exportCpePostRehabPDF } = await import("../lib/cpe-post-rehab-pdf.js");
+                          await exportCpePostRehabPDF({
+                            building, auditor,
+                            rehabComparison, rehabScenarioInputs,
+                            opaqueElements, glazingElements, REHAB_COSTS,
+                            instSummary,
+                            cpeCodeBase: building?.cpeNumber || null,
+                          });
+                          showToast("✓ CPE estimat post-reabilitare PDF descărcat", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] export CPE post-rehab:", e);
+                          showToast("Eroare generare CPE estimat: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all text-sm font-bold sm:col-span-2">
+                      <span>🏠</span> CPE Estimat Post-Reabilitare (PDF) — clasă proiectată după lucrări
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Secțiunea B: DOCUMENTE CLIENT ORIENTATIVE ── */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-amber-500/30" />
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-amber-300">B · Documente client orientative</div>
+                    <div className="h-px flex-1 bg-amber-500/30" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button onClick={async () => {
+                      if (!rehabComparison) { showToast("Configurați scenariul de reabilitare în Pasul 5", "error"); return; }
+                      try {
+                        showToast("Se generează devizul PDF...", "info", 2000);
+                        await generateRehabEstimatePDF({
+                          building, auditor,
+                          rehabScenarioInputs, glazingElements,
+                          rehabComparison,
+                          download: true,
+                        });
+                        showToast("✓ Deviz estimativ PDF descărcat", "success", 3000);
+                      } catch (e) {
+                        showToast("Eroare generare deviz: " + e.message, "error", 5000);
+                      }
+                    }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
+                      <span>📋</span> Deviz estimativ reabilitare (PDF)
+                    </button>
+                    {/* Sprint Pas 7 docs — buton „Pașaport Renovare PDF" mutat aici din PasaportBasic.
+                        Build passport + export PDF direct (același cod ca PasaportBasic.handleGenerate). */}
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Pașaport Renovare PDF…", "info", 3000);
+                          const eurRon = getEurRonSync() || 5.05;
+                          const measures = (smartSuggestions || []).map((s, i) => {
+                            const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                            const epSav = parseFloat(s.epSaving_m2) || 0;
+                            return {
+                              id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                              name: s.measure || `Măsură ${i + 1}`,
+                              category: s.system || "Nespecificat",
+                              system: s.system || "Nespecificat",
+                              cost_RON: Math.round(costEur * eurRon),
+                              ep_reduction_kWh_m2: epSav,
+                              co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                              lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
+                              priority: s.priority || 3,
+                            };
+                          });
+                          const phasedPlan = measures.length > 0
+                            ? calcPhasedRehabPlan(measures, 50000, "balanced", epFinal || 200,
+                                building?.category || "AL", parseFloat(building?.areaUseful) || 100, 0.45)
+                            : null;
+                          const mepsThresholds = getMepsThresholdsFor(building?.category);
+                          const passport = buildRenovationPassport({
+                            cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                            building: building || {},
+                            instSummary: instSummary || { ep_total_m2: epFinal, energyClass: enClass?.cls },
+                            renewSummary: renewSummary || {},
+                            climate: selectedClimate || {},
+                            auditor: auditor || {},
+                            phasedPlan: phasedPlan ? {
+                              strategy: "balanced", totalYears: phasedPlan.totalYears,
+                              annualBudget: 50000, energyPrice: 0.45, discountRate: 0.04,
+                              phases: phasedPlan.phases, epTrajectory: phasedPlan.epTrajectory,
+                              classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
+                            } : null,
+                            mepsStatus: { thresholds: mepsThresholds, level: "noncompliant" },
+                            financialSummary: financialAnalysis ? {
+                              totalInvest_RON: (financialAnalysis.globalCost || 0) * eurRon,
+                              npv: financialAnalysis.npv || 0, irr: financialAnalysis.irr || 0,
+                              paybackSimple: financialAnalysis.paybackSimple || 0,
+                              paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
+                              perspective: "financial",
+                            } : null,
+                            changeReason: "Generare pașaport renovare (Pas 7 card central)",
+                            changedBy: auditor?.name || "Auditor",
+                          });
+                          const lib = await import("../lib/passport-export.js");
+                          await lib.exportPassportPDF(passport, {
+                            building, auditor, energyClass: enClass?.cls, epPrimary: epFinal,
+                          });
+                          showToast("✓ Pașaport Renovare PDF descărcat", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] export Pașaport PDF:", e);
+                          showToast("Eroare generare Pașaport PDF: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-all text-xs font-semibold">
+                      <span>📘</span> Pașaport Renovare EPBD (PDF A4)
+                    </button>
+                  </div>
+                  {/* Pașaport Renovare EPBD 2024 — preview-only (banner + plan etapizat).
+                      Butoanele export sunt mutate în card central (PDF mai sus, XML jos în Sec. C).
+                      JSON + DOCX foaie parcurs ELIMINATE (redundante: JSON=debug, DOCX≡PDF Sec. 4). */}
+                  <div className="mt-3">
+                    <PasaportBasic
+                      building={building}
+                      energyClass={enClass?.cls || "—"}
+                      epFinal={epFinal}
+                      auditor={auditor}
+                      userPlan={userPlan}
+                      cpeCode={building?.cpeCode || building?.cpeNumber || null}
+                      instSummary={instSummary}
+                      renewSummary={renewSummary}
+                      climate={selectedClimate}
+                      smartSuggestions={smartSuggestions}
+                      financialSummary={financialAnalysis ? {
+                        totalInvest_RON: financialAnalysis.globalCost ? financialAnalysis.globalCost * 5.05 : 0,
+                        npv: financialAnalysis.npv || 0,
+                        irr: financialAnalysis.irr || 0,
+                        paybackSimple: financialAnalysis.paybackSimple || 0,
+                        paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
+                        perspective: "financial",
+                      } : null}
+                      noButtons={true}
+                    />
+                  </div>
+                </div>
+
+                {/* ── Secțiunea C: DATE TEHNICE EXPORT ── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-emerald-500/30" />
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">C · Date tehnice (export)</div>
+                    <div className="h-px flex-1 bg-emerald-500/30" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button onClick={exportXML}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
+                      <span>📄</span> XML MDLPA (CPE)
+                    </button>
+                    {/* Sprint Pas 7 docs — buton XML Pașaport mutat aici din PasaportBasic. */}
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Pașaport XML…", "info", 2000);
+                          const eurRon = getEurRonSync() || 5.05;
+                          const measures = (smartSuggestions || []).map((s, i) => {
+                            const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                            const epSav = parseFloat(s.epSaving_m2) || 0;
+                            return {
+                              id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                              name: s.measure || `Măsură ${i + 1}`,
+                              category: s.system || "Nespecificat",
+                              cost_RON: Math.round(costEur * eurRon),
+                              ep_reduction_kWh_m2: epSav,
+                              co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                              lifespan_years: 20, priority: s.priority || 3,
+                            };
+                          });
+                          const phasedPlan = measures.length > 0
+                            ? calcPhasedRehabPlan(measures, 50000, "balanced", epFinal || 200,
+                                building?.category || "AL", parseFloat(building?.areaUseful) || 100, 0.45)
+                            : null;
+                          const passport = buildRenovationPassport({
+                            cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                            building: building || {}, instSummary: instSummary || {},
+                            renewSummary: renewSummary || {}, climate: selectedClimate || {},
+                            auditor: auditor || {},
+                            phasedPlan: phasedPlan ? {
+                              strategy: "balanced", totalYears: phasedPlan.totalYears,
+                              phases: phasedPlan.phases, epTrajectory: phasedPlan.epTrajectory,
+                              classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
+                            } : null,
+                            changeReason: "Export XML Pașaport (Pas 7)",
+                          });
+                          const lib = await import("../lib/passport-export.js");
+                          lib.exportPassportXML(passport);
+                          showToast("✓ Pașaport XML descărcat", "success", 3000);
+                        } catch (e) {
+                          console.error("[Step7] export Pașaport XML:", e);
+                          showToast("Eroare generare Pașaport XML: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400/80 hover:bg-blue-500/10 transition-all text-xs">
+                      <span>📄</span> XML Pașaport (EPBD)
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const hasAny = (opaqueElements?.length || 0) +
+                          (glazingElements?.length || 0) + (thermalBridges?.length || 0) > 0;
+                        if (!hasAny) {
+                          showToast("Nu există elemente — adaugă cel puțin unul în Pasul 2/3.", "warning", 5000);
+                          return;
+                        }
+                        try {
+                          const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
+                          const buildingName = (building?.name || building?.address || "cladire")
+                            .replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 40);
+                          const r = await exportFullAnnexesDOCX(
+                            { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges,
+                              systems: { heating, cooling, ventilation, lighting, acm } },
+                            {
+                              filename: `anexe_complete_${buildingName}_${new Date().toISOString().slice(0, 10)}.docx`,
+                              building,
+                            }
+                          );
+                          showToast(`Anexe DOCX complete exportate (${r.sectionsCount} secțiuni).`, "success", 4000);
+                        } catch (e) {
+                          console.error("Eroare export anexe:", e);
+                          showToast(`Eroare la export anexe: ${e.message}`, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
+                      <span>📘</span> Anexe (DOCX) — opace+vitraj+punți+sisteme
+                    </button>
+                  </div>
+                  <div className="mt-2 text-[10px] opacity-40 italic">
+                    Notă: Raport tehnic complet PDF + Excel portofoliu sunt disponibile în Pasul 8 (Avansat).
+                  </div>
+                </div>
+              </Card>
 
               {/* Simulare what-if interactivă */}
               {instSummary && (() => {

@@ -84,6 +84,12 @@ function PasaportBasicInternal({
   smartSuggestions = null,
   financialSummary = null,
   fundingEligible = null,
+  // Sprint Pas 7 docs (6 mai 2026) — centralizare butoane în Step 7.
+  // noButtons=true ascunde rândul cu butoane export (JSON/XML/PDF/DOCX) +
+  // bara de rezultat. Componenta rămâne PREVIEW-ONLY (banner + stare + plan
+  // etapizat). Butoanele PDF + XML se mută în Card central, JSON + DOCX
+  // foaie parcurs sunt eliminate (redundante: JSON=debug, DOCX≡PDF secțiunea 4).
+  noButtons = false,
 }) {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
@@ -283,90 +289,64 @@ function PasaportBasicInternal({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-        <button
-          onClick={() => handleGenerate("json")}
-          disabled={generating}
-          style={{
-            padding:      "10px 16px",
-            background:   "#3B82F6",
-            color:        "#fff",
-            border:       "none",
-            borderRadius: "6px",
-            fontSize:     "13px",
-            fontWeight:   600,
-            cursor:       generating ? "wait" : "pointer",
-            opacity:      generating ? 0.6 : 1,
-          }}
-        >
-          {generating ? "Se generează…" : "📥 JSON"}
-        </button>
-        <button
-          onClick={() => handleGenerate("xml")}
-          disabled={generating}
-          style={{
-            padding:      "10px 16px",
-            background:   "rgba(59, 130, 246, 0.15)",
-            color:        "#3B82F6",
-            border:       "1px solid #3B82F6",
-            borderRadius: "6px",
-            fontSize:     "13px",
-            fontWeight:   600,
-            cursor:       generating ? "wait" : "pointer",
-            opacity:      generating ? 0.6 : 1,
-          }}
-        >
-          📥 XML
-        </button>
-        <button
-          onClick={() => handleGenerate("pdf")}
-          disabled={generating}
-          style={{
-            padding:      "10px 16px",
-            background:   "rgba(59, 130, 246, 0.15)",
-            color:        "#3B82F6",
-            border:       "1px solid #3B82F6",
-            borderRadius: "6px",
-            fontSize:     "13px",
-            fontWeight:   600,
-            cursor:       generating ? "wait" : "pointer",
-            opacity:      generating ? 0.6 : 1,
-          }}
-        >
-          📥 PDF (A4)
-        </button>
-        <button
-          onClick={() => handleGenerate("docx")}
-          disabled={generating}
-          style={{
-            padding:      "10px 16px",
-            background:   "rgba(180, 83, 9, 0.15)",
-            color:        "#FCD34D",
-            border:       "1px solid #B45309",
-            borderRadius: "6px",
-            fontSize:     "13px",
-            fontWeight:   600,
-            cursor:       generating ? "wait" : "pointer",
-            opacity:      generating ? 0.6 : 1,
-          }}
-        >
-          📄 DOCX A4 (foaie parcurs)
-        </button>
-      </div>
+      {/* Sprint Pas 7 docs (6 mai 2026) — butoanele JSON/XML/PDF/DOCX sunt mutate
+          în Cardul central „Generare documente" (Step7Audit) când noButtons=true.
+          JSON + DOCX foaie parcurs ELIMINATE (redundante). Doar PDF + XML rămân
+          ca livrabile activate prin Cardul central. */}
+      {!noButtons && (
+        <>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              onClick={() => handleGenerate("xml")}
+              disabled={generating}
+              style={{
+                padding:      "10px 16px",
+                background:   "rgba(59, 130, 246, 0.15)",
+                color:        "#3B82F6",
+                border:       "1px solid #3B82F6",
+                borderRadius: "6px",
+                fontSize:     "13px",
+                fontWeight:   600,
+                cursor:       generating ? "wait" : "pointer",
+                opacity:      generating ? 0.6 : 1,
+              }}
+            >
+              {generating ? "Se generează…" : "📥 XML"}
+            </button>
+            <button
+              onClick={() => handleGenerate("pdf")}
+              disabled={generating}
+              style={{
+                padding:      "10px 16px",
+                background:   "#3B82F6",
+                color:        "#fff",
+                border:       "none",
+                borderRadius: "6px",
+                fontSize:     "13px",
+                fontWeight:   600,
+                cursor:       generating ? "wait" : "pointer",
+                opacity:      generating ? 0.6 : 1,
+              }}
+            >
+              📥 PDF (A4)
+            </button>
+          </div>
 
-      {result && (
-        <div style={{
-          marginTop: "12px",
-          padding: "10px",
-          background: result.ok ? "#10B98115" : "#EF444415",
-          borderRadius: "6px",
-          fontSize: "12px",
-          color: result.ok ? "#10B981" : "#EF4444",
-        }}>
-          {result.ok
-            ? `✓ Pașaport ${(result.format || "").toUpperCase()} descărcat. UUID: ${result.passport?.passportId?.slice(0, 8) || "—"}…`
-            : `✗ Eroare: ${result.error}`}
-        </div>
+          {result && (
+            <div style={{
+              marginTop: "12px",
+              padding: "10px",
+              background: result.ok ? "#10B98115" : "#EF444415",
+              borderRadius: "6px",
+              fontSize: "12px",
+              color: result.ok ? "#10B981" : "#EF4444",
+            }}>
+              {result.ok
+                ? `✓ Pașaport ${(result.format || "").toUpperCase()} descărcat. UUID: ${result.passport?.passportId?.slice(0, 8) || "—"}…`
+                : `✗ Eroare: ${result.error}`}
+            </div>
+          )}
+        </>
       )}
     </Card>
   );
