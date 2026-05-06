@@ -473,8 +473,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   {/* Bio */}
                   <p style={{ fontSize: "13px", color: textMuted, lineHeight: "1.65", margin: "0 0 16px" }}>
                     {lang === "EN"
-                      ? "Zephren was built from direct energy auditing experience — software designed by an auditor, for auditors. The M.Sc. research on high-performance buildings forms the methodological backbone, fully compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
-                      : "Zephren a apărut din experiența directă în auditare energetică — un software gândit de un auditor, pentru auditori. Cercetarea de masterat privind clădirile cu performanță ridicată a stat la baza metodologiei, conformă integral cu Mc 001-2022 și Ord. MDLPA 348/2026."}
+                      ? "Zephren integrates AI natively into every stage of energy calculation: automatic OCR from energy bills, intelligent PDF plan import, natural text conversation for data entry, and an AI assistant for rehabilitation recommendations. Methodology compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
+                      : "Zephren integrează nativ inteligența artificială în fiecare etapă a calculului energetic: OCR automat din facturi de energie, import planșe PDF prin analiză vizuală avansată, completare prin conversație în text liber și asistent AI pentru recomandări de reabilitare. Metodologie conformă Mc 001-2022 și Ord. MDLPA 348/2026."}
                   </p>
 
                   {/* Badge-uri */}

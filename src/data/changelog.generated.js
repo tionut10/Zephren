@@ -13,6 +13,26 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "🔸",
+        "text": "landing: mutat 2019 pe același rând cu Brașov în cardul fondator"
+      },
+      {
+        "icon": "🚀",
+        "text": "landing: eliminare linie AE Ici din cardul fondator"
+      },
+      {
+        "icon": "🚀",
+        "text": "landing: corecție denumire licență CCIA (Agricole, nu Agrozootehnice)"
+      },
+      {
+        "icon": "🎨",
+        "text": "landing: înlocuire M.Sc. cu titluri academice complete (Licență CCIA + Masterat traseu cercetare MEMC, Faculta"
+      },
+      {
+        "icon": "📄",
+        "text": "Sprint P1 cleanup — Costuri energie + curs EUR/RON live + MEPI redirect + RaportNZEB"
+      },
+      {
+        "icon": "🔸",
         "text": "Sprint P0-C — Coerență matematică recomandări + unificare SCENARIO_PRESETS"
       },
       {
@@ -22,26 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔸",
         "text": "Sprint P0-A — Reactivare Pașaport Renovare EPBD 2024 (PREVIEW)"
-      },
-      {
-        "icon": "🔸",
-        "text": "deactivate fRsi gate temporary - flag local ENABLE_FRSI_GATE=false"
-      },
-      {
-        "icon": "🔸",
-        "text": "G4 fRsi gate + G7 cross-source pipeline + filtru epoca constructiva"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint 2+3+4: P2 lipsuri + Schema P3 migration + DD dinamic"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix P0 thermal bridges - psi_izolat negativ + chi:0 + cod ISO RF"
-      },
-      {
-        "icon": "📄",
-        "text": "audit normativ thermal-bridges.json - raport OPUS Max"
       }
     ]
   },

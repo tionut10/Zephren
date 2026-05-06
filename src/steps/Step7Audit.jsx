@@ -10,6 +10,13 @@ import { buildRenovationPassport } from "../calc/renovation-passport.js";
 import { getEurRonSync } from "../data/rehab-prices.js";
 // Sprint P1 (6 mai 2026) cleanup — sursă canonică prețuri energie ANRE 2025.
 import { getEnergyPriceFromPreset, DEFAULT_ENERGY_PRICES } from "../data/energy-prices.js";
+// Sprint P2 (6 mai 2026) — preț electricitate LIVE Eurostat (cu fallback ANRE static).
+import {
+  getEnergyPriceLiveOrFallback,
+  refreshEurostatCache,
+  getUserElectricityPriceOverride,
+  setUserElectricityPriceOverride,
+} from "../data/energy-prices-live.js";
 // Sprint P1 P1-06 — preț energie EUR/kWh per combustibil real (nu 0.15 hardcoded global).
 import { getEnergyPriceEUR } from "../calc/smart-rehab.js";
 // Sprint P1 P1-03 — referință RaportConformareNZEB în Step 7 (gating Ord. 348/2026).
@@ -416,18 +423,90 @@ export default function Step7Audit(props) {
                 {/* ── Analiză cost-optimă rapidă ──
                     Mutat din Pas 6 → Pas 7 (1 mai 2026): costul anual €/an + recomandările
                     de remediere (PV m², termoizolare anvelopă) sunt parte din auditul energetic,
-                    nu din emiterea CPE. Cuplată cu CostOptimalCurve detaliată mai jos. */}
-                {instSummary && renewSummary && (
+                    nu din emiterea CPE. Cuplată cu CostOptimalCurve detaliată mai jos.
+                    Sprint P2 (6 mai 2026) — toggle „🌐 Spot live (Eurostat)" pentru preț
+                    electricitate actualizat semestrial (fallback ANRE casnic 2025 static). */}
+                {instSummary && renewSummary && (() => {
+                  const [useLivePrices, setUseLivePrices] = React.useState(false);
+                  const [liveStatus, setLiveStatus] = React.useState({ source: "ANRE casnic 2025 (preset static)", isLive: false });
+                  const [refreshingLive, setRefreshingLive] = React.useState(false);
+                  const [userOverride, setUserOverrideState] = React.useState(getUserElectricityPriceOverride());
+
+                  React.useEffect(() => {
+                    if (!useLivePrices) return;
+                    setRefreshingLive(true);
+                    refreshEurostatCache().then(r => {
+                      const fuelId = instSummary.fuel?.id || "electricitate";
+                      const result = getEnergyPriceLiveOrFallback(fuelId);
+                      setLiveStatus(result);
+                      setRefreshingLive(false);
+                    }).catch(() => setRefreshingLive(false));
+                  }, [useLivePrices, instSummary.fuel?.id]);
+
+                  return (
                   <Card title={t("Analiză cost-optimă rapidă",lang)} className="border-blue-500/20">
+                    {/* Sprint P2 — Toggle preț spot live + override manual */}
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/20 space-y-2">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={useLivePrices}
+                            onChange={(e) => setUseLivePrices(e.target.checked)}
+                            className="w-4 h-4 rounded border-blue-500/40 bg-blue-500/10"
+                          />
+                          <span>🌐 Folosește preț electricitate live (Eurostat semestrial)</span>
+                        </label>
+                        {refreshingLive && <span className="text-[10px] opacity-60">Se actualizează…</span>}
+                      </div>
+                      {useLivePrices && (
+                        <div className="text-[10px] opacity-70 pl-6">
+                          {liveStatus.isLive
+                            ? <>✅ Sursă: <strong>{liveStatus.source}</strong> · Preț: <strong>{liveStatus.priceRON} RON/kWh</strong></>
+                            : <>⚠️ Spot indisponibil — fallback la <strong>{liveStatus.source}</strong></>}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pl-6 text-[10px]">
+                        <span className="opacity-60">Override manual:</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.05"
+                          max="5"
+                          placeholder="ex. 1.30"
+                          defaultValue={userOverride || ""}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            if (v > 0) {
+                              setUserElectricityPriceOverride(v);
+                              setUserOverrideState(v);
+                            }
+                          }}
+                          className="w-20 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-xs"
+                        />
+                        <span className="opacity-60">RON/kWh (sesiune curentă)</span>
+                      </div>
+                      <div className="text-[10px] text-amber-400/80 pl-6 italic">
+                        ⚠️ Preț live DOAR pentru analiză orientativă. CPE oficial folosește preț ANRE Q4 reglementat.
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       {(() => {
-                        // Sprint P1 (6 mai 2026) P1-01 + P1-08: înlocuit hardcoded
-                        // (electricitate=1.30, gaz=0.32, default=0.30, curs=4.95) cu sursă
-                        // canonică ANRE 2025 (DEFAULT_ENERGY_PRICES) + curs BNR live via
-                        // getEurRonSync (Frankfurter API). costKwh e în RON/kWh, convertit
-                        // la EUR/kWh prin cursul curent — nu fix istoric.
+                        // Sprint P1 P1-01 + P1-08 + Sprint P2: cost canonic ANRE +
+                        // override Eurostat live (electricitate doar) + override user.
                         const fuelId = instSummary.fuel?.id || "default";
-                        const costKwhRON = getEnergyPriceFromPreset(fuelId, "casnic_2025");
+                        let costKwhRON;
+                        let priceSource = "ANRE casnic 2025 static";
+                        if (userOverride && fuelId === "electricitate") {
+                          costKwhRON = userOverride;
+                          priceSource = `Override manual user (${userOverride} RON/kWh)`;
+                        } else if (useLivePrices && fuelId === "electricitate" && liveStatus.isLive) {
+                          costKwhRON = liveStatus.priceRON;
+                          priceSource = liveStatus.source;
+                        } else {
+                          costKwhRON = getEnergyPriceFromPreset(fuelId, "casnic_2025");
+                        }
                         const eurRon = getEurRonSync() || 5.05;
                         const totalKwh = instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l;
                         const annCost = (totalKwh * costKwhRON) / eurRon;
@@ -467,11 +546,15 @@ export default function Step7Audit(props) {
                               ✓ Clădirea îndeplinește pragurile nZEB. Economie față de clasă G: ~{Math.round(annCost * 0.6)} €/an.
                             </div>
                           )}
+                          <div className="text-[9px] opacity-30 pt-1 italic">
+                            Preț folosit: {priceSource} · Curs EUR/RON: {eurRon.toFixed(4)} (BNR live)
+                          </div>
                         </>);
                       })()}
                     </div>
                   </Card>
-                )}
+                  );
+                })()}
 
                 {/* ── Recomandari Anvelopa ── */}
                 {envelopeAnalysis.length > 0 && (
