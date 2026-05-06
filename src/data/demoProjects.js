@@ -481,21 +481,23 @@ export const DEMO_PROJECTS = [
       observations: "Apartament 3 camere etajul 2, bloc PAFP nereabilitat — termoficare RADET (CET Constanța, contor unic bloc), boiler electric apartament 80L. Anvelopă: PAFP 27 cm BA fără izolație suplimentară (U_pereți ≈ 1.45 W/m²·K), termopan PVC 4-16-4 fără Low-E (U_glaz ≈ 2.70). Punți termice severe: rosturi orizontale/verticale panou mare. n₅₀ = 7.5 h⁻¹ (etanșeitate proastă). Recomandare urgentă: reabilitare termică Pașaport Renovare în 3 etape (anvelopă + ferestre + sursa).",
       photo: "",
     },
-    // S29 — calibrat după rezultate reale motor (CPE registru 27.04.2026):
-    // PAFP 27 cm BA fără izolație → U=2.70 W/m²·K (nu 1.45 — am subestimat)
-    // → Q_inc=637 kWh/m²·an, EP=968 kWh/m²·an, clasa G (nu F)
+    // S29 (27.04.2026) → calibrat E_p=968. Sprint 06may2026 audit B11 — RECALIBRARE:
+    // Drift -19% după sprinturile P0-B (getURefAdaptive), P0-C (rehab-scenarios),
+    // P1 (energy-prices canonic), P2 (Eurostat live preț). CPE_XML 06.05.2026
+    // arată EP=781.2, Qf=45975, LENI=13.9, randament η=0.60 (era 0.54).
+    // Calibrare nouă reflectă motor curent (06 mai 2026, post-audit Pas 7).
     expectedResults: {
-      energyClass: "G",                  // S29 fix — corectat din F → G (Mc 001-2022 prag G pentru RA = > 870)
-      E_p_total_kWh_m2_y: 968,
-      E_p_nren_kWh_m2_y: 968,            // RER 0% → tot EP e nren
-      E_p_ren_kWh_m2_y: 0,
-      RER_pct: 0,
-      U_med_W_m2K: 2.10,                 // S29 — calculat 240.24/114.2 din raport tehnic
+      energyClass: "G",                  // > prag G pentru RA = 870 → încă G
+      E_p_total_kWh_m2_y: 781,           // recalibrat din 968 (CPE_XML 06.05.2026)
+      E_p_nren_kWh_m2_y: 740,            // recalibrat din 968 (XML ep_nren=739.9)
+      E_p_ren_kWh_m2_y: 41,              // recalibrat din 0 (XML ep_ren=41.3 — boiler electric mix RO grid 14% RES)
+      RER_pct: 0,                        // RER 0% (PV=0, ST=0, HP=0 — boiler E nu e RER)
+      U_med_W_m2K: 2.10,
       U_max_violations: ["PE", "PL", "GLAZ"],
-      Q_inc_kWh_m2_y: 637,
+      Q_inc_kWh_m2_y: 625,               // recalibrat din 637 (XML qf_h=40607/65=625)
       Q_rac_kWh_m2_y: 0,
       Q_acm_kWh_m2_y: 71,
-      Q_il_kWh_m2_y: 15,
+      Q_il_kWh_m2_y: 14,                 // recalibrat din 15 (XML LENI=13.9)
       Q_aux_kWh_m2_y: 4,
       bacsClass: "D",
       fBac: 1.10,
