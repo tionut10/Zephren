@@ -4330,21 +4330,42 @@ class handler(BaseHTTPRequestHandler):
                             for _r in _para.runs[1:]:
                                 _r.text = ""
                         break
-                # 2) "m²" e într-o celulă separată de tabel (lățime 3680 DXA pentru
+                # 2) "m²"/"m³" e într-o celulă separată de tabel (lățime 3680 DXA pentru
                 #    valoare, 429 DXA pentru m²) — setarea LEFT pe celula m² nu e
                 #    suficientă: rămâne spațiu de ~20mm între valoare și m² din cauza
                 #    lățimii mari a celulei valorii.
-                #    Fix: concatenez " m²" la finalul valorii și golesc celula m²
-                #    separată. Astfel m² apare lipit de valoare.
-                for _mlbl in ("Aria de referință a pardoselii:",
-                               "Aria utilă / desfășurată:",
-                               "Volumul interior de referință:"):
+                #    Fix: concatenez " m²" (arie) sau " m³" (volum) la finalul valorii
+                #    și golesc celula unitate separată. Astfel unitatea apare lipită.
+                #    Acoperă AMBELE template-uri: clădire (label fără "apart")
+                #    și apartament (label cu "apart" / "apartamentului").
+                _AREA_LABELS = (
+                    # Clădire
+                    "Aria de referință a pardoselii:",
+                    "Aria utilă / desfășurată:",
+                    # Apartament (template 4-CPE-apartament-bloc)
+                    "Aria de referință a pardoselii apart",
+                    "Aria utilă a apartamentului",
+                )
+                _VOLUME_LABELS = (
+                    # Clădire
+                    "Volumul interior de referință:",
+                    # Apartament
+                    "Volumul interior de referință al apart",
+                )
+                _matched_unit = None
+                for _mlbl in _AREA_LABELS:
                     if _pt.startswith(_mlbl) and " m²" not in _pt and " m2" not in _pt:
-                        if _para.runs:
-                            _para.runs[-1].text = _para.runs[-1].text.rstrip() + " m²"
+                        _matched_unit = "m²"
                         break
-                # Golire celule "m²" separate (unde textul e STRICT m2 sau m²)
-                if _pt.strip() in ("m2", "m²"):
+                if _matched_unit is None:
+                    for _mlbl in _VOLUME_LABELS:
+                        if _pt.startswith(_mlbl) and " m³" not in _pt and " m3" not in _pt:
+                            _matched_unit = "m³"
+                            break
+                if _matched_unit and _para.runs:
+                    _para.runs[-1].text = _para.runs[-1].text.rstrip() + " " + _matched_unit
+                # Golire celule unitate separate (unde textul e STRICT m2/m²/m3/m³)
+                if _pt.strip() in ("m2", "m²", "m3", "m³"):
                     for _r in _para.runs:
                         _r.text = ""
 
@@ -5974,16 +5995,17 @@ class handler(BaseHTTPRequestHandler):
                                     # Înlocuiește run-ul cu dots (placeholder) cu nr_footer.
                                     # Textul "Numărul certificatului în registrul auditorului" rămâne intact.
                                     replaced = False
+                                    # Înlocuim dots cu ": NR" (cu colon + spațiu prefix, ca în template oficial MDLPA)
                                     for run in p.runs:
                                         if re.search(r"\.{4,}", run.text):
-                                            run.text = re.sub(r"\.{4,}", nr_footer, run.text, count=1)
+                                            run.text = re.sub(r"\.{4,}", ": " + nr_footer, run.text, count=1)
                                             replaced = True
                                             break
                                     if not replaced:
                                         # Fallback: dacă dots sunt în același run cu textul
                                         for run in p.runs:
                                             if re.search(r"[ \s]{4,}", run.text) and "auditorului" in run.text:
-                                                run.text = run.text.rstrip() + nr_footer
+                                                run.text = run.text.rstrip() + ": " + nr_footer
                                                 replaced = True
                                                 break
                     except Exception:
