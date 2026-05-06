@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { cn } from "./ui.jsx";
 import { nextDocNumber } from "../utils/doc-counter.js";
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
@@ -47,6 +47,33 @@ function mkScenariu() {
   return { id: Date.now(), denumire: "", reducereEP: 40, investitie: "", finantari: [], subventii: { ...SUBVENTII_DEFAULT } };
 }
 
+// Sprint 06may2026 audit P0 (B3) — prepopulare scenarii din pașaport
+// (anterior „Scenariu 1: (fără denumire)" + Investiție 0 RON + Payback 0 ani — neprofesional)
+function mkScenariiFromPassport(passport, baselineEP) {
+  if (!passport?.roadmap?.phases?.length || !baselineEP) {
+    return [{ ...mkScenariu(), denumire: "Pachet — Reabilitare cuprinzătoare" }];
+  }
+  const phases = passport.roadmap.phases;
+  const epEnd = phases[phases.length - 1].ep_after || baselineEP;
+  const reducPct = Math.max(5, Math.min(95, Math.round(((baselineEP - epEnd) / baselineEP) * 100)));
+  const totalCost = phases.reduce((acc, p) => acc + (p.phaseCost_RON || 0), 0);
+  const measureNames = phases
+    .flatMap((p) => (p.measures || []).map((m) => m.name))
+    .slice(0, 3)
+    .join(", ");
+  return [
+    {
+      id: Date.now(),
+      denumire: `Pachet integrat (${phases.length} faze) — clasă ${phases[phases.length - 1].class_after || "—"}`,
+      reducereEP: reducPct,
+      investitie: String(Math.round(totalCost)),
+      finantari: [],
+      subventii: { ...SUBVENTII_DEFAULT },
+      _autoDescription: measureNames,
+    },
+  ];
+}
+
 const SCENARIO_COLORS = ["bg-amber-500/20 border-amber-500/40 text-amber-300", "bg-green-500/20 border-green-500/40 text-green-300", "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"];
 
 export default function OfertaReabilitare({ building, instSummary, auditor, passport = null, onClose }) {
@@ -69,6 +96,16 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   const pretKwhNum = parseFloat(pretKwh) || 0.92;
   const costAnual = +(ep * au * pretKwhNum).toFixed(0);
   const clasaActuala = epToClasa(ep);
+
+  // Sprint 06may2026 audit P0 (B3) — la primul mount, dacă există passport,
+  // prepopulez scenariul cu denumire + investiție derivate din pașaport.
+  // Altfel rămâne placeholder „(fără denumire)" + 0 RON.
+  React.useEffect(() => {
+    if (passport?.roadmap?.phases?.length && scenarii.length === 1 && !scenarii[0].denumire && !scenarii[0].investitie) {
+      setScenarii(mkScenariiFromPassport(passport, ep));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passport?.passportId]);
 
   const updateScenariu = useCallback((id, patch) => {
     setScenarii(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));

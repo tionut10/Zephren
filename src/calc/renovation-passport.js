@@ -140,14 +140,19 @@ export function buildRenovationPassport({
   const milestone2 = mepsThresholds.milestone2 || 2033;
   const epTotalBase = num(instSummary?.ep_total_m2, 0);
 
+  // Sprint 06may2026 audit P0 (B7 ext) — rotunjire 1 zecimală pentru XML/JSON
+  // (anterior <ep_total>781.1893646160287</ep_total> — ilizibil în export)
+  const round1 = (v) => Math.round(num(v, 0) * 10) / 10;
+  const round2 = (v) => Math.round(num(v, 0) * 100) / 100;
+
   const baseline = {
     date: now.slice(0, 10),
-    ep_total: epTotalBase,
-    ep_nren: num(instSummary?.ep_nren_m2, 0),
-    ep_ren: num(instSummary?.ep_ren_m2, 0),
-    co2: num(instSummary?.co2_total_m2, 0),
+    ep_total: round1(epTotalBase),
+    ep_nren: round1(instSummary?.ep_nren_m2),
+    ep_ren: round1(instSummary?.ep_ren_m2),
+    co2: round2(instSummary?.co2_total_m2),
     energyClass: instSummary?.energyClass || "G",
-    rer_pct: num(renewSummary?.rer, 0),
+    rer_pct: round1(renewSummary?.rer),
     meps2030_compliant: epTotalBase > 0 ? epTotalBase <= ep2030 : false,
     meps2033_compliant: epTotalBase > 0 ? epTotalBase <= ep2nd : false,
     mepsMilestone2: milestone2,

@@ -1384,13 +1384,23 @@ export default function Step7Audit(props) {
                               classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
                             } : null,
                             mepsStatus: { thresholds: mepsThresholds, level: "noncompliant" },
-                            financialSummary: financialAnalysis ? {
-                              totalInvest_RON: (financialAnalysis.globalCost || 0) * eurRon,
-                              npv: financialAnalysis.npv || 0, irr: financialAnalysis.irr || 0,
-                              paybackSimple: financialAnalysis.paybackSimple || 0,
-                              paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
-                              perspective: "financial",
-                            } : null,
+                            // Sprint 06may2026 audit P0 (B1) — Math.abs() pe globalCost
+                            // (LCC poate fi negativ; folosesc phasedPlan.totalCost_RON ca primă sursă)
+                            financialSummary: (() => {
+                              const phasedCostPDF = phasedPlan?.totalCost_RON || 0;
+                              const lccPDF = financialAnalysis
+                                ? Math.abs((financialAnalysis.globalCost || 0) * eurRon)
+                                : 0;
+                              if (phasedCostPDF === 0 && !financialAnalysis) return null;
+                              return {
+                                totalInvest_RON: phasedCostPDF > 0 ? phasedCostPDF : lccPDF,
+                                npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
+                                irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
+                                paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
+                                paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
+                                perspective: "financial",
+                              };
+                            })(),
                             changeReason: "Generare pașaport renovare (Pas 7 card central)",
                             changedBy: auditor?.name || "Auditor",
                           });
@@ -1484,6 +1494,20 @@ export default function Step7Audit(props) {
                           // Sprint 06may2026 audit P0 (B10) — pass mepsStatus pentru
                           // calcul corect baseline.meps2030_compliant (era default 999 → true greșit)
                           const mepsThXml = getMepsThresholdsFor(building?.category);
+                          // Sprint 06may2026 audit P0 (B1 extended) — financial XML
+                          // (anterior <totalInvestment_RON>0</totalInvestment_RON>)
+                          const phasedCostXml = phasedPlan?.totalCost_RON || 0;
+                          const lccCostXml = financialAnalysis
+                            ? Math.abs((financialAnalysis.globalCost || 0) * eurRon)
+                            : 0;
+                          const finSumXml = (phasedCostXml > 0 || financialAnalysis) ? {
+                            totalInvest_RON: phasedCostXml > 0 ? phasedCostXml : lccCostXml,
+                            npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
+                            irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
+                            paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
+                            paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
+                            perspective: "financial",
+                          } : null;
                           const passport = buildRenovationPassport({
                             cpeCode: building?.cpeCode || building?.cpeNumber || null,
                             building: building || {}, instSummary: instSummary || {},
@@ -1491,10 +1515,12 @@ export default function Step7Audit(props) {
                             auditor: auditor || {},
                             phasedPlan: phasedPlan ? {
                               strategy: "balanced", totalYears: phasedPlan.totalYears,
+                              annualBudget: 50000, energyPrice: 0.45, discountRate: 0.04,
                               phases: phasedPlan.phases, epTrajectory: phasedPlan.epTrajectory,
                               classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
                             } : null,
                             mepsStatus: { thresholds: mepsThXml },
+                            financialSummary: finSumXml,
                             changeReason: "Export XML Pașaport (Pas 7)",
                           });
                           const lib = await import("../lib/passport-export.js");
@@ -1680,25 +1706,23 @@ export default function Step7Audit(props) {
 
                 const exportRoadmapDOCX = async () => {
                   try {
-                    // Sprint 06may2026 audit P0 (B1) — populate financialSummary
-                    // pentru ca DOCX-ul să afișeze NPV/IRR/payback corect (nu 0 RON)
+                    // Sprint 06may2026 audit P0 (B1) — populate financialSummary.
+                    // Prioritate: phasedPlan.totalCost_RON (cost real măsuri agregate) >
+                    // financialAnalysis.globalCost (LCC poate fi NEGATIV când VAN beneficii>cost).
+                    // Fix bug 06.05.2026 12:02 raport: „Investiție totală: -142.882 RON".
                     const eurRonRate = getEurRonSync() || 5.05;
-                    const financialSum = financialAnalysis ? {
-                      totalInvest_RON: (financialAnalysis.globalCost || 0) * eurRonRate,
-                      npv: financialAnalysis.npv || 0,
-                      irr: financialAnalysis.irr || 0,
-                      paybackSimple: financialAnalysis.paybackSimple || 0,
-                      paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
+                    const phasedCost = phasedPlan?.totalCost_RON || 0;
+                    const lccCost = financialAnalysis
+                      ? Math.abs((financialAnalysis.globalCost || 0) * eurRonRate)
+                      : 0;
+                    const financialSum = (phasedCost > 0 || financialAnalysis) ? {
+                      totalInvest_RON: phasedCost > 0 ? phasedCost : lccCost,
+                      npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
+                      irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
+                      paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
+                      paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
                       perspective: "financial",
-                    } : (phasedPlan ? {
-                      // Fallback când lipsește financialAnalysis: derivă din phasedPlan
-                      totalInvest_RON: phasedPlan.totalCost_RON || 0,
-                      npv: phasedPlan.summary?.npv_30y || 0,
-                      irr: phasedPlan.summary?.irr_pct || 0,
-                      paybackSimple: phasedPlan.summary?.paybackSimple_y || 0,
-                      paybackDiscounted: phasedPlan.summary?.paybackDiscounted_y || 0,
-                      perspective: "financial",
-                    } : null);
+                    } : null;
                     const passport = buildRenovationPassport({
                       cpeCode: building?.cpeCode || building?.cpeNumber || null,
                       building,
@@ -2175,7 +2199,48 @@ export default function Step7Audit(props) {
                     )}
                     {activeTool === "oferta" && (
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-                        <OfertaReabilitare building={building} instSummary={instSummary} auditor={auditor} onClose={() => setActiveTool(null)} />
+                        {/* Sprint 06may2026 audit P0 (B3) — pasăm passport ca să
+                            prepopulăm scenariu cu denumire + investiție reale */}
+                        <OfertaReabilitare
+                          building={building}
+                          instSummary={instSummary}
+                          auditor={auditor}
+                          passport={(() => {
+                            try {
+                              const eurRonRate = getEurRonSync() || 5.05;
+                              const slug = (s, i) => {
+                                const a = String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                                  .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
+                                return `m_${i}_${a || "masura"}`;
+                              };
+                              const ms = (smartSuggestions || []).map((s, i) => ({
+                                id: slug(s.measure, i),
+                                name: s.measure || `Măsură ${i+1}`,
+                                category: s.system || "Nespecificat",
+                                cost_RON: Math.round((parseFloat(String(s.costEstimate||"0").replace(/[^0-9.]/g,""))||0) * eurRonRate),
+                                ep_reduction_kWh_m2: parseFloat(s.epSaving_m2) || 0,
+                                co2_reduction: Math.round((parseFloat(s.epSaving_m2)||0) * 0.230 * 100)/100,
+                                lifespan_years: 20, priority: s.priority || 3,
+                              }));
+                              const pp = ms.length > 0
+                                ? calcPhasedRehabPlan(ms, 50000, "balanced", epFinal||200,
+                                    building?.category||"AL", parseFloat(building?.areaUseful)||100, 0.45)
+                                : null;
+                              if (!pp) return null;
+                              return buildRenovationPassport({
+                                cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                                building: building||{}, instSummary: instSummary||{},
+                                renewSummary: renewSummary||{}, climate: selectedClimate||{},
+                                auditor: auditor||{},
+                                phasedPlan: { strategy: "balanced", totalYears: pp.totalYears,
+                                  phases: pp.phases, epTrajectory: pp.epTrajectory,
+                                  classTrajectory: pp.classTrajectory, summary: pp.summary },
+                                mepsStatus: { thresholds: getMepsThresholdsFor(building?.category) },
+                                changeReason: "Inline pre-fill OfertaReabilitare (Pas 7)",
+                              });
+                            } catch (e) { console.warn("[Pas 7 oferta] passport prefill:", e); return null; }
+                          })()}
+                          onClose={() => setActiveTool(null)} />
                       </div>
                     )}
                     {/* Pașaport Renovare EPBD — DEZACTIVAT până la 29 mai 2026
