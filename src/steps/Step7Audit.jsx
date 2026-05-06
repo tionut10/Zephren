@@ -24,7 +24,7 @@ import { generateThermalMapSVG } from "../calc/thermal-map.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
-import { getNzebEpMax } from "../calc/smart-rehab.js";
+import { getNzebEpMax, getURefAdaptive, getURefGlazingAdaptive } from "../calc/smart-rehab.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG } from "../calc/epbd.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
@@ -157,7 +157,11 @@ export default function Step7Audit(props) {
                 const elType = ELEMENT_TYPES.find(t => t.id === el.type);
                 const tau = elType ? elType.tau : 1;
                 const loss = tau * area * u;
-                const uRef = el.type === "PE" ? 0.56 : el.type === "PSol" ? 0.40 : el.type === "PlanInt" ? 0.50 : el.type === "PlanExt" ? 0.20 : el.type === "Acoperiș" ? 0.20 : 0.35;
+                // Sprint P0-B (6 mai 2026) P0-04 — U_REF adaptiv per categorie + scop renovare.
+                // Surse: Mc 001-2022 Tab 2.4 (nZEB rez), 2.7 (nZEB nrez), 2.10a (renov rez), 2.10b (renov nrez).
+                // Înlocuiește valorile hardcoded incorecte (PE=0.56, PSol=0.40, PlanInt=0.50, etc.)
+                // cu motorul `getURefAdaptive` care alege tabelul corect din u-reference.js.
+                const uRef = getURefAdaptive(baseCatResolved, el.type, building) ?? 0.35;
                 items.push({
                   name: el.name || elType?.label || el.type,
                   type: "opac",
@@ -167,7 +171,7 @@ export default function Step7Audit(props) {
                   loss,
                   needsUpgrade: u > uRef * 1.2,
                   potential: u > uRef ? ((u - uRef) * area * tau) : 0,
-                  recommendation: u > uRef * 1.5 ? "Termoizolare urgenta" : u > uRef ? "Termoizolare recomandata" : "Conform",
+                  recommendation: u > uRef * 1.5 ? "Termoizolare urgentă" : u > uRef ? "Termoizolare recomandată" : "Conform",
                   priority: u > uRef * 1.5 ? 1 : u > uRef ? 2 : 3,
                 });
               });
@@ -175,7 +179,9 @@ export default function Step7Audit(props) {
               glazingElements.forEach(el => {
                 const area = parseFloat(el.area) || 0;
                 const u = parseFloat(el.u) || 0;
-                const uRef = 1.30; // Mc 001 ref pt tamplarie
+                // Sprint P0-B P0-04 — U_REF ferestre adaptiv (Mc 001-2022 Tab 2.5 + U_REF_GLAZING).
+                // Reprezintă: nZEB rez 0.90 / nZEB nrez 1.30 / renovare 1.30 (configurat în u-reference.js).
+                const uRef = getURefGlazingAdaptive(baseCatResolved, building) ?? 1.30;
                 const loss = area * u;
                 items.push({
                   name: el.name || "Tamplarie",
@@ -924,12 +930,54 @@ export default function Step7Audit(props) {
                 <span>📋</span> Generează deviz estimativ reabilitare (PDF)
               </button>
 
-              {/* ═══ EXPORT BUTTONS — consolidate (26 apr 2026) ═══
-                  Eliminate: Raport audit (PDF), Upload MDLPA, Export PDF certificat,
-                  Export bulk proiecte (motive: duplicare cu Pas 6, mock UI fals,
-                  sau funcție de backup care nu aparține în wizard-ul de audit).
-                  Rămân: XML MDLPA + Excel complet + Raport tehnic complet PDF. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
+              {/* ═══ EXPORT BUTTONS — consolidate Sprint P0-B (6 mai 2026) ═══
+                  Sprint P0-B P0-03 + P1-07: adăugat „Dosar Audit Energetic AAECR (DOCX)"
+                  ca buton primar — generează raport conform Cap. 1-8 AAECR Ghid 2014
+                  prin /api/generate-document?type=audit. Era accesibil DOAR în Step 8
+                  tab `raport_audit` (rezervat Expert), dar AE Ici 1.499 RON trebuie să
+                  poată genera Dosarul AAECR pentru clienți (risc legal+comercial).
+                  Sprint P0-B P1-11: extins „Anexe elemente DOCX" cu glazing + bridges
+                  + sisteme prin exportFullAnnexesDOCX. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      showToast("Generare Dosar Audit AAECR în curs…", "info", 4000);
+                      const payload = {
+                        building, instSummary, renewSummary, auditor,
+                        opaqueElements, glazingElements, thermalBridges,
+                        energyClass: enClass?.cls || "—",
+                        measuredConsumption: (() => {
+                          try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); }
+                          catch { return {}; }
+                        })(),
+                        systems: { heating, cooling, ventilation, lighting, acm },
+                      };
+                      const res = await fetch("/api/generate-document?type=audit", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                      });
+                      if (!res.ok) throw new Error("API error " + res.status);
+                      const { docx, filename } = await res.json();
+                      const bytes = Uint8Array.from(atob(docx), c => c.charCodeAt(0));
+                      const blob = new Blob([bytes], {
+                        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                      });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = filename || `dosar_audit_AAECR_${new Date().toISOString().slice(0, 10)}.docx`;
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                      showToast("✓ Dosar Audit AAECR DOCX descărcat", "success", 4000);
+                    } catch (e) {
+                      console.error("[Step7] export Dosar Audit:", e);
+                      showToast("Eroare generare Dosar Audit: " + e.message, "error", 6000);
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
+                  <span>📋</span> Generează Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8
+                </button>
                 <button onClick={exportXML}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
                   <span>📄</span> Export XML MDLPA
@@ -942,28 +990,36 @@ export default function Step7Audit(props) {
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
                   <span>📊</span> Raport tehnic complet PDF
                 </button>
-                {/* Sprint 22 #23 — Anexe DOCX per element opac (fișe tehnice) */}
+                {/* Sprint 22 #23 + Sprint P0-B P1-11 — Anexe DOCX EXTINS:
+                    opaque + glazing + bridges + systems via exportFullAnnexesDOCX. */}
                 <button
                   onClick={async () => {
-                    if (!opaqueElements || opaqueElements.length === 0) {
-                      showToast("Nu există elemente opace — adaugă cel puțin unul în Pasul 2.", "warning", 5000);
+                    const hasAny = (opaqueElements?.length || 0) +
+                      (glazingElements?.length || 0) + (thermalBridges?.length || 0) > 0;
+                    if (!hasAny) {
+                      showToast("Nu există elemente — adaugă cel puțin unul în Pasul 2/3.", "warning", 5000);
                       return;
                     }
                     try {
-                      const { exportElementAnnexesDOCX } = await import("../lib/element-annex-docx.js");
-                      const buildingName = (building?.name || building?.address || "cladire").replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 40);
-                      await exportElementAnnexesDOCX(opaqueElements, {
-                        filename: `anexe_elemente_${buildingName}_${new Date().toISOString().slice(0, 10)}.docx`,
-                        building,
-                      });
-                      showToast(`Anexe DOCX exportate pentru ${opaqueElements.length} element(e).`, "success", 4000);
+                      const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
+                      const buildingName = (building?.name || building?.address || "cladire")
+                        .replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0, 40);
+                      const r = await exportFullAnnexesDOCX(
+                        { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges,
+                          systems: { heating, cooling, ventilation, lighting, acm } },
+                        {
+                          filename: `anexe_complete_${buildingName}_${new Date().toISOString().slice(0, 10)}.docx`,
+                          building,
+                        }
+                      );
+                      showToast(`Anexe DOCX complete exportate (${r.sectionsCount} secțiuni).`, "success", 4000);
                     } catch (e) {
                       console.error("Eroare export anexe:", e);
                       showToast(`Eroare la export anexe: ${e.message}`, "error", 6000);
                     }
                   }}
                   className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
-                  <span>📘</span> Export anexe elemente (DOCX)
+                  <span>📘</span> Export anexe complete (DOCX) — opace + vitraj + punți + sisteme
                 </button>
               </div>
 

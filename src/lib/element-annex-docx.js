@@ -351,6 +351,299 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
   return { blob, filename };
 }
 
+/**
+ * Sprint P0-B (6 mai 2026) P1-11 — Export DOCX EXTINS cu toate categoriile de anexe:
+ * opace + vitraj + punți termice + sisteme HVAC. Format A4 portret consolidat.
+ *
+ * @param {{
+ *   opaque?: Array,    // elemente opace (PE, PT, PB, etc.)
+ *   glazing?: Array,   // ferestre / vitraj
+ *   bridges?: Array,   // punți termice
+ *   systems?: { heating?, cooling?, ventilation?, lighting?, acm? }
+ * }} data
+ * @param {{ filename?: string, building?: object }} options
+ * @returns {Promise<{blob, filename, sectionsCount}>}
+ */
+export async function exportFullAnnexesDOCX(data, options = {}) {
+  const {
+    Document, Paragraph, TextRun, Table, TableRow, TableCell,
+    HeadingLevel, AlignmentType, PageOrientation, WidthType, BorderStyle,
+    Packer, PageBreak,
+  } = await import("docx");
+
+  const opaque   = Array.isArray(data?.opaque)  ? data.opaque  : [];
+  const glazing  = Array.isArray(data?.glazing) ? data.glazing : [];
+  const bridges  = Array.isArray(data?.bridges) ? data.bridges : [];
+  const systems  = data?.systems || {};
+
+  const children = [
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: "ANEXE TEHNICE COMPLETE — DOSAR AUDIT", bold: true, size: 32 })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({
+        text: "Opace + Vitraj + Punți termice + Sisteme HVAC · Mc 001-2022 + SR EN ISO 6946:2017",
+        size: 18, color: "666666", italics: true,
+      })],
+    }),
+    new Paragraph({ text: "" }),
+  ];
+
+  let sectionsCount = 0;
+
+  // ── Secțiune 1: Elemente OPACE (re-folosește pipeline-ul existent) ──
+  if (opaque.length > 0) {
+    sectionsCount++;
+    children.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: "1. Elemente opace", bold: true, size: 28 })],
+    }));
+    opaque.forEach((el, idx) => {
+      const metrics = computeElementMetrics(el);
+      children.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: [new TextRun({
+            text: `1.${idx + 1} — ${el.name || elementTypeName(el.type) || `Element ${idx + 1}`}`,
+            bold: true, size: 22,
+          })],
+        }),
+        new Paragraph({
+          children: [new TextRun({
+            text: `Tip: ${elementTypeName(el.type)} (${el.type}) · Suprafață: ${fmtNum(el.area, 2)} m² · `
+              + `U=${fmtNum(metrics.u, 3)} W/(m²·K) · R=${fmtNum(metrics.r_total, 3)} m²·K/W · `
+              + `D=${fmtNum(metrics.D, 3)} · Foc: ${metrics.worstFireClass}`,
+            size: 18,
+          })],
+        }),
+        new Paragraph({ text: "" }),
+      );
+    });
+  }
+
+  // ── Secțiune 2: Elemente VITRATE ──
+  if (glazing.length > 0) {
+    sectionsCount++;
+    if (children.length > 4) children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: "2. Elemente vitrate", bold: true, size: 28 })],
+    }));
+    const tblRows = [
+      new TableRow({
+        children: ["Nr.", "Denumire", "Tip", "Orientare", "Suprafață [m²]", "U [W/(m²·K)]", "g [-]"].map(h =>
+          new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })] })],
+          })
+        ),
+      }),
+      ...glazing.map((g, i) => new TableRow({
+        children: [
+          String(i + 1),
+          String(g.name || "—"),
+          String(g.type || "—"),
+          String(g.orientation || "—"),
+          fmtNum(g.area, 2),
+          fmtNum(g.u, 2),
+          fmtNum(g.g_value || g.g, 2),
+        ].map(c => new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: c, size: 18 })] })],
+        })),
+      })),
+    ];
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: tblRows,
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 4, color: "888888" },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
+        left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+      },
+    }));
+    children.push(new Paragraph({ text: "" }));
+    children.push(new Paragraph({
+      children: [new TextRun({
+        text: "Referințe: SR EN 14351-1 (vitraj), SR EN 673 (U), SR EN 410 (g_value), Mc 001-2022 §3.3.2 + Tab 2.5.",
+        size: 16, italics: true, color: "666666",
+      })],
+    }));
+  }
+
+  // ── Secțiune 3: PUNȚI TERMICE ──
+  if (bridges.length > 0) {
+    sectionsCount++;
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: "3. Punți termice liniare", bold: true, size: 28 })],
+    }));
+    const tblRows = [
+      new TableRow({
+        children: ["Nr.", "Denumire", "ψ [W/(m·K)]", "Lungime [m]", "Pierdere [W/K]"].map(h =>
+          new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })] })],
+          })
+        ),
+      }),
+      ...bridges.map((b, i) => {
+        const psi = parseFloat(b.psi) || 0;
+        const len = parseFloat(b.length) || 0;
+        return new TableRow({
+          children: [
+            String(i + 1), String(b.name || "Punte " + (i + 1)),
+            fmtNum(psi, 3), fmtNum(len, 2), fmtNum(psi * len, 3),
+          ].map(c => new TableCell({
+            children: [new Paragraph({ children: [new TextRun({ text: c, size: 18 })] })],
+          })),
+        });
+      }),
+    ];
+    const totalLoss = bridges.reduce((s, b) => s + (parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0), 0);
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: tblRows,
+      borders: {
+        top:    { style: BorderStyle.SINGLE, size: 4, color: "888888" },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
+        left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+      },
+    }));
+    children.push(new Paragraph({ text: "" }));
+    children.push(new Paragraph({
+      children: [new TextRun({
+        text: `Pierdere totală liniară: ${fmtNum(totalLoss, 3)} W/K. `
+          + `Referințe: SR EN ISO 14683:2017, SR EN ISO 10211:2017, Mc 001-2022 §3.3.4 + Catalog MCCL 165 tipologii.`,
+        size: 16, italics: true, color: "666666",
+      })],
+    }));
+  }
+
+  // ── Secțiune 4: SISTEME HVAC ──
+  const hasSystems = !!(systems.heating || systems.cooling || systems.ventilation || systems.lighting || systems.acm);
+  if (hasSystems) {
+    sectionsCount++;
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: "4. Sisteme tehnice (HVAC + ACM + Iluminat)", bold: true, size: 28 })],
+    }));
+
+    const subSection = (title, obj, fields) => {
+      if (!obj || Object.keys(obj).length === 0) return;
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        children: [new TextRun({ text: title, bold: true, size: 22 })],
+      }));
+      const rows = fields.filter(([_, key]) => obj[key] !== undefined && obj[key] !== null && obj[key] !== "")
+        .map(([label, key, unit]) => new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18 })] })],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              children: [new Paragraph({ children: [new TextRun({ text: `${obj[key]}${unit ? " " + unit : ""}`, size: 18 })] })],
+            }),
+          ],
+        }));
+      if (rows.length > 0) {
+        children.push(new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows,
+          borders: {
+            top:    { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+            insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+          },
+        }));
+        children.push(new Paragraph({ text: "" }));
+      }
+    };
+
+    subSection("4.1 Încălzire", systems.heating, [
+      ["Sursă", "source"], ["Combustibil", "fuel"], ["Putere", "power", "kW"],
+      ["η generare", "eta_gen"], ["η distribuție", "eta_distr"], ["η reglaj", "eta_reg"], ["η emisie", "eta_em"],
+      ["Clasă BACS", "bacsClass"],
+    ]);
+    subSection("4.2 Răcire", systems.cooling, [
+      ["Tip", "type"], ["Putere", "power", "kW"], ["EER", "eer"], ["SEER", "seer"],
+      ["Activă", "hasCooling"],
+    ]);
+    subSection("4.3 Ventilare", systems.ventilation, [
+      ["Tip", "type"], ["Recuperare căldură", "hasHR"], ["η HR", "hrEfficiency", "%"],
+      ["Debit", "flow", "m³/h"],
+    ]);
+    subSection("4.4 Iluminat", systems.lighting, [
+      ["Tip", "type"], ["Densitate putere", "pDensity", "W/m²"], ["Control", "control"],
+    ]);
+    subSection("4.5 ACM", systems.acm, [
+      ["Sursă", "source"], ["Stocare", "storageType"], ["Consumatori", "consumers"],
+      ["Anti-Legionella", "legionellaMethod"], ["Izolație conducte", "pipeInsulationType"],
+    ]);
+
+    children.push(new Paragraph({
+      children: [new TextRun({
+        text: "Referințe: SR EN 15316-1 (încălzire), SR EN 15243 (răcire), SR EN 16798-7 (ventilare), "
+          + "SR EN 15193-1 (iluminat), SR EN 15316-3 (ACM), EN 15232-1 (BACS).",
+        size: 16, italics: true, color: "666666",
+      })],
+    }));
+  }
+
+  // Footer
+  children.push(
+    new Paragraph({ text: "" }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({
+        text: `Document generat ${new Date().toLocaleString("ro-RO")} de Zephren Energy Calculator. `
+          + `Anexe complete pentru Dosar Audit Energetic AAECR (Cap. 8).`,
+        size: 14, color: "999999", italics: true,
+      })],
+    })
+  );
+
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838, orientation: PageOrientation.PORTRAIT },
+          margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 },
+        },
+      },
+      children,
+    }],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const filename = options.filename || `anexe_complete_${new Date().toISOString().slice(0, 10)}.docx`;
+  if (typeof document === "undefined") {
+    return { blob, filename, sectionsCount };
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return { blob, filename, sectionsCount };
+}
+
 // Expus doar pentru testare (builder-ul pur de metrici fără DOCX)
 export const __testing__ = {
   computeElementMetrics,

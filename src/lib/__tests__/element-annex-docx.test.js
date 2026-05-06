@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   exportElementAnnexesDOCX,
+  exportFullAnnexesDOCX,
   __testing__,
 } from "../element-annex-docx.js";
 
@@ -137,5 +138,46 @@ describe("Sprint 22 #23 — exportElementAnnexesDOCX", () => {
     }];
     const r = await exportElementAnnexesDOCX(elements, { filename: "custom_anexe.docx" });
     expect(r.filename).toBe("custom_anexe.docx");
+  }, 10000);
+});
+
+describe("Sprint P0-B P1-11 — exportFullAnnexesDOCX (opaque + glazing + bridges + systems)", () => {
+  beforeEach(() => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("returnează sectionsCount=4 când toate categoriile sunt prezente", async () => {
+    const r = await exportFullAnnexesDOCX({
+      opaque: [{ name: "PE", type: "PE", area: 50, layers: [{ matName: "EPS", thickness: 100, lambda: 0.036, rho: 20 }] }],
+      glazing: [{ name: "F1", type: "tripan", orientation: "S", area: 5, u: 0.9, g: 0.5 }],
+      bridges: [{ name: "Colț", psi: 0.15, length: 4 }],
+      systems: { heating: { source: "PC", power: 8, eta_gen: 4.2 } },
+    });
+    expect(r.sectionsCount).toBe(4);
+    expect(r.blob.size).toBeGreaterThan(2000);
+  }, 10000);
+
+  it("returnează sectionsCount=2 când doar opaque + bridges", async () => {
+    const r = await exportFullAnnexesDOCX({
+      opaque: [{ name: "PE", type: "PE", area: 50, layers: [{ matName: "EPS", thickness: 100, lambda: 0.036, rho: 20 }] }],
+      bridges: [{ name: "B1", psi: 0.10, length: 8 }],
+    });
+    expect(r.sectionsCount).toBe(2);
+  }, 10000);
+
+  it("returnează sectionsCount=0 pentru date goale (DOCX cu doar header)", async () => {
+    const r = await exportFullAnnexesDOCX({});
+    expect(r.sectionsCount).toBe(0);
+    expect(r.blob.size).toBeGreaterThan(500);
+  }, 10000);
+
+  it("filename default conține anexe_complete + dată ISO", async () => {
+    const r = await exportFullAnnexesDOCX({
+      glazing: [{ name: "F", area: 3, u: 1.1 }],
+    });
+    expect(r.filename).toMatch(/^anexe_complete_\d{4}-\d{2}-\d{2}\.docx$/);
   }, 10000);
 });
