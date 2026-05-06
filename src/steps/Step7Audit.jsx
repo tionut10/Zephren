@@ -1709,32 +1709,85 @@ export default function Step7Audit(props) {
                   smartSuggestions, în loc de reduceri fixe [0,20,40,60]%. Buget anual default
                   50.000 RON, strategie balanced (mix anvelopă+sisteme), 20 ani orizont maxim. */}
               {instSummary && (() => {
-                // Mapper inline smartSuggestions → measures format calcPhasedRehabPlan
+                // Sprint 06may2026 audit P1 (B4) — UNIFICARE 3 SURSE COST.
+                // Prioritate: rehabScenarioInputs (Pas 5 user) > smartSuggestions (Pas 7 auto).
+                // Aliniere cu Deviz + CPE post-rehab care folosesc rehabScenarioInputs.
                 const eurRon = getEurRonSync() || 5.05;
-                // Sprint 06may2026 audit P0 (B9) — slug complet
                 const slugifyCard = (s, i) => {
                   const ascii = String(s || "")
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .normalize("NFD").replace(/[̀-ͯ]/g, "")
                     .replace(/[^a-zA-Z0-9]+/g, "_")
                     .replace(/^_+|_+$/g, "")
                     .toLowerCase();
                   return `m_${i}_${ascii || "masura"}`;
                 };
-                const measures = (smartSuggestions || []).map((s, i) => {
-                  const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
-                  const epSav = parseFloat(s.epSaving_m2) || 0;
-                  return {
-                    id: slugifyCard(s.measure, i),
-                    name: s.measure || `Măsură ${i + 1}`,
-                    category: s.system || "Nespecificat",
-                    system: s.system || "Nespecificat",
+                const ri = rehabScenarioInputs || {};
+                const hasRehabInputs = ri.addInsulWall || ri.addInsulRoof ||
+                  ri.replaceWindows || ri.replaceHeating || ri.addPV ||
+                  ri.addSolarThermal || ri.addHRV || ri.addLED;
+                let measures = [];
+                if (hasRehabInputs) {
+                  const wallA = (opaqueElements || []).filter(e => e.type === "PE")
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const roofA = (opaqueElements || []).filter(e => e.type === "PP" || e.type === "PT")
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const glazA = (glazingElements || [])
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const Au = parseFloat(building?.areaUseful) || 100;
+                  const epBase = parseFloat(epFinal) || 200;
+                  let id = 0;
+                  const push = (name, cat, costEur, epSav, life, prio) => measures.push({
+                    id: slugifyCard(name, id++),
+                    name, category: cat, system: cat,
                     cost_RON: Math.round(costEur * eurRon),
                     ep_reduction_kWh_m2: epSav,
                     co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
-                    lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
-                    priority: s.priority || 3,
-                  };
-                });
+                    lifespan_years: life, priority: prio,
+                  });
+                  if (ri.addInsulWall && wallA > 0) {
+                    const t = parseInt(ri.insulWallThickness) || 10;
+                    push(`Termoizolație pereți ETICS (${t} cm)`, "Anvelopă", wallA * 42, Math.min(epBase * 0.30, 80), 30, 1);
+                  }
+                  if (ri.addInsulRoof && roofA > 0) {
+                    const t = parseInt(ri.insulRoofThickness) || 15;
+                    push(`Termoizolație acoperiș/planșeu superior (${t} cm)`, "Anvelopă", roofA * 42, Math.min(epBase * 0.15, 50), 30, 1);
+                  }
+                  if (ri.replaceWindows && glazA > 0) {
+                    push("Înlocuire tâmplărie exterioară (Low-E)", "Anvelopă", glazA * 200, Math.min(epBase * 0.20, 60), 30, 2);
+                  }
+                  if (ri.replaceHeating) {
+                    push("Pompă de căldură aer-apă", "Instalații", 9000, Math.min(epBase * 0.25, 100), 20, 2);
+                  }
+                  if (ri.addHRV) {
+                    push("Ventilare mecanică cu recuperare căldură (η ≥ 80%)", "Instalații", Au * 32, Math.min(epBase * 0.18, 70), 20, 3);
+                  }
+                  if (ri.addPV) {
+                    push("Instalare panouri fotovoltaice", "Regenerabile", 5 * 1100, 40, 25, 1);
+                  }
+                  if (ri.addSolarThermal) {
+                    push("Panouri solar-termice pentru ACM", "Regenerabile", 6 * 380, Math.min(epBase * 0.08, 30), 25, 2);
+                  }
+                  if (ri.addLED) {
+                    push("Înlocuire iluminat cu LED + senzori prezență", "Instalații", Au * 8, Math.min(epBase * 0.06, 20), 20, 3);
+                  }
+                }
+                if (measures.length === 0) {
+                  measures = (smartSuggestions || []).map((s, i) => {
+                    const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                    const epSav = parseFloat(s.epSaving_m2) || 0;
+                    return {
+                      id: slugifyCard(s.measure, i),
+                      name: s.measure || `Măsură ${i + 1}`,
+                      category: s.system || "Nespecificat",
+                      system: s.system || "Nespecificat",
+                      cost_RON: Math.round(costEur * eurRon),
+                      ep_reduction_kWh_m2: epSav,
+                      co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                      lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
+                      priority: s.priority || 3,
+                    };
+                  });
+                }
 
                 const energyPriceRON = 0.45;
                 const phasedPlan = measures.length > 0
