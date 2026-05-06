@@ -3366,6 +3366,71 @@ class handler(BaseHTTPRequestHandler):
 
             doc.add_paragraph()
 
+            # ── Capitol 0. Ipoteze de calcul ────
+            # Sprint P2 06may2026 — listă explicită ipoteze + standarde aplicate.
+            # Mc 001-2022 §1.5 cere ca raportul să declare ipotezele non-default
+            # pentru reproducibilitate și verificare independentă.
+            h0 = doc.add_paragraph()
+            rh0 = h0.add_run("0. Ipoteze de calcul și standarde aplicate")
+            rh0.bold = True
+            rh0.font.size = _Pt(13)
+
+            ipoteze_table = doc.add_table(rows=1, cols=2)
+            ipoteze_table.style = "Light Grid Accent 1"
+            ip_hdr = ipoteze_table.rows[0].cells
+            ip_hdr[0].text = ""
+            r = ip_hdr[0].paragraphs[0].add_run("Domeniu / Element")
+            r.font.name = "Calibri"; r.font.size = _Pt(10); r.bold = True
+            ip_hdr[1].text = ""
+            r = ip_hdr[1].paragraphs[0].add_run("Standard / Ipoteză adoptată")
+            r.font.name = "Calibri"; r.font.size = _Pt(10); r.bold = True
+
+            ipoteze = [
+                ("Metodologia de calcul",
+                 "Mc 001-2022 (Partea I-IV) — bilanț pe utilizări UE, RER, MEPS"),
+                ("Calcul transfer termic",
+                 "SR EN ISO 13790:2008 (sezon încălzire) + SR EN ISO 52016-1:2017 (orar)"),
+                ("Coeficienți U opaci",
+                 "SR EN ISO 6946:2017 (Rsi/Rse + Σd/λ); SR EN ISO 10211:2017 (punți)"),
+                ("Coeficienți U vitraje",
+                 "SR EN 14351-1:2016 + SR EN 673:2011 (U_g) + SR EN 410:2011 (g_value)"),
+                ("Punți termice liniare",
+                 "SR EN ISO 14683:2017 + Catalog Mc 001-2022 (165 tipologii)"),
+                ("Climă referință",
+                 f"Zona {building.get('zonaClimatica', climate.get('zone', '—') if climate else '—')} (SR 4839/Mc 001-2022)"),
+                ("Etanșeitate aer",
+                 f"n50 = {building.get('n50', '—')} h⁻¹ (default Mc 001-2022 dacă neasigurat blower-door)"),
+                ("Aporturi solare",
+                 f"Factor umbrire mediu = {building.get('shadingFactor', '0.85')} (SR EN ISO 52010-1)"),
+                ("Aporturi interne",
+                 "Conform Mc 001-2022 Tab 4.10 (densitate ocupare per categorie)"),
+                ("Temperatură interioară setpoint",
+                 f"{(systems.get('heating', {}) or {}).get('theta_int', '20')}°C încălzire / 26°C răcire (Mc 001-2022)"),
+                ("Categorie comfort IEQ",
+                 "Cat. III SR EN 16798-1/NA:2019 (rezidențial) sau Cat. II nerezidențial"),
+                ("Factori conversie energie",
+                 "f_p_nren conform Mc 001-2022 Tab 8.3 (RO grid 2.5 / gaz 1.1 / lemn 0.2)"),
+                ("Emisii CO₂",
+                 "Factori SR EN 15603:2008 (cu update RO 2024 — 0.230 kgCO₂/kWh termic)"),
+                ("BACS",
+                 f"Clasă {(systems.get('heating', {}) or {}).get('bacsClass', 'D')} (EN 15232-1:2017 + ISO 52120-1)"),
+                ("Iluminat (LENI)",
+                 "SR EN 15193-1:2017/A1:2021 — densitate putere + control + ore funcționare"),
+                ("Toleranțe acceptate",
+                 "EP ±15% / RER ±5% / U_med ±10% / Q_inc ±15% (calibrare auditor)"),
+            ]
+
+            for k, v in ipoteze:
+                row = ipoteze_table.add_row().cells
+                row[0].text = ""
+                p = row[0].paragraphs[0].add_run(k)
+                p.font.name = "Calibri"; p.font.size = _Pt(9); p.bold = True
+                row[1].text = ""
+                p = row[1].paragraphs[0].add_run(v)
+                p.font.name = "Calibri"; p.font.size = _Pt(9)
+
+            doc.add_paragraph()
+
             # ── Capitol 1. Date identificare ───────────
             h1 = doc.add_paragraph()
             rh1 = h1.add_run("1. Date de identificare a clădirii")

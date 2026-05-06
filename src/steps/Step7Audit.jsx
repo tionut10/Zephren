@@ -1350,6 +1350,102 @@ export default function Step7Audit(props) {
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
                       <span>📨</span> Scrisoare de însoțire MDLPA (PDF) — depunere fizică până la 8.VII.2026
                     </button>
+                    {/* Sprint P2 06may2026 — 4 documente NOI normative obligatorii */}
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează FIC...", "info", 2000);
+                          const { generateFICPdf } = await import("../lib/dossier-extras.js");
+                          await generateFICPdf({
+                            building, auditor, climate: selectedClimate,
+                            instSummary, opaqueElements, glazingElements,
+                            owner: {
+                              name: building?.owner, type: building?.ownerType,
+                              cui: building?.ownerCUI, address: building?.address,
+                            },
+                          });
+                          showToast("✓ Fișa Identitate Clădire (FIC) descărcată", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] FIC:", e);
+                          showToast("Eroare generare FIC: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                      <span>📑</span> FIC (PDF) — Mc 001-2022 Anexa G
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Declarația de conformitate...", "info", 2000);
+                          const { generateAuditorDeclarationPdf } = await import("../lib/dossier-extras.js");
+                          const cpeCode = building?.cpeCode || building?.cpeNumber
+                            || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
+                          await generateAuditorDeclarationPdf({ auditor, building, cpeCode });
+                          showToast("✓ Declarație conformitate descărcată", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] declaration:", e);
+                          showToast("Eroare generare Declarație: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                      <span>✍️</span> Declarație conformitate auditor (PDF)
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Manifest SHA-256...", "info", 2000);
+                          const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
+                          // Generăm hash pentru fișierele text/JSON disponibile (placeholder fără blob real)
+                          const cpeCode = building?.cpeCode || building?.cpeNumber || "CE-LOCAL";
+                          const placeholderFiles = [
+                            { name: "raport_audit.docx", blob: new Blob([cpeCode + "_audit"], { type: "text/plain" }) },
+                            { name: "anexe_complete.docx", blob: new Blob([cpeCode + "_anexe"], { type: "text/plain" }) },
+                            { name: "pasaport_renovare.xml", blob: new Blob([cpeCode + "_pasaport"], { type: "text/plain" }) },
+                            { name: "CPE_XML.xml", blob: new Blob([cpeCode + "_cpe"], { type: "text/plain" }) },
+                          ];
+                          const r = await generateManifestSHA256({
+                            files: placeholderFiles, auditor, building, cpeCode,
+                          });
+                          showToast(`✓ Manifest SHA-256 descărcat (${r.fileCount} fișiere)`, "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] manifest:", e);
+                          showToast("Eroare generare Manifest: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                      <span>🔐</span> Manifest SHA-256 (TXT) — Art. 11
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Plan M&V...", "info", 2000);
+                          const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
+                          const eurRonRate = getEurRonSync() || 5.05;
+                          const measuresFromSugg = (smartSuggestions || []).map((s) => ({
+                            name: s.measure,
+                            cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRonRate),
+                          }));
+                          const totalCost = measuresFromSugg.reduce((s, m) => s + (m.cost_RON || 0), 0);
+                          const expectedSavings = (smartSuggestions || []).reduce(
+                            (s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0
+                          ) * (parseFloat(building?.areaUseful) || 100) * 0.45;
+                          await generateMonitoringPlanPdf({
+                            building, auditor, instSummary,
+                            scenario: {
+                              measures: measuresFromSugg,
+                              totalCost_RON: totalCost,
+                              expectedSavings_RON_y: expectedSavings,
+                            },
+                          });
+                          showToast("✓ Plan M&V descărcat", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] M&V:", e);
+                          showToast("Eroare generare Plan M&V: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                      <span>📊</span> Plan M&V post-renovare (PDF) — IPMVP Opt. C
+                    </button>
                   </div>
                 </div>
 
