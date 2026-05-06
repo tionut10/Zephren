@@ -3359,7 +3359,7 @@ export default function EnergyCalcApp({ cloud }) {
             </button>
             {selectedClimate && (
               <Badge color={selectedClimate.zone==="I"?"green":selectedClimate.zone==="II"?"amber":selectedClimate.zone==="III"?"amber":selectedClimate.zone==="IV"?"red":"purple"}>
-                <span className="hidden md:inline">Zona </span>{selectedClimate.zone}
+Zona {selectedClimate.zone}
               </Badge>
             )}
             {/* Coef. G mini-badge — vizibil doar pe mobile (<md); sidebar-ul îl arată pe tabletă/desktop */}
