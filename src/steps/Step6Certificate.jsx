@@ -40,6 +40,9 @@ import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
 import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
+// Sprint Conformitate P0-01 + P0-02 (6 mai 2026) — PDF/A-3 + PAdES container.
+// Importuri lazy în handler pentru a păstra initial bundle Step6 mic.
+// Vezi audit-conformitate-2026-05-06/P0-CRITIC.md pentru context.
 import { canAccess as canAccessFn, resolvePlan } from "../lib/planGating.js";
 import { detectIncoherences, summarizeIncoherences } from "../utils/incoherence-detector.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
@@ -99,6 +102,14 @@ export default function Step6Certificate(props) {
             // Sprint G4 — fRsi validation gate (SR EN ISO 13788)
             const [fRsiModal, setFRsiModal] = useState({ open: false, validation: null, pendingExport: null });
             const [fRsiOverride, setFRsiOverride] = useState(null); // { rationale, problems, timestamp }
+            // Sprint Conformitate P0-01 + P0-02 (6 mai 2026) — state PDF/A-3 + PAdES.
+            // Provider default „mock" pentru pilot pre-onboarding QTSP RO; user poate
+            // schimba la „certsign" dacă env vars CERTSIGN_CLIENT_ID/SECRET sunt setate.
+            // Level default „B-LT" (Long-Term Validation) pentru CPE arhivabil 5/10 ani.
+            const [pdfaProvider, setPdfaProvider] = useState("mock"); // „mock" | „certsign"
+            const [pdfaLevel, setPdfaLevel] = useState("B-LT"); // „B-T" | „B-LT"
+            const [pdfaSigningStatus, setPdfaSigningStatus] = useState(null); // null | „signing" | „done" | „error"
+            const [pdfaSignerInfo, setPdfaSignerInfo] = useState(null); // result.signerInfo după export
             // Audit 2 mai 2026 — P0.5: pe Vercel HTTPS cu CSP strict, range requests pe
             // blob:// eșuează cu „Unexpected server response (0)". Pasăm ArrayBuffer-ul
             // direct la PDFViewer (PDF.js îl tratează cu disableRange/disableStream).
@@ -3972,6 +3983,398 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         </div>
                       </div>
                     </button>
+                  </div>
+                );
+              })()}
+
+              {/* ═══ PDF/A-3 + Semnătură electronică PAdES (Sprint Conformitate P0-01 + P0-02, 6 mai 2026) ═══
+                   Card NOU additive — NU modifică niciun flux DOCX existent (CPE/Anexa/Anexa Bloc/Pachet ZIP).
+                   Apel separat la endpoint-ul Python existent /api/generate-document?type=cpe pentru a obține
+                   DOCX-urile MDLPA byte-perfect, apoi le ATAȘEAZĂ într-un container PDF/A-3 (pattern ZUGFeRD).
+                   Cover PDF compact generat client-side cu jsPDF; semnătură PAdES B-T/B-LT cu provider selectabil.
+                   Vezi audit-conformitate-2026-05-06/P0-CRITIC.md + docs/CERTSIGN_SETUP.md.
+              */}
+              {canExportDocx && dataComplete && (() => {
+                const handleExportPDFA3Signed = async () => {
+                  // Verificare gating legal HARD (REUTILIZARE — same logic as DOCX export)
+                  const legalCheck = canEmitForBuilding({
+                    plan: userPlan,
+                    auditorGrad: building?.auditorGrad || null,
+                    building,
+                    operation: "cpe",
+                  });
+                  if (!legalCheck.ok) {
+                    showToast(`Export blocat legal: ${legalCheck.reason} (${legalCheck.legalRef})`, "error");
+                    return;
+                  }
+
+                  setPdfaSigningStatus("signing");
+                  setPdfaSignerInfo(null);
+
+                  try {
+                    showToast(lang === "EN"
+                      ? "Building PDF/A-3 archival container…"
+                      : "Se construiește containerul PDF/A-3…", "info", 3500);
+
+                    const dateSlug = new Date().toISOString().slice(0, 10);
+                    const addrSlug = (building.address || "proiect").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+                    const cpeCode = auditor.cpeCode || auditor.mdlpaCode || "";
+
+                    // 1. Apel DOCX CPE existing — NU modifică nimic, doar primește blob
+                    const tplBufCpe = await fetchTemplate(tpl.cpe);
+                    const cpeDocxBlob = await generateDocxCPE(tplBufCpe, "cpe", { download: false });
+                    if (!cpeDocxBlob) throw new Error("CPE DOCX generation failed");
+
+                    // 2. Apel DOCX Anexa 1+2 existing
+                    const tplBufAnx = await fetchTemplate(tpl.anexa);
+                    const anexaDocxBlob = await generateDocxCPE(tplBufAnx, "anexa", { download: false });
+
+                    // 3. Anexa Bloc dacă RC + apartments
+                    let blocDocxBlob = null;
+                    if ((building.apartments || []).length > 0) {
+                      const tplBufBloc = await fetchTemplate(tpl.anexa);
+                      blocDocxBlob = await generateDocxCPE(tplBufBloc, "anexa_bloc", { download: false });
+                    }
+
+                    // 4. Generez Cover PDF compact cu jsPDF
+                    const { default: jsPDF } = await import("jspdf");
+                    const { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } = await import("../utils/pdf-fonts.js");
+                    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+                    const fontOk = await setupRomanianFont(doc);
+                    const writeText = makeTextWriter(doc, fontOk);
+                    const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
+                    const M = 18;
+                    const pageW = doc.internal.pageSize.getWidth();
+                    let y = 22;
+
+                    doc.setFont(baseFont, "bold"); doc.setFontSize(16);
+                    writeText("CONTAINER PDF/A-3 — DOSAR CPE ARHIVABIL", pageW / 2, y, { align: "center" });
+                    y += 7;
+                    doc.setFontSize(10); doc.setFont(baseFont, "normal"); doc.setTextColor(80, 80, 100);
+                    writeText("Conform ISO 19005-3 + ISO 14641 + Mc 001-2022 §10 + Art. 17 EPBD 2024/1275", pageW / 2, y, { align: "center" });
+                    y += 5;
+                    writeText(`Generat: ${new Date().toLocaleString("ro-RO")}`, pageW / 2, y, { align: "center" });
+                    y += 12;
+                    doc.setTextColor(0, 0, 0);
+
+                    // Tabel sumar
+                    doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+                    writeText("DATE CERTIFICAT ENERGETIC", M, y); y += 7;
+                    doc.setFont(baseFont, "normal"); doc.setFontSize(10);
+                    const drawRow = (label, value) => {
+                      doc.setDrawColor(220, 220, 230);
+                      doc.line(M, y, pageW - M, y);
+                      doc.setFont(baseFont, "bold"); writeText(label, M + 2, y + 5);
+                      doc.setFont(baseFont, "normal"); writeText(String(value || "—"), M + 75, y + 5);
+                      y += 7;
+                    };
+                    drawRow("Cod CPE/CUC", cpeCode);
+                    drawRow("Adresă clădire", building.address);
+                    drawRow("Categorie", building.category);
+                    drawRow("Suprafață utilă Au", `${Au.toFixed(1)} m²`);
+                    drawRow("EP final", `${epFinal.toFixed(1)} kWh/m²·an`);
+                    drawRow("Clasă energetică", enClass?.cls || "—");
+                    drawRow("CO₂ specific", `${co2Final.toFixed(1)} kg/m²·an`);
+                    drawRow("Auditor", `${auditor.name || "—"} (atestat ${auditor.atestat || "—"})`);
+                    drawRow("Scop CPE", building.scopCpe);
+                    y += 5;
+
+                    // Listă atașamente
+                    doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+                    writeText("ATAȘAMENTE EMBEDED ÎN ACEST CONTAINER PDF/A-3:", M, y); y += 7;
+                    doc.setFont(baseFont, "normal"); doc.setFontSize(9);
+                    const attList = [
+                      `• 1_CPE_oficial.docx — Certificat Performanță Energetică (format MDLPA Ord. 16/2023)`,
+                      anexaDocxBlob ? `• 2_Anexa_1+2_oficial.docx — Anexa 1+2 (date tehnice + recomandări)` : null,
+                      blocDocxBlob ? `• 3_Anexa_Bloc_oficial.docx — Tabel multi-apartament RC` : null,
+                      `• 4_inputs.json — Date intrare wizard Zephren (Step 1-7 state) — relationship: Source`,
+                      `• 5_metadata.json — Cod CPE, auditor, validitate, semnătură info`,
+                    ].filter(Boolean);
+                    attList.forEach(line => {
+                      const lines = doc.splitTextToSize(line, pageW - 2 * M);
+                      lines.forEach(l => { writeText(l, M, y); y += 4.5; });
+                    });
+                    y += 6;
+
+                    // Note tehnice
+                    doc.setDrawColor(180, 100, 30);
+                    doc.setFillColor(255, 248, 220);
+                    doc.rect(M, y, pageW - 2 * M, 24, "FD");
+                    doc.setFont(baseFont, "bold"); doc.setFontSize(9); doc.setTextColor(140, 80, 20);
+                    writeText("ℹ️ Cum se folosește acest container", M + 3, y + 5);
+                    doc.setFont(baseFont, "normal"); doc.setFontSize(8); doc.setTextColor(60, 50, 20);
+                    const noteLines = [
+                      "Acest fișier PDF/A-3 conține DOCX-urile oficiale MDLPA atașate ca fișiere embedate.",
+                      "Pentru extragere: deschideți cu Adobe Reader / Foxit → tab „Atașamente” (clip iconiță).",
+                      "Documentul oficial pentru depunere la portal MDLPA rămâne DOCX-ul atașat.",
+                      "Acest container PDF/A-3 servește exclusiv pentru arhivare cu fidelitate (ISO 14641).",
+                    ];
+                    let ny = y + 9;
+                    noteLines.forEach(l => { writeText(l, M + 3, ny); ny += 3.8; });
+                    doc.setTextColor(0, 0, 0);
+                    y = ny + 8;
+
+                    // Footer juridic
+                    doc.setDrawColor(150, 150, 170);
+                    doc.line(M, 270, pageW - M, 270);
+                    doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
+                    writeText("Bază legală: Mc 001-2022 (Ord. MDLPA 16/2023) + L.372/2005 republicată cu L.238/2024 + " +
+                      "Ord. MDLPA 348/2026 + ISO 19005-3 + eIDAS 2 (Reg. UE 910/2014 modif. 2024/1183) + Legea 214/2024.",
+                      M, 274, { maxWidth: pageW - 2 * M });
+
+                    const coverPdfBlob = doc.output("blob");
+
+                    // 5. Construire metadata.json
+                    const metadataJson = {
+                      cpeCode,
+                      generatedAt: new Date().toISOString(),
+                      auditor: {
+                        name: auditor.name,
+                        atestat: auditor.atestat,
+                        grade: auditor.grade,
+                        registryIndex: auditor.registryIndex,
+                      },
+                      building: {
+                        address: building.address,
+                        category: building.category,
+                        areaUseful: Au,
+                        scopCpe: building.scopCpe,
+                        cadastralNumber: building.cadastralNumber,
+                      },
+                      energy: {
+                        epFinal,
+                        epClass: enClass?.cls,
+                        co2Final,
+                        co2Class: co2Class?.cls,
+                        rer,
+                        validityYears: getValidityYears(enClass?.cls),
+                      },
+                      pdfaSpec: "ISO 19005-3 PDF/A-3b",
+                      padesLevel: pdfaLevel,
+                      padesProvider: pdfaProvider,
+                    };
+
+                    // 6. Convertire la PDF/A-3 cu atașamente
+                    const { exportCpePDFA3WithAttachments, AF_RELATIONSHIP } = await import("../lib/pdfa-export.js");
+                    const extraAttachments = [
+                      {
+                        filename: `1_CPE_oficial_${addrSlug}_${dateSlug}.docx`,
+                        bytes: cpeDocxBlob,
+                        mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        relationship: AF_RELATIONSHIP.Source,
+                        description: "Certificat performanță energetică DOCX oficial MDLPA",
+                      },
+                    ];
+                    if (anexaDocxBlob) {
+                      extraAttachments.push({
+                        filename: `2_Anexa_1plus2_${addrSlug}_${dateSlug}.docx`,
+                        bytes: anexaDocxBlob,
+                        mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        relationship: AF_RELATIONSHIP.Source,
+                        description: "Anexa 1+2 CPE — date tehnice și recomandări",
+                      });
+                    }
+                    if (blocDocxBlob) {
+                      extraAttachments.push({
+                        filename: `3_Anexa_Bloc_${addrSlug}_${dateSlug}.docx`,
+                        bytes: blocDocxBlob,
+                        mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        relationship: AF_RELATIONSHIP.Source,
+                        description: "Anexa 2 multi-apartament RC",
+                      });
+                    }
+                    extraAttachments.push({
+                      filename: "5_metadata.json",
+                      bytes: JSON.stringify(metadataJson, null, 2),
+                      mime: "application/json",
+                      relationship: AF_RELATIONSHIP.Data,
+                      description: "Metadata Zephren — cod CPE, auditor, validitate",
+                    });
+
+                    // Construim un „inputs.json" sumar din state-ul curent (sigur — fără PII excesiv)
+                    const inputsJson = {
+                      step1: {
+                        address: building.address,
+                        category: building.category,
+                        areaUseful: building.areaUseful,
+                        volume: building.volume,
+                        floors: building.floors,
+                        yearBuilt: building.yearBuilt,
+                        scopCpe: building.scopCpe,
+                      },
+                      step5_results: {
+                        ep_final: epFinal,
+                        ep_class: enClass?.cls,
+                        co2_final: co2Final,
+                        rer,
+                      },
+                      auditor: {
+                        atestat: auditor.atestat,
+                        grade: auditor.grade,
+                      },
+                    };
+
+                    const pdfaResult = await exportCpePDFA3WithAttachments(coverPdfBlob, {
+                      cpeCode,
+                      title: `CPE ${cpeCode} — Container arhivabil PDF/A-3`,
+                      author: auditor.name || "Auditor energetic",
+                      subject: "Certificat Performanță Energetică Mc 001-2022 — container PDF/A-3 cu DOCX atașat",
+                      inputsJson,
+                      extraAttachments,
+                      filename: null, // download manual după signing
+                    });
+
+                    // 7. Re-fetch bytes-urile generate (exportCpePDFA3WithAttachments downloadează intern;
+                    // pentru semnare, regenerăm fără download)
+                    const { convertToPDFA3 } = await import("../lib/pdfa-export.js");
+                    const pdfaBytes = await convertToPDFA3(coverPdfBlob, {
+                      cpeCode,
+                      title: `CPE ${cpeCode} — Container arhivabil PDF/A-3`,
+                      author: auditor.name || "Auditor energetic",
+                      subject: "Container PDF/A-3 cu DOCX MDLPA atașat",
+                      part: 3,
+                      conformance: "B",
+                      attachments: [
+                        ...extraAttachments,
+                        {
+                          filename: "4_inputs.json",
+                          bytes: JSON.stringify(inputsJson, null, 2),
+                          mime: "application/json",
+                          relationship: AF_RELATIONSHIP.Source,
+                          description: "Date intrare wizard Zephren (Step 1-7)",
+                        },
+                      ],
+                    });
+
+                    // 8. Semnare PAdES
+                    showToast(lang === "EN" ? "Signing PAdES…" : "Se semnează PAdES…", "info", 2500);
+                    const { signPdfPades, PADES_LEVELS } = await import("../lib/pades-sign.js");
+                    const signResult = await signPdfPades(
+                      pdfaBytes,
+                      { provider: pdfaProvider },
+                      {
+                        reason: `Certificat performanță energetică ${cpeCode}`,
+                        location: building.city || building.locality || "România",
+                        signerName: auditor.name || "Auditor energetic MDLPA",
+                        signingTime: new Date(),
+                        level: pdfaLevel === "B-LT" ? PADES_LEVELS.B_LT : PADES_LEVELS.B_T,
+                      },
+                    );
+
+                    // 9. Download final
+                    const finalBlob = new Blob([signResult.bytes], { type: "application/pdf" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(finalBlob);
+                    a.download = `CPE_PDFA3_signed_${addrSlug}_${dateSlug}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+
+                    setPdfaSignerInfo(signResult.signerInfo);
+                    setPdfaSigningStatus("done");
+                    showToast(lang === "EN"
+                      ? `Signed PDF/A-3 generated ✓ (${signResult.signerInfo.providerLabel})`
+                      : `PDF/A-3 semnat generat ✓ (${signResult.signerInfo.providerLabel})`,
+                      "success", 4500);
+                  } catch (e) {
+                    console.error("[PDF/A-3 + PAdES] export error:", e);
+                    setPdfaSigningStatus("error");
+                    setPdfaSignerInfo({ error: e?.message || "Eroare necunoscută" });
+                    showToast(`Eroare PDF/A-3: ${e?.message || "Eroare necunoscută"}`, "error", 6000);
+                  }
+                };
+
+                const isSigning = pdfaSigningStatus === "signing";
+
+                return (
+                  <div className="mt-6">
+                    <Card title="🔐 Container PDF/A-3 + Semnătură PAdES (BETA)">
+                      <div className="space-y-4">
+                        <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3 text-[12px] text-cyan-100/85">
+                          <div className="font-semibold mb-1">📦 Pattern container ZUGFeRD/GoBD pentru arhivare 25-30 ani</div>
+                          <div className="opacity-80">
+                            Cover PDF compact + DOCX MDLPA originale embedate ca atașamente AFRelationship Source +
+                            inputs.json + metadata.json + semnătură PAdES B-T/B-LT.
+                            Conform <strong>ISO 19005-3</strong> + <strong>ISO 14641</strong> + <strong>Mc 001-2022 §10</strong> +
+                            <strong> Art. 17 EPBD 2024/1275</strong>.
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <div className="text-[11px] font-semibold opacity-80 mb-1">Provider semnătură</div>
+                            <select
+                              value={pdfaProvider}
+                              onChange={(e) => setPdfaProvider(e.target.value)}
+                              disabled={isSigning}
+                              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                              <option value="mock">Mock (testing/pilot)</option>
+                              <option value="certsign">certSIGN PARAPHE (real — necesită env vars)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold opacity-80 mb-1">Nivel PAdES</div>
+                            <select
+                              value={pdfaLevel}
+                              onChange={(e) => setPdfaLevel(e.target.value)}
+                              disabled={isSigning}
+                              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
+                              <option value="B-LT">B-LT (Long-Term — recomandat CPE arhivabil)</option>
+                              <option value="B-T">B-T (Baseline + Timestamp — minimal)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {pdfaProvider === "mock" && (
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] text-amber-100/90">
+                            🟡 <strong>Mock signer</strong> — fără valoare juridică conform eIDAS 2.
+                            Adobe Reader va flagga ca „Identity Unknown".
+                            Pentru lansare comercială cu valoare probatorie, configurează <code className="px-1 bg-black/30 rounded">CERTSIGN_CLIENT_ID</code> +
+                            <code className="px-1 bg-black/30 rounded ml-1">CERTSIGN_CLIENT_SECRET</code> în Vercel env vars.
+                            Vezi <code>docs/CERTSIGN_SETUP.md</code>.
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleExportPDFA3Signed}
+                          disabled={isSigning}
+                          className={`w-full px-4 py-3 rounded-xl border transition-all text-sm font-medium ${
+                            isSigning
+                              ? "border-white/10 bg-white/5 opacity-60 cursor-wait"
+                              : "border-cyan-500/40 bg-gradient-to-r from-cyan-500/15 to-emerald-500/15 hover:from-cyan-500/25 hover:to-emerald-500/25 text-cyan-200 cursor-pointer"
+                          }`}>
+                          {isSigning
+                            ? (lang === "EN" ? "⏳ Building + signing PDF/A-3…" : "⏳ Se construiește + semnează PDF/A-3…")
+                            : (lang === "EN" ? "📥 Download signed PDF/A-3 archival container" : "📥 Descarcă container PDF/A-3 semnat")}
+                        </button>
+
+                        {pdfaSigningStatus === "done" && pdfaSignerInfo && (
+                          <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-[11px] text-emerald-100/95">
+                            <div className="font-semibold mb-2">
+                              {pdfaSignerInfo.isMock ? "🟡" : "🟢"} Container PDF/A-3 generat și semnat ({pdfaSignerInfo.providerLabel})
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] opacity-90">
+                              <div><strong>Subject:</strong> {pdfaSignerInfo.certificateSubject || "—"}</div>
+                              <div><strong>Issuer:</strong> {pdfaSignerInfo.certificateIssuer || "—"}</div>
+                              <div><strong>Signing time:</strong> {pdfaSignerInfo.signingTime}</div>
+                              <div><strong>Level:</strong> PAdES {pdfaSignerInfo.level} · {pdfaSignerInfo.subFilter}</div>
+                            </div>
+                            {(pdfaSignerInfo.warnings || []).length > 0 && (
+                              <ul className="mt-2 list-disc pl-5 space-y-0.5 text-amber-200/80">
+                                {pdfaSignerInfo.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+
+                        {pdfaSigningStatus === "error" && pdfaSignerInfo && (
+                          <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-[11px] text-red-100/95">
+                            <div className="font-semibold">❌ Eroare la generare/semnare</div>
+                            <div className="opacity-80 mt-1">{pdfaSignerInfo.error}</div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
                   </div>
                 );
               })()}
