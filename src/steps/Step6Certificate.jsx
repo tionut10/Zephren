@@ -3268,9 +3268,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         {/* Fallback: docx-preview în browser (fără pdfPreviewUrl) */}
                         {!pdfPreviewUrl && (
                           <div className="w-full h-full flex flex-col" style={{height: docxRendered ? "85vh" : undefined, display: docxRendered ? "flex" : "none"}}>
-                            {/* Toolbar zoom (vizibil DOAR când avem preview HTML) */}
-                            <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#1f2937", color: "#f3f4f6", fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
-                              <span style={{opacity: 0.85, marginRight: "auto", fontWeight: 500}}>Preview HTML (docx-preview)</span>
+                            {/* Toolbar zoom + warning banner */}
+                            <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#7f1d1d", color: "#fef2f2", fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
+                              <span style={{opacity: 0.95, marginRight: "auto", fontWeight: 600}}>⚠ Preview aproximativ (HTML) — descarcă DOCX pentru rendering Word fidel</span>
                               <button type="button" onClick={() => setCpePreviewZoom(z => Math.max(0.5, +(z - 0.1).toFixed(2)))} title="Micșorează" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>−</button>
                               <button type="button" onClick={() => setCpePreviewZoom(1.0)} title="Reset 100%" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:64,fontVariantNumeric:"tabular-nums"}}>{Math.round(cpePreviewZoom*100)}%</button>
                               <button type="button" onClick={() => setCpePreviewZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))} title="Mărește" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>+</button>
@@ -3453,8 +3453,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       )}
                       {!anexaPreviewUrl && (
                         <div className="w-full h-full flex flex-col" style={{ height: anexaRendered ? "85vh" : undefined, display: anexaRendered ? "flex" : "none" }}>
-                          <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#1f2937", color: "#f3f4f6", fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
-                            <span style={{opacity: 0.85, marginRight: "auto", fontWeight: 500}}>Preview HTML (docx-preview)</span>
+                          <div style={{display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "6px 10px", background: "#7f1d1d", color: "#fef2f2", fontSize: 12, borderBottom: "1px solid rgba(255,255,255,0.15)", flexShrink: 0}}>
+                            <span style={{opacity: 0.95, marginRight: "auto", fontWeight: 600}}>⚠ Preview aproximativ (HTML) — descarcă DOCX pentru rendering Word fidel</span>
                             <button type="button" onClick={() => setAnexaPreviewZoom(z => Math.max(0.5, +(z - 0.1).toFixed(2)))} title="Micșorează" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>−</button>
                             <button type="button" onClick={() => setAnexaPreviewZoom(1.0)} title="Reset 100%" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:64,fontVariantNumeric:"tabular-nums"}}>{Math.round(anexaPreviewZoom*100)}%</button>
                             <button type="button" onClick={() => setAnexaPreviewZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))} title="Mărește" style={{background:"#374151",border:"1px solid #4b5563",color:"#f9fafb",padding:"5px 12px",borderRadius:4,fontSize:13,fontWeight:600,cursor:"pointer",minWidth:32}}>+</button>
