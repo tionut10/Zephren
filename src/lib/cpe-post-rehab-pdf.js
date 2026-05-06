@@ -84,90 +84,77 @@ function estimateAnnualEnergyCostRON(qfTotalKwh, fuelId) {
 }
 
 /**
- * Construiește listă măsuri incluse din rehabScenarioInputs.
+ * Construiește listă măsuri incluse din rehabScenarioInputs — DEPRECATED.
+ * Sprint Pas 7 docs (6 mai 2026) — folosește buildCanonicalMeasures din
+ * src/calc/unified-rehab-costs.js (sursa unică pentru toate cele 3 documente).
+ *
+ * Adaptor: convertește output-ul canonic în format compatibil cu PDF-ul curent
+ * ({ label, area, cost }) pentru a evita refactor masiv în drawTable.
  */
-function buildMeasuresList(rehabInputs, opaqueElements, glazingElements, REHAB_COSTS) {
-  const measures = [];
-  if (!rehabInputs) return measures;
+function buildMeasuresList(rehabInputs, opaqueElements, glazingElements, _ignoredREHAB_COSTS) {
+  // Import lazy ca să evităm import circular în testing
+  if (!buildMeasuresList._canonical) {
+    // Setat la prima utilizare (vezi exportCpePostRehabPDF mai jos)
+    return [];
+  }
+  const canonical = buildMeasuresList._canonical(rehabInputs, opaqueElements, glazingElements);
+  return canonical.map(m => ({
+    label: m.label,
+    area: m.qty,
+    cost: m.costRON,
+    costEUR: m.costEUR,
+    normativ: m.normativ,
+    unit: m.unit,
+  }));
+}
 
-  if (rehabInputs.addInsulWall) {
-    const t = parseInt(rehabInputs.insulWallThickness) || 10;
-    const wallArea = (opaqueElements || []).filter(el => el.type === "PE")
-      .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const cost = wallArea * (REHAB_COSTS?.insulWall?.[t] || 40);
-    measures.push({
-      label: `Termoizolare pereți exteriori (${t} cm vată minerală/EPS)`,
-      area: wallArea,
-      cost: Math.round(cost * 4.97), // EUR → RON estimat
-    });
-  }
-  if (rehabInputs.addInsulRoof) {
-    const t = parseInt(rehabInputs.insulRoofThickness) || 15;
-    const roofArea = (opaqueElements || []).filter(el => el.type === "PP" || el.type === "PT")
-      .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const cost = roofArea * (REHAB_COSTS?.insulRoof?.[t] || 30);
-    measures.push({
-      label: `Termoizolare planșeu superior / acoperiș (${t} cm)`,
-      area: roofArea,
-      cost: Math.round(cost * 4.97),
-    });
-  }
-  if (rehabInputs.addInsulBasement) {
-    const t = parseInt(rehabInputs.insulBasementThickness) || 8;
-    const baseArea = (opaqueElements || []).filter(el => el.type === "PB" || el.type === "PL")
-      .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const cost = baseArea * (REHAB_COSTS?.insulBasement?.[t] || 40);
-    measures.push({
-      label: `Termoizolare planșeu peste subsol (${t} cm)`,
-      area: baseArea,
-      cost: Math.round(cost * 4.97),
-    });
-  }
-  if (rehabInputs.replaceWindows) {
-    const newU = parseFloat(rehabInputs.newWindowU) || 0.90;
-    const winArea = (glazingElements || []).reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const cost = winArea * (REHAB_COSTS?.windows?.[newU] || 200);
-    measures.push({
-      label: `Înlocuire tâmplărie (U = ${fmt(newU, 2)} W/m²K)`,
-      area: winArea,
-      cost: Math.round(cost * 4.97),
-    });
-  }
-  if (rehabInputs.addHR) {
-    const eff = parseInt(rehabInputs.hrEfficiency) || 80;
-    const cost = REHAB_COSTS?.[`hr${eff >= 90 ? "90" : eff >= 80 ? "80" : "70"}`] || 5000;
-    measures.push({
-      label: `Ventilare mecanică cu recuperare căldură (η = ${eff}%)`,
-      cost: Math.round(cost * 4.97),
-    });
-  }
-  if (rehabInputs.addHP) {
-    const cop = parseFloat(rehabInputs.hpCOP) || 4.0;
-    measures.push({
-      label: `Pompă de căldură (COP = ${fmt(cop, 1)})`,
-      cost: null,
-    });
-  }
-  if (rehabInputs.addPV) {
-    const area = parseFloat(rehabInputs.pvArea) || 0;
-    const cost = area * (REHAB_COSTS?.pvPerM2 || 250);
-    measures.push({
-      label: `Sistem fotovoltaic (${fmt(area, 0)} m²)`,
-      area,
-      cost: Math.round(cost * 4.97),
-    });
-  }
-  if (rehabInputs.addSolarTh) {
-    const area = parseFloat(rehabInputs.solarThArea) || 0;
-    const cost = area * (REHAB_COSTS?.solarThPerM2 || 350);
-    measures.push({
-      label: `Panouri solare termice (${fmt(area, 0)} m²)`,
-      area,
-      cost: Math.round(cost * 4.97),
-    });
+/**
+ * Desenează scală orizontală A-G colorată (similar CPE oficial MDLPA).
+ * Marker triunghiular indică clasa estimată.
+ */
+function drawEnergyScale(doc, x, y, totalWidth, height, currentCls, targetCls) {
+  const classes = ["A", "B", "C", "D", "E", "F", "G"];
+  const barWidth = totalWidth / classes.length;
+
+  // Bare colorate
+  classes.forEach((cls, i) => {
+    const [r, g, b] = CLASS_COLORS_RGB[cls] || [128, 128, 128];
+    doc.setFillColor(r, g, b);
+    doc.rect(x + i * barWidth, y, barWidth, height, "F");
+    // Etichete în interior
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cls, x + i * barWidth + barWidth / 2, y + height / 2 + 1.2, { align: "center" });
+  });
+
+  // Marker triunghi „CURRENT" (jos)
+  if (currentCls && classes.includes(currentCls)) {
+    const idx = classes.indexOf(currentCls);
+    const cx = x + idx * barWidth + barWidth / 2;
+    const triY = y + height + 1;
+    doc.setFillColor(60, 60, 60);
+    doc.triangle(cx - 2, triY + 3, cx + 2, triY + 3, cx, triY, "F");
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(60, 60, 60);
+    doc.text("ACTUAL", cx, triY + 7, { align: "center" });
   }
 
-  return measures;
+  // Marker triunghi „TARGET" (sus)
+  if (targetCls && classes.includes(targetCls)) {
+    const idx = classes.indexOf(targetCls);
+    const cx = x + idx * barWidth + barWidth / 2;
+    const triY = y - 1;
+    doc.setFillColor(180, 83, 9);
+    doc.triangle(cx - 2.5, triY - 4, cx + 2.5, triY - 4, cx, triY, "F");
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(180, 83, 9);
+    doc.text("ESTIMAT", cx, triY - 5, { align: "center" });
+  }
+
+  doc.setTextColor(0, 0, 0);
 }
 
 function drawClassBadge(doc, x, y, w, h, cls, label) {
@@ -230,6 +217,12 @@ export async function exportCpePostRehabPDF(params = {}) {
   if (!rehabComparison) {
     throw new Error("Lipsește scenariul de reabilitare. Configurează măsurile în Pasul 5.");
   }
+
+  // Sprint Pas 7 docs (6 mai 2026) P0-1 — injectăm helper-ul canonic.
+  // buildMeasuresList devine adaptor peste buildCanonicalMeasures (sursa unică).
+  const { buildCanonicalMeasures, buildFinancialSummary } = await import("../calc/unified-rehab-costs.js");
+  buildMeasuresList._canonical = (inputs, opaque, glazing) =>
+    buildCanonicalMeasures(inputs, opaque, glazing);
 
   const { default: jsPDF } = await import("jspdf");
   const autoTableMod = await import("jspdf-autotable");
@@ -356,7 +349,16 @@ export async function exportCpePostRehabPDF(params = {}) {
   doc.text(`CO₂: ${fmt(reh?.co2 || 0, 1)} kg/(m²·an)`, rightTxtX, y + 14);
   doc.setFontSize(7); doc.setTextColor(120, 120, 120);
   doc.text("Estimat după implementare scenariu", rightTxtX, y + 19);
-  y += 28;
+  y += 30;
+
+  // ── Scală A-G vizuală cu markeri ACTUAL + ESTIMAT (ca CPE oficial) ──
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(60, 60, 60);
+  doc.text("Scala energetică A-G", w / 2, y, { align: "center" });
+  y += 8; // spațiu pentru marker ESTIMAT (sus)
+  drawEnergyScale(doc, 24, y, w - 48, 7, origCls, rehCls);
+  y += 18; // spațiu jos pentru marker ACTUAL + etichetă
 
   // ── 4. REDUCERE consum + emisii ──
   const sav = rehabComparison.savings || {};
@@ -415,10 +417,10 @@ export async function exportCpePostRehabPDF(params = {}) {
         1: { cellWidth: "auto" },
         2: { cellWidth: 35, halign: "right" },
       },
-      head: [["✓", "Măsură", "Cost estimat (RON)"]],
-      body: measures.map((m) => [
-        "✓",
-        m.label + (m.area ? ` · ${fmt(m.area, 0)} m²` : ""),
+      head: [["#", "Măsură", "Cost estimat (RON)"]],
+      body: measures.map((m, idx) => [
+        String(idx + 1),
+        m.label + (m.area ? ` · ${fmt(m.area, 0)} ${m.unit || "m²"}` : ""),
         m.cost ? fmt(m.cost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.") : "—",
       ]),
       foot: [["", "TOTAL ESTIMAT", fmt(totalCost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")]],

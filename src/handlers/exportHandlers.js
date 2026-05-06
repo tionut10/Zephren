@@ -1513,13 +1513,16 @@ export async function exportFullReport(ctx) {
       headStyles: { fillColor: LGRAY, textColor: [26, 26, 46], fontStyle: "bold", fontSize: 7.5 },
       bodyStyles: { fontSize: 7.5 }, columnStyles: { 0: { cellWidth: 90 } },
       body: [
+        // Sprint Pas 7 docs (6 mai 2026) P0-3 — fix câmpuri goale Raport Tehnic.
+        // Campuri reale climate.json: `ngz` (grade-zile), `solar.Oriz` (iradianță),
+        // nu `HDD`/`Gh`. ventilation.airChange (rata efectivă) — nu `ach`.
         ["Temperatură interioară de calcul θint", `${heating.theta_int || 20} °C`],
         ["Temperatură exterioară de proiectare θe", `${selectedClimate?.theta_e ?? "—"} °C`],
         ["Rata ventilare n50 (test Blower Door)", `${building.n50 || "—"} h⁻¹`],
-        ["Rata schimb aer (ventilare mecanică)", `${ventilation?.ach || "—"} h⁻¹`],
+        ["Rata schimb aer (ventilare mecanică)", `${ventilation?.airChange ?? ventilation?.ach ?? "—"} h⁻¹`],
         ["Temperatură medie anuală", `${selectedClimate?.theta_a ?? "—"} °C`],
-        ["Grad-zile încălzire (HDD)", `${selectedClimate?.HDD ?? "—"} °C·zile`],
-        ["Iradianță orizontală anuală", `${selectedClimate?.Gh ?? "—"} kWh/m²/an`],
+        ["Grad-zile încălzire", `${selectedClimate?.ngz ?? selectedClimate?.HDD ?? "—"} °C·zile`],
+        ["Iradianță orizontală anuală", `${selectedClimate?.solar?.Oriz ?? selectedClimate?.Gh ?? "—"} kWh/m²/an`],
       ],
     });
     y = doc.lastAutoTable.finalY;

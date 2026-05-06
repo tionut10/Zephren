@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "feat(pas7): generare CPE post-reabilitare + Pașaport extins multi-page + centralizare butoane"
+      },
+      {
         "icon": "🎨",
         "text": "afișează 'Zona I' cu spațiu în badge header (era 'ZONAI' pe mobile)"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔸",
         "text": "landing: mutat 2019 pe același rând cu Brașov în cardul fondator"
-      },
-      {
-        "icon": "🚀",
-        "text": "landing: eliminare linie AE Ici din cardul fondator"
       }
     ]
   },

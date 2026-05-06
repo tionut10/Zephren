@@ -10,8 +10,17 @@ import {
   exportCpePostRehabPDF,
   _internals,
 } from "../cpe-post-rehab-pdf.js";
+// Sprint Pas 7 docs (6 mai 2026) — buildMeasuresList e acum adaptor peste
+// helper-ul canonic. Testele folosesc direct buildCanonicalMeasures (sursa unică).
+import { buildCanonicalMeasures } from "../../calc/unified-rehab-costs.js";
 
-const { buildMeasuresList, estimateAnnualEnergyCostRON, FUEL_PRICE_RON_KWH, CLASS_COLORS_RGB } = _internals;
+const { estimateAnnualEnergyCostRON, FUEL_PRICE_RON_KWH, CLASS_COLORS_RGB } = _internals;
+// Adaptor: convertește format canonical → format vechi {label, area, cost} pentru testele existente.
+const buildMeasuresList = (inputs, opaque, glazing) => {
+  return buildCanonicalMeasures(inputs, opaque, glazing).map(m => ({
+    label: m.label, area: m.qty, cost: m.costRON,
+  }));
+};
 
 const sampleRehabComparison = () => ({
   original: { ep: 280, co2: 65, cls: "G", qfTotal: 18000 },
@@ -115,7 +124,7 @@ describe("cpe-post-rehab-pdf — internals", () => {
       const m = buildMeasuresList(sampleRehabInputs(), sampleOpaque(), sampleGlazing(), sampleREHAB_COSTS);
       expect(m.length).toBeGreaterThanOrEqual(6); // wall + roof + windows + HR + HP + PV
       const labels = m.map((x) => x.label).join(" | ");
-      expect(labels).toContain("Termoizolare pereți");
+      expect(labels).toContain("pereți");
       expect(labels).toContain("acoperiș");
       expect(labels).toContain("tâmplărie");
       expect(labels).toContain("recuperare");

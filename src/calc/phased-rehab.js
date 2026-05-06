@@ -174,7 +174,14 @@ export function calcPhasedRehabPlan(
       continue;
     }
 
-    epCurrent = Math.max(0, epCurrent - epReductionPhase);
+    // Sprint Pas 7 docs (6 mai 2026) P0-2 — cap minim REALIST pe EP final.
+    // EP=0 e fizic imposibil pentru clădiri rezidențiale (chiar și passive house
+    // cu PV mare are minim ~15 kWh/m²·an consumuri auxiliare ne-acoperite de
+    // regenerabile). Anterior `Math.max(0, ...)` permitea EP=0 când suma reducerilor
+    // depășea EP inițial → user vedea „EP țintă: 0,0 kWh/(m²·an) (100%)" nerealist.
+    // Pragul 15 e aliniat cu nZEB Mc 001-2022 Tab 2.4 (clasa A).
+    const EP_MIN_REALISTIC = 15; // kWh/(m²·an) — passive house benchmark
+    epCurrent = Math.max(EP_MIN_REALISTIC, epCurrent - epReductionPhase);
     cumulativeCost_RON += phaseCost;
 
     // Economii anuale după această fază [RON/an]

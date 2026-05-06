@@ -691,7 +691,19 @@ export async function exportPassportPDF(passport, options = {}) {
         ["Contact", auditorObj.contact || auditor?.email || "—"],
       ],
     });
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Sprint Pas 7 docs (6 mai 2026) P1-2 — spațiu semnătură + ștampilă (ca în Deviz).
+    // Două chenare goale pe care auditorul le poate semna manual / ștampila.
+    y = ensureSpace(doc, y, 35, w, h, drawHeader);
+    const sigW = (w - 28 - 12) / 2;
+    doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.3);
+    doc.rect(14, y, sigW, 22);
+    doc.rect(14 + sigW + 12, y, sigW, 22);
+    doc.setFont(undefined, "normal"); doc.setFontSize(8); doc.setTextColor(80, 80, 80);
+    doc.text("Semnătură auditor", 14 + sigW / 2, y + 26, { align: "center" });
+    doc.text("Ștampilă profesională", 14 + sigW + 12 + sigW / 2, y + 26, { align: "center" });
+    y += 30;
   }
 
   // ── FOOTER toate paginile ──

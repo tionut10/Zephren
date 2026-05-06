@@ -491,8 +491,8 @@ export async function generateOwnerReport({
       startY: y,
       columnStyles: { 0: { cellWidth: 80, fontStyle: "bold" }, 1: { halign: "right" } },
       body: [
-        ["Cost anual estimat energie", `≈ ${costAnual.toLocaleString("ro-RO")} RON / an`],
-        ["Cost lunar mediu",           `≈ ${costLunar.toLocaleString("ro-RO")} RON / lună`],
+        ["Cost anual estimat energie", `aprox. ${costAnual.toLocaleString("ro-RO")} RON / an`],
+        ["Cost lunar mediu",           `aprox. ${costLunar.toLocaleString("ro-RO")} RON / lună`],
         ["Emisii CO₂",                 `${(co2F * Au).toFixed(0)} kg CO₂ pe an`],
       ],
     });
@@ -533,8 +533,8 @@ export async function generateOwnerReport({
     y = autoTable(doc, {
       startY: y,
       body: [
-        ["Economie anuală estimată", `≈ ${economieRON.toLocaleString("ro-RO")} RON / an`],
-        ["Reducere emisii CO₂",      `≈ ${economieCO2} kg CO₂ / an`],
+        ["Economie anuală estimată", `aprox. ${economieRON.toLocaleString("ro-RO")} RON / an`],
+        ["Reducere emisii CO₂",      `aprox. ${economieCO2} kg CO₂ / an`],
         ["Timp de recuperare investiție", "8–12 ani (estimativ)"],
       ],
       columnStyles: { 0: { cellWidth: 80, fontStyle: "bold" }, 1: { halign: "right" } },
@@ -2603,10 +2603,14 @@ export async function generateAuditReportPDF(opts) {
       ]);
     }
     if (annualEnergyCost?.total) {
+      // Sprint Pas 7 docs (6 mai 2026) P0-3 — fix bug Raport Tehnic „−3.808 EUR/an":
+      // caracterul Unicode ≈ (U+2248 ALMOST EQUAL TO) era rendat ca „−" în PDF
+      // după font fallback (Helvetica nu are glif pentru ≈, jsPDF înlocuia cu en-dash).
+      // Înlocuit cu ASCII „aprox." pentru randare consistentă.
       obsRows.push([
         "Cost anual de exploatare estimat",
         `${annualEnergyCost.total.toLocaleString("ro-RO")} lei/an`,
-        `≈ ${(annualEnergyCost.totalEur || 0).toLocaleString("ro-RO")} EUR/an`,
+        `aprox. ${(annualEnergyCost.totalEur || 0).toLocaleString("ro-RO")} EUR/an`,
       ]);
     }
     if (obsRows.length === 0) {
