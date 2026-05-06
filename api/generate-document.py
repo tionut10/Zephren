@@ -4165,19 +4165,30 @@ class handler(BaseHTTPRequestHandler):
                 # (joacă pe textul COMBINAT al paragrafului) cu substring exact extras prin regex.
                 if mode in ("anexa", "anexa_bloc"):
                     import re as _re_cpe
-                    # Regex tolerant: NBSP, spațiu normal, sau zero spațiu între "nr." și dots
-                    _nr_pattern = _re_cpe.compile(r"nr\.[\s\xa0]*\.{3,}")
+                    # Regex tolerant: NBSP, spatiu normal, sau zero spatiu intre "nr." si dots
+                    _nr_pattern = _re_cpe.compile(r"nr\.[\s ]*\.{3,}")
+                    # Foloseste format scurt "registryIndex / nrMDLPA" in titlul Anexei (oficial MDLPA)
+                    # Fallback: cpe_code complet daca nu exista nici registry_index nici nr_mdlpa
+                    _nr_reg_t = str(data.get("registry_index", "") or "").strip()
+                    _nr_mdlpa_t = str(data.get("nr_mdlpa", "") or "").strip()
+                    if _nr_reg_t and _nr_mdlpa_t:
+                        _title_nr = f"{_nr_reg_t} / {_nr_mdlpa_t}"
+                    elif _nr_reg_t:
+                        _title_nr = _nr_reg_t
+                    elif _nr_mdlpa_t:
+                        _title_nr = _nr_mdlpa_t
+                    else:
+                        _title_nr = cpe_code
                     for p in _iter_all_paragraphs(doc):
                         pt = p.text
-                        if "Certificatul de performan" not in pt and \
-                           "certificatul de performan" not in pt.lower():
+                        if "Certificatul de performan" not in pt and                            "certificatul de performan" not in pt.lower():
                             continue
                         m = _nr_pattern.search(pt)
                         if not m:
                             continue
                         matched_text = pt[m.start():m.end()]
-                        # `replace_in_paragraph` știe să acopere run-uri multiple
-                        replace_in_paragraph(p, matched_text, "nr. " + cpe_code, count=1)
+                        # `replace_in_paragraph` stie sa acopere run-uri multiple
+                        replace_in_paragraph(p, matched_text, "nr. " + _title_nr, count=1)
 
             # ═══════════════════════════════════════
             # Sprint 15 — Semnătură + ștampilă + QR code (Ord. MDLPA 16/2023)
