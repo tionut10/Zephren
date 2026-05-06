@@ -8,6 +8,12 @@ import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { getMepsThresholdsFor } from "../components/MEPSCheck.jsx";
 import { buildRenovationPassport } from "../calc/renovation-passport.js";
 import { getEurRonSync } from "../data/rehab-prices.js";
+// Sprint P1 (6 mai 2026) cleanup — sursă canonică prețuri energie ANRE 2025.
+import { getEnergyPriceFromPreset, DEFAULT_ENERGY_PRICES } from "../data/energy-prices.js";
+// Sprint P1 P1-06 — preț energie EUR/kWh per combustibil real (nu 0.15 hardcoded global).
+import { getEnergyPriceEUR } from "../calc/smart-rehab.js";
+// Sprint P1 P1-03 — referință RaportConformareNZEB în Step 7 (gating Ord. 348/2026).
+import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 import { sanitizeSvg } from "../lib/sanitize-html.js";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -315,7 +321,12 @@ export default function Step7Audit(props) {
 
               const totalCost = costEnvelope + costInstall + costRenew;
               const qfSaved = rehabComparison.savings.qfSaved || 0;
-              const annualCostSaving = qfSaved * 0.15; // ~0.15 EUR/kWh average
+              // Sprint P1 (6 mai 2026) P1-06: înlocuit 0.15 EUR/kWh hardcoded global
+              // (un singur factor pentru toate combustibilii) cu apel real per-combustibil
+              // getEnergyPriceEUR(instSummary, building) din smart-rehab.js — folosește
+              // FUEL_PRICES_EUR derivate din DEFAULT_ENERGY_PRICES (RON) prin getEurRonSync.
+              const energyPriceEUR = getEnergyPriceEUR(instSummary, building) || 0.15;
+              const annualCostSaving = qfSaved * energyPriceEUR;
               const payback = annualCostSaving > 0 ? totalCost / annualCostSaving : 0;
 
               return {
@@ -410,8 +421,16 @@ export default function Step7Audit(props) {
                   <Card title={t("Analiză cost-optimă rapidă",lang)} className="border-blue-500/20">
                     <div className="space-y-2">
                       {(() => {
-                        const costKwh = instSummary.fuel?.id === "electricitate" ? 1.30 : instSummary.fuel?.id === "gaz" ? 0.32 : 0.30;
-                        const annCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh / 4.95;
+                        // Sprint P1 (6 mai 2026) P1-01 + P1-08: înlocuit hardcoded
+                        // (electricitate=1.30, gaz=0.32, default=0.30, curs=4.95) cu sursă
+                        // canonică ANRE 2025 (DEFAULT_ENERGY_PRICES) + curs BNR live via
+                        // getEurRonSync (Frankfurter API). costKwh e în RON/kWh, convertit
+                        // la EUR/kWh prin cursul curent — nu fix istoric.
+                        const fuelId = instSummary.fuel?.id || "default";
+                        const costKwhRON = getEnergyPriceFromPreset(fuelId, "casnic_2025");
+                        const eurRon = getEurRonSync() || 5.05;
+                        const totalKwh = instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l;
+                        const annCost = (totalKwh * costKwhRON) / eurRon;
                         const epF = renewSummary.ep_adjusted_m2;
                         const nzeb = NZEB_THRESHOLDS[building.category] || NZEB_THRESHOLDS.AL;
                         const gap = Math.max(0, epF - getNzebEpMax(building.category, selectedClimate?.zone));
@@ -1302,26 +1321,65 @@ export default function Step7Audit(props) {
                 );
               })()}
 
-              {/* ── MEPI — Consum calculat vs real ── */}
+              {/* ── MEPI — Sprint P1 (6 mai 2026) P0-06: înlocuit Card mock UI cu trimitere la
+                  modulul real ConsumReconciliere (Step 8 tab `consum`). Card-ul vechi avea
+                  inputs fără value/onChange/setState — date introduse se pierdeau imediat.
+                  Modul corect: Step 8 ConsumReconciliere cu salvare în localStorage
+                  zephren_measured_consumption + integrare în AuditReport.jsx + DOCX. */}
               <Card title="MEPI — Consum calculat vs. facturi reale" className="mb-4">
-                <div className="space-y-2">
-                  <div className="text-xs opacity-50 mb-2">Introduceți consumul real din facturi pentru validarea modelului energetic</div>
-                  <div className="grid grid-cols-3 gap-2 text-[10px]">
-                    <div className="font-bold opacity-40">Utilitate</div>
-                    <div className="font-bold opacity-40">Calculat [kWh/an]</div>
-                    <div className="font-bold opacity-40">Real [kWh/an]</div>
-                    {[{label:"Electricitate",calc:instSummary?(instSummary.qf_c+instSummary.qf_v+instSummary.qf_l):0},
-                      {label:"Gaz/termic",calc:instSummary?(instSummary.qf_h+instSummary.qf_w):0}
-                    ].map(u => (
-                      <React.Fragment key={u.label}>
-                        <div className="opacity-60">{u.label}</div>
-                        <div className="font-mono">{u.calc.toFixed(0)}</div>
-                        <input type="number" placeholder="din facturi" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:border-amber-500/50" />
-                      </React.Fragment>
-                    ))}
+                <div className="space-y-3">
+                  <div className="text-xs opacity-50">
+                    Calculat curent (kWh/an):
+                    <span className="ml-2 font-mono opacity-80">
+                      Electricitate ≈ {instSummary ? Math.round(instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) : 0} ·
+                      Gaz/termic ≈ {instSummary ? Math.round(instSummary.qf_h + instSummary.qf_w) : 0}
+                    </span>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-xs">
+                    <strong>📊 Reconciliere consum real (MEPI complet)</strong> este disponibil în
+                    Pas 8 → tab „Consum reconciliere" — permite import facturi/OCR, comparație
+                    lunară calculat vs. real, calibrare automată model energetic și salvare
+                    persistentă în Dosarul Audit.
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setStep(8)}
+                      disabled={!canAccess(userPlan, "consumReconciliere")}
+                      className="px-4 py-2 rounded-lg bg-blue-600/20 border border-blue-600/40 hover:bg-blue-600/30 text-blue-300 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      → Pas 8: Reconciliere consum (MEPI complet)
+                    </button>
+                    {!canAccess(userPlan, "consumReconciliere") && (
+                      <span className="text-[10px] opacity-50 self-center">
+                        (Necesar plan Expert+ pentru ConsumReconciliere)
+                      </span>
+                    )}
                   </div>
                 </div>
               </Card>
+
+              {/* ── Sprint P1 (6 mai 2026) P1-03: referință scurtă RaportConformareNZEB.
+                  Modulul complet rămâne în Pas 6 (Card auditor + ștampilă + Anexa MDLPA),
+                  dar Step 7 e un punct logic de re-acces pentru auditorul AE Ici care
+                  după audit + recomandări vrea să confirme conformarea nZEB. */}
+              {canAccess(userPlan, "nzebReport") && building?.scopCpe === "construire" && (
+                <Card title="Raport conformare nZEB — referință" className="mb-4 border-violet-500/20">
+                  <div className="px-3 py-2 rounded-lg bg-violet-500/10 border-l-4 border-violet-500 text-xs">
+                    <div className="mb-2">
+                      📄 <strong>Raportul de conformare nZEB</strong> este disponibil și editabil
+                      în Pas 6 (Certificat) — secțiunea „Auditor + Anexa MDLPA". Conform
+                      Ord. MDLPA 348/2026 Art. 6 alin. (1) lit. c, AE Ici (atestat grad I civile)
+                      poate emite acest raport pentru clădiri în faza de proiectare/recepție.
+                    </div>
+                    <button
+                      onClick={() => setStep(6)}
+                      className="px-3 py-1.5 rounded-md bg-violet-600/20 border border-violet-600/40 hover:bg-violet-600/30 text-violet-300 text-xs font-medium transition-all"
+                    >
+                      → Pas 6: Raport conformare nZEB
+                    </button>
+                  </div>
+                </Card>
+              )}
 
               {/* ── IEQ — Calitate aer interior ── */}
               <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">

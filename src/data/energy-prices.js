@@ -124,3 +124,34 @@ export const PRICE_ICONS = {
   lemn_foc:      "🪵",
   termoficare:   "♨️",
 };
+
+// ═══════════════════════════════════════════════════════════════
+// Sprint P1 (6 mai 2026) P1-10 — Helper canonic pentru consum în Step7Audit + smart-rehab
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Returnează prețul energiei [RON/kWh] pentru un combustibil + preset.
+ * Înlocuiește hardcoded-urile din Step7Audit (electricitate=1.30, gaz=0.32,
+ * default=0.30) cu sursă canonică ANRE 2025.
+ *
+ * @param {string} fuelId - ID combustibil (gaz, electricitate, biomasa, etc.)
+ * @param {string} [presetId="casnic_2025"] - preset tarifar (casnic/imm/industrial/maxim)
+ * @returns {number} preț RON/kWh (default 0.40 fallback dacă combustibil necunoscut)
+ */
+export function getEnergyPriceFromPreset(fuelId, presetId = "casnic_2025") {
+  const preset = ENERGY_PRICE_PRESETS.find(p => p.id === presetId);
+  if (!preset) return DEFAULT_ENERGY_PRICES[fuelId] ?? 0.40;
+  const key = FUEL_PRICE_KEY[fuelId] || FUEL_PRICE_KEY.default;
+  return preset.prices[key] ?? DEFAULT_ENERGY_PRICES[key] ?? 0.40;
+}
+
+/**
+ * Returnează prețul mediu ponderat al energiei pentru toate utilitățile [RON/kWh].
+ * Util pentru estimare „cost anual energie" când nu există un combustibil dominant.
+ * Default: medie ponderată gaz (60%) + electricitate (40%) — tipic clădire RO.
+ */
+export function getAverageEnergyPriceRON(presetId = "casnic_2025") {
+  const gaz = getEnergyPriceFromPreset("gaz", presetId);
+  const electricitate = getEnergyPriceFromPreset("electricitate", presetId);
+  return Math.round((gaz * 0.6 + electricitate * 0.4) * 100) / 100;
+}
