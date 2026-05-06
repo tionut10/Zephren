@@ -64,6 +64,7 @@ export default async function handler(req, res) {
 
   // ── Calea 1: Gotenberg (dacă e configurat) — preferat GDPR ──
   const gotenbergUrl = process.env.GOTENBERG_URL;
+  let gotenbergDiag = null;
   if (gotenbergUrl) {
     try {
       const boundary = "----GotenbergBoundary" + Date.now();
@@ -86,10 +87,17 @@ export default async function handler(req, res) {
         res.setHeader("Content-Length", String(pdfBuffer.length));
         res.setHeader("Cache-Control", "no-store");
         return res.status(200).send(pdfBuffer);
+      } else {
+        const errBody = await pdfResp.text().catch(() => "");
+        gotenbergDiag = `Gotenberg HTTP ${pdfResp.status}: ${errBody.slice(0, 150)}`;
+        console.error(gotenbergDiag);
       }
     } catch (err) {
-      console.error("Gotenberg error:", err.message);
+      gotenbergDiag = `Gotenberg fetch error: ${err.message}`;
+      console.error(gotenbergDiag);
     }
+  } else {
+    gotenbergDiag = "GOTENBERG_URL not configured";
   }
 
   // ── Calea 2: Vercel Blob → Office Online Viewer ──
@@ -128,6 +136,10 @@ export default async function handler(req, res) {
     });
   } catch (blobErr) {
     console.error("Blob upload error:", blobErr.message);
-    return res.status(500).json({ error: "Preview unavailable: " + blobErr.message });
+    return res.status(500).json({
+      error: "Preview unavailable: " + blobErr.message,
+      gotenbergDiag,
+      hint: "Setează BLOB_READ_WRITE_TOKEN sau verifică GOTENBERG_URL în Vercel env",
+    });
   }
 }
