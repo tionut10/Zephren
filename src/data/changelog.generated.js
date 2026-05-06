@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🎨",
+        "text": "fix(chart): prag amortizare portocaliu + label mutat în viewBox (nu mai suprapune PAYBACK)"
+      },
+      {
+        "icon": "📋",
+        "text": "refactor(Step7Audit): reordonare logică secțiuni Pas 7"
+      },
+      {
+        "icon": "🎨",
+        "text": "fix(pas7): grafic amortizare 3× mai mare + migrare Deviz la helper canonic"
+      },
+      {
         "icon": "🔧",
         "text": "fix(pas7-docs): rezolv 8 issues critice + 1 P1 din review documente generate"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🚀",
         "text": "landing: restructurare footer fondator — Licență CCIA·2017 + Masterat MEMC·2019 pe rânduri separate, font unif"
-      },
-      {
-        "icon": "🔸",
-        "text": "clarificare Sprint P2 (commit logic in cc1ebd0)"
-      },
-      {
-        "icon": "🔸",
-        "text": "landing: eliminare badge-uri și rând diplomă din cardul fondator"
-      },
-      {
-        "icon": "💰",
-        "text": "landing: descriere fondator actualizată cu funcțiile AI integrate (OCR, planșe PDF, text liber, asistent reabi"
       }
     ]
   },

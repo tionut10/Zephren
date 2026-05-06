@@ -769,17 +769,30 @@ export default function Step6Certificate(props) {
                     basement: building.basement ? "true" : "false",
                     attic: building.attic ? "true" : "false",
                     biomass_enabled: biomass?.enabled ? "true" : "false",
-                    // 2 mai 2026 — Etape implementare + Stimulente financiare (secțiunea I AnexaMDLPA)
-                    // Completate de auditor din formularul COMPLETARE AUTOMATĂ DETALIATĂ (Pas 6)
-                    etape_implementare: building.etapeImplementare || "",
-                    stimulente_financiare: building.stimulenteFinanciare || "",
-                    // 2 mai 2026 — Soluții și măsuri custom (Anexa secțiunile 1, 2, 3.A, 3.B + regenerabile)
-                    // Înlocuiesc placeholder-ele „Alte soluții: ..." din template Anexa
-                    solutii_anvelopa: building.solutiiAnvelopa || "",
-                    solutii_instalatii: building.solutiiInstalatii || "",
-                    masuri_organizare: building.masuriOrganizare || "",
-                    masuri_locale: building.masuriLocale || "",
-                    regenerabile_custom: building.regenerabileCustom || "",
+                    // Sprint Pas 7 docs follow-up (6 mai 2026) — REVERT la modul anterior:
+                    // Utilizatorul a constatat că textele auto-generate de butoanele
+                    // „Generează automat" din AnexaMDLPAFields (Etape implementare,
+                    // Stimulente financiare, Soluții anvelopă/instalații/organizare/locale,
+                    // Regenerabile custom) erau INSERATE PESTE template-ul oficial MDLPA
+                    // prin _replace_placeholder_para → MARKER_OBIECTIV occurrences 1/2/3.
+                    // Asta poluează Anexa CPE oficială cu recomandări care NU FAC PARTE
+                    // din modelul MDLPA original (Ord. 16/2023).
+                    //
+                    // FIX: trimitem mereu string gol → Python nu apelează replace
+                    // (verifică `if _solutii_anvelopa:` care e False pentru "") →
+                    // template-ul Anexa rămâne intact cu placeholder-ele originale,
+                    // identic cu cum era înainte de feature-ul „Completare automată detaliată".
+                    //
+                    // Datele rămân în state (building.solutiiAnvelopa etc.) — pot fi
+                    // copiate manual din UI dacă auditorul dorește, dar NU mai sunt
+                    // trimise automat în DOCX-ul oficial Anexa CPE.
+                    etape_implementare: "",
+                    stimulente_financiare: "",
+                    solutii_anvelopa: "",
+                    solutii_instalatii: "",
+                    masuri_organizare: "",
+                    masuri_locale: "",
+                    regenerabile_custom: "",
                     // 2 mai 2026 — câmpuri pentru bifare automată în Anexa 1+2
                     nr_persoane: building.nrOcupanti || "",
                     structure_code: (() => {
