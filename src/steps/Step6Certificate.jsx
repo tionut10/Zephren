@@ -3994,7 +3994,17 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                    Cover PDF compact generat client-side cu jsPDF; semnătură PAdES B-T/B-LT cu provider selectabil.
                    Vezi audit-conformitate-2026-05-06/P0-CRITIC.md + docs/CERTSIGN_SETUP.md.
               */}
-              {canExportDocx && dataComplete && (() => {
+              {canExportDocx && (() => {
+                // Replic logica `dataComplete` + `tpl` + `ancpiOk` + `scop` din IIFE-ul
+                // butonului „Pachet complet ZIP" (linia ~3675) ca să fie accesibile aici.
+                // NU modific scope-ul existent — doar duc duplicatul în Card-ul meu.
+                const tpl = CPE_TEMPLATES[building.category] || CPE_TEMPLATES.AL;
+                const ancpiVerified = !!building?.ancpi?.verified;
+                const scop = building?.scopCpe || "vanzare";
+                const ancpiOk = !ANCPI_REQUIRED_SCOPES.includes(scop) || ancpiVerified;
+                const dataComplete = Au > 0 && instSummary && building.locality && building.category && ancpiOk;
+                if (!dataComplete) return null;
+
                 const handleExportPDFA3Signed = async () => {
                   // Verificare gating legal HARD (REUTILIZARE — same logic as DOCX export)
                   const legalCheck = canEmitForBuilding({
