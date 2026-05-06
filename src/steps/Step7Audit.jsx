@@ -1009,9 +1009,9 @@ export default function Step7Audit(props) {
 
                       {/* Zero line — prag de amortizare */}
                       <line x1={padL} y1={zeroY} x2={padL + cW} y2={zeroY}
-                            stroke="#fbbf24" strokeWidth="2" strokeDasharray="6 4" />
-                      <text x={padL + cW + 4} y={zeroY + 4} fontSize="10" fill="#fbbf24" fontWeight="bold">
-                        Prag amortizare
+                            stroke="#f97316" strokeWidth="2" strokeDasharray="6 4" />
+                      <text x={padL + cW - 4} y={zeroY - 5} textAnchor="end" fontSize="10" fill="#f97316" fontWeight="bold">
+                        Prag amortizare 0 €
                       </text>
 
                       {/* Area sub curba cash flow (verde) */}
@@ -1070,8 +1070,8 @@ export default function Step7Audit(props) {
                         <text x="26" y="0" fontSize="11" fill="#22c55e" fontWeight="bold">Flux numerar cumulat (nominal)</text>
                         <line x1="240" y1="-2" x2="260" y2="-2" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="5 4" />
                         <text x="266" y="0" fontSize="11" fill="#3b82f6" fontWeight="bold">Flux actualizat (NPV @ {(discountRate * 100).toFixed(0)}%)</text>
-                        <line x1="500" y1="-2" x2="520" y2="-2" stroke="#fbbf24" strokeWidth="2" strokeDasharray="6 4" />
-                        <text x="526" y="0" fontSize="11" fill="#fbbf24" fontWeight="bold">Prag amortizare 0 €</text>
+                        <line x1="500" y1="-2" x2="520" y2="-2" stroke="#f97316" strokeWidth="2" strokeDasharray="6 4" />
+                        <text x="526" y="0" fontSize="11" fill="#f97316" fontWeight="bold">Prag amortizare 0 €</text>
                       </g>
                     </svg>
 
