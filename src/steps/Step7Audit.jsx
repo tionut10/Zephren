@@ -353,6 +353,253 @@ export default function Step7Audit(props) {
             const priorityLabel = p => p === 1 ? "URGENT" : p === 2 ? "RECOMANDAT" : "OPTIONAL";
             const priorityBg = p => p === 1 ? "bg-red-500/10 border-red-500/20" : p === 2 ? "bg-amber-500/10 border-amber-500/20" : "bg-green-500/10 border-green-500/20";
 
+            // ── Download All as ZIP ──────────────────────────────────────────
+            const downloadAllAsZip = async () => {
+              const { default: JSZip } = await import("jszip");
+              const zip = new JSZip();
+              const errors = [];
+              let count = 0;
+              const today = new Date().toISOString().slice(0, 10);
+              const buildingSlug = (building?.address || "cladire")
+                .replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 30);
+              const cpeCode = building?.cpeCode || building?.cpeNumber
+                || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
+              const eurRon = getEurRonSync() || 5.05;
+
+              showToast("⏳ Se generează pachetul complet... (poate dura 15-30 sec)", "info", 35000);
+
+              const addToZip = async (name, fn) => {
+                try {
+                  const result = await fn();
+                  if (!result) return;
+                  const blob = result instanceof Blob ? result : result.blob;
+                  if (!blob) return;
+                  zip.file(name, await blob.arrayBuffer());
+                  count++;
+                } catch (e) {
+                  console.warn(`[ZIP] eroare la ${name}:`, e);
+                  errors.push(`${name}: ${e.message}`);
+                }
+              };
+
+              const slugify = (s, i) => {
+                const ascii = String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+                  .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
+                return `m_${i}_${ascii || "masura"}`;
+              };
+
+              const buildPassportForZip = (changeReason) => {
+                const measures = (smartSuggestions || []).map((s, i) => {
+                  const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                  const epSav = parseFloat(s.epSaving_m2) || 0;
+                  return {
+                    id: slugify(s.measure, i),
+                    name: s.measure || `Măsură ${i + 1}`,
+                    category: s.system || "Nespecificat",
+                    system: s.system || "Nespecificat",
+                    cost_RON: Math.round(costEur * eurRon),
+                    ep_reduction_kWh_m2: epSav,
+                    co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                    lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
+                    priority: s.priority || 3,
+                  };
+                });
+                const phasedPlan = measures.length > 0
+                  ? calcPhasedRehabPlan(measures, 50000, "balanced", epFinal || 200,
+                      building?.category || "AL", parseFloat(building?.areaUseful) || 100, 0.45)
+                  : null;
+                const mepsTh = getMepsThresholdsFor(building?.category);
+                const phasedCost = phasedPlan?.totalCost_RON || 0;
+                const lcc = financialAnalysis ? Math.abs((financialAnalysis.globalCost || 0) * eurRon) : 0;
+                const finSum = (phasedCost > 0 || financialAnalysis) ? {
+                  totalInvest_RON: phasedCost > 0 ? phasedCost : lcc,
+                  npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
+                  irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
+                  paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
+                  paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
+                  perspective: "financial",
+                } : null;
+                return buildRenovationPassport({
+                  cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                  building: building || {}, instSummary: instSummary || {},
+                  renewSummary: renewSummary || {}, climate: selectedClimate || {},
+                  auditor: auditor || {},
+                  phasedPlan: phasedPlan ? {
+                    strategy: "balanced", totalYears: phasedPlan.totalYears,
+                    annualBudget: 50000, energyPrice: 0.45, discountRate: 0.04,
+                    phases: phasedPlan.phases, epTrajectory: phasedPlan.epTrajectory,
+                    classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
+                  } : null,
+                  mepsStatus: { thresholds: mepsTh },
+                  financialSummary: finSum,
+                  changeReason,
+                });
+              };
+
+              // A1 — Dosar Audit AAECR (DOCX)
+              await addToZip(`A1_dosar_audit_AAECR_${today}.docx`, async () => {
+                const payload = {
+                  building, instSummary, renewSummary, auditor,
+                  opaqueElements, glazingElements, thermalBridges,
+                  energyClass: enClass || { cls: "—", color: "#888" },
+                  measuredConsumption: (() => { try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); } catch { return {}; } })(),
+                  systems: { heating, cooling, ventilation, lighting, acm },
+                };
+                const res = await fetch("/api/generate-document?type=audit", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("API error " + res.status);
+                const { docx } = await res.json();
+                const bytes = Uint8Array.from(atob(docx), c => c.charCodeAt(0));
+                return new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+              });
+
+              // A2 — CPE Estimat Post-Reabilitare (PDF) — only if rehabComparison exists
+              if (rehabComparison) {
+                await addToZip(`A2_CPE_estimat_post_reabilitare_${today}.pdf`, async () => {
+                  const { exportCpePostRehabPDF } = await import("../lib/cpe-post-rehab-pdf.js");
+                  return exportCpePostRehabPDF({
+                    building, auditor, rehabComparison, rehabScenarioInputs,
+                    opaqueElements, glazingElements, REHAB_COSTS, instSummary,
+                    cpeCodeBase: building?.cpeNumber || null, download: false,
+                  });
+                });
+              }
+
+              // A3 — Scrisoare însoțire MDLPA (PDF)
+              await addToZip(`A3_scrisoare_insotire_MDLPA_${today}.pdf`, async () => {
+                const { generateCoverLetterPdf } = await import("../lib/cover-letter-pdf.js");
+                return generateCoverLetterPdf({
+                  auditor: { name: auditor?.name, atestat: auditor?.atestat, grade: auditor?.grade, mdlpaCode: auditor?.mdlpaCode || auditor?.codUnicMDLPA, attestationIssueDate: auditor?.attestationIssueDate },
+                  building: { address: building?.address, cadastralNumber: building?.cadastralNumber, locality: building?.locality || building?.city, county: building?.county, yearBuilt: building?.yearBuilt, areaUseful: building?.areaUseful, category: building?.category },
+                  cpeCode,
+                  attachments: [
+                    { name: "CPE — XML schema MDLPA Mc 001-2022", sizeMB: 0.01 },
+                    { name: "CPE — DOCX (cu semnătură + ștampilă auditor)", sizeMB: 0.5 },
+                    { name: "Raport audit energetic — Cap. 1-8", sizeMB: 0.6 },
+                    { name: "Anexe tehnice (opace + vitraj + punți + sisteme)", sizeMB: 0.2 },
+                    { name: "Pașaport renovare EPBD 2024 (PDF + XML)", sizeMB: 0.4 },
+                  ],
+                  download: false,
+                });
+              });
+
+              // A4 — FIC (PDF)
+              await addToZip(`A4_FIC_Mc001_2022_${today}.pdf`, async () => {
+                const { generateFICPdf } = await import("../lib/dossier-extras.js");
+                return generateFICPdf({
+                  building, auditor, climate: selectedClimate, instSummary, opaqueElements, glazingElements,
+                  owner: { name: building?.owner, type: building?.ownerType, cui: building?.ownerCUI, address: building?.address },
+                  download: false,
+                });
+              });
+
+              // A5 — Declarație conformitate auditor (PDF)
+              await addToZip(`A5_declaratie_conformitate_auditor_${today}.pdf`, async () => {
+                const { generateAuditorDeclarationPdf } = await import("../lib/dossier-extras.js");
+                return generateAuditorDeclarationPdf({ auditor, building, cpeCode, download: false });
+              });
+
+              // A6 — Manifest SHA-256 (TXT)
+              await addToZip(`A6_manifest_SHA256_${today}.txt`, async () => {
+                const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
+                const r = await generateManifestSHA256({
+                  files: [
+                    { name: "dosar_audit.docx", blob: new Blob([cpeCode + "_audit"], { type: "text/plain" }) },
+                    { name: "pasaport.xml", blob: new Blob([cpeCode + "_pasaport"], { type: "text/plain" }) },
+                  ],
+                  auditor, building, cpeCode, download: false,
+                });
+                return r?.blob;
+              });
+
+              // A7 — Plan M&V IPMVP (PDF)
+              await addToZip(`A7_plan_MV_IPMVP_${today}.pdf`, async () => {
+                const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
+                const measuresFromSugg = (smartSuggestions || []).map(s => ({
+                  name: s.measure,
+                  cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRon),
+                }));
+                const totalCost = measuresFromSugg.reduce((s, m) => s + (m.cost_RON || 0), 0);
+                const expectedSavings = (smartSuggestions || []).reduce((s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0)
+                  * (parseFloat(building?.areaUseful) || 100) * 0.45;
+                return generateMonitoringPlanPdf({
+                  building, auditor, instSummary,
+                  scenario: { measures: measuresFromSugg, totalCost_RON: totalCost, expectedSavings_RON_y: expectedSavings },
+                  download: false,
+                });
+              });
+
+              // B1 — Deviz estimativ (PDF) — only if rehabComparison exists
+              if (rehabComparison) {
+                await addToZip(`B1_deviz_estimativ_reabilitare_${today}.pdf`, async () => {
+                  return generateRehabEstimatePDF({
+                    building, auditor, rehabScenarioInputs, opaqueElements, glazingElements, rehabComparison, download: false,
+                  });
+                });
+              }
+
+              // B2 — Pașaport Renovare EPBD (PDF)
+              await addToZip(`B2_pasaport_renovare_EPBD_${today}.pdf`, async () => {
+                const passport = buildPassportForZip("Export ZIP Pașaport PDF (Pas 7)");
+                const lib = await import("../lib/passport-export.js");
+                return lib.exportPassportPDF(passport, { download: false });
+              });
+
+              // C1 — XML MDLPA (CPE)
+              await addToZip(`C1_CPE_XML_MDLPA_${today}.xml`, async () => {
+                const { exportXML: exportXMLFn } = await import("../handlers/exportHandlers.js");
+                return exportXMLFn({
+                  building, opaqueElements, glazingElements, thermalBridges,
+                  heating, acm, cooling, ventilation, lighting,
+                  solarThermal, photovoltaic, heatPump, biomass,
+                  auditor, instSummary, renewSummary, envelopeSummary, selectedClimate,
+                  showToast: () => {}, returnBlob: true,
+                });
+              });
+
+              // C2 — XML Pașaport (EPBD)
+              await addToZip(`C2_pasaport_XML_EPBD_${today}.xml`, async () => {
+                const passport = buildPassportForZip("Export ZIP Pașaport XML (Pas 7)");
+                const lib = await import("../lib/passport-export.js");
+                return lib.exportPassportXML(passport, { download: false });
+              });
+
+              // C3 — Anexe DOCX
+              const hasElements = (opaqueElements?.length || 0) + (glazingElements?.length || 0) + (thermalBridges?.length || 0) > 0;
+              if (hasElements) {
+                await addToZip(`C3_anexe_complete_${buildingSlug}_${today}.docx`, async () => {
+                  const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
+                  return exportFullAnnexesDOCX(
+                    { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges, systems: { heating, cooling, ventilation, lighting, acm } },
+                    { building, download: false }
+                  );
+                });
+              }
+
+              if (count === 0) {
+                showToast("Nu s-a putut genera niciun document. Verificați datele introduse.", "error", 6000);
+                return;
+              }
+
+              try {
+                const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(zipBlob);
+                a.download = `Zephren_audit_${buildingSlug}_${today}.zip`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                if (errors.length > 0) {
+                  showToast(`✓ ZIP descărcat (${count} doc.). Atenție: ${errors.length} doc. au eșuat — ${errors.join("; ")}`, "warning", 10000);
+                } else {
+                  showToast(`✓ Pachet complet descărcat — ${count} documente în arhiva ZIP`, "success", 5000);
+                }
+              } catch (e) {
+                showToast("Eroare generare ZIP: " + e.message, "error", 6000);
+              }
+            };
+
             return (
             <div>
               <div className="mb-6">
@@ -1229,6 +1476,14 @@ export default function Step7Audit(props) {
                   Pașaportul de Renovare e mutat aici din locul vechi (era jos, izolat).
               ═══════════════════════════════════════════════════════════════ */}
               <Card title="📑 Generare documente — pachet client reabilitare" className="mt-6 border-2 border-amber-500/30 bg-amber-500/[0.03]">
+                {/* ── Buton descărcare totală ZIP ── */}
+                <button
+                  onClick={downloadAllAsZip}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3.5 mb-5 rounded-xl border-2 border-emerald-400/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/80 transition-all font-bold text-sm shadow-lg shadow-emerald-900/20">
+                  <span className="text-lg">📦</span>
+                  <span>Descarcă toate documentele (ZIP)</span>
+                  <span className="text-[10px] font-normal opacity-60 ml-1">A1–A7 + B1–B2 + C1–C3</span>
+                </button>
                 {/* ── Secțiunea A: DOCUMENTE OFICIALE (auditor → client) ── */}
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">

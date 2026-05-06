@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🎨",
-        "text": "fix(chart): prag amortizare portocaliu + label mutat în viewBox (nu mai suprapune PAYBACK)"
-      },
-      {
-        "icon": "📋",
-        "text": "refactor(Step7Audit): reordonare logică secțiuni Pas 7"
-      },
-      {
-        "icon": "🎨",
-        "text": "fix(pas7): grafic amortizare 3× mai mare + migrare Deviz la helper canonic"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(pas7-docs): rezolv 8 issues critice + 1 P1 din review documente generate"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(pas7): generare CPE post-reabilitare + Pașaport extins multi-page + centralizare butoane"
-      },
-      {
-        "icon": "🎨",
-        "text": "afișează 'Zona I' cu spațiu în badge header (era 'ZONAI' pe mobile)"
+        "icon": "🔸",
+        "text": "Gotenberg config + diagnostic în preview-document"
       },
       {
         "icon": "🔸",
-        "text": "landing: descriere fondator actualizată cu motivul creării Zephren + funcții AI"
+        "text": "diagnostic: log Gotenberg HTTP status în preview-document API + return în response body"
       },
       {
-        "icon": "🚀",
-        "text": "landing: restructurare footer fondator — Licență CCIA·2017 + Masterat MEMC·2019 pe rânduri separate, font unif"
+        "icon": "📄",
+        "text": "Banner avertisment preview HTML — clarifică că DOCX descărcat e sursa"
+      },
+      {
+        "icon": "📄",
+        "text": "Zoom toolbar pe preview docx (CPE + Anexa)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step7): Sprint P2 — 5 documente normative noi (FIC + DCA + SHA-256 + M&V + Cap. 0)"
+      },
+      {
+        "icon": "🔧",
+        "text": "Footer & Anexa: ': ' prefix nr + m²/m³ labels apartament"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(step7): Sprint P1 — B4 unificare 3 surse cost (rehabScenarioInputs prioritar)"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(demo): B11 recalibrare M1 expectedResults la motor curent (06.05.2026)"
       }
     ]
   },

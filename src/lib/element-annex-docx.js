@@ -336,8 +336,7 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
 
   const blob = await Packer.toBlob(doc);
   const filename = options.filename || `anexe_elemente_${new Date().toISOString().slice(0, 10)}.docx`;
-  // În mediu de test (lipsă `document`) doar întoarce blob + filename
-  if (typeof document === "undefined") {
+  if (typeof document === "undefined" || options.download === false) {
     return { blob, filename };
   }
   const url = URL.createObjectURL(blob);
@@ -630,7 +629,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
 
   const blob = await Packer.toBlob(doc);
   const filename = options.filename || `anexe_complete_${new Date().toISOString().slice(0, 10)}.docx`;
-  if (typeof document === "undefined") {
+  if (typeof document === "undefined" || options.download === false) {
     return { blob, filename, sectionsCount };
   }
   const url = URL.createObjectURL(blob);

@@ -107,10 +107,12 @@ export function passportToXml(passport) {
 }
 
 export function exportPassportXML(passport, options = {}) {
-  const { filename } = options;
+  const { filename, download = true } = options;
   const xml = passportToXml(passport);
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-  return triggerDownload(blob, filename || defaultFilename(passport, "xml"));
+  const fn = filename || defaultFilename(passport, "xml");
+  if (!download) return { blob, filename: fn };
+  return triggerDownload(blob, fn);
 }
 
 // ──────────────────────────────────────────────
@@ -718,7 +720,9 @@ export async function exportPassportPDF(passport, options = {}) {
   }
 
   const blob = doc.output("blob");
-  return triggerDownload(blob, filename || defaultFilename(passport, "pdf"));
+  const fn = filename || defaultFilename(passport, "pdf");
+  if (options.download === false) return { blob, filename: fn };
+  return triggerDownload(blob, fn);
 }
 
 // Export helpers for testing

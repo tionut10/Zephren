@@ -212,6 +212,7 @@ export async function exportCpePostRehabPDF(params = {}) {
     instSummary = null,
     cpeCodeBase = null,
     filename,
+    download = true,
   } = params;
 
   if (!rehabComparison) {
@@ -481,7 +482,9 @@ export async function exportCpePostRehabPDF(params = {}) {
   doc.text(`Zephren · ${new Date().getFullYear()}`, w - 14, h - 9, { align: "right" });
 
   const blob = doc.output("blob");
-  return triggerDownload(blob, filename || defaultFilename(building));
+  const fn = filename || defaultFilename(building);
+  if (!download) return { blob, filename: fn };
+  return triggerDownload(blob, fn);
 }
 
 // Export helpers for testing

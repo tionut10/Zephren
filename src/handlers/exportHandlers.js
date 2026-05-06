@@ -471,9 +471,11 @@ export function exportXML(ctx) {
   </Auditor>
 </CPE_RegistruElectronic>`;
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
+  const filename = `CPE_XML_${(building.address || "cladire").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}.xml`;
+  if (ctx.returnBlob) return { blob, filename };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `CPE_XML_${(building.address || "cladire").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25)}_${new Date().toISOString().slice(0, 10)}.xml`;
+  a.download = filename;
   document.body.appendChild(a); a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
   showToast("XML MDLPA exportat cu succes", "success");
