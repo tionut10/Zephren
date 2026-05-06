@@ -504,6 +504,183 @@ export async function generateManifestSHA256Signed({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 4.b. PLAN M&V AVANSAT — IPMVP Opțiunile A+B+C+D (Sprint Conformitate P1-14)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Configurări IPMVP per opțiune (sumar tehnic).
+ */
+export const IPMVP_OPTIONS_META = Object.freeze({
+  A: {
+    label: "Opțiunea A — Retrofit isolation, parțial măsurat",
+    method: "Măsurare directă pentru parametri cheie + estimare pentru restul",
+    boundary: "Sub-sistem retrofit (ex: cazan nou, ferestre)",
+    keyMeasurements: "Putere instalată, ore funcționare, eficiență nominală",
+    frequency: "Verificare anuală cu instrumente certificate",
+    bestFor: "Retrofit izolare anvelopă (ETICS, ferestre)",
+    uncertaintyTypical: "5-10%",
+  },
+  B: {
+    label: "Opțiunea B — Retrofit isolation+system, full măsurare",
+    method: "Măsurare continuă a tuturor parametrilor (debit, temperatură, energie)",
+    boundary: "Sub-sistem complet (ex: tot circuitul HVAC)",
+    keyMeasurements: "Energie consumată, eficiență reală, profil orar",
+    frequency: "Continuă cu data-logger + raport lunar",
+    bestFor: "Retrofit instalații (HP, BACS, BMS)",
+    uncertaintyTypical: "3-7%",
+  },
+  C: {
+    label: "Opțiunea C — Whole facility (consum total facturat)",
+    method: "Comparație facturi pre/post cu corecție climatică (GD)",
+    boundary: "Întreaga clădire",
+    keyMeasurements: "Facturi lunare energie + GD ANM",
+    frequency: "Lunară (12 luni baseline + 12-24 luni post)",
+    bestFor: "Renovare cumulativă majoră (anvelopă + instalații)",
+    uncertaintyTypical: "10-20%",
+  },
+  D: {
+    label: "Opțiunea D — Calibrated simulation",
+    method: "Simulare termică calibrată cu măsurători punctuale (EnergyPlus, IES-VE, TRNSYS)",
+    boundary: "Întreaga clădire sau zone definite",
+    keyMeasurements: "Simulare orară 8760h calibrată cu 1-3 luni date măsurate",
+    frequency: "Recalibrare anuală + raport final IPMVP",
+    bestFor: "Renovare complexă cu schimbare de utilizare sau extindere",
+    uncertaintyTypical: "8-15%",
+  },
+});
+
+/**
+ * Generează plan M&V avansat IPMVP cu suport multi-opțiune (A+B+C+D).
+ *
+ * Diferit față de generateMonitoringPlanPdf (existing, păstrat backward-compat):
+ *   - Acceptă options: ["A","B","C","D"] (multi-select); default ["C"] doar
+ *   - Pentru fiecare opțiune adaugă capitol distinct cu metodologie + boundary +
+ *     measurements + frequency + uncertainty
+ *   - Util pentru cazuri complexe care folosesc combinații (ex A+C pentru retrofit
+ *     incremental cu verificare facturi globale)
+ *
+ * @param {object} args
+ * @param {object} [args.building]
+ * @param {object} [args.auditor]
+ * @param {object} [args.instSummary]
+ * @param {object} [args.scenario]
+ * @param {Array<"A"|"B"|"C"|"D">} [args.options=["C"]] — multi-select
+ * @param {boolean} [args.download=true]
+ * @returns {Promise<Blob>}
+ */
+export async function generateMonitoringPlanAdvancedPdf({
+  building = {},
+  auditor = {},
+  instSummary = {},
+  scenario = {},
+  options = ["C"],
+  download = true,
+} = {}) {
+  // Validare opțiuni
+  const validOptions = options.filter(o => Object.prototype.hasOwnProperty.call(IPMVP_OPTIONS_META, o));
+  if (validOptions.length === 0) validOptions.push("C");
+
+  const { default: jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const fontOk = await setupRomanianFont(doc);
+  const writeText = makeTextWriter(doc, fontOk);
+  const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
+  const M = 18;
+  const pageW = doc.internal.pageSize.getWidth();
+  const lineMaxW = pageW - 2 * M;
+  let y = 22;
+
+  // Antet
+  doc.setFont(baseFont, "bold"); doc.setFontSize(14);
+  writeText("PLAN AVANSAT DE MONITORIZARE & VERIFICARE", pageW / 2, y, { align: "center" });
+  y += 6;
+  doc.setFontSize(10);
+  writeText(`IPMVP Multi-Opțiune (${validOptions.join(" + ")})`, pageW / 2, y, { align: "center" });
+  y += 5;
+  doc.setFont(baseFont, "normal"); doc.setFontSize(9); doc.setTextColor(80, 80, 100);
+  writeText("International Performance Measurement & Verification Protocol",
+    pageW / 2, y, { align: "center" });
+  y += 4;
+  writeText(`Data: ${TODAY_RO}`, pageW / 2, y, { align: "center" });
+  y += 10;
+  doc.setTextColor(0, 0, 0);
+
+  // 1. Date proiect (sumar)
+  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  writeText("1. Identificare proiect", M, y); y += 6;
+  doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
+  writeText(`Adresă: ${building.address || "—"}`, M, y); y += 5;
+  writeText(`Auditor M&V: ${auditor.name || "—"} (atestat ${auditor.atestat || "—"})`, M, y); y += 5;
+  writeText(`Investiție totală: ${scenario.totalCost_RON ? Math.round(scenario.totalCost_RON).toLocaleString("ro-RO") + " RON" : "—"}`, M, y); y += 5;
+  writeText(`Economii estimate: ${scenario.expectedSavings_RON_y ? Math.round(scenario.expectedSavings_RON_y).toLocaleString("ro-RO") + " RON/an" : "—"}`, M, y); y += 5;
+  writeText(`Opțiuni IPMVP selectate: ${validOptions.join(", ")}`, M, y); y += 7;
+
+  // 2. Capitol per opțiune selectată
+  validOptions.forEach((opt, idx) => {
+    if (y > 230) { doc.addPage(); y = 22; }
+    const meta = IPMVP_OPTIONS_META[opt];
+
+    doc.setFillColor(35, 41, 70);
+    doc.rect(M, y, lineMaxW, 7, "F");
+    doc.setTextColor(251, 191, 36);
+    doc.setFont(baseFont, "bold"); doc.setFontSize(10.5);
+    writeText(`${idx + 2}. ${meta.label}`, M + 2, y + 5);
+    doc.setTextColor(0, 0, 0);
+    y += 9;
+
+    doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
+    const fields = [
+      { label: "Metodă", value: meta.method },
+      { label: "Boundary (limită sistem)", value: meta.boundary },
+      { label: "Măsurători cheie", value: meta.keyMeasurements },
+      { label: "Frecvență", value: meta.frequency },
+      { label: "Aplicabilitate optimă", value: meta.bestFor },
+      { label: "Incertitudine tipică", value: meta.uncertaintyTypical },
+    ];
+    fields.forEach(f => {
+      doc.setFont(baseFont, "bold"); doc.setFontSize(9);
+      writeText(`${f.label}:`, M + 2, y);
+      doc.setFont(baseFont, "normal");
+      const lines = doc.splitTextToSize(f.value, lineMaxW - 50);
+      lines.forEach((l, li) => {
+        writeText(l, M + 50, y + li * 4.2);
+      });
+      y += Math.max(5, lines.length * 4.2) + 1;
+    });
+    y += 4;
+  });
+
+  // 3. Recomandare combinație
+  if (y > 240) { doc.addPage(); y = 22; }
+  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  writeText(`${validOptions.length + 2}. Recomandare auditor`, M, y); y += 6;
+  doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
+  let rec;
+  if (validOptions.length === 1) {
+    rec = `Acest plan utilizează exclusiv Opțiunea ${validOptions[0]} IPMVP. ` +
+      `Pentru un proiect cu intervenții cumulate, considerați combinația cu Opțiunea C ` +
+      `(verificare globală) pentru robustețe statistică.`;
+  } else {
+    rec = `Combinația ${validOptions.join("+")} oferă acoperire completă: măsurători detaliate ` +
+      `pe sub-sisteme + verificare globală. Recomandat pentru proiecte cu investiții > 100.000 RON ` +
+      `sau finanțare publică (POR/PNRR/AFM Casa Eficientă).`;
+  }
+  doc.splitTextToSize(rec, lineMaxW).forEach(l => { writeText(l, M, y); y += 4.5; });
+
+  // Footer
+  doc.setDrawColor(150, 150, 170);
+  doc.line(M, 285, pageW - M, 285);
+  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
+  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P1-14. " +
+    "Bază: IPMVP Core Concepts (EVO 2022) + ISO 50001 + EN 17463.",
+    M, 290);
+
+  const fname = `Plan_MV_avansat_${_safeSlug(building.address || "proiect").slice(0, 30)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  if (download) doc.save(fname);
+  return doc.output("blob");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 4. PLAN MONITORIZARE M&V — IPMVP Opțiunea C (consum total facturat)
 // ─────────────────────────────────────────────────────────────────────────────
 /**
