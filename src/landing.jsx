@@ -465,7 +465,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
 
                   {/* Titlu academic */}
                   <div style={{ fontSize: "12px", color: textMuted, background: isDark ? "rgba(245,158,11,0.06)" : "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.18)", borderRadius: "8px", padding: "9px 12px", marginBottom: "14px", lineHeight: "1.55" }}>
-                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>Licență</span>{" "}· Construcții Civile, Industriale și Agricole (CCIA)<br/>
+                    <span style={{ color: "#f59e0b", fontWeight: "700" }}>Licență</span>{" "}· Construcții Civile, Industriale și Agricole (CCIA) · 2017<br/>
                     <span style={{ color: "#f59e0b", fontWeight: "700" }}>Masterat (traseu cercetare)</span>{" "}· Modernizare Energetică în Mediul Construit (MEMC)<br/>
                     <span style={{ opacity: 0.75 }}>Facultatea de Construcții · Universitatea Transilvania din Brașov · 2019</span>
                   </div>
@@ -574,13 +574,18 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
             </span>
             <span style={{ fontSize: "13px", color: textMuted, fontWeight: "400" }}>
               {lang === "EN"
-                ? "M.Sc. Energy Efficiency in the Built Environment (MEMC)"
-                : "Masterat în Modernizare Energetică în Mediul Construit (MEMC)"}
+                ? "B.Eng. Civil, Industrial and Agricultural Engineering (CCIA) · 2017"
+                : "Licență · Construcții Civile, Industriale și Agricole (CCIA) · 2017"}
+            </span>
+            <span style={{ fontSize: "13px", color: textMuted, fontWeight: "400" }}>
+              {lang === "EN"
+                ? "M.Sc. Energy Efficiency in the Built Environment (MEMC) · 2019"
+                : "Masterat (traseu cercetare) · Modernizare Energetică în Mediul Construit (MEMC) · 2019"}
             </span>
             <span style={{ fontSize: "12px", color: textFaint, fontWeight: "400" }}>
               {lang === "EN"
-                ? "Licență CCIA · Masterat (research track) MEMC · Facultatea de Construcții · Universitatea Transilvania din Brașov · 2019"
-                : "Licență CCIA · Masterat (traseu cercetare) MEMC · Facultatea de Construcții · Universitatea Transilvania din Brașov · 2019"}
+                ? "Faculty of Civil Engineering · Transilvania University of Brașov"
+                : "Facultatea de Construcții · Universitatea Transilvania din Brașov"}
             </span>
           </div>
         </div>
