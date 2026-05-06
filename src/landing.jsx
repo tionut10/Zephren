@@ -459,8 +459,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "800", color: "#000", flexShrink: 0, letterSpacing: "-0.5px" }}>IT</div>
                     <div>
                       <div style={{ fontWeight: "700", fontSize: "15px", color: text, lineHeight: 1.2 }}>ing. Ionuț Tunaru</div>
-                      <div style={{ fontSize: "12px", color: "#10b981", fontWeight: "600", marginTop: "3px" }}>AE Ici · Auditor energetic atestat</div>
-                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "1px" }}>{lang === "EN" ? "Founder · ZEPHREN SRL" : "Fondator · ZEPHREN SRL"}</div>
+                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px" }}>{lang === "EN" ? "Founder · ZEPHREN SRL" : "Fondator · ZEPHREN SRL"}</div>
                     </div>
                   </div>
 
