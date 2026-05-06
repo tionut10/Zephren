@@ -477,23 +477,6 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                       : "Zephren integrează nativ inteligența artificială în fiecare etapă a calculului energetic: OCR automat din facturi de energie, import planșe PDF prin analiză vizuală avansată, completare prin conversație în text liber și asistent AI pentru recomandări de reabilitare. Metodologie conformă Mc 001-2022 și Ord. MDLPA 348/2026."}
                   </p>
 
-                  {/* Badge-uri */}
-                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                    {[
-                      { label: "UNITBV · 2019", color: "#3b82f6" },
-                      { label: "M.Sc. MEMC",     color: "#8b5cf6" },
-                      { label: "AE Ici · MDLPA", color: "#10b981" },
-                      { label: "Mc 001-2022",    color: "#f59e0b" },
-                    ].map(b => (
-                      <span key={b.label} style={{ fontSize: "11px", fontWeight: "600", padding: "3px 9px", borderRadius: "6px", color: b.color, background: `${b.color}1a`, border: `1px solid ${b.color}35` }}>{b.label}</span>
-                    ))}
-                  </div>
-
-                  {/* Note diplome */}
-                  <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: `1px solid ${border}`, fontSize: "11px", color: textFaint, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span>📎</span>
-                    <span>{lang === "EN" ? "Diploma & dissertation — coming soon" : "Diplomă & disertație — în curând"}</span>
-                  </div>
                 </div>
               )}
             </div>
