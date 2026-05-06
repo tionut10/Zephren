@@ -29,22 +29,44 @@ const TTL_DAYS = 7;
 
 /**
  * Slot keys recunoscute (sincronizate cu DocumentUploadCenter).
+ *
+ * 18 sloturi: 8 standard P0-05..09 + 10 extensie P2 (NR + RC + audit precedent + plan amplasament).
  */
 export const DOCUMENT_SLOTS = Object.freeze({
-  CARTEA_TEHNICA: { key: "cartea_tehnica", label: "Cartea Tehnică (≥1995)", maxMb: 50, accept: ".pdf", required: false },
-  PV_RECEPTIE: { key: "pv_receptie", label: "Proces verbal recepție", maxMb: 10, accept: ".pdf", required: false },
-  RELEVEU: { key: "releveu", label: "Releveu actualizat (PDF/DWG)", maxMb: 30, accept: ".pdf,.dwg,.dxf", required: false },
-  AUTORIZATIE: { key: "autorizatie", label: "Autorizație de construire", maxMb: 5, accept: ".pdf", required: false },
-  AVIZ_ANCPI: { key: "aviz_ancpi", label: "Aviz ANCPI (zone protejate)", maxMb: 5, accept: ".pdf", required: false },
-  AVIZ_ISC: { key: "aviz_isc", label: "Aviz ISC (siguranță foc)", maxMb: 5, accept: ".pdf", required: false },
-  AVIZ_MONUMENTE: { key: "aviz_monumente", label: "Aviz monumente (DJC)", maxMb: 5, accept: ".pdf", required: false },
-  ACORD_PROPRIETARI: { key: "acord_proprietari", label: "Acord scris proprietari (RC)", maxMb: 20, accept: ".pdf", required: false },
+  // P0-05..P0-09 standard (rezidențial + general)
+  CARTEA_TEHNICA: { key: "cartea_tehnica", label: "Cartea Tehnică (≥1995)", maxMb: 50, accept: ".pdf", required: false, scope: "all" },
+  PV_RECEPTIE: { key: "pv_receptie", label: "Proces verbal recepție", maxMb: 10, accept: ".pdf", required: false, scope: "all" },
+  RELEVEU: { key: "releveu", label: "Releveu actualizat (PDF/DWG)", maxMb: 30, accept: ".pdf,.dwg,.dxf", required: false, scope: "all" },
+  AUTORIZATIE: { key: "autorizatie", label: "Autorizație de construire", maxMb: 5, accept: ".pdf", required: false, scope: "all" },
+  AVIZ_ANCPI: { key: "aviz_ancpi", label: "Aviz ANCPI (zone protejate)", maxMb: 5, accept: ".pdf", required: false, scope: "all" },
+  AVIZ_ISC: { key: "aviz_isc", label: "Aviz ISC (siguranță foc)", maxMb: 5, accept: ".pdf", required: false, scope: "all" },
+  AVIZ_MONUMENTE: { key: "aviz_monumente", label: "Aviz monumente (DJC)", maxMb: 5, accept: ".pdf", required: false, scope: "all" },
+  ACORD_PROPRIETARI: { key: "acord_proprietari", label: "Acord scris proprietari (RC)", maxMb: 20, accept: ".pdf", required: false, scope: "rc" },
+
+  // P2-01..P2-07 extensie NEREZIDENȚIAL (BI/ED/SP/HC/CO/SA/AL)
+  BACS_INVENTORY: { key: "bacs_inventory", label: "BACS inventory (CSV/XLSX)", maxMb: 10, accept: ".csv,.xlsx,.pdf", required: false, scope: "nr" },
+  LENI_BASELINE: { key: "leni_baseline", label: "LENI baseline + zone iluminat", maxMb: 10, accept: ".csv,.xlsx,.pdf", required: false, scope: "nr" },
+  PROGRAM_FUNCTIONARE: { key: "program_functionare", label: "Program funcționare zilnic/anual", maxMb: 5, accept: ".xlsx,.pdf", required: false, scope: "nr" },
+  DOSAR_BMS: { key: "dosar_bms", label: "Dosar BMS / sub-metering", maxMb: 30, accept: ".pdf,.json", required: false, scope: "nr" },
+  CONTRACTE_SERVICE_HVAC: { key: "contracte_service_hvac", label: "Contracte service HVAC anuale", maxMb: 5, accept: ".pdf", required: false, scope: "nr" },
+  RELEVEU_ILUMINAT: { key: "releveu_iluminat", label: "Releveu iluminat (lux per zonă)", maxMb: 10, accept: ".csv,.pdf", required: false, scope: "nr" },
+  PLAN_AMPLASAMENT: { key: "plan_amplasament", label: "Plan amplasament cu rețele", maxMb: 30, accept: ".pdf,.dwg,.dxf", required: false, scope: "nr_rc" },
+
+  // P2-08 audit precedent (orice clădire reabilitată parțial)
+  AUDIT_PRECEDENT: { key: "audit_precedent", label: "Audit energetic precedent", maxMb: 30, accept: ".pdf", required: false, scope: "all" },
+
+  // P2-09..P2-11 RC apartament specific
+  PLAN_APARTAMENT: { key: "plan_apartament", label: "Plan apartament + plan etaj (RC)", maxMb: 20, accept: ".pdf,.dwg", required: false, scope: "rc" },
+  REPARTITIE_RC: { key: "repartitie_rc", label: "Schemă repartiție RC (vert/oriz)", maxMb: 5, accept: ".pdf", required: false, scope: "rc" },
 });
 
 const MAGIC_BYTES = {
   pdf: [0x25, 0x50, 0x44, 0x46], // %PDF
   dwg: [0x41, 0x43, 0x31, 0x30], // AC10..AC32 (AutoCAD)
   dxf: null, // text-based, no magic — accept anything > 64 bytes
+  xlsx: [0x50, 0x4b, 0x03, 0x04], // PK ZIP (XLSX e ZIP container)
+  csv: null, // text-based
+  json: null, // text-based
 };
 
 /**
@@ -61,9 +83,10 @@ export function validateMagicBytes(bytes, accept) {
   if (bytes.length < 4) return false;
 
   for (const ext of exts) {
-    if (ext === "dxf") {
-      // DXF e text — acceptăm dacă > 64 octeți și conține „SECTION" sau „0"
-      if (bytes.length > 64) return true;
+    // Text-based formats — accept dacă bytes >= 4 (parser-ul downstream va valida structura)
+    if (ext === "dxf" || ext === "csv" || ext === "json") {
+      if (bytes.length >= 4) return true;
+      continue;
     }
     const magic = MAGIC_BYTES[ext];
     if (!magic) continue;

@@ -41,13 +41,14 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("DOCUMENT_SLOTS", () => {
-  it("conține cele 8 slot-uri standard", () => {
+  it("conține cele 8 slot-uri standard P0-05..09 (printre 18 totale post P2)", () => {
     const keys = Object.values(DOCUMENT_SLOTS).map(s => s.key);
     expect(keys).toEqual(expect.arrayContaining([
       "cartea_tehnica", "pv_receptie", "releveu", "autorizatie",
       "aviz_ancpi", "aviz_isc", "aviz_monumente", "acord_proprietari",
     ]));
-    expect(keys.length).toBe(8);
+    // Post Sprint P2 (7 mai 2026): extins la 18 sloturi (8 P0 + 10 P2)
+    expect(keys.length).toBeGreaterThanOrEqual(8);
   });
 
   it("Cartea Tehnică are limit 50 MB (cel mai mare)", () => {
