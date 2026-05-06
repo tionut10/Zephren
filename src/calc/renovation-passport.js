@@ -254,12 +254,18 @@ export function buildRenovationPassport({
     cpePreviousNumber: building?.cpeNumber || null,
   };
 
+  // Sprint 06may2026 audit P0 — aliase complete pentru schema demoProjects
+  // (atestat → certNumber, grade → category, company → firm, email → contact)
   const auditorObj = {
     name: auditor?.name || "",
-    certNumber: auditor?.certNr || auditor?.certNumber || "",
-    category: auditor?.category || "",
-    firm: auditor?.firma || auditor?.firm || "",
-    contact: auditor?.contact || "",
+    certNumber:
+      auditor?.certNr || auditor?.certNumber || auditor?.atestat || "",
+    category:
+      auditor?.category || auditor?.grade || auditor?.specialty || "",
+    firm:
+      auditor?.firma || auditor?.firm || auditor?.company || "",
+    contact:
+      auditor?.contact || auditor?.email || auditor?.phone || "",
   };
 
   // Sprint 25 P0.4 — păstrare ID legacy v4 dacă re-emitere

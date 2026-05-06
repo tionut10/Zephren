@@ -1341,11 +1341,20 @@ export default function Step7Audit(props) {
                         try {
                           showToast("Se generează Pașaport Renovare PDF…", "info", 3000);
                           const eurRon = getEurRonSync() || 5.05;
+                          // Sprint 06may2026 audit P0 (B9) — slug complet
+                          const slugifyPDF = (s, i) => {
+                            const ascii = String(s || "")
+                              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                              .replace(/[^a-zA-Z0-9]+/g, "_")
+                              .replace(/^_+|_+$/g, "")
+                              .toLowerCase();
+                            return `m_${i}_${ascii || "masura"}`;
+                          };
                           const measures = (smartSuggestions || []).map((s, i) => {
                             const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
                             const epSav = parseFloat(s.epSaving_m2) || 0;
                             return {
-                              id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                              id: slugifyPDF(s.measure, i),
                               name: s.measure || `Măsură ${i + 1}`,
                               category: s.system || "Nespecificat",
                               system: s.system || "Nespecificat",
@@ -1445,11 +1454,21 @@ export default function Step7Audit(props) {
                         try {
                           showToast("Se generează Pașaport XML…", "info", 2000);
                           const eurRon = getEurRonSync() || 5.05;
+                          // Sprint 06may2026 audit P0 (B9) — slug complet diacritics-stripped
+                          // în loc de slice(0,8) care cauzează ID-uri grotești (m_3_Instalar)
+                          const slugify = (s, i) => {
+                            const ascii = String(s || "")
+                              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                              .replace(/[^a-zA-Z0-9]+/g, "_")
+                              .replace(/^_+|_+$/g, "")
+                              .toLowerCase();
+                            return `m_${i}_${ascii || "masura"}`;
+                          };
                           const measures = (smartSuggestions || []).map((s, i) => {
                             const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
                             const epSav = parseFloat(s.epSaving_m2) || 0;
                             return {
-                              id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                              id: slugify(s.measure, i),
                               name: s.measure || `Măsură ${i + 1}`,
                               category: s.system || "Nespecificat",
                               cost_RON: Math.round(costEur * eurRon),
@@ -1462,6 +1481,9 @@ export default function Step7Audit(props) {
                             ? calcPhasedRehabPlan(measures, 50000, "balanced", epFinal || 200,
                                 building?.category || "AL", parseFloat(building?.areaUseful) || 100, 0.45)
                             : null;
+                          // Sprint 06may2026 audit P0 (B10) — pass mepsStatus pentru
+                          // calcul corect baseline.meps2030_compliant (era default 999 → true greșit)
+                          const mepsThXml = getMepsThresholdsFor(building?.category);
                           const passport = buildRenovationPassport({
                             cpeCode: building?.cpeCode || building?.cpeNumber || null,
                             building: building || {}, instSummary: instSummary || {},
@@ -1472,6 +1494,7 @@ export default function Step7Audit(props) {
                               phases: phasedPlan.phases, epTrajectory: phasedPlan.epTrajectory,
                               classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
                             } : null,
+                            mepsStatus: { thresholds: mepsThXml },
                             changeReason: "Export XML Pașaport (Pas 7)",
                           });
                           const lib = await import("../lib/passport-export.js");
@@ -1613,11 +1636,20 @@ export default function Step7Audit(props) {
               {instSummary && (() => {
                 // Mapper inline smartSuggestions → measures format calcPhasedRehabPlan
                 const eurRon = getEurRonSync() || 5.05;
+                // Sprint 06may2026 audit P0 (B9) — slug complet
+                const slugifyCard = (s, i) => {
+                  const ascii = String(s || "")
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^a-zA-Z0-9]+/g, "_")
+                    .replace(/^_+|_+$/g, "")
+                    .toLowerCase();
+                  return `m_${i}_${ascii || "masura"}`;
+                };
                 const measures = (smartSuggestions || []).map((s, i) => {
                   const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
                   const epSav = parseFloat(s.epSaving_m2) || 0;
                   return {
-                    id: `m_${i}_${(s.measure || "").slice(0, 8).replace(/\s+/g, "_")}`,
+                    id: slugifyCard(s.measure, i),
                     name: s.measure || `Măsură ${i + 1}`,
                     category: s.system || "Nespecificat",
                     system: s.system || "Nespecificat",
@@ -1648,6 +1680,25 @@ export default function Step7Audit(props) {
 
                 const exportRoadmapDOCX = async () => {
                   try {
+                    // Sprint 06may2026 audit P0 (B1) — populate financialSummary
+                    // pentru ca DOCX-ul să afișeze NPV/IRR/payback corect (nu 0 RON)
+                    const eurRonRate = getEurRonSync() || 5.05;
+                    const financialSum = financialAnalysis ? {
+                      totalInvest_RON: (financialAnalysis.globalCost || 0) * eurRonRate,
+                      npv: financialAnalysis.npv || 0,
+                      irr: financialAnalysis.irr || 0,
+                      paybackSimple: financialAnalysis.paybackSimple || 0,
+                      paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
+                      perspective: "financial",
+                    } : (phasedPlan ? {
+                      // Fallback când lipsește financialAnalysis: derivă din phasedPlan
+                      totalInvest_RON: phasedPlan.totalCost_RON || 0,
+                      npv: phasedPlan.summary?.npv_30y || 0,
+                      irr: phasedPlan.summary?.irr_pct || 0,
+                      paybackSimple: phasedPlan.summary?.paybackSimple_y || 0,
+                      paybackDiscounted: phasedPlan.summary?.paybackDiscounted_y || 0,
+                      perspective: "financial",
+                    } : null);
                     const passport = buildRenovationPassport({
                       cpeCode: building?.cpeCode || building?.cpeNumber || null,
                       building,
@@ -1667,6 +1718,7 @@ export default function Step7Audit(props) {
                         summary: phasedPlan.summary,
                       } : null,
                       mepsStatus: { thresholds: mepsTh },
+                      financialSummary: financialSum,
                       changeReason: "Export Foaie de parcurs (Pas 7 Card pașaport)",
                       changedBy: auditor?.name || "Auditor",
                     });

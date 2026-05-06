@@ -3420,16 +3420,26 @@ class handler(BaseHTTPRequestHandler):
             rh3.bold = True
             rh3.font.size = _Pt(13)
 
+            # Sprint 06may2026 audit P0 (B7) — rotunjire la 1 zecimală
+            # (era afișat 855.9586758743318 → confuz pentru raport oficial)
+            def _fmt(val, decimals=1):
+                if val is None or val == "" or val == "—":
+                    return "—"
+                try:
+                    return f"{float(val):.{decimals}f}"
+                except (ValueError, TypeError):
+                    return str(val)
+
             tbl3 = doc.add_table(rows=0, cols=2)
             tbl3.style = "Light Grid Accent 1"
             _trow(tbl3, "Clasă energetică EP", en_class.get("cls", "—"))
             _trow(tbl3, "EP total [kWh/(m²·an)]",
-                  f"{renew.get('ep_adjusted_m2', inst.get('ep_total_m2', '—'))}")
+                  _fmt(renew.get('ep_adjusted_m2', inst.get('ep_total_m2', '—')), 1))
             _trow(tbl3, "CO₂ specific [kg/(m²·an)]",
-                  f"{renew.get('co2_adjusted_m2', inst.get('co2_total_m2', '—'))}")
-            _trow(tbl3, "RER [%]", f"{renew.get('rer', '—')}")
-            _trow(tbl3, "Qf total [kWh/an]", f"{inst.get('qf_total', '—')}")
-            _trow(tbl3, "LENI [kWh/(m²·an)]", f"{inst.get('leni', '—')}")
+                  _fmt(renew.get('co2_adjusted_m2', inst.get('co2_total_m2', '—')), 2))
+            _trow(tbl3, "RER [%]", _fmt(renew.get('rer', '—'), 1))
+            _trow(tbl3, "Qf total [kWh/an]", _fmt(inst.get('qf_total', '—'), 0))
+            _trow(tbl3, "LENI [kWh/(m²·an)]", _fmt(inst.get('leni', '—'), 2))
 
             doc.add_paragraph()
 
@@ -3477,7 +3487,9 @@ class handler(BaseHTTPRequestHandler):
                 conform = "[OK] Conform" if u_num <= u_lim else "[X] Neconform"
                 row = cap4_table.add_row().cells
                 row[0].text = ""
-                p = row[0].paragraphs[0].add_run(f"U {t} — {el.get('name', '—')[:30]}")
+                # Sprint 06may2026 audit P0 (B8) — eliminare slice [:30]
+                # (era „Termopan PVC 4-16-4 dublu — Su" → trunchiat)
+                p = row[0].paragraphs[0].add_run(f"U {t} — {el.get('name', '—')}")
                 p.font.name = "Calibri"; p.font.size = _Pt(9); p.bold = True
                 row[1].text = f"{u_num:.3f} W/(m²·K)"
                 row[2].text = f"{u_lim:.2f} W/(m²·K)"
@@ -3500,7 +3512,8 @@ class handler(BaseHTTPRequestHandler):
                 conform = "[OK] Conform" if u_num <= u_lim else "[X] Neconform"
                 row = cap4_table.add_row().cells
                 row[0].text = ""
-                p = row[0].paragraphs[0].add_run(f"U vitraj — {el.get('name', '—')[:30]}")
+                # Sprint 06may2026 audit P0 (B8) — eliminare slice [:30]
+                p = row[0].paragraphs[0].add_run(f"U vitraj — {el.get('name', '—')}")
                 p.font.name = "Calibri"; p.font.size = _Pt(9); p.bold = True
                 row[1].text = f"{u_num:.3f} W/(m²·K)"
                 row[2].text = f"{u_lim:.2f} W/(m²·K)"
@@ -3528,6 +3541,42 @@ class handler(BaseHTTPRequestHandler):
             doc.add_paragraph()
 
             # ── Capitol 5. Anvelopa opacă + vitrată ────
+            # Sprint 06may2026 audit P0 (B6) — calcul U din layers când nu e dat explicit
+            # (Mc 001-2022 §3.3.1 + SR EN ISO 6946:2017: R_total = Rsi + Σ(d/λ)/1000 + Rse)
+            def _calc_u_from_layers(element):
+                u_explicit = element.get("u")
+                if u_explicit is not None:
+                    try:
+                        return float(u_explicit)
+                    except (ValueError, TypeError):
+                        pass
+                layers = element.get("layers") or []
+                if not layers:
+                    return None
+                el_type = element.get("type", "")
+                # Rezistențe superficiale SR EN ISO 6946:2017 Tab. 7
+                rsi_rse = {
+                    "PE": (0.13, 0.04), "PR": (0.13, 0.04),
+                    "PS": (0.13, 0.04), "PA": (0.13, 0.04),
+                    "PV": (0.13, 0.04),  # planșeu vitrat
+                    "PI": (0.10, 0.10),  # planșeu intermediar
+                    "PB": (0.17, 0.04),  # planșeu peste subsol
+                    "PT": (0.10, 0.04),  # planșeu peste tavan
+                    "PL": (0.10, 0.04),  # planșeu sub mansardă
+                }.get(el_type, (0.13, 0.04))
+                rsi, rse = rsi_rse
+                r_layers = 0.0
+                for ly in layers:
+                    try:
+                        thickness_mm = float(ly.get("thickness", 0) or 0)
+                        lambda_w = float(ly.get("lambda", 0) or 0)
+                        if lambda_w > 0:
+                            r_layers += (thickness_mm / 1000.0) / lambda_w
+                    except (ValueError, TypeError):
+                        continue
+                r_total = rsi + r_layers + rse
+                return (1.0 / r_total) if r_total > 0 else None
+
             if opaque:
                 h5 = doc.add_paragraph()
                 rh5 = h5.add_run("5. Anvelopa termică — elemente opace")
@@ -3546,7 +3595,8 @@ class handler(BaseHTTPRequestHandler):
                     cells[0].text = str(el.get("type", ""))
                     cells[1].text = str(el.get("name", ""))
                     cells[2].text = str(el.get("area", ""))
-                    cells[3].text = str(el.get("u", "") or "—")
+                    u_calc = _calc_u_from_layers(el)
+                    cells[3].text = f"{u_calc:.3f}" if u_calc is not None else "—"
 
             if glazing:
                 doc.add_paragraph()
@@ -3569,16 +3619,88 @@ class handler(BaseHTTPRequestHandler):
 
             doc.add_paragraph()
 
-            # ── Capitol 6. Consum măsurat vs. calculat ──
-            if measured:
-                h6 = doc.add_paragraph()
-                rh6 = h6.add_run("6. Consum măsurat vs. calculat")
-                rh6.bold = True
-                rh6.font.size = _Pt(13)
+            # ── Capitol 6. Sisteme tehnice + (opțional) consum măsurat ──
+            # Sprint 06may2026 audit P0 (B5) — Cap. 6 garantat prezent
+            # (anterior `if measured:` doar → numerotarea sărea 5b → 7)
+            h6 = doc.add_paragraph()
+            rh6 = h6.add_run("6. Sisteme tehnice (HVAC + ACM + Iluminat)")
+            rh6.bold = True
+            rh6.font.size = _Pt(13)
 
-                tbl6 = doc.add_table(rows=1, cols=3)
-                tbl6.style = "Light Grid Accent 1"
-                hdr = tbl6.rows[0].cells
+            systems_data = body.get("systems", {}) or {}
+            tbl6 = doc.add_table(rows=1, cols=3)
+            tbl6.style = "Light Grid Accent 1"
+            hdr = tbl6.rows[0].cells
+            hdr[0].text = "Sistem"
+            hdr[1].text = "Caracteristică"
+            hdr[2].text = "Valoare"
+            for sys_key, sys_label in [
+                ("heating", "Încălzire"),
+                ("cooling", "Răcire"),
+                ("ventilation", "Ventilare"),
+                ("lighting", "Iluminat"),
+                ("acm", "ACM"),
+            ]:
+                sys_d = systems_data.get(sys_key, {}) or {}
+                if not sys_d:
+                    continue
+                # Selectare câmpuri reprezentative per sistem
+                fields = []
+                if sys_key == "heating":
+                    fields = [
+                        ("Sursă", sys_d.get("source", "—")),
+                        ("Putere [kW]", _fmt(sys_d.get("power"), 1)),
+                        ("η generare", _fmt(sys_d.get("eta_gen"), 2)),
+                        ("η emisie", _fmt(sys_d.get("eta_em"), 2)),
+                        ("η distribuție", _fmt(sys_d.get("eta_dist"), 2)),
+                        ("η control", _fmt(sys_d.get("eta_ctrl"), 2)),
+                    ]
+                elif sys_key == "cooling":
+                    fields = [
+                        ("Sistem", sys_d.get("system", "—")),
+                        ("Putere [kW]", _fmt(sys_d.get("power"), 1)),
+                        ("EER", _fmt(sys_d.get("eer"), 2)),
+                        ("SEER", _fmt(sys_d.get("seer"), 2)),
+                    ]
+                elif sys_key == "ventilation":
+                    fields = [
+                        ("Tip", sys_d.get("type", "—")),
+                        ("Debit [m³/h]", _fmt(sys_d.get("airflow"), 0)),
+                        ("η HR [%]", _fmt(sys_d.get("hrEfficiency"), 0)),
+                        ("Putere ventilator [W]", _fmt(sys_d.get("fanPower"), 0)),
+                    ]
+                elif sys_key == "lighting":
+                    fields = [
+                        ("Tip", sys_d.get("type", "—")),
+                        ("Densitate putere [W/m²]", _fmt(sys_d.get("pDensity"), 1)),
+                        ("Control", sys_d.get("controlType", "—")),
+                        ("Ore funcționare", _fmt(sys_d.get("operatingHours"), 0)),
+                    ]
+                elif sys_key == "acm":
+                    fields = [
+                        ("Sursă", sys_d.get("source", "—")),
+                        ("Consumatori", _fmt(sys_d.get("consumers"), 0)),
+                        ("Volum stocaj [L]", _fmt(sys_d.get("storageVolume"), 0)),
+                        ("T. livrare [°C]", _fmt(sys_d.get("tSupply"), 0)),
+                    ]
+                first_in_group = True
+                for k, v in fields:
+                    cells = tbl6.add_row().cells
+                    cells[0].text = sys_label if first_in_group else ""
+                    cells[1].text = str(k)
+                    cells[2].text = str(v)
+                    first_in_group = False
+
+            # Consum măsurat (sub-secțiune opțională Cap. 6.b)
+            if measured:
+                doc.add_paragraph()
+                h6b = doc.add_paragraph()
+                rh6b = h6b.add_run("6.b Consum măsurat vs. calculat")
+                rh6b.bold = True
+                rh6b.font.size = _Pt(13)
+                tbl6b = doc.add_table(rows=1, cols=3)
+                tbl6b.style = "Light Grid Accent 1"
+                hdr = tbl6b.rows[0].cells
                 hdr[0].text = "Utilitate"
                 hdr[1].text = "Măsurat [kWh/an]"
                 hdr[2].text = "Calculat [kWh/an]"
@@ -3588,7 +3710,7 @@ class handler(BaseHTTPRequestHandler):
                     ("acm", "ACM"),
                     ("lighting", "Iluminat"),
                 ]:
-                    cells = tbl6.add_row().cells
+                    cells = tbl6b.add_row().cells
                     cells[0].text = util_label
                     cells[1].text = str(measured.get(util_key, "—"))
                     calc_key = f"qf_{util_key[0]}"
@@ -3626,12 +3748,13 @@ class handler(BaseHTTPRequestHandler):
                     continue
                 t = el.get("type", "")
                 u_lim = U_REF.get(t, 0.40)
+                # Sprint 06may2026 audit P0 (B8) — nume complet
                 if u_num > u_lim * 1.5:
-                    recommendations.append((1, f"Termoizolare {t} — {el.get('name', '')[:30]}",
+                    recommendations.append((1, f"Termoizolare {t} — {el.get('name', '')}",
                                             f"U={u_num:.2f} > 1.5 × U_REF ({u_lim:.2f}). Necesită ETICS 10-15 cm.",
                                             "~25-40 kWh/(m²·an)"))
                 elif u_num > u_lim:
-                    recommendations.append((2, f"Îmbunătățire izolație {t}",
+                    recommendations.append((2, f"Îmbunătățire izolație {t} — {el.get('name', '')}",
                                             f"U={u_num:.2f} > U_REF ({u_lim:.2f}).",
                                             "~10-20 kWh/(m²·an)"))
 
@@ -3644,12 +3767,13 @@ class handler(BaseHTTPRequestHandler):
                     u_num = float(u_val)
                 except Exception:
                     continue
+                # Sprint 06may2026 audit P0 (B8) — nume complet
                 if u_num > 2.0:
-                    recommendations.append((1, f"Înlocuire tâmplărie — {el.get('name', '')[:30]}",
+                    recommendations.append((1, f"Înlocuire tâmplărie — {el.get('name', '')}",
                                             f"U={u_num:.2f} > 2.0. Geam tripan Low-E.",
                                             "~15-25 kWh/(m²·an)"))
                 elif u_num > 1.30:
-                    recommendations.append((2, f"Înlocuire tâmplărie — {el.get('name', '')[:30]}",
+                    recommendations.append((2, f"Înlocuire tâmplărie — {el.get('name', '')}",
                                             f"U={u_num:.2f} > U_REF (1.30). Geam dublu Low-E.",
                                             "~8-15 kWh/(m²·an)"))
 
