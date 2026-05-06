@@ -420,6 +420,314 @@ export default function Step7Audit(props) {
                   </div>
                 </Card>
 
+                {/* ═══ NEW: SUGESTII SMART REABILITARE (E5) ═══ */}
+                {smartSuggestions && smartSuggestions.length > 0 && (
+                  <Card title={t("Sugestii inteligente reabilitare",lang)} badge={<Badge color="amber">{smartSuggestions.length} măsuri</Badge>}>
+                    <div className="space-y-2">
+                      {smartSuggestions.map((s, i) => (
+                        <div key={i} className="p-3 rounded-lg border" style={{
+                          background: s.priority===1 ? "rgba(239,68,68,0.03)" : s.priority===2 ? "rgba(234,179,8,0.03)" : "rgba(34,197,94,0.03)",
+                          borderColor: s.priority===1 ? "rgba(239,68,68,0.15)" : s.priority===2 ? "rgba(234,179,8,0.15)" : "rgba(34,197,94,0.15)"
+                        }}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold" style={{color: s.priority===1?"#ef4444":s.priority===2?"#eab308":"#22c55e"}}>
+                              {s.priority===1?"🔴 URGENT":s.priority===2?"🟡 RECOMANDAT":"🟢 OPȚIONAL"}
+                            </span>
+                            <span className="text-xs font-medium flex-1">{s.measure}</span>
+                            <Badge color={s.priority===1?"red":s.priority===2?"amber":"green"}>{s.system}</Badge>
+                          </div>
+                          <div className="text-[10px] opacity-50 mb-1">{s.detail}</div>
+                          <div className="flex flex-wrap gap-3 text-[10px]">
+                            <span className="opacity-40">Impact: <b className="text-white/70">{s.impact}</b></span>
+                            <span className="opacity-40">Cost: <b className="text-white/70">{s.costEstimate}</b></span>
+                            <span className="opacity-40">Recuperare: <b className="text-white/70">{s.payback}</b></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── Prioritizare masuri ── */}
+                <Card title={t("Prioritizare Masuri de Interventie",lang)}>
+                  <div className="space-y-4">
+                    {[1,2,3].map(prio => {
+                      const allItems = [
+                        ...envelopeAnalysis.filter(e => e.needsUpgrade && e.priority === prio).map(e => ({...e, cat:"Anvelopa"})),
+                        ...installAnalysis.filter(e => e.priority === prio).map(e => ({...e, cat:"Instalatii", name: e.system})),
+                        ...renewRecommendations.filter(e => e.priority === prio).map(e => ({...e, cat:"Regenerabile", name: e.system})),
+                      ];
+                      if (allItems.length === 0) return null;
+                      return (
+                        <div key={prio}>
+                          <div className={`text-xs font-bold uppercase mb-2 ${priorityColor(prio)}`}>
+                            {prio === 1 ? "🔴 Prioritate 1 — Urgente" : prio === 2 ? "🟡 Prioritate 2 — Recomandate" : "🟢 Prioritate 3 — Optionale"}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {allItems.map((item, j) => (
+                              <div key={j} className="flex items-center gap-2 p-2 rounded bg-white/[0.03] text-xs">
+                                <span className="opacity-40">[{item.cat}]</span>
+                                <span className="font-medium">{item.name}</span>
+                                <span className="opacity-30 flex-1 text-right truncate">{item.recommendation}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* ── Recomandari Anvelopa ── */}
+                {envelopeAnalysis.length > 0 && (
+                <Card title={t("R1 — Recomandari Anvelopa Termica",lang)}>
+                  <div className="space-y-3">
+                    {envelopeAnalysis.map((el, i) => (
+                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(el.priority)}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(el.priority)}`}>
+                                {priorityLabel(el.priority)}
+                              </span>
+                              <span className="text-sm font-medium">{el.name}</span>
+                              {el.type !== "punte" && <span className="text-xs opacity-40">({el.area.toFixed(1)} m²)</span>}
+                            </div>
+                            <div className="text-xs opacity-60 mb-1">{el.recommendation}</div>
+                            {el.type !== "punte" && (
+                              <div className="flex gap-4 text-[10px] opacity-40">
+                                <span>U actual: <strong className={el.u > el.uRef ? "text-red-400" : "text-green-400"}>{el.u.toFixed(3)}</strong> W/(m²K)</span>
+                                <span>U referinta: {el.uRef.toFixed(2)} W/(m²K)</span>
+                                <span>Pierdere: {el.loss.toFixed(1)} W/K</span>
+                              </div>
+                            )}
+                          </div>
+                          {el.potential > 0 && (
+                            <div className="text-right shrink-0">
+                              <div className="text-xs opacity-40">Potential economie</div>
+                              <div className="text-sm font-bold text-amber-400">{el.potential.toFixed(1)} W/K</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {envelopeAnalysis.every(e => !e.needsUpgrade) && (
+                      <div className="text-center text-sm text-green-400 py-3">✓ Anvelopa termica conforma — nu sunt necesare interventii</div>
+                    )}
+                  </div>
+                </Card>
+                )}
+
+                {/* ── Recomandari Instalatii ── */}
+                <Card title={t("R2 — Recomandari Instalatii",lang)}>
+                  <div className="space-y-3">
+                    {installAnalysis.length > 0 ? installAnalysis.map((item, i) => (
+                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(item.priority)}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(item.priority)}`}>
+                                {priorityLabel(item.priority)}
+                              </span>
+                              <span className="text-sm font-medium">{item.system}</span>
+                            </div>
+                            <div className="text-xs opacity-60 mb-1">{item.issue}</div>
+                            <div className="text-xs text-amber-400/80">→ {item.recommendation}</div>
+                          </div>
+                          {item.saving > 0 && (
+                            <div className="text-right shrink-0">
+                              <div className="text-xs opacity-40">Economie estimata</div>
+                              <div className="text-sm font-bold text-green-400">{item.saving.toFixed(0)} kWh/an</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="text-center text-sm text-green-400 py-3">✓ Instalațiile sunt în parametri normali</div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* ── Recomandari Regenerabile ── */}
+                {renewRecommendations.length > 0 && (
+                <Card title={t("R3 — Surse Regenerabile Recomandate",lang)}>
+                  <div className="space-y-3">
+                    {renewRecommendations.map((item, i) => (
+                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(item.priority)}`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(item.priority)}`}>
+                                {priorityLabel(item.priority)}
+                              </span>
+                              <span className="text-sm font-medium">{item.system}</span>
+                            </div>
+                            <div className="text-xs text-amber-400/80">{item.recommendation}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs opacity-40">Impact</div>
+                            <div className="text-xs opacity-70">{item.impact}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+                )}
+
+
+                {/* ── Scenariu Reabilitat — Comparatie ── */}
+                {rehabScenario && (
+                <Card title={t("Scenariu Reabilitare — Proiectie",lang)} className="border-amber-500/20">
+
+                  <div className="flex gap-2 mb-4">
+                    {SCENARIO_PRESETS.map(function(sp) { return (
+                      <button key={sp.id} onClick={function(){ loadScenarioPreset(sp.id); }}
+                        className={cn("flex-1 py-2 rounded-lg text-xs font-medium transition-all border",
+                          activeScenario===sp.id ? "bg-amber-500/15 border-amber-500/30 text-amber-400" : "border-white/10 hover:bg-white/5")}>
+                        {sp.label}
+                      </button>
+                    ); })}
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Comparatie clase */}
+                    <div>
+                      <div className="text-xs font-medium opacity-50 mb-3">Comparatie Clasa Energetica</div>
+                      <div className="flex items-center justify-center gap-6">
+                        <div className="text-center">
+                          <div className="text-[10px] opacity-40 mb-1">ACTUAL</div>
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
+                            style={{backgroundColor: rehabScenario.classCurrent.color + "30", color: rehabScenario.classCurrent.color, border:`2px solid ${rehabScenario.classCurrent.color}`}}>
+                            {rehabScenario.classCurrent.cls}
+                          </div>
+                          <div className="text-sm font-bold mt-1">{rehabScenario.epCurrent.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
+                        </div>
+                        <div className="text-2xl opacity-20">→</div>
+                        <div className="text-center">
+                          <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
+                            style={{backgroundColor: rehabScenario.classRehab.color + "30", color: rehabScenario.classRehab.color, border:`2px solid ${rehabScenario.classRehab.color}`}}>
+                            {rehabScenario.classRehab.cls}
+                          </div>
+                          <div className="text-sm font-bold mt-1">{rehabScenario.epRehab.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
+                        </div>
+                      </div>
+                      <div className="text-center mt-3">
+                        <span className="text-sm font-bold text-green-400">
+                          -{((1 - rehabScenario.epRehab / Math.max(1, rehabScenario.epCurrent)) * 100).toFixed(0)}%
+                        </span>
+                        <span className="text-xs opacity-40 ml-2">reducere consum energie primara</span>
+                      </div>
+                      <div className="text-center mt-1">
+                        <span className="text-sm font-bold text-green-400">-{rehabScenario.co2Reduction.toFixed(1)} kg/(m²·an)</span>
+                        <span className="text-xs opacity-40 ml-2">reducere emisii CO₂</span>
+                      </div>
+
+                      {/* Grafic comparativ */}
+                      <svg viewBox="0 0 280 80" width="100%" height="70" className="mt-3">
+                        {(() => {
+                          var epO = rehabScenario.epCurrent, epN = rehabScenario.epRehab, mx = Math.max(epO, epN, 1);
+                          return (<g>
+                            <text x="0" y="15" fontSize="7" fill="#888">Actual</text>
+                            <rect x="50" y="6" width={Math.max(2,epO/mx*200)} height="16" fill={rehabScenario.classCurrent.color} rx="2" opacity="0.8"/>
+                            <text x={53+epO/mx*200} y="18" fontSize="7" fill="#ccc">{epO.toFixed(0)}</text>
+                            <text x="0" y="42" fontSize="7" fill="#f59e0b">Reabilitat</text>
+                            <rect x="50" y="33" width={Math.max(2,epN/mx*200)} height="16" fill={rehabScenario.classRehab.color} rx="2" opacity="0.8"/>
+                            <text x={53+epN/mx*200} y="45" fontSize="7" fill="#ccc">{epN.toFixed(0)}</text>
+                            <rect x={50+epN/mx*200} y="33" width={Math.max(0,(epO-epN)/mx*200)} height="16" fill="#22c55e" rx="2" opacity="0.12"/>
+                            <text x="140" y="68" textAnchor="middle" fontSize="7" fill="#22c55e">Economie: {Math.max(0,epO-epN).toFixed(0)} kWh/(m2a)</text>
+                          </g>);
+                        })()}
+                      </svg>
+
+                    </div>
+
+                    {/* Estimare costuri */}
+                    <div>
+                      <div className="text-xs font-medium opacity-50 mb-3">Estimare Costuri Orientative</div>
+                      <div className="space-y-2">
+                        {rehabScenario.costEnvelope > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">🏗️ Anvelopa (termoizolare + tamplarie)</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costEnvelope).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        {rehabScenario.costInstall > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">⚙️ Instalatii (modernizare)</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costInstall).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        {rehabScenario.costRenew > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">☀️ Surse regenerabile</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costRenew).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <span className="text-sm font-medium">TOTAL ESTIMAT</span>
+                          <span className="text-lg font-black text-amber-400">{(rehabScenario.totalCost).toLocaleString("ro-RO")} €</span>
+                        </div>
+                        {rehabScenario.payback > 0 && rehabScenario.payback < 30 && (
+                          <div className="text-center text-xs opacity-40 mt-1">
+                            Durata estimata recuperare investitie: ~{rehabScenario.payback.toFixed(0)} ani
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 p-2 rounded bg-white/[0.02] text-[10px] opacity-30">
+                        * Costurile sunt estimative orientative si pot varia semnificativ in functie de piata locala, specificul cladirii si solutiile tehnice alese. Se recomanda obtinerea de oferte de pret de la furnizori.
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+                )}
+
+                {/* ═══ COMPARAȚIE MULTI-SCENARIU — Sprint P0-C P0-05 marker explicit ═══
+                    Tabelul afișează măsurile per scenariu DIN preset-uri canonice
+                    (data/rehab-scenarios.js — 5/10/15cm pereți). Pentru EP recalculat
+                    rigoros per scenariu, auditorul trebuie să încarce preset-ul în
+                    Pas 5 (loadScenarioPreset) și să recalculeze prin motorul de
+                    instalații. Acest tabel e DOAR comparativ măsuri, nu rezultate. */}
+                <Card title={t("Comparație scenarii reabilitare",lang)} badge={<Badge color="purple">{multiScenarios.length} scenarii</Badge>}>
+                  <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border-l-2 border-amber-500/40 text-[10px] text-amber-300/80">
+                    ⚠️ Comparație măsuri (preset). Pentru EP recalculat rigoros per scenariu,
+                    încarcă preset-ul în Pas 5 și recalculează bilanțul energetic.
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="text-left py-2 px-1 opacity-40">Măsură</th>
+                          {multiScenarios.map(s => <th key={s.id} className="text-center py-2 px-2 font-bold">{s.name}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { label:"Izolație pereți", key:"addInsulWall", detail:s=>s.insulWallThickness+"cm" },
+                          { label:"Izolație acoperiș", key:"addInsulRoof", detail:s=>s.insulRoofThickness+"cm" },
+                          { label:"Înlocuire ferestre", key:"replaceWindows", detail:s=>"U="+s.newWindowU },
+                          { label:"Panouri PV", key:"addPV", detail:s=>s.pvArea+" m²" },
+                          { label:"Pompă căldură", key:"addHP", detail:s=>"COP "+s.hpCOP },
+                          { label:"Ventilare HR", key:"addHR", detail:s=>"η="+s.hrEfficiency+"%" },
+                        ].map(row => (
+                          <tr key={row.key} className="border-b border-white/5">
+                            <td className="py-1.5 px-1 opacity-50">{row.label}</td>
+                            {multiScenarios.map(s => (
+                              <td key={s.id} className="text-center py-1.5 px-2">
+                                {s[row.key] ? <span className="text-emerald-400">✓ {row.detail(s)}</span> : <span className="opacity-20">—</span>}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="text-[10px] opacity-20 mt-2 text-center">Scenariile sunt orientative. Consultați un auditor atestat pentru analiza detaliată.</div>
+                </Card>
+
                 {/* ── Analiză cost-optimă rapidă ──
                     Mutat din Pas 6 → Pas 7 (1 mai 2026): costul anual €/an + recomandările
                     de remediere (PV m², termoizolare anvelopă) sunt parte din auditul energetic,
@@ -555,104 +863,6 @@ export default function Step7Audit(props) {
                   </Card>
                   );
                 })()}
-
-                {/* ── Recomandari Anvelopa ── */}
-                {envelopeAnalysis.length > 0 && (
-                <Card title={t("R1 — Recomandari Anvelopa Termica",lang)}>
-                  <div className="space-y-3">
-                    {envelopeAnalysis.map((el, i) => (
-                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(el.priority)}`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(el.priority)}`}>
-                                {priorityLabel(el.priority)}
-                              </span>
-                              <span className="text-sm font-medium">{el.name}</span>
-                              {el.type !== "punte" && <span className="text-xs opacity-40">({el.area.toFixed(1)} m²)</span>}
-                            </div>
-                            <div className="text-xs opacity-60 mb-1">{el.recommendation}</div>
-                            {el.type !== "punte" && (
-                              <div className="flex gap-4 text-[10px] opacity-40">
-                                <span>U actual: <strong className={el.u > el.uRef ? "text-red-400" : "text-green-400"}>{el.u.toFixed(3)}</strong> W/(m²K)</span>
-                                <span>U referinta: {el.uRef.toFixed(2)} W/(m²K)</span>
-                                <span>Pierdere: {el.loss.toFixed(1)} W/K</span>
-                              </div>
-                            )}
-                          </div>
-                          {el.potential > 0 && (
-                            <div className="text-right shrink-0">
-                              <div className="text-xs opacity-40">Potential economie</div>
-                              <div className="text-sm font-bold text-amber-400">{el.potential.toFixed(1)} W/K</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {envelopeAnalysis.every(e => !e.needsUpgrade) && (
-                      <div className="text-center text-sm text-green-400 py-3">✓ Anvelopa termica conforma — nu sunt necesare interventii</div>
-                    )}
-                  </div>
-                </Card>
-                )}
-
-                {/* ── Recomandari Instalatii ── */}
-                <Card title={t("R2 — Recomandari Instalatii",lang)}>
-                  <div className="space-y-3">
-                    {installAnalysis.length > 0 ? installAnalysis.map((item, i) => (
-                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(item.priority)}`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(item.priority)}`}>
-                                {priorityLabel(item.priority)}
-                              </span>
-                              <span className="text-sm font-medium">{item.system}</span>
-                            </div>
-                            <div className="text-xs opacity-60 mb-1">{item.issue}</div>
-                            <div className="text-xs text-amber-400/80">→ {item.recommendation}</div>
-                          </div>
-                          {item.saving > 0 && (
-                            <div className="text-right shrink-0">
-                              <div className="text-xs opacity-40">Economie estimata</div>
-                              <div className="text-sm font-bold text-green-400">{item.saving.toFixed(0)} kWh/an</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="text-center text-sm text-green-400 py-3">✓ Instalațiile sunt în parametri normali</div>
-                    )}
-                  </div>
-                </Card>
-
-                {/* ── Recomandari Regenerabile ── */}
-                {renewRecommendations.length > 0 && (
-                <Card title={t("R3 — Surse Regenerabile Recomandate",lang)}>
-                  <div className="space-y-3">
-                    {renewRecommendations.map((item, i) => (
-                      <div key={i} className={`p-3 rounded-lg border ${priorityBg(item.priority)}`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${priorityColor(item.priority)}`}>
-                                {priorityLabel(item.priority)}
-                              </span>
-                              <span className="text-sm font-medium">{item.system}</span>
-                            </div>
-                            <div className="text-xs text-amber-400/80">{item.recommendation}</div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-xs opacity-40">Impact</div>
-                            <div className="text-xs opacity-70">{item.impact}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-                )}
-
 
                 {/* ── Analiză amortizare investiție 20 ani ──
                     Sprint Pas 7 docs follow-up (6 mai 2026) — refactor major:
@@ -900,115 +1110,6 @@ export default function Step7Audit(props) {
                   );
                 })()}
 
-                {/* ── Scenariu Reabilitat — Comparatie ── */}
-                {rehabScenario && (
-                <Card title={t("Scenariu Reabilitare — Proiectie",lang)} className="border-amber-500/20">
-
-                  <div className="flex gap-2 mb-4">
-                    {SCENARIO_PRESETS.map(function(sp) { return (
-                      <button key={sp.id} onClick={function(){ loadScenarioPreset(sp.id); }}
-                        className={cn("flex-1 py-2 rounded-lg text-xs font-medium transition-all border",
-                          activeScenario===sp.id ? "bg-amber-500/15 border-amber-500/30 text-amber-400" : "border-white/10 hover:bg-white/5")}>
-                        {sp.label}
-                      </button>
-                    ); })}
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Comparatie clase */}
-                    <div>
-                      <div className="text-xs font-medium opacity-50 mb-3">Comparatie Clasa Energetica</div>
-                      <div className="flex items-center justify-center gap-6">
-                        <div className="text-center">
-                          <div className="text-[10px] opacity-40 mb-1">ACTUAL</div>
-                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
-                            style={{backgroundColor: rehabScenario.classCurrent.color + "30", color: rehabScenario.classCurrent.color, border:`2px solid ${rehabScenario.classCurrent.color}`}}>
-                            {rehabScenario.classCurrent.cls}
-                          </div>
-                          <div className="text-sm font-bold mt-1">{rehabScenario.epCurrent.toFixed(1)}</div>
-                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
-                        </div>
-                        <div className="text-2xl opacity-20">→</div>
-                        <div className="text-center">
-                          <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
-                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
-                            style={{backgroundColor: rehabScenario.classRehab.color + "30", color: rehabScenario.classRehab.color, border:`2px solid ${rehabScenario.classRehab.color}`}}>
-                            {rehabScenario.classRehab.cls}
-                          </div>
-                          <div className="text-sm font-bold mt-1">{rehabScenario.epRehab.toFixed(1)}</div>
-                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
-                        </div>
-                      </div>
-                      <div className="text-center mt-3">
-                        <span className="text-sm font-bold text-green-400">
-                          -{((1 - rehabScenario.epRehab / Math.max(1, rehabScenario.epCurrent)) * 100).toFixed(0)}%
-                        </span>
-                        <span className="text-xs opacity-40 ml-2">reducere consum energie primara</span>
-                      </div>
-                      <div className="text-center mt-1">
-                        <span className="text-sm font-bold text-green-400">-{rehabScenario.co2Reduction.toFixed(1)} kg/(m²·an)</span>
-                        <span className="text-xs opacity-40 ml-2">reducere emisii CO₂</span>
-                      </div>
-
-                      {/* Grafic comparativ */}
-                      <svg viewBox="0 0 280 80" width="100%" height="70" className="mt-3">
-                        {(() => {
-                          var epO = rehabScenario.epCurrent, epN = rehabScenario.epRehab, mx = Math.max(epO, epN, 1);
-                          return (<g>
-                            <text x="0" y="15" fontSize="7" fill="#888">Actual</text>
-                            <rect x="50" y="6" width={Math.max(2,epO/mx*200)} height="16" fill={rehabScenario.classCurrent.color} rx="2" opacity="0.8"/>
-                            <text x={53+epO/mx*200} y="18" fontSize="7" fill="#ccc">{epO.toFixed(0)}</text>
-                            <text x="0" y="42" fontSize="7" fill="#f59e0b">Reabilitat</text>
-                            <rect x="50" y="33" width={Math.max(2,epN/mx*200)} height="16" fill={rehabScenario.classRehab.color} rx="2" opacity="0.8"/>
-                            <text x={53+epN/mx*200} y="45" fontSize="7" fill="#ccc">{epN.toFixed(0)}</text>
-                            <rect x={50+epN/mx*200} y="33" width={Math.max(0,(epO-epN)/mx*200)} height="16" fill="#22c55e" rx="2" opacity="0.12"/>
-                            <text x="140" y="68" textAnchor="middle" fontSize="7" fill="#22c55e">Economie: {Math.max(0,epO-epN).toFixed(0)} kWh/(m2a)</text>
-                          </g>);
-                        })()}
-                      </svg>
-
-                    </div>
-
-                    {/* Estimare costuri */}
-                    <div>
-                      <div className="text-xs font-medium opacity-50 mb-3">Estimare Costuri Orientative</div>
-                      <div className="space-y-2">
-                        {rehabScenario.costEnvelope > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">🏗️ Anvelopa (termoizolare + tamplarie)</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costEnvelope).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        {rehabScenario.costInstall > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">⚙️ Instalatii (modernizare)</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costInstall).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        {rehabScenario.costRenew > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">☀️ Surse regenerabile</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costRenew).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <span className="text-sm font-medium">TOTAL ESTIMAT</span>
-                          <span className="text-lg font-black text-amber-400">{(rehabScenario.totalCost).toLocaleString("ro-RO")} €</span>
-                        </div>
-                        {rehabScenario.payback > 0 && rehabScenario.payback < 30 && (
-                          <div className="text-center text-xs opacity-40 mt-1">
-                            Durata estimata recuperare investitie: ~{rehabScenario.payback.toFixed(0)} ani
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-3 p-2 rounded bg-white/[0.02] text-[10px] opacity-30">
-                        * Costurile sunt estimative orientative si pot varia semnificativ in functie de piata locala, specificul cladirii si solutiile tehnice alese. Se recomanda obtinerea de oferte de pret de la furnizori.
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-                )}
-
                 {/* ── ANALIZĂ FINANCIARĂ EN 15459-1 ── */}
                 {financialAnalysis && (
                   <Card title="Analiză financiară reabilitare (EN 15459-1)" className="border-emerald-500/20">
@@ -1105,107 +1206,6 @@ export default function Step7Audit(props) {
                     </details>
                   </Card>
                 )}
-
-                {/* ═══ NEW: SUGESTII SMART REABILITARE (E5) ═══ */}
-                {smartSuggestions && smartSuggestions.length > 0 && (
-                  <Card title={t("Sugestii inteligente reabilitare",lang)} badge={<Badge color="amber">{smartSuggestions.length} măsuri</Badge>}>
-                    <div className="space-y-2">
-                      {smartSuggestions.map((s, i) => (
-                        <div key={i} className="p-3 rounded-lg border" style={{
-                          background: s.priority===1 ? "rgba(239,68,68,0.03)" : s.priority===2 ? "rgba(234,179,8,0.03)" : "rgba(34,197,94,0.03)",
-                          borderColor: s.priority===1 ? "rgba(239,68,68,0.15)" : s.priority===2 ? "rgba(234,179,8,0.15)" : "rgba(34,197,94,0.15)"
-                        }}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-bold" style={{color: s.priority===1?"#ef4444":s.priority===2?"#eab308":"#22c55e"}}>
-                              {s.priority===1?"🔴 URGENT":s.priority===2?"🟡 RECOMANDAT":"🟢 OPȚIONAL"}
-                            </span>
-                            <span className="text-xs font-medium flex-1">{s.measure}</span>
-                            <Badge color={s.priority===1?"red":s.priority===2?"amber":"green"}>{s.system}</Badge>
-                          </div>
-                          <div className="text-[10px] opacity-50 mb-1">{s.detail}</div>
-                          <div className="flex flex-wrap gap-3 text-[10px]">
-                            <span className="opacity-40">Impact: <b className="text-white/70">{s.impact}</b></span>
-                            <span className="opacity-40">Cost: <b className="text-white/70">{s.costEstimate}</b></span>
-                            <span className="opacity-40">Recuperare: <b className="text-white/70">{s.payback}</b></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-                {/* ═══ COMPARAȚIE MULTI-SCENARIU — Sprint P0-C P0-05 marker explicit ═══
-                    Tabelul afișează măsurile per scenariu DIN preset-uri canonice
-                    (data/rehab-scenarios.js — 5/10/15cm pereți). Pentru EP recalculat
-                    rigoros per scenariu, auditorul trebuie să încarce preset-ul în
-                    Pas 5 (loadScenarioPreset) și să recalculeze prin motorul de
-                    instalații. Acest tabel e DOAR comparativ măsuri, nu rezultate. */}
-                <Card title={t("Comparație scenarii reabilitare",lang)} badge={<Badge color="purple">{multiScenarios.length} scenarii</Badge>}>
-                  <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border-l-2 border-amber-500/40 text-[10px] text-amber-300/80">
-                    ⚠️ Comparație măsuri (preset). Pentru EP recalculat rigoros per scenariu,
-                    încarcă preset-ul în Pas 5 și recalculează bilanțul energetic.
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-white/10">
-                          <th className="text-left py-2 px-1 opacity-40">Măsură</th>
-                          {multiScenarios.map(s => <th key={s.id} className="text-center py-2 px-2 font-bold">{s.name}</th>)}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { label:"Izolație pereți", key:"addInsulWall", detail:s=>s.insulWallThickness+"cm" },
-                          { label:"Izolație acoperiș", key:"addInsulRoof", detail:s=>s.insulRoofThickness+"cm" },
-                          { label:"Înlocuire ferestre", key:"replaceWindows", detail:s=>"U="+s.newWindowU },
-                          { label:"Panouri PV", key:"addPV", detail:s=>s.pvArea+" m²" },
-                          { label:"Pompă căldură", key:"addHP", detail:s=>"COP "+s.hpCOP },
-                          { label:"Ventilare HR", key:"addHR", detail:s=>"η="+s.hrEfficiency+"%" },
-                        ].map(row => (
-                          <tr key={row.key} className="border-b border-white/5">
-                            <td className="py-1.5 px-1 opacity-50">{row.label}</td>
-                            {multiScenarios.map(s => (
-                              <td key={s.id} className="text-center py-1.5 px-2">
-                                {s[row.key] ? <span className="text-emerald-400">✓ {row.detail(s)}</span> : <span className="opacity-20">—</span>}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="text-[10px] opacity-20 mt-2 text-center">Scenariile sunt orientative. Consultați un auditor atestat pentru analiza detaliată.</div>
-                </Card>
-
-                {/* ── Prioritizare masuri ── */}
-                <Card title={t("Prioritizare Masuri de Interventie",lang)}>
-                  <div className="space-y-4">
-                    {[1,2,3].map(prio => {
-                      const allItems = [
-                        ...envelopeAnalysis.filter(e => e.needsUpgrade && e.priority === prio).map(e => ({...e, cat:"Anvelopa"})),
-                        ...installAnalysis.filter(e => e.priority === prio).map(e => ({...e, cat:"Instalatii", name: e.system})),
-                        ...renewRecommendations.filter(e => e.priority === prio).map(e => ({...e, cat:"Regenerabile", name: e.system})),
-                      ];
-                      if (allItems.length === 0) return null;
-                      return (
-                        <div key={prio}>
-                          <div className={`text-xs font-bold uppercase mb-2 ${priorityColor(prio)}`}>
-                            {prio === 1 ? "🔴 Prioritate 1 — Urgente" : prio === 2 ? "🟡 Prioritate 2 — Recomandate" : "🟢 Prioritate 3 — Optionale"}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {allItems.map((item, j) => (
-                              <div key={j} className="flex items-center gap-2 p-2 rounded bg-white/[0.03] text-xs">
-                                <span className="opacity-40">[{item.cat}]</span>
-                                <span className="font-medium">{item.name}</span>
-                                <span className="opacity-30 flex-1 text-right truncate">{item.recommendation}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
 
                 {/* ── Nota finala ── */}
                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
