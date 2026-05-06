@@ -32,9 +32,15 @@ function getUnitCosts() {
   };
 }
 
-// Reducere EP estimată [kWh/(m²·an)] per măsură față de clădire existentă
-// Valorile sunt procente din gap față de nZEB
-function calcMeasureReductions(epActual, nzebEpMax) {
+// Sprint P0-C (6 mai 2026) P0-05 — MARKER HEURISTIC EXPLICIT.
+// Aceste reduceri sunt APROXIMĂRI procentuale derivate empiric din gap-ul față
+// de nZEB; NU sunt rezultatul re-rulării motorului de calcul instalații per
+// pachet. Pentru calcul rigoros bilanț Pas 5 cu pachet specific aplicat,
+// auditorul trebuie să încarce manual scenariul în Pas 5 (loadScenarioPreset)
+// și să recalculeze EP-ul prin useInstallationSummary.
+// Pacostă tehnică deferată Sprint P1+: recalculare automată per pachet.
+// Acoperire pentru transparency: rezultat marcat cu `_isHeuristicEstimate: true`.
+function estimateMeasureReductionsHeuristic(epActual, nzebEpMax) {
   const gap = Math.max(0, epActual - nzebEpMax);
   return {
     wall_basic:    gap * 0.20,
@@ -46,8 +52,13 @@ function calcMeasureReductions(epActual, nzebEpMax) {
     pv:            Math.min(epActual * 0.35, 45),
     led:           epActual * 0.05,
     solar:         epActual * 0.06,
+    _isHeuristicEstimate: true,
+    _calculationNote: "Aproximare procentuală gap-vs-nZEB. Pentru calcul exact, "
+      + "încarcă pachetul în Pas 5 + recalculează prin motorul de instalații.",
   };
 }
+// Backward compat — păstrează numele vechi pentru orice import existent.
+const calcMeasureReductions = estimateMeasureReductionsHeuristic;
 
 export function calcRehabPackages(params) {
   const {

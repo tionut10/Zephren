@@ -833,8 +833,17 @@ export default function Step7Audit(props) {
                   </Card>
                 )}
 
-                {/* ═══ NEW: COMPARAȚIE MULTI-SCENARIU (C4) ═══ */}
+                {/* ═══ COMPARAȚIE MULTI-SCENARIU — Sprint P0-C P0-05 marker explicit ═══
+                    Tabelul afișează măsurile per scenariu DIN preset-uri canonice
+                    (data/rehab-scenarios.js — 5/10/15cm pereți). Pentru EP recalculat
+                    rigoros per scenariu, auditorul trebuie să încarce preset-ul în
+                    Pas 5 (loadScenarioPreset) și să recalculeze prin motorul de
+                    instalații. Acest tabel e DOAR comparativ măsuri, nu rezultate. */}
                 <Card title={t("Comparație scenarii reabilitare",lang)} badge={<Badge color="purple">{multiScenarios.length} scenarii</Badge>}>
+                  <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border-l-2 border-amber-500/40 text-[10px] text-amber-300/80">
+                    ⚠️ Comparație măsuri (preset). Pentru EP recalculat rigoros per scenariu,
+                    încarcă preset-ul în Pas 5 și recalculează bilanțul energetic.
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>

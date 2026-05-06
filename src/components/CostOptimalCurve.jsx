@@ -128,6 +128,13 @@ function generatePackagesExtended(building, instSummary, energyPrices) {
                    + 10 * P.renewables.pv_battery_kwh
                    + P.bacs.class_c_to_b;
 
+  // Sprint P0-C (6 mai 2026) P0-05 — MARKER HEURISTIC EXPLICIT.
+  // Reducerile EP per pachet (ep_final = epActual * factor) sunt aproximări
+  // procentuale pre-calibrate (0.85, 0.60, 0.45, 0.30, 0.15, 0.10 — calibrate
+  // empiric din date Mc 001-2022 + pachetele PNRR Casa Verde reference).
+  // Pentru calcul rigoros bilanț Pas 5, auditorul aplică pachetul în Pas 5 →
+  // motorul useInstallationSummary recalculează EP exact. Restanță sprint P1+
+  // pentru recalc automat per pachet în CostOptimalCurve.
   const packages = [
     {
       id: "baseline",
@@ -136,6 +143,7 @@ function generatePackagesExtended(building, instSummary, energyPrices) {
       ep_final: epActual,
       measures: [],
       ep_reduction_pct: 0,
+      _isHeuristicEstimate: true,
     },
     {
       id: "minimal",

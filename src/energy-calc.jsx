@@ -18,6 +18,9 @@ import { APP_VERSION } from "./data/landingData.js";
 import { T } from "./data/translations.js";
 import { PRODUCT_CATALOG, STEPS } from "./data/products.js";
 import { TYPICAL_BUILDINGS, TYPICAL_BUILDINGS_EXTRA } from "./data/typical-buildings.js";
+// Sprint P0-C (6 mai 2026) P1-04 — sursă canonică unică pentru SCENARIO_PRESETS
+// (înainte exista duplicare cu valori CONFLICTUALE între linia 438 și linia 1704).
+import { SCENARIO_PRESETS, getMultiScenariosCompact } from "./data/rehab-scenarios.js";
 import { buildRomaniaMapPoints, ROMANIA_BORDER_PATH } from "./data/map-data.js";
 
 // ── Calc imports ──
@@ -435,11 +438,9 @@ export default function EnergyCalcApp({ cloud }) {
   const [buildingPhotos, setBuildingPhotos] = useState([]); // [{url, label, zone}]
   const [showProductCatalog, setShowProductCatalog] = useState(false);
   const [productCatalogTab, setProductCatalogTab] = useState("windows");
-  const [multiScenarios, setMultiScenarios] = useState([
-    { id:"S1", name:"Minim", addInsulWall:true, insulWallThickness:"10", replaceWindows:false, addPV:false, addHP:false },
-    { id:"S2", name:"Mediu", addInsulWall:true, insulWallThickness:"15", replaceWindows:true, newWindowU:"1.00", addPV:true, pvArea:"20", addHP:false },
-    { id:"S3", name:"Maxim (nZEB)", addInsulWall:true, insulWallThickness:"20", replaceWindows:true, newWindowU:"0.80", addPV:true, pvArea:"40", addHP:true, hpCOP:"4.0", addInsulRoof:true, insulRoofThickness:"25", addHR:true, hrEfficiency:"85" },
-  ]);
+  // Sprint P0-C P1-04 — derivă din SCENARIO_PRESETS canonic (data/rehab-scenarios.js).
+  // Înainte: valori CONFLICTUALE (Minim 10cm vs MINIM 5cm). Acum unic: 5/10/15cm.
+  const [multiScenarios, setMultiScenarios] = useState(getMultiScenariosCompact());
   const [bacsClass, setBacsClass] = useState("D");
 
   // ─── Persistent Storage (auto-save/load) ───
@@ -1700,12 +1701,7 @@ export default function EnergyCalcApp({ cloud }) {
     return m.importCompareRef({ file, setCompareRef, showToast });
   }, [showToast]);
 
-  // ─── Multi-scenario presets ───
-  const SCENARIO_PRESETS = [
-    { id:"MINIM", label:"Minim (obligatoriu)", addInsulWall:true, insulWallThickness:"5", addInsulRoof:true, insulRoofThickness:"8", addInsulBasement:false, insulBasementThickness:"0", replaceWindows:false, newWindowU:"1.40", addHR:false, hrEfficiency:"0", addPV:false, pvArea:"0", addHP:false, hpCOP:"3.5", addSolarTh:false, solarThArea:"0" },
-    { id:"MEDIU", label:"Mediu (recomandat)", addInsulWall:true, insulWallThickness:"10", addInsulRoof:true, insulRoofThickness:"15", addInsulBasement:true, insulBasementThickness:"8", replaceWindows:true, newWindowU:"0.90", addHR:true, hrEfficiency:"80", addPV:true, pvArea:"20", addHP:false, hpCOP:"4.0", addSolarTh:true, solarThArea:"6" },
-    { id:"MAXIM", label:"Maxim (nZEB)", addInsulWall:true, insulWallThickness:"15", addInsulRoof:true, insulRoofThickness:"25", addInsulBasement:true, insulBasementThickness:"12", replaceWindows:true, newWindowU:"0.70", addHR:true, hrEfficiency:"90", addPV:true, pvArea:"40", addHP:true, hpCOP:"4.5", addSolarTh:true, solarThArea:"10" },
-  ];
+  // Sprint P0-C P1-04 — SCENARIO_PRESETS canonic vine din data/rehab-scenarios.js (importat top).
   const [activeScenario, setActiveScenario] = useState("MEDIU");
   const loadScenarioPreset = useCallback((presetId) => {
     var p = SCENARIO_PRESETS.find(function(s){ return s.id === presetId; });
