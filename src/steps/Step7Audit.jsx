@@ -654,52 +654,251 @@ export default function Step7Audit(props) {
                 )}
 
 
-                {/* ── Analiză amortizare investiție 20 ani ── */}
-                {rehabScenario && instSummary && (
-                <Card title={lang==="EN"?"20-Year Investment Amortization":"Amortizare investiție 20 ani"}>
-                  <svg viewBox="0 0 400 160" width="100%" height="140">
-                    {(() => {
-                      var costTotal = rehabScenario.costTotal || 30000;
-                      var annualSaving = Math.max(100, (instSummary.qf_total - (rehabScenario.qfRehab||instSummary.qf_total*0.6)) * 0.15);
-                      var discountRate = 0.03;
-                      var energyInflation = 0.05;
-                      var years = 20, data = [], cumCash = -costTotal, cumNPV = -costTotal;
-                      for (var y = 0; y <= years; y++) {
-                        var saving = y === 0 ? 0 : annualSaving * Math.pow(1 + energyInflation, y - 1);
-                        cumCash += saving;
-                        cumNPV += y === 0 ? 0 : saving / Math.pow(1 + discountRate, y);
-                        data.push({y:y, cumCash:cumCash, cumNPV:cumNPV - costTotal + costTotal});
-                      }
-                      var minV = Math.min.apply(null, data.map(function(d){return Math.min(d.cumCash,d.cumNPV)}));
-                      var maxV = Math.max.apply(null, data.map(function(d){return Math.max(d.cumCash,d.cumNPV)}));
-                      var range = Math.max(maxV - minV, 1);
-                      var oX = 40, cW = 340, cH = 110, bY = 140;
-                      var els = [];
-                      // Zero line
-                      var zeroY = bY - ((0 - minV) / range) * cH;
-                      els.push(<line key="z" x1={oX} y1={zeroY} x2={oX+cW} y2={zeroY} stroke="#666" strokeWidth="0.5" strokeDasharray="3 2"/>);
-                      els.push(<text key="zt" x={oX-4} y={zeroY+3} textAnchor="end" fontSize="6" fill="#888">0</text>);
-                      // Cash flow line
-                      var cashPts = data.map(function(d,i){return (oX+i*cW/years)+","+(bY-((d.cumCash-minV)/range)*cH)}).join(" ");
-                      els.push(<polyline key="cf" points={cashPts} fill="none" stroke="#22c55e" strokeWidth="2"/>);
-                      // Payback marker
-                      for (var pi = 1; pi < data.length; pi++) {
-                        if (data[pi-1].cumCash < 0 && data[pi].cumCash >= 0) {
-                          var px = oX + pi * cW / years;
-                          els.push(<circle key="pb" cx={px} cy={zeroY} r="4" fill="#22c55e"/>);
-                          els.push(<text key="pbt" x={px} y={zeroY-8} textAnchor="middle" fontSize="7" fill="#22c55e" fontWeight="bold">An {pi}</text>);
-                          break;
-                        }
-                      }
-                      // Labels
-                      els.push(<text key="y0" x={oX} y={bY+10} fontSize="6" fill="#888">0</text>);
-                      els.push(<text key="y20" x={oX+cW} y={bY+10} textAnchor="end" fontSize="6" fill="#888">20 ani</text>);
-                      els.push(<text key="ti" x={200} y={12} textAnchor="middle" fontSize="7" fill="#22c55e">Flux cumulat (verde) | Economie: {annualSaving.toFixed(0)} EUR/an | Cost: {costTotal.toFixed(0)} EUR</text>);
-                      return els;
-                    })()}
-                  </svg>
-                </Card>
-                )}
+                {/* ── Analiză amortizare investiție 20 ani ──
+                    Sprint Pas 7 docs follow-up (6 mai 2026) — refactor major:
+                    grafic mărit (viewBox 800×420), Y-axis cu 5 etichete EUR,
+                    gridlines orizontale, 2 linii (cash flow verde + NPV albastru),
+                    linie verticală payback distinctă, etichete cantitative
+                    pe fiecare punct cheie, legendă mare cu IRR + ROI 20 ani. */}
+                {rehabScenario && instSummary && (() => {
+                  const costTotal = rehabScenario.costTotal || 30000;
+                  const annualSaving = Math.max(100,
+                    (instSummary.qf_total - (rehabScenario.qfRehab || instSummary.qf_total * 0.6)) * 0.15
+                  );
+                  const discountRate = 0.04; // Reg. UE 2025/2273 financial private
+                  const energyInflation = 0.03; // Aliniat cu Sprint 26 P1.6
+                  const years = 20;
+
+                  const data = [];
+                  let cumCash = -costTotal;
+                  let cumNPV = -costTotal;
+                  let paybackYear = null;
+                  let paybackYearNPV = null;
+                  for (let y = 0; y <= years; y++) {
+                    const saving = y === 0 ? 0 : annualSaving * Math.pow(1 + energyInflation, y - 1);
+                    cumCash += saving;
+                    cumNPV += y === 0 ? 0 : saving / Math.pow(1 + discountRate, y);
+                    data.push({ y, cumCash, cumNPV, annualSaving: saving });
+                    if (paybackYear === null && y > 0 && cumCash >= 0) paybackYear = y;
+                    if (paybackYearNPV === null && y > 0 && cumNPV >= 0) paybackYearNPV = y;
+                  }
+                  // Interpolare lineară mai precisă pentru payback
+                  if (paybackYear !== null && paybackYear > 0) {
+                    const prev = data[paybackYear - 1];
+                    const curr = data[paybackYear];
+                    if (prev.cumCash < 0) {
+                      const frac = -prev.cumCash / (curr.cumCash - prev.cumCash);
+                      paybackYear = paybackYear - 1 + frac;
+                    }
+                  }
+
+                  const totalReturn = data[years].cumCash;
+                  const npv20 = data[years].cumNPV;
+                  const roiPct = costTotal > 0 ? (totalReturn / costTotal) * 100 : 0;
+                  // IRR aproximare prin scanare
+                  let irr = 0;
+                  for (let r = 0.01; r <= 0.50; r += 0.005) {
+                    let npv = -costTotal;
+                    for (let y = 1; y <= years; y++) {
+                      npv += (annualSaving * Math.pow(1 + energyInflation, y - 1)) / Math.pow(1 + r, y);
+                    }
+                    if (npv >= 0) { irr = r; break; }
+                  }
+
+                  // Plot dimensiuni: viewBox 800×420 (mărit ~3× față de 400×160)
+                  const W = 800, H = 420;
+                  const padL = 70, padR = 30, padT = 60, padB = 50;
+                  const cW = W - padL - padR;
+                  const cH = H - padT - padB;
+
+                  const minV = Math.min(...data.map(d => Math.min(d.cumCash, d.cumNPV)));
+                  const maxV = Math.max(...data.map(d => Math.max(d.cumCash, d.cumNPV)));
+                  const range = Math.max(maxV - minV, 1);
+
+                  const xAt = (y) => padL + (y / years) * cW;
+                  const yAt = (v) => padT + cH - ((v - minV) / range) * cH;
+                  const zeroY = yAt(0);
+
+                  // Y-axis ticks (5 valori)
+                  const yTicks = [];
+                  for (let i = 0; i <= 4; i++) {
+                    const v = minV + (range * i / 4);
+                    yTicks.push(v);
+                  }
+
+                  return (
+                  <Card title={lang === "EN" ? "20-Year Investment Amortization" : "Amortizare investiție 20 ani"}
+                        className="border-emerald-500/30">
+                    {/* Sumar metrici (deasupra graficului) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                        <div className="text-[10px] opacity-50 mb-1">INVESTIȚIE</div>
+                        <div className="text-lg font-bold text-amber-400">{costTotal.toLocaleString("ro-RO")} €</div>
+                        <div className="text-[10px] opacity-40">cost lucrări (fără TVA)</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                        <div className="text-[10px] opacity-50 mb-1">ECONOMIE/AN</div>
+                        <div className="text-lg font-bold text-emerald-400">{annualSaving.toFixed(0)} €/an</div>
+                        <div className="text-[10px] opacity-40">la prețuri 2025 (+3%/an)</div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                        <div className="text-[10px] opacity-50 mb-1">PAYBACK SIMPLU</div>
+                        <div className="text-lg font-bold text-emerald-400">
+                          {paybackYear !== null ? `${paybackYear.toFixed(1)} ani` : "> 20 ani"}
+                        </div>
+                        <div className="text-[10px] opacity-40">
+                          {paybackYear !== null && paybackYear < 5 ? "⚠ Verifică costul" : "fără actualizare"}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/10">
+                        <div className="text-[10px] opacity-50 mb-1">IRR (rata internă)</div>
+                        <div className="text-lg font-bold text-blue-400">{(irr * 100).toFixed(1)}%</div>
+                        <div className="text-[10px] opacity-40">ROI 20 ani: {roiPct.toFixed(0)}%</div>
+                      </div>
+                    </div>
+
+                    {/* Graficul mare */}
+                    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ minHeight: 320 }}>
+                      {/* Background gradient */}
+                      <defs>
+                        <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#22c55e" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Title in chart */}
+                      <text x={W / 2} y={20} textAnchor="middle" fontSize="14" fill="#e5e7eb" fontWeight="bold">
+                        Flux numerar cumulat — investiție vs. economii
+                      </text>
+                      <text x={W / 2} y={40} textAnchor="middle" fontSize="11" fill="#94a3b8">
+                        Ipoteze: inflație energie {(energyInflation * 100).toFixed(0)}%/an · rată actualizare NPV {(discountRate * 100).toFixed(0)}%/an
+                      </text>
+
+                      {/* Y-axis gridlines + labels */}
+                      {yTicks.map((v, i) => (
+                        <g key={`y${i}`}>
+                          <line x1={padL} y1={yAt(v)} x2={padL + cW} y2={yAt(v)}
+                                stroke="#374151" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" />
+                          <text x={padL - 8} y={yAt(v) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">
+                            {(v / 1000).toFixed(1)}k €
+                          </text>
+                        </g>
+                      ))}
+
+                      {/* X-axis gridlines (la fiecare 5 ani) */}
+                      {[0, 5, 10, 15, 20].map(yr => (
+                        <g key={`x${yr}`}>
+                          <line x1={xAt(yr)} y1={padT} x2={xAt(yr)} y2={padT + cH}
+                                stroke="#374151" strokeWidth="1" strokeDasharray="2 3" opacity="0.4" />
+                          <text x={xAt(yr)} y={padT + cH + 18} textAnchor="middle" fontSize="11" fill="#94a3b8">
+                            An {yr}
+                          </text>
+                        </g>
+                      ))}
+
+                      {/* Zero line — prag de amortizare */}
+                      <line x1={padL} y1={zeroY} x2={padL + cW} y2={zeroY}
+                            stroke="#fbbf24" strokeWidth="2" strokeDasharray="6 4" />
+                      <text x={padL + cW + 4} y={zeroY + 4} fontSize="10" fill="#fbbf24" fontWeight="bold">
+                        Prag amortizare
+                      </text>
+
+                      {/* Area sub curba cash flow (verde) */}
+                      {(() => {
+                        const pts = data.map(d => `${xAt(d.y)},${yAt(d.cumCash)}`).join(" ");
+                        return (
+                          <polygon
+                            points={`${padL},${zeroY} ${pts} ${padL + cW},${zeroY}`}
+                            fill="url(#cashGrad)"
+                          />
+                        );
+                      })()}
+
+                      {/* Linie cash flow (verde, groasă) */}
+                      <polyline
+                        points={data.map(d => `${xAt(d.y)},${yAt(d.cumCash)}`).join(" ")}
+                        fill="none" stroke="#22c55e" strokeWidth="3"
+                      />
+
+                      {/* Linie NPV (albastră, întreruptă) */}
+                      <polyline
+                        points={data.map(d => `${xAt(d.y)},${yAt(d.cumNPV)}`).join(" ")}
+                        fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="5 4"
+                      />
+
+                      {/* Puncte la fiecare 5 ani pe linia verde */}
+                      {[0, 5, 10, 15, 20].map(yr => (
+                        <g key={`pt${yr}`}>
+                          <circle cx={xAt(yr)} cy={yAt(data[yr].cumCash)} r="4" fill="#22c55e" stroke="#0a0a0a" strokeWidth="1.5" />
+                          <text x={xAt(yr)} y={yAt(data[yr].cumCash) - 10} textAnchor="middle" fontSize="9" fill="#22c55e" fontWeight="bold">
+                            {Math.round(data[yr].cumCash / 1000)}k
+                          </text>
+                        </g>
+                      ))}
+
+                      {/* Payback marker — linie verticală + cerc + text */}
+                      {paybackYear !== null && paybackYear <= years && (
+                        <g>
+                          <line x1={xAt(paybackYear)} y1={padT} x2={xAt(paybackYear)} y2={padT + cH}
+                                stroke="#fbbf24" strokeWidth="2" />
+                          <circle cx={xAt(paybackYear)} cy={zeroY} r="6" fill="#fbbf24" stroke="#0a0a0a" strokeWidth="2" />
+                          <rect x={xAt(paybackYear) - 38} y={padT + 4} width="76" height="22" rx="4"
+                                fill="#fbbf24" />
+                          <text x={xAt(paybackYear)} y={padT + 18} textAnchor="middle" fontSize="11" fill="#000" fontWeight="bold">
+                            PAYBACK
+                          </text>
+                          <text x={xAt(paybackYear)} y={padT + 32} textAnchor="middle" fontSize="11" fill="#fbbf24" fontWeight="bold">
+                            An {paybackYear.toFixed(1)}
+                          </text>
+                        </g>
+                      )}
+
+                      {/* Legendă jos */}
+                      <g transform={`translate(${padL}, ${H - 20})`}>
+                        <rect x="0" y="-4" width="20" height="3" fill="#22c55e" />
+                        <text x="26" y="0" fontSize="11" fill="#22c55e" fontWeight="bold">Flux numerar cumulat (nominal)</text>
+                        <line x1="240" y1="-2" x2="260" y2="-2" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="5 4" />
+                        <text x="266" y="0" fontSize="11" fill="#3b82f6" fontWeight="bold">Flux actualizat (NPV @ {(discountRate * 100).toFixed(0)}%)</text>
+                        <line x1="500" y1="-2" x2="520" y2="-2" stroke="#fbbf24" strokeWidth="2" strokeDasharray="6 4" />
+                        <text x="526" y="0" fontSize="11" fill="#fbbf24" fontWeight="bold">Prag amortizare 0 €</text>
+                      </g>
+                    </svg>
+
+                    {/* Detalii payback + total return jos */}
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+                        <div className="text-emerald-300 font-bold mb-1">📈 Total câștig 20 ani</div>
+                        <div className="text-base font-bold text-emerald-400">
+                          {totalReturn > 0 ? "+" : ""}{Math.round(totalReturn).toLocaleString("ro-RO")} €
+                        </div>
+                        <div className="text-[10px] opacity-50 mt-1">
+                          ROI total: {roiPct.toFixed(0)}% peste investiția inițială
+                        </div>
+                      </div>
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                        <div className="text-blue-300 font-bold mb-1">💰 NPV 20 ani (actualizat)</div>
+                        <div className="text-base font-bold text-blue-400">
+                          {npv20 > 0 ? "+" : ""}{Math.round(npv20).toLocaleString("ro-RO")} €
+                        </div>
+                        <div className="text-[10px] opacity-50 mt-1">
+                          Payback NPV: {paybackYearNPV !== null ? `${paybackYearNPV} ani` : "> 20 ani"}
+                        </div>
+                      </div>
+                      <div className={`${paybackYear !== null && paybackYear < 5 ? "bg-amber-500/15 border-amber-500/40" : "bg-white/5 border-white/10"} border rounded-lg p-3`}>
+                        <div className={`${paybackYear !== null && paybackYear < 5 ? "text-amber-300" : "text-slate-300"} font-bold mb-1`}>
+                          {paybackYear !== null && paybackYear < 5 ? "⚠ Atenție validare" : "ℹ️ Validare cost"}
+                        </div>
+                        <div className="text-[11px] opacity-80">
+                          {paybackYear !== null && paybackYear < 5
+                            ? "Payback < 5 ani e neobișnuit. Verifică costurile reale în Devizul detaliat."
+                            : "Costul afișat e estimat. Devizul detaliat (PDF) folosește aceleași REHAB_COSTS."}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                  );
+                })()}
 
                 {/* ── Scenariu Reabilitat — Comparatie ── */}
                 {rehabScenario && (
@@ -1117,9 +1316,13 @@ export default function Step7Audit(props) {
                       if (!rehabComparison) { showToast("Configurați scenariul de reabilitare în Pasul 5", "error"); return; }
                       try {
                         showToast("Se generează devizul PDF...", "info", 2000);
+                        // Sprint Pas 7 docs follow-up — pasăm opaqueElements
+                        // pentru ca Devizul să folosească arii REALE din Step 2
+                        // (nu estimări heuristice Au × 3.5) prin buildCanonicalMeasures.
                         await generateRehabEstimatePDF({
                           building, auditor,
-                          rehabScenarioInputs, glazingElements,
+                          rehabScenarioInputs,
+                          opaqueElements, glazingElements,
                           rehabComparison,
                           download: true,
                         });

@@ -2780,93 +2780,28 @@ export async function generateRehabEstimatePDF(opts) {
     const ri = rehabScenarioInputs;
     const Au = parseFloat(building.areaUseful) || 0;
 
-    // Build measure list (mirror Step 7 inline TXT logic)
-    const measures = [];
+    // Sprint Pas 7 docs (6 mai 2026) follow-up — migrare la sursa canonică unică.
+    // Anterior, Devizul folosea estimări heuristice `Au × 3.5` pentru pereți și
+    // prețuri hardcoded (45 €/m²) DIFERITE de REHAB_COSTS (42 €/m² la 10cm),
+    // producând diferențe majore față de CPE Estimat și Pașaport (28.281 € vs
+    // 15.369 €). Acum toate cele 3 documente folosesc buildCanonicalMeasures.
+    const opaqueElementsArr = opts.opaqueElements || [];
+    const { buildCanonicalMeasures } = await import("../calc/unified-rehab-costs.js");
+    const canonical = buildCanonicalMeasures(ri, opaqueElementsArr, glazingElements);
+
+    // Adaptor: format canonical → format așteptat de tabelul Deviz existent.
     let totalEUR = 0;
-    let nr = 1;
-
-    const push = (denumire, cantitate, unitate, pret, costEur, detalii = "") => {
-      totalEUR += costEur;
-      measures.push({
-        nr: nr++,
-        denumire,
-        cantitate: `${cantitate} ${unitate}`,
-        pret: `${pret} €/${unitate}`,
-        cost: costEur,
-        detalii,
-      });
-    };
-
-    if (ri.addInsulWall) {
-      const cant = Au * 3.5;
-      const cost = cant * 45;
-      push(
-        `Termoizolație pereți ETICS (${ri.insulWallThickness} cm)`,
-        cant.toFixed(0), "m²", "45", cost,
-        "Sistem ETICS conform SR EN 13499/13500, EPS grafitat sau vată minerală"
-      );
-    }
-    if (ri.addInsulRoof) {
-      const cant = Au * 1.1;
-      const cost = cant * 35;
-      push(
-        `Termoizolație acoperiș (${ri.insulRoofThickness} cm)`,
-        cant.toFixed(0), "m²", "35", cost,
-        "Vată minerală sau XPS, barieră de vapori SR EN ISO 6946"
-      );
-    }
-    if (ri.addInsulBasement) {
-      const cant = Au;
-      const cost = cant * 25;
-      push(
-        `Izolație planșeu subsol (${ri.insulBasementThickness} cm)`,
-        cant.toFixed(0), "m²", "25", cost,
-        "Vată minerală sau polistiren extrudat la pardoseala subsol"
-      );
-    }
-    if (ri.replaceWindows) {
-      const wArea = glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-      const cost = wArea * 280;
-      push(
-        `Înlocuire tâmplărie (U_w=${ri.newWindowU} W/m²K)`,
-        wArea.toFixed(1), "m²", "280", cost,
-        "PVC sau aluminiu cu rupere de punte termică, geam Low-E argon"
-      );
-    }
-    if (ri.addHR) {
-      const cost = Au * 12;
-      push(
-        `Ventilare mecanică cu recuperare (η=${ri.hrEfficiency}%)`,
-        "1", "buc", `${(Au * 12).toFixed(0)} €`, cost,
-        "Centrală HRV cu schimbător contracurent, distribuție tubulatură"
-      );
-    }
-    if (ri.addPV) {
-      const cant = parseFloat(ri.pvArea || 0);
-      const cost = cant * 350;
-      push(
-        `Panouri fotovoltaice (${ri.pvArea} m²)`,
-        cant.toFixed(0), "m²", "350", cost,
-        "Module monocristaline + invertor on-grid + montaj acoperiș"
-      );
-    }
-    if (ri.addHP) {
-      const cost = Au * 55;
-      push(
-        `Pompă de căldură (COP=${ri.hpCOP})`,
-        "1", "buc", `${(Au * 55).toFixed(0)} €`, cost,
-        "Pompă aer-apă cu rezervor tampon, integrare ACM"
-      );
-    }
-    if (ri.addSolarTh) {
-      const cant = parseFloat(ri.solarThArea || 0);
-      const cost = cant * 500;
-      push(
-        `Colectoare solare termice (${ri.solarThArea} m²)`,
-        cant.toFixed(0), "m²", "500", cost,
-        "Colectoare plane sau tuburi vidate + boiler bivalent + sistem reglare"
-      );
-    }
+    const measures = canonical.map((c, idx) => {
+      totalEUR += c.costEUR;
+      return {
+        nr: idx + 1,
+        denumire: c.label,
+        cantitate: `${c.qty.toFixed(c.unit === "buc" ? 0 : 1)} ${c.unit}`,
+        pret: `${c.unitPriceEUR.toFixed(0)} €/${c.unit}`,
+        cost: Math.round(c.costEUR),
+        detalii: c.normativ || "",
+      };
+    });
 
     if (measures.length === 0) {
       throw new Error("Nu există măsuri active în scenariul de reabilitare. Activați cel puțin o măsură în Pasul 5.");

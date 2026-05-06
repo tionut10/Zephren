@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔧",
+        "text": "fix(pas7-docs): rezolv 8 issues critice + 1 P1 din review documente generate"
+      },
+      {
         "icon": "✨",
         "text": "feat(pas7): generare CPE post-reabilitare + Pașaport extins multi-page + centralizare butoane"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "💰",
         "text": "landing: descriere fondator actualizată cu funcțiile AI integrate (OCR, planșe PDF, text liber, asistent reabi"
-      },
-      {
-        "icon": "🔸",
-        "text": "landing: mutat 2019 pe același rând cu Brașov în cardul fondator"
       }
     ]
   },
