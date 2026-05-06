@@ -1301,6 +1301,55 @@ export default function Step7Audit(props) {
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all text-sm font-bold sm:col-span-2">
                       <span>🏠</span> CPE Estimat Post-Reabilitare (PDF) — clasă proiectată după lucrări
                     </button>
+                    {/* Sprint 06may2026 audit P0 — Cover Letter MDLPA pentru depunere fizică
+                        până la 8.VII.2026 când portalul electronic devine operațional
+                        (Ord. 348/2026 Art. 19 alin. 3). Folosește cover-letter-pdf.js. */}
+                    <button
+                      onClick={async () => {
+                        try {
+                          showToast("Se generează Scrisoare de însoțire MDLPA...", "info", 3000);
+                          const { generateCoverLetterPdf } = await import("../lib/cover-letter-pdf.js");
+                          const cpeCode = building?.cpeCode || building?.cpeNumber
+                            || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
+                          await generateCoverLetterPdf({
+                            auditor: {
+                              name: auditor?.name,
+                              atestat: auditor?.atestat,
+                              grade: auditor?.grade,
+                              mdlpaCode: auditor?.mdlpaCode || auditor?.codUnicMDLPA,
+                              attestationIssueDate: auditor?.attestationIssueDate,
+                            },
+                            building: {
+                              address: building?.address,
+                              cadastralNumber: building?.cadastralNumber,
+                              locality: building?.locality || building?.city,
+                              county: building?.county,
+                              yearBuilt: building?.yearBuilt,
+                              areaUseful: building?.areaUseful,
+                              category: building?.category,
+                            },
+                            cpeCode,
+                            attachments: [
+                              { name: "CPE — XML schema MDLPA Mc 001-2022", sizeMB: 0.01 },
+                              { name: "CPE — DOCX (cu semnătură + ștampilă auditor)", sizeMB: 0.5 },
+                              { name: "Anexă A1+A2 MDLPA Ord. 16/2023", sizeMB: 0.3 },
+                              { name: "Raport audit energetic — Cap. 1-8", sizeMB: 0.6 },
+                              { name: "Anexe tehnice (opace + vitraj + punți + sisteme)", sizeMB: 0.2 },
+                              { name: "Pașaport renovare EPBD 2024 (PDF + XML)", sizeMB: 0.4 },
+                              ...(building?.ancpi?.fileName
+                                ? [{ name: `Extras CF: ${building.ancpi.fileName}`, sizeMB: (building.ancpi.fileSize || 0) / 1e6 }]
+                                : []),
+                            ],
+                          });
+                          showToast("✓ Scrisoare de însoțire MDLPA descărcată", "success", 4000);
+                        } catch (e) {
+                          console.error("[Step7] cover letter:", e);
+                          showToast("Eroare generare Scrisoare însoțire: " + e.message, "error", 6000);
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
+                      <span>📨</span> Scrisoare de însoțire MDLPA (PDF) — depunere fizică până la 8.VII.2026
+                    </button>
                   </div>
                 </div>
 

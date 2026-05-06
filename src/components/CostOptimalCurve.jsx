@@ -181,7 +181,11 @@ function generatePackagesExtended(building, instSummary, energyPrices) {
       id: "nzeb_integral",
       label: "5. nZEB-Integral (+VMC+PV)",
       invest_eur: pkg5Invest,
-      ep_final: Math.max(COST_OPTIMAL_REF * 0.9, epActual * 0.15),
+      // Sprint 06may2026 audit P0 (B12) — Math.max → Math.min cu cap absolut.
+      // Anterior pe clădiri G (epActual=781): max(45, 117) = 117 kWh > 50 prag →
+      // pachet nZEB marcat „NU" la cost-opt (incoerent cu definiția pachetului).
+      // Acum garantăm EP_final ≤ 45 (sub pragul 50 Reg. UE 2025/2273) cu floor 15.
+      ep_final: Math.min(COST_OPTIMAL_REF * 0.9, Math.max(15, epActual * 0.15)),
       measures: ["Anvelopă EPS 15cm", "Acoperiș 25cm MW", "Ferestre U≤0.90", "PC aer-apă", "VMC HR 90%", "PV 5kWp", "LED+DALI"],
       ep_reduction_pct: 85,
     },
@@ -189,7 +193,8 @@ function generatePackagesExtended(building, instSummary, energyPrices) {
       id: "nzeb_plus_res",
       label: "6. nZEB+RES (baterie+BACS)",
       invest_eur: pkg6Invest,
-      ep_final: Math.max(COST_OPTIMAL_REF * 0.7, epActual * 0.10),
+      // Sprint 06may2026 audit P0 (B12) — Math.max → Math.min cu cap absolut.
+      ep_final: Math.min(COST_OPTIMAL_REF * 0.7, Math.max(10, epActual * 0.10)),
       measures: ["Tot nZEB-Integral", "Baterie 10kWh", "BACS clasa B"],
       ep_reduction_pct: 90,
     },
