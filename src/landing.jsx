@@ -473,8 +473,8 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                   {/* Bio */}
                   <p style={{ fontSize: "13px", color: textMuted, lineHeight: "1.65", margin: "0 0 16px" }}>
                     {lang === "EN"
-                      ? "Zephren integrates AI natively into every stage of energy calculation: automatic OCR from energy bills, intelligent PDF plan import, natural text conversation for data entry, and an AI assistant for rehabilitation recommendations. Methodology compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
-                      : "Zephren integrează nativ inteligența artificială în fiecare etapă a calculului energetic: OCR automat din facturi de energie, import planșe PDF prin analiză vizuală avansată, completare prin conversație în text liber și asistent AI pentru recomandări de reabilitare. Metodologie conformă Mc 001-2022 și Ord. MDLPA 348/2026."}
+                      ? "Zephren was built to eliminate repetitive data entry from energy auditing. Today it integrates AI natively at every stage: OCR from energy bills, PDF plan import, natural conversation input and automatic rehabilitation recommendations — all compliant with Mc 001-2022 and MDLPA Ord. 348/2026."
+                      : "Zephren a apărut din nevoia unui instrument care să elimine munca repetitivă din auditul energetic. Astăzi integrează nativ AI în fiecare etapă: OCR din facturi, import planșe PDF, completare prin conversație și recomandări automate de reabilitare — totul conform Mc 001-2022 și Ord. MDLPA 348/2026."}
                   </p>
 
                 </div>
