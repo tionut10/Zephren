@@ -404,6 +404,7 @@ export default function Step6Certificate(props) {
                     // Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
                     cpe_code: auditor.cpeCode || "",
                     registry_index: auditor.registryIndex || "1",
+                    nr_mdlpa: auditor.nrMDLPA || "",
                     // Sprint 15 — Semnătură + ștampilă (PNG base64 dataURL, fără prefix)
                     signature_png_b64: auditor.signatureDataURL ? (auditor.signatureDataURL.split(",")[1] || "") : "",
                     stamp_png_b64: auditor.stampDataURL ? (auditor.stampDataURL.split(",")[1] || "") : "",
@@ -2468,10 +2469,10 @@ ${(() => {
                           <span>Format așteptat: CPE-XXXXX/AAAA sau numeric</span>
                         </div>
                       )}
-                      {/* Index registru local — număr secvențial în arhiva auditorului */}
+                      {/* Număr în registrul auditorului + număr înregistrare MDLPA — apar în footer Anexa 1+2 */}
                       <div className="mt-3">
                         <Input
-                          label="Index registru local"
+                          label="Nr. în registrul auditorului"
                           value={auditor.registryIndex || "1"}
                           onChange={v => {
                             const cleaned = v.replace(/[^0-9]/g, "").slice(0, 6) || "1";
@@ -2480,7 +2481,18 @@ ${(() => {
                           placeholder="1"
                         />
                         <div className="text-[9px] opacity-40 mt-1">
-                          Se incrementează automat la fiecare CPE exportat · salvat în arhiva Zephren
+                          Număr secvențial din registrul personal · se incrementează automat la fiecare export
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Input
+                          label="Nr. înregistrare național MDLPA"
+                          value={auditor.nrMDLPA || ""}
+                          onChange={v => setAuditor(p => ({ ...p, nrMDLPA: v.trim() }))}
+                          placeholder="ex: 500318"
+                        />
+                        <div className="text-[9px] opacity-40 mt-1">
+                          Completat după upload pe portalul MDLPA · apare în footer Anexa 1+2 ca: {auditor.registryIndex || "1"} / {auditor.nrMDLPA || "......"}
                         </div>
                       </div>
 

@@ -5939,10 +5939,18 @@ class handler(BaseHTTPRequestHandler):
                                 run.text = run.text[:m.start()] + f" {acm_pts} " + run.text[m.end():]
                                 break
 
-                # ── Footer: afișează direct codul CPE, fără prefixul "Numărul certificatului..." ──
-                cpe_code_footer = data.get("cpe_code", "") or data.get("auditor_mdlpa", "")
-                if cpe_code_footer:
-                    cpe_short = cpe_code_footer[:50] + ("..." if len(cpe_code_footer) > 50 else "")
+                # ── Footer: "Numărul certificatului în registrul auditorului: X / Y" ──
+                # Structura template: "Numărul certificatului în registrul auditorului............"
+                # Înlocuim NUMAI dots-urile cu "registryIndex / nrMDLPA" (textul dinaintea dots rămâne intact).
+                nr_registru = str(data.get("registry_index", "") or "").strip()
+                nr_mdlpa_val = str(data.get("nr_mdlpa", "") or "").strip()
+                if nr_registru or nr_mdlpa_val:
+                    if nr_registru and nr_mdlpa_val:
+                        nr_footer = f"{nr_registru} / {nr_mdlpa_val}"
+                    elif nr_registru:
+                        nr_footer = nr_registru
+                    else:
+                        nr_footer = nr_mdlpa_val
                     try:
                         for section in doc.sections:
                             for footer_type in ("first_page_footer", "even_page_footer", "footer"):
@@ -5952,34 +5960,20 @@ class handler(BaseHTTPRequestHandler):
                                 for p in footer.paragraphs:
                                     if "registrul auditorului" not in p.text:
                                         continue
-                                    # Structura template: run0="Numărul certificatului în registrul auditorului"
-                                    # run1="............" (dots placeholder) → ambele trebuie tratate.
-                                    # Strategie: parcurgem TOATE run-urile paragrafului:
-                                    #   - run cu "registrul auditorului" → devine cpe_short
-                                    #   - run-uri ULTERIOARE cu NUMAI dots/spații → golim
-                                    #   - run-uri cu "Semnătura" sau conținut real → stop
-                                    replaced_idx = None
-                                    for ri, run in enumerate(p.runs):
-                                        if "registrul auditorului" in run.text:
-                                            run.text = cpe_short
-                                            replaced_idx = ri
+                                    # Înlocuiește run-ul cu dots (placeholder) cu nr_footer.
+                                    # Textul "Numărul certificatului în registrul auditorului" rămâne intact.
+                                    replaced = False
+                                    for run in p.runs:
+                                        if re.search(r"\.{4,}", run.text):
+                                            run.text = re.sub(r"\.{4,}", nr_footer, run.text, count=1)
+                                            replaced = True
                                             break
-                                        if re.search(r"Num[ăa]rul|certificatului", run.text):
-                                            run.text = cpe_short
-                                            replaced_idx = ri
-                                            break
-                                    if replaced_idx is not None:
-                                        # Curăță run-urile de dots care urmează imediat
-                                        for run in p.runs[replaced_idx + 1:]:
-                                            if re.match(r'^[.\s\xa0  \t]+$', run.text):
-                                                run.text = ""
-                                            elif run.text.strip():
-                                                break  # conținut real → stop
-                                    else:
-                                        # Fallback: înlocuiește dots dacă există
+                                    if not replaced:
+                                        # Fallback: dacă dots sunt în același run cu textul
                                         for run in p.runs:
-                                            if re.search(r"\.{4,}", run.text):
-                                                run.text = re.sub(r"\.{4,}", cpe_short, run.text, count=1)
+                                            if re.search(r"[ \s]{4,}", run.text) and "auditorului" in run.text:
+                                                run.text = run.text.rstrip() + nr_footer
+                                                replaced = True
                                                 break
                     except Exception:
                         pass

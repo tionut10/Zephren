@@ -155,6 +155,22 @@ function addPageFooter(doc, normative, pageNum) {
   doc.text(`${BRAND} ${VERSION}  |  Pagina ${pageNum}`, w - 10, h - 6, { align: "right" });
 }
 
+// ── Utilitar: footer Anexa 1+2 — conform template MDLPA ──────
+// Format: [Nr. registru auditor]  [Semnătura și ștampila]  [pag X]
+function addAnexaFooter(doc, nrRegistru, nrMDLPA, pageNum) {
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  doc.setDrawColor(180); doc.setLineWidth(0.2);
+  doc.line(10, h - 11, w - 10, h - 11);
+  doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(80);
+  const nrComplet = nrRegistru
+    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
+    : (nrMDLPA || "............");
+  doc.text(`Numărul certificatului în registrul auditorului: ${nrComplet}`, 10, h - 6);
+  doc.text("Semnătura și ștampila auditorului", w / 2, h - 6, { align: "center" });
+  doc.text(`pag ${pageNum}`, w - 10, h - 6, { align: "right" });
+}
+
 // ── Utilitar: secțiune titlu ──────────────────────────────────
 function sectionTitle(doc, text, y) {
   const w = doc.internal.pageSize.getWidth();
@@ -1292,6 +1308,9 @@ function _renderAnexa1(doc, startPageNum, opts) {
     calcOpaqueR,
   } = opts;
 
+  const nrRegistru = auditor?.registryIndex || "";
+  const nrMDLPA   = auditor?.nrMDLPA || "";
+
   const w = doc.internal.pageSize.getWidth();
   const title = "CPE — ANEXA 1 (Date generale și tehnice)";
   const audName = auditor?.name || "";
@@ -1312,15 +1331,19 @@ function _renderAnexa1(doc, startPageNum, opts) {
   addPageHeader(doc, title, audName, today);
   let y = 26;
 
-  // Titlu mare
-  doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
-  doc.text("CERTIFICAT DE PERFORMANȚĂ ENERGETICĂ", w / 2, y, { align: "center" });
+  // Titlu mare — conform model oficial MDLPA
+  doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+  doc.text("RECOMANDĂRI PENTRU CREȘTEREA PERFORMANȚEI ENERGETICE", w / 2, y, { align: "center" });
   y += 6;
-  doc.setFontSize(10); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_A);
-  doc.text("ANEXA 1 — Date generale și tehnice", w / 2, y, { align: "center" });
+  const nrCompletA1 = nrRegistru
+    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
+    : "......";
+  doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_A);
+  doc.text(`ANEXA 1 la Certificatul de performanță energetică nr. ${nrCompletA1}`, w / 2, y, { align: "center" });
   y += 5;
-  doc.setFontSize(7); doc.setTextColor(...COL_G);
-  doc.text("Conform Mc 001-2022 și Ordinul MDLPA nr. 16/2023", w / 2, y, { align: "center" });
+  doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+  const adresaA1 = [building?.address, building?.city].filter(Boolean).join(", ");
+  doc.text(`pentru CLĂDIREA/UNITATEA DE CLĂDIRE/APARTAMENTUL${adresaA1 ? ` din ${adresaA1}` : ""}`, w / 2, y, { align: "center" });
   y += 10;
 
   // ── Badge clasă energetică (stânga, text valori dreapta cu spațiu generos) ──
@@ -1371,7 +1394,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
     ],
   });
 
-  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 52000-1", page);
+  addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
 
   // ══════ PAGINA 2: Geometrie + U-values ══════
   doc.addPage(); page++;
@@ -1455,7 +1478,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
     });
   }
 
-  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 6946", page);
+  addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
 
   // ══════ PAGINA 3: Instalații ══════
   doc.addPage(); page++;
@@ -1573,7 +1596,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
     });
   }
 
-  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | EN 15232-1 | SR EN 15193", page);
+  addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
 
   // ══════ PAGINA 4: Indicator energetic + date auditor ══════
   doc.addPage(); page++;
@@ -1666,7 +1689,7 @@ function _renderAnexa1(doc, startPageNum, opts) {
     } catch { /* ignore bad image */ }
   }
 
-  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | SR EN ISO 52000-1", page);
+  addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
 
   return page; // pentru wrapper — ultima pagină utilizată
 }
@@ -1679,8 +1702,11 @@ function _renderAnexa2(doc, startPageNum, opts) {
     rehabScenarios, financialAnalysis,
   } = opts;
 
+  const nrRegistru = auditor?.registryIndex || "";
+  const nrMDLPA   = auditor?.nrMDLPA || "";
+
   const w = doc.internal.pageSize.getWidth();
-  const title = "CPE — ANEXA 2 (Recomandări de îmbunătățire)";
+  const title = "CPE — ANEXA 2 (Date tehnice instalații)";
   const audName = auditor?.name || "";
   const today = dateRO();
   let page = startPageNum || 1;
@@ -1688,14 +1714,18 @@ function _renderAnexa2(doc, startPageNum, opts) {
   addPageHeader(doc, title, audName, today);
   let y = 26;
 
-  doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
-  doc.text("ANEXA 2 — RECOMANDĂRI DE ÎMBUNĂTĂȚIRE", w / 2, y, { align: "center" });
+  const nrCompletA2 = nrRegistru
+    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
+    : "......";
+  doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+  doc.text("DATE TEHNICE PRIVIND EVALUAREA PERFORMANȚEI ENERGETICE", w / 2, y, { align: "center" });
   y += 6;
-  doc.setFontSize(9); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
-  doc.text("Măsuri prioritizate pentru reducerea consumului energetic și a emisiilor CO₂", w / 2, y, { align: "center" });
-  y += 4;
-  doc.setFontSize(7);
-  doc.text(`${building?.address || ""} · ${building?.city || ""} · ${auditor?.date ? new Date(auditor.date).toLocaleDateString("ro-RO") : dateRO()}`, w / 2, y, { align: "center" });
+  doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_A);
+  doc.text(`ANEXA 2 la Certificatul de performanță energetică nr. ${nrCompletA2}`, w / 2, y, { align: "center" });
+  y += 5;
+  doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+  const adresaA2 = [building?.address, building?.city].filter(Boolean).join(", ");
+  doc.text(`pentru APARTAMENTUL${adresaA2 ? ` din ${adresaA2}` : ""}`, w / 2, y, { align: "center" });
   y += 10;
 
   // ── Preambul normativ ──
@@ -1938,7 +1968,7 @@ function _renderAnexa2(doc, startPageNum, opts) {
     } catch { /* ignore */ }
   }
 
-  addPageFooter(doc, "Mc 001-2022 | Ord. MDLPA 16/2023 | EPBD 2024/1275", page);
+  addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
 
   return page;
 }
