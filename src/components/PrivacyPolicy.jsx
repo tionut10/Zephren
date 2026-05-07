@@ -39,7 +39,7 @@ export default function PrivacyPolicy({ theme = "dark" }) {
           <p style={{ ...P, color: muted }}>
             <strong>ZEPHREN S.R.L.</strong>, cu sediul social în B-dul Libertății,
             nr. 38, ap. 4, Bușteni, jud. Prahova, România.
-            CUI: 54561142 | Nr. Reg. Com.: J29/2027529009.
+            CUI: 54561142 | Nr. Reg. Com.: J2026027529009.
             <br />Contact Protecție Date: <a href="mailto:privacy@zephren.ro" style={{ color: "#f59e0b" }}>privacy@zephren.ro</a>.
           </p>
         </div>

@@ -29,7 +29,7 @@ export default function TermsOfService({ theme = "dark" }) {
           <p style={{ ...P, color: muted }}>
             Serviciul Zephren („Serviciul”) este furnizat de <strong>ZEPHREN S.R.L.</strong>,
             sediu social B-dul Libertății, nr. 38, ap. 4, Bușteni, jud. Prahova, România.
-            CUI: 54561142 | Nr. Reg. Com.: J29/2027529009.
+            CUI: 54561142 | Nr. Reg. Com.: J2026027529009.
           </p>
         </div>
 

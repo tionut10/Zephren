@@ -1308,7 +1308,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           ))}
         </div>
         <p style={{ fontSize: "11px", color: isDark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.45)", margin: 0 }}>
-          © {new Date().getFullYear()} ZEPHREN S.R.L. · CUI 54561142 · J29/2027529009 · Toate drepturile rezervate
+          © {new Date().getFullYear()} ZEPHREN S.R.L. · CUI 54561142 · J2026027529009 · Toate drepturile rezervate
         </p>
       </footer>
 
