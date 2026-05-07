@@ -4612,7 +4612,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                       { name: "n50 blower-door (real)", value: building.n50 ? `${building.n50} h⁻¹` : "—", target: "≤ 1.5 h⁻¹ (rezidențial nZEB)" },
                       { name: "EP final test", value: instSummary?.ep_total_m2 ? `${Number(instSummary.ep_total_m2).toFixed(1)} kWh/m²·an` : "—", target: "≤ valoare proiect" },
                     ],
-                    auditor,
+                    auditor: systems?.auditor,
                   });
                 } catch (e) { console.error(e); alert("Eroare: " + e.message); }
               }}
