@@ -90,13 +90,13 @@ def render_ep_distribution_chart(ep_per_service, cls_per_service, width_px=1200,
             return None
 
         # Margini și layout
-        MARGIN_L = 200      # spațiu pentru etichete utilitate
-        MARGIN_R = 150      # spațiu pentru valoare + clasă
-        MARGIN_T = 60
-        MARGIN_B = 40
+        MARGIN_L = 240      # spațiu pentru etichete utilitate (font mărit 18pt)
+        MARGIN_R = 200      # spațiu pentru valoare + clasă (font mărit 18pt)
+        MARGIN_T = 80       # spațiu titlu mărit 26pt + subtitlu 18pt
+        MARGIN_B = 50
         bar_area_w = width_px - MARGIN_L - MARGIN_R
         bar_area_h = height_px - MARGIN_T - MARGIN_B
-        bar_height = max(20, int(bar_area_h / max(1, len(items)) * 0.7))
+        bar_height = max(30, int(bar_area_h / max(1, len(items)) * 0.7))
         bar_spacing = int(bar_area_h / max(1, len(items)))
 
         # Valoarea maximă pentru scalare proporțională
@@ -110,18 +110,18 @@ def render_ep_distribution_chart(ep_per_service, cls_per_service, width_px=1200,
 
         # Title
         try:
-            title_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
-            label_font = _PIL_ImageFont.truetype("DejaVuSans.ttf", 14)
-            value_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 14)
+            title_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
+            label_font = _PIL_ImageFont.truetype("DejaVuSans.ttf", 18)
+            value_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 18)
         except Exception:
             # Fallback la default font dacă DejaVu lipsește (Vercel Linux base)
             title_font = _PIL_ImageFont.load_default()
             label_font = _PIL_ImageFont.load_default()
             value_font = _PIL_ImageFont.load_default()
 
-        draw.text((MARGIN_L, 15), "Distribuția EP per utilitate (kWh/m²·an)",
+        draw.text((MARGIN_L, 12), "Distribuția EP per utilitate (kWh/m²·an)",
                   fill=(13, 71, 161), font=title_font)
-        draw.text((MARGIN_L, 38),
+        draw.text((MARGIN_L, 46),
                   "Conform Mc 001-2022 §5.1 + Tab I.1 (clase per serviciu)",
                   fill=(100, 100, 130), font=label_font)
 
@@ -134,29 +134,29 @@ def render_ep_distribution_chart(ep_per_service, cls_per_service, width_px=1200,
             draw.rectangle([MARGIN_L, y, MARGIN_L + bar_w, y + bar_height],
                            fill=color, outline=(50, 50, 50), width=1)
             # Etichetă utilitate (la stânga)
-            draw.text((10, y + bar_height // 2 - 8), name,
+            draw.text((10, y + bar_height // 2 - 10), name,
                       fill=(0, 0, 0), font=label_font)
             # Valoare + clasă (la dreapta)
             value_text = f"{val:.1f} kWh/m²·an"
-            draw.text((MARGIN_L + bar_w + 8, y + bar_height // 2 - 12), value_text,
+            draw.text((MARGIN_L + bar_w + 10, y + bar_height // 2 - 16), value_text,
                       fill=(0, 0, 0), font=value_font)
             class_text = f"({cls})"
-            draw.text((MARGIN_L + bar_w + 8, y + bar_height // 2 + 4), class_text,
+            draw.text((MARGIN_L + bar_w + 10, y + bar_height // 2 + 6), class_text,
                       fill=color, font=value_font)
 
         # Legendă culori clase (jos)
         legend_y = MARGIN_T + len(items) * bar_spacing + 15
-        if legend_y < height_px - 25:
+        if legend_y < height_px - 30:
             legend_x = MARGIN_L
             draw.text((legend_x, legend_y), "Clasă:", fill=(80, 80, 100), font=label_font)
-            legend_x += 60
+            legend_x += 80
             for cls in ["A+", "A", "B", "C", "D", "E", "F", "G"]:
                 color = _ENERGY_CLASS_COLORS[cls]
-                draw.rectangle([legend_x, legend_y, legend_x + 18, legend_y + 14],
+                draw.rectangle([legend_x, legend_y, legend_x + 22, legend_y + 18],
                                fill=color, outline=(50, 50, 50))
-                draw.text((legend_x + 22, legend_y - 2), cls,
+                draw.text((legend_x + 26, legend_y - 1), cls,
                           fill=(0, 0, 0), font=label_font)
-                legend_x += 52
+                legend_x += 64
 
         # Export PNG bytes
         buf = io.BytesIO()
@@ -5741,7 +5741,7 @@ class handler(BaseHTTPRequestHandler):
                                 v = 0.0
                             ep_dict[label] = v
                             cls_dict[label] = (data.get(cls_key) or "—").strip() or "—"
-                        png_bytes = render_ep_distribution_chart(ep_dict, cls_dict, 1100, 500)
+                        png_bytes = render_ep_distribution_chart(ep_dict, cls_dict, 1300, 600)
                         if png_bytes:
                             # Adăugăm chart-ul ca poză imediat după ultimul tabel modificat
                             # (deja în context Anexa apartament). Adăugăm la finalul body
@@ -5753,10 +5753,10 @@ class handler(BaseHTTPRequestHandler):
                                 "Distribuția vizuală a consumului EP per utilitate"
                             )
                             chart_title_run.bold = True
-                            chart_title_run.font.size = Pt(10)
+                            chart_title_run.font.size = Pt(13)
                             chart_p = doc.add_paragraph()
                             chart_p.alignment = _WD_AL.CENTER
-                            chart_p.add_run().add_picture(io.BytesIO(png_bytes), width=Cm(15.5))
+                            chart_p.add_run().add_picture(io.BytesIO(png_bytes), width=Cm(16.5))
                             chart_caption_p = doc.add_paragraph()
                             chart_caption_p.alignment = _WD_AL.CENTER
                             chart_caption_run = chart_caption_p.add_run(
@@ -5765,7 +5765,7 @@ class handler(BaseHTTPRequestHandler):
                                 "claselor energetice oficiale MDLPA."
                             )
                             chart_caption_run.italic = True
-                            chart_caption_run.font.size = Pt(8)
+                            chart_caption_run.font.size = Pt(10)
                             from docx.shared import RGBColor as _RGB13
                             chart_caption_run.font.color.rgb = _RGB13(0x60, 0x60, 0x80)
                 except Exception as _chart_err:
