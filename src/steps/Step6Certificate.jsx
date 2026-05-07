@@ -4004,10 +4004,12 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           - CPE DOCX (mereu)
                           - Anexa 1+2 DOCX (mereu)
                           - Anexa Bloc DOCX (dacă apartments > 0)
-                          - XML MDLPA (mereu)
+                          - Anexa MDLPA portal XML (Ord. 348/2026, obligatoriu 8.VII.2026)
                           - Raport nZEB DOCX (dacă plan permite)
+                        Sprint 08may2026: înlocuit XML-ul vechi Ord. 16/2023 cu XML portal
+                        Ord. 348/2026 pentru consistență cu butoanele standalone păstrate.
                         Util pentru auditori care depun pachetul integral
-                        la beneficiar / OAR / Primărie într-o singură arhivă. */}
+                        la beneficiar / OAR / Primărie / portal MDLPA într-o singură arhivă. */}
                     <button
                       disabled={!dataComplete || isGeneratingDocx}
                       onClick={async () => {
@@ -4039,15 +4041,31 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             if (blocBlob) zip.file(`3_Anexa_Bloc_${addrSlug}_${dateSlug}.docx`, blocBlob);
                           }
 
-                          // 4. XML MDLPA — CR-4 (7 mai 2026): folosim helper-ul reutilizabil
-                          // buildFullCpeXml() care produce XML complet (DateIdentificare +
-                          // Auditor + Cladire + Anvelopa + Instalatii + RezultateEnergetice +
-                          // Penalizari) — identic cu XML-ul descărcat individual prin
-                          // generateXMLMDLPA. Înlocuiește versiunea minimal-truncată anterioară.
+                          // 4. Anexa MDLPA portal XML — Sprint 08may2026 (FOLLOWUP):
+                          // Înlocuit XML-ul vechi Ord. 16/2023 (buildFullCpeXml) cu XML-ul portal
+                          // Anexa MDLPA Ord. 348/2026 Art. 4 alin. 6 (operațional 8.VII.2026).
+                          // Motiv consistență: butonul standalone „Export XML MDLPA Ord. 16/2023"
+                          // a fost eliminat (format intern fără destinatar); pachetul folosește
+                          // acum XML-ul oficial pentru portalul MDLPA care devine obligatoriu legal.
                           try {
-                            const xmlFull = buildFullCpeXml();
-                            if (xmlFull) {
-                              zip.file(`4_XML_MDLPA_${addrSlug}_${dateSlug}.xml`, xmlFull);
+                            const { generateAnexaMdlpaXml } = await import("../lib/anexa-mdlpa-xml.js");
+                            const cpeCodeForXml = auditor.cpeCode || auditor.mdlpaCode || "";
+                            if (cpeCodeForXml) {
+                              const xmlResult = generateAnexaMdlpaXml({
+                                cpeCode: cpeCodeForXml,
+                                building, instSummary, renewSummary, envelopeSummary, auditor,
+                                auditorAttestation: {
+                                  issueDate: auditor.attestationIssueDate,
+                                  gradeMdlpa: auditor.gradMdlpa || auditor.grade,
+                                },
+                                energyClass: enClass,
+                                co2Class,
+                                issueDate: auditor.date ? new Date(auditor.date) : new Date(),
+                                validityYears: getValidityYears(enClass?.cls),
+                              });
+                              if (xmlResult?.xml) {
+                                zip.file(`4_Anexa_MDLPA_portal_${addrSlug}_${dateSlug}.xml`, xmlResult.xml);
+                              }
                             }
                           } catch { /* XML opt — ZIP rămâne valid fără el */ }
 
@@ -4068,11 +4086,11 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             "  1_CPE — Certificatul de Performanță Energetică (DOCX, format MDLPA)",
                             "  2_Anexa — Anexa 1+2 (date tehnice + recomandări)",
                             ((building.apartments || []).length > 0) ? "  3_Anexa_Bloc — Tabel multi-apartament (RC)" : "",
-                            "  4_XML_MDLPA — Format registru electronic (Ord. 16/2023)",
+                            "  4_Anexa_MDLPA_portal — XML pentru portalul MDLPA (Ord. 348/2026 Art. 4 alin. 6, obligatoriu 8.VII.2026)",
                             nzebReportHtml ? "  5_Raport_nZEB — Raport conformare nZEB (HTML)" : "",
                             "",
-                            "Cadru legal: L.372/2005 republicată (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023).",
-                            "Atestare auditor: Ord. MDLPA 348/2026 (intrat în vigoare 14.04.2026).",
+                            "Cadru legal: L.372/2005 republicată (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023),",
+                            "Ord. MDLPA 348/2026 (atestare + portal electronic, intrat în vigoare 14.04.2026).",
                             "",
                             "Audit Zephren — 2 mai 2026 / P2.7 (pachet complet ZIP).",
                           ].filter(Boolean).join("\n"));
@@ -4109,8 +4127,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           </div>
                           <div className="text-[10px] opacity-60">
                             {lang === "EN"
-                              ? "CPE + Annex 1+2 + Block (if RC) + XML MDLPA + nZEB report (if available)"
-                              : "CPE + Anexa 1+2 + Bloc (dacă RC) + XML MDLPA + Raport nZEB (dacă disponibil)"}
+                              ? "CPE + Annex 1+2 + Block (if RC) + MDLPA portal XML + nZEB report (if available)"
+                              : "CPE + Anexa 1+2 + Bloc (dacă RC) + Anexă portal MDLPA XML + Raport nZEB (dacă disponibil)"}
                           </div>
                         </div>
                       </div>
