@@ -1,2 +1,7 @@
 python-docx==1.1.2
 segno==1.6.1
+# #13 (audit Pas 6+7 V8, 7 mai 2026) — Pillow pentru generare grafic
+# distribuție EP per utilitate (bar chart colorat A+..G) în Anexa 2 DOCX.
+# Variantă lightweight (~5MB) față de matplotlib (~55MB cu numpy — peste
+# limita Vercel Hobby 50MB function size).
+Pillow==10.4.0

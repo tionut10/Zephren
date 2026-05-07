@@ -29,6 +29,143 @@ except ImportError:  # pragma: no cover — dev fallback
     segno = None
     _SEGNO_AVAILABLE = False
 
+# ── #13 (audit Pas 6+7 V8, 7 mai 2026) — Pillow pentru bar chart EP per utilitate ──
+try:
+    from PIL import Image as _PIL_Image, ImageDraw as _PIL_ImageDraw, ImageFont as _PIL_ImageFont  # type: ignore
+    _PIL_AVAILABLE = True
+except ImportError:  # pragma: no cover — dev fallback (Vercel cold start poate lipsi temporar)
+    _PIL_Image = None
+    _PIL_ImageDraw = None
+    _PIL_ImageFont = None
+    _PIL_AVAILABLE = False
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# #13 — GENERATOR BAR CHART EP PER UTILITATE (PILLOW)
+# ═══════════════════════════════════════════════════════════════════════
+# Render distribuția consumului energetic per utilitate (Mc 001-2022 §5.1)
+# ca PNG cu bar chart orizontal colorat după clasă energetică A+..G
+# (culorile standard MDLPA verde→roșu).
+#
+# Variantă LIGHTWEIGHT (Pillow only, fără matplotlib) — bundle <10MB pentru
+# compatibilitate Vercel Hobby. Suficient pentru o vizualizare clară a
+# distribuției EP per serviciu (încălzire / ACM / răcire / ventilare / iluminat)
+# în Anexa 2 DOCX. Pentru vizualizări mai elaborate (Sankey energy flow),
+# necesită upgrade la Vercel Pro + matplotlib.
+
+# Culori clase energetice — identice cu _COL_FILLS folosite la utility cells
+_ENERGY_CLASS_COLORS = {
+    "A+": (0, 155, 0),     # #009B00 — verde închis
+    "A":  (50, 200, 49),   # #32C831
+    "B":  (0, 255, 0),     # #00FF00
+    "C":  (255, 255, 0),   # #FFFF00
+    "D":  (243, 156, 0),   # #F39C00
+    "E":  (255, 100, 0),   # #FF6400
+    "F":  (254, 65, 1),    # #FE4101
+    "G":  (254, 0, 0),     # #FE0000
+    "—":  (180, 180, 180), # gri pentru clasă necunoscută
+}
+
+
+def render_ep_distribution_chart(ep_per_service, cls_per_service, width_px=1200, height_px=600):
+    """Generează un bar chart orizontal cu EP per utilitate, colorat după clasă.
+
+    Args:
+        ep_per_service: dict {nume_serviciu: ep_value_kwh_m2}
+            ex: {"Încălzire": 641.0, "ACM": 171.8, "Răcire": 0.0, ...}
+        cls_per_service: dict {nume_serviciu: clasă_string}
+            ex: {"Încălzire": "G", "ACM": "G", "Răcire": "A+", ...}
+        width_px / height_px: dimensiuni imagine PNG.
+
+    Returns:
+        bytes — conținut PNG, sau None dacă Pillow indisponibil.
+    """
+    if not _PIL_AVAILABLE:
+        return None
+    try:
+        # Filtrăm utilități cu valoare > 0 (păstrăm ordinea de inserare a dict-ului)
+        items = [(name, val, cls_per_service.get(name, "—"))
+                 for name, val in ep_per_service.items() if val > 0]
+        if not items:
+            return None
+
+        # Margini și layout
+        MARGIN_L = 200      # spațiu pentru etichete utilitate
+        MARGIN_R = 150      # spațiu pentru valoare + clasă
+        MARGIN_T = 60
+        MARGIN_B = 40
+        bar_area_w = width_px - MARGIN_L - MARGIN_R
+        bar_area_h = height_px - MARGIN_T - MARGIN_B
+        bar_height = max(20, int(bar_area_h / max(1, len(items)) * 0.7))
+        bar_spacing = int(bar_area_h / max(1, len(items)))
+
+        # Valoarea maximă pentru scalare proporțională
+        max_val = max(v for _, v, _ in items)
+        if max_val <= 0:
+            return None
+
+        # Create canvas
+        img = _PIL_Image.new("RGB", (width_px, height_px), (255, 255, 255))
+        draw = _PIL_ImageDraw.Draw(img)
+
+        # Title
+        try:
+            title_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+            label_font = _PIL_ImageFont.truetype("DejaVuSans.ttf", 14)
+            value_font = _PIL_ImageFont.truetype("DejaVuSans-Bold.ttf", 14)
+        except Exception:
+            # Fallback la default font dacă DejaVu lipsește (Vercel Linux base)
+            title_font = _PIL_ImageFont.load_default()
+            label_font = _PIL_ImageFont.load_default()
+            value_font = _PIL_ImageFont.load_default()
+
+        draw.text((MARGIN_L, 15), "Distribuția EP per utilitate (kWh/m²·an)",
+                  fill=(13, 71, 161), font=title_font)
+        draw.text((MARGIN_L, 38),
+                  "Conform Mc 001-2022 §5.1 + Tab I.1 (clase per serviciu)",
+                  fill=(100, 100, 130), font=label_font)
+
+        # Draw bars
+        for i, (name, val, cls) in enumerate(items):
+            y = MARGIN_T + i * bar_spacing
+            bar_w = int(bar_area_w * val / max_val)
+            color = _ENERGY_CLASS_COLORS.get(cls, _ENERGY_CLASS_COLORS["—"])
+            # Border bar (chenar negru subțire pentru contrast)
+            draw.rectangle([MARGIN_L, y, MARGIN_L + bar_w, y + bar_height],
+                           fill=color, outline=(50, 50, 50), width=1)
+            # Etichetă utilitate (la stânga)
+            draw.text((10, y + bar_height // 2 - 8), name,
+                      fill=(0, 0, 0), font=label_font)
+            # Valoare + clasă (la dreapta)
+            value_text = f"{val:.1f} kWh/m²·an"
+            draw.text((MARGIN_L + bar_w + 8, y + bar_height // 2 - 12), value_text,
+                      fill=(0, 0, 0), font=value_font)
+            class_text = f"({cls})"
+            draw.text((MARGIN_L + bar_w + 8, y + bar_height // 2 + 4), class_text,
+                      fill=color, font=value_font)
+
+        # Legendă culori clase (jos)
+        legend_y = MARGIN_T + len(items) * bar_spacing + 15
+        if legend_y < height_px - 25:
+            legend_x = MARGIN_L
+            draw.text((legend_x, legend_y), "Clasă:", fill=(80, 80, 100), font=label_font)
+            legend_x += 60
+            for cls in ["A+", "A", "B", "C", "D", "E", "F", "G"]:
+                color = _ENERGY_CLASS_COLORS[cls]
+                draw.rectangle([legend_x, legend_y, legend_x + 18, legend_y + 14],
+                               fill=color, outline=(50, 50, 50))
+                draw.text((legend_x + 22, legend_y - 2), cls,
+                          fill=(0, 0, 0), font=label_font)
+                legend_x += 52
+
+        # Export PNG bytes
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+    except Exception as _err:
+        print(f"[render_ep_distribution_chart] eroare: {_err}", flush=True)
+        return None
+
 
 # ═══════════════════════════════════════════════════════
 # A4 PORTRAIT ENFORCEMENT — Ord. MDLPA 16/2023 Anexa 1
@@ -5577,6 +5714,62 @@ class handler(BaseHTTPRequestHandler):
                         break
                 except Exception as e_t3:
                     print(f"[tabel_3_sisteme] eroare: {e_t3}", flush=True)
+
+                # ── #13 (audit Pas 6+7 V8, 7 mai 2026) — Bar chart EP per utilitate ──
+                # Distribuția consumului energetic per utilitate vizualizată ca bar chart
+                # orizontal colorat după clasă (Mc 001-2022 §5.1 + Tab I.1). Adăugat după
+                # Tab 3 (clase per utilitate text) pentru claritate vizuală suplimentară.
+                # NU înlocuiește tabelul oficial — îl COMPLEMENTEAZĂ.
+                # Generat cu Pillow (lightweight ~5MB) în loc de matplotlib (~55MB peste
+                # limita Vercel Hobby). Skip silent dacă Pillow indisponibil.
+                try:
+                    if _PIL_AVAILABLE:
+                        # Construim dict-uri ordonate pentru chart
+                        ep_dict = {}
+                        cls_dict = {}
+                        _SERVICES_MAP = [
+                            ("Încălzire",  "ep_incalzire", "cls_incalzire"),
+                            ("ACM",        "ep_acm",       "cls_acm"),
+                            ("Răcire",     "ep_racire",    "cls_racire"),
+                            ("Ventilare",  "ep_ventilare", "cls_ventilare"),
+                            ("Iluminat",   "ep_iluminat",  "cls_iluminat"),
+                        ]
+                        for label, ep_key, cls_key in _SERVICES_MAP:
+                            try:
+                                v = float((data.get(ep_key, "0") or "0").replace(",", "."))
+                            except (ValueError, TypeError):
+                                v = 0.0
+                            ep_dict[label] = v
+                            cls_dict[label] = (data.get(cls_key) or "—").strip() or "—"
+                        png_bytes = render_ep_distribution_chart(ep_dict, cls_dict, 1100, 500)
+                        if png_bytes:
+                            # Adăugăm chart-ul ca poză imediat după ultimul tabel modificat
+                            # (deja în context Anexa apartament). Adăugăm la finalul body
+                            # cu titlu propriu pentru claritate.
+                            from docx.enum.text import WD_ALIGN_PARAGRAPH as _WD_AL
+                            chart_title_p = doc.add_paragraph()
+                            chart_title_p.alignment = _WD_AL.CENTER
+                            chart_title_run = chart_title_p.add_run(
+                                "Distribuția vizuală a consumului EP per utilitate"
+                            )
+                            chart_title_run.bold = True
+                            chart_title_run.font.size = Pt(10)
+                            chart_p = doc.add_paragraph()
+                            chart_p.alignment = _WD_AL.CENTER
+                            chart_p.add_run().add_picture(io.BytesIO(png_bytes), width=Cm(15.5))
+                            chart_caption_p = doc.add_paragraph()
+                            chart_caption_p.alignment = _WD_AL.CENTER
+                            chart_caption_run = chart_caption_p.add_run(
+                                "Vizualizare suplimentară Zephren conform Mc 001-2022 §5.1 + "
+                                "Tab I.1 (clasificare per serviciu). Culorile corespund "
+                                "claselor energetice oficiale MDLPA."
+                            )
+                            chart_caption_run.italic = True
+                            chart_caption_run.font.size = Pt(8)
+                            from docx.shared import RGBColor as _RGB13
+                            chart_caption_run.font.color.rgb = _RGB13(0x60, 0x60, 0x80)
+                except Exception as _chart_err:
+                    print(f"[#13 ep_chart] {_chart_err}", flush=True)
 
                 # ── Layout: elimină paragrafe goale excesive înainte de titluri de secțiune ──
                 # Template-ul Anexa apartament are 4+ paragrafe goale înainte de "DATE TEHNICE",
