@@ -5,6 +5,7 @@ import PlanGate from "../components/PlanGate.jsx";
 import PasaportBasic from "../components/PasaportBasic.jsx";
 // Sprint P0-A (6 mai 2026) — refactor Card „Pașaport de Renovare" cu plan etapizat REAL.
 import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
+import { buildCanonicalMeasures } from "../calc/unified-rehab-costs.js";
 import { getMepsThresholdsFor } from "../components/MEPSCheck.jsx";
 import { buildRenovationPassport } from "../calc/renovation-passport.js";
 import { getEurRonSync } from "../data/rehab-prices.js";
@@ -2903,6 +2904,11 @@ export default function Step7Audit(props) {
                   building={building}
                   cpeCode={auditor?.cpeCode || auditor?.mdlpaCode}
                   showToast={showToast}
+                  opaqueElements={opaqueElements}
+                  glazingElements={glazingElements}
+                  rehabScenarioInputs={rehabScenarioInputs}
+                  rehabComparison={rehabComparison}
+                  instSummary={instSummary}
                 />
 
                 {/* 3. Manifest signed CAdES (alternativ la TXT existing) */}
@@ -2988,14 +2994,84 @@ function Step7FundingBundles({ building, auditor, cpeCode, showToast }) {
   );
 }
 
-function Step7CostOptimalExports({ building, cpeCode, showToast }) {
+function Step7CostOptimalExports({
+  building,
+  cpeCode,
+  showToast,
+  opaqueElements = [],
+  glazingElements = [],
+  rehabScenarioInputs = null,
+  rehabComparison = null,
+  instSummary = null,
+}) {
   const [busy, setBusy] = useState(false);
-  // Pachete demo simple — user customizează prin Step 5/6 ulterior
-  const samplePackages = [
-    { label: "Minim — izolație 5cm", totalCost: 35000, npv: 12000, paybackYears: 8.5, epReduction: 25 },
-    { label: "Mediu — izolație 10cm + ferestre", totalCost: 65000, npv: 28000, paybackYears: 6.2, epReduction: 45 },
-    { label: "Maxim — izolație 15cm + HP + PV", totalCost: 120000, npv: 45000, paybackYears: 9.8, epReduction: 70 },
-  ];
+
+  // CR-5 (7 mai 2026) — pachete REALE calculate din buildCanonicalMeasures
+  // pe 3 scenarii (Minim 5cm / Mediu 10cm / Maxim 15cm + HP + PV) folosind
+  // ariile reale ale clădirii (opaqueElements + glazingElements). Anterior
+  // erau placeholder hardcoded (35k/65k/120k RON) inconsistente cu A2/B1/B2.
+  const samplePackages = useMemo(() => {
+    const packages = [];
+    const Au = parseFloat(building?.areaUseful) || 0;
+    const epBaseline = parseFloat(instSummary?.ep_total_m2) || 0;
+
+    // Helper: construiește un pachet din rehabScenarioInputs ad-hoc
+    const buildPackage = (label, scenarioInputs, expectedReductionPct) => {
+      try {
+        const measures = buildCanonicalMeasures(scenarioInputs, opaqueElements, glazingElements);
+        const totalCost = measures.reduce((s, m) => s + (m.costRON || 0), 0);
+        if (totalCost <= 0) return null;
+        // EP reduction estimat: pct × baseline (sau fallback 200 dacă lipsește)
+        const epRedKwh = expectedReductionPct * (epBaseline || 200) / 100;
+        // Economii anuale @ preț mediu 0.45 RON/kWh × Au
+        const annualSavingsRON = epRedKwh * Au * 0.45;
+        // Payback simplu (TVA 21% inclus în cost)
+        const totalCostTva = totalCost * 1.21;
+        const payback = annualSavingsRON > 0 ? totalCostTva / annualSavingsRON : null;
+        // NPV simplificat: economii cumulate 25 ani la rata 4%
+        const pvFactor = (1 - Math.pow(1.04, -25)) / 0.04; // ~15.62
+        const npv = annualSavingsRON * pvFactor - totalCostTva;
+        return {
+          label,
+          totalCost: Math.round(totalCost),
+          npv: Math.round(npv),
+          paybackYears: payback ? Math.round(payback * 10) / 10 : null,
+          epReduction: expectedReductionPct,
+        };
+      } catch { return null; }
+    };
+
+    // Scenariu MINIM — izolație pereți 5cm
+    const minPkg = buildPackage("Minim — izolație 5cm",
+      { addInsulWall: true, insulWallThickness: 5 }, 20);
+    if (minPkg) packages.push(minPkg);
+
+    // Scenariu MEDIU — izolație 10cm + ferestre Low-E
+    const medPkg = buildPackage("Mediu — izolație 10cm + ferestre",
+      { addInsulWall: true, insulWallThickness: 10,
+        replaceWindows: true, newWindowU: 1.10 }, 40);
+    if (medPkg) packages.push(medPkg);
+
+    // Scenariu MAXIM — izolație 15cm + HP + PV
+    const maxPkg = buildPackage("Maxim — izolație 15cm + HP + PV",
+      { addInsulWall: true, insulWallThickness: 15,
+        replaceWindows: true, newWindowU: 0.90,
+        addInsulRoof: true, insulRoofThickness: 20,
+        addHP: true, hpCOP: 4.5, hpPower: 6,
+        addPV: true, pvArea: 20 }, 65);
+    if (maxPkg) packages.push(maxPkg);
+
+    // Fallback la placeholder DOAR dacă niciun scenariu nu produce date reale
+    // (ex: building gol / opaqueElements lipsă în Step 2).
+    if (packages.length === 0) {
+      return [
+        { label: "Minim — izolație 5cm", totalCost: 35000, npv: 12000, paybackYears: 8.5, epReduction: 25 },
+        { label: "Mediu — izolație 10cm + ferestre", totalCost: 65000, npv: 28000, paybackYears: 6.2, epReduction: 45 },
+        { label: "Maxim — izolație 15cm + HP + PV", totalCost: 120000, npv: 45000, paybackYears: 9.8, epReduction: 70 },
+      ];
+    }
+    return packages;
+  }, [building, opaqueElements, glazingElements, instSummary]);
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
       <div className="text-[12px] font-semibold opacity-90">📈 Curba cost-optim (Reg. UE 244/2012)</div>
