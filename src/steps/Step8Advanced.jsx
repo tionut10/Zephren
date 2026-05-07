@@ -36,7 +36,8 @@ import AuditInvoice from "../components/AuditInvoice.jsx";
 import PVDegradation from "../components/PVDegradation.jsx";
 import CloudSyncPanel from "../components/CloudSyncPanel.jsx";
 import ContractGenerator from "../components/ContractGenerator.jsx";
-import EFacturaExport from "../components/EFacturaExport.jsx";
+// Sprint 08may2026 — eliminat import EFacturaExport (PFA sub plafon SPV; user nu emite e-Factura)
+// import EFacturaExport from "../components/EFacturaExport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 import CPETracker from "../components/CPETracker.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -124,7 +125,9 @@ export const TAB_SECTIONS = [
   { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
   { id:"facturare",     icon:"🧾", label:"Deviz servicii",           category:"cabinet" },
   { id:"contract",      icon:"📝", label:"Contract",                 category:"cabinet" },
-  { id:"efactura",      icon:"🏛️", label:"e-Factură ANAF",           category:"cabinet" },
+  // Sprint 08may2026 — tab e-Factură eliminat (PFA sub plafon SPV; user nu emite e-Factura).
+  // Reactivare la depășire plafon: decomentează linia + import EFacturaExport + bloc activeTab===efactura.
+  // { id:"efactura",      icon:"🏛️", label:"e-Factură ANAF",           category:"cabinet" },
   { id:"oferta_reab",   icon:"📄", label:"Ofertă reabilitare",       category:"cabinet" },
   { id:"team",          icon:"👥", label:"Echipă",                   category:"cabinet" },
 
@@ -342,7 +345,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showContract, setShowContract] = useState(false);
-  const [showEFactura, setShowEFactura] = useState(false);
+  // Sprint 08may2026 — eliminat state showEFactura (tab e-Factură eliminat)
+  // const [showEFactura, setShowEFactura] = useState(false);
   const [showOferta, setShowOferta] = useState(false);
 
   // ── Climate import state ──
@@ -4493,17 +4497,9 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         </Card>
       )}
 
-      {/* ═══ E-FACTURĂ ═══ */}
-      {activeTab === "efactura" && (
-        <Card className="p-4">
-          <SectionHeader icon="🏛️" title="e-Factură ANAF — XML UBL 2.1"
-            subtitle="Format RO-CIUS obligatoriu B2B din 2024 — generare și descărcare XML" />
-          <button onClick={() => setShowEFactura(true)}
-            className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-lg transition-colors text-sm">
-            🏛️ Generează e-Factură XML
-          </button>
-        </Card>
-      )}
+      {/* Sprint 08may2026 — Tab E-FACTURĂ eliminat
+          Motiv: PFA sub plafon SPV — user nu emite e-Factura prin sistem.
+          Reactivare la depășire plafon: decomentează blocul + import + tab + state. */}
 
       {/* ═══ CLOUD SYNC ═══ */}
       {activeTab === "cloud_sync" && (
@@ -4793,7 +4789,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
       {showPortfolio && <PortfolioDashboard onClose={() => setShowPortfolio(false)} onOpenProject={() => {}} />}
       {showInvoice && <AuditInvoice building={building} onClose={() => setShowInvoice(false)} />}
       {showContract && <ContractGenerator building={building} onClose={() => setShowContract(false)} />}
-      {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />}
+      {/* Sprint 08may2026 — modal EFacturaExport eliminat (tab e-Factură eliminat) */}
+      {/* {showEFactura && <EFacturaExport building={building} onClose={() => setShowEFactura(false)} />} */}
 
       {showOferta && <OfertaReabilitare building={building} instSummary={instSummary} auditor={systems?.auditor} onClose={() => setShowOferta(false)} />}
 

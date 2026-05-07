@@ -3936,58 +3936,77 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
 
                     {/* Sprint Conformitate P1-03 (7 mai 2026) — Buton NOU XML portal electronic
                          MDLPA cu schema 7 secțiuni structurate (Art. 4 alin. 6 Ord. 348/2026,
-                         operațional 8.VII.2026). Folosește anexa-mdlpa-xml.js. */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          const cpeCode = auditor.cpeCode || auditor.mdlpaCode || "";
-                          if (!cpeCode) {
-                            showToast("Setați codul CPE înainte de export XML portal", "error");
-                            return;
-                          }
-                          const { generateAnexaMdlpaXml, downloadAnexaMdlpaXml } = await import("../lib/anexa-mdlpa-xml.js");
-                          const r = generateAnexaMdlpaXml({
-                            cpeCode,
-                            building,
-                            instSummary,
-                            renewSummary,
-                            envelopeSummary,
-                            auditor,
-                            auditorAttestation: {
-                              issueDate: auditor.attestationIssueDate,
-                              gradeMdlpa: auditor.gradMdlpa || auditor.grade,
-                            },
-                            energyClass: enClass,
-                            co2Class,
-                            issueDate: auditor.date ? new Date(auditor.date) : new Date(),
-                            validityYears: getValidityYears(enClass?.cls),
-                          });
-                          if (r.errors.length > 0) {
-                            showToast(`XML portal: ${r.errors.length} erori — ${r.errors[0].message}`, "warning", 6000);
-                          }
-                          const dateSlug = new Date().toISOString().slice(0, 10);
-                          const addrSlug = (building.address || "anexa").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
-                          downloadAnexaMdlpaXml(r.xml, `Anexa_MDLPA_portal_${addrSlug}_${dateSlug}.xml`);
-                          showToast("XML portal MDLPA descărcat (schema 7 secțiuni)", "success", 3500);
-                        } catch (e) {
-                          console.error("[XML portal] eroare:", e);
-                          showToast("Eroare XML portal: " + (e?.message || "necunoscut"), "error", 5000);
-                        }
-                      }}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">🌐</span>
-                        <div className="text-left">
-                          <div className="font-medium">Export XML portal (NEW)</div>
-                          <div className="text-[10px] opacity-60">Schema 7 secțiuni · Art. 4.6 Ord. 348/2026 · 8.VII.2026</div>
-                        </div>
-                      </div>
-                    </button>
+                         operațional 8.VII.2026). Folosește anexa-mdlpa-xml.js.
+                         Sprint 08may2026 — adăugat countdown live până la 8.VII.2026
+                         (în prezent NU este obligatoriu legal — devine din 8.VII.2026). */}
+                    {(() => {
+                      const PORTAL_DEADLINE = new Date("2026-07-08T00:00:00");
+                      const now = new Date();
+                      const msPerDay = 24 * 60 * 60 * 1000;
+                      const daysUntil = Math.ceil((PORTAL_DEADLINE - now) / msPerDay);
+                      const isActive = daysUntil <= 0;
+                      const subtitleText = isActive
+                        ? `🟢 OBLIGATORIU activ · Schema 7 secțiuni · Art. 4.6 Ord. 348/2026`
+                        : `🟡 Devine obligatoriu în ${daysUntil} ${daysUntil === 1 ? "zi" : "zile"} (8.VII.2026) · Art. 4.6 Ord. 348/2026`;
+                      return (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const cpeCode = auditor.cpeCode || auditor.mdlpaCode || "";
+                              if (!cpeCode) {
+                                showToast("Setați codul CPE înainte de export XML portal", "error");
+                                return;
+                              }
+                              const { generateAnexaMdlpaXml, downloadAnexaMdlpaXml } = await import("../lib/anexa-mdlpa-xml.js");
+                              const r = generateAnexaMdlpaXml({
+                                cpeCode,
+                                building,
+                                instSummary,
+                                renewSummary,
+                                envelopeSummary,
+                                auditor,
+                                auditorAttestation: {
+                                  issueDate: auditor.attestationIssueDate,
+                                  gradeMdlpa: auditor.gradMdlpa || auditor.grade,
+                                },
+                                energyClass: enClass,
+                                co2Class,
+                                issueDate: auditor.date ? new Date(auditor.date) : new Date(),
+                                validityYears: getValidityYears(enClass?.cls),
+                              });
+                              if (r.errors.length > 0) {
+                                showToast(`XML portal: ${r.errors.length} erori — ${r.errors[0].message}`, "warning", 6000);
+                              }
+                              const dateSlug = new Date().toISOString().slice(0, 10);
+                              const addrSlug = (building.address || "anexa").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+                              downloadAnexaMdlpaXml(r.xml, `Anexa_MDLPA_portal_${addrSlug}_${dateSlug}.xml`);
+                              showToast("XML portal MDLPA descărcat (schema 7 secțiuni)", "success", 3500);
+                            } catch (e) {
+                              console.error("[XML portal] eroare:", e);
+                              showToast("Eroare XML portal: " + (e?.message || "necunoscut"), "error", 5000);
+                            }
+                          }}
+                          disabled={!instSummary}
+                          title={isActive
+                            ? "Anexă MDLPA portal — OBLIGATORIU LEGAL (Ord. 348/2026 Art. 4 alin. 6)"
+                            : `Anexă MDLPA portal — încă NU este obligatoriu legal. Devine obligatoriu pentru toate CPE depuse din 8 iulie 2026 (Ord. 348/2026 Art. 4 alin. 6). Mai sunt ${daysUntil} ${daysUntil === 1 ? "zi" : "zile"}.`}
+                          className={`w-full rounded-xl border transition-all text-sm ${
+                            !instSummary
+                              ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
+                              : isActive
+                                ? "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 cursor-pointer"
+                                : "border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                          }`}>
+                          <div className="flex items-center justify-center gap-2 px-4 py-3">
+                            <span className="text-lg">🌐</span>
+                            <div className="text-left">
+                              <div className="font-medium">Export XML portal {isActive ? "(activ)" : "(preview)"}</div>
+                              <div className="text-[10px] opacity-70">{subtitleText}</div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })()}
 
                     {/* Audit 2 mai 2026 — P2.7: Buton „Generează pachet complet"
                         Bundlează toate exporturile într-un ZIP unic:

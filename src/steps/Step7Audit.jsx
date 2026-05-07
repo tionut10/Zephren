@@ -469,26 +469,12 @@ export default function Step7Audit(props) {
                 });
               }
 
-              // A3 — Scrisoare însoțire MDLPA (PDF)
-              await addToZip(`A3_scrisoare_insotire_MDLPA_${today}.pdf`, async () => {
-                const { generateCoverLetterPdf } = await import("../lib/cover-letter-pdf.js");
-                return generateCoverLetterPdf({
-                  auditor: { name: auditor?.name, atestat: auditor?.atestat, grade: auditor?.grade, mdlpaCode: auditor?.mdlpaCode || auditor?.codUnicMDLPA, attestationIssueDate: auditor?.attestationIssueDate },
-                  building: { address: building?.address, cadastralNumber: building?.cadastralNumber, locality: building?.locality || building?.city, county: building?.county, yearBuilt: building?.yearBuilt, areaUseful: building?.areaUseful, category: building?.category },
-                  cpeCode,
-                  attachments: [
-                    { name: "CPE — XML schema MDLPA Mc 001-2022", sizeMB: 0.01 },
-                    { name: "CPE — DOCX (cu semnătură + ștampilă auditor)", sizeMB: 0.5 },
-                    { name: "Raport audit energetic — Cap. 1-8", sizeMB: 0.6 },
-                    { name: "Anexe tehnice (opace + vitraj + punți + sisteme)", sizeMB: 0.2 },
-                    { name: "Pașaport renovare EPBD 2024 (PDF + XML)", sizeMB: 0.4 },
-                  ],
-                  download: false,
-                });
-              });
+              // Sprint 08may2026 — A3 Scrisoare însoțire ELIMINAT din ZIP
+              // (nu este obligatoriu legal — codul CPE este pe certificat;
+              //  user feedback 8 mai 2026: nu folosit în practică).
 
-              // A4 — FIC (PDF)
-              await addToZip(`A4_FIC_Mc001_2022_${today}.pdf`, async () => {
+              // A4 → renumerotat A3 — FIC (PDF) — Mc 001-2022 Anexa G
+              await addToZip(`A3_FIC_Mc001_2022_${today}.pdf`, async () => {
                 const { generateFICPdf } = await import("../lib/dossier-extras.js");
                 return generateFICPdf({
                   building, auditor, climate: selectedClimate, instSummary, opaqueElements, glazingElements,
@@ -498,14 +484,12 @@ export default function Step7Audit(props) {
                 });
               });
 
-              // A5 — Declarație conformitate auditor (PDF)
-              await addToZip(`A5_declaratie_conformitate_auditor_${today}.pdf`, async () => {
-                const { generateAuditorDeclarationPdf } = await import("../lib/dossier-extras.js");
-                return generateAuditorDeclarationPdf({ auditor, building, cpeCode, download: false });
-              });
+              // Sprint 08may2026 — A5 Declarație conformitate ELIMINATĂ din ZIP
+              // (nu există în Mc 001-2022 sau ordine MDLPA ca document obligatoriu;
+              //  induce confuzie cu HG 622/2004; user feedback 8 mai 2026: nu folosită în practică).
 
-              // A6 — Manifest SHA-256 (TXT)
-              await addToZip(`A6_manifest_SHA256_${today}.txt`, async () => {
+              // A6 → renumerotat A4 — Manifest SHA-256 (TXT)
+              await addToZip(`A4_manifest_SHA256_${today}.txt`, async () => {
                 const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
                 const r = await generateManifestSHA256({
                   files: [
@@ -517,8 +501,8 @@ export default function Step7Audit(props) {
                 return r?.blob;
               });
 
-              // A7 — Plan M&V IPMVP (PDF)
-              await addToZip(`A7_plan_MV_IPMVP_${today}.pdf`, async () => {
+              // A7 → renumerotat A5 — Plan M&V IPMVP (PDF)
+              await addToZip(`A5_plan_MV_IPMVP_${today}.pdf`, async () => {
                 const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
                 const measuresFromSugg = (smartSuggestions || []).map(s => ({
                   name: s.measure,
@@ -1486,7 +1470,7 @@ export default function Step7Audit(props) {
                   className="w-full flex items-center justify-center gap-3 px-4 py-3.5 mb-5 rounded-xl border-2 border-emerald-400/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/80 transition-all font-bold text-sm shadow-lg shadow-emerald-900/20">
                   <span className="text-lg">📦</span>
                   <span>Descarcă toate documentele (ZIP)</span>
-                  <span className="text-[10px] font-normal opacity-60 ml-1">A1–A7 + B1–B2 + C1–C3</span>
+                  <span className="text-[10px] font-normal opacity-60 ml-1">A1–A5 + B1–B2 + C1–C3</span>
                 </button>
                 {/* ── Secțiunea A: DOCUMENTE OFICIALE (auditor → client) ── */}
                 <div className="mb-4">
@@ -1532,8 +1516,9 @@ export default function Step7Audit(props) {
                           showToast("Eroare generare Dosar Audit: " + e.message, "error", 6000);
                         }
                       }}
-                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
-                      <span>📋</span> Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8
+                      title="🟢 OBLIGATORIU LEGAL pentru auditul energetic — Mc 001-2022 §11 + Ord. 2237/2010 anexa 1 (conținut minim raport audit). Include bilanț energetic + recomandări cuantificate cu costuri + reconciliere consum."
+                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-all text-sm font-bold sm:col-span-2">
+                      <span>🟢</span><span>📋</span> Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8 · OBLIGATORIU LEGAL
                     </button>
                     <button
                       onClick={async () => {
@@ -1557,157 +1542,115 @@ export default function Step7Audit(props) {
                           showToast("Eroare generare CPE estimat: " + e.message, "error", 6000);
                         }
                       }}
+                      title="🟡 OPȚIONAL — proiecție clasă energetică după lucrări. Util pentru beneficiar / bancă / finanțator (PNRR, AFM Casa Verde) ca evidență a îmbunătățirii așteptate. NU este un CPE oficial — CPE-ul oficial se emite doar pe stare reală post-execuție. Necesită scenariu reabilitare configurat la Pas 5."
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all text-sm font-bold sm:col-span-2">
-                      <span>🏠</span> CPE Estimat Post-Reabilitare (PDF) — clasă proiectată după lucrări
+                      <span>🟡</span><span>🏠</span> CPE Estimat Post-Reabilitare (PDF) — clasă proiectată după lucrări
                     </button>
-                    {/* Sprint 06may2026 audit P0 — Cover Letter MDLPA pentru depunere fizică
-                        până la 8.VII.2026 când portalul electronic devine operațional
-                        (Ord. 348/2026 Art. 19 alin. 3). Folosește cover-letter-pdf.js. */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          showToast("Se generează Scrisoare de însoțire MDLPA...", "info", 3000);
-                          const { generateCoverLetterPdf } = await import("../lib/cover-letter-pdf.js");
-                          const cpeCode = building?.cpeCode || building?.cpeNumber
-                            || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
-                          await generateCoverLetterPdf({
-                            auditor: {
-                              name: auditor?.name,
-                              atestat: auditor?.atestat,
-                              grade: auditor?.grade,
-                              mdlpaCode: auditor?.mdlpaCode || auditor?.codUnicMDLPA,
-                              attestationIssueDate: auditor?.attestationIssueDate,
-                            },
-                            building: {
-                              address: building?.address,
-                              cadastralNumber: building?.cadastralNumber,
-                              locality: building?.locality || building?.city,
-                              county: building?.county,
-                              yearBuilt: building?.yearBuilt,
-                              areaUseful: building?.areaUseful,
-                              category: building?.category,
-                            },
-                            cpeCode,
-                            attachments: [
-                              { name: "CPE — XML schema MDLPA Mc 001-2022", sizeMB: 0.01 },
-                              { name: "CPE — DOCX (cu semnătură + ștampilă auditor)", sizeMB: 0.5 },
-                              { name: "Anexă A1+A2 MDLPA Ord. 16/2023", sizeMB: 0.3 },
-                              { name: "Raport audit energetic — Cap. 1-8", sizeMB: 0.6 },
-                              { name: "Anexe tehnice (opace + vitraj + punți + sisteme)", sizeMB: 0.2 },
-                              { name: "Pașaport renovare EPBD 2024 (PDF + XML)", sizeMB: 0.4 },
-                              ...(building?.ancpi?.fileName
-                                ? [{ name: `Extras CF: ${building.ancpi.fileName}`, sizeMB: (building.ancpi.fileSize || 0) / 1e6 }]
-                                : []),
-                            ],
-                          });
-                          showToast("✓ Scrisoare de însoțire MDLPA descărcată", "success", 4000);
-                        } catch (e) {
-                          console.error("[Step7] cover letter:", e);
-                          showToast("Eroare generare Scrisoare însoțire: " + e.message, "error", 6000);
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-bold sm:col-span-2">
-                      <span>📨</span> Scrisoare de însoțire MDLPA (PDF) — depunere fizică până la 8.VII.2026
-                    </button>
-                    {/* Sprint P2 06may2026 — 4 documente NOI normative obligatorii */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          showToast("Se generează FIC...", "info", 2000);
-                          const { generateFICPdf } = await import("../lib/dossier-extras.js");
-                          await generateFICPdf({
-                            building, auditor, climate: selectedClimate,
-                            instSummary, opaqueElements, glazingElements,
-                            energyClass: enClass?.cls,
-                            owner: {
-                              name: building?.owner, type: building?.ownerType,
-                              cui: building?.ownerCUI, address: building?.address,
-                            },
-                          });
-                          showToast("✓ Fișa Identitate Clădire (FIC) descărcată", "success", 4000);
-                        } catch (e) {
-                          console.error("[Step7] FIC:", e);
-                          showToast("Eroare generare FIC: " + e.message, "error", 6000);
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
-                      <span>📑</span> FIC (PDF) — Mc 001-2022 Anexa G
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          showToast("Se generează Declarația de conformitate...", "info", 2000);
-                          const { generateAuditorDeclarationPdf } = await import("../lib/dossier-extras.js");
-                          const cpeCode = building?.cpeCode || building?.cpeNumber
-                            || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
-                          await generateAuditorDeclarationPdf({ auditor, building, cpeCode });
-                          showToast("✓ Declarație conformitate descărcată", "success", 4000);
-                        } catch (e) {
-                          console.error("[Step7] declaration:", e);
-                          showToast("Eroare generare Declarație: " + e.message, "error", 6000);
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
-                      <span>✍️</span> Declarație conformitate auditor (PDF)
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          showToast("Se generează Manifest SHA-256...", "info", 2000);
-                          const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
-                          // Generăm hash pentru fișierele text/JSON disponibile (placeholder fără blob real)
-                          const cpeCode = building?.cpeCode || building?.cpeNumber || "CE-LOCAL";
-                          const placeholderFiles = [
-                            { name: "raport_audit.docx", blob: new Blob([cpeCode + "_audit"], { type: "text/plain" }) },
-                            { name: "anexe_complete.docx", blob: new Blob([cpeCode + "_anexe"], { type: "text/plain" }) },
-                            { name: "pasaport_renovare.xml", blob: new Blob([cpeCode + "_pasaport"], { type: "text/plain" }) },
-                            { name: "CPE_XML.xml", blob: new Blob([cpeCode + "_cpe"], { type: "text/plain" }) },
-                          ];
-                          const r = await generateManifestSHA256({
-                            files: placeholderFiles, auditor, building, cpeCode,
-                          });
-                          showToast(`✓ Manifest SHA-256 descărcat (${r.fileCount} fișiere)`, "success", 4000);
-                        } catch (e) {
-                          console.error("[Step7] manifest:", e);
-                          showToast("Eroare generare Manifest: " + e.message, "error", 6000);
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
-                      <span>🔐</span> Manifest SHA-256 (TXT) — Art. 11
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          showToast("Se generează Plan M&V...", "info", 2000);
-                          const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
-                          const eurRonRate = getEurRonSync() || 5.05;
-                          const measuresFromSugg = (smartSuggestions || []).map((s) => ({
-                            name: s.measure,
-                            cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRonRate),
-                          }));
-                          const totalCost = measuresFromSugg.reduce((s, m) => s + (m.cost_RON || 0), 0);
-                          const expectedSavings = (smartSuggestions || []).reduce(
-                            (s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0
-                          ) * (parseFloat(building?.areaUseful) || 100) * 0.45;
-                          await generateMonitoringPlanPdf({
-                            building, auditor, instSummary,
-                            energyClass: enClass?.cls,
-                            scenario: {
-                              measures: measuresFromSugg,
-                              totalCost_RON: totalCost,
-                              expectedSavings_RON_y: expectedSavings,
-                            },
-                          });
-                          showToast("✓ Plan M&V descărcat", "success", 4000);
-                        } catch (e) {
-                          console.error("[Step7] M&V:", e);
-                          showToast("Eroare generare Plan M&V: " + e.message, "error", 6000);
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
-                      <span>📊</span> Plan M&V post-renovare (PDF) — IPMVP Opt. C
-                    </button>
+                    {/* Sprint 08may2026 — eliminat butonul „Scrisoare însoțire MDLPA" (cover letter)
+                        Motiv: nu este obligatoriu legal (codul CPE este oricum imprimat pe certificat),
+                        nu este folosit în practică (PFA cabinet user feedback 8 mai 2026),
+                        nu apare în Mc 001-2022 / Ord. 2237/2010 / Ord. 348/2026 ca document obligatoriu.
+                        Helper-ul cover-letter-pdf.js rămâne în repo pentru testele existente.
+                        Vezi audit documente generate · folder „documente generate/" · 7 mai 2026. */}
                   </div>
+
+                  {/* Sprint 08may2026 — Extrageri individuale audit (sub-meniu collapsible)
+                      Aceste 3 documente sunt INCLUSE deja în Dosarul Audit AAECR DOCX
+                      (FIC = Anexa G; Manifest SHA-256 = Anexa 11; Plan M&V = sec. monitorizare).
+                      Le păstrăm ca extrageri individuale pentru cazul în care beneficiarul / banca /
+                      finanțatorul cere o anexă specifică fără raportul complet (viteză/confidențialitate).
+                      Marcate ⚪ OPȚIONAL — bună practică, nu obligatorii legal ca documente standalone. */}
+                  <details className="mt-3 group">
+                    <summary className="flex items-center gap-2 cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-violet-400/70 hover:text-violet-300 transition-colors px-2 py-1.5 rounded-lg bg-violet-500/[0.04] border border-violet-500/20">
+                      <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+                      <span>⚪ Extrageri individuale din audit (opționale)</span>
+                      <span className="ml-auto text-[9px] opacity-60 normal-case">FIC · Manifest · Plan M&V</span>
+                    </summary>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            showToast("Se generează FIC...", "info", 2000);
+                            const { generateFICPdf } = await import("../lib/dossier-extras.js");
+                            await generateFICPdf({
+                              building, auditor, climate: selectedClimate,
+                              instSummary, opaqueElements, glazingElements,
+                              energyClass: enClass?.cls,
+                              owner: {
+                                name: building?.owner, type: building?.ownerType,
+                                cui: building?.ownerCUI, address: building?.address,
+                              },
+                            });
+                            showToast("✓ Fișa Identitate Clădire (FIC) descărcată", "success", 4000);
+                          } catch (e) {
+                            console.error("[Step7] FIC:", e);
+                            showToast("Eroare generare FIC: " + e.message, "error", 6000);
+                          }
+                        }}
+                        title="⚪ OPȚIONAL — Fișa Identitate Clădire (Anexa G Mc 001-2022). Inclusă deja în Dosarul Audit AAECR. Folosește acest export individual când beneficiarul/banca cere DOAR FIC fără raportul complet."
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                        <span>📑</span> FIC (PDF) — Mc 001-2022 Anexa G
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            showToast("Se generează Manifest SHA-256...", "info", 2000);
+                            const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
+                            const cpeCode = building?.cpeCode || building?.cpeNumber || "CE-LOCAL";
+                            const placeholderFiles = [
+                              { name: "raport_audit.docx", blob: new Blob([cpeCode + "_audit"], { type: "text/plain" }) },
+                              { name: "anexe_complete.docx", blob: new Blob([cpeCode + "_anexe"], { type: "text/plain" }) },
+                              { name: "pasaport_renovare.xml", blob: new Blob([cpeCode + "_pasaport"], { type: "text/plain" }) },
+                              { name: "CPE_XML.xml", blob: new Blob([cpeCode + "_cpe"], { type: "text/plain" }) },
+                            ];
+                            const r = await generateManifestSHA256({
+                              files: placeholderFiles, auditor, building, cpeCode,
+                            });
+                            showToast(`✓ Manifest SHA-256 descărcat (${r.fileCount} fișiere)`, "success", 4000);
+                          } catch (e) {
+                            console.error("[Step7] manifest:", e);
+                            showToast("Eroare generare Manifest: " + e.message, "error", 6000);
+                          }
+                        }}
+                        title="⚪ OPȚIONAL — Manifest SHA-256 pentru integritate fișiere (bună practică ISO 14641). NU este obligatoriu legal. Util când beneficiarul/instituția cere garanția că fișierele predate nu au fost alterate."
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                        <span>🔐</span> Manifest SHA-256 (TXT) — integritate
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            showToast("Se generează Plan M&V...", "info", 2000);
+                            const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
+                            const eurRonRate = getEurRonSync() || 5.05;
+                            const measuresFromSugg = (smartSuggestions || []).map((s) => ({
+                              name: s.measure,
+                              cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRonRate),
+                            }));
+                            const totalCost = measuresFromSugg.reduce((s, m) => s + (m.cost_RON || 0), 0);
+                            const expectedSavings = (smartSuggestions || []).reduce(
+                              (s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0
+                            ) * (parseFloat(building?.areaUseful) || 100) * 0.45;
+                            await generateMonitoringPlanPdf({
+                              building, auditor, instSummary,
+                              energyClass: enClass?.cls,
+                              scenario: {
+                                measures: measuresFromSugg,
+                                totalCost_RON: totalCost,
+                                expectedSavings_RON_y: expectedSavings,
+                              },
+                            });
+                            showToast("✓ Plan M&V descărcat", "success", 4000);
+                          } catch (e) {
+                            console.error("[Step7] M&V:", e);
+                            showToast("Eroare generare Plan M&V: " + e.message, "error", 6000);
+                          }
+                        }}
+                        title="⚪ OPȚIONAL — Plan Măsurare & Verificare IPMVP Opțiunea C. Cerut de bănci internaționale (EBRD, IFC) și unele finanțări UE/PNRR. NU există obligație legală în RO la 8.V.2026."
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/10 transition-all text-xs font-semibold">
+                        <span>📊</span> Plan M&V post-renovare (PDF) — IPMVP
+                      </button>
+                    </div>
+                  </details>
                 </div>
 
                 {/* ── Secțiunea B: DOCUMENTE CLIENT ORIENTATIVE ── */}
