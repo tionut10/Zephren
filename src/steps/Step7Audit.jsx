@@ -1962,10 +1962,16 @@ export default function Step7Audit(props) {
                    Locul canonic = Step 8 tab SRI. */}
 
               {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
-                  Sprint P0-A (6 mai 2026) — refactor: plan REAL prin calcPhasedRehabPlan din
-                  smartSuggestions, în loc de reduceri fixe [0,20,40,60]%. Buget anual default
-                  50.000 RON, strategie balanced (mix anvelopă+sisteme), 20 ani orizont maxim. */}
-              {instSummary && (() => {
+                  Sprint 08may2026 (followup 3) — DEZACTIVAT prin `false && ...`
+                  Motiv consistență: card-ul afișa banner „PREVIEW EPBD 2024 — fără valoare
+                  juridică în RO până la actul național de transpunere" (termen 29.05.2026).
+                  Aceeași logică ca butoanele Pașaport eliminate anterior (commit-uri db089d2 + b367618):
+                  tot ce nu e impus de norma în vigoare la 8.V.2026 → eliminat, reactivare la transpunere.
+                  Conține: banner ținte 2030/2035, Card cu Faze/Durată/Investiție/Clasă finală,
+                  buton „Export DOCX Foaie de Parcurs" — toate dependente de Pașaport EPBD.
+                  REACTIVARE LA TRANSPUNERE EPBD RO: schimbă `false &&` în nimic.
+                  Helper-ul calcPhasedRehabPlan rămâne în repo. */}
+              {false && instSummary && (() => {
                 // Sprint 06may2026 audit P1 (B4) — UNIFICARE 3 SURSE COST.
                 // Prioritate: rehabScenarioInputs (Pas 5 user) > smartSuggestions (Pas 7 auto).
                 // Aliniere cu Deviz + CPE post-rehab care folosesc rehabScenarioInputs.
