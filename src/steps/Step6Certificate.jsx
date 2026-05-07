@@ -13,7 +13,7 @@ import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcSummerComfort } from "../calc/summer-comfort.js";
-import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
+import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS, getServiceClass } from "../data/energy-classes.js";
 import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB, NZEB_EP_FALLBACK, getNzebEpMaxWithFallback } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
@@ -588,6 +588,14 @@ export default function Step6Certificate(props) {
                     ep_racire:    fmtRo(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, 1),
                     ep_ventilare: fmtRo(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, 1),
                     ep_iluminat:  fmtRo(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, 1),
+                    // CR-2 (7 mai 2026) — clase per utilitate Mc 001-2022 Tab I.1
+                    // (trimise explicit pentru a evita clasificarea greșită server-side
+                    // cu pragurile whole-building — care plasa ACM 171,8 → C în loc de G).
+                    cls_incalzire: getServiceClass(Au > 0 ? (instSummary?.ep_h || 0) / Au : 0, "heating",     catKey),
+                    cls_acm:       getServiceClass(Au > 0 ? (instSummary?.ep_w || 0) / Au : 0, "dhw",         catKey),
+                    cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     catKey),
+                    cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", catKey),
+                    cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    catKey),
                     // ── Etapa 7 (20 apr 2026) — câmpuri Anexa 2 detaliate ──
                     // Completare automată câmpuri lipsă din audit Anexa (gap-uri identificate
                     // 20 apr 2026): EER, putere frigorifică, ventilare HR, putere iluminat,
@@ -1066,6 +1074,11 @@ export default function Step6Certificate(props) {
                   else cbAnex1.push(53);
 
                   // Estimare economii energie (CB 54-59): <10%, 10-20, 20-30, 30-40, 40-50, >60%
+                  // M-7 (audit 7 mai 2026): template-ul oficial MDLPA Ord. 16/2023 NU
+                  // include opțiunea „50-60%" (sare direct de la 40-50% la >60%). Acesta
+                  // este un gap tipografic în Anexa 1 MDLPA original, nu o eroare Zephren.
+                  // Pentru economii 50-59% bifăm CB59 (>60%) — cea mai apropiată categorie
+                  // disponibilă; auditorul va corecta manual dacă necesar.
                   // Audit 2 mai 2026 — P1.12: NU mai folosim fallback `|| 20` (bias optimist).
                   // Dacă financialAnalysis nu e calculat, marcăm explicit "necalculat" prin
                   // a NU bifa niciun checkbox de economii — auditorul completează manual.
@@ -1780,14 +1793,10 @@ export default function Step6Certificate(props) {
                 efficiency: isEN ? "Efficiency / COP" : "Randament / COP",
               };
 
-              // Per-utility specific values
-              const getUtilClass = (epVal) => {
-                if (!grid) return "\u2014";
-                const t = grid.thresholds;
-                for (let i = 0; i < t.length; i++) { if (epVal <= t[i]) return CLASS_LABELS[i]; }
-                return CLASS_LABELS[CLASS_LABELS.length - 1];
-              };
-
+              // CR-2 (7 mai 2026) \u2014 getUtilClass folosea WHOLE-BUILDING grid pentru
+              // utilit\u0103\u021bi individuale \u2192 clase gre\u0219ite (ACM 171.8 \u2192 C \u00een loc de G;
+              // Iluminat 43.2 \u2192 A+ \u00een loc de F). Folosim acum SERVICE_CLASSES_DB
+              // (Mc 001-2022 Tab I.1) cu grile per-serviciu.
               const ep_h_m2 = Au > 0 ? (instSummary?.ep_h || 0) / Au : 0;
               const ep_w_m2 = Au > 0 ? (instSummary?.ep_w || 0) / Au : 0;
               const ep_c_m2 = Au > 0 ? (instSummary?.ep_c || 0) / Au : 0;
@@ -1810,11 +1819,13 @@ export default function Step6Certificate(props) {
               const ep_sum_m2 = ep_h_m2 + ep_w_m2 + ep_c_m2 + ep_v_m2 + ep_l_m2;
               const co2_sum_m2 = co2_h_m2 + co2_w_m2 + co2_c_m2 + co2_v_m2 + co2_l_m2;
 
-              const utilClassH = getUtilClass(ep_h_m2);
-              const utilClassW = getUtilClass(ep_w_m2);
-              const utilClassC = getUtilClass(ep_c_m2);
-              const utilClassV = getUtilClass(ep_v_m2);
-              const utilClassL = getUtilClass(ep_l_m2);
+              // CR-2 (7 mai 2026) — clase per utilitate folosind SERVICE_CLASSES_DB
+              // (Mc 001-2022 Tab I.1) în loc de grila whole-building.
+              const utilClassH = getServiceClass(ep_h_m2, "heating", catKey);
+              const utilClassW = getServiceClass(ep_w_m2, "dhw", catKey);
+              const utilClassC = getServiceClass(ep_c_m2, "cooling", catKey);
+              const utilClassV = getServiceClass(ep_v_m2, "ventilation", catKey);
+              const utilClassL = getServiceClass(ep_l_m2, "lighting", catKey);
 
               // SRE
               const sre_solar_th = renewSummary ? (Au > 0 ? renewSummary.qSolarTh / Au : 0) : 0;

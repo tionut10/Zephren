@@ -3004,6 +3004,20 @@ def _highlight_utility_class_cells(doc, data):
         "iluminat":  _parse_ro(data.get("ep_iluminat", "")),
     }
 
+    # CR-2 (7 mai 2026) — clase per utilitate Mc 001-2022 Tab I.1
+    # Pre-calculate în JS (getServiceClass) — folosite cu prioritate față de
+    # clasificarea bazată pe ep_thresholds_data (care folosea pragurile WHOLE-
+    # BUILDING, ducând la clase greșite: ACM 171,8 → C în loc de G; iluminat
+    # 43,2 → A+ în loc de F). Fallback la clasificare numerică dacă lipsesc.
+    _CLASS_LABELS = ["A+", "A", "B", "C", "D", "E", "F", "G"]
+    cls_explicit = {
+        "incalzire": (data.get("cls_incalzire") or "").strip(),
+        "acm":       (data.get("cls_acm") or "").strip(),
+        "racire":    (data.get("cls_racire") or "").strip(),
+        "ventilare": (data.get("cls_ventilare") or "").strip(),
+        "iluminat":  (data.get("cls_iluminat") or "").strip(),
+    }
+
     # Culori per clasă (0=A+, 1=A, ..., 7=G) — identice cu _EP_CLASS_COLORS
     _COL_FILLS = ["009B00", "32C831", "00FF00", "FFFF00", "F39C00", "FF6400", "FE4101", "FE0000"]
 
@@ -3271,8 +3285,15 @@ def _highlight_utility_class_cells(doc, data):
         except Exception:
             ep_thresholds_data = []
 
-        if any(t > 0 for t in ep_thresholds_data):
+        # CR-2 (7 mai 2026) — prioritate clasă explicită din JS (getServiceClass
+        # cu Mc 001-2022 Tab I.1), apoi fallback la clasificarea numerică.
+        explicit_cls = cls_explicit.get(ep_key, "")
+        if explicit_cls in _CLASS_LABELS:
+            col_idx = _CLASS_LABELS.index(explicit_cls) + 1  # unique[0]=label, unique[1]=A+
+        elif any(t > 0 for t in ep_thresholds_data):
             # Clasificare directă cu pragurile reale (nu range-ul din template)
+            # ATENȚIE: foloseste praguri WHOLE-BUILDING, deci poate da clase
+            # greșite pentru utilități individuale. Folosit doar ca fallback.
             class_idx_direct = len(ep_thresholds_data)  # default: G
             for i, t in enumerate(ep_thresholds_data):
                 if ep_val <= t:
@@ -5386,6 +5407,18 @@ class handler(BaseHTTPRequestHandler):
                                 return classes[i]
                         return "G"
 
+                    # CR-2 (7 mai 2026) — clase per utilitate explicite (Mc 001-2022 Tab I.1)
+                    # primite din JS (cls_incalzire/acm/racire/ventilare/iluminat) au prioritate
+                    # față de _class_from_ep care folosea WHOLE-BUILDING ep_scale.
+                    _CLS_EXPLICIT_T3 = {
+                        "Încălzire": (data.get("cls_incalzire") or "").strip(),
+                        "Apă caldă": (data.get("cls_acm") or "").strip(),
+                        "Răcire":    (data.get("cls_racire") or "").strip(),
+                        "Ventilare": (data.get("cls_ventilare") or "").strip(),
+                        "Iluminat":  (data.get("cls_iluminat") or "").strip(),
+                    }
+                    _VALID_CLASSES_T3 = {"A+", "A", "B", "C", "D", "E", "F", "G"}
+
                     # Suportă ambele template-uri: apartament (5 col) și clădire (8 col)
                     TABEL3_VARIANTS = [
                         # (min_cols, max_cols, h_keyword, ep_col, co2_col, cls_col, tot_row)
@@ -5423,7 +5456,9 @@ class handler(BaseHTTPRequestHandler):
                             row = tbl.rows[row_idx]
                             row.cells[ep_col].text  = format_ro(ep_val, 1)
                             row.cells[co2_col].text = format_ro(ep_val * co2_ratio, 1) if co2_ratio > 0 else "—"
-                            cls = _class_from_ep(ep_val)
+                            # CR-2 — prioritate clasă explicită din JS, fallback la _class_from_ep
+                            explicit_cls_t3 = _CLS_EXPLICIT_T3.get(nume, "")
+                            cls = explicit_cls_t3 if explicit_cls_t3 in _VALID_CLASSES_T3 else _class_from_ep(ep_val)
                             if cls:
                                 row.cells[cls_col].text = cls
                             for ci in (ep_col, co2_col, cls_col):
