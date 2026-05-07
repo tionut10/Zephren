@@ -5715,62 +5715,6 @@ class handler(BaseHTTPRequestHandler):
                 except Exception as e_t3:
                     print(f"[tabel_3_sisteme] eroare: {e_t3}", flush=True)
 
-                # ── #13 (audit Pas 6+7 V8, 7 mai 2026) — Bar chart EP per utilitate ──
-                # Distribuția consumului energetic per utilitate vizualizată ca bar chart
-                # orizontal colorat după clasă (Mc 001-2022 §5.1 + Tab I.1). Adăugat după
-                # Tab 3 (clase per utilitate text) pentru claritate vizuală suplimentară.
-                # NU înlocuiește tabelul oficial — îl COMPLEMENTEAZĂ.
-                # Generat cu Pillow (lightweight ~5MB) în loc de matplotlib (~55MB peste
-                # limita Vercel Hobby). Skip silent dacă Pillow indisponibil.
-                try:
-                    if _PIL_AVAILABLE:
-                        # Construim dict-uri ordonate pentru chart
-                        ep_dict = {}
-                        cls_dict = {}
-                        _SERVICES_MAP = [
-                            ("Încălzire",  "ep_incalzire", "cls_incalzire"),
-                            ("ACM",        "ep_acm",       "cls_acm"),
-                            ("Răcire",     "ep_racire",    "cls_racire"),
-                            ("Ventilare",  "ep_ventilare", "cls_ventilare"),
-                            ("Iluminat",   "ep_iluminat",  "cls_iluminat"),
-                        ]
-                        for label, ep_key, cls_key in _SERVICES_MAP:
-                            try:
-                                v = float((data.get(ep_key, "0") or "0").replace(",", "."))
-                            except (ValueError, TypeError):
-                                v = 0.0
-                            ep_dict[label] = v
-                            cls_dict[label] = (data.get(cls_key) or "—").strip() or "—"
-                        png_bytes = render_ep_distribution_chart(ep_dict, cls_dict, 1300, 600)
-                        if png_bytes:
-                            # Adăugăm chart-ul ca poză imediat după ultimul tabel modificat
-                            # (deja în context Anexa apartament). Adăugăm la finalul body
-                            # cu titlu propriu pentru claritate.
-                            from docx.enum.text import WD_ALIGN_PARAGRAPH as _WD_AL
-                            chart_title_p = doc.add_paragraph()
-                            chart_title_p.alignment = _WD_AL.CENTER
-                            chart_title_run = chart_title_p.add_run(
-                                "Distribuția vizuală a consumului EP per utilitate"
-                            )
-                            chart_title_run.bold = True
-                            chart_title_run.font.size = Pt(13)
-                            chart_p = doc.add_paragraph()
-                            chart_p.alignment = _WD_AL.CENTER
-                            chart_p.add_run().add_picture(io.BytesIO(png_bytes), width=Cm(16.5))
-                            chart_caption_p = doc.add_paragraph()
-                            chart_caption_p.alignment = _WD_AL.CENTER
-                            chart_caption_run = chart_caption_p.add_run(
-                                "Vizualizare suplimentară Zephren conform Mc 001-2022 §5.1 + "
-                                "Tab I.1 (clasificare per serviciu). Culorile corespund "
-                                "claselor energetice oficiale MDLPA."
-                            )
-                            chart_caption_run.italic = True
-                            chart_caption_run.font.size = Pt(10)
-                            from docx.shared import RGBColor as _RGB13
-                            chart_caption_run.font.color.rgb = _RGB13(0x60, 0x60, 0x80)
-                except Exception as _chart_err:
-                    print(f"[#13 ep_chart] {_chart_err}", flush=True)
-
                 # ── Layout: elimină paragrafe goale excesive înainte de titluri de secțiune ──
                 # Template-ul Anexa apartament are 4+ paragrafe goale înainte de "DATE TEHNICE",
                 # creând spațiu alb mare. Reducem la maxim 1 paragraf gol consecutiv.
