@@ -9,9 +9,9 @@
  * - customer.subscription.deleted → revert to free
  *
  * Env vars suplimentare necesare pentru SmartBill (Sprint P0-1, 18 apr 2026):
- *   SMARTBILL_EMAIL  — email cont SmartBill (ex: contact@zephren.com)
+ *   SMARTBILL_EMAIL  — email cont SmartBill (ex: contact@zephren.ro)
  *   SMARTBILL_TOKEN  — token API generat din Settings → API SmartBill
- *   SMARTBILL_CUI    — CUI firmă emitentă ZEPHREN SRL (format "RO12345678")
+ *   SMARTBILL_CUI    — CUI firmă emitentă ZEPHREN S.R.L. (format "RO54561142")
  */
 
 export const config = { api: { bodyParser: false } };

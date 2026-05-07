@@ -37,9 +37,9 @@ export default function PrivacyPolicy({ theme = "dark" }) {
         <div style={SECTION}>
           <h2 style={H2}>1. Operatorul de date</h2>
           <p style={{ ...P, color: muted }}>
-            <strong>ZEPHREN SRL</strong>, cu sediul social în Mun. Orș. Bușteni,
-            B-dul Libertății nr. 38, ap. 4, jud. Prahova, România. Entitate
-            înregistrată la ORC Prahova (proces în curs — CUI va fi actualizat).
+            <strong>ZEPHREN S.R.L.</strong>, cu sediul social în B-dul Libertății,
+            nr. 38, ap. 4, Bușteni, jud. Prahova, România.
+            CUI: 54561142 | Nr. Reg. Com.: J29/2027529009.
             <br />Contact Protecție Date: <a href="mailto:privacy@zephren.ro" style={{ color: "#f59e0b" }}>privacy@zephren.ro</a>.
           </p>
         </div>

@@ -27,9 +27,9 @@ export default function TermsOfService({ theme = "dark" }) {
         <div style={SECTION}>
           <h2 style={H2}>1. Furnizorul serviciului</h2>
           <p style={{ ...P, color: muted }}>
-            Serviciul Zephren („Serviciul”) este furnizat de <strong>ZEPHREN SRL</strong>,
-            sediu social Mun. Orș. Bușteni, B-dul Libertății nr. 38, ap. 4, jud. Prahova,
-            România.
+            Serviciul Zephren („Serviciul”) este furnizat de <strong>ZEPHREN S.R.L.</strong>,
+            sediu social B-dul Libertății, nr. 38, ap. 4, Bușteni, jud. Prahova, România.
+            CUI: 54561142 | Nr. Reg. Com.: J29/2027529009.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function TermsOfService({ theme = "dark" }) {
           <h2 style={H2}>5. Proprietate intelectuală</h2>
           <p style={{ ...P, color: muted }}>
             Codul sursă, designul, logo-ul și algoritmii de calcul sunt proprietatea
-            ZEPHREN SRL. Utilizatorul primește o licență neexclusivă, netransferabilă,
+            ZEPHREN S.R.L. Utilizatorul primește o licență neexclusivă, netransferabilă,
             pentru utilizare profesională. Datele introduse de utilizator rămân
             proprietatea acestuia.
           </p>
@@ -76,7 +76,7 @@ export default function TermsOfService({ theme = "dark" }) {
         <div style={SECTION}>
           <h2 style={H2}>6. Limitări de răspundere</h2>
           <p style={{ ...P, color: muted }}>
-            Serviciul este oferit „ca atare”. ZEPHREN SRL nu răspunde pentru:
+            Serviciul este oferit „ca atare”. ZEPHREN S.R.L. nu răspunde pentru:
             (a) erori în datele introduse de utilizator, (b) interpretări incorecte
             ale rezultatelor, (c) întreruperi punctuale de serviciu cauzate de
             furnizorii externi (Vercel, Supabase, Stripe, Anthropic). Răspunderea
@@ -98,7 +98,7 @@ export default function TermsOfService({ theme = "dark" }) {
         <div style={SECTION}>
           <h2 style={H2}>8. Încetare</h2>
           <p style={{ ...P, color: muted }}>
-            ZEPHREN SRL poate suspenda conturi în caz de încălcare a Termenilor. La
+            ZEPHREN S.R.L. poate suspenda conturi în caz de încălcare a Termenilor. La
             încetare, datele personale ale utilizatorului vor fi anonimizate sau
             șterse conform Politicii de confidențialitate.
           </p>

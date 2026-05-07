@@ -459,7 +459,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
                     <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", fontWeight: "800", color: "#000", flexShrink: 0, letterSpacing: "-0.5px" }}>IT</div>
                     <div>
                       <div style={{ fontWeight: "700", fontSize: "15px", color: text, lineHeight: 1.2 }}>ing. Ionuț Tunaru</div>
-                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px" }}>{lang === "EN" ? "Founder · ZEPHREN SRL" : "Fondator · ZEPHREN SRL"}</div>
+                      <div style={{ fontSize: "11px", color: textFaint, marginTop: "3px" }}>{lang === "EN" ? "Founder · ZEPHREN S.R.L." : "Fondator · ZEPHREN S.R.L."}</div>
                     </div>
                   </div>
 
@@ -1308,7 +1308,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
           ))}
         </div>
         <p style={{ fontSize: "11px", color: isDark ? "rgba(255,255,255,0.30)" : "rgba(0,0,0,0.45)", margin: 0 }}>
-          © {new Date().getFullYear()} Zephren SRL · Toate drepturile rezervate
+          © {new Date().getFullYear()} ZEPHREN S.R.L. · CUI 54561142 · J29/2027529009 · Toate drepturile rezervate
         </p>
       </footer>
 

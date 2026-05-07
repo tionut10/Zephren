@@ -164,7 +164,7 @@ export default function MyData({ supabase, user, onClose }) {
             Contul tău va fi dezactivat imediat. Toate proiectele conținând date personale ale clienților vor fi <strong>anonimizate</strong> (numele, email, telefon, adresă, cadastru → „[ANONIMIZAT]”). Certificatele CPE vor fi șterse.
           </p>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", marginBottom: "12px", lineHeight: 1.5 }}>
-            <strong>Notă fiscală</strong>: facturile emise vor fi păstrate anonimizat 10 ani (obligație Cod Fiscal RO) — doar numele va fi eliminat, sumele și CUI-ul ZEPHREN SRL rămân în evidențe.
+            <strong>Notă fiscală</strong>: facturile emise vor fi păstrate anonimizat 10 ani (obligație Cod Fiscal RO) — doar numele va fi eliminat, sumele și CUI-ul ZEPHREN S.R.L. rămân în evidențe.
           </p>
           <input
             type="text"

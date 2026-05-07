@@ -260,7 +260,7 @@ export const DEMO_DATA = {
   // Administrativ
   auditorName: "Popescu Alexandru",
   auditorRegistry: "AE-BV-00123",
-  auditorCompany: "Zephren SRL",
+  auditorCompany: "ZEPHREN S.R.L.",
   auditType: "CPE obligatoriu",
   occupancyType: "Rezidență permanentă",
   occupantsNumber: 4,
