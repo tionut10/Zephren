@@ -1500,38 +1500,28 @@ export default function Step6Certificate(props) {
             // EXPORT XML MDLPA — Registrul electronic al certificatelor
             // Format conform Ord. MDLPA 16/2023 Anexa 4
             // ═══════════════════════════════════════════════════════════
-            const generateXMLMDLPA = () => {
-              if (!instSummary) { showToast("Completați pașii 1-4.", "error"); return; }
-              // Pricing v6.0 — XML MDLPA disponibil Audit/Pro/Expert/Birou/Enterprise.
-              // Free + Edu: BLOCAT (Free are watermark; Edu n-are atestat → fără registru oficial).
-              if (!canAccessFn(userPlan, "exportXML")) {
-                showToast("Export XML MDLPA disponibil din planul Zephren AE IIci (199 RON/lună).", "error");
-                return;
-              }
-              // Sprint v6.3 — verificare HARD legal pre-export XML (Ord. 348/2026 Art. 6)
-              const legalCheckXml = canEmitForBuilding({
-                plan: userPlan,
-                auditorGrad: building?.auditorGrad || null,
-                building,
-                operation: "cpe",
-              });
-              if (!legalCheckXml.ok) {
-                showToast(
-                  `Export XML blocat legal: ${legalCheckXml.reason} (${legalCheckXml.legalRef})`,
-                  "error",
-                );
-                return;
-              }
+            // CR-4 (7 mai 2026) — helper reutilizabil pentru construirea XML CPE
+            // complet (DateIdentificare + Auditor + Cladire + Anvelopa + Instalatii +
+            // RezultateEnergetice + Penalizari). Folosit atât de generateXMLMDLPA
+            // (descărcare individuală) cât și de pachetul ZIP complet (eliminând
+            // versiunea minimal-truncată inline care lipsea Auditor/Anvelopa/Instalatii).
+            // Returnează string XML sau null dacă instSummary lipsește.
+            const buildFullCpeXml = () => {
+              if (!instSummary) return null;
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
               const fmtD = (d) => d ? d.split("-").reverse().join(".") : "";
               const validDate = auditor.date ? fmtD(auditor.date) : new Date().toISOString().slice(0,10).split("-").reverse().join(".");
-              // Sprint 15 — valabilitate diferențiată (acum L.372/2005 mod. L.238/2024)
-              const expDateObj = getExpiryDate(auditor.date || new Date(), enClass?.cls);
-              const expDate = expDateObj ? expDateObj.toISOString().slice(0,10).split("-").reverse().join(".") : "";
-              const validityYearsXml = getValidityYears(enClass?.cls);
+              // CR-3 — apel cu opts.scaleVersion explicit (Ord. 16/2023 default 10 ani uniform).
+              const scaleVersionXml = building.scaleVersion || "2023";
+              const validityYearsXml = getValidityYears(enClass?.cls, {
+                scopCpe: building.scopCpe,
+                scaleVersion: scaleVersionXml,
+              });
+              const issueDate = new Date(auditor.date || Date.now());
+              const expDateCalc = isNaN(issueDate.getTime()) ? new Date() : new Date(issueDate);
+              expDateCalc.setFullYear(expDateCalc.getFullYear() + validityYearsXml);
+              const expDate = expDateCalc.toISOString().slice(0,10).split("-").reverse().join(".");
 
-              // Audit 2 mai 2026 — P1.8: lipsuri XML MDLPA
-              // Calculez penalități + SRI pentru includere în XML.
               let penaltiesXml = { summary: { total_pct: 0, count: 0 }, items: [] };
               try {
                 penaltiesXml = calcPenalties({
@@ -1559,7 +1549,6 @@ export default function Step6Certificate(props) {
                 });
               } catch { /* penalties opt — XML rămâne valid fără ele */ }
 
-              // SRI auto-mapped (Sprint 28 — calcSRI din epbd.js)
               let sriResult = { sri: 0, grade: "—" };
               try {
                 sriResult = calcSRI({
@@ -1569,7 +1558,7 @@ export default function Step6Certificate(props) {
                 });
               } catch { /* SRI opt */ }
 
-              const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+              return `<?xml version="1.0" encoding="UTF-8"?>
 <CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
   <DateIdentificare>
     <CodUnic>${esc(auditor.mdlpaCode)}</CodUnic>
@@ -1606,45 +1595,45 @@ export default function Step6Certificate(props) {
     <n50 unit="1_per_h">${(parseFloat(building.n50)||0).toFixed(2)}</n50>
   </Cladire>
   <Anvelopa>
-    <ElementeOpace>${opaqueElements.map(el => {
-      const {u} = calcOpaqueR(el.layers, el.type);
-      return `\n      <Element tip="${esc(el.type)}" denumire="${esc(el.name)}" aria="${parseFloat(el.area)||0}" U="${u.toFixed(3)}" orientare="${esc(el.orientation)}"/>`;
+    <ElementeOpace>${(opaqueElements||[]).map(el => {
+      const {u} = calcOpaqueR ? calcOpaqueR(el.layers, el.type) : { u: 0 };
+      return `\n      <Element tip="${esc(el.type)}" denumire="${esc(el.name)}" aria="${parseFloat(el.area)||0}" U="${(u||0).toFixed(3)}" orientare="${esc(el.orientation)}"/>`;
     }).join("")}
     </ElementeOpace>
-    <ElementeVitrate>${glazingElements.map(el =>
+    <ElementeVitrate>${(glazingElements||[]).map(el =>
       `\n      <Vitraj denumire="${esc(el.name)}" aria="${parseFloat(el.area)||0}" U="${parseFloat(el.u)||0}" g="${parseFloat(el.g)||0}" orientare="${esc(el.orientation)}"/>`
     ).join("")}
     </ElementeVitrate>
-    <PuntiTermice>${thermalBridges.map(b =>
+    <PuntiTermice>${(thermalBridges||[]).map(b =>
       `\n      <Punte denumire="${esc(b.name)}" psi="${parseFloat(b.psi)||0}" lungime="${parseFloat(b.length)||0}"/>`
     ).join("")}
     </PuntiTermice>
     <CoeficientG unit="W_per_m3K">${(envelopeSummary?.G||0).toFixed(3)}</CoeficientG>
   </Anvelopa>
   <Instalatii>
-    <Incalzire sursa="${esc(heating.source)}" combustibil="${esc(instSummary.fuel?.id)}" eta_gen="${parseFloat(heating.eta_gen)||0}"/>
-    <ACM sursa="${esc(acm.source)}"/>
-    <Racire activ="${instSummary.hasCool}" EER="${parseFloat(cooling.eer)||0}"/>
-    <Ventilare tip="${esc(ventilation.type)}" recuperare="${instSummary.hrEta||0}"/>
+    <Incalzire sursa="${esc(heating?.source)}" combustibil="${esc(instSummary?.fuel?.id)}" eta_gen="${parseFloat(heating?.eta_gen)||0}"/>
+    <ACM sursa="${esc(acm?.source)}"/>
+    <Racire activ="${instSummary?.hasCool}" EER="${parseFloat(cooling?.eer)||0}"/>
+    <Ventilare tip="${esc(ventilation?.type)}" recuperare="${instSummary?.hrEta||0}"/>
     <BACS clasa="${esc(bacsClass || "D")}"/>
     <SRI total="${parseFloat(sriResult.sri||0).toFixed(0)}" grad="${esc(sriResult.grade || "—")}"/>
   </Instalatii>
   <RezultateEnergetice>
-    <EnergiePrimaraSpecifica unit="kWh_per_mp_an">${epFinal.toFixed(1)}</EnergiePrimaraSpecifica>
-    <ClasaEnergetica>${enClass.cls}</ClasaEnergetica>
-    <NotaEnergetica>${enClass.score}</NotaEnergetica>
-    <EmisiiCO2Specifice unit="kgCO2_per_mp_an">${co2Final.toFixed(1)}</EmisiiCO2Specifice>
-    <ClasaCO2>${co2Class.cls}</ClasaCO2>
-    <RER unit="procent">${rer.toFixed(1)}</RER>
+    <EnergiePrimaraSpecifica unit="kWh_per_mp_an">${(epFinal||0).toFixed(1)}</EnergiePrimaraSpecifica>
+    <ClasaEnergetica>${enClass?.cls || ""}</ClasaEnergetica>
+    <NotaEnergetica>${enClass?.score ?? ""}</NotaEnergetica>
+    <EmisiiCO2Specifice unit="kgCO2_per_mp_an">${(co2Final||0).toFixed(1)}</EmisiiCO2Specifice>
+    <ClasaCO2>${co2Class?.cls || ""}</ClasaCO2>
+    <RER unit="procent">${(rer||0).toFixed(1)}</RER>
     <ConsumFinal>
-      <Incalzire unit="kWh_an">${(instSummary.qf_h||0).toFixed(0)}</Incalzire>
-      <ACM unit="kWh_an">${(instSummary.qf_w||0).toFixed(0)}</ACM>
-      <Racire unit="kWh_an">${(instSummary.qf_c||0).toFixed(0)}</Racire>
-      <Ventilare unit="kWh_an">${(instSummary.qf_v||0).toFixed(0)}</Ventilare>
-      <Iluminat unit="kWh_an">${(instSummary.qf_l||0).toFixed(0)}</Iluminat>
-      <Total unit="kWh_an">${(instSummary.qf_total||0).toFixed(0)}</Total>
+      <Incalzire unit="kWh_an">${(instSummary?.qf_h||0).toFixed(0)}</Incalzire>
+      <ACM unit="kWh_an">${(instSummary?.qf_w||0).toFixed(0)}</ACM>
+      <Racire unit="kWh_an">${(instSummary?.qf_c||0).toFixed(0)}</Racire>
+      <Ventilare unit="kWh_an">${(instSummary?.qf_v||0).toFixed(0)}</Ventilare>
+      <Iluminat unit="kWh_an">${(instSummary?.qf_l||0).toFixed(0)}</Iluminat>
+      <Total unit="kWh_an">${(instSummary?.qf_total||0).toFixed(0)}</Total>
     </ConsumFinal>
-    <nZEB indeplineste="${epFinal <= (getNzebEpMax(building.category, selectedClimate?.zone)||999) && rer >= (NZEB_THRESHOLDS[building.category]?.rer_min||30)}"/>
+    <nZEB indeplineste="${(epFinal||0) <= (getNzebEpMax(building.category, selectedClimate?.zone)||999) && (rer||0) >= (NZEB_THRESHOLDS[building.category]?.rer_min||30)}"/>
   </RezultateEnergetice>
   <Penalizari total_pct="${(parseFloat(penaltiesXml.summary?.total_pct)||0).toFixed(1)}" numar="${penaltiesXml.summary?.count||0}">${
     (penaltiesXml.items || []).filter(p => p.applied).map(p =>
@@ -1653,11 +1642,42 @@ export default function Step6Certificate(props) {
   }
   </Penalizari>
 </CertificatPerformantaEnergetica>`;
+            };
+
+            const generateXMLMDLPA = () => {
+              if (!instSummary) { showToast("Completați pașii 1-4.", "error"); return; }
+              // Pricing v6.0 — XML MDLPA disponibil Audit/Pro/Expert/Birou/Enterprise.
+              // Free + Edu: BLOCAT (Free are watermark; Edu n-are atestat → fără registru oficial).
+              if (!canAccessFn(userPlan, "exportXML")) {
+                showToast("Export XML MDLPA disponibil din planul Zephren AE IIci (199 RON/lună).", "error");
+                return;
+              }
+              // Sprint v6.3 — verificare HARD legal pre-export XML (Ord. 348/2026 Art. 6)
+              const legalCheckXml = canEmitForBuilding({
+                plan: userPlan,
+                auditorGrad: building?.auditorGrad || null,
+                building,
+                operation: "cpe",
+              });
+              if (!legalCheckXml.ok) {
+                showToast(
+                  `Export XML blocat legal: ${legalCheckXml.reason} (${legalCheckXml.legalRef})`,
+                  "error",
+                );
+                return;
+              }
+              // CR-4 (7 mai 2026) — folosim helper-ul reutilizabil buildFullCpeXml
+              // (același conținut și în pachetul ZIP complet).
+              const xmlContent = buildFullCpeXml();
+              if (!xmlContent) { showToast("Eroare generare XML — date insuficiente.", "error"); return; }
 
               const blob = new Blob([xmlContent], {type: "application/xml;charset=utf-8"});
               const a = document.createElement("a");
               a.href = URL.createObjectURL(blob);
-              a.download = "CPE_XML_" + (auditor.mdlpaCode || building.address || "export").replace(/[^a-zA-Z0-9]/g,"_").slice(0,30) + ".xml";
+              // m-6 (7 mai 2026) — slug filename mai permisiv (nu mai trunchiez la 30 chars).
+              const slugXml = (auditor.mdlpaCode || building.address || "export")
+                .replace(/[^a-zA-Z0-9]/g,"_").slice(0, 60);
+              a.download = "CPE_XML_" + slugXml + ".xml";
               document.body.appendChild(a); a.click();
               setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
               showToast("XML MDLPA exportat cu succes", "success");
@@ -2996,7 +3016,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = "Raport_nZEB_" + (building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,30) + "_" + new Date().toISOString().slice(0,10) + ".html";
+                        // m-6 (7 mai 2026) — slice 30→60 (incluse „ap. N" pentru blocuri)
+                        a.download = "Raport_nZEB_" + (building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,60) + "_" + new Date().toISOString().slice(0,10) + ".html";
                         document.body.appendChild(a); a.click();
                         setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
                         showToast("Raport nZEB descărcat ca HTML (deschide în browser → Print → Save as PDF)", "success", 5000);
@@ -3942,36 +3963,16 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             if (blocBlob) zip.file(`3_Anexa_Bloc_${addrSlug}_${dateSlug}.docx`, blocBlob);
                           }
 
-                          // 4. XML MDLPA — generez inline (replică generateXMLMDLPA fără download)
+                          // 4. XML MDLPA — CR-4 (7 mai 2026): folosim helper-ul reutilizabil
+                          // buildFullCpeXml() care produce XML complet (DateIdentificare +
+                          // Auditor + Cladire + Anvelopa + Instalatii + RezultateEnergetice +
+                          // Penalizari) — identic cu XML-ul descărcat individual prin
+                          // generateXMLMDLPA. Înlocuiește versiunea minimal-truncată anterioară.
                           try {
-                            const escx = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-                            const validDateXml = auditor.date ? auditor.date.split("-").reverse().join(".") : new Date().toISOString().slice(0, 10).split("-").reverse().join(".");
-                            const expDateObj2 = getExpiryDate(auditor.date || new Date(), enClass?.cls);
-                            const expDateXml = expDateObj2 ? expDateObj2.toISOString().slice(0, 10).split("-").reverse().join(".") : "";
-                            const validityYearsXml2 = getValidityYears(enClass?.cls);
-                            const xmlMin = `<?xml version="1.0" encoding="UTF-8"?>
-<CertificatPerformantaEnergetica xmlns="urn:ro:mdlpa:certificat-performanta-energetica:2023" versiune="1.0">
-  <DateIdentificare>
-    <CodUnic>${escx(auditor.mdlpaCode)}</CodUnic>
-    <CodCPE>${escx(auditor.cpeCode || auditor.mdlpaCode || "")}</CodCPE>
-    <DataElaborare>${validDateXml}</DataElaborare>
-    <DataExpirare>${expDateXml}</DataExpirare>
-    <ValabilitateAni>${validityYearsXml2}</ValabilitateAni>
-    <NormativValabilitate>L.372/2005 republicată mod. L.238/2024 Art. 18</NormativValabilitate>
-    <ScopElaborare>${escx(building.scopCpe || "vanzare")}</ScopElaborare>
-    <ProgramCalcul>ZEPHREN ${APP_VERSION}</ProgramCalcul>
-  </DateIdentificare>
-  <Cladire>
-    <Categorie>${escx(building.category)}</Categorie>
-    <Adresa>${escx(building.address)}</Adresa>
-    <ArieUtila unit="mp">${Au.toFixed(1)}</ArieUtila>
-  </Cladire>
-  <RezultateEnergetice>
-    <EnergiePrimaraSpecifica unit="kWh_per_mp_an">${epFinal.toFixed(1)}</EnergiePrimaraSpecifica>
-    <ClasaEnergetica>${enClass?.cls || ""}</ClasaEnergetica>
-  </RezultateEnergetice>
-</CertificatPerformantaEnergetica>`;
-                            zip.file(`4_XML_MDLPA_${addrSlug}_${dateSlug}.xml`, xmlMin);
+                            const xmlFull = buildFullCpeXml();
+                            if (xmlFull) {
+                              zip.file(`4_XML_MDLPA_${addrSlug}_${dateSlug}.xml`, xmlFull);
+                            }
                           } catch { /* XML opt — ZIP rămâne valid fără el */ }
 
                           // 5. Raport nZEB (dacă HTML deja generat în state — opțional)

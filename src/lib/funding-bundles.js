@@ -308,7 +308,8 @@ export async function generateFundingBundle({
   const slug = String(metadata.cpeCode || metadata.building?.address || "bundle")
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[^a-zA-Z0-9_-]+/g, "_")
-    .slice(0, 30);
+    // m-6 (7 mai 2026) — slice 30→60 pentru includerea ap./bl./sc.
+    .slice(0, 60);
   const filename = `${programType}_${slug}_${dateSlug}.zip`;
 
   if (download && typeof document !== "undefined") {

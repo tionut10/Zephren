@@ -17,9 +17,15 @@
  */
 
 import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validity.js";
+import { setupRomanianFont, makeTextWriter, normalizeForPdf, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 
 /**
  * Generează scrisoarea de însoțire ca PDF Blob și descarcă automat.
+ *
+ * Audit 7 mai 2026 (CR-1) — diacritice fix: cover-letter folosea Helvetica
+ * direct fără setupRomanianFont, ducând la PDF cu „SCRISOARE DE ÎNSOIRE"
+ * (litere spaced + diacritice eliminate). Acum încarcă Liberation Sans cu
+ * fallback transliterare ASCII pentru text și autoTable.
  *
  * @param {object} args
  * @param {object} args.auditor — date auditor (name, atestat, grade, mdlpaCode, attestationIssueDate)
@@ -38,6 +44,10 @@ export async function generateCoverLetterPdf({
 }) {
   const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const fontOk = await setupRomanianFont(doc);
+  const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
+  const writeText = makeTextWriter(doc, fontOk);
+  const norm = (t) => normalizeForPdf(t, fontOk);
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 18;
   const todayRO = new Date().toLocaleDateString("ro-RO", {
@@ -46,12 +56,12 @@ export async function generateCoverLetterPdf({
   const ordLabel = getAttestationOrdinanceLabel(auditor.attestationIssueDate);
 
   // Antet
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(14);
-  doc.text("SCRISOARE DE ÎNSOȚIRE", pageW / 2, 22, { align: "center" });
+  writeText("SCRISOARE DE ÎNSOȚIRE", pageW / 2, 22, { align: "center" });
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(
+  doc.setFont(baseFont, "normal");
+  writeText(
     "depunere fizică Certificat de Performanță Energetică",
     pageW / 2, 28, { align: "center" }
   );
@@ -60,33 +70,33 @@ export async function generateCoverLetterPdf({
 
   // Destinatar
   let y = 40;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(10);
-  doc.text("Către:", margin, y);
-  doc.setFont("helvetica", "normal");
-  doc.text("Ministerul Dezvoltării, Lucrărilor Publice și Administrației (MDLPA)", margin + 16, y);
+  writeText("Către:", margin, y);
+  doc.setFont(baseFont, "normal");
+  writeText("Ministerul Dezvoltării, Lucrărilor Publice și Administrației (MDLPA)", margin + 16, y);
   y += 5;
-  doc.text("Direcția Atestări — Registrul Auditorilor Energetici", margin + 16, y);
+  writeText("Direcția Atestări — Registrul Auditorilor Energetici", margin + 16, y);
   y += 5;
-  doc.text("Adresa: Str. Apolodor nr. 17, sector 5, București", margin + 16, y);
+  writeText("Adresa: Str. Apolodor nr. 17, sector 5, București", margin + 16, y);
 
   // Data + Cod CPE
   y += 10;
-  doc.setFont("helvetica", "bold");
-  doc.text("Data:", margin, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(todayRO, margin + 16, y);
+  doc.setFont(baseFont, "bold");
+  writeText("Data:", margin, y);
+  doc.setFont(baseFont, "normal");
+  writeText(todayRO, margin + 16, y);
   y += 5;
-  doc.setFont("helvetica", "bold");
-  doc.text("Cod CPE:", margin, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(cpeCode || "—", margin + 22, y);
+  doc.setFont(baseFont, "bold");
+  writeText("Cod CPE:", margin, y);
+  doc.setFont(baseFont, "normal");
+  writeText(cpeCode || "—", margin + 22, y);
 
   // Date auditor
   y += 10;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(11);
-  doc.text("AUDITOR ENERGETIC", margin, y);
+  writeText("AUDITOR ENERGETIC", margin, y);
   doc.setLineWidth(0.2);
   doc.line(margin, y + 1, margin + 60, y + 1);
   doc.setFontSize(10);
@@ -100,18 +110,18 @@ export async function generateCoverLetterPdf({
     ["Cod MDLPA:", auditor.mdlpaCode || "(se va atribui la înregistrare)"],
   ];
   for (const [k, v] of auditorRows) {
-    doc.setFont("helvetica", "bold");
-    doc.text(k, margin, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(v), margin + 36, y);
+    doc.setFont(baseFont, "bold");
+    writeText(k, margin, y);
+    doc.setFont(baseFont, "normal");
+    writeText(String(v), margin + 36, y);
     y += 5;
   }
 
   // Date clădire
   y += 5;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(11);
-  doc.text("CLĂDIRE CERTIFICATĂ", margin, y);
+  writeText("CLĂDIRE CERTIFICATĂ", margin, y);
   doc.line(margin, y + 1, margin + 60, y + 1);
   doc.setFontSize(10);
   y += 7;
@@ -125,47 +135,47 @@ export async function generateCoverLetterPdf({
     ["Destinație:", building.category || building.building_type || "rezidențial"],
   ];
   for (const [k, v] of buildingRows) {
-    doc.setFont("helvetica", "bold");
-    doc.text(k, margin, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(v), margin + 42, y);
+    doc.setFont(baseFont, "bold");
+    writeText(k, margin, y);
+    doc.setFont(baseFont, "normal");
+    writeText(String(v), margin + 42, y);
     y += 5;
   }
 
   // Lista atașamente
   y += 5;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(11);
-  doc.text("DOCUMENTE DEPUSE", margin, y);
+  writeText("DOCUMENTE DEPUSE", margin, y);
   doc.line(margin, y + 1, margin + 60, y + 1);
   doc.setFontSize(10);
   y += 7;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(baseFont, "normal");
   if (!attachments || attachments.length === 0) {
-    doc.text("(Lista atașamentelor se completează manual)", margin, y);
+    writeText("(Lista atașamentelor se completează manual)", margin, y);
     y += 5;
   } else {
     attachments.forEach((att, i) => {
       const sizeStr = att.sizeMB ? ` (${att.sizeMB.toFixed(2)} MB)` : "";
       const line = `${i + 1}. ${att.name || "fișier"}${sizeStr}`;
-      doc.text(line, margin, y);
+      writeText(line, margin, y);
       y += 5;
     });
   }
 
   // Declarație
   y += 5;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(10);
-  doc.text("DECLARAȚIE:", margin, y);
+  writeText("DECLARAȚIE:", margin, y);
   y += 5;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(baseFont, "normal");
   doc.setFontSize(9);
   const decl = `Subsemnatul, în calitate de auditor energetic atestat, declar pe propria răspundere că ` +
     `documentele anexate (CPE + Anexa 1 + Anexa 2) sunt complete și conforme cu metodologia ` +
     `Mc 001-2022, ${ordLabel.short} și prevederile Legii 372/2005 R2. Solicit înregistrarea ` +
     `prezentului CPE în Registrul Național al Auditorilor Energetici.`;
-  const declLines = doc.splitTextToSize(decl, pageW - 2 * margin);
+  const declLines = doc.splitTextToSize(norm(decl), pageW - 2 * margin);
   doc.text(declLines, margin, y);
   y += declLines.length * 4 + 4;
 
@@ -173,29 +183,29 @@ export async function generateCoverLetterPdf({
   doc.setFontSize(8);
   doc.setTextColor(110);
   const transNote =
-    "⏱️ Notă tranziție: documentul este generat în perioada de tranziție Ord. MDLPA 348/2026 " +
+    "[!] Notă tranziție: documentul este generat în perioada de tranziție Ord. MDLPA 348/2026 " +
     "(14.IV.2026 → 11.X.2026), când portalul electronic MDLPA pentru distincția Ici/IIci nu " +
     "este încă operațional (start prevăzut 8.VII.2026). Depunerea se efectuează prin procedura " +
     "veche (fizică / email birou.atestari@mdlpa.ro).";
-  const transLines = doc.splitTextToSize(transNote, pageW - 2 * margin);
+  const transLines = doc.splitTextToSize(norm(transNote), pageW - 2 * margin);
   doc.text(transLines, margin, y);
   y += transLines.length * 3.5 + 6;
   doc.setTextColor(0);
 
   // Spațiu semnătură + ștampilă
-  doc.setFont("helvetica", "bold");
+  doc.setFont(baseFont, "bold");
   doc.setFontSize(10);
-  doc.text("Semnătura auditor:", margin, y);
-  doc.text("Ștampilă (Ø 40 mm):", pageW / 2 + 5, y);
+  writeText("Semnătura auditor:", margin, y);
+  writeText("Ștampilă (Ø 40 mm):", pageW / 2 + 5, y);
   doc.setLineWidth(0.3);
   doc.rect(margin, y + 2, 70, 25);
   doc.circle(pageW / 2 + 25, y + 14, 12);
 
   // Footer
-  doc.setFont("helvetica", "italic");
+  doc.setFont(baseFont, "italic");
   doc.setFontSize(7);
   doc.setTextColor(140);
-  doc.text(
+  writeText(
     `Generat de Zephren Energy Calculator · ${todayRO} · ${ordLabel.short}`,
     pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" }
   );

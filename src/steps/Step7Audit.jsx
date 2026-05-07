@@ -360,8 +360,9 @@ export default function Step7Audit(props) {
               const errors = [];
               let count = 0;
               const today = new Date().toISOString().slice(0, 10);
+              // m-6 (7 mai 2026) — slice 30→60 pentru includerea ap./bl./sc. complet.
               const buildingSlug = (building?.address || "cladire")
-                .replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 30);
+                .replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 60);
               const cpeCode = building?.cpeCode || building?.cpeNumber
                 || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
               const eurRon = getEurRonSync() || 5.05;

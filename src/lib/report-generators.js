@@ -6,9 +6,11 @@
 //            EN ISO 13788, C125, NP 008-97, SR 6156:2016
 // ═══════════════════════════════════════════════════════════════
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
+import { APP_VERSION } from "../data/app-version.js";
 
 const BRAND = "ZEPHREN";
-const VERSION = "v3.4";
+// m-1 (7 mai 2026) — VERSION centralizat din app-version.js (era hardcoded "v3.4").
+const VERSION = APP_VERSION;
 const COL_H = [13, 15, 26];   // #0d0f1a — header dark
 const COL_A = [251, 191, 36]; // #fbbf24 — amber accent
 const COL_G = [80, 80, 90];   // text gri corp

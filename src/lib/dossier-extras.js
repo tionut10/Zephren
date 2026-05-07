@@ -99,7 +99,7 @@ export async function generateFICPdf({
   drawRow("Carte funciară", building.landBook);
   drawRow("Categorie funcțională", building.category);
   drawRow("Structură constructivă", building.structure);
-  drawRow("An construcție / reabilitare", `${building.yearBuilt || "—"} / ${building.yearRenov || "necalibrat"}`);
+  drawRow("An construcție / reabilitare", `${building.yearBuilt || "—"} / ${building.yearRenov || "nereabilitată"}`);
   drawRow("Regim înălțime", `${building.floors || "—"} (${building.basement ? "subsol" : "fără subsol"}, ${building.attic ? "mansardă" : "fără mansardă"})`);
   y += 3;
 
@@ -675,7 +675,8 @@ export async function generateMonitoringPlanAdvancedPdf({
     "Bază: IPMVP Core Concepts (EVO 2022) + ISO 50001 + EN 17463.",
     M, 290);
 
-  const fname = `Plan_MV_avansat_${_safeSlug(building.address || "proiect").slice(0, 30)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  // m-6 (7 mai 2026) — slice 30→60 pentru includerea ap./bl./sc.
+  const fname = `Plan_MV_avansat_${_safeSlug(building.address || "proiect").slice(0, 60)}_${new Date().toISOString().slice(0, 10)}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }

@@ -204,7 +204,8 @@ export function exportCSV(ctx) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "Zephren_" + (building.address || "proiect").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30) + "_" + new Date().toISOString().slice(0, 10) + ".csv";
+  // m-6 (7 mai 2026) — slice 30→60 pentru includerea ap./bl./sc.
+  a.download = "Zephren_" + (building.address || "proiect").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 60) + "_" + new Date().toISOString().slice(0, 10) + ".csv";
   a.click();
   URL.revokeObjectURL(url);
   showToast(lang === "EN" ? "CSV exported successfully." : "CSV exportat cu succes.", "success");
