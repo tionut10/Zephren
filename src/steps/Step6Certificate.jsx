@@ -3069,30 +3069,18 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                     showToast("Raport nZEB generat.", "success");
                     } catch(e) { showToast("Eroare raport nZEB: " + e.message, "error", 6000); }
                   }}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 transition-all text-sm mt-3">
+                    className="hidden">
+                    {/* Sprint 08may2026 (followup 5) — Buton „Raport conformare nZEB (L.238/2024)" HTML inline ELIMINAT
+                        Motiv: duplicat funcțional cu butonul „Raport conformare nZEB — PDF oficial"
+                        de mai jos (Art. 6 alin. 1 lit. c) Ord. MDLPA 348/2026 + Mc 001-2022 §2.4),
+                        care este forma corectă legal cu conținut-cadru standardizat A4 4-5 pagini.
+                        REACTIVARE: scoate `className="hidden"` + decomentează vechi className. */}
                     <span className="text-lg">📋</span> Raport conformare nZEB (L.238/2024)
                     {!canNzebReport && <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
                   </button>
 
-                  {/* nZEB Report as downloadable HTML file */}
-                  {nzebReportHtml && (
-                    <button onClick={function() {
-                      try {
-                        const blob = new Blob([nzebReportHtml], {type:"text/html;charset=utf-8"});
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        // m-6 (7 mai 2026) — slice 30→60 (incluse „ap. N" pentru blocuri)
-                        a.download = "Raport_nZEB_" + (building.address||"cladire").replace(/[^a-zA-Z0-9]/g,"_").slice(0,60) + "_" + new Date().toISOString().slice(0,10) + ".html";
-                        document.body.appendChild(a); a.click();
-                        setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                        showToast("Raport nZEB descărcat ca HTML (deschide în browser → Print → Save as PDF)", "success", 5000);
-                      } catch(e) { showToast("Eroare: " + e.message, "error"); }
-                    }}
-                      className="w-full flex items-center justify-center gap-3 px-4 py-2 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.03] text-emerald-400/70 hover:bg-emerald-500/10 transition-all text-xs">
-                      <span>💾</span> Descarcă raport nZEB (.html → Print to PDF)
-                    </button>
-                  )}
+                  {/* Sprint 08may2026 (followup 5) — Buton secundar „Descarcă raport nZEB (.html)" ELIMINAT
+                      (depindea de nzebReportHtml din butonul HTML inline eliminat de mai sus). */}
 
                   {/* ───────────────────────────────────────────────────────────────
                       RAPORT DE CONFORMARE nZEB — PDF OFICIAL
@@ -3761,7 +3749,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                 const ancpiOk = !ANCPI_REQUIRED_SCOPES.includes(scop) || ancpiVerified;
                 const dataComplete = Au > 0 && instSummary && building.locality && building.category && ancpiOk;
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-3">
                     <button
                       disabled={!dataComplete || isGeneratingDocx}
                       onClick={async () => {
