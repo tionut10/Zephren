@@ -16,6 +16,9 @@
  */
 
 import { XML_SCHEMA_NAMESPACE } from "../data/renovation-passport-schema.js";
+// Sprint Conformitate P0-12 (7 mai 2026) — schema v1.0 OneClickRENO (skeleton).
+// Import static pentru a păstra exportPassportXML sync; bundle bloat ~5KB acceptabil.
+import { passportToXmlV1 } from "../data/renovation-passport-schema-v1.js";
 
 function defaultFilename(passport, ext) {
   const id = (passport?.passportId || "nou").slice(0, 8);
@@ -107,8 +110,13 @@ export function passportToXml(passport) {
 }
 
 export function exportPassportXML(passport, options = {}) {
-  const { filename, download = true } = options;
-  const xml = passportToXml(passport);
+  const { filename, download = true, schemaVersion = "0.1" } = options;
+
+  // Sprint Conformitate P0-12 (7 mai 2026) — suport schema v1.0 OneClickRENO.
+  // Default rămâne „0.1" pentru backward-compat. Pentru export portal MDLPA
+  // (post-publicare ordin oficial), folosiți schemaVersion: "1.0".
+  const xml = schemaVersion === "1.0" ? passportToXmlV1(passport) : passportToXml(passport);
+
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
   const fn = filename || defaultFilename(passport, "xml");
   if (!download) return { blob, filename: fn };

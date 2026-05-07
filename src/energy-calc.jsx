@@ -67,6 +67,8 @@ import { useProjectHistory } from "./hooks/useProjectHistory.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — Statistici auditor mutate din Pas 6 → Sidebar global.
 import AuditorStatsBadge from "./components/AuditorStatsBadge.jsx";
+// Sprint Conformitate P2-16 (7 mai 2026) — banner expiry atestat în sidebar
+import { buildExpiryNotification as _buildExpiryNotification } from "./lib/auditor-expiry-notifier.js";
 // ── Envelope modals — lazy loaded (S6.2) ──
 const ThermalBridgeCatalog = lazy(() => import("./components/ThermalBridgeCatalog.jsx"));
 const OpaqueModal = lazy(() => import("./components/OpaqueModal.jsx"));
@@ -3440,6 +3442,36 @@ Zona {selectedClimate.zone}
                 lang={lang}
               />
             );
+          })()}
+
+          {/* Sprint Conformitate P2-16 (7 mai 2026) — Banner expiry atestat auditor.
+               Severity-based (verde/amber/red), vizibil DOAR dacă issueDate setată
+               și < 365 zile până expirare. Click → toast cu actionRequired detail. */}
+          {auditor?.attestationIssueDate && (() => {
+            try {
+              const notif = _buildExpiryNotification({
+                attestationIssueDate: auditor.attestationIssueDate,
+                auditorName: auditor.name || "—",
+                atestat: auditor.atestat || "—",
+                validityYears: 5,
+                lang,
+              });
+              if (notif.severity === "ok" || !notif.bannerText) return null;
+              const colorMap = {
+                red: "border-red-500/40 bg-red-500/10 text-red-200",
+                amber: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+                blue: "border-blue-500/40 bg-blue-500/10 text-blue-200",
+              };
+              return (
+                <div className={cn("mt-3 p-2 rounded-lg border text-[10px] cursor-pointer", colorMap[notif.bannerColor] || "border-white/10")}
+                  onClick={() => notif.actionRequired && showToast?.(notif.actionRequired, notif.severity === "expired" ? "error" : "warning", 6000)}>
+                  <div className="font-semibold leading-tight">{notif.bannerText.slice(0, 90)}</div>
+                  {notif.actionRequired && (
+                    <div className="opacity-75 mt-1 truncate">{notif.actionRequired}</div>
+                  )}
+                </div>
+              );
+            } catch { return null; }
           })()}
 
           {/* Formular Date Client */}

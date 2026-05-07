@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🔸",
-        "text": "Gotenberg config + diagnostic în preview-document"
+        "icon": "📥",
+        "text": "P0-12 Schema OneClickRENO XML preparare migrare (skeleton v1.0)"
       },
       {
         "icon": "🔸",
-        "text": "diagnostic: log Gotenberg HTTP status în preview-document API + return în response body"
+        "text": "P0-11 Watermark juridic centralizat (DEMO/SCOP DIDACTIC/MOCK/PREVIEW)"
+      },
+      {
+        "icon": "📋",
+        "text": "P0-10 Bundle ZIP standardizat dosar audit (10 categorii) + manifest.json"
+      },
+      {
+        "icon": "📥",
+        "text": "P0-05..P0-09 DocumentUploadCenter + 8 slot-uri condiționate input client"
       },
       {
         "icon": "📄",
-        "text": "Banner avertisment preview HTML — clarifică că DOCX descărcat e sursa"
-      },
-      {
-        "icon": "📄",
-        "text": "Zoom toolbar pe preview docx (CPE + Anexa)"
+        "text": "P0-04 Cerere oficială client → auditor (PDF generator)"
       },
       {
         "icon": "✨",
-        "text": "feat(step7): Sprint P2 — 5 documente normative noi (FIC + DCA + SHA-256 + M&V + Cap. 0)"
+        "text": "add logo_ro_signature.png 150x173px for email signatures"
       },
       {
-        "icon": "🔧",
-        "text": "Footer & Anexa: ': ' prefix nr + m²/m³ labels apartament"
+        "icon": "🔸",
+        "text": "P0-03 CAdES B-T detașat pentru Manifest SHA-256 (Sprint Conformitate)"
       },
       {
-        "icon": "🔧",
-        "text": "fix(step7): Sprint P1 — B4 unificare 3 surse cost (rehabScenarioInputs prioritar)"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(demo): B11 recalibrare M1 expectedResults la motor curent (06.05.2026)"
+        "icon": "📄",
+        "text": "fix(step6): repară ReferenceError dataComplete în Card PDF/A-3 nou"
       }
     ]
   },

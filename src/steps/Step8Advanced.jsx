@@ -117,6 +117,8 @@ export const TAB_SECTIONS = [
   { id:"mdlpa",         icon:"🏛️", label:"MDLPA Registru (XML)",     category:"rapoarte" },
   { id:"cpe_tracker",   icon:"📅", label:"Tracker CPE",              category:"rapoarte" },
   { id:"gwp_co2",       icon:"🌿", label:"CO₂ Lifecycle",            category:"rapoarte" },
+  // Sprint Conformitate P3-01..P3-06 (7 mai 2026) — Construcție nouă
+  { id:"constructie_noua", icon:"🏗️", label:"Construcție nouă",       category:"rapoarte" },
 
   // 💼 06 ADMINISTRARE CABINET (business ops auditor)
   { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
@@ -4547,6 +4549,123 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
             renewSummary={renewSummary}
             lang={lang}
           />
+        </Card>
+      )}
+
+      {/* Sprint Conformitate P3-01..P3-06 (7 mai 2026) — Construcție nouă
+           4 documente livrabile pentru construcții noi (post Art. 9 EPBD 2024/1275). */}
+      {activeTab === "constructie_noua" && (
+        <Card className="p-4 space-y-4">
+          <div>
+            <div className="text-base font-semibold mb-1">🏗️ Documente Construcție Nouă</div>
+            <div className="text-[12px] opacity-70">
+              Pentru clădiri noi (scopCpe = construire). Acoperă cerințele Art. 9 EPBD 2024/1275
+              (ZEB post-2030 public, post-2033 toate) + HG 273/1994 (Cartea Tehnică) + HG 122/2024.
+            </div>
+          </div>
+
+          {/* 1. Studiu ZEB */}
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3 space-y-2">
+            <div className="text-[13px] font-semibold">1️⃣ Studiu ZEB (Zero Emission Building)</div>
+            <div className="text-[11px] opacity-70">Verificare conformitate prag ZEB pe categoria clădirii (post-2030 public, 2033 privat).</div>
+            <button
+              onClick={async () => {
+                try {
+                  const { generateZebStudyPdf } = await import("../lib/zeb-study-pdf.js");
+                  await generateZebStudyPdf({
+                    building,
+                    energy: {
+                      epPrimary: instSummary?.ep_total_m2 || 0,
+                      epNren: instSummary?.ep_nren_m2 || 0,
+                      rer: renewSummary?.rer || 0,
+                      co2: instSummary?.co2_total_m2 || 0,
+                    },
+                    scenarios: {
+                      current: {
+                        epPrimary: instSummary?.ep_total_m2 || 0,
+                        rer: renewSummary?.rer || 0,
+                        co2: instSummary?.co2_total_m2 || 0,
+                      },
+                      nzebTarget: { epPrimary: 65, rer: 0.30, co2: 13 },
+                      zebTarget: { epPrimary: 50, rer: 0.75, co2: 5 },
+                    },
+                  });
+                } catch (e) { console.error(e); alert("Eroare: " + e.message); }
+              }}
+              className="px-3 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 text-[12px] font-medium">
+              📄 Generează Studiu ZEB
+            </button>
+          </div>
+
+          {/* 2. Note Cartea Tehnică */}
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+            <div className="text-[13px] font-semibold">2️⃣ Note Cartea Tehnică (HG 273/1994 Art. 17)</div>
+            <div className="text-[11px] opacity-70">Faza execuție — abateri vs proiect + măsurători cheie post-construcție.</div>
+            <button
+              onClick={async () => {
+                try {
+                  const { generateCarteaTehnicaNotesPdf } = await import("../lib/construction-docs-pdf.js");
+                  await generateCarteaTehnicaNotesPdf({
+                    building,
+                    deviations: [], // user populează manual via UI viitor
+                    measurements: [
+                      { name: "n50 blower-door (real)", value: building.n50 ? `${building.n50} h⁻¹` : "—", target: "≤ 1.5 h⁻¹ (rezidențial nZEB)" },
+                      { name: "EP final test", value: instSummary?.ep_total_m2 ? `${Number(instSummary.ep_total_m2).toFixed(1)} kWh/m²·an` : "—", target: "≤ valoare proiect" },
+                    ],
+                    auditor,
+                  });
+                } catch (e) { console.error(e); alert("Eroare: " + e.message); }
+              }}
+              className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[12px] font-medium">
+              📋 Generează Note CT
+            </button>
+          </div>
+
+          {/* 3. Foto-album */}
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+            <div className="text-[13px] font-semibold">3️⃣ Foto-album construcție</div>
+            <div className="text-[11px] opacity-70">PDF A4 cu fotografii grupate pe 6 categorii (săpături, structură, anvelopă, instalații, finisaje, altele).</div>
+            <button
+              onClick={async () => {
+                try {
+                  const { generatePhotoAlbumPdf } = await import("../lib/construction-docs-pdf.js");
+                  // Placeholder fără fotografii — user adaugă manual via Step 1 BuildingPhotos
+                  await generatePhotoAlbumPdf({
+                    building,
+                    photos: [], // TODO: integrare cu BuildingPhotos store
+                  });
+                } catch (e) { console.error(e); alert("Eroare: " + e.message); }
+              }}
+              className="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[12px] font-medium">
+              📸 Generează Foto-album (template)
+            </button>
+          </div>
+
+          {/* 4. ENERGOBILANT industrial */}
+          <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 p-3 space-y-2">
+            <div className="text-[13px] font-semibold">4️⃣ ENERGOBILANȚ MO industrial (HG 122/2024)</div>
+            <div className="text-[11px] opacity-70">Pentru clădiri categoria AL (industriale) — bilanț procese cu indicatori specifici kWh/buc.</div>
+            <button
+              onClick={async () => {
+                try {
+                  const { generateEnergobilantPdf } = await import("../lib/construction-docs-pdf.js");
+                  await generateEnergobilantPdf({
+                    facility: {
+                      name: building?.owner || "—",
+                      address: building?.address,
+                      areaTotal: building?.areaUseful,
+                    },
+                    processes: [
+                      // Placeholder — user adaugă procese manual ulterior
+                      { name: "Total clădire", consumption_kwh: instSummary?.qf_total ? Math.round(instSummary.qf_total) : 0 },
+                    ],
+                  });
+                } catch (e) { console.error(e); alert("Eroare: " + e.message); }
+              }}
+              className="px-3 py-2 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 text-[12px] font-medium">
+              📊 Generează ENERGOBILANT
+            </button>
+          </div>
         </Card>
       )}
 

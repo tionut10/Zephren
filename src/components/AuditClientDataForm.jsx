@@ -163,6 +163,57 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
               >
                 📋 Anexa 6
               </button>
+              {/* Sprint Conformitate P0-04 (7 mai 2026) — Cerere oficială client */}
+              <button
+                onClick={async () => {
+                  try {
+                    const { generateClientRequestPdf } = await import("../lib/client-request-pdf.js");
+                    await generateClientRequestPdf({
+                      client: {
+                        name: formData.ownerName,
+                        type: formData.ownerType || "PF",
+                        cnp: formData.ownerCNP,
+                        cui: formData.ownerCUI,
+                        address: formData.ownerAddress,
+                        city: formData.ownerCity,
+                        email: formData.ownerEmail,
+                        phone: formData.ownerPhone,
+                      },
+                      building: {
+                        address: formData.buildingAddress,
+                        cadastralNumber: formData.cadastralNumber,
+                        landBook: formData.landBook,
+                        category: formData.buildingTipAnex6,
+                        areaUseful: formData.usefulArea,
+                        areaBuilt: formData.areaBuilt,
+                        yearBuilt: formData.constructionYear,
+                        scopCpe: formData.scopCpe,
+                        locality: formData.buildingLocality,
+                        county: formData.buildingCounty,
+                      },
+                      auditor: {
+                        name: formData.auditorName,
+                        atestat: formData.auditorRegistry,
+                        company: formData.auditorCompany,
+                      },
+                      services: {
+                        cpe: true,
+                        audit: formData.auditType === "Audit energetic complet",
+                        passport: false,
+                        nzebRoadmap: false,
+                      },
+                      requestDate: new Date(),
+                    });
+                  } catch (e) {
+                    console.error("[ClientRequest] Eroare:", e);
+                    alert("Eroare generare cerere: " + (e?.message || "necunoscut"));
+                  }
+                }}
+                className="px-3 py-2 bg-amber-500 text-white rounded text-sm font-medium hover:bg-amber-600 transition whitespace-nowrap"
+                title="Generează cerere oficială client → auditor (semnătură olograf, GDPR, Art. 6 alin. 1 Ord. 348/2026)"
+              >
+                📜 Cerere oficială
+              </button>
               <button
                 onClick={clearForm}
                 className="px-3 py-2 bg-red-500 text-white rounded text-sm font-medium hover:bg-red-600 transition whitespace-nowrap"
