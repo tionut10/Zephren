@@ -2480,21 +2480,37 @@ export default function Step7Audit(props) {
               </Card>
 
 
-              {/* ═══ INSTRUMENTE SUPLIMENTARE (pct. 9-17) ═══ */}
-              {(() => {
+              {/* ═══ INSTRUMENTE SUPLIMENTARE (pct. 9-17) — Sprint 08may2026 (followup 6) ═══
+                   DEZACTIVATE prin `false && ...` (toate 8 instrumente sunt DUPLICATE cu tab-uri
+                   Step 8 deja existente). User feedback 8 mai 2026: „toate" → eliminate.
+
+                   Mapping duplicate eliminate:
+                   - 📊 Analiză LCC → Step 8 tab „💹 LCC per măsură" (categoria Reabilitare)
+                   - 🎯 Curbă Cost-Optimal → Step 8 tab „📊 Curba cost-optim" (Sprint followup 4)
+                   - ⚠️ MEPS Check → Step 8 tab „🏛️ MEPS EPBD 2024" (categoria Conformitate)
+                   - 📄 Ofertă Reabilitare → eliminat anterior din Step 8 Cabinet (user nu folosește)
+                   - 📈 Consum Real → Step 8 tab „📊 Reconciliere consum" + buton dedicat în Pas 7
+                   - 🏗️ Fond Reparații → Step 8 tab „🔧 Fond reparații" (categoria Reabilitare)
+                   - 💶 Finanțări PNRR → Step 8 tab „💶 Finanțare PNRR/AFM" (Reabilitare)
+                   - 🌡️ Hartă Termică → Step 8 tab „🌡️ Hartă termică" (categoria Diagnostic)
+
+                   Logică unificată: locul canonic = Step 8.
+                   Helperele calcMaintenanceFund + calcPNRRFunding + generateThermalMapSVG +
+                   checkAcousticConformity rămân în repo (apelate de Step 8 + alte locuri).
+
+                   REACTIVARE (dacă userul vrea shortcut-uri inline): schimbă `false &&` în nimic.
+              */}
+              {false && (() => {
                 const [activeTool, setActiveTool] = React.useState(null);
                 const tools = [
                   { id:"lcc",       icon:"📊", label:"Analiză LCC" },
                   { id:"costOptimal", icon:"🎯", label:"Curbă Cost-Optimal" },
                   { id:"meps",      icon:"⚠️",  label:"MEPS Check" },
-                  // { id:"passport",  icon:"🆔", label:"Pașaport Renovare EPBD" }, // DEZACTIVAT — reactiv după EPBD 29 mai 2026
                   { id:"oferta",    icon:"📄", label:"Ofertă Reabilitare" },
                   { id:"consum",    icon:"📈", label:"Consum Real" },
                   { id:"fond",      icon:"🏗️", label:"Fond Reparații" },
                   { id:"pnrr",      icon:"💶", label:"Finanțări PNRR" },
                   { id:"thermal",   icon:"🌡️", label:"Hartă Termică" },
-                  // Sprint 08may2026 — tool „Acustic" eliminat din Pas 7 (DUPLICAT cu Step 8 tab Acustic)
-                  // { id:"acoustic",  icon:"🔊", label:"Acustic" },
                 ];
                 const Au = parseFloat(building?.areaUseful) || 0;
 
