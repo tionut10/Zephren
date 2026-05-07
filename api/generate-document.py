@@ -2027,11 +2027,64 @@ def compute_checkboxes(data, category):
     if not vent_type or "hr" not in vent_type:
         cbs.append(28)
 
-    # Cost/Savings/Payback (CB 48-64) — valori estimate
-    # Fără financialAnalysis, folosim default-uri
-    cbs.append(50)  # 10k-25k EUR (default mediu)
-    cbs.append(56)  # 20-30% savings
-    cbs.append(62)  # 3-7 ani payback
+    # Cost/Savings/Payback (CB 48-64) — #7 (audit Pas 6+7 V7, 7 mai 2026)
+    # Folosim valori REALE din financialAnalysis (Pas 7) primite din JS, fallback
+    # la defaults dacă lipsesc. Bază: L.372/2005 R2 + Reg. UE 244/2012 (cost-optim).
+    #
+    # Cost total renovare (CB 48-53): <1k / 1k-10k / 10k-25k / 25k-50k / 50k-100k / >100k EUR
+    try:
+        total_cost_eur = float((data.get("financial_total_cost_eur", "0") or "0").replace(",", "."))
+    except (ValueError, TypeError):
+        total_cost_eur = 0
+    if total_cost_eur > 0:
+        if total_cost_eur < 1000:       cbs.append(48)
+        elif total_cost_eur < 10000:    cbs.append(49)
+        elif total_cost_eur < 25000:    cbs.append(50)
+        elif total_cost_eur < 50000:    cbs.append(51)
+        elif total_cost_eur < 100000:   cbs.append(52)
+        else:                           cbs.append(53)
+    else:
+        cbs.append(50)  # default 10k-25k EUR
+
+    # Savings (CB 54-59): <10% / 10-20% / 20-30% / 30-40% / 40-50% / >60%
+    # M-7 din audit: template MDLPA Ord. 16/2023 NU include 50-60% (gap tipografic
+    # original); pentru savings 50-59% bifăm CB59 (>60% — cea mai apropiată).
+    # #12b (audit Pas 6+7 V7, 7 mai 2026) — flag pentru notă footer auditor
+    # când savings cad în intervalul 50-59% (zona cu gap în template).
+    try:
+        savings_pct = float((data.get("financial_savings_pct", "0") or "0").replace(",", "."))
+    except (ValueError, TypeError):
+        savings_pct = 0
+    needs_50_60_note = False
+    if savings_pct > 0:
+        if savings_pct < 10:        cbs.append(54)
+        elif savings_pct < 20:      cbs.append(55)
+        elif savings_pct < 30:      cbs.append(56)
+        elif savings_pct < 40:      cbs.append(57)
+        elif savings_pct < 50:      cbs.append(58)
+        else:
+            cbs.append(59)  # 50-60% și >60% (gap M-7)
+            if 50 <= savings_pct < 60:
+                needs_50_60_note = True
+    else:
+        cbs.append(56)  # default 20-30%
+    # Salvăm flag-ul în data pentru a fi citit de funcția de injectare notă footer
+    data["_needs_50_60_note"] = "1" if needs_50_60_note else ""
+    data["_savings_pct_actual"] = str(savings_pct) if savings_pct > 0 else ""
+
+    # Payback (CB 60-64): <1 / 1-3 / 3-7 / 7-10 / >10 ani
+    try:
+        payback_y = float((data.get("financial_payback_years", "0") or "0").replace(",", "."))
+    except (ValueError, TypeError):
+        payback_y = 0
+    if payback_y > 0:
+        if payback_y < 1:           cbs.append(60)
+        elif payback_y < 3:         cbs.append(61)
+        elif payback_y < 7:         cbs.append(62)
+        elif payback_y < 10:        cbs.append(63)
+        else:                       cbs.append(64)
+    else:
+        cbs.append(62)  # default 3-7 ani
 
     # ══════════════════════════════
     # ANEXA 2 — DATE CLĂDIRE (CB 65+)
@@ -4479,6 +4532,39 @@ class handler(BaseHTTPRequestHandler):
                     cb_indices = cb_all
                 if cb_indices:
                     toggle_checkboxes(doc, cb_indices)
+
+                # #12b (audit Pas 6+7 V7, 7 mai 2026) — Notă auditor în footer Anexa 1
+                # când savings cad în intervalul 50-59% (gap tipografic în template-ul
+                # oficial MDLPA Ord. 16/2023 — sare de la „40-50%" la „>60%"). Adaugă
+                # un paragraf italic explicativ DUPĂ secțiunea „Estimarea economiilor"
+                # fără a modifica structura template-ului oficial.
+                try:
+                    if data.get("_needs_50_60_note") == "1":
+                        savings_actual = data.get("_savings_pct_actual", "")
+                        savings_str = f"{float(savings_actual):.1f}".replace(".", ",") if savings_actual else "50-59"
+                        for tbl_idx, tbl in enumerate(doc.tables):
+                            txt = " ".join(c.text for r in tbl.rows for c in r.cells)
+                            if "40-50%" in txt and ">60%" in txt:
+                                # Găsit tabelul/secțiunea cu economii — adăugăm note
+                                # paragraf imediat după acest tabel
+                                last_p = doc.paragraphs[-1]
+                                note_p = doc.add_paragraph()
+                                note_run = note_p.add_run(
+                                    f"N.B. Auditor — Economii estimate: {savings_str}%. "
+                                    f"Categoria '50-60%' nu apare în template-ul oficial "
+                                    f"Ord. MDLPA 16/2023 Anexa 1 (gap tipografic în original "
+                                    f"care sare de la '40-50%' la '>60%'). Categoria '>60%' "
+                                    f"a fost bifată ca cea mai apropiată; auditorul confirmă "
+                                    f"valoarea reală în această notă conform L.372/2005 R2 "
+                                    f"și Reg. UE 244/2012."
+                                )
+                                note_run.italic = True
+                                note_run.font.size = Pt(8)
+                                from docx.shared import RGBColor as _RGB
+                                note_run.font.color.rgb = _RGB(0x80, 0x60, 0x00)  # amber
+                                break
+                except Exception as _note_err:
+                    print(f"[12b notă footer 50-60%] {_note_err}", flush=True)
 
                 # Mapping dinamic — chei semantice rezolvate la runtime
                 try:

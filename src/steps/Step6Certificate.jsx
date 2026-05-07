@@ -613,6 +613,19 @@ export default function Step6Certificate(props) {
                     cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     catKey),
                     cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", catKey),
                     cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    catKey),
+                    // #7 (audit Pas 6+7 V7, 7 mai 2026) — date analiza financiară (Pas 7) pentru
+                    // bifare CORECTĂ Anexa 1 secțiunea „Costuri/Economii/Recuperare" (CB 48-64).
+                    // Anterior Python folosea defaults hardcoded (10k-25k / 20-30% / 3-7 ani)
+                    // ignorând valorile reale calculate. Bază: L.372/2005 R2 + Reg. UE 244/2012.
+                    financial_total_cost_eur: financialAnalysis?.totalInvestment
+                      ? fmtRo(financialAnalysis.totalInvestment, 0)
+                      : "",
+                    financial_savings_pct: Number.isFinite(financialAnalysis?.energySavingsPercent)
+                      ? fmtRo(financialAnalysis.energySavingsPercent, 1)
+                      : "",
+                    financial_payback_years: Number.isFinite(financialAnalysis?.paybackYears)
+                      ? fmtRo(financialAnalysis.paybackYears, 1)
+                      : "",
                     // ── Etapa 7 (20 apr 2026) — câmpuri Anexa 2 detaliate ──
                     // Completare automată câmpuri lipsă din audit Anexa (gap-uri identificate
                     // 20 apr 2026): EER, putere frigorifică, ventilare HR, putere iluminat,
