@@ -28,12 +28,17 @@ function _safeSlug(s) {
 // 1. FIȘA IDENTITATE CLĂDIRE (FIC) — Mc 001-2022 Anexa G
 // ─────────────────────────────────────────────────────────────────────────────
 /**
+ * V2.1 (7 mai 2026) — M-1 fix: mapping permisiv pentru câmpuri climatice
+ * (selectedClimate folosește theta_e/ngz/name; FIC așteaptă t_ext_min/gd/locality)
+ * + energyClass derivat din enClass dacă lipsește din instSummary.
+ *
  * @param {object} args
  * @param {object} args.building — date clădire complete
  * @param {object} args.owner   — { name, type:"PF"|"PJ", cui, address }
  * @param {object} args.auditor — { name, atestat, grade }
- * @param {object} args.climate — { zone, gd, t_ext_min, locality }
+ * @param {object} args.climate — selectedClimate cu zone/name/theta_e/ngz SAU FIC-style {zone, locality, t_ext_min, gd}
  * @param {object} args.instSummary — { ep_total_m2, energyClass, qf_total }
+ * @param {string} [args.energyClass] — override explicit (din enClass.cls)
  * @param {Array}  args.opaqueElements
  * @param {Array}  args.glazingElements
  * @param {boolean} [args.download=true]
@@ -44,6 +49,7 @@ export async function generateFICPdf({
   auditor = {},
   climate = {},
   instSummary = {},
+  energyClass: energyClassOverride = null,
   opaqueElements = [],
   glazingElements = [],
   download = true,
@@ -120,12 +126,18 @@ export async function generateFICPdf({
   y += 3;
 
   // Secțiunea 3: Date climatice
+  // M-1 (7 mai 2026) — mapare permisivă pentru selectedClimate (climate.json):
+  // - theta_e (selectedClimate) → t_ext_min (FIC label)
+  // - ngz (selectedClimate)     → gd       (FIC label)
+  // - name (selectedClimate)    → locality (FIC label)
   drawRow("3. DATE CLIMATICE (SR 4839/Mc 001-2022)", "", true);
   drawRow("Zonă climatică", climate.zone || building.zonaClimatica);
-  drawRow("Locality climatică", climate.locality || building.locality);
-  drawRow("Latitudine / Longitudine", `${building.latitude || "—"}° N / ${building.longitude || "—"}° E`);
-  drawRow("Temperatură exterioară conv. [°C]", climate.t_ext_min);
-  drawRow("Grade-zile [°C·zile]", climate.gd);
+  drawRow("Locality climatică", climate.locality || climate.name || building.locality || building.city);
+  drawRow("Latitudine / Longitudine", `${building.latitude || climate.lat || "—"}° N / ${building.longitude || climate.lon || "—"}° E`);
+  const tExtMin = climate.t_ext_min ?? climate.theta_e;
+  const gradeZile = climate.gd ?? climate.ngz;
+  drawRow("Temperatură exterioară conv. [°C]", tExtMin != null ? tExtMin : "—");
+  drawRow("Grade-zile [°C·zile]", gradeZile != null ? gradeZile : "—");
   y += 3;
 
   // Secțiunea 4: Anvelopa termică (sumar)
@@ -140,9 +152,15 @@ export async function generateFICPdf({
   y += 3;
 
   // Secțiunea 5: Performanță energetică
+  // M-1 (7 mai 2026) — energyClass: prioritate (1) override explicit din apel,
+  // (2) instSummary.energyClass, (3) instSummary.cls, (4) "—".
+  const epClassFinal = energyClassOverride
+    || instSummary.energyClass
+    || instSummary.cls
+    || "—";
   drawRow("5. PERFORMANȚĂ ENERGETICĂ ACTUALĂ", "", true);
   drawRow("EP total [kWh/m²·an]", instSummary.ep_total_m2 ? Number(instSummary.ep_total_m2).toFixed(1) : "—");
-  drawRow("Clasă energetică", instSummary.energyClass);
+  drawRow("Clasă energetică", epClassFinal);
   drawRow("Energie finală totală [kWh/an]", instSummary.qf_total ? Math.round(instSummary.qf_total) : "—");
   drawRow("Scop CPE", building.scopCpe);
   drawRow("Validitate CPE [ani]", building.validityYears || "10");
@@ -685,11 +703,14 @@ export async function generateMonitoringPlanAdvancedPdf({
 // 4. PLAN MONITORIZARE M&V — IPMVP Opțiunea C (consum total facturat)
 // ─────────────────────────────────────────────────────────────────────────────
 /**
+ * V2.2 (7 mai 2026) — M-1 fix: energyClass override pentru baseline.
+ *
  * @param {object} args
  * @param {object} args.building
  * @param {object} args.auditor
  * @param {object} args.instSummary — baseline EP înainte de renovare
  * @param {object} args.scenario   — { measures, totalCost_RON, expectedSavings_RON_y }
+ * @param {string} [args.energyClass] — override explicit (din enClass.cls)
  * @param {boolean} [args.download=true]
  */
 export async function generateMonitoringPlanPdf({
@@ -697,6 +718,7 @@ export async function generateMonitoringPlanPdf({
   auditor = {},
   instSummary = {},
   scenario = {},
+  energyClass: energyClassOverride = null,
   download = true,
 } = {}) {
   const { default: jsPDF } = await import("jspdf");
@@ -750,7 +772,8 @@ export async function generateMonitoringPlanPdf({
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   drawKV("EP total baseline", `${instSummary.ep_total_m2 ? Number(instSummary.ep_total_m2).toFixed(1) : "—"} kWh/m²·an`);
   drawKV("Energie finală baseline", `${instSummary.qf_total ? Math.round(instSummary.qf_total) : "—"} kWh/an`);
-  drawKV("Clasă energetică baseline", instSummary.energyClass);
+  // M-1 (7 mai 2026) — fallback la override explicit dacă instSummary.energyClass lipsește.
+  drawKV("Clasă energetică baseline", energyClassOverride || instSummary.energyClass || instSummary.cls || "—");
   drawKV("Perioada baseline necesară", "12 luni consecutive (facturi gaz + electric)");
   drawKV("Sursă date baseline", "Facturi furnizori (E.ON/Engie/CEZ/Hidroelectrica/etc.)");
   y += 5;

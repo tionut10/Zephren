@@ -157,7 +157,9 @@ export function buildRenovationPassport({
     meps2033_compliant: epTotalBase > 0 ? epTotalBase <= ep2nd : false,
     mepsMilestone2: milestone2,
     cpeNumber: building?.cpeNumber || null,
-    cpeIssueDate: building?.cpeIssueDate || null,
+    // M-8 (7 mai 2026) — fallback la auditor.date dacă building.cpeIssueDate lipsește
+    // (în setupul curent CPE issue date = auditor.date din Pas 6).
+    cpeIssueDate: building?.cpeIssueDate || auditor?.date || null,
   };
 
   const strategy = ["quick_wins", "envelope_first", "systems_first", "balanced"].includes(
@@ -241,8 +243,24 @@ export function buildRenovationPassport({
       : "financial",
   };
 
+  // M-8 (7 mai 2026) — mapping permisiv pentru câmpurile pașaport care lipseau în XML:
+  //   - name: fallback adresă (clădirea nu are field „name" în UI; folosim adresa pentru identificare)
+  //   - heightRegime: fallback la building.floors string (ex. „P+4" e regimul de înălțime real)
+  //   - apartments: building folosește nApartments (camelCase), nu „apartments"
+  //   - floors: extragem partea numerică din string-uri ca „P+4" → 4 (sau null dacă nu se poate)
+  // Schema cere floors:integer|null + heightRegime:string, deci păstrăm tipurile.
+  const floorsRaw = building?.floors;
+  const floorsStr = floorsRaw != null ? String(floorsRaw) : "";
+  // Extrage primul număr din „P+4", „D+P+4E", „4E" etc. — pentru câmpul int floors.
+  const floorsNumMatch = floorsStr.match(/(\d+)/);
+  const floorsInt = floorsNumMatch ? parseInt(floorsNumMatch[1], 10) : int(floorsRaw, null);
+  const heightRegimeFallback = building?.heightRegime || floorsStr || "";
+  const apartmentsCount = int(
+    building?.nApartments ?? building?.apartmentsCount ?? building?.apartments,
+    null,
+  );
   const buildingObj = {
-    name: building?.name || "",
+    name: building?.name || building?.address || "",
     address: building?.address || "",
     county: building?.county || "",
     cadastralNumber: building?.cadastralNumber || "",
@@ -252,9 +270,9 @@ export function buildRenovationPassport({
     climateZone: ["I", "II", "III", "IV", "V"].includes(climate?.zone)
       ? climate.zone
       : "II",
-    floors: int(building?.floors, null),
-    apartments: int(building?.apartments, null),
-    heightRegime: building?.heightRegime || "",
+    floors: floorsInt,
+    apartments: apartmentsCount,
+    heightRegime: heightRegimeFallback,
     protectedStatus: !!building?.protectedStatus,
     cpePreviousNumber: building?.cpeNumber || null,
   };

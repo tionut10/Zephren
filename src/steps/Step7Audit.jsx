@@ -491,6 +491,7 @@ export default function Step7Audit(props) {
                 const { generateFICPdf } = await import("../lib/dossier-extras.js");
                 return generateFICPdf({
                   building, auditor, climate: selectedClimate, instSummary, opaqueElements, glazingElements,
+                  energyClass: enClass?.cls,
                   owner: { name: building?.owner, type: building?.ownerType, cui: building?.ownerCUI, address: building?.address },
                   download: false,
                 });
@@ -527,6 +528,7 @@ export default function Step7Audit(props) {
                   * (parseFloat(building?.areaUseful) || 100) * 0.45;
                 return generateMonitoringPlanPdf({
                   building, auditor, instSummary,
+                  energyClass: enClass?.cls,
                   scenario: { measures: measuresFromSugg, totalCost_RON: totalCost, expectedSavings_RON_y: expectedSavings },
                   download: false,
                 });
@@ -1615,6 +1617,7 @@ export default function Step7Audit(props) {
                           await generateFICPdf({
                             building, auditor, climate: selectedClimate,
                             instSummary, opaqueElements, glazingElements,
+                            energyClass: enClass?.cls,
                             owner: {
                               name: building?.owner, type: building?.ownerType,
                               cui: building?.ownerCUI, address: building?.address,
@@ -1687,6 +1690,7 @@ export default function Step7Audit(props) {
                           ) * (parseFloat(building?.areaUseful) || 100) * 0.45;
                           await generateMonitoringPlanPdf({
                             building, auditor, instSummary,
+                            energyClass: enClass?.cls,
                             scenario: {
                               measures: measuresFromSugg,
                               totalCost_RON: totalCost,
@@ -1771,6 +1775,21 @@ export default function Step7Audit(props) {
                                 building?.category || "AL", parseFloat(building?.areaUseful) || 100, 0.45)
                             : null;
                           const mepsThresholds = getMepsThresholdsFor(building?.category);
+                          // m-10 (7 mai 2026) — calculează granturi PNRR/AFM pentru a popula
+                          // câmpul „Grant maxim eligibil" din PDF Pașaport pag. 3 (era „—" gol).
+                          const fundingEligiblePassport = (() => {
+                            if (!instSummary) return null;
+                            try {
+                              const r = calcPNRRFunding({
+                                category: building?.category,
+                                Au: parseFloat(building?.areaUseful) || 0,
+                                epBefore: instSummary.ep_total_m2,
+                                epAfter: (instSummary.ep_total_m2 || 0) * 0.55,
+                                yearBuilt: parseInt(building?.yearBuilt) || 1980,
+                              });
+                              return r ? { maxGrantCombined: r.total_grant_RON || 0, programs: r.eligible || [] } : null;
+                            } catch { return null; }
+                          })();
                           const passport = buildRenovationPassport({
                             cpeCode: building?.cpeCode || building?.cpeNumber || null,
                             building: building || {},
@@ -1785,6 +1804,7 @@ export default function Step7Audit(props) {
                               classTrajectory: phasedPlan.classTrajectory, summary: phasedPlan.summary,
                             } : null,
                             mepsStatus: { thresholds: mepsThresholds, level: "noncompliant" },
+                            fundingEligible: fundingEligiblePassport,
                             // Sprint 06may2026 audit P0 (B1) — Math.abs() pe globalCost
                             // (LCC poate fi negativ; folosesc phasedPlan.totalCost_RON ca primă sursă)
                             financialSummary: (() => {
@@ -1909,6 +1929,20 @@ export default function Step7Audit(props) {
                             paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
                             perspective: "financial",
                           } : null;
+                          // m-10 (7 mai 2026) — granturi în XML Pașaport pentru consistență cu PDF.
+                          const fundingEligibleXml = (() => {
+                            if (!instSummary) return null;
+                            try {
+                              const r = calcPNRRFunding({
+                                category: building?.category,
+                                Au: parseFloat(building?.areaUseful) || 0,
+                                epBefore: instSummary.ep_total_m2,
+                                epAfter: (instSummary.ep_total_m2 || 0) * 0.55,
+                                yearBuilt: parseInt(building?.yearBuilt) || 1980,
+                              });
+                              return r ? { maxGrantCombined: r.total_grant_RON || 0, programs: r.eligible || [] } : null;
+                            } catch { return null; }
+                          })();
                           const passport = buildRenovationPassport({
                             cpeCode: building?.cpeCode || building?.cpeNumber || null,
                             building: building || {}, instSummary: instSummary || {},
@@ -1922,6 +1956,7 @@ export default function Step7Audit(props) {
                             } : null,
                             mepsStatus: { thresholds: mepsThXml },
                             financialSummary: finSumXml,
+                            fundingEligible: fundingEligibleXml,
                             changeReason: "Export XML Pașaport (Pas 7)",
                           });
                           const lib = await import("../lib/passport-export.js");
@@ -2177,6 +2212,20 @@ export default function Step7Audit(props) {
                       paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
                       perspective: "financial",
                     } : null;
+                    // m-10 (7 mai 2026) — granturi în Foaie de parcurs DOCX pentru consistență.
+                    const fundingEligibleRoadmap = (() => {
+                      if (!instSummary) return null;
+                      try {
+                        const r = calcPNRRFunding({
+                          category: building?.category,
+                          Au: parseFloat(building?.areaUseful) || 0,
+                          epBefore: instSummary.ep_total_m2,
+                          epAfter: (instSummary.ep_total_m2 || 0) * 0.55,
+                          yearBuilt: parseInt(building?.yearBuilt) || 1980,
+                        });
+                        return r ? { maxGrantCombined: r.total_grant_RON || 0, programs: r.eligible || [] } : null;
+                      } catch { return null; }
+                    })();
                     const passport = buildRenovationPassport({
                       cpeCode: building?.cpeCode || building?.cpeNumber || null,
                       building,
@@ -2197,6 +2246,7 @@ export default function Step7Audit(props) {
                       } : null,
                       mepsStatus: { thresholds: mepsTh },
                       financialSummary: financialSum,
+                      fundingEligible: fundingEligibleRoadmap,
                       changeReason: "Export Foaie de parcurs (Pas 7 Card pașaport)",
                       changedBy: auditor?.name || "Auditor",
                     });
