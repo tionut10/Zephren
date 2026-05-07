@@ -5339,8 +5339,21 @@ class handler(BaseHTTPRequestHandler):
                                     area = el["area"]
                                     r_calc = 1 / u if u > 0 else 0
                                     r_norm = R_NORMAT.get(code, 0)
+                                    # #9 (audit Pas 6+7 — V6, 7 mai 2026) — indicator vizual
+                                    # conformitate R termică vs Mc 001-2022 Tab 2.4-2.10
+                                    # (R_calc >= R_norm = conform; R_calc < R_norm = neconform).
+                                    # Sufix " ✓" / " ✗" pe valoarea R_calc — ajută auditorul să
+                                    # identifice rapid elementele neconforme la prima vedere.
+                                    # Fallback "—" dacă lipsesc date pentru comparație.
+                                    if r_calc > 0 and r_norm > 0:
+                                        indicator = " ✓" if r_calc >= r_norm else " ✗"
+                                        r_calc_str = format_ro(r_calc, 2) + indicator
+                                    elif r_calc > 0:
+                                        r_calc_str = format_ro(r_calc, 2)
+                                    else:
+                                        r_calc_str = "—"
                                     entries.append((
-                                        format_ro(r_calc, 2) if r_calc > 0 else "—",
+                                        r_calc_str,
                                         format_ro(r_norm, 2) if r_norm > 0 else "—",
                                         format_ro(area, 1),
                                     ))

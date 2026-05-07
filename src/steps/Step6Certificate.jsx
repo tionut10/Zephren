@@ -292,17 +292,34 @@ export default function Step6Certificate(props) {
 
                 const Aref = parseFloat(building.areaUseful) || 0;
                 const Vol = parseFloat(building.volume) || 0;
-                const latV = selectedClimate?.lat || 0;
-                // Etapa 2 — fix BUG-6: longitude din catalog 120 orașe + fallback centroid județ
-                // (înainte: 60 orașe inline + fallback 25.0 generic → coordonate greșite pentru orașe mici)
+                // #1 (audit Pas 6+7 — V6, 7 mai 2026) — GPS prioritar din input user
+                // (building.latitude/longitude din Step 1 / cadastru ANCPI), fallback la
+                // coordonatele orașului din selectedClimate. Anterior se folosea centroid
+                // oraș → eroare ~1-2 km vs adresa reală a clădirii. Format: 4 zecimale
+                // (~11 m precizie la lat 44° — suficient pentru identificare clădire).
                 const cityCoords = getCityCoordinates(selectedClimate?.name, building?.county);
-                const lngV = selectedClimate ? cityCoords.lng : 0;
+                const latUser = parseFloat(building?.latitude);
+                const lngUser = parseFloat(building?.longitude);
+                const latV = Number.isFinite(latUser) && latUser !== 0
+                  ? latUser
+                  : (selectedClimate?.lat || 0);
+                const lngV = Number.isFinite(lngUser) && lngUser !== 0
+                  ? lngUser
+                  : (selectedClimate ? cityCoords.lng : 0);
 
                 const fullAddress = [building.address, building.city, building.county].filter(Boolean).join(", ");
                 const yearStr = building.yearBuilt || "____";
                 const regimStr = building.floors || "____";
                 const nrCam = building.units || "3";
-                const arieDesf = Aref * 1.15;
+                // #2 (audit Pas 6+7 — V6, 7 mai 2026) — Aria construit desfășurată (Acd):
+                // prioritate la input user (building.areaBuilt din Pas 1, măsurată conform
+                // Mc 001-2022 §3.2), fallback la heuristică Au × 1.15 (factor formă RO mediu)
+                // doar dacă utilizatorul nu a introdus valoarea reală.
+                // Format CPE template MDLPA: „Aria utilă a apartamentului: Au / Acd m²".
+                const areaBuiltUser = parseFloat(building?.areaBuilt);
+                const arieDesf = Number.isFinite(areaBuiltUser) && areaBuiltUser > 0
+                  ? areaBuiltUser
+                  : Aref * 1.15;
 
                 const baseCat = baseCatResolved; // sub-categorie rezolvată la baza Mc 001-2022
                 const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
@@ -958,6 +975,27 @@ export default function Step6Certificate(props) {
 
                 // Routing query: cpe / anexa / anexa_bloc
                 const typeQuery = mode === "anexa_bloc" ? "anexa_bloc" : (mode === "anexa" ? "anexa" : "cpe");
+
+                // #14 (audit Pas 6+7 — V6, 7 mai 2026) — Validare schema payload pre-POST.
+                // WARNING-only (nu blochează), informează auditorul despre câmpurile lipsă
+                // ÎNAINTE de a primi un DOCX cu „—" tăcut. Bază: Mc 001-2022 + Ord. 16/2023.
+                try {
+                  const { validateCpePayload, formatValidationMessage } = await import("../lib/cpe-payload-schema.js");
+                  const valResult = validateCpePayload(payload.data || payload, mode);
+                  if (!valResult.ok || valResult.warnings.length > 0) {
+                    const msg = formatValidationMessage(valResult);
+                    showToast(msg, valResult.ok ? "info" : "warning", 7000);
+                    if (typeof console !== "undefined") {
+                      console.warn("[CPE Payload Validation]", msg);
+                    }
+                  }
+                } catch (e) {
+                  // Validarea nu blochează exportul — în caz de eroare doar log silent
+                  if (typeof console !== "undefined") {
+                    console.warn("[CPE Payload Validation skipped]", e?.message);
+                  }
+                }
+
                 const resp = await fetch(`/api/generate-document?type=${typeQuery}`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -1522,8 +1560,12 @@ export default function Step6Certificate(props) {
             const buildFullCpeXml = () => {
               if (!instSummary) return null;
               const esc = (s) => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-              const fmtD = (d) => d ? d.split("-").reverse().join(".") : "";
-              const validDate = auditor.date ? fmtD(auditor.date) : new Date().toISOString().slice(0,10).split("-").reverse().join(".");
+              // #5 (audit Pas 6+7 — V6, 7 mai 2026) — Format ISO YYYY-MM-DD pentru
+              // câmpurile XML <DataElaborare> și <DataExpirare> (XSD xs:date standard,
+              // compatibilitate cu C1_CPE_XML_MDLPA.xml din exportHandlers + portal MDLPA).
+              // Anterior se folosea DD.MM.YYYY (format uman) inconsistent cu alte XML-uri.
+              // Format DD.MM.YYYY se păstrează în DOCX (lizibil pentru auditor + utilizator).
+              const validDate = auditor.date || new Date().toISOString().slice(0,10);
               // CR-3 — apel cu opts.scaleVersion explicit (Ord. 16/2023 default 10 ani uniform).
               const scaleVersionXml = building.scaleVersion || "2023";
               const validityYearsXml = getValidityYears(enClass?.cls, {
@@ -1533,7 +1575,7 @@ export default function Step6Certificate(props) {
               const issueDate = new Date(auditor.date || Date.now());
               const expDateCalc = isNaN(issueDate.getTime()) ? new Date() : new Date(issueDate);
               expDateCalc.setFullYear(expDateCalc.getFullYear() + validityYearsXml);
-              const expDate = expDateCalc.toISOString().slice(0,10).split("-").reverse().join(".");
+              const expDate = expDateCalc.toISOString().slice(0,10);
 
               let penaltiesXml = { summary: { total_pct: 0, count: 0 }, items: [] };
               try {
