@@ -599,7 +599,17 @@ export async function exportPassportPDF(passport, options = {}) {
   // ── 7. REDUCERE EMISII CO₂ ──
   if (allMeasures.length > 0) {
     y = ensureSpace(doc, y, 30, w, h, drawHeader);
-    const totalCO2Reduction = allMeasures.reduce((s, m) => s + (parseFloat(m.co2_reduction) || 0), 0);
+    // CR-8 (7 mai 2026) — suma reducerilor măsurilor poate depăși baseline (fizic
+    // imposibil — nu poți reduce mai mult de cât emiți). Aplicăm cap la baseline
+    // CO₂ pentru a evita afișarea „Reducere 215,4 > Baseline 162,5" (nonsens).
+    // Soluția corectă cu diminishing returns e în calcPhasedRehabPlan, dar pentru
+    // sumarul Pașaportului pe TOATE măsurile (independent de fază), folosim cap
+    // simplu: max 95% din baseline (cap absolut realist).
+    const totalCO2ReductionRaw = allMeasures.reduce((s, m) => s + (parseFloat(m.co2_reduction) || 0), 0);
+    const baselineCO2 = parseFloat(baseline?.co2) || 0;
+    const totalCO2Reduction = baselineCO2 > 0
+      ? Math.min(totalCO2ReductionRaw, baselineCO2 * 0.95)
+      : totalCO2ReductionRaw;
     const Au = parseFloat(buildingFull?.areaUseful) || 0;
     const annualCO2Saved = totalCO2Reduction * Au;
 

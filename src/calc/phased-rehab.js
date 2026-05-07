@@ -130,7 +130,22 @@ export function calcPhasedRehabPlan(
 
   const phases            = [];
   const scheduled         = new Set();
-  let epCurrent           = parseFloat(epInitial_m2) || 200;
+  // CR-7 (7 mai 2026) — calcul iterativ EP cu diminishing returns:
+  // tracker BASELINE pentru calculul ratei de eficiență per măsură
+  const epInitialNum      = parseFloat(epInitial_m2) || 200;
+  let epCurrent           = epInitialNum;
+  // CR-8 (7 mai 2026) — tracker CO₂ inițial pentru cap fizic baseline
+  // Estimare CO₂ inițial = sum(co2_reduction)|când nu cunoaștem direct → folosim
+  // suma maximă a măsurilor doar ca limita superioară de pornire (ulterior va fi
+  // recalibrată dacă suma reducerilor depășește baseline real estimat).
+  const co2Sum            = sorted.reduce((s, m) => s + (parseFloat(m.co2_reduction) || 0), 0);
+  // Heuristic: pentru clădiri rezidențiale RA, CO₂ baseline ≈ EP × 0.19 (mix
+  // termoficare/gaz/electricitate). Folosim raportul ca să estimăm CO₂ baseline
+  // dacă utilizatorul nu îl furnizează (nu îl avem la nivelul acestei funcții).
+  const co2InitialEstimate = epInitialNum * 0.19;
+  // Plafon CO₂ baseline = max(estimat, sum reduceri) pentru a evita ratio>1
+  const co2Initial        = Math.max(co2InitialEstimate, co2Sum * 0.6);
+  let co2Current          = co2Initial;
   let cumulativeCost_RON  = 0;
   let cumulativeSavingsRON = 0;
   let npv                  = 0;
@@ -153,6 +168,8 @@ export function calcPhasedRehabPlan(
         scheduled.add(m.id);
         budgetLeft       -= cost;
         phaseCost        += cost;
+        // CR-7+CR-8 (7 mai 2026) — agregăm reducerile NOMINAL (independent) doar
+        // pentru raportare; aplicarea iterativă cu diminishing returns se face mai jos.
         epReductionPhase += parseFloat(m.ep_reduction_kWh_m2) || 0;
         co2ReductionPhase += parseFloat(m.co2_reduction) || 0;
       }
@@ -174,18 +191,52 @@ export function calcPhasedRehabPlan(
       continue;
     }
 
-    // Sprint Pas 7 docs (6 mai 2026) P0-2 — cap minim REALIST pe EP final.
-    // EP=0 e fizic imposibil pentru clădiri rezidențiale (chiar și passive house
-    // cu PV mare are minim ~15 kWh/m²·an consumuri auxiliare ne-acoperite de
-    // regenerabile). Anterior `Math.max(0, ...)` permitea EP=0 când suma reducerilor
-    // depășea EP inițial → user vedea „EP țintă: 0,0 kWh/(m²·an) (100%)" nerealist.
-    // Pragul 15 e aliniat cu nZEB Mc 001-2022 Tab 2.4 (clasa A).
-    const EP_MIN_REALISTIC = 15; // kWh/(m²·an) — passive house benchmark
-    epCurrent = Math.max(EP_MIN_REALISTIC, epCurrent - epReductionPhase);
+    // CR-7 (7 mai 2026) — CALCUL ITERATIV CU DIMINISHING RETURNS + cap min 25.
+    //
+    // Înainte: `epCurrent = Math.max(15, epCurrent - sum(reductions))` — model
+    // ADITIV care permitea suma reducerilor să depășească baseline (ex. baseline
+    // 856 → year 1: -494 → 362; year 2: -441 → -79 capped la 15). Math invalid:
+    // arăta cazul nerealist EP=15 (98% reducere) pentru un buget 80k RON.
+    //
+    // Acum: model MULTIPLICATIV — fiecare măsură reduce EP curent proporțional
+    // cu eficiența ei la baseline. ep_reduction din input e calculată față de
+    // baseline-ul inițial, deci convertim în factor de eficiență:
+    //   efficiency_i = ep_reduction_i / ep_initial
+    //   epCurrent ← epCurrent × (1 - efficiency_i)
+    // Acest model respectă proprietatea fizică că măsurile aplicate ulterior
+    // au efect marginal redus (efectul lor cumulativ ≠ suma efectelor individuale).
+    //
+    // Cap absolut: 25 kWh/(m²·an) — passive house realist Mc 001-2022 Tab 2.4
+    // pentru clasă A (era 15 = clasă A+ doar pentru clădiri foarte performante).
+    const EP_MIN_REALISTIC = 25; // kWh/(m²·an) — clasa A passive house
+    let epReductionEffectiveTotal = 0;
+    let co2ReductionEffectiveTotal = 0;
+    for (const m of phaseMeasures) {
+      const epReductionFull = parseFloat(m.ep_reduction_kWh_m2) || 0;
+      const co2ReductionFull = parseFloat(m.co2_reduction) || 0;
+      // Eficiență față de baseline inițial — cap la 95% pentru a evita
+      // anularea completă a EP printr-o singură măsură (fizic improbabil).
+      const epEfficiency = epInitialNum > 0
+        ? Math.min(0.95, Math.max(0, epReductionFull / epInitialNum))
+        : 0;
+      const co2Efficiency = co2Initial > 0
+        ? Math.min(0.95, Math.max(0, co2ReductionFull / co2Initial))
+        : 0;
+      // Reducere efectivă = efficiency × valoarea curentă (nu baseline)
+      const epReductionEff = epCurrent * epEfficiency;
+      const co2ReductionEff = co2Current * co2Efficiency;
+      epCurrent = Math.max(EP_MIN_REALISTIC, epCurrent - epReductionEff);
+      // CR-8 — cap CO₂ la 0 (fizic imposibil < 0)
+      co2Current = Math.max(0, co2Current - co2ReductionEff);
+      epReductionEffectiveTotal += epReductionEff;
+      co2ReductionEffectiveTotal += co2ReductionEff;
+    }
     cumulativeCost_RON += phaseCost;
 
     // Economii anuale după această fază [RON/an]
-    const annualEnergySavingKwh = epReductionPhase * areaUseful_m2;
+    // CR-7 — folosim reducerea EFECTIVĂ (după diminishing returns) nu suma
+    // nominală — altfel economiile sunt supraestimate.
+    const annualEnergySavingKwh = epReductionEffectiveTotal * areaUseful_m2;
     // Prețul energiei indexat cu inflația la anul curent
     const energyPriceYear = energyCostRON_kWh * Math.pow(1 + energyInflation, year - 1);
     const annualSavingRON  = annualEnergySavingKwh * energyPriceYear;
@@ -205,8 +256,14 @@ export function calcPhasedRehabPlan(
       phaseCost_RON: Math.round(phaseCost),
       cumulativeCost_RON: Math.round(cumulativeCost_RON),
       ep_after: Math.round(epCurrent * 10) / 10,
-      ep_reduction_phase: Math.round(epReductionPhase * 10) / 10,
-      co2_reduction_phase: Math.round(co2ReductionPhase * 100) / 100,
+      // CR-7+CR-8 — raportăm REDUCERILE EFECTIVE (după diminishing returns),
+      // nu suma nominală — pentru a fi consistente cu valorile EP/CO₂ rezultate.
+      // Suma nominală e păstrată în câmpurile *_nominal pentru audit/debug.
+      ep_reduction_phase: Math.round(epReductionEffectiveTotal * 10) / 10,
+      ep_reduction_phase_nominal: Math.round(epReductionPhase * 10) / 10,
+      co2_reduction_phase: Math.round(co2ReductionEffectiveTotal * 100) / 100,
+      co2_reduction_phase_nominal: Math.round(co2ReductionPhase * 100) / 100,
+      co2_after: Math.round(co2Current * 100) / 100,
       annualSaving_RON: Math.round(annualSavingRON),
       class_after: getEpClass(epCurrent, buildingCategory),
     });
