@@ -38,6 +38,8 @@ import CloudSyncPanel from "../components/CloudSyncPanel.jsx";
 import ContractGenerator from "../components/ContractGenerator.jsx";
 // Sprint 08may2026 — eliminat import EFacturaExport (PFA sub plafon SPV; user nu emite e-Factura)
 // import EFacturaExport from "../components/EFacturaExport.jsx";
+// Sprint 08may2026 (followup 4) — Bundle finanțare + Curba cost-optim mutate din Pas 7 → Pas 8
+import { Step7FundingBundles, Step7CostOptimalExports } from "./Step7Audit.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 import CPETracker from "../components/CPETracker.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -87,6 +89,9 @@ export const TAB_SECTIONS = [
   { id:"rehab",         icon:"🏗️", label:"Pachete reabilitare",      category:"rehab" },
   { id:"deviz",         icon:"💰", label:"Deviz reabilitare",        category:"rehab" },
   { id:"pnrr",          icon:"💶", label:"Finanțare PNRR/AFM",       category:"rehab" },
+  // Sprint 08may2026 (followup 4) — mutate din Pas 7 (Card Conformitate avansată):
+  { id:"funding_bundle",icon:"🎯", label:"Bundle finanțare 2026",    category:"rehab" },
+  { id:"cost_optim",    icon:"📊", label:"Curba cost-optim",         category:"rehab" },
   { id:"lcc",           icon:"💹", label:"LCC per măsură",           category:"rehab" },
   { id:"fond_rep",      icon:"🔧", label:"Fond reparații",           category:"rehab" },
   { id:"pompa",         icon:"♨️", label:"Pompă căldură",            category:"rehab" },
@@ -2741,6 +2746,54 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
           )}
         </Card>
       )}
+
+      {/* ═══ BUNDLE FINANȚARE 2026 (Sprint 08may2026 followup 4 — mutat din Pas 7) ═══ */}
+      {activeTab === "funding_bundle" && (() => {
+        const auditorObj = systems?.auditor || {};
+        const cpeCodeLocal = auditorObj.cpeCode || auditorObj.mdlpaCode || building?.cpeCode || building?.cpeNumber;
+        const localToast = (msg, type = "info") => {
+          console.log(`[Step8 funding_bundle ${type}]`, msg);
+          if (type === "error") alert(msg);
+        };
+        return (
+          <Card className="p-4">
+            <SectionHeader icon="🎯" title="Bundle finanțare 2026"
+              subtitle="Generare ZIP cu metadata pentru aplicații AFM Casa Verde / PNRR / programe 2026" />
+            <Step7FundingBundles
+              building={building}
+              auditor={auditorObj}
+              cpeCode={cpeCodeLocal}
+              showToast={localToast}
+            />
+          </Card>
+        );
+      })()}
+
+      {/* ═══ CURBA COST-OPTIM (Sprint 08may2026 followup 4 — mutat din Pas 7) ═══ */}
+      {activeTab === "cost_optim" && (() => {
+        const auditorObj = systems?.auditor || {};
+        const cpeCodeLocal = auditorObj.cpeCode || auditorObj.mdlpaCode || building?.cpeCode || building?.cpeNumber;
+        const localToast = (msg, type = "info") => {
+          console.log(`[Step8 cost_optim ${type}]`, msg);
+          if (type === "error") alert(msg);
+        };
+        return (
+          <Card className="p-4">
+            <SectionHeader icon="📊" title="Curba cost-optim — Reg. UE 244/2012"
+              subtitle="Analiză cost-optimă pentru pachete reabilitare. Export PDF + XLSX (3 sheets)" />
+            <Step7CostOptimalExports
+              building={building}
+              cpeCode={cpeCodeLocal}
+              showToast={localToast}
+              opaqueElements={opaqueElements}
+              glazingElements={glazingElements}
+              rehabScenarioInputs={null}
+              rehabComparison={null}
+              instSummary={instSummary}
+            />
+          </Card>
+        );
+      })()}
 
       {/* ═══ FOND REPARAȚII ═══ */}
       {activeTab === "fond_rep" && (

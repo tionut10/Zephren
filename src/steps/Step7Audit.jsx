@@ -2700,78 +2700,25 @@ export default function Step7Audit(props) {
                 );
               })()}
 
-              {/* Sprint P0-A (6 mai 2026) — Pașaport Renovare EPBD 2024 cu schema completă Anexa VIII.
-                  Versiune basic inclusă în Pro/AE Ici (1.499 RON). Pentru LCC + multi-fază → Expert/Step 8.
-                  Pasăm cpeCode + instSummary + renewSummary + climate + smartSuggestions + financialSummary
-                  pentru a alimenta buildRenovationPassport cu schema completă (12 secțiuni). */}
+              {/* Sprint 08may2026 (followup 4) — componenta `<PasaportBasic>` plin (Pașaport Renovare
+                  EPBD 2024 — Anexa VIII cu banner PREVIEW + butoane XML/PDF) ELIMINATĂ.
+                  Motiv: EPBD 2024/1275 NU este transpus în drept intern RO la 8.V.2026.
+                  Banner explicit „PREVIEW EPBD 2024 — fără valoare juridică în RO până la actul
+                  național de transpunere. Termen transpunere națională: 29.05.2026".
+                  REACTIVARE LA TRANSPUNERE EPBD RO: decomentează blocul de mai jos.
+                  Helperele lib/passport-export.js + components/PasaportBasic.jsx rămân în repo. */}
+              {/* ELIMINAT_PASAPORT_FULL_START
               <div className="mt-6">
-                <PasaportBasic
-                  building={building}
-                  energyClass={enClass?.cls || "—"}
-                  epFinal={epFinal}
-                  auditor={auditor}
-                  userPlan={userPlan}
-                  cpeCode={building?.cpeCode || building?.cpeNumber || null}
-                  instSummary={instSummary}
-                  renewSummary={renewSummary}
-                  climate={selectedClimate}
-                  smartSuggestions={smartSuggestions}
-                  financialSummary={financialAnalysis ? {
-                    totalInvest_RON: financialAnalysis.globalCost ? financialAnalysis.globalCost * 5.05 : 0,
-                    npv: financialAnalysis.npv || 0,
-                    irr: financialAnalysis.irr || 0,
-                    paybackSimple: financialAnalysis.paybackSimple || 0,
-                    paybackDiscounted: financialAnalysis.paybackDiscounted || 0,
-                    perspective: "financial",
-                  } : null}
-                  onGenerate={(passport) => {
-                    if (setBuilding && passport) {
-                      // Sprint P0-A — passportId din schema EPBD Anexa VIII (UUID v5 deterministic).
-                      setBuilding(prev => ({ ...prev, passportUUID: passport.passportId || passport.generatedAt }));
-                    }
-                  }}
-                />
+                <PasaportBasic ... />
               </div>
+              ELIMINAT_PASAPORT_FULL_END */}
 
-              {/* Sprint Conformitate P1-04..P1-10 + P0-03/P0-10 integrare (7 mai 2026)
-                   Card master cu 4 sub-funcționalități noi:
-                   1. Funding bundles (6 programe)
-                   2. Cost-optim PDF + XLSX
-                   3. Dossier complet ZIP standardizat 10 categorii
-                   4. Manifest semnat CAdES B-T (alternativ la TXT existing) */}
-              <div className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-4">
-                <div className="text-sm font-semibold text-emerald-300 flex items-center gap-2">
-                  🌱 Conformitate avansată (Sprint P0+P1)
-                </div>
-
-                {/* 1. Funding bundles — selector + buton ZIP */}
-                <Step7FundingBundles
-                  building={building}
-                  auditor={auditor}
-                  cpeCode={auditor?.cpeCode || auditor?.mdlpaCode}
-                  showToast={showToast}
-                />
-
-                {/* 2. Cost-optim PDF + XLSX */}
-                <Step7CostOptimalExports
-                  building={building}
-                  cpeCode={auditor?.cpeCode || auditor?.mdlpaCode}
-                  showToast={showToast}
-                  opaqueElements={opaqueElements}
-                  glazingElements={glazingElements}
-                  rehabScenarioInputs={rehabScenarioInputs}
-                  rehabComparison={rehabComparison}
-                  instSummary={instSummary}
-                />
-
-                {/* 3. Manifest signed CAdES (alternativ la TXT existing) */}
-                <Step7ManifestSigned
-                  building={building}
-                  auditor={auditor}
-                  cpeCode={auditor?.cpeCode || auditor?.mdlpaCode}
-                  showToast={showToast}
-                />
-              </div>
+              {/* Sprint 08may2026 (followup 4) — Card „🌱 Conformitate avansată (Sprint P0+P1)" REORGANIZAT:
+                  - Step7FundingBundles → MUTAT în Pas 8 categoria 🏗️ Reabilitare (tab „Bundle finanțare 2026")
+                  - Step7CostOptimalExports → MUTAT în Pas 8 categoria 🏗️ Reabilitare (tab „Curba cost-optim")
+                  - Step7ManifestSigned → ELIMINAT (mock signer fără valoare juridică conform eIDAS 2;
+                    utilizator PFA fără cont certSIGN B2B activ; același principiu ca PDF/A-3 + PAdES BETA
+                    eliminat în commit-ul db089d2). Helper lib/dossier-extras.js păstrat pentru reactivare. */}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
@@ -2790,9 +2737,12 @@ export default function Step7Audit(props) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-componente Sprint Conformitate P1+P0 integrare (7 mai 2026)
+// Sprint 08may2026 (followup 4) — exportate pentru utilizare în Step8Advanced
+// (mutate din Pas 7 → Pas 8 categoria Reabilitare).
+// Step7ManifestSigned rămâne ne-exportat — eliminat ca mock fără valoare juridică.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Step7FundingBundles({ building, auditor, cpeCode, showToast }) {
+export function Step7FundingBundles({ building, auditor, cpeCode, showToast }) {
   const [program, setProgram] = useState("afm-casa-eficienta");
   const [busy, setBusy] = useState(false);
   return (
@@ -2847,7 +2797,7 @@ function Step7FundingBundles({ building, auditor, cpeCode, showToast }) {
   );
 }
 
-function Step7CostOptimalExports({
+export function Step7CostOptimalExports({
   building,
   cpeCode,
   showToast,
