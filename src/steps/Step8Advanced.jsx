@@ -114,22 +114,28 @@ export const TAB_SECTIONS = [
   { id:"pasivhaus",     icon:"🏠", label:"Pasivhaus",                category:"diagnostic" },
 
   // 📑 05 RAPOARTE CPE & AUDIT (livrabile oficiale)
-  { id:"raport_audit",  icon:"📋", label:"Raport audit",             category:"rapoarte" },
-  { id:"mdlpa",         icon:"🏛️", label:"MDLPA Registru (XML)",     category:"rapoarte" },
-  { id:"cpe_tracker",   icon:"📅", label:"Tracker CPE",              category:"rapoarte" },
+  // Sprint 08may2026 — eliminate 3 tab-uri redundante:
+  // - „Raport audit" (DUPLICAT cu butonul Pas 7 „Raport Audit Energetic")
+  // - „MDLPA Registru (XML)" (DUPLICAT cu Pas 6 „Export XML MDLPA")
+  // - „Tracker CPE" (util doar pentru portofoliu 50+ CPE; user PFA cabinet mic)
+  // { id:"raport_audit",  icon:"📋", label:"Raport audit",             category:"rapoarte" },
+  // { id:"mdlpa",         icon:"🏛️", label:"MDLPA Registru (XML)",     category:"rapoarte" },
+  // { id:"cpe_tracker",   icon:"📅", label:"Tracker CPE",              category:"rapoarte" },
   { id:"gwp_co2",       icon:"🌿", label:"CO₂ Lifecycle",            category:"rapoarte" },
   // Sprint Conformitate P3-01..P3-06 (7 mai 2026) — Construcție nouă
   { id:"constructie_noua", icon:"🏗️", label:"Construcție nouă",       category:"rapoarte" },
 
-  // 💼 06 ADMINISTRARE CABINET (business ops auditor)
-  { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
-  { id:"facturare",     icon:"🧾", label:"Deviz servicii",           category:"cabinet" },
-  { id:"contract",      icon:"📝", label:"Contract",                 category:"cabinet" },
-  // Sprint 08may2026 — tab e-Factură eliminat (PFA sub plafon SPV; user nu emite e-Factura).
-  // Reactivare la depășire plafon: decomentează linia + import EFacturaExport + bloc activeTab===efactura.
+  // 💼 06 ADMINISTRARE CABINET — ELIMINATĂ COMPLET (Sprint 08may2026)
+  // Toate cele 5 tab-uri (Portofoliu + Deviz servicii + Contract + Ofertă reabilitare + Echipă)
+  // au fost eliminate: user PFA fără echipă, fără contract scris, fără ofertă pre-contractuală
+  // formalizată, fără SPV e-Factură, fără portofoliu mare.
+  // Reactivare: decomentează linile + restituie categoria „cabinet" în CATEGORIES_RO/EN.
+  // { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
+  // { id:"facturare",     icon:"🧾", label:"Deviz servicii",           category:"cabinet" },
+  // { id:"contract",      icon:"📝", label:"Contract",                 category:"cabinet" },
   // { id:"efactura",      icon:"🏛️", label:"e-Factură ANAF",           category:"cabinet" },
-  { id:"oferta_reab",   icon:"📄", label:"Ofertă reabilitare",       category:"cabinet" },
-  { id:"team",          icon:"👥", label:"Echipă",                   category:"cabinet" },
+  // { id:"oferta_reab",   icon:"📄", label:"Ofertă reabilitare",       category:"cabinet" },
+  // { id:"team",          icon:"👥", label:"Echipă",                   category:"cabinet" },
 
   // 🌐 07 DATE EXTERNE & CLOUD
   { id:"climate_import", icon:"📡", label:"Import climă",            category:"date_ext" },
@@ -179,7 +185,8 @@ export const CATEGORIES_RO = [
   { id: "calcul",        label: "📊 Calcul detaliat" },
   { id: "diagnostic",    label: "🔍 Diagnostic" },
   { id: "rapoarte",      label: "📑 Rapoarte CPE" },
-  { id: "cabinet",       label: "💼 Cabinet" },
+  // Sprint 08may2026 — categoria „💼 Cabinet" eliminată (toate cele 5 tab-uri eliminate)
+  // { id: "cabinet",       label: "💼 Cabinet" },
   { id: "date_ext",      label: "🌐 Date & Cloud" },
   { id: "resurse",       label: "📚 Resurse & FAQ" },
   { id: "expert",        label: "🔬 Avansat" },
@@ -191,7 +198,8 @@ const CATEGORIES_EN = [
   { id: "calcul",        label: "📊 Detailed calc" },
   { id: "diagnostic",    label: "🔍 Diagnostics" },
   { id: "rapoarte",      label: "📑 EPC Reports" },
-  { id: "cabinet",       label: "💼 Office" },
+  // Sprint 08may2026 — „💼 Office" category removed (all 5 tabs eliminated)
+  // { id: "cabinet",       label: "💼 Office" },
   { id: "date_ext",      label: "🌐 Data & Cloud" },
   { id: "resurse",       label: "📚 Resources & FAQ" },
   { id: "expert",        label: "🔬 Advanced" },

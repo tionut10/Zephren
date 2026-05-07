@@ -3917,22 +3917,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         </div>
                       </button>
                     )}
-                    <button
-                      onClick={generateXMLMDLPA}
-                      disabled={!instSummary}
-                      className={`w-full rounded-xl border transition-all text-sm ${
-                        !instSummary
-                          ? "border-white/10 bg-white/5 opacity-50 cursor-not-allowed"
-                          : "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 cursor-pointer"
-                      }`}>
-                      <div className="flex items-center justify-center gap-2 px-4 py-3">
-                        <span className="text-lg">📤</span>
-                        <div className="text-left">
-                          <div className="font-medium">Export XML MDLPA</div>
-                          <div className="text-[10px] opacity-60">Registru electronic Ord. 16/2023</div>
-                        </div>
-                      </div>
-                    </button>
+                    {/* Sprint 08may2026 — Buton „Export XML MDLPA (Ord. 16/2023)" ELIMINAT
+                        Motiv: Format intern Zephren fără destinatar real — Ord. 16/2023 cere doar
+                        actualizarea valorilor metodologice (fP=2.62 / fCO2=0.107), NU format XML obligatoriu.
+                        DUPLICAT funcțional cu butonul „Export XML portal" (Anexa MDLPA) care devine
+                        obligatoriu legal pe 8.VII.2026 (Ord. 348/2026 Art. 4 alin. 6).
+                        Handler `generateXMLMDLPA` rămâne în repo — apelat de butonul ZIP „Pachet complet".
+                        REACTIVARE: scoate markerul ELIMINAT din comentariu + decomentează blocul. */}
 
                     {/* Sprint Conformitate P1-03 (7 mai 2026) — Buton NOU XML portal electronic
                          MDLPA cu schema 7 secțiuni structurate (Art. 4 alin. 6 Ord. 348/2026,
@@ -4129,13 +4120,14 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
               })()}
 
               {/* ═══ PDF/A-3 + Semnătură electronică PAdES (Sprint Conformitate P0-01 + P0-02, 6 mai 2026) ═══
-                   Card NOU additive — NU modifică niciun flux DOCX existent (CPE/Anexa/Anexa Bloc/Pachet ZIP).
-                   Apel separat la endpoint-ul Python existent /api/generate-document?type=cpe pentru a obține
-                   DOCX-urile MDLPA byte-perfect, apoi le ATAȘEAZĂ într-un container PDF/A-3 (pattern ZUGFeRD).
-                   Cover PDF compact generat client-side cu jsPDF; semnătură PAdES B-T/B-LT cu provider selectabil.
-                   Vezi audit-conformitate-2026-05-06/P0-CRITIC.md + docs/CERTSIGN_SETUP.md.
+                   Sprint 08may2026 — DEZACTIVAT prin `false && ...`
+                   Motiv: Mock signer fără valoare juridică conform eIDAS 2 (Adobe Reader flagghează „Identity Unknown");
+                   user PFA fără cont certSIGN B2B activ (~150-400 EUR/lună) și fără upgrade Vercel Pro pentru
+                   endpoint serverless qtsp-proxy.js (limit 12 funcții pe Hobby plan).
+                   REACTIVARE LA cont certSIGN B2B + Vercel Pro: schimbă `false &&` în nimic.
+                   Helperele lib/pdfa-export.js + lib/pades-sign.js + qtsp-providers/* rămân în repo.
               */}
-              {canExportDocx && (() => {
+              {false && canExportDocx && (() => {
                 // Replic logica `dataComplete` + `tpl` + `ancpiOk` + `scop` din IIFE-ul
                 // butonului „Pachet complet ZIP" (linia ~3675) ca să fie accesibile aici.
                 // NU modific scope-ul existent — doar duc duplicatul în Card-ul meu.

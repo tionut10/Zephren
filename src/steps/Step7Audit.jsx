@@ -438,8 +438,8 @@ export default function Step7Audit(props) {
                 });
               };
 
-              // A1 — Dosar Audit AAECR (DOCX)
-              await addToZip(`A1_dosar_audit_AAECR_${today}.docx`, async () => {
+              // A1 — Raport Audit Energetic (DOCX) — Mc 001-2022 §11 + Ord. 2237/2010 anexa 1
+              await addToZip(`A1_raport_audit_energetic_${today}.docx`, async () => {
                 const payload = {
                   building, instSummary, renewSummary, auditor,
                   opaqueElements, glazingElements, thermalBridges,
@@ -528,36 +528,23 @@ export default function Step7Audit(props) {
                 });
               }
 
-              // B2 — Pașaport Renovare EPBD (PDF)
-              await addToZip(`B2_pasaport_renovare_EPBD_${today}.pdf`, async () => {
-                const passport = buildPassportForZip("Export ZIP Pașaport PDF (Pas 7)");
-                const lib = await import("../lib/passport-export.js");
-                return lib.exportPassportPDF(passport, { download: false });
-              });
+              // Sprint 08may2026 — B2 Pașaport Renovare ELIMINAT din ZIP
+              // (EPBD 2024/1275 NU este transpus în RO la 8.V.2026 — watermark spunea
+              //  „PREVIEW fără valoare juridică". Helperele lib păstrate pentru reactivare.)
+              // REACTIVARE LA TRANSPUNERE EPBD RO: decomentați blocul + buildPassportForZip.
 
-              // C1 — XML MDLPA (CPE)
-              await addToZip(`C1_CPE_XML_MDLPA_${today}.xml`, async () => {
-                const { exportXML: exportXMLFn } = await import("../handlers/exportHandlers.js");
-                return exportXMLFn({
-                  building, opaqueElements, glazingElements, thermalBridges,
-                  heating, acm, cooling, ventilation, lighting,
-                  solarThermal, photovoltaic, heatPump, biomass,
-                  auditor, instSummary, renewSummary, envelopeSummary, selectedClimate,
-                  showToast: () => {}, returnBlob: true,
-                });
-              });
+              // Sprint 08may2026 — C1 XML MDLPA (CPE) ELIMINAT din ZIP
+              // (Format intern Zephren fără destinatar real — Ord. 16/2023 NU cere XML.
+              //  Va fi înlocuit complet de XML portal din Anexa MDLPA când 8.VII.2026
+              //  Ord. 348/2026 Art. 4.6 devine operațional.)
 
-              // C2 — XML Pașaport (EPBD)
-              await addToZip(`C2_pasaport_XML_EPBD_${today}.xml`, async () => {
-                const passport = buildPassportForZip("Export ZIP Pașaport XML (Pas 7)");
-                const lib = await import("../lib/passport-export.js");
-                return lib.exportPassportXML(passport, { download: false });
-              });
+              // Sprint 08may2026 — C2 XML Pașaport (EPBD) ELIMINAT din ZIP
+              // (Schema oficială RO inexistentă până la transpunere act național EPBD.)
 
-              // C3 — Anexe DOCX
+              // C3 → renumerotat C1 — Anexe DOCX
               const hasElements = (opaqueElements?.length || 0) + (glazingElements?.length || 0) + (thermalBridges?.length || 0) > 0;
               if (hasElements) {
-                await addToZip(`C3_anexe_complete_${buildingSlug}_${today}.docx`, async () => {
+                await addToZip(`C1_anexe_complete_${buildingSlug}_${today}.docx`, async () => {
                   const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
                   return exportFullAnnexesDOCX(
                     { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges, systems: { heating, cooling, ventilation, lighting, acm } },
@@ -1458,7 +1445,7 @@ export default function Step7Audit(props) {
               {/* ═══════════════════════════════════════════════════════════════
                   CARD CENTRAL — GENERARE DOCUMENTE PAS 7 (6 mai 2026)
                   Toate butoanele de export într-un singur loc, grupate logic:
-                    A. Documente OFICIALE pentru client (Dosar AAECR + CPE estimat)
+                    A. Documente OFICIALE pentru client (Raport Audit Energetic + CPE estimat)
                     B. Documente CLIENT orientative (Deviz + Pașaport renovare)
                     C. Date tehnice export (XML MDLPA + Excel + PDF tehnic + anexe)
                   Pașaportul de Renovare e mutat aici din locul vechi (era jos, izolat).
@@ -1470,7 +1457,7 @@ export default function Step7Audit(props) {
                   className="w-full flex items-center justify-center gap-3 px-4 py-3.5 mb-5 rounded-xl border-2 border-emerald-400/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/80 transition-all font-bold text-sm shadow-lg shadow-emerald-900/20">
                   <span className="text-lg">📦</span>
                   <span>Descarcă toate documentele (ZIP)</span>
-                  <span className="text-[10px] font-normal opacity-60 ml-1">A1–A5 + B1–B2 + C1–C3</span>
+                  <span className="text-[10px] font-normal opacity-60 ml-1">A1–A5 + B1 + C1</span>
                 </button>
                 {/* ── Secțiunea A: DOCUMENTE OFICIALE (auditor → client) ── */}
                 <div className="mb-4">
@@ -1483,7 +1470,7 @@ export default function Step7Audit(props) {
                     <button
                       onClick={async () => {
                         try {
-                          showToast("Generare Dosar Audit AAECR în curs…", "info", 4000);
+                          showToast("Generare Raport Audit Energetic în curs…", "info", 4000);
                           const payload = {
                             building, instSummary, renewSummary, auditor,
                             opaqueElements, glazingElements, thermalBridges,
@@ -1507,18 +1494,18 @@ export default function Step7Audit(props) {
                           });
                           const a = document.createElement("a");
                           a.href = URL.createObjectURL(blob);
-                          a.download = filename || `dosar_audit_AAECR_${new Date().toISOString().slice(0, 10)}.docx`;
+                          a.download = filename || `raport_audit_energetic_${new Date().toISOString().slice(0, 10)}.docx`;
                           a.click();
                           URL.revokeObjectURL(a.href);
-                          showToast("✓ Dosar Audit AAECR DOCX descărcat", "success", 4000);
+                          showToast("✓ Raport Audit Energetic DOCX descărcat", "success", 4000);
                         } catch (e) {
-                          console.error("[Step7] export Dosar Audit:", e);
-                          showToast("Eroare generare Dosar Audit: " + e.message, "error", 6000);
+                          console.error("[Step7] export Raport Audit:", e);
+                          showToast("Eroare generare Raport Audit: " + e.message, "error", 6000);
                         }
                       }}
                       title="🟢 OBLIGATORIU LEGAL pentru auditul energetic — Mc 001-2022 §11 + Ord. 2237/2010 anexa 1 (conținut minim raport audit). Include bilanț energetic + recomandări cuantificate cu costuri + reconciliere consum."
                       className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-all text-sm font-bold sm:col-span-2">
-                      <span>🟢</span><span>📋</span> Dosar Audit Energetic AAECR (DOCX A4) — Cap. 1-8 · OBLIGATORIU LEGAL
+                      <span>🟢</span><span>📋</span> Raport Audit Energetic (DOCX A4) — Cap. 1-8 · OBLIGATORIU LEGAL
                     </button>
                     <button
                       onClick={async () => {
@@ -1554,12 +1541,14 @@ export default function Step7Audit(props) {
                         Vezi audit documente generate · folder „documente generate/" · 7 mai 2026. */}
                   </div>
 
-                  {/* Sprint 08may2026 — Extrageri individuale audit (sub-meniu collapsible)
-                      Aceste 3 documente sunt INCLUSE deja în Dosarul Audit AAECR DOCX
-                      (FIC = Anexa G; Manifest SHA-256 = Anexa 11; Plan M&V = sec. monitorizare).
-                      Le păstrăm ca extrageri individuale pentru cazul în care beneficiarul / banca /
-                      finanțatorul cere o anexă specifică fără raportul complet (viteză/confidențialitate).
-                      Marcate ⚪ OPȚIONAL — bună practică, nu obligatorii legal ca documente standalone. */}
+                  {/* Sprint 08may2026 — Sub-meniul „Extrageri individuale audit" ELIMINAT
+                      (FIC + Manifest SHA-256 + Plan M&V).
+                      Motiv: user feedback 8 mai 2026 — nu cere niciodată extrageri individuale;
+                      toate 3 documente sunt INCLUSE deja în Raportul Audit Energetic complet
+                      (FIC = Anexa G; Manifest = Anexa 11; M&V = sec. monitorizare).
+                      Helperele lib/dossier-extras.js (generateFICPdf, generateManifestSHA256,
+                      generateMonitoringPlanPdf) rămân în repo pentru reactivare instant. */}
+                  {/* ELIMINAT_EXTRAGERI_START
                   <details className="mt-3 group">
                     <summary className="flex items-center gap-2 cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-violet-400/70 hover:text-violet-300 transition-colors px-2 py-1.5 rounded-lg bg-violet-500/[0.04] border border-violet-500/20">
                       <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
@@ -1651,6 +1640,7 @@ export default function Step7Audit(props) {
                       </button>
                     </div>
                   </details>
+                  ELIMINAT_EXTRAGERI_END */}
                 </div>
 
                 {/* ── Secțiunea B: DOCUMENTE CLIENT ORIENTATIVE ── */}
@@ -1683,8 +1673,14 @@ export default function Step7Audit(props) {
                       className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-400/80 hover:bg-amber-500/10 transition-all text-xs">
                       <span>📋</span> Deviz estimativ reabilitare (PDF)
                     </button>
-                    {/* Sprint Pas 7 docs — buton „Pașaport Renovare PDF" mutat aici din PasaportBasic.
-                        Build passport + export PDF direct (același cod ca PasaportBasic.handleGenerate). */}
+                    {/* Sprint 08may2026 — Buton „Pașaport Renovare EPBD (PDF A4)" ELIMINAT
+                        Motiv: EPBD 2024/1275 NU este transpus în drept intern RO la 8.V.2026
+                        (termen UE 29.V.2026 — nu există încă act normativ național RO).
+                        Watermark juridic spunea „PREVIEW EPBD fără valoare juridică în RO".
+                        REACTIVARE LA TRANSPUNERE EPBD RO: scoate markerele ELIMINAT din comentarii + decomentează blocul.
+                        Helperele lib/passport-export.js + passport-docx.js + renovation-passport-schema
+                        rămân în repo pentru reactivare instant. */}
+                    {/* ELIMINAT_PASAPORT_PDF_START
                     <button
                       onClick={async () => {
                         try {
@@ -1782,10 +1778,12 @@ export default function Step7Audit(props) {
                       className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-all text-xs font-semibold">
                       <span>📘</span> Pașaport Renovare EPBD (PDF A4)
                     </button>
+                    ELIMINAT_PASAPORT_PDF_END */}
                   </div>
-                  {/* Pașaport Renovare EPBD 2024 — preview-only (banner + plan etapizat).
-                      Butoanele export sunt mutate în card central (PDF mai sus, XML jos în Sec. C).
-                      JSON + DOCX foaie parcurs ELIMINATE (redundante: JSON=debug, DOCX≡PDF Sec. 4). */}
+                  {/* Sprint 08may2026 — componenta `<PasaportBasic>` preview UI ELIMINATĂ
+                      (același motiv: EPBD netranspus RO 8.V.2026). Decomentează blocul de mai jos
+                      la transpunere act normativ național. */}
+                  {/* ELIMINAT_PASAPORT_PREVIEW_START
                   <div className="mt-3">
                     <PasaportBasic
                       building={building}
@@ -1809,6 +1807,7 @@ export default function Step7Audit(props) {
                       noButtons={true}
                     />
                   </div>
+                  ELIMINAT_PASAPORT_PREVIEW_END */}
                 </div>
 
                 {/* ── Secțiunea C: DATE TEHNICE EXPORT ── */}
@@ -1818,12 +1817,15 @@ export default function Step7Audit(props) {
                     <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">C · Date tehnice (export)</div>
                     <div className="h-px flex-1 bg-emerald-500/30" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button onClick={exportXML}
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400/80 hover:bg-emerald-500/10 transition-all text-xs">
-                      <span>📄</span> XML MDLPA (CPE)
-                    </button>
-                    {/* Sprint Pas 7 docs — buton XML Pașaport mutat aici din PasaportBasic. */}
+                  <div className="grid grid-cols-1 gap-2">
+                    {/* Sprint 08may2026 — buton „📄 XML MDLPA (CPE)" ELIMINAT
+                        (DUPLICAT EXACT cu butonul „Export XML MDLPA" Pas 6 — apelează
+                        aceeași funcție exportXML din handlers/exportHandlers.js). */}
+                    {/* Sprint 08may2026 — buton „📄 XML Pașaport (EPBD)" ELIMINAT
+                        (EPBD netranspus RO 8.V.2026 — schemă oficială inexistentă;
+                        helper exportPassportXML rămâne pentru reactivare).
+                        REACTIVARE LA TRANSPUNERE EPBD RO: scoate markerele ELIMINAT din comentarii + decomentează blocul. */}
+                    {/* ELIMINAT_XML_PASAPORT_START
                     <button
                       onClick={async () => {
                         try {
@@ -1914,6 +1916,7 @@ export default function Step7Audit(props) {
                       className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400/80 hover:bg-blue-500/10 transition-all text-xs">
                       <span>📄</span> XML Pașaport (EPBD)
                     </button>
+                    ELIMINAT_XML_PASAPORT_END */}
                     <button
                       onClick={async () => {
                         const hasAny = (opaqueElements?.length || 0) +
@@ -1950,90 +1953,13 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
-              {/* Simulare what-if interactivă */}
-              {instSummary && (() => {
-                const [simInsul, setSimInsul] = React.useState(10);
-                const [simWindow, setSimWindow] = React.useState(1.0);
-                const [simPV, setSimPV] = React.useState(0);
-                const baseEp = epFinal;
-                // Estimare simplificată impact
-                const insulImpact = (simInsul - 5) * 1.5; // fiecare cm peste 5cm reduce ~1.5 kWh/m²
-                const windowImpact = (1.4 - simWindow) * 15; // fiecare 0.1 U reducere ~1.5 kWh/m²
-                const pvImpact = simPV * 1.1; // fiecare m² PV produce ~1.1 kWh/m²·an specific
-                const simEp = Math.max(10, baseEp - insulImpact - windowImpact - pvImpact);
-                const simClass = getEnergyClass(simEp, catKey);
-                const savings = baseEp - simEp;
-                const savingsEur = savings * Au * 0.12 / 4.97; // ~0.12 EUR/kWh
-                return (
-                  <Card title="Simulare what-if — impact reabilitare" className="mb-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="text-[10px] opacity-50 block mb-1">Grosime izolație pereți [cm]</label>
-                        <input type="range" min="0" max="25" value={simInsul} onChange={e => setSimInsul(+e.target.value)} className="w-full" />
-                        <div className="text-xs font-mono text-center">{simInsul} cm</div>
-                      </div>
-                      <div>
-                        <label className="text-[10px] opacity-50 block mb-1">U ferestre [W/(m²·K)]</label>
-                        <input type="range" min="0.6" max="2.5" step="0.1" value={simWindow} onChange={e => setSimWindow(+e.target.value)} className="w-full" />
-                        <div className="text-xs font-mono text-center">{simWindow.toFixed(1)}</div>
-                      </div>
-                      <div>
-                        <label className="text-[10px] opacity-50 block mb-1">Suprafață PV [m²]</label>
-                        <input type="range" min="0" max="100" value={simPV} onChange={e => setSimPV(+e.target.value)} className="w-full" />
-                        <div className="text-xs font-mono text-center">{simPV} m²</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold" style={{color:simClass.color}}>{simClass.cls}</div>
-                        <div className="text-[10px] opacity-40">Clasă simulată</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-emerald-400">{simEp.toFixed(0)}</div>
-                        <div className="text-[10px] opacity-40">EP simulat</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-amber-400">-{savings.toFixed(0)}</div>
-                        <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-2.5 text-center">
-                        <div className="text-lg font-bold text-emerald-400">~{savingsEur.toFixed(0)}</div>
-                        <div className="text-[10px] opacity-40">EUR/an economii</div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })()}
+              {/* Sprint 08may2026 — Card „Simulare what-if interactivă" ELIMINAT
+                  (3 sliders: izolație/ferestre/PV — pedagogic, nu produce document.
+                   Auditor experimentat știe deja ordinul de mărime al impactului). */}
 
-              {/* ── SRI — Smart Readiness Indicator ── */}
-              {instSummary && (() => {
-                const sri = calcSRI(heating, cooling, ventilation, lighting, solarThermal, photovoltaic, heatPump, heating.bacsClass || "D");
-                const gradeColors = {A:"#22c55e",B:"#84cc16",C:"#eab308",D:"#ef4444"};
-                return (
-                  <Card title="Smart Readiness Indicator (SRI) — EPBD 2024/1275" className="mb-4">
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-black" style={{background:gradeColors[sri.grade]+"20",color:gradeColors[sri.grade],border:"2px solid "+gradeColors[sri.grade]}}>{sri.grade}</div>
-                      <div>
-                        <div className="text-xl font-bold">{sri.total}%</div>
-                        <div className="text-[10px] opacity-40">Scor total Smart Readiness</div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {SRI_DOMAINS.map(d => (
-                        <div key={d.id}>
-                          <div className="flex justify-between text-xs mb-0.5">
-                            <span className="opacity-60">{d.label} ({Math.round(d.weight*100)}%)</span>
-                            <span className="font-mono">{sri.scores[d.id]}%</span>
-                          </div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-emerald-500/60 transition-all" style={{width:sri.scores[d.id]+"%"}} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                );
-              })()}
+              {/* Sprint 08may2026 — Card „Smart Readiness Indicator (SRI)" ELIMINAT din Pas 7
+                  (DUPLICAT — apare deja în Step 5 SRIScoreAuto + Step 8 tab SRI Indicator).
+                   Locul canonic = Step 8 tab SRI. */}
 
               {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
                   Sprint P0-A (6 mai 2026) — refactor: plan REAL prin calcPhasedRehabPlan din
@@ -2561,7 +2487,8 @@ export default function Step7Audit(props) {
                   { id:"fond",      icon:"🏗️", label:"Fond Reparații" },
                   { id:"pnrr",      icon:"💶", label:"Finanțări PNRR" },
                   { id:"thermal",   icon:"🌡️", label:"Hartă Termică" },
-                  { id:"acoustic",  icon:"🔊", label:"Acustic" },
+                  // Sprint 08may2026 — tool „Acustic" eliminat din Pas 7 (DUPLICAT cu Step 8 tab Acustic)
+                  // { id:"acoustic",  icon:"🔊", label:"Acustic" },
                 ];
                 const Au = parseFloat(building?.areaUseful) || 0;
 
@@ -2761,31 +2688,8 @@ export default function Step7Audit(props) {
                         )}
                       </div>
                     )}
-                    {activeTool === "acoustic" && (
-                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-2">
-                        <div className="text-sm font-semibold mb-3">🔊 Conformitate Acustică — C125 / SR EN ISO 717</div>
-                        {acousticResult ? (
-                          <>
-                            <div className={`flex items-center gap-2 text-sm font-bold ${acousticResult.allConform ? "text-emerald-400" : "text-amber-400"}`}>
-                              {acousticResult.allConform ? "✓ Toate elementele conforme acustic" : `⚠ ${acousticResult.nonConformCount} element(e) neconforme`}
-                            </div>
-                            <div className="space-y-1 mt-2">
-                              {acousticResult.checks?.map((c, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-white/[0.04]">
-                                  <span className="opacity-60">{c.name}</span>
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-mono">Rw = {c.rw?.toFixed(0)} dB</span>
-                                    <span className={`font-bold ${c.ok ? "text-emerald-400" : "text-red-400"}`}>{c.ok ? "✓" : "✗"} {c.requirement} dB min</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-center py-8 opacity-30 text-sm">Adăugați elemente de anvelopă cu straturi pentru calcul acustic.</div>
-                        )}
-                      </div>
-                    )}
+                    {/* Sprint 08may2026 — Card „Conformitate Acustică C125" ELIMINAT din Pas 7
+                        (DUPLICAT cu Step 8 tab Acustic — locul canonic). */}
                   </div>
                 );
               })()}
