@@ -3925,11 +3925,13 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         Handler `generateXMLMDLPA` rămâne în repo — apelat de butonul ZIP „Pachet complet".
                         REACTIVARE: scoate markerul ELIMINAT din comentariu + decomentează blocul. */}
 
-                    {/* Sprint Conformitate P1-03 (7 mai 2026) — Buton NOU XML portal electronic
-                         MDLPA cu schema 7 secțiuni structurate (Art. 4 alin. 6 Ord. 348/2026,
-                         operațional 8.VII.2026). Folosește anexa-mdlpa-xml.js.
-                         Sprint 08may2026 — adăugat countdown live până la 8.VII.2026
-                         (în prezent NU este obligatoriu legal — devine din 8.VII.2026). */}
+                    {/* Sprint 08may2026 (followup 2) — Buton „Export XML portal (preview)" ELIMINAT
+                        Motiv consistență: deși are countdown live până la 8.VII.2026, butonul NU este
+                        obligatoriu legal la 8.V.2026 (61 zile rămase). User feedback: „tot ce nu e
+                        obligatoriu legal acum → eliminat, reactivare la activarea normei".
+                        REACTIVARE LA 8.VII.2026: scoate markerele ELIMINAT din comentariile JSX +
+                        decomentează blocul de mai jos. Helperele lib/anexa-mdlpa-xml.js rămân în repo. */}
+                    {/* ELIMINAT_XML_PORTAL_START
                     {(() => {
                       const PORTAL_DEADLINE = new Date("2026-07-08T00:00:00");
                       const now = new Date();
@@ -3998,18 +4000,19 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         </button>
                       );
                     })()}
+                    ELIMINAT_XML_PORTAL_END */}
 
                     {/* Audit 2 mai 2026 — P2.7: Buton „Generează pachet complet"
                         Bundlează toate exporturile într-un ZIP unic:
                           - CPE DOCX (mereu)
                           - Anexa 1+2 DOCX (mereu)
                           - Anexa Bloc DOCX (dacă apartments > 0)
-                          - Anexa MDLPA portal XML (Ord. 348/2026, obligatoriu 8.VII.2026)
                           - Raport nZEB DOCX (dacă plan permite)
-                        Sprint 08may2026: înlocuit XML-ul vechi Ord. 16/2023 cu XML portal
-                        Ord. 348/2026 pentru consistență cu butoanele standalone păstrate.
+                        Sprint 08may2026 (followup 2): eliminat complet XML din pachet
+                        (nici Ord. 16/2023, nici portal Ord. 348/2026 — niciunul nu este
+                        obligatoriu legal la 8.V.2026). REACTIVARE XML portal la 8.VII.2026.
                         Util pentru auditori care depun pachetul integral
-                        la beneficiar / OAR / Primărie / portal MDLPA într-o singură arhivă. */}
+                        la beneficiar / OAR / Primărie într-o singură arhivă. */}
                     <button
                       disabled={!dataComplete || isGeneratingDocx}
                       onClick={async () => {
@@ -4041,33 +4044,10 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             if (blocBlob) zip.file(`3_Anexa_Bloc_${addrSlug}_${dateSlug}.docx`, blocBlob);
                           }
 
-                          // 4. Anexa MDLPA portal XML — Sprint 08may2026 (FOLLOWUP):
-                          // Înlocuit XML-ul vechi Ord. 16/2023 (buildFullCpeXml) cu XML-ul portal
-                          // Anexa MDLPA Ord. 348/2026 Art. 4 alin. 6 (operațional 8.VII.2026).
-                          // Motiv consistență: butonul standalone „Export XML MDLPA Ord. 16/2023"
-                          // a fost eliminat (format intern fără destinatar); pachetul folosește
-                          // acum XML-ul oficial pentru portalul MDLPA care devine obligatoriu legal.
-                          try {
-                            const { generateAnexaMdlpaXml } = await import("../lib/anexa-mdlpa-xml.js");
-                            const cpeCodeForXml = auditor.cpeCode || auditor.mdlpaCode || "";
-                            if (cpeCodeForXml) {
-                              const xmlResult = generateAnexaMdlpaXml({
-                                cpeCode: cpeCodeForXml,
-                                building, instSummary, renewSummary, envelopeSummary, auditor,
-                                auditorAttestation: {
-                                  issueDate: auditor.attestationIssueDate,
-                                  gradeMdlpa: auditor.gradMdlpa || auditor.grade,
-                                },
-                                energyClass: enClass,
-                                co2Class,
-                                issueDate: auditor.date ? new Date(auditor.date) : new Date(),
-                                validityYears: getValidityYears(enClass?.cls),
-                              });
-                              if (xmlResult?.xml) {
-                                zip.file(`4_Anexa_MDLPA_portal_${addrSlug}_${dateSlug}.xml`, xmlResult.xml);
-                              }
-                            }
-                          } catch { /* XML opt — ZIP rămâne valid fără el */ }
+                          // Sprint 08may2026 (followup 2) — Item 4 Anexa MDLPA portal XML ELIMINAT din ZIP
+                          // Motiv consistență: butonul standalone „Export XML portal" a fost eliminat
+                          // (NU este obligatoriu legal la 8.V.2026 — devine din 8.VII.2026).
+                          // REACTIVARE LA 8.VII.2026: decomentează blocul de mai jos.
 
                           // 5. Raport nZEB (dacă HTML deja generat în state — opțional)
                           if (nzebReportHtml) {
@@ -4086,11 +4066,10 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                             "  1_CPE — Certificatul de Performanță Energetică (DOCX, format MDLPA)",
                             "  2_Anexa — Anexa 1+2 (date tehnice + recomandări)",
                             ((building.apartments || []).length > 0) ? "  3_Anexa_Bloc — Tabel multi-apartament (RC)" : "",
-                            "  4_Anexa_MDLPA_portal — XML pentru portalul MDLPA (Ord. 348/2026 Art. 4 alin. 6, obligatoriu 8.VII.2026)",
-                            nzebReportHtml ? "  5_Raport_nZEB — Raport conformare nZEB (HTML)" : "",
+                            nzebReportHtml ? "  4_Raport_nZEB — Raport conformare nZEB (HTML)" : "",
                             "",
                             "Cadru legal: L.372/2005 republicată (modif. L.238/2024), Mc 001-2022 (Ord. MDLPA 16/2023),",
-                            "Ord. MDLPA 348/2026 (atestare + portal electronic, intrat în vigoare 14.04.2026).",
+                            "Ord. MDLPA 348/2026 (regulament atestare auditori, intrat în vigoare 14.04.2026).",
                             "",
                             "Audit Zephren — 2 mai 2026 / P2.7 (pachet complet ZIP).",
                           ].filter(Boolean).join("\n"));
@@ -4127,8 +4106,8 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                           </div>
                           <div className="text-[10px] opacity-60">
                             {lang === "EN"
-                              ? "CPE + Annex 1+2 + Block (if RC) + MDLPA portal XML + nZEB report (if available)"
-                              : "CPE + Anexa 1+2 + Bloc (dacă RC) + Anexă portal MDLPA XML + Raport nZEB (dacă disponibil)"}
+                              ? "CPE + Annex 1+2 + Block (if RC) + nZEB report (if available)"
+                              : "CPE + Anexa 1+2 + Bloc (dacă RC) + Raport nZEB (dacă disponibil)"}
                           </div>
                         </div>
                       </div>
