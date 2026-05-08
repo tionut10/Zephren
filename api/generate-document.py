@@ -1338,6 +1338,54 @@ def replace_in_vml_raw(doc, old_text, new_text):
     return count
 
 
+def replace_barcode_cells(doc, cpe_nr_val):
+    """Înlocuiește barcode-ul CPE caracter cu caracter în template-ul MDLPA.
+
+    Template-ul MDLPA are rândul 2 din tabelul de identificare cu fiecare caracter
+    din 'regreg/codcod' (13 caractere) în câte o celulă separată cu font Code 39.
+    Înlocuim caracterele 0..12 cu cele din cpe_nr_val; celulele rămase devin ''.
+    """
+    if not cpe_nr_val:
+        return False
+    placeholder = "regreg/codcod"
+    n_ph = len(placeholder)          # 13 caractere
+    cpe_chars = list(cpe_nr_val)
+
+    for table in doc.tables:
+        for row in table.rows:
+            cells = row.cells
+            if len(cells) < n_ph:
+                continue
+            # Verifică dacă celulele 0..n_ph-1 formează exact placeholder-ul
+            cell_texts = []
+            for i in range(n_ph):
+                txt = "".join(
+                    run.text
+                    for para in cells[i].paragraphs
+                    for run in para.runs
+                )
+                cell_texts.append(txt)
+            if "".join(cell_texts) != placeholder:
+                continue
+            # Înlocuiește caracter cu caracter; celulele surplus → ""
+            for i in range(n_ph):
+                target = cpe_chars[i] if i < len(cpe_chars) else ""
+                cell = cells[i]
+                replaced = False
+                for para in cell.paragraphs:
+                    runs = para.runs
+                    if runs:
+                        runs[0].text = target
+                        for run in runs[1:]:
+                            run.text = ""
+                        replaced = True
+                        break
+                if not replaced and target:
+                    cell.paragraphs[0].add_run(target)
+            return True
+    return False
+
+
 def set_nzeb_checkbox(doc, nzeb_ok):
     """Check (DA) or uncheck (NU) the NZEB FORMCHECKBOX in the document via XML manipulation."""
     W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -4467,9 +4515,11 @@ class handler(BaseHTTPRequestHandler):
             # Încearcă înlocuire placeholder barcode CPE cu cpe_nr dacă există
             # (VML text box Code 39 nu poate fi înlocuit, dar orice text simplu poate)
             if cpe_nr:
-                for placeholder in ["[[CPE_NR]]", "{{CPE_NR}}", "regreg/codcod"]:
+                for placeholder in ["[[CPE_NR]]", "{{CPE_NR}}"]:
                     replace_in_doc(doc, placeholder, cpe_nr)
                     replace_in_vml_raw(doc, placeholder, cpe_nr)
+                # Template MDLPA: fiecare caracter din "regreg/codcod" e în celulă separată
+                replace_barcode_cells(doc, cpe_nr)
                 # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
                 # "ANEXA 1/2 la Certificatul de performanță energetică nr. ......"
                 # Textul e fragmentat în multe run-uri Word, deci folosim `replace_in_paragraph`
