@@ -1,151 +1,399 @@
 /**
- * sectionConfig.js - Configurație secțiuni formular audit energetic
- * 6 secțiuni cu câmpuri și validare
+ * sectionConfig.js — Configurație secțiuni formular client
+ *
+ * Sprint Client-Form-v2 (8 mai 2026)
+ *
+ * Formular simplificat destinat CLIENTULUI (proprietar clădire) care solicită
+ * CPE și/sau Audit Energetic. Conține exclusiv informații pe care clientul
+ * le cunoaște fără pregătire tehnică: identitate, clădire, scop, dotări
+ * de bază, documente disponibile și acord GDPR.
+ *
+ * 6 secțiuni · 22 câmpuri esențiale + 8 opționale = ~30 total
+ * Timp completare estimat: 5-7 minute
  */
-import { ANEXA6_CATEGORIES } from "../../../data/anexa6-mapping.js";
+
+const COUNTIES_RO = [
+  "Alba", "Arad", "Argeș", "Bacău", "Bihor", "Bistrița-Năsăud", "Botoșani",
+  "Brăila", "Brașov", "București", "Buzău", "Călărași", "Caraș-Severin",
+  "Cluj", "Constanța", "Covasna", "Dâmbovița", "Dolj", "Galați", "Giurgiu",
+  "Gorj", "Harghita", "Hunedoara", "Ialomița", "Iași", "Ilfov", "Maramureș",
+  "Mehedinți", "Mureș", "Neamț", "Olt", "Prahova", "Sălaj", "Satu Mare",
+  "Sibiu", "Suceava", "Teleorman", "Timiș", "Tulcea", "Vâlcea", "Vaslui", "Vrancea",
+];
 
 export const SECTIONS = {
-  documentation: {
-    label: "Documentație Clădire",
-    icon: "📋",
-    description: "Proprietăți și documente clădire",
+  identity: {
+    label: "Cine ești?",
+    icon: "👤",
+    description: "Date de identificare proprietar — din buletin sau certificat ONRC",
     color: "blue",
     fields: [
-      { id: "ownerName", label: "Nume proprietar", type: "text", required: true },
-      { id: "ownerEmail", label: "Email proprietar", type: "email", required: true },
-      { id: "ownerPhone", label: "Telefon proprietar", type: "tel", required: true },
-      { id: "buildingAddress", label: "Adresă clădire", type: "text", required: true },
-      { id: "propertyAct", label: "Act de proprietate (nr/anul)", type: "text" },
-      { id: "constructionYear", label: "Anul construcției", type: "number", min: 1800, max: new Date().getFullYear() },
-      { id: "urbanismCert", label: "Certificat de urbanism (dispozitie)", type: "text" },
-      { id: "buildingAuthority", label: "Autorizație de construire (nr/anul)", type: "text" },
-      { id: "technicalBook", label: "Cartă tehnică disponibilă?", type: "select", options: ["Da", "Nu", "Parțial"] },
-      { id: "planArchitectural", label: "Planuri arhitecturale disponibile?", type: "select", options: ["Parter+niveluri", "Doar parter", "Doar secțiuni", "Nu"] },
-      { id: "buildingTipAnex6", label: "Tip clădire Anexa 6 (Ord. 348/2026)", type: "select", options: ["Rezidențial", "Nerezidențial"] },
-      { id: "buildingSubtipAnex6", label: "Subtip clădire Anexa 6", type: "select", options: [
-        ...ANEXA6_CATEGORIES.rezidential.map(s => `Rezidențial – ${s}`),
-        ...ANEXA6_CATEGORIES.nerezidential.map(s => `Nerezidențial – ${s}`),
-      ]},
-      // Coordonate geografice — Anexa 6, Ord. MDLPA 348/2026
-      { id: "latitude",  label: "Latitudine",  type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 44.4268)" },
-      { id: "longitude", label: "Longitudine", type: "number", required: false, hint: "Coordonate GPS — grad zecimal WGS84 (ex: 26.1025)" },
-      // Sprint 15 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1)
-      { id: "cadastralNumber", label: "Nr. cadastral ANCPI", type: "text", placeholder: "123456-A", hint: "Format ANCPI: 5-6 cifre, opțional litera corpului" },
-      { id: "landBook", label: "Carte Funciară", type: "text", placeholder: "CF nr. 123456 București Sector 3", hint: "Nr. CF + localitate + sector/sat" },
-      { id: "areaBuilt", label: "Arie construită desfășurată Acd (m²)", type: "number", min: 0, hint: "Distinct de arie utilă (Au) — Ord. MDLPA 16/2023" },
-      { id: "nApartments", label: "Număr apartamente (pentru bloc)", type: "number", min: 1, hint: "Obligatoriu pentru bloc RC — Anexa 2 CPE multi-apartament" },
-    ]
+      {
+        id: "ownerType",
+        label: "Tip proprietar",
+        type: "select",
+        required: true,
+        options: ["Persoană Fizică (PF)", "Persoană Juridică (PJ)"],
+      },
+      {
+        id: "ownerName",
+        label: "Nume complet / Denumire firmă",
+        type: "text",
+        required: true,
+        placeholder: "ex: Ionescu Maria sau SC Exemplu SRL",
+      },
+      {
+        id: "ownerCNP",
+        label: "CNP (Persoană Fizică)",
+        type: "text",
+        placeholder: "13 cifre",
+        hint: "Obligatoriu PF — mascat în documente (ultimele 6 cifre ascunse)",
+      },
+      {
+        id: "ownerCUI",
+        label: "CUI (Persoană Juridică)",
+        type: "text",
+        placeholder: "ex: RO12345678",
+        hint: "Obligatoriu PJ",
+      },
+      {
+        id: "ownerAddress",
+        label: "Adresa de domiciliu / sediu",
+        type: "text",
+        required: true,
+        placeholder: "Str. Florilor nr. 12, ap. 3",
+      },
+      {
+        id: "ownerCity",
+        label: "Localitate domiciliu",
+        type: "text",
+        required: true,
+        placeholder: "ex: Cluj-Napoca",
+      },
+      {
+        id: "ownerEmail",
+        label: "Email contact",
+        type: "email",
+        required: true,
+        placeholder: "email@exemplu.ro",
+      },
+      {
+        id: "ownerPhone",
+        label: "Telefon contact",
+        type: "tel",
+        required: true,
+        placeholder: "07XX XXX XXX",
+      },
+    ],
   },
-  envelope: {
-    label: "Anvelopa Clădirii",
+
+  building: {
+    label: "Clădirea ta",
     icon: "🏠",
-    description: "Izolație, ferestre, acoperiș",
+    description: "Identificare și date de bază ale clădirii — din acte de proprietate",
     color: "green",
     fields: [
-      { id: "totalBuildingArea", label: "Arie totală clădire (m²)", type: "number", min: 10, required: true },
-      { id: "usefulArea", label: "Arie utilă (m²)", type: "number", min: 5 },
-      { id: "buildingVolume", label: "Volum încălzit (m³)", type: "number", min: 20 },
-      { id: "externalWallMaterial", label: "Material pereți exteriori", type: "text", placeholder: "ex: cărămidă, beton, piatră" },
-      { id: "externalWallThickness", label: "Grosime pereți (cm)", type: "number", min: 5 },
-      { id: "insulationThickness", label: "Grosime izolație (cm)", type: "number", min: 0 },
-      { id: "windowsType", label: "Tip ferestre", type: "select", options: ["Simplu vitraj", "Dublu vitraj", "Triplu vitraj", "Dublu low-e", "Mixte"] },
-      { id: "windowsYear", label: "Anul înlocuirii ferestrelor", type: "number", min: 1900 },
-      { id: "frameProfile", label: "Profil cadru ferestre", type: "select", options: ["Lemn", "PVC", "Aluminiu", "Aluminiu cu barieră termică", "Necunoscut"] },
-      { id: "roofType", label: "Tip acoperis", type: "text", placeholder: "ex: țiglă, tablă, beton" },
-      { id: "roofInsulation", label: "Izolație acoperiș (cm)", type: "number", min: 0 },
-      { id: "thermalBridgesPresent", label: "Punți termice vizibile?", type: "select", options: ["Da", "Nu", "Parțial izolate", "Nu stiu"] },
-    ]
+      {
+        id: "buildingAddress",
+        label: "Adresă clădire",
+        type: "text",
+        required: true,
+        placeholder: "Str. Principală nr. 5",
+      },
+      {
+        id: "buildingLocality",
+        label: "Localitate clădire",
+        type: "text",
+        required: true,
+        placeholder: "ex: Brașov",
+      },
+      {
+        id: "buildingCounty",
+        label: "Județ clădire",
+        type: "select",
+        required: true,
+        options: COUNTIES_RO,
+      },
+      {
+        id: "buildingType",
+        label: "Tip clădire",
+        type: "select",
+        required: true,
+        options: [
+          "Casă unifamilială",
+          "Apartament",
+          "Bloc de locuințe",
+          "Spațiu comercial",
+          "Birou / clădire de birouri",
+          "Clădire industrială",
+          "Instituție publică",
+          "Altul",
+        ],
+      },
+      {
+        id: "usefulArea",
+        label: "Suprafață utilă aproximativă (m²)",
+        type: "number",
+        required: true,
+        min: 5,
+        placeholder: "ex: 120",
+      },
+      {
+        id: "constructionYear",
+        label: "Anul construcției",
+        type: "number",
+        min: 1800,
+        max: new Date().getFullYear(),
+        placeholder: "ex: 1978",
+      },
+      {
+        id: "nFloors",
+        label: "Număr de etaje (inclusiv parter)",
+        type: "number",
+        min: 1,
+        max: 50,
+        placeholder: "ex: 2",
+      },
+      {
+        id: "hasBasement",
+        label: "Are subsol?",
+        type: "select",
+        options: ["Nu", "Da — neîncălzit", "Da — încălzit"],
+      },
+      {
+        id: "hasMansard",
+        label: "Are mansardă / pod amenajat?",
+        type: "select",
+        options: ["Nu", "Da"],
+      },
+      {
+        id: "cadastralNumber",
+        label: "Nr. cadastral ANCPI (opțional)",
+        type: "text",
+        placeholder: "ex: 123456",
+      },
+      {
+        id: "landBook",
+        label: "Carte Funciară (opțional)",
+        type: "text",
+        placeholder: "ex: CF nr. 123456 Brașov",
+      },
+    ],
   },
-  thermal: {
-    label: "Instalații Termice",
-    icon: "🔥",
-    description: "Încălzire, apă caldă, ventilație",
-    color: "red",
-    fields: [
-      { id: "heatingSystem", label: "Sistem încălzire", type: "select", options: ["Cazan gaz", "Cazan petrol", "Pompă de căldură", "Încălzire electrică", "Lemn/biomasa", "Centralizată"], required: true },
-      { id: "boilerYear", label: "Anul cazanului", type: "number", min: 1900 },
-      { id: "boilerPower", label: "Putere cazan (kW)", type: "number", min: 5 },
-      { id: "boilerEfficiency", label: "Randament cazan (%)", type: "number", min: 50, max: 100 },
-      { id: "hotWaterSystem", label: "Sistem apă caldă", type: "select", options: ["Individual (gaz)", "Individual (electric)", "Individual (solar)", "Centralizată", "Nu are"], required: true },
-      { id: "hotWaterStorage", label: "Volum acumulator (litri)", type: "number", min: 0 },
-      { id: "hasCooling", label: "Sistem răcire?", type: "select", options: ["Nu", "Aer condiționat", "Ventilatoare", "Ventilație naturală"] },
-      { id: "coolingSystemType", label: "Tip sistem răcire", type: "text" },
-      { id: "gasConsumptionYearly", label: "Consum anual gaz (m³/an)", type: "number", min: 0 },
-      { id: "heatingOilConsumption", label: "Consum anual ulei (litri/an)", type: "number", min: 0 },
-      { id: "ventilationType", label: "Tip ventilație", type: "select", options: ["Naturală", "Mecanică cu recuperare", "Mecanică fără recuperare"], required: true },
-      { id: "ventilationDetails", label: "Detalii ventilație", type: "text", placeholder: "ex: număr extractoare, locații" },
-    ]
-  },
-  electrical: {
-    label: "Instalații Electrice",
-    icon: "⚡",
-    description: "Consum, fotovoltaic, iluminare",
-    color: "yellow",
-    fields: [
-      { id: "electricityConsumptionYearly", label: "Consum anual electricitate (kWh/an)", type: "number", min: 0, required: true },
-      { id: "hasPV", label: "Sistem fotovoltaic?", type: "select", options: ["Nu", "Da"] },
-      { id: "pvInstalledPower", label: "Putere PV instalată (kWp)", type: "number", min: 0 },
-      { id: "pvYearInstalled", label: "Anul instalării PV", type: "number", min: 2000 },
-      { id: "pvAnnualProduction", label: "Producție anuală PV (kWh/an)", type: "number", min: 0 },
-      { id: "hasSolarThermal", label: "Sistem solar termic?", type: "select", options: ["Nu", "Da"] },
-      { id: "solarThermalArea", label: "Suprafață panouri solare (m²)", type: "number", min: 0 },
-      { id: "solarThermalYear", label: "Anul instalării panouri solare", type: "number", min: 1980 },
-      { id: "lightingType", label: "Tip iluminare", type: "select", options: ["Incandescență", "Halogeni", "Fluoreșcente", "LED", "Mixă"] },
-      { id: "hasSmartMetering", label: "Contor inteligent?", type: "select", options: ["Nu", "Da"] },
-    ]
-  },
-  measurements: {
-    label: "Măsurători și Inspecție",
-    icon: "📏",
-    description: "Măsurători pe teren și stare constructivă",
+
+  purpose: {
+    label: "Scopul solicitării",
+    icon: "🎯",
+    description: "De ce ai nevoie de certificat energetic și ce servicii dorești",
     color: "purple",
     fields: [
-      { id: "inspectionDate", label: "Data inspecției", type: "date", required: true },
-      { id: "interiorTemperature", label: "Temperatură interioară (°C)", type: "number", min: 10, max: 35 },
-      { id: "exteriorTemperature", label: "Temperatură exterioară (°C)", type: "number", min: -30, max: 50 },
-      { id: "relativeHumidity", label: "Umiditate relativă (%)", type: "number", min: 0, max: 100 },
-      { id: "envelopeCondition", label: "Starea anvelopei", type: "select", options: ["Bună", "Satisfăcătoare", "Precară", "Distrugere avansată"] },
-      { id: "roofCondition", label: "Starea acoperișului", type: "select", options: ["Bună", "Necesită reparații minore", "Necesită reparații majore", "Schimbare necesară"] },
-      { id: "windowsCondition", label: "Starea ferestrelor", type: "select", options: ["Bună", "Necessită reglare", "Necesită înlocuire"] },
-      { id: "moistureIssues", label: "Probleme de umiditate?", type: "select", options: ["Nu", "Ușoare", "Moderate", "Grave"] },
-      { id: "thermalPhotosAvailable", label: "Camera termică disponibilă?", type: "select", options: ["Nu", "Da"] },
-      { id: "infiltrationTests", label: "Test infiltrații (blower door)?", type: "select", options: ["Nu", "Planificat", "Făcut"] },
-    ]
+      {
+        id: "scopCpe",
+        label: "Scopul solicitării CPE",
+        type: "select",
+        required: true,
+        options: [
+          "Vânzare imobil",
+          "Închiriere",
+          "Recepție lucrări (construcție nouă sau renovare)",
+          "Acces finanțare (AFM / PNRR / bancă)",
+          "Informare personală",
+          "Renovare majoră planificată",
+          "Alt scop",
+        ],
+      },
+      {
+        id: "servicesNeeded",
+        label: "Servicii dorite",
+        type: "select",
+        required: true,
+        options: [
+          "Doar CPE (Certificat de Performanță Energetică)",
+          "CPE + Audit energetic complet",
+          "Nu știu — vreau o recomandare",
+        ],
+      },
+      {
+        id: "urgency",
+        label: "Urgența documentului",
+        type: "select",
+        options: [
+          "Fără urgență (2-3 săptămâni)",
+          "Moderat urgentă (1 săptămână)",
+          "Urgentă (2-3 zile lucrătoare)",
+        ],
+      },
+    ],
   },
-  admin: {
-    label: "Informații Administrative",
-    icon: "📄",
-    description: "Date auditor și clasificare audit",
+
+  buildingInfo: {
+    label: "Detalii clădire",
+    icon: "🔧",
+    description: "Informații opționale despre dotările clădirii — completează ce știi",
+    color: "orange",
+    fields: [
+      {
+        id: "heatingType",
+        label: "Tip încălzire",
+        type: "select",
+        options: [
+          "Gaz natural (centrală proprie)",
+          "Gaz natural (centralizat / termoficare)",
+          "Lemn / biomasă / peleți",
+          "Electric (calorifere / pardoseală)",
+          "Pompă de căldură",
+          "Nu știu",
+        ],
+      },
+      {
+        id: "windowsReplaced",
+        label: "Ferestrele au fost schimbate?",
+        type: "select",
+        options: [
+          "Nu — ferestre originale",
+          "Da — înainte de 2005",
+          "Da — după 2005",
+          "Da — recent (după 2015)",
+          "Nu știu",
+        ],
+      },
+      {
+        id: "hasPV",
+        label: "Are panouri fotovoltaice?",
+        type: "select",
+        options: ["Nu", "Da", "Nu știu"],
+      },
+      {
+        id: "hasSolarThermal",
+        label: "Are panouri solare termice?",
+        type: "select",
+        options: ["Nu", "Da", "Nu știu"],
+      },
+      {
+        id: "hasAC",
+        label: "Are aer condiționat?",
+        type: "select",
+        options: ["Nu", "Da — în unele camere", "Da — în toată clădirea"],
+      },
+      {
+        id: "buildingCondition",
+        label: "Starea generală a clădirii",
+        type: "select",
+        options: [
+          "Bună — fără probleme vizibile",
+          "Satisfăcătoare — necesită mici reparații",
+          "Necesită renovare",
+          "Degradată — probleme majore",
+        ],
+      },
+      {
+        id: "lastRenovationYear",
+        label: "Ultimele lucrări majore de renovare (an aproximativ)",
+        type: "number",
+        min: 1950,
+        max: new Date().getFullYear(),
+        placeholder: "ex: 2010",
+      },
+    ],
+  },
+
+  documents: {
+    label: "Documente disponibile",
+    icon: "📎",
+    description: "Bifează documentele pe care le ai la dispoziție — ajută la pregătirea auditorului",
     color: "indigo",
     fields: [
-      { id: "auditorName", label: "Nume auditor energetic", type: "text", required: true },
-      { id: "auditorRegistry", label: "Nr. înregistrare auditor", type: "text", required: true },
-      { id: "auditorCompany", label: "Companie auditor", type: "text" },
-      { id: "auditType", label: "Tip audit", type: "select", options: ["CPE obligatoriu", "Audit energetic complet", "Audit simplified", "Diagnostic", "Urmărire rehab"], required: true },
-      { id: "occupancyType", label: "Tip ocupare clădire", type: "select", options: ["Rezidență permanentă", "Rezidență sezonieră", "Birou", "Comercial", "Instituție", "Mixt"], required: true },
-      { id: "occupantsNumber", label: "Numărul de ocupanți", type: "number", min: 1 },
-      { id: "hasElectricHeating", label: "Încălzire electrică?", type: "select", options: ["Nu", "Parțial", "Total"] },
-      { id: "financialDocumentsAvailable", label: "Documente financiare disponibile (facturi)?", type: "select", options: ["Ultimele 3 luni", "Ultimul an", "Ultimii 3 ani", "Nu"] },
-      { id: "budgetForRehab", label: "Buget estimat pentru reabilitare (RON)", type: "number", min: 0 },
-      { id: "notesAndObservations", label: "Note și observații suplimentare", type: "textarea", maxLength: 500 },
-    ]
-  }
+      {
+        id: "hasPropertyAct",
+        label: "Act de proprietate (titlu, contract vânzare-cumpărare)",
+        type: "select",
+        options: ["Da — disponibil", "Nu — nu am", "Parțial / în curs"],
+      },
+      {
+        id: "hasCF",
+        label: "Extras Carte Funciară (CF) — eliberat recent",
+        type: "select",
+        options: [
+          "Da — eliberat recent (30 zile)",
+          "Da — mai vechi de 30 zile",
+          "Nu",
+          "În curs de obținere",
+        ],
+      },
+      {
+        id: "hasArchitecturalPlan",
+        label: "Plan / releveu arhitectural al clădirii",
+        type: "select",
+        options: ["Da — complet", "Da — parțial", "Nu"],
+      },
+      {
+        id: "hasTechnicalBook",
+        label: "Cartea tehnică a construcției",
+        type: "select",
+        options: ["Da — completă", "Da — parțială", "Nu", "Nu știu"],
+      },
+      {
+        id: "hasEnergyBills",
+        label: "Facturi energie (electricitate / gaz / lemn)",
+        type: "select",
+        options: [
+          "Da — ultimii 3 ani",
+          "Da — ultimul an",
+          "Da — parțial",
+          "Nu",
+        ],
+      },
+      {
+        id: "hasBuildingPermit",
+        label: "Autorizație de construire / renovare",
+        type: "select",
+        options: ["Da", "Nu", "Nu este cazul"],
+      },
+    ],
+  },
+
+  confirmation: {
+    label: "Confirmare",
+    icon: "✅",
+    description: "Acord GDPR și observații finale — obligatoriu înainte de trimitere",
+    color: "teal",
+    fields: [
+      {
+        id: "gdprConsent",
+        label: "Sunt de acord cu prelucrarea datelor cu caracter personal de către auditorul energetic, conform Reg. UE 2016/679 (GDPR) și Legii 190/2018 RO. Datele vor fi folosite exclusiv pentru emiterea documentațiilor energetice solicitate.",
+        type: "checkbox",
+        required: true,
+      },
+      {
+        id: "dataCorrect",
+        label: "Confirm că informațiile completate sunt corecte și complete conform cunoștințelor mele.",
+        type: "checkbox",
+        required: true,
+      },
+      {
+        id: "notesAndObservations",
+        label: "Observații suplimentare pentru auditor (opțional)",
+        type: "textarea",
+        maxLength: 500,
+        placeholder: "Orice informație relevantă: acces la clădire, probleme specifice cunoscute, preferințe...",
+      },
+    ],
+  },
 };
 
-// Obține toate secțiunile ca array pentru iterare
 export const SECTIONS_ARRAY = Object.entries(SECTIONS).map(([key, section]) => ({
   key,
-  ...section
+  ...section,
 }));
 
-// Obține lista ordinelor secțiunilor pentru navigație
 export const SECTION_KEYS = Object.keys(SECTIONS);
 
-// Obține numărul total de câmpuri
-export const TOTAL_FIELDS_COUNT = Object.values(SECTIONS).reduce((sum, section) => sum + section.fields.length, 0);
+export const TOTAL_FIELDS_COUNT = Object.values(SECTIONS).reduce(
+  (sum, section) => sum + section.fields.length,
+  0,
+);
 
-// Obține numărul total de câmpuri obligatorii
 export const TOTAL_REQUIRED_FIELDS_COUNT = Object.values(SECTIONS).reduce(
   (sum, section) => sum + section.fields.filter(f => f.required).length,
-  0
+  0,
 );

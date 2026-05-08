@@ -1,447 +1,503 @@
 /**
- * exportUtils.js - Funcții export date audit energetic
- * JSON, CSV, TXT Checklist, DOCX
+ * exportUtils.js — Export date audit energetic
+ *
+ * Sprint Client-Form-v2 (8 mai 2026)
+ *
+ * Formate:
+ *   exportToJSON       — date brute JSON
+ *   exportToCSV        — date plate CSV
+ *   downloadChecklist  — progres TXT
+ *   exportToDOCX       — Fișă sinteză profesională cu logo, copertă, zebra, header/footer
+ *   DEMO_DATA          — date fictive pentru testare formular client
  */
-import { getCategoryLabel } from "../../../data/anexa6-mapping.js";
+
 import {
   Document, Paragraph, TextRun, Table, TableRow, TableCell,
-  WidthType, AlignmentType, HeadingLevel, BorderStyle, Packer
+  ImageRun, Header, Footer, PageNumber,
+  WidthType, AlignmentType, HeadingLevel, BorderStyle,
+  ShadingType, Packer, VerticalAlign,
 } from "docx";
 
-/**
- * Formatează data curentă pentru nume fișier
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
 function getTimestamp() {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
-/**
- * Export date la JSON
- */
+function triggerDownload(href, filename) {
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function fetchLogoArrayBuffer() {
+  try {
+    const resp = await fetch("/logo_ro.png");
+    if (!resp.ok) return null;
+    return await resp.arrayBuffer();
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JSON export
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function exportToJSON(formData) {
   const dataStr = JSON.stringify(formData, null, 2);
-  const element = document.createElement("a");
-  element.setAttribute("href", "data:application/json;charset=utf-8," + encodeURIComponent(dataStr));
-  element.setAttribute("download", `audit-client-data-${getTimestamp()}.json`);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  triggerDownload(
+    "data:application/json;charset=utf-8," + encodeURIComponent(dataStr),
+    `solicitare-client-${getTimestamp()}.json`,
+  );
 }
 
-/**
- * Export date la CSV
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV export
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function exportToCSV(formData) {
-  const flatData = {};
-  Object.entries(formData).forEach(([key, value]) => {
-    if (value !== null && value !== undefined) {
-      flatData[key] = typeof value === 'object' ? JSON.stringify(value) : value;
+  const flat = {};
+  Object.entries(formData).forEach(([k, v]) => {
+    if (v !== null && v !== undefined) {
+      flat[k] = typeof v === "object" ? JSON.stringify(v) : v;
     }
   });
-
-  const headers = Object.keys(flatData);
-  const values = headers.map(h => `"${String(flatData[h]).replace(/"/g, '""')}"`);
+  const headers = Object.keys(flat);
+  const values = headers.map(h => `"${String(flat[h]).replace(/"/g, '""')}"`);
   const csv = [headers.join(","), values.join(",")].join("\n");
-
-  const element = document.createElement("a");
-  element.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
-  element.setAttribute("download", `audit-client-data-${getTimestamp()}.csv`);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  triggerDownload(
+    "data:text/csv;charset=utf-8," + encodeURIComponent(csv),
+    `solicitare-client-${getTimestamp()}.csv`,
+  );
 }
 
-/**
- * Export checklist în format TXT
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Checklist TXT
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function downloadChecklist(completionStatus, SECTIONS) {
-  const checklistText = Object.entries(SECTIONS)
-    .map(([key, section]) => {
-      const status = completionStatus[key] || { completed: 0, required: 0 };
-      const percentage = status.required > 0 ? Math.round((status.completed / status.required) * 100) : 0;
-      return `${section.label}: ${status.completed}/${status.required} câmpuri obligatorii (${percentage}%)`;
-    })
-    .join("\n");
+  const lines = Object.entries(SECTIONS).map(([key, section]) => {
+    const status = completionStatus[key] || { completed: 0, required: 0 };
+    const pct = status.required > 0 ? Math.round((status.completed / status.required) * 100) : 100;
+    const bar = "█".repeat(Math.round(pct / 10)) + "░".repeat(10 - Math.round(pct / 10));
+    return `${section.icon} ${section.label.padEnd(30)} ${bar} ${pct}% (${status.completed}/${status.required})`;
+  });
 
   const totalCompleted = Object.values(completionStatus).reduce((a, b) => a + (b.completed || 0), 0);
   const totalRequired = Object.values(completionStatus).reduce((a, b) => a + (b.required || 0), 0);
-  const totalPercentage = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
+  const totalPct = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 100;
 
-  const doc = `CHECKLIST AUDIT ENERGETIC
-Data: ${new Date().toLocaleDateString('ro-RO')}
-${new Array(50).fill("=").join("")}
+  const doc = [
+    "CHECKLIST SOLICITARE AUDIT ENERGETIC — ZEPHREN",
+    `Data: ${new Date().toLocaleDateString("ro-RO")}`,
+    "═".repeat(60),
+    "",
+    ...lines,
+    "",
+    "═".repeat(60),
+    `TOTAL: ${totalCompleted}/${totalRequired} câmpuri obligatorii (${totalPct}%)`,
+    "═".repeat(60),
+    "",
+    `Generat: ${new Date().toLocaleString("ro-RO")}`,
+  ].join("\n");
 
-PROGRES PE ETAPE:
-${checklistText}
-
-${new Array(50).fill("=").join("")}
-PROGRES TOTAL: ${totalCompleted} / ${totalRequired} câmpuri obligatorii
-Procent: ${totalPercentage}%
-${new Array(50).fill("=").join("")}
-
-Generat: ${new Date().toLocaleString('ro-RO')}
-`;
-
-  const element = document.createElement("a");
-  element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(doc));
-  element.setAttribute("download", `checklist-audit-${getTimestamp()}.txt`);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
+  triggerDownload(
+    "data:text/plain;charset=utf-8," + encodeURIComponent(doc),
+    `checklist-${getTimestamp()}.txt`,
+  );
 }
 
-/**
- * Formatează date pentru PDF export (pentru viitor)
- */
-export function formatDataForPDF(formData, completionStatus, SECTIONS) {
-  return {
-    header: {
-      title: "AUDIT ENERGETIC - FORMULAR DATE",
-      date: new Date().toLocaleDateString('ro-RO'),
-      time: new Date().toLocaleTimeString('ro-RO')
-    },
-    sections: Object.entries(SECTIONS).map(([key, section]) => ({
-      key,
-      label: section.label,
-      icon: section.icon,
-      completion: completionStatus[key],
-      fields: section.fields.map(field => ({
-        id: field.id,
-        label: field.label,
-        value: formData[field.id] || "-",
-        required: field.required
-      }))
-    })),
-    summary: {
-      totalCompleted: Object.values(completionStatus).reduce((a, b) => a + (b.completed || 0), 0),
-      totalRequired: Object.values(completionStatus).reduce((a, b) => a + (b.required || 0), 0)
-    }
-  };
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCX — Fișă sinteză profesională
+// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Validează completare date înainte de export
- */
-export function validateBeforeExport(formData, completionStatus, SECTIONS) {
-  const errors = [];
-
-  Object.entries(SECTIONS).forEach(([key, section]) => {
-    const requiredFields = section.fields.filter(f => f.required);
-    const missingRequired = requiredFields.filter(f => !formData[f.id]);
-
-    if (missingRequired.length > 0) {
-      errors.push({
-        section: section.label,
-        missingCount: missingRequired.length,
-        fields: missingRequired.map(f => f.label)
-      });
-    }
-  });
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-}
-
-/**
- * Generează raport text detaliat pentru completare date
- */
-export function generateDetailedReport(formData, completionStatus, SECTIONS) {
-  let report = "RAPORT DETALIAT COLECTARE DATE AUDIT ENERGETIC\n";
-  report += `Generated: ${new Date().toLocaleString('ro-RO')}\n`;
-  report += "=".repeat(70) + "\n\n";
-
-  let totalFields = 0;
-  let completedFields = 0;
-
-  Object.entries(SECTIONS).forEach(([key, section]) => {
-    const status = completionStatus[key];
-    const percentage = status.required > 0 ? Math.round((status.completed / status.required) * 100) : 0;
-
-    report += `\n${section.icon} ${section.label.toUpperCase()}\n`;
-    report += "-".repeat(70) + "\n";
-    report += `Progres: ${status.completed}/${status.required} obligatori (${percentage}%)\n`;
-    report += `Total: ${status.completedTotal}/${status.total} câmpuri\n\n`;
-
-    section.fields.forEach(field => {
-      const value = formData[field.id];
-      const isCompleted = !!value;
-      const status_icon = isCompleted ? "✓" : field.required ? "✗" : "○";
-
-      totalFields++;
-      if (isCompleted) completedFields++;
-
-      report += `  ${status_icon} ${field.label}: `;
-      report += isCompleted ? `"${value}"` : "(necompletat)";
-      report += field.required ? " [OBLIGATORIU]" : "\n";
-      report += "\n";
-    });
-  });
-
-  report += "\n" + "=".repeat(70) + "\n";
-  report += `TOTAL: ${completedFields}/${totalFields} câmpuri completate\n`;
-  report += `Procent: ${Math.round((completedFields / totalFields) * 100)}%\n`;
-
-  return report;
-}
-
-/**
- * Date demo pentru pre-populare formular (exemplu fictiv)
- */
-export const DEMO_DATA = {
-  // Documentație
-  ownerName: "Ionescu Maria",
-  ownerEmail: "maria.ionescu@gmail.com",
-  ownerPhone: "0721 234 567",
-  buildingAddress: "Str. Florilor nr. 12, Brașov, jud. Brașov",
-  propertyAct: "Contract vânzare-cumpărare nr. 1234/2005",
-  constructionYear: 1978,
-  urbanismCert: "CU nr. 45/2023",
-  buildingAuthority: "AC nr. 123/1978",
-  technicalBook: "Parțial",
-  planArchitectural: "Parter+niveluri",
-  buildingTipAnex6: "Rezidențial",
-  buildingSubtipAnex6: "Rezidențial – unifamilial",
-  latitude: 45.6427,
-  longitude: 25.5887,
-  cadastralNumber: "123456",
-  landBook: "CF nr. 123456 Brașov",
-  areaBuilt: 210,
-  nApartments: 1,
-  // Anvelopă
-  totalBuildingArea: 185,
-  usefulArea: 142,
-  buildingVolume: 490,
-  externalWallMaterial: "Cărămidă GVP 30 cm",
-  externalWallThickness: 30,
-  insulationThickness: 0,
-  windowsType: "Dublu vitraj",
-  windowsYear: 2010,
-  frameProfile: "PVC",
-  roofType: "Țiglă ceramică pe șarpantă lemn",
-  roofInsulation: 10,
-  thermalBridgesPresent: "Da",
-  // Termice
-  heatingSystem: "Cazan gaz",
-  boilerYear: 2008,
-  boilerPower: 24,
-  boilerEfficiency: 89,
-  hotWaterSystem: "Individual (gaz)",
-  hotWaterStorage: 80,
-  hasCooling: "Aer condiționat",
-  coolingSystemType: "Split 9000 BTU dormitor + living",
-  gasConsumptionYearly: 1850,
-  heatingOilConsumption: 0,
-  ventilationType: "Naturală",
-  ventilationDetails: "Grile ventilație baie + bucătărie",
-  // Electrice
-  electricityConsumptionYearly: 3200,
-  hasPV: "Nu",
-  pvInstalledPower: 0,
-  pvAnnualProduction: 0,
-  hasSolarThermal: "Nu",
-  lightingType: "Mixă",
-  hasSmartMetering: "Nu",
-  // Măsurători
-  inspectionDate: "2026-04-24",
-  interiorTemperature: 21,
-  exteriorTemperature: 8,
-  relativeHumidity: 65,
-  envelopeCondition: "Satisfăcătoare",
-  roofCondition: "Necesită reparații minore",
-  windowsCondition: "Bună",
-  moistureIssues: "Ușoare",
-  thermalPhotosAvailable: "Nu",
-  infiltrationTests: "Nu",
-  // Administrativ
-  auditorName: "Popescu Alexandru",
-  auditorRegistry: "AE-BV-00123",
-  auditorCompany: "ZEPHREN S.R.L.",
-  auditType: "CPE obligatoriu",
-  occupancyType: "Rezidență permanentă",
-  occupantsNumber: 4,
-  hasElectricHeating: "Nu",
-  financialDocumentsAvailable: "Ultimii 3 ani",
-  budgetForRehab: 45000,
-  notesAndObservations: "Clădire construită înainte de 1980, fără izolație termică pe pereții exteriori. Podul mansardat parțial utilizabil. Necesită audit termografic complet în sezon rece.",
+// Culori brand Zephren
+const COLOR = {
+  PRIMARY: "007A3D",
+  PRIMARY_LIGHT: "E8F6EE",
+  SLATE_900: "0F172A",
+  SLATE_700: "334155",
+  SLATE_500: "64748B",
+  SLATE_200: "E2E8F0",
+  SLATE_50: "F8FAFC",
+  WHITE: "FFFFFF",
+  RED: "DC2626",
+  AMBER: "F59E0B",
 };
 
-/**
- * Export date la DOCX — Fișă sinteză audit energetic
- */
-export async function exportToDOCX(formData, SECTIONS) {
-  const labelOf = (sectionKey, fieldId) => {
-    const section = SECTIONS[sectionKey];
-    if (!section) return fieldId;
-    const field = section.fields.find(f => f.id === fieldId);
-    return field ? field.label : fieldId;
-  };
+function _makeCell(text, opts = {}) {
+  const {
+    bold = false,
+    color = COLOR.SLATE_900,
+    shade = null,
+    width = 50,
+    size = 20,
+    align = AlignmentType.LEFT,
+    italic = false,
+  } = opts;
 
-  const makeRow = (label, value, isHeader = false) =>
-    new TableRow({
-      children: [
-        new TableCell({
-          width: { size: 45, type: WidthType.PERCENTAGE },
-          shading: isHeader ? { fill: "2563EB" } : { fill: "F3F4F6" },
-          children: [new Paragraph({
-            children: [new TextRun({
-              text: label,
-              bold: true,
-              color: isHeader ? "FFFFFF" : "374151",
-              size: 20,
-            })],
-          })],
-        }),
-        new TableCell({
-          width: { size: 55, type: WidthType.PERCENTAGE },
-          children: [new Paragraph({
-            children: [new TextRun({
-              text: String(value || "—"),
-              size: 20,
-              color: "111827",
-            })],
-          })],
-        }),
-      ],
-    });
-
-  const sectionChildren = [];
-
-  Object.entries(SECTIONS).forEach(([key, section]) => {
-    sectionChildren.push(
+  return new TableCell({
+    width: { size: width, type: WidthType.PERCENTAGE },
+    shading: shade ? { type: ShadingType.SOLID, color: shade } : undefined,
+    verticalAlign: VerticalAlign.CENTER,
+    margins: { top: 60, bottom: 60, left: 120, right: 120 },
+    children: [
       new Paragraph({
-        text: `${section.icon || ""} ${section.label}`.trim(),
-        heading: HeadingLevel.HEADING_2,
-        spacing: { before: 300, after: 120 },
-      })
-    );
-
-    const rows = section.fields
-      .filter(f => formData[f.id] !== undefined && formData[f.id] !== "")
-      .map(f => makeRow(f.label, formData[f.id]));
-
-    if (rows.length === 0) {
-      sectionChildren.push(new Paragraph({
-        children: [new TextRun({ text: "(nicio dată completată)", italics: true, color: "9CA3AF", size: 20 })],
-      }));
-    } else {
-      sectionChildren.push(
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows,
-          borders: {
-            top: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-            bottom: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-            left: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-            right: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-            insideH: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-            insideV: { style: BorderStyle.SINGLE, size: 1, color: "E5E7EB" },
-          },
-        })
-      );
-    }
+        alignment: align,
+        children: [
+          new TextRun({ text: String(text ?? "—"), bold, color, size, italics: italic }),
+        ],
+      }),
+    ],
   });
+}
 
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          size: { width: 11906, height: 16838 }, // A4 portret
-          margin: { top: 1134, right: 850, bottom: 1134, left: 850 },
-        },
-      },
+function _makeSectionHeader(icon, label) {
+  return new Paragraph({
+    spacing: { before: 320, after: 120 },
+    children: [
+      new TextRun({ text: `${icon}  ${label.toUpperCase()}`, bold: true, size: 24, color: COLOR.SLATE_900 }),
+    ],
+    border: {
+      bottom: { style: BorderStyle.SINGLE, size: 8, color: COLOR.PRIMARY, space: 2 },
+    },
+  });
+}
+
+function _makeDataRow(label, value, isZebra = false) {
+  const shade = isZebra ? COLOR.SLATE_50 : COLOR.WHITE;
+  return new TableRow({
+    children: [
+      _makeCell(label, { bold: true, color: COLOR.SLATE_700, shade, width: 40, size: 18 }),
+      _makeCell(value, { color: COLOR.SLATE_900, shade, width: 60, size: 18 }),
+    ],
+  });
+}
+
+function _makeTable(rows) {
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.NONE },
+      bottom: { style: BorderStyle.NONE },
+      left: { style: BorderStyle.NONE },
+      right: { style: BorderStyle.NONE },
+      insideH: { style: BorderStyle.SINGLE, size: 1, color: COLOR.SLATE_200 },
+      insideV: { style: BorderStyle.NONE },
+    },
+    rows,
+  });
+}
+
+export async function exportToDOCX(formData, SECTIONS) {
+  const logoBuffer = await fetchLogoArrayBuffer();
+  const dateStr = new Date().toLocaleDateString("ro-RO");
+  const ownerName = formData.ownerName || "—";
+  const buildingAddr = [formData.buildingAddress, formData.buildingLocality, formData.buildingCounty]
+    .filter(Boolean).join(", ") || "—";
+
+  // ── Header document (repetat pe fiecare pagină de conținut)
+  const headerChildren = [
+    new Paragraph({
+      spacing: { after: 0 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: COLOR.PRIMARY, space: 2 } },
       children: [
-        new Paragraph({
-          text: "FIȘĂ SINTEZĂ AUDIT ENERGETIC",
-          heading: HeadingLevel.HEADING_1,
+        ...(logoBuffer
+          ? [new ImageRun({ data: logoBuffer, transformation: { width: 80, height: 24 }, type: "png" })]
+          : [new TextRun({ text: "ZEPHREN", bold: true, color: COLOR.PRIMARY, size: 22 })]),
+        new TextRun({ text: "   FIȘĂ SINTEZĂ SOLICITARE ENERGETICĂ", bold: true, size: 18, color: COLOR.SLATE_700 }),
+        new TextRun({ text: `\t${dateStr}`, size: 16, color: COLOR.SLATE_500 }),
+      ],
+      tabStops: [{ type: "right", position: 9000 }],
+    }),
+  ];
+
+  // ── Footer document
+  const footerChildren = [
+    new Paragraph({
+      spacing: { before: 0 },
+      border: { top: { style: BorderStyle.SINGLE, size: 2, color: COLOR.SLATE_200, space: 2 } },
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({ text: "Generat de Zephren Energy Performance Calculator  ·  ", size: 14, italics: true, color: COLOR.SLATE_500 }),
+        new TextRun({ text: "Pag. ", size: 14, color: COLOR.SLATE_500 }),
+        new TextRun({ children: [PageNumber.CURRENT], size: 14, color: COLOR.SLATE_500 }),
+        new TextRun({ text: " / ", size: 14, color: COLOR.SLATE_500 }),
+        new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 14, color: COLOR.SLATE_500 }),
+      ],
+    }),
+  ];
+
+  // ── Pagina de copertă
+  const coverChildren = [
+    // Spațiu de sus
+    new Paragraph({ spacing: { before: 1200, after: 0 }, children: [] }),
+
+    // Logo mare
+    ...(logoBuffer
+      ? [new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { after: 80 },
-        }),
-        new Paragraph({
+          spacing: { before: 0, after: 400 },
+          children: [new ImageRun({ data: logoBuffer, transformation: { width: 160, height: 48 }, type: "png" })],
+        })]
+      : [new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 400 },
+          children: [new TextRun({ text: "ZEPHREN", bold: true, color: COLOR.PRIMARY, size: 52 })],
+        })]),
+
+    // Titlu document
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 200, after: 100 },
+      children: [
+        new TextRun({ text: "FIȘĂ SINTEZĂ", bold: true, size: 52, color: COLOR.SLATE_900 }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 80 },
+      children: [
+        new TextRun({ text: "SOLICITARE DOCUMENTAȚIE ENERGETICĂ", size: 28, color: COLOR.SLATE_500 }),
+      ],
+    }),
+
+    // Linie decorativă
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 600 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: COLOR.PRIMARY } },
+      children: [new TextRun({ text: " " })],
+    }),
+
+    // Card date cheie
+    new Table({
+      width: { size: 80, type: WidthType.PERCENTAGE },
+      alignment: AlignmentType.CENTER,
+      borders: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: COLOR.PRIMARY },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: COLOR.PRIMARY },
+        left: { style: BorderStyle.SINGLE, size: 4, color: COLOR.PRIMARY },
+        right: { style: BorderStyle.SINGLE, size: 4, color: COLOR.PRIMARY },
+        insideH: { style: BorderStyle.SINGLE, size: 1, color: COLOR.SLATE_200 },
+        insideV: { style: BorderStyle.NONE },
+      },
+      rows: [
+        new TableRow({
           children: [
-            new TextRun({ text: `Data: ${new Date().toLocaleDateString("ro-RO")}`, size: 20, color: "6B7280" }),
-            new TextRun({ text: "   |   ", size: 20, color: "9CA3AF" }),
-            new TextRun({ text: `Proprietar: ${formData.ownerName || "—"}`, size: 20, color: "6B7280" }),
-            new TextRun({ text: "   |   ", size: 20, color: "9CA3AF" }),
-            new TextRun({ text: `Adresă: ${formData.buildingAddress || "—"}`, size: 20, color: "6B7280" }),
+            _makeCell("Proprietar", { bold: true, color: COLOR.SLATE_500, shade: COLOR.PRIMARY_LIGHT, width: 35, size: 18 }),
+            _makeCell(ownerName, { bold: true, color: COLOR.SLATE_900, shade: COLOR.WHITE, width: 65, size: 20 }),
           ],
         }),
-        ...sectionChildren,
-        new Paragraph({
-          text: `Generat de Zephren — ${new Date().toLocaleString("ro-RO")}`,
-          alignment: AlignmentType.RIGHT,
-          spacing: { before: 400 },
-          children: [new TextRun({ text: `Generat de Zephren — ${new Date().toLocaleString("ro-RO")}`, size: 18, color: "9CA3AF", italics: true })],
+        new TableRow({
+          children: [
+            _makeCell("Clădire", { bold: true, color: COLOR.SLATE_500, shade: COLOR.PRIMARY_LIGHT, width: 35, size: 18 }),
+            _makeCell(buildingAddr, { color: COLOR.SLATE_900, shade: COLOR.WHITE, width: 65, size: 18 }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            _makeCell("Scop solicitare", { bold: true, color: COLOR.SLATE_500, shade: COLOR.PRIMARY_LIGHT, width: 35, size: 18 }),
+            _makeCell(formData.scopCpe || "—", { color: COLOR.SLATE_900, shade: COLOR.WHITE, width: 65, size: 18 }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            _makeCell("Servicii dorite", { bold: true, color: COLOR.SLATE_500, shade: COLOR.PRIMARY_LIGHT, width: 35, size: 18 }),
+            _makeCell(formData.servicesNeeded || "—", { color: COLOR.SLATE_900, shade: COLOR.WHITE, width: 65, size: 18 }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            _makeCell("Data solicitării", { bold: true, color: COLOR.SLATE_500, shade: COLOR.PRIMARY_LIGHT, width: 35, size: 18 }),
+            _makeCell(dateStr, { color: COLOR.SLATE_900, shade: COLOR.WHITE, width: 65, size: 18 }),
+          ],
         }),
       ],
-    }],
+    }),
+
+    // Footer copertă
+    new Paragraph({ spacing: { before: 800, after: 0 }, children: [] }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({ text: "Mc 001-2022 · Ord. MDLPA 348/2026 · GDPR Reg. UE 2016/679", size: 14, italics: true, color: COLOR.SLATE_500 }),
+      ],
+    }),
+  ];
+
+  // ── Secțiuni de conținut
+  const sectionChildren = [];
+
+  const LABEL_MAP = {
+    identity:     { icon: "👤", label: "Identificare Proprietar" },
+    building:     { icon: "🏠", label: "Date Clădire" },
+    purpose:      { icon: "🎯", label: "Scop și Servicii Solicitate" },
+    buildingInfo: { icon: "🔧", label: "Detalii Clădire (opțional)" },
+    documents:    { icon: "📎", label: "Documente Disponibile" },
+    confirmation: { icon: "✅", label: "Confirmare și Observații" },
+  };
+
+  Object.entries(SECTIONS).forEach(([key, section]) => {
+    const meta = LABEL_MAP[key] || { icon: section.icon || "", label: section.label };
+    const filledFields = section.fields.filter(
+      f => f.type !== "checkbox" && formData[f.id] !== undefined && formData[f.id] !== "",
+    );
+    const checkboxFields = section.fields.filter(
+      f => f.type === "checkbox",
+    );
+
+    sectionChildren.push(_makeSectionHeader(meta.icon, meta.label));
+
+    if (filledFields.length === 0 && checkboxFields.length === 0) {
+      sectionChildren.push(
+        new Paragraph({
+          spacing: { before: 80, after: 80 },
+          children: [new TextRun({ text: "(nicio dată completată)", italics: true, color: COLOR.SLATE_500, size: 18 })],
+        }),
+      );
+      return;
+    }
+
+    if (filledFields.length > 0) {
+      sectionChildren.push(
+        _makeTable(
+          filledFields.map((f, i) => _makeDataRow(f.label, String(formData[f.id] ?? "—"), i % 2 === 0)),
+        ),
+      );
+    }
+
+    // Checkbox-uri (da/nu vizual)
+    checkboxFields.forEach(f => {
+      const checked = !!formData[f.id];
+      const short = f.label.length > 90 ? f.label.slice(0, 90) + "…" : f.label;
+      sectionChildren.push(
+        new Paragraph({
+          spacing: { before: 120, after: 40 },
+          children: [
+            new TextRun({ text: checked ? "☑  " : "☐  ", size: 20, color: checked ? COLOR.PRIMARY : COLOR.RED }),
+            new TextRun({ text: short, size: 18, color: COLOR.SLATE_700, bold: checked }),
+          ],
+        }),
+      );
+    });
+  });
+
+  // Notă finală
+  sectionChildren.push(
+    new Paragraph({
+      spacing: { before: 600, after: 0 },
+      alignment: AlignmentType.RIGHT,
+      children: [
+        new TextRun({
+          text: `Document generat de Zephren — ${new Date().toLocaleString("ro-RO")}`,
+          size: 16, italics: true, color: COLOR.SLATE_500,
+        }),
+      ],
+    }),
+  );
+
+  // ── Asamblare document
+  const doc = new Document({
+    sections: [
+      // Secțiunea 1: copertă (fără header/footer)
+      {
+        properties: {
+          page: {
+            size: { width: 11906, height: 16838 },
+            margin: { top: 1134, right: 850, bottom: 1134, left: 850 },
+          },
+        },
+        children: coverChildren,
+      },
+      // Secțiunea 2: conținut (cu header/footer)
+      {
+        headers: { default: new Header({ children: headerChildren }) },
+        footers: { default: new Footer({ children: footerChildren }) },
+        properties: {
+          page: {
+            size: { width: 11906, height: 16838 },
+            margin: { top: 1440, right: 850, bottom: 1134, left: 850 },
+          },
+        },
+        children: sectionChildren,
+      },
+    ],
   });
 
   const buffer = await Packer.toBlob(doc);
   const url = URL.createObjectURL(buffer);
+  const safeOwner = (formData.ownerName || "client")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "-").toLowerCase().slice(0, 30);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `fisa-audit-${formData.ownerName?.replace(/\s+/g, "-").toLowerCase() || "client"}-${getTimestamp()}.docx`;
+  a.download = `fisa-solicitare-${safeOwner}-${getTimestamp()}.docx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-/**
- * Export registru conform Anexa 6, Ord. MDLPA 348/2026
- * Generează CSV cu structura oficială pentru înregistrare CPE
- * @param {object} formData - Datele din formular audit
- * @param {string} [internalCategory] - Codul categorie intern opțional (RI, RC etc.)
- */
-export function exportRegistruAnex6(formData, internalCategory = null) {
-  // Determină clasificarea Anexa 6
-  let tip = formData.buildingTipAnex6 || "";
-  let subtip = "";
+// ─────────────────────────────────────────────────────────────────────────────
+// Date demo formular client
+// ─────────────────────────────────────────────────────────────────────────────
 
-  if (formData.buildingSubtipAnex6) {
-    // Extrage subtipul din formatul "Rezidențial – unifamilial"
-    const parts = formData.buildingSubtipAnex6.split(" – ");
-    subtip = parts.length > 1 ? parts[1] : formData.buildingSubtipAnex6;
-    if (!tip && parts.length > 1) tip = parts[0];
-  }
+export const DEMO_DATA = {
+  // Identitate
+  ownerType: "Persoană Fizică (PF)",
+  ownerName: "Ionescu Maria",
+  ownerCNP: "2780315080045",
+  ownerCUI: "",
+  ownerAddress: "Str. Florilor nr. 12, ap. 3",
+  ownerCity: "Brașov",
+  ownerEmail: "maria.ionescu@gmail.com",
+  ownerPhone: "0721 234 567",
 
-  // Fallback: mapare din codul intern dacă câmpurile Anexa 6 lipsesc
-  if (!tip && internalCategory) {
-    const mapped = getCategoryLabel(internalCategory);
-    tip = mapped.tip;
-    subtip = mapped.subtip;
-  }
+  // Clădire
+  buildingAddress: "Str. Principală nr. 45",
+  buildingLocality: "Brașov",
+  buildingCounty: "Brașov",
+  buildingType: "Casă unifamilială",
+  usefulArea: 142,
+  constructionYear: 1978,
+  nFloors: 2,
+  hasBasement: "Nu",
+  hasMansard: "Nu",
+  cadastralNumber: "123456",
+  landBook: "CF nr. 123456 Brașov",
 
-  const record = {
-    "Data export": new Date().toLocaleDateString("ro-RO"),
-    "Auditor": formData.auditorName || "",
-    "Nr. înregistrare auditor": formData.auditorRegistry || "",
-    "Proprietar": formData.ownerName || "",
-    "Adresă clădire": formData.buildingAddress || "",
-    "An construcție": formData.constructionYear || "",
-    "Arie utilă (m²)": formData.usefulArea || formData.totalBuildingArea || "",
-    "Tip Anexa 6 (Ord. 348/2026)": tip,
-    "Subtip Anexa 6 (Ord. 348/2026)": subtip,
-    "Data inspecție": formData.inspectionDate || "",
-    "Tip audit": formData.auditType || "",
-  };
+  // Scop
+  scopCpe: "Vânzare imobil",
+  servicesNeeded: "CPE + Audit energetic complet",
+  urgency: "Moderat urgentă (1 săptămână)",
 
-  const headers = Object.keys(record);
-  const values = headers.map(h => `"${String(record[h]).replace(/"/g, '""')}"`);
-  const csv = [headers.join(","), values.join(",")].join("\n");
+  // Detalii clădire
+  heatingType: "Gaz natural (centrală proprie)",
+  windowsReplaced: "Da — după 2005",
+  hasPV: "Nu",
+  hasSolarThermal: "Nu",
+  hasAC: "Da — în unele camere",
+  buildingCondition: "Satisfăcătoare — necesită mici reparații",
+  lastRenovationYear: 2010,
 
-  const element = document.createElement("a");
-  element.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv));
-  element.setAttribute("download", `registru-anexa6-${getTimestamp()}.csv`);
-  element.style.display = "none";
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-}
+  // Documente
+  hasPropertyAct: "Da — disponibil",
+  hasCF: "Da — eliberat recent (30 zile)",
+  hasArchitecturalPlan: "Da — complet",
+  hasTechnicalBook: "Nu",
+  hasEnergyBills: "Da — ultimii 3 ani",
+  hasBuildingPermit: "Nu este cazul",
+
+  // Confirmare
+  gdprConsent: true,
+  dataCorrect: true,
+  notesAndObservations: "Clădire construită înainte de 1980, fără izolație termică pe pereții exteriori. Accesul se face prin poarta din spate — cheia la vecin (Popescu, apt. 2).",
+};

@@ -3,28 +3,17 @@ import { cn, Card, Input, Badge } from "./ui.jsx";
 import TabNavigation from "./AuditClientDataForm/TabNavigation.jsx";
 import ProgressIndicator from "./AuditClientDataForm/ProgressIndicator.jsx";
 import { SECTIONS, SECTIONS_ARRAY } from "./AuditClientDataForm/utils/sectionConfig.js";
-import { exportToJSON, exportToCSV, downloadChecklist, exportRegistruAnex6, exportToDOCX, DEMO_DATA } from "./AuditClientDataForm/utils/exportUtils.js";
+import { exportToJSON, exportToCSV, downloadChecklist, exportToDOCX, DEMO_DATA } from "./AuditClientDataForm/utils/exportUtils.js";
 import { calculateFormCompletion } from "./AuditClientDataForm/utils/validationUtils.js";
 import { saveToStorage, loadFromStorage } from "./AuditClientDataForm/utils/storageUtils.js";
 
-/**
- * AuditClientDataForm — Formular structurat audit energetic cu tab navigation
- * ✓ 6 categorii organizate în taburi (responsive)
- * ✓ Validare de date cu feedback vizual
- * ✓ Salvare automată localStorage
- * ✓ Export JSON/CSV/Checklist
- * ✓ Responsive design (desktop, tablet, mobile)
- */
-
 export default function AuditClientDataForm({ onDataChange, initialData = {} }) {
-  // State management
   const [formData, setFormData] = useState(initialData);
-  const [activeTab, setActiveTab] = useState("documentation");
+  const [activeTab, setActiveTab] = useState("identity");
   const [completionStatus, setCompletionStatus] = useState({});
   const [showChecklistOnly, setShowChecklistOnly] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  // Effect: Încarcă date din localStorage la montare
   useEffect(() => {
     const stored = loadFromStorage();
     if (stored.success && stored.data && Object.keys(initialData).length === 0) {
@@ -32,50 +21,27 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
     }
   }, []);
 
-  // Effect: Sincronizare localStorage și notificare onChange
   useEffect(() => {
-    // Salvează în localStorage
     const saveResult = saveToStorage(formData);
     if (saveResult.success) {
       setSaveMessage("Salvat");
       setTimeout(() => setSaveMessage(""), 2000);
     }
-
-    // Notifică parent component
     if (onDataChange) onDataChange(formData);
-
-    // Actualizează completion status
     updateCompletionStatus();
   }, [formData, onDataChange]);
 
-  /**
-   * Calculează starea completare pentru fiecare secțiune
-   */
   const updateCompletionStatus = () => {
     const completion = calculateFormCompletion(formData, SECTIONS);
     setCompletionStatus(completion.bySection);
   };
 
-  /**
-   * Handler schimbare câmp formular
-   */
   const handleFieldChange = (fieldId, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
+    setFormData(prev => ({ ...prev, [fieldId]: value }));
   };
 
-  /**
-   * Handler schimbare tab activ
-   */
-  const handleTabChange = (tabKey) => {
-    setActiveTab(tabKey);
-  };
+  const handleTabChange = (tabKey) => setActiveTab(tabKey);
 
-  /**
-   * Handler pre-populare cu date demo
-   */
   const loadDemoData = () => {
     if (Object.keys(formData).length > 0) {
       if (!window.confirm("Formularul conține deja date. Le înlocuiți cu datele demo?")) return;
@@ -83,42 +49,78 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
     setFormData(DEMO_DATA);
   };
 
-  /**
-   * Handler ștergere date
-   */
   const clearForm = () => {
     if (window.confirm("Sigur doriți să ștergeți toate datele colectate?")) {
       setFormData({});
-      setActiveTab("documentation");
+      setActiveTab("identity");
     }
   };
 
-  // Secțiunea activă curentă
+  const handleGenerateCerere = async () => {
+    try {
+      const { generateClientRequestPdf } = await import("../lib/client-request-pdf.js");
+      await generateClientRequestPdf({
+        client: {
+          name: formData.ownerName,
+          type: formData.ownerType?.includes("PJ") ? "PJ" : "PF",
+          cnp: formData.ownerCNP,
+          cui: formData.ownerCUI,
+          address: formData.ownerAddress,
+          city: formData.ownerCity,
+          email: formData.ownerEmail,
+          phone: formData.ownerPhone,
+        },
+        building: {
+          address: formData.buildingAddress,
+          locality: formData.buildingLocality,
+          county: formData.buildingCounty,
+          cadastralNumber: formData.cadastralNumber,
+          landBook: formData.landBook,
+          category: formData.buildingType,
+          areaUseful: formData.usefulArea,
+          yearBuilt: formData.constructionYear,
+          scopCpe: formData.scopCpe,
+          nFloors: formData.nFloors,
+        },
+        services: {
+          cpe: true,
+          audit: formData.servicesNeeded?.includes("Audit"),
+          passport: false,
+          nzebRoadmap: false,
+        },
+        documents: _buildDocumentsList(formData),
+        requestDate: new Date(),
+      });
+    } catch (e) {
+      console.error("[ClientRequest] Eroare:", e);
+      alert("Eroare generare cerere: " + (e?.message || "necunoscut"));
+    }
+  };
+
   const currentSection = SECTIONS[activeTab];
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* HEADER */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-        <Card className="m-0 p-4 md:p-6 bg-gradient-to-r from-blue-50 to-green-50 border-0 rounded-0">
+        <Card className="m-0 p-4 md:p-6 bg-gradient-to-r from-blue-50 to-green-50 border-0 rounded-none">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                📋 Formular Audit Energetic
+                Formular Solicitare Client
               </h1>
               <p className="text-gray-600 text-sm mt-1">
-                Colectare date structurată pentru CPE și Audit Energetic (v3.4)
+                Certificat de Performanță Energetică și/sau Audit Energetic — completați în 5-7 minute
               </p>
             </div>
 
-            {/* Export Buttons */}
             <div className="flex flex-wrap gap-2 w-full md:w-auto">
               <button
                 onClick={loadDemoData}
                 className="px-3 py-2 bg-teal-500 text-white rounded text-sm font-medium hover:bg-teal-600 transition whitespace-nowrap"
                 title="Pre-populează cu date fictive pentru testare"
               >
-                🧪 Date Demo
+                🧪 Demo
               </button>
               <button
                 onClick={() => setShowChecklistOnly(!showChecklistOnly)}
@@ -129,25 +131,7 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                 )}
               >
-                {showChecklistOnly ? "Ascunde Checklist" : "📊 Checklist"}
-              </button>
-              <button
-                onClick={() => exportToJSON(formData)}
-                className="px-3 py-2 bg-green-500 text-white rounded text-sm font-medium hover:bg-green-600 transition whitespace-nowrap"
-              >
-                📥 JSON
-              </button>
-              <button
-                onClick={() => exportToCSV(formData)}
-                className="px-3 py-2 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 transition whitespace-nowrap"
-              >
-                📊 CSV
-              </button>
-              <button
-                onClick={() => downloadChecklist(completionStatus, SECTIONS)}
-                className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
-              >
-                ✓ Check
+                {showChecklistOnly ? "Ascunde Progres" : "📊 Progres"}
               </button>
               <button
                 onClick={() => exportToDOCX(formData, SECTIONS)}
@@ -157,62 +141,18 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                 📄 DOCX
               </button>
               <button
-                onClick={() => exportRegistruAnex6(formData)}
-                className="px-3 py-2 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700 transition whitespace-nowrap"
-                title="Export registru conform Anexa 6, Ord. MDLPA 348/2026"
-              >
-                📋 Anexa 6
-              </button>
-              {/* Sprint Conformitate P0-04 (7 mai 2026) — Cerere oficială client */}
-              <button
-                onClick={async () => {
-                  try {
-                    const { generateClientRequestPdf } = await import("../lib/client-request-pdf.js");
-                    await generateClientRequestPdf({
-                      client: {
-                        name: formData.ownerName,
-                        type: formData.ownerType || "PF",
-                        cnp: formData.ownerCNP,
-                        cui: formData.ownerCUI,
-                        address: formData.ownerAddress,
-                        city: formData.ownerCity,
-                        email: formData.ownerEmail,
-                        phone: formData.ownerPhone,
-                      },
-                      building: {
-                        address: formData.buildingAddress,
-                        cadastralNumber: formData.cadastralNumber,
-                        landBook: formData.landBook,
-                        category: formData.buildingTipAnex6,
-                        areaUseful: formData.usefulArea,
-                        areaBuilt: formData.areaBuilt,
-                        yearBuilt: formData.constructionYear,
-                        scopCpe: formData.scopCpe,
-                        locality: formData.buildingLocality,
-                        county: formData.buildingCounty,
-                      },
-                      auditor: {
-                        name: formData.auditorName,
-                        atestat: formData.auditorRegistry,
-                        company: formData.auditorCompany,
-                      },
-                      services: {
-                        cpe: true,
-                        audit: formData.auditType === "Audit energetic complet",
-                        passport: false,
-                        nzebRoadmap: false,
-                      },
-                      requestDate: new Date(),
-                    });
-                  } catch (e) {
-                    console.error("[ClientRequest] Eroare:", e);
-                    alert("Eroare generare cerere: " + (e?.message || "necunoscut"));
-                  }
-                }}
+                onClick={handleGenerateCerere}
                 className="px-3 py-2 bg-amber-500 text-white rounded text-sm font-medium hover:bg-amber-600 transition whitespace-nowrap"
-                title="Generează cerere oficială client → auditor (semnătură olograf, GDPR, Art. 6 alin. 1 Ord. 348/2026)"
+                title="Generează cerere oficială client → auditor (PDF)"
               >
                 📜 Cerere oficială
+              </button>
+              <button
+                onClick={() => exportToJSON(formData)}
+                className="px-3 py-2 bg-gray-500 text-white rounded text-sm font-medium hover:bg-gray-600 transition whitespace-nowrap"
+                title="Export date brute JSON"
+              >
+                ⬇ JSON
               </button>
               <button
                 onClick={clearForm}
@@ -221,9 +161,7 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                 🗑️ Șterge
               </button>
               {saveMessage && (
-                <span className="px-3 py-2 text-sm text-green-600 font-medium">
-                  ✓ {saveMessage}
-                </span>
+                <span className="px-3 py-2 text-sm text-green-600 font-medium">✓ {saveMessage}</span>
               )}
             </div>
           </div>
@@ -232,7 +170,7 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
 
       {/* MAIN CONTENT */}
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        {/* TAB NAVIGATION - Sidebar pe desktop, top pe mobile */}
+        {/* TAB NAVIGATION */}
         <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-gray-200 bg-white lg:overflow-y-auto lg:sticky lg:top-20">
           <TabNavigation
             sections={SECTIONS_ARRAY}
@@ -245,14 +183,13 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
         {/* FORM CONTENT */}
         <main className="flex-1 overflow-y-auto">
           {showChecklistOnly ? (
-            // CHECKLIST VIEW
             <div className="p-4 md:p-6 space-y-4">
               <Card className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-800">✓ Progres Colectare Date</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-800">Progres completare formular</h3>
                 <div className="space-y-3">
                   {SECTIONS_ARRAY.map((section) => {
                     const status = completionStatus[section.key] || { completed: 0, required: 0 };
-                    const percentage = status.required > 0 ? Math.round((status.completed / status.required) * 100) : 0;
+                    const percentage = status.required > 0 ? Math.round((status.completed / status.required) * 100) : 100;
                     return (
                       <div key={section.key} className="space-y-1">
                         <div className="flex justify-between items-center">
@@ -263,7 +200,7 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                             "text-white font-bold",
                             status.isComplete ? "bg-green-500" : percentage > 50 ? "bg-yellow-500" : "bg-red-500"
                           )}>
-                            {status.completed}/{status.required} ({percentage}%)
+                            {status.completed}/{status.required}
                           </Badge>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -281,11 +218,9 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
               </Card>
             </div>
           ) : (
-            // FORM SECTIONS VIEW
             <div className="p-4 md:p-6 space-y-6">
-              {/* Secțiune activă */}
               <Card className={cn(
-                "p-4 md:p-6 transition-all border-2 animated",
+                "p-4 md:p-6 transition-all border-2",
                 completionStatus[activeTab]?.isComplete
                   ? "border-green-300 bg-green-50"
                   : "border-gray-200 bg-white"
@@ -296,78 +231,111 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
                     <h2 className="text-2xl font-bold text-gray-800">
                       {currentSection.icon} {currentSection.label}
                     </h2>
-                    <p className="text-gray-600 text-sm mt-2">
-                      {currentSection.description}
-                    </p>
+                    <p className="text-gray-500 text-sm mt-1">{currentSection.description}</p>
                     {completionStatus[activeTab] && (
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-400 mt-1">
                         {completionStatus[activeTab].completed}/{completionStatus[activeTab].required} câmpuri obligatorii completate
                       </p>
                     )}
                   </div>
                   {completionStatus[activeTab]?.isComplete && (
-                    <Badge className="bg-green-500 text-white font-bold text-base px-4 py-2 flex-shrink-0">
+                    <Badge className="bg-green-500 text-white font-bold text-sm px-4 py-2 flex-shrink-0">
                       ✓ COMPLET
                     </Badge>
                   )}
                 </div>
 
-                {/* Câmpuri formular - responsive grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Câmpuri formular */}
+                <div className="space-y-4">
                   {currentSection.fields.map(field => {
-                    const value = formData[field.id] || "";
-                    const isEmpty = !value || value === "";
+                    const value = formData[field.id];
+                    const isEmpty = value === undefined || value === null || value === "" || value === false;
 
+                    // ── CHECKBOX
+                    if (field.type === "checkbox") {
+                      return (
+                        <div key={field.id} className={cn(
+                          "flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors",
+                          value
+                            ? "bg-green-50 border-green-300"
+                            : field.required && isEmpty
+                              ? "bg-red-50 border-red-300"
+                              : "bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200"
+                        )}
+                          onClick={() => handleFieldChange(field.id, !value)}
+                        >
+                          <div className={cn(
+                            "flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors",
+                            value ? "bg-green-500 border-green-500" : "border-gray-400 bg-white"
+                          )}>
+                            {value && <span className="text-white text-xs font-bold">✓</span>}
+                          </div>
+                          <label className="text-sm text-gray-700 leading-relaxed cursor-pointer select-none">
+                            {field.required && (
+                              <span className="text-red-500 mr-1 font-bold">*</span>
+                            )}
+                            {field.label}
+                          </label>
+                        </div>
+                      );
+                    }
+
+                    // ── GRID pentru câmpuri non-checkbox
                     return (
-                      <div key={field.id} className="space-y-1">
+                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-x-6 items-start">
                         <label className={cn(
-                          "block text-sm font-medium",
+                          "block text-sm font-medium pt-2 md:text-right",
                           field.required && isEmpty ? "text-red-600" : "text-gray-700"
                         )}>
                           {field.label}
                           {field.required && <span className="text-red-500 ml-1">*</span>}
+                          {field.hint && (
+                            <span className="block text-xs text-gray-400 font-normal mt-0.5">{field.hint}</span>
+                          )}
                         </label>
 
-                        {field.type === "select" ? (
-                          <select
-                            value={value}
-                            onChange={e => handleFieldChange(field.id, e.target.value)}
-                            className={cn(
-                              "w-full px-3 py-2 border rounded text-sm bg-white/5 text-white",
-                              field.required && isEmpty ? "border-red-500" : "border-white/10"
-                            )}
-                          >
-                            <option value="">-- Selectați --</option>
-                            {field.options.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        ) : field.type === "textarea" ? (
-                          <textarea
-                            value={value}
-                            onChange={e => handleFieldChange(field.id, e.target.value)}
-                            maxLength={field.maxLength}
-                            rows={3}
-                            className={cn(
-                              "w-full px-3 py-2 border rounded text-sm",
-                              field.required && isEmpty ? "border-red-500" : "border-gray-300"
-                            )}
-                            placeholder={field.placeholder}
-                          />
-                        ) : (
-                          <Input
-                            type={field.type}
-                            value={value}
-                            onChange={e => handleFieldChange(field.id, e.target.value)}
-                            min={field.min}
-                            max={field.max}
-                            placeholder={field.placeholder}
-                            className={cn(
-                              "w-full px-3 py-2 border rounded text-sm",
-                              field.required && isEmpty ? "border-red-500" : "border-gray-300"
-                            )}
-                          />
-                        )}
+                        <div className="md:col-span-2">
+                          {field.type === "select" ? (
+                            <select
+                              value={value || ""}
+                              onChange={e => handleFieldChange(field.id, e.target.value)}
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300 transition",
+                                field.required && isEmpty ? "border-red-400 bg-red-50" : "border-gray-300"
+                              )}
+                            >
+                              <option value="">— Selectați —</option>
+                              {field.options.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : field.type === "textarea" ? (
+                            <textarea
+                              value={value || ""}
+                              onChange={e => handleFieldChange(field.id, e.target.value)}
+                              maxLength={field.maxLength}
+                              rows={3}
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition",
+                                field.required && isEmpty ? "border-red-400 bg-red-50" : "border-gray-300"
+                              )}
+                              placeholder={field.placeholder}
+                            />
+                          ) : (
+                            <Input
+                              type={field.type}
+                              value={value || ""}
+                              onChange={e => handleFieldChange(field.id, e.target.value)}
+                              min={field.min}
+                              max={field.max}
+                              placeholder={field.placeholder}
+                              className={cn("text-gray-900 bg-white",
+                                "w-full",
+                                field.required && isEmpty ? "border-red-400 bg-red-50" : ""
+                              )}
+                            />
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -375,33 +343,29 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
               </Card>
 
               {/* Navigare taburi */}
-              <div className="flex flex-col md:flex-row justify-between gap-4 pb-6">
+              <div className="flex justify-between gap-4 pb-6">
                 <button
                   onClick={() => {
-                    const currentIndex = SECTIONS_ARRAY.findIndex(s => s.key === activeTab);
-                    if (currentIndex > 0) {
-                      handleTabChange(SECTIONS_ARRAY[currentIndex - 1].key);
-                    }
+                    const idx = SECTIONS_ARRAY.findIndex(s => s.key === activeTab);
+                    if (idx > 0) handleTabChange(SECTIONS_ARRAY[idx - 1].key);
                   }}
                   disabled={SECTIONS_ARRAY[0].key === activeTab}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded font-medium hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  ← Precedent
+                  ← Înapoi
                 </button>
 
-                <span className="text-center text-gray-600 font-medium py-2">
+                <span className="text-sm text-gray-500 py-2 self-center">
                   Etapa {SECTIONS_ARRAY.findIndex(s => s.key === activeTab) + 1} / {SECTIONS_ARRAY.length}
                 </span>
 
                 <button
                   onClick={() => {
-                    const currentIndex = SECTIONS_ARRAY.findIndex(s => s.key === activeTab);
-                    if (currentIndex < SECTIONS_ARRAY.length - 1) {
-                      handleTabChange(SECTIONS_ARRAY[currentIndex + 1].key);
-                    }
+                    const idx = SECTIONS_ARRAY.findIndex(s => s.key === activeTab);
+                    if (idx < SECTIONS_ARRAY.length - 1) handleTabChange(SECTIONS_ARRAY[idx + 1].key);
                   }}
                   disabled={SECTIONS_ARRAY[SECTIONS_ARRAY.length - 1].key === activeTab}
-                  className="px-4 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
                   Următor →
                 </button>
@@ -411,14 +375,27 @@ export default function AuditClientDataForm({ onDataChange, initialData = {} }) 
         </main>
       </div>
 
-      {/* PROGRESS INDICATOR - FOOTER */}
+      {/* FOOTER — progress indicator */}
       <footer className="border-t border-gray-200 bg-white">
         <ProgressIndicator
           completionStatus={completionStatus}
           sections={SECTIONS_ARRAY}
-          className="m-0 border-0 rounded-0"
+          className="m-0 border-0 rounded-none"
         />
       </footer>
     </div>
   );
+}
+
+// ── Helpers
+
+function _buildDocumentsList(formData) {
+  return [
+    { label: "Act de proprietate (titlu, contract)", available: formData.hasPropertyAct === "Da — disponibil" },
+    { label: "Extras Carte Funciară (CF) recent", available: formData.hasCF?.startsWith("Da") },
+    { label: "Plan / releveu arhitectural", available: formData.hasArchitecturalPlan?.startsWith("Da") },
+    { label: "Cartea tehnică a construcției", available: formData.hasTechnicalBook?.startsWith("Da") },
+    { label: "Facturi energie (electricitate / gaz / lemn)", available: formData.hasEnergyBills?.startsWith("Da") },
+    { label: "Autorizație de construire / renovare", available: formData.hasBuildingPermit === "Da" },
+  ];
 }
