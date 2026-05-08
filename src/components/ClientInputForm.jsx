@@ -1209,26 +1209,20 @@ export default function ClientInputForm({ onDataChange }) {
         </div>
 
         {/* Butoane auditor */}
-        <div className="flex flex-wrap justify-between items-center gap-3">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setData(DEMO_DATA)}
-              className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-all"
-              title="Populează formularul cu date demo pentru testare"
-            >
-              Demo
-            </button>
-            <button
-              onClick={() => setData({})}
-              className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 text-white/40 hover:text-red-400 rounded-xl text-sm font-medium transition-all"
-              title="Golește toate câmpurile"
-            >
-              ✕ Resetează
-            </button>
-          </div>
-          <button onClick={() => exportDOCX(data, planuri)}
-            className="px-6 py-2.5 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-xl text-sm font-medium transition-all">
-            ↓ Descarcă DOCX
+        <div className="flex gap-2">
+          <button
+            onClick={() => setData(DEMO_DATA)}
+            className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-all"
+            title="Populează formularul cu date demo pentru testare"
+          >
+            Demo
+          </button>
+          <button
+            onClick={() => setData({})}
+            className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 text-white/40 hover:text-red-400 rounded-xl text-sm font-medium transition-all"
+            title="Golește toate câmpurile"
+          >
+            ✕ Resetează
           </button>
         </div>
       </div>
