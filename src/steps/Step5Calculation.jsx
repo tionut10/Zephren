@@ -457,9 +457,9 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   <div className="flex items-center justify-center">
-                    <svg viewBox="0 0 400 400" width="100%" style={{maxWidth:"520px"}}>
+                    <svg viewBox="0 0 460 440" width="100%" style={{maxWidth:"520px"}}>
                       {(() => {
-                        const cx = 200, cy = 160, maxR = 100, maxMul = 1.8;
+                        const cx = 230, cy = 190, maxR = 100, maxMul = 1.6;
                         const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
                         const utils = [
                           {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0},
@@ -478,22 +478,25 @@ export default function Step5Calculation(props) {
                           const isRef = f === 1.0;
                           const r = maxR * f;
                           const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
-                          const [tx, ty] = getXY(0, r);
                           return <g key={f}>
                             <polygon points={pts} fill={isRef ? "rgba(34,197,94,0.07)" : "none"}
                               stroke={isRef ? "#22c55e" : "rgba(255,255,255,0.13)"}
                               strokeWidth={isRef ? 1.8 : 0.7}
                               strokeDasharray={isRef ? "5 3" : undefined} />
-                            {isRef && <text x={tx} y={ty - 6} textAnchor="middle" fontSize="8.5" fill="#4ade80" fontWeight="600">nZEB A+</text>}
+                            {isRef && <text x={292} y={108} textAnchor="start" fontSize="8.5" fill="#4ade80" fontWeight="600">nZEB A+</text>}
                           </g>;
                         });
-                        // Axes extend to maxMul×maxR
+                        // Axes with value labels at fixed distance from center (not at polygon vertex)
                         const axes = utils.map((u, i) => {
-                          const [lx, ly] = getXY(i, maxR + 24);
+                          const ratio = ratios[i];
+                          const col = getCol(ratio);
+                          const capped = ratio > maxMul;
+                          const [lx, ly] = getXY(i, maxR + 26);
                           const [ax, ay] = getXY(i, maxR * maxMul);
                           return <g key={i}>
                             <line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.90)" fontWeight="500">{u.label}</text>
+                            <text x={lx} y={ly + 17} textAnchor="middle" fontSize="8.5" fill={col} fontWeight="600">{u.val.toFixed(1)}{capped ? "⁺" : ""} · ×{ratio.toFixed(1)}</text>
                           </g>;
                         });
                         // Data polygon — r normalized to nZEB, capped at maxMul
@@ -503,23 +506,10 @@ export default function Step5Calculation(props) {
                           const r = Math.min(maxR * maxMul, maxR * ratio);
                           return getXY(i, r).join(",");
                         }).join(" ");
-                        // Value labels: kWh value + ×ratio
-                        const vals = ratios.map((ratio, i) => {
-                          const u = utils[i];
-                          const r = Math.min(maxR * maxMul, maxR * ratio) + 14;
-                          const [x, y] = getXY(i, r);
-                          const col = getCol(ratio);
-                          const capped = ratio > maxMul;
-                          return <g key={"v"+i}>
-                            <text x={x} y={y + 1} textAnchor="middle" fontSize="9.5" fill={col} fontWeight="bold">{u.val.toFixed(1)}{capped ? "⁺" : ""}</text>
-                            <text x={x} y={y + 13} textAnchor="middle" fontSize="8" fill={col} opacity="0.85">×{ratio.toFixed(1)}</text>
-                          </g>;
-                        });
                         const noteY = cy + maxR * maxMul + 34;
                         return <>
                           {grid}{axes}
                           <polygon points={pts} fill={`${polyCol}22`} stroke={polyCol} strokeWidth="2.5" opacity="0.95" />
-                          {vals}
                           <text x={cx} y={noteY} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.50)">Inelul verde = prag nZEB A+ · ×N = raport față de prag</text>
                           <g transform={`translate(${cx - 110}, ${noteY + 15})`}>
                             <rect x={0} y={-8} width={9} height={9} fill="#22c55e" rx="1.5" />
