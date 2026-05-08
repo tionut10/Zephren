@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "update: toate dependențele la ultimele versiuni (react 19, vite 8, pdfjs 5, react-leaflet 5, uuid 14, cryptogr"
+      },
+      {
         "icon": "🔸",
         "text": "checkpoint: versiuni stabile pre-update major (node 24, python 3.14, toate dependențele safe actualizate)"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📥",
         "text": "fix(consistență): Pachet complet ZIP folosește Anexa MDLPA portal XML (Ord. 348/2026) în loc de XML vechi Ord."
-      },
-      {
-        "icon": "📄",
-        "text": "refactor(documente): eliminare 13 grupe de exporturi/tab-uri redundante (~30 elemente)"
       }
     ]
   },
