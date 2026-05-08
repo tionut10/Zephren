@@ -1,7 +1,7 @@
 /**
  * cpe-post-rehab-pdf.js — Generator CPE estimat post-reabilitare (PDF A4)
  *
- * Sprint Pas 7 docs (6 mai 2026)
+ * Sprint Pas 7 docs (6 mai 2026) + Sprint Visual-1 (8 mai 2026)
  *
  * Generează un document PDF orientativ care prezintă clasa energetică estimată
  * pe care clădirea ar atinge-o DUPĂ implementarea scenariului de reabilitare
@@ -16,15 +16,43 @@
  * Scop: instrument de informare pentru client/dezvoltator/finanțator —
  *   răspunde la întrebarea „dacă fac lucrările, ce clasă obțin?"
  *
- * Layout (1 pagină A4 portret):
- *   1. Header amber „CPE ESTIMAT — POST-REABILITARE"
- *   2. Identificare clădire (adresă, categorie, Au, an, cadastru)
- *   3. Comparație vizuală EP/clasă: ACTUAL vs. POST-REABILITARE (badge dual)
- *   4. Reducere consum + emisii CO2 (tabel: kWh/m²·an, kg CO2/m²·an, %)
- *   5. Măsuri incluse în scenariu (listă bifată cu costuri)
- *   6. Cost total estimat + economie anuală + perioadă recuperare
- *   7. Watermark central diagonal „ESTIMAT" + footer disclaimer juridic
+ * Layout (Sprint Visual-1 — 2 pagini A4 portret):
+ *   PAG 1 (cover):
+ *     • Logo Zephren full + titlu + sub-titlu cu watermark "ESTIMAT"
+ *     • Identificare clădire + auditor
+ *     • 3 KPI box-uri: clasa actuală → estimată / reducere EP% / payback ani
+ *     • Disclaimer + bază legală
+ *   PAG 2 (detaliu):
+ *     • Header brand repetat + footer cu Pag X/Y
+ *     • Comparație EP/CO₂ + scala A-G îmbunătățită cu prag nZEB
+ *     • Reducere estimată (tabel)
+ *     • Măsuri incluse + sumar financiar
+ *     • Box semnătură + ștampilă auditor
  */
+
+import {
+  BRAND_COLORS,
+  ENERGY_CLASS_COLORS,
+  FONT_SIZES,
+  A4,
+  SPACING,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  formatRomanianNumber,
+  formatRON,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderCoverPage,
+  renderEnergyClassBar,
+  renderSectionHeader,
+  renderWatermark,
+  renderSignatureBox,
+} from "./pdf-brand-layout.js";
 
 const CLASS_COLORS_RGB = {
   A: [22, 163, 74],
@@ -275,37 +303,94 @@ export async function exportCpePostRehabPDF(params = {}) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
-  // ── 1. HEADER amber „ESTIMAT POST-REABILITARE" ──
-  doc.setFillColor(180, 83, 9); // amber-700
-  doc.rect(0, 0, w, 30, "F");
-  doc.setFont(undefined, "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(255, 255, 255);
-  doc.text("CPE ESTIMAT — POST-REABILITARE", w / 2, 12, { align: "center" });
-  doc.setFont(undefined, "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(254, 243, 199);
-  doc.text("Document orientativ — NU înlocuiește CPE oficial emis după lucrări", w / 2, 18, { align: "center" });
-  doc.setFontSize(7);
-  doc.setTextColor(254, 215, 170);
+  // ─── Sprint Visual-1: build brand metadata pentru header/footer/cover ───
   const cpeEstCode = cpeCodeBase ? `${cpeCodeBase}-EST` : `EST-${new Date().toISOString().slice(0, 10)}`;
-  doc.text(`Cod orientativ: ${cpeEstCode} · Generat la: ${new Date().toLocaleDateString("ro-RO")}`, w / 2, 24, { align: "center" });
+  const brandMeta = buildBrandMetadata({
+    title: "CPE Estimat — Post-Reabilitare",
+    cpeCode: cpeEstCode,
+    building: {
+      address: building?.address,
+      category: building?.category,
+      areaUseful: building?.areaUseful,
+      year: building?.yearBuilt,
+      cadastral: building?.cadastralNumber,
+    },
+    auditor: {
+      name: auditor?.name,
+      atestat: auditor?.atestat,
+      grade: auditor?.grade || "AE Ici",
+      firm: auditor?.company || auditor?.firma,
+    },
+    docType: "cpe-post-rehab",
+    version: "v4.0",
+  });
 
-  let y = 38;
+  // ─── Pre-calcul savings + cost pentru KPI box-uri cover ───
+  const orig = rehabComparison.original;
+  const reh = rehabComparison.rehab;
+  const sav = rehabComparison.savings || {};
+  const origCls = String(orig?.cls?.cls || orig?.cls || "—");
+  const rehCls = String(reh?.cls?.cls || reh?.cls || "—");
+  const measures = buildMeasuresList(rehabScenarioInputs, opaqueElements, glazingElements, REHAB_COSTS);
+  const totalCost = measures.reduce((s, m) => s + (m.cost || 0), 0);
+  const annualKwhSaved = sav.qfSaved || 0;
+  const fuelId = instSummary?.fuel?.id || "gaz";
+  const annualSavingRON = estimateAnnualEnergyCostRON(annualKwhSaved, fuelId);
+  const paybackYears = annualSavingRON > 0 ? totalCost / annualSavingRON : 0;
 
-  // ── 2. IDENTIFICARE CLĂDIRE ──
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(180, 83, 9);
-  doc.text("1. Identificare clădire", 14, y);
-  y += 2;
-  doc.setDrawColor(180, 83, 9); doc.setLineWidth(0.4);
-  doc.line(14, y, w - 14, y); y += 4;
+  // ═══════════════════════════════════════════════════════════════════════
+  // PAGINA 1 — COVER PAGE (brand kit unitar)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  renderCoverPage(doc, brandMeta, {
+    subtitle: `Document orientativ · ${rehCls} estimată · reducere EP ${formatRomanianNumber(sav.epPct || 0, 1)}%`,
+    kpis: [
+      {
+        value: `${origCls} → ${rehCls}`,
+        label: "Clasa energetică",
+        color: ENERGY_CLASS_COLORS[rehCls] || BRAND_COLORS.PRIMARY,
+      },
+      {
+        value: `${formatRomanianNumber(sav.epPct || 0, 1)}%`,
+        label: "Reducere EP primar",
+        color: BRAND_COLORS.SUCCESS,
+      },
+      {
+        value: paybackYears > 0 && paybackYears < 100 ? `${formatRomanianNumber(paybackYears, 1)} ani` : "—",
+        label: "Recuperare simplă",
+        color: BRAND_COLORS.PRIMARY,
+      },
+    ],
+    disclaimer: "Document orientativ generat pentru informare — NU înlocuiește CPE oficial emis după realizarea lucrărilor (Legea 372/2005, Mc 001-2022, Ord. MDLPA 348/2026). Performanța reală post-reabilitare se atestă prin CPE oficial înregistrat la portalul MDLPA.",
+  });
+
+  // Watermark pe cover page
+  renderWatermark(doc, "ESTIMAT", { opacity: 0.08 });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PAGINA 2 — DETALIU TEHNIC
+  // ═══════════════════════════════════════════════════════════════════════
+
+  doc.addPage();
+  applyBrandHeader(doc, brandMeta);
+
+  let y = A4.MARGIN_TOP + 4;
+
+  // ── 1. IDENTIFICARE CLĂDIRE ──
+  y = renderSectionHeader(doc, "1. Identificare clădire", y);
 
   doc.autoTable({
     startY: y,
-    margin: { left: 14, right: 14 },
+    margin: { left: A4.MARGIN_LEFT, right: A4.MARGIN_RIGHT },
     theme: "grid",
-    headStyles: { fillColor: [254, 243, 199], textColor: [180, 83, 9], fontStyle: "bold", fontSize: 9 },
-    bodyStyles: { fontSize: 9 },
+    headStyles: {
+      fillColor: BRAND_COLORS.SLATE_900,
+      textColor: BRAND_COLORS.WHITE,
+      fontStyle: "bold",
+      fontSize: FONT_SIZES.TABLE_HEADER,
+    },
+    bodyStyles: { fontSize: FONT_SIZES.TABLE_BODY },
+    alternateRowStyles: { fillColor: BRAND_COLORS.SLATE_50 },
     columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
     body: [
       ["Adresă", building?.address || "—"],
@@ -315,71 +400,76 @@ export async function exportCpePostRehabPDF(params = {}) {
       ["Nr. cadastral", building?.cadastralNumber || "—"],
     ],
   });
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + SPACING.LG;
 
-  // ── 3. COMPARAȚIE EP/CLASĂ ACTUAL vs. POST-REABILITARE ──
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(180, 83, 9);
-  doc.text("2. Performanță energetică — comparație", 14, y);
-  y += 2;
-  doc.line(14, y, w - 14, y); y += 6;
-
-  const orig = rehabComparison.original;
-  const reh = rehabComparison.rehab;
-  const origCls = String(orig?.cls?.cls || orig?.cls || "—");
-  const rehCls = String(reh?.cls?.cls || reh?.cls || "—");
+  // ── 2. PERFORMANȚĂ ENERGETICĂ — comparație ──
+  y = renderSectionHeader(doc, "2. Performanță energetică — comparație", y);
 
   // Badge ACTUAL (stânga)
-  drawClassBadge(doc, 14, y, 26, 22, origCls, "ACTUAL");
-  doc.setFont(undefined, "normal"); doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`EP: ${fmt(orig?.ep || 0, 1)} kWh/(m²·an)`, 44, y + 8);
-  doc.text(`CO₂: ${fmt(orig?.co2 || 0, 1)} kg/(m²·an)`, 44, y + 14);
-  doc.setFontSize(7); doc.setTextColor(120, 120, 120);
-  doc.text("Bilanț Mc 001-2022 stare existentă", 44, y + 19);
+  drawClassBadge(doc, A4.MARGIN_LEFT, y, 26, 22, origCls, "ACTUAL");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  doc.text(`EP: ${fmt(orig?.ep || 0, 1)} kWh/(m²·an)`, A4.MARGIN_LEFT + 30, y + 8);
+  doc.text(`CO₂: ${fmt(orig?.co2 || 0, 1)} kg/(m²·an)`, A4.MARGIN_LEFT + 30, y + 14);
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  doc.text("Bilanț Mc 001-2022 stare existentă", A4.MARGIN_LEFT + 30, y + 19);
 
-  // Săgeată
-  doc.setFont(undefined, "bold"); doc.setFontSize(20); doc.setTextColor(180, 83, 9);
+  // Săgeată centrală
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT_SIZES.H1);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "text");
   doc.text("→", w / 2 - 5, y + 14);
 
   // Badge POST-REHAB (dreapta)
   drawClassBadge(doc, w - 40, y, 26, 22, rehCls, "POST-REHAB");
-  doc.setFont(undefined, "normal"); doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const rightTxtX = w / 2 + 8;
   doc.text(`EP: ${fmt(reh?.ep || 0, 1)} kWh/(m²·an)`, rightTxtX, y + 8);
   doc.text(`CO₂: ${fmt(reh?.co2 || 0, 1)} kg/(m²·an)`, rightTxtX, y + 14);
-  doc.setFontSize(7); doc.setTextColor(120, 120, 120);
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   doc.text("Estimat după implementare scenariu", rightTxtX, y + 19);
   y += 30;
 
-  // ── Scală A-G vizuală cu markeri ACTUAL + ESTIMAT (ca CPE oficial) ──
-  doc.setFont(undefined, "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(60, 60, 60);
-  doc.text("Scala energetică A-G", w / 2, y, { align: "center" });
-  y += 8; // spațiu pentru marker ESTIMAT (sus)
-  drawEnergyScale(doc, 24, y, w - 48, 7, origCls, rehCls);
-  y += 18; // spațiu jos pentru marker ACTUAL + etichetă
+  // ── Scala A-G îmbunătățită cu markeri ACTUAL + ESTIMAT + prag nZEB ──
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  doc.text("Scala energetică A-G (cu prag nZEB orientativ)", w / 2, y, { align: "center" });
+  y += 10; // spațiu pentru marker POST-REHAB (sus)
+  renderEnergyClassBar(doc, 24, y, w - 48, 8, {
+    actualClass: origCls,
+    actualEP: orig?.ep,
+    targetClass: rehCls,
+    targetEP: reh?.ep,
+    thresholdClass: building?.category && /^(R|C)/.test(building.category) ? "B" : "C",
+  });
+  y += 22; // spațiu jos pentru marker ACTUAL + etichete
 
-  // ── 4. REDUCERE consum + emisii ──
-  const sav = rehabComparison.savings || {};
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(180, 83, 9);
-  doc.text("3. Reducere estimată", 14, y);
-  y += 2;
-  doc.line(14, y, w - 14, y); y += 4;
+  // ── 3. REDUCERE consum + emisii ──
+  y = renderSectionHeader(doc, "3. Reducere estimată", y);
 
   const epReductionAbs = (orig?.ep || 0) - (reh?.ep || 0);
   const co2ReductionAbs = (orig?.co2 || 0) - (reh?.co2 || 0);
   const Au = parseFloat(building?.areaUseful) || 0;
-  const annualKwhSaved = sav.qfSaved || 0;
   const co2TotalSavedKg = co2ReductionAbs * Au;
 
   doc.autoTable({
     startY: y,
-    margin: { left: 14, right: 14 },
+    margin: { left: A4.MARGIN_LEFT, right: A4.MARGIN_RIGHT },
     theme: "striped",
-    headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
-    bodyStyles: { fontSize: 9 },
+    headStyles: {
+      fillColor: BRAND_COLORS.SLATE_900,
+      textColor: BRAND_COLORS.WHITE,
+      fontStyle: "bold",
+      fontSize: FONT_SIZES.TABLE_HEADER,
+    },
+    bodyStyles: { fontSize: FONT_SIZES.TABLE_BODY },
+    alternateRowStyles: { fillColor: BRAND_COLORS.SLATE_50 },
     columnStyles: {
       0: { cellWidth: 65, fontStyle: "bold" },
       1: { cellWidth: 50, halign: "right" },
@@ -392,27 +482,24 @@ export async function exportCpePostRehabPDF(params = {}) {
       ["Energie finală anuală totală (kWh)", `${fmt(annualKwhSaved, 0)} salvați/an`, `${fmt(co2TotalSavedKg, 0)} kg CO₂/an`],
     ],
   });
-  y = doc.lastAutoTable.finalY + 8;
+  y = doc.lastAutoTable.finalY + SPACING.LG;
 
-  // ── 5. MĂSURI INCLUSE ──
-  const measures = buildMeasuresList(rehabScenarioInputs, opaqueElements, glazingElements, REHAB_COSTS);
+  // ── 4. MĂSURI INCLUSE ──
   if (measures.length > 0) {
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(180, 83, 9);
-    doc.text("4. Măsuri incluse în scenariu", 14, y);
-    y += 2;
-    doc.line(14, y, w - 14, y); y += 4;
-
-    const totalCost = measures.reduce((s, m) => s + (m.cost || 0), 0);
-    const fuelId = instSummary?.fuel?.id || "gaz";
-    const annualSavingRON = estimateAnnualEnergyCostRON(annualKwhSaved, fuelId);
-    const paybackYears = annualSavingRON > 0 ? totalCost / annualSavingRON : 0;
+    y = renderSectionHeader(doc, "4. Măsuri incluse în scenariu", y);
 
     doc.autoTable({
       startY: y,
-      margin: { left: 14, right: 14 },
+      margin: { left: A4.MARGIN_LEFT, right: A4.MARGIN_RIGHT },
       theme: "grid",
-      headStyles: { fillColor: [254, 243, 199], textColor: [180, 83, 9], fontStyle: "bold", fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
+      headStyles: {
+        fillColor: BRAND_COLORS.SLATE_900,
+        textColor: BRAND_COLORS.WHITE,
+        fontStyle: "bold",
+        fontSize: FONT_SIZES.TABLE_HEADER,
+      },
+      bodyStyles: { fontSize: FONT_SIZES.TABLE_BODY },
+      alternateRowStyles: { fillColor: BRAND_COLORS.SLATE_50 },
       columnStyles: {
         0: { cellWidth: 10, halign: "center" },
         1: { cellWidth: "auto" },
@@ -425,61 +512,67 @@ export async function exportCpePostRehabPDF(params = {}) {
         m.cost ? fmt(m.cost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.") : "—",
       ]),
       foot: [["", "TOTAL ESTIMAT", fmt(totalCost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")]],
-      footStyles: { fillColor: [254, 243, 199], textColor: [180, 83, 9], fontStyle: "bold", fontSize: 9 },
+      footStyles: {
+        fillColor: BRAND_COLORS.PRIMARY_FAINT,
+        textColor: BRAND_COLORS.PRIMARY_DARK,
+        fontStyle: "bold",
+        fontSize: FONT_SIZES.TABLE_HEADER,
+      },
     });
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + SPACING.MD;
 
     // Sumar financiar
-    doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(FONT_SIZES.BODY);
+    setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
     const lines = [
       `Cost total estimat: ${fmt(totalCost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")} RON (fără TVA, fără proiectare/avize)`,
       `Economie anuală estimată: ~${fmt(annualSavingRON, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")} RON/an (preț energie 2025)`,
       `Perioadă de recuperare simplă: ${paybackYears > 0 && paybackYears < 100 ? fmt(paybackYears, 1) + " ani" : "—"}`,
     ];
-    lines.forEach((line) => { doc.text(line, 14, y); y += 5; });
-    y += 3;
+    lines.forEach((line) => { doc.text(line, A4.MARGIN_LEFT, y); y += 5; });
+    y += SPACING.SM;
   }
 
-  // ── 6. AUDITOR ──
+  // ── 5. SEMNĂTURĂ AUDITOR ──
   if (auditor?.name || auditor?.atestat) {
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(180, 83, 9);
-    doc.text("5. Auditor energetic", 14, y);
-    y += 2;
-    doc.line(14, y, w - 14, y); y += 4;
+    // Verifică dacă mai e spațiu pentru box semnătură (35mm) + footer (20mm)
+    if (y > A4.HEIGHT - 60) {
+      doc.addPage();
+      applyBrandHeader(doc, brandMeta);
+      y = A4.MARGIN_TOP + 4;
+    }
 
-    doc.autoTable({
-      startY: y,
-      margin: { left: 14, right: 14 },
-      theme: "grid",
-      headStyles: { fillColor: [254, 243, 199], textColor: [180, 83, 9], fontStyle: "bold", fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
-      body: [
-        ["Auditor", auditor?.name || "—"],
-        ["Atestat MDLPA", `${auditor?.atestat || "—"} / ${auditor?.grade || "AE Ici"}`],
-        ["Firmă / PFA", auditor?.company || auditor?.firma || "—"],
-      ],
+    y = renderSectionHeader(doc, "5. Auditor energetic", y);
+    renderSignatureBox(doc, A4.MARGIN_LEFT, y, {
+      label: "AUDITOR ENERGETIC",
+      name: auditor?.name,
+      atestat: `${auditor?.atestat || "—"} / ${auditor?.grade || "AE Ici"}`,
+      date: brandMeta.dateText,
+      width: 80,
+      height: 35,
     });
-    y = doc.lastAutoTable.finalY + 4;
+    // Box opțional dreapta — firmă/ștampilă
+    if (auditor?.company || auditor?.firma) {
+      renderSignatureBox(doc, A4.WIDTH - A4.MARGIN_RIGHT - 80, y, {
+        label: "ȘTAMPILĂ FIRMĂ / PFA",
+        name: auditor?.company || auditor?.firma,
+        atestat: "",
+        date: "",
+        width: 80,
+        height: 35,
+      });
+    }
+    y += 38;
   }
 
-  // ── WATERMARK diagonal central ──
-  drawWatermark(doc, w, h);
+  // ── WATERMARK pe pag 2 ──
+  renderWatermark(doc, "ESTIMAT", { opacity: 0.06 });
 
-  // ── FOOTER disclaimer ──
-  doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.2);
-  doc.line(14, h - 18, w - 14, h - 18);
-  doc.setFont(undefined, "italic"); doc.setFontSize(7); doc.setTextColor(120, 120, 120);
-  doc.text(
-    "Document orientativ — bazat pe scenariul de reabilitare configurat în Pasul 5. Performanța reală post-reabilitare se",
-    14, h - 13
-  );
-  doc.text(
-    "atestă prin CPE oficial emis după realizarea lucrărilor (Legea 372/2005, Mc 001-2022, Ord. MDLPA 348/2026).",
-    14, h - 9
-  );
-  doc.setFont(undefined, "normal"); doc.setFontSize(7);
-  doc.text(`Zephren · ${new Date().getFullYear()}`, w - 14, h - 9, { align: "right" });
+  // ── FOOTER pag 2 (brand kit) ──
+  applyBrandFooter(doc, brandMeta, 2, 2, {
+    legalText: "Document orientativ — atestat prin CPE oficial post-lucrări (L. 372/2005, Mc 001-2022, Ord. MDLPA 348/2026)",
+  });
 
   const blob = doc.output("blob");
   const fn = filename || defaultFilename(building);
