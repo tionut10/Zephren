@@ -27,6 +27,8 @@ import {
 import {
   applyBrandHeader,
   applyBrandFooter,
+  renderQrCode,
+  buildVerifyUrl,
 } from "./pdf-brand-layout.js";
 
 const TODAY_RO = new Date().toLocaleDateString("ro-RO", {
@@ -239,6 +241,14 @@ export async function generateFICPdf({
   drawRow("Atestat MDLPA", `${auditor.atestat || "—"} / ${auditor.grade || "—"}`);
   drawRow("Companie / PFA", auditor.company || auditor.firm);
   drawRow("Data întocmirii FIC", brandMeta.dateText);
+
+  // Sprint V7-C: QR cod verificare integritate
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
 
   // Footer brand (înlocuire footer custom)
   applyBrandFooter(doc, brandMeta, 1, 1, {
@@ -985,6 +995,14 @@ export async function generateMonitoringPlanPdf({
     date: brandMeta.dateText,
     width: 75,
     height: 35,
+  });
+
+  // Sprint V7-C: QR cod verificare integritate
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
   });
 
   // Footer brand

@@ -37,6 +37,8 @@ import {
   applyBrandFooter,
   renderSectionHeader,
   renderSignatureBox,
+  renderQrCode,
+  buildVerifyUrl,
 } from "./pdf-brand-layout.js";
 import { renderTimelineChart } from "./pdf-brand-charts.js";
 
@@ -819,8 +821,17 @@ export async function exportPassportPDF(passport, options = {}) {
     y += 35;
   }
 
-  // ── FOOTER toate paginile (brand kit applyBrandFooter) ──
+  // Sprint V7-C: QR cod verificare integritate (ultima pagină)
   const pageCount = doc.internal.getNumberOfPages();
+  doc.setPage(pageCount);
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: w - A4.MARGIN_RIGHT - 18,
+    y: h - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
+
+  // ── FOOTER toate paginile (brand kit applyBrandFooter) ──
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     applyBrandFooter(doc, brandMeta, i, pageCount, {

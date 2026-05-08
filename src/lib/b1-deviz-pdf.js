@@ -91,8 +91,18 @@ export async function generateB1DevizPdf({
   if (!devizResult) throw new Error("[B1Deviz] Lipsă devizResult — configurați lucrările în Step 8.");
 
   const { default: jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const autoTableMod = await import("jspdf-autotable");
+  const autoTableFn = autoTableMod.default || autoTableMod.autoTable || autoTableMod;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  // jspdf-autotable v5 — attach manual la instanță
+  if (typeof doc.autoTable !== "function" && typeof autoTableFn === "function") {
+    doc.autoTable = function (opts) {
+      const r = autoTableFn(doc, opts);
+      if (!doc.lastAutoTable && r) doc.lastAutoTable = r;
+      return doc.lastAutoTable;
+    };
+  }
 
   // Setup font diacritice RO
   const fontOk = await setupRomanianFont(doc);

@@ -9,7 +9,8 @@ import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZI
 import { APP_VERSION } from "../data/app-version.js";
 import { BRAND_COLORS } from "./pdf-brand-kit.js";
 // Sprint Visual-5: chart helpers nativi (bar/line) pentru rapoarte
-import { renderBarChart, renderLineChart } from "./pdf-brand-charts.js";
+// Sprint Visual-7: + renderPieChart pentru pierderi anvelopă în RAE
+import { renderBarChart, renderLineChart, renderPieChart } from "./pdf-brand-charts.js";
 
 const BRAND = "ZEPHREN";
 // m-1 (7 mai 2026) — VERSION centralizat din app-version.js (era hardcoded "v3.4").
@@ -402,6 +403,47 @@ export async function generateTechnicalReport({
       body: glRows.length ? glRows : [["—", "", "", "", "", ""]],
     });
 
+    // Sprint V7-B: Pie chart pierderi anvelopă (contribuția fiecărui element la H_T)
+    // Calculăm contribuția fiecărui element la transferul termic total (U × A).
+    const lossContrib = [];
+    (opaqueElements || []).forEach(el => {
+      const area = parseFloat(el.area) || 0;
+      const u = parseFloat(el.U) || 0;
+      if (area > 0 && u > 0) {
+        lossContrib.push({
+          label: el.type || el.name || "Opac",
+          value: area * u, // W/K contribuție
+        });
+      }
+    });
+    (glazingElements || []).forEach(gl => {
+      const area = parseFloat(gl.area) || 0;
+      const u = parseFloat(gl.U) || 0;
+      if (area > 0 && u > 0) {
+        lossContrib.push({
+          label: `Fereastră ${gl.orientation || ""}`.trim(),
+          value: area * u,
+        });
+      }
+    });
+    if (lossContrib.length >= 2 && y < 240) {
+      y = sectionTitle(doc, "4-BIS. DISTRIBUȚIE PIERDERI TERMICE PRIN ANVELOPĂ", y);
+      // Group după label (sumează același tip de element)
+      const grouped = {};
+      lossContrib.forEach(l => {
+        grouped[l.label] = (grouped[l.label] || 0) + l.value;
+      });
+      const pieData = Object.entries(grouped).map(([label, value]) => ({ label, value }));
+      // Pie chart compact cu legendă lateral (centru x=80, y=y+25)
+      renderPieChart(doc, 50, y + 25, 18, {
+        data: pieData,
+        donut: true,
+        showLegend: true,
+        showPercentages: true,
+      });
+      y += 55;
+    }
+
     addPageFooter(doc, "SR EN ISO 52000-1:2017 | Mc 001-2022 | EN 12831", page);
 
     // ── Pagina 2: Bilanț lunar ISO 13790 ──
@@ -426,6 +468,26 @@ export async function generateTechnicalReport({
       head: [["Lună", "θe [°C]", "Q_tr [kWh]", "Q_ve [kWh]", "Q_sol [kWh]", "Q_int [kWh]", "η [-]", "Q_H_nd [kWh]"]],
       body: mRows,
     });
+
+    // Sprint V7-A: Bar chart consum lunar Q_H_nd (kWh) pentru vizualizare bilanț
+    if ((monthlyISO || []).length >= 6 && y < 220) {
+      const monthsBarData = (monthlyISO || []).map((mr, i) => ({
+        label: months[i] || mr.month || "—",
+        value: parseFloat(mr.Q_H_nd) || 0,
+      }));
+      // Filtrează lunile cu valori > 0 sau păstrează toate dacă valorile există
+      if (monthsBarData.some(d => d.value > 0)) {
+        renderBarChart(doc, 10, y, w - 20, 45, {
+          title: "Consum termic lunar Q_H_nd (kWh)",
+          data: monthsBarData,
+          orientation: "vertical",
+          unit: "kWh/lună",
+          showValues: false, // 12 bare = etichete prea aglomerate
+          showGrid: true,
+        });
+        y += 50;
+      }
+    }
 
     y = sectionTitle(doc, "6. CONSUMURI FINALE ȘI PRIMARE", y);
     y = autoTable(doc, {

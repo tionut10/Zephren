@@ -34,6 +34,8 @@ import {
   applyBrandFooter,
   renderSectionHeader,
   renderSignatureBox,
+  renderQrCode,
+  buildVerifyUrl,
 } from "./pdf-brand-layout.js";
 
 /**
@@ -263,6 +265,14 @@ export async function generateCoverLetterPdf({
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   writeText("Ștampilă", A4.WIDTH - A4.MARGIN_RIGHT - 25, y + 31, { align: "center" });
   writeText("(Ø 40 mm)", A4.WIDTH - A4.MARGIN_RIGHT - 25, y + 34, { align: "center" });
+
+  // ── QR cod verificare integritate (Sprint V7-C)
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
 
   // ── Footer brand
   applyBrandFooter(doc, brandMeta, 1, 1, {
