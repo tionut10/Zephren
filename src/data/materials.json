@@ -1947,7 +1947,7 @@
   },
   {
     "cat": "Termoizolații",
-    "name": "PIR sandwich panel",
+    "name": "Panou sandwich PIR",
     "lambda": 0.021,
     "rho": 35,
     "mu": 60
@@ -2906,7 +2906,7 @@
   },
   {
     "cat": "Altele",
-    "name": "Policarbonat alveolar 16 mm (5-wall multi)",
+    "name": "Policarbonat alveolar 16 mm (5 camere)",
     "lambda": 0.18,
     "rho": 230,
     "mu": 8500,
@@ -2915,7 +2915,7 @@
   },
   {
     "cat": "Altele",
-    "name": "Policarbonat alveolar 32 mm (7-wall)",
+    "name": "Policarbonat alveolar 32 mm (7 camere)",
     "lambda": 0.16,
     "rho": 290,
     "mu": 8500,
@@ -2924,7 +2924,7 @@
   },
   {
     "cat": "Altele",
-    "name": "Policarbonat alveolar 40 mm (X-structure)",
+    "name": "Policarbonat alveolar 40 mm (structură X)",
     "lambda": 0.16,
     "rho": 320,
     "mu": 8500,
@@ -3338,7 +3338,7 @@
   },
   {
     "cat": "Metale",
-    "name": "Panou fagure aluminiu (honeycomb sandwich)",
+    "name": "Panou fagure aluminiu (sandwich)",
     "lambda": 0.85,
     "rho": 850,
     "mu": 1000000,

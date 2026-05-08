@@ -351,7 +351,7 @@
     },
     {
       "id": "GL-solar-thermal-hybrid",
-      "label": "Vitraj solar + termic hibrid (all-season)",
+      "label": "Vitraj solar + termic hibrid (toate sezoanele)",
       "shortLabel": "Solar+termic",
       "composition": "6-16-4 dublu strat (selectiv + Low-E) + Argon",
       "ug": 1.05,
