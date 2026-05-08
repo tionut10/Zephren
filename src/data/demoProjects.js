@@ -628,7 +628,7 @@ export const DEMO_PROJECTS = [
         "1. Aprobați planul de investiții prin decizia consiliului de administrație al companiei.\n" +
         "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR componenta C5, scheme de ajutor de stat eficiență energetică).\n" +
         "3. Obțineți autorizațiile legale necesare pentru lucrări (AC + avize ISU/Mediu/Apă).\n" +
-        "4. Implementați măsurile în ordinea priorităților: BMS optimizare → curtain wall etanșare → expansiune PV.\n" +
+        "4. Implementați măsurile în ordinea priorităților: BMS optimizare → etanșare perete cortină → expansiune PV.\n" +
         "5. Documentați performanța atinsă (m&v M&V IPMVP Opțiunea C — comparație consum baseline vs. post-implementare).\n" +
         "6. Solicitați re-certificare CPE după 3 ani sau la modificarea regimului de funcționare (Mc 001-2022 art. 7.5).",
       stimulenteFinanciare:
@@ -637,10 +637,10 @@ export const DEMO_PROJECTS = [
         "— EIB/BERD: credite verzi directe sau prin intermediari bancari autorizați (BCR, Raiffeisen, ING Wholesale).\n" +
         "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
       solutiiAnvelopa:
-        "— Auditul intermediar al curtain wall-ului la 5 ani (etanșeitate joints — testare cu fum trace + termoviziune SR EN 13187).\n" +
+        "— Auditul intermediar al peretelui cortină la 5 ani (etanșeitate joints — testare cu fum trace + termoviziune SR EN 13187).\n" +
         "— Reducerea G-value vitrajelor pe fațada Sud prin film solar suplimentar (ΔU < 0.05).\n" +
         "— Verificare anuală fixări mecanice spandrel + ancorajul vatei minerale (CWCT TN 56).\n" +
-        "— Monitorizare condens curtain wall în zonele de bridge punct (psi-value local optimizat).",
+        "— Monitorizare condens perete cortină în zonele de punte termică punctuală (psi-value local optimizat).",
       solutiiInstalatii:
         "— Optimizare program BMS Siemens Desigo (occupancy-based set-points, night setback agresiv 16-18°C).\n" +
         "— Verificare anuală chiller centralizat (curățare condensator, încărcare R-32 / R-454B conform F-Gas).\n" +
@@ -655,7 +655,7 @@ export const DEMO_PROJECTS = [
         "— Programare orară a iluminatului zonal cu DALI-2 D4i (8-19 zone tehnice, 6-22 zone publice).\n" +
         "— Senzori prezență și lumină naturală în coridoare/băi/sălile de ședințe (cf. EN 15193-1).\n" +
         "— Curățare lunară a filtrelor F7 ventilație și schimb anual G4 (debit aer cat. I = 50 m³/h·persoană).\n" +
-        "— Etanșeizarea trecerilor prin curtain wall (cabluri, conducte) cu mansetă EPDM + spumă PUR rezistentă la foc.",
+        "— Etanșeizarea trecerilor prin peretele cortină (cabluri, conducte) cu mansetă EPDM + spumă PUR rezistentă la foc.",
       regenerabileCustom:
         "— Expansiune PV 100→250 kWp pe acoperiș (curent 80 kWp acoperiș, posibilă acoperire shed-uri).\n" +
         "— CHP biogaz cogenerare pentru încălzire+electricitate la peak load iarnă.\n" +
@@ -664,7 +664,7 @@ export const DEMO_PROJECTS = [
     },
     opaqueElements: [
       {
-        name: "Curtain wall — pereți spandrel termoizolat (S+E+V)",
+        name: "Perete cortină — spandrel termoizolat (S+E+V)",
         type: "PE", area: "1850", orientation: "S", tau: "1",
         layers: [
           { matName: "Aluminiu compozit ACM", material: "Aluminiu", thickness: "4", lambda: 200, rho: 2700 },
@@ -707,18 +707,18 @@ export const DEMO_PROJECTS = [
       },
     ],
     glazingElements: [
-      { name: "Curtain wall triplu Low-E argon — Sud (jaluzele auto)",  area: "780", u: "0.85", g: "0.42", orientation: "S", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Curtain wall triplu Low-E argon — Est",                  area: "560", u: "0.85", g: "0.45", orientation: "E", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Curtain wall triplu Low-E argon — Vest",                  area: "560", u: "0.85", g: "0.45", orientation: "V", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Curtain wall triplu Low-E argon — Nord (mai mic)",        area: "320", u: "0.80", g: "0.50", orientation: "N", frameRatio: "12", type: "Triplu Low-E argon" },
+      { name: "Perete cortină triplu Low-E argon — Sud (jaluzele auto)",  area: "780", u: "0.85", g: "0.42", orientation: "S", frameRatio: "12", type: "Triplu Low-E argon" },
+      { name: "Perete cortină triplu Low-E argon — Est",                  area: "560", u: "0.85", g: "0.45", orientation: "E", frameRatio: "12", type: "Triplu Low-E argon" },
+      { name: "Perete cortină triplu Low-E argon — Vest",                 area: "560", u: "0.85", g: "0.45", orientation: "V", frameRatio: "12", type: "Triplu Low-E argon" },
+      { name: "Perete cortină triplu Low-E argon — Nord (mai mic)",       area: "320", u: "0.80", g: "0.50", orientation: "N", frameRatio: "12", type: "Triplu Low-E argon" },
     ],
     thermalBridges: [
-      { name: "Stâlp metalic MPC traversând curtain wall", type: "SB", psi: "0.04", length: "120" },
+      { name: "Stâlp metalic MPC traversând peretele cortină", type: "SB", psi: "0.04", length: "120" },
       { name: "Centură planșeu BA — fațadă ventilată",     type: "CB", psi: "0.03", length: "180" },
-      { name: "Profil aluminiu curtain wall (typ.)",       type: "GF", psi: "0.05", length: "1900" },
+      { name: "Profil aluminiu perete cortină (tip.)",      type: "GF", psi: "0.05", length: "1900" },
       { name: "Cornișă atic terasă verde",                 type: "CO", psi: "0.05", length: "180" },
       { name: "Soclu fațadă ventilată",                    type: "SO", psi: "0.04", length: "180" },
-      { name: "Conector spandrel — vitraj curtain wall",  type: "CB", psi: "0.06", length: "240" },
+      { name: "Conector spandrel — vitraj perete cortină", type: "CB", psi: "0.06", length: "240" },
       { name: "Colț 90° clădire (S-E, S-V, N-E, N-V)",     type: "SB", psi: "0.05", length: "92" },
       { name: "Tranziție terasă — atic perimetral",        type: "CO", psi: "0.06", length: "180" },
       { name: "Penetrare ventilație ductă fațadă",         type: "GF", psi: "0.10", length: "12" },
@@ -870,7 +870,7 @@ export const DEMO_PROJECTS = [
       // prin componenta `AuditorSignatureStampUpload.jsx` în Step 6.
       signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Constantinescu M.</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text><text x='200' y='110' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23bbbbbb'>Inlocuieste prin UI Step 6 inainte de export oficial</text></svg>",
       stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Constantinescu M.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>CE-2024-09245</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Clădire birouri Tower Pipera Office recepționată noiembrie 2024. nZEB conformă EPBD 2024 + L.238/2024. Anvelopă: curtain wall triplu Low-E argon U=0.85, fațadă ventilată vată minerală 18 cm, terasă verde XPS 22 cm. Sisteme: PC aer-apă centralizată 200 kW (SCOP 3.50), CHP gaz natural 50 kWel/80 kWth (5500 h/an), PV 30 kWp + baterie LFP 60 kWh (autoconsum 82%), recuperator entalpic 80%. BACS clasa A — BMS Siemens Desigo. RER total ≈ 62% (PV + CHP recuperare + PC). MEPS 2030/2033 PASS cu marjă. Pașaport renovare neaplicabil — clădire deja nZEB de top.",
+      observations: "Clădire birouri Tower Pipera Office recepționată noiembrie 2024. nZEB conformă EPBD 2024 + L.238/2024. Anvelopă: perete cortină triplu Low-E argon U=0.85, fațadă ventilată vată minerală 18 cm, terasă verde XPS 22 cm. Sisteme: PC aer-apă centralizată 200 kW (SCOP 3.50), CHP gaz natural 50 kWel/80 kWth (5500 h/an), PV 30 kWp + baterie LFP 60 kWh (autoconsum 82%), recuperator entalpic 80%. BACS clasa A — BMS Siemens Desigo. RER total ≈ 62% (PV + CHP recuperare + PC). MEPS 2030/2033 PASS cu marjă. Pașaport renovare neaplicabil — clădire deja nZEB de top.",
       photo: "",
     },
     expectedResults: {

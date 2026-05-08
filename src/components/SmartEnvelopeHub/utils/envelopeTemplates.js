@@ -43,8 +43,8 @@ export const ENVELOPE_TEMPLATES = Object.freeze([
   },
   {
     id: "tpl-birouri-nzeb",
-    title: "Birouri nZEB curtain wall — clasă A",
-    tagline: "Curtain wall triplu Low-E + fațadă ventilată vată 18 cm + terasă verde XPS 22 cm",
+    title: "Birouri nZEB perete cortină — clasă A",
+    tagline: "Perete cortină triplu Low-E + fațadă ventilată vată 18 cm + terasă verde XPS 22 cm",
     category: "Nerezidențial — nZEB",
     icon: "🏙️",
     demoIndex: 1,                // M2 București
