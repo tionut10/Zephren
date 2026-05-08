@@ -350,7 +350,7 @@ export default function Step3Systems({
             <button onClick={() => setStep(2)} className="text-amber-500 hover:text-amber-400 text-sm">← Pas 2</button>
             <h2 className="text-xl font-bold">{lang==="EN"?"Building systems":"Instalații"}</h2>
           </div>
-          <p className="text-xs opacity-40">Capitolul 3 Mc 001-2022 — Încălzire, ACM, Climatizare, Ventilare, Iluminat</p>
+          <p className="text-xs opacity-40">Capitolul 3 Mc 001-2022 — Încălzire, ACM, Ventilare, Climatizare, Iluminat</p>
         </div>
         <button
           onClick={() => setShowOCR(true)}
@@ -365,8 +365,8 @@ export default function Step3Systems({
         {[
           {id:"heating",label:t("Încălzire"),icon:"🔥"},
           {id:"acm",label:"ACM",icon:"🚿"},
-          {id:"cooling",label:t("Climatizare"),icon:"❄️"},
           {id:"ventilation",label:t("Ventilare"),icon:"💨"},
+          {id:"cooling",label:t("Climatizare"),icon:"❄️"},
           {id:"lighting",label:t("Iluminat"),icon:"💡"},
         ].map(tab => (
           <button key={tab.id} onClick={() => setInstSubTab(tab.id)}
@@ -438,14 +438,6 @@ export default function Step3Systems({
                 </div>
               </Card>
 
-              <Card title={t("Sistem de emisie",lang)}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select label={t("Tip corpuri de încălzire",lang)} value={heating.emission} onChange={trackAndSet("emission", "Step3.heating.emission", setHeating)}
-                    options={buildOptions(EMISSION_SYSTEMS, lang, building?.category, true, onlyPartners)} />
-                  <Input label={t("Randament emisie (eta_em)",lang)} value={heating.eta_em} onChange={v => setHeating(p=>({...p,eta_em:v}))} type="number" step="0.01" />
-                </div>
-              </Card>
-
               <Card title={t("Distribuție și control",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select label={t("Calitate distribuție",lang)} value={heating.distribution} onChange={trackAndSet("distribution", "Step3.heating.distribution", setHeating)}
@@ -454,6 +446,14 @@ export default function Step3Systems({
                   <Select label={t("Tip reglaj/control",lang)} value={heating.control} onChange={trackAndSet("control", "Step3.heating.control", setHeating)}
                     options={buildOptions(CONTROL_TYPES, lang, building?.category, true, onlyPartners)} />
                   <Input label={t("Randament reglaj (eta_ctrl)",lang)} value={heating.eta_ctrl} onChange={v => setHeating(p=>({...p,eta_ctrl:v}))} type="number" step="0.01" />
+                </div>
+              </Card>
+
+              <Card title={t("Sistem de emisie",lang)}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Select label={t("Tip corpuri de încălzire",lang)} value={heating.emission} onChange={trackAndSet("emission", "Step3.heating.emission", setHeating)}
+                    options={buildOptions(EMISSION_SYSTEMS, lang, building?.category, true, onlyPartners)} />
+                  <Input label={t("Randament emisie (eta_em)",lang)} value={heating.eta_em} onChange={v => setHeating(p=>({...p,eta_em:v}))} type="number" step="0.01" />
                 </div>
               </Card>
 
@@ -571,44 +571,6 @@ export default function Step3Systems({
                 )}
               </Card>
 
-              <Card title={t("Protecție anti-Legionella (HG 1425/2006 + Ord. MS 1002/2015)",lang)}>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={!!acm.hasLegionella} onChange={e => setAcm(p=>({...p,hasLegionella:e.target.checked}))} className="accent-amber-500" />
-                    <span className="font-medium">{t("Tratament termic periodic activ")}</span>
-                    <span className="text-[10px] opacity-40">(supliment energetic 3-5%/an)</span>
-                  </label>
-                  {acm.hasLegionella && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Select label={t("Frecvență tratament",lang)} value={acm.legionellaFreq || "weekly"} onChange={v => setAcm(p=>({...p,legionellaFreq:v}))}
-                        options={[
-                          {value:"weekly", label:t("Săptămânal (VDI 6023 standard)")},
-                          {value:"daily",  label:t("Zilnic (risc ridicat)")},
-                        ]} />
-                      <Input label={t("Temperatură șoc termic",lang)} value={acm.legionellaT || "70"} onChange={v => setAcm(p=>({...p,legionellaT:v}))} type="number" unit="°C" min="60" max="80" step="1"
-                        tooltip="Minim 70°C timp de 3 min pentru distrugere Legionella" />
-                    </div>
-                  )}
-                  {/* Banner avertizare — clădire risc ridicat, fără măsuri */}
-                  {instSummary?.acmDetailed?.legionella?.warnings?.length > 0 && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs">
-                      <div className="font-medium text-red-400 mb-1">⚠ Risc Legionella detectat</div>
-                      {instSummary.acmDetailed.legionella.warnings.map((w, i) => (
-                        <div key={i} className="text-red-300/80 leading-relaxed">• {w}</div>
-                      ))}
-                    </div>
-                  )}
-                  {instSummary?.acmDetailed?.legionella?.recommendations?.length > 0 && (
-                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs">
-                      <div className="font-medium text-amber-400 mb-1">💡 Recomandări</div>
-                      {instSummary.acmDetailed.legionella.recommendations.map((r, i) => (
-                        <div key={i} className="text-amber-300/80 leading-relaxed">• {r}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-
               <Card title={t("Distribuție ACM",lang)}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label={t("Lungime conducte distribuție",lang)} value={acm.pipeLength} onChange={v => setAcm(p=>({...p,pipeLength:v}))} type="number" unit="m"
@@ -645,6 +607,44 @@ export default function Step3Systems({
                         ]}
                         tooltip="EN 15316-3 Tab.10 + Reg. UE 641/2009 (ecodesign pompe)" />
                     </>
+                  )}
+                </div>
+              </Card>
+
+              <Card title={t("Protecție anti-Legionella (HG 1425/2006 + Ord. MS 1002/2015)",lang)}>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={!!acm.hasLegionella} onChange={e => setAcm(p=>({...p,hasLegionella:e.target.checked}))} className="accent-amber-500" />
+                    <span className="font-medium">{t("Tratament termic periodic activ")}</span>
+                    <span className="text-[10px] opacity-40">(supliment energetic 3-5%/an)</span>
+                  </label>
+                  {acm.hasLegionella && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Select label={t("Frecvență tratament",lang)} value={acm.legionellaFreq || "weekly"} onChange={v => setAcm(p=>({...p,legionellaFreq:v}))}
+                        options={[
+                          {value:"weekly", label:t("Săptămânal (VDI 6023 standard)")},
+                          {value:"daily",  label:t("Zilnic (risc ridicat)")},
+                        ]} />
+                      <Input label={t("Temperatură șoc termic",lang)} value={acm.legionellaT || "70"} onChange={v => setAcm(p=>({...p,legionellaT:v}))} type="number" unit="°C" min="60" max="80" step="1"
+                        tooltip="Minim 70°C timp de 3 min pentru distrugere Legionella" />
+                    </div>
+                  )}
+                  {/* Banner avertizare — clădire risc ridicat, fără măsuri */}
+                  {instSummary?.acmDetailed?.legionella?.warnings?.length > 0 && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs">
+                      <div className="font-medium text-red-400 mb-1">⚠ Risc Legionella detectat</div>
+                      {instSummary.acmDetailed.legionella.warnings.map((w, i) => (
+                        <div key={i} className="text-red-300/80 leading-relaxed">• {w}</div>
+                      ))}
+                    </div>
+                  )}
+                  {instSummary?.acmDetailed?.legionella?.recommendations?.length > 0 && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs">
+                      <div className="font-medium text-amber-400 mb-1">💡 Recomandări</div>
+                      {instSummary.acmDetailed.legionella.recommendations.map((r, i) => (
+                        <div key={i} className="text-amber-300/80 leading-relaxed">• {r}</div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </Card>
@@ -953,14 +953,6 @@ export default function Step3Systems({
                       <div className="mt-3">
                         <div className="text-xs font-medium text-amber-400 mb-2">RANDAMENTE SEPARATE — SR EN 15316-2:2017</div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Select label={t("Tip emisie răcire",lang)} value={cooling.emissionType || "fan_coil"} onChange={v => {
-                            const em = COOLING_EMISSION_EFFICIENCY.find(e=>e.id===v);
-                            setCooling(p=>({...p,emissionType:v,eta_em:em?.eta.toString()||"0.97"}));
-                          }} options={buildOptions(COOLING_EMISSION_EFFICIENCY, lang, building?.category, false, onlyPartners)} />
-                          <Input label="η emisie" value={cooling.eta_em || "0.97"} onChange={v => setCooling(p=>({...p,eta_em:v}))}
-                            type="number" step="0.01" min="0.70" max="1.00"
-                            tooltip="Randament emisie răcire (0.70–1.00). Conform EN 15316-2 Tab.7." />
-
                           <Select label={t("Tip distribuție răcire",lang)} value={cooling.distributionType || "apa_rece_izolat_int"} onChange={v => {
                             const di = COOLING_DISTRIBUTION_EFFICIENCY.find(d=>d.id===v);
                             setCooling(p=>({...p,distributionType:v,eta_dist:di?.eta.toString()||"0.95"}));
@@ -968,6 +960,14 @@ export default function Step3Systems({
                           <Input label="η distribuție" value={cooling.eta_dist || "0.95"} onChange={v => setCooling(p=>({...p,eta_dist:v}))}
                             type="number" step="0.01" min="0.70" max="1.00"
                             tooltip="Randament distribuție răcire (0.70–1.00). Conform EN 15316-3 Tab.7." />
+
+                          <Select label={t("Tip emisie răcire",lang)} value={cooling.emissionType || "fan_coil"} onChange={v => {
+                            const em = COOLING_EMISSION_EFFICIENCY.find(e=>e.id===v);
+                            setCooling(p=>({...p,emissionType:v,eta_em:em?.eta.toString()||"0.97"}));
+                          }} options={buildOptions(COOLING_EMISSION_EFFICIENCY, lang, building?.category, false, onlyPartners)} />
+                          <Input label="η emisie" value={cooling.eta_em || "0.97"} onChange={v => setCooling(p=>({...p,eta_em:v}))}
+                            type="number" step="0.01" min="0.70" max="1.00"
+                            tooltip="Randament emisie răcire (0.70–1.00). Conform EN 15316-2 Tab.7." />
 
                           <Select label={t("Reglare răcire",lang)} value={cooling.controlType || "termostat_prop"} onChange={v => {
                             const ct = COOLING_CONTROL_EFFICIENCY.find(c=>c.id===v);
@@ -1313,6 +1313,11 @@ export default function Step3Systems({
                       options={buildOptions(LIGHTING_TYPES, lang, building?.category, true, onlyPartners)} />
                     <Input label={t("Densitate putere instalată",lang)} value={lighting.pDensity} onChange={v => setLighting(p=>({...p,pDensity:v}))} type="number" unit="W/m2" step="0.1" min="0" max="50"
                       tooltip="EN 15193-1: tipic rezidențial 3–8 W/m², birouri 8–12 W/m², industrial 10–20 W/m²" />
+                    <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" min="0" max="8760"
+                      placeholder={`auto: ${LIGHTING_HOURS[building.category] || 1800} h/an (${building.category || "—"})`}
+                      tooltip="Gol → default categorie (Mc 001-2022 Anexa). Rezidențial 1800h, birouri 2500h, spital 3500h, supermarket 5000h." />
+                    <Input label={t("Raport lumină naturală",lang)} value={lighting.naturalLightRatio} onChange={v => setLighting(p=>({...p,naturalLightRatio:v}))} type="number" unit="%" min="0" max="80"
+                      tooltip="Factor F_d aplicat DOAR pe termenul diurn (Sprint 2 fix: nu există daylight noaptea)." />
                     <Select label={t("Sistem de control",lang)} value={lighting.controlType} onChange={v => {
                       if (v) { const ps = getActivePartnersForEntry(v); if (ps.length > 0) logPartnerClick(v, ps.map(p=>p.id), "Step3.lighting.controlType"); }
                       const ctrl = LIGHTING_CONTROL.find(c=>c.id===v);
@@ -1321,11 +1326,6 @@ export default function Step3Systems({
                       options={buildOptions(LIGHTING_CONTROL, lang, building?.category, true, onlyPartners)} />
                     <Input label={t("Factor control (F_C)",lang)} value={lighting.fCtrl} onChange={v => setLighting(p=>({...p,fCtrl:v}))} type="number" step="0.01" min="0.3" max="1.0"
                       tooltip="EN 15193-1 Tab. B.6: manual 1.00, PIR 0.80, DALI 0.45, auto integral 0.40" />
-                    <Input label={t("Ore funcționare / an",lang)} value={lighting.operatingHours} onChange={v => setLighting(p=>({...p,operatingHours:v}))} type="number" unit="h/an" min="0" max="8760"
-                      placeholder={`auto: ${LIGHTING_HOURS[building.category] || 1800} h/an (${building.category || "—"})`}
-                      tooltip="Gol → default categorie (Mc 001-2022 Anexa). Rezidențial 1800h, birouri 2500h, spital 3500h, supermarket 5000h." />
-                    <Input label={t("Raport lumină naturală",lang)} value={lighting.naturalLightRatio} onChange={v => setLighting(p=>({...p,naturalLightRatio:v}))} type="number" unit="%" min="0" max="80"
-                      tooltip="Factor F_d aplicat DOAR pe termenul diurn (Sprint 2 fix: nu există daylight noaptea)." />
                   </div>
 
                   {/* ── Sprint 2: W_P (energie parazită) EN 15193-1 Annex B ── */}

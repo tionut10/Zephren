@@ -91,7 +91,7 @@ export function Select({ label, value, onChange, options, placeholder, className
                 onClick={() => { onChange(val); setOpen(false); }}
                 className={cn("px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2",
                   isActive ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/10")}>
-                <span className="truncate">{lab}</span>
+                <span className="whitespace-normal leading-snug">{lab}</span>
                 {partner && <span className="text-[9px] opacity-70 shrink-0" title="Brand partener">🤝</span>}
               </div>
             );
