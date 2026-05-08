@@ -119,7 +119,10 @@ function UploadSlot({
     <div className="flex flex-col gap-2 p-3 rounded-xl border border-white/10 bg-white/5 overflow-hidden min-w-0">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-amber-300 truncate">{label}</div>
+          {/* Sprint 8 mai 2026 — eliminat `truncate` (taie „SEMNĂTURĂ OLOGRAFĂ" /
+              „ȘTAMPILĂ AUDITOR" pe 2 coloane). Permitem wrap natural pe 2 linii
+              cu `leading-tight` ca să nu mărească exagerat înălțimea cardului. */}
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-300 leading-tight break-words">{label}</div>
           <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{hint}</div>
           {recommendedSize && (
             <div className="text-[10px] text-white/30 mt-0.5">Rec: {recommendedSize}</div>
@@ -291,9 +294,15 @@ export default function AuditorSignatureStampUpload({ auditor = {}, setAuditor }
           })}
         </div>
         {grad && (
-          <div className="mt-2 text-[10px] opacity-50">
-            Ștampila ta trebuie să afișeze simbolul „<strong>{stampSymbol}</strong>" în centru
-            și textul „ROMÂNIA M.D.L.P.A. Nr.____" pe coroana exterioară (Anexa 1b Ord. 348/2026).
+          <div className="mt-2 text-[10px] opacity-50 space-y-1">
+            <div>
+              Ștampila ta trebuie să afișeze conform <strong>Anexei 1b Ord. MDLPA 348/2026</strong>:
+            </div>
+            <ul className="list-disc list-inside pl-2 space-y-0.5">
+              <li><strong>Coroana exterioară:</strong> „AUDITOR ENERGETIC PENTRU CLĂDIRI" + „SPECIALITATEA CONSTRUCȚII ȘI INSTALAȚII"</li>
+              <li><strong>Centrul:</strong> simbol „<strong>{stampSymbol}</strong>" + „GRAD PROFESIONAL {grad === "Ici" ? "I" : "II"}" + nr. atestat (= nr. registru auditori)</li>
+              <li><strong>Diametru:</strong> Ø 40 mm (standard profesional RO; Art. 5 alin. (5) interzice alte dimensiuni)</li>
+            </ul>
           </div>
         )}
       </div>

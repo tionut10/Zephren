@@ -373,6 +373,86 @@ def _replace_placeholder_with_image(doc, placeholder, img_bytes, width_cm=4.0):
     return count
 
 
+def _convert_drawing_to_anchor(drawing_elem, dx_cm, dy_cm, behind=False, relative_to_page=False):
+    """Convertește un drawing inline (<wp:inline>) în anchor (<wp:anchor>) cu
+    poziție absolută. Imaginea NU mai contribuie la înălțimea paragrafului,
+    deci NU împinge conținutul vertical pe pagina nouă.
+
+    @param drawing_elem  — elementul <w:drawing> rezultat din `add_picture`
+    @param dx_cm, dy_cm  — offset orizontal/vertical (cm) față de paragraf/margine
+    @param behind        — True: în spatele textului (wrap=behindDoc); False: cu wrap top/bottom
+    @param relative_to_page — True: poziție relativă la pagină; False: la paragraf
+
+    Sprint 8 mai 2026 — folosit pentru a poziționa ștampila Ø 40 mm pe pagina
+    semnăturii FĂRĂ a forța pagină nouă (problema raportată 8 mai 2026).
+
+    @returns True dacă conversia a reușit, False în caz de eroare (caller revine
+    la fallback inline).
+    """
+    try:
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        EMU_PER_CM = 360000
+
+        inline = drawing_elem.find(qn("wp:inline"))
+        if inline is None:
+            return False  # deja anchored sau structură neașteptată
+
+        # Extragere copii: <wp:extent>, <wp:effectExtent>, <wp:docPr>, <wp:cNvGraphicFramePr>, <a:graphic>
+        extent = inline.find(qn("wp:extent"))
+        effectExtent = inline.find(qn("wp:effectExtent"))
+        docPr = inline.find(qn("wp:docPr"))
+        cNvFramePr = inline.find(qn("wp:cNvGraphicFramePr"))
+        graphic = inline.find(qn("a:graphic"))
+
+        # Construire <wp:anchor> cu atributele standard
+        anchor = OxmlElement("wp:anchor")
+        anchor.set("distT", "0"); anchor.set("distB", "0")
+        anchor.set("distL", "0"); anchor.set("distR", "0")
+        anchor.set("simplePos", "0"); anchor.set("relativeHeight", "5")
+        anchor.set("behindDoc", "1" if behind else "0")
+        anchor.set("locked", "0"); anchor.set("layoutInCell", "1")
+        anchor.set("allowOverlap", "1")
+
+        # <wp:simplePos> obligatoriu (chiar dacă simplePos="0", trebuie prezent)
+        simplePos = OxmlElement("wp:simplePos")
+        simplePos.set("x", "0"); simplePos.set("y", "0")
+        anchor.append(simplePos)
+
+        # <wp:positionH> — orizontal față de margine (sau pagină)
+        relH = "page" if relative_to_page else "margin"
+        relV = "page" if relative_to_page else "paragraph"
+        pH = OxmlElement("wp:positionH"); pH.set("relativeFrom", relH)
+        pH_off = OxmlElement("wp:posOffset"); pH_off.text = str(int(dx_cm * EMU_PER_CM))
+        pH.append(pH_off); anchor.append(pH)
+
+        # <wp:positionV> — vertical față de paragraf (sau pagină)
+        pV = OxmlElement("wp:positionV"); pV.set("relativeFrom", relV)
+        pV_off = OxmlElement("wp:posOffset"); pV_off.text = str(int(dy_cm * EMU_PER_CM))
+        pV.append(pV_off); anchor.append(pV)
+
+        # Restul în ordinea OOXML: extent, effectExtent, wrap, docPr, cNvFramePr, graphic
+        if extent is not None: anchor.append(extent)
+        if effectExtent is not None: anchor.append(effectExtent)
+
+        # Wrap: ÎNTOTDEAUNA <wp:wrapNone> — imaginea NU influențează flow-ul textului
+        # (nici peste, nici sub, nici lateral). Diferența `behind` controlează doar
+        # vizibilitatea: True = în spatele textului, False = deasupra textului.
+        wrap = OxmlElement("wp:wrapNone")
+        anchor.append(wrap)
+
+        if docPr is not None: anchor.append(docPr)
+        if cNvFramePr is not None: anchor.append(cNvFramePr)
+        if graphic is not None: anchor.append(graphic)
+
+        # Înlocuire inline cu anchor în drawing
+        drawing_elem.remove(inline)
+        drawing_elem.append(anchor)
+        return True
+    except Exception:
+        return False
+
+
 def insert_signature_stamp(doc, signature_b64, stamp_b64):
     """Înlocuiește placeholder-urile {{SEMNATURA}} / {{STAMPILA}} cu imaginile PNG.
 
@@ -431,26 +511,196 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                     if target_para: break
                 if target_para: break
 
+        # Sprint 8 mai 2026 (v6 — final, conform CPE_Bd_Tomis referință utilizator):
+        # REORDONARE BODY: în template-ul original ordinea e [Semnătura para] → [Tabel COD UNIC],
+        # dar utilizatorul a furnizat un DOCX referință în care ordinea CORECTĂ e
+        # [Tabel COD UNIC] → [Semnătura para] (tabelul ÎNAINTEA semnăturii).
+        # Asta permite paragrafului semnăturii să rămână ULTIMUL element vizibil pe
+        # pagină — imaginile inline (5cm + 4cm) NU mai au alt conținut după ele care
+        # să fie împins pe pagina nouă.
+        if target_para is not None:
+            try:
+                from docx.oxml.ns import qn as _qn_reord
+                # Caut tabelul „COD UNIC DE BARE" în body-ul top-level
+                body = doc.element.body
+                target_para_elem = target_para._p
+                # Verific că target_para e top-level (nu în interiorul tabelului)
+                if target_para_elem.getparent() is body:
+                    cod_tbl = None
+                    for child in body:
+                        if child.tag.endswith("}tbl"):
+                            text = "".join(t.text or "" for t in child.iter(_qn_reord("w:t")))
+                            if "COD UNIC" in text.upper() or "BAZA NA" in text.upper():
+                                cod_tbl = child
+                                break
+                    # Dacă tabel COD UNIC există ȘI vine DUPĂ paragraful semnăturii,
+                    # mutăm tabelul ÎNAINTEA paragrafului (ca în DOCX-ul referință).
+                    if cod_tbl is not None:
+                        body_children = list(body)
+                        try:
+                            para_idx = body_children.index(target_para_elem)
+                            tbl_idx = body_children.index(cod_tbl)
+                            if tbl_idx > para_idx:
+                                # Mutăm tabelul: scoatem din poziția curentă și
+                                # inserăm ÎNAINTEA paragrafului semnăturii.
+                                body.remove(cod_tbl)
+                                target_para_elem.addprevious(cod_tbl)
+                        except ValueError:
+                            pass  # element nu e în listă (improbabil)
+            except Exception:
+                pass  # reordonare opțională — dacă eșuează, continuăm cu inserare imagini
+
         try:
             if target_para is not None:
-                # Păstrez textul „Semnătura și ștampila auditorului" intact (etichetă
-                # conform modelului oficial MDLPA în colțul dreapta) și adaug imaginile
-                # SUB text printr-un line break în același paragraf — astfel ele rămân
-                # în aceeași poziție pe pagină, fără a crea o pagină nouă.
-                from docx.oxml import OxmlElement as _OxEl_sig
-                # Adaug w:br pentru new line în paragraf
-                br = _OxEl_sig("w:br")
-                last_run = target_para.runs[-1] if target_para.runs else target_para.add_run()
-                last_run._r.append(br)
-                # Acum adaug imaginile ca run-uri noi (vor fi pe linia următoare)
+                # Sprint 8 mai 2026 (final) — Inserare ANCHORED (poziție absolută)
+                # ca să NU împingă layoutul vertical pe pagina nouă.
+                #
+                # Probleme rezolvate:
+                #   v1 (înainte): w:br + imagini inline → linie 4cm înălțime →
+                #     paragraf împins pe pagină nouă (utilizatorul vedea tabelul
+                #     „COD UNIC" izolat pe pagina 2)
+                #   v2 (inline fără break): tot 4cm înălțime → tot 2 pagini
+                #   v3 (ANCHORED): imaginile plutesc cu poziție absolută față de
+                #     paragraf → înălțimea liniei rămâne text-only (1 linie), pagina
+                #     1 își păstrează layoutul cu COD UNIC pe aceeași pagină.
+                #
+                # Layout final (vizual):
+                #   [semn olograf 5cm]  [tab-uri]  Semnătura și ștampila auditorului
+                #                                                       [stamp Ø40mm]
+                # Ambele imagini ANCHORED — nu împing nimic vertical.
+                from docx.oxml.ns import qn as _qn_sig
+
+                # Sprint 8 mai 2026 (v10 — FINAL, conform cerinței utilizatorului):
+                # AMBELE imagini (semnătură olografă + ștampilă Ø 40 mm) sub textul
+                # „Semnătura și ștampila auditorului" (dreapta paginii), SUPRAPUSE
+                # ca pe documente reale: ștampila circulară aplicată PESTE semnătura
+                # olografă (cum se aplică în practică un CPE fizic).
+                #
+                # Layout (poziții absolute pe pagina A4 = 21×29.7 cm):
+                #   [text aliniat dreapta]
+                #   Semnătura și ștampila auditorului        ← paragraf existent
+                #
+                #         [SEMNĂTURA OLOGRAFĂ 5×1.5 cm]      ← dy=25.5 cm (cea mai jos)
+                #            (dx=14.5 cm = centru @ 17 cm)
+                #         [ȘTAMPILĂ Ø 40 mm CIRCULARĂ]       ← dy=24.0 cm (deasupra/peste)
+                #            (dx=15.0 cm = centru @ 17 cm)
+                #
+                # Cele două imagini se suprapun parțial (centrul ștampilei la y≈26 cm
+                # peste semnătura la y≈26.25 cm) — exact cum apare pe CPE-uri fizice
+                # unde ștampila se aplică deasupra semnăturii.
+                #
+                # `wrapNone` + `relative_to_page=True` → NU împing layout-ul vertical
+                # → CPE rămâne pe 1 PAGINĂ.
+
+                # Sprint 8 mai 2026 (v14 — FINAL, compatibil Office Online + LibreOffice):
+                # AMBELE imagini SUPRAPUSE în ACELAȘI LOC sub textul „Semnătura și
+                # ștampila auditorului" — semnătura olografă + ștampila Ø 40 mm
+                # exact cum se aplică pe documente fizice (ștampila aplicată peste
+                # semnătura olografă).
+                #
+                # Strategie: AMBELE ANCHORED la PARAGRAFUL semnăturii cu COORDONATE
+                # IDENTICE de poziționare → suprapunere perfectă în același loc.
+                # Datorită reordonării body (Tabel COD UNIC mutat înainte), paragraful
+                # semnăturii e ULTIMUL pe pagina 1 → ambele imagini ancorate la el
+                # vor fi pe pagina 1 (Office Online + Word + LibreOffice).
+                #
+                # Coordonate ABSOLUTE (în zona dreapta-jos paginii, sub textul aliniat dreapta):
+                #   dx_cm=12.0  → 12 cm de la stânga marginii (zona dreaptă)
+                #   dy_cm=-1.0  → 1 cm DEASUPRA paragrafului (Word/LibreOffice respectă)
+                #
+                # Layout final:
+                #   ...                                     Semnătura și ștampila auditorului
+                #                                               ┌─────────────────┐
+                #                                               │  [SEMNĂTURĂ      │
+                #                                               │   peste care e   │
+                #                                               │   ȘTAMPILA Ø40]  │
+                #                                               └─────────────────┘
+
+                # Sprint 8 mai 2026 (v15 — FIX Office Online):
+                # Office Online plasează imaginile ancorate la paragraful semnăturii
+                # (= ULTIMUL pe pagina 1) pe pagina 2 dacă nu „încap" în spațiul de jos.
+                # Soluție: ANCHOR la paragraful „* valori calculate" (note asterisc) —
+                # care are spațiu disponibil de ~5-6 cm sub el (până la marginea de jos),
+                # SUFICIENT să încapă ștampila Ø 40 mm fără overflow → Office o ține pe pagina 1.
+                #
+                # Caut paragraful ANCHOR — primul paragraf top-level care conține
+                # „valori calculate" sau „* valori" (note asterisc înainte de semnătură).
+                anchor_para = target_para  # fallback la paragraf semnătură
+                try:
+                    body = doc.element.body
+                    for child in body:
+                        if child.tag.endswith("}p"):
+                            text = "".join(t.text or "" for t in child.iter(_qn_sig("w:t")))
+                            if "valori calculate" in text.lower() or "valori" in text.lower():
+                                # Wrappuiesc în Paragraph proxy
+                                from docx.text.paragraph import Paragraph as _Para_v15
+                                anchor_para = _Para_v15(child, target_para._parent)
+                                break
+                except Exception:
+                    pass
+
+                # 1. SEMNĂTURA olografă — ANCHORED la „* valori calculate" + offset jos
                 if signature_b64:
                     sig_bytes = base64.b64decode(signature_b64)
-                    target_para.add_run().add_picture(io.BytesIO(sig_bytes), width=Cm(5.0))
-                    target_para.add_run("  ")
+                    sig_run = anchor_para.add_run()
+                    sig_run.add_picture(io.BytesIO(sig_bytes), width=Cm(5.0), height=Cm(1.5))
+                    drawings_sig = sig_run._r.findall(_qn_sig("w:drawing"))
+                    if drawings_sig:
+                        ok = _convert_drawing_to_anchor(
+                            drawings_sig[-1],
+                            dx_cm=11.5,   # x = 11.5 cm dreapta marginii
+                            dy_cm=2.5,    # 2.5 cm sub paragraf „* valori" → la nivelul
+                                          # textului „Semnătura și ștampila auditorului"
+                            behind=False,
+                            relative_to_page=False,
+                        )
+                        if not ok:
+                            pass
+
+                # 2. ȘTAMPILA Ø 40 mm — ACELAȘI loc, suprapusă peste semnătură
                 if stamp_b64:
                     stamp_bytes = base64.b64decode(stamp_b64)
-                    # Ord. MDLPA 16/2023 Art. 12 alin. (3): ștampila auditorului = Ø 40 mm fix
-                    target_para.add_run().add_picture(io.BytesIO(stamp_bytes), width=Cm(4.0), height=Cm(4.0))
+                    stamp_run = anchor_para.add_run()
+                    stamp_run.add_picture(io.BytesIO(stamp_bytes), width=Cm(4.0), height=Cm(4.0))
+                    drawings_st = stamp_run._r.findall(_qn_sig("w:drawing"))
+                    if drawings_st:
+                        ok = _convert_drawing_to_anchor(
+                            drawings_st[-1],
+                            dx_cm=12.0,    # centru aliniat cu semnătura (la 14 cm)
+                            dy_cm=1.0,     # 1 cm sub paragraf → centrul ștampilei la
+                                           # ~3 cm sub note → suprapunere peste semnătură
+                            behind=False,
+                            relative_to_page=False,
+                        )
+                        if not ok:
+                            pass
+
+                # Sprint 8 mai 2026 (v6 final) — Eliminare paragrafe goale după
+                # paragraful semnăturii. Template-ul original are 2 paragrafe goale
+                # la sfârșit (#17, #18 cu spacing-after=40 = ~1 cm extra) care, alături
+                # de imaginile inline 4 cm, împing conținutul pe pagina nouă.
+                # DOCX-ul referință furnizat de user (CPE_Bd_Tomis) NU le are → 1 pagină.
+                try:
+                    from docx.oxml.ns import qn as _qn_clean
+                    body = doc.element.body
+                    target_idx = list(body).index(target_para_elem)
+                    # Iterez prin elementele DUPĂ target_para și șterg paragrafele goale
+                    # până la primul element non-empty sau SECTION_BREAK.
+                    children_after = list(body)[target_idx + 1:]
+                    for child in children_after:
+                        if child.tag.endswith("}sectPr"):
+                            break  # nu atingem section break (definește pagina)
+                        if child.tag.endswith("}p"):
+                            # Paragraf — verific dacă e gol (fără text, fără drawings, fără tabele)
+                            text = "".join(t.text or "" for t in child.iter(_qn_clean("w:t"))).strip()
+                            drawings = child.findall(".//" + _qn_clean("w:drawing"))
+                            if not text and not drawings:
+                                body.remove(child)
+                                continue
+                        # Tabel sau paragraf cu conținut — oprim curățarea
+                        break
+                except Exception:
+                    pass  # curățare opțională
             else:
                 # Doar dacă NU există paragraf țintă în template — fallback legacy
                 p = doc.add_paragraph()
