@@ -60,11 +60,6 @@ export default function RampInstant({
   cadastralSimulated,
   cadastralBannerDismissed,
   onCadastralBannerDismiss,
-  selectedClimate,
-  importStatus,
-  importStatusMsg,
-  importedClimateData,
-  onOpenMeteoImport,
   showToast,
 }) {
   const [showTemplates, setShowTemplates] = useState(false);
@@ -211,42 +206,6 @@ export default function RampInstant({
         )}
       </div>
 
-      {/* ── Open-Meteo ERA5 ──────────────────────────────────────────────────── */}
-      <ActionButton
-        icon="📡"
-        title="Date climatice Open-Meteo ERA5"
-        description={selectedClimate
-          ? `Descarcă medii lunare 2023 pentru ${selectedClimate.name || "localitatea aleasă"}`
-          : "⚠ Selectează mai întâi localitatea de calcul"}
-        accent="emerald"
-        onClick={onOpenMeteoImport}
-        disabled={!selectedClimate || importStatus === "loading"}
-        loading={importStatus === "loading"}
-      />
-
-      {/* Status import climă */}
-      {importStatus === "ok" && importStatusMsg && (
-        <div className="flex items-start gap-2 rounded-lg bg-green-900/20 border border-green-700/30 p-2 text-[11px] text-green-300">
-          <span className="shrink-0 mt-0.5">✓</span>
-          <div>
-            <div className="font-medium">{importStatusMsg}</div>
-            {importedClimateData?.temp_month && (
-              <div className="text-[10px] text-green-400/80 mt-0.5">
-                T ian.: {importedClimateData.temp_month[0]}°C · T iul.: {importedClimateData.temp_month[6]}°C
-                {importedClimateData.GHI_month?.length === 12
-                  ? ` · GHI iul.: ${importedClimateData.GHI_month[6]} kWh/m²`
-                  : ""}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {importStatus === "error" && importStatusMsg && (
-        <div className="flex items-start gap-2 rounded-lg bg-red-900/20 border border-red-700/30 p-2 text-[11px] text-red-300">
-          <span className="shrink-0 mt-0.5">✗</span>
-          <div>{importStatusMsg}</div>
-        </div>
-      )}
 
       {/* ── Modal Șabloane ───────────────────────────────────────────────────── */}
       {showTemplates && (

@@ -755,52 +755,7 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* Scop CPE — înainte de identificarea juridică (Mc 001-2022 flux logic) */}
-          <Card title={lang === "EN" ? "CPE Purpose & Building Flags" : "Scop CPE & Caracteristici"}>
-            <div className="space-y-3">
-              <Select
-                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
-                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
-                value={building.scopCpe}
-                onChange={v => updateBuilding("scopCpe", v)}
-                error={fieldErr("scopCpe")}
-                options={SCOP_CPE_OPTIONS.map(o => ({ value: o.value, label: lang === "EN" ? o.labelEN : o.label }))}
-              />
-              {building.scopCpe === "renovare" && (
-                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
-                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
-                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
-                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
-                </label>
-                <Input
-                  label={t("Albedo override (teren)", lang)}
-                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
-                  value={building.albedoOverride || ""}
-                  onChange={v => updateBuilding("albedoOverride", v)}
-                  type="number" step="0.01" min="0" max="1"
-                  placeholder="auto"
-                />
-              </div>
-              {(() => {
-                const classification = classifyN50(building.n50, building.category);
-                if (!classification) return <div className="text-[10px] opacity-40 italic">Etanșeitate n50: introduceți valoarea în Dimensiuni pentru evaluare nZEB.</div>;
-                const { label, color, value, ref } = classification;
-                return (
-                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                    <span className="opacity-40">Etanșeitate n50:</span>
-                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
-                    <span className="opacity-30">nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹</span>
-                  </div>
-                );
-              })()}
-            </div>
-          </Card>
-
-          {/* Sprint 15 + 21 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1) */}
+          {/* Sprint 15 + 21 — Identificare juridică (Ord. MDLPA 16/2023 Anexa 1) — Mc 001-2022 Cap. 1.2 */}
           <Card title={t("Identificare juridică",lang)} subtitle={<Badge color="amber">Ord. 16/2023</Badge>}>
             <div className="space-y-3">
               {/* Sprint 21 #8 — tip proprietar + CUI validat */}
@@ -899,6 +854,51 @@ export default function Step1Identification({
                     : "Aceste câmpuri se transferă automat în Formularul de audit client (Step 7)."}
                 </div>
               )}
+            </div>
+          </Card>
+
+          {/* Scop CPE & Caracteristici — Mc 001-2022 Cap. 1.3 (după identificare juridică) */}
+          <Card title={lang === "EN" ? "CPE Purpose & Building Flags" : "Scop CPE & Caracteristici"}>
+            <div className="space-y-3">
+              <Select
+                label={lang==="EN"?"CPE purpose":"Scop elaborare CPE"}
+                tooltip="Obligatoriu conform L. 372/2005 Art. 8¹. 'Renovare majoră' declanșează cost-optimal SR EN 15459-1."
+                value={building.scopCpe}
+                onChange={v => updateBuilding("scopCpe", v)}
+                error={fieldErr("scopCpe")}
+                options={SCOP_CPE_OPTIONS.map(o => ({ value: o.value, label: lang === "EN" ? o.labelEN : o.label }))}
+              />
+              {building.scopCpe === "renovare" && (
+                <div className="text-[10px] text-amber-300/80 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2">
+                  ⚡ Renovare majoră detectată — cost-optimal SR EN 15459-1 necesar (Step 6) + MEPS 2030/2033 (EPBD Art. 9).
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 text-xs cursor-pointer py-2">
+                  <input type="checkbox" checked={building.solarReady} onChange={e => updateBuilding("solarReady",e.target.checked)} className="accent-amber-500" />
+                  {lang==="EN"?"Solar-ready building":"Clădire solar-ready"}
+                </label>
+                <Input
+                  label={t("Albedo override (teren)", lang)}
+                  tooltip="Reflectanță sol (0–1). Implicit calculat pe zonă climatică (post-S20). Override manual: zăpadă=0.7, beton=0.3, asfalt=0.12, iarbă=0.2."
+                  value={building.albedoOverride || ""}
+                  onChange={v => updateBuilding("albedoOverride", v)}
+                  type="number" step="0.01" min="0" max="1"
+                  placeholder="auto"
+                />
+              </div>
+              {(() => {
+                const classification = classifyN50(building.n50, building.category);
+                if (!classification) return <div className="text-[10px] opacity-40 italic">Etanșeitate n50: introduceți valoarea în Dimensiuni pentru evaluare nZEB.</div>;
+                const { label, color, value, ref } = classification;
+                return (
+                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                    <span className="opacity-40">Etanșeitate n50:</span>
+                    <Badge color={color}>{label} — {value} h⁻¹</Badge>
+                    <span className="opacity-30">nZEB {ref.residential ? "rezidențial" : "non-rezidențial"}: ≤{ref.nZEB} h⁻¹</span>
+                  </div>
+                );
+              })()}
             </div>
           </Card>
 
@@ -1120,54 +1120,11 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* EV Charging (EPBD 2024 Art. 14) — date tehnice clădire */}
-          {building.category !== "RA" && (
-            <Card title={lang === "EN" ? "EV Charging (EPBD Art. 14)" : "Încărcare EV (EPBD Art. 14)"}>
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Input label="Nr. locuri parcare" value={building.parkingSpaces} onChange={v => updateBuilding("parkingSpaces",v)} type="number" min="0" />
-                  <Input
-                    label="Pct. EV instalate"
-                    tooltip="Puncte EV funcționale — EPBD 2024 Art. 14"
-                    value={building.evChargingPoints || "0"}
-                    onChange={v => updateBuilding("evChargingPoints",v)}
-                    type="number" min="0"
-                  />
-                  <Input
-                    label="Locuri EV precablate"
-                    tooltip="Rezidențial §3: ≥50% · Non-rez §4: 1/5 (existent) sau 1/2 (renovare majoră)"
-                    value={building.evChargingPrepared || "0"}
-                    onChange={v => updateBuilding("evChargingPrepared",v)}
-                    type="number" min="0"
-                  />
-                </div>
-                {(() => {
-                  const isRecent = (parseInt(building.yearRenov) || parseInt(building.yearBuilt) || 0) >= 2024;
-                  const req = getEVRequirements({ parkingSpaces: building.parkingSpaces, category: building.category, isRecent });
-                  if (!req) return null;
-                  const iHave = parseInt(building.evChargingPoints) || 0;
-                  const pHave = parseInt(building.evChargingPrepared) || 0;
-                  const iOk = iHave >= req.installedMin;
-                  const pOk = pHave >= req.preparedMin;
-                  const gaps = [];
-                  if (!iOk) gaps.push(`${req.installedMin - iHave} instalate`);
-                  if (!pOk) gaps.push(`${req.preparedMin - pHave} precablate`);
-                  return (
-                    <div className={cn("text-[10px] rounded-lg p-2 border", iOk && pOk ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300/80" : "bg-amber-500/5 border-amber-500/20 text-amber-400/80")}>
-                      ⚡ {req.reference}: {req.description}
-                      {iOk && pOk ? " — ✓ conform" : ` — lipsă ${gaps.join(" + ")}`}
-                    </div>
-                  );
-                })()}
-              </div>
-            </Card>
-          )}
-
         </div>
 
-        {/* Coloana 3: Date climatice + ANCPI */}
+        {/* Coloana 3: Date climatice + Condiții interioare + EPBD — Mc 001-2022 Cap. 2+3 */}
         <div className="space-y-4">
-          <Card title={t("Localizare climatică",lang)} badge={selectedClimate && <Badge color="blue">Auto-detectat</Badge>}>
+          <Card title={t("Localizare climatică",lang)} subtitle={selectedClimate && <Badge color="blue">Auto-detectat</Badge>}>
             <div className="space-y-3">
               <Select
                 label={t("Localitatea de calcul",lang)}
@@ -1231,7 +1188,59 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {/* Calitate aer interior (IAQ) — EN 16798-1 */}
+          {/* Mc 001-2022 Cap. 2.3 — Profil temperatură lunară */}
+          {selectedClimate && (
+            <Card title={t("Profil temperatură lunară",lang)}>
+              <svg viewBox="0 0 280 100" width="100%" height="90">
+                {(() => {
+                  const temps = selectedClimate.temp_month;
+                  const tMin = Math.min(...temps);
+                  const tMax = Math.max(...temps);
+                  const range = Math.max(tMax - tMin, 1);
+                  const months = ["I","F","M","A","M","I","I","A","S","O","N","D"];
+                  const barW = 18, gap = 5, offsetX = 8;
+                  const chartH = 60, baseY = 75;
+                  var els = [];
+                  var zeroY = baseY - ((0 - tMin) / range) * chartH;
+                  if (tMin < 0 && tMax > 0) els.push(<line key="z" x1={offsetX} y1={zeroY} x2={offsetX + 12*(barW+gap)} y2={zeroY} stroke="#555" strokeWidth="0.5" strokeDasharray="2 2"/>);
+                  temps.forEach(function(t, i) {
+                    var x = offsetX + i * (barW + gap);
+                    var h = Math.abs(t - Math.max(0, tMin)) / range * chartH;
+                    var y = t >= 0 ? baseY - ((t - tMin) / range) * chartH : baseY - ((0 - tMin) / range) * chartH;
+                    var barH = t >= 0 ? ((t - Math.max(0, tMin)) / range) * chartH : ((0 - t) / range) * chartH;
+                    var isHeat = t < 15;
+                    els.push(<rect key={"b"+i} x={x} y={t >= 0 ? baseY - ((t-tMin)/range)*chartH : zeroY} width={barW} height={Math.max(1, Math.abs(t)/range*chartH)} fill={isHeat ? "#3b82f6" : "#ef4444"} opacity="0.6" rx="2"/>);
+                    els.push(<text key={"v"+i} x={x+barW/2} y={baseY - ((t-tMin)/range)*chartH - 3} textAnchor="middle" fontSize="6" fill={isHeat ? "#60a5fa" : "#f87171"}>{t.toFixed(0)}</text>);
+                    els.push(<text key={"m"+i} x={x+barW/2} y={baseY+10} textAnchor="middle" fontSize="7" fill="#666">{months[i]}</text>);
+                  });
+                  els.push(<text key="leg" x="140" y="98" textAnchor="middle" fontSize="6" fill="#555">Albastru = sezon incalzire (&lt;15C) | Rosu = sezon racire</text>);
+                  return els;
+                })()}
+              </svg>
+            </Card>
+          )}
+
+          {/* Mc 001-2022 Cap. 2.4 — Radiație solară */}
+          {selectedClimate && (
+            <Card title={t("Radiație solară anuală",lang)}>
+              <div className="space-y-1">
+                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
+                  <div key={dir} className="flex items-center justify-between py-1">
+                    <span className="text-xs opacity-50">{dir}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
+                      </div>
+                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
+              </div>
+            </Card>
+          )}
+
+          {/* Mc 001-2022 Cap. 3 — Condiții interioare: IAQ (EN 16798-1) */}
           <Card title={lang === "EN" ? "Indoor Air Quality (IAQ)" : "Calitate aer interior (IAQ)"} badge={<Badge color="blue">EN 16798-1</Badge>}>
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1297,54 +1306,45 @@ export default function Step1Identification({
             </div>
           </Card>
 
-          {selectedClimate && (
-            <Card title={t("Profil temperatură lunară",lang)}>
-              <svg viewBox="0 0 280 100" width="100%" height="90">
+          {/* EPBD Art. 14 — Încărcare EV (ultimul, cerință specifică) */}
+          {building.category !== "RA" && (
+            <Card title={lang === "EN" ? "EV Charging (EPBD Art. 14)" : "Încărcare EV (EPBD Art. 14)"}>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Input label="Nr. locuri parcare" value={building.parkingSpaces} onChange={v => updateBuilding("parkingSpaces",v)} type="number" min="0" />
+                  <Input
+                    label="Pct. EV instalate"
+                    tooltip="Puncte EV funcționale — EPBD 2024 Art. 14"
+                    value={building.evChargingPoints || "0"}
+                    onChange={v => updateBuilding("evChargingPoints",v)}
+                    type="number" min="0"
+                  />
+                  <Input
+                    label="Locuri EV precablate"
+                    tooltip="Rezidențial §3: ≥50% · Non-rez §4: 1/5 (existent) sau 1/2 (renovare majoră)"
+                    value={building.evChargingPrepared || "0"}
+                    onChange={v => updateBuilding("evChargingPrepared",v)}
+                    type="number" min="0"
+                  />
+                </div>
                 {(() => {
-                  const temps = selectedClimate.temp_month;
-                  const tMin = Math.min(...temps);
-                  const tMax = Math.max(...temps);
-                  const range = Math.max(tMax - tMin, 1);
-                  const months = ["I","F","M","A","M","I","I","A","S","O","N","D"];
-                  const barW = 18, gap = 5, offsetX = 8;
-                  const chartH = 60, baseY = 75;
-                  var els = [];
-                  // zero line
-                  var zeroY = baseY - ((0 - tMin) / range) * chartH;
-                  if (tMin < 0 && tMax > 0) els.push(<line key="z" x1={offsetX} y1={zeroY} x2={offsetX + 12*(barW+gap)} y2={zeroY} stroke="#555" strokeWidth="0.5" strokeDasharray="2 2"/>);
-                  temps.forEach(function(t, i) {
-                    var x = offsetX + i * (barW + gap);
-                    var h = Math.abs(t - Math.max(0, tMin)) / range * chartH;
-                    var y = t >= 0 ? baseY - ((t - tMin) / range) * chartH : baseY - ((0 - tMin) / range) * chartH;
-                    var barH = t >= 0 ? ((t - Math.max(0, tMin)) / range) * chartH : ((0 - t) / range) * chartH;
-                    var isHeat = t < 15;
-                    els.push(<rect key={"b"+i} x={x} y={t >= 0 ? baseY - ((t-tMin)/range)*chartH : zeroY} width={barW} height={Math.max(1, Math.abs(t)/range*chartH)} fill={isHeat ? "#3b82f6" : "#ef4444"} opacity="0.6" rx="2"/>);
-                    els.push(<text key={"v"+i} x={x+barW/2} y={baseY - ((t-tMin)/range)*chartH - 3} textAnchor="middle" fontSize="6" fill={isHeat ? "#60a5fa" : "#f87171"}>{t.toFixed(0)}</text>);
-                    els.push(<text key={"m"+i} x={x+barW/2} y={baseY+10} textAnchor="middle" fontSize="7" fill="#666">{months[i]}</text>);
-                  });
-                  // Season heating indicator
-                  els.push(<text key="leg" x="140" y="98" textAnchor="middle" fontSize="6" fill="#555">Albastru = sezon incalzire (&lt;15C) | Rosu = sezon racire</text>);
-                  return els;
-                })()}
-              </svg>
-            </Card>
-          )}
-
-          {selectedClimate && (
-            <Card title={t("Radiație solară anuală",lang)}>
-              <div className="space-y-1">
-                {Object.entries(selectedClimate.solar).map(([dir, val]) => (
-                  <div key={dir} className="flex items-center justify-between py-1">
-                    <span className="text-xs opacity-50">{dir}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${(val/450)*100}%`, background:`linear-gradient(90deg, #f59e0b, #ef4444)`}} />
-                      </div>
-                      <span className="text-xs font-mono w-12 text-right opacity-60">{val}</span>
+                  const isRecent = (parseInt(building.yearRenov) || parseInt(building.yearBuilt) || 0) >= 2024;
+                  const req = getEVRequirements({ parkingSpaces: building.parkingSpaces, category: building.category, isRecent });
+                  if (!req) return null;
+                  const iHave = parseInt(building.evChargingPoints) || 0;
+                  const pHave = parseInt(building.evChargingPrepared) || 0;
+                  const iOk = iHave >= req.installedMin;
+                  const pOk = pHave >= req.preparedMin;
+                  const gaps = [];
+                  if (!iOk) gaps.push(`${req.installedMin - iHave} instalate`);
+                  if (!pOk) gaps.push(`${req.preparedMin - pHave} precablate`);
+                  return (
+                    <div className={cn("text-[10px] rounded-lg p-2 border", iOk && pOk ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-300/80" : "bg-amber-500/5 border-amber-500/20 text-amber-400/80")}>
+                      ⚡ {req.reference}: {req.description}
+                      {iOk && pOk ? " — ✓ conform" : ` — lipsă ${gaps.join(" + ")}`}
                     </div>
-                  </div>
-                ))}
-                <div className="text-[10px] opacity-30 mt-2">kWh/(m²·an) — valori medii Mc 001-2022</div>
+                  );
+                })()}
               </div>
             </Card>
           )}
@@ -1352,20 +1352,7 @@ export default function Step1Identification({
         </div>
       </div>
 
-      {/* ── Hartă clădire (Leaflet + Overpass) — full-width sub grid ──────── */}
-      {selectedClimate?.lat != null && selectedClimate?.lon != null && (
-        <div className="mt-4">
-          <BuildingMapAdvanced
-            lat={selectedClimate.lat}
-            lon={selectedClimate.lon}
-            address={building?.address}
-            building={building}
-            lang={lang}
-          />
-        </div>
-      )}
-
-      {/* ── ANCPI — full-width sub grid ──────────────────────────────────── */}
+      {/* ── ANCPI — Mc 001-2022 Cap. 1.3 — identificare juridică ──────────── */}
       <div className="mt-4">
         <ANCPIVerificationPanel
           data={{
@@ -1386,6 +1373,19 @@ export default function Step1Identification({
           lang={lang}
         />
       </div>
+
+      {/* ── Hartă clădire (Leaflet + Overpass) — Mc 001-2022 Cap. 1.4 ───── */}
+      {selectedClimate?.lat != null && selectedClimate?.lon != null && (
+        <div className="mt-4">
+          <BuildingMapAdvanced
+            lat={selectedClimate.lat}
+            lon={selectedClimate.lon}
+            address={building?.address}
+            building={building}
+            lang={lang}
+          />
+        </div>
+      )}
 
       {/* TMY orar (Pro+) — full-width după ANCPI */}
       {selectedClimate && canAccess(userPlan, "climateImportEPW") && (
@@ -1452,6 +1452,25 @@ export default function Step1Identification({
         </Card>
       </div>
 
+      {/* Sprint Conformitate P0-05..09 + P2-01..11 (7 mai 2026) — DocumentUploadCenter
+           Card additive (NU modifică niciun câmp existing). 18 sloturi cu IndexedDB store,
+           hash SHA-256, magic bytes validation. Sloturi condiționate pe yearBuilt/scopCpe/
+           category/protectedZone/isHistoric. */}
+      <div className="mt-6">
+        <Card title="📄 Documente client (upload)">
+          <DocumentUploadCenter
+            cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
+            buildingCategory={building.category}
+            buildingYearBuilt={building.yearBuilt}
+            scopCpe={building.scopCpe}
+            isResidentialCollective={building.category === "RC"}
+            protectedZone={!!building.protectedZone}
+            isHistoric={!!building.isHistoric}
+            showInfo={true}
+          />
+        </Card>
+      </div>
+
       {/* Banner avertisment validare (Sprint 18 + 21 — extins cu warnings + progress) */}
       {showValidationBanner && hasErrors && (
         <div role="alert" className="mt-6 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs flex justify-between items-start gap-3">
@@ -1499,25 +1518,6 @@ export default function Step1Identification({
             style={{ width: `${(progress.filled / Math.max(1, progress.total)) * 100}%` }}
           />
         </div>
-      </div>
-
-      {/* Sprint Conformitate P0-05..09 + P2-01..11 (7 mai 2026) — DocumentUploadCenter
-           Card additive (NU modifică niciun câmp existing). 18 sloturi cu IndexedDB store,
-           hash SHA-256, magic bytes validation. Sloturi condiționate pe yearBuilt/scopCpe/
-           category/protectedZone/isHistoric. */}
-      <div className="mt-6">
-        <Card title="📄 Documente client (upload)">
-          <DocumentUploadCenter
-            cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
-            buildingCategory={building.category}
-            buildingYearBuilt={building.yearBuilt}
-            scopCpe={building.scopCpe}
-            isResidentialCollective={building.category === "RC"}
-            protectedZone={!!building.protectedZone}
-            isHistoric={!!building.isHistoric}
-            showInfo={true}
-          />
-        </Card>
       </div>
 
       {/* Navigation */}
