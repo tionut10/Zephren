@@ -379,7 +379,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
       new TableCell({
         shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark }, borders: NB,
         children: [
-          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, transformation: { width: 150, height: 45 } })], spacing: { before: 300, after: 80 }, indent: { left: 240 } })] : [
+          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 150, height: 45 } })], spacing: { before: 300, after: 80 }, indent: { left: 240 } })] : [
             new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 60, bold: true, color: C.green })], spacing: { before: 300, after: 80 }, indent: { left: 240 } }),
           ]),
           new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT — AUDIT ENERGETIC / CPE", font: "Calibri", size: 28, bold: true, color: WHITE })], spacing: { before: 0, after: 60 }, indent: { left: 240 } }),
@@ -604,7 +604,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
         cells.push(new TableCell({
           borders: allBd(),
           children: [
-            new Paragraph({ children: [new ImageRun({ data: dataUrlToBuffer(pl.dataUrl), transformation: { width: Math.round(ew / 9144), height: Math.round(eh / 9144) } })], alignment: AlignmentType.CENTER, spacing: { before: 80, after: 40 } }),
+            new Paragraph({ children: [new ImageRun({ data: dataUrlToBuffer(pl.dataUrl), type: pl.type?.split("/")[1] || "png", transformation: { width: Math.round(ew / 9144), height: Math.round(eh / 9144) } })], alignment: AlignmentType.CENTER, spacing: { before: 80, after: 40 } }),
             new Paragraph({ children: [new TextRun({ text: pl.name || pl.fileName, font: "Calibri", size: 18, italics: true, color: C.gray })], alignment: AlignmentType.CENTER, spacing: { before: 0, after: 80 } }),
           ],
         }));
@@ -628,7 +628,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
         new TableCell({ width: { size: 28, type: WidthType.PERCENTAGE }, borders: NB,
           children: [new Paragraph({
             children: logoBuffer
-              ? [new ImageRun({ data: logoBuffer, transformation: { width: 90, height: 27 } })]
+              ? [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 90, height: 27 } })]
               : [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 22, bold: true, color: C.green })],
             spacing: { before: 60, after: 60 },
           })],
