@@ -210,6 +210,7 @@ const downloadBlankWordInteract = () => exportDOCX({}, [], true, true);  // ☑ 
 // isBlank=true          → formular gol (câmpuri cu linie de completare)
 // isWordInteractive=true → checkbox-uri Word SDT interactive (w:sdt)
 async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive = false) {
+  const logoBuffer = await fetchLogoArrayBuffer();
   const v   = (key) => data[key] ?? "";
   const has = (key) => { const val = data[key]; return val !== undefined && val !== "" && val !== null && val !== false; };
   const txt = (key, unit = "") => has(key) ? String(v(key)) + (unit ? "\u00a0" + unit : "") : "";
@@ -770,32 +771,13 @@ export default function ClientInputForm({ onDataChange }) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-2xl px-6 py-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-white">Formular Date Clădire</h2>
-            <p className="text-sm text-white/50 mt-1">
-              Completați câmpurile de mai jos pentru a permite auditorului energetic să calculeze performanța clădirii dvs.
-              Câmpurile marcate cu <span className="text-amber-400 font-bold">*</span> sunt obligatorii.
-            </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0 flex-wrap">
-            <button onClick={loadDemoData}
-              className="px-4 py-2 bg-teal-500/20 border border-teal-500/30 hover:bg-teal-500/30 text-teal-300 rounded-lg text-sm font-medium transition-all"
-              title="Pre-populează cu date fictive pentru testare">
-              🧪 Demo
-            </button>
-            <button onClick={() => exportDOCX(data, planuri)}
-              className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-lg text-sm font-medium transition-all">
-              ↓ DOCX
-            </button>
-            <button onClick={() => { if (confirm("Ștergeți toate datele introduse?")) { setData({}); localStorage.removeItem("clientFormData"); } }}
-              className="px-4 py-2 bg-white/5 border border-white/10 hover:border-red-500/30 text-white/40 hover:text-red-400 rounded-lg text-sm transition-all">
-              ✕
-            </button>
-          </div>
-        </div>
+      {/* Header — titlu + progres */}
+      <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-2xl px-6 py-5">
+        <h2 className="text-xl font-bold text-white">Formular Date Clădire</h2>
+        <p className="text-sm text-white/50 mt-1">
+          Completați câmpurile de mai jos pentru a permite auditorului energetic să calculeze performanța clădirii dvs.
+          Câmpurile marcate cu <span className="text-green-400 font-bold">*</span> sunt obligatorii.
+        </p>
         <div className="mt-4">
           <ProgressBar sections={SECTIONS_META} data={data} />
         </div>
@@ -1239,7 +1221,23 @@ export default function ClientInputForm({ onDataChange }) {
         </div>
 
         {/* Butoane auditor */}
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-wrap justify-between items-center gap-3">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setData(DEMO_DATA)}
+              className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-all"
+              title="Populează formularul cu date demo pentru testare"
+            >
+              Demo
+            </button>
+            <button
+              onClick={() => setData({})}
+              className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 text-white/40 hover:text-red-400 rounded-xl text-sm font-medium transition-all"
+              title="Golește toate câmpurile"
+            >
+              ✕ Resetează
+            </button>
+          </div>
           <button onClick={() => exportDOCX(data, planuri)}
             className="px-6 py-2.5 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-xl text-sm font-medium transition-all">
             ↓ Descarcă DOCX
