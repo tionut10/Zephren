@@ -193,13 +193,28 @@ const DEMO_DATA = {
   alteDocumente: "Clădire construită circa 1978, fără izolație termică pe pereții exteriori. Se solicită reabilitare termică completă în vederea reducerii consumului energetic și îmbunătățirii clasei energetice.",
 };
 
-// ─── Logo fetch pentru DOCX ───────────────────────────────────────────────────
+// ─── Logo fetch + proporții auto pentru DOCX ─────────────────────────────────
 async function fetchLogoArrayBuffer() {
   try {
     const resp = await fetch("/logo_ro.png");
     if (!resp.ok) return null;
     return await resp.arrayBuffer();
   } catch { return null; }
+}
+
+// Citește w/h din header PNG (IHDR la byte 16/20) și returnează { width, height }
+// proporționale fără distorsionare
+function logoSize(buffer, targetH) {
+  const fallbackRatio = 0.862; // 1563/1813 — logo_ro.png
+  try {
+    const view = new DataView(buffer instanceof ArrayBuffer ? buffer : buffer.buffer);
+    const w = view.getUint32(16);
+    const h = view.getUint32(20);
+    const ratio = h > 0 ? w / h : fallbackRatio;
+    return { width: Math.round(targetH * ratio), height: targetH };
+  } catch {
+    return { width: Math.round(targetH * fallbackRatio), height: targetH };
+  }
 }
 
 // ─── Download Formular Gol variante ──────────────────────────────────────────
@@ -211,6 +226,8 @@ const downloadBlankWordInteract = () => exportDOCX({}, [], true, true);  // ☑ 
 // isWordInteractive=true → checkbox-uri Word SDT interactive (w:sdt)
 async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive = false) {
   const logoBuffer = await fetchLogoArrayBuffer();
+  const logoLg = logoBuffer ? logoSize(logoBuffer, 80) : { width: 69, height: 80 };
+  const logoSm = logoBuffer ? logoSize(logoBuffer, 30) : { width: 26, height: 30 };
   const v   = (key) => data[key] ?? "";
   const has = (key) => { const val = data[key]; return val !== undefined && val !== "" && val !== null && val !== false; };
   const txt = (key, unit = "") => has(key) ? String(v(key)) + (unit ? "\u00a0" + unit : "") : "";
@@ -379,7 +396,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
       new TableCell({
         shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark }, borders: NB,
         children: [
-          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 69, height: 80 } })], spacing: { before: 220, after: 60 }, indent: { left: 240 } })] : [
+          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, type: "png", transformation: logoLg })], spacing: { before: 220, after: 60 }, indent: { left: 240 } })] : [
             new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 60, bold: true, color: C.green })], spacing: { before: 220, after: 60 }, indent: { left: 240 } }),
           ]),
           new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT — AUDIT ENERGETIC / CPE", font: "Calibri", size: 28, bold: true, color: WHITE })], spacing: { before: 0, after: 60 }, indent: { left: 240 } }),
@@ -748,7 +765,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
           verticalAlign: VerticalAlign.CENTER,
           children: [new Paragraph({
             children: logoBuffer
-              ? [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 26, height: 30 } })]
+              ? [new ImageRun({ data: logoBuffer, type: "png", transformation: logoSm })]
               : [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 20, bold: true, color: C.green })],
             spacing: { before: 50, after: 50 }, indent: { left: 100 },
           })],
