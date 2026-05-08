@@ -845,9 +845,8 @@ def append_legal_supplement(doc, data):
     except Exception:
         pass
 
-    # 5) Rânduri imagini — semnătură + ștampilă + QR-uri
+    # 5) Rânduri imagini — semnătură + QR-uri (ștampila se aplică manual pe printout)
     _add_label_image_row(tbl, "Semnătură auditor",   data.get("signature_png_b64", ""), width_cm=4.0)
-    _add_label_image_row(tbl, "Ștampilă auditor",    data.get("stamp_png_b64", ""),     width_cm=2.5)
 
     # QR verificare CPE — generat din qr_verify_url
     qr_verify_bytes = generate_qr_png(data.get("qr_verify_url", ""), scale=4, border=2)
@@ -4167,31 +4166,19 @@ class handler(BaseHTTPRequestHandler):
             sig.add_run(f"Atestat nr.: {auditor.get('atestat', '—')}\n")
             sig.add_run(f"Data: {auditor.get('date', '—')}")
 
-            # Sprint 15 — embed semnătură + ștampilă dacă există
+            # Sprint 15 — embed semnătură (ștampila se aplică manual pe printout)
             sig_b64 = auditor.get("signatureDataURL", "") or ""
-            stamp_b64 = auditor.get("stampDataURL", "") or ""
             if sig_b64 and "," in sig_b64:
                 sig_b64 = sig_b64.split(",", 1)[1]
-            if stamp_b64 and "," in stamp_b64:
-                stamp_b64 = stamp_b64.split(",", 1)[1]
-            if sig_b64 or stamp_b64:
+            if sig_b64:
                 p_imgs = doc.add_paragraph()
                 p_imgs.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                if sig_b64:
-                    try:
-                        p_imgs.add_run().add_picture(
-                            io.BytesIO(base64.b64decode(sig_b64)), width=Cm(5.0)
-                        )
-                        p_imgs.add_run("  ")
-                    except Exception:
-                        pass
-                if stamp_b64:
-                    try:
-                        p_imgs.add_run().add_picture(
-                            io.BytesIO(base64.b64decode(stamp_b64)), width=Cm(3.0)
-                        )
-                    except Exception:
-                        pass
+                try:
+                    p_imgs.add_run().add_picture(
+                        io.BytesIO(base64.b64decode(sig_b64)), width=Cm(5.0)
+                    )
+                except Exception:
+                    pass
 
             # Sprint 15 — QR code pentru verificare (dacă auditor.cpeCode există)
             # Audit 2 mai 2026 — P0.3: URL pointează la landing static cu form
@@ -4530,8 +4517,8 @@ class handler(BaseHTTPRequestHandler):
             # cere doar UN exemplar semnat fizic; Anexa nu are loc dedicat pentru semnătură
             # injectată în corpul documentului — textul „Semnătura și ștampila auditorului"
             # apare DEJA în footerul oficial al fiecărei pagini).
-            if (signature_b64 or stamp_b64) and mode == "cpe":
-                insert_signature_stamp(doc, signature_b64, stamp_b64)
+            if signature_b64 and mode == "cpe":
+                insert_signature_stamp(doc, signature_b64, "")
 
             # Audit 2 mai 2026 — NU MAI MODIFICĂM celula „Anul construirii/renovării majore":
             # template-ul oficial MDLPA are deja celula vertical-merged între R1+R2
