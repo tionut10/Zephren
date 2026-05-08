@@ -452,11 +452,14 @@ export async function exportCpePostRehabPDF(params = {}) {
   y += 30;
 
   // ── Scala A-G îmbunătățită cu markeri ACTUAL + ESTIMAT + prag nZEB ──
+  // Sprint 8 mai 2026 — Spațiu marker POST-REHAB mărit 10→16mm pentru a evita
+  // suprapunerea cu titlul „Scala energetică A-G" (audit raport: marker label
+  // „POST-REHAB EP 220" cădea peste textul titlului).
   doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.CAPTION);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   doc.text("Scala energetică A-G (cu prag nZEB orientativ)", w / 2, y, { align: "center" });
-  y += 10; // spațiu pentru marker POST-REHAB (sus)
+  y += 16; // spațiu pentru marker POST-REHAB sus (era 10 — overlap cu titlul)
   renderEnergyClassBar(doc, 24, y, w - 48, 8, {
     actualClass: origCls,
     actualEP: orig?.ep,
@@ -625,7 +628,10 @@ export async function exportCpePostRehabPDF(params = {}) {
   }
 
   // ── WATERMARK pe pag 2 ──
-  renderWatermark(doc, "ESTIMAT", { opacity: 0.06 });
+  // Sprint 8 mai 2026 — opacitate redusă 0.06 → 0.035 pentru a nu interfera
+  // cu lizibilitatea textului auditor + ștampilă pe pag. ultimă (audit raport
+  // 8 mai: watermark suprapus cu „Atestat: CT-01875").
+  renderWatermark(doc, "ESTIMAT", { opacity: 0.035 });
 
   // ── FOOTER pag 2 (brand kit) ──
   applyBrandFooter(doc, brandMeta, 2, 2, {
