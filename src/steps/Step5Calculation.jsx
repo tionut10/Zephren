@@ -457,44 +457,79 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   <div className="flex items-center justify-center">
-                    <svg viewBox="0 0 340 300" width="100%" style={{maxWidth:"460px"}}>
+                    <svg viewBox="0 0 400 400" width="100%" style={{maxWidth:"520px"}}>
                       {(() => {
-                        const cx = 170, cy = 145, maxR = 108;
+                        const cx = 200, cy = 160, maxR = 100, maxMul = 1.8;
+                        const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
                         const utils = [
-                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#f87171"},
-                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#fb923c"},
-                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#60a5fa"},
-                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#a78bfa"},
-                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#fde047"},
+                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0},
+                          {label:"ACM",       val: Au > 0 ? instSummary.qf_w / Au : 0},
+                          {label:"Răcire",    val: Au > 0 ? instSummary.qf_c / Au : 0},
+                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0},
+                          {label:"Iluminat",  val: Au > 0 ? instSummary.qf_l / Au : 0},
                         ];
+                        const ratios = utils.map((u, i) => nzebThresh[i] > 0 ? u.val / nzebThresh[i] : 0);
                         const n = utils.length;
                         const angleStep = (2 * Math.PI) / n;
                         const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
+                        const getCol = r => r <= 1.0 ? "#22c55e" : r <= 1.8 ? "#f59e0b" : "#ef4444";
+                        // Grid: 0.25×, 0.5×, 0.75×, 1.0× (nZEB ref)
                         const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
+                          const isRef = f === 1.0;
                           const r = maxR * f;
                           const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
-                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="0.8" />;
+                          const [tx, ty] = getXY(0, r);
+                          return <g key={f}>
+                            <polygon points={pts} fill={isRef ? "rgba(34,197,94,0.07)" : "none"}
+                              stroke={isRef ? "#22c55e" : "rgba(255,255,255,0.13)"}
+                              strokeWidth={isRef ? 1.8 : 0.7}
+                              strokeDasharray={isRef ? "5 3" : undefined} />
+                            {isRef && <text x={tx} y={ty - 6} textAnchor="middle" fontSize="8.5" fill="#4ade80" fontWeight="600">nZEB A+</text>}
+                          </g>;
                         });
+                        // Axes extend to maxMul×maxR
                         const axes = utils.map((u, i) => {
-                          const [x, y] = getXY(i, maxR + 22);
-                          const [ax, ay] = getXY(i, maxR);
-                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.20)" strokeWidth="0.8" /><text x={x} y={y+4} textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.90)" fontWeight="500">{u.label}</text></g>;
+                          const [lx, ly] = getXY(i, maxR + 24);
+                          const [ax, ay] = getXY(i, maxR * maxMul);
+                          return <g key={i}>
+                            <line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
+                            <text x={lx} y={ly + 4} textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.90)" fontWeight="500">{u.label}</text>
+                          </g>;
                         });
-                        const pts = utils.map((u, i) => {
-                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1));
+                        // Data polygon — r normalized to nZEB, capped at maxMul
+                        const worstRatio = Math.max(...ratios);
+                        const polyCol = getCol(worstRatio);
+                        const pts = ratios.map((ratio, i) => {
+                          const r = Math.min(maxR * maxMul, maxR * ratio);
                           return getXY(i, r).join(",");
                         }).join(" ");
-                        const vals = utils.map((u, i) => {
-                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 14;
+                        // Value labels: kWh value + ×ratio
+                        const vals = ratios.map((ratio, i) => {
+                          const u = utils[i];
+                          const r = Math.min(maxR * maxMul, maxR * ratio) + 14;
                           const [x, y] = getXY(i, r);
-                          return <text key={"v"+i} x={x} y={y+3} textAnchor="middle" fontSize="9.5" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
+                          const col = getCol(ratio);
+                          const capped = ratio > maxMul;
+                          return <g key={"v"+i}>
+                            <text x={x} y={y + 1} textAnchor="middle" fontSize="9.5" fill={col} fontWeight="bold">{u.val.toFixed(1)}{capped ? "⁺" : ""}</text>
+                            <text x={x} y={y + 13} textAnchor="middle" fontSize="8" fill={col} opacity="0.85">×{ratio.toFixed(1)}</text>
+                          </g>;
                         });
-                        const nzebVals = [49, 18, 13, 5, 6];
-                        const nzebPts = nzebVals.map((v, i) => {
-                          const r = maxR * Math.min(v / utils[i].max, 1);
-                          return getXY(i, r).join(",");
-                        }).join(" ");
-                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.12)" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="4 2" /><polygon points={pts} fill="rgba(245,158,11,0.22)" stroke="#f59e0b" strokeWidth="2.5" />{vals}<text x={cx} y={cy + maxR + 44} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.65)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
+                        const noteY = cy + maxR * maxMul + 34;
+                        return <>
+                          {grid}{axes}
+                          <polygon points={pts} fill={`${polyCol}22`} stroke={polyCol} strokeWidth="2.5" opacity="0.95" />
+                          {vals}
+                          <text x={cx} y={noteY} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.50)">Inelul verde = prag nZEB A+ · ×N = raport față de prag</text>
+                          <g transform={`translate(${cx - 110}, ${noteY + 15})`}>
+                            <rect x={0} y={-8} width={9} height={9} fill="#22c55e" rx="1.5" />
+                            <text x={13} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">≤1× conform nZEB</text>
+                            <rect x={108} y={-8} width={9} height={9} fill="#f59e0b" rx="1.5" />
+                            <text x={121} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">1–1.8× depășit</text>
+                            <rect x={210} y={-8} width={9} height={9} fill="#ef4444" rx="1.5" />
+                            <text x={223} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">{">"}1.8× critic</text>
+                          </g>
+                        </>;
                       })()}
                     </svg>
                   </div>
