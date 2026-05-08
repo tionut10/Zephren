@@ -590,6 +590,25 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     });
   };
 
+  // ── Mapare categorie Zephren extinsă → categorie C107/2-2005 (6 valori bază) ──
+  // Sprint 8 mai 2026 — getC107UMax/getRenovUMax acceptă DOAR RI/RC/AL/BI/CO/IN.
+  // Categoriile extinse Zephren (RA/SA/HC/etc.) trebuie mapate înainte de lookup,
+  // altfel returnează null + nu intră în statistici → §7 sumar arată „0 conforme/0 neconforme".
+  const C107_CATEGORY_MAP = {
+    RA: "RC", CP: "RC",
+    AD: "BI", BA_OFF: "BI",
+    ED: "AL", GR: "AL", SC: "AL", LI: "AL", UN: "AL",
+    SA: "AL", SPA_H: "AL", CL: "AL", ST: "AL", LB_MED: "AL",
+    HC: "AL", HO_LUX: "AL", HOSTEL: "AL",
+    RE: "CO", REST: "CO", BAR: "CO", CANTINE: "CO", FAST_F: "CO",
+    MAG: "CO", SUPER: "CO", MALL: "CO", AG_COM: "CO",
+    SP: "AL", PSC: "AL", SALA_POL: "AL",
+    CU: "AL", CIN: "AL", TEA: "AL", MUZ: "AL", BIB: "AL",
+    GARA: "AL", AER: "AL",
+    IU: "IN", HAL: "IN", DEP: "IN", LAB_IND: "IN",
+  };
+  const c107Cat = C107_CATEGORY_MAP[building.category] || building.category || "RC";
+
   // ── Determinare set U'max nZEB (residential vs nonresidential, nou vs renovare) ──
   const isResidentialCat = ["RI", "RC", "RA"].includes(building.category);
   const isRenovation = (building?.scopCpe || "").includes("renovare")
@@ -703,8 +722,8 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       // --- 1.x.5 Verificare conformitate (C107/2-2005, Mc 001-2022 renovare, NZEB) ---
       children.push(H(`1.${idx + 1}.5  Verificare conformitate normativă`, 3));
       const u_calc = metrics.u || 0;
-      const u_c107 = getC107UMax(el.type, building.category) || null;
-      const u_renov = getRenovUMax(el.type, building.category) || null;
+      const u_c107 = getC107UMax(el.type, c107Cat) || null;
+      const u_renov = getRenovUMax(el.type, c107Cat) || null;
       const u_nzeb_new = nzebUMaxSet[el.type] != null ? nzebUMaxSet[el.type] : null;
       const verdict = (uref) => {
         if (uref == null) return ["—", "—"];
@@ -793,9 +812,12 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       const totalD_mm = (el.layers || []).reduce((s, l) => s + (parseFloat(l.thickness) || 0), 0);
       if (totalD_mm > 0) {
         children.push(H(`1.${idx + 1}.8  Schema secțiune (interior → exterior)`, 3));
-        const schemaText = "[INT]  " + (el.layers || []).map((l, i) =>
-          `${parseFloat(l.thickness) || 0}mm ${(l.matName || l.material || "?").slice(0, 16)}`
-        ).join("  ░  ") + "  [EXT]";
+        // Sprint 8 mai 2026 — Lățime nume material 16→32 char (era trunchiat
+        // „Tencuială exteri" sau „Beton armat pano"). Folosim font monospaced
+        // mai mic pentru a încăpea pe un rând larg.
+        const schemaText = "[INT] " + (el.layers || []).map((l, i) =>
+          `${parseFloat(l.thickness) || 0}mm ${(l.matName || l.material || "?").slice(0, 32)}`
+        ).join(" │ ") + " [EXT]";
         children.push(P(schemaText, { size: 14, color: DOCX_BRAND.SLATE_700 }));
         children.push(P(
           `Grosime totală element: ${totalD_mm.toFixed(0)} mm`,
@@ -903,8 +925,8 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
 
       // --- 2.x.5 Verificare conformitate ---
       children.push(H(`2.${idx + 1}.5  Verificare conformitate normativă`, 3));
-      const u_c107_g = getC107UMax("FE", building.category) || 1.30;
-      const u_renov_g = getRenovUMax("FE", building.category) || 1.10;
+      const u_c107_g = getC107UMax("FE", c107Cat) || 1.30;
+      const u_renov_g = getRenovUMax("FE", c107Cat) || 1.10;
       const u_nzeb_g = nzebUMaxSet["FE"] || 1.20;
       const verdictG = (uref) => {
         const ok = u_g <= uref + 0.005;
@@ -1235,7 +1257,8 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
         comfortRows.push([
           el.name || el.type,
           el.orientation || "—",
-          fmtNum(sc.D_inertia || 0, 2),
+          // Sprint 8 mai 2026 — calcSummerComfort returnează field-ul „D", nu „D_inertia"
+          fmtNum(sc.D || 0, 2),
           fmtNum(sc.dampingFactor || 0, 3),
           fmtNum(sc.phaseShift || 0, 1),
           fmtNum(sc.T_operative || 0, 1),
@@ -1288,7 +1311,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   opaque.forEach(el => {
     const m = computeElementMetrics(el);
     const u = m.u || 0;
-    const u107 = getC107UMax(el.type, building.category);
+    const u107 = getC107UMax(el.type, c107Cat);
     const uNzeb = nzebUMaxSet[el.type];
     if (u107 != null) { if (u <= u107 + 0.005) opaqueOK_C107++; else opaqueFail_C107++; }
     if (uNzeb != null) { if (u <= uNzeb + 0.005) opaqueOK_NZEB++; else opaqueFail_NZEB++; }
@@ -1296,7 +1319,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   let glazingOK_C107 = 0, glazingFail_C107 = 0;
   glazing.forEach(g => {
     const u = parseFloat(g.u) || 0;
-    const u107 = getC107UMax("FE", building.category) || 1.30;
+    const u107 = getC107UMax("FE", c107Cat) || 1.30;
     if (u <= u107 + 0.005) glazingOK_C107++; else glazingFail_C107++;
   });
 
