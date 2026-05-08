@@ -36,6 +36,8 @@ import {
   applyBrandHeader,
   applyBrandFooter,
   renderSignatureBox,
+  renderQrCode,
+  buildVerifyUrl,
 } from "./pdf-brand-layout.js";
 
 function _safeSlug(s) {
@@ -287,6 +289,14 @@ export async function generateClientRequestPdf({
     date: brandMeta.dateText,
     width: 90,
     height: 35,
+  });
+
+  // Sprint V9: QR cod verificare integritate (ultima pagină)
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
   });
 
   // ── Footer brand (înlocuire footer juridic custom)
