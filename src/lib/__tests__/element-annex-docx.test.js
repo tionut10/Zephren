@@ -149,23 +149,25 @@ describe("Sprint P0-B P1-11 — exportFullAnnexesDOCX (opaque + glazing + bridge
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it("returnează sectionsCount=4 când toate categoriile sunt prezente", async () => {
+  it("returnează sectionsCount=5 când toate categoriile sunt prezente (4 + §7 sumar)", async () => {
+    // Sprint 8 mai 2026 — versiunea detaliată adaugă §7 Sumar verificări
+    // (doar dacă există măcar o categorie), deci 4 + 1 = 5.
     const r = await exportFullAnnexesDOCX({
       opaque: [{ name: "PE", type: "PE", area: 50, layers: [{ matName: "EPS", thickness: 100, lambda: 0.036, rho: 20 }] }],
       glazing: [{ name: "F1", type: "tripan", orientation: "S", area: 5, u: 0.9, g: 0.5 }],
       bridges: [{ name: "Colț", psi: 0.15, length: 4 }],
       systems: { heating: { source: "PC", power: 8, eta_gen: 4.2 } },
     });
-    expect(r.sectionsCount).toBe(4);
+    expect(r.sectionsCount).toBe(5);
     expect(r.blob.size).toBeGreaterThan(2000);
   }, 10000);
 
-  it("returnează sectionsCount=2 când doar opaque + bridges", async () => {
+  it("returnează sectionsCount=3 când doar opaque + bridges (2 + §7 sumar)", async () => {
     const r = await exportFullAnnexesDOCX({
       opaque: [{ name: "PE", type: "PE", area: 50, layers: [{ matName: "EPS", thickness: 100, lambda: 0.036, rho: 20 }] }],
       bridges: [{ name: "B1", psi: 0.10, length: 8 }],
     });
-    expect(r.sectionsCount).toBe(2);
+    expect(r.sectionsCount).toBe(3);
   }, 10000);
 
   it("returnează sectionsCount=0 pentru date goale (DOCX cu doar header)", async () => {

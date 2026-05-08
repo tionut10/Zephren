@@ -607,8 +607,19 @@ export default function Step7Audit(props) {
                 await addToZip(`C1_anexe_complete_${buildingSlug}_${today}.docx`, async () => {
                   const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
                   return exportFullAnnexesDOCX(
-                    { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges, systems: { heating, cooling, ventilation, lighting, acm } },
-                    // Sprint 8 mai 2026 — pasăm auditor pentru banner header brand C1
+                    {
+                      opaque: opaqueElements,
+                      glazing: glazingElements,
+                      bridges: thermalBridges,
+                      systems: { heating, cooling, ventilation, lighting, acm },
+                      // Sprint 8 mai 2026 — C1 versiune detaliată: pasăm date din pașii 4+5
+                      // pentru bilanț energetic anual, RER, confort vară, verificare conformitate.
+                      renewables: { solarThermal, photovoltaic, heatPump, biomass, otherRenew },
+                      instSummary,
+                      monthlyISO: instSummary?.monthlyISO || null,
+                      renewSummary,
+                      climate: selectedClimate || {},
+                    },
                     { building, auditor, download: false }
                   );
                 });
