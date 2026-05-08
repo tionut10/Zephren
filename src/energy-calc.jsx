@@ -3268,7 +3268,6 @@ export default function EnergyCalcApp({ cloud }) {
                         { icon: "💾", label: "Export JSON", action: exportProject },
                         { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
                         { icon: "⚡", label: "Quick Fill", action: () => setShowQuickFill(true), color: "text-amber-300" },
-                        { icon: "📋", label: "Formular Audit", action: () => setShowAuditForm(true), color: "text-sky-300" },
                         { icon: "🖨️", label: "Printează", action: () => { setPrintMode(true); setTimeout(() => { window.print(); setPrintMode(false); }, 500); } },
                         { icon: "↶", label: `Undo${undoStack.length > 0 ? ` (${undoStack.length})` : ""}`, action: undo, color: undoStack.length > 0 ? "" : "opacity-30 cursor-not-allowed" },
                         { icon: "↷", label: `Redo${redoStack.length > 0 ? ` (${redoStack.length})` : ""}`, action: redo, color: redoStack.length > 0 ? "" : "opacity-30 cursor-not-allowed" },
@@ -3313,7 +3312,6 @@ export default function EnergyCalcApp({ cloud }) {
                         { icon: "📊", label: "Export CSV", action: exportCSV },
                         { icon: "📗", label: "Export XLSX", action: exportExcel, color: "text-green-400" },
                         { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
-                        { icon: "📋", label: "Formular Audit", action: () => setShowAuditForm(true), color: "text-sky-300" },
                       ].map((item, i) => (
                         <button key={i}
                           onClick={() => { item.action(); setShowMoreMenu(false); }}
