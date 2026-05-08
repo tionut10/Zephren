@@ -1,31 +1,43 @@
 /**
- * cover-letter-pdf.js — T4 Sprint Tranziție 2026 (2 mai 2026)
+ * cover-letter-pdf.js — Scrisoare de însoțire PDF pentru depunere CPE la MDLPA
+ *
+ * T4 Sprint Tranziție 2026 (2 mai 2026) + Sprint Visual-2 (8 mai 2026)
  *
  * Generează „Scrisoare de însoțire" PDF pentru depunerea fizică a CPE la MDLPA
  * în perioada în care portalul electronic nu este operațional (până la 8.VII.2026,
- * conform Art. 19 alin. (3) Ord. MDLPA 348/2026 — 60 zile lucrătoare de la publicare).
+ * conform Art. 19 alin. (3) Ord. MDLPA 348/2026).
  *
- * Document conține:
- *   - Antet auditor (nume, atestat, grad, cod MDLPA)
- *   - Date clădire (adresă, cadastral, an, suprafață)
- *   - Cod unic CPE local generat
- *   - Lista anexelor depuse (XML, DOCX, PDF, foto etc.)
- *   - Declarație conformitate cu Mc 001-2022 + Ord. MDLPA aplicabil
- *   - Spațiu semnătură + ștampilă
- *
- * Format: A4 portret, 1 pagină.
+ * Layout (Sprint Visual-2 — 1 pagină A4 portret):
+ *   • Header brand (logo + cod CPE + dată)
+ *   • Titlu „SCRISOARE DE ÎNSOȚIRE" cu bară primary
+ *   • Destinatar MDLPA
+ *   • 3 secțiuni cu titluri brand: AUDITOR / CLĂDIRE / DOCUMENTE DEPUSE
+ *   • Declarație + notă tranziție în box
+ *   • Box semnătură 80×35mm + Box ștampilă cerc 40mm
+ *   • Footer brand (auditor + Pag X/Y + generator)
  */
 
 import { getAttestationOrdinanceLabel } from "../calc/auditor-attestation-validity.js";
 import { setupRomanianFont, makeTextWriter, normalizeForPdf, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  SPACING,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderSectionHeader,
+  renderSignatureBox,
+} from "./pdf-brand-layout.js";
 
 /**
  * Generează scrisoarea de însoțire ca PDF Blob și descarcă automat.
- *
- * Audit 7 mai 2026 (CR-1) — diacritice fix: cover-letter folosea Helvetica
- * direct fără setupRomanianFont, ducând la PDF cu „SCRISOARE DE ÎNSOIRE"
- * (litere spaced + diacritice eliminate). Acum încarcă Liberation Sans cu
- * fallback transliterare ASCII pentru text și autoTable.
  *
  * @param {object} args
  * @param {object} args.auditor — date auditor (name, atestat, grade, mdlpaCode, attestationIssueDate)
@@ -48,60 +60,86 @@ export async function generateCoverLetterPdf({
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
   const writeText = makeTextWriter(doc, fontOk);
   const norm = (t) => normalizeForPdf(t, fontOk);
-  const pageW = doc.internal.pageSize.getWidth();
-  const margin = 18;
-  const todayRO = new Date().toLocaleDateString("ro-RO", {
-    day: "2-digit", month: "long", year: "numeric",
-  });
+
   const ordLabel = getAttestationOrdinanceLabel(auditor.attestationIssueDate);
 
-  // Antet
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(14);
-  writeText("SCRISOARE DE ÎNSOȚIRE", pageW / 2, 22, { align: "center" });
-  doc.setFontSize(10);
-  doc.setFont(baseFont, "normal");
-  writeText(
-    "depunere fizică Certificat de Performanță Energetică",
-    pageW / 2, 28, { align: "center" }
-  );
-  doc.setDrawColor(180);
-  doc.line(margin, 32, pageW - margin, 32);
+  // Brand metadata
+  const brandMeta = buildBrandMetadata({
+    title: "Scrisoare de Însoțire",
+    cpeCode,
+    building: {
+      address: building.address,
+      category: building.category || building.building_type,
+      areaUseful: building.areaUseful || building.useful_area,
+      year: building.yearBuilt || building.year_built,
+      cadastral: building.cadastralNumber || building.cadastral_number,
+    },
+    auditor: {
+      name: auditor.name,
+      atestat: auditor.atestat || auditor.license_number,
+      grade: auditor.grade,
+      firm: auditor.company || auditor.firm,
+    },
+    docType: "cover-letter",
+    version: "v4.0",
+  });
 
-  // Destinatar
-  let y = 40;
+  // ── Header brand
+  applyBrandHeader(doc, brandMeta);
+
+  // ── Titlu central cu bară primary
+  let y = A4.MARGIN_TOP + 4;
   doc.setFont(baseFont, "bold");
-  doc.setFontSize(10);
-  writeText("Către:", margin, y);
+  doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("SCRISOARE DE ÎNSOȚIRE", A4.WIDTH / 2, y, { align: "center" });
+  y += 6;
   doc.setFont(baseFont, "normal");
-  writeText("Ministerul Dezvoltării, Lucrărilor Publice și Administrației (MDLPA)", margin + 16, y);
+  doc.setFontSize(FONT_SIZES.H3);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("depunere fizică Certificat de Performanță Energetică", A4.WIDTH / 2, y, { align: "center" });
+  y += 3;
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(A4.WIDTH / 2 - 30, y, A4.WIDTH / 2 + 30, y);
+  y += SPACING.LG;
+
+  // ── Destinatar
+  doc.setFont(baseFont, "bold");
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("Către:", A4.MARGIN_LEFT, y);
+  doc.setFont(baseFont, "normal");
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  writeText("Ministerul Dezvoltării, Lucrărilor Publice și Administrației (MDLPA)", A4.MARGIN_LEFT + 16, y);
   y += 5;
-  writeText("Direcția Atestări — Registrul Auditorilor Energetici", margin + 16, y);
+  writeText("Direcția Atestări — Registrul Auditorilor Energetici", A4.MARGIN_LEFT + 16, y);
   y += 5;
-  writeText("Adresa: Str. Apolodor nr. 17, sector 5, București", margin + 16, y);
+  writeText("Adresa: Str. Apolodor nr. 17, sector 5, București", A4.MARGIN_LEFT + 16, y);
 
-  // Data + Cod CPE
-  y += 10;
+  // ── Data + Cod CPE (în-line, evidențiate)
+  y += SPACING.LG;
   doc.setFont(baseFont, "bold");
-  writeText("Data:", margin, y);
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("Data:", A4.MARGIN_LEFT, y);
   doc.setFont(baseFont, "normal");
-  writeText(todayRO, margin + 16, y);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  writeText(brandMeta.dateText, A4.MARGIN_LEFT + 16, y);
   y += 5;
   doc.setFont(baseFont, "bold");
-  writeText("Cod CPE:", margin, y);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("Cod CPE:", A4.MARGIN_LEFT, y);
   doc.setFont(baseFont, "normal");
-  writeText(cpeCode || "—", margin + 22, y);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "text");
+  writeText(cpeCode || "—", A4.MARGIN_LEFT + 22, y);
 
-  // Date auditor
-  y += 10;
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(11);
-  writeText("AUDITOR ENERGETIC", margin, y);
-  doc.setLineWidth(0.2);
-  doc.line(margin, y + 1, margin + 60, y + 1);
-  doc.setFontSize(10);
+  // ── Date auditor
+  y += SPACING.LG;
+  y = renderSectionHeader(doc, "Auditor energetic", y);
 
-  y += 7;
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const auditorRows = [
     ["Nume:", auditor.name || "—"],
     ["Nr. atestat:", auditor.atestat || auditor.license_number || "—"],
@@ -111,112 +149,132 @@ export async function generateCoverLetterPdf({
   ];
   for (const [k, v] of auditorRows) {
     doc.setFont(baseFont, "bold");
-    writeText(k, margin, y);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+    writeText(k, A4.MARGIN_LEFT, y);
     doc.setFont(baseFont, "normal");
-    writeText(String(v), margin + 36, y);
+    setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+    writeText(String(v), A4.MARGIN_LEFT + 36, y);
     y += 5;
   }
 
-  // Date clădire
-  y += 5;
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(11);
-  writeText("CLĂDIRE CERTIFICATĂ", margin, y);
-  doc.line(margin, y + 1, margin + 60, y + 1);
-  doc.setFontSize(10);
-  y += 7;
+  // ── Date clădire
+  y += SPACING.SM;
+  y = renderSectionHeader(doc, "Clădire certificată", y);
+
+  doc.setFontSize(FONT_SIZES.BODY);
   const buildingRows = [
     ["Adresă:", building.address || "—"],
     ["Localitate / județ:", `${building.locality || building.city || "—"} / ${building.county || "—"}`],
     ["Nr. cadastral:", building.cadastralNumber || building.cadastral_number || "—"],
     ["Carte funciară:", building.landBook || "—"],
     ["An construcție:", building.yearBuilt || building.year_built || "—"],
-    ["Suprafață utilă:", building.areaUseful || building.useful_area ? `${building.areaUseful || building.useful_area} m²` : "—"],
+    ["Suprafață utilă:", (building.areaUseful || building.useful_area) ? `${building.areaUseful || building.useful_area} m²` : "—"],
     ["Destinație:", building.category || building.building_type || "rezidențial"],
   ];
   for (const [k, v] of buildingRows) {
     doc.setFont(baseFont, "bold");
-    writeText(k, margin, y);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+    writeText(k, A4.MARGIN_LEFT, y);
     doc.setFont(baseFont, "normal");
-    writeText(String(v), margin + 42, y);
+    setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+    writeText(String(v), A4.MARGIN_LEFT + 42, y);
     y += 5;
   }
 
-  // Lista atașamente
-  y += 5;
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(11);
-  writeText("DOCUMENTE DEPUSE", margin, y);
-  doc.line(margin, y + 1, margin + 60, y + 1);
-  doc.setFontSize(10);
-  y += 7;
+  // ── Lista atașamente
+  y += SPACING.SM;
+  y = renderSectionHeader(doc, "Documente depuse", y);
+
   doc.setFont(baseFont, "normal");
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   if (!attachments || attachments.length === 0) {
-    writeText("(Lista atașamentelor se completează manual)", margin, y);
+    doc.setFont(baseFont, "italic");
+    setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+    writeText("(Lista atașamentelor se completează manual)", A4.MARGIN_LEFT, y);
     y += 5;
   } else {
     attachments.forEach((att, i) => {
       const sizeStr = att.sizeMB ? ` (${att.sizeMB.toFixed(2)} MB)` : "";
       const line = `${i + 1}. ${att.name || "fișier"}${sizeStr}`;
-      writeText(line, margin, y);
+      writeText(line, A4.MARGIN_LEFT, y);
       y += 5;
     });
   }
 
-  // Declarație
-  y += 5;
+  // ── Declarație + notă tranziție în box-uri evidențiate
+  y += SPACING.MD;
+  // Box declarație
   doc.setFont(baseFont, "bold");
-  doc.setFontSize(10);
-  writeText("DECLARAȚIE:", margin, y);
+  doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
+  writeText("DECLARAȚIE:", A4.MARGIN_LEFT, y);
   y += 5;
   doc.setFont(baseFont, "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const decl = `Subsemnatul, în calitate de auditor energetic atestat, declar pe propria răspundere că ` +
     `documentele anexate (CPE + Anexa 1 + Anexa 2) sunt complete și conforme cu metodologia ` +
     `Mc 001-2022, ${ordLabel.short} și prevederile Legii 372/2005 R2. Solicit înregistrarea ` +
     `prezentului CPE în Registrul Național al Auditorilor Energetici.`;
-  const declLines = doc.splitTextToSize(norm(decl), pageW - 2 * margin);
-  doc.text(declLines, margin, y);
-  y += declLines.length * 4 + 4;
+  const declLines = doc.splitTextToSize(norm(decl), A4.CONTENT_WIDTH);
+  doc.text(declLines, A4.MARGIN_LEFT, y);
+  y += declLines.length * 4 + SPACING.SM;
 
-  // Notă tranziție portal
-  doc.setFontSize(8);
-  doc.setTextColor(110);
-  const transNote =
-    "[!] Notă tranziție: documentul este generat în perioada de tranziție Ord. MDLPA 348/2026 " +
-    "(14.IV.2026 → 11.X.2026), când portalul electronic MDLPA pentru distincția Ici/IIci nu " +
-    "este încă operațional (start prevăzut 8.VII.2026). Depunerea se efectuează prin procedura " +
-    "veche (fizică / email birou.atestari@mdlpa.ro).";
-  const transLines = doc.splitTextToSize(norm(transNote), pageW - 2 * margin);
-  doc.text(transLines, margin, y);
-  y += transLines.length * 3.5 + 6;
-  doc.setTextColor(0);
-
-  // Spațiu semnătură + ștampilă
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(10);
-  writeText("Semnătura auditor:", margin, y);
-  writeText("Ștampilă (Ø 40 mm):", pageW / 2 + 5, y);
-  doc.setLineWidth(0.3);
-  doc.rect(margin, y + 2, 70, 25);
-  doc.circle(pageW / 2 + 25, y + 14, 12);
-
-  // Footer
-  doc.setFont(baseFont, "italic");
-  doc.setFontSize(7);
-  doc.setTextColor(140);
-  writeText(
-    `Generat de Zephren Energy Calculator · ${todayRO} · ${ordLabel.short}`,
-    pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" }
+  // Notă tranziție în fundal warning subtil
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_FAINT, "fill");
+  const noteLines = doc.splitTextToSize(
+    norm(
+      "Notă tranziție: documentul este generat în perioada de tranziție Ord. MDLPA 348/2026 " +
+      "(14.IV.2026 → 11.X.2026), când portalul electronic MDLPA pentru distincția Ici/IIci nu " +
+      "este încă operațional (start prevăzut 8.VII.2026). Depunerea se efectuează prin procedura " +
+      "veche (fizică / email birou.atestari@mdlpa.ro).",
+    ),
+    A4.CONTENT_WIDTH - 4,
   );
+  const noteHeight = noteLines.length * 3.5 + 4;
+  doc.rect(A4.MARGIN_LEFT, y, A4.CONTENT_WIDTH, noteHeight, "F");
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.MEDIUM);
+  doc.line(A4.MARGIN_LEFT, y, A4.MARGIN_LEFT, y + noteHeight);
+  doc.setFont(baseFont, "italic");
+  doc.setFontSize(FONT_SIZES.FOOTER);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  doc.text(noteLines, A4.MARGIN_LEFT + 2, y + 4);
+  y += noteHeight + SPACING.LG;
+
+  // ── Spațiu semnătură + ștampilă (folosind renderSignatureBox)
+  // Box semnătură stânga (auditor)
+  renderSignatureBox(doc, A4.MARGIN_LEFT, y, {
+    label: "SEMNĂTURĂ AUDITOR",
+    name: auditor.name,
+    atestat: auditor.atestat || auditor.license_number,
+    date: brandMeta.dateText,
+    width: 80,
+    height: 35,
+  });
+
+  // Cerc ștampilă dreapta (Ø 40mm)
+  setBrandColor(doc, BRAND_COLORS.SLATE_400, "draw");
+  doc.setLineWidth(STROKE_WIDTH.THIN);
+  doc.circle(A4.WIDTH - A4.MARGIN_RIGHT - 25, y + 14, 12);
+  doc.setFont(baseFont, "italic");
+  doc.setFontSize(FONT_SIZES.FOOTER);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("Ștampilă", A4.WIDTH - A4.MARGIN_RIGHT - 25, y + 31, { align: "center" });
+  writeText("(Ø 40 mm)", A4.WIDTH - A4.MARGIN_RIGHT - 25, y + 34, { align: "center" });
+
+  // ── Footer brand
+  applyBrandFooter(doc, brandMeta, 1, 1, {
+    legalText: `Mc 001-2022 · ${ordLabel.short} · Legea 372/2005 R2`,
+  });
 
   const blob = doc.output("blob");
   if (download) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Scrisoare_insotire_CPE_${cpeCode || "draft"}_${new Date()
-      .toISOString().slice(0, 10)}.pdf`;
+    a.download = `Scrisoare_insotire_CPE_${cpeCode || "draft"}_${formatRomanianDate(new Date(), "iso")}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();

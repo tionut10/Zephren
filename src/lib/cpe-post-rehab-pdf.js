@@ -54,6 +54,11 @@ import {
   renderSignatureBox,
 } from "./pdf-brand-layout.js";
 
+import {
+  renderBarChart,
+  renderPieChart,
+} from "./pdf-brand-charts.js";
+
 const CLASS_COLORS_RGB = {
   A: [22, 163, 74],
   B: [132, 204, 22],
@@ -482,7 +487,25 @@ export async function exportCpePostRehabPDF(params = {}) {
       ["Energie finală anuală totală (kWh)", `${fmt(annualKwhSaved, 0)} salvați/an`, `${fmt(co2TotalSavedKg, 0)} kg CO₂/an`],
     ],
   });
-  y = doc.lastAutoTable.finalY + SPACING.LG;
+  y = doc.lastAutoTable.finalY + SPACING.MD;
+
+  // Sprint Visual-3: Bar chart vizual EP+CO₂ baseline vs post (compact 70mm înălțime)
+  if (Number.isFinite(orig?.ep) && Number.isFinite(reh?.ep)) {
+    renderBarChart(doc, A4.MARGIN_LEFT, y, A4.CONTENT_WIDTH, 38, {
+      title: "Evoluție indicatori — baseline vs post-reabilitare",
+      data: [
+        { label: "EP actual", value: orig.ep, color: BRAND_COLORS.DANGER },
+        { label: "EP post-rehab", value: reh.ep, color: BRAND_COLORS.SUCCESS },
+        { label: "CO₂ actual", value: orig.co2, color: BRAND_COLORS.DANGER },
+        { label: "CO₂ post-rehab", value: reh.co2, color: BRAND_COLORS.SUCCESS },
+      ],
+      orientation: "vertical",
+      unit: "kWh/m²·an / kg CO₂",
+      showValues: true,
+      showGrid: true,
+    });
+    y += 38 + SPACING.LG;
+  }
 
   // ── 4. MĂSURI INCLUSE ──
   if (measures.length > 0) {
@@ -532,6 +555,27 @@ export async function exportCpePostRehabPDF(params = {}) {
     ];
     lines.forEach((line) => { doc.text(line, A4.MARGIN_LEFT, y); y += 5; });
     y += SPACING.SM;
+
+    // Sprint Visual-3: Donut chart distribuție costuri măsuri (dacă mai e loc)
+    if (measures.length >= 2 && y < A4.HEIGHT - 70) {
+      const pieData = measures
+        .filter(m => (m.cost || 0) > 0)
+        .map(m => ({
+          label: m.label.length > 20 ? m.label.slice(0, 19) + "…" : m.label,
+          value: m.cost || 0,
+        }));
+      if (pieData.length >= 2) {
+        // Pie chart pe stânga + legendă pe dreapta — folosim renderPieChart
+        renderPieChart(doc, A4.MARGIN_LEFT + 25, y + 25, 22, {
+          data: pieData,
+          title: "Distribuție costuri pe măsură",
+          donut: true,
+          showLegend: true,
+          showPercentages: true,
+        });
+        y += 60;
+      }
+    }
   }
 
   // ── 5. SEMNĂTURĂ AUDITOR ──

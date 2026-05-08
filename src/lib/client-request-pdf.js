@@ -1,32 +1,42 @@
 /**
  * client-request-pdf.js — Cerere oficială client → auditor pentru CPE/Audit.
  *
+ * Sprint Conformitate P0-04 (6 mai 2026) + Sprint Visual-2 (8 mai 2026).
+ *
  * Document inițial al dosarului energetic: clientul completează datele de bază,
  * descrie scopul și semnează olograf. Auditorul folosește această cerere ca
  * baza juridică pentru deschiderea dosarului (Art. 6 alin. 1 Ord. 348/2026).
  *
  * Conține:
- *   1. Antet + identificare proprietar (nume/CNP/CUI/adresă/contact)
+ *   1. Antet brand + identificare proprietar (nume/CNP/CUI/adresă/contact)
  *   2. Date clădire (adresă/cadastral/categorie/suprafață/an/scop)
  *   3. Servicii solicitate (CPE / Audit / Pașaport / Roadmap nZEB)
  *   4. Documente atașate (declarate de client — checklist)
  *   5. Acord GDPR pentru prelucrare date personale (Reg. UE 2016/679)
- *   6. Loc + dată + semnătură olograf client
+ *   6. Box semnătură olograf client + footer brand
  *
  * Bază legală:
  *   - Art. 6 alin. 1 Ord. MDLPA 348/2026 — auditor primește cerere scrisă
  *   - HG 273/1994 — documentația obligatorie pentru clădiri
  *   - GDPR (Reg. UE 2016/679 + Legea 190/2018 RO)
  *   - AFM Casa Eficientă 2026 — cerere obligatorie în dosar finanțare
- *
- * Sprint Conformitate P0-04 (6 mai 2026).
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
-
-const TODAY_RO = () => new Date().toLocaleDateString("ro-RO", {
-  day: "2-digit", month: "long", year: "numeric",
-});
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderSignatureBox,
+} from "./pdf-brand-layout.js";
 
 function _safeSlug(s) {
   return String(s || "")
@@ -62,31 +72,75 @@ export async function generateClientRequestPdf({
   const fontOk = await setupRomanianFont(doc);
   const writeText = makeTextWriter(doc, fontOk);
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
-  const M = 20;
-  const pageW = doc.internal.pageSize.getWidth();
-  const lineW = pageW - 2 * M;
-  let y = 22;
+  const M = A4.MARGIN_LEFT;
+  const pageW = A4.WIDTH;
+  const lineW = A4.CONTENT_WIDTH;
 
-  // ── Antet ────────────────────────────────────────────────────────────
-  doc.setFont(baseFont, "bold"); doc.setFontSize(14);
+  // Brand metadata
+  const brandMeta = buildBrandMetadata({
+    title: "Cerere Documentație Energetică",
+    cpeCode: "CR-" + formatRomanianDate(requestDate, "iso"),
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    auditor: {
+      name: auditor.name,
+      atestat: auditor.atestat,
+      grade: auditor.grade,
+      firm: auditor.company,
+    },
+    date: requestDate,
+    docType: "client-request",
+    version: "v4.0",
+  });
+
+  // ── Header brand
+  applyBrandHeader(doc, brandMeta);
+
+  let y = A4.MARGIN_TOP + 4;
+
+  // ── Antet titlu ──
+  doc.setFont(baseFont, "bold");
+  doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   writeText("CERERE", pageW / 2, y, { align: "center" });
-  y += 6;
+  y += 7;
+  doc.setFontSize(FONT_SIZES.H3);
+  doc.setFont(baseFont, "normal");
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   writeText("pentru elaborare documentație energetică", pageW / 2, y, { align: "center" });
-  y += 5;
-  doc.setFontSize(10); doc.setFont(baseFont, "normal"); doc.setTextColor(80, 80, 100);
+  y += 4;
+  // Bară primary
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(pageW / 2 - 25, y, pageW / 2 + 25, y);
+  y += 4;
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   writeText("Conform Art. 6 alin. 1 Ord. MDLPA 348/2026 + L. 372/2005 republicată cu L. 238/2024",
     pageW / 2, y, { align: "center" });
   y += 8;
-  doc.setTextColor(0, 0, 0);
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
 
-  // ── Helper: secțiune cu titlu îngroșat + subtitle ───────────────────
+  // ── Helper: secțiune cu titlu (brand colors)
   const section = (title) => {
-    if (y > 250) { doc.addPage(); y = 22; }
-    doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-    doc.setFillColor(35, 41, 70); doc.rect(M, y - 4, lineW, 6, "F");
-    doc.setTextColor(251, 191, 36);
+    if (y > 250) {
+      applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+      doc.addPage();
+      applyBrandHeader(doc, brandMeta);
+      y = A4.MARGIN_TOP + 4;
+    }
+    doc.setFont(baseFont, "bold");
+    doc.setFontSize(FONT_SIZES.H3);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "fill");
+    doc.rect(M, y - 4, lineW, 6, "F");
+    setBrandColor(doc, BRAND_COLORS.WHITE, "text");
     writeText(title, M + 2, y + 0.5);
-    doc.setTextColor(0, 0, 0);
+    setBrandColor(doc, BRAND_COLORS.BLACK, "text");
     y += 5;
   };
 
@@ -212,37 +266,39 @@ export async function generateClientRequestPdf({
   }
 
   // ── Loc + Dată + Semnătură ──────────────────────────────────────────
-  if (y > 240) { doc.addPage(); y = 22; }
+  if (y > 240) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
   y += 6;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(10);
-  const dateStr = requestDate.toLocaleDateString("ro-RO", {
-    day: "2-digit", month: "long", year: "numeric",
-  });
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   writeText(`Locul: ${client.city || "_______________________"}`, M, y);
-  writeText(`Data: ${dateStr}`, pageW - M - 60, y);
-  y += 18;
+  writeText(`Data: ${brandMeta.dateText}`, pageW - M - 60, y);
+  y += 8;
 
-  // Linie semnătură + label
-  doc.setDrawColor(80, 80, 100);
-  doc.line(M, y, M + 80, y);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 130);
-  writeText("Semnătură olograf solicitant", M, y + 4);
-  if (isPJ) writeText("(+ ștampilă companie pentru PJ)", M, y + 7.5);
-  doc.setTextColor(0, 0, 0);
+  // ── Box semnătură brand kit
+  renderSignatureBox(doc, M, y, {
+    label: isPJ ? "SEMNĂTURĂ OLOGRAF + ȘTAMPILĂ" : "SEMNĂTURĂ OLOGRAF SOLICITANT",
+    name: client.name,
+    atestat: isPJ && client.cui ? `CUI ${client.cui}` : "",
+    date: brandMeta.dateText,
+    width: 90,
+    height: 35,
+  });
 
-  // ── Footer juridic ──────────────────────────────────────────────────
-  const footerY = 285;
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, footerY, pageW - M, footerY);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText(
-    "Generat de Zephren — Calculator energetic clădiri (zephren.ro). " +
-    `Document emis: ${TODAY_RO()}. Bază legală: Mc 001-2022, Ord. MDLPA 16/2023, Ord. MDLPA 348/2026.`,
-    M, footerY + 4, { maxWidth: lineW },
-  );
+  // ── Footer brand (înlocuire footer juridic custom)
+  // Recalculează totalul paginilor (post addPage-uri)
+  const totalPages = doc.internal.getNumberOfPages();
+  // Aplică footer pe pagina curentă — paginile anterioare au footer-ele aplicate la addPage
+  applyBrandFooter(doc, brandMeta, totalPages, totalPages, {
+    legalText: "Mc 001-2022 · Ord. MDLPA 348/2026 · L. 372/2005 R2 · GDPR Reg. UE 2016/679",
+  });
 
   // ── Save ────────────────────────────────────────────────────────────
-  const fname = `Cerere_${_safeSlug(client.name || building.address || "client").slice(0, 40)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fname = `Cerere_${_safeSlug(client.name || building.address || "client").slice(0, 40)}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }

@@ -1,17 +1,33 @@
 /**
  * dossier-extras.js — Documente suplimentare dosar reabilitare 100%
  *
- * Sprint P2 audit Pas 7 (06 mai 2026) — implementează 4 documente normative
- * lipsă din pachetul Pas 7:
+ * Sprint P2 audit Pas 7 (06 mai 2026) + Sprint Visual-2 (8 mai 2026)
+ *
+ * Implementează 4 documente normative lipsă din pachetul Pas 7:
  *   1. FIC  — Fișa Identitate Clădire (Mc 001-2022 Anexa G)
  *   2. DCA — Declarație de conformitate auditor (Ord. 348/2026 Anexa I)
  *   3. SHA — Manifest hash SHA-256 (Ord. 348/2026 Art. 11 — deduplicare MDLPA)
  *   4. M&V — Plan monitorizare consum post-renovare (IPMVP Opțiunea C)
  *
- * Toate folosesc jsPDF + setupRomanianFont pentru diacritice native.
+ * Sprint Visual-2: aplicare brand kit (header brand verde Zephren + section
+ * headers + footer Pag X/Y) pe FIC și M&V (cele 2 sub-docs principale din
+ * bundle audit). DCA + SHA păstrate ca fallback până la Sprint Visual-3.
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+} from "./pdf-brand-layout.js";
 
 const TODAY_RO = new Date().toLocaleDateString("ro-RO", {
   day: "2-digit", month: "long", year: "numeric",
@@ -59,40 +75,78 @@ export async function generateFICPdf({
   const fontOk = await setupRomanianFont(doc);
   const writeText = makeTextWriter(doc, fontOk);
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
-  const M = 18;
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = 18;
+  const M = A4.MARGIN_LEFT;
+  const pageW = A4.WIDTH;
 
-  // Antet
-  doc.setFont(baseFont, "bold"); doc.setFontSize(15);
-  writeText("FIȘA DE IDENTITATE A CLĂDIRII (FIC)", pageW / 2, y, { align: "center" });
+  // Sprint Visual-2: brand metadata pentru header/footer
+  const brandMeta = buildBrandMetadata({
+    title: "Fișa de Identitate a Clădirii (FIC)",
+    cpeCode: building?.cpeCode || `FIC-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    auditor: {
+      name: auditor.name,
+      atestat: auditor.atestat,
+      grade: auditor.grade,
+      firm: auditor.company || auditor.firm,
+    },
+    docType: "fic",
+    version: "v4.0",
+  });
+
+  // Header brand
+  applyBrandHeader(doc, brandMeta);
+  let y = A4.MARGIN_TOP + 4;
+
+  // Antet titlu cu bară primary
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("FIȘA DE IDENTITATE A CLĂDIRII", pageW / 2, y, { align: "center" });
   y += 6;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9); doc.setTextColor(80, 80, 100);
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.H3);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   writeText("Mc 001-2022 Anexa G — date de bază pentru analiza energetică", pageW / 2, y, { align: "center" });
   y += 4;
-  writeText(`Data emiterii: ${TODAY_RO}`, pageW / 2, y, { align: "center" });
+  // Bară primary
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
+  y += 4;
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText(`Data emiterii: ${brandMeta.dateText}`, pageW / 2, y, { align: "center" });
   y += 8;
-  doc.setTextColor(0, 0, 0);
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
 
-  // Helper rând tabel
+  // Helper rând tabel cu brand colors
   const rowH = 6;
   const drawRow = (label, value, isHeader = false) => {
     if (isHeader) {
-      doc.setFillColor(35, 41, 70);
+      // Section header — fundal SLATE_900 (era custom [35, 41, 70])
+      setBrandColor(doc, BRAND_COLORS.SLATE_900, "fill");
       doc.rect(M, y, pageW - 2 * M, rowH + 1, "F");
-      doc.setTextColor(251, 191, 36);
-      doc.setFont(baseFont, "bold"); doc.setFontSize(9);
+      setBrandColor(doc, BRAND_COLORS.WHITE, "text"); // text alb (era custom [251, 191, 36] amber)
+      doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TABLE_HEADER);
       writeText(label, M + 2, y + 4.2);
-      doc.setTextColor(0, 0, 0);
+      setBrandColor(doc, BRAND_COLORS.BLACK, "text");
       y += rowH + 1;
       return;
     }
-    doc.setDrawColor(200, 200, 220);
+    // Border subțire SLATE_200
+    setBrandColor(doc, BRAND_COLORS.SLATE_200, "draw");
     doc.line(M, y, pageW - M, y);
-    doc.setFont(baseFont, "bold"); doc.setFontSize(8.5);
+    doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TABLE_BODY);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     writeText(label, M + 2, y + 4);
     doc.setFont(baseFont, "normal");
+    setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
     writeText(String(value || "—"), M + 75, y + 4);
+    setBrandColor(doc, BRAND_COLORS.BLACK, "text");
     y += rowH;
   };
 
@@ -184,20 +238,15 @@ export async function generateFICPdf({
   drawRow("Nume auditor", auditor.name);
   drawRow("Atestat MDLPA", `${auditor.atestat || "—"} / ${auditor.grade || "—"}`);
   drawRow("Companie / PFA", auditor.company || auditor.firm);
-  drawRow("Data întocmirii FIC", TODAY_RO);
+  drawRow("Data întocmirii FIC", brandMeta.dateText);
 
-  // Footer
-  y = Math.max(y + 12, 268);
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, y, pageW - M, y);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Mc 001-2022 Metodologia de calcul al performanței energetice a clădirilor — Partea I, Anexa G.",
-    M, y + 4);
-  writeText("Documentul reflectă datele Pas 1-7 din Zephren la momentul exportului.", M, y + 8);
-  doc.setTextColor(0, 0, 0);
+  // Footer brand (înlocuire footer custom)
+  applyBrandFooter(doc, brandMeta, 1, 1, {
+    legalText: "Mc 001-2022 Anexa G — Metodologia de calcul al performanței energetice a clădirilor",
+  });
 
   // Save
-  const fname = `FIC_${_safeSlug(building.address || "cladire").slice(0, 40)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fname = `FIC_${_safeSlug(building.address || "cladire").slice(0, 40)}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }
@@ -726,30 +775,63 @@ export async function generateMonitoringPlanPdf({
   const fontOk = await setupRomanianFont(doc);
   const writeText = makeTextWriter(doc, fontOk);
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
-  const M = 18;
-  const pageW = doc.internal.pageSize.getWidth();
-  const lineMaxW = pageW - 2 * M;
-  let y = 22;
+  const M = A4.MARGIN_LEFT;
+  const pageW = A4.WIDTH;
+  const lineMaxW = A4.CONTENT_WIDTH;
 
-  // Antet
-  doc.setFont(baseFont, "bold"); doc.setFontSize(14);
-  writeText("PLAN DE MONITORIZARE ȘI VERIFICARE (M&V)", pageW / 2, y, { align: "center" });
+  // Sprint Visual-2: brand metadata
+  const brandMeta = buildBrandMetadata({
+    title: "Plan M&V IPMVP — post-renovare",
+    cpeCode: building?.cpeCode || `MV-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    auditor: {
+      name: auditor.name,
+      atestat: auditor.atestat,
+      grade: auditor.grade,
+      firm: auditor.company || auditor.firm,
+    },
+    docType: "plan-mv-ipmvp",
+    version: "v4.0",
+  });
+
+  // Header brand
+  applyBrandHeader(doc, brandMeta);
+  let y = A4.MARGIN_TOP + 4;
+
+  // Antet titlu cu bară primary
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("PLAN DE MONITORIZARE ȘI VERIFICARE", pageW / 2, y, { align: "center" });
   y += 6;
-  doc.setFontSize(11);
+  doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   writeText("post-renovare energetică", pageW / 2, y, { align: "center" });
+  y += 4;
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
   y += 5;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9); doc.setTextColor(80, 80, 100);
-  writeText("Conform IPMVP — International Performance Measurement & Verification Protocol",
+  doc.setFont(baseFont, "italic"); doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("IPMVP — International Performance Measurement & Verification Protocol",
     pageW / 2, y, { align: "center" });
   y += 4;
   writeText("Opțiunea C — Verificare bazată pe facturile întregii clădiri",
     pageW / 2, y, { align: "center" });
-  y += 10;
-  doc.setTextColor(0, 0, 0);
+  y += 8;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
 
   // 1. Date proiect
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("1. Date proiect", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   doc.setDrawColor(180, 180, 200);
   const drawKV = (k, v) => {
@@ -767,8 +849,10 @@ export async function generateMonitoringPlanPdf({
   y += 5;
 
   // 2. Baseline pre-renovare
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("2. Baseline pre-renovare", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   drawKV("EP total baseline", `${instSummary.ep_total_m2 ? Number(instSummary.ep_total_m2).toFixed(1) : "—"} kWh/m²·an`);
   drawKV("Energie finală baseline", `${instSummary.qf_total ? Math.round(instSummary.qf_total) : "—"} kWh/an`);
@@ -779,8 +863,10 @@ export async function generateMonitoringPlanPdf({
   y += 5;
 
   // 3. Variabile măsurate
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("3. Variabile măsurate (post-renovare)", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9);
   const vars = [
     "• Energie finală totală [kWh/an] — sumă lunară facturi pentru toate utilitățile.",
@@ -796,8 +882,10 @@ export async function generateMonitoringPlanPdf({
   y += 4;
 
   // 4. Frecvență raportare
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("4. Frecvență raportare M&V", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   drawKV("Raport intermediar", "La 6 luni post-finalizare lucrări (date 6 luni)");
   drawKV("Raport anual M&V", "12 luni post-finalizare (comparație baseline vs actual)");
@@ -806,8 +894,10 @@ export async function generateMonitoringPlanPdf({
   y += 5;
 
   // 5. Formula calcul economii
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("5. Calcul economii (IPMVP Opțiunea C)", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   const formula = [
     "Savings [kWh/an] = (E_baseline − E_actual_post) × adjustment_factor",
@@ -826,8 +916,10 @@ export async function generateMonitoringPlanPdf({
   if (y > 220) { doc.addPage(); y = 22; }
 
   // 6. Scenariu monitorizat
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("6. Scenariu de renovare monitorizat", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
   drawKV("Investiție totală", `${scenario.totalCost_RON ? Math.round(scenario.totalCost_RON).toLocaleString("ro-RO") : "—"} RON`);
   drawKV("Economie estimată anuală", `${scenario.expectedSavings_RON_y ? Math.round(scenario.expectedSavings_RON_y).toLocaleString("ro-RO") : "—"} RON/an`);
@@ -843,8 +935,10 @@ export async function generateMonitoringPlanPdf({
   y += 5;
 
   // 7. Responsabilități
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.H2);
+  setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   writeText("7. Responsabilități părți", M, y); y += 5;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9);
   const responsabilitati = [
     "Beneficiar (proprietar/asociație):",
@@ -861,20 +955,44 @@ export async function generateMonitoringPlanPdf({
     writeText(l, M + 2, y); y += 4.2;
   });
 
-  if (y > 250) { doc.addPage(); y = 22; }
+  if (y > 230) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
   y += 8;
 
-  // Semnături
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
-  writeText(`Data: ${TODAY_RO}`, M, y);
-  y += 12;
-  doc.line(M, y, M + 70, y);
-  doc.line(pageW - M - 70, y, pageW - M, y);
-  doc.setFontSize(8.5);
-  writeText("Auditor M&V (semnătură + ștampilă)", M, y + 4);
-  writeText("Beneficiar (semnătură)", pageW - M - 70, y + 4);
+  // Sprint Visual-2: box-uri semnătură brand kit (replace simplu line + label)
+  const { renderSignatureBox } = await import("./pdf-brand-layout.js");
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+  writeText(`Data: ${brandMeta.dateText}`, M, y);
+  y += 6;
 
-  const fname = `plan_monitorizare_M&V_${_safeSlug(building.address || "cladire").slice(0, 40)}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  renderSignatureBox(doc, M, y, {
+    label: "AUDITOR M&V",
+    name: auditor.name,
+    atestat: auditor.atestat ? `Atestat ${auditor.atestat}` : "",
+    date: brandMeta.dateText,
+    width: 75,
+    height: 35,
+  });
+  renderSignatureBox(doc, pageW - M - 75, y, {
+    label: "BENEFICIAR",
+    name: building?.owner || "",
+    atestat: "",
+    date: brandMeta.dateText,
+    width: 75,
+    height: 35,
+  });
+
+  // Footer brand
+  applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages(), {
+    legalText: "IPMVP Volume I (EVO 10000-1:2022) · Mc 001-2022 §11 · Ord. MDLPA 348/2026",
+  });
+
+  const fname = `plan_monitorizare_M&V_${_safeSlug(building.address || "cladire").slice(0, 40)}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }
