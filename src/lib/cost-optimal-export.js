@@ -1,19 +1,42 @@
 /**
  * cost-optimal-export.js — Export curbă cost-optim ca PDF + XLSX.
  *
+ * Sprint Conformitate P1-04 (7 mai 2026) + Sprint Visual-10 (8 mai 2026).
+ *
  * Conform Reg. UE 244/2012 + Reg. UE 2014/1051 — curba cost-optim e document
  * oficial pentru autorizare DTAC + dosar finanțare AFM/POR/PNRR.
  *
  * Output:
- *   - PDF A4 cu sumar pachete + analiză sensibilitate per scenariu (low/expected/high)
- *     + perspective EN 15459-1 (financiar / macro / social)
+ *   - PDF A4 cu cover page brand + bar chart pachete (V10) + sumar pachete +
+ *     analiză sensibilitate per scenariu (low/expected/high) + perspective
+ *     EN 15459-1 (financiar / macro / social) + QR cod verificare
  *   - XLSX cu 3 tab-uri: Pachete, Sensibilitate, Sumar
  *
- * Sprint Conformitate P1-04 (7 mai 2026).
+ * Sprint Visual-10: aplicare brand kit verde Zephren + bar chart costuri
+ * pachete + QR cod verificare integritate (înlocuiește header amber custom
+ * + footer linie simplu).
  *
  * INTEGRARE: CostOptimalCurve.jsx adaugă 2 butoane (PDF + XLSX) lângă graficul
  * existent. Modulul rămâne disponibil pentru consumatori externi.
  */
+
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderSectionHeader,
+  renderQrCode,
+  buildVerifyUrl,
+} from "./pdf-brand-layout.js";
+import { renderBarChart } from "./pdf-brand-charts.js";
 
 /**
  * Format helper: număr cu zecimale și separator RO.
@@ -55,60 +78,112 @@ export async function exportCostOptimalPdf({
   const fontOk = await setupRomanianFont(doc);
   const writeText = makeTextWriter(doc, fontOk);
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
-  const M = 18;
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = 22;
+  const M = A4.MARGIN_LEFT;
+  const pageW = A4.WIDTH;
 
-  // Antet
-  doc.setFont(baseFont, "bold"); doc.setFontSize(15);
-  writeText("ANALIZĂ COST-OPTIM PACHETE RENOVARE", pageW / 2, y, { align: "center" });
+  // Sprint Visual-10: brand metadata pentru header/footer/QR
+  const brandMeta = buildBrandMetadata({
+    title: "Analiză Cost-Optim Pachete Renovare",
+    cpeCode: cpeCode || `CO-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    docType: "cost-optim",
+    version: "v4.0",
+  });
+
+  // Header brand
+  applyBrandHeader(doc, brandMeta);
+  let y = A4.MARGIN_TOP + 4;
+
+  // Antet titlu cu bară primary verde
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("ANALIZĂ COST-OPTIM", pageW / 2, y, { align: "center" });
   y += 6;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9); doc.setTextColor(80, 80, 100);
-  writeText("Conform Reg. UE 244/2012 + Reg. UE 2014/1051 + EN 15459-1 (perspective F/M/S)",
-    pageW / 2, y, { align: "center" });
-  y += 5;
+  doc.setFontSize(FONT_SIZES.H3); doc.setFont(baseFont, "normal");
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("Pachete renovare — Reg. UE 244/2012 + EN 15459-1 (F/M/S)", pageW / 2, y, { align: "center" });
+  y += 4;
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
+  y += 6;
   if (cpeCode) {
+    doc.setFontSize(FONT_SIZES.CAPTION);
+    setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     writeText(`Cod CPE: ${cpeCode} · ${building.address || ""}`, pageW / 2, y, { align: "center" });
-    y += 5;
+    y += 4;
   }
-  writeText(`Data: ${new Date().toLocaleDateString("ro-RO")}`, pageW / 2, y, { align: "center" });
-  y += 10;
-  doc.setTextColor(0, 0, 0);
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
+  y += 4;
 
-  // Helper: tabel pachete
+  // Helper: tabel pachete cu brand colors
   const drawHeader = (cells, widths) => {
-    doc.setFillColor(35, 41, 70);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "fill"); // brand kit (era custom slate dark)
     doc.rect(M, y, pageW - 2 * M, 7, "F");
-    doc.setTextColor(251, 191, 36);
-    doc.setFont(baseFont, "bold"); doc.setFontSize(8.5);
+    setBrandColor(doc, BRAND_COLORS.WHITE, "text"); // brand kit (era amber accent)
+    doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TABLE_HEADER);
     let x = M + 2;
     cells.forEach((c, i) => {
       writeText(c, x, y + 5);
       x += widths[i];
     });
-    doc.setTextColor(0, 0, 0);
+    setBrandColor(doc, BRAND_COLORS.BLACK, "text");
     y += 8;
   };
   const drawRow = (cells, widths, alt = false) => {
-    if (y > 270) { doc.addPage(); y = 22; }
+    if (y > 270) {
+      applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+      doc.addPage();
+      applyBrandHeader(doc, brandMeta);
+      y = A4.MARGIN_TOP + 4;
+    }
     if (alt) {
-      doc.setFillColor(245, 245, 250);
+      setBrandColor(doc, BRAND_COLORS.SLATE_50, "fill"); // brand zebra (era custom 245,245,250)
       doc.rect(M, y - 4, pageW - 2 * M, 6, "F");
     }
-    doc.setDrawColor(220, 220, 230);
+    setBrandColor(doc, BRAND_COLORS.SLATE_200, "draw");
     doc.line(M, y + 2, pageW - M, y + 2);
-    doc.setFont(baseFont, "normal"); doc.setFontSize(8);
+    doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.TABLE_BODY);
+    setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     let x = M + 2;
     cells.forEach((c, i) => {
       writeText(String(c || "—"), x, y);
       x += widths[i];
     });
+    setBrandColor(doc, BRAND_COLORS.BLACK, "text");
     y += 6;
   };
 
+  // Sprint V10: Bar chart cost total per pachet (înainte de tabel)
+  if (packages.length >= 2 && packages.length <= 8) {
+    y = renderSectionHeader(doc, "1. Vizualizare cost total per pachet", y);
+    const barData = packages.map((pkg, idx) => ({
+      label: (pkg.label || `Pachet ${idx + 1}`).slice(0, 18),
+      value: Number(pkg.totalCost) || 0,
+      // Verde pentru pachetul cu reducere EP maximă, restul slate
+      color: idx === 0 ? BRAND_COLORS.PRIMARY :
+             idx === 1 ? BRAND_COLORS.PRIMARY_LIGHT :
+             idx === 2 ? BRAND_COLORS.INFO :
+             BRAND_COLORS.SLATE_500,
+    }));
+    renderBarChart(doc, M, y, pageW - 2 * M, 50, {
+      data: barData,
+      orientation: "horizontal",
+      unit: "RON (cost total)",
+      showValues: true,
+      showGrid: true,
+    });
+    y += 54;
+  }
+
   // 1. Tabel pachete (scenariu expected)
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("1. PACHETE RENOVARE — Scenariu așteptat (expected)", M, y); y += 7;
+  y = renderSectionHeader(doc, packages.length >= 2 ? "2. Pachete renovare — Scenariu așteptat (expected)" : "1. Pachete renovare — Scenariu așteptat (expected)", y);
 
   const widths = [50, 30, 30, 25, 35]; // Total: 170mm = pageW-M*2
   drawHeader(["Denumire pachet", "Cost total RON", "VAN 25 ani", "Payback (ani)", "Reducere EP %"], widths);
@@ -125,9 +200,13 @@ export async function exportCostOptimalPdf({
   y += 6;
 
   // 2. Analiza sensibilitate per scenariu
-  if (y > 220) { doc.addPage(); y = 22; }
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("2. ANALIZĂ SENSIBILITATE — Cost total per scenariu", M, y); y += 7;
+  if (y > 220) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
+  y = renderSectionHeader(doc, packages.length >= 2 ? "3. Analiză sensibilitate — Cost total per scenariu" : "2. Analiză sensibilitate — Cost total per scenariu", y);
 
   const scWidths = [60, 35, 35, 35]; // 165mm
   drawHeader([
@@ -148,11 +227,17 @@ export async function exportCostOptimalPdf({
   y += 6;
 
   // 3. Perspective EN 15459-1
-  if (y > 230) { doc.addPage(); y = 22; }
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("3. PERSPECTIVE EN 15459-1 — Cost-optim", M, y); y += 7;
+  if (y > 230) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
+  const sectionOffset = packages.length >= 2 ? 1 : 0;
+  y = renderSectionHeader(doc, `${3 + sectionOffset}. Perspective EN 15459-1 — Cost-optim`, y);
 
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9); doc.setTextColor(50, 50, 80);
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const perspectives = [
     "  • Perspectiva FINANCIARĂ (F): cost-beneficiu pentru proprietar (incluzând TVA, fără subvenții).",
     "  • Perspectiva MACRO-ECONOMICĂ (M): cost național fără TVA (inclusiv externalități CO₂ EU ETS).",
@@ -161,13 +246,17 @@ export async function exportCostOptimalPdf({
   perspectives.forEach(p => {
     writeText(p, M, y); y += 5;
   });
-  doc.setTextColor(0, 0, 0);
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   y += 6;
 
   // Recomandare auditor
-  if (y > 240) { doc.addPage(); y = 22; }
-  doc.setFont(baseFont, "bold"); doc.setFontSize(10);
-  writeText("4. RECOMANDARE AUDITOR", M, y); y += 6;
+  if (y > 240) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
+  y = renderSectionHeader(doc, `${4 + sectionOffset}. Recomandare auditor`, y);
 
   doc.setFont(baseFont, "normal"); doc.setFontSize(9);
   // Pachet cu cel mai mic cost / EP_reducere maximă
@@ -183,15 +272,24 @@ export async function exportCostOptimalPdf({
     lines.forEach(l => { writeText(l, M, y); y += 4.5; });
   }
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 280, pageW - M, 280);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P1-04. " +
-    "Bază: Reg. UE 244/2012 + Reg. UE 2014/1051 + EN 15459-1 + Mc 001-2022.",
-    M, 285, { maxWidth: pageW - 2 * M });
+  // Sprint V10: QR cod verificare integritate (ultima pagină)
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
 
-  const fname = `Cost_optim_${_safeSlug(cpeCode || building.address || "analiza")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  // Footer brand pe TOATE paginile
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    applyBrandFooter(doc, brandMeta, i, totalPages, {
+      legalText: "Reg. UE 244/2012 · Reg. UE 2014/1051 · EN 15459-1 (F/M/S) · Mc 001-2022 · Sprint Conformitate P1-04",
+    });
+  }
+
+  const fname = `Cost_optim_${_safeSlug(cpeCode || building.address || "analiza")}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }

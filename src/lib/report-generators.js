@@ -1250,6 +1250,9 @@ export async function generateMultiScenarioReport({
     auditorBlock(doc, auditor, y);
     addPageFooter(doc, "Mc 001-2022 | EPBD 2024/1275 | EN 15459 (analiză cost-eficiență) | ISO 52000-1", page);
 
+    // Sprint V10: QR cod verificare integritate
+    await _addVerificationQr(doc, building, auditor);
+
     const addr = (building?.address || "scenarii").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
     const filename = `RaportScenarii_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
     return finalize(doc, filename, download);
@@ -1462,6 +1465,12 @@ function ensureSpace(doc, y, needed, title, audName, today) {
 }
 
 // ── Randare Anexa 1 pe un doc deja inițializat ────────────────
+/**
+ * @deprecated Sprint Visual-10 (8 mai 2026) — orphan helper, fost folosit
+ * doar de generateCPEAnexa1/2/Anexe (eliminate). Anexa 1+2 OFICIALĂ MDLPA
+ * folosește server-side python-docx prin /api/generate-document.
+ * Programat pentru cleanup în sprint dedicat (~416 LOC).
+ */
 function _renderAnexa1(doc, startPageNum, opts) {
   const {
     building, selectedClimate, auditor,
@@ -1878,6 +1887,11 @@ function _renderAnexa1(doc, startPageNum, opts) {
 }
 
 // ── Randare Anexa 2 pe un doc deja inițializat ────────────────
+/**
+ * @deprecated Sprint Visual-10 (8 mai 2026) — orphan helper, fost folosit
+ * doar de generateCPEAnexa1/2/Anexe (eliminate). Programat pentru cleanup
+ * în sprint dedicat (~294 LOC).
+ */
 function _renderAnexa2(doc, startPageNum, opts) {
   const {
     building, auditor, envelopeSummary, glazingElements, opaqueElements,
@@ -2170,64 +2184,22 @@ function _renderAnexa2(doc, startPageNum, opts) {
   return page;
 }
 
-/**
- * CPE Anexa 1 — Date generale și tehnice (PDF oficial).
- * Document de 4 pagini A4 conform Ord. MDLPA 16/2023 art. 7-10.
- *
- * Așteaptă toate propsurile folosite de componenta <CpeAnexa />.
- * Vezi `src/components/CpeAnexa.jsx` pentru semnătura completă.
- *
- * @returns {Promise<Blob|null>} — Blob dacă `download=false`, null altfel
- */
-export async function generateCPEAnexa1(opts) {
-  try {
-    const doc = await initDoc();
-    _renderAnexa1(doc, 1, opts);
-    const addr = (opts?.building?.address || "anexa1").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
-    const filename = `CPE_Anexa1_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    return finalize(doc, filename, opts?.download);
-  } catch (e) {
-    throw new Error(`generateCPEAnexa1: ${e.message}`);
-  }
-}
-
-/**
- * CPE Anexa 2 — Recomandări de îmbunătățire (PDF oficial).
- * Măsuri prioritizate conform Mc 001-2022 + analiză financiară dacă e disponibilă.
- *
- * @returns {Promise<Blob|null>}
- */
-export async function generateCPEAnexa2(opts) {
-  try {
-    const doc = await initDoc();
-    _renderAnexa2(doc, 1, opts);
-    const addr = (opts?.building?.address || "anexa2").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
-    const filename = `CPE_Anexa2_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    return finalize(doc, filename, opts?.download);
-  } catch (e) {
-    throw new Error(`generateCPEAnexa2: ${e.message}`);
-  }
-}
-
-/**
- * CPE Anexa 1 + Anexa 2 — PDF combinat (recomandat pentru livrare oficială).
- * Paginație continuă: Anexa 1 (pag. 1-4) + Anexa 2 (pag. 5+).
- *
- * @returns {Promise<Blob|null>}
- */
-export async function generateCPEAnexe(opts) {
-  try {
-    const doc = await initDoc();
-    const lastPage = _renderAnexa1(doc, 1, opts);
-    doc.addPage();
-    _renderAnexa2(doc, lastPage + 1, opts);
-    const addr = (opts?.building?.address || "anexe").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
-    const filename = `CPE_Anexa1+2_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
-    return finalize(doc, filename, opts?.download);
-  } catch (e) {
-    throw new Error(`generateCPEAnexe: ${e.message}`);
-  }
-}
+// ═══════════════════════════════════════════════════════════════
+// Sprint Visual-10 (8 mai 2026) — DELETED orphan wrappers
+// ═══════════════════════════════════════════════════════════════
+// generateCPEAnexa1, generateCPEAnexa2, generateCPEAnexe au fost ELIMINATE
+// (cod orfan): definite în acest fișier dar NU erau apelate nicăieri în
+// codbase (verificat src/steps/Step6Certificate.jsx + Step7Audit.jsx).
+//
+// Anexa 1+2 OFICIALĂ MDLPA în producție folosește SERVER-SIDE python-docx
+// prin /api/generate-document?type=anexa1+2 (vezi Step6Certificate.jsx
+// linia ~1021). Acest flux NU este afectat de această eliminare.
+//
+// Helper-ii interni `_renderAnexa1` și `_renderAnexa2` (deasupra) rămân
+// momentan în repo cu marcaj @deprecated — pot fi șterși într-un sprint
+// dedicat de cleanup (~700 LOC) după verificare suplimentară că niciun
+// consumator extern nu îi importă prin __testing__.
+// ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
 // RAPORT DE CONFORMARE nZEB
@@ -3534,6 +3506,9 @@ export async function generateRehabEstimatePDF(opts) {
     }
 
     addPageFooter(doc, "Deviz estimativ — orientativ | Mc 001-2022 | PNRR + Casa Verde", page);
+
+    // Sprint V10: QR cod verificare integritate
+    await _addVerificationQr(doc, building, auditor);
 
     const addr = (building?.address || "deviz").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 25);
     const filename = `Deviz_estimativ_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;
