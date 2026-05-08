@@ -1,5 +1,6 @@
 /**
- * element-annex-docx.js — Sprint 22 #23
+ * element-annex-docx.js — Sprint 22 #23 + Sprint Visual-8 (8 mai 2026)
+ *
  * Export anexă DOCX per element opac cu:
  *  - Titlu "Anexa 1.N — Fișă tehnică [nume element]"
  *  - Descriere textuală a secțiunii (int → ext) cu grosimi
@@ -7,10 +8,34 @@
  *  - Metrici sumar: R total, U, U_base, ΔU″, masă/m², inerție termică
  *  - Justificare normativă (Mc 001-2022, ISO 6946)
  *
+ * Sprint Visual-8: aplicare brand kit colors în DOCX (PRIMARY verde Zephren
+ * pe titluri secțiuni + SLATE_900 pe header tabele + SLATE_50 pe zebra rows).
+ *
  * Format: A4 portret (11906 × 16838 DXA — conform feedback proiect).
  */
 import { calcOpaqueR } from "../calc/opaque.js";
 import { getMaterialFireClass, FIRE_CLASSES } from "../calc/fire-safety.js";
+import { BRAND_COLORS } from "./pdf-brand-kit.js";
+
+// Sprint V8: convertor RGB tuple → hex string fără # (DOCX format)
+function _rgbToHex(rgb) {
+  if (!Array.isArray(rgb) || rgb.length < 3) return "000000";
+  return rgb.map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+// Brand colors în format DOCX hex (fără #)
+const DOCX_BRAND = Object.freeze({
+  PRIMARY: _rgbToHex(BRAND_COLORS.PRIMARY),         // 007A3D
+  PRIMARY_DARK: _rgbToHex(BRAND_COLORS.PRIMARY_DARK), // 005A2D
+  PRIMARY_FAINT: _rgbToHex(BRAND_COLORS.PRIMARY_FAINT), // E8F6EE
+  SLATE_900: _rgbToHex(BRAND_COLORS.SLATE_900),     // 0F172A
+  SLATE_700: _rgbToHex(BRAND_COLORS.SLATE_700),     // 334155
+  SLATE_500: _rgbToHex(BRAND_COLORS.SLATE_500),     // 64748B
+  SLATE_400: _rgbToHex(BRAND_COLORS.SLATE_400),     // 94A3B8
+  SLATE_200: _rgbToHex(BRAND_COLORS.SLATE_200),     // E2E8F0
+  SLATE_50: _rgbToHex(BRAND_COLORS.SLATE_50),       // F8FAFC
+  WHITE: "FFFFFF",
+});
 
 function fmtNum(v, decimals = 2) {
   if (v === null || v === undefined || !Number.isFinite(Number(v))) return "—";
@@ -133,10 +158,11 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
     Packer,
   } = await import("docx");
 
+  // Sprint V8: header SLATE_900 + text WHITE bold (era custom EEEEEE light gri)
   const makeHeaderCell = (text) => new TableCell({
     width: { size: 20, type: WidthType.PERCENTAGE },
-    children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 18 })] })],
-    shading: { fill: "EEEEEE" },
+    children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 18, color: DOCX_BRAND.WHITE })] })],
+    shading: { fill: DOCX_BRAND.SLATE_900 },
   });
   const makeCell = (text, pct = 20) => new TableCell({
     width: { size: pct, type: WidthType.PERCENTAGE },
@@ -176,13 +202,14 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [header, ...rows],
+      // Sprint V8: borders SLATE_400/SLATE_200 (era custom 888888/CCCCCC gri neutru)
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        left: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        right: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        top: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        left: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        right: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
       },
     });
   };
@@ -212,13 +239,14 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
         row("Indice inerție termică D",  `${fmtNum(metrics.D, 3)}`),
         row("Clasă foc (cel mai slab strat)", `${metrics.worstFireClass} — ${FIRE_CLASSES[metrics.worstFireClass]?.label || ""}`),
       ],
+      // Sprint V8: borders brand kit
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        top: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        left: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        right: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
       },
     });
   };
@@ -234,7 +262,7 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
       alignment: AlignmentType.CENTER,
       children: [new TextRun({
         text: "Fișe tehnice per element, conform Mc 001-2022 + SR EN ISO 6946:2017",
-        size: 18, color: "666666", italics: true,
+        size: 18, color: DOCX_BRAND.SLATE_500, italics: true, // Sprint V8: brand SLATE_500 (era 666666)
       })],
     }),
     new Paragraph({ text: "" }),
@@ -317,7 +345,7 @@ export async function exportElementAnnexesDOCX(opaqueElements, options = {}) {
       alignment: AlignmentType.CENTER,
       children: [new TextRun({
         text: `Document generat ${new Date().toLocaleString("ro-RO")} de Zephren Energy Calculator.`,
-        size: 14, color: "999999", italics: true,
+        size: 14, color: DOCX_BRAND.SLATE_500, italics: true, // Sprint V8: brand SLATE_500 (era 999999)
       })],
     })
   );
@@ -385,7 +413,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       alignment: AlignmentType.CENTER,
       children: [new TextRun({
         text: "Opace + Vitraj + Punți termice + Sisteme HVAC · Mc 001-2022 + SR EN ISO 6946:2017",
-        size: 18, color: "666666", italics: true,
+        size: 18, color: DOCX_BRAND.SLATE_500, italics: true, // Sprint V8: brand SLATE_500
       })],
     }),
     new Paragraph({ text: "" }),
@@ -457,19 +485,20 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: tblRows,
       borders: {
-        top:    { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        // Sprint V8: borders brand kit
+        top:    { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        left:   { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        right:  { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
       },
     }));
     children.push(new Paragraph({ text: "" }));
     children.push(new Paragraph({
       children: [new TextRun({
         text: "Referințe: SR EN 14351-1 (vitraj), SR EN 673 (U), SR EN 410 (g_value), Mc 001-2022 §3.3.2 + Tab 2.5.",
-        size: 16, italics: true, color: "666666",
+        size: 16, italics: true, color: DOCX_BRAND.SLATE_500, // Sprint V8: brand SLATE_500
       })],
     }));
   }
@@ -508,12 +537,13 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: tblRows,
       borders: {
-        top:    { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        bottom: { style: BorderStyle.SINGLE, size: 4, color: "888888" },
-        left:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right:  { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        // Sprint V8: borders brand kit
+        top:    { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.SLATE_400 },
+        left:   { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        right:  { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
       },
     }));
     children.push(new Paragraph({ text: "" }));
@@ -521,7 +551,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       children: [new TextRun({
         text: `Pierdere totală liniară: ${fmtNum(totalLoss, 3)} W/K. `
           + `Referințe: SR EN ISO 14683:2017, SR EN ISO 10211:2017, Mc 001-2022 §3.3.4 + Catalog MCCL 165 tipologii.`,
-        size: 16, italics: true, color: "666666",
+        size: 16, italics: true, color: DOCX_BRAND.SLATE_500, // Sprint V8: brand SLATE_500
       })],
     }));
   }
@@ -597,7 +627,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       children: [new TextRun({
         text: "Referințe: SR EN 15316-1 (încălzire), SR EN 15243 (răcire), SR EN 16798-7 (ventilare), "
           + "SR EN 15193-1 (iluminat), SR EN 15316-3 (ACM), EN 15232-1 (BACS).",
-        size: 16, italics: true, color: "666666",
+        size: 16, italics: true, color: DOCX_BRAND.SLATE_500, // Sprint V8: brand SLATE_500
       })],
     }));
   }
@@ -610,7 +640,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       children: [new TextRun({
         text: `Document generat ${new Date().toLocaleString("ro-RO")} de Zephren Energy Calculator. `
           + `Anexe complete pentru Dosar Audit Energetic AAECR (Cap. 8).`,
-        size: 14, color: "999999", italics: true,
+        size: 14, color: DOCX_BRAND.SLATE_500, italics: true, // Sprint V8: brand SLATE_500 (era 999999)
       })],
     })
   );

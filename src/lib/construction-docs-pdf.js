@@ -163,15 +163,45 @@ export async function generateCarteaTehnicaNotesPdf({
   });
   y += 4;
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 285, pageW - M, 285);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P3-02. " +
-    "Bază: HG 273/1994 Art. 17 + Mc 001-2022 + L. 50/1991.",
-    M, 290, { maxWidth: pageW - 2 * M });
+  // Sprint V8: brand metadata + QR + footer brand
+  const brandMeta = buildBrandMetadata({
+    title: "Note pentru Cartea Tehnică",
+    cpeCode: building?.cpeCode || `NCT-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    auditor: {
+      name: auditor?.name,
+      atestat: auditor?.atestat,
+      grade: auditor?.grade,
+      firm: auditor?.company,
+    },
+    docType: "cartea-tehnica-notes",
+    version: "v4.0",
+  });
 
-  const fname = `Note_CT_${_safeSlug(building.address || "constructie")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  // QR cod verificare integritate (ultima pagină)
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
+
+  // Footer brand pe TOATE paginile
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    applyBrandFooter(doc, brandMeta, i, totalPages, {
+      legalText: "HG 273/1994 Art. 17 · Mc 001-2022 · L. 50/1991 · Sprint Conformitate P3-02",
+    });
+  }
+
+  const fname = `Note_CT_${_safeSlug(building.address || "constructie")}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }

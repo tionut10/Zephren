@@ -7,10 +7,12 @@
 // ═══════════════════════════════════════════════════════════════
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
 import { APP_VERSION } from "../data/app-version.js";
-import { BRAND_COLORS } from "./pdf-brand-kit.js";
+import { BRAND_COLORS, A4 as A4_DIMS, formatRomanianDate, buildBrandMetadata } from "./pdf-brand-kit.js";
 // Sprint Visual-5: chart helpers nativi (bar/line) pentru rapoarte
 // Sprint Visual-7: + renderPieChart pentru pierderi anvelopă în RAE
 import { renderBarChart, renderLineChart, renderPieChart } from "./pdf-brand-charts.js";
+// Sprint Visual-8: QR cod verificare integritate
+import { renderQrCode, buildVerifyUrl } from "./pdf-brand-layout.js";
 
 const BRAND = "ZEPHREN";
 // m-1 (7 mai 2026) — VERSION centralizat din app-version.js (era hardcoded "v3.4").
@@ -161,6 +163,24 @@ function clampText(doc, text, maxWidth) {
     else hi = mid - 1;
   }
   return t.slice(0, lo) + ellipsis;
+}
+
+// ── Sprint Visual-8: QR cod verificare integritate ────────────
+// Helper async aplicabil înainte de finalize() în orice generator raport.
+async function _addVerificationQr(doc, building, auditor) {
+  const meta = buildBrandMetadata({
+    cpeCode: building?.cpeCode || `RAE-${formatRomanianDate(new Date(), "iso")}`,
+    building: { address: building?.address, category: building?.category },
+    auditor: { name: auditor?.name, atestat: auditor?.atestat },
+    docType: "rae",
+    version: "v4.0",
+  });
+  await renderQrCode(doc, buildVerifyUrl(meta), {
+    x: A4_DIMS.WIDTH - A4_DIMS.MARGIN_RIGHT - 18,
+    y: A4_DIMS.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
 }
 
 // ── Utilitar: footer pagini ───────────────────────────────────
@@ -559,6 +579,9 @@ export async function generateTechnicalReport({
     doc.text("* Valorile EP și CO₂ sunt calculate conform metodologiei naționale Mc 001-2022, factori fp conform Ordinul MDLPA 16/2023.", 10, y + 3);
 
     addPageFooter(doc, "SR EN ISO 52000-1:2017 | Mc 001-2022 | SR EN ISO 10211 | EN 12831", page);
+
+    // Sprint V8: QR cod verificare integritate (ultima pagină)
+    await _addVerificationQr(doc, building, auditor);
 
     const addr = (building?.address || "raport").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 20);
     const filename = `RaportTehnic_${addr}_${new Date().toISOString().slice(0, 10)}.pdf`;

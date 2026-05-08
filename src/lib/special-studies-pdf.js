@@ -1,7 +1,8 @@
 /**
  * special-studies-pdf.js — Studii speciale obligatorii pentru construcții noi.
  *
- * Sprint Conformitate P1-11..P1-14 (7 mai 2026) + Sprint Visual-6 (8 mai 2026).
+ * Sprint Conformitate P1-11..P1-14 (7 mai 2026) + Sprint Visual-6 (8 mai 2026)
+ * + Sprint Visual-8 (8 mai 2026 — QR cod verificare integritate).
  *
  * Acoperă itemii P1-11..P1-14 din audit conformitate:
  *   - P1-11 Studiu sisteme alternative (Mc 001-2022 §11 + Art. 9 EPBD 2024/1275)
@@ -10,9 +11,57 @@
  *   - P1-14 Plan M&V avansat IPMVP cu opțiunile A/B/C/D (extends dossier-extras.js)
  *
  * Sprint Visual-6: aplicare brand kit (SLATE_900 + WHITE pe headers tabele).
+ * Sprint Visual-8: QR cod verificare integritate pe ultima pagină (4 funcții).
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+import {
+  A4,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandFooter,
+  renderQrCode,
+  buildVerifyUrl,
+} from "./pdf-brand-layout.js";
+
+/**
+ * Sprint V8 helper: aplică QR cod + brand footer pe ultima pagină.
+ * Apelabil la finalul fiecărei funcții generator înainte de doc.save().
+ */
+async function _applyV8FooterAndQr(doc, building, auditor, sprintRef, legalText) {
+  const brandMeta = buildBrandMetadata({
+    title: sprintRef,
+    cpeCode: building?.cpeCode || `SS-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building?.address,
+      category: building?.category,
+      areaUseful: building?.areaUseful,
+      year: building?.yearBuilt,
+      cadastral: building?.cadastralNumber,
+    },
+    auditor: {
+      name: auditor?.name,
+      atestat: auditor?.atestat,
+      grade: auditor?.grade,
+      firm: auditor?.company || auditor?.firm,
+    },
+    docType: "special-study",
+    version: "v4.0",
+  });
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    applyBrandFooter(doc, brandMeta, i, totalPages, { legalText });
+  }
+}
 
 const TODAY_RO = () => new Date().toLocaleDateString("ro-RO", {
   day: "2-digit", month: "long", year: "numeric",
@@ -200,15 +249,11 @@ export async function generateAlternativeSystemsStudyPdf({
   );
   lines.forEach(l => { writeText(l, M, y); y += 4.5; });
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 280, pageW - M, 280);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P1-11. " +
-    "Bază: Mc 001-2022 §11 + EPBD 2024/1275 Art. 9 + L. 372/2005 republ.",
-    M, 285, { maxWidth: pageW - 2 * M });
+  // Sprint V8: brand footer + QR
+  await _applyV8FooterAndQr(doc, building, {}, "Studiu Sisteme Alternative",
+    "Mc 001-2022 §11 · EPBD 2024/1275 Art. 9 · L. 372/2005 R2 · Sprint Conformitate P1-11");
 
-  const fname = `Studiu_alternative_${_safeSlug(building.address || "cladire")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fname = `Studiu_alternative_${_safeSlug(building.address || "cladire")}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }
@@ -336,14 +381,11 @@ export async function generateEvPrecablingPdf({
   const memoLines = doc.splitTextToSize(memo, pageW - 2 * M);
   memoLines.forEach(l => { writeText(l, M, y); y += 4.5; });
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 280, pageW - M, 280);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P1-12.",
-    M, 285, { maxWidth: pageW - 2 * M });
+  // Sprint V8: brand footer + QR
+  await _applyV8FooterAndQr(doc, building, {}, "Studiu Pre-cabling EV",
+    "EPBD 2024/1275 Art. 14 alin. 3-4 · L. 238/2024 · Reg. UE 2023/1804 AFIR · Sprint P1-12");
 
-  const fname = `Studiu_EV_precabling_${_safeSlug(building.address || "cladire")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fname = `Studiu_EV_precabling_${_safeSlug(building.address || "cladire")}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }
@@ -473,12 +515,9 @@ export async function generateFoaieParcursStandalonePdf({
   );
   msg.forEach(l => { writeText(l, M, y); y += 4.5; });
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 285, pageW - M, 285);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText(`Generat de Zephren — ${TODAY_RO()} · Foaie standalone pentru beneficiar (P1-13)`,
-    M, 290);
+  // Sprint V8: brand footer + QR
+  await _applyV8FooterAndQr(doc, building, {}, "Foaie de Parcurs Standalone",
+    "Zephren · Foaie standalone pentru beneficiar · Sprint Conformitate P1-13");
 
   const fname = `Foaie_parcurs_${_safeSlug(owner.name || building.address || "beneficiar")}_${new Date().toISOString().slice(0, 10)}.pdf`;
   if (download) doc.save(fname);
