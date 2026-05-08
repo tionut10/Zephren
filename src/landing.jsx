@@ -452,7 +452,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               {showFounder && (
                 <div role="dialog" aria-label={lang === "EN" ? "Founder card" : "Card fondator"} style={{ position: "absolute", top: "calc(100% + 14px)", right: "-12px", width: "320px", background: isDark ? "#0d0d22" : "#ffffff", border: `1px solid ${cardBorder}`, borderRadius: "16px", boxShadow: isDark ? "0 24px 48px rgba(0,0,0,0.55)" : "0 24px 48px rgba(15,23,42,0.13)", padding: "24px", zIndex: 200 }}>
                   {/* Vârf săgeată */}
-                  <div style={{ position: "absolute", top: "-6px", right: "28px", width: "12px", height: "12px", background: isDark ? "#0d0d22" : "#ffffff", border: `1px solid ${cardBorder}`, borderBottom: "none", borderRight: "none", transform: "rotate(45deg)" }} />
+                  <div style={{ position: "absolute", top: "-6px", right: "28px", width: "12px", height: "12px", background: isDark ? "#0d0d22" : "#ffffff", borderTop: `1px solid ${cardBorder}`, borderLeft: `1px solid ${cardBorder}`, transform: "rotate(45deg)" }} />
 
                   {/* Avatar + Nume */}
                   <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
@@ -881,7 +881,7 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
         ].filter(g => g.items.length > 0).map(group => {
           const filtered = group.items;
           return (
-          <div key={group.title} style={{ marginBottom: "16px", padding: "20px 24px", borderRadius: "14px", background: group.isPrimary ? (isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.04)") : cardBg, border: group.isPrimary ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${cardBorder}`, borderLeft: group.isPrimary ? "3px solid #f59e0b" : undefined, textAlign: "left" }}>
+          <div key={group.title} style={{ marginBottom: "16px", padding: "20px 24px", borderRadius: "14px", background: group.isPrimary ? (isDark ? "rgba(245,158,11,0.05)" : "rgba(245,158,11,0.04)") : cardBg, borderTop: group.isPrimary ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${cardBorder}`, borderRight: group.isPrimary ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${cardBorder}`, borderBottom: group.isPrimary ? "1px solid rgba(245,158,11,0.25)" : `1px solid ${cardBorder}`, borderLeft: group.isPrimary ? "3px solid #f59e0b" : `1px solid ${cardBorder}`, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <span style={{ fontSize: "18px" }}>{group.icon}</span>
               <span style={{ fontSize: "14px", fontWeight: "700", color: group.color }}>{group.title}</span>

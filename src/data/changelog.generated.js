@@ -12,6 +12,10 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🚀",
+        "text": "security: xlsx 0.18.5→0.20.3 (CDN oficial fără vulnerabilități) + websockets Python 15→16 (eliminat supabase P"
+      },
+      {
         "icon": "📄",
         "text": "update: @anthropic-ai/sdk 0.95.1, exceljs instalat, cachetools/lxml/tzdata/pdfminer Python actualizate"
       },
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔀",
         "text": "refactor(documente): eliminare consistentă Card Pașaport Foaie de Parcurs etapizată din Pas 7"
-      },
-      {
-        "icon": "📥",
-        "text": "refactor(documente): eliminare consistentă XML portal MDLPA standalone + din pachet ZIP (până 8.VII.2026)"
       }
     ]
   },
