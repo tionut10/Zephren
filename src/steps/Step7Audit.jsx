@@ -39,6 +39,8 @@ import { checkAcousticConformity } from "../calc/acoustic.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax, getURefAdaptive, getURefGlazingAdaptive } from "../calc/smart-rehab.js";
+// Sprint 8 mai 2026 — helper centralizat obligativitate juridică raport nZEB
+import { requiresNZEBReport } from "../calc/nzeb-required.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcSRI, SRI_DOMAINS, CHP_TYPES, IEQ_CATEGORIES, RENOVATION_STAGES, MCCL_CATALOG } from "../calc/epbd.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
@@ -1832,28 +1834,36 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
-              {/* ── Sprint P1 (6 mai 2026) P1-03: referință scurtă RaportConformareNZEB.
-                  Modulul complet rămâne în Pas 6 (Card auditor + ștampilă + Anexa MDLPA),
-                  dar Step 7 e un punct logic de re-acces pentru auditorul AE Ici care
-                  după audit + recomandări vrea să confirme conformarea nZEB. */}
-              {canAccess(userPlan, "nzebReport") && building?.scopCpe === "construire" && (
-                <Card title="Raport conformare nZEB — referință" className="mb-4 border-violet-500/20">
-                  <div className="px-3 py-2 rounded-lg bg-violet-500/10 border-l-4 border-violet-500 text-xs">
-                    <div className="mb-2">
-                      📄 <strong>Raportul de conformare nZEB</strong> este disponibil și editabil
-                      în Pas 6 (Certificat) — secțiunea „Auditor + Anexa MDLPA". Conform
-                      Ord. MDLPA 348/2026 Art. 6 alin. (1) lit. c, AE Ici (atestat grad I civile)
-                      poate emite acest raport pentru clădiri în faza de proiectare/recepție.
+              {/* ── Sprint P1 (6 mai 2026) — referință raport conformare nZEB.
+                  Modulul complet rămâne în Pas 6 (Card auditor + ștampilă + Anexa MDLPA).
+                  Sprint 8 mai 2026 — gating prin requiresNZEBReport() (clădiri noi +
+                  renovare majoră + recepție; NU se afișează pentru CPE vânzare/închiriere
+                  sau clădiri exceptate Art. 4 L.372/2005). */}
+              {canAccess(userPlan, "nzebReport") && (() => {
+                const nzebReq = requiresNZEBReport(building);
+                if (!nzebReq.required) return null;
+                return (
+                  <Card title="Raport conformare nZEB — referință" className="mb-4 border-violet-500/20">
+                    <div className="px-3 py-2 rounded-lg bg-violet-500/10 border-l-4 border-violet-500 text-xs space-y-2">
+                      <div>
+                        📄 <strong>Raportul de conformare nZEB este obligatoriu</strong> pentru această clădire.
+                        {" "}{nzebReq.reason}
+                      </div>
+                      <div className="text-[11px] opacity-70">
+                        Modulul complet de generare se află în Pas 6 (Certificat) — secțiunea
+                        „Auditor + Anexa MDLPA". Conform Ord. MDLPA 348/2026 Art. 6 alin. (1) lit. c,
+                        doar AE Ici (atestat grad I civile) poate emite acest raport.
+                      </div>
+                      <button
+                        onClick={() => setStep(6)}
+                        className="px-3 py-1.5 rounded-md bg-violet-600/20 border border-violet-600/40 hover:bg-violet-600/30 text-violet-300 text-xs font-medium transition-all"
+                      >
+                        → Pas 6: Raport conformare nZEB
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setStep(6)}
-                      className="px-3 py-1.5 rounded-md bg-violet-600/20 border border-violet-600/40 hover:bg-violet-600/30 text-violet-300 text-xs font-medium transition-all"
-                    >
-                      → Pas 6: Raport conformare nZEB
-                    </button>
-                  </div>
-                </Card>
-              )}
+                  </Card>
+                );
+              })()}
 
               <Card title="📑 Generare documente — pachet client reabilitare" className="mt-6 border-2 border-amber-500/30 bg-amber-500/[0.03]">
                 {/* ── Buton descărcare totală ZIP ── */}

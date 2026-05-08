@@ -116,45 +116,48 @@ function UploadSlot({
   }, [onChange]);
 
   return (
-    <div className="flex flex-col gap-2 p-3 rounded-xl border border-white/10 bg-white/5">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-amber-300">{label}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">{hint}</div>
+    <div className="flex flex-col gap-2 p-3 rounded-xl border border-white/10 bg-white/5 overflow-hidden min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold uppercase tracking-wider text-amber-300 truncate">{label}</div>
+          <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{hint}</div>
           {recommendedSize && (
-            <div className="text-[10px] text-white/30 mt-0.5">Recomandat: {recommendedSize}</div>
+            <div className="text-[10px] text-white/30 mt-0.5">Rec: {recommendedSize}</div>
           )}
         </div>
         {dataURL && (
-          <span className="text-[10px] text-emerald-400">
+          <span className="text-[10px] text-emerald-400 shrink-0">
             ✓ {kbSize(dataURL)} KB
           </span>
         )}
       </div>
 
       {dataURL ? (
-        <div className="relative group">
-          <img
-            src={dataURL}
-            alt={label}
-            style={{
-              background: "repeating-conic-gradient(#1a1a2e 0% 25%, #2a2a3e 0% 50%) 50% / 12px 12px",
-              ...previewStyle,
-            }}
-            className="mx-auto max-w-full rounded border border-white/10"
-          />
-          <div className="mt-2 flex gap-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-center w-full overflow-hidden rounded border border-white/10"
+               style={{ background: "repeating-conic-gradient(#1a1a2e 0% 25%, #2a2a3e 0% 50%) 50% / 12px 12px",
+                        minHeight: 40, maxHeight: previewStyle?.maxHeight ?? 100 }}>
+            <img
+              src={dataURL}
+              alt={label}
+              style={{ maxHeight: previewStyle?.maxHeight ?? 100,
+                       maxWidth: "100%",
+                       objectFit: "contain",
+                       ...(previewStyle?.borderRadius ? { borderRadius: previewStyle.borderRadius } : {}) }}
+            />
+          </div>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="flex-1 py-1.5 px-3 rounded text-xs bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80 transition-all"
+              className="flex-1 py-1 px-2 rounded text-xs bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80 transition-all truncate"
             >
               Înlocuiește
             </button>
             <button
               type="button"
               onClick={onClear}
-              className="flex-1 py-1.5 px-3 rounded text-xs bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 transition-all"
+              className="flex-1 py-1 px-2 rounded text-xs bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 transition-all truncate"
             >
               Șterge
             </button>
