@@ -3085,7 +3085,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       src/calc/nzeb-required.js.
                   ─────────────────────────────────────────────────────────────── */}
                   {(() => {
-                    const nzebReq = nzebRequirement; // closure peste constanta calculată mai sus
+                    // Sprint 8 mai 2026 — calcul inline (evită dependență de scope-ul
+                    // sub-funcției unde a fost declarat anterior `nzebRequirement`).
+                    const nzebReq = requiresNZEBReport(building);
                     const isExempted = nzebReq.severity === "exempted";
                     const isOptional = nzebReq.severity === "optional";
                     const isRequired = nzebReq.severity === "required";
