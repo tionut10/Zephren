@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { cn } from "./ui.jsx";
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, BorderStyle, WidthType, ShadingType,
   TableLayoutType, VerticalAlign, convertInchesToTwip, ImageRun,
-  CheckBox,
+  CheckBox, Header, Footer, PageNumber,
 } from "docx";
 
 // ─── Helpers vizuale ──────────────────────────────────────────────────────────
@@ -193,18 +193,18 @@ const DEMO_DATA = {
   alteDocumente: "Clădire construită circa 1978, fără izolație termică pe pereții exteriori. Se solicită reabilitare termică completă în vederea reducerii consumului energetic și îmbunătățirii clasei energetice.",
 };
 
-// ─── Export PDF/JSON ──────────────────────────────────────────────────────────
-function exportJSON(data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url;
-  a.download = `date-client-audit-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click(); URL.revokeObjectURL(url);
+// ─── Logo fetch pentru DOCX ───────────────────────────────────────────────────
+async function fetchLogoArrayBuffer() {
+  try {
+    const resp = await fetch("/logo_ro.png");
+    if (!resp.ok) return null;
+    return await resp.arrayBuffer();
+  } catch { return null; }
 }
 
 // ─── Download Formular Gol variante ──────────────────────────────────────────
-function downloadBlankPrint()       { exportDOCX({}, [], true, false); } // ☐ simbol printabil
-function downloadBlankWordInteract(){ exportDOCX({}, [], true, true);  } // ☑ Word interactiv SDT
+const downloadBlankPrint        = () => exportDOCX({}, [], true, false); // ☐ simbol printabil
+const downloadBlankWordInteract = () => exportDOCX({}, [], true, true);  // ☑ Word interactiv SDT
 
 // ─── Export DOCX ─────────────────────────────────────────────────────────────
 // isBlank=true          → formular gol (câmpuri cu linie de completare)
@@ -214,20 +214,18 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
   const has = (key) => { const val = data[key]; return val !== undefined && val !== "" && val !== null && val !== false; };
   const txt = (key, unit = "") => has(key) ? String(v(key)) + (unit ? "\u00a0" + unit : "") : "";
 
-  // ─── Culori ───────────────────────────────────────────────────────────────────
+  // ─── Culori Zephren ──────────────────────────────────────────────────────────
   const C = {
-    amber:   "F59E0B", ambLight: "FFFBEB",
-    dark:    "1E293B", gray:     "475569",
-    lGray:   "94A3B8", light:    "F8FAFC",
-    border:  "E2E8F0", white:    "FFFFFF",
+    green:   "007A3D", greenLt: "E8F6EE", greenDk: "005C2E",
+    amber:   "F59E0B",
+    dark:    "0F172A", gray:    "475569",
+    lGray:   "94A3B8", light:   "F8FAFC",
+    border:  "E2E8F0", white:   "FFFFFF",
     blue:    "1E40AF", blueLight:"EFF6FF",
-    green:   "16A34A", label:    "F1F5F9",
-    line:    "CBD5E1",
+    label:   "F1F5F9", line:    "CBD5E1",
   };
-  // aliases compat
-  const AMBER = C.amber, DARK = C.dark, GRAY = C.gray, LGRAY = C.lGray,
-        LIGHT = C.light, GREEN = C.green, BORDER = C.border, WHITE = C.white,
-        BLUE = C.blue, BLU_LT = C.blueLight, AMB_LT = C.ambLight;
+  const WHITE = C.white, DARK = C.dark, GRAY = C.gray, LGRAY = C.lGray,
+        LIGHT = C.light, BORDER = C.border, BLUE = C.blue;
 
   // ─── Border helpers ───────────────────────────────────────────────────────────
   const NB = { top: { style: BorderStyle.NONE, size: 0, color: WHITE }, bottom: { style: BorderStyle.NONE, size: 0, color: WHITE }, left: { style: BorderStyle.NONE, size: 0, color: WHITE }, right: { style: BorderStyle.NONE, size: 0, color: WHITE } };
@@ -245,11 +243,11 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
   const headerRow = (nr, title) => new TableRow({
     children: [new TableCell({
       columnSpan: 2,
-      shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark },
+      shading: { type: ShadingType.SOLID, color: C.green, fill: C.green },
       borders: NB,
       children: [new Paragraph({
         children: [
-          new TextRun({ text: `${nr}. `, font: "Calibri", size: 24, bold: true, color: C.amber }),
+          new TextRun({ text: `${nr}. `, font: "Calibri", size: 22, bold: true, color: C.greenLt }),
           new TextRun({ text: title.toUpperCase(), font: "Calibri", size: 22, bold: true, color: WHITE }),
         ],
         spacing: { before: 110, after: 110 }, indent: { left: 160 },
@@ -291,8 +289,8 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
         }),
         new TableCell({
           width: { size: 58, type: WidthType.PERCENTAGE },
-          shading: { type: ShadingType.SOLID, color: filled ? C.ambLight : WHITE, fill: filled ? C.ambLight : WHITE },
-          borders: { top: ln(C.border), bottom: ln(C.border), left: ln(filled ? C.amber : C.line, filled ? 12 : 4), right: ln(C.border) },
+          shading: { type: ShadingType.SOLID, color: filled ? C.greenLt : WHITE, fill: filled ? C.greenLt : WHITE },
+          borders: { top: ln(C.border), bottom: ln(C.border), left: ln(filled ? C.green : C.line, filled ? 12 : 4), right: ln(C.border) },
           verticalAlign: VerticalAlign.CENTER,
           children: [new Paragraph({
             children: [new TextRun({ text: filled ? val : (isBlank ? "" : "\u2014"), font: "Calibri", size: 20, bold: filled, color: filled ? C.dark : C.lGray })],
@@ -378,38 +376,66 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
   //  CONȚINUT DOCUMENT
   // ════════════════════════════════════════════════════════════════════════════
 
-  // ── ANTET ───────────────────────────────────────────────────────────────────
-  add(new Table({
+  // ── COPERTĂ (section 1 — fără header/footer) ─────────────────────────────────
+  const coverChildren = [];
+  const addCover = (...items) => items.flat().forEach(i => i && coverChildren.push(i));
+  const gapCover = (after = 200) => new Paragraph({ spacing: { before: 0, after }, children: [new TextRun({ text: "" })] });
+
+  // Banner verde cu logo + titlu
+  addCover(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
     borders: NB,
     rows: [new TableRow({ children: [
-      new TableCell({ width: { size: 14, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.amber, fill: C.amber }, borders: NB, children: [sp(0)] }),
+      new TableCell({ width: { size: 6, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.greenDk, fill: C.greenDk }, borders: NB, children: [new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 0, after: 0 } })] }),
       new TableCell({
         shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark }, borders: NB,
         children: [
-          new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 56, bold: true, color: C.amber })], spacing: { before: 160, after: 40 }, indent: { left: 220 } }),
-          new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT \u2014 AUDIT ENERGETIC / CPE", font: "Calibri", size: 22, bold: true, color: WHITE })], spacing: { before: 0, after: 40 }, indent: { left: 220 } }),
-          new Paragraph({ children: [new TextRun({ text: "Data: " + new Date().toLocaleDateString("ro-RO") + "\u2003|\u2003Mc 001-2022\u2003|\u2003EPBD 2024/1275", font: "Calibri", size: 17, italics: true, color: "94A3B8" })], spacing: { before: 0, after: 160 }, indent: { left: 220 } }),
+          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, transformation: { width: 150, height: 45 } })], spacing: { before: 300, after: 80 }, indent: { left: 240 } })] : [
+            new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 60, bold: true, color: C.green })], spacing: { before: 300, after: 80 }, indent: { left: 240 } }),
+          ]),
+          new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT — AUDIT ENERGETIC / CPE", font: "Calibri", size: 28, bold: true, color: WHITE })], spacing: { before: 0, after: 60 }, indent: { left: 240 } }),
+          new Paragraph({ children: [new TextRun({ text: "Data: " + new Date().toLocaleDateString("ro-RO") + "   ·   Mc 001-2022   ·   EPBD 2024/1275", font: "Calibri", size: 17, italics: true, color: LGRAY })], spacing: { before: 0, after: 300 }, indent: { left: 240 } }),
         ],
       }),
     ]})]
   }));
-  add(gap(260));
+  addCover(gapCover(320));
 
-  // ── INTRO ───────────────────────────────────────────────────────────────────
-  add(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: NB,
+  // Card sumar date solicitant (doar formulare completate)
+  if (!isBlank && (has("numeProprietar") || has("adresaCompleta"))) {
+    const buildingTypeLabel = { casa_unifamiliala: "Casă unifamilială", apartament: "Apartament în bloc", bloc_locuinte: "Bloc de locuințe", birouri: "Clădire de birouri", comercial: "Spațiu comercial", institutie: "Instituție publică", industrial: "Hală industrială", altul: "Alt tip" };
+    const tipCladire = data["tipĆlădire"] || data["tipClădire"] || "";
+    const summaryRows = [
+      ["Proprietar", v("numeProprietar")],
+      ["Telefon", v("telefonProprietar")],
+      ["Email", v("emailProprietar")],
+      ["Adresă clădire", [v("adresaCompleta"), v("localitate"), v("judet")].filter(Boolean).join(", ")],
+      ["Tip clădire", buildingTypeLabel[tipCladire] || tipCladire],
+      ["Scop solicitare", v("scopulCPE")],
+    ].filter(([, val]) => val).map(([label, value]) => new TableRow({ children: [
+      new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.greenLt, fill: C.greenLt }, borders: allBd(), verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({ children: [new TextRun({ text: label, font: "Calibri", size: 19, bold: true, color: C.greenDk })], spacing: { before: 80, after: 80 }, indent: { left: 140 } })] }),
+      new TableCell({ shading: { type: ShadingType.SOLID, color: WHITE, fill: WHITE }, borders: { top: ln(BORDER), bottom: ln(BORDER), left: ln(C.green, 14), right: ln(BORDER) }, verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({ children: [new TextRun({ text: value, font: "Calibri", size: 20, bold: true, color: DARK })], spacing: { before: 80, after: 80 }, indent: { left: 160 } })] }),
+    ]}));
+    if (summaryRows.length) addCover(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, borders: allBd(), rows: summaryRows }));
+    addCover(gapCover(200));
+  }
+
+  // Nota intro pe coperta
+  addCover(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE }, borders: NB,
     rows: [new TableRow({ children: [new TableCell({
       shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
       borders: { top: ln("BFDBFE", 6), bottom: ln("BFDBFE", 6), left: ln("3B82F6", 18), right: ln("BFDBFE", 6) },
       children: [
         new Paragraph({ children: [new TextRun({ text: "  Stimate proprietar,", font: "Calibri", size: 22, bold: true, color: "1E3A8A" })], spacing: { before: 100, after: 60 } }),
-        new Paragraph({ children: [new TextRun({ text: "  V\u0103 rug\u0103m s\u0103 completa\u021bi c\u00e2mpurile de mai jos cu informa\u021biile disponibile despre cl\u0103direa dumneavoastr\u0103 \u015fi s\u0103 transmite\u021bi documentul auditorului energetic \u00ednainte de inspec\u021bie. C\u00e2mpurile marcate cu \u2731 sunt obligatorii.", font: "Calibri", size: 20, color: C.blue })], spacing: { before: 0, after: 100 } }),
+        new Paragraph({ children: [new TextRun({ text: "  Vă rugăm să completați câmpurile de mai jos cu informațiile disponibile despre clădirea dumneavoastră şi să transmiteți documentul auditorului energetic înainte de inspecție. Câmpurile marcate cu ✱ sunt obligatorii.", font: "Calibri", size: 20, color: BLUE })], spacing: { before: 0, after: 100 } }),
       ],
     })] })]
   }));
-  add(gap(280));
+
+  // ── CONTINUT (section 2 cu header/footer) ──────────────────────────────────
 
   // ══ 1. DATE DE IDENTIFICARE ══
   add(makeSection([
@@ -602,24 +628,64 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
   }
 
   // ══ FOOTER ══
-  add(gap(200));
-  add(new Paragraph({
-    children: [new TextRun({ text: "Generat de Zephren \u2014 " + new Date().toLocaleString("ro-RO") + "\u2003|\u2003ZEPHREN.COM", font: "Calibri", size: 17, italics: true, color: C.lGray })],
-    alignment: AlignmentType.CENTER,
-    border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.border } },
-    spacing: { before: 80, after: 0 },
-  }));
+  add(gap(140));
 
-  // ══ CREARE DOCUMENT ══
+  // ══ HEADER / FOOTER pentru pagini de continut ══
+  const pageHeader = new Header({
+    children: [new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
+      borders: { top: NB.top, bottom: ln(C.green, 6), left: NB.left, right: NB.right },
+      rows: [new TableRow({ children: [
+        new TableCell({ width: { size: 28, type: WidthType.PERCENTAGE }, borders: NB,
+          children: [new Paragraph({
+            children: logoBuffer
+              ? [new ImageRun({ data: logoBuffer, transformation: { width: 90, height: 27 } })]
+              : [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 22, bold: true, color: C.green })],
+            spacing: { before: 60, after: 60 },
+          })],
+        }),
+        new TableCell({ borders: NB,
+          children: [new Paragraph({
+            children: [new TextRun({ text: "Formular Client — Audit Energetic / CPE  ·  " + new Date().toLocaleDateString("ro-RO"), font: "Calibri", size: 17, italics: true, color: LGRAY })],
+            alignment: AlignmentType.RIGHT, spacing: { before: 60, after: 60 },
+          })],
+        }),
+      ]})]
+    })],
+  });
+
+  const pageFooter = new Footer({
+    children: [new Paragraph({
+      children: [
+        new TextRun({ text: "Generat de Zephren  ·  ZEPHREN.COM  ·  Pag. ", font: "Calibri", size: 16, italics: true, color: LGRAY }),
+        new TextRun({ children: [PageNumber.CURRENT], font: "Calibri", size: 16, color: LGRAY }),
+        new TextRun({ text: " / ", font: "Calibri", size: 16, color: LGRAY }),
+        new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Calibri", size: 16, color: LGRAY }),
+      ],
+      alignment: AlignmentType.CENTER,
+      border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.border } },
+      spacing: { before: 80, after: 0 },
+    })],
+  });
+
+  // ══ CREARE DOCUMENT (2 sectiuni) ══
   const doc = new Document({
     creator: "Zephren Energy Performance Calculator",
-    title: isBlank ? "Formular Client (Gol) \u2014 Audit Energetic" : "Formular Client \u2014 Audit Energetic",
-    description: "Formular colectare date pentru calculul performan\u021bei energetice conform Mc 001-2022",
+    title: isBlank ? "Formular Client (Gol) — Audit Energetic" : "Formular Client — Audit Energetic",
+    description: "Formular colectare date pentru calculul performanței energetice conform Mc 001-2022",
     styles: { default: { document: { run: { font: "Calibri", size: 20, color: C.dark } } } },
-    sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 851, right: 851, bottom: 851, left: 851 } } },
-      children,
-    }],
+    sections: [
+      {
+        properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 851, right: 851, bottom: 851, left: 851 } } },
+        children: coverChildren,
+      },
+      {
+        properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1300, right: 851, bottom: 1000, left: 851 } } },
+        headers: { default: pageHeader },
+        footers: { default: pageFooter },
+        children,
+      },
+    ],
   });
 
   const blob = await Packer.toBlob(doc);
@@ -723,10 +789,6 @@ export default function ClientInputForm({ onDataChange }) {
             <button onClick={() => exportDOCX(data, planuri)}
               className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-lg text-sm font-medium transition-all">
               ↓ DOCX
-            </button>
-            <button onClick={() => exportJSON(data)}
-              className="px-4 py-2 bg-white/5 border border-white/10 hover:border-amber-500/30 text-white/70 hover:text-amber-300 rounded-lg text-sm transition-all">
-              ↓ JSON
             </button>
             <button onClick={() => { if (confirm("Ștergeți toate datele introduse?")) { setData({}); localStorage.removeItem("clientFormData"); } }}
               className="px-4 py-2 bg-white/5 border border-white/10 hover:border-red-500/30 text-white/40 hover:text-red-400 rounded-lg text-sm transition-all">
@@ -1181,10 +1243,6 @@ export default function ClientInputForm({ onDataChange }) {
           <button onClick={() => exportDOCX(data, planuri)}
             className="px-6 py-2.5 bg-blue-500/20 border border-blue-500/30 hover:bg-blue-500/30 text-blue-300 rounded-xl text-sm font-medium transition-all">
             ↓ Descarcă DOCX
-          </button>
-          <button onClick={() => exportJSON(data)}
-            className="px-6 py-2.5 bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white/80 rounded-xl text-sm transition-all">
-            ↓ JSON
           </button>
         </div>
       </div>
