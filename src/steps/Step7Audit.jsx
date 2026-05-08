@@ -1363,7 +1363,7 @@ export default function Step7Audit(props) {
                       </div>
                       <div className="p-3 rounded-lg bg-white/[0.03] text-center">
                         <div className="text-lg font-bold font-mono">
-                          {financialAnalysis.paybackDiscounted !== null ? financialAnalysis.paybackDiscounted : "—"}
+                          {financialAnalysis.paybackDiscounted !== null ? Number(financialAnalysis.paybackDiscounted).toFixed(1) : "—"}
                         </div>
                         <div className="text-[10px] opacity-40">Recuperare actualizată [ani]</div>
                       </div>
@@ -2436,8 +2436,9 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
-              {/* ── Digital Building Logbook ── */}
-              <Card title="Digital Building Logbook — Dosar digital al clădirii" className="mb-4">
+              {/* ── Digital Building Logbook ── DEZACTIVAT: EPBD 2024/1275 netranspus în RO la 8.V.2026.
+                  Termen transpunere națională: 29.05.2026. Reactivare după adoptarea actului național. */}
+              {false && <Card title="Digital Building Logbook — Dosar digital al clădirii" className="mb-4">
                 <div className="space-y-2 text-xs">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white/[0.03] rounded-lg p-2.5">
@@ -2461,7 +2462,7 @@ export default function Step7Audit(props) {
                   </div>
                   <div className="text-[10px] opacity-30">Conform EPBD 2024/1275 — Digital Building Logbook framework</div>
                 </div>
-              </Card>
+              </Card>}
 
               {/* ── Pipeline gestionare proiecte ── */}
               <Card title="Pipeline proiecte — Status tracking" className="mb-4">
