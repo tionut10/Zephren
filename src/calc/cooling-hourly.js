@@ -268,16 +268,11 @@ export function calcCoolingHourly({
     const Q_internal_month_kWh = (Q_int_W * avgOccupancyFactor * hours) / 1000;
 
     // ── Transfer termic per lună [kWh] ───────────────────────────────
-    // Răcire activă doar când T_e > theta_int_cool (contribuție transmisie pozitivă)
+    // ISO 52016-1: delta_T poate fi negativ (T_e < setpoint) → flux termic spre exterior
+    // reduce sarcina de răcire. Math.max(0,...) pe Q_total gestionează balanța negativă.
     const delta_T_trans = T_e_mean - theta_int_cool;
-    const Q_trans_month_kWh = delta_T_trans > 0
-      ? (H_tr * delta_T_trans * hours) / 1000
-      : 0;
-
-    // Componenta de ventilare
-    const Q_vent_month_kWh = delta_T_trans > 0
-      ? (H_ve * delta_T_trans * hours) / 1000
-      : 0;
+    const Q_trans_month_kWh = (H_tr * delta_T_trans * hours) / 1000;
+    const Q_vent_month_kWh  = (H_ve * delta_T_trans * hours) / 1000;
 
     // ── Sarcina totală de răcire per lună [kWh] ─────────────────────
     const Q_total_month_kWh = Math.max(0,
