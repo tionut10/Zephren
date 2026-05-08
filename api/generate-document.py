@@ -545,6 +545,21 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                                 # inserăm ÎNAINTEA paragrafului semnăturii.
                                 body.remove(cod_tbl)
                                 target_para_elem.addprevious(cod_tbl)
+
+                            # Sprint 8 mai 2026 — Adaug paragraf gol mic ÎNAINTE de
+                            # tabelul COD UNIC pentru a crea spațiu vertical (~6mm)
+                            # între textul „** t/e..." și tabel (cerere utilizator).
+                            from docx.oxml import OxmlElement as _OxEl_sp
+                            spacer = _OxEl_sp("w:p")
+                            spacer_pPr = _OxEl_sp("w:pPr")
+                            spacer_spacing = _OxEl_sp("w:spacing")
+                            spacer_spacing.set(_qn_reord("w:before"), "0")
+                            spacer_spacing.set(_qn_reord("w:after"), "120")  # 120 twips = 6mm
+                            spacer_spacing.set(_qn_reord("w:line"), "60")    # line height mică
+                            spacer_spacing.set(_qn_reord("w:lineRule"), "exact")
+                            spacer_pPr.append(spacer_spacing)
+                            spacer.append(spacer_pPr)
+                            cod_tbl.addprevious(spacer)
                         except ValueError:
                             pass  # element nu e în listă (improbabil)
             except Exception:
@@ -4823,13 +4838,17 @@ class handler(BaseHTTPRequestHandler):
             # ═══════════════════════════════════════
             signature_b64 = data.get("signature_png_b64", "")
             stamp_b64 = data.get("stamp_png_b64", "")
-            # Pentru CPE: injectează semnătură/ștampilă în paragraful existent din template.
+            # Pentru CPE: injectează semnătură + ștampilă în paragraful existent din
+            # template. Sprint 8 mai 2026 — fix bug critic: anterior trimiteam stamp_b64=""
+            # (string gol) → ștampila NU se insera deloc în CPE. Acum trimitem ambele
+            # imagini → semnătură olografă + ștampilă Ø 40 mm suprapuse în dreapta-jos
+            # (Anexa 1b Ord. MDLPA 348/2026).
             # Pentru Anexa 1+2: SKIP — auditorul semnează manual pe printout (Ord. MDLPA 16/2023
             # cere doar UN exemplar semnat fizic; Anexa nu are loc dedicat pentru semnătură
             # injectată în corpul documentului — textul „Semnătura și ștampila auditorului"
             # apare DEJA în footerul oficial al fiecărei pagini).
-            if signature_b64 and mode == "cpe":
-                insert_signature_stamp(doc, signature_b64, "")
+            if (signature_b64 or stamp_b64) and mode == "cpe":
+                insert_signature_stamp(doc, signature_b64, stamp_b64)
 
             # Audit 2 mai 2026 — NU MAI MODIFICĂM celula „Anul construirii/renovării majore":
             # template-ul oficial MDLPA are deja celula vertical-merged între R1+R2
