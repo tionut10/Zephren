@@ -395,8 +395,12 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
     if stamp_b64:
         try:
             stamp_bytes = base64.b64decode(stamp_b64)
+            # Sprint 8 mai 2026 — Ștampila auditorului = Ø 40 mm conform Anexa 1b
+            # Ord. MDLPA 348/2026 (Art. 5 alin. 5: „Este interzisă utilizarea de
+            # ștampile cu alte dimensiuni decât cele precizate în anexa 1b").
+            # Era 3.0 cm — corectat la 4.0 cm (40 mm) standard profesional RO.
             for ph in ["{{STAMPILA}}", "{{STAMP}}", "[[STAMP]]", "{STAMPILA}"]:
-                stamp_count += _replace_placeholder_with_image(doc, ph, stamp_bytes, width_cm=3.0)
+                stamp_count += _replace_placeholder_with_image(doc, ph, stamp_bytes, width_cm=4.0)
         except Exception:
             pass
 
@@ -1346,6 +1350,10 @@ def replace_barcode_cells(doc, code6):
       celula  6  = '/'                       → separator fix
       celule 7-12= 'c','o','d','c','o','d'  → înlocuite cu cele 6 cifre Zephren
     Rezultat barcode: regreg/XXXXXX  (ex: regreg/000042)
+
+    NOTĂ: Folosim lxml direct (row_elem.findall) în loc de row.cells din python-docx,
+    deoarece row.cells expandează celulele cu gridSpan/vMerge din rândul anterior,
+    deplasând indicii și cauzând înlocuirea celulelor greșite (0-5 în loc de 7-12).
     """
     if not code6:
         return False
@@ -1355,31 +1363,35 @@ def replace_barcode_cells(doc, code6):
     else:
         code6 = (code6 + "      ")[:6]
 
+    W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    W_TR = f"{{{W_NS}}}tr"
+    W_TC = f"{{{W_NS}}}tc"
+    W_T  = f"{{{W_NS}}}t"
+
     placeholder = "regreg/codcod"
-    n_ph = len(placeholder)          # 13 caractere
 
     for table in doc.tables:
-        for row in table.rows:
-            cells = row.cells
-            if len(cells) < n_ph:
+        for row_elem in table._tbl.iter(W_TR):
+            # Acces direct XML — fără expansiunea merge din python-docx
+            tc_elems = list(row_elem.findall(W_TC))
+            if len(tc_elems) < 13:
                 continue
-            cell_texts = [
-                "".join(run.text for para in cells[i].paragraphs for run in para.runs)
-                for i in range(n_ph)
-            ]
-            if "".join(cell_texts) != placeholder:
+            # Construiește textul primelor 13 celule reale
+            texts = []
+            for tc in tc_elems[:13]:
+                t_texts = [t.text or "" for t in tc.iter(W_T)]
+                texts.append("".join(t_texts))
+            if "".join(texts) != placeholder:
                 continue
-            # Înlocuiește NUMAI celulele 7-12 (codcod → 6 cifre)
+            # Înlocuiește NUMAI celulele 7-12 (codcod → 6 cifre Zephren)
             for i in range(6):
+                tc = tc_elems[7 + i]
                 target = code6[i]
-                cell = cells[7 + i]
-                for para in cell.paragraphs:
-                    runs = para.runs
-                    if runs:
-                        runs[0].text = target
-                        for run in runs[1:]:
-                            run.text = ""
-                        break
+                t_list = list(tc.iter(W_T))
+                if t_list:
+                    t_list[0].text = target
+                    for t in t_list[1:]:
+                        t.text = ""
             return True
     return False
 
