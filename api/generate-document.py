@@ -1327,6 +1327,18 @@ def replace_in_txbx_only(doc, old_text, new_text):
     return total
 
 
+def replace_in_vml_raw(doc, old_text, new_text):
+    """Replace text in VML shape text nodes (v:t) — fallback pentru barcode-uri Code 39.
+    Acoperă cazul în care template-ul folosește v:textbox cu v:t în loc de w:txbxContent."""
+    _VML_NS = "urn:schemas-microsoft-com:vml"
+    count = 0
+    for vt in doc.element.body.iter(f"{{{_VML_NS}}}t"):
+        if vt.text and old_text in vt.text:
+            vt.text = vt.text.replace(old_text, new_text)
+            count += 1
+    return count
+
+
 def set_nzeb_checkbox(doc, nzeb_ok):
     """Check (DA) or uncheck (NU) the NZEB FORMCHECKBOX in the document via XML manipulation."""
     W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -4470,6 +4482,7 @@ class handler(BaseHTTPRequestHandler):
             if cpe_nr:
                 for placeholder in ["[[CPE_NR]]", "{{CPE_NR}}", "regreg/codcod"]:
                     replace_in_doc(doc, placeholder, cpe_nr)
+                    replace_in_vml_raw(doc, placeholder, cpe_nr)
                 # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
                 # "ANEXA 1/2 la Certificatul de performanță energetică nr. ......"
                 # Textul e fragmentat în multe run-uri Word, deci folosim `replace_in_paragraph`
