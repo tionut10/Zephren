@@ -4,7 +4,7 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, BorderStyle, WidthType, ShadingType,
   TableLayoutType, VerticalAlign, convertInchesToTwip, ImageRun,
-  CheckBox, Header, Footer, PageNumber,
+  Header, Footer, PageNumber,
 } from "docx";
 
 // ─── Helpers vizuale ──────────────────────────────────────────────────────────
@@ -310,19 +310,7 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
     const on = !isBlank && !!data[key];
 
     let checkCell;
-    if (isBlank && isWordInteractive) {
-      // MOD 3 — Word SDT checkbox interactiv (click în Word pentru bifă)
-      checkCell = new TableCell({
-        width: { size: 7, type: WidthType.PERCENTAGE },
-        borders: allBd(),
-        verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({
-          children: [new CheckBox({ checked: false })],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 60 },
-        })],
-      });
-    } else if (isBlank) {
+    if (isBlank) {
       // MOD 2 — simbol ☐ printabil (MS Gothic pentru redare corectă)
       checkCell = new TableCell({
         width: { size: 7, type: WidthType.PERCENTAGE },
