@@ -540,29 +540,6 @@ export default function Step2Envelope({
             </Card>
           )}
 
-          {/* ── CONFORT TERMIC VARĂ — C107/7-2002 (A1) ── */}
-          {summerComfortResults.length > 0 && (
-            <Card title={t("Confort termic vară",lang)} badge={<Badge color={summerComfortResults.every(r=>r?.ok) ? "green" : "amber"}>C107/7</Badge>}>
-              <div className="space-y-2">
-                {summerComfortResults.map((r, i) => r && (
-                  <div key={i} className="p-2 rounded-lg text-xs" style={{ background: r.ok ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.03)", border: `1px solid ${r.ok ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"}` }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium truncate flex-1">{r.name}</span>
-                      <Badge color={r.ok ? "green" : "red"}>Cat. {r.comfortCategory}</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] opacity-60">
-                      <span>Indice inerție D: <b className="font-mono">{r.D}</b></span>
-                      <span>Amortizare ν: <b className="font-mono">{r.dampingFactor}</b></span>
-                      <span>Defazaj: <b className="font-mono">{r.phaseShift}h</b></span>
-                      <span>T sup. max: <b className="font-mono" style={{color: r.ok ? "#22c55e" : "#ef4444"}}>{r.tSurfMax}°C</b></span>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-[10px] opacity-25 mt-1">Cat. I: ≤25°C · Cat. II: ≤26°C · Cat. III: ≤27°C · Cat. IV: &gt;27°C</div>
-              </div>
-            </Card>
-          )}
-
           {/* ── DIAGRAMĂ GLASER REALĂ — p_sat vs p_v pe axa sd (ISO 13788) ── */}
           {glaserResult && glaserResult.monthly && glaserResult.layers && glaserResult.layers.length > 0 && (
             <Card title={t("Diagramă Glaser — presiuni vapori (ISO 13788)", lang)}>
@@ -732,6 +709,29 @@ export default function Step2Envelope({
                   </>
                 );
               })()}
+            </Card>
+          )}
+
+          {/* ── CONFORT TERMIC VARĂ — C107/7-2002 (A1) ── */}
+          {summerComfortResults.length > 0 && (
+            <Card title={t("Confort termic vară",lang)} badge={<Badge color={summerComfortResults.every(r=>r?.ok) ? "green" : "amber"}>C107/7</Badge>}>
+              <div className="space-y-2">
+                {summerComfortResults.map((r, i) => r && (
+                  <div key={i} className="p-2 rounded-lg text-xs" style={{ background: r.ok ? "rgba(34,197,94,0.03)" : "rgba(239,68,68,0.03)", border: `1px solid ${r.ok ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"}` }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium truncate flex-1">{r.name}</span>
+                      <Badge color={r.ok ? "green" : "red"}>Cat. {r.comfortCategory}</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] opacity-60">
+                      <span>Indice inerție D: <b className="font-mono">{r.D}</b></span>
+                      <span>Amortizare ν: <b className="font-mono">{r.dampingFactor}</b></span>
+                      <span>Defazaj: <b className="font-mono">{r.phaseShift}h</b></span>
+                      <span>T sup. max: <b className="font-mono" style={{color: r.ok ? "#22c55e" : "#ef4444"}}>{r.tSurfMax}°C</b></span>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-[10px] opacity-25 mt-1">Cat. I: ≤25°C · Cat. II: ≤26°C · Cat. III: ≤27°C · Cat. IV: &gt;27°C</div>
+              </div>
             </Card>
           )}
 
