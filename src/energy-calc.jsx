@@ -3265,8 +3265,6 @@ export default function EnergyCalcApp({ cloud }) {
                     <div className="lg:hidden mb-1 pb-1 border-b border-white/[0.06]">
                       <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Acțiuni rapide</div>
                       {[
-                        { icon: "💾", label: "Export JSON", action: exportProject },
-                        { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
                         { icon: "⚡", label: "Quick Fill", action: () => setShowQuickFill(true), color: "text-amber-300" },
                         { icon: "🖨️", label: "Printează", action: () => { setPrintMode(true); setTimeout(() => { window.print(); setPrintMode(false); }, 500); } },
                         { icon: "↶", label: `Undo${undoStack.length > 0 ? ` (${undoStack.length})` : ""}`, action: undo, color: undoStack.length > 0 ? "" : "opacity-30 cursor-not-allowed" },
@@ -3283,10 +3281,8 @@ export default function EnergyCalcApp({ cloud }) {
 
                     {/* Instrumente avansate — mereu vizibile */}
                     <div className="lg:hidden mb-1">
-                      <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Export date</div>
+                      <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Cloud</div>
                       {[
-                        { icon: "📊", label: "Export CSV", action: exportCSV },
-                        { icon: "📗", label: "Export XLSX", action: exportExcel, color: "text-green-400" },
                         { icon: "☁️", label: "Salvează cloud", action: saveToCloud, color: cloud?.isLoggedIn ? "text-green-400" : "opacity-40" },
                       ].map((item, i) => (
                         <button key={i}
@@ -3303,15 +3299,11 @@ export default function EnergyCalcApp({ cloud }) {
                       <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Instrumente</div>
                     </div>
 
-                    {/* Export / Import — mereu vizibile (mutate din header) */}
+                    {/* Acces rapid — mereu vizibil */}
                     <div className="mb-1 pb-1 border-b border-white/[0.06]">
-                      <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Export / Import</div>
+                      <div className="text-[9px] uppercase tracking-wider opacity-30 px-3 py-1">Acces rapid</div>
                       {[
                         { icon: "⚡", label: "Quick Fill clădire", action: () => setShowQuickFill(true), color: "text-amber-300" },
-                        { icon: "💾", label: "Export JSON", action: exportProject },
-                        { icon: "📊", label: "Export CSV", action: exportCSV },
-                        { icon: "📗", label: "Export XLSX", action: exportExcel, color: "text-green-400" },
-                        { icon: "📂", label: "Import JSON", action: () => importFileRef.current?.click() },
                       ].map((item, i) => (
                         <button key={i}
                           onClick={() => { item.action(); setShowMoreMenu(false); }}
@@ -3325,7 +3317,6 @@ export default function EnergyCalcApp({ cloud }) {
                     {/* Instrumente avansate — mereu vizibile (la toate dimensiunile) */}
                     {[
                       { icon: "📋", label: "Conformitate PDF", action: exportComplianceReport, color: "text-violet-400" },
-                      { icon: "🔗", label: "Partajare + QR", action: () => setShowShareModal(true), color: "text-indigo-400" },
                       { icon: "📥", label: "Import din alt soft", action: () => setShowImportWizard(true) },
                       { icon: "👥", label: "Echipă & Cloud", action: () => { loadTeamData(); loadCloudProjects(); setShowTeamManager(true); }, color: cloud?.isLoggedIn ? "text-emerald-400" : "opacity-40" },
                       { icon: "🗺️", label: t("Hartă climatică"), action: () => setShowClimateMap(true) },
@@ -3333,11 +3324,9 @@ export default function EnergyCalcApp({ cloud }) {
                       { icon: "🏭", label: t("Catalog produse"), action: () => setShowProductCatalog(true) },
                       { icon: "💰", label: "Calculator ROI", action: () => setShowROICalculator(true), color: "text-green-400" },
                       { icon: "🗂️", label: "Gestiune CPE", action: () => setShowCPETracker(true), color: "text-sky-400" },
-                      { icon: "🧾", label: "Factură audit", action: () => setShowAuditInvoice(true), color: "text-amber-400" },
                       { icon: "🤖", label: "AI Assistant", action: () => setShowAIAssistant(o => !o), color: "text-amber-400" },
                       { icon: "📋", label: "Timeline progres", action: () => setShowTimeline(o => !o) },
                       { icon: "⚖️", label: "Comparare proiecte", action: () => setShowComparison(true) },
-                      { icon: "⌨️", label: "Scurtături tastatură", action: () => setShowShortcutsHelp(true) },
                       { icon: "?", label: t("Ghid utilizare"), action: () => setShowTour(true) },
                     ].map((item, i) => (
                       <button key={i}
