@@ -118,23 +118,22 @@ export default function Step5Calculation(props) {
               {/* ── GRAFIC LUNAR CONSUM ── */}
               {monthlyBreakdown && (
                 <Card title={t("Profil lunar consum energie",lang)} className="mb-6">
-                  <svg viewBox="0 0 660 180" width="100%" height="170" className="overflow-visible">
+                  <svg viewBox="0 0 700 210" width="100%" height="200" className="overflow-visible">
                     {(() => {
                       var data = monthlyBreakdown, maxQ = Math.max.apply(null, data.map(function(m){return m.qf_total}))||1;
-                      var bW=38, gap=16, cH=130, bY=155, oX=30, els=[];
-                      for(var t=0;t<=4;t++){var y=bY-(t/4)*cH; els.push(<line key={"yg"+t} x1={oX} y1={y} x2={oX+12*(bW+gap)} y2={y} stroke="#222" strokeWidth="0.5"/>); els.push(<text key={"yl"+t} x={oX-4} y={y+3} textAnchor="end" fontSize="6" fill="#555">{Math.round(maxQ*t/4)}</text>);}
+                      var bW=40, gap=14, cH=140, bY=178, oX=44, els=[];
+                      var gridCol="rgba(255,255,255,0.10)", textCol="#9ca3af", textBright="#e2e8f0";
+                      for(var ti=0;ti<=4;ti++){var yg=bY-(ti/4)*cH; els.push(<line key={"yg"+ti} x1={oX} y1={yg} x2={oX+12*(bW+gap)} y2={yg} stroke={gridCol} strokeWidth="0.8"/>); els.push(<text key={"yl"+ti} x={oX-6} y={yg+4} textAnchor="end" fontSize="9" fill={textCol}>{Math.round(maxQ*ti/4)}</text>);}
                       data.forEach(function(m,i){
-                        var x=oX+6+i*(bW+gap), utils=[{v:m.qf_h,c:"#ef4444"},{v:m.qf_w,c:"#f97316"},{v:m.qf_c,c:"#3b82f6"},{v:m.qf_v+m.qf_l,c:"#8b5cf6"}];
-                        var cumH=0;
-                        utils.forEach(function(u,ui){ var h=maxQ>0?(u.v/maxQ)*cH:0; if(h>0.5) els.push(<rect key={"b"+i+"-"+ui} x={x} y={bY-cumH-h} width={bW} height={h} fill={u.c} opacity="0.8" rx="1"/>); cumH+=h; });
-                        els.push(<text key={"ml"+i} x={x+bW/2} y={bY+11} textAnchor="middle" fontSize="7" fill="#777">{m.name}</text>);
+                        var x=oX+2+i*(bW+gap), cumH=0;
+                        [{v:m.qf_h,c:"#ef4444"},{v:m.qf_w,c:"#f97316"},{v:m.qf_c,c:"#3b82f6"},{v:m.qf_v+m.qf_l,c:"#8b5cf6"}].forEach(function(u,ui){ var h=maxQ>0?(u.v/maxQ)*cH:0; if(h>0.5) els.push(<rect key={"b"+i+"-"+ui} x={x} y={bY-cumH-h} width={bW} height={h} fill={u.c} opacity="0.88" rx="1.5"/>); cumH+=h; });
+                        els.push(<text key={"ml"+i} x={x+bW/2} y={bY+15} textAnchor="middle" fontSize="10" fill={textBright} fontWeight="500">{m.name}</text>);
                       });
-                      // Temperature line
                       var tMin=Math.min.apply(null,data.map(function(m){return m.tExt})), tMax=Math.max.apply(null,data.map(function(m){return m.tExt})), tR=Math.max(tMax-tMin,1);
-                      var pts=data.map(function(m,i){ return (oX+6+i*(bW+gap)+bW/2)+","+(bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1); }).join(" ");
-                      els.push(<polyline key="tl" points={pts} fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.6"/>);
-                      data.forEach(function(m,i){ var x=oX+6+i*(bW+gap)+bW/2, y=bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1; els.push(<circle key={"td"+i} cx={x} cy={y} r="2" fill="#fbbf24" opacity="0.7"/>); els.push(<text key={"tt"+i} x={x} y={y-4} textAnchor="middle" fontSize="5" fill="#fbbf24" opacity="0.7">{m.tExt.toFixed(0)}</text>); });
-                      [{l:"Încălzire",c:"#ef4444"},{l:"ACM",c:"#f97316"},{l:"Răcire",c:"#3b82f6"},{l:"V+I",c:"#8b5cf6"},{l:"Temp",c:"#fbbf24"}].forEach(function(it,i){ els.push(<rect key={"lg"+i} x={oX+i*100} y={2} width={7} height={7} fill={it.c} rx="1" opacity="0.8"/>); els.push(<text key={"lt"+i} x={oX+i*100+10} y={9} fontSize="6" fill="#888">{it.l}</text>); });
+                      var pts=data.map(function(m,i){ return (oX+2+i*(bW+gap)+bW/2)+","+(bY-((m.tExt-tMin)/tR)*cH*0.78-cH*0.1); }).join(" ");
+                      els.push(<polyline key="tl" points={pts} fill="none" stroke="#fbbf24" strokeWidth="2.5" opacity="0.95"/>);
+                      data.forEach(function(m,i){ var tx=oX+2+i*(bW+gap)+bW/2, ty=bY-((m.tExt-tMin)/tR)*cH*0.78-cH*0.1; els.push(<circle key={"td"+i} cx={tx} cy={ty} r="3.5" fill="#fbbf24"/>); els.push(<text key={"tt"+i} x={tx} y={ty-8} textAnchor="middle" fontSize="8.5" fill="#fde68a" fontWeight="600">{m.tExt.toFixed(0)}</text>); });
+                      [{l:"Încălzire",c:"#ef4444"},{l:"ACM",c:"#f97316"},{l:"Răcire",c:"#3b82f6"},{l:"Vent",c:"#8b5cf6"},{l:"Temp",c:"#fbbf24"}].forEach(function(it,i){ var lx=oX+i*118; els.push(<rect key={"lg"+i} x={lx} y={4} width={11} height={11} fill={it.c} rx="2"/>); els.push(<text key={"lt"+i} x={lx+15} y={14} fontSize="10.5" fill={textBright} fontWeight="500">{it.l}</text>); });
                       return els;
                     })()}
                   </svg>
@@ -1302,8 +1301,14 @@ export default function Step5Calculation(props) {
               <GradeGate feature="npvCurve" plan={userPlan} auditorGrad={auditorGrad}>
               {(() => {
                 const Au = parseFloat(building.areaUseful) || 1;
-                const costKwh = instSummary.fuel?.id === "electricitate" ? 1.30 : instSummary.fuel?.id === "gaz" ? 0.32 : 0.30;
-                const annualCost = (instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) * costKwh;
+                const fuelId = instSummary.fuel?.id || "gaz";
+                const priceFuel = energyPrices?.[fuelId] || (fuelId === "gaz" ? 0.31 : fuelId === "electricitate" ? 1.10 : 0.30);
+                const priceElec = energyPrices?.electricitate || 1.10;
+                const annualCost = instSummary.qf_h * priceFuel
+                  + instSummary.qf_w * priceFuel
+                  + instSummary.qf_c * priceElec
+                  + instSummary.qf_v * priceElec
+                  + instSummary.qf_l * priceElec;
                 const measures = [
                   { name: "Termoizolație pereți", cost: Au * 45, savePct: 0.18, color: "#3b82f6" },
                   { name: "Ferestre triple", cost: Au * 0.15 * 250, savePct: 0.12, color: "#8b5cf6" },
@@ -1385,9 +1390,13 @@ export default function Step5Calculation(props) {
                     {curves.map((c, ci) => {
                       const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
                       const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
+                      const npv20 = c.pts[c.pts.length-1].npv;
+                      const tipText = `${c.name}\nEconomie: ${fmtRON(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nNPV 20 ani: ${fmtRON(npv20)} RON\nRecuperare: ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
                       return (
                         <g key={"c"+ci}>
+                          <title>{tipText}</title>
                           <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" opacity="0.9" />
+                          <polyline points={ptStr} fill="none" stroke="transparent" strokeWidth="12" />
                           {pbX && (
                             <>
                               <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
@@ -1419,7 +1428,7 @@ export default function Step5Calculation(props) {
                       );
                     })}
                   </div>
-                  <div className="text-xs opacity-30 mt-2">NPV cu rată discount 5%/an · prețuri constante {costKwh.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
+                  <div className="text-xs opacity-30 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
                 </Card>
                 );
               })()}
