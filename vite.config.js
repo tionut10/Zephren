@@ -34,12 +34,12 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom"],
-          "pdf-engine": ["jspdf", "jspdf-autotable"],
-          "excel-engine": ["xlsx"],
-          "docx-engine": ["docx-preview"],
-          "supabase": ["@supabase/supabase-js"],
+        manualChunks: (id) => {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) return "react-vendor";
+          if (id.includes("node_modules/jspdf")) return "pdf-engine";
+          if (id.includes("node_modules/xlsx")) return "excel-engine";
+          if (id.includes("node_modules/docx-preview")) return "docx-engine";
+          if (id.includes("node_modules/@supabase")) return "supabase";
         },
       },
     },

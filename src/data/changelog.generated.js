@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-07
+// Ultima generare: 2026-05-08
 
 export const APP_VERSION = "0.6.0";
 export const CHANGELOG = [
@@ -11,6 +11,10 @@ export const CHANGELOG = [
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "🔸",
+        "text": "checkpoint: versiuni stabile pre-update major (node 24, python 3.14, toate dependențele safe actualizate)"
+      },
       {
         "icon": "🔀",
         "text": "refactor(Pas 7): elimin secțiunea „INSTRUMENTE SUPLIMENTARE\" (8 tool-uri duplicate cu Step 8)"
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "refactor(documente): eliminare 13 grupe de exporturi/tab-uri redundante (~30 elemente)"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(documente): markaj 🟢/🟡/⚪ obligatoriu legal vs opțional + countdown portal MDLPA + sub-meniu Extrage"
       }
     ]
   },
