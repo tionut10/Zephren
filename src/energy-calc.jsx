@@ -1807,7 +1807,9 @@ export default function EnergyCalcApp({ cloud }) {
     const newQfTotal = newQfH + newQfW + newQfC + newQfV + newQfL;
     const acmFp = ri.addHP ? fP_elec_scenario : (instSummary.fuel?.fP_tot || 1.17);
     const newEp = newQfH * newFuelFpH + newQfW * acmFp + newQfC * fP_elec_scenario + newQfV * fP_elec_scenario + newQfL * fP_elec_scenario;
-    let renewEp = 0;
+    // Pornim de la creditele renewables EXISTENTE ale proiectului (PV, CHP, HP, biomasă)
+    // Scenariul adaugă surse NOI pe deasupra; fără această linie M2 (nZEB cu PV+CHP) apărea degradat
+    let renewEp = renewSummary ? (renewSummary.ep_reduction || 0) : 0;
     if (ri.addPV) { renewEp += (parseFloat(ri.pvArea)||0) * 0.21 * 0.97 * (selectedClimate?.solar?.Oriz||330) * 0.80 * fP_elec_scenario; }
     if (ri.addSolarTh) { renewEp += (parseFloat(ri.solarThArea)||0) * 0.75 * (selectedClimate?.solar?.S||390) * 0.85; }
     const newEpM2 = Au > 0 ? Math.max(0, newEp - renewEp) / Au : 0;

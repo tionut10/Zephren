@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
-import MonthlyEnergyChart from "../components/MonthlyEnergyChart.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
@@ -63,36 +62,6 @@ export default function Step5Calculation(props) {
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCatResolved];
             const rer = renewSummary?.rer || 0;
 
-            // C5 FIX: Bilanț lunar — use monthlyISO when available
-            const months = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
-            const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
-            const tInt = parseFloat(heating.theta_int) || 20;
-            // Sprint 19 Performanță — monthlyData + derivate memoizate (12 iterații + fallback ISO 13790)
-            const monthlyData = useMemo(() => months.map((m,i) => {
-              const tExt = selectedClimate?.temp_month?.[i] ?? 5;
-              const deltaT = Math.max(0, tInt - tExt);
-              if (monthlyISO && monthlyISO[i]) {
-                return { month:m, tExt, deltaT, qLoss: monthlyISO[i].Q_loss || 0, solarGain: monthlyISO[i].Q_sol || 0, intGain: monthlyISO[i].Q_int || 0, qHeat: monthlyISO[i].qH_nd, qCool: monthlyISO[i].qC_nd };
-              }
-              const G = envelopeSummary?.G || 0.5;
-              const V = parseFloat(building.volume) || 100;
-              const qLoss = G * V * deltaT * monthDays[i] * 24 / 1000;
-              const solarGain = (selectedClimate?.solar?.S || 400) / 12 * 0.15 * Au * (deltaT > 0 ? 0.8 : 0.3);
-              const intGain = Au * 5 * monthDays[i] * 12 / 1000;
-              const gamma = qLoss > 0 ? (solarGain + intGain) / qLoss : 0;
-              const tau_h = envelopeSummary?.G ? (Au * 80000) / ((envelopeSummary.G * V + 0.34 * 0.5 * V) * 3600) : 15;
-              const a = 1 + tau_h / 15;
-              const etaH = gamma !== 1 ? (1 - Math.pow(gamma, a)) / (1 - Math.pow(gamma, a+1)) : a/(a+1);
-              const qHeat = Math.max(0, qLoss - etaH * (solarGain + intGain));
-              const qCool = deltaT <= 0 ? Math.max(0, (solarGain + intGain) * 0.3) : 0;
-              return { month:m, tExt, deltaT, qLoss, solarGain, intGain, qHeat, qCool };
-            }), [monthlyISO, selectedClimate, tInt, envelopeSummary, building.volume, Au]);
-            const { annualHeat, annualCool, maxQ } = useMemo(() => ({
-              annualHeat: monthlyData.reduce((s,d) => s + d.qHeat, 0),
-              annualCool: monthlyData.reduce((s,d) => s + d.qCool, 0),
-              maxQ: Math.max(...monthlyData.map(d => Math.max(d.qLoss, d.qHeat))),
-            }), [monthlyData]);
-
             // Sprint 18 UX — verificare date minime pentru Step 5
             const _missingCritical = [];
             if (!Au || Au <= 0) _missingCritical.push(lang==="EN"?"usable area (Step 1)":"suprafață utilă (Pasul 1)");
@@ -146,60 +115,6 @@ export default function Step5Calculation(props) {
                   <div className="text-[10px] opacity-30 mt-2">Valori kWh — metoda lunară SR EN ISO 13790 | Factori NA:2023</div>
                 </Card>
               )}
-              {/* ── BILANȚ LUNAR ── */}
-              <Card title={t("Bilanț energetic lunar (metoda quasi-staționară)",lang)} className="mb-6">
-                <div className="overflow-x-auto">
-                  <div className="min-w-[480px]">
-                    {/* Grafic SVG bilanț lunar */}
-                    <MonthlyEnergyChart monthlyData={monthlyData} Au={Au} lang={lang} />
-
-                    {/* Tabel lunar */}
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full text-[10px]">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="text-left py-1.5 px-1 opacity-40 font-medium">Luna</th>
-                            {months.map(m => <th key={m} className="text-center py-1.5 px-1 opacity-40 font-medium">{m}</th>)}
-                            <th className="text-center py-1.5 px-1 opacity-60 font-semibold">TOTAL</th>
-                          </tr>
-                        </thead>
-                        <tbody className="font-mono">
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">T ext [°C]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.tExt.toFixed(1)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium">{selectedClimate?.theta_a || "—"}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q pierderi [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.qLoss.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium">{monthlyData.reduce((s,d)=>s+d.qLoss,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q solar [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-amber-400/70">{d.solarGain.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium text-amber-400/70">{monthlyData.reduce((s,d)=>s+d.solarGain,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q intern [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-purple-400/70">{d.intGain.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium text-purple-400/70">{monthlyData.reduce((s,d)=>s+d.intGain,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/10 bg-red-500/5">
-                            <td className="py-1.5 px-1 font-semibold text-red-400">Q incalzire [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-red-400 font-medium">{d.qHeat.toFixed(0)}</td>)}
-                            <td className="text-center py-1.5 px-1 font-bold text-red-400">{annualHeat.toFixed(0)}</td>
-                          </tr>
-                          <tr className="bg-blue-500/5">
-                            <td className="py-1.5 px-1 font-semibold text-blue-400">Q racire [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-blue-400 font-medium">{d.qCool.toFixed(0)}</td>)}
-                            <td className="text-center py-1.5 px-1 font-bold text-blue-400">{annualCool.toFixed(0)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </Card>
               {/* ── GRAFIC LUNAR CONSUM ── */}
               {monthlyBreakdown && (
                 <Card title={t("Profil lunar consum energie",lang)} className="mb-6">
@@ -1616,7 +1531,7 @@ export default function Step5Calculation(props) {
                       </div>
                       <div className="p-3 flex flex-col items-center justify-center">
                         <div className="text-2xl opacity-20">→</div>
-                        <div className="text-sm font-bold text-green-400">-{rehabComparison.savings.epPct.toFixed(0)}%</div>
+                        <div className={`text-sm font-bold ${rehabComparison.savings.epPct >= 0 ? "text-green-400" : "text-red-400"}`}>{rehabComparison.savings.epPct >= 0 ? "-" : "+"}{Math.abs(rehabComparison.savings.epPct).toFixed(0)}%</div>
                       </div>
                       <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                         <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
