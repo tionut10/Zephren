@@ -20,8 +20,8 @@ import {
 } from "../data/energy-prices-live.js";
 // Sprint P1 P1-06 — preț energie EUR/kWh per combustibil real (nu 0.15 hardcoded global).
 import { getEnergyPriceEUR } from "../calc/smart-rehab.js";
-// Sprint P1 P1-03 — referință RaportConformareNZEB în Step 7 (gating Ord. 348/2026).
-import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
+// Sprint 8 mai 2026 — Componenta RaportConformareNZEB a fost eliminată; cardul
+// de referință de mai jos păstrează doar redirect către Pas 6 (PDF oficial).
 import { sanitizeSvg } from "../lib/sanitize-html.js";
 import BuildingPhotos from "../components/BuildingPhotos.jsx";
 import LCCAnalysis from "../components/LCCAnalysis.jsx";
@@ -597,25 +597,6 @@ export default function Step7Audit(props) {
               <div className="space-y-5">
 
 
-                {/* ── Radar performanță ── */}
-                {instSummary && envelopeSummary && (
-                <Card title={t("Radar performanță energetică",lang)}>
-                  <svg viewBox="0 0 240 220" width="240" height="200" className="mx-auto block">
-                    {(() => {
-                      var cx=120,cy=105,mR=80;
-                      var axes=[{l:"Anvelopa",v:Math.min(100,Math.max(0,100-envelopeSummary.G*120))},{l:"Încălzire",v:Math.min(100,(instSummary.eta_total_h||0)*100)},{l:"ACM",v:Math.min(100,(instSummary.eta_acm||0.85)*100)},{l:"Ventilare",v:Math.min(100,instSummary.hrEta>0?instSummary.hrEta*110:30)},{l:"Regenerabile",v:Math.min(100,(renewSummary?renewSummary.rer:0)*1.5)}];
-                      var nn=axes.length, els=[];
-                      [0.25,0.5,0.75,1].forEach(function(f){var pts=[];for(var i=0;i<nn;i++){var a=(i*360/nn-90)*Math.PI/180;pts.push((cx+mR*f*Math.cos(a))+","+(cy+mR*f*Math.sin(a)));}els.push(<polygon key={"g"+f} points={pts.join(" ")} fill="none" stroke="#333" strokeWidth="0.5"/>);});
-                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;els.push(<line key={"a"+i} x1={cx} y1={cy} x2={cx+mR*Math.cos(a)} y2={cy+mR*Math.sin(a)} stroke="#444" strokeWidth="0.5"/>);els.push(<text key={"al"+i} x={cx+(mR+15)*Math.cos(a)} y={cy+(mR+15)*Math.sin(a)+3} textAnchor="middle" fontSize="7" fill="#888">{ax.l}</text>);});
-                      var dPts=axes.map(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);return (cx+r*Math.cos(a))+","+(cy+r*Math.sin(a));}).join(" ");
-                      els.push(<polygon key="dp" points={dPts} fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="2"/>);
-                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);els.push(<circle key={"dc"+i} cx={cx+r*Math.cos(a)} cy={cy+r*Math.sin(a)} r="3" fill="#f59e0b"/>);});
-                      return els;
-                    })()}
-                  </svg>
-                </Card>
-                )}
-
                 {/* ── Sumar situatie actuala ── */}
                 <Card title={t("Situatia actuala — Sumar diagnostic",lang)}>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -642,63 +623,24 @@ export default function Step7Audit(props) {
                   </div>
                 </Card>
 
-                {/* ═══ NEW: SUGESTII SMART REABILITARE (E5) ═══ */}
-                {smartSuggestions && smartSuggestions.length > 0 && (
-                  <Card title={t("Sugestii inteligente reabilitare",lang)} badge={<Badge color="amber">{smartSuggestions.length} măsuri</Badge>}>
-                    <div className="space-y-2">
-                      {smartSuggestions.map((s, i) => (
-                        <div key={i} className="p-3 rounded-lg border" style={{
-                          background: s.priority===1 ? "rgba(239,68,68,0.03)" : s.priority===2 ? "rgba(234,179,8,0.03)" : "rgba(34,197,94,0.03)",
-                          borderColor: s.priority===1 ? "rgba(239,68,68,0.15)" : s.priority===2 ? "rgba(234,179,8,0.15)" : "rgba(34,197,94,0.15)"
-                        }}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-bold" style={{color: s.priority===1?"#ef4444":s.priority===2?"#eab308":"#22c55e"}}>
-                              {s.priority===1?"🔴 URGENT":s.priority===2?"🟡 RECOMANDAT":"🟢 OPȚIONAL"}
-                            </span>
-                            <span className="text-xs font-medium flex-1">{s.measure}</span>
-                            <Badge color={s.priority===1?"red":s.priority===2?"amber":"green"}>{s.system}</Badge>
-                          </div>
-                          <div className="text-[10px] opacity-50 mb-1">{s.detail}</div>
-                          <div className="flex flex-wrap gap-3 text-[10px]">
-                            <span className="opacity-40">Impact: <b className="text-white/70">{s.impact}</b></span>
-                            <span className="opacity-40">Cost: <b className="text-white/70">{s.costEstimate}</b></span>
-                            <span className="opacity-40">Recuperare: <b className="text-white/70">{s.payback}</b></span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-                {/* ── Prioritizare masuri ── */}
-                <Card title={t("Prioritizare Masuri de Interventie",lang)}>
-                  <div className="space-y-4">
-                    {[1,2,3].map(prio => {
-                      const allItems = [
-                        ...envelopeAnalysis.filter(e => e.needsUpgrade && e.priority === prio).map(e => ({...e, cat:"Anvelopa"})),
-                        ...installAnalysis.filter(e => e.priority === prio).map(e => ({...e, cat:"Instalatii", name: e.system})),
-                        ...renewRecommendations.filter(e => e.priority === prio).map(e => ({...e, cat:"Regenerabile", name: e.system})),
-                      ];
-                      if (allItems.length === 0) return null;
-                      return (
-                        <div key={prio}>
-                          <div className={`text-xs font-bold uppercase mb-2 ${priorityColor(prio)}`}>
-                            {prio === 1 ? "🔴 Prioritate 1 — Urgente" : prio === 2 ? "🟡 Prioritate 2 — Recomandate" : "🟢 Prioritate 3 — Optionale"}
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {allItems.map((item, j) => (
-                              <div key={j} className="flex items-center gap-2 p-2 rounded bg-white/[0.03] text-xs">
-                                <span className="opacity-40">[{item.cat}]</span>
-                                <span className="font-medium">{item.name}</span>
-                                <span className="opacity-30 flex-1 text-right truncate">{item.recommendation}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                {/* ── Radar performanță ── */}
+                {instSummary && envelopeSummary && (
+                <Card title={t("Radar performanță energetică",lang)}>
+                  <svg viewBox="0 0 240 220" width="240" height="200" className="mx-auto block">
+                    {(() => {
+                      var cx=120,cy=105,mR=80;
+                      var axes=[{l:"Anvelopa",v:Math.min(100,Math.max(0,100-envelopeSummary.G*120))},{l:"Încălzire",v:Math.min(100,(instSummary.eta_total_h||0)*100)},{l:"ACM",v:Math.min(100,(instSummary.eta_acm||0.85)*100)},{l:"Ventilare",v:Math.min(100,instSummary.hrEta>0?instSummary.hrEta*110:30)},{l:"Regenerabile",v:Math.min(100,(renewSummary?renewSummary.rer:0)*1.5)}];
+                      var nn=axes.length, els=[];
+                      [0.25,0.5,0.75,1].forEach(function(f){var pts=[];for(var i=0;i<nn;i++){var a=(i*360/nn-90)*Math.PI/180;pts.push((cx+mR*f*Math.cos(a))+","+(cy+mR*f*Math.sin(a)));}els.push(<polygon key={"g"+f} points={pts.join(" ")} fill="none" stroke="#333" strokeWidth="0.5"/>);});
+                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;els.push(<line key={"a"+i} x1={cx} y1={cy} x2={cx+mR*Math.cos(a)} y2={cy+mR*Math.sin(a)} stroke="#444" strokeWidth="0.5"/>);els.push(<text key={"al"+i} x={cx+(mR+15)*Math.cos(a)} y={cy+(mR+15)*Math.sin(a)+3} textAnchor="middle" fontSize="7" fill="#888">{ax.l}</text>);});
+                      var dPts=axes.map(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);return (cx+r*Math.cos(a))+","+(cy+r*Math.sin(a));}).join(" ");
+                      els.push(<polygon key="dp" points={dPts} fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="2"/>);
+                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);els.push(<circle key={"dc"+i} cx={cx+r*Math.cos(a)} cy={cy+r*Math.sin(a)} r="3" fill="#f59e0b"/>);});
+                      return els;
+                    })()}
+                  </svg>
                 </Card>
+                )}
 
                 {/* ── Recomandari Anvelopa ── */}
                 {envelopeAnalysis.length > 0 && (
@@ -797,6 +739,64 @@ export default function Step7Audit(props) {
                 </Card>
                 )}
 
+
+                {/* ═══ NEW: SUGESTII SMART REABILITARE (E5) ═══ */}
+                {smartSuggestions && smartSuggestions.length > 0 && (
+                  <Card title={t("Sugestii inteligente reabilitare",lang)} badge={<Badge color="amber">{smartSuggestions.length} măsuri</Badge>}>
+                    <div className="space-y-2">
+                      {smartSuggestions.map((s, i) => (
+                        <div key={i} className="p-3 rounded-lg border" style={{
+                          background: s.priority===1 ? "rgba(239,68,68,0.03)" : s.priority===2 ? "rgba(234,179,8,0.03)" : "rgba(34,197,94,0.03)",
+                          borderColor: s.priority===1 ? "rgba(239,68,68,0.15)" : s.priority===2 ? "rgba(234,179,8,0.15)" : "rgba(34,197,94,0.15)"
+                        }}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold" style={{color: s.priority===1?"#ef4444":s.priority===2?"#eab308":"#22c55e"}}>
+                              {s.priority===1?"🔴 URGENT":s.priority===2?"🟡 RECOMANDAT":"🟢 OPȚIONAL"}
+                            </span>
+                            <span className="text-xs font-medium flex-1">{s.measure}</span>
+                            <Badge color={s.priority===1?"red":s.priority===2?"amber":"green"}>{s.system}</Badge>
+                          </div>
+                          <div className="text-[10px] opacity-50 mb-1">{s.detail}</div>
+                          <div className="flex flex-wrap gap-3 text-[10px]">
+                            <span className="opacity-40">Impact: <b className="text-white/70">{s.impact}</b></span>
+                            <span className="opacity-40">Cost: <b className="text-white/70">{s.costEstimate}</b></span>
+                            <span className="opacity-40">Recuperare: <b className="text-white/70">{s.payback}</b></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── Prioritizare masuri ── */}
+                <Card title={t("Prioritizare Masuri de Interventie",lang)}>
+                  <div className="space-y-4">
+                    {[1,2,3].map(prio => {
+                      const allItems = [
+                        ...envelopeAnalysis.filter(e => e.needsUpgrade && e.priority === prio).map(e => ({...e, cat:"Anvelopa"})),
+                        ...installAnalysis.filter(e => e.priority === prio).map(e => ({...e, cat:"Instalatii", name: e.system})),
+                        ...renewRecommendations.filter(e => e.priority === prio).map(e => ({...e, cat:"Regenerabile", name: e.system})),
+                      ];
+                      if (allItems.length === 0) return null;
+                      return (
+                        <div key={prio}>
+                          <div className={`text-xs font-bold uppercase mb-2 ${priorityColor(prio)}`}>
+                            {prio === 1 ? "🔴 Prioritate 1 — Urgente" : prio === 2 ? "🟡 Prioritate 2 — Recomandate" : "🟢 Prioritate 3 — Optionale"}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {allItems.map((item, j) => (
+                              <div key={j} className="flex items-center gap-2 p-2 rounded bg-white/[0.03] text-xs">
+                                <span className="opacity-40">[{item.cat}]</span>
+                                <span className="font-medium">{item.name}</span>
+                                <span className="opacity-30 flex-1 text-right truncate">{item.recommendation}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
 
                 {/* ── Scenariu Reabilitat — Comparatie ── */}
                 {rehabScenario && (
@@ -1450,6 +1450,411 @@ export default function Step7Audit(props) {
                     C. Date tehnice export (XML MDLPA + Excel + PDF tehnic + anexe)
                   Pașaportul de Renovare e mutat aici din locul vechi (era jos, izolat).
               ═══════════════════════════════════════════════════════════════ */}
+              {/* ── IEQ — Calitate aer interior ── */}
+              <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {IEQ_CATEGORIES.map(cat => (
+                    <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
+                      <div className="text-sm font-bold">{cat.id}</div>
+                      <div className="text-[10px] opacity-40">{cat.tempRange}</div>
+                      <div className="text-[10px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
+                      <div className="text-[10px] opacity-40">{cat.lux} lux</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform SR EN 16798-1:2019/NA:2019</div>
+              </Card>
+
+              {/* ── CHP — Cogenerare ── */}
+              <Card title="Cogenerare (CHP) — producție combinată căldură + electricitate" className="mb-4">
+                <div className="space-y-1.5">
+                  {CHP_TYPES.map(chp => (
+                    <div key={chp.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs">
+                      <span>{chp.label}</span>
+                      <span className="font-mono opacity-60">η_el={chp.eta_el} η_th={chp.eta_th}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Disponibil pentru clădiri cu consum termic {">"} 100 MWh/an</div>
+              </Card>
+
+              {/* ── MCCL — Catalog ponți termice extins ── */}
+              <Card title={`MCCL — Catalog ponți termice (${MCCL_CATALOG.length} tipuri)`} className="mb-4">
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
+                    <div key={cat}>
+                      <div className="text-[10px] font-bold opacity-40 mt-2 mb-1">{cat}</div>
+                      {MCCL_CATALOG.filter(m => m.cat === cat).map(m => (
+                        <div key={m.id} className="flex items-center justify-between text-[10px] py-0.5 px-2 rounded hover:bg-white/5 cursor-pointer" onClick={() => {
+                          setThermalBridges(prev => [...prev, { name: m.desc, psi: String(m.psi), length: "1" }]);
+                          showToast("Adăugat: " + m.desc, "success");
+                        }}>
+                          <span className="opacity-60">{m.desc}</span>
+                          <span className="font-mono">Ψ={m.psi} / {m.psi_izolat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
+              </Card>
+
+              {/* ── Fotografii clădire + adnotări ── */}
+              <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
+                <BuildingPhotos
+                  buildingPhotos={buildingPhotos}
+                  setBuildingPhotos={setBuildingPhotos}
+                  showToast={showToast}
+                  cn={cn}
+                />
+              </Card>
+
+              {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
+                  Sprint 08may2026 (followup 3) — DEZACTIVAT prin `false && ...`
+                  Motiv consistență: card-ul afișa banner „PREVIEW EPBD 2024 — fără valoare
+                  juridică în RO până la actul național de transpunere" (termen 29.05.2026).
+                  Aceeași logică ca butoanele Pașaport eliminate anterior (commit-uri db089d2 + b367618):
+                  tot ce nu e impus de norma în vigoare la 8.V.2026 → eliminat, reactivare la transpunere.
+                  Conține: banner ținte 2030/2035, Card cu Faze/Durată/Investiție/Clasă finală,
+                  buton „Export DOCX Foaie de Parcurs" — toate dependente de Pașaport EPBD.
+                  REACTIVARE LA TRANSPUNERE EPBD RO: schimbă `false &&` în nimic.
+                  Helper-ul calcPhasedRehabPlan rămâne în repo. */}
+              {false && instSummary && (() => {
+                // Sprint 06may2026 audit P1 (B4) — UNIFICARE 3 SURSE COST.
+                // Prioritate: rehabScenarioInputs (Pas 5 user) > smartSuggestions (Pas 7 auto).
+                // Aliniere cu Deviz + CPE post-rehab care folosesc rehabScenarioInputs.
+                const eurRon = getEurRonSync() || 5.05;
+                const slugifyCard = (s, i) => {
+                  const ascii = String(s || "")
+                    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+                    .replace(/[^a-zA-Z0-9]+/g, "_")
+                    .replace(/^_+|_+$/g, "")
+                    .toLowerCase();
+                  return `m_${i}_${ascii || "masura"}`;
+                };
+                const ri = rehabScenarioInputs || {};
+                const hasRehabInputs = ri.addInsulWall || ri.addInsulRoof ||
+                  ri.replaceWindows || ri.replaceHeating || ri.addPV ||
+                  ri.addSolarThermal || ri.addHRV || ri.addLED;
+                let measures = [];
+                if (hasRehabInputs) {
+                  const wallA = (opaqueElements || []).filter(e => e.type === "PE")
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const roofA = (opaqueElements || []).filter(e => e.type === "PP" || e.type === "PT")
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const glazA = (glazingElements || [])
+                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
+                  const Au = parseFloat(building?.areaUseful) || 100;
+                  const epBase = parseFloat(epFinal) || 200;
+                  let id = 0;
+                  const push = (name, cat, costEur, epSav, life, prio) => measures.push({
+                    id: slugifyCard(name, id++),
+                    name, category: cat, system: cat,
+                    cost_RON: Math.round(costEur * eurRon),
+                    ep_reduction_kWh_m2: epSav,
+                    co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                    lifespan_years: life, priority: prio,
+                  });
+                  if (ri.addInsulWall && wallA > 0) {
+                    const t = parseInt(ri.insulWallThickness) || 10;
+                    push(`Termoizolație pereți ETICS (${t} cm)`, "Anvelopă", wallA * 42, Math.min(epBase * 0.30, 80), 30, 1);
+                  }
+                  if (ri.addInsulRoof && roofA > 0) {
+                    const t = parseInt(ri.insulRoofThickness) || 15;
+                    push(`Termoizolație acoperiș/planșeu superior (${t} cm)`, "Anvelopă", roofA * 42, Math.min(epBase * 0.15, 50), 30, 1);
+                  }
+                  if (ri.replaceWindows && glazA > 0) {
+                    push("Înlocuire tâmplărie exterioară (Low-E)", "Anvelopă", glazA * 200, Math.min(epBase * 0.20, 60), 30, 2);
+                  }
+                  if (ri.replaceHeating) {
+                    push("Pompă de căldură aer-apă", "Instalații", 9000, Math.min(epBase * 0.25, 100), 20, 2);
+                  }
+                  if (ri.addHRV) {
+                    push("Ventilare mecanică cu recuperare căldură (η ≥ 80%)", "Instalații", Au * 32, Math.min(epBase * 0.18, 70), 20, 3);
+                  }
+                  if (ri.addPV) {
+                    push("Instalare panouri fotovoltaice", "Regenerabile", 5 * 1100, 40, 25, 1);
+                  }
+                  if (ri.addSolarThermal) {
+                    push("Panouri solar-termice pentru ACM", "Regenerabile", 6 * 380, Math.min(epBase * 0.08, 30), 25, 2);
+                  }
+                  if (ri.addLED) {
+                    push("Înlocuire iluminat cu LED + senzori prezență", "Instalații", Au * 8, Math.min(epBase * 0.06, 20), 20, 3);
+                  }
+                }
+                if (measures.length === 0) {
+                  measures = (smartSuggestions || []).map((s, i) => {
+                    const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
+                    const epSav = parseFloat(s.epSaving_m2) || 0;
+                    return {
+                      id: slugifyCard(s.measure, i),
+                      name: s.measure || `Măsură ${i + 1}`,
+                      category: s.system || "Nespecificat",
+                      system: s.system || "Nespecificat",
+                      cost_RON: Math.round(costEur * eurRon),
+                      ep_reduction_kWh_m2: epSav,
+                      co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
+                      lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
+                      priority: s.priority || 3,
+                    };
+                  });
+                }
+
+                const energyPriceRON = 0.45;
+                const phasedPlan = measures.length > 0
+                  ? calcPhasedRehabPlan(
+                      measures,
+                      50000,
+                      "balanced",
+                      epFinal,
+                      building?.category || "AL",
+                      Au,
+                      energyPriceRON,
+                    )
+                  : null;
+
+                const mepsTh = getMepsThresholdsFor(building?.category);
+                const milestone1 = 2030;
+                const milestone2 = mepsTh.milestone2;
+
+                const exportRoadmapDOCX = async () => {
+                  try {
+                    // Sprint 06may2026 audit P0 (B1) — populate financialSummary.
+                    // Prioritate: phasedPlan.totalCost_RON (cost real măsuri agregate) >
+                    // financialAnalysis.globalCost (LCC poate fi NEGATIV când VAN beneficii>cost).
+                    // Fix bug 06.05.2026 12:02 raport: „Investiție totală: -142.882 RON".
+                    const eurRonRate = getEurRonSync() || 5.05;
+                    const phasedCost = phasedPlan?.totalCost_RON || 0;
+                    const lccCost = financialAnalysis
+                      ? Math.abs((financialAnalysis.globalCost || 0) * eurRonRate)
+                      : 0;
+                    const financialSum = (phasedCost > 0 || financialAnalysis) ? {
+                      totalInvest_RON: phasedCost > 0 ? phasedCost : lccCost,
+                      npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
+                      irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
+                      paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
+                      paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
+                      perspective: "financial",
+                    } : null;
+                    // m-10 (7 mai 2026) — granturi în Foaie de parcurs DOCX pentru consistență.
+                    const fundingEligibleRoadmap = (() => {
+                      if (!instSummary) return null;
+                      try {
+                        const r = calcPNRRFunding({
+                          category: building?.category,
+                          Au: parseFloat(building?.areaUseful) || 0,
+                          epBefore: instSummary.ep_total_m2,
+                          epAfter: (instSummary.ep_total_m2 || 0) * 0.55,
+                          yearBuilt: parseInt(building?.yearBuilt) || 1980,
+                        });
+                        return r ? { maxGrantCombined: r.total_grant_RON || 0, programs: r.eligible || [] } : null;
+                      } catch { return null; }
+                    })();
+                    const passport = buildRenovationPassport({
+                      cpeCode: building?.cpeCode || building?.cpeNumber || null,
+                      building,
+                      instSummary,
+                      renewSummary,
+                      climate: selectedClimate,
+                      auditor,
+                      phasedPlan: phasedPlan ? {
+                        strategy: "balanced",
+                        totalYears: phasedPlan.totalYears,
+                        annualBudget: 50000,
+                        energyPrice: energyPriceRON,
+                        discountRate: 0.04,
+                        phases: phasedPlan.phases,
+                        epTrajectory: phasedPlan.epTrajectory,
+                        classTrajectory: phasedPlan.classTrajectory,
+                        summary: phasedPlan.summary,
+                      } : null,
+                      mepsStatus: { thresholds: mepsTh },
+                      financialSummary: financialSum,
+                      fundingEligible: fundingEligibleRoadmap,
+                      changeReason: "Export Foaie de parcurs (Pas 7 Card pașaport)",
+                      changedBy: auditor?.name || "Auditor",
+                    });
+                    const docxLib = await import("../lib/passport-docx.js");
+                    await docxLib.exportPassportDOCX(passport);
+                    showToast("Foaia de parcurs DOCX descărcată", "success");
+                  } catch (err) {
+                    console.error("[Step7 Pașaport] export DOCX error:", err);
+                    showToast("Eroare la generarea DOCX: " + err.message, "error");
+                  }
+                };
+
+                return (
+                  <Card title="Pașaport de Renovare — Foaie de parcurs etapizată" className="mb-4">
+                    {/* Banner watermark juridic */}
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border-l-4 border-amber-600 text-[11px] text-amber-300">
+                      ⚠️ <strong>PREVIEW EPBD 2024</strong> — fără valoare juridică în RO până la actul național
+                      de transpunere (termen 29.05.2026). Document intern Zephren.
+                    </div>
+
+                    {/* Țintă MEPS dinamică EPBD Art. 9 */}
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-[11px] space-y-1">
+                      <div>
+                        🎯 <strong>Țintă {milestone1}:</strong> clasă {mepsTh.class2030} · EP ≤ {mepsTh.ep2030} kWh/(m²·an)
+                      </div>
+                      <div>
+                        🎯 <strong>Țintă {milestone2}:</strong> clasă {mepsTh.class2nd} · EP ≤ {mepsTh.ep2nd} kWh/(m²·an)
+                        {" "}({["RI", "RC", "RA"].includes(building?.category) ? "rezidențial Art. 9.1.a" : "nerezidențial Art. 9.1.b"})
+                      </div>
+                    </div>
+
+                    {!phasedPlan || phasedPlan.phases.length === 0 ? (
+                      <div className="text-[11px] opacity-50 italic">
+                        Nu există măsuri suficiente în „Sugestii inteligente reabilitare" pentru a construi un plan etapizat.
+                      </div>
+                    ) : (
+                      <>
+                        {/* Sumar plan */}
+                        <div className="mb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Faze</div>
+                            <div className="font-bold text-base">{phasedPlan.phases.length}</div>
+                          </div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Durată</div>
+                            <div className="font-bold text-base">{phasedPlan.totalYears} ani</div>
+                          </div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Investiție totală</div>
+                            <div className="font-bold text-sm">{phasedPlan.totalCost_RON.toLocaleString("ro-RO")} RON</div>
+                          </div>
+                          <div className="bg-white/[0.04] rounded-lg p-2">
+                            <div className="opacity-50">Clasă finală</div>
+                            <div className="font-bold text-base">{phasedPlan.summary?.class_final || "—"}</div>
+                          </div>
+                        </div>
+
+                        {/* Vizualizare faze cu măsuri reale */}
+                        <div className="space-y-3">
+                          {phasedPlan.phases.map((ph, idx) => {
+                            const cls = getEnergyClass(ph.ep_after, catKey);
+                            return (
+                              <div key={idx} className="flex gap-3 items-start">
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                                    style={{ background: cls.color + "30", color: cls.color }}
+                                  >
+                                    {idx + 1}
+                                  </div>
+                                  {idx < phasedPlan.phases.length - 1 && <div className="w-0.5 h-8 bg-white/10" />}
+                                </div>
+                                <div className="flex-1 bg-white/[0.03] rounded-lg p-3 border border-white/5">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-bold">
+                                      Faza {idx + 1} — Anul {ph.year}
+                                    </span>
+                                    <span className="text-[10px] font-mono" style={{ color: cls.color }}>
+                                      → {cls.cls} ({ph.ep_after.toFixed(0)} kWh/m²)
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] opacity-50 mb-1">
+                                    Cost fază: <strong>{ph.phaseCost_RON.toLocaleString("ro-RO")} RON</strong>
+                                    {" · "}Economie anuală: <strong>{ph.annualSaving_RON.toLocaleString("ro-RO")} RON/an</strong>
+                                    {" · "}{ph.measures.length} măsuri
+                                  </div>
+                                  <div className="text-[10px] opacity-40">
+                                    {ph.measures.map(m => m.name).join(" • ") || "—"}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Măsuri ne-alocate */}
+                        {phasedPlan.unscheduledMeasures && phasedPlan.unscheduledMeasures.length > 0 && (
+                          <div className="mt-3 p-2 rounded-lg bg-red-500/5 border border-red-500/20 text-[10px] text-red-300/80">
+                            ⚠️ {phasedPlan.unscheduledMeasures.length} măsuri nealocate (buget insuficient pe 20 ani):
+                            {" "}{phasedPlan.unscheduledMeasures.map(m => m.name).join(", ")}
+                          </div>
+                        )}
+
+                        {/* Buton export DOCX foaie de parcurs */}
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={exportRoadmapDOCX}
+                            className="px-4 py-2 rounded-lg bg-amber-600/20 border border-amber-600/40 hover:bg-amber-600/30 text-amber-300 text-xs font-medium transition-all"
+                          >
+                            📄 Export DOCX Foaie de Parcurs (A4)
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="mt-3 text-[10px] opacity-30">
+                      Conform EPBD 2024/1275 Art. 12 + Anexa VIII — Building Renovation Passport.
+                      Plan generat din {(smartSuggestions || []).length} măsuri (sugestii inteligente),
+                      strategie „balanced", buget anual 50.000 RON, preț energie 0,45 RON/kWh.
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* ── MEPI — Sprint P1 (6 mai 2026) P0-06: înlocuit Card mock UI cu trimitere la
+                  modulul real ConsumReconciliere (Step 8 tab `consum`). Card-ul vechi avea
+                  inputs fără value/onChange/setState — date introduse se pierdeau imediat.
+                  Modul corect: Step 8 ConsumReconciliere cu salvare în localStorage
+                  zephren_measured_consumption + integrare în AuditReport.jsx + DOCX. */}
+              <Card title="MEPI — Consum calculat vs. facturi reale" className="mb-4">
+                <div className="space-y-3">
+                  <div className="text-xs opacity-50">
+                    Calculat curent (kWh/an):
+                    <span className="ml-2 font-mono opacity-80">
+                      Electricitate ≈ {instSummary ? Math.round(instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) : 0} ·
+                      Gaz/termic ≈ {instSummary ? Math.round(instSummary.qf_h + instSummary.qf_w) : 0}
+                    </span>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-xs">
+                    <strong>📊 Reconciliere consum real (MEPI complet)</strong> este disponibil în
+                    Pas 8 → tab „Consum reconciliere" — permite import facturi/OCR, comparație
+                    lunară calculat vs. real, calibrare automată model energetic și salvare
+                    persistentă în Dosarul Audit.
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setStep(8)}
+                      disabled={!canAccess(userPlan, "consumReconciliere")}
+                      className="px-4 py-2 rounded-lg bg-blue-600/20 border border-blue-600/40 hover:bg-blue-600/30 text-blue-300 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      → Pas 8: Reconciliere consum (MEPI complet)
+                    </button>
+                    {!canAccess(userPlan, "consumReconciliere") && (
+                      <span className="text-[10px] opacity-50 self-center">
+                        (Necesar plan Expert+ pentru ConsumReconciliere)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              {/* ── Sprint P1 (6 mai 2026) P1-03: referință scurtă RaportConformareNZEB.
+                  Modulul complet rămâne în Pas 6 (Card auditor + ștampilă + Anexa MDLPA),
+                  dar Step 7 e un punct logic de re-acces pentru auditorul AE Ici care
+                  după audit + recomandări vrea să confirme conformarea nZEB. */}
+              {canAccess(userPlan, "nzebReport") && building?.scopCpe === "construire" && (
+                <Card title="Raport conformare nZEB — referință" className="mb-4 border-violet-500/20">
+                  <div className="px-3 py-2 rounded-lg bg-violet-500/10 border-l-4 border-violet-500 text-xs">
+                    <div className="mb-2">
+                      📄 <strong>Raportul de conformare nZEB</strong> este disponibil și editabil
+                      în Pas 6 (Certificat) — secțiunea „Auditor + Anexa MDLPA". Conform
+                      Ord. MDLPA 348/2026 Art. 6 alin. (1) lit. c, AE Ici (atestat grad I civile)
+                      poate emite acest raport pentru clădiri în faza de proiectare/recepție.
+                    </div>
+                    <button
+                      onClick={() => setStep(6)}
+                      className="px-3 py-1.5 rounded-md bg-violet-600/20 border border-violet-600/40 hover:bg-violet-600/30 text-violet-300 text-xs font-medium transition-all"
+                    >
+                      → Pas 6: Raport conformare nZEB
+                    </button>
+                  </div>
+                </Card>
+              )}
+
               <Card title="📑 Generare documente — pachet client reabilitare" className="mt-6 border-2 border-amber-500/30 bg-amber-500/[0.03]">
                 {/* ── Buton descărcare totală ZIP ── */}
                 <button
@@ -1960,411 +2365,6 @@ export default function Step7Audit(props) {
               {/* Sprint 08may2026 — Card „Smart Readiness Indicator (SRI)" ELIMINAT din Pas 7
                   (DUPLICAT — apare deja în Step 5 SRIScoreAuto + Step 8 tab SRI Indicator).
                    Locul canonic = Step 8 tab SRI. */}
-
-              {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
-                  Sprint 08may2026 (followup 3) — DEZACTIVAT prin `false && ...`
-                  Motiv consistență: card-ul afișa banner „PREVIEW EPBD 2024 — fără valoare
-                  juridică în RO până la actul național de transpunere" (termen 29.05.2026).
-                  Aceeași logică ca butoanele Pașaport eliminate anterior (commit-uri db089d2 + b367618):
-                  tot ce nu e impus de norma în vigoare la 8.V.2026 → eliminat, reactivare la transpunere.
-                  Conține: banner ținte 2030/2035, Card cu Faze/Durată/Investiție/Clasă finală,
-                  buton „Export DOCX Foaie de Parcurs" — toate dependente de Pașaport EPBD.
-                  REACTIVARE LA TRANSPUNERE EPBD RO: schimbă `false &&` în nimic.
-                  Helper-ul calcPhasedRehabPlan rămâne în repo. */}
-              {false && instSummary && (() => {
-                // Sprint 06may2026 audit P1 (B4) — UNIFICARE 3 SURSE COST.
-                // Prioritate: rehabScenarioInputs (Pas 5 user) > smartSuggestions (Pas 7 auto).
-                // Aliniere cu Deviz + CPE post-rehab care folosesc rehabScenarioInputs.
-                const eurRon = getEurRonSync() || 5.05;
-                const slugifyCard = (s, i) => {
-                  const ascii = String(s || "")
-                    .normalize("NFD").replace(/[̀-ͯ]/g, "")
-                    .replace(/[^a-zA-Z0-9]+/g, "_")
-                    .replace(/^_+|_+$/g, "")
-                    .toLowerCase();
-                  return `m_${i}_${ascii || "masura"}`;
-                };
-                const ri = rehabScenarioInputs || {};
-                const hasRehabInputs = ri.addInsulWall || ri.addInsulRoof ||
-                  ri.replaceWindows || ri.replaceHeating || ri.addPV ||
-                  ri.addSolarThermal || ri.addHRV || ri.addLED;
-                let measures = [];
-                if (hasRehabInputs) {
-                  const wallA = (opaqueElements || []).filter(e => e.type === "PE")
-                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-                  const roofA = (opaqueElements || []).filter(e => e.type === "PP" || e.type === "PT")
-                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-                  const glazA = (glazingElements || [])
-                    .reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-                  const Au = parseFloat(building?.areaUseful) || 100;
-                  const epBase = parseFloat(epFinal) || 200;
-                  let id = 0;
-                  const push = (name, cat, costEur, epSav, life, prio) => measures.push({
-                    id: slugifyCard(name, id++),
-                    name, category: cat, system: cat,
-                    cost_RON: Math.round(costEur * eurRon),
-                    ep_reduction_kWh_m2: epSav,
-                    co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
-                    lifespan_years: life, priority: prio,
-                  });
-                  if (ri.addInsulWall && wallA > 0) {
-                    const t = parseInt(ri.insulWallThickness) || 10;
-                    push(`Termoizolație pereți ETICS (${t} cm)`, "Anvelopă", wallA * 42, Math.min(epBase * 0.30, 80), 30, 1);
-                  }
-                  if (ri.addInsulRoof && roofA > 0) {
-                    const t = parseInt(ri.insulRoofThickness) || 15;
-                    push(`Termoizolație acoperiș/planșeu superior (${t} cm)`, "Anvelopă", roofA * 42, Math.min(epBase * 0.15, 50), 30, 1);
-                  }
-                  if (ri.replaceWindows && glazA > 0) {
-                    push("Înlocuire tâmplărie exterioară (Low-E)", "Anvelopă", glazA * 200, Math.min(epBase * 0.20, 60), 30, 2);
-                  }
-                  if (ri.replaceHeating) {
-                    push("Pompă de căldură aer-apă", "Instalații", 9000, Math.min(epBase * 0.25, 100), 20, 2);
-                  }
-                  if (ri.addHRV) {
-                    push("Ventilare mecanică cu recuperare căldură (η ≥ 80%)", "Instalații", Au * 32, Math.min(epBase * 0.18, 70), 20, 3);
-                  }
-                  if (ri.addPV) {
-                    push("Instalare panouri fotovoltaice", "Regenerabile", 5 * 1100, 40, 25, 1);
-                  }
-                  if (ri.addSolarThermal) {
-                    push("Panouri solar-termice pentru ACM", "Regenerabile", 6 * 380, Math.min(epBase * 0.08, 30), 25, 2);
-                  }
-                  if (ri.addLED) {
-                    push("Înlocuire iluminat cu LED + senzori prezență", "Instalații", Au * 8, Math.min(epBase * 0.06, 20), 20, 3);
-                  }
-                }
-                if (measures.length === 0) {
-                  measures = (smartSuggestions || []).map((s, i) => {
-                    const costEur = parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0;
-                    const epSav = parseFloat(s.epSaving_m2) || 0;
-                    return {
-                      id: slugifyCard(s.measure, i),
-                      name: s.measure || `Măsură ${i + 1}`,
-                      category: s.system || "Nespecificat",
-                      system: s.system || "Nespecificat",
-                      cost_RON: Math.round(costEur * eurRon),
-                      ep_reduction_kWh_m2: epSav,
-                      co2_reduction: Math.round(epSav * 0.230 * 100) / 100,
-                      lifespan_years: s.system === "Anvelopă" ? 30 : (s.system === "Regenerabile" ? 25 : 20),
-                      priority: s.priority || 3,
-                    };
-                  });
-                }
-
-                const energyPriceRON = 0.45;
-                const phasedPlan = measures.length > 0
-                  ? calcPhasedRehabPlan(
-                      measures,
-                      50000,
-                      "balanced",
-                      epFinal,
-                      building?.category || "AL",
-                      Au,
-                      energyPriceRON,
-                    )
-                  : null;
-
-                const mepsTh = getMepsThresholdsFor(building?.category);
-                const milestone1 = 2030;
-                const milestone2 = mepsTh.milestone2;
-
-                const exportRoadmapDOCX = async () => {
-                  try {
-                    // Sprint 06may2026 audit P0 (B1) — populate financialSummary.
-                    // Prioritate: phasedPlan.totalCost_RON (cost real măsuri agregate) >
-                    // financialAnalysis.globalCost (LCC poate fi NEGATIV când VAN beneficii>cost).
-                    // Fix bug 06.05.2026 12:02 raport: „Investiție totală: -142.882 RON".
-                    const eurRonRate = getEurRonSync() || 5.05;
-                    const phasedCost = phasedPlan?.totalCost_RON || 0;
-                    const lccCost = financialAnalysis
-                      ? Math.abs((financialAnalysis.globalCost || 0) * eurRonRate)
-                      : 0;
-                    const financialSum = (phasedCost > 0 || financialAnalysis) ? {
-                      totalInvest_RON: phasedCost > 0 ? phasedCost : lccCost,
-                      npv: financialAnalysis?.npv || phasedPlan?.summary?.npv_30y || 0,
-                      irr: financialAnalysis?.irr || phasedPlan?.summary?.irr_pct || 0,
-                      paybackSimple: financialAnalysis?.paybackSimple || phasedPlan?.summary?.paybackSimple_y || 0,
-                      paybackDiscounted: financialAnalysis?.paybackDiscounted || phasedPlan?.summary?.paybackDiscounted_y || 0,
-                      perspective: "financial",
-                    } : null;
-                    // m-10 (7 mai 2026) — granturi în Foaie de parcurs DOCX pentru consistență.
-                    const fundingEligibleRoadmap = (() => {
-                      if (!instSummary) return null;
-                      try {
-                        const r = calcPNRRFunding({
-                          category: building?.category,
-                          Au: parseFloat(building?.areaUseful) || 0,
-                          epBefore: instSummary.ep_total_m2,
-                          epAfter: (instSummary.ep_total_m2 || 0) * 0.55,
-                          yearBuilt: parseInt(building?.yearBuilt) || 1980,
-                        });
-                        return r ? { maxGrantCombined: r.total_grant_RON || 0, programs: r.eligible || [] } : null;
-                      } catch { return null; }
-                    })();
-                    const passport = buildRenovationPassport({
-                      cpeCode: building?.cpeCode || building?.cpeNumber || null,
-                      building,
-                      instSummary,
-                      renewSummary,
-                      climate: selectedClimate,
-                      auditor,
-                      phasedPlan: phasedPlan ? {
-                        strategy: "balanced",
-                        totalYears: phasedPlan.totalYears,
-                        annualBudget: 50000,
-                        energyPrice: energyPriceRON,
-                        discountRate: 0.04,
-                        phases: phasedPlan.phases,
-                        epTrajectory: phasedPlan.epTrajectory,
-                        classTrajectory: phasedPlan.classTrajectory,
-                        summary: phasedPlan.summary,
-                      } : null,
-                      mepsStatus: { thresholds: mepsTh },
-                      financialSummary: financialSum,
-                      fundingEligible: fundingEligibleRoadmap,
-                      changeReason: "Export Foaie de parcurs (Pas 7 Card pașaport)",
-                      changedBy: auditor?.name || "Auditor",
-                    });
-                    const docxLib = await import("../lib/passport-docx.js");
-                    await docxLib.exportPassportDOCX(passport);
-                    showToast("Foaia de parcurs DOCX descărcată", "success");
-                  } catch (err) {
-                    console.error("[Step7 Pașaport] export DOCX error:", err);
-                    showToast("Eroare la generarea DOCX: " + err.message, "error");
-                  }
-                };
-
-                return (
-                  <Card title="Pașaport de Renovare — Foaie de parcurs etapizată" className="mb-4">
-                    {/* Banner watermark juridic */}
-                    <div className="mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border-l-4 border-amber-600 text-[11px] text-amber-300">
-                      ⚠️ <strong>PREVIEW EPBD 2024</strong> — fără valoare juridică în RO până la actul național
-                      de transpunere (termen 29.05.2026). Document intern Zephren.
-                    </div>
-
-                    {/* Țintă MEPS dinamică EPBD Art. 9 */}
-                    <div className="mb-3 px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-[11px] space-y-1">
-                      <div>
-                        🎯 <strong>Țintă {milestone1}:</strong> clasă {mepsTh.class2030} · EP ≤ {mepsTh.ep2030} kWh/(m²·an)
-                      </div>
-                      <div>
-                        🎯 <strong>Țintă {milestone2}:</strong> clasă {mepsTh.class2nd} · EP ≤ {mepsTh.ep2nd} kWh/(m²·an)
-                        {" "}({["RI", "RC", "RA"].includes(building?.category) ? "rezidențial Art. 9.1.a" : "nerezidențial Art. 9.1.b"})
-                      </div>
-                    </div>
-
-                    {!phasedPlan || phasedPlan.phases.length === 0 ? (
-                      <div className="text-[11px] opacity-50 italic">
-                        Nu există măsuri suficiente în „Sugestii inteligente reabilitare" pentru a construi un plan etapizat.
-                      </div>
-                    ) : (
-                      <>
-                        {/* Sumar plan */}
-                        <div className="mb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                          <div className="bg-white/[0.04] rounded-lg p-2">
-                            <div className="opacity-50">Faze</div>
-                            <div className="font-bold text-base">{phasedPlan.phases.length}</div>
-                          </div>
-                          <div className="bg-white/[0.04] rounded-lg p-2">
-                            <div className="opacity-50">Durată</div>
-                            <div className="font-bold text-base">{phasedPlan.totalYears} ani</div>
-                          </div>
-                          <div className="bg-white/[0.04] rounded-lg p-2">
-                            <div className="opacity-50">Investiție totală</div>
-                            <div className="font-bold text-sm">{phasedPlan.totalCost_RON.toLocaleString("ro-RO")} RON</div>
-                          </div>
-                          <div className="bg-white/[0.04] rounded-lg p-2">
-                            <div className="opacity-50">Clasă finală</div>
-                            <div className="font-bold text-base">{phasedPlan.summary?.class_final || "—"}</div>
-                          </div>
-                        </div>
-
-                        {/* Vizualizare faze cu măsuri reale */}
-                        <div className="space-y-3">
-                          {phasedPlan.phases.map((ph, idx) => {
-                            const cls = getEnergyClass(ph.ep_after, catKey);
-                            return (
-                              <div key={idx} className="flex gap-3 items-start">
-                                <div className="flex flex-col items-center">
-                                  <div
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                                    style={{ background: cls.color + "30", color: cls.color }}
-                                  >
-                                    {idx + 1}
-                                  </div>
-                                  {idx < phasedPlan.phases.length - 1 && <div className="w-0.5 h-8 bg-white/10" />}
-                                </div>
-                                <div className="flex-1 bg-white/[0.03] rounded-lg p-3 border border-white/5">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-bold">
-                                      Faza {idx + 1} — Anul {ph.year}
-                                    </span>
-                                    <span className="text-[10px] font-mono" style={{ color: cls.color }}>
-                                      → {cls.cls} ({ph.ep_after.toFixed(0)} kWh/m²)
-                                    </span>
-                                  </div>
-                                  <div className="text-[10px] opacity-50 mb-1">
-                                    Cost fază: <strong>{ph.phaseCost_RON.toLocaleString("ro-RO")} RON</strong>
-                                    {" · "}Economie anuală: <strong>{ph.annualSaving_RON.toLocaleString("ro-RO")} RON/an</strong>
-                                    {" · "}{ph.measures.length} măsuri
-                                  </div>
-                                  <div className="text-[10px] opacity-40">
-                                    {ph.measures.map(m => m.name).join(" • ") || "—"}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Măsuri ne-alocate */}
-                        {phasedPlan.unscheduledMeasures && phasedPlan.unscheduledMeasures.length > 0 && (
-                          <div className="mt-3 p-2 rounded-lg bg-red-500/5 border border-red-500/20 text-[10px] text-red-300/80">
-                            ⚠️ {phasedPlan.unscheduledMeasures.length} măsuri nealocate (buget insuficient pe 20 ani):
-                            {" "}{phasedPlan.unscheduledMeasures.map(m => m.name).join(", ")}
-                          </div>
-                        )}
-
-                        {/* Buton export DOCX foaie de parcurs */}
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            onClick={exportRoadmapDOCX}
-                            className="px-4 py-2 rounded-lg bg-amber-600/20 border border-amber-600/40 hover:bg-amber-600/30 text-amber-300 text-xs font-medium transition-all"
-                          >
-                            📄 Export DOCX Foaie de Parcurs (A4)
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="mt-3 text-[10px] opacity-30">
-                      Conform EPBD 2024/1275 Art. 12 + Anexa VIII — Building Renovation Passport.
-                      Plan generat din {(smartSuggestions || []).length} măsuri (sugestii inteligente),
-                      strategie „balanced", buget anual 50.000 RON, preț energie 0,45 RON/kWh.
-                    </div>
-                  </Card>
-                );
-              })()}
-
-              {/* ── MEPI — Sprint P1 (6 mai 2026) P0-06: înlocuit Card mock UI cu trimitere la
-                  modulul real ConsumReconciliere (Step 8 tab `consum`). Card-ul vechi avea
-                  inputs fără value/onChange/setState — date introduse se pierdeau imediat.
-                  Modul corect: Step 8 ConsumReconciliere cu salvare în localStorage
-                  zephren_measured_consumption + integrare în AuditReport.jsx + DOCX. */}
-              <Card title="MEPI — Consum calculat vs. facturi reale" className="mb-4">
-                <div className="space-y-3">
-                  <div className="text-xs opacity-50">
-                    Calculat curent (kWh/an):
-                    <span className="ml-2 font-mono opacity-80">
-                      Electricitate ≈ {instSummary ? Math.round(instSummary.qf_c + instSummary.qf_v + instSummary.qf_l) : 0} ·
-                      Gaz/termic ≈ {instSummary ? Math.round(instSummary.qf_h + instSummary.qf_w) : 0}
-                    </span>
-                  </div>
-                  <div className="px-3 py-2 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 text-xs">
-                    <strong>📊 Reconciliere consum real (MEPI complet)</strong> este disponibil în
-                    Pas 8 → tab „Consum reconciliere" — permite import facturi/OCR, comparație
-                    lunară calculat vs. real, calibrare automată model energetic și salvare
-                    persistentă în Dosarul Audit.
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setStep(8)}
-                      disabled={!canAccess(userPlan, "consumReconciliere")}
-                      className="px-4 py-2 rounded-lg bg-blue-600/20 border border-blue-600/40 hover:bg-blue-600/30 text-blue-300 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      → Pas 8: Reconciliere consum (MEPI complet)
-                    </button>
-                    {!canAccess(userPlan, "consumReconciliere") && (
-                      <span className="text-[10px] opacity-50 self-center">
-                        (Necesar plan Expert+ pentru ConsumReconciliere)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Card>
-
-              {/* ── Sprint P1 (6 mai 2026) P1-03: referință scurtă RaportConformareNZEB.
-                  Modulul complet rămâne în Pas 6 (Card auditor + ștampilă + Anexa MDLPA),
-                  dar Step 7 e un punct logic de re-acces pentru auditorul AE Ici care
-                  după audit + recomandări vrea să confirme conformarea nZEB. */}
-              {canAccess(userPlan, "nzebReport") && building?.scopCpe === "construire" && (
-                <Card title="Raport conformare nZEB — referință" className="mb-4 border-violet-500/20">
-                  <div className="px-3 py-2 rounded-lg bg-violet-500/10 border-l-4 border-violet-500 text-xs">
-                    <div className="mb-2">
-                      📄 <strong>Raportul de conformare nZEB</strong> este disponibil și editabil
-                      în Pas 6 (Certificat) — secțiunea „Auditor + Anexa MDLPA". Conform
-                      Ord. MDLPA 348/2026 Art. 6 alin. (1) lit. c, AE Ici (atestat grad I civile)
-                      poate emite acest raport pentru clădiri în faza de proiectare/recepție.
-                    </div>
-                    <button
-                      onClick={() => setStep(6)}
-                      className="px-3 py-1.5 rounded-md bg-violet-600/20 border border-violet-600/40 hover:bg-violet-600/30 text-violet-300 text-xs font-medium transition-all"
-                    >
-                      → Pas 6: Raport conformare nZEB
-                    </button>
-                  </div>
-                </Card>
-              )}
-
-              {/* ── IEQ — Calitate aer interior ── */}
-              <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  {IEQ_CATEGORIES.map(cat => (
-                    <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
-                      <div className="text-sm font-bold">{cat.id}</div>
-                      <div className="text-[10px] opacity-40">{cat.tempRange}</div>
-                      <div className="text-[10px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
-                      <div className="text-[10px] opacity-40">{cat.lux} lux</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform SR EN 16798-1:2019/NA:2019</div>
-              </Card>
-
-              {/* ── CHP — Cogenerare ── */}
-              <Card title="Cogenerare (CHP) — producție combinată căldură + electricitate" className="mb-4">
-                <div className="space-y-1.5">
-                  {CHP_TYPES.map(chp => (
-                    <div key={chp.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs">
-                      <span>{chp.label}</span>
-                      <span className="font-mono opacity-60">η_el={chp.eta_el} η_th={chp.eta_th}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Disponibil pentru clădiri cu consum termic {">"} 100 MWh/an</div>
-              </Card>
-
-              {/* ── MCCL — Catalog ponți termice extins ── */}
-              <Card title={`MCCL — Catalog ponți termice (${MCCL_CATALOG.length} tipuri)`} className="mb-4">
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
-                    <div key={cat}>
-                      <div className="text-[10px] font-bold opacity-40 mt-2 mb-1">{cat}</div>
-                      {MCCL_CATALOG.filter(m => m.cat === cat).map(m => (
-                        <div key={m.id} className="flex items-center justify-between text-[10px] py-0.5 px-2 rounded hover:bg-white/5 cursor-pointer" onClick={() => {
-                          setThermalBridges(prev => [...prev, { name: m.desc, psi: String(m.psi), length: "1" }]);
-                          showToast("Adăugat: " + m.desc, "success");
-                        }}>
-                          <span className="opacity-60">{m.desc}</span>
-                          <span className="font-mono">Ψ={m.psi} / {m.psi_izolat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
-              </Card>
-
-              {/* ── Fotografii clădire + adnotări ── */}
-              <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
-                <BuildingPhotos
-                  buildingPhotos={buildingPhotos}
-                  setBuildingPhotos={setBuildingPhotos}
-                  showToast={showToast}
-                  cn={cn}
-                />
-              </Card>
 
               {/* ── Sprint v6.2 (27 apr 2026) — AnexaMDLPAFields mutat în Step 6 ──
                   Conform Ord. MDLPA 348/2026, Anexa 1+2 se completează la momentul
