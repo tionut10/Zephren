@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-06
+// Ultima generare: 2026-05-07
 
 export const APP_VERSION = "0.6.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "📥",
-        "text": "P0-12 Schema OneClickRENO XML preparare migrare (skeleton v1.0)"
-      },
-      {
-        "icon": "🔸",
-        "text": "P0-11 Watermark juridic centralizat (DEMO/SCOP DIDACTIC/MOCK/PREVIEW)"
-      },
-      {
-        "icon": "📋",
-        "text": "P0-10 Bundle ZIP standardizat dosar audit (10 categorii) + manifest.json"
-      },
-      {
-        "icon": "📥",
-        "text": "P0-05..P0-09 DocumentUploadCenter + 8 slot-uri condiționate input client"
+        "icon": "🔀",
+        "text": "refactor(Pas 7): elimin secțiunea „INSTRUMENTE SUPLIMENTARE\" (8 tool-uri duplicate cu Step 8)"
       },
       {
         "icon": "📄",
-        "text": "P0-04 Cerere oficială client → auditor (PDF generator)"
+        "text": "refactor(Pas 6): optimizare spațiu grid export + elimin Raport conformare nZEB HTML inline (duplicat)"
       },
       {
-        "icon": "✨",
-        "text": "add logo_ro_signature.png 150x173px for email signatures"
+        "icon": "🔀",
+        "text": "refactor(documente): elimin PasaportBasic plin + Card Conformitate avansată din Pas 7; mut Bundle/Cost-optim î"
       },
       {
-        "icon": "🔸",
-        "text": "P0-03 CAdES B-T detașat pentru Manifest SHA-256 (Sprint Conformitate)"
+        "icon": "🔀",
+        "text": "refactor(documente): eliminare consistentă Card Pașaport Foaie de Parcurs etapizată din Pas 7"
+      },
+      {
+        "icon": "📥",
+        "text": "refactor(documente): eliminare consistentă XML portal MDLPA standalone + din pachet ZIP (până 8.VII.2026)"
+      },
+      {
+        "icon": "📥",
+        "text": "fix(consistență): Pachet complet ZIP folosește Anexa MDLPA portal XML (Ord. 348/2026) în loc de XML vechi Ord."
       },
       {
         "icon": "📄",
-        "text": "fix(step6): repară ReferenceError dataComplete în Card PDF/A-3 nou"
+        "text": "refactor(documente): eliminare 13 grupe de exporturi/tab-uri redundante (~30 elemente)"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(documente): markaj 🟢/🟡/⚪ obligatoriu legal vs opțional + countdown portal MDLPA + sub-meniu Extrage"
       }
     ]
   },
