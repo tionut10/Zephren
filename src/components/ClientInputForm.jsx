@@ -55,7 +55,7 @@ function FSelect({ value, onChange, options, placeholder = "Selectați..." }) {
     <select
       value={value ?? ""}
       onChange={e => onChange(e.target.value)}
-      className="w-full bg-[#1a1d2e] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white
+      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white
         focus:outline-none focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/20 transition-all appearance-none"
     >
       <option value="">{placeholder}</option>
@@ -132,6 +132,7 @@ function ProgressBar({ sections, data }) {
 
 // ─── Date demo pentru testare ─────────────────────────────────────────────────
 const DEMO_DATA = {
+  // 1. Identificare
   numeProprietar: "Ionescu Maria",
   telefonProprietar: "0721 234 567",
   emailProprietar: "maria.ionescu@gmail.com",
@@ -140,17 +141,20 @@ const DEMO_DATA = {
   adresaCompleta: "Str. Florilor nr. 12, bl. A2, ap. 5",
   latitude: 45.6427,
   longitude: 25.5887,
-  tipClădire: "casa_unifamiliala",
+  "tipClădire": "casa_unifamiliala",
   anConstructie: 1978,
   nrCadastral: "123456",
   scopulCPE: "Reabilitare termică",
   reabilitarePrecedenta: "Da — parțial",
-  descriereReabilitare: "Înlocuire ferestre cu termopane PVC dublu vitraj în 2010. Nu s-a realizat izolație termică pe fațadă.",
+  descriereReabilitare: "Înlocuire ferestre cu termopane PVC dublu vitraj în 2010. Nu s-a realizat izolație termică pe fațadă sau acoperiș.",
+  // 2. Geometrie
   arieTotala: 185,
   arieUtila: 142,
   numarEtaje: "P+1",
   areSubsol: "Nu",
   arePod: "Pod neamenajat",
+  numarOcupanti: 4,
+  // 3. Încălzire
   tipSursa: "cazan_gaz",
   combustibil: "Gaz natural",
   marcaCazan: "Vaillant ecoTEC Plus 24",
@@ -159,20 +163,34 @@ const DEMO_DATA = {
   distributieIncalzire: "radiatoare",
   robinetiTermostati: "Da — la unele",
   termostatAmbient: "Da — simplu",
+  // 4. ACM
   surseACM: "cazan_combinat",
   volumBoiler: 0,
+  // 5. Răcire
   areRacire: "Da — în unele camere",
   tipRacire: "Aparat split (aer condiționat perete)",
+  // 6. Regenerabile
   arePV: "Nu",
   areSolarTermicRenew: "Nu",
+  // 7. Consumuri
   consumGaz: 1850,
   consumElectricitate: 3200,
-  numarOcupanti: 4,
+  consumLemn: 0,
+  consumPeleti: 0,
+  consumTermoficare: 0,
+  // 8. Documente
   areActProp: true,
+  areAutorizatie: false,
+  arePlanuri: true,
+  areCarteTehn: false,
+  areFisaCazan: true,
+  areFisaVMC: false,
+  areFisaPV: false,
   areFacGaz: true,
   areFacElec: true,
+  areFacTermo: false,
   areFotoExter: true,
-  alteDocumente: "Clădire construită circa 1978, fără izolație termică pe pereții exteriori. Se solicită reabilitare termică completă în vederea reducerii consumului energetic.",
+  alteDocumente: "Clădire construită circa 1978, fără izolație termică pe pereții exteriori. Se solicită reabilitare termică completă în vederea reducerii consumului energetic și îmbunătățirii clasei energetice.",
 };
 
 // ─── Export PDF/JSON ──────────────────────────────────────────────────────────
