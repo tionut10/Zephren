@@ -39,7 +39,6 @@ import { supabase } from "../lib/supabase.js";
 import { getExpiryDate, getValidityYears, getValidityLabel } from "../utils/cpe-validity.js";
 import AuditorSignatureStampUpload from "../components/AuditorSignatureStampUpload.jsx";
 import AnexaMDLPAFields from "../components/AnexaMDLPAFields.jsx";
-import RaportConformareNZEB from "../components/RaportConformareNZEB.jsx";
 // Sprint Conformitate P0-01 + P0-02 (6 mai 2026) — PDF/A-3 + PAdES container.
 // Importuri lazy în handler pentru a păstra initial bundle Step6 mic.
 // Vezi audit-conformitate-2026-05-06/P0-CRITIC.md pentru context.
@@ -608,11 +607,13 @@ export default function Step6Certificate(props) {
                     // CR-2 (7 mai 2026) — clase per utilitate Mc 001-2022 Tab I.1
                     // (trimise explicit pentru a evita clasificarea greșită server-side
                     // cu pragurile whole-building — care plasa ACM 171,8 → C în loc de G).
-                    cls_incalzire: getServiceClass(Au > 0 ? (instSummary?.ep_h || 0) / Au : 0, "heating",     catKey),
-                    cls_acm:       getServiceClass(Au > 0 ? (instSummary?.ep_w || 0) / Au : 0, "dhw",         catKey),
-                    cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     catKey),
-                    cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", catKey),
-                    cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    catKey),
+                    // Folosim baseCat (RI/RC/RA etc.) nu catKey ("RI_nocool") deoarece
+                    // SERVICE_CLASSES_DB nu are chei cu sufixul _cool/_nocool.
+                    cls_incalzire: getServiceClass(Au > 0 ? (instSummary?.ep_h || 0) / Au : 0, "heating",     baseCat),
+                    cls_acm:       getServiceClass(Au > 0 ? (instSummary?.ep_w || 0) / Au : 0, "dhw",         baseCat),
+                    cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     baseCat),
+                    cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", baseCat),
+                    cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    baseCat),
                     // #7 (audit Pas 6+7 V7, 7 mai 2026) — date analiza financiară (Pas 7) pentru
                     // bifare CORECTĂ Anexa 1 secțiunea „Costuri/Economii/Recuperare" (CB 48-64).
                     // Anterior Python folosea defaults hardcoded (10k-25k / 20-30% / 3-7 ani)
@@ -2651,44 +2652,12 @@ ${(() => {
                     </div>
                   </details>
 
-                  {/* ── Sprint v6.2 (27 apr 2026) — Raport conformare nZEB ──
-                      Conform Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026, doar
-                      AE Ici poate emite acest raport pentru clădiri în faza de
-                      proiectare. Componenta validează intern gating-ul. */}
-                  {canAccessFn(userPlan, "nzebReport") && (
-                    <details className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 group">
-                      <summary className="cursor-pointer flex items-center gap-2 text-xs opacity-80 hover:opacity-100 list-none [&::-webkit-details-marker]:hidden">
-                        <span className="text-base">🌿</span>
-                        <span>{lang === "EN" ? "nZEB Conformance Report (design phase)" : "Raport conformare nZEB (proiectare)"}</span>
-                        <span className="text-[9px] opacity-60 ml-auto">AE Ici · Art. 6 lit. c</span>
-                      </summary>
-                      <div className="mt-2">
-                        <RaportConformareNZEB
-                          building={building}
-                          selectedClimate={selectedClimate}
-                          instSummary={instSummary}
-                          renewSummary={renewSummary}
-                          envelopeSummary={envelopeSummary}
-                          opaqueElements={opaqueElements}
-                          glazingElements={glazingElements}
-                          heating={heating}
-                          cooling={cooling}
-                          ventilation={ventilation}
-                          lighting={lighting}
-                          acm={acm}
-                          solarThermal={solarThermal}
-                          photovoltaic={photovoltaic}
-                          heatPump={heatPump}
-                          biomass={biomass}
-                          auditor={auditor}
-                          userPlan={userPlan}
-                          lang={lang}
-                          showToast={showToast}
-                        />
-                      </div>
-                    </details>
-                  )}
-
+                  {/* Sprint 8 mai 2026 — Componenta <RaportConformareNZEB> a fost eliminată
+                      (duplicat funcțional cu butonul „Raport conformare nZEB — PDF oficial"
+                      de mai jos, care este forma corectă legal cu conținut-cadru standardizat
+                      A4 4-5 pagini conform Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026 +
+                      Mc 001-2022 §2.4). Cardul mare afișa eronat „DOCX A4 portret" deși
+                      generatorul produce PDF. Singura cale de generare = butonul de mai jos. */}
 
                   {/* MDLPA Registry info */}
                   <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-3">

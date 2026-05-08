@@ -129,8 +129,12 @@ export function useEnvelopeSummary({
 
     // Sprint 3a (17 apr 2026) — expus opaqueElements/glazingElements pentru cooling-hourly.js
     // Sprint 22 #2 — pointBridgeLoss expus separat pentru rapoarte
+    // Sprint 8 mai 2026 — Fix raport nZEB: alias Ht (transmisie) + Hv (ventilare)
+    // pe nume standard ISO 13789 (raportul citea Ht/Hv care nu existau, afișa "—").
     return {
       totalHeatLoss, totalArea, bridgeLoss, pointBridgeLoss, ventLoss, G, volume, hrEta, H_tr_adj_per_A,
+      Ht: totalHeatLoss,   // ISO 13789 §6 — coef. transfer prin transmisie [W/K]
+      Hv: ventLoss,        // ISO 13789 §6 — coef. transfer prin ventilare [W/K]
       opaqueElements, glazingElements,
     };
   }, [

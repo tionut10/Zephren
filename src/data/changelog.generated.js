@@ -12,6 +12,14 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "📄",
+        "text": "refactor(Step7): reordonare flux logic — diagnostic → recomandări → financiar → export"
+      },
+      {
+        "icon": "🔬",
+        "text": "fix(landing): elimină warnings React 19 — separare border/borderLeft (săgeată Founder + carduri normative)"
+      },
+      {
         "icon": "🚀",
         "text": "security: xlsx 0.18.5→0.20.3 (CDN oficial fără vulnerabilități) + websockets Python 15→16 (eliminat supabase P"
       },
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📄",
         "text": "refactor(Pas 6): optimizare spațiu grid export + elimin Raport conformare nZEB HTML inline (duplicat)"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(documente): elimin PasaportBasic plin + Card Conformitate avansată din Pas 7; mut Bundle/Cost-optim î"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(documente): eliminare consistentă Card Pașaport Foaie de Parcurs etapizată din Pas 7"
       }
     ]
   },

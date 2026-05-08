@@ -17,6 +17,7 @@
 
 import { NZEB_THRESHOLDS } from "../data/energy-classes.js";
 import { getNzebEpMax } from "./smart-rehab.js";
+import { getEnergyClass } from "./classification.js";
 
 // ── Mapare categorie Zephren → categorie de bază nZEB ─────────
 // Copy local (evită import circular), aliniat cu CATEGORY_BASE_MAP
@@ -88,27 +89,36 @@ function computeElementU(el) {
 
 /**
  * Verifică U'max pentru fiecare element al anvelopei conform SR EN ISO 52018-1
- * @returns {{ ok, violations: [{name, type, U, uMax, deltaPct}], uMaxSet: "residential"|"nonresidential" }}
+ * @returns {{ ok, violations: [...], elements: [...], uMaxSet: "residential"|"nonresidential" }}
+ *   Sprint 8 mai 2026 — `elements` returnează TOATE elementele cu U calculat
+ *   și verdict per element (pentru tabelul detaliat din raportul nZEB).
  */
 function checkEnvelopeUmax({ opaqueElements, glazingElements, category }) {
   const isRes = RESIDENTIAL_CATS.has(category);
   const uMaxSet = isRes ? NZEB_U_MAX.residential : NZEB_U_MAX.nonresidential;
   const uMaxSetKey = isRes ? "residential" : "nonresidential";
   const violations = [];
+  const elements = [];
 
   (opaqueElements || []).forEach(el => {
     const type = (el.type || "").toUpperCase();
     const uMax = uMaxSet[type];
-    if (uMax == null) return; // tip necunoscut — nu verificăm
     const U = computeElementU(el);
-    if (U > uMax + 0.005) { // toleranță 0,005 pentru rotunjiri
-      violations.push({
-        name: el.name || type,
-        type,
-        U: Math.round(U * 1000) / 1000,
-        uMax,
-        deltaPct: Math.round(((U - uMax) / uMax) * 1000) / 10,
-      });
+    const URounded = Math.round(U * 1000) / 1000;
+    const area = parseFloat(el.area);
+    const entry = {
+      name: el.name || type || "Element opac",
+      type,
+      kind: "opaque",
+      U: URounded,
+      uMax: uMax != null ? uMax : null,
+      area: Number.isFinite(area) ? area : null,
+      ok: uMax == null ? true : U <= uMax + 0.005,
+      deltaPct: uMax != null ? Math.round(((U - uMax) / uMax) * 1000) / 10 : null,
+    };
+    elements.push(entry);
+    if (uMax != null && U > uMax + 0.005) {
+      violations.push({ name: entry.name, type, U: URounded, uMax, deltaPct: entry.deltaPct });
     }
   });
 
@@ -117,18 +127,26 @@ function checkEnvelopeUmax({ opaqueElements, glazingElements, category }) {
     const uMax = uMaxSet[type];
     const U = parseFloat(gl.u);
     if (!Number.isFinite(U)) return;
+    const URounded = Math.round(U * 1000) / 1000;
+    const area = parseFloat(gl.area);
+    const name = gl.name || `Vitrare ${gl.orientation || ""}`.trim();
+    const entry = {
+      name,
+      type,
+      kind: "glazing",
+      U: URounded,
+      uMax,
+      area: Number.isFinite(area) ? area : null,
+      ok: U <= uMax + 0.005,
+      deltaPct: Math.round(((U - uMax) / uMax) * 1000) / 10,
+    };
+    elements.push(entry);
     if (U > uMax + 0.005) {
-      violations.push({
-        name: gl.name || `Vitrare ${gl.orientation || ""}`.trim(),
-        type,
-        U: Math.round(U * 1000) / 1000,
-        uMax,
-        deltaPct: Math.round(((U - uMax) / uMax) * 1000) / 10,
-      });
+      violations.push({ name, type, U: URounded, uMax, deltaPct: entry.deltaPct });
     }
   });
 
-  return { ok: violations.length === 0, violations, uMaxSet: uMaxSetKey };
+  return { ok: violations.length === 0, violations, elements, uMaxSet: uMaxSetKey };
 }
 
 export { NZEB_U_MAX, checkEnvelopeUmax };
@@ -165,6 +183,9 @@ export function checkNZEBCompliance(params = {}) {
     instSummary = null,
     auditor = null,
     projectPhase = "proiectare",
+    // Sprint 8 mai 2026 — pentru tabel U detaliat raport (overrides).
+    opaqueElements: opaqueOverride = null,
+    glazingElements: glazingOverride = null,
   } = params;
 
   const category = building?.category;
@@ -199,10 +220,12 @@ export function checkNZEBCompliance(params = {}) {
   const rerOnsiteOk = rerOnsite >= rerOnsiteMin;
 
   // Verificare U'max per element (SR EN ISO 52018-1:2018/NA:2023)
-  // Obligatorie pentru nZEB — separat de limita EP globală
+  // Obligatorie pentru nZEB — separat de limita EP globală.
+  // Sprint 8 mai 2026 — params.opaqueElements/glazingElements (overrides explicite)
+  // au prioritate față de building.* (apelul din raport pasează listele complete).
   const envelopeCheck = checkEnvelopeUmax({
-    opaqueElements: building?.opaqueElements,
-    glazingElements: building?.glazingElements,
+    opaqueElements: opaqueOverride ?? building?.opaqueElements,
+    glazingElements: glazingOverride ?? building?.glazingElements,
     category: baseCat,
   });
   const envelopeOk = envelopeCheck.ok;
@@ -442,6 +465,38 @@ export function checkNZEBCompliance(params = {}) {
     },
   ];
 
+  // ── Sprint 8 mai 2026: clasă energetică curentă (Mc 001-2022 Tab 5.x) ──
+  // Pentru rezidențial cheia depinde de prezența răcirii (RA_cool / RA_nocool).
+  // hasCool detectat din instSummary.qf_c > 0.5 kWh/m²a (filtrare zgomot).
+  const Au = parseFloat(building?.areaUseful) || 0;
+  const qfCool_m2 = Au > 0 ? (instSummary?.qf_c || 0) / Au : 0;
+  const cool = qfCool_m2 > 0.5;
+  const isResidential = RESIDENTIAL_CATS.has(baseCat);
+  const classKey = isResidential ? `${baseCat}_${cool ? "cool" : "nocool"}` : baseCat;
+  const energyClass = getEnergyClass(ep, classKey);
+
+  // ── Sprint 8 mai 2026: scenariu post-reabilitare (P1+P2 implementate) ──
+  // Estimare conservativă bazată pe impactul recomandărilor:
+  //   • Anvelopă (P1) → -25% EP (mediană din termoizolare 25-35% + ferestre 8-15%)
+  //   • Pompă căldură (P2) → -25% EP
+  //   • Recuperare căldură ventilare (P3) → -10% EP
+  //   • PV pe acoperiș → +25 p.p. RER (până la max 100%)
+  //   • Solar termic ACM → +7 p.p. RER
+  // Aceste valori sunt conservative — interacțiunile între măsuri reduc impactul
+  // cumulat. Sursă: Mc 001-2022 Anexa K + EN 16798-1 §6.5.
+  const post = {
+    // Reducere multiplicativă (interacțiuni — nu se adună aritmetic)
+    epAfterP1: Math.round(ep * 0.75 * 10) / 10,        // doar P1 anvelopă
+    epAfterP1P2: Math.round(ep * 0.75 * 0.75 * 10) / 10, // P1+P2 anvelopă+sistem
+    epAfterAll: Math.round(ep * 0.75 * 0.75 * 0.90 * 10) / 10, // P1+P2+P3
+    rerAfter: Math.min(100, Math.round((rer + 32) * 10) / 10), // PV +25 + solar +7
+    rerOnsiteAfter: Math.min(100, Math.round((rerOnsite + 25) * 10) / 10),
+  };
+  post.compliantAfterAll = post.epAfterAll <= epMax
+    && post.rerAfter >= rerMin
+    && post.rerOnsiteAfter >= rerOnsiteMin;
+  post.classAfterAll = getEnergyClass(post.epAfterAll, classKey);
+
   return {
     // Verdict
     compliant,
@@ -464,7 +519,15 @@ export function checkNZEBCompliance(params = {}) {
     rerOnsiteOk,
     envelopeOk,
     envelopeViolations: envelopeCheck.violations,
+    envelopeElements: envelopeCheck.elements, // Sprint 8 mai 2026 — pt. tabel detaliat
     uMaxSet: envelopeCheck.uMaxSet,
+
+    // Sprint 8 mai 2026 — clasă energetică curentă (Mc 001-2022 Tab 5.x)
+    energyClass,
+    hasCool: cool,
+
+    // Sprint 8 mai 2026 — scenariu post-reabilitare estimat (P1+P2+P3)
+    postRehab: post,
 
     // Context
     zone: climate.zone,

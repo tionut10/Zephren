@@ -2686,6 +2686,19 @@ CHECKBOX_KEYWORD_MAP = {
     "BLDG_NEW":             ["tipul cladirii", "noua finalizata"],
     "BLDG_UNFINISHED":      ["existenta nefinalizata"],
 
+    # ── Anexa 2 — Zone climatice (I-V) — occurrence_idx per secțiune ──
+    # Contextul fiecăruia include header "zone climatice"; distingem prin ordine.
+    "CLIMA_I":   (["zone climat"], 0),
+    "CLIMA_II":  (["zone climat"], 1),
+    "CLIMA_III": (["zone climat"], 2),
+    "CLIMA_IV":  (["zone climat"], 3),
+    "CLIMA_V":   (["zone climat"], 4),
+
+    # ── Anexa 2 — Zone eoliene (I-III) ──
+    "VANT_I":    (["zone eolien"], 0),
+    "VANT_II":   (["zone eolien"], 1),
+    "VANT_III":  (["zone eolien"], 2),
+
     # ── Anexa 2 — Categoria clădirii (CB 68-111) ──
     "CAT_RES_INDIV":        ["casa individuala"],
     "CAT_RES_INSIRUITA":    ["casa insiruita"],
@@ -3026,6 +3039,21 @@ def compute_checkbox_keys(data, category):
         keys.append("BLDG_NEW")
     else:
         keys.append("BLDG_EXISTING")
+
+    # ── Anexa 2 — zona climatică (I-V) și zona eoliană (I-III) ──
+    # Parsăm climate_zone ("zona III" sau "zona 3") sau zona_climatica_num ("3").
+    _ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5}
+    try:
+        _cz_raw = (data.get("climate_zone") or data.get("zona_climatica_num") or "3").strip().upper()
+        _cz_tok = _cz_raw.split()[-1]  # "zona III" → "III", "zona 3" → "3"
+        _zone_num = _ROMAN.get(_cz_tok) or int(_cz_tok)
+    except Exception:
+        _zone_num = 3
+    _zone_num = max(1, min(5, _zone_num))
+    keys.append(["CLIMA_I", "CLIMA_II", "CLIMA_III", "CLIMA_IV", "CLIMA_V"][_zone_num - 1])
+    # Zona eoliană: I→zone 1-2, II→zone 3-4, III→zone 5
+    _wind = 1 if _zone_num <= 2 else (2 if _zone_num <= 4 else 3)
+    keys.append(["VANT_I", "VANT_II", "VANT_III"][_wind - 1])
 
     # ── Anexa 2 — Structura constructivă (FIX Etapa 7e) ──
     # Mapare building.structure (string lung) → cheia semantică checkbox

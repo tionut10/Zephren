@@ -533,6 +533,43 @@ export function useInstallationSummary({
     const ep_nren_m2 = Au > 0 ? ep_nren_total / Au : 0;
     const ep_ren_m2 = Au > 0 ? ep_ren_total / Au : 0;
 
+    // Sprint 8 mai 2026 — Fix raport nZEB: defalcare EP per m² pe destinații
+    // (consumat de report-generators.js / generateNZEBConformanceReport tabel III).
+    // Cheile *_m2 lipseau complet — raportul citea undefined și afișa 0.0 pe toate
+    // rândurile, deși totalul (ep_total_m2) era corect. Auxiliarul ACM se cumulează
+    // în ep_w_m2 (apă caldă), aliniat cu Mc 001-2022 §3.2.3.
+    const ep_h_m2 = Au > 0 ? ep_h / Au : 0;
+    const ep_w_m2 = Au > 0 ? (ep_w + ep_aux_acm) / Au : 0;
+    const ep_c_m2 = Au > 0 ? ep_c / Au : 0;
+    const ep_v_m2 = Au > 0 ? ep_v / Au : 0;
+    const ep_l_m2 = Au > 0 ? ep_l / Au : 0;
+
+    // Defalcare EP pe purtători de energie [kWh/(m²·an)] — pentru tabel
+    // „EP pe purtători" (gaz natural, electricitate, biomasă etc.) în raport.
+    // Util pentru aplicarea factorilor de conversie f_P (Mc 001-2022 Anexa C).
+    const isElec = (f) => !f || f.id === "electricitate" || f.fP_tot === fP_elec_tot;
+    const heatingFuelLabel = fuel?.name || fuel?.label || (isElec(fuel) ? "Electricitate" : "Gaz natural");
+    const acmFuelLabel = acmFuel?.name || acmFuel?.label || heatingFuelLabel;
+    const ep_by_carrier_m2 = (() => {
+      if (Au <= 0) return [];
+      const map = new Map();
+      const add = (label, f, ep) => {
+        if (!ep) return;
+        const key = label || "—";
+        const prev = map.get(key) || { label: key, fP_tot: f?.fP_tot ?? null, ep: 0 };
+        prev.ep += ep / Au;
+        map.set(key, prev);
+      };
+      add(heatingFuelLabel, fuel, ep_h);
+      add(acmFuelLabel, acmFuel || fuel, ep_w);
+      add("Electricitate (răcire)", null, coolIsElec ? ep_c : 0);
+      if (!coolIsElec) add(coolFuel?.name || "Combustibil răcire", coolFuel, ep_c);
+      add("Electricitate (ventilare)", null, ep_v);
+      add("Electricitate (iluminat)", null, ep_l);
+      add("Electricitate (auxiliar ACM)", null, ep_aux_acm);
+      return [...map.values()].sort((a, b) => b.ep - a.ep);
+    })();
+
     // ── CO2 ──
     // Factor CO2 electricitate SEN = 0.107 kg/kWh (identic Tab 5.17 și Tab A.16)
     const co2_h = qf_h * (fuel?.fCO2 || 0.20);
@@ -562,6 +599,9 @@ export function useInstallationSummary({
       leni, qf_l, leniMax, leniStatus, W_L, W_P, W_em, W_standby,
       qf_total, qf_total_m2,
       ep_h, ep_w, ep_c, ep_v, ep_l, ep_total, ep_total_m2,
+      // Sprint 8 mai 2026 — defalcare EP per m² pe destinații (era lipsă).
+      ep_h_m2, ep_w_m2, ep_c_m2, ep_v_m2, ep_l_m2,
+      ep_by_carrier_m2,
       ep_nren_h, ep_nren_w, ep_nren_c, ep_nren_v, ep_nren_l, ep_nren_total, ep_nren_m2,
       ep_ren_h, ep_ren_w, ep_ren_c, ep_ren_v, ep_ren_l, ep_ren_total, ep_ren_m2,
       co2_h, co2_w, co2_c, co2_v, co2_l, co2_total, co2_total_m2,

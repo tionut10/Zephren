@@ -212,6 +212,63 @@ function dateRO() {
   return new Date().toLocaleDateString("ro-RO");
 }
 
+// ── Sprint 8 mai 2026 — utilitare raport nZEB extins ──────────
+// hexToRgb: "#22c55e" → [34, 197, 94] (jsPDF acceptă tuple RGB).
+function hexToRgb(hex) {
+  if (!hex || typeof hex !== "string") return [0, 0, 0];
+  const s = hex.replace("#", "");
+  const v = parseInt(s.length === 3 ? s.split("").map(c => c + c).join("") : s, 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+// drawHorizBar: bară orizontală gradient (verde→ambră→roșu) cu marker prag
+// pentru ilustrare „valoare vs prag" (EP, RER, RER on-site).
+//   x, y, w, h    — caseta în mm
+//   value, max    — valoare curentă și plafon scalei (afișate ca text)
+//   threshold     — prag de conformare (linie albă verticală)
+//   compliantHigh — true: conform când value ≥ threshold (RER); false: când value ≤ threshold (EP)
+function drawHorizBar(doc, x, y, w, h, value, max, threshold, label, unit, compliantHigh) {
+  const v = Math.max(0, Math.min(value, max));
+  const filledW = (v / max) * w;
+  const ok = compliantHigh ? value >= threshold : value <= threshold;
+  // Fundal scală
+  doc.setFillColor(240, 240, 245);
+  doc.roundedRect(x, y, w, h, 1, 1, "F");
+  // Bară colorată
+  doc.setFillColor(...(ok ? COL_OK : COL_ERR));
+  doc.roundedRect(x, y, filledW, h, 1, 1, "F");
+  // Marker prag
+  const tx = x + (Math.min(threshold, max) / max) * w;
+  doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.4);
+  doc.line(tx, y - 0.5, tx, y + h + 0.5);
+  doc.setFontSize(6); doc.setTextColor(0);
+  doc.text(`prag ${threshold}${unit || ""}`, tx, y - 1, { align: "center" });
+  // Text label sus-stânga + valoare sus-dreapta
+  doc.setFontSize(7); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+  doc.text(label, x, y - 5);
+  doc.setFont(undefined, "normal");
+  doc.text(`${value}${unit || ""}`, x + w, y - 5, { align: "right" });
+}
+
+// computeReportHash: SHA-256 (Web Crypto disponibil în jsdom) → primii 16 hex chars
+// hash deterministic pe payload-ul cheie al raportului (EP, RER, auditor, dată).
+async function computeReportHash(payload) {
+  try {
+    const txt = JSON.stringify(payload);
+    if (typeof crypto !== "undefined" && crypto.subtle?.digest) {
+      const buf = new TextEncoder().encode(txt);
+      const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+      const arr = Array.from(new Uint8Array(hashBuf));
+      return arr.map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16).toUpperCase();
+    }
+  } catch (_) { /* fallback */ }
+  // Fallback: hash simplu pe string (DJB2)
+  let h = 5381;
+  const s = JSON.stringify(payload);
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) & 0xffffffff;
+  return ("0000000000000000" + (h >>> 0).toString(16).toUpperCase()).slice(-16);
+}
+
 // ── Utilitar: sigla auditor ───────────────────────────────────
 function auditorBlock(doc, auditor, y) {
   const rows = [
@@ -2083,9 +2140,11 @@ export async function generateNZEBConformanceReport(opts) {
 
     // Import dinamic modulul de verificare nZEB
     const { checkNZEBCompliance } = await import("../calc/nzeb-check.js");
+    // Sprint 8 mai 2026 — pasăm explicit listele de elemente pentru tabel U detaliat.
     const compliance = checkNZEBCompliance({
       building, climate: selectedClimate,
       renewSummary, instSummary, auditor, projectPhase,
+      opaqueElements, glazingElements,
     });
 
     if (!compliance) {
@@ -2149,6 +2208,9 @@ export async function generateNZEBConformanceReport(opts) {
 
     // ── Secțiunea I: Date identificare clădire ──
     y = sectionTitle(doc, "I. IDENTIFICARE CLĂDIRE", y);
+    // Sprint 8 mai 2026 — Adăugăm clasa energetică curentă (Mc 001-2022 Tab 5.x).
+    const cls = compliance.energyClass;
+    const clsLabel = cls?.cls && cls.cls !== "—" ? cls.cls : "—";
     y = autoTable(doc, {
       startY: y,
       columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
@@ -2165,6 +2227,13 @@ export async function generateNZEBConformanceReport(opts) {
         ["Localitate climatică", selectedClimate?.name || building?.city || "—"],
         ["Zona climatică Mc 001", selectedClimate?.zone ? `Zona ${selectedClimate.zone}` : "—"],
         ["Temperatură exterioară calcul θₑ", selectedClimate?.theta_e != null ? `${selectedClimate.theta_e} °C` : "—"],
+        [
+          { content: "Clasă energetică curentă (Mc 001-2022)", styles: { fontStyle: "bold" } },
+          {
+            content: `${clsLabel}  ·  EP = ${compliance.ep} kWh/(m²·an)  ·  scor ${cls?.score || "—"}/100`,
+            styles: { fontStyle: "bold", textColor: cls?.color ? hexToRgb(cls.color) : COL_H },
+          },
+        ],
       ],
     });
 
@@ -2183,12 +2252,19 @@ export async function generateNZEBConformanceReport(opts) {
 
     y = sectionTitle(doc, "III. INDICATORI ENERGETICI CALCULAȚI", y);
 
-    // Tabel consumuri specifice pe destinație
-    const epH = instSummary?.ep_h_m2 || 0;
-    const epC = instSummary?.ep_c_m2 || 0;
-    const epW = instSummary?.ep_w_m2 || 0;
-    const epV = instSummary?.ep_v_m2 || 0;
-    const epL = instSummary?.ep_l_m2 || 0;
+    // Tabel consumuri specifice pe destinație.
+    // Sprint 8 mai 2026 — Fix bug: ep_*_m2 nu existau în instSummary (returnau undefined→0).
+    // Fallback la calcul din ep_* / Au pentru retrocompatibilitate (preset-uri vechi).
+    const _ep_per_m2 = (totalKey, m2Key) => {
+      if (instSummary?.[m2Key] != null) return instSummary[m2Key];
+      const tot = instSummary?.[totalKey];
+      return Au > 0 && Number.isFinite(tot) ? tot / Au : 0;
+    };
+    const epH = _ep_per_m2("ep_h", "ep_h_m2");
+    const epC = _ep_per_m2("ep_c", "ep_c_m2");
+    const epW = _ep_per_m2("ep_w", "ep_w_m2");
+    const epV = _ep_per_m2("ep_v", "ep_v_m2");
+    const epL = _ep_per_m2("ep_l", "ep_l_m2");
     const epTotal = instSummary?.ep_total_m2 || 0;
     const epRenew = renewSummary?.ep_renew_m2 || 0;
     const epFinal = renewSummary?.ep_adjusted_m2 || epTotal;
@@ -2207,6 +2283,27 @@ export async function generateNZEBConformanceReport(opts) {
         [{ content: "EP specific final (cu regenerabile)", styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, { content: epFinal.toFixed(1), styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, "—"],
       ],
     });
+
+    // Sprint 8 mai 2026 — Defalcare EP pe purtători de energie (Mc 001-2022 Anexa C)
+    const carriers = Array.isArray(instSummary?.ep_by_carrier_m2) ? instSummary.ep_by_carrier_m2 : [];
+    if (carriers.length > 0 && epTotal > 0) {
+      y = sectionTitle(doc, "III.b — DEFALCARE EP PE PURTĂTORI DE ENERGIE", y);
+      y = autoTable(doc, {
+        startY: y,
+        head: [["Purtător", "EP [kWh/(m²·an)]", "Pondere [%]", "Factor f_P"]],
+        body: carriers.map(c => [
+          c.label,
+          c.ep.toFixed(1),
+          ((c.ep / epTotal) * 100).toFixed(1),
+          c.fP_tot != null ? c.fP_tot.toFixed(2) : "—",
+        ]),
+        columnStyles: {
+          1: { halign: "right" },
+          2: { halign: "right" },
+          3: { halign: "right" },
+        },
+      });
+    }
 
     // Indicatori globali
     y = sectionTitle(doc, "IV. INDICATORI GLOBALI ANVELOPĂ ȘI INSTALAȚII", y);
@@ -2296,6 +2393,21 @@ export async function generateNZEBConformanceReport(opts) {
     doc.text(verdictDetail, w / 2, y + 18, { align: "center" });
     y += finalVerdictH + 8;
 
+    // ─── Sprint 8 mai 2026 — Vizualizare grafică EP/RER vs prag ───
+    y = sectionTitle(doc, "Vizualizare conformare", y);
+    const barW = w - 30;
+    // EP — scala adaptivă (max(value*1.15, threshold*1.5)) pentru lizibilitate
+    const epMaxScale = Math.max(compliance.ep * 1.15, compliance.epMax * 1.5);
+    drawHorizBar(doc, 15, y + 6, barW, 4, compliance.ep, epMaxScale,
+      compliance.epMax, "Energie primară EP", " kWh/(m²·an)", false);
+    y += 14;
+    drawHorizBar(doc, 15, y + 6, barW, 4, compliance.rer, 100,
+      compliance.rerMin, "Pondere regenerabilă RER total", " %", true);
+    y += 14;
+    drawHorizBar(doc, 15, y + 6, barW, 4, compliance.rerOnsite, 100,
+      compliance.rerOnsiteMin, "Pondere regenerabilă on-site", " %", true);
+    y += 12;
+
     // Gap-uri identificate (dacă există)
     if (compliance.gaps.length > 0) {
       doc.setTextColor(...COL_H);
@@ -2313,6 +2425,76 @@ export async function generateNZEBConformanceReport(opts) {
     }
 
     addPageFooter(doc, "Mc 001-2022 Tabel 2.10a | Legea 238/2024 Art.6", page);
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGINA Va — TABEL DETALIAT U PER ELEMENT ANVELOPĂ
+    // SR EN ISO 52018-1:2018/NA:2023 Tab. A.2b/A.3
+    // Sprint 8 mai 2026 — răspunde audit raport (lipsea tabel detaliat)
+    // ═══════════════════════════════════════════════════════════
+    const envElements = compliance.envelopeElements || [];
+    if (envElements.length > 0) {
+      doc.addPage(); page++;
+      addPageHeader(doc, title, audName, today);
+      y = 26;
+
+      y = sectionTitle(doc, "V.b — TRANSMITANȚE TERMICE PER ELEMENT ANVELOPĂ", y);
+      doc.setFontSize(8); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+      doc.text(
+        `Verificare obligatorie SR EN ISO 52018-1:2018/NA:2023 Tab. ${compliance.uMaxSet === "residential" ? "A.2b (rezidențial)" : "A.3 (nerezidențial)"}.`,
+        10, y
+      );
+      y += 4;
+      doc.text(
+        "Fiecare element trebuie să respecte U ≤ U'max separat de cerința EP globală (Mc 001-2022 §2.4).",
+        10, y
+      );
+      y += 6;
+      doc.setFont(undefined, "normal");
+
+      y = autoTable(doc, {
+        startY: y,
+        head: [["Element", "Tip", "Suprafață [m²]", "U calc. [W/(m²·K)]", "U'max [W/(m²·K)]", "Δ%", "Verdict"]],
+        body: envElements.map(el => [
+          el.name || el.type || "—",
+          el.type || "—",
+          el.area != null ? el.area.toFixed(1) : "—",
+          el.U != null ? el.U.toFixed(3) : "—",
+          el.uMax != null ? el.uMax.toFixed(2) : "n/a",
+          el.deltaPct != null ? (el.deltaPct > 0 ? `+${el.deltaPct}` : `${el.deltaPct}`) : "—",
+          el.uMax == null ? "ⓘ N/A" : (el.ok ? "✓ CONFORM" : "✗ DEPĂȘ."),
+        ]),
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 14, halign: "center" },
+          2: { cellWidth: 22, halign: "right" },
+          3: { cellWidth: 28, halign: "right" },
+          4: { cellWidth: 28, halign: "right" },
+          5: { cellWidth: 16, halign: "right" },
+          6: { cellWidth: 28, halign: "center", fontStyle: "bold" },
+        },
+        didParseCell: function (data) {
+          if (data.column.index === 6 && data.cell.section === "body") {
+            const text = String(data.cell.raw);
+            if (text.includes("✓")) data.cell.styles.textColor = COL_OK;
+            else if (text.includes("✗")) data.cell.styles.textColor = COL_ERR;
+            else data.cell.styles.textColor = COL_G;
+          }
+        },
+      });
+
+      // Notă explicativă
+      doc.setFontSize(7); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+      doc.text(
+        "Notă: Δ% reprezintă diferența relativă față de U'max — valori pozitive indică depășirea pragului.",
+        10, y
+      );
+      y += 4;
+      doc.text(
+        "Tipuri standard: PE/PET pereți ext. · AC/PP planșeu pod/teras · PS/PSI planșeu subsol · PL/PB plăci pe sol · FE ferestre · UE uși.",
+        10, y
+      );
+      addPageFooter(doc, "SR EN ISO 52018-1:2018/NA:2023 — Tab. A.2b / A.3", page);
+    }
 
     // ═══════════════════════════════════════════════════════════
     // PAGINA 4 — RECOMANDĂRI (dacă NECONFORM)
@@ -2376,6 +2558,98 @@ export async function generateNZEBConformanceReport(opts) {
         "și interacțiunea între măsuri. Se recomandă reevaluarea cu Mc 001-2022 după fiecare intervenție majoră.",
         13, y + 14
       );
+      y += 22;
+
+      // ─── Sprint 8 mai 2026: Scenariu post-reabilitare estimat ───
+      const post = compliance.postRehab;
+      if (post) {
+        y = ensureSpace(doc, y, 90, title, audName, today);
+        y = sectionTitle(doc, "VI.b — SCENARIU POST-REABILITARE (ESTIMARE CONSERVATIVĂ)", y);
+        doc.setFontSize(8); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+        doc.text(
+          "Estimare orientativă bazată pe implementarea cumulată a măsurilor P1, P2, P3 din Secțiunea VI.",
+          10, y
+        );
+        y += 4;
+        doc.text(
+          "Calcul prin reducere multiplicativă (interacțiunile între măsuri reduc impactul aritmetic).",
+          10, y
+        );
+        y += 6;
+        doc.setFont(undefined, "normal");
+
+        const postClassLabel = post.classAfterAll?.cls || "—";
+        const postClassColor = post.classAfterAll?.color
+          ? hexToRgb(post.classAfterAll.color) : COL_H;
+
+        y = autoTable(doc, {
+          startY: y,
+          head: [["Stare", "EP [kWh/(m²·an)]", "Δ vs prag", "RER total [%]", "RER on-site [%]", "Verdict nZEB"]],
+          body: [
+            [
+              "Existent",
+              compliance.ep.toFixed(1),
+              (compliance.ep - compliance.epMax >= 0 ? "+" : "") + (compliance.ep - compliance.epMax).toFixed(1),
+              compliance.rer.toFixed(1),
+              compliance.rerOnsite.toFixed(1),
+              compliance.compliant ? "✓ CONFORM" : "✗ NECONFORM",
+            ],
+            [
+              "După P1 (anvelopă)",
+              post.epAfterP1.toFixed(1),
+              (post.epAfterP1 - compliance.epMax >= 0 ? "+" : "") + (post.epAfterP1 - compliance.epMax).toFixed(1),
+              compliance.rer.toFixed(1),
+              compliance.rerOnsite.toFixed(1),
+              "—",
+            ],
+            [
+              "După P1 + P2 (anvelopă + sistem)",
+              post.epAfterP1P2.toFixed(1),
+              (post.epAfterP1P2 - compliance.epMax >= 0 ? "+" : "") + (post.epAfterP1P2 - compliance.epMax).toFixed(1),
+              post.rerAfter.toFixed(1),
+              post.rerOnsiteAfter.toFixed(1),
+              "—",
+            ],
+            [
+              { content: "După P1 + P2 + P3 (toate)", styles: { fontStyle: "bold" } },
+              { content: post.epAfterAll.toFixed(1), styles: { fontStyle: "bold" } },
+              {
+                content: (post.epAfterAll - compliance.epMax >= 0 ? "+" : "") + (post.epAfterAll - compliance.epMax).toFixed(1),
+                styles: { fontStyle: "bold" },
+              },
+              { content: post.rerAfter.toFixed(1), styles: { fontStyle: "bold" } },
+              { content: post.rerOnsiteAfter.toFixed(1), styles: { fontStyle: "bold" } },
+              {
+                content: post.compliantAfterAll ? "✓ CONFORM" : "✗ NECONFORM",
+                styles: { fontStyle: "bold", textColor: post.compliantAfterAll ? COL_OK : COL_ERR },
+              },
+            ],
+          ],
+          columnStyles: {
+            1: { halign: "right" },
+            2: { halign: "right" },
+            3: { halign: "right" },
+            4: { halign: "right" },
+            5: { halign: "center" },
+          },
+        });
+
+        // Concluzie sintetică
+        const concl = post.compliantAfterAll
+          ? `După implementarea integrală a măsurilor P1+P2+P3, clădirea ESTIMAT atinge clasa ${postClassLabel} și se încadrează în nZEB (estimare orientativă).`
+          : `Chiar și după implementarea P1+P2+P3, EP estimat (${post.epAfterAll}) rămâne peste pragul nZEB (${compliance.epMax}). Sunt necesare măsuri adiționale (creștere PV, biomasă, recuperare apă reziduală).`;
+        doc.setFillColor(...(post.compliantAfterAll ? [220, 252, 231] : [254, 226, 226]));
+        const conclLines = doc.splitTextToSize(concl, w - 26);
+        const conclH = conclLines.length * 4 + 6;
+        doc.roundedRect(10, y, w - 20, conclH, 2, 2, "F");
+        doc.setFontSize(8); doc.setFont(undefined, "bold");
+        doc.setTextColor(...(post.compliantAfterAll ? [22, 101, 52] : [153, 27, 27]));
+        doc.text(`Estimare clasă post-reabilitare: ${postClassLabel}`, 13, y + 5);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(...postClassColor);
+        doc.text(conclLines, 13, y + 10);
+        y += conclH + 4;
+      }
 
       addPageFooter(doc, "Mc 001-2022 §6 + Anexa K | Recomandări reabilitare", page);
     }
@@ -2432,6 +2706,39 @@ export async function generateNZEBConformanceReport(opts) {
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(building?.city || "—", boxX2 + 2, y + 15);
     y += boxH + 6;
+
+    // ─── Sprint 8 mai 2026: hash autentificare + ID raport ───
+    // Hash deterministic SHA-256 (16 hex) pe payload-ul cheie — permite verificare
+    // ulterioară că documentul nu a fost modificat. Util pentru portal MDLPA.
+    const reportPayload = {
+      v: VERSION,
+      addr: building?.address || "",
+      city: building?.city || "",
+      cat: building?.category || "",
+      auditor: auditor?.atestat || "",
+      ep: compliance.ep,
+      epMax: compliance.epMax,
+      rer: compliance.rer,
+      rerOnsite: compliance.rerOnsite,
+      compliant: compliance.compliant,
+      date: today,
+    };
+    const reportHash = await computeReportHash(reportPayload);
+    const documentId = `nZEB-${(building?.category || "X")}-${(auditor?.atestat || "XXXX").replace(/\W/g, "")}-${reportHash}`;
+
+    doc.setFillColor(248, 248, 252);
+    doc.roundedRect(10, y, w - 20, 10, 1, 1, "F");
+    doc.setFontSize(7); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text("ID document:", 13, y + 4);
+    doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(documentId, 35, y + 4);
+    doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
+    doc.text("Hash SHA-256:", 13, y + 8);
+    doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+    doc.text(reportHash, 35, y + 8);
+    doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+    doc.text("Cod unic verificare integritate document — păstrați împreună cu PDF-ul.", w - 13, y + 6, { align: "right" });
+    y += 14;
 
     // Footer legal
     doc.setFontSize(6); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
