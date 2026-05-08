@@ -4460,9 +4460,16 @@ class handler(BaseHTTPRequestHandler):
             # și se afișează în UI + XML export via generate-xml.js <CodUnicCPE>.
             # ═══════════════════════════════════════
             cpe_code = data.get("cpe_code", "")
+            # cpe_nr = formatul barcode oficial: {nrMDLPA}/{registryIndex}
+            cpe_nr = (data.get("cpe_nr", "") or "").strip()
             if cpe_code:
                 for placeholder in ["[[CPE_CODE]]", "{{CPE_CODE}}", "CodUnicCPE"]:
                     replace_in_doc(doc, placeholder, cpe_code)
+            # Încearcă înlocuire placeholder barcode CPE cu cpe_nr dacă există
+            # (VML text box Code 39 nu poate fi înlocuit, dar orice text simplu poate)
+            if cpe_nr:
+                for placeholder in ["[[CPE_NR]]", "{{CPE_NR}}", "regreg/codcod"]:
+                    replace_in_doc(doc, placeholder, cpe_nr)
                 # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
                 # "ANEXA 1/2 la Certificatul de performanță energetică nr. ......"
                 # Textul e fragmentat în multe run-uri Word, deci folosim `replace_in_paragraph`
@@ -4471,12 +4478,16 @@ class handler(BaseHTTPRequestHandler):
                     import re as _re_cpe
                     # Regex tolerant: NBSP, spatiu normal, sau zero spatiu intre "nr." si dots
                     _nr_pattern = _re_cpe.compile(r"nr\.[\s ]*\.{3,}")
-                    # Foloseste format scurt "registryIndex / nrMDLPA" in titlul Anexei (oficial MDLPA)
-                    # Fallback: cpe_code complet daca nu exista nici registry_index nici nr_mdlpa
+                    # Format CPE nr: {nrMDLPA}/{registryIndex} - stanga=cod MDLPA auditor,
+                    # dreapta=nr secvential auto-generat Zephren (conform barcode template MDLPA).
+                    # Campul cpe_nr vine direct din JS pre-format; fallback la calcul local.
+                    _cpe_nr = str(data.get("cpe_nr", "") or "").strip()
                     _nr_reg_t = str(data.get("registry_index", "") or "").strip()
                     _nr_mdlpa_t = str(data.get("nr_mdlpa", "") or "").strip()
-                    if _nr_reg_t and _nr_mdlpa_t:
-                        _title_nr = f"{_nr_reg_t} / {_nr_mdlpa_t}"
+                    if _cpe_nr:
+                        _title_nr = _cpe_nr
+                    elif _nr_mdlpa_t and _nr_reg_t:
+                        _title_nr = f"{_nr_mdlpa_t}/{_nr_reg_t}"
                     elif _nr_reg_t:
                         _title_nr = _nr_reg_t
                     elif _nr_mdlpa_t:
@@ -6340,10 +6351,11 @@ class handler(BaseHTTPRequestHandler):
                 # Înlocuim NUMAI dots-urile cu "registryIndex / nrMDLPA" (textul dinaintea dots rămâne intact).
                 nr_registru = str(data.get("registry_index", "") or "").strip()
                 nr_mdlpa_val = str(data.get("nr_mdlpa", "") or "").strip()
+                # Format footer: "Numarul certificatului in registrul auditorului: X"
+                # X = nr secvential (registryIndex) — codul propriu al auditorului.
+                # Formatul complet CPE nr ({nrMDLPA}/{registryIndex}) apare in barcode si titlu.
                 if nr_registru or nr_mdlpa_val:
-                    if nr_registru and nr_mdlpa_val:
-                        nr_footer = f"{nr_registru} / {nr_mdlpa_val}"
-                    elif nr_registru:
+                    if nr_registru:
                         nr_footer = nr_registru
                     else:
                         nr_footer = nr_mdlpa_val

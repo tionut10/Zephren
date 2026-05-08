@@ -165,10 +165,7 @@ function addAnexaFooter(doc, nrRegistru, nrMDLPA, pageNum) {
   doc.setDrawColor(180); doc.setLineWidth(0.2);
   doc.line(10, h - 11, w - 10, h - 11);
   doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(80);
-  const nrComplet = nrRegistru
-    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
-    : (nrMDLPA || "............");
-  doc.text(`Numărul certificatului în registrul auditorului: ${nrComplet}`, 10, h - 6);
+  doc.text(`Numărul certificatului în registrul auditorului: ${nrRegistru || "............"}`, 10, h - 6);
   doc.text("Semnătura și ștampila auditorului", w / 2, h - 6, { align: "center" });
   doc.text(`pag ${pageNum}`, w - 10, h - 6, { align: "right" });
 }
@@ -1394,9 +1391,9 @@ function _renderAnexa1(doc, startPageNum, opts) {
   doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
   doc.text("RECOMANDĂRI PENTRU CREȘTEREA PERFORMANȚEI ENERGETICE", w / 2, y, { align: "center" });
   y += 6;
-  const nrCompletA1 = nrRegistru
-    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
-    : "......";
+  const nrCompletA1 = nrMDLPA
+    ? (nrRegistru ? `${nrMDLPA}/${nrRegistru}` : nrMDLPA)
+    : (nrRegistru || "......");
   doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_A);
   doc.text(`ANEXA 1 la Certificatul de performanță energetică nr. ${nrCompletA1}`, w / 2, y, { align: "center" });
   y += 5;
@@ -1773,9 +1770,9 @@ function _renderAnexa2(doc, startPageNum, opts) {
   addPageHeader(doc, title, audName, today);
   let y = 26;
 
-  const nrCompletA2 = nrRegistru
-    ? (nrMDLPA ? `${nrRegistru} / ${nrMDLPA}` : nrRegistru)
-    : "......";
+  const nrCompletA2 = nrMDLPA
+    ? (nrRegistru ? `${nrMDLPA}/${nrRegistru}` : nrMDLPA)
+    : (nrRegistru || "......");
   doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
   doc.text("DATE TEHNICE PRIVIND EVALUAREA PERFORMANȚEI ENERGETICE", w / 2, y, { align: "center" });
   y += 6;

@@ -11,6 +11,8 @@ import { APP_VERSION } from "../data/app-version.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
+// Sprint 8 mai 2026 — gating juridic pentru butonul „Raport conformare nZEB".
+import { requiresNZEBReport } from "../calc/nzeb-required.js";
 import { calcOpaqueR } from "../calc/opaque.js";
 import { calcSummerComfort } from "../calc/summer-comfort.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS, getServiceClass } from "../data/energy-classes.js";
@@ -432,9 +434,17 @@ export default function Step6Certificate(props) {
                     // (linia ~2024) ca să avem aceleași defaults în UI și document.
                     auditor_observations: auditor.observations || "Clădirea a fost evaluată conform Mc 001-2022 (Ord. MDLPA 16/2023). Valorile sunt calculate pe baza datelor furnizate și a inspecției vizuale.",
                     // Sprint 14 — cod unic CPE (Ord. MDLPA 16/2023 + L.238/2024)
+                    // cpe_nr = format oficial barcode: {nrMDLPA}/{registryIndex}
+                    // stânga = codul MDLPA al auditorului (unic per auditor)
+                    // dreapta = nr secvențial auto-generat de Zephren per export CPE
                     cpe_code: auditor.cpeCode || "",
                     registry_index: auditor.registryIndex || "1",
                     nr_mdlpa: auditor.nrMDLPA || "",
+                    cpe_nr: (() => {
+                      const idx = auditor.registryIndex || "1";
+                      const mdlpa = auditor.nrMDLPA || "";
+                      return mdlpa ? `${mdlpa}/${idx}` : idx;
+                    })(),
                     // Sprint 15 — Semnătură + ștampilă (PNG base64 dataURL, fără prefix)
                     signature_png_b64: auditor.signatureDataURL ? (auditor.signatureDataURL.split(",")[1] || "") : "",
                     stamp_png_b64: auditor.stampDataURL ? (auditor.stampDataURL.split(",")[1] || "") : "",
@@ -1549,6 +1559,14 @@ export default function Step6Certificate(props) {
                   a.click();
                   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
                   if (canExportDocx && mode === "cpe") incrementCertCount();
+                  // Auto-increment registryIndex după fiecare export CPE — auditorul
+                  // nu mai trebuie să actualizeze manual numărul secvențial.
+                  if (mode === "cpe" && setAuditor) {
+                    setAuditor(p => ({
+                      ...p,
+                      registryIndex: String(parseInt(p.registryIndex || "1", 10) + 1),
+                    }));
+                  }
                   showToast("DOCX generat: " + filename, "success");
                 }
                 return blob;
@@ -1632,6 +1650,9 @@ export default function Step6Certificate(props) {
   <DateIdentificare>
     <CodUnic>${esc(auditor.mdlpaCode)}</CodUnic>
     <CodCPE>${esc(auditor.cpeCode || auditor.mdlpaCode || "")}</CodCPE>
+    <NrCPE>${esc(auditor.nrMDLPA && auditor.registryIndex ? auditor.nrMDLPA + "/" + auditor.registryIndex : (auditor.nrMDLPA || auditor.registryIndex || ""))}</NrCPE>
+    <NrRegistruAuditor>${esc(auditor.registryIndex || "1")}</NrRegistruAuditor>
+    <NrMDLPAAuditor>${esc(auditor.nrMDLPA || "")}</NrMDLPAAuditor>
     <DataElaborare>${validDate}</DataElaborare>
     <DataExpirare>${expDate}</DataExpirare>
     <ValabilitateAni>${validityYearsXml}</ValabilitateAni>
@@ -2046,14 +2067,14 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <tr><td colspan="20" class="S" style="background:#E7E6E6">DATE PRIVIND IDENTIFICAREA CPE \u0218I A AUDITORULUI ENERGETIC</td></tr>
 <tr>
   <td colspan="4" class="L"><strong>CPE num\u0103rul</strong></td>
-  <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">${auditor.mdlpaCode || ".................."}</td>
+  <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">${(auditor.nrMDLPA && auditor.registryIndex) ? auditor.nrMDLPA + "/" + auditor.registryIndex : (auditor.nrMDLPA || auditor.registryIndex || "....../......")}</td>
   <td colspan="2" class="L" style="text-align:right"><strong>valabil ${validYearsPreview} ani</strong><br><span style="font-size:5pt;color:#888">L.372/2005 mod. L.238/2024 · clasa ${enClass?.cls || "—"}</span></td>
   <td colspan="5" class="L"><strong>Nume &amp; prenume auditor energetic</strong></td>
   <td colspan="5" class="L">${auditor.name || "________________"}</td>
 </tr>
 <tr>
-  <td colspan="4" class="L" style="font-size:6.5pt;color:#666">Cod \u00eenregistrare MDLPA</td>
-  <td colspan="4" class="Vs" style="font-size:6.5pt;letter-spacing:2px">${auditor.mdlpaCode || "\u2014"}</td>
+  <td colspan="4" class="L" style="font-size:6.5pt;color:#666">Nr. MDLPA / Nr. registru auditor</td>
+  <td colspan="4" class="Vs" style="font-size:6.5pt;letter-spacing:2px">${auditor.nrMDLPA || "\u2014"} / ${auditor.registryIndex || "1"}</td>
   <td colspan="2" class="L"></td>
   <td colspan="5" class="L"><strong>Certificat atestare:</strong> ${auditor.atestat || "XX/XXXXX"}</td>
   <td colspan="2" class="L"><strong>gradul</strong></td>
@@ -3056,49 +3077,104 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                       Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026
                       Conținut-cadru Mc 001-2022 §2.4 + Legea 238/2024 Art.6
                       Emis de auditor energetic Grad I (AE Ici)
+
+                      Sprint 8 mai 2026 — Gating obligativitate juridică:
+                      Butonul e blocat când raportul nu e necesar (CPE vânzare/
+                      închiriere / clădire <50 m² / monument / cult). Tooltip
+                      explică motivul exact. Helper centralizat în
+                      src/calc/nzeb-required.js.
                   ─────────────────────────────────────────────────────────────── */}
-                  <button onClick={async function() {
-                    if (!canNzebReport) { requireUpgrade("Raport conformare nZEB necesită plan Starter+"); return; }
-                    if (!instSummary || !renewSummary) { showToast("Completați pașii 1-5 pentru raport conformare nZEB.", "error"); return; }
-                    if (!selectedClimate?.zone) { showToast("Selectați o localitate climatică (Pasul 1).", "error"); return; }
-                    try {
-                      showToast("Se generează raportul de conformare nZEB (PDF oficial)...", "info", 3500);
-                      const projectPhase = building?.scopCpe === "renovare" ? "renovare" : (building?.yearBuilt && parseInt(building.yearBuilt) >= new Date().getFullYear() ? "proiectare" : "audit");
-                      await generateNZEBConformanceReport({
-                        building, selectedClimate, instSummary, renewSummary, envelopeSummary,
-                        opaqueElements, glazingElements,
-                        heating, cooling, ventilation, lighting, acm,
-                        solarThermal, photovoltaic, heatPump, biomass,
-                        auditor, projectPhase,
-                        download: true,
-                      });
-                      showToast("✓ Raport de conformare nZEB generat cu succes (PDF oficial)", "success", 3500);
-                    } catch (e) {
-                      showToast("Eroare la generarea raportului: " + e.message, "error", 6000);
-                    }
-                  }}
-                    className="w-full flex items-start gap-3 px-5 py-3.5 rounded-xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-emerald-500/5 text-amber-300 hover:from-amber-500/15 hover:to-emerald-500/10 hover:border-amber-500/50 transition-all mt-3 group">
-                    <span className="text-2xl shrink-0 group-hover:scale-110 transition-transform">📜</span>
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="text-sm font-bold text-amber-200 flex items-center gap-2 flex-wrap">
-                        Raport conformare nZEB — PDF oficial
-                        {!canNzebReport && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
-                        {auditor?.grade && (() => {
-                          const g = String(auditor.grade).trim().toUpperCase();
-                          const isGradeOne = g === "I" || g === "1" || g.includes("AE ICI") || g.includes("GRAD I");
-                          return !isGradeOne;
-                        })() && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300" title="Raport rezervat auditorilor Grad I (AE Ici)">⚠ Grad I necesar</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-white/50 mt-0.5">
-                        Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026 · conținut-cadru Mc 001-2022 · 4-5 pagini A4
-                      </div>
-                      <div className="text-[10px] text-white/35 mt-0.5">
-                        Verdict EP/RER/RER on-site · recomandări prioritizate · declarație auditor · semnătură
-                      </div>
-                    </div>
-                  </button>
+                  {(() => {
+                    const nzebReq = nzebRequirement; // closure peste constanta calculată mai sus
+                    const isExempted = nzebReq.severity === "exempted";
+                    const isOptional = nzebReq.severity === "optional";
+                    const isRequired = nzebReq.severity === "required";
+                    return (
+                      <button
+                        type="button"
+                        disabled={isExempted}
+                        title={nzebReq.reason}
+                        onClick={async function() {
+                          if (isExempted) {
+                            showToast("Raportul nZEB nu este necesar pentru această clădire: " + nzebReq.reason, "info", 6000);
+                            return;
+                          }
+                          if (!canNzebReport) { requireUpgrade("Raport conformare nZEB necesită plan Starter+"); return; }
+                          if (!instSummary || !renewSummary) { showToast("Completați pașii 1-5 pentru raport conformare nZEB.", "error"); return; }
+                          if (!selectedClimate?.zone) { showToast("Selectați o localitate climatică (Pasul 1).", "error"); return; }
+                          try {
+                            showToast("Se generează raportul de conformare nZEB (PDF oficial)...", "info", 3500);
+                            const projectPhase = building?.scopCpe === "renovare" ? "renovare" : (building?.yearBuilt && parseInt(building.yearBuilt) >= new Date().getFullYear() ? "proiectare" : "audit");
+                            await generateNZEBConformanceReport({
+                              building, selectedClimate, instSummary, renewSummary, envelopeSummary,
+                              opaqueElements, glazingElements,
+                              heating, cooling, ventilation, lighting, acm,
+                              solarThermal, photovoltaic, heatPump, biomass,
+                              auditor, projectPhase,
+                              download: true,
+                            });
+                            showToast("✓ Raport de conformare nZEB generat cu succes (PDF oficial)", "success", 3500);
+                          } catch (e) {
+                            showToast("Eroare la generarea raportului: " + e.message, "error", 6000);
+                          }
+                        }}
+                        className={`w-full flex items-start gap-3 px-5 py-3.5 rounded-xl border-2 transition-all mt-3 group ${
+                          isExempted
+                            ? "border-white/10 bg-white/[0.03] text-white/40 cursor-not-allowed"
+                            : isOptional
+                              ? "border-sky-500/25 bg-gradient-to-br from-sky-500/5 to-emerald-500/5 text-sky-200 hover:from-sky-500/10 hover:to-emerald-500/10 hover:border-sky-500/40"
+                              : "border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-emerald-500/5 text-amber-300 hover:from-amber-500/15 hover:to-emerald-500/10 hover:border-amber-500/50"
+                        }`}
+                        aria-disabled={isExempted}
+                      >
+                        <span className={`text-2xl shrink-0 ${!isExempted && "group-hover:scale-110"} transition-transform`}>
+                          {isExempted ? "🚫" : "📜"}
+                        </span>
+                        <div className="flex-1 text-left min-w-0">
+                          <div className={`text-sm font-bold flex items-center gap-2 flex-wrap ${
+                            isExempted ? "text-white/55" : isOptional ? "text-sky-200" : "text-amber-200"
+                          }`}>
+                            Raport conformare nZEB — PDF oficial
+                            {isRequired && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                obligatoriu legal
+                              </span>
+                            )}
+                            {isOptional && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                                opțional · informativ
+                              </span>
+                            )}
+                            {isExempted && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/15">
+                                exceptat (Art. 4 L.372/2005)
+                              </span>
+                            )}
+                            {!canNzebReport && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}
+                            {auditor?.grade && (() => {
+                              const g = String(auditor.grade).trim().toUpperCase();
+                              const isGradeOne = g === "I" || g === "1" || g.includes("AE ICI") || g.includes("GRAD I");
+                              return !isGradeOne;
+                            })() && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300" title="Raport rezervat auditorilor Grad I (AE Ici)">⚠ Grad I necesar</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-white/50 mt-0.5">
+                            {isExempted
+                              ? nzebReq.reason
+                              : "Art. 6 alin. (1) lit. c) Ord. MDLPA 348/2026 · conținut-cadru Mc 001-2022 · 4-5 pagini A4"}
+                          </div>
+                          <div className="text-[10px] text-white/35 mt-0.5">
+                            {isExempted
+                              ? `Referință legală: ${nzebReq.article}`
+                              : isOptional
+                                ? `${nzebReq.reason} (referință: ${nzebReq.article || "—"})`
+                                : "Verdict EP/RER/RER on-site · recomandări prioritizate · declarație auditor · semnătură"}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })()}
 
                   {/* Banner informativ pentru clădiri atipice (Mc 001-2022: "alte destinații") */}
                   {baseCatResolved === "AL" && (
