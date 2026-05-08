@@ -171,6 +171,7 @@ export function calcCoolingHourly({
   occupancy         = 0.1,
   internalGainsType = "office",
   shadingExternal   = 0.7,
+  gainsW_m2Override = null,  // număr pozitiv → suprascrie gainProfile.total_W_m2 (pentru nZEB cu echipamente eficiente)
 } = {}) {
 
   // ── Validare și valori implicite ─────────────────────────────────────
@@ -181,8 +182,12 @@ export function calcCoolingHourly({
   const gainProfile = COOLING_INTERNAL_GAINS[internalGainsType]
     || COOLING_INTERNAL_GAINS.office;
 
+  const gainsTotal_W_m2 = (gainsW_m2Override != null && gainsW_m2Override > 0)
+    ? gainsW_m2Override
+    : gainProfile.total_W_m2;
+
   // Câștiguri interne [W] — total pentru spațiu
-  const Q_int_W = gainProfile.total_W_m2 * Au;
+  const Q_int_W = gainsTotal_W_m2 * Au;
 
   // ── Coeficient global de transfer termic H_tr [W/K] ─────────────────
   // Calculat din elementele opace + vitrate

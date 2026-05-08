@@ -783,7 +783,7 @@ export const DEMO_PROJECTS = [
       hasNightVent: true,
       n_night: "1.5",
       comfortCategory: "I",
-      internalGainsOverride: "",
+      internalGainsOverride: "22",  // 22 W/m² realist nZEB birouri (EN 16798-1 cat.I echipamente eficiente vs 35 default)
     },
     ventilation: {
       type: "MEC_HR80",                   // Recuperator entalpic 80%

@@ -1582,7 +1582,7 @@ export default function Step5Calculation(props) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="flex justify-between p-2 rounded bg-white/[0.03]">
                         <span className="opacity-50">CO₂ actual / reabilitat</span>
-                        <span className="font-medium">{rehabComparison.original.co2.toFixed(1)} → {rehabComparison.rehab.co2.toFixed(1)} <span className="text-green-400">(-{rehabComparison.savings.co2Pct.toFixed(0)}%)</span></span>
+                        <span className="font-medium">{rehabComparison.original.co2.toFixed(1)} → {rehabComparison.rehab.co2.toFixed(1)} <span className={rehabComparison.savings.co2Pct >= 0 ? "text-green-400" : "text-red-400"}>({rehabComparison.savings.co2Pct >= 0 ? "-" : "+"}{Math.abs(rehabComparison.savings.co2Pct).toFixed(0)}%)</span></span>
                       </div>
                       <div className="flex justify-between p-2 rounded bg-white/[0.03]">
                         <span className="opacity-50">Economie Ef anuală</span>

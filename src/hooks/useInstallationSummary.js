@@ -246,8 +246,11 @@ export function useInstallationSummary({
     const coolArea = parseFloat(cooling.cooledArea) || Au;
 
     // #7 — Override tipologie aporturi (prioritate UI > auto din category)
+    // Dacă override e numeric (ex: "22") → W/m² direct; altfel e tip string ("office", "residential")
     const gainsOverride = cooling.internalGainsOverride;
-    const internalGainsType = (gainsOverride && gainsOverride !== "")
+    const gainsNumeric = gainsOverride && gainsOverride !== "" ? parseFloat(gainsOverride) : NaN;
+    const gainsW_m2Override = isFinite(gainsNumeric) && gainsNumeric > 0 ? gainsNumeric : null;
+    const internalGainsType = (!gainsW_m2Override && gainsOverride && gainsOverride !== "")
       ? gainsOverride
       : mapCategoryToGains(building.category);
 
@@ -269,6 +272,7 @@ export function useInstallationSummary({
           theta_int_cool: parseFloat(cooling.setpoint) || 26,
           internalGainsType,
           shadingExternal: parseFloat(cooling.shadingExternal) || 0.7,
+          gainsW_m2Override,
         });
         qC_nd_hourly = (coolingHourlyResult && coolingHourlyResult.Q_annual_kWh > 0)
           ? coolingHourlyResult.Q_annual_kWh

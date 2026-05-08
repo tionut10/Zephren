@@ -1793,8 +1793,13 @@ export default function EnergyCalcApp({ cloud }) {
       const cop = parseFloat(ri.hpCOP) || 4.0;
       newQfH = newQH / cop; newFuelFpH = fP_elec_scenario; newFuelCO2H = CO2_ELEC;
     } else {
-      const etaH = instSummary.eta_total_h || 0.80;
-      newQfH = etaH > 0 ? newQH / etaH : 0;
+      // Scalăm qf_h proporțional cu reducerea cererii — corect pentru PC (unde eta_total_h exclud SCOP)
+      // și pentru cazane (unde eta_total_h include eta_gen). Evităm împărțirea la eta_total_h care
+      // pentru PC ar omite COP-ul și ar produce qf_h de 4× prea mare.
+      const qH_nd_cur = instSummary.qH_nd || 0;
+      newQfH = qH_nd_cur > 0
+        ? (instSummary.qf_h || 0) * (newQH / qH_nd_cur)
+        : ((instSummary.eta_total_h || 0.80) > 0 ? newQH / (instSummary.eta_total_h || 0.80) : 0);
       newFuelFpH = instSummary.fuel?.fP_tot || 1.17; newFuelCO2H = instSummary.fuel?.fCO2 || 0.20;
     }
     const newQfW = instSummary.qf_w, newQfC = instSummary.qf_c;
