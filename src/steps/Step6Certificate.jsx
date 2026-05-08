@@ -440,11 +440,9 @@ export default function Step6Certificate(props) {
                     cpe_code: auditor.cpeCode || "",
                     registry_index: auditor.registryIndex || "1",
                     nr_mdlpa: auditor.nrMDLPA || "",
-                    cpe_nr: (() => {
-                      const idx = auditor.registryIndex || "1";
-                      const mdlpa = auditor.nrMDLPA || "";
-                      return mdlpa ? `${mdlpa}/${idx}` : idx;
-                    })(),
+                    // Codul Zephren: 6 cifre zero-padded (celulele 7-12 din barcode)
+                    // Celulele 0-5 rămân "regreg" (MDLPA le va completa la upload)
+                    cpe_nr: String(parseInt(auditor.registryIndex || "1", 10)).padStart(6, "0"),
                     // Sprint 15 — Semnătură + ștampilă (PNG base64 dataURL, fără prefix)
                     signature_png_b64: auditor.signatureDataURL ? (auditor.signatureDataURL.split(",")[1] || "") : "",
                     stamp_png_b64: auditor.stampDataURL ? (auditor.stampDataURL.split(",")[1] || "") : "",
@@ -2067,14 +2065,14 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <tr><td colspan="20" class="S" style="background:#E7E6E6">DATE PRIVIND IDENTIFICAREA CPE \u0218I A AUDITORULUI ENERGETIC</td></tr>
 <tr>
   <td colspan="4" class="L"><strong>CPE num\u0103rul</strong></td>
-  <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">${(auditor.nrMDLPA && auditor.registryIndex) ? auditor.nrMDLPA + "/" + auditor.registryIndex : (auditor.nrMDLPA || auditor.registryIndex || "....../......")}</td>
+  <td colspan="4" class="Vs" style="font-size:7pt;letter-spacing:1.5px">regreg/${String(parseInt(auditor.registryIndex || "1", 10)).padStart(6, "0")}</td>
   <td colspan="2" class="L" style="text-align:right"><strong>valabil ${validYearsPreview} ani</strong><br><span style="font-size:5pt;color:#888">L.372/2005 mod. L.238/2024 · clasa ${enClass?.cls || "—"}</span></td>
   <td colspan="5" class="L"><strong>Nume &amp; prenume auditor energetic</strong></td>
   <td colspan="5" class="L">${auditor.name || "________________"}</td>
 </tr>
 <tr>
-  <td colspan="4" class="L" style="font-size:6.5pt;color:#666">Nr. MDLPA / Nr. registru auditor</td>
-  <td colspan="4" class="Vs" style="font-size:6.5pt;letter-spacing:2px">${auditor.nrMDLPA || "\u2014"} / ${auditor.registryIndex || "1"}</td>
+  <td colspan="4" class="L" style="font-size:6.5pt;color:#666">Cod MDLPA / Nr. registru Zephren</td>
+  <td colspan="4" class="Vs" style="font-size:6.5pt;letter-spacing:2px">regreg / ${String(parseInt(auditor.registryIndex || "1", 10)).padStart(6, "0")}</td>
   <td colspan="2" class="L"></td>
   <td colspan="5" class="L"><strong>Certificat atestare:</strong> ${auditor.atestat || "XX/XXXXX"}</td>
   <td colspan="2" class="L"><strong>gradul</strong></td>

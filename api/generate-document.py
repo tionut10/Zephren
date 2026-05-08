@@ -1338,50 +1338,48 @@ def replace_in_vml_raw(doc, old_text, new_text):
     return count
 
 
-def replace_barcode_cells(doc, cpe_nr_val):
-    """Înlocuiește barcode-ul CPE caracter cu caracter în template-ul MDLPA.
+def replace_barcode_cells(doc, code6):
+    """Înlocuiește DOAR celulele 7-12 din barcode-ul CPE cu codul Zephren (6 cifre).
 
-    Template-ul MDLPA are rândul 2 din tabelul de identificare cu fiecare caracter
-    din 'regreg/codcod' (13 caractere) în câte o celulă separată cu font Code 39.
-    Înlocuim caracterele 0..12 cu cele din cpe_nr_val; celulele rămase devin ''.
+    Structura template MDLPA (rândul 2, tabelul de identificare):
+      celule 0-5 = 'r','e','g','r','e','g'  → rămân neschimbate (MDLPA le va completa)
+      celula  6  = '/'                       → separator fix
+      celule 7-12= 'c','o','d','c','o','d'  → înlocuite cu cele 6 cifre Zephren
+    Rezultat barcode: regreg/XXXXXX  (ex: regreg/000042)
     """
-    if not cpe_nr_val:
+    if not code6:
         return False
+    # Normalizare: exact 6 caractere, zero-padded dacă numeric
+    if code6.isdigit():
+        code6 = code6.zfill(6)[-6:]
+    else:
+        code6 = (code6 + "      ")[:6]
+
     placeholder = "regreg/codcod"
     n_ph = len(placeholder)          # 13 caractere
-    cpe_chars = list(cpe_nr_val)
 
     for table in doc.tables:
         for row in table.rows:
             cells = row.cells
             if len(cells) < n_ph:
                 continue
-            # Verifică dacă celulele 0..n_ph-1 formează exact placeholder-ul
-            cell_texts = []
-            for i in range(n_ph):
-                txt = "".join(
-                    run.text
-                    for para in cells[i].paragraphs
-                    for run in para.runs
-                )
-                cell_texts.append(txt)
+            cell_texts = [
+                "".join(run.text for para in cells[i].paragraphs for run in para.runs)
+                for i in range(n_ph)
+            ]
             if "".join(cell_texts) != placeholder:
                 continue
-            # Înlocuiește caracter cu caracter; celulele surplus → ""
-            for i in range(n_ph):
-                target = cpe_chars[i] if i < len(cpe_chars) else ""
-                cell = cells[i]
-                replaced = False
+            # Înlocuiește NUMAI celulele 7-12 (codcod → 6 cifre)
+            for i in range(6):
+                target = code6[i]
+                cell = cells[7 + i]
                 for para in cell.paragraphs:
                     runs = para.runs
                     if runs:
                         runs[0].text = target
                         for run in runs[1:]:
                             run.text = ""
-                        replaced = True
                         break
-                if not replaced and target:
-                    cell.paragraphs[0].add_run(target)
             return True
     return False
 
@@ -4518,7 +4516,8 @@ class handler(BaseHTTPRequestHandler):
                 for placeholder in ["[[CPE_NR]]", "{{CPE_NR}}"]:
                     replace_in_doc(doc, placeholder, cpe_nr)
                     replace_in_vml_raw(doc, placeholder, cpe_nr)
-                # Template MDLPA: fiecare caracter din "regreg/codcod" e în celulă separată
+                # Template MDLPA: barcode regreg/XXXXXX — înlocuim doar celulele 7-12
+                # cpe_nr conține codul de 6 cifre (registryIndex zero-padded)
                 replace_barcode_cells(doc, cpe_nr)
                 # Fix Anexa 1+2: înlocuiește placeholder-ul "nr. ......" din titlul
                 # "ANEXA 1/2 la Certificatul de performanță energetică nr. ......"
