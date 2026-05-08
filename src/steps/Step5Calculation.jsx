@@ -1359,10 +1359,10 @@ export default function Step5Calculation(props) {
                       return (
                         <g key={"yt"+i}>
                           <line x1={pL} y1={y} x2={pL+cW} y2={y}
-                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"}
-                            strokeWidth={isZero ? 1.2 : 0.6}
+                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.10)"}
+                            strokeWidth={isZero ? 1.5 : 0.7}
                             strokeDasharray={isZero ? "5 3" : undefined} />
-                          <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#f59e0b" : "#888"}>{fmtRON(v)}</text>
+                          <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#fbbf24" : "#b0b8c8"}>{fmtRON(v)}</text>
                         </g>
                       );
                     })}
@@ -1371,16 +1371,16 @@ export default function Step5Calculation(props) {
                       const x = toX(yr);
                       return (
                         <g key={"xt"+yr}>
-                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"} strokeWidth="0.6" />
-                          <text x={x} y={pT+cH+18} textAnchor="middle" fontSize="10" fill="#888">{yr}</text>
+                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)"} strokeWidth="0.7" />
+                          <text x={x} y={pT+cH+18} textAnchor="middle" fontSize="10" fill="#b0b8c8">{yr}</text>
                         </g>
                       );
                     })}
                     {/* Axe */}
-                    <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="#555" strokeWidth="1" />
-                    <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="#555" strokeWidth="1" />
-                    <text x={pL+cW/2} y={H-2} textAnchor="middle" fontSize="10" fill="#999">Ani</text>
-                    <text x={pL-6} y={pT-4} textAnchor="end" fontSize="9" fill="#666">RON</text>
+                    <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
+                    <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
+                    <text x={pL+cW/2} y={H-2} textAnchor="middle" fontSize="11" fill="#c8cfd8">Ani</text>
+                    <text x={pL-6} y={pT-4} textAnchor="end" fontSize="10" fill="#a8b0c0">RON</text>
                     {/* Curbe + marcatori break-even */}
                     {curves.map((c, ci) => {
                       const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
@@ -1390,21 +1390,21 @@ export default function Step5Calculation(props) {
                       return (
                         <g key={"c"+ci}>
                           <title>{tipText}</title>
-                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" opacity="0.9" />
+                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" opacity="0.95" />
                           <polyline points={ptStr} fill="none" stroke="transparent" strokeWidth="12" />
                           {pbX && (
                             <>
-                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
-                              <circle cx={pbX} cy={breakY} r="4" fill={c.color} />
+                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
+                              <circle cx={pbX} cy={breakY} r="4.5" fill={c.color} />
                             </>
                           )}
-                          <circle cx={toX(0)} cy={toY(-c.cost)} r="3" fill={c.color} opacity="0.7" />
+                          <circle cx={toX(0)} cy={toY(-c.cost)} r="3.5" fill={c.color} opacity="0.9" />
                         </g>
                       );
                     })}
                     {/* Etichetă break-even */}
                     {breakY > pT && breakY < pT+cH && (
-                      <text x={pL+cW-4} y={breakY-5} textAnchor="end" fontSize="9" fill="#f59e0b" opacity="0.8">break-even</text>
+                      <text x={pL+cW-4} y={breakY-6} textAnchor="end" fontSize="10" fill="#fbbf24" fontWeight="500">break-even</text>
                     )}
                   </svg>
                   </div>
@@ -1415,15 +1415,15 @@ export default function Step5Calculation(props) {
                       const npv20 = m.pts[m.pts.length-1].npv;
                       return (
                         <div key={i} className="flex items-center gap-2 text-xs">
-                          <div className="w-4 h-[2.5px] rounded flex-shrink-0" style={{background: m.color}} />
-                          <span className="opacity-70">{m.name}</span>
+                          <div className="w-5 h-[3px] rounded flex-shrink-0" style={{background: m.color}} />
+                          <span className="opacity-85">{m.name}</span>
                           <span className="font-bold ml-auto">{payback}</span>
-                          <span className="opacity-40 text-[11px]">{fmtRON(npv20)} RON</span>
+                          <span className="opacity-60 text-[11px]">{fmtRON(npv20)} RON</span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="text-xs opacity-30 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
+                  <div className="text-xs opacity-55 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
                 </Card>
                 );
               })()}
