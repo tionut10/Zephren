@@ -127,6 +127,285 @@ export default function Step5Calculation(props) {
                 <p className="text-xs opacity-40">Capitolul 5 Mc 001-2022 — Bilanț energetic, conversie energie primară, clasare A+ — G</p>
               </div>
 
+
+              {/* ═════ A. BILANȚ ENERGETIC (Mc 001-2022 §5.2-5.8) ═════ */}
+
+              {monthlyISO && (
+                <Card title={t("Bilanț termic lunar ISO 13790",lang)} className="mb-6">
+                  <div className="text-[10px] text-amber-500/60 mb-1 sm:hidden text-center">↔ Glisează orizontal pentru tabelul complet</div>
+                  <div className="relative">
+                    <div className="overflow-x-auto rounded-lg" style={{WebkitOverflowScrolling:"touch",scrollbarWidth:"thin"}}>
+                    <table className="w-full text-xs" style={{minWidth:"640px"}}><thead><tr className="border-b border-white/10">
+                      <th className="text-left py-2 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa",minWidth:"36px"}}>Luna</th><th className="text-right px-1">θ ext</th><th className="text-right px-1">Q_tr</th><th className="text-right px-1">Q_ve</th><th className="text-right px-1">Q_int</th><th className="text-right px-1">Q_sol</th><th className="text-right px-1">γ_H</th><th className="text-right px-1">η_H</th><th className="text-right px-1 font-bold">Q_H,nd</th><th className="text-right px-1">Q_C,nd</th>
+                    </tr></thead><tbody>
+                      {monthlyISO.map((m, i) => (<tr key={i} className="border-b border-white/5"><td className="py-1 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa"}}>{m.name}</td><td className="text-right px-1 opacity-50">{m.tExt.toFixed(1)}</td><td className="text-right px-1">{m.Q_tr.toFixed(0)}</td><td className="text-right px-1">{m.Q_ve.toFixed(0)}</td><td className="text-right px-1 text-green-400/70">{m.Q_int.toFixed(0)}</td><td className="text-right px-1 text-amber-400/70">{m.Q_sol.toFixed(0)}</td><td className="text-right px-1 opacity-40">{m.gamma_H.toFixed(2)}</td><td className="text-right px-1 opacity-40">{m.eta_H.toFixed(2)}</td><td className="text-right px-1 font-bold text-red-400">{m.qH_nd.toFixed(0)}</td><td className="text-right px-1 text-blue-400">{m.qC_nd.toFixed(0)}</td></tr>))}
+                      <tr className="border-t border-white/20 font-bold"><td className="py-2 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa"}}>TOTAL</td><td></td><td className="text-right px-1">{monthlyISO.reduce((s,m)=>s+m.Q_tr,0).toFixed(0)}</td><td className="text-right px-1">{monthlyISO.reduce((s,m)=>s+m.Q_ve,0).toFixed(0)}</td><td className="text-right px-1 text-green-400">{monthlyISO.reduce((s,m)=>s+m.Q_int,0).toFixed(0)}</td><td className="text-right px-1 text-amber-400">{monthlyISO.reduce((s,m)=>s+m.Q_sol,0).toFixed(0)}</td><td></td><td></td><td className="text-right px-1 text-red-400">{monthlyISO.reduce((s,m)=>s+m.qH_nd,0).toFixed(0)}</td><td className="text-right px-1 text-blue-400">{monthlyISO.reduce((s,m)=>s+m.qC_nd,0).toFixed(0)}</td></tr>
+                    </tbody></table>
+                    </div>
+                  </div>
+                  <div className="text-[10px] opacity-30 mt-2">Valori kWh — metoda lunară SR EN ISO 13790 | Factori NA:2023</div>
+                </Card>
+              )}
+              {/* ── BILANȚ LUNAR ── */}
+              <Card title={t("Bilanț energetic lunar (metoda quasi-staționară)",lang)} className="mb-6">
+                <div className="overflow-x-auto">
+                  <div className="min-w-[480px]">
+                    {/* Grafic SVG bilanț lunar */}
+                    <MonthlyEnergyChart monthlyData={monthlyData} Au={Au} lang={lang} />
+
+                    {/* Tabel lunar */}
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-[10px]">
+                        <thead>
+                          <tr className="border-b border-white/10">
+                            <th className="text-left py-1.5 px-1 opacity-40 font-medium">Luna</th>
+                            {months.map(m => <th key={m} className="text-center py-1.5 px-1 opacity-40 font-medium">{m}</th>)}
+                            <th className="text-center py-1.5 px-1 opacity-60 font-semibold">TOTAL</th>
+                          </tr>
+                        </thead>
+                        <tbody className="font-mono">
+                          <tr className="border-b border-white/5">
+                            <td className="py-1 px-1 opacity-50">T ext [°C]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.tExt.toFixed(1)}</td>)}
+                            <td className="text-center py-1 px-1 font-medium">{selectedClimate?.theta_a || "—"}</td>
+                          </tr>
+                          <tr className="border-b border-white/5">
+                            <td className="py-1 px-1 opacity-50">Q pierderi [kWh]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.qLoss.toFixed(0)}</td>)}
+                            <td className="text-center py-1 px-1 font-medium">{monthlyData.reduce((s,d)=>s+d.qLoss,0).toFixed(0)}</td>
+                          </tr>
+                          <tr className="border-b border-white/5">
+                            <td className="py-1 px-1 opacity-50">Q solar [kWh]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-amber-400/70">{d.solarGain.toFixed(0)}</td>)}
+                            <td className="text-center py-1 px-1 font-medium text-amber-400/70">{monthlyData.reduce((s,d)=>s+d.solarGain,0).toFixed(0)}</td>
+                          </tr>
+                          <tr className="border-b border-white/5">
+                            <td className="py-1 px-1 opacity-50">Q intern [kWh]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-purple-400/70">{d.intGain.toFixed(0)}</td>)}
+                            <td className="text-center py-1 px-1 font-medium text-purple-400/70">{monthlyData.reduce((s,d)=>s+d.intGain,0).toFixed(0)}</td>
+                          </tr>
+                          <tr className="border-b border-white/10 bg-red-500/5">
+                            <td className="py-1.5 px-1 font-semibold text-red-400">Q incalzire [kWh]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-red-400 font-medium">{d.qHeat.toFixed(0)}</td>)}
+                            <td className="text-center py-1.5 px-1 font-bold text-red-400">{annualHeat.toFixed(0)}</td>
+                          </tr>
+                          <tr className="bg-blue-500/5">
+                            <td className="py-1.5 px-1 font-semibold text-blue-400">Q racire [kWh]</td>
+                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-blue-400 font-medium">{d.qCool.toFixed(0)}</td>)}
+                            <td className="text-center py-1.5 px-1 font-bold text-blue-400">{annualCool.toFixed(0)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+              {/* ── GRAFIC LUNAR CONSUM ── */}
+              {monthlyBreakdown && (
+                <Card title={t("Profil lunar consum energie",lang)} className="mb-6">
+                  <svg viewBox="0 0 660 180" width="100%" height="170" className="overflow-visible">
+                    {(() => {
+                      var data = monthlyBreakdown, maxQ = Math.max.apply(null, data.map(function(m){return m.qf_total}))||1;
+                      var bW=38, gap=16, cH=130, bY=155, oX=30, els=[];
+                      for(var t=0;t<=4;t++){var y=bY-(t/4)*cH; els.push(<line key={"yg"+t} x1={oX} y1={y} x2={oX+12*(bW+gap)} y2={y} stroke="#222" strokeWidth="0.5"/>); els.push(<text key={"yl"+t} x={oX-4} y={y+3} textAnchor="end" fontSize="6" fill="#555">{Math.round(maxQ*t/4)}</text>);}
+                      data.forEach(function(m,i){
+                        var x=oX+6+i*(bW+gap), utils=[{v:m.qf_h,c:"#ef4444"},{v:m.qf_w,c:"#f97316"},{v:m.qf_c,c:"#3b82f6"},{v:m.qf_v+m.qf_l,c:"#8b5cf6"}];
+                        var cumH=0;
+                        utils.forEach(function(u,ui){ var h=maxQ>0?(u.v/maxQ)*cH:0; if(h>0.5) els.push(<rect key={"b"+i+"-"+ui} x={x} y={bY-cumH-h} width={bW} height={h} fill={u.c} opacity="0.8" rx="1"/>); cumH+=h; });
+                        els.push(<text key={"ml"+i} x={x+bW/2} y={bY+11} textAnchor="middle" fontSize="7" fill="#777">{m.name}</text>);
+                      });
+                      // Temperature line
+                      var tMin=Math.min.apply(null,data.map(function(m){return m.tExt})), tMax=Math.max.apply(null,data.map(function(m){return m.tExt})), tR=Math.max(tMax-tMin,1);
+                      var pts=data.map(function(m,i){ return (oX+6+i*(bW+gap)+bW/2)+","+(bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1); }).join(" ");
+                      els.push(<polyline key="tl" points={pts} fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.6"/>);
+                      data.forEach(function(m,i){ var x=oX+6+i*(bW+gap)+bW/2, y=bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1; els.push(<circle key={"td"+i} cx={x} cy={y} r="2" fill="#fbbf24" opacity="0.7"/>); els.push(<text key={"tt"+i} x={x} y={y-4} textAnchor="middle" fontSize="5" fill="#fbbf24" opacity="0.7">{m.tExt.toFixed(0)}</text>); });
+                      [{l:"Încălzire",c:"#ef4444"},{l:"ACM",c:"#f97316"},{l:"Răcire",c:"#3b82f6"},{l:"V+I",c:"#8b5cf6"},{l:"Temp",c:"#fbbf24"}].forEach(function(it,i){ els.push(<rect key={"lg"+i} x={oX+i*100} y={2} width={7} height={7} fill={it.c} rx="1" opacity="0.8"/>); els.push(<text key={"lt"+i} x={oX+i*100+10} y={9} fontSize="6" fill="#888">{it.l}</text>); });
+                      return els;
+                    })()}
+                  </svg>
+                </Card>
+              )}
+              {/* ── DEFALCARE CONSUM PE LUNI ── */}
+              {monthlyBreakdown && (
+                <Card title={t("Defalcare consum pe luni",lang)} badge={<span className="text-[10px] opacity-30">profil climatic lunar</span>}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[10px] border-collapse" style={{minWidth:"700px"}}>
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="text-left py-2 px-2 opacity-50">Luna</th>
+                          <th className="text-center py-2 px-1 opacity-50">T ext °C</th>
+                          <th className="text-center py-2 px-1 opacity-50">ΔT</th>
+                          <th className="text-right py-2 px-1 opacity-50">Încălz.</th>
+                          <th className="text-right py-2 px-1 opacity-50">ACM</th>
+                          <th className="text-right py-2 px-1 opacity-50">Răcire</th>
+                          <th className="text-right py-2 px-1 opacity-50">Ventil.</th>
+                          <th className="text-right py-2 px-1 opacity-50">Ilum.</th>
+                          <th className="text-right py-2 px-1 font-medium">TOTAL</th>
+                          <th className="text-right py-2 px-1 opacity-50">Ep</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyBreakdown.map((m, i) => (
+                          <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
+                            <td className="py-1.5 px-2 font-medium">{m.name}</td>
+                            <td className="text-center px-1" style={{color: m.tExt < 0 ? "#60a5fa" : m.tExt > 25 ? "#f87171" : "inherit"}}>{m.tExt.toFixed(1)}</td>
+                            <td className="text-center px-1 opacity-40">{m.deltaT.toFixed(0)}</td>
+                            <td className="text-right px-1">{m.qf_h > 0 ? m.qf_h.toFixed(0) : "—"}</td>
+                            <td className="text-right px-1 opacity-60">{m.qf_w.toFixed(0)}</td>
+                            <td className="text-right px-1" style={{color: m.qf_c > 0 ? "#f87171" : "inherit"}}>{m.qf_c > 0 ? m.qf_c.toFixed(0) : "—"}</td>
+                            <td className="text-right px-1 opacity-60">{m.qf_v.toFixed(0)}</td>
+                            <td className="text-right px-1 opacity-60">{m.qf_l.toFixed(0)}</td>
+                            <td className="text-right px-1 font-bold">{m.qf_total.toFixed(0)}</td>
+                            <td className="text-right px-1 opacity-40">{m.ep.toFixed(0)}</td>
+                          </tr>
+                        ))}
+                        <tr className="border-t border-white/10 font-bold">
+                          <td className="py-2 px-2">TOTAL AN</td>
+                          <td colSpan={2}></td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_h, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_w, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_c, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_v, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_l, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_total, 0).toFixed(0)}</td>
+                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.ep, 0).toFixed(0)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Mini bar chart */}
+                  <div className="mt-4 flex items-end gap-1 h-24">
+                    {monthlyBreakdown.map((m, i) => {
+                      const maxQ = Math.max(...monthlyBreakdown.map(x => x.qf_total));
+                      const hPct = maxQ > 0 ? (m.qf_total / maxQ) * 100 : 0;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                          <div className="w-full rounded-t" style={{height:`${hPct}%`, minHeight: m.qf_total > 0 ? "2px" : 0,
+                            background: m.qf_h > m.qf_c ? "linear-gradient(180deg, #f59e0b44, #f59e0b)" : "linear-gradient(180deg, #3b82f644, #3b82f6)"}} />
+                          <div className="text-[8px] opacity-30">{m.name}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
+              {/* ── A/V FACTOR VALIDATION ── */}
+              {avValidation && avValidation.msg && (
+                <div className={cn("mb-4 p-3 rounded-xl border text-xs flex items-center gap-2",
+                  avValidation.status === "high" ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-amber-500/20 bg-amber-500/5 text-amber-400"
+                )}>
+                  <span>⚠</span> {avValidation.msg}
+                </div>
+              )}
+
+              {/* ═════ B. CONVERSIE ENERGIE PRIMARĂ (Mc 001-2022 §5.9 Tabelul 5.17) ═════ */}
+
+              {/* ── TOGGLE NA:2023 (Sprint 11 — extins la factor electricitate global) ── */}
+              <div className="flex items-center gap-3 mb-3 bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={useNA2023} onChange={e => setUseNA2023(e.target.checked)} className="accent-amber-500" />
+                  <span className="text-xs font-medium">Factori NA:2023 (Tab A.16) — electricitate + energie ambientală</span>
+                </label>
+                <div className="text-[10px] opacity-40 flex-1">
+                  {useNA2023
+                    ? "ON (recomandat): electricitate fP_nren=2.00 + fP_ren=0.50 (Tab A.16, valoare ASRO autoritară) • energie ambientală PC = 1.00 (corecție confirmată MDLPA nr. 50843/09.03.2026)."
+                    : "OFF (legacy Mc001-2022 Tab 5.17): electricitate fP_nren=2.62 (fP_ren=0) • energie ambientală PC = 0. Păstrat pentru paritate cu CPE-uri emise înainte de Sprint 11."}
+                </div>
+              </div>
+              {/* ── FACTORI DE CONVERSIE APLICAȚI ── */}
+              <Card title={t("Factori de conversie energie primară aplicați (Tabelul 5.17)",lang)} className="mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
+                  {FUELS.map(f => (
+                    <div key={f.id} className="flex items-center justify-between py-1.5 border-b border-white/5">
+                      <span className="text-xs opacity-60">{f.label}</span>
+                      <div className="flex gap-3">
+                        <span className="text-[10px] font-mono">fP={f.fP_tot}</span>
+                        <span className="text-[10px] font-mono opacity-40">fCO2={f.fCO2}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              {/* ── DEFALCARE ENERGIE FINALĂ & PRIMARĂ ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                <Card title={t("Energie finală per utilitate",lang)}>
+                  {instSummary && (
+                    <div className="space-y-3">
+                      {[
+                        {label:"Încălzire", qf:instSummary.qf_h, ep:instSummary.ep_h, co2:instSummary.co2_h, color:"#ef4444"},
+                        {label:"ACM", qf:instSummary.qf_w, ep:instSummary.ep_w, co2:instSummary.co2_w, color:"#f97316"},
+                        {label:"Răcire", qf:instSummary.qf_c, ep:instSummary.ep_c, co2:instSummary.co2_c, color:"#3b82f6"},
+                        {label:"Ventilare", qf:instSummary.qf_v, ep:instSummary.ep_v, co2:instSummary.co2_v, color:"#8b5cf6"},
+                        {label:"Iluminat", qf:instSummary.qf_l, ep:instSummary.ep_l, co2:instSummary.co2_l, color:"#eab308"},
+                      ].map(u => (
+                        <div key={u.label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:u.color}} />
+                              <span className="text-xs font-medium">{u.label}</span>
+                            </div>
+                            <span className="text-xs font-mono">{u.qf.toFixed(0)} kWh/an</span>
+                          </div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{
+                              width:`${instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100) : 0}%`,
+                              backgroundColor:u.color
+                            }} />
+                          </div>
+                          <div className="flex justify-between mt-0.5">
+                            <span className="text-[10px] opacity-30">{Au > 0 ? (u.qf/Au).toFixed(1) : "—"} kWh/(m²·an)</span>
+                            <span className="text-[10px] opacity-30">{instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100).toFixed(0) : 0}%</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-white/10">
+                        <ResultRow label="TOTAL energie finală" value={instSummary.qf_total.toFixed(0)} unit="kWh/an" />
+                        <ResultRow label="Specific" value={instSummary.qf_total_m2.toFixed(1)} unit="kWh/(m²·an)" />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+
+                <Card title={t("Energie primară per utilitate",lang)}>
+                  {instSummary && (
+                    <div className="space-y-3">
+                      {[
+                        {label:"Încălzire", ep:instSummary.ep_h, color:"#ef4444"},
+                        {label:"ACM", ep:instSummary.ep_w, color:"#f97316"},
+                        {label:"Răcire", ep:instSummary.ep_c, color:"#3b82f6"},
+                        {label:"Ventilare", ep:instSummary.ep_v, color:"#8b5cf6"},
+                        {label:"Iluminat", ep:instSummary.ep_l, color:"#eab308"},
+                      ].map(u => (
+                        <div key={u.label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:u.color}} />
+                              <span className="text-xs font-medium">{u.label}</span>
+                            </div>
+                            <span className="text-xs font-mono">{u.ep.toFixed(0)} kWh/an</span>
+                          </div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{
+                              width:`${instSummary.ep_total > 0 ? (u.ep/instSummary.ep_total*100) : 0}%`,
+                              backgroundColor:u.color
+                            }} />
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-white/10">
+                        <ResultRow label="Total EP (fără regenerabile)" value={instSummary.ep_total.toFixed(0)} unit="kWh/an" />
+                        <ResultRow label="Reducere regenerabile" value={renewSummary ? `-${renewSummary.ep_reduction.toFixed(0)}` : "0"} unit="kWh/an" status="ok" />
+                        <ResultRow label="EP FINAL ajustat" value={(renewSummary?.ep_adjusted || instSummary.ep_total).toFixed(0)} unit="kWh/an" />
+                        <ResultRow label="EP specific FINAL" value={epFinal.toFixed(1)} unit="kWh/(m²·an)"
+                          status={enClass.idx <= 1 ? "ok" : enClass.idx <= 3 ? "warn" : "fail"} />
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              {/* ═════ C. CLASARE ENERGETICĂ & CO₂ (Mc 001-2022 §5.10-5.11) ═════ */}
+
               {/* ── CLASARE ENERGETICĂ — HERO ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 {/* Clasa energetică */}
@@ -260,190 +539,102 @@ export default function Step5Calculation(props) {
                   </div>
                 </Card>
               </div>
-
-              {/* ── COST ANUAL ENERGIE ── */}
-              {annualEnergyCost && (
-                <Card title={t("Cost anual energie estimat (prețuri 2025)",lang)} className="mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Total */}
-                    <div className="text-center sm:text-left">
-                      <div className="text-3xl font-black font-mono text-amber-400">{annualEnergyCost.total.toLocaleString("ro-RO")} <span className="text-lg opacity-60">lei/an</span></div>
-                      <div className="text-sm opacity-40 mt-1">≈ {annualEnergyCost.totalEur.toLocaleString("ro-RO")} EUR/an</div>
-                      <div className="text-[10px] opacity-25 mt-2">{annualEnergyCost.note}</div>
-                    </div>
-                    {/* Breakdown bars */}
-                    <div className="space-y-2">
-                      {[
-                        { label: "Încălzire", val: annualEnergyCost.costH, color: "#ef4444" },
-                        { label: "Apă caldă", val: annualEnergyCost.costW, color: "#f97316" },
-                        { label: "Răcire", val: annualEnergyCost.costC, color: "#3b82f6" },
-                        { label: "Ventilare", val: annualEnergyCost.costV, color: "#8b5cf6" },
-                        { label: "Iluminat", val: annualEnergyCost.costL, color: "#eab308" },
-                      ].map(item => {
-                        const pct = annualEnergyCost.total > 0 ? (item.val / annualEnergyCost.total * 100) : 0;
-                        return (
-                          <div key={item.label} className="flex items-center gap-2">
-                            <span className="text-[10px] opacity-50 w-16 text-right shrink-0">{item.label}</span>
-                            <div className="flex-1 h-4 bg-white/5 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: item.color, minWidth: pct > 0 ? "4px" : "0" }} />
-                            </div>
-                            <span className="text-[10px] font-mono opacity-60 w-16 shrink-0">{item.val.toLocaleString("ro-RO")} lei</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {/* ── COST ESTIMATIV REABILITARE ── (Faza A — ascuns la IIci, Art. 6 alin. 2) */}
-              {rehabCostEstimate && (
-              <GradeGate feature="rehabCostEstimate" plan={userPlan} auditorGrad={auditorGrad}>
-                <Card title="Cost estimativ reabilitare termică" className="mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-center">
-                      <div className="text-2xl font-black font-mono text-amber-400">{rehabCostEstimate.total_lei.toLocaleString("ro-RO")}</div>
-                      <div className="text-[10px] opacity-40 mt-1">lei (total cu neprevăzut {(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
-                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_eur.toLocaleString("ro-RO")}</div>
-                      <div className="text-[10px] opacity-40 mt-1">EUR (fără TVA)</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
-                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_per_m2.toLocaleString("ro-RO")}</div>
-                      <div className="text-[10px] opacity-40 mt-1">EUR/m² util</div>
-                    </div>
-                  </div>
-                  {/* Detaliu pe categorii */}
-                  {rehabCostEstimate.items.length > 0 && (
-                    <div className="space-y-1.5">
-                      {rehabCostEstimate.items.map((item, i) => {
-                        const pct = rehabCostEstimate.subtotal_eur > 0 ? (item.total_eur / rehabCostEstimate.subtotal_eur * 100) : 0;
-                        return (
-                          <div key={i} className="flex items-center gap-2 text-xs">
-                            <span className="opacity-50 truncate w-52 shrink-0">{item.label}</span>
-                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#f59e0b", minWidth: pct > 0 ? "2px" : "0" }} />
-                            </div>
-                            <span className="font-mono opacity-60 w-20 text-right shrink-0">{item.total_eur.toLocaleString("ro-RO")} €</span>
-                          </div>
-                        );
-                      })}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
-                        <span className="opacity-40">Neprevăzut ({(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</span>
-                        <span className="font-mono opacity-50">{rehabCostEstimate.contingency_eur.toLocaleString("ro-RO")} €</span>
-                      </div>
-                    </div>
-                  )}
-                  {/* Finanțare eligibilă */}
-                  {(rehabCostEstimate.fundingEligible.pnrr_max > 0 || rehabCostEstimate.fundingEligible.casa_verde_max > 0 || rehabCostEstimate.fundingEligible.afm_max > 0) && (
-                    <div className="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
-                      <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Finanțare eligibilă orientativă</div>
-                      <div className="flex flex-wrap gap-3 text-xs">
-                        {rehabCostEstimate.fundingEligible.pnrr_max > 0 && (
-                          <span className="text-emerald-400">PNRR: max {rehabCostEstimate.fundingEligible.pnrr_max.toLocaleString("ro-RO")} €</span>
-                        )}
-                        {rehabCostEstimate.fundingEligible.casa_verde_max > 0 && (
-                          <span className="text-emerald-400">Casa Verde: max {rehabCostEstimate.fundingEligible.casa_verde_max.toLocaleString("ro-RO")} €</span>
-                        )}
-                        {rehabCostEstimate.fundingEligible.afm_max > 0 && (
-                          <span className="text-emerald-400">AFM: max {rehabCostEstimate.fundingEligible.afm_max.toLocaleString("ro-RO")} €</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  <div className="mt-3 text-[10px] opacity-25">{rehabCostEstimate.meta.note}</div>
-                </Card>
-              </GradeGate>
-              )}
-
-              {/* ── VERIFICARE nZEB / ZEB ── */}
-              {zebVerification && (
-                <Card title={t("Verificare nZEB / ZEB (EPBD 2024/1275)",lang)} className="mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* nZEB */}
-                    <div className="rounded-xl p-4" style={{ background: zebVerification.nzeb.compliant ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)", border: `1px solid ${zebVerification.nzeb.compliant ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}` }}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-bold">nZEB</span>
-                        <Badge color={zebVerification.nzeb.compliant ? "green" : "red"}>
-                          {zebVerification.nzeb.compliant ? "CONFORM" : "NECONFORM"}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="opacity-50">EP ≤ {zebVerification.nzeb.ep_max}</span>
-                          <span style={{ color: zebVerification.nzeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.nzeb.epOk ? "✓" : "✗"}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="opacity-50">RER ≥ {NZEB_THRESHOLDS[baseCatResolved]?.rer_min || 30}%</span>
-                          <span style={{ color: zebVerification.nzeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.nzeb.rerOk ? "✓" : "✗"}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {/* ZEB */}
-                    <div className="rounded-xl p-4" style={{ background: zebVerification.zeb.compliant ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)", border: `1px solid ${zebVerification.zeb.compliant ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}` }}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-bold">ZEB</span>
-                        <Badge color={zebVerification.zeb.compliant ? "green" : "red"}>
-                          {zebVerification.zeb.compliant ? "CONFORM" : "NECONFORM"}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="opacity-50">EP ≤ {zebVerification.zeb.ep_max}</span>
-                          <span style={{ color: zebVerification.zeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.zeb.epOk ? "✓" : "✗"}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="opacity-50">RER ≥ {ZEB_THRESHOLDS[baseCatResolved]?.rer_min || 50}%</span>
-                          <span style={{ color: zebVerification.zeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.zeb.rerOk ? "✓" : "✗"}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="opacity-50">Fără combustibil fosil</span>
-                          <span style={{ color: zebVerification.zeb.noFossil ? "#22c55e" : "#ef4444" }}>{zebVerification.zeb.noFossil ? "Da ✓" : "Nu ✗"}</span>
-                        </div>
-                        <div className="text-[10px] opacity-30 mt-2">Termen: {zebVerification.zeb.deadline}</div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {/* ═══ NEW: DASHBOARD SUMAR (C3) ═══ */}
+              {/* #19 Grafic radar performanță pe utilități */}
               {instSummary && (
-                <Card title={t("Dashboard sumar",lang)} className="mb-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
-                      { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
-                      { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
-                      { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
-                    ].map((kpi, i) => (
-                      <div key={i} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                        <div className="text-[10px] uppercase tracking-wider opacity-40 mb-1">{kpi.label}</div>
-                        <div className="text-2xl font-black font-mono" style={{color: kpi.color}}>{kpi.value}</div>
-                        <div className="text-[10px] opacity-25 mt-0.5">{kpi.unit}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Quick status badges */}
-                  <div className="flex flex-wrap gap-2 mt-3 justify-center">
-                    {(() => {
-                      const ep = renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999;
-                      const nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
-                      const rer = renewSummary?.rer || 0;
-                      const isNZEB = ep <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && rer >= nzeb.rer_min;
-                      const zeb = ZEB_THRESHOLDS[baseCatResolved];
-                      const isZEB = zeb && ep <= zeb.ep_max * ZEB_FACTOR && rer >= zeb.rer_min;
-                      return <>
-                        <Badge color={isNZEB ? "green" : "red"}>{isNZEB ? "✓" : "✗"} nZEB</Badge>
-                        <Badge color={isZEB ? "green" : "red"}>{isZEB ? "✓" : "✗"} ZEB</Badge>
-                        {annualEnergyCost && <Badge color="amber">Cost: {annualEnergyCost.total.toLocaleString("ro-RO")} lei/an</Badge>}
-                        {gwpDetailed && gwpGate.allowed && <Badge color={gwpDetailed.gwpPerM2Year <= 15 ? "green" : "amber"}>GWP: {gwpDetailed.gwpPerM2Year} kgCO₂eq/(m²·an)</Badge>}
-                      </>;
-                    })()}
+                <Card title="Profil performanță energetică" className="mb-4">
+                  <div className="flex items-center justify-center">
+                    <svg viewBox="0 0 300 280" width="100%" style={{maxWidth:"400px"}} className="opacity-90">
+                      {(() => {
+                        const cx = 150, cy = 130, maxR = 100;
+                        const utils = [
+                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#ef4444"},
+                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#f97316"},
+                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#3b82f6"},
+                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#8b5cf6"},
+                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#eab308"},
+                        ];
+                        const n = utils.length;
+                        const angleStep = (2 * Math.PI) / n;
+                        const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
+                        // Grid circles
+                        const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
+                          const r = maxR * f;
+                          const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
+                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />;
+                        });
+                        // Axes
+                        const axes = utils.map((u, i) => {
+                          const [x, y] = getXY(i, maxR + 15);
+                          const [ax, ay] = getXY(i, maxR);
+                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" /><text x={x} y={y} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.6)">{u.label}</text></g>;
+                        });
+                        // Data polygon
+                        const pts = utils.map((u, i) => {
+                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1));
+                          return getXY(i, r).join(",");
+                        }).join(" ");
+                        // Value labels
+                        const vals = utils.map((u, i) => {
+                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 10;
+                          const [x, y] = getXY(i, r);
+                          return <text key={"v"+i} x={x} y={y} textAnchor="middle" fontSize="7" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
+                        });
+                        // nZEB reference polygon
+                        const nzebVals = [49, 18, 13, 5, 6]; // Mc 001 A+ thresholds
+                        const nzebPts = nzebVals.map((v, i) => {
+                          const r = maxR * Math.min(v / utils[i].max, 1);
+                          return getXY(i, r).join(",");
+                        }).join(" ");
+                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.08)" stroke="#22c55e" strokeWidth="1" strokeDasharray="3 2" /><polygon points={pts} fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5" />{vals}<text x={cx} y={cy + maxR + 40} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
+                      })()}
+                    </svg>
                   </div>
                 </Card>
               )}
+              {/* ── SUMAR FINAL ── */}
+              {/* #10 Comparare proiecte */}
+              <Card title="Comparare cu proiect referință" className="mb-4">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-white/20 bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer text-xs">
+                    <span>📂</span> Import JSON referință
+                    <input type="file" accept=".json" className="hidden" onChange={e => { if (e.target.files?.[0]) importCompareRef(e.target.files[0]); e.target.value=""; }} />
+                  </label>
+                  {compareRef && (
+                    <button onClick={() => setCompareRef(null)} className="text-[10px] text-red-400 hover:text-red-300">Șterge referință</button>
+                  )}
+                </div>
+                {compareRef && instSummary && (
+                  <div className="mt-3 overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead><tr className="border-b border-white/10">
+                        <th className="text-left py-1 px-2 opacity-50">Indicator</th>
+                        <th className="text-center py-1 px-2 opacity-50">Proiect curent</th>
+                        <th className="text-center py-1 px-2 opacity-50">{compareRef.name}</th>
+                        <th className="text-center py-1 px-2 opacity-50">Diferență</th>
+                      </tr></thead>
+                      <tbody>
+                        {[
+                          {label:"Ep [kWh/m²·an]", cur: epFinal, ref: compareRef.ep},
+                          {label:"CO₂ [kg/m²·an]", cur: co2Final, ref: compareRef.co2},
+                          {label:"RER [%]", cur: rer, ref: compareRef.rer},
+                          {label:"G [W/m³K]", cur: envelopeSummary?.G||0, ref: compareRef.G},
+                        ].map((r,i) => {
+                          const diff = r.cur - r.ref;
+                          const better = r.label.includes("RER") ? diff > 0 : diff < 0;
+                          return (<tr key={i} className="border-b border-white/5">
+                            <td className="py-1.5 px-2 opacity-70">{r.label}</td>
+                            <td className="text-center font-mono">{r.cur.toFixed(1)}</td>
+                            <td className="text-center font-mono opacity-60">{r.ref.toFixed(1)}</td>
+                            <td className={`text-center font-mono font-bold ${better ? "text-emerald-400" : "text-red-400"}`}>{diff > 0 ? "+" : ""}{diff.toFixed(1)}</td>
+                          </tr>);
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+
+              {/* ═════ D. VIZUALIZARE FLUX ENERGIE ═════ */}
 
               {/* ═══ NEW: GRAFIC SANKEY (C2) — Flux energie ═══ */}
               {sankeyData && (
@@ -482,7 +673,6 @@ export default function Step5Calculation(props) {
                   </div>
                 </Card>
               )}
-
               {/* ═══ NEW: GWP LIFECYCLE (A4) ═══ (Faza C — EN 15978 carbon înglobat: ascuns la IIci, EPBD Art. 7) */}
               {gwpDetailed && (
               <GradeGate feature="gwpSimple" plan={userPlan} auditorGrad={auditorGrad}>
@@ -536,6 +726,76 @@ export default function Step5Calculation(props) {
               </GradeGate>
               )}
 
+              {/* ═════ E. CONFORMITATE EPBD 2024/1275 + Mc 001-2022 §5.12-5.17 ═════ */}
+
+              {/* ── VERIFICARE nZEB / ZEB ── */}
+              {zebVerification && (
+                <Card title={t("Verificare nZEB / ZEB (EPBD 2024/1275)",lang)} className="mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* nZEB */}
+                    <div className="rounded-xl p-4" style={{ background: zebVerification.nzeb.compliant ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)", border: `1px solid ${zebVerification.nzeb.compliant ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold">nZEB</span>
+                        <Badge color={zebVerification.nzeb.compliant ? "green" : "red"}>
+                          {zebVerification.nzeb.compliant ? "CONFORM" : "NECONFORM"}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-50">EP ≤ {zebVerification.nzeb.ep_max}</span>
+                          <span style={{ color: zebVerification.nzeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.nzeb.epOk ? "✓" : "✗"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-50">RER ≥ {NZEB_THRESHOLDS[baseCatResolved]?.rer_min || 30}%</span>
+                          <span style={{ color: zebVerification.nzeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.nzeb.rerOk ? "✓" : "✗"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* ZEB */}
+                    <div className="rounded-xl p-4" style={{ background: zebVerification.zeb.compliant ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)", border: `1px solid ${zebVerification.zeb.compliant ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold">ZEB</span>
+                        <Badge color={zebVerification.zeb.compliant ? "green" : "red"}>
+                          {zebVerification.zeb.compliant ? "CONFORM" : "NECONFORM"}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-50">EP ≤ {zebVerification.zeb.ep_max}</span>
+                          <span style={{ color: zebVerification.zeb.epOk ? "#22c55e" : "#ef4444" }}>{zebVerification.epActual} kWh/(m²·an) {zebVerification.zeb.epOk ? "✓" : "✗"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-50">RER ≥ {ZEB_THRESHOLDS[baseCatResolved]?.rer_min || 50}%</span>
+                          <span style={{ color: zebVerification.zeb.rerOk ? "#22c55e" : "#ef4444" }}>{zebVerification.rerActual}% {zebVerification.zeb.rerOk ? "✓" : "✗"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-50">Fără combustibil fosil</span>
+                          <span style={{ color: zebVerification.zeb.noFossil ? "#22c55e" : "#ef4444" }}>{zebVerification.zeb.noFossil ? "Da ✓" : "Nu ✗"}</span>
+                        </div>
+                        <div className="text-[10px] opacity-30 mt-2">Termen: {zebVerification.zeb.deadline}</div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+              {/* ── CONFORMITATE U ── */}
+              {U_REF_NZEB_RES && (opaqueElements?.length > 0 || glazingElements?.length > 0) && (
+                <Card title={t("Conformitate U față de referințe nZEB / renovare", lang)} className="mb-6">
+                  <UComplianceTable
+                    opaqueElements={opaqueElements}
+                    glazingElements={glazingElements}
+                    building={building}
+                    calcOpaqueR={calcOpaqueR}
+                    U_REF_NZEB_RES={U_REF_NZEB_RES}
+                    U_REF_NZEB_NRES={U_REF_NZEB_NRES}
+                    U_REF_RENOV_RES={U_REF_RENOV_RES}
+                    U_REF_RENOV_NRES={U_REF_RENOV_NRES}
+                    U_REF_GLAZING={U_REF_GLAZING}
+                    ELEMENT_TYPES={ELEMENT_TYPES}
+                    lang={lang}
+                  />
+                </Card>
+              )}
               {/* ═══ BACS — SR EN ISO 52120-1:2022 (A5) — Sprint 5 ═══ */}
               {bacsCheck && bacsCheck.isApplicable && (
                 <Card
@@ -683,7 +943,37 @@ export default function Step5Calculation(props) {
                   </div>
                 </Card>
               )}
-
+              {/* ═══ CONFORMITATE EPBD 2024 OBLIGATORIE (BACS + SRI + MEPS Simple) ═══
+                  Mutat din Pas 6 → Pas 5 (1 mai 2026): f_BAC ajustează EP final, deci aparține
+                  bilanțului energetic. SRI auto + MEPS binar decurg din bilanț.
+                  Versiune detaliată (200 factori BACS, 42 servicii SRI, optimizator MEPS) → Pas 8 Expert. */}
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>{lang === "EN" ? "EPBD 2024 mandatory compliance" : "Conformitate EPBD 2024 obligatorie"}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <BACSSelectorSimple
+                    value={bacsClass}
+                    onChange={setBacsClass}
+                    epBase={instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0}
+                    lang={lang}
+                  />
+                  <SRIScoreAuto
+                    building={building}
+                    heating={heating}
+                    cooling={cooling}
+                    ventilation={ventilation}
+                    lighting={lighting}
+                    acm={acm}
+                    photovoltaic={photovoltaic}
+                  />
+                  <MEPSCheckBinar
+                    energyClass={enClass?.cls}
+                    buildingCategory={baseCatResolved}
+                  />
+                </div>
+              </div>
               {/* ═══ NEW: EV CHARGER (A6) ═══ (Faza B — recomandare proiectare, EPBD Art. 12: ascuns la IIci) */}
               {evChargerCalc && evChargerCalc.required && (
               <GradeGate feature="evCharger" plan={userPlan} auditorGrad={auditorGrad}>
@@ -700,7 +990,6 @@ export default function Step5Calculation(props) {
                 </Card>
               </GradeGate>
               )}
-
               {/* ═══ NEW: SOLAR-READY CHECK (A7) ═══ */}
               {solarReadyCheck && (
                 <Card title="Solar-Ready (EPBD Art.11)" className="mb-6" badge={<Badge color={solarReadyCheck.compliant ? "green" : "amber"}>{solarReadyCheck.verdict}</Badge>}>
@@ -720,116 +1009,379 @@ export default function Step5Calculation(props) {
                   </div>
                 </Card>
               )}
-
-              {/* ── BILANȚ LUNAR ── */}
-              <Card title={t("Bilanț energetic lunar (metoda quasi-staționară)",lang)} className="mb-6">
-                <div className="overflow-x-auto">
-                  <div className="min-w-[480px]">
-                    {/* Grafic SVG bilanț lunar */}
-                    <MonthlyEnergyChart monthlyData={monthlyData} Au={Au} lang={lang} />
-
-                    {/* Tabel lunar */}
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full text-[10px]">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="text-left py-1.5 px-1 opacity-40 font-medium">Luna</th>
-                            {months.map(m => <th key={m} className="text-center py-1.5 px-1 opacity-40 font-medium">{m}</th>)}
-                            <th className="text-center py-1.5 px-1 opacity-60 font-semibold">TOTAL</th>
-                          </tr>
-                        </thead>
-                        <tbody className="font-mono">
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">T ext [°C]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.tExt.toFixed(1)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium">{selectedClimate?.theta_a || "—"}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q pierderi [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1">{d.qLoss.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium">{monthlyData.reduce((s,d)=>s+d.qLoss,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q solar [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-amber-400/70">{d.solarGain.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium text-amber-400/70">{monthlyData.reduce((s,d)=>s+d.solarGain,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/5">
-                            <td className="py-1 px-1 opacity-50">Q intern [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1 px-1 text-purple-400/70">{d.intGain.toFixed(0)}</td>)}
-                            <td className="text-center py-1 px-1 font-medium text-purple-400/70">{monthlyData.reduce((s,d)=>s+d.intGain,0).toFixed(0)}</td>
-                          </tr>
-                          <tr className="border-b border-white/10 bg-red-500/5">
-                            <td className="py-1.5 px-1 font-semibold text-red-400">Q incalzire [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-red-400 font-medium">{d.qHeat.toFixed(0)}</td>)}
-                            <td className="text-center py-1.5 px-1 font-bold text-red-400">{annualHeat.toFixed(0)}</td>
-                          </tr>
-                          <tr className="bg-blue-500/5">
-                            <td className="py-1.5 px-1 font-semibold text-blue-400">Q racire [kWh]</td>
-                            {monthlyData.map((d,i) => <td key={i} className="text-center py-1.5 px-1 text-blue-400 font-medium">{d.qCool.toFixed(0)}</td>)}
-                            <td className="text-center py-1.5 px-1 font-bold text-blue-400">{annualCool.toFixed(0)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-
-              {/* ── Benchmarking — comparație cu referințe ── (Faza B — context audit, ascuns la IIci) */}
-              {instSummary && (
-              <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
-                <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
-                  <div className="space-y-2">
-                    {(function() {
-                      const cat = building.category || "RI";
-                      const isRes = ["RI","RC","RA"].includes(cat);
-                      const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
-                      return isRes ? [
-                        {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
-                        {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
-                        {label:"Clădire conformă 2010-2020",ep:120,co2:15},
-                        {label:"Standard nZEB (2021+)",ep:nzebEp,co2:8},
-                        {label:"Pasivhaus",ep:40,co2:4},
-                      ] : [
-                        {label:"Clădire veche neizolată (pre-1990)",ep:450,co2:55},
-                        {label:"Clădire izolată parțial (1990-2010)",ep:250,co2:30},
-                        {label:"Clădire conformă 2010-2020",ep:160,co2:18},
-                        {label:"Standard nZEB (2021+)",ep:nzebEp,co2:10},
-                        {label:"Best practice",ep:60,co2:5},
-                      ];
-                    })().map(function(ref,i) {
-                      var myEp = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
-                      var maxEp = 400;
+              {/* ── CONFORMITATE nZEB / ZEB / L.238/2024 ── */}
+              {instSummary && renewSummary && (
+                <Card title={lang==="EN"?"Regulatory compliance":"Conformitate normativă"} className="mb-6 border-amber-500/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* nZEB */}
+                    {(() => {
+                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
+                      var epF = renewSummary.ep_adjusted_m2;
+                      var isN = epF <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min;
                       return (
-                        <div key={i} className="flex items-center gap-3">
-                          <span className="text-[10px] opacity-50 w-40 shrink-0 truncate">{ref.label}</span>
-                          <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden relative">
-                            <div className="h-full rounded-full opacity-40" style={{width:Math.min(100,ref.ep/maxEp*100)+"%",backgroundColor:"#666"}}/>
-                            <div className="absolute top-0 left-0 h-full w-0.5 bg-amber-500" style={{left:Math.min(100,myEp/maxEp*100)+"%"}}/>
-                          </div>
-                          <span className="text-[10px] font-mono opacity-40 w-10 text-right">{ref.ep}</span>
+                        <div className={cn("p-4 rounded-xl border text-center", isN ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
+                          <div className="text-2xl font-black mb-1" style={{color:isN?"#22c55e":"#ef4444"}}>{isN?"✓":"✗"}</div>
+                          <div className="text-xs font-bold">nZEB</div>
+                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{getNzebEpMax(baseCatResolved, selectedClimate?.zone)} kWh/m²a</div>
+                          <div className="text-[10px] opacity-50">RER: {renewSummary.rer.toFixed(0)}/{nzeb.rer_min}%</div>
                         </div>
                       );
-                    })}
-                    <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
+                    })()}
+                    
+                    {/* ZEB readiness */}
+                    {(() => {
+                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
+                      var zebMax = getNzebEpMax(baseCatResolved, selectedClimate?.zone) * ZEB_FACTOR;
+                      var epF = renewSummary.ep_adjusted_m2;
+                      var hasFossil = ["gaz","motorina","carbune"].includes(instSummary.fuel?.id);
+                      var isZEB = epF <= zebMax && !hasFossil && renewSummary.rer >= 30;
+                      return (
+                        <div className={cn("p-4 rounded-xl border text-center", isZEB ? "border-emerald-500/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.02]")}>
+                          <div className="text-2xl font-black mb-1" style={{color:isZEB?"#22c55e":"#888"}}>{isZEB?"✓":"—"}</div>
+                          <div className="text-xs font-bold">{lang==="EN"?"ZEB Ready":"ZEB Ready"}</div>
+                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{zebMax.toFixed(0)} kWh/m²a</div>
+                          <div className="text-[10px] opacity-50">{hasFossil ? (lang==="EN"?"Fossil fuel on-site":"Combustibil fosil on-site") : (lang==="EN"?"No fossil":"Fără fosil")}</div>
+                          <div className="text-[10px] opacity-30 mt-1">EPBD IV Art.11 — 2028/2030</div>
+                        </div>
+                      );
+                    })()}
+                    
+                    {/* RER decomposition L.238/2024 */}
+                    <div className={cn("p-4 rounded-xl border text-center", renewSummary.rerOnSiteOk && renewSummary.rerTotalOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5")}>
+                      <div className="text-2xl font-black mb-1" style={{color:renewSummary.rerOnSiteOk && renewSummary.rerTotalOk?"#22c55e":"#eab308"}}>{renewSummary.rerOnSiteOk && renewSummary.rerTotalOk?"✓":"⚠"}</div>
+                      <div className="text-xs font-bold">RER L.238/2024</div>
+                      <div className="text-[10px] opacity-50 mt-1">On-site: {renewSummary.rerOnSite.toFixed(1)}% / min 10%</div>
+                      <div className="text-[10px] opacity-50">Total: {renewSummary.rer.toFixed(1)}% / min 30%</div>
+                      <div className="text-[10px] opacity-30 mt-1">Art.17 L.372/2005 mod. L.238/2024</div>
+                    </div>
+                  </div>
+                  
+                  {/* Solar obligation indicator */}
+                  {["BI","ED","SA","HC","CO","SP"].includes(building.category) && parseFloat(building.areaUseful) > 250 && (
+                    <div className="mt-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 flex items-center gap-3">
+                      <span className="text-xl">☀️</span>
+                      <div>
+                        <div className="text-xs font-bold text-amber-400">{lang==="EN"?"Solar installation obligation":"Obligație instalație solară"}</div>
+                        <div className="text-[10px] opacity-50">{lang==="EN"?"EPBD IV Art.10: mandatory for non-residential >250m² by end 2026":"EPBD IV Art.10: obligatoriu pt. non-rezidențial >250m² de la sfârșitul 2026"}</div>
+                        <div className="text-[10px] opacity-50">{photovoltaic.enabled || solarThermal.enabled ? "✓ Instalație solară configurată" : "⚠ Nicio instalație solară configurată"}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* GWP lifecycle — calcul simplificat */}
+                  {(() => {
+                    const gwpManual = parseFloat(building.gwpLifecycle) || 0;
+                    const co2Op = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
+                    // Embodied carbon estimate: ~8-12 kgCO2eq/m²/an for 50yr lifecycle (EN 15978)
+                    // Simplified: residential ~10, non-residential ~12, renovation ~5
+                    const yearBuilt = parseInt(building.yearBuilt) || 2000;
+                    const isNew = yearBuilt >= 2020;
+                    const embodiedEst = isNew ? (["RI","RC","RA"].includes(building.category) ? 10 : 12) : 5;
+                    const gwpCalc = gwpManual > 0 ? gwpManual : (co2Op + embodiedEst);
+                    const gwpLimit = 50; // EPBD IV indicative threshold
+                    const obligatory = Au > 1000 || (["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250);
+                    return (
+                    <div className={cn("mt-3 p-3 rounded-lg border flex items-center gap-3", 
+                      obligatory ? "border-amber-500/20 bg-amber-500/5" : "border-white/5 bg-white/[0.02]")}>
+                      <span className="text-xl">{obligatory ? "🌍" : <span className="opacity-30">🌍</span>}</span>
+                      <div className="flex-1">
+                        <div className="text-xs font-medium opacity-60">GWP Lifecycle (kg CO₂eq/m²/an)</div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <div className="text-lg font-bold" style={{color: gwpCalc < 30 ? "#22c55e" : gwpCalc < gwpLimit ? "#eab308" : "#ef4444"}}>{gwpCalc.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-40">
+                            = CO₂ operațional ({co2Op.toFixed(1)}) + carbon înglobat ({gwpManual > 0 ? "manual" : "~" + embodiedEst + " est."})
+                          </div>
+                        </div>
+                        <div className="text-[10px] opacity-30 mt-1">
+                          EPBD IV Art.7 {obligatory ? "— OBLIGATORIU pt. această clădire" : "— opțional (obligatoriu >1000m² din 2028)"} | Estimare conform EN 15978
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })()}
+                </Card>
+              )}
+
+              {/* ═════ F. ANALIZĂ DETALIATĂ COMPONENTE ═════ */}
+
+              {/* ── ACM EN 15316 DETALIAT ── */}
+              {acmDetailed && (
+                <Card title="Sistem ACM — Analiză detaliată EN 15316-3/5" className="mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Necesar termic brut</div>
+                      <div className="text-xl font-mono font-bold text-orange-400">{acmDetailed.Q_nd_annual_kWh.toFixed(0)}</div>
+                      <div className="text-[10px] opacity-30">kWh/an</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Eficiență sistem</div>
+                      <div className="text-xl font-mono font-bold" style={{color: acmDetailed.color}}>
+                        {(acmDetailed.eta_system * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-[10px] opacity-30">{acmDetailed.verdict}</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                      <div className="text-[10px] opacity-40 mb-1">Energie finală sursă</div>
+                      <div className="text-xl font-mono font-bold text-white/70">{acmDetailed.Q_final_kWh.toFixed(0)}</div>
+                      <div className="text-[10px] opacity-30">kWh/an (η_gen={acmDetailed.eta_gen})</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+                    <div className="space-y-1">
+                      <ResultRow label="Pierderi distribuție" value={acmDetailed.Q_dist_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_dist_pct}%)`}
+                        status={acmDetailed.f_dist_pct > 20 ? "fail" : acmDetailed.f_dist_pct > 12 ? "warn" : "ok"} />
+                      <ResultRow label="Pierderi stocare" value={acmDetailed.Q_storage_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_storage_pct}%)`}
+                        status={acmDetailed.f_storage_pct > 15 ? "fail" : acmDetailed.f_storage_pct > 8 ? "warn" : "ok"} />
+                      <ResultRow label="Pierderi standby boiler" value={acmDetailed.q_standby_kWh_day.toFixed(1)} unit="kWh/zi" />
+                      {acmDetailed.Q_legionella_kWh > 0 && (
+                        <ResultRow label="Supliment Legionella (tratament)" value={acmDetailed.Q_legionella_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_legionella_pct}%)`}
+                          status={acmDetailed.f_legionella_pct > 10 ? "warn" : "ok"} />
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <ResultRow label="Volum boiler estimat" value={acmDetailed.vol_L} unit="L" />
+                      {acmDetailed.solarFraction_pct > 0 && (
+                        <ResultRow label="Contribuție solară" value={`${acmDetailed.solarFraction_pct}%`} unit={`(${acmDetailed.Q_solar_kWh.toFixed(0)} kWh/an)`} status="ok" />
+                      )}
+                      <ResultRow label="Temp. apă caldă / rece" value={`${acmDetailed.tSupply}°C / ${acmDetailed.tCold}°C`} unit="" />
+                    </div>
+                  </div>
+
+                  {/* Sprint 4b — Breakdown energetic ACM (brut → economie solar → net → final) */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 mb-4">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">Breakdown energetic ACM (EN 15316)</div>
+                    <div className="space-y-1 text-xs font-mono">
+                      <div className="flex justify-between opacity-70">
+                        <span>Q_nd necesar termic util</span>
+                        <span>{acmDetailed.Q_nd_annual_kWh} kWh/an</span>
+                      </div>
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>+ pierderi distribuție</span>
+                        <span>+ {acmDetailed.Q_dist_kWh}</span>
+                      </div>
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>+ pierderi stocare</span>
+                        <span>+ {acmDetailed.Q_storage_kWh}</span>
+                      </div>
+                      {acmDetailed.Q_legionella_kWh > 0 && (
+                        <div className="flex justify-between opacity-60 pl-3">
+                          <span>+ supliment Legionella</span>
+                          <span>+ {acmDetailed.Q_legionella_kWh}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
+                        <span>= Q_gen_brut (fără solar)</span>
+                        <span>{(acmDetailed.Q_nd_annual_kWh + acmDetailed.Q_dist_kWh + acmDetailed.Q_storage_kWh + acmDetailed.Q_legionella_kWh).toFixed(0)} kWh/an</span>
+                      </div>
+                      {acmDetailed.Q_solar_kWh > 0 && (
+                        <>
+                          <div className="flex justify-between text-emerald-400 pl-3">
+                            <span>− economie solar termic ({acmDetailed.solarFraction_pct}%)</span>
+                            <span>− {acmDetailed.Q_solar_kWh}</span>
+                          </div>
+                          <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
+                            <span>= Q_gen_net (dup\u0103 solar)</span>
+                            <span>{acmDetailed.Q_gen_needed_kWh} kWh/an</span>
+                          </div>
+                        </>
+                      )}
+                      <div className="flex justify-between opacity-60 pl-3">
+                        <span>÷ η_gen = {acmDetailed.eta_gen}</span>
+                        <span></span>
+                      </div>
+                      <div className="flex justify-between font-semibold text-white/90 border-t border-white/[0.12] pt-1 mt-1">
+                        <span>= Q_final energie furnizată</span>
+                        <span>{acmDetailed.Q_final_kWh} kWh/an</span>
+                      </div>
+                    </div>
+                    {instSummary?.acmSolar?.source && instSummary.acmSolar.source !== "none" && (
+                      <div className="mt-2 pt-2 border-t border-white/[0.06] text-[10px] opacity-60 flex items-center gap-2">
+                        <span>Sursă f_sol:</span>
+                        <span className={instSummary.acmSolar.source === "step8_calc" ? "text-emerald-300 font-mono" : "text-amber-300 font-mono"}>
+                          {instSummary.acmSolar.source === "step8_calc"
+                            ? "✓ calculată EN 15316-4-3 (Step 4 Regenerabile)"
+                            : "⚠ implicită (constantă ACM_SOURCES — activați Step 4 pentru calcul real)"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {acmDetailed.recommendations.length > 0 && (
+                    <div className="space-y-1">
+                      {acmDetailed.recommendations.map((r, i) => (
+                        <div key={i} className="text-[10px] text-yellow-400/70 flex gap-2">
+                          <span>💡</span><span>{r}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* ═════ G. ANALIZĂ COST (orientativă, post-clasare) ═════ */}
+
+              {/* ── COST ANUAL ENERGIE ── */}
+              {annualEnergyCost && (
+                <Card title={t("Cost anual energie estimat (prețuri 2025)",lang)} className="mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Total */}
+                    <div className="text-center sm:text-left">
+                      <div className="text-3xl font-black font-mono text-amber-400">{annualEnergyCost.total.toLocaleString("ro-RO")} <span className="text-lg opacity-60">lei/an</span></div>
+                      <div className="text-sm opacity-40 mt-1">≈ {annualEnergyCost.totalEur.toLocaleString("ro-RO")} EUR/an</div>
+                      <div className="text-[10px] opacity-25 mt-2">{annualEnergyCost.note}</div>
+                    </div>
+                    {/* Breakdown bars */}
+                    <div className="space-y-2">
+                      {[
+                        { label: "Încălzire", val: annualEnergyCost.costH, color: "#ef4444" },
+                        { label: "Apă caldă", val: annualEnergyCost.costW, color: "#f97316" },
+                        { label: "Răcire", val: annualEnergyCost.costC, color: "#3b82f6" },
+                        { label: "Ventilare", val: annualEnergyCost.costV, color: "#8b5cf6" },
+                        { label: "Iluminat", val: annualEnergyCost.costL, color: "#eab308" },
+                      ].map(item => {
+                        const pct = annualEnergyCost.total > 0 ? (item.val / annualEnergyCost.total * 100) : 0;
+                        return (
+                          <div key={item.label} className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-50 w-16 text-right shrink-0">{item.label}</span>
+                            <div className="flex-1 h-4 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: item.color, minWidth: pct > 0 ? "4px" : "0" }} />
+                            </div>
+                            <span className="text-[10px] font-mono opacity-60 w-16 shrink-0">{item.val.toLocaleString("ro-RO")} lei</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </Card>
+              )}
+              {/* ── ESTIMARE COST ENERGIE ANUAL ── (Faza A — Preseturi ANRE + tarife custom: ascuns la IIci) */}
+              {instSummary && (
+              <GradeGate feature="costAnnualDetail" plan={userPlan} auditorGrad={auditorGrad}>
+                <Card title={t("Estimare cost energie anual",lang)} className="mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {(() => {
+                      const prices = energyPrices;
+                      const fuelId = instSummary.fuel?.id || "gaz";
+                      const priceFuel = prices[fuelId] || 0.32;
+                      const priceElec = prices.electricitate;
+                      const costHeat = instSummary.qf_h * priceFuel;
+                      const costACM = instSummary.qf_w * (fuelId === "electricitate" ? priceElec : priceFuel);
+                      const costCool = instSummary.qf_c * priceElec;
+                      const costVentLight = (instSummary.qf_v + instSummary.qf_l) * priceElec;
+                      const costTotal = costHeat + costACM + costCool + costVentLight;
+                      const costPerM2 = Au > 0 ? costTotal / Au : 0;
+                      return (
+                        <>
+                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                            <div className="text-xl font-bold text-amber-400">{costTotal.toFixed(0)}</div>
+                            <div className="text-[10px] opacity-40">RON/an total</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                            <div className="text-xl font-bold text-white">{costPerM2.toFixed(1)}</div>
+                            <div className="text-[10px] opacity-40">RON/(m2 an)</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                            <div className="text-xl font-bold text-red-400">{costHeat.toFixed(0)}</div>
+                            <div className="text-[10px] opacity-40">RON incalzire</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                            <div className="text-xl font-bold text-blue-400">{(costCool + costVentLight).toFixed(0)}</div>
+                            <div className="text-[10px] opacity-40">RON racire+vent+il</div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  {/* ── Preseturi ANRE ── */}
+                  <div className="mt-3 pt-3 border-t border-white/5">
+                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Preseturi ANRE 2025</div>
+                    <div className="grid grid-cols-2 gap-1.5 mb-3">
+                      {ENERGY_PRICE_PRESETS.map(preset => (
+                        <button key={preset.id} onClick={() => setEnergyPrices(p => ({ ...p, ...preset.prices }))}
+                          className="flex items-start gap-2 p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] transition-all text-left">
+                          <span className="text-sm mt-0.5">{preset.icon}</span>
+                          <div>
+                            <div className="text-[10px] font-semibold leading-tight">{preset.label}</div>
+                            <div className="text-[10px] opacity-40 leading-tight">{preset.sublabel}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Tarife personalizate (RON/kWh)</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      {Object.entries(energyPrices).map(function(entry) { return (
+                        <div key={entry[0]} className="flex items-center gap-1.5">
+                          <span className="text-xs">{PRICE_ICONS[entry[0]] || "⚙️"}</span>
+                          <span className="text-[10px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
+                          <input type="number" value={entry[1]} step="0.01" min="0"
+                            onChange={function(e){setEnergyPrices(function(p){var n=Object.assign({},p);n[entry[0]]=parseFloat(e.target.value)||0;return n;});}}
+                            className="w-16 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-right"/>
+                        </div>
+                      ); })}
+                    </div>
                   </div>
                 </Card>
               </GradeGate>
               )}
-
-
-
-              {/* ── A/V FACTOR VALIDATION ── */}
-              {avValidation && avValidation.msg && (
-                <div className={cn("mb-4 p-3 rounded-xl border text-xs flex items-center gap-2",
-                  avValidation.status === "high" ? "border-red-500/20 bg-red-500/5 text-red-400" : "border-amber-500/20 bg-amber-500/5 text-amber-400"
-                )}>
-                  <span>⚠</span> {avValidation.msg}
-                </div>
+              {/* ── COST ESTIMATIV REABILITARE ── (Faza A — ascuns la IIci, Art. 6 alin. 2) */}
+              {rehabCostEstimate && (
+              <GradeGate feature="rehabCostEstimate" plan={userPlan} auditorGrad={auditorGrad}>
+                <Card title="Cost estimativ reabilitare termică" className="mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-center">
+                      <div className="text-2xl font-black font-mono text-amber-400">{rehabCostEstimate.total_lei.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">lei (total cu neprevăzut {(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_eur.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">EUR (fără TVA)</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                      <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_per_m2.toLocaleString("ro-RO")}</div>
+                      <div className="text-[10px] opacity-40 mt-1">EUR/m² util</div>
+                    </div>
+                  </div>
+                  {/* Detaliu pe categorii */}
+                  {rehabCostEstimate.items.length > 0 && (
+                    <div className="space-y-1.5">
+                      {rehabCostEstimate.items.map((item, i) => {
+                        const pct = rehabCostEstimate.subtotal_eur > 0 ? (item.total_eur / rehabCostEstimate.subtotal_eur * 100) : 0;
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-xs">
+                            <span className="opacity-50 truncate w-52 shrink-0">{item.label}</span>
+                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#f59e0b", minWidth: pct > 0 ? "2px" : "0" }} />
+                            </div>
+                            <span className="font-mono opacity-60 w-20 text-right shrink-0">{item.total_eur.toLocaleString("ro-RO")} €</span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                        <span className="opacity-40">Neprevăzut ({(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</span>
+                        <span className="font-mono opacity-50">{rehabCostEstimate.contingency_eur.toLocaleString("ro-RO")} €</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Finanțare eligibilă */}
+                  {(rehabCostEstimate.fundingEligible.pnrr_max > 0 || rehabCostEstimate.fundingEligible.casa_verde_max > 0 || rehabCostEstimate.fundingEligible.afm_max > 0) && (
+                    <div className="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+                      <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Finanțare eligibilă orientativă</div>
+                      <div className="flex flex-wrap gap-3 text-xs">
+                        {rehabCostEstimate.fundingEligible.pnrr_max > 0 && (
+                          <span className="text-emerald-400">PNRR: max {rehabCostEstimate.fundingEligible.pnrr_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                        {rehabCostEstimate.fundingEligible.casa_verde_max > 0 && (
+                          <span className="text-emerald-400">Casa Verde: max {rehabCostEstimate.fundingEligible.casa_verde_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                        {rehabCostEstimate.fundingEligible.afm_max > 0 && (
+                          <span className="text-emerald-400">AFM: max {rehabCostEstimate.fundingEligible.afm_max.toLocaleString("ro-RO")} €</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 text-[10px] opacity-25">{rehabCostEstimate.meta.note}</div>
+                </Card>
+              </GradeGate>
               )}
-
               {/* ── GRAFIC AMORTIZARE INVESTIȚIE (NPV 20 ani) ── (Faza A — ascuns la IIci, Mc 001-2022 §8.5) */}
               {instSummary && renewSummary && envelopeSummary && (
               <GradeGate feature="npvCurve" plan={userPlan} auditorGrad={auditorGrad}>
@@ -959,639 +1511,60 @@ export default function Step5Calculation(props) {
               </GradeGate>
               )}
 
-              {/* ── CONFORMITATE nZEB / ZEB / L.238/2024 ── */}
-              {instSummary && renewSummary && (
-                <Card title={lang==="EN"?"Regulatory compliance":"Conformitate normativă"} className="mb-6 border-amber-500/20">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* nZEB */}
-                    {(() => {
-                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
-                      var epF = renewSummary.ep_adjusted_m2;
-                      var isN = epF <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && renewSummary.rer >= nzeb.rer_min;
-                      return (
-                        <div className={cn("p-4 rounded-xl border text-center", isN ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5")}>
-                          <div className="text-2xl font-black mb-1" style={{color:isN?"#22c55e":"#ef4444"}}>{isN?"✓":"✗"}</div>
-                          <div className="text-xs font-bold">nZEB</div>
-                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{getNzebEpMax(baseCatResolved, selectedClimate?.zone)} kWh/m²a</div>
-                          <div className="text-[10px] opacity-50">RER: {renewSummary.rer.toFixed(0)}/{nzeb.rer_min}%</div>
-                        </div>
-                      );
-                    })()}
-                    
-                    {/* ZEB readiness */}
-                    {(() => {
-                      var nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
-                      var zebMax = getNzebEpMax(baseCatResolved, selectedClimate?.zone) * ZEB_FACTOR;
-                      var epF = renewSummary.ep_adjusted_m2;
-                      var hasFossil = ["gaz","motorina","carbune"].includes(instSummary.fuel?.id);
-                      var isZEB = epF <= zebMax && !hasFossil && renewSummary.rer >= 30;
-                      return (
-                        <div className={cn("p-4 rounded-xl border text-center", isZEB ? "border-emerald-500/30 bg-emerald-500/5" : "border-white/10 bg-white/[0.02]")}>
-                          <div className="text-2xl font-black mb-1" style={{color:isZEB?"#22c55e":"#888"}}>{isZEB?"✓":"—"}</div>
-                          <div className="text-xs font-bold">{lang==="EN"?"ZEB Ready":"ZEB Ready"}</div>
-                          <div className="text-[10px] opacity-50 mt-1">EP: {epF.toFixed(0)}/{zebMax.toFixed(0)} kWh/m²a</div>
-                          <div className="text-[10px] opacity-50">{hasFossil ? (lang==="EN"?"Fossil fuel on-site":"Combustibil fosil on-site") : (lang==="EN"?"No fossil":"Fără fosil")}</div>
-                          <div className="text-[10px] opacity-30 mt-1">EPBD IV Art.11 — 2028/2030</div>
-                        </div>
-                      );
-                    })()}
-                    
-                    {/* RER decomposition L.238/2024 */}
-                    <div className={cn("p-4 rounded-xl border text-center", renewSummary.rerOnSiteOk && renewSummary.rerTotalOk ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5")}>
-                      <div className="text-2xl font-black mb-1" style={{color:renewSummary.rerOnSiteOk && renewSummary.rerTotalOk?"#22c55e":"#eab308"}}>{renewSummary.rerOnSiteOk && renewSummary.rerTotalOk?"✓":"⚠"}</div>
-                      <div className="text-xs font-bold">RER L.238/2024</div>
-                      <div className="text-[10px] opacity-50 mt-1">On-site: {renewSummary.rerOnSite.toFixed(1)}% / min 10%</div>
-                      <div className="text-[10px] opacity-50">Total: {renewSummary.rer.toFixed(1)}% / min 30%</div>
-                      <div className="text-[10px] opacity-30 mt-1">Art.17 L.372/2005 mod. L.238/2024</div>
-                    </div>
-                  </div>
-                  
-                  {/* Solar obligation indicator */}
-                  {["BI","ED","SA","HC","CO","SP"].includes(building.category) && parseFloat(building.areaUseful) > 250 && (
-                    <div className="mt-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 flex items-center gap-3">
-                      <span className="text-xl">☀️</span>
-                      <div>
-                        <div className="text-xs font-bold text-amber-400">{lang==="EN"?"Solar installation obligation":"Obligație instalație solară"}</div>
-                        <div className="text-[10px] opacity-50">{lang==="EN"?"EPBD IV Art.10: mandatory for non-residential >250m² by end 2026":"EPBD IV Art.10: obligatoriu pt. non-rezidențial >250m² de la sfârșitul 2026"}</div>
-                        <div className="text-[10px] opacity-50">{photovoltaic.enabled || solarThermal.enabled ? "✓ Instalație solară configurată" : "⚠ Nicio instalație solară configurată"}</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* GWP lifecycle — calcul simplificat */}
-                  {(() => {
-                    const gwpManual = parseFloat(building.gwpLifecycle) || 0;
-                    const co2Op = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-                    // Embodied carbon estimate: ~8-12 kgCO2eq/m²/an for 50yr lifecycle (EN 15978)
-                    // Simplified: residential ~10, non-residential ~12, renovation ~5
-                    const yearBuilt = parseInt(building.yearBuilt) || 2000;
-                    const isNew = yearBuilt >= 2020;
-                    const embodiedEst = isNew ? (["RI","RC","RA"].includes(building.category) ? 10 : 12) : 5;
-                    const gwpCalc = gwpManual > 0 ? gwpManual : (co2Op + embodiedEst);
-                    const gwpLimit = 50; // EPBD IV indicative threshold
-                    const obligatory = Au > 1000 || (["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250);
-                    return (
-                    <div className={cn("mt-3 p-3 rounded-lg border flex items-center gap-3", 
-                      obligatory ? "border-amber-500/20 bg-amber-500/5" : "border-white/5 bg-white/[0.02]")}>
-                      <span className="text-xl">{obligatory ? "🌍" : <span className="opacity-30">🌍</span>}</span>
-                      <div className="flex-1">
-                        <div className="text-xs font-medium opacity-60">GWP Lifecycle (kg CO₂eq/m²/an)</div>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="text-lg font-bold" style={{color: gwpCalc < 30 ? "#22c55e" : gwpCalc < gwpLimit ? "#eab308" : "#ef4444"}}>{gwpCalc.toFixed(1)}</div>
-                          <div className="text-[10px] opacity-40">
-                            = CO₂ operațional ({co2Op.toFixed(1)}) + carbon înglobat ({gwpManual > 0 ? "manual" : "~" + embodiedEst + " est."})
-                          </div>
-                        </div>
-                        <div className="text-[10px] opacity-30 mt-1">
-                          EPBD IV Art.7 {obligatory ? "— OBLIGATORIU pt. această clădire" : "— opțional (obligatoriu >1000m² din 2028)"} | Estimare conform EN 15978
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  })()}
-                </Card>
-              )}
-
-              {monthlyISO && (
-                <Card title={t("Bilanț termic lunar ISO 13790",lang)} className="mb-6">
-                  <div className="text-[10px] text-amber-500/60 mb-1 sm:hidden text-center">↔ Glisează orizontal pentru tabelul complet</div>
-                  <div className="relative">
-                    <div className="overflow-x-auto rounded-lg" style={{WebkitOverflowScrolling:"touch",scrollbarWidth:"thin"}}>
-                    <table className="w-full text-xs" style={{minWidth:"640px"}}><thead><tr className="border-b border-white/10">
-                      <th className="text-left py-2 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa",minWidth:"36px"}}>Luna</th><th className="text-right px-1">θ ext</th><th className="text-right px-1">Q_tr</th><th className="text-right px-1">Q_ve</th><th className="text-right px-1">Q_int</th><th className="text-right px-1">Q_sol</th><th className="text-right px-1">γ_H</th><th className="text-right px-1">η_H</th><th className="text-right px-1 font-bold">Q_H,nd</th><th className="text-right px-1">Q_C,nd</th>
-                    </tr></thead><tbody>
-                      {monthlyISO.map((m, i) => (<tr key={i} className="border-b border-white/5"><td className="py-1 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa"}}>{m.name}</td><td className="text-right px-1 opacity-50">{m.tExt.toFixed(1)}</td><td className="text-right px-1">{m.Q_tr.toFixed(0)}</td><td className="text-right px-1">{m.Q_ve.toFixed(0)}</td><td className="text-right px-1 text-green-400/70">{m.Q_int.toFixed(0)}</td><td className="text-right px-1 text-amber-400/70">{m.Q_sol.toFixed(0)}</td><td className="text-right px-1 opacity-40">{m.gamma_H.toFixed(2)}</td><td className="text-right px-1 opacity-40">{m.eta_H.toFixed(2)}</td><td className="text-right px-1 font-bold text-red-400">{m.qH_nd.toFixed(0)}</td><td className="text-right px-1 text-blue-400">{m.qC_nd.toFixed(0)}</td></tr>))}
-                      <tr className="border-t border-white/20 font-bold"><td className="py-2 px-1 sticky left-0 z-10" style={{background:theme==="dark"?"#0d0d20":"#f5f7fa"}}>TOTAL</td><td></td><td className="text-right px-1">{monthlyISO.reduce((s,m)=>s+m.Q_tr,0).toFixed(0)}</td><td className="text-right px-1">{monthlyISO.reduce((s,m)=>s+m.Q_ve,0).toFixed(0)}</td><td className="text-right px-1 text-green-400">{monthlyISO.reduce((s,m)=>s+m.Q_int,0).toFixed(0)}</td><td className="text-right px-1 text-amber-400">{monthlyISO.reduce((s,m)=>s+m.Q_sol,0).toFixed(0)}</td><td></td><td></td><td className="text-right px-1 text-red-400">{monthlyISO.reduce((s,m)=>s+m.qH_nd,0).toFixed(0)}</td><td className="text-right px-1 text-blue-400">{monthlyISO.reduce((s,m)=>s+m.qC_nd,0).toFixed(0)}</td></tr>
-                    </tbody></table>
-                    </div>
-                  </div>
-                  <div className="text-[10px] opacity-30 mt-2">Valori kWh — metoda lunară SR EN ISO 13790 | Factori NA:2023</div>
-                </Card>
-              )}
+              {/* ═════ H. BENCHMARKING & SCENARII REABILITARE ═════ */}
 
 
-
-              {/* ── GRAFIC LUNAR CONSUM ── */}
-              {monthlyBreakdown && (
-                <Card title={t("Profil lunar consum energie",lang)} className="mb-6">
-                  <svg viewBox="0 0 660 180" width="100%" height="170" className="overflow-visible">
-                    {(() => {
-                      var data = monthlyBreakdown, maxQ = Math.max.apply(null, data.map(function(m){return m.qf_total}))||1;
-                      var bW=38, gap=16, cH=130, bY=155, oX=30, els=[];
-                      for(var t=0;t<=4;t++){var y=bY-(t/4)*cH; els.push(<line key={"yg"+t} x1={oX} y1={y} x2={oX+12*(bW+gap)} y2={y} stroke="#222" strokeWidth="0.5"/>); els.push(<text key={"yl"+t} x={oX-4} y={y+3} textAnchor="end" fontSize="6" fill="#555">{Math.round(maxQ*t/4)}</text>);}
-                      data.forEach(function(m,i){
-                        var x=oX+6+i*(bW+gap), utils=[{v:m.qf_h,c:"#ef4444"},{v:m.qf_w,c:"#f97316"},{v:m.qf_c,c:"#3b82f6"},{v:m.qf_v+m.qf_l,c:"#8b5cf6"}];
-                        var cumH=0;
-                        utils.forEach(function(u,ui){ var h=maxQ>0?(u.v/maxQ)*cH:0; if(h>0.5) els.push(<rect key={"b"+i+"-"+ui} x={x} y={bY-cumH-h} width={bW} height={h} fill={u.c} opacity="0.8" rx="1"/>); cumH+=h; });
-                        els.push(<text key={"ml"+i} x={x+bW/2} y={bY+11} textAnchor="middle" fontSize="7" fill="#777">{m.name}</text>);
-                      });
-                      // Temperature line
-                      var tMin=Math.min.apply(null,data.map(function(m){return m.tExt})), tMax=Math.max.apply(null,data.map(function(m){return m.tExt})), tR=Math.max(tMax-tMin,1);
-                      var pts=data.map(function(m,i){ return (oX+6+i*(bW+gap)+bW/2)+","+(bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1); }).join(" ");
-                      els.push(<polyline key="tl" points={pts} fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.6"/>);
-                      data.forEach(function(m,i){ var x=oX+6+i*(bW+gap)+bW/2, y=bY-((m.tExt-tMin)/tR)*cH*0.8-cH*0.1; els.push(<circle key={"td"+i} cx={x} cy={y} r="2" fill="#fbbf24" opacity="0.7"/>); els.push(<text key={"tt"+i} x={x} y={y-4} textAnchor="middle" fontSize="5" fill="#fbbf24" opacity="0.7">{m.tExt.toFixed(0)}</text>); });
-                      [{l:"Încălzire",c:"#ef4444"},{l:"ACM",c:"#f97316"},{l:"Răcire",c:"#3b82f6"},{l:"V+I",c:"#8b5cf6"},{l:"Temp",c:"#fbbf24"}].forEach(function(it,i){ els.push(<rect key={"lg"+i} x={oX+i*100} y={2} width={7} height={7} fill={it.c} rx="1" opacity="0.8"/>); els.push(<text key={"lt"+i} x={oX+i*100+10} y={9} fontSize="6" fill="#888">{it.l}</text>); });
-                      return els;
-                    })()}
-                  </svg>
-                </Card>
-              )}
-
-
-              {/* ── ESTIMARE COST ENERGIE ANUAL ── (Faza A — Preseturi ANRE + tarife custom: ascuns la IIci) */}
+              {/* ── Benchmarking — comparație cu referințe ── (Faza B — context audit, ascuns la IIci) */}
               {instSummary && (
-              <GradeGate feature="costAnnualDetail" plan={userPlan} auditorGrad={auditorGrad}>
-                <Card title={t("Estimare cost energie anual",lang)} className="mb-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {(() => {
-                      const prices = energyPrices;
-                      const fuelId = instSummary.fuel?.id || "gaz";
-                      const priceFuel = prices[fuelId] || 0.32;
-                      const priceElec = prices.electricitate;
-                      const costHeat = instSummary.qf_h * priceFuel;
-                      const costACM = instSummary.qf_w * (fuelId === "electricitate" ? priceElec : priceFuel);
-                      const costCool = instSummary.qf_c * priceElec;
-                      const costVentLight = (instSummary.qf_v + instSummary.qf_l) * priceElec;
-                      const costTotal = costHeat + costACM + costCool + costVentLight;
-                      const costPerM2 = Au > 0 ? costTotal / Au : 0;
+              <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
+                <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
+                  <div className="space-y-2">
+                    {(function() {
+                      const cat = building.category || "RI";
+                      const isRes = ["RI","RC","RA"].includes(cat);
+                      const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
+                      return isRes ? [
+                        {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
+                        {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
+                        {label:"Clădire conformă 2010-2020",ep:120,co2:15},
+                        {label:"Standard nZEB (2021+)",ep:nzebEp,co2:8},
+                        {label:"Pasivhaus",ep:40,co2:4},
+                      ] : [
+                        {label:"Clădire veche neizolată (pre-1990)",ep:450,co2:55},
+                        {label:"Clădire izolată parțial (1990-2010)",ep:250,co2:30},
+                        {label:"Clădire conformă 2010-2020",ep:160,co2:18},
+                        {label:"Standard nZEB (2021+)",ep:nzebEp,co2:10},
+                        {label:"Best practice",ep:60,co2:5},
+                      ];
+                    })().map(function(ref,i) {
+                      var myEp = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
+                      var maxEp = 400;
                       return (
-                        <>
-                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-amber-400">{costTotal.toFixed(0)}</div>
-                            <div className="text-[10px] opacity-40">RON/an total</div>
+                        <div key={i} className="flex items-center gap-3">
+                          <span className="text-[10px] opacity-50 w-40 shrink-0 truncate">{ref.label}</span>
+                          <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden relative">
+                            <div className="h-full rounded-full opacity-40" style={{width:Math.min(100,ref.ep/maxEp*100)+"%",backgroundColor:"#666"}}/>
+                            <div className="absolute top-0 left-0 h-full w-0.5 bg-amber-500" style={{left:Math.min(100,myEp/maxEp*100)+"%"}}/>
                           </div>
-                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-white">{costPerM2.toFixed(1)}</div>
-                            <div className="text-[10px] opacity-40">RON/(m2 an)</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-red-400">{costHeat.toFixed(0)}</div>
-                            <div className="text-[10px] opacity-40">RON incalzire</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-blue-400">{(costCool + costVentLight).toFixed(0)}</div>
-                            <div className="text-[10px] opacity-40">RON racire+vent+il</div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  {/* ── Preseturi ANRE ── */}
-                  <div className="mt-3 pt-3 border-t border-white/5">
-                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Preseturi ANRE 2025</div>
-                    <div className="grid grid-cols-2 gap-1.5 mb-3">
-                      {ENERGY_PRICE_PRESETS.map(preset => (
-                        <button key={preset.id} onClick={() => setEnergyPrices(p => ({ ...p, ...preset.prices }))}
-                          className="flex items-start gap-2 p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] transition-all text-left">
-                          <span className="text-sm mt-0.5">{preset.icon}</span>
-                          <div>
-                            <div className="text-[10px] font-semibold leading-tight">{preset.label}</div>
-                            <div className="text-[10px] opacity-40 leading-tight">{preset.sublabel}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Tarife personalizate (RON/kWh)</div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                      {Object.entries(energyPrices).map(function(entry) { return (
-                        <div key={entry[0]} className="flex items-center gap-1.5">
-                          <span className="text-xs">{PRICE_ICONS[entry[0]] || "⚙️"}</span>
-                          <span className="text-[10px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
-                          <input type="number" value={entry[1]} step="0.01" min="0"
-                            onChange={function(e){setEnergyPrices(function(p){var n=Object.assign({},p);n[entry[0]]=parseFloat(e.target.value)||0;return n;});}}
-                            className="w-16 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-right"/>
+                          <span className="text-[10px] font-mono opacity-40 w-10 text-right">{ref.ep}</span>
                         </div>
-                      ); })}
-                    </div>
+                      );
+                    })}
+                    <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
                   </div>
                 </Card>
               </GradeGate>
               )}
-
-              {/* ── DEFALCARE ENERGIE FINALĂ & PRIMARĂ ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                <Card title={t("Energie finală per utilitate",lang)}>
-                  {instSummary && (
-                    <div className="space-y-3">
-                      {[
-                        {label:"Încălzire", qf:instSummary.qf_h, ep:instSummary.ep_h, co2:instSummary.co2_h, color:"#ef4444"},
-                        {label:"ACM", qf:instSummary.qf_w, ep:instSummary.ep_w, co2:instSummary.co2_w, color:"#f97316"},
-                        {label:"Răcire", qf:instSummary.qf_c, ep:instSummary.ep_c, co2:instSummary.co2_c, color:"#3b82f6"},
-                        {label:"Ventilare", qf:instSummary.qf_v, ep:instSummary.ep_v, co2:instSummary.co2_v, color:"#8b5cf6"},
-                        {label:"Iluminat", qf:instSummary.qf_l, ep:instSummary.ep_l, co2:instSummary.co2_l, color:"#eab308"},
-                      ].map(u => (
-                        <div key={u.label}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:u.color}} />
-                              <span className="text-xs font-medium">{u.label}</span>
-                            </div>
-                            <span className="text-xs font-mono">{u.qf.toFixed(0)} kWh/an</span>
-                          </div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{
-                              width:`${instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100) : 0}%`,
-                              backgroundColor:u.color
-                            }} />
-                          </div>
-                          <div className="flex justify-between mt-0.5">
-                            <span className="text-[10px] opacity-30">{Au > 0 ? (u.qf/Au).toFixed(1) : "—"} kWh/(m²·an)</span>
-                            <span className="text-[10px] opacity-30">{instSummary.qf_total > 0 ? (u.qf/instSummary.qf_total*100).toFixed(0) : 0}%</span>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-white/10">
-                        <ResultRow label="TOTAL energie finală" value={instSummary.qf_total.toFixed(0)} unit="kWh/an" />
-                        <ResultRow label="Specific" value={instSummary.qf_total_m2.toFixed(1)} unit="kWh/(m²·an)" />
-                      </div>
-                    </div>
-                  )}
-                </Card>
-
-                <Card title={t("Energie primară per utilitate",lang)}>
-                  {instSummary && (
-                    <div className="space-y-3">
-                      {[
-                        {label:"Încălzire", ep:instSummary.ep_h, color:"#ef4444"},
-                        {label:"ACM", ep:instSummary.ep_w, color:"#f97316"},
-                        {label:"Răcire", ep:instSummary.ep_c, color:"#3b82f6"},
-                        {label:"Ventilare", ep:instSummary.ep_v, color:"#8b5cf6"},
-                        {label:"Iluminat", ep:instSummary.ep_l, color:"#eab308"},
-                      ].map(u => (
-                        <div key={u.label}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:u.color}} />
-                              <span className="text-xs font-medium">{u.label}</span>
-                            </div>
-                            <span className="text-xs font-mono">{u.ep.toFixed(0)} kWh/an</span>
-                          </div>
-                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{
-                              width:`${instSummary.ep_total > 0 ? (u.ep/instSummary.ep_total*100) : 0}%`,
-                              backgroundColor:u.color
-                            }} />
-                          </div>
-                        </div>
-                      ))}
-                      <div className="pt-2 border-t border-white/10">
-                        <ResultRow label="Total EP (fără regenerabile)" value={instSummary.ep_total.toFixed(0)} unit="kWh/an" />
-                        <ResultRow label="Reducere regenerabile" value={renewSummary ? `-${renewSummary.ep_reduction.toFixed(0)}` : "0"} unit="kWh/an" status="ok" />
-                        <ResultRow label="EP FINAL ajustat" value={(renewSummary?.ep_adjusted || instSummary.ep_total).toFixed(0)} unit="kWh/an" />
-                        <ResultRow label="EP specific FINAL" value={epFinal.toFixed(1)} unit="kWh/(m²·an)"
-                          status={enClass.idx <= 1 ? "ok" : enClass.idx <= 3 ? "warn" : "fail"} />
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              </div>
-
-              {/* ── ACM EN 15316 DETALIAT ── */}
-              {acmDetailed && (
-                <Card title="Sistem ACM — Analiză detaliată EN 15316-3/5" className="mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                      <div className="text-[10px] opacity-40 mb-1">Necesar termic brut</div>
-                      <div className="text-xl font-mono font-bold text-orange-400">{acmDetailed.Q_nd_annual_kWh.toFixed(0)}</div>
-                      <div className="text-[10px] opacity-30">kWh/an</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                      <div className="text-[10px] opacity-40 mb-1">Eficiență sistem</div>
-                      <div className="text-xl font-mono font-bold" style={{color: acmDetailed.color}}>
-                        {(acmDetailed.eta_system * 100).toFixed(0)}%
-                      </div>
-                      <div className="text-[10px] opacity-30">{acmDetailed.verdict}</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                      <div className="text-[10px] opacity-40 mb-1">Energie finală sursă</div>
-                      <div className="text-xl font-mono font-bold text-white/70">{acmDetailed.Q_final_kWh.toFixed(0)}</div>
-                      <div className="text-[10px] opacity-30">kWh/an (η_gen={acmDetailed.eta_gen})</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs mb-4">
-                    <div className="space-y-1">
-                      <ResultRow label="Pierderi distribuție" value={acmDetailed.Q_dist_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_dist_pct}%)`}
-                        status={acmDetailed.f_dist_pct > 20 ? "fail" : acmDetailed.f_dist_pct > 12 ? "warn" : "ok"} />
-                      <ResultRow label="Pierderi stocare" value={acmDetailed.Q_storage_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_storage_pct}%)`}
-                        status={acmDetailed.f_storage_pct > 15 ? "fail" : acmDetailed.f_storage_pct > 8 ? "warn" : "ok"} />
-                      <ResultRow label="Pierderi standby boiler" value={acmDetailed.q_standby_kWh_day.toFixed(1)} unit="kWh/zi" />
-                      {acmDetailed.Q_legionella_kWh > 0 && (
-                        <ResultRow label="Supliment Legionella (tratament)" value={acmDetailed.Q_legionella_kWh.toFixed(0)} unit={`kWh/an (${acmDetailed.f_legionella_pct}%)`}
-                          status={acmDetailed.f_legionella_pct > 10 ? "warn" : "ok"} />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <ResultRow label="Volum boiler estimat" value={acmDetailed.vol_L} unit="L" />
-                      {acmDetailed.solarFraction_pct > 0 && (
-                        <ResultRow label="Contribuție solară" value={`${acmDetailed.solarFraction_pct}%`} unit={`(${acmDetailed.Q_solar_kWh.toFixed(0)} kWh/an)`} status="ok" />
-                      )}
-                      <ResultRow label="Temp. apă caldă / rece" value={`${acmDetailed.tSupply}°C / ${acmDetailed.tCold}°C`} unit="" />
-                    </div>
-                  </div>
-
-                  {/* Sprint 4b — Breakdown energetic ACM (brut → economie solar → net → final) */}
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 mb-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">Breakdown energetic ACM (EN 15316)</div>
-                    <div className="space-y-1 text-xs font-mono">
-                      <div className="flex justify-between opacity-70">
-                        <span>Q_nd necesar termic util</span>
-                        <span>{acmDetailed.Q_nd_annual_kWh} kWh/an</span>
-                      </div>
-                      <div className="flex justify-between opacity-60 pl-3">
-                        <span>+ pierderi distribuție</span>
-                        <span>+ {acmDetailed.Q_dist_kWh}</span>
-                      </div>
-                      <div className="flex justify-between opacity-60 pl-3">
-                        <span>+ pierderi stocare</span>
-                        <span>+ {acmDetailed.Q_storage_kWh}</span>
-                      </div>
-                      {acmDetailed.Q_legionella_kWh > 0 && (
-                        <div className="flex justify-between opacity-60 pl-3">
-                          <span>+ supliment Legionella</span>
-                          <span>+ {acmDetailed.Q_legionella_kWh}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
-                        <span>= Q_gen_brut (fără solar)</span>
-                        <span>{(acmDetailed.Q_nd_annual_kWh + acmDetailed.Q_dist_kWh + acmDetailed.Q_storage_kWh + acmDetailed.Q_legionella_kWh).toFixed(0)} kWh/an</span>
-                      </div>
-                      {acmDetailed.Q_solar_kWh > 0 && (
-                        <>
-                          <div className="flex justify-between text-emerald-400 pl-3">
-                            <span>− economie solar termic ({acmDetailed.solarFraction_pct}%)</span>
-                            <span>− {acmDetailed.Q_solar_kWh}</span>
-                          </div>
-                          <div className="flex justify-between border-t border-white/[0.08] pt-1 mt-1">
-                            <span>= Q_gen_net (dup\u0103 solar)</span>
-                            <span>{acmDetailed.Q_gen_needed_kWh} kWh/an</span>
-                          </div>
-                        </>
-                      )}
-                      <div className="flex justify-between opacity-60 pl-3">
-                        <span>÷ η_gen = {acmDetailed.eta_gen}</span>
-                        <span></span>
-                      </div>
-                      <div className="flex justify-between font-semibold text-white/90 border-t border-white/[0.12] pt-1 mt-1">
-                        <span>= Q_final energie furnizată</span>
-                        <span>{acmDetailed.Q_final_kWh} kWh/an</span>
-                      </div>
-                    </div>
-                    {instSummary?.acmSolar?.source && instSummary.acmSolar.source !== "none" && (
-                      <div className="mt-2 pt-2 border-t border-white/[0.06] text-[10px] opacity-60 flex items-center gap-2">
-                        <span>Sursă f_sol:</span>
-                        <span className={instSummary.acmSolar.source === "step8_calc" ? "text-emerald-300 font-mono" : "text-amber-300 font-mono"}>
-                          {instSummary.acmSolar.source === "step8_calc"
-                            ? "✓ calculată EN 15316-4-3 (Step 4 Regenerabile)"
-                            : "⚠ implicită (constantă ACM_SOURCES — activați Step 4 pentru calcul real)"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  {acmDetailed.recommendations.length > 0 && (
-                    <div className="space-y-1">
-                      {acmDetailed.recommendations.map((r, i) => (
-                        <div key={i} className="text-[10px] text-yellow-400/70 flex gap-2">
-                          <span>💡</span><span>{r}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              )}
-
-              {/* ── CONFORMITATE U ── */}
-              {U_REF_NZEB_RES && (opaqueElements?.length > 0 || glazingElements?.length > 0) && (
-                <Card title={t("Conformitate U față de referințe nZEB / renovare", lang)} className="mb-6">
-                  <UComplianceTable
-                    opaqueElements={opaqueElements}
-                    glazingElements={glazingElements}
-                    building={building}
-                    calcOpaqueR={calcOpaqueR}
-                    U_REF_NZEB_RES={U_REF_NZEB_RES}
-                    U_REF_NZEB_NRES={U_REF_NZEB_NRES}
-                    U_REF_RENOV_RES={U_REF_RENOV_RES}
-                    U_REF_RENOV_NRES={U_REF_RENOV_NRES}
-                    U_REF_GLAZING={U_REF_GLAZING}
-                    ELEMENT_TYPES={ELEMENT_TYPES}
-                    lang={lang}
+              {/* ═══ BENCHMARK NAȚIONAL ═══ */}
+              {epFinal > 0 && (
+                <Card className="p-4">
+                  <BenchmarkNational
+                    epValue={epFinal}
+                    buildingType={categoryToBenchmarkType(building.category)}
+                    countyCode={countyNameToCode(building.county) || "B"}
                   />
                 </Card>
               )}
-
-              {/* ── TOGGLE NA:2023 (Sprint 11 — extins la factor electricitate global) ── */}
-              <div className="flex items-center gap-3 mb-3 bg-white/[0.03] border border-white/10 rounded-xl p-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={useNA2023} onChange={e => setUseNA2023(e.target.checked)} className="accent-amber-500" />
-                  <span className="text-xs font-medium">Factori NA:2023 (Tab A.16) — electricitate + energie ambientală</span>
-                </label>
-                <div className="text-[10px] opacity-40 flex-1">
-                  {useNA2023
-                    ? "ON (recomandat): electricitate fP_nren=2.00 + fP_ren=0.50 (Tab A.16, valoare ASRO autoritară) • energie ambientală PC = 1.00 (corecție confirmată MDLPA nr. 50843/09.03.2026)."
-                    : "OFF (legacy Mc001-2022 Tab 5.17): electricitate fP_nren=2.62 (fP_ren=0) • energie ambientală PC = 0. Păstrat pentru paritate cu CPE-uri emise înainte de Sprint 11."}
-                </div>
-              </div>
-
-              {/* ── FACTORI DE CONVERSIE APLICAȚI ── */}
-              <Card title={t("Factori de conversie energie primară aplicați (Tabelul 5.17)",lang)} className="mb-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
-                  {FUELS.map(f => (
-                    <div key={f.id} className="flex items-center justify-between py-1.5 border-b border-white/5">
-                      <span className="text-xs opacity-60">{f.label}</span>
-                      <div className="flex gap-3">
-                        <span className="text-[10px] font-mono">fP={f.fP_tot}</span>
-                        <span className="text-[10px] font-mono opacity-40">fCO2={f.fCO2}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* ── SUMAR FINAL ── */}
-              {/* #10 Comparare proiecte */}
-              <Card title="Comparare cu proiect referință" className="mb-4">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-white/20 bg-white/[0.02] hover:bg-white/[0.05] cursor-pointer text-xs">
-                    <span>📂</span> Import JSON referință
-                    <input type="file" accept=".json" className="hidden" onChange={e => { if (e.target.files?.[0]) importCompareRef(e.target.files[0]); e.target.value=""; }} />
-                  </label>
-                  {compareRef && (
-                    <button onClick={() => setCompareRef(null)} className="text-[10px] text-red-400 hover:text-red-300">Șterge referință</button>
-                  )}
-                </div>
-                {compareRef && instSummary && (
-                  <div className="mt-3 overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
-                      <thead><tr className="border-b border-white/10">
-                        <th className="text-left py-1 px-2 opacity-50">Indicator</th>
-                        <th className="text-center py-1 px-2 opacity-50">Proiect curent</th>
-                        <th className="text-center py-1 px-2 opacity-50">{compareRef.name}</th>
-                        <th className="text-center py-1 px-2 opacity-50">Diferență</th>
-                      </tr></thead>
-                      <tbody>
-                        {[
-                          {label:"Ep [kWh/m²·an]", cur: epFinal, ref: compareRef.ep},
-                          {label:"CO₂ [kg/m²·an]", cur: co2Final, ref: compareRef.co2},
-                          {label:"RER [%]", cur: rer, ref: compareRef.rer},
-                          {label:"G [W/m³K]", cur: envelopeSummary?.G||0, ref: compareRef.G},
-                        ].map((r,i) => {
-                          const diff = r.cur - r.ref;
-                          const better = r.label.includes("RER") ? diff > 0 : diff < 0;
-                          return (<tr key={i} className="border-b border-white/5">
-                            <td className="py-1.5 px-2 opacity-70">{r.label}</td>
-                            <td className="text-center font-mono">{r.cur.toFixed(1)}</td>
-                            <td className="text-center font-mono opacity-60">{r.ref.toFixed(1)}</td>
-                            <td className={`text-center font-mono font-bold ${better ? "text-emerald-400" : "text-red-400"}`}>{diff > 0 ? "+" : ""}{diff.toFixed(1)}</td>
-                          </tr>);
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Card>
-
-              {/* #19 Grafic radar performanță pe utilități */}
-              {instSummary && (
-                <Card title="Profil performanță energetică" className="mb-4">
-                  <div className="flex items-center justify-center">
-                    <svg viewBox="0 0 300 280" width="100%" style={{maxWidth:"400px"}} className="opacity-90">
-                      {(() => {
-                        const cx = 150, cy = 130, maxR = 100;
-                        const utils = [
-                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#ef4444"},
-                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#f97316"},
-                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#3b82f6"},
-                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#8b5cf6"},
-                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#eab308"},
-                        ];
-                        const n = utils.length;
-                        const angleStep = (2 * Math.PI) / n;
-                        const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
-                        // Grid circles
-                        const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
-                          const r = maxR * f;
-                          const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
-                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />;
-                        });
-                        // Axes
-                        const axes = utils.map((u, i) => {
-                          const [x, y] = getXY(i, maxR + 15);
-                          const [ax, ay] = getXY(i, maxR);
-                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" /><text x={x} y={y} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.6)">{u.label}</text></g>;
-                        });
-                        // Data polygon
-                        const pts = utils.map((u, i) => {
-                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1));
-                          return getXY(i, r).join(",");
-                        }).join(" ");
-                        // Value labels
-                        const vals = utils.map((u, i) => {
-                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 10;
-                          const [x, y] = getXY(i, r);
-                          return <text key={"v"+i} x={x} y={y} textAnchor="middle" fontSize="7" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
-                        });
-                        // nZEB reference polygon
-                        const nzebVals = [49, 18, 13, 5, 6]; // Mc 001 A+ thresholds
-                        const nzebPts = nzebVals.map((v, i) => {
-                          const r = maxR * Math.min(v / utils[i].max, 1);
-                          return getXY(i, r).join(",");
-                        }).join(" ");
-                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.08)" stroke="#22c55e" strokeWidth="1" strokeDasharray="3 2" /><polygon points={pts} fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5" />{vals}<text x={cx} y={cy + maxR + 40} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
-                      })()}
-                    </svg>
-                  </div>
-                </Card>
-              )}
-
-              <Card title={t("Sumar final — Date pentru Certificatul de Performanță Energetică",lang)} className="border-amber-500/20">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Clasa energetică</div>
-                    <div className="text-3xl font-black" style={{color:enClass.color}}>{enClass.cls}</div>
-                    <div className="text-xs font-mono opacity-60 mt-1">{epFinal.toFixed(1)} kWh/(m²·an)</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Clasa de mediu</div>
-                    <div className="text-3xl font-black" style={{color:co2Class.color}}>{co2Class.cls}</div>
-                    <div className="text-xs font-mono opacity-60 mt-1">{co2Final.toFixed(1)} kg CO2/(m2an)</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Energie finală</div>
-                    <div className="text-2xl font-bold font-mono">{instSummary?.qf_total_m2.toFixed(1) || "—"}</div>
-                    <div className="text-xs opacity-40 mt-1">kWh/(m²·an)</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
-                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">RER</div>
-                    <div className={cn("text-2xl font-bold font-mono", rer >= 30 ? "text-emerald-400" : "text-red-400")}>{rer.toFixed(1)}%</div>
-                    <div className="text-xs opacity-40 mt-1">{rer >= 30 ? "nZEB OK" : "< 30% nZEB"}</div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* ── DEFALCARE CONSUM PE LUNI ── */}
-              {monthlyBreakdown && (
-                <Card title={t("Defalcare consum pe luni",lang)} badge={<span className="text-[10px] opacity-30">profil climatic lunar</span>}>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[10px] border-collapse" style={{minWidth:"700px"}}>
-                      <thead>
-                        <tr className="border-b border-white/10">
-                          <th className="text-left py-2 px-2 opacity-50">Luna</th>
-                          <th className="text-center py-2 px-1 opacity-50">T ext °C</th>
-                          <th className="text-center py-2 px-1 opacity-50">ΔT</th>
-                          <th className="text-right py-2 px-1 opacity-50">Încălz.</th>
-                          <th className="text-right py-2 px-1 opacity-50">ACM</th>
-                          <th className="text-right py-2 px-1 opacity-50">Răcire</th>
-                          <th className="text-right py-2 px-1 opacity-50">Ventil.</th>
-                          <th className="text-right py-2 px-1 opacity-50">Ilum.</th>
-                          <th className="text-right py-2 px-1 font-medium">TOTAL</th>
-                          <th className="text-right py-2 px-1 opacity-50">Ep</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthlyBreakdown.map((m, i) => (
-                          <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
-                            <td className="py-1.5 px-2 font-medium">{m.name}</td>
-                            <td className="text-center px-1" style={{color: m.tExt < 0 ? "#60a5fa" : m.tExt > 25 ? "#f87171" : "inherit"}}>{m.tExt.toFixed(1)}</td>
-                            <td className="text-center px-1 opacity-40">{m.deltaT.toFixed(0)}</td>
-                            <td className="text-right px-1">{m.qf_h > 0 ? m.qf_h.toFixed(0) : "—"}</td>
-                            <td className="text-right px-1 opacity-60">{m.qf_w.toFixed(0)}</td>
-                            <td className="text-right px-1" style={{color: m.qf_c > 0 ? "#f87171" : "inherit"}}>{m.qf_c > 0 ? m.qf_c.toFixed(0) : "—"}</td>
-                            <td className="text-right px-1 opacity-60">{m.qf_v.toFixed(0)}</td>
-                            <td className="text-right px-1 opacity-60">{m.qf_l.toFixed(0)}</td>
-                            <td className="text-right px-1 font-bold">{m.qf_total.toFixed(0)}</td>
-                            <td className="text-right px-1 opacity-40">{m.ep.toFixed(0)}</td>
-                          </tr>
-                        ))}
-                        <tr className="border-t border-white/10 font-bold">
-                          <td className="py-2 px-2">TOTAL AN</td>
-                          <td colSpan={2}></td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_h, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_w, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_c, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_v, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_l, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.qf_total, 0).toFixed(0)}</td>
-                          <td className="text-right px-1">{monthlyBreakdown.reduce((s,m) => s + m.ep, 0).toFixed(0)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* Mini bar chart */}
-                  <div className="mt-4 flex items-end gap-1 h-24">
-                    {monthlyBreakdown.map((m, i) => {
-                      const maxQ = Math.max(...monthlyBreakdown.map(x => x.qf_total));
-                      const hPct = maxQ > 0 ? (m.qf_total / maxQ) * 100 : 0;
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                          <div className="w-full rounded-t" style={{height:`${hPct}%`, minHeight: m.qf_total > 0 ? "2px" : 0,
-                            background: m.qf_h > m.qf_c ? "linear-gradient(180deg, #f59e0b44, #f59e0b)" : "linear-gradient(180deg, #3b82f644, #3b82f6)"}} />
-                          <div className="text-[8px] opacity-30">{m.name}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-              )}
-
               {/* ── COMPARAȚIE SCENARII ── (Faza A — ascuns la IIci, Mc 001-2022 Cap. 8 audit) */}
               <GradeGate feature="rehabScenarios" plan={userPlan} auditorGrad={auditorGrad}>
               <Card title={t("Comparație scenarii",lang)} badge={
@@ -1671,48 +1644,68 @@ export default function Step5Calculation(props) {
               </Card>
               </GradeGate>
 
-              {/* ═══ BENCHMARK NAȚIONAL ═══ */}
-              {epFinal > 0 && (
-                <Card className="p-4">
-                  <BenchmarkNational
-                    epValue={epFinal}
-                    buildingType={categoryToBenchmarkType(building.category)}
-                    countyCode={countyNameToCode(building.county) || "B"}
-                  />
+              {/* ═════ I. SUMAR FINAL → tranziție Pasul 6 (CPE) ═════ */}
+
+              {/* ═══ NEW: DASHBOARD SUMAR (C3) ═══ */}
+              {instSummary && (
+                <Card title={t("Dashboard sumar",lang)} className="mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
+                      { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
+                      { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
+                      { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
+                    ].map((kpi, i) => (
+                      <div key={i} className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                        <div className="text-[10px] uppercase tracking-wider opacity-40 mb-1">{kpi.label}</div>
+                        <div className="text-2xl font-black font-mono" style={{color: kpi.color}}>{kpi.value}</div>
+                        <div className="text-[10px] opacity-25 mt-0.5">{kpi.unit}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Quick status badges */}
+                  <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                    {(() => {
+                      const ep = renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999;
+                      const nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
+                      const rer = renewSummary?.rer || 0;
+                      const isNZEB = ep <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && rer >= nzeb.rer_min;
+                      const zeb = ZEB_THRESHOLDS[baseCatResolved];
+                      const isZEB = zeb && ep <= zeb.ep_max * ZEB_FACTOR && rer >= zeb.rer_min;
+                      return <>
+                        <Badge color={isNZEB ? "green" : "red"}>{isNZEB ? "✓" : "✗"} nZEB</Badge>
+                        <Badge color={isZEB ? "green" : "red"}>{isZEB ? "✓" : "✗"} ZEB</Badge>
+                        {annualEnergyCost && <Badge color="amber">Cost: {annualEnergyCost.total.toLocaleString("ro-RO")} lei/an</Badge>}
+                        {gwpDetailed && gwpGate.allowed && <Badge color={gwpDetailed.gwpPerM2Year <= 15 ? "green" : "amber"}>GWP: {gwpDetailed.gwpPerM2Year} kgCO₂eq/(m²·an)</Badge>}
+                      </>;
+                    })()}
+                  </div>
                 </Card>
               )}
-
-              {/* ═══ CONFORMITATE EPBD 2024 OBLIGATORIE (BACS + SRI + MEPS Simple) ═══
-                  Mutat din Pas 6 → Pas 5 (1 mai 2026): f_BAC ajustează EP final, deci aparține
-                  bilanțului energetic. SRI auto + MEPS binar decurg din bilanț.
-                  Versiune detaliată (200 factori BACS, 42 servicii SRI, optimizator MEPS) → Pas 8 Expert. */}
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                  <span>📋</span>
-                  <span>{lang === "EN" ? "EPBD 2024 mandatory compliance" : "Conformitate EPBD 2024 obligatorie"}</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <BACSSelectorSimple
-                    value={bacsClass}
-                    onChange={setBacsClass}
-                    epBase={instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0}
-                    lang={lang}
-                  />
-                  <SRIScoreAuto
-                    building={building}
-                    heating={heating}
-                    cooling={cooling}
-                    ventilation={ventilation}
-                    lighting={lighting}
-                    acm={acm}
-                    photovoltaic={photovoltaic}
-                  />
-                  <MEPSCheckBinar
-                    energyClass={enClass?.cls}
-                    buildingCategory={baseCatResolved}
-                  />
+              <Card title={t("Sumar final — Date pentru Certificatul de Performanță Energetică",lang)} className="border-amber-500/20">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Clasa energetică</div>
+                    <div className="text-3xl font-black" style={{color:enClass.color}}>{enClass.cls}</div>
+                    <div className="text-xs font-mono opacity-60 mt-1">{epFinal.toFixed(1)} kWh/(m²·an)</div>
+                  </div>
+                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Clasa de mediu</div>
+                    <div className="text-3xl font-black" style={{color:co2Class.color}}>{co2Class.cls}</div>
+                    <div className="text-xs font-mono opacity-60 mt-1">{co2Final.toFixed(1)} kg CO2/(m2an)</div>
+                  </div>
+                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Energie finală</div>
+                    <div className="text-2xl font-bold font-mono">{instSummary?.qf_total_m2.toFixed(1) || "—"}</div>
+                    <div className="text-xs opacity-40 mt-1">kWh/(m²·an)</div>
+                  </div>
+                  <div className="text-center p-4 bg-white/[0.02] rounded-xl">
+                    <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">RER</div>
+                    <div className={cn("text-2xl font-bold font-mono", rer >= 30 ? "text-emerald-400" : "text-red-400")}>{rer.toFixed(1)}%</div>
+                    <div className="text-xs opacity-40 mt-1">{rer >= 30 ? "nZEB OK" : "< 30% nZEB"}</div>
+                  </div>
                 </div>
-              </div>
+              </Card>
 
               {/* Faza E.1 — Banner contextual AE IIci (Ord. MDLPA 348/2026 Art. 6 alin. 2)
                   Vizibil DOAR pentru auditorii AE IIci pe plan audit. Explică limitarea
