@@ -454,6 +454,9 @@ export default function Step7Audit(props) {
                   energyClass: enClass || { cls: "—", color: "#888" },
                   measuredConsumption: (() => { try { return JSON.parse(localStorage.getItem("zephren_measured_consumption") || "{}"); } catch { return {}; } })(),
                   systems: { heating, cooling, ventilation, lighting, acm },
+                  // Sprint 8 mai 2026 — pasăm climate (lipsea → API NameError 500
+                  // pe Capitolul 0 ipoteze care referă climate.get('zone')).
+                  climate: selectedClimate || {},
                 };
                 const res = await fetch("/api/generate-document?type=audit", {
                   method: "POST", headers: { "Content-Type": "application/json" },

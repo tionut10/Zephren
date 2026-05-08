@@ -201,32 +201,59 @@ export function applyBrandFooter(doc, meta = {}, pageNumber = 1, totalPages = 1,
  * @param {string} [options.subtitle] — sub-titlu sub titlu principal
  * @param {string} [options.disclaimer] — text disclaimer la final (ex: estimare/orientativ)
  */
-export function renderCoverPage(doc, meta = {}, options = {}) {
+export async function renderCoverPage(doc, meta = {}, options = {}) {
   const { kpis = [], subtitle, disclaimer } = options;
 
-  // ── 1. Logo mare centrat (35mm)
-  const logoX = (A4.WIDTH - 50) / 2;
-  drawZephrenLogoFull(doc, logoX, 30, 50);
+  // ── 1. Logo Zephren — încercăm PNG real din /public/, fallback procedural
+  // Sprint 8 mai 2026 — audit raport: logo procedural era suprapus pe titlu.
+  // Dimensiune redusă 50→32 mm + folosim PNG real (logo-canva.png) când e
+  // accesibil în rulare browser (fetch). În jsdom/SSR — fallback procedural.
+  const LOGO_W = 32;
+  const LOGO_Y = 25;
+  const logoX = (A4.WIDTH - LOGO_W) / 2;
+  let logoEmbeddedOk = false;
+  try {
+    if (typeof fetch === "function" && typeof window !== "undefined") {
+      const res = await fetch("/logo-canva.png");
+      if (res?.ok) {
+        const blob = await res.blob();
+        const dataURL = await new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result);
+          fr.onerror = () => reject(fr.error);
+          fr.readAsDataURL(blob);
+        });
+        // Aspect ratio aproximativ logo-canva.png (square-ish): folosim height=LOGO_W
+        doc.addImage(dataURL, "PNG", logoX, LOGO_Y, LOGO_W, LOGO_W, undefined, "FAST");
+        logoEmbeddedOk = true;
+      }
+    }
+  } catch (_) { /* fallback procedural */ }
+  if (!logoEmbeddedOk) {
+    drawZephrenLogoFull(doc, logoX, LOGO_Y, LOGO_W);
+  }
 
-  // ── 2. Titlu document
+  // ── 2. Titlu document — poziționat sub logo (logo end ≈ 25 + 37 = 62 mm)
+  // Cu logo PNG square 32x32 → end la 57 mm. Cu procedural 32x37 → end la 62 mm.
+  // Title la y=72 → gap minim 10 mm față de logo procedural.
   const title = String(meta.title || "Document Zephren").toUpperCase();
   doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.TITLE);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
-  doc.text(title, A4.WIDTH / 2, 85, { align: "center" });
+  doc.text(title, A4.WIDTH / 2, 72, { align: "center" });
 
   // ── 3. Subtitlu (opțional)
   if (subtitle) {
     doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
-    doc.text(subtitle, A4.WIDTH / 2, 92, { align: "center" });
+    doc.text(subtitle, A4.WIDTH / 2, 80, { align: "center" });
   }
 
   // ── 4. Bară primary sub titlu
   setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
   doc.setLineWidth(STROKE_WIDTH.HEAVY);
-  doc.line(A4.WIDTH / 2 - 30, 96, A4.WIDTH / 2 + 30, 96);
+  doc.line(A4.WIDTH / 2 - 30, 85, A4.WIDTH / 2 + 30, 85);
 
   // ── 5. Identificare clădire
   let y = 110;

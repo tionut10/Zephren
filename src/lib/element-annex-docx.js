@@ -512,9 +512,13 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   }
 
   // ── Secțiune 2: Elemente VITRATE ──
+  // Sprint 8 mai 2026 — Eliminat PageBreak forțat (audit raport 8 mai 2026:
+  // banner header adăugat 5+ paragrafe → condition >4 era mereu true → spațiu
+  // gol enorm între secțiuni). Lăsăm DOCX să flow natural; spaceBefore/After
+  // pe heading dă spațiu suficient.
   if (glazing.length > 0) {
     sectionsCount++;
-    if (children.length > 4) children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({ text: "", spacing: { before: 240, after: 0 } }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
       children: [new TextRun({ text: "2. Elemente vitrate", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
@@ -564,9 +568,10 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   }
 
   // ── Secțiune 3: PUNȚI TERMICE ──
+  // Sprint 8 mai 2026 — Eliminat PageBreak forțat (vezi notă §2)
   if (bridges.length > 0) {
     sectionsCount++;
-    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({ text: "", spacing: { before: 240, after: 0 } }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
       children: [new TextRun({ text: "3. Punți termice liniare", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
@@ -617,10 +622,11 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   }
 
   // ── Secțiune 4: SISTEME HVAC ──
+  // Sprint 8 mai 2026 — Eliminat PageBreak forțat (vezi notă §2)
   const hasSystems = !!(systems.heating || systems.cooling || systems.ventilation || systems.lighting || systems.acm);
   if (hasSystems) {
     sectionsCount++;
-    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(new Paragraph({ text: "", spacing: { before: 240, after: 0 } }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
       children: [new TextRun({ text: "4. Sisteme tehnice (HVAC + ACM + Iluminat)", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],

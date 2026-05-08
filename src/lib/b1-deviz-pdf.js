@@ -141,7 +141,7 @@ export async function generateB1DevizPdf({
   // PAGINA 1 — COVER PAGE cu 3 KPI
   // ═══════════════════════════════════════════════════════════════════════
 
-  renderCoverPage(doc, brandMeta, {
+  await renderCoverPage(doc, brandMeta, {
     subtitle: `Costuri orientative 2025-2026 · PNRR C5 + Casa Verde Plus`,
     kpis: [
       {

@@ -353,7 +353,7 @@ export async function exportCpePostRehabPDF(params = {}) {
   // PAGINA 1 — COVER PAGE (brand kit unitar)
   // ═══════════════════════════════════════════════════════════════════════
 
-  renderCoverPage(doc, brandMeta, {
+  await renderCoverPage(doc, brandMeta, {
     // Sprint 8 mai 2026 — Săgeata "→" U+2192 nu e în Liberation Sans;
     // SYMBOL_MAP convertește în "->" — folosim direct ASCII pentru consistență.
     subtitle: `Document orientativ · ${rehCls} estimată · reducere EP ${formatRomanianNumber(sav.epPct || 0, 1)}%`,

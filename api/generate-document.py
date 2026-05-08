@@ -3955,6 +3955,11 @@ class handler(BaseHTTPRequestHandler):
             glazing = body.get("glazingElements", []) or []
             bridges = body.get("thermalBridges", []) or []
             measured = body.get("measuredConsumption", {}) or {}
+            # Sprint 8 mai 2026 — Fix API 500: lipseau systems + climate din scope
+            # local. Capitolul 0 ipoteze referează (systems.get('heating')...).bacsClass
+            # și (climate.get('zone'))... → NameError dacă nu sunt extrase din body.
+            systems = body.get("systems", {}) or {}
+            climate = body.get("climate", {}) or body.get("selectedClimate", {}) or {}
 
             doc = Document()
             enforce_a4_portrait(doc)
