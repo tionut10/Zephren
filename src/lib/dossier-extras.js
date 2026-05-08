@@ -886,7 +886,7 @@ export async function generateMonitoringPlanPdf({
     "• Energie finală totală [kWh/an] — sumă lunară facturi pentru toate utilitățile.",
     "• Grade-zile reale [°C·zile] — corecție climatică pe baza datelor ANM/Meteoblue.",
     "• Ocupare [persoane × ore/an] — chestionar trimestrial proprietar / asociație.",
-    "• Setpoint mediu [°C] — citire termostate / BMS dacă disponibil.",
+    "• Temperatură de referință (setpoint) mediu [°C] — citire termostate / BMS dacă disponibil.",
     "• Apă caldă consumată [m³/an] — contor dedicat ACM (dacă prezent).",
   ];
   vars.forEach(v => {
@@ -913,16 +913,18 @@ export async function generateMonitoringPlanPdf({
   writeText("5. Calcul economii (IPMVP Opțiunea C)", M, y); y += 5;
   setBrandColor(doc, BRAND_COLORS.BLACK, "text");
   doc.setFont(baseFont, "normal"); doc.setFontSize(9.5);
+  // Sprint 8 mai 2026 — Formula tradusă complet în română (audit raport:
+  // englezisme „Savings/Tolerance/rebound effect/baseline/setpoint/E_actual_post")
   const formula = [
-    "Savings [kWh/an] = (E_baseline − E_actual_post) × adjustment_factor",
+    "Economii [kWh/an] = (E_referință − E_real_post) × factor_ajustare",
     "",
     "unde:",
-    "  • E_baseline = consum mediu 12 luni pre-renovare (facturat)",
-    "  • E_actual_post = consum efectiv post-renovare (facturat)",
-    "  • adjustment_factor = corecție GD_baseline / GD_actual + ocupare + setpoint",
+    "  • E_referință (E_baseline) = consum mediu 12 luni pre-renovare (facturat)",
+    "  • E_real_post (E_actual) = consum efectiv post-renovare (facturat)",
+    "  • factor_ajustare = corecție grade-zile (GZ_referință / GZ_real) + ocupare + temp. setpoint",
     "",
-    "Tolerance acceptabilă: ±10% față de economia estimată (Pas 7 audit).",
-    "Diferențe > 15% → investigație suplimentară (rebound effect, comportament etc.).",
+    "Toleranță acceptabilă: ±10% față de economia estimată (Pasul 7 audit).",
+    "Diferențe > 15% → investigație suplimentară (efect de relansare consum post-renovare, comportament etc.).",
   ];
   formula.forEach(l => { writeText(l, M + 2, y); y += 4.2; });
   y += 4;

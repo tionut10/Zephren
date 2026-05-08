@@ -439,7 +439,7 @@ export async function exportCpePostRehabPDF(params = {}) {
   doc.text("->", w / 2 - 5, y + 14);
 
   // Badge POST-REHAB (dreapta)
-  drawClassBadge(doc, w - 40, y, 26, 22, rehCls, "POST-REHAB");
+  drawClassBadge(doc, w - 40, y, 26, 22, rehCls, "POST-REABILITARE");
   doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
@@ -509,9 +509,9 @@ export async function exportCpePostRehabPDF(params = {}) {
       title: "Evoluție indicatori — baseline vs post-reabilitare",
       data: [
         { label: "EP actual", value: orig.ep, color: BRAND_COLORS.DANGER },
-        { label: "EP post-rehab", value: reh.ep, color: BRAND_COLORS.SUCCESS },
+        { label: "EP post-reabilitare", value: reh.ep, color: BRAND_COLORS.SUCCESS },
         { label: "CO₂ actual", value: orig.co2, color: BRAND_COLORS.DANGER },
-        { label: "CO₂ post-rehab", value: reh.co2, color: BRAND_COLORS.SUCCESS },
+        { label: "CO₂ post-reabilitare", value: reh.co2, color: BRAND_COLORS.SUCCESS },
       ],
       orientation: "vertical",
       unit: "kWh/m²·an / kg CO₂",

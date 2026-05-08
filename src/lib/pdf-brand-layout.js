@@ -517,7 +517,7 @@ export function renderEnergyClassBar(doc, x, y, totalWidth, height, options = {}
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.PRIMARY, "text");
     const epText = Number.isFinite(targetEP) ? `EP ${Math.round(targetEP)}` : "";
-    doc.text(`POST-REHAB ${epText}`, cx, triY - 6, { align: "center" });
+    doc.text(`POST-REABILITARE ${epText}`, cx, triY - 6, { align: "center" });
   }
 
   // Reset

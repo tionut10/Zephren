@@ -655,7 +655,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
         ["Suprafață", `${fmtNum(el.area, 2)} m²`],
         ["Orientare", el.orientation || "—"],
         ["Tip contact", elContact],
-        ["Coef. absorbție solară α", el.alpha != null ? fmtNum(el.alpha, 2) : "0,65 (default culoare medie)"],
+        ["Coef. absorbție solară α", el.alpha != null ? fmtNum(el.alpha, 2) : "0,65 (valoare implicită — culoare medie)"],
         ["Clasă reacție foc", `${metrics.worstFireClass} — ${FIRE_CLASSES[metrics.worstFireClass]?.label || ""}`],
         ["Tip fixări mecanice", metrics.fastenerLabel || "—"],
       ]));
@@ -855,7 +855,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
         ["Suprafață", `${fmtNum(g.area, 2)} m²`],
         ["U_w (transmitanță globală)", `${fmtNum(u_g, 2)} W/(m²·K)`, { bold: true, color: DOCX_BRAND.PRIMARY_DARK }],
         ["g_value (factor solar)", fmtNum(g_val, 2)],
-        ["Factor umbrire (F_sh)", g.shadingFactor != null ? fmtNum(g.shadingFactor, 2) : "0,85 (default Mc 001-2022)"],
+        ["Factor umbrire (F_sh)", g.shadingFactor != null ? fmtNum(g.shadingFactor, 2) : "0,85 (valoare implicită Mc 001-2022)"],
       ]));
 
       // --- 2.x.2 Detalii constructive (rame + geam) ---
@@ -867,7 +867,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       const glassLayers = g.glass_layers || g.glazing_layers || (g.type?.includes("triplu") ? 3 : 2);
       const glassU = g.glass_U != null ? parseFloat(g.glass_U) : (glassLayers === 3 ? 0.7 : 1.1);
       const glassGas = g.glass_gas || g.gas || "Argon";
-      const lowE = g.lowE != null ? g.lowE : (g.type?.includes("Low-E") || g.type?.includes("low-E") ? "Da" : "Da (default presupus)");
+      const lowE = g.lowE != null ? g.lowE : (g.type?.includes("Low-E") || g.type?.includes("low-E") ? "Da" : "Da (presupus implicit)");
       children.push(KV([
         ["Tip rame", frameType],
         ["Lățime rame (b_f)", `${frameWidth} mm`],
@@ -1033,6 +1033,14 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     const Au = parseFloat(building?.areaUseful) || 1;
     const epTotal = instSummary?.ep_total_m2 || 0;
     const sharePct = (val) => epTotal > 0 ? (val / epTotal) * 100 : 0;
+    // Sprint 8 mai 2026 — fallback CO₂ per utilitate: instSummary expune doar
+    // raw `co2_h/co2_w/etc.` (kg/an); _m2 se calculează aici dacă lipsește.
+    const co2_m2 = (raw_field) => {
+      const m2 = instSummary?.[`${raw_field}_m2`];
+      if (m2 != null) return m2;
+      const raw = instSummary?.[raw_field];
+      return (raw != null && Au > 0) ? raw / Au : null;
+    };
 
     // Helper care construiește un bloc complet pentru un sistem
     const sysBlock = (title, obj, fields, energyData) => {
@@ -1074,7 +1082,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       qf: instSummary?.qf_h,
       qf_m2: instSummary?.qf_h ? instSummary.qf_h / Au : null,
       ep_m2: instSummary?.ep_h_m2 || (instSummary?.ep_h ? instSummary.ep_h / Au : null),
-      co2_m2: instSummary?.co2_h_m2,
+      co2_m2: co2_m2("co2_h"),
       share_pct: sharePct(instSummary?.ep_h_m2 || 0),
     });
 
@@ -1090,7 +1098,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       qf: instSummary?.qf_c,
       qf_m2: instSummary?.qf_c ? instSummary.qf_c / Au : null,
       ep_m2: instSummary?.ep_c_m2 || (instSummary?.ep_c ? instSummary.ep_c / Au : null),
-      co2_m2: instSummary?.co2_c_m2,
+      co2_m2: co2_m2("co2_c"),
       share_pct: sharePct(instSummary?.ep_c_m2 || 0),
     });
 
@@ -1105,7 +1113,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       qf: instSummary?.qf_v,
       qf_m2: instSummary?.qf_v ? instSummary.qf_v / Au : null,
       ep_m2: instSummary?.ep_v_m2 || (instSummary?.ep_v ? instSummary.ep_v / Au : null),
-      co2_m2: instSummary?.co2_v_m2,
+      co2_m2: co2_m2("co2_v"),
       share_pct: sharePct(instSummary?.ep_v_m2 || 0),
     });
 
@@ -1119,7 +1127,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       qf: instSummary?.qf_l,
       qf_m2: instSummary?.qf_l ? instSummary.qf_l / Au : null,
       ep_m2: instSummary?.ep_l_m2 || (instSummary?.ep_l ? instSummary.ep_l / Au : null),
-      co2_m2: instSummary?.co2_l_m2,
+      co2_m2: co2_m2("co2_l"),
       share_pct: sharePct(instSummary?.ep_l_m2 || 0),
     });
 
@@ -1135,7 +1143,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       qf: instSummary?.qf_w,
       qf_m2: instSummary?.qf_w ? instSummary.qf_w / Au : null,
       ep_m2: instSummary?.ep_w_m2 || (instSummary?.ep_w ? instSummary.ep_w / Au : null),
-      co2_m2: instSummary?.co2_w_m2,
+      co2_m2: co2_m2("co2_w"),
       share_pct: sharePct(instSummary?.ep_w_m2 || 0),
     });
 
@@ -1165,12 +1173,19 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
       ["Utilitate", 25], ["Q_f [kWh/an]", 16], ["Q_f [kWh/m²·an]", 17],
       ["EP [kWh/m²·an]", 17], ["CO₂ [kg/m²·an]", 17], ["Pondere [%]", 8],
     ];
+    // Sprint 8 mai 2026 — fallback CO₂ per utilitate (raw kWh/Au) pentru §5
+    const co2_m2_5 = (raw_field) => {
+      const m2 = instSummary?.[`${raw_field}_m2`];
+      if (m2 != null) return m2;
+      const raw = instSummary?.[raw_field];
+      return (raw != null && Au5 > 0) ? raw / Au5 : null;
+    };
     const utilities = [
-      ["Încălzire spații", instSummary?.qf_h, instSummary?.ep_h_m2, instSummary?.co2_h_m2],
-      ["Răcire spații", instSummary?.qf_c, instSummary?.ep_c_m2, instSummary?.co2_c_m2],
-      ["Apă caldă menajeră", instSummary?.qf_w, instSummary?.ep_w_m2, instSummary?.co2_w_m2],
-      ["Ventilare mecanică", instSummary?.qf_v, instSummary?.ep_v_m2, instSummary?.co2_v_m2],
-      ["Iluminat", instSummary?.qf_l, instSummary?.ep_l_m2, instSummary?.co2_l_m2],
+      ["Încălzire spații", instSummary?.qf_h, instSummary?.ep_h_m2, co2_m2_5("co2_h")],
+      ["Răcire spații", instSummary?.qf_c, instSummary?.ep_c_m2, co2_m2_5("co2_c")],
+      ["Apă caldă menajeră", instSummary?.qf_w, instSummary?.ep_w_m2, co2_m2_5("co2_w")],
+      ["Ventilare mecanică", instSummary?.qf_v, instSummary?.ep_v_m2, co2_m2_5("co2_v")],
+      ["Iluminat", instSummary?.qf_l, instSummary?.ep_l_m2, co2_m2_5("co2_l")],
     ];
     const balRows = utilities.map(([name, qf, ep_m2, co2_m2]) => [
       name,
