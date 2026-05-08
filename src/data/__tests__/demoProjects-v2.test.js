@@ -47,7 +47,7 @@ const REQUIRED_EXPECTED_KEYS = [
   "documentsExpected", "tolerances",
 ];
 
-const VALID_ENERGY_CLASSES = ["A", "B", "C", "D", "E", "F", "G"];
+const VALID_ENERGY_CLASSES = ["A+", "A", "B", "C", "D", "E", "F", "G"];
 const VALID_BACS_CLASSES = ["A", "B", "C", "D"];
 
 const ZONE_CLIMATIC_BOUNDS = {
@@ -230,7 +230,7 @@ describe("DEMO_PROJECTS v2 — diversitate scenarii (testare end-to-end)", () =>
     expect(parseFloat(DEMO_PROJECTS[1].otherRenew.cogenElectric)).toBeGreaterThan(0);
     expect(DEMO_PROJECTS[1].photovoltaic.enabled).toBe(true);
     expect(parseFloat(DEMO_PROJECTS[1].photovoltaic.peakPower)).toBeGreaterThanOrEqual(20);
-    expect(DEMO_PROJECTS[1].expectedResults.energyClass).toBe("A");
+    expect(DEMO_PROJECTS[1].expectedResults.energyClass).toBe("A+");
     expect(DEMO_PROJECTS[1].expectedResults.RER_pct).toBeGreaterThanOrEqual(50);
     expect(DEMO_PROJECTS[1].expectedResults.bacsClass).toBe("A");
   });

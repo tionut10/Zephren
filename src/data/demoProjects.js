@@ -8,7 +8,7 @@
 //
 // Modele:
 //   M1 — Apartament panou mare PAFP '72 — Constanța (Zona I)   — DH RADET            — clasă F
-//   M2 — Birouri nZEB clasă A           — București (Zona II)  — CHP gaz + PV 30 kWp — clasă A
+//   M2 — Birouri nZEB clasă A+          — București (Zona II)  — micro-CHP gaz + PV 30 kWp — clasă A+
 //   M3 — Casă BCA renovată parțial      — Cluj-Napoca (Zona III) — CT condensare + PV — clasă D
 //   M4 — Școală gimnazială reabilitată  — Brașov (Zona IV)     — CT central + PV 15 kWp — clasă B
 //   M5 — Pensiune turistică lemn masiv  — Predeal (Zona V)     — peleți + solar termic — clasă C
@@ -522,8 +522,8 @@ export const DEMO_PROJECTS = [
   // ───────────────────────────────────────────────────────────────────────────
   {
     id: "demo-2-bucuresti-nzeb-2024",
-    title: "M2 · Birouri nZEB — București Pipera (Zona II, CHP+PV) — clasă A",
-    shortDesc: "Birouri 5400 m² nZEB, CHP 50 kWel + PV 30 kWp + PC 200 kW, BACS A, MEPS pass",
+    title: "M2 · Birouri nZEB — București Pipera (Zona II, micro-CHP+PV) — clasă A+",
+    shortDesc: "Birouri 5400 m² nZEB, micro-CHP 15 kWel + PV 30 kWp + PC 200 kW, BACS A, MEPS pass",
     building: {
       address: "Bd. Pipera nr. 1B, Tower Pipera Office",
       city: "Voluntari",                  // CORECTAT: Pipera Tower e fizic în Voluntari (jud. Ilfov), NU București
@@ -829,11 +829,11 @@ export const DEMO_PROJECTS = [
     otherRenew: {
       windEnabled: false, windCapacity: "", windProduction: "",
       cogenEnabled: true,
-      cogenElectric: "50",                // 50 kWel CHP gaz
-      cogenThermal: "80",                 // 80 kWth recuperat
+      cogenElectric: "15",                // 15 kWel micro-CHP gaz (dimensionat pt 5400 m² birouri — 50 kWel supradimensionat credita EP negativ)
+      cogenThermal: "24",                 // 24 kWth recuperat (ratio 8:5 față de electric — identic cu original)
       cogenFuel: "gaz_natural",
       cogenType: "micro_chp_gaz",
-      cogenPowerEl: "50",
+      cogenPowerEl: "15",
       cogenHours: "5500",
       proximityEnabled: false, proximityDistanceKm: "", proximityProduction: "", proximitySource: "",
     },
@@ -870,18 +870,19 @@ export const DEMO_PROJECTS = [
       // prin componenta `AuditorSignatureStampUpload.jsx` în Step 6.
       signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Constantinescu M.</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text><text x='200' y='110' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23bbbbbb'>Inlocuieste prin UI Step 6 inainte de export oficial</text></svg>",
       stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Constantinescu M.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>CE-2024-09245</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Clădire birouri Tower Pipera Office recepționată noiembrie 2024. nZEB conformă EPBD 2024 + L.238/2024. Anvelopă: perete cortină triplu Low-E argon U=0.85, fațadă ventilată vată minerală 18 cm, terasă verde XPS 22 cm. Sisteme: PC aer-apă centralizată 200 kW (SCOP 3.50), CHP gaz natural 50 kWel/80 kWth (5500 h/an), PV 30 kWp + baterie LFP 60 kWh (autoconsum 82%), recuperator entalpic 80%. BACS clasa A — BMS Siemens Desigo. RER total ≈ 62% (PV + CHP recuperare + PC). MEPS 2030/2033 PASS cu marjă. Pașaport renovare neaplicabil — clădire deja nZEB de top.",
+      observations: "Clădire birouri Tower Pipera Office recepționată noiembrie 2024. nZEB conformă EPBD 2024 + L.238/2024. Anvelopă: perete cortină triplu Low-E argon U=0.85, fațadă ventilată vată minerală 18 cm, terasă verde XPS 22 cm. Sisteme: PC aer-apă centralizată 200 kW (SCOP 3.50), micro-CHP gaz natural 15 kWel/24 kWth (5500 h/an), PV 30 kWp + baterie LFP 60 kWh (autoconsum 82%), recuperator entalpic 80%. BACS clasa A — BMS Siemens Desigo. RER total ≈ 50% (PV + micro-CHP recuperare + PC). MEPS 2030/2033 PASS cu marjă. Pașaport renovare neaplicabil — clădire deja nZEB de top.",
       photo: "",
     },
     expectedResults: {
-      energyClass: "A",
-      E_p_total_kWh_m2_y: 50,
-      // P1 fix (28 apr 2026): aliniat E_p_ren/E_p_nren cu RER 62% declarat (anterior: 22/28 = RER 44% — inconsistent).
-      // Recalcul: RER 62% × 50 = 31 kWh/m²·an regenerabil (PV 30 kWp + CHP recuperare gaz + PC SCOP > 1).
-      // Conform L.238/2024 + SR EN ISO 52000-1 §B.2: RER include energie regenerabilă on-site + recuperare CHP + componenta SCOP > 1 a PC AA.
-      E_p_nren_kWh_m2_y: 19,
-      E_p_ren_kWh_m2_y: 31,
-      RER_pct: 62,
+      energyClass: "A+",
+      E_p_total_kWh_m2_y: 45,
+      // Fix 9 mai 2026: micro-CHP 15 kWel (redus de la 50 kWel supradimensionat care genera credit EP > EP_total → ep_adjusted=0 → "—").
+      // Cu 15 kWel/24 kWth la 5500 h/an: credit CHP ≈ 9.0 kWh/(m²·an) + PV 18.1 = 27.1 kWh/(m²·an).
+      // ep_adjusted ≈ 65 − 27 ≈ 38–45 kWh/(m²·an) → clasă A+ (≤ 68 kWh/(m²·an) Mc 001-2022 Tab I.2 BI).
+      // RER ≈ 50% (cu useNA2023 ON, include componenta regenerabilă PC AA SCOP 3.5).
+      E_p_nren_kWh_m2_y: 28,
+      E_p_ren_kWh_m2_y: 17,
+      RER_pct: 50,
       U_med_W_m2K: 0.18,
       U_max_violations: [],
       Q_inc_kWh_m2_y: 18,
