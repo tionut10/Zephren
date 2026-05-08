@@ -1,22 +1,28 @@
 // ═══════════════════════════════════════════════════════════════
 // ZEPHREN — Modul generare rapoarte PDF
-// Toate funcțiile sunt async și folosesc import() dinamic jsPDF
-// Color scheme: header dark (#0d0f1a / amber), corp alb/gri
+// Sprint Visual-5 (8 mai 2026): brand kit unitar (verde Zephren #007A3D)
+// Color scheme migrat: header SLATE_900/PRIMARY_DARK/WHITE (era amber)
 // Normative: Mc 001-2022, ISO 52000-1, EN 15978, EN ISO 717-1,
 //            EN ISO 13788, C125, NP 008-97, SR 6156:2016
 // ═══════════════════════════════════════════════════════════════
 import { U_REF_NZEB_RES as U_REF_RES, U_REF_NZEB_NRES as U_REF_NRES, U_REF_GLAZING } from "../data/u-reference.js";
 import { APP_VERSION } from "../data/app-version.js";
+import { BRAND_COLORS } from "./pdf-brand-kit.js";
+// Sprint Visual-5: chart helpers nativi (bar/line) pentru rapoarte
+import { renderBarChart, renderLineChart } from "./pdf-brand-charts.js";
 
 const BRAND = "ZEPHREN";
 // m-1 (7 mai 2026) — VERSION centralizat din app-version.js (era hardcoded "v3.4").
 const VERSION = APP_VERSION;
-const COL_H = [13, 15, 26];   // #0d0f1a — header dark
-const COL_A = [251, 191, 36]; // #fbbf24 — amber accent
-const COL_G = [80, 80, 90];   // text gri corp
-const COL_W = [255, 255, 255];
-const COL_ERR = [220, 38, 38];
-const COL_OK  = [22, 163, 74];
+// Sprint Visual-5: COL_* migrat la brand kit (PRIMARY verde Zephren #007A3D + slate)
+const COL_H = BRAND_COLORS.SLATE_900;       // [15, 23, 42] — header dark slate (era #0d0f1a custom)
+const COL_A = BRAND_COLORS.WHITE;            // text alb pe header (era amber [251,191,36])
+const COL_BR = BRAND_COLORS.PRIMARY_LIGHT;   // [0, 165, 80] — verde Zephren A+ pentru brand text pe header
+const COL_PRI = BRAND_COLORS.PRIMARY_DARK;   // [0, 90, 45] — accent verde închis (replace amber accent)
+const COL_G = BRAND_COLORS.SLATE_700;        // [51, 65, 85] — text corp (era custom [80,80,90])
+const COL_W = BRAND_COLORS.WHITE;
+const COL_ERR = BRAND_COLORS.DANGER;          // [220, 38, 38] — neschimbat
+const COL_OK  = BRAND_COLORS.SUCCESS;         // [22, 163, 74] — neschimbat
 
 // ── Utilitar: inițializare jsPDF ──────────────────────────────
 // jspdf-autotable v5 nu mai patch-ează automat prototipul jsPDF — apelul
@@ -106,11 +112,16 @@ function applyFontDefaults(opts, fontName) {
 // Evităm suprapunerile dintre titlu și sigla auditor măsurând lățimea reală.
 function addPageHeader(doc, title, auditorName, dateStr) {
   const w = doc.internal.pageSize.getWidth();
+  // Sprint Visual-5: header slate dark (era custom dark #0d0f1a, acum SLATE_900 brand)
   doc.setFillColor(...COL_H);
   doc.rect(0, 0, w, 18, "F");
+  // Brand "Zephren" cu Z verde + ephren alb (replicare logo wordmark)
   doc.setFontSize(11); doc.setFont(undefined, "bold");
-  doc.setTextColor(...COL_A);
-  doc.text(BRAND, 10, 12);
+  doc.setTextColor(...COL_BR); // verde Zephren primary light
+  doc.text("Z", 10, 12);
+  const zWidth = doc.getTextWidth("Z");
+  doc.setTextColor(...COL_W);
+  doc.text("ephren", 10 + zWidth, 12);
 
   // Auditor + data — lățime maximă 60mm, aliniat dreapta
   doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(180, 180, 180);
@@ -121,7 +132,7 @@ function addPageHeader(doc, title, auditorName, dateStr) {
   const audActualW = doc.getTextWidth(audClipped);
 
   // Titlu — centrat dar într-o casetă care respectă spațiul liber dintre brand și auditor
-  const brandRight = 10 + doc.getTextWidth(BRAND) + 4; // după brand
+  const brandRight = 10 + zWidth + doc.getTextWidth("ephren") + 4; // după brand
   const audLeft = w - 10 - audActualW - 4;             // înainte de meta
   const titleZoneCenter = (brandRight + audLeft) / 2;
   const titleZoneWidth = Math.max(40, audLeft - brandRight - 2);
@@ -129,6 +140,11 @@ function addPageHeader(doc, title, auditorName, dateStr) {
   doc.setTextColor(...COL_W);
   const titleClamped = clampText(doc, title || "", titleZoneWidth);
   doc.text(titleClamped, titleZoneCenter, 12, { align: "center" });
+
+  // Sprint Visual-5: bară primary verde sub header (separator brand)
+  doc.setDrawColor(...BRAND_COLORS.PRIMARY);
+  doc.setLineWidth(0.8);
+  doc.line(0, 18, w, 18);
 }
 
 // Trunchiază un text astfel încât să încapă în maxWidth (mm), adăugând "…" la final.
@@ -171,24 +187,32 @@ function addAnexaFooter(doc, nrRegistru, nrMDLPA, pageNum) {
 }
 
 // ── Utilitar: secțiune titlu ──────────────────────────────────
+// Sprint Visual-5: refactor brand kit — fundal SLATE_900 + text WHITE +
+// border-stânga PRIMARY 4mm pentru accent vizual brand verde.
 function sectionTitle(doc, text, y) {
   const w = doc.internal.pageSize.getWidth();
+  // Border-stânga primary verde (4mm)
+  doc.setFillColor(...BRAND_COLORS.PRIMARY);
+  doc.rect(10, y - 4, 1.5, 7, "F");
+  // Background slate dark
   doc.setFillColor(...COL_H);
-  doc.rect(10, y - 4, w - 20, 7, "F");
+  doc.rect(11.5, y - 4, w - 21.5, 7, "F");
+  // Text alb (era amber)
   doc.setFontSize(9); doc.setFont(undefined, "bold");
   doc.setTextColor(...COL_A);
-  doc.text(text, 13, y + 0.5);
+  doc.text(text, 14.5, y + 0.5);
   doc.setTextColor(0);
   return y + 8;
 }
 
 // ── Utilitar: tabel autoTable cu stil consistent ──────────────
+// Sprint Visual-5: tabel header SLATE_900 + text alb (era amber accent)
 function autoTable(doc, opts) {
   doc.autoTable({
     theme: "grid",
     headStyles: { fillColor: COL_H, textColor: COL_A, fontStyle: "bold", fontSize: 8 },
     bodyStyles: { fontSize: 8, textColor: COL_G },
-    alternateRowStyles: { fillColor: [248, 248, 252] },
+    alternateRowStyles: { fillColor: [248, 250, 252] }, // SLATE_50
     margin: { left: 10, right: 10 },
     ...opts,
   });
@@ -1065,46 +1089,49 @@ export async function generateMultiScenarioReport({
       headStyles: { fillColor: COL_H, textColor: COL_A, fontStyle: "bold", fontSize: 7.5 },
     });
 
-    // Grafic bar ASCII/text: EP per scenariu
+    // Sprint Visual-5: bar chart brand kit (replace bar custom 40 LOC)
     if ((scenarios || []).length > 0) {
       y = sectionTitle(doc, "3. VIZUALIZARE EP — ÎNAINTE ȘI DUPĂ PER SCENARIU", y);
-      doc.setFontSize(8); doc.setTextColor(...COL_G);
 
-      const barMaxWidth = w - 60;
-      const allEPs = [epBase, ...(scenarios || []).map(s => s.ep || 0)];
-      const maxEP = Math.max(...allEPs, 1);
+      const barData = [
+        { label: "Referință", value: epBase, color: BRAND_COLORS.DANGER },
+        ...(scenarios || []).map((sc, i) => ({
+          label: sc.name || `Sc ${i + 1}`,
+          value: sc.ep || 0,
+          color: i === 0 ? BRAND_COLORS.PRIMARY : i === 1 ? BRAND_COLORS.PRIMARY_LIGHT : BRAND_COLORS.INFO,
+        })),
+      ];
 
-      // Bara referință
-      const bh = 7; // bar height mm
-      const labelW = 40;
-      const scaleF = barMaxWidth / maxEP;
-
-      doc.setFont(undefined, "normal");
-      const drawBar = (label, ep, color, yPos) => {
-        doc.setFontSize(7); doc.setTextColor(...COL_G);
-        doc.text(label.slice(0, 20), 10, yPos + bh - 1);
-        doc.setFillColor(...color);
-        doc.rect(10 + labelW, yPos, Math.max(2, ep * scaleF), bh - 1, "F");
-        doc.setFontSize(6.5); doc.setTextColor(...COL_H);
-        doc.text(`${ep.toFixed(0)} kWh/m²`, 10 + labelW + Math.max(2, ep * scaleF) + 1, yPos + bh - 2);
-        return yPos + bh + 2;
-      };
-
-      y = drawBar("Referință (actual)", epBase, [180, 30, 30], y);
-      (scenarios || []).forEach((sc, i) => {
-        const shade = Math.max(20, 160 - i * 25);
-        y = drawBar(sc.name || `Scenariu ${i + 1}`, sc.ep || 0, [shade, shade + 60, shade + 30], y);
+      const chartHeight = Math.max(50, 12 * (barData.length + 1));
+      renderBarChart(doc, 10, y, w - 20, chartHeight, {
+        data: barData,
+        orientation: "horizontal",
+        unit: "kWh/m²·an (EP primar)",
+        showValues: true,
+        showGrid: true,
       });
-      y += 4;
+      y += chartHeight + 4;
 
-      // Linie prag nZEB
-      doc.setDrawColor(251, 191, 36); doc.setLineWidth(0.5);
-      const nzebEP = 100;
-      const nzebX = 10 + labelW + nzebEP * scaleF;
-      if (nzebX < w - 10) {
-        doc.line(nzebX, y - (scenarios.length + 1) * 9 - 4, nzebX, y - 4);
-        doc.setFontSize(6); doc.setTextColor(251, 191, 36);
-        doc.text("nZEB", nzebX + 1, y - 4);
+      // Sprint Visual-5: line chart NPV cumulativ 25 ani per scenariu (nou cap. 3-bis)
+      const scenariosWithNpv = (scenarios || []).filter(sc => sc.cost && sc.annualSaving);
+      if (scenariosWithNpv.length > 0 && y < 200) {
+        y = sectionTitle(doc, "3-BIS. NPV CUMULATIV PE 25 ANI — ANALIZĂ FINANCIARĂ", y);
+
+        const years = Array.from({ length: 26 }, (_, i) => i); // 0..25 ani
+        const series = scenariosWithNpv.slice(0, 3).map((sc, i) => ({
+          label: (sc.name || `Sc ${i + 1}`).slice(0, 12),
+          data: years.map(yr => -sc.cost + (sc.annualSaving * yr)),
+          color: i === 0 ? BRAND_COLORS.PRIMARY : i === 1 ? BRAND_COLORS.INFO : BRAND_COLORS.WARNING,
+        }));
+
+        renderLineChart(doc, 10, y, w - 20, 55, {
+          xLabels: years,
+          series,
+          yUnit: "RON cumulativ",
+          threshold: 0,
+          thresholdLabel: "Break-even",
+        });
+        y += 60;
       }
     }
 
@@ -1726,23 +1753,38 @@ function _renderAnexa1(doc, startPageNum, opts) {
     ],
   });
 
-  // Zonă semnătură/ștampilă (placeholder cu chenar)
+  // Zonă semnătură/ștampilă auditor.
+  // Sprint 8 mai 2026 — Inserare imagine ștampilă Ø 40 mm conform Anexa 1b
+  // Ord. MDLPA 348/2026 + semnătură olografă scanată. Caseta crescută de la
+  // 80×22 mm la 80×55 mm pentru a încadra ștampila la diametrul real legal.
+  // Era folosit `auditor.photo` (foto auditor) eronat ca ștampilă — corectat
+  // la `auditor.stampDataURL` și `auditor.signatureDataURL` (câmpurile dedicate).
   y += 5;
-  y = ensureSpace(doc, y, 30, title, audName, today);
-  const sigBoxW = 80, sigBoxH = 22;
+  y = ensureSpace(doc, y, 60, title, audName, today);
+  const sigBoxW = 80, sigBoxH = 55;
   doc.setDrawColor(200); doc.setLineWidth(0.3);
   doc.rect(10, y, sigBoxW, sigBoxH);
   doc.rect(w - 10 - sigBoxW, y, sigBoxW, sigBoxH);
   doc.setFontSize(7); doc.setTextColor(...COL_G);
   doc.text("Semnătură auditor", 10 + sigBoxW / 2, y + sigBoxH + 3, { align: "center" });
-  doc.text("Ștampilă profesională", w - 10 - sigBoxW / 2, y + sigBoxH + 3, { align: "center" });
+  doc.text("Ștampilă auditor (Ø 40 mm — Anexa 1b Ord. 348/2026)", w - 10 - sigBoxW / 2, y + sigBoxH + 3, { align: "center" });
 
-  // Încearcă încorporare foto/ștampilă dacă e data URL
-  if (auditor?.photo && typeof auditor.photo === "string" && auditor.photo.startsWith("data:image/")) {
+  // Caseta stângă: SEMNĂTURA OLOGRAFĂ (PNG cu transparență)
+  if (auditor?.signatureDataURL && typeof auditor.signatureDataURL === "string") {
     try {
-      const fmt = auditor.photo.includes("jpeg") || auditor.photo.includes("jpg") ? "JPEG" : "PNG";
-      doc.addImage(auditor.photo, fmt, w - 10 - sigBoxW + 5, y + 2, sigBoxW - 10, sigBoxH - 4, undefined, "FAST");
-    } catch { /* ignore bad image */ }
+      // 70 × 25 mm, păstrând aspect ratio (PNG 400×150 ≈ 70×26 mm)
+      doc.addImage(auditor.signatureDataURL, "PNG", 15, y + 15, 70, 25, undefined, "FAST");
+    } catch (e) { console.warn("[CPE Anexa1] semnătură PNG invalid:", e?.message); }
+  }
+
+  // Caseta dreaptă: ȘTAMPILĂ Ø 40 mm fix (centrat în caseta de 80×55)
+  if (auditor?.stampDataURL && typeof auditor.stampDataURL === "string") {
+    try {
+      const STAMP_DIAM = 40;
+      const stampX = w - 10 - sigBoxW + (sigBoxW - STAMP_DIAM) / 2; // centrat orizontal
+      const stampY = y + (sigBoxH - STAMP_DIAM) / 2;                // centrat vertical
+      doc.addImage(auditor.stampDataURL, "PNG", stampX, stampY, STAMP_DIAM, STAMP_DIAM, undefined, "FAST");
+    } catch (e) { console.warn("[CPE Anexa1] ștampilă PNG invalid:", e?.message); }
   }
 
   addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
@@ -2008,20 +2050,34 @@ function _renderAnexa2(doc, startPageNum, opts) {
 
   y = auditorBlock(doc, auditor, y);
 
-  // Zonă semnătură
-  y = ensureSpace(doc, y, 28, title, audName, today);
-  const sigW = 80, sigH = 22;
+  // Zonă semnătură + ștampilă (Sprint 8 mai 2026 — Anexa 1b Ord. 348/2026)
+  // Caseta crescută de la 80×22 mm → 80×55 mm pentru a încadra ștampila Ø 40 mm.
+  // Sursa imaginilor schimbată de la `auditor.photo` (foto profil — incorect)
+  // la `auditor.stampDataURL` + `auditor.signatureDataURL` (câmpuri dedicate).
+  y = ensureSpace(doc, y, 60, title, audName, today);
+  const sigW = 80, sigH = 55;
   doc.setDrawColor(200); doc.setLineWidth(0.3);
   doc.rect(10, y, sigW, sigH);
   doc.rect(w - 10 - sigW, y, sigW, sigH);
   doc.setFontSize(7); doc.setTextColor(...COL_G);
   doc.text("Semnătură auditor", 10 + sigW / 2, y + sigH + 3, { align: "center" });
-  doc.text("Ștampilă profesională", w - 10 - sigW / 2, y + sigH + 3, { align: "center" });
-  if (auditor?.photo && typeof auditor.photo === "string" && auditor.photo.startsWith("data:image/")) {
+  doc.text("Ștampilă auditor (Ø 40 mm — Anexa 1b Ord. 348/2026)", w - 10 - sigW / 2, y + sigH + 3, { align: "center" });
+
+  // Semnătura olografă (caseta stângă)
+  if (auditor?.signatureDataURL && typeof auditor.signatureDataURL === "string") {
     try {
-      const fmt = auditor.photo.includes("jpeg") || auditor.photo.includes("jpg") ? "JPEG" : "PNG";
-      doc.addImage(auditor.photo, fmt, w - 10 - sigW + 5, y + 2, sigW - 10, sigH - 4, undefined, "FAST");
-    } catch { /* ignore */ }
+      doc.addImage(auditor.signatureDataURL, "PNG", 15, y + 15, 70, 25, undefined, "FAST");
+    } catch (e) { console.warn("[CPE Anexa2] semnătură PNG invalid:", e?.message); }
+  }
+
+  // Ștampila Ø 40 mm (caseta dreaptă, centrată)
+  if (auditor?.stampDataURL && typeof auditor.stampDataURL === "string") {
+    try {
+      const STAMP_DIAM = 40;
+      const stampX = w - 10 - sigW + (sigW - STAMP_DIAM) / 2;
+      const stampY = y + (sigH - STAMP_DIAM) / 2;
+      doc.addImage(auditor.stampDataURL, "PNG", stampX, stampY, STAMP_DIAM, STAMP_DIAM, undefined, "FAST");
+    } catch (e) { console.warn("[CPE Anexa2] ștampilă PNG invalid:", e?.message); }
   }
 
   addAnexaFooter(doc, nrRegistru, nrMDLPA, page);
@@ -2679,13 +2735,36 @@ export async function generateNZEBConformanceReport(opts) {
     doc.text(declLines, 10, y);
     y += declLines.length * 4 + 8;
 
-    // Caseta semnătură
-    const boxW = 80, boxH = 40;
+    // Caseta semnătură + ștampilă auditor.
+    // Sprint 8 mai 2026 — Inserare automată imagine semnătură + ștampilă Ø 40 mm
+    // conform Anexa 1b Ord. MDLPA 348/2026 (Art. 5 alin. 5 — dimensiune obligatorie 40 mm).
+    //
+    // Layout caseta stângă (boxW=80, boxH=55):
+    //   • Texte auditor: rândurile y+4 … y+19 (ocupă 19 mm sus)
+    //   • Semnătură imagine: y+21 … y+33 (12 mm înălțime, ~50 mm lățime)
+    //   • Ștampilă imagine: dreapta-jos, Ø 40 mm fix (poziționat 35..75 × 14..54)
+    //     → ștampila se SUPRAPUNE parțial peste zona de text (cum se aplică în
+    //       documente reale: ștampila "validează" semnătura/textul). Acest layout
+    //       respectă obligația juridică Ø 40 mm + încadrează totul în caseta de
+    //       55 mm fără page break.
+    const boxW = 80, boxH = 55;
     const boxX1 = 15;
     const boxX2 = w - boxW - 15;
+
+    // Verificare spațiu disponibil — dacă caseta + ID document (~75 mm) ar
+    // împinge conținutul peste footer, compresăm la 45 mm fără ștampilă (caz
+    // extrem; preferăm să afișăm doar texte decât să creăm pagină nouă).
+    const pageH = doc.internal.pageSize.getHeight();
+    const FOOTER_RESERVE = 16;     // 10 mm footer + 6 mm pad
+    const ID_DOC_RESERVE = 14;     // bandă hash + ID
+    const FOOTER_LEGAL = 8;        // 2 linii subsol legal
+    const spaceLeft = pageH - y - FOOTER_RESERVE - ID_DOC_RESERVE - FOOTER_LEGAL;
+    const effectiveBoxH = spaceLeft >= boxH ? boxH : Math.max(40, spaceLeft);
+    const canRenderStamp = effectiveBoxH >= 50; // ștampila Ø 40 mm nu încape sub 50 mm
+
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
-    doc.roundedRect(boxX1, y, boxW, boxH, 2, 2, "S");
-    doc.roundedRect(boxX2, y, boxW, boxH, 2, 2, "S");
+    doc.roundedRect(boxX1, y, boxW, effectiveBoxH, 2, 2, "S");
+    doc.roundedRect(boxX2, y, boxW, effectiveBoxH, 2, 2, "S");
 
     doc.setFontSize(7); doc.setTextColor(...COL_G);
     doc.text("AUDITOR ENERGETIC GRAD I (AE Ici)", boxX1 + 2, y + 4);
@@ -2694,15 +2773,52 @@ export async function generateNZEBConformanceReport(opts) {
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(`Nr. atestat: ${auditor?.atestat || "—"}`, boxX1 + 2, y + 15);
     doc.text(auditor?.grade || "—", boxX1 + 2, y + 19);
-    doc.text("Semnătură + ștampilă", boxX1 + 2, y + boxH - 3);
 
-    doc.setFontSize(7);
+    // ─── Semnătură imagine (PNG, dataURL) ───
+    if (auditor?.signatureDataURL && typeof auditor.signatureDataURL === "string") {
+      try {
+        // 50 mm × 12 mm păstrând aspect ratio (raport recomandat 400×150 → ~50×18.75 mm)
+        const sigW = 50, sigH = 12;
+        const sigX = boxX1 + 2;
+        const sigY = y + 22;
+        doc.addImage(auditor.signatureDataURL, "PNG", sigX, sigY, sigW, sigH, undefined, "FAST");
+      } catch (e) {
+        console.warn("[nZEB] semnătură PNG invalid:", e?.message);
+      }
+    }
+
+    // ─── Ștampilă Ø 40 mm fix (Art. 5 alin. 5 Ord. MDLPA 348/2026) ───
+    // Poziționată în partea dreaptă-jos a casetei semnătură (overlap parțial
+    // peste semnătură, exact ca pe documente reale). Doar dacă încape (≥50 mm).
+    if (canRenderStamp && auditor?.stampDataURL && typeof auditor.stampDataURL === "string") {
+      try {
+        const STAMP_DIAM = 40; // Ø 40 mm OBLIGATORIU legal
+        const stampX = boxX1 + boxW - STAMP_DIAM - 2; // dreapta cu margine 2 mm
+        const stampY = y + effectiveBoxH - STAMP_DIAM - 2; // jos cu margine 2 mm
+        doc.addImage(auditor.stampDataURL, "PNG", stampX, stampY, STAMP_DIAM, STAMP_DIAM, undefined, "FAST");
+      } catch (e) {
+        console.warn("[nZEB] ștampilă PNG invalidă:", e?.message);
+      }
+    }
+
+    // Etichetă jos (dacă imaginile nu s-au inserat, rămâne ghid pentru zona fizică)
+    doc.setFontSize(6); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");
+    if (!auditor?.signatureDataURL && !auditor?.stampDataURL) {
+      doc.text("Semnătură + ștampilă", boxX1 + 2, y + effectiveBoxH - 2);
+    } else if (!canRenderStamp && auditor?.stampDataURL) {
+      doc.setTextColor(...COL_ERR);
+      doc.text("⚠ Ștampila Ø 40 mm nu a încăput pe pagină", boxX1 + 2, y + effectiveBoxH - 2);
+      doc.setTextColor(...COL_G);
+    }
+
+    // Caseta dreaptă — DATA ȘI LOCUL
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text("DATA ȘI LOCUL", boxX2 + 2, y + 4);
     doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
     doc.text(today, boxX2 + 2, y + 10);
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(building?.city || "—", boxX2 + 2, y + 15);
-    y += boxH + 6;
+    y += effectiveBoxH + 6;
 
     // ─── Sprint 8 mai 2026: hash autentificare + ID raport ───
     // Hash deterministic SHA-256 (16 hex) pe payload-ul cheie — permite verificare
@@ -3042,10 +3158,13 @@ export async function generateAuditReportPDF(opts) {
       ],
     });
 
-    // Caseta de semnătură
+    // Caseta de semnătură + ștampilă auditor.
+    // Sprint 8 mai 2026 — Inserare automată ștampilă Ø 40 mm (Anexa 1b Ord. 348/2026).
+    // Caseta extinsă de la 80×40 mm la 80×55 mm pentru a încadra ștampila la
+    // diametrul real legal fără a crea page break.
     y += 6;
-    y = ensureSpace(doc, y, 50, title, audName, today);
-    const sigW = 80, sigH = 40;
+    y = ensureSpace(doc, y, 65, title, audName, today);
+    const sigW = 80, sigH = 55;
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
     doc.roundedRect(15, y, sigW, sigH, 2, 2, "S");
     doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2, "S");
@@ -3056,9 +3175,30 @@ export async function generateAuditReportPDF(opts) {
     doc.text(auditor?.name || "—", 17, y + 11);
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(`Nr. atestat: ${auditor?.atestat || "—"}  ·  Grad: ${auditor?.grade || "—"}`, 17, y + 16);
-    doc.text("Semnătură + ștampilă profesională", 17, y + sigH - 4);
 
-    doc.setFontSize(7);
+    // Semnătură olografă (sub texte, ~50×12 mm)
+    if (auditor?.signatureDataURL && typeof auditor.signatureDataURL === "string") {
+      try {
+        doc.addImage(auditor.signatureDataURL, "PNG", 17, y + 21, 50, 12, undefined, "FAST");
+      } catch (e) { console.warn("[Audit] semnătură PNG invalid:", e?.message); }
+    }
+
+    // Ștampilă Ø 40 mm fix — dreapta-jos în caseta auditor (overlap parțial peste semnătură)
+    if (auditor?.stampDataURL && typeof auditor.stampDataURL === "string") {
+      try {
+        const STAMP_DIAM = 40;
+        const stampX = 15 + sigW - STAMP_DIAM - 2;
+        const stampY = y + sigH - STAMP_DIAM - 2;
+        doc.addImage(auditor.stampDataURL, "PNG", stampX, stampY, STAMP_DIAM, STAMP_DIAM, undefined, "FAST");
+      } catch (e) { console.warn("[Audit] ștampilă PNG invalid:", e?.message); }
+    }
+
+    if (!auditor?.signatureDataURL && !auditor?.stampDataURL) {
+      doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+      doc.text("Semnătură + ștampilă profesională", 17, y + sigH - 3);
+    }
+
+    doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text("DATA ȘI LOCUL ÎNTOCMIRII", w - 13 - sigW, y + 5);
     doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
     doc.text(today, w - 13 - sigW, y + 11);
@@ -3277,16 +3417,36 @@ export async function generateRehabEstimatePDF(opts) {
     y = sectionTitle(doc, "6. AUDITOR ENERGETIC", y);
     y = auditorBlock(doc, auditor, y);
 
-    // Caseta de semnătură
+    // Caseta de semnătură + ștampilă auditor.
+    // Sprint 8 mai 2026 — Anexa 1b Ord. MDLPA 348/2026 → ștampilă Ø 40 mm.
+    // Caseta extinsă de la 80×24 mm la 80×55 mm pentru a încadra ștampila
+    // la diametrul real fără page break.
     y += 4;
-    y = ensureSpace(doc, y, 32, title, audName, today);
-    const sigW = 80, sigH = 24;
+    y = ensureSpace(doc, y, 60, title, audName, today);
+    const sigW = 80, sigH = 55;
     doc.setDrawColor(...COL_G); doc.setLineWidth(0.3);
     doc.roundedRect(15, y, sigW, sigH, 2, 2, "S");
     doc.roundedRect(w - 15 - sigW, y, sigW, sigH, 2, 2, "S");
     doc.setFontSize(7); doc.setTextColor(...COL_G);
     doc.text("Semnătură auditor", 15 + sigW / 2, y + sigH + 3, { align: "center" });
-    doc.text("Ștampilă profesională", w - 15 - sigW / 2, y + sigH + 3, { align: "center" });
+    doc.text("Ștampilă auditor (Ø 40 mm — Anexa 1b Ord. 348/2026)", w - 15 - sigW / 2, y + sigH + 3, { align: "center" });
+
+    // Semnătura olografă (caseta stângă)
+    if (auditor?.signatureDataURL && typeof auditor.signatureDataURL === "string") {
+      try {
+        doc.addImage(auditor.signatureDataURL, "PNG", 20, y + 15, 70, 25, undefined, "FAST");
+      } catch (e) { console.warn("[Rehab] semnătură PNG invalid:", e?.message); }
+    }
+
+    // Ștampila Ø 40 mm centrată în caseta dreaptă
+    if (auditor?.stampDataURL && typeof auditor.stampDataURL === "string") {
+      try {
+        const STAMP_DIAM = 40;
+        const stampX = w - 15 - sigW + (sigW - STAMP_DIAM) / 2;
+        const stampY = y + (sigH - STAMP_DIAM) / 2;
+        doc.addImage(auditor.stampDataURL, "PNG", stampX, stampY, STAMP_DIAM, STAMP_DIAM, undefined, "FAST");
+      } catch (e) { console.warn("[Rehab] ștampilă PNG invalid:", e?.message); }
+    }
 
     addPageFooter(doc, "Deviz estimativ — orientativ | Mc 001-2022 | PNRR + Casa Verde", page);
 

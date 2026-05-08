@@ -2,13 +2,15 @@
  * Export pașaport renovare EPBD 2024/1275 Art. 12 — JSON + XML + clipboard + PDF.
  * Toate exporturile generează fișier download prin Blob + anchor.
  *
- * Sprint Pas 7 docs (6 mai 2026) — extindere PDF de la 1 pagină (4 secțiuni minime)
- * la 3-4 pagini A4 cu 9 secțiuni complete:
+ * Sprint Pas 7 docs (6 mai 2026) + Sprint Visual-4 (8 mai 2026)
+ *
+ * PDF cu 9 secțiuni complete + brand kit unitar verde Zephren:
  *   1. Identificare clădire (extinsă: cadastru + climă)
  *   2. Performanță energetică actuală (clasă + servicii separate)
  *   3. Țintă renovare + tabel MEPS (2030/2033/2035)
- *   4. Foaie de parcurs etapizată (faze cu costuri + clase intermediare)
- *   5. Tabel detaliat măsuri (cost, economie, CO2, durata viață, finanțare)
+ *   4. Foaie de parcurs etapizată (Sprint V4: + renderTimelineChart cu
+ *      milestones MEPS 2030/2033/2050 derivate din EPBD Art. 9)
+ *   5. Tabel detaliat măsuri
  *   6. Grafic traiectorie EP (actual → faze → țintă) + linii MEPS
  *   7. Reducere emisii CO2
  *   8. Analiză financiară (NPV, IRR, payback, finanțare disponibilă)
@@ -19,6 +21,24 @@ import { XML_SCHEMA_NAMESPACE } from "../data/renovation-passport-schema.js";
 // Sprint Conformitate P0-12 (7 mai 2026) — schema v1.0 OneClickRENO (skeleton).
 // Import static pentru a păstra exportPassportXML sync; bundle bloat ~5KB acceptabil.
 import { passportToXmlV1 } from "../data/renovation-passport-schema-v1.js";
+
+// Sprint Visual-4: brand kit unitar
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderSectionHeader,
+  renderSignatureBox,
+} from "./pdf-brand-layout.js";
+import { renderTimelineChart } from "./pdf-brand-charts.js";
 
 function defaultFilename(passport, ext) {
   const id = (passport?.passportId || "nou").slice(0, 8);
@@ -377,38 +397,64 @@ export async function exportPassportPDF(passport, options = {}) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
-  // Helper header pentru paginile 2+
+  // Sprint Visual-4: brand metadata pentru header/footer/cover
+  const passportId = passport?.passportId || passport?.generatedAt || "—";
+  const brandMeta = buildBrandMetadata({
+    title: "Pașaport Renovare — Preview EPBD",
+    cpeCode: passport?.cpeCode || `PR-${String(passportId).slice(0, 8)}`,
+    building: {
+      address: building?.address || passport?.building?.address,
+      category: building?.category || passport?.building?.category,
+      areaUseful: building?.areaUseful || passport?.building?.areaUseful,
+      year: building?.yearBuilt || passport?.building?.yearBuilt,
+      cadastral: building?.cadastralNumber || passport?.building?.cadastralNumber,
+    },
+    auditor: {
+      name: auditor?.name || passport?.auditor?.name,
+      atestat: auditor?.atestat || passport?.auditor?.certNumber,
+      grade: auditor?.grade || passport?.auditor?.category,
+      firm: auditor?.company || passport?.auditor?.firm,
+    },
+    docType: "passport",
+    version: "v4.0",
+  });
+
+  // Helper header pentru paginile 2+ (replacement cu brand kit)
   const drawHeader = () => {
-    doc.setFillColor(180, 83, 9);
-    doc.rect(0, 0, w, 18, "F");
-    doc.setFont(undefined, "bold"); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-    doc.text("PAȘAPORT RENOVARE — PREVIEW EPBD 2024", w / 2, 8, { align: "center" });
-    doc.setFont(undefined, "normal"); doc.setFontSize(7);
-    doc.setTextColor(254, 215, 170);
-    const passportId = passport?.passportId || "—";
-    doc.text(`ID: ${String(passportId).slice(0, 36)}`, w / 2, 14, { align: "center" });
+    applyBrandHeader(doc, brandMeta);
   };
 
-  // ── PAGINA 1: HEADER + Identificare + Performanță ──
-  doc.setFillColor(180, 83, 9);
-  doc.rect(0, 0, w, 36, "F");
-  doc.setFont(undefined, "bold"); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
-  doc.text("PAȘAPORT RENOVARE — PREVIEW", w / 2, 12, { align: "center" });
-  doc.setFont(undefined, "normal"); doc.setFontSize(8);
-  doc.setTextColor(254, 243, 199);
-  doc.text("Format derivat din EPBD 2024/1275 Art. 12 + Anexa VIII · termen transpunere RO 29.05.2026", w / 2, 18, { align: "center" });
-  doc.setFontSize(7); doc.setTextColor(254, 215, 170);
-  doc.text("Document fără valoare juridică în România la data emiterii", w / 2, 24, { align: "center" });
-  doc.setFontSize(8); doc.setTextColor(254, 243, 199);
-  const passportId = passport?.passportId || passport?.generatedAt || "—";
-  doc.text(`ID: ${String(passportId).slice(0, 36)}`, w / 2, 31, { align: "center" });
+  // ── PAGINA 1: HEADER brand + Identificare + Performanță ──
+  applyBrandHeader(doc, brandMeta);
 
-  let y = 46;
+  // Antet cu titlu mare + bară primary verde + ID pașaport + disclaimer
+  let y = A4.MARGIN_TOP + 4;
+  doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  doc.text("PAȘAPORT RENOVARE", w / 2, y, { align: "center" });
+  y += 6;
+  doc.setFont(undefined, "normal"); doc.setFontSize(FONT_SIZES.H3);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  doc.text("preview EPBD 2024/1275 Art. 12 + Anexa VIII", w / 2, y, { align: "center" });
+  y += 4;
+  // Bară primary
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(w / 2 - 30, y, w / 2 + 30, y);
+  y += 4;
+  // Disclaimer juridic
+  doc.setFont(undefined, "italic"); doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.WARNING, "text");
+  doc.text("Document fără valoare juridică în România la data emiterii (termen transpunere 29.05.2026)", w / 2, y, { align: "center" });
+  y += 4;
+  doc.setFont(undefined, "normal"); doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  doc.text(`ID: ${String(passportId).slice(0, 36)}`, w / 2, y, { align: "center" });
+  y += 8;
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
 
   // ── 1. IDENTIFICARE CLĂDIRE ──
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
-  doc.text("1. Identificare clădire", 14, y); y += 2;
-  doc.setDrawColor(13, 71, 161); doc.setLineWidth(0.4); doc.line(14, y, w - 14, y); y += 4;
+  y = renderSectionHeader(doc, "1. Identificare clădire", y);
 
   const b = passport?.building || {};
   const buildingFull = { ...b, ...building };
@@ -416,7 +462,8 @@ export async function exportPassportPDF(passport, options = {}) {
     startY: y,
     margin: { left: 14, right: 14 },
     theme: "grid",
-    headStyles: { fillColor: [240, 244, 248], textColor: [13, 71, 161], fontStyle: "bold", fontSize: 9 },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
     body: [
@@ -432,7 +479,7 @@ export async function exportPassportPDF(passport, options = {}) {
   y = doc.lastAutoTable.finalY + 8;
 
   // ── 2. PERFORMANȚĂ ENERGETICĂ ACTUALĂ ──
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+  doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   doc.text("2. Performanța energetică actuală", 14, y); y += 2;
   doc.line(14, y, w - 14, y); y += 4;
 
@@ -458,7 +505,7 @@ export async function exportPassportPDF(passport, options = {}) {
   y += 28;
 
   // ── 3. ȚINTĂ RENOVARE + MEPS ──
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+  doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   doc.text("3. Țintă renovare & conformitate MEPS", 14, y); y += 2;
   doc.line(14, y, w - 14, y); y += 4;
 
@@ -474,7 +521,8 @@ export async function exportPassportPDF(passport, options = {}) {
     startY: y,
     margin: { left: 14, right: 14 },
     theme: "grid",
-    headStyles: { fillColor: [240, 244, 248], textColor: [13, 71, 161], fontStyle: "bold", fontSize: 9 },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
     body: [
@@ -498,16 +546,47 @@ export async function exportPassportPDF(passport, options = {}) {
   // ── 4. FOAIE DE PARCURS ETAPIZATĂ ──
   const phases = roadmap.phases || [];
   if (phases.length > 0) {
-    y = ensureSpace(doc, y, 60, w, h, drawHeader);
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+    y = ensureSpace(doc, y, 100, w, h, drawHeader);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("4. Foaie de parcurs etapizată", 14, y); y += 2;
     doc.line(14, y, w - 14, y); y += 4;
+
+    // Sprint Visual-4: timeline chart cu MEPS milestones (EPBD Art. 9)
+    // Construire date timeline din phases:
+    // - startYear = data emiterii pașaport
+    // - phase.year = anul de finalizare al fazei
+    const passportYear = new Date().getFullYear();
+    const lastPhaseYear = Math.max(...phases.map(p => p.year || passportYear), passportYear + 1);
+    const timelineEndYear = Math.max(2050, lastPhaseYear);
+
+    const timelinePhases = phases.map((p, i) => ({
+      label: `F${i + 1}: ${(p.measures || []).map(m => m.name?.split(" ")[0] || "").slice(0, 2).join("+") || "Reno"}`,
+      startYear: i === 0 ? passportYear : (phases[i - 1].year || passportYear),
+      endYear: p.year || (passportYear + (i + 1) * 5),
+    }));
+
+    // Milestones MEPS din EPBD 2024/1275 Art. 9
+    const milestones = [
+      { year: 2030, label: "MEPS C" },
+      { year: 2033, label: "MEPS B" },
+      { year: 2050, label: "nZEB" },
+    ].filter(m => m.year >= passportYear && m.year <= timelineEndYear);
+
+    renderTimelineChart(doc, A4.MARGIN_LEFT, y, A4.CONTENT_WIDTH, 35, {
+      title: "Foaie de parcurs cronologică · MEPS EPBD Art. 9",
+      phases: timelinePhases,
+      yearStart: passportYear,
+      yearEnd: timelineEndYear,
+      milestones,
+    });
+    y += 38;
 
     doc.autoTable({
       startY: y,
       margin: { left: 14, right: 14 },
       theme: "striped",
-      headStyles: { fillColor: [13, 71, 161], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
       bodyStyles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 14, halign: "center" },
@@ -537,7 +616,7 @@ export async function exportPassportPDF(passport, options = {}) {
   );
   if (allMeasures.length > 0) {
     y = ensureSpace(doc, y, 80, w, h, drawHeader);
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("5. Detaliu măsuri recomandate", 14, y); y += 2;
     doc.line(14, y, w - 14, y); y += 4;
 
@@ -545,7 +624,8 @@ export async function exportPassportPDF(passport, options = {}) {
       startY: y,
       margin: { left: 14, right: 14 },
       theme: "grid",
-      headStyles: { fillColor: [13, 71, 161], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 7 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
         0: { cellWidth: 9, halign: "center" },
@@ -573,7 +653,7 @@ export async function exportPassportPDF(passport, options = {}) {
   // ── 6. GRAFIC TRAIECTORIE EP ──
   if ((roadmap.epTrajectory || []).length > 1) {
     y = ensureSpace(doc, y, 75, w, h, drawHeader);
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("6. Traiectorie EP — actual → țintă", 14, y); y += 2;
     doc.line(14, y, w - 14, y); y += 6;
 
@@ -613,7 +693,7 @@ export async function exportPassportPDF(passport, options = {}) {
     const Au = parseFloat(buildingFull?.areaUseful) || 0;
     const annualCO2Saved = totalCO2Reduction * Au;
 
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("7. Reducere emisii CO₂", 14, y); y += 2;
     doc.line(14, y, w - 14, y); y += 4;
 
@@ -621,7 +701,8 @@ export async function exportPassportPDF(passport, options = {}) {
       startY: y,
       margin: { left: 14, right: 14 },
       theme: "grid",
-      headStyles: { fillColor: [240, 244, 248], textColor: [13, 71, 161], fontStyle: "bold", fontSize: 9 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
       bodyStyles: { fontSize: 9 },
       columnStyles: { 0: { cellWidth: 75, fontStyle: "bold" } },
       body: [
@@ -637,7 +718,7 @@ export async function exportPassportPDF(passport, options = {}) {
   // ── 8. ANALIZĂ FINANCIARĂ + FINANȚARE ──
   const fin = passport?.financial || {};
   y = ensureSpace(doc, y, 80, w, h, drawHeader);
-  doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+  doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
   doc.text("8. Analiză financiară & surse de finanțare", 14, y); y += 2;
   doc.line(14, y, w - 14, y); y += 4;
 
@@ -646,7 +727,8 @@ export async function exportPassportPDF(passport, options = {}) {
     startY: y,
     margin: { left: 14, right: 14 },
     theme: "grid",
-    headStyles: { fillColor: [240, 244, 248], textColor: [13, 71, 161], fontStyle: "bold", fontSize: 9 },
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     bodyStyles: { fontSize: 9 },
     columnStyles: { 0: { cellWidth: 75, fontStyle: "bold" } },
     body: [
@@ -665,14 +747,15 @@ export async function exportPassportPDF(passport, options = {}) {
   const programs = getApplicableFundingPrograms(passport);
   if (programs.length > 0) {
     y = ensureSpace(doc, y, 40, w, h, drawHeader);
-    doc.setFont(undefined, "bold"); doc.setFontSize(9); doc.setTextColor(13, 71, 161);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H3); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("Surse de finanțare aplicabile (RO 2026)", 14, y); y += 4;
 
     doc.autoTable({
       startY: y,
       margin: { left: 14, right: 14 },
       theme: "striped",
-      headStyles: { fillColor: [13, 71, 161], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
       bodyStyles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 12, halign: "center" },
@@ -693,7 +776,7 @@ export async function exportPassportPDF(passport, options = {}) {
   const auditorObj = passport?.auditor || {};
   if (auditorObj.name || auditor?.name) {
     y = ensureSpace(doc, y, 30, w, h, drawHeader);
-    doc.setFont(undefined, "bold"); doc.setFontSize(11); doc.setTextColor(13, 71, 161);
+    doc.setFont(undefined, "bold"); doc.setFontSize(FONT_SIZES.H2); setBrandColor(doc, BRAND_COLORS.PRIMARY_DARK, "text");
     doc.text("9. Auditor energetic", 14, y); y += 2;
     doc.line(14, y, w - 14, y); y += 4;
 
@@ -701,7 +784,8 @@ export async function exportPassportPDF(passport, options = {}) {
       startY: y,
       margin: { left: 14, right: 14 },
       theme: "grid",
-      headStyles: { fillColor: [240, 244, 248], textColor: [13, 71, 161], fontStyle: "bold", fontSize: 9 },
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
       bodyStyles: { fontSize: 9 },
       columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
       body: [
@@ -713,28 +797,35 @@ export async function exportPassportPDF(passport, options = {}) {
     });
     y = doc.lastAutoTable.finalY + 8;
 
-    // Sprint Pas 7 docs (6 mai 2026) P1-2 — spațiu semnătură + ștampilă (ca în Deviz).
-    // Două chenare goale pe care auditorul le poate semna manual / ștampila.
-    y = ensureSpace(doc, y, 35, w, h, drawHeader);
-    const sigW = (w - 28 - 12) / 2;
-    doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.3);
-    doc.rect(14, y, sigW, 22);
-    doc.rect(14 + sigW + 12, y, sigW, 22);
-    doc.setFont(undefined, "normal"); doc.setFontSize(8); doc.setTextColor(80, 80, 80);
-    doc.text("Semnătură auditor", 14 + sigW / 2, y + 26, { align: "center" });
-    doc.text("Ștampilă profesională", 14 + sigW + 12 + sigW / 2, y + 26, { align: "center" });
-    y += 30;
+    // Sprint Visual-4: signature box-uri brand kit (replace chenare custom)
+    y = ensureSpace(doc, y, 40, w, h, drawHeader);
+    const sigW = (w - 2 * A4.MARGIN_LEFT - 8) / 2;
+    renderSignatureBox(doc, A4.MARGIN_LEFT, y, {
+      label: "AUDITOR ENERGETIC",
+      name: auditorObj.name || auditor?.name,
+      atestat: auditorObj.certNumber || auditor?.atestat,
+      date: brandMeta.dateText,
+      width: sigW,
+      height: 32,
+    });
+    renderSignatureBox(doc, A4.MARGIN_LEFT + sigW + 8, y, {
+      label: "ȘTAMPILĂ PROFESIONALĂ",
+      name: auditorObj.firm || auditor?.company || "",
+      atestat: "",
+      date: "",
+      width: sigW,
+      height: 32,
+    });
+    y += 35;
   }
 
-  // ── FOOTER toate paginile ──
+  // ── FOOTER toate paginile (brand kit applyBrandFooter) ──
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(7); doc.setTextColor(120, 120, 120);
-    doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.2);
-    doc.line(14, h - 14, w - 14, h - 14);
-    doc.text("Zephren · Pașaport intern (preview EPBD 2024) · Fără bază legală RO la data emiterii", 14, h - 10);
-    doc.text(`Pag. ${i}/${pageCount}`, w - 14, h - 10, { align: "right" });
+    applyBrandFooter(doc, brandMeta, i, pageCount, {
+      legalText: "Pașaport intern (preview EPBD 2024) · Fără bază legală RO la data emiterii (transpunere 29.05.2026)",
+    });
   }
 
   const blob = doc.output("blob");
