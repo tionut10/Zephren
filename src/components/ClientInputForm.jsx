@@ -379,8 +379,8 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
       new TableCell({
         shading: { type: ShadingType.SOLID, color: C.dark, fill: C.dark }, borders: NB,
         children: [
-          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 150, height: 45 } })], spacing: { before: 300, after: 80 }, indent: { left: 240 } })] : [
-            new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 60, bold: true, color: C.green })], spacing: { before: 300, after: 80 }, indent: { left: 240 } }),
+          ...(logoBuffer ? [new Paragraph({ children: [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 69, height: 80 } })], spacing: { before: 220, after: 60 }, indent: { left: 240 } })] : [
+            new Paragraph({ children: [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 60, bold: true, color: C.green })], spacing: { before: 220, after: 60 }, indent: { left: 240 } }),
           ]),
           new Paragraph({ children: [new TextRun({ text: "FORMULAR CLIENT — AUDIT ENERGETIC / CPE", font: "Calibri", size: 28, bold: true, color: WHITE })], spacing: { before: 0, after: 60 }, indent: { left: 240 } }),
           new Paragraph({ children: [new TextRun({ text: "Data: " + new Date().toLocaleDateString("ro-RO") + "   ·   Mc 001-2022   ·   EPBD 2024/1275", font: "Calibri", size: 17, italics: true, color: LGRAY })], spacing: { before: 0, after: 300 }, indent: { left: 240 } }),
@@ -736,20 +736,31 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
   const pageHeader = new Header({
     children: [new Table({
       width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED,
-      borders: { top: NB.top, bottom: ln(C.green, 6), left: NB.left, right: NB.right },
+      borders: { top: NB.top, bottom: ln(C.green, 8), left: NB.left, right: NB.right },
       rows: [new TableRow({ children: [
-        new TableCell({ width: { size: 28, type: WidthType.PERCENTAGE }, borders: NB,
+        // Accent verde stânga
+        new TableCell({ width: { size: 2, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: C.green, fill: C.green }, borders: NB,
+          children: [new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 0, after: 0 } })],
+        }),
+        // Logo
+        new TableCell({ width: { size: 15, type: WidthType.PERCENTAGE }, borders: NB,
+          verticalAlign: VerticalAlign.CENTER,
           children: [new Paragraph({
             children: logoBuffer
-              ? [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 90, height: 27 } })]
-              : [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 22, bold: true, color: C.green })],
-            spacing: { before: 60, after: 60 },
+              ? [new ImageRun({ data: logoBuffer, type: "png", transformation: { width: 26, height: 30 } })]
+              : [new TextRun({ text: "ZEPHREN", font: "Calibri", size: 20, bold: true, color: C.green })],
+            spacing: { before: 50, after: 50 }, indent: { left: 100 },
           })],
         }),
-        new TableCell({ borders: NB,
+        // Titlu document
+        new TableCell({ borders: NB, verticalAlign: VerticalAlign.CENTER,
           children: [new Paragraph({
-            children: [new TextRun({ text: "Formular Client — Audit Energetic / CPE  ·  " + new Date().toLocaleDateString("ro-RO"), font: "Calibri", size: 17, italics: true, color: LGRAY })],
-            alignment: AlignmentType.RIGHT, spacing: { before: 60, after: 60 },
+            children: [
+              new TextRun({ text: "Formular Client — Audit Energetic / CPE", font: "Calibri", size: 18, bold: true, color: C.dark }),
+              new TextRun({ text: "   ·   " + new Date().toLocaleDateString("ro-RO"), font: "Calibri", size: 16, italics: true, color: LGRAY }),
+            ],
+            alignment: AlignmentType.RIGHT, spacing: { before: 50, after: 50 }, indent: { right: 100 },
           })],
         }),
       ]})]
