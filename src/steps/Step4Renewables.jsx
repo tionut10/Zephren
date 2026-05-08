@@ -137,10 +137,10 @@ export default function Step4Renewables({
       <div className="flex gap-1 mb-6 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] overflow-x-auto no-scrollbar">
         {[
           {id:"solar_th",label:"Solar termic",icon:"☀️"},
-          {id:"pv",label:"Fotovoltaic",icon:"🔋"},
           {id:"heat_pump",label:"Pompe căldură",icon:"♨️"},
+          {id:"pv",label:"Fotovoltaic",icon:"🔋"},
           {id:"biomass",label:"Biomasă",icon:"🌳"},
-          {id:"other",label:"Eolian/CHP",icon:"🌬️"},
+          {id:"other",label:"CHP / Eolian",icon:"⚡"},
         ].map(tab => (
           <button key={tab.id} onClick={() => setRenewSubTab(tab.id)}
             className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
@@ -167,6 +167,8 @@ export default function Step4Renewables({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                       <Select label={t("Tip colector",lang)} value={solarThermal.type} onChange={v => setSolarThermal(p=>({...p,type:v}))}
                         options={buildMergedOptions(SOLAR_THERMAL_TYPES, SOLAR_THERMAL_EXT, lang)} />
+                      <Input label={t("Randament optic (eta_0)",lang)} value={solarThermal.eta0} onChange={v => setSolarThermal(p=>({...p,eta0:v}))} type="number" step="0.01" />
+                      <Input label={t("Coeficient pierderi (a1)",lang)} value={solarThermal.a1} onChange={v => setSolarThermal(p=>({...p,a1:v}))} type="number" unit="W/(m2K)" step="0.1" />
                       <Input label={t("Suprafață colectoare",lang)} value={solarThermal.area} onChange={v => setSolarThermal(p=>({...p,area:v}))} type="number" unit="m2" min="0" step="0.1" />
                       <Select label={t("Orientare",lang)} value={solarThermal.orientation} onChange={v => setSolarThermal(p=>({...p,orientation:v}))}
                         options={ORIENTATIONS.filter(o=>o!=="Orizontal")} />
@@ -175,8 +177,6 @@ export default function Step4Renewables({
                       <Select label={t("Utilizare",lang)} value={solarThermal.usage} onChange={v => setSolarThermal(p=>({...p,usage:v}))}
                         options={[{value:"acm",label:t("Doar ACM",lang)},{value:"heating",label:t("Doar încălzire",lang)},{value:"both",label:t("ACM + Încălzire",lang)}]} />
                       <Input label={t("Volum stocare",lang)} value={solarThermal.storageVolume} onChange={v => setSolarThermal(p=>({...p,storageVolume:v}))} type="number" unit="litri" placeholder="50-80 l/m2" />
-                      <Input label={t("Randament optic (eta_0)",lang)} value={solarThermal.eta0} onChange={v => setSolarThermal(p=>({...p,eta0:v}))} type="number" step="0.01" />
-                      <Input label={t("Coeficient pierderi (a1)",lang)} value={solarThermal.a1} onChange={v => setSolarThermal(p=>({...p,a1:v}))} type="number" unit="W/(m2K)" step="0.1" />
                     </div>
                   )}
 
@@ -254,18 +254,18 @@ export default function Step4Renewables({
                           PV_CELLS_EXT,
                           lang
                         )} />
-                      <Input label={t("Suprafață panouri",lang)} value={photovoltaic.area} onChange={v => setPhotovoltaic(p=>({...p,area:v}))} type="number" unit="m2" min="0" step="0.1" />
                       <Input label={t("Putere de varf instalată",lang)} value={photovoltaic.peakPower} onChange={v => setPhotovoltaic(p=>({...p,peakPower:v}))} type="number" unit="kWp" step="0.01" />
-                      <Select label={t("Orientare",lang)} value={photovoltaic.orientation} onChange={v => setPhotovoltaic(p=>({...p,orientation:v}))}
-                        options={ORIENTATIONS.filter(o=>o!=="Orizontal").concat(["Orizontal"])} />
-                      <Select label={t("Inclinare",lang)} value={photovoltaic.tilt} onChange={v => setPhotovoltaic(p=>({...p,tilt:v}))}
-                        options={Object.keys(TILT_FACTORS).map(k=>({value:k,label:`${k}° (factor ${TILT_FACTORS[k]})`}))} />
                       <Select label={t("Tip invertor",lang)} value={photovoltaic.inverterType} onChange={v => setPhotovoltaic(p=>({...p,inverterType:v}))}
                         options={buildMergedOptions(
                           PV_INVERTER_ETA.map(s => ({...s, label: `${s.label} (${(s.eta*100).toFixed(0)}%)`})),
                           PV_INVERTERS_EXT,
                           lang
                         )} />
+                      <Input label={t("Suprafață panouri",lang)} value={photovoltaic.area} onChange={v => setPhotovoltaic(p=>({...p,area:v}))} type="number" unit="m2" min="0" step="0.1" />
+                      <Select label={t("Orientare",lang)} value={photovoltaic.orientation} onChange={v => setPhotovoltaic(p=>({...p,orientation:v}))}
+                        options={ORIENTATIONS.filter(o=>o!=="Orizontal").concat(["Orizontal"])} />
+                      <Select label={t("Inclinare",lang)} value={photovoltaic.tilt} onChange={v => setPhotovoltaic(p=>({...p,tilt:v}))}
+                        options={Object.keys(TILT_FACTORS).map(k=>({value:k,label:`${k}° (factor ${TILT_FACTORS[k]})`}))} />
                       <Select label={t("Utilizare energie",lang)} value={photovoltaic.usage} onChange={v => setPhotovoltaic(p=>({...p,usage:v}))}
                         options={[{value:"all",label:t("Toate utilitățile",lang)},{value:"lighting",label:t("Doar iluminat",lang)},{value:"hvac",label:t("HVAC + ventilare",lang)},{value:"export",label:t("Export în rețea",lang)}]} />
                     </div>
@@ -404,11 +404,11 @@ export default function Step4Renewables({
                         HEAT_PUMPS_EXT,
                         lang
                       )} />
+                      <Select label={t("Acoperire",lang)} value={heatPump.covers} onChange={v => setHeatPump(p=>({...p,covers:v}))}
+                        options={[{value:"heating",label:t("Doar încălzire",lang)},{value:"acm",label:t("Doar ACM",lang)},{value:"heating_acm",label:t("Încălzire + ACM",lang)}]} />
                       <Input label={t("COP nominal",lang)} value={heatPump.cop} onChange={v => setHeatPump(p=>({...p,cop:v}))} type="number" step="0.1" />
                       <Input label={t("SCOP sezonier incalzire",lang)} value={heatPump.scopHeating} onChange={v => setHeatPump(p=>({...p,scopHeating:v}))} type="number" step="0.1"
                         placeholder={`~${(parseFloat(heatPump.cop)*0.85).toFixed(1)}`} />
-                      <Select label={t("Acoperire",lang)} value={heatPump.covers} onChange={v => setHeatPump(p=>({...p,covers:v}))}
-                        options={[{value:"heating",label:t("Doar încălzire",lang)},{value:"acm",label:t("Doar ACM",lang)},{value:"heating_acm",label:t("Încălzire + ACM",lang)}]} />
                       <Input label={t("Temp. bivalentă",lang)} value={heatPump.bivalentTemp} onChange={v => setHeatPump(p=>({...p,bivalentTemp:v}))} type="number" unit="°C" />
                       <Select label={t("Sursă auxiliară (bivalent)",lang)} value={heatPump.auxSource} onChange={v => setHeatPump(p=>({...p,auxSource:v}))}
                         options={HEAT_SOURCES.filter(s=>!s.isCOP).slice(0,5).map(s=>({value:s.id,label:s.label}))} />
@@ -450,6 +450,14 @@ export default function Step4Renewables({
 
                   {biomass.enabled && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                      <Select label={t("Tip cazan / sobă",lang)} value={biomass.boilerType || ""} onChange={v => {
+                        const ext = BIOMASS_BOILERS_EXT.find(e => e.id === v);
+                        setBiomass(p => ({
+                          ...p,
+                          boilerType: v,
+                          ...(ext?.etaNominal && !p.boilerEta ? { boilerEta: ext.etaNominal.toString() } : {}),
+                        }));
+                      }} options={[{value:"",label:t("— Selectează —",lang)}, ...buildExtOptions(BIOMASS_BOILERS_EXT, lang)]} />
                       <Select label={t("Tip combustibil biomasă",lang)} value={biomass.type} onChange={v => setBiomass(p=>({...p,type:v}))}
                         options={buildMergedOptions(
                           BIOMASS_TYPES.map(s => ({...s, label: `${s.label} (PCI=${s.pci} MJ/kg)`})),
@@ -486,16 +494,8 @@ export default function Step4Renewables({
                 <Card title={t("Tip cazan / sobă biomasă",lang)}>
                   <div className="space-y-3">
                     <div className="text-[11px] opacity-50">
-                      {t("Selectează tipul de cazan sau sobă pentru a obține parametri tehnici (η, clasa EN 303-5, emisii PM).",lang)}
+                      {t("Specificații tehnice echipament selectat (η, clasa EN 303-5, emisii PM).",lang)}
                     </div>
-                    <Select label={t("Tip echipament",lang)} value={biomass.boilerType || ""} onChange={v => {
-                      const ext = BIOMASS_BOILERS_EXT.find(e => e.id === v);
-                      setBiomass(p => ({
-                        ...p,
-                        boilerType: v,
-                        ...(ext?.etaNominal && !p.boilerEta ? { boilerEta: ext.etaNominal.toString() } : {}),
-                      }));
-                    }} options={[{value:"",label:t("— Selectează —",lang)}, ...buildExtOptions(BIOMASS_BOILERS_EXT, lang)]} />
 
                     {biomass.boilerType && (() => {
                       const ext = BIOMASS_BOILERS_EXT.find(e => e.id === biomass.boilerType);
@@ -519,72 +519,6 @@ export default function Step4Renewables({
           {/* ── EOLIAN / COGENERARE ── */}
           {renewSubTab === "other" && (
             <>
-              <Card title={t("Energie eoliană",lang)}>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={otherRenew.windEnabled} onChange={e => setOtherRenew(p=>({...p,windEnabled:e.target.checked}))} className="accent-emerald-500" />
-                    <span className="font-medium">{t("Turbină eoliană",lang)}</span>
-                  </label>
-                  {otherRenew.windEnabled && (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                        <Select label={t("Tip turbină",lang)} value={otherRenew.windType || ""} onChange={v => {
-                          const ext = WIND_TURBINES_EXT.find(e => e.id === v);
-                          const avgKwh = ext ? Math.round((ext.aey5MinKWh + ext.aey5MaxKWh) / 2) : null;
-                          const avgPowerKw = ext ? ((ext.powerKwMin + ext.powerKwMax) / 2).toFixed(1) : null;
-                          setOtherRenew(p => ({
-                            ...p,
-                            windType: v,
-                            ...(avgPowerKw && !p.windCapacity ? { windCapacity: avgPowerKw } : {}),
-                            ...(avgKwh && !p.windProduction ? { windProduction: avgKwh.toString() } : {}),
-                          }));
-                        }} options={buildExtOptions(WIND_TURBINES_EXT, lang)} />
-                        <div /> {/* spacer */}
-                        <Input label={t("Capacitate instalată",lang)} value={otherRenew.windCapacity} onChange={v => setOtherRenew(p=>({...p,windCapacity:v}))} type="number" unit="kW" />
-                        <Input label={t("Producție anuală estimată",lang)} value={otherRenew.windProduction} onChange={v => setOtherRenew(p=>({...p,windProduction:v}))} type="number" unit="kWh/an" />
-                      </div>
-
-                      {/* Detalii turbină selectată */}
-                      {otherRenew.windType && (() => {
-                        const ext = WIND_TURBINES_EXT.find(e => e.id === otherRenew.windType);
-                        if (!ext) return null;
-                        return (
-                          <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-lg p-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">{t("Specificații tehnice",lang)} — IEC 61400-2 cls. {ext.iecClass || "—"}</div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Putere",lang)}</div>
-                                <div className="font-mono">{ext.powerKwMin}-{ext.powerKwMax} kW</div>
-                              </div>
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Cut-in / nominal",lang)}</div>
-                                <div className="font-mono">{ext.cutIn} / {ext.rated} m/s</div>
-                              </div>
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Diametru rotor",lang)}</div>
-                                <div className="font-mono">{ext.rotorMin}-{ext.rotorMax} m</div>
-                              </div>
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Înălțime hub",lang)}</div>
-                                <div className="font-mono">{ext.hubMin}-{ext.hubMax} m</div>
-                              </div>
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Producție @ 5 m/s",lang)}</div>
-                                <div className="font-mono">{ext.aey5MinKWh.toLocaleString("ro-RO")}-{ext.aey5MaxKWh.toLocaleString("ro-RO")} kWh/an</div>
-                              </div>
-                              <div className="bg-white/[0.02] rounded p-2">
-                                <div className="opacity-40">{t("Zgomot la 25 m",lang)}</div>
-                                <div className="font-mono">{ext.noiseDb} dB(A)</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </>
-                  )}
-                </div>
-              </Card>
-
               <Card title={t("Cogenerare (CHP)",lang)}>
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -659,6 +593,72 @@ export default function Step4Renewables({
                 </div>
               </Card>
 
+              <Card title={t("Energie eoliană",lang)}>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={otherRenew.windEnabled} onChange={e => setOtherRenew(p=>({...p,windEnabled:e.target.checked}))} className="accent-emerald-500" />
+                    <span className="font-medium">{t("Turbină eoliană",lang)}</span>
+                  </label>
+                  {otherRenew.windEnabled && (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <Select label={t("Tip turbină",lang)} value={otherRenew.windType || ""} onChange={v => {
+                          const ext = WIND_TURBINES_EXT.find(e => e.id === v);
+                          const avgKwh = ext ? Math.round((ext.aey5MinKWh + ext.aey5MaxKWh) / 2) : null;
+                          const avgPowerKw = ext ? ((ext.powerKwMin + ext.powerKwMax) / 2).toFixed(1) : null;
+                          setOtherRenew(p => ({
+                            ...p,
+                            windType: v,
+                            ...(avgPowerKw && !p.windCapacity ? { windCapacity: avgPowerKw } : {}),
+                            ...(avgKwh && !p.windProduction ? { windProduction: avgKwh.toString() } : {}),
+                          }));
+                        }} options={buildExtOptions(WIND_TURBINES_EXT, lang)} />
+                        <div /> {/* spacer */}
+                        <Input label={t("Capacitate instalată",lang)} value={otherRenew.windCapacity} onChange={v => setOtherRenew(p=>({...p,windCapacity:v}))} type="number" unit="kW" />
+                        <Input label={t("Producție anuală estimată",lang)} value={otherRenew.windProduction} onChange={v => setOtherRenew(p=>({...p,windProduction:v}))} type="number" unit="kWh/an" />
+                      </div>
+
+                      {/* Detalii turbină selectată */}
+                      {otherRenew.windType && (() => {
+                        const ext = WIND_TURBINES_EXT.find(e => e.id === otherRenew.windType);
+                        if (!ext) return null;
+                        return (
+                          <div className="mt-3 bg-white/[0.02] border border-white/[0.06] rounded-lg p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider opacity-40 mb-2">{t("Specificații tehnice",lang)} — IEC 61400-2 cls. {ext.iecClass || "—"}</div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Putere",lang)}</div>
+                                <div className="font-mono">{ext.powerKwMin}-{ext.powerKwMax} kW</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Cut-in / nominal",lang)}</div>
+                                <div className="font-mono">{ext.cutIn} / {ext.rated} m/s</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Diametru rotor",lang)}</div>
+                                <div className="font-mono">{ext.rotorMin}-{ext.rotorMax} m</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Înălțime hub",lang)}</div>
+                                <div className="font-mono">{ext.hubMin}-{ext.hubMax} m</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Producție @ 5 m/s",lang)}</div>
+                                <div className="font-mono">{ext.aey5MinKWh.toLocaleString("ro-RO")}-{ext.aey5MaxKWh.toLocaleString("ro-RO")} kWh/an</div>
+                              </div>
+                              <div className="bg-white/[0.02] rounded p-2">
+                                <div className="opacity-40">{t("Zgomot la 25 m",lang)}</div>
+                                <div className="font-mono">{ext.noiseDb} dB(A)</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
+              </Card>
+
               {/* ── PROXIMITATE 30 km GPS (L.238/2024 Art.6) ── */}
               <Card title={t("Regenerabile în proximitate (≤30 km GPS)",lang)}>
                 <div className="space-y-3">
@@ -720,8 +720,8 @@ export default function Step4Renewables({
                   <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">{t("Producție per sursă",lang)}</div>
                   {[
                     {label:"Solar termic", val:renewSummary.qSolarTh, enabled:solarThermal.enabled, color:"#f59e0b"},
-                    {label:"Fotovoltaic", val:renewSummary.qPV_kWh, enabled:photovoltaic.enabled, color:"#3b82f6"},
                     {label:"PC ambientală", val:renewSummary.qPC_ren, enabled:heatPump.enabled, color:"#8b5cf6"},
+                    {label:"Fotovoltaic", val:renewSummary.qPV_kWh, enabled:photovoltaic.enabled, color:"#3b82f6"},
                     {label:"Biomasă", val:renewSummary.qBio_ren, enabled:biomass.enabled, color:"#22c55e"},
                     {label:"Eolian", val:renewSummary.qWind, enabled:otherRenew.windEnabled, color:"#06b6d4"},
                   ].filter(i=>i.enabled).map(item => {
