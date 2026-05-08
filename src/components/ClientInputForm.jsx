@@ -388,41 +388,154 @@ async function exportDOCX(data, planuri = [], isBlank = false, isWordInteractive
       }),
     ]})]
   }));
-  addCover(gapCover(320));
+  addCover(gapCover(160));
 
-  // Card sumar date solicitant (doar formulare completate)
-  if (!isBlank && (has("numeProprietar") || has("adresaCompleta"))) {
-    const buildingTypeLabel = { casa_unifamiliala: "Casă unifamilială", apartament: "Apartament în bloc", bloc_locuinte: "Bloc de locuințe", birouri: "Clădire de birouri", comercial: "Spațiu comercial", institutie: "Instituție publică", industrial: "Hală industrială", altul: "Alt tip" };
-    const tipCladire = data["tipĆlădire"] || data["tipClădire"] || "";
-    const summaryRows = [
-      ["Proprietar", v("numeProprietar")],
-      ["Telefon", v("telefonProprietar")],
-      ["Email", v("emailProprietar")],
-      ["Adresă clădire", [v("adresaCompleta"), v("localitate"), v("judet")].filter(Boolean).join(", ")],
-      ["Tip clădire", buildingTypeLabel[tipCladire] || tipCladire],
-      ["Scop solicitare", v("scopulCPE")],
-    ].filter(([, val]) => val).map(([label, value]) => new TableRow({ children: [
-      new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.greenLt, fill: C.greenLt }, borders: allBd(), verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({ children: [new TextRun({ text: label, font: "Calibri", size: 19, bold: true, color: C.greenDk })], spacing: { before: 80, after: 80 }, indent: { left: 140 } })] }),
-      new TableCell({ shading: { type: ShadingType.SOLID, color: WHITE, fill: WHITE }, borders: { top: ln(BORDER), bottom: ln(BORDER), left: ln(C.green, 14), right: ln(BORDER) }, verticalAlign: VerticalAlign.CENTER,
-        children: [new Paragraph({ children: [new TextRun({ text: value, font: "Calibri", size: 20, bold: true, color: DARK })], spacing: { before: 80, after: 80 }, indent: { left: 160 } })] }),
-    ]}));
-    if (summaryRows.length) addCover(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, borders: allBd(), rows: summaryRows }));
+  if (isBlank) {
+    // ── COPERTĂ FORMULAR GOL — instrucțiuni + grid secțiuni ──────────────────
+
+    // Intro albastru
+    addCover(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE }, borders: NB,
+      rows: [new TableRow({ children: [new TableCell({
+        shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
+        borders: { top: ln("BFDBFE", 6), bottom: ln("BFDBFE", 6), left: ln("3B82F6", 18), right: ln("BFDBFE", 6) },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "  Stimate proprietar,", font: "Calibri", size: 22, bold: true, color: "1E3A8A" })], spacing: { before: 100, after: 50 } }),
+          new Paragraph({ children: [new TextRun({ text: "  Vă rugăm să completați câmpurile de mai jos cu informațiile disponibile despre clădirea dumneavoastră şi să transmiteți documentul auditorului energetic înainte de inspecție. Câmpurile marcate cu ✱ sunt obligatorii.", font: "Calibri", size: 20, color: BLUE })], spacing: { before: 0, after: 100 } }),
+        ],
+      })] })]
+    }));
+    addCover(gapCover(180));
+
+    // Card "Date auditor" + "Instrucțiuni" side by side
+    addCover(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, borders: NB,
+      rows: [new TableRow({ children: [
+        // Stânga: Date auditor
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: C.greenLt, fill: C.greenLt },
+          borders: { top: allBd(C.green).top, bottom: allBd(C.green).bottom, left: allBd(C.green).left, right: ln(C.border) },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "AUDITOR ENERGETIC", font: "Calibri", size: 18, bold: true, color: C.greenDk })], spacing: { before: 120, after: 80 }, indent: { left: 160 } }),
+            ...[
+              ["Nume şi prenume:", "numeAuditor"],
+              ["Nr. atestat MLPAT/MDLPA:", "nrAtestat"],
+              ["Telefon:", "telAuditor"],
+              ["Email:", "emailAuditor"],
+              ["Firmă / PFA:", "firmaAuditor"],
+            ].map(([lbl]) => new Paragraph({
+              children: [
+                new TextRun({ text: lbl + "  ", font: "Calibri", size: 18, bold: true, color: C.gray }),
+                new TextRun({ text: "." .repeat(30), font: "Calibri", size: 18, color: C.line }),
+              ],
+              spacing: { before: 50, after: 50 }, indent: { left: 160 },
+            })),
+            new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 60, after: 0 } }),
+          ],
+        }),
+        // Dreapta: Instrucțiuni
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          shading: { type: ShadingType.SOLID, color: C.light, fill: C.light },
+          borders: { top: allBd().top, bottom: allBd().bottom, left: ln(C.border), right: allBd().right },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "CUM SE COMPLETEAZĂ", font: "Calibri", size: 18, bold: true, color: DARK })], spacing: { before: 120, after: 80 }, indent: { left: 160 } }),
+            ...[
+              "✱  Câmpurile cu asterisc sunt obligatorii",
+              "✓  Bifați documentele pe care le aveți",
+              "✎  Completați cu pixul sau direct în Word",
+              "⚠  Nu lăsați câmpuri obligatorii necompletate",
+              "📧  Trimiteți la adresa de email a auditorului",
+            ].map(txt => new Paragraph({
+              children: [new TextRun({ text: txt, font: "Calibri", size: 18, color: C.gray })],
+              spacing: { before: 50, after: 50 }, indent: { left: 160 },
+            })),
+            new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 60, after: 0 } }),
+          ],
+        }),
+      ]})]
+    }));
     addCover(gapCover(200));
-  }
 
-  // Nota intro pe coperta
-  addCover(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE }, borders: NB,
-    rows: [new TableRow({ children: [new TableCell({
-      shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
-      borders: { top: ln("BFDBFE", 6), bottom: ln("BFDBFE", 6), left: ln("3B82F6", 18), right: ln("BFDBFE", 6) },
+    // Grid secțiuni — 2 coloane × 4 rânduri
+    const sectionDefs = [
+      ["1", "Date de identificare", "Proprietar, contact, adresă, tip clădire, scop audit"],
+      ["2", "Dimensiunile clădirii", "Suprafețe, număr niveluri, subsol, pod"],
+      ["3", "Sistemul de încălzire", "Sursă termică, combustibil, cazan/pompă"],
+      ["4", "Apă caldă menajeră", "Mod preparare ACM, boiler, solar termic"],
+      ["5", "Răcire şi climatizare", "Sistem aer condiționat, tip, putere"],
+      ["6", "Surse regenerabile", "Panouri PV, solar termic, alte surse verzi"],
+      ["7", "Consumuri energetice", "Facturi gaz, electricitate, termoficare, lemne"],
+      ["8", "Documente disponibile", "Acte proprietate, planuri, cărți tehnice, facturi"],
+    ];
+
+    const sectionCell = ([nr, title, desc]) => new TableCell({
+      width: { size: 50, type: WidthType.PERCENTAGE },
+      shading: { type: ShadingType.SOLID, color: WHITE, fill: WHITE },
+      borders: allBd(C.border),
       children: [
-        new Paragraph({ children: [new TextRun({ text: "  Stimate proprietar,", font: "Calibri", size: 22, bold: true, color: "1E3A8A" })], spacing: { before: 100, after: 60 } }),
-        new Paragraph({ children: [new TextRun({ text: "  Vă rugăm să completați câmpurile de mai jos cu informațiile disponibile despre clădirea dumneavoastră şi să transmiteți documentul auditorului energetic înainte de inspecție. Câmpurile marcate cu ✱ sunt obligatorii.", font: "Calibri", size: 20, color: BLUE })], spacing: { before: 0, after: 100 } }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: nr + "  ", font: "Calibri", size: 24, bold: true, color: C.green }),
+            new TextRun({ text: title, font: "Calibri", size: 20, bold: true, color: DARK }),
+          ],
+          spacing: { before: 90, after: 30 }, indent: { left: 140 },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: desc, font: "Calibri", size: 17, italics: true, color: GRAY })],
+          spacing: { before: 0, after: 90 }, indent: { left: 140 },
+        }),
       ],
-    })] })]
-  }));
+    });
+
+    for (let i = 0; i < sectionDefs.length; i += 2) {
+      addCover(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, borders: NB,
+        rows: [new TableRow({ children: [
+          sectionCell(sectionDefs[i]),
+          new TableCell({ width: { size: 2, type: WidthType.PERCENTAGE }, borders: NB, shading: { type: ShadingType.SOLID, color: C.light, fill: C.light }, children: [new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 0, after: 0 } })] }),
+          sectionCell(sectionDefs[i + 1]),
+        ]})]
+      }));
+      if (i < 6) addCover(gapCover(60));
+    }
+
+  } else {
+    // ── COPERTĂ FORMULAR COMPLETAT — card sumar date ──────────────────────────
+    if (has("numeProprietar") || has("adresaCompleta")) {
+      const buildingTypeLabel = { casa_unifamiliala: "Casă unifamilială", apartament: "Apartament în bloc", bloc_locuinte: "Bloc de locuințe", birouri: "Clădire de birouri", comercial: "Spațiu comercial", institutie: "Instituție publică", industrial: "Hală industrială", altul: "Alt tip" };
+      const tipCladire = data["tipĆlădire"] || data["tipClădire"] || "";
+      const summaryRows = [
+        ["Proprietar", v("numeProprietar")],
+        ["Telefon", v("telefonProprietar")],
+        ["Email", v("emailProprietar")],
+        ["Adresă clădire", [v("adresaCompleta"), v("localitate"), v("judet")].filter(Boolean).join(", ")],
+        ["Tip clădire", buildingTypeLabel[tipCladire] || tipCladire],
+        ["Scop solicitare", v("scopulCPE")],
+      ].filter(([, val]) => val).map(([label, value]) => new TableRow({ children: [
+        new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.SOLID, color: C.greenLt, fill: C.greenLt }, borders: allBd(), verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ children: [new TextRun({ text: label, font: "Calibri", size: 19, bold: true, color: C.greenDk })], spacing: { before: 80, after: 80 }, indent: { left: 140 } })] }),
+        new TableCell({ shading: { type: ShadingType.SOLID, color: WHITE, fill: WHITE }, borders: { top: ln(BORDER), bottom: ln(BORDER), left: ln(C.green, 14), right: ln(BORDER) }, verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({ children: [new TextRun({ text: value, font: "Calibri", size: 20, bold: true, color: DARK })], spacing: { before: 80, after: 80 }, indent: { left: 160 } })] }),
+      ]}));
+      if (summaryRows.length) addCover(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, layout: TableLayoutType.FIXED, borders: allBd(), rows: summaryRows }));
+      addCover(gapCover(200));
+    }
+
+    // Nota intro pe coperta
+    addCover(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE }, borders: NB,
+      rows: [new TableRow({ children: [new TableCell({
+        shading: { type: ShadingType.SOLID, color: C.blueLight, fill: C.blueLight },
+        borders: { top: ln("BFDBFE", 6), bottom: ln("BFDBFE", 6), left: ln("3B82F6", 18), right: ln("BFDBFE", 6) },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "  Stimate proprietar,", font: "Calibri", size: 22, bold: true, color: "1E3A8A" })], spacing: { before: 100, after: 60 } }),
+          new Paragraph({ children: [new TextRun({ text: "  Vă rugăm să completați câmpurile de mai jos cu informațiile disponibile despre clădirea dumneavoastră şi să transmiteți documentul auditorului energetic înainte de inspecție. Câmpurile marcate cu ✱ sunt obligatorii.", font: "Calibri", size: 20, color: BLUE })], spacing: { before: 0, after: 100 } }),
+        ],
+      })] })]
+    }));
+  }
 
   // ── CONTINUT (section 2 cu header/footer) ──────────────────────────────────
 
