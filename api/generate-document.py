@@ -554,8 +554,8 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                             spacer_pPr = _OxEl_sp("w:pPr")
                             spacer_spacing = _OxEl_sp("w:spacing")
                             spacer_spacing.set(_qn_reord("w:before"), "0")
-                            spacer_spacing.set(_qn_reord("w:after"), "120")  # 120 twips = 6mm
-                            spacer_spacing.set(_qn_reord("w:line"), "60")    # line height mică
+                            spacer_spacing.set(_qn_reord("w:after"), "300")  # 300 twips = ~15mm spațiu
+                            spacer_spacing.set(_qn_reord("w:line"), "120")   # line height ~6mm
                             spacer_spacing.set(_qn_reord("w:lineRule"), "exact")
                             spacer_pPr.append(spacer_spacing)
                             spacer.append(spacer_pPr)
@@ -654,7 +654,7 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                 except Exception:
                     pass
 
-                # 1. SEMNĂTURA olografă — ANCHORED la „* valori calculate" + offset jos
+                # 1. SEMNĂTURA olografă — ridicată cu 2 cm (cerere utilizator: vizibilă complet)
                 if signature_b64:
                     sig_bytes = base64.b64decode(signature_b64)
                     sig_run = anchor_para.add_run()
@@ -664,15 +664,15 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                         ok = _convert_drawing_to_anchor(
                             drawings_sig[-1],
                             dx_cm=11.5,   # x = 11.5 cm dreapta marginii
-                            dy_cm=2.5,    # 2.5 cm sub paragraf „* valori" → la nivelul
-                                          # textului „Semnătura și ștampila auditorului"
+                            dy_cm=0.5,    # 0.5 cm sub paragraf „* valori" → ridicată cu 2cm
+                                          # vs versiunea anterioară (era 2.5)
                             behind=False,
                             relative_to_page=False,
                         )
                         if not ok:
                             pass
 
-                # 2. ȘTAMPILA Ø 40 mm — ACELAȘI loc, suprapusă peste semnătură
+                # 2. ȘTAMPILA Ø 40 mm — ridicată cu 2 cm pentru a fi vizibilă complet
                 if stamp_b64:
                     stamp_bytes = base64.b64decode(stamp_b64)
                     stamp_run = anchor_para.add_run()
@@ -682,8 +682,8 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                         ok = _convert_drawing_to_anchor(
                             drawings_st[-1],
                             dx_cm=12.0,    # centru aliniat cu semnătura (la 14 cm)
-                            dy_cm=1.0,     # 1 cm sub paragraf → centrul ștampilei la
-                                           # ~3 cm sub note → suprapunere peste semnătură
+                            dy_cm=-1.0,    # -1 cm DEASUPRA paragrafului → ridicată cu 2cm
+                                           # vs versiunea anterioară (era +1)
                             behind=False,
                             relative_to_page=False,
                         )
