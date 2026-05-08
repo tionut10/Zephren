@@ -403,18 +403,78 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
   const bridges  = Array.isArray(data?.bridges) ? data.bridges : [];
   const systems  = data?.systems || {};
 
+  // Sprint 8 mai 2026 — Branding extins (audit raport: design rudimentar fără
+  // header brand + info clădire). Adăugăm bandă brand verde + informații
+  // identificare clădire + auditor + dată pentru acoperire profesională.
+  const building = options?.building || {};
+  const auditor = options?.auditor || building?.auditor || {};
+  const todayRO = new Date().toLocaleDateString("ro-RO");
+
   const children = [
+    // Banda brand „Zephren" în culoare PRIMARY (replica header PDF)
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      children: [
+        new TextRun({ text: "Z", bold: true, size: 28, color: DOCX_BRAND.PRIMARY }),
+        new TextRun({ text: "ephren", bold: true, size: 28, color: DOCX_BRAND.SLATE_900 }),
+        new TextRun({ text: "  ·  Energy Performance Calculator", size: 16, color: DOCX_BRAND.SLATE_500, italics: true }),
+      ],
+    }),
+    new Paragraph({
+      border: { bottom: { color: DOCX_BRAND.PRIMARY, space: 1, style: BorderStyle.SINGLE, size: 12 } },
+      children: [new TextRun({ text: "", size: 1 })],
+    }),
+    new Paragraph({ text: "" }),
+    // Titlu principal cu PRIMARY accent
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: "ANEXE TEHNICE COMPLETE — DOSAR AUDIT", bold: true, size: 32 })],
+      children: [new TextRun({
+        text: "ANEXE TEHNICE COMPLETE — DOSAR AUDIT",
+        bold: true, size: 32, color: DOCX_BRAND.PRIMARY_DARK,
+      })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       children: [new TextRun({
         text: "Opace + Vitraj + Punți termice + Sisteme HVAC · Mc 001-2022 + SR EN ISO 6946:2017",
-        size: 18, color: DOCX_BRAND.SLATE_500, italics: true, // Sprint V8: brand SLATE_500
+        size: 18, color: DOCX_BRAND.SLATE_500, italics: true,
       })],
+    }),
+    new Paragraph({ text: "" }),
+    // Bloc identificare clădire + auditor (banner SLATE_50)
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.PRIMARY },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: DOCX_BRAND.PRIMARY },
+        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_BRAND.SLATE_200 },
+        insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+      },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              shading: { fill: DOCX_BRAND.SLATE_50 },
+              children: [
+                new Paragraph({ children: [new TextRun({ text: "Adresă: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: building.address || "—", size: 18 })] }),
+                new Paragraph({ children: [new TextRun({ text: "Categorie: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: `${building.category || "—"}`, size: 18 })] }),
+                new Paragraph({ children: [new TextRun({ text: "Au: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: `${building.areaUseful || "—"} m²`, size: 18 })] }),
+              ],
+            }),
+            new TableCell({
+              shading: { fill: DOCX_BRAND.SLATE_50 },
+              children: [
+                new Paragraph({ children: [new TextRun({ text: "Auditor: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: auditor.name || "—", size: 18 })] }),
+                new Paragraph({ children: [new TextRun({ text: "Atestat: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: `${auditor.atestat || "—"} / ${auditor.grade || "—"}`, size: 18 })] }),
+                new Paragraph({ children: [new TextRun({ text: "Data: ", bold: true, size: 18, color: DOCX_BRAND.SLATE_700 }), new TextRun({ text: todayRO, size: 18 })] }),
+              ],
+            }),
+          ],
+        }),
+      ],
     }),
     new Paragraph({ text: "" }),
   ];
@@ -426,7 +486,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     sectionsCount++;
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: "1. Elemente opace", bold: true, size: 28 })],
+      children: [new TextRun({ text: "1. Elemente opace", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
     }));
     opaque.forEach((el, idx) => {
       const metrics = computeElementMetrics(el);
@@ -457,7 +517,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     if (children.length > 4) children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: "2. Elemente vitrate", bold: true, size: 28 })],
+      children: [new TextRun({ text: "2. Elemente vitrate", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
     }));
     const tblRows = [
       new TableRow({
@@ -509,7 +569,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: "3. Punți termice liniare", bold: true, size: 28 })],
+      children: [new TextRun({ text: "3. Punți termice liniare", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
     }));
     const tblRows = [
       new TableRow({
@@ -563,7 +623,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: "4. Sisteme tehnice (HVAC + ACM + Iluminat)", bold: true, size: 28 })],
+      children: [new TextRun({ text: "4. Sisteme tehnice (HVAC + ACM + Iluminat)", bold: true, size: 28, color: DOCX_BRAND.PRIMARY_DARK })],
     }));
 
     const subSection = (title, obj, fields) => {

@@ -87,7 +87,7 @@ export function drawZephrenLogoFull(doc, x, y, width = 30) {
 
   // ── Text "Zephren" sub casă (la 30.9mm scale=1, deci offset y)
   // Z verde + ephren slate
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(16 * scale);
   // Calculăm centrare manual: textWidth aproximativ 22mm pentru "Zephren" 16pt
   const cx = x + w / 2;
@@ -108,7 +108,7 @@ export function drawZephrenLogoFull(doc, x, y, width = 30) {
   doc.line(x + 7.2 * scale, y + 31.8 * scale, x + 22.8 * scale, y + 31.8 * scale);
 
   // ── Tagline
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(5 * scale);
   doc.setTextColor(...BRAND_COLORS.SLATE_500);
   doc.text("Energy Performance Calculator", cx, y + 33.6 * scale, { align: "center" });
@@ -134,7 +134,7 @@ export function drawZephrenLogoCompact(doc, x, y, width = 30) {
   const cx = x + width / 2;
   const baselineY = y + 4.5 * scale;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(13 * scale);
 
   const ZWidth = doc.getTextWidth("Z") || (3.5 * scale);
@@ -149,7 +149,7 @@ export function drawZephrenLogoCompact(doc, x, y, width = 30) {
 
   // Tagline mic dedesubt (opțional — doar dacă width >= 25mm)
   if (width >= 25) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(4 * scale);
     doc.setTextColor(...BRAND_COLORS.SLATE_500);
     doc.text("Energy Performance Calculator", cx, baselineY + 2.5 * scale, { align: "center" });

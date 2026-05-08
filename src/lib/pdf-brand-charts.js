@@ -81,7 +81,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
 
   // Titlu
   if (title) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     doc.text(String(title), x + width / 2, y + 4, { align: "center" });
@@ -97,7 +97,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
         const ty = chartY + chartH - (chartH * i) / ticks;
         doc.line(chartX, ty, chartX + chartW, ty);
         // Labels
-        doc.setFont("helvetica", "normal");
+        doc.setFont(undefined, "normal");
         doc.setFontSize(FONT_SIZES.FOOTER);
         setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
         const tickValue = (niceMax * i) / ticks;
@@ -111,7 +111,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
         const tx = chartX + (chartW * i) / ticks;
         doc.line(tx, chartY, tx, chartY + chartH);
         // Labels jos
-        doc.setFont("helvetica", "normal");
+        doc.setFont(undefined, "normal");
         doc.setFontSize(FONT_SIZES.FOOTER);
         setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
         const tickValue = (niceMax * i) / ticks;
@@ -142,7 +142,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
 
       // Valoare deasupra
       if (showValues && v > 0) {
-        doc.setFont("helvetica", "bold");
+        doc.setFont(undefined, "bold");
         doc.setFontSize(FONT_SIZES.FOOTER);
         setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
         doc.text(
@@ -154,7 +154,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
       }
 
       // Label dedesubt (rotit dacă lung)
-      doc.setFont("helvetica", "normal");
+      doc.setFont(undefined, "normal");
       doc.setFontSize(FONT_SIZES.FOOTER);
       setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
       const lbl = String(d.label || "");
@@ -176,7 +176,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
 
       // Valoare la capăt
       if (showValues && v > 0) {
-        doc.setFont("helvetica", "bold");
+        doc.setFont(undefined, "bold");
         doc.setFontSize(FONT_SIZES.FOOTER);
         setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
         doc.text(
@@ -187,7 +187,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
       }
 
       // Label stânga
-      doc.setFont("helvetica", "normal");
+      doc.setFont(undefined, "normal");
       doc.setFontSize(FONT_SIZES.FOOTER);
       setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
       const lbl = String(d.label || "");
@@ -198,7 +198,7 @@ export function renderBarChart(doc, x, y, width, height, options = {}) {
 
   // Unit (axe label)
   if (unit) {
-    doc.setFont("helvetica", "italic");
+    doc.setFont(undefined, "italic");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     if (orientation === "vertical") {
@@ -256,7 +256,7 @@ export function renderPieChart(doc, x, y, radius, options = {}) {
 
   // Titlu deasupra
   if (title) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     doc.text(String(title), x, y - radius - 4, { align: "center" });
@@ -322,7 +322,7 @@ export function renderPieChart(doc, x, y, radius, options = {}) {
       const labelR = donut ? radius * (1 + innerRadiusRatio) / 2 : radius * 0.6;
       const lx = x + Math.cos(midA) * labelR;
       const ly = y + Math.sin(midA) * labelR;
-      doc.setFont("helvetica", "bold");
+      doc.setFont(undefined, "bold");
       doc.setFontSize(FONT_SIZES.FOOTER);
       // Text alb pentru contrast (segmentele sunt colorate)
       setBrandColor(doc, BRAND_COLORS.WHITE, "text");
@@ -334,7 +334,7 @@ export function renderPieChart(doc, x, y, radius, options = {}) {
   if (showLegend) {
     const legendX = x + radius + 6;
     let legendY = y - radius;
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.FOOTER);
     segments.forEach(seg => {
       // Square color
@@ -406,7 +406,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
 
   // Titlu
   if (title) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     doc.text(String(title), x + width / 2, y + 4, { align: "center" });
@@ -420,7 +420,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
     const ty = chartY + chartH - (chartH * i) / ticksY;
     doc.line(chartX, ty, chartX + chartW, ty);
     const tickValue = yMin + ((yMax - yMin) * i) / ticksY;
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(
@@ -432,7 +432,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
   }
 
   // X labels
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.FOOTER);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   const xStep = chartW / Math.max(1, xLabels.length - 1);
@@ -453,7 +453,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
     doc.line(chartX, ty, chartX + chartW, ty);
     doc.setLineDashPattern([], 0);
     if (thresholdLabel) {
-      doc.setFont("helvetica", "italic");
+      doc.setFont(undefined, "italic");
       doc.setFontSize(FONT_SIZES.FOOTER);
       setBrandColor(doc, BRAND_COLORS.WARNING, "text");
       doc.text(thresholdLabel, chartX + chartW - 2, ty - 1, { align: "right" });
@@ -488,7 +488,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
   // Legendă (dreapta)
   if (series.length > 1) {
     let legendY = chartY + 2;
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.FOOTER);
     series.forEach((s, sIdx) => {
       const color = s.color || SERIES_COLORS[sIdx % SERIES_COLORS.length];
@@ -502,7 +502,7 @@ export function renderLineChart(doc, x, y, width, height, options = {}) {
 
   // Y unit
   if (yUnit) {
-    doc.setFont("helvetica", "italic");
+    doc.setFont(undefined, "italic");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(yUnit, chartX, y + padTop - 1);
@@ -557,7 +557,7 @@ export function renderTimelineChart(doc, x, y, width, height, options = {}) {
 
   // Titlu
   if (title) {
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     doc.text(String(title), x + width / 2, y + 4, { align: "center" });
@@ -569,7 +569,7 @@ export function renderTimelineChart(doc, x, y, width, height, options = {}) {
   const axisY = chartY + chartH;
   doc.line(chartX, axisY, chartX + chartW, axisY);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.FOOTER);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   for (let yr = yearStart; yr <= yearEnd; yr += 1) {
@@ -600,7 +600,7 @@ export function renderTimelineChart(doc, x, y, width, height, options = {}) {
 
     // Label fază în interior (dacă încape)
     const labelText = String(phase.label || `Faza ${i + 1}`);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.WHITE, "text");
     if ((endX - startX) > 30) {
@@ -621,7 +621,7 @@ export function renderTimelineChart(doc, x, y, width, height, options = {}) {
     doc.line(mx, chartY, mx, axisY);
     doc.setLineDashPattern([], 0);
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.DANGER, "text");
     doc.text(String(ms.label || ms.year), mx, chartY - 1, { align: "center" });

@@ -60,7 +60,7 @@ export function applyBrandHeader(doc, meta = {}, options = {}) {
 
   // Cod CPE centru
   if (meta.cpeCode && meta.cpeCode !== "—") {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(`Cod: ${meta.cpeCode}`, A4.WIDTH / 2, 10, { align: "center" });
@@ -68,7 +68,7 @@ export function applyBrandHeader(doc, meta = {}, options = {}) {
 
   // Dată dreapta
   if (meta.dateText) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(meta.dateText, A4.WIDTH - A4.MARGIN_RIGHT, 10, { align: "right" });
@@ -119,7 +119,7 @@ export function applyBrandFooter(doc, meta = {}, pageNumber = 1, totalPages = 1,
   doc.setLineWidth(STROKE_WIDTH.HAIRLINE);
   doc.line(A4.MARGIN_LEFT, footerY - 4, A4.WIDTH - A4.MARGIN_RIGHT, footerY - 4);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.FOOTER);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
 
@@ -210,14 +210,14 @@ export function renderCoverPage(doc, meta = {}, options = {}) {
 
   // ── 2. Titlu document
   const title = String(meta.title || "Document Zephren").toUpperCase();
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.TITLE);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   doc.text(title, A4.WIDTH / 2, 85, { align: "center" });
 
   // ── 3. Subtitlu (opțional)
   if (subtitle) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(subtitle, A4.WIDTH / 2, 92, { align: "center" });
@@ -230,13 +230,13 @@ export function renderCoverPage(doc, meta = {}, options = {}) {
 
   // ── 5. Identificare clădire
   let y = 110;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.H3);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   doc.text("IDENTIFICARE CLĂDIRE", A4.MARGIN_LEFT, y);
   y += 5;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
 
@@ -257,13 +257,13 @@ export function renderCoverPage(doc, meta = {}, options = {}) {
 
   // ── 6. Auditor
   y += 10;
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.H3);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   doc.text("AUDITOR ENERGETIC", A4.MARGIN_LEFT, y);
   y += 5;
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
 
@@ -295,7 +295,7 @@ export function renderCoverPage(doc, meta = {}, options = {}) {
   // ── 8. Disclaimer (opțional)
   if (disclaimer) {
     y = Math.max(y, 240);
-    doc.setFont("helvetica", "italic");
+    doc.setFont(undefined, "italic");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     const lines = doc.splitTextToSize(disclaimer, A4.CONTENT_WIDTH);
@@ -305,7 +305,7 @@ export function renderCoverPage(doc, meta = {}, options = {}) {
 
   // ── 9. Footer cover page (cod CPE + dată generare)
   const footerY = A4.HEIGHT - 25;
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.CAPTION);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   doc.text(`Cod CPE / CUC: ${meta.cpeCode || "—"}`, A4.MARGIN_LEFT, footerY);
@@ -360,14 +360,14 @@ export function renderKpiBox(doc, x, y, w, h, options = {}) {
 
   // Icon (opțional, dreapta sus)
   if (icon) {
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.H2);
     setBrandColor(doc, color, "text");
     doc.text(icon, x + w - 4, y + 6, { align: "right" });
   }
 
   // Valoare mare
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.KPI_VALUE);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   const valueText = String(value || "—");
@@ -376,14 +376,14 @@ export function renderKpiBox(doc, x, y, w, h, options = {}) {
   // Unitate (mai mică, lângă valoare)
   if (unit) {
     const valueWidth = doc.getTextWidth(valueText);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.H3);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text(unit, x + 5 + valueWidth + 2, y + h * 0.55);
   }
 
   // Label dedesubt
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.KPI_LABEL);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   doc.text(String(label || "").toUpperCase(), x + 5, y + h - 3);
@@ -440,7 +440,7 @@ export function renderEnergyClassBar(doc, x, y, totalWidth, height, options = {}
 
     if (showLabels) {
       const [tr, tg, tb] = getEnergyClassTextColor(cls);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(undefined, "bold");
       doc.setFontSize(FONT_SIZES.H3);
       doc.setTextColor(tr, tg, tb);
       doc.text(cls, x + i * barWidth + barWidth / 2, y + height / 2 + 1.5, { align: "center" });
@@ -457,7 +457,7 @@ export function renderEnergyClassBar(doc, x, y, totalWidth, height, options = {}
     doc.line(lineX, y - 2, lineX, y + height + 2);
     doc.setLineDashPattern([], 0);
 
-    doc.setFont("helvetica", "italic");
+    doc.setFont(undefined, "italic");
     doc.setFontSize(FONT_SIZES.FOOTER);
     setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
     doc.text("prag nZEB", lineX, y - 3, { align: "center" });
@@ -471,7 +471,7 @@ export function renderEnergyClassBar(doc, x, y, totalWidth, height, options = {}
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "fill");
     doc.triangle(cx - 3, triY + 4, cx + 3, triY + 4, cx, triY, "F");
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
     const epText = Number.isFinite(actualEP) ? `EP ${Math.round(actualEP)}` : "";
@@ -486,7 +486,7 @@ export function renderEnergyClassBar(doc, x, y, totalWidth, height, options = {}
     setBrandColor(doc, BRAND_COLORS.PRIMARY, "fill");
     doc.triangle(cx - 3, triY - 4, cx + 3, triY - 4, cx, triY, "F");
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.PRIMARY, "text");
     const epText = Number.isFinite(targetEP) ? `EP ${Math.round(targetEP)}` : "";
@@ -533,7 +533,7 @@ export function renderSectionDivider(doc, y, options = {}) {
 export function renderSectionHeader(doc, title, y, options = {}) {
   const { x = A4.MARGIN_LEFT } = options;
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.H1);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
   doc.text(String(title || "").toUpperCase(), x, y);
@@ -567,7 +567,7 @@ export function renderWatermark(doc, text, options = {}) {
 
   doc.saveGraphicsState();
   doc.setGState(new doc.GState({ opacity }));
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.WATERMARK);
   setBrandColor(doc, color, "text");
   doc.text(String(text || "").toUpperCase(), A4.WIDTH / 2, A4.HEIGHT / 2, {
@@ -628,13 +628,13 @@ export function renderSignatureBox(doc, x, y, options = {}) {
   doc.line(x, y + 22, x + width, y + 22);
 
   // Label sus (în zona signaturii)
-  doc.setFont("helvetica", "italic");
+  doc.setFont(undefined, "italic");
   doc.setFontSize(FONT_SIZES.FOOTER);
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   doc.text(label.toUpperCase(), x + width / 2, y + 4, { align: "center" });
 
   // Date dedesubt linie
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.CAPTION);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
 
@@ -707,7 +707,7 @@ export async function renderQrCode(doc, payload, options = {}) {
 
     // Label dedesubt (opțional)
     if (label) {
-      doc.setFont("helvetica", "italic");
+      doc.setFont(undefined, "italic");
       doc.setFontSize(FONT_SIZES.FOOTER);
       setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
       doc.text(String(label), x + size / 2, y + size + 2.5, { align: "center" });
@@ -720,12 +720,12 @@ export async function renderQrCode(doc, payload, options = {}) {
     setBrandColor(doc, BRAND_COLORS.SLATE_400, "draw");
     doc.setLineWidth(STROKE_WIDTH.THIN);
     doc.rect(x, y, size, size, "S");
-    doc.setFont("helvetica", "bold");
+    doc.setFont(undefined, "bold");
     doc.setFontSize(FONT_SIZES.CAPTION);
     setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
     doc.text("QR", x + size / 2, y + size / 2, { align: "center" });
     if (label) {
-      doc.setFont("helvetica", "italic");
+      doc.setFont(undefined, "italic");
       doc.setFontSize(FONT_SIZES.FOOTER);
       doc.text(String(label).slice(0, 16), x + size / 2, y + size + 2.5, { align: "center" });
     }
@@ -780,7 +780,7 @@ export function renderTableHeader(doc, columns, widths, x, y, rowHeight = 7) {
   doc.rect(x, y, totalW, rowHeight, "F");
 
   // Text alb bold
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.TABLE_HEADER);
   setBrandColor(doc, BRAND_COLORS.WHITE, "text");
 
@@ -816,7 +816,7 @@ export function renderTableRow(doc, cells, widths, x, y, rowHeight = 6, zebra = 
     doc.rect(x, y, totalW, rowHeight, "F");
   }
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.TABLE_BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
 

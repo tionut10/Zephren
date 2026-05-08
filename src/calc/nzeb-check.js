@@ -36,9 +36,16 @@ const SEV = { ERR: "error", WARN: "warning", OK: "ok", INFO: "info" };
 // Cerință OBLIGATORIE pentru nZEB (separat de limita EP): fiecare element
 // al anvelopei trebuie să respecte transmitanța maximă pe tip + tipologie.
 // Valori din NA 2023 (Licență ASRO TUNARU IONUȚ, Factură 148552/17.04.2026)
+//
+// Sprint 8 mai 2026 — Distincție nZEB nou vs RENOVARE majoră:
+//   • Construcție NOUĂ → praguri stricte (Tab A.2b/A.3 — referința standard)
+//   • Renovare majoră → praguri relaxate (Mc 001-2022 §4.5 Tab 4.6 +
+//     Ord. MDLPA 2641/2017 — întrucât intervențiile pe clădiri existente
+//     sunt limitate tehnic și economic; renovarea majoră urmărește atingerea
+//     pragurilor anvelopă "renovare majoră" iar nu "nou").
 // ═══════════════════════════════════════════════════════════════
 const NZEB_U_MAX = {
-  residential: {  // Tab A.2b — clădiri rezidențiale NZEB (după 01.01.2023)
+  residential: {  // Tab A.2b — clădiri rezidențiale NZEB construcție NOUĂ (după 01.01.2023)
     PE:   0.20,   // Pereți exteriori
     PET:  0.20,   // Pereți exteriori termoizolați
     AC:   0.17,   // Planșee peste ultimul nivel (teras/pod)
@@ -54,7 +61,7 @@ const NZEB_U_MAX = {
     FE:   1.20,   // Ferestre / tâmplărie exterioară
     UE:   1.20,   // Uși exterioare
   },
-  nonresidential: { // Tab A.3 — clădiri nerezidențiale NZEB
+  nonresidential: { // Tab A.3 — clădiri nerezidențiale NZEB construcție NOUĂ
     PE:   0.22,
     PET:  0.22,
     AC:   0.17,
@@ -69,6 +76,41 @@ const NZEB_U_MAX = {
     PSE:  0.32,
     FE:   1.30,
     UE:   1.30,
+  },
+  // Sprint 8 mai 2026 — RENOVARE MAJORĂ (Mc 001-2022 §4.5 Tab 4.6 — valori mai
+  // permisive, aplicabile când projectPhase === "renovare"). Sursa: Mc 001-2022
+  // §4.5 + Ord. MDLPA 2641/2017 + C107/2005 (versiunea consolidată).
+  residential_renovation: {
+    PE:   0.30,   // Pereți exteriori — renovare (nou: 0.20)
+    PET:  0.30,
+    AC:   0.20,   // Planșeu teras renovare (nou: 0.17)
+    PP:   0.20,
+    PS:   0.35,   // Planșeu peste subsol — renovare (nou: 0.29)
+    PSI:  0.25,
+    PR:   0.75,
+    PAR:  0.75,
+    PLE:  0.30,
+    PL:   0.30,
+    PB:   0.30,
+    PSE:  0.35,
+    FE:   1.30,   // Ferestre renovare (nou: 1.20)
+    UE:   1.30,
+  },
+  nonresidential_renovation: {
+    PE:   0.32,
+    PET:  0.32,
+    AC:   0.20,
+    PP:   0.20,
+    PS:   0.38,
+    PSI:  0.27,
+    PR:   0.80,
+    PAR:  0.80,
+    PLE:  0.32,
+    PL:   0.32,
+    PB:   0.32,
+    PSE:  0.38,
+    FE:   1.40,
+    UE:   1.40,
   },
 };
 
@@ -89,13 +131,25 @@ function computeElementU(el) {
 
 /**
  * Verifică U'max pentru fiecare element al anvelopei conform SR EN ISO 52018-1
- * @returns {{ ok, violations: [...], elements: [...], uMaxSet: "residential"|"nonresidential" }}
+ * @param {object} args
+ * @param {Array}  args.opaqueElements
+ * @param {Array}  args.glazingElements
+ * @param {string} args.category — RI/RC/RA/BI/...
+ * @param {string} [args.projectPhase] — "proiectare"|"renovare"|"audit"
+ *                  Sprint 8 mai 2026 — pentru "renovare" aplicăm praguri Mc 001-2022
+ *                  Tab 4.6 (RENOVARE MAJORĂ) în loc de Tab A.2b/A.3 (CONSTRUCȚIE NOUĂ).
+ * @returns {{ ok, violations: [...], elements: [...], uMaxSet, isRenovation: bool }}
  *   Sprint 8 mai 2026 — `elements` returnează TOATE elementele cu U calculat
  *   și verdict per element (pentru tabelul detaliat din raportul nZEB).
  */
-function checkEnvelopeUmax({ opaqueElements, glazingElements, category }) {
+function checkEnvelopeUmax({ opaqueElements, glazingElements, category, projectPhase = "proiectare" }) {
   const isRes = RESIDENTIAL_CATS.has(category);
-  const uMaxSet = isRes ? NZEB_U_MAX.residential : NZEB_U_MAX.nonresidential;
+  const isRenovation = projectPhase === "renovare";
+  // Sprint 8 mai 2026 — praguri condițional pe fază (nou vs renovare majoră)
+  const uMaxKey = isRes
+    ? (isRenovation ? "residential_renovation" : "residential")
+    : (isRenovation ? "nonresidential_renovation" : "nonresidential");
+  const uMaxSet = NZEB_U_MAX[uMaxKey];
   const uMaxSetKey = isRes ? "residential" : "nonresidential";
   const violations = [];
   const elements = [];
@@ -146,7 +200,7 @@ function checkEnvelopeUmax({ opaqueElements, glazingElements, category }) {
     }
   });
 
-  return { ok: violations.length === 0, violations, elements, uMaxSet: uMaxSetKey };
+  return { ok: violations.length === 0, violations, elements, uMaxSet: uMaxSetKey, isRenovation };
 }
 
 export { NZEB_U_MAX, checkEnvelopeUmax };
@@ -227,6 +281,7 @@ export function checkNZEBCompliance(params = {}) {
     opaqueElements: opaqueOverride ?? building?.opaqueElements,
     glazingElements: glazingOverride ?? building?.glazingElements,
     category: baseCat,
+    projectPhase, // Sprint 8 mai 2026 — pasăm faza pentru praguri condițional
   });
   const envelopeOk = envelopeCheck.ok;
 
@@ -265,7 +320,9 @@ export function checkNZEBCompliance(params = {}) {
     },
     {
       id: "envelope_umax",
-      label: `Transmitanțe anvelopă U ≤ U'max (${envelopeCheck.uMaxSet === "residential" ? "rezidențial" : "nerezidențial"})`,
+      // Sprint 8 mai 2026 — etichetă dinamică: indicăm dacă pragurile sunt
+      // CONSTRUCȚIE NOUĂ sau RENOVARE MAJORĂ pentru transparență legală.
+      label: `Transmitanțe anvelopă U ≤ U'max (${envelopeCheck.uMaxSet === "residential" ? "rezidențial" : "nerezidențial"} — ${envelopeCheck.isRenovation ? "renovare" : "construcție nouă"})`,
       value: envelopeCheck.violations.length,
       target: 0,
       ok: envelopeOk,
@@ -572,6 +629,8 @@ export function getNZEBThreshold(category, zone) {
 
 // ═══════════════════════════════════════════════════════════════
 // Utilitar: status sintetic pentru afișare UI inline (badge)
+// Sprint 8 mai 2026 — păstrăm ✓/✗ pentru UI HTML (browser le randează cu
+// fontul OS); raportul PDF folosește text "CONFORM/NECONFORM" via SYMBOL_MAP.
 // ═══════════════════════════════════════════════════════════════
 export function getNZEBStatusBadge(compliance) {
   if (!compliance) return { label: "Date insuficiente", color: "#94a3b8", icon: "?" };

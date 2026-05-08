@@ -263,37 +263,81 @@ function hexToRgb(hex) {
   return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
 
-// drawHorizBar: bară orizontală gradient (verde→ambră→roșu) cu marker prag
-// pentru ilustrare „valoare vs prag" (EP, RER, RER on-site).
+// drawHorizBar: bară orizontală cu indicator vizual prag + zonă conformă/neconformă
+// Sprint 8 mai 2026 — Re-design pentru lizibilitate când depășire >100%:
+//   • Bară fundal împărțită vizual la prag (zonă verde + zonă roșie)
+//   • Marker valoare poziționat proporțional cu indicator clar
+//   • Etichetă "DEPĂȘIRE: +X%" când value > threshold pe EP / "DEFICIT: -X p.p." pe RER
+//
 //   x, y, w, h    — caseta în mm
-//   value, max    — valoare curentă și plafon scalei (afișate ca text)
-//   threshold     — prag de conformare (linie albă verticală)
+//   value, max    — valoare curentă și plafon scalei
+//   threshold     — prag de conformare
 //   compliantHigh — true: conform când value ≥ threshold (RER); false: când value ≤ threshold (EP)
 function drawHorizBar(doc, x, y, w, h, value, max, threshold, label, unit, compliantHigh) {
   const v = Math.max(0, Math.min(value, max));
-  const filledW = (v / max) * w;
+  const valuePos = (v / max) * w;
+  const thresholdPos = x + (Math.min(threshold, max) / max) * w;
   const ok = compliantHigh ? value >= threshold : value <= threshold;
-  // Fundal scală
-  doc.setFillColor(240, 240, 245);
-  doc.roundedRect(x, y, w, h, 1, 1, "F");
-  // Bară colorată
+
+  // Fundal scală — zonă conformă (verde deschis) + zonă neconformă (roșu deschis)
+  // separate la pragul de referință pentru context vizual instant.
+  if (compliantHigh) {
+    // RER: zona stânga (sub prag) = neconformă (roșu); zona dreapta (peste prag) = conformă (verde)
+    doc.setFillColor(254, 226, 226); // red-100
+    doc.roundedRect(x, y, thresholdPos - x, h, 1, 1, "F");
+    doc.setFillColor(220, 252, 231); // green-100
+    doc.roundedRect(thresholdPos - x, y, x + w - thresholdPos, h, 1, 1, "F");
+  } else {
+    // EP: zona stânga (sub prag) = conformă (verde); zona dreapta (peste prag) = neconformă (roșu)
+    doc.setFillColor(220, 252, 231); // green-100
+    doc.roundedRect(x, y, thresholdPos - x, h, 1, 1, "F");
+    doc.setFillColor(254, 226, 226); // red-100
+    doc.roundedRect(thresholdPos - x, y, x + w - thresholdPos, h, 1, 1, "F");
+  }
+
+  // Marker valoare — bară plină verticală (3mm înălțime peste fundal)
+  const markerX = x + valuePos;
   doc.setFillColor(...(ok ? COL_OK : COL_ERR));
-  doc.roundedRect(x, y, filledW, h, 1, 1, "F");
-  // Marker prag
-  const tx = x + (Math.min(threshold, max) / max) * w;
-  doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.4);
-  doc.line(tx, y - 0.5, tx, y + h + 0.5);
-  doc.setFontSize(6); doc.setTextColor(0);
-  doc.text(`prag ${threshold}${unit || ""}`, tx, y - 1, { align: "center" });
-  // Text label sus-stânga + valoare sus-dreapta
+  doc.rect(markerX - 0.6, y - 1, 1.2, h + 2, "F");
+
+  // Etichetă valoare deasupra markerului — folosim fmtRo pentru virgulă RO
+  doc.setFontSize(7); doc.setFont(undefined, "bold"); doc.setTextColor(...(ok ? COL_OK : COL_ERR));
+  const valueText = `${fmtRo(value, 1)}${unit || ""}`;
+  // Poziționare smart: dacă marker e aproape de margine dreapta, alinia text la stânga
+  const align = (valuePos / w) > 0.7 ? "right" : (valuePos / w) < 0.3 ? "left" : "center";
+  doc.text(valueText, markerX, y + h + 4, { align });
+
+  // Marker prag — linie punctată verticală
+  doc.setDrawColor(...COL_H); doc.setLineWidth(0.4);
+  doc.setLineDashPattern([1, 0.8], 0);
+  doc.line(thresholdPos, y - 1.5, thresholdPos, y + h + 1.5);
+  doc.setLineDashPattern([], 0);
+  doc.setFontSize(5.5); doc.setTextColor(...COL_H);
+  doc.text(`prag ${fmtRo(threshold, 0)}${unit || ""}`, thresholdPos, y - 2, { align: "center" });
+
+  // Text label sus-stânga + status sus-dreapta
   doc.setFontSize(7); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
   doc.text(label, x, y - 5);
   doc.setFont(undefined, "normal");
-  doc.text(`${value}${unit || ""}`, x + w, y - 5, { align: "right" });
+  // Status compact: depășire/deficit pentru context clar
+  let statusTxt;
+  if (ok) {
+    statusTxt = "CONFORM";
+  } else if (compliantHigh) {
+    const deficit = threshold - value;
+    statusTxt = `DEFICIT -${fmtRo(deficit, 1)} p.p.`;
+  } else {
+    const overrun = ((value - threshold) / threshold) * 100;
+    statusTxt = `DEPĂȘIRE +${fmtRo(overrun, 0)}%`;
+  }
+  doc.setTextColor(...(ok ? COL_OK : COL_ERR));
+  doc.text(statusTxt, x + w, y - 5, { align: "right" });
 }
 
-// computeReportHash: SHA-256 (Web Crypto disponibil în jsdom) → primii 16 hex chars
-// hash deterministic pe payload-ul cheie al raportului (EP, RER, auditor, dată).
+// computeReportHash: SHA-256 (Web Crypto disponibil în jsdom) — returnează AMBELE
+// versiuni: { full } 64-hex SHA-256 conform FIPS 180-4 + { short } primii 16 hex
+// pentru afișare compactă (ID document). Sprint 8 mai 2026 — fix audit raport
+// (etichetă „SHA-256" trebuie să afișeze hash COMPLET, nu trunchiat la 16 char).
 async function computeReportHash(payload) {
   try {
     const txt = JSON.stringify(payload);
@@ -301,14 +345,17 @@ async function computeReportHash(payload) {
       const buf = new TextEncoder().encode(txt);
       const hashBuf = await crypto.subtle.digest("SHA-256", buf);
       const arr = Array.from(new Uint8Array(hashBuf));
-      return arr.map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16).toUpperCase();
+      const full = arr.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+      return { full, short: full.slice(0, 16) };
     }
   } catch (_) { /* fallback */ }
-  // Fallback: hash simplu pe string (DJB2)
+  // Fallback: hash simplu pe string (DJB2) — NU este SHA-256 valid; etichetă
+  // cu „cod scurt" în UI (vezi pagina semnătură nZEB).
   let h = 5381;
   const s = JSON.stringify(payload);
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) & 0xffffffff;
-  return ("0000000000000000" + (h >>> 0).toString(16).toUpperCase()).slice(-16);
+  const short = ("0000000000000000" + (h >>> 0).toString(16).toUpperCase()).slice(-16);
+  return { full: null, short };
 }
 
 // ── Utilitar: sigla auditor ───────────────────────────────────
@@ -1601,26 +1648,55 @@ export async function generateNZEBConformanceReport(opts) {
     // Sprint 8 mai 2026 — Adăugăm clasa energetică curentă (Mc 001-2022 Tab 5.x).
     const cls = compliance.energyClass;
     const clsLabel = cls?.cls && cls.cls !== "—" ? cls.cls : "—";
+
+    // Sprint 8 mai 2026 — Categorie cu denumire descriptivă (era „RA (cod RA)").
+    // Folosim categoryLabel (din NZEB_THRESHOLDS) DOAR dacă diferă de cod;
+    // altfel încercăm BUILDING_CATEGORIES_LABELS local pentru text plin.
+    const CATEGORY_LABELS_RO = {
+      RI: "Locuință individuală",
+      RC: "Locuință colectivă (bloc)",
+      RA: "Apartament în bloc (unitate locativă)",
+      BI: "Birouri",
+      ED: "Educație (școală/grădiniță)",
+      SA: "Sănătate (spital/clinică)",
+      HC: "Cazare (hotel/pensiune)",
+      CO: "Comerț (magazin/mall)",
+      SP: "Sport (sală/piscină)",
+      AL: "Altă categorie nerezidențială",
+      IN: "Industrial",
+    };
+    const fullCatLabel = CATEGORY_LABELS_RO[building?.category]
+      || compliance.categoryLabel
+      || building?.category
+      || "—";
+    const catCellText = building?.category && fullCatLabel !== building.category
+      ? `${fullCatLabel} (cod ${building.category})`
+      : fullCatLabel;
+
     y = autoTable(doc, {
       startY: y,
       columnStyles: { 0: { cellWidth: 60, fontStyle: "bold" } },
       body: [
         ["Denumire / adresă", [building?.address, building?.city, building?.county && `jud. ${building.county}`].filter(Boolean).join(", ") || "—"],
-        ["Destinație / categorie", `${compliance.categoryLabel} (cod ${building?.category || "—"})`],
+        ["Destinație / categorie", catCellText],
         ["Fază proiect", projectPhase === "proiectare" ? "Proiectare — clădire nouă" : projectPhase === "renovare" ? "Renovare majoră" : "Evaluare în exploatare"],
         ["An construcție", building?.yearBuilt || "—"],
         ["Regim înălțime", building?.floors || "—"],
-        ["Suprafață utilă Au", `${Au.toFixed(1)} m²`],
-        ["Volum util V", `${V.toFixed(1)} m³`],
-        ["Suprafață anvelopă Aenv", Aenv ? `${Aenv.toFixed(1)} m²` : "—"],
-        ["Raport Aenv/V", Aenv && V ? `${(Aenv / V).toFixed(3)} m⁻¹` : "—"],
+        ["Suprafață utilă Au", `${fmtRo(Au, 1)} m²`],
+        ["Volum util V", `${fmtRo(V, 1)} m³`],
+        ["Suprafață anvelopă Aenv", Aenv ? `${fmtRo(Aenv, 1)} m²` : "—"],
+        // Raport Aenv/V — unitate "1/m" (echivalent m⁻¹) pentru a evita
+        // pierdere superscript ⁻ care lipsește din Liberation Sans.
+        ["Raport Aenv/V", Aenv && V ? `${fmtRo(Aenv / V, 3)} 1/m` : "—"],
         ["Localitate climatică", selectedClimate?.name || building?.city || "—"],
         ["Zona climatică Mc 001", selectedClimate?.zone ? `Zona ${selectedClimate.zone}` : "—"],
         ["Temperatură exterioară calcul θₑ", selectedClimate?.theta_e != null ? `${selectedClimate.theta_e} °C` : "—"],
         [
           { content: "Clasă energetică curentă (Mc 001-2022)", styles: { fontStyle: "bold" } },
           {
-            content: `${clsLabel}  ·  EP = ${compliance.ep} kWh/(m²·an)  ·  scor ${cls?.score || "—"}/100`,
+            // Sprint 8 mai 2026 — adăugăm context scor (1=cea mai slabă, 100=cea mai bună)
+            // în loc de „scor 1/100" ambiguu pentru cititor.
+            content: `${clsLabel}  ·  EP = ${fmtRo(compliance.ep, 1)} kWh/(m²·an)  ·  scor ${cls?.score || "—"}/100 (1=slabă, 100=excelentă)`,
             styles: { fontStyle: "bold", textColor: cls?.color ? hexToRgb(cls.color) : COL_H },
           },
         ],
@@ -1659,18 +1735,26 @@ export async function generateNZEBConformanceReport(opts) {
     const epRenew = renewSummary?.ep_renew_m2 || 0;
     const epFinal = renewSummary?.ep_adjusted_m2 || epTotal;
 
+    // Sprint 8 mai 2026 — Iluminat: label condițional pe categorie clădire.
+    // Pentru rezidențial (RI/RC/RA) iluminatul se calculează cu metodologie
+    // simplificată Mc 001-2022 §5.4 (densitate × ore/an) — nu mai e „nerezidențial".
+    const isResidentialCat = ["RI", "RC", "RA"].includes(building?.category);
+    const lightingLabel = isResidentialCat
+      ? "Iluminat (rezidențial — Mc 001-2022 §5.4)"
+      : "Iluminat (nerezidențial — SR EN 15193)";
+
     y = autoTable(doc, {
       startY: y,
       head: [["Destinație consum", "EP [kWh/(m²·an)]", "Pondere [%]"]],
       body: [
-        ["Încălzire spații", epH.toFixed(1), epTotal ? ((epH / epTotal) * 100).toFixed(1) : "—"],
-        ["Răcire spații", epC.toFixed(1), epTotal ? ((epC / epTotal) * 100).toFixed(1) : "—"],
-        ["Preparare apă caldă menajeră (ACM)", epW.toFixed(1), epTotal ? ((epW / epTotal) * 100).toFixed(1) : "—"],
-        ["Ventilare mecanică", epV.toFixed(1), epTotal ? ((epV / epTotal) * 100).toFixed(1) : "—"],
-        ["Iluminat (nerezidențial)", epL.toFixed(1), epTotal ? ((epL / epTotal) * 100).toFixed(1) : "—"],
-        [{ content: "EP total (înainte de regenerabile)", styles: { fontStyle: "bold" } }, { content: epTotal.toFixed(1), styles: { fontStyle: "bold" } }, "100.0"],
-        [{ content: "Aport surse regenerabile (-)", styles: { textColor: [22, 163, 74] } }, { content: `-${epRenew.toFixed(1)}`, styles: { textColor: [22, 163, 74] } }, "—"],
-        [{ content: "EP specific final (cu regenerabile)", styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, { content: epFinal.toFixed(1), styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, "—"],
+        ["Încălzire spații", fmtRo(epH, 1), epTotal ? fmtRo((epH / epTotal) * 100, 1) : "—"],
+        ["Răcire spații", fmtRo(epC, 1), epTotal ? fmtRo((epC / epTotal) * 100, 1) : "—"],
+        ["Preparare apă caldă menajeră (ACM)", fmtRo(epW, 1), epTotal ? fmtRo((epW / epTotal) * 100, 1) : "—"],
+        ["Ventilare mecanică", fmtRo(epV, 1), epTotal ? fmtRo((epV / epTotal) * 100, 1) : "—"],
+        [lightingLabel, fmtRo(epL, 1), epTotal ? fmtRo((epL / epTotal) * 100, 1) : "—"],
+        [{ content: "EP total (înainte de regenerabile)", styles: { fontStyle: "bold" } }, { content: fmtRo(epTotal, 1), styles: { fontStyle: "bold" } }, "100,0"],
+        [{ content: "Aport surse regenerabile (-)", styles: { textColor: [22, 163, 74] } }, { content: `-${fmtRo(epRenew, 1)}`, styles: { textColor: [22, 163, 74] } }, "—"],
+        [{ content: "EP specific final (cu regenerabile)", styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, { content: fmtRo(epFinal, 1), styles: { fontStyle: "bold", fillColor: [240, 253, 244] } }, "—"],
       ],
     });
 
@@ -1683,9 +1767,9 @@ export async function generateNZEBConformanceReport(opts) {
         head: [["Purtător", "EP [kWh/(m²·an)]", "Pondere [%]", "Factor f_P"]],
         body: carriers.map(c => [
           c.label,
-          c.ep.toFixed(1),
-          ((c.ep / epTotal) * 100).toFixed(1),
-          c.fP_tot != null ? c.fP_tot.toFixed(2) : "—",
+          fmtRo(c.ep, 1),
+          fmtRo((c.ep / epTotal) * 100, 1),
+          c.fP_tot != null ? fmtRo(c.fP_tot, 2) : "—",
         ]),
         columnStyles: {
           1: { halign: "right" },
@@ -1705,15 +1789,15 @@ export async function generateNZEBConformanceReport(opts) {
       startY: y,
       columnStyles: { 0: { cellWidth: 80, fontStyle: "bold" } },
       body: [
-        ["Coeficient global pierderi termice G", envelopeSummary?.G != null ? `${envelopeSummary.G.toFixed(3)} W/(m³·K)` : "—"],
-        ["Pierderi prin transmisie Ht", envelopeSummary?.Ht != null ? `${envelopeSummary.Ht.toFixed(1)} W/K` : "—"],
-        ["Pierderi prin ventilare Hv", envelopeSummary?.Hv != null ? `${envelopeSummary.Hv.toFixed(1)} W/K` : "—"],
+        ["Coeficient global pierderi termice G", envelopeSummary?.G != null ? `${fmtRo(envelopeSummary.G, 3)} W/(m³·K)` : "—"],
+        ["Pierderi prin transmisie Ht", envelopeSummary?.Ht != null ? `${fmtRo(envelopeSummary.Ht, 1)} W/K` : "—"],
+        ["Pierderi prin ventilare Hv", envelopeSummary?.Hv != null ? `${fmtRo(envelopeSummary.Hv, 1)} W/K` : "—"],
         ["Număr elemente opace", `${opaqueElements.length}`],
         ["Număr elemente vitrate", `${glazingElements.length}`],
-        ["Energie primară totală EP", `${epFinal.toFixed(1)} kWh/(m²·an)`],
-        ["Emisii CO₂ specifice", `${co2Final.toFixed(1)} kg CO₂/(m²·an)`],
-        ["Pondere surse regenerabile RER (total)", `${rer.toFixed(1)} %`],
-        ["Pondere surse regenerabile la fața locului", `${rerOnsite.toFixed(1)} %`],
+        ["Energie primară totală EP", `${fmtRo(epFinal, 1)} kWh/(m²·an)`],
+        ["Emisii CO₂ specifice", `${fmtRo(co2Final, 1)} kg CO₂/(m²·an)`],
+        ["Pondere surse regenerabile RER (total)", `${fmtRo(rer, 1)} %`],
+        ["Pondere surse regenerabile la fața locului", `${fmtRo(rerOnsite, 1)} %`],
       ],
     });
 
@@ -1742,12 +1826,19 @@ export async function generateNZEBConformanceReport(opts) {
     doc.setFont(undefined, "normal"); doc.setTextColor(...COL_H);
 
     // Tabel verificări — 3 criterii cu verdict colorat
-    const checkRows = compliance.checks.map(c => [
-      c.label,
-      `${c.value} ${c.unit || ""}`.trim(),
-      `${c.target} ${c.unit || ""}`.trim(),
-      c.ok ? "✓ CONFORM" : "✗ NECONFORM",
-    ]);
+    // Sprint 8 mai 2026 — eliminat ✓/✗ din text (Liberation Sans nu le conține
+    // ca glyph; afișarea „[X]" prin SYMBOL_MAP arată neprofesional). Culoarea
+    // celulei (verde/roșu, didParseCell) comunică verdictul vizual.
+    const checkRows = compliance.checks.map(c => {
+      const valueNum = typeof c.value === "number" ? fmtRo(c.value, 1) : c.value;
+      const targetNum = typeof c.target === "number" ? fmtRo(c.target, 1) : c.target;
+      return [
+        c.label,
+        `${valueNum} ${c.unit || ""}`.trim(),
+        `${targetNum} ${c.unit || ""}`.trim(),
+        c.ok ? "CONFORM" : "NECONFORM",
+      ];
+    });
 
     y = autoTable(doc, {
       startY: y,
@@ -1755,9 +1846,11 @@ export async function generateNZEBConformanceReport(opts) {
       body: checkRows,
       didParseCell: function (data) {
         if (data.column.index === 3 && data.cell.section === "body") {
-          const text = data.cell.raw;
+          const text = String(data.cell.raw || "");
           data.cell.styles.fontStyle = "bold";
-          data.cell.styles.textColor = String(text).includes("✓") ? COL_OK : COL_ERR;
+          // Sprint 8 mai 2026 — verdict prin TEXT „CONFORM"/„NECONFORM" + culoare
+          // (eliminat ✓/✗ care randau ca [OK]/[X] pe Liberation Sans).
+          data.cell.styles.textColor = text.includes("NECONFORM") ? COL_ERR : COL_OK;
           data.cell.styles.halign = "center";
         }
       },
@@ -1772,31 +1865,33 @@ export async function generateNZEBConformanceReport(opts) {
     doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(255, 255, 255);
     doc.text(
       compliance.compliant
-        ? "✓ CLĂDIREA SE ÎNCADREAZĂ ÎN CATEGORIA nZEB"
-        : "✗ CLĂDIREA NU SE ÎNCADREAZĂ ÎN CATEGORIA nZEB",
+        ? "CLĂDIREA SE ÎNCADREAZĂ ÎN CATEGORIA nZEB"
+        : "CLĂDIREA NU SE ÎNCADREAZĂ ÎN CATEGORIA nZEB",
       w / 2, y + 10, { align: "center" }
     );
     doc.setFontSize(9); doc.setFont(undefined, "normal");
     const verdictDetail = compliance.compliant
-      ? `EP = ${compliance.ep} ≤ ${compliance.epMax} kWh/(m²·an)  •  RER = ${compliance.rer}% ≥ ${compliance.rerMin}%  •  RER on-site = ${compliance.rerOnsite}% ≥ ${compliance.rerOnsiteMin}%`
+      ? `EP = ${fmtRo(compliance.ep, 1)} ≤ ${fmtRo(compliance.epMax, 1)} kWh/(m²·an)  •  RER = ${fmtRo(compliance.rer, 1)}% ≥ ${compliance.rerMin}%  •  RER on-site = ${fmtRo(compliance.rerOnsite, 1)}% ≥ ${compliance.rerOnsiteMin}%`
       : `${compliance.gaps.length} criteriu(i) neîndeplinite — vezi Secțiunea VI pentru recomandări`;
     doc.text(verdictDetail, w / 2, y + 18, { align: "center" });
     y += finalVerdictH + 8;
 
     // ─── Sprint 8 mai 2026 — Vizualizare grafică EP/RER vs prag ───
+    // Re-design: zone verde/roșu separate la prag + valoare etichetată sub bară.
+    // Spacing extins de la 14 → 18 mm pentru a încăpea label deasupra + dedesubt.
     y = sectionTitle(doc, "Vizualizare conformare", y);
     const barW = w - 30;
     // EP — scala adaptivă (max(value*1.15, threshold*1.5)) pentru lizibilitate
     const epMaxScale = Math.max(compliance.ep * 1.15, compliance.epMax * 1.5);
     drawHorizBar(doc, 15, y + 6, barW, 4, compliance.ep, epMaxScale,
       compliance.epMax, "Energie primară EP", " kWh/(m²·an)", false);
-    y += 14;
+    y += 18;
     drawHorizBar(doc, 15, y + 6, barW, 4, compliance.rer, 100,
       compliance.rerMin, "Pondere regenerabilă RER total", " %", true);
-    y += 14;
+    y += 18;
     drawHorizBar(doc, 15, y + 6, barW, 4, compliance.rerOnsite, 100,
       compliance.rerOnsiteMin, "Pondere regenerabilă on-site", " %", true);
-    y += 12;
+    y += 16;
 
     // Gap-uri identificate (dacă există)
     if (compliance.gaps.length > 0) {
@@ -1847,11 +1942,12 @@ export async function generateNZEBConformanceReport(opts) {
         body: envElements.map(el => [
           el.name || el.type || "—",
           el.type || "—",
-          el.area != null ? el.area.toFixed(1) : "—",
-          el.U != null ? el.U.toFixed(3) : "—",
-          el.uMax != null ? el.uMax.toFixed(2) : "n/a",
-          el.deltaPct != null ? (el.deltaPct > 0 ? `+${el.deltaPct}` : `${el.deltaPct}`) : "—",
-          el.uMax == null ? "ⓘ N/A" : (el.ok ? "✓ CONFORM" : "✗ DEPĂȘ."),
+          el.area != null ? fmtRo(el.area, 1) : "—",
+          el.U != null ? fmtRo(el.U, 3) : "—",
+          el.uMax != null ? fmtRo(el.uMax, 2) : "n/a",
+          el.deltaPct != null ? (el.deltaPct > 0 ? `+${fmtRo(el.deltaPct, 1)}` : fmtRo(el.deltaPct, 1)) : "—",
+          // Sprint 8 mai 2026 — verdict text pur (eliminat ✓/✗/ⓘ — culoare via didParseCell)
+          el.uMax == null ? "N/A" : (el.ok ? "CONFORM" : "DEPĂȘIT"),
         ]),
         columnStyles: {
           0: { cellWidth: 50 },
@@ -1864,9 +1960,9 @@ export async function generateNZEBConformanceReport(opts) {
         },
         didParseCell: function (data) {
           if (data.column.index === 6 && data.cell.section === "body") {
-            const text = String(data.cell.raw);
-            if (text.includes("✓")) data.cell.styles.textColor = COL_OK;
-            else if (text.includes("✗")) data.cell.styles.textColor = COL_ERR;
+            const text = String(data.cell.raw || "");
+            if (text === "CONFORM") data.cell.styles.textColor = COL_OK;
+            else if (text === "DEPĂȘIT") data.cell.styles.textColor = COL_ERR;
             else data.cell.styles.textColor = COL_G;
           }
         },
@@ -1972,45 +2068,50 @@ export async function generateNZEBConformanceReport(opts) {
         const postClassColor = post.classAfterAll?.color
           ? hexToRgb(post.classAfterAll.color) : COL_H;
 
+        // Sprint 8 mai 2026 — verdict text + culoare prin didParseCell (fără ✓/✗)
+        const epDeltaTxt = (val) => {
+          const d = val - compliance.epMax;
+          return (d >= 0 ? "+" : "") + fmtRo(d, 1);
+        };
         y = autoTable(doc, {
           startY: y,
           head: [["Stare", "EP [kWh/(m²·an)]", "Δ vs prag", "RER total [%]", "RER on-site [%]", "Verdict nZEB"]],
           body: [
             [
               "Existent",
-              compliance.ep.toFixed(1),
-              (compliance.ep - compliance.epMax >= 0 ? "+" : "") + (compliance.ep - compliance.epMax).toFixed(1),
-              compliance.rer.toFixed(1),
-              compliance.rerOnsite.toFixed(1),
-              compliance.compliant ? "✓ CONFORM" : "✗ NECONFORM",
+              fmtRo(compliance.ep, 1),
+              epDeltaTxt(compliance.ep),
+              fmtRo(compliance.rer, 1),
+              fmtRo(compliance.rerOnsite, 1),
+              compliance.compliant ? "CONFORM" : "NECONFORM",
             ],
             [
               "După P1 (anvelopă)",
-              post.epAfterP1.toFixed(1),
-              (post.epAfterP1 - compliance.epMax >= 0 ? "+" : "") + (post.epAfterP1 - compliance.epMax).toFixed(1),
-              compliance.rer.toFixed(1),
-              compliance.rerOnsite.toFixed(1),
+              fmtRo(post.epAfterP1, 1),
+              epDeltaTxt(post.epAfterP1),
+              fmtRo(compliance.rer, 1),
+              fmtRo(compliance.rerOnsite, 1),
               "—",
             ],
             [
               "După P1 + P2 (anvelopă + sistem)",
-              post.epAfterP1P2.toFixed(1),
-              (post.epAfterP1P2 - compliance.epMax >= 0 ? "+" : "") + (post.epAfterP1P2 - compliance.epMax).toFixed(1),
-              post.rerAfter.toFixed(1),
-              post.rerOnsiteAfter.toFixed(1),
+              fmtRo(post.epAfterP1P2, 1),
+              epDeltaTxt(post.epAfterP1P2),
+              fmtRo(post.rerAfter, 1),
+              fmtRo(post.rerOnsiteAfter, 1),
               "—",
             ],
             [
               { content: "După P1 + P2 + P3 (toate)", styles: { fontStyle: "bold" } },
-              { content: post.epAfterAll.toFixed(1), styles: { fontStyle: "bold" } },
+              { content: fmtRo(post.epAfterAll, 1), styles: { fontStyle: "bold" } },
               {
-                content: (post.epAfterAll - compliance.epMax >= 0 ? "+" : "") + (post.epAfterAll - compliance.epMax).toFixed(1),
+                content: epDeltaTxt(post.epAfterAll),
                 styles: { fontStyle: "bold" },
               },
-              { content: post.rerAfter.toFixed(1), styles: { fontStyle: "bold" } },
-              { content: post.rerOnsiteAfter.toFixed(1), styles: { fontStyle: "bold" } },
+              { content: fmtRo(post.rerAfter, 1), styles: { fontStyle: "bold" } },
+              { content: fmtRo(post.rerOnsiteAfter, 1), styles: { fontStyle: "bold" } },
               {
-                content: post.compliantAfterAll ? "✓ CONFORM" : "✗ NECONFORM",
+                content: post.compliantAfterAll ? "CONFORM" : "NECONFORM",
                 styles: { fontStyle: "bold", textColor: post.compliantAfterAll ? COL_OK : COL_ERR },
               },
             ],
@@ -2024,10 +2125,22 @@ export async function generateNZEBConformanceReport(opts) {
           },
         });
 
-        // Concluzie sintetică
-        const concl = post.compliantAfterAll
-          ? `După implementarea integrală a măsurilor P1+P2+P3, clădirea ESTIMAT atinge clasa ${postClassLabel} și se încadrează în nZEB (estimare orientativă).`
-          : `Chiar și după implementarea P1+P2+P3, EP estimat (${post.epAfterAll}) rămâne peste pragul nZEB (${compliance.epMax}). Sunt necesare măsuri adiționale (creștere PV, biomasă, recuperare apă reziduală).`;
+        // Sprint 8 mai 2026 — Concluzie sintetică + notă pentru apartament (RA).
+        // Mc 001-2022 §2.4 evaluează nZEB la nivelul CLĂDIRII, nu al unității de
+        // clădire. Pentru categoria RA (apartament) recomandarea autonomă de
+        // atingere nZEB este nerealistă; raportul trebuie să clarifice asta.
+        const isApartment = building?.category === "RA";
+        let concl;
+        if (post.compliantAfterAll) {
+          concl = `După implementarea integrală a măsurilor P1+P2+P3, clădirea ESTIMAT atinge clasa ${postClassLabel} și se încadrează în nZEB (estimare orientativă).`;
+        } else if (isApartment) {
+          concl = `Chiar și după implementarea P1+P2+P3, EP estimat (${fmtRo(post.epAfterAll, 1)}) rămâne peste pragul nZEB (${fmtRo(compliance.epMax, 1)}). ` +
+            `IMPORTANT: Mc 001-2022 §2.4 evaluează încadrarea nZEB la nivelul ÎNTREGII CLĂDIRI (bloc), NU al apartamentului individual. ` +
+            `Pierderile prin pereții comuni cu apartamentele neîncălzite și prin SACET vechi sunt constrângeri structurale care nu pot fi rezolvate prin reabilitare individuală. ` +
+            `Recomandare: reabilitare integrată la nivelul blocului prin programe ANS / Casa Verde Asociații / PNRR Componenta C5.`;
+        } else {
+          concl = `Chiar și după implementarea P1+P2+P3, EP estimat (${fmtRo(post.epAfterAll, 1)}) rămâne peste pragul nZEB (${fmtRo(compliance.epMax, 1)}). Sunt necesare măsuri adiționale (creștere PV, biomasă, recuperare apă reziduală, schimb purtător termic).`;
+        }
         doc.setFillColor(...(post.compliantAfterAll ? [220, 252, 231] : [254, 226, 226]));
         const conclLines = doc.splitTextToSize(concl, w - 26);
         const conclH = conclLines.length * 4 + 6;
@@ -2148,13 +2261,36 @@ export async function generateNZEBConformanceReport(opts) {
       doc.setTextColor(...COL_G);
     }
 
-    // Caseta dreaptă — DATA ȘI LOCUL
+    // Caseta dreaptă — DATA, LOCUL ȘI BENEFICIARUL
+    // Sprint 8 mai 2026 — Adăugăm beneficiar + spațiu pentru semnătură proprietar
+    // ca să nu apară 2/3 din înălțime gol (audit 8 mai 2026 raportă cutie goală).
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
-    doc.text("DATA ȘI LOCUL", boxX2 + 2, y + 4);
+    doc.text("DATA, LOCUL ȘI BENEFICIARUL", boxX2 + 2, y + 4);
     doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
     doc.text(today, boxX2 + 2, y + 10);
     doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
-    doc.text(building?.city || "—", boxX2 + 2, y + 15);
+    doc.text(building?.city || "—", boxX2 + 2, y + 14);
+
+    // Beneficiar (proprietar) — opțional, citit din building.owner sau auditor.beneficiary
+    const beneficiar = building?.owner || building?.beneficiary || building?.proprietar;
+    if (beneficiar) {
+      doc.setFontSize(7); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+      doc.text("Beneficiar:", boxX2 + 2, y + 19);
+      doc.setFont(undefined, "normal"); doc.setTextColor(...COL_H);
+      const benLines = doc.splitTextToSize(String(beneficiar), boxW - 4);
+      doc.text(benLines, boxX2 + 2, y + 23);
+      // Linie semnătură beneficiar (etichetă jos)
+      doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+      doc.text("Semnătură proprietar / asociație:", boxX2 + 2, y + effectiveBoxH - 8);
+      doc.setDrawColor(...COL_G); doc.setLineWidth(0.2);
+      doc.line(boxX2 + 2, y + effectiveBoxH - 3, boxX2 + boxW - 2, y + effectiveBoxH - 3);
+    } else {
+      // Fallback: linie semnătură generică ca să umplem caseta
+      doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
+      doc.text("Semnătură beneficiar:", boxX2 + 2, y + effectiveBoxH - 8);
+      doc.setDrawColor(...COL_G); doc.setLineWidth(0.2);
+      doc.line(boxX2 + 2, y + effectiveBoxH - 3, boxX2 + boxW - 2, y + effectiveBoxH - 3);
+    }
     y += effectiveBoxH + 6;
 
     // ─── Sprint 8 mai 2026: hash autentificare + ID raport ───
@@ -2174,21 +2310,36 @@ export async function generateNZEBConformanceReport(opts) {
       date: today,
     };
     const reportHash = await computeReportHash(reportPayload);
-    const documentId = `nZEB-${(building?.category || "X")}-${(auditor?.atestat || "XXXX").replace(/\W/g, "")}-${reportHash}`;
+    const documentId = `nZEB-${(building?.category || "X")}-${(auditor?.atestat || "XXXX").replace(/\W/g, "")}-${reportHash.short}`;
 
+    // Sprint 8 mai 2026 — Bandă hash extinsă: ID + SHA-256 COMPLET (64 hex)
+    // pe 2 rânduri pentru a respecta cerința FIPS 180-4 (hash-ul complet
+    // permite verificare reală integritate document, nu doar identificare).
+    const hashBoxH = reportHash.full ? 14 : 10;
     doc.setFillColor(248, 248, 252);
-    doc.roundedRect(10, y, w - 20, 10, 1, 1, "F");
+    doc.roundedRect(10, y, w - 20, hashBoxH, 1, 1, "F");
     doc.setFontSize(7); doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
     doc.text("ID document:", 13, y + 4);
     doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
     doc.text(documentId, 35, y + 4);
     doc.setFont(undefined, "bold"); doc.setTextColor(...COL_H);
-    doc.text("Hash SHA-256:", 13, y + 8);
-    doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
-    doc.text(reportHash, 35, y + 8);
+    if (reportHash.full) {
+      doc.text("Hash SHA-256:", 13, y + 8);
+      doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+      // Hash complet (64 hex) afișat pe rând propriu pentru lizibilitate
+      doc.setFontSize(5.5);
+      doc.text(reportHash.full, 35, y + 8);
+      doc.setFontSize(6);
+      doc.text("Algoritm: SHA-256 (FIPS 180-4) — verificare integritate prin re-calcul pe payload identic.", 13, y + 12);
+    } else {
+      // Fallback DJB2 — etichetă onestă: NU SHA-256
+      doc.text("Cod scurt (DJB2):", 13, y + 8);
+      doc.setFont(undefined, "normal"); doc.setTextColor(...COL_G);
+      doc.text(reportHash.short, 40, y + 8);
+    }
     doc.setFontSize(6); doc.setFont(undefined, "italic"); doc.setTextColor(...COL_G);
     doc.text("Cod unic verificare integritate document — păstrați împreună cu PDF-ul.", w - 13, y + 6, { align: "right" });
-    y += 14;
+    y += hashBoxH + 4;
 
     // Footer legal
     doc.setFontSize(6); doc.setTextColor(...COL_G); doc.setFont(undefined, "italic");

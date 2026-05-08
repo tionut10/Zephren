@@ -336,7 +336,13 @@ export async function exportCpePostRehabPDF(params = {}) {
   const sav = rehabComparison.savings || {};
   const origCls = String(orig?.cls?.cls || orig?.cls || "—");
   const rehCls = String(reh?.cls?.cls || reh?.cls || "—");
-  const measures = buildMeasuresList(rehabScenarioInputs, opaqueElements, glazingElements, REHAB_COSTS);
+  // Sprint 8 mai 2026 — Filtru măsuri cu cost 0 RON (ex: planșeu superior pentru
+  // apartament etaj inferior). Audit 8 mai 2026 raportă că măsuri inactive apar
+  // în tabel cu cost "—" și aglomerează lista. Excludem cele cu cost <= 0 ȘI
+  // qty <= 0 (păstrăm cele cu 0 cost dar qty>0 pentru transparență — ex: lucrări
+  // gratuite incluse în pachet).
+  const measuresAll = buildMeasuresList(rehabScenarioInputs, opaqueElements, glazingElements, REHAB_COSTS);
+  const measures = measuresAll.filter(m => (m.cost || 0) > 0 || (m.area || 0) > 0);
   const totalCost = measures.reduce((s, m) => s + (m.cost || 0), 0);
   const annualKwhSaved = sav.qfSaved || 0;
   const fuelId = instSummary?.fuel?.id || "gaz";
@@ -348,10 +354,12 @@ export async function exportCpePostRehabPDF(params = {}) {
   // ═══════════════════════════════════════════════════════════════════════
 
   renderCoverPage(doc, brandMeta, {
+    // Sprint 8 mai 2026 — Săgeata "→" U+2192 nu e în Liberation Sans;
+    // SYMBOL_MAP convertește în "->" — folosim direct ASCII pentru consistență.
     subtitle: `Document orientativ · ${rehCls} estimată · reducere EP ${formatRomanianNumber(sav.epPct || 0, 1)}%`,
     kpis: [
       {
-        value: `${origCls} → ${rehCls}`,
+        value: `${origCls} -> ${rehCls}`,
         label: "Clasa energetică",
         color: ENERGY_CLASS_COLORS[rehCls] || BRAND_COLORS.PRIMARY,
       },
@@ -369,8 +377,10 @@ export async function exportCpePostRehabPDF(params = {}) {
     disclaimer: "Document orientativ generat pentru informare — NU înlocuiește CPE oficial emis după realizarea lucrărilor (Legea 372/2005, Mc 001-2022, Ord. MDLPA 348/2026). Performanța reală post-reabilitare se atestă prin CPE oficial înregistrat la portalul MDLPA.",
   });
 
-  // Watermark pe cover page
-  renderWatermark(doc, "ESTIMAT", { opacity: 0.08 });
+  // Sprint 8 mai 2026 — Watermark cover ELIMINAT.
+  // Motiv audit 8 mai 2026: watermark "ESTIMAT" la centrul paginii se suprapune
+  // cu titlul "CPE ESTIMAT — POST-REABILITARE" care deja conține cuvântul
+  // ESTIMAT. Dublarea creează vizual confuz. Watermark rămâne pe pag. 2 detaliu.
 
   // ═══════════════════════════════════════════════════════════════════════
   // PAGINA 2 — DETALIU TEHNIC
@@ -412,7 +422,7 @@ export async function exportCpePostRehabPDF(params = {}) {
 
   // Badge ACTUAL (stânga)
   drawClassBadge(doc, A4.MARGIN_LEFT, y, 26, 22, origCls, "ACTUAL");
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   doc.text(`EP: ${fmt(orig?.ep || 0, 1)} kWh/(m²·an)`, A4.MARGIN_LEFT + 30, y + 8);
@@ -421,15 +431,16 @@ export async function exportCpePostRehabPDF(params = {}) {
   setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
   doc.text("Bilanț Mc 001-2022 stare existentă", A4.MARGIN_LEFT + 30, y + 19);
 
-  // Săgeată centrală
-  doc.setFont("helvetica", "bold");
+  // Săgeată centrală — Liberation Sans nu conține → (U+2192), folosim ASCII
+  // (SYMBOL_MAP convertește auto, dar explicit aici pentru claritate).
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.H1);
   setBrandColor(doc, BRAND_COLORS.PRIMARY, "text");
-  doc.text("→", w / 2 - 5, y + 14);
+  doc.text("->", w / 2 - 5, y + 14);
 
   // Badge POST-REHAB (dreapta)
   drawClassBadge(doc, w - 40, y, 26, 22, rehCls, "POST-REHAB");
-  doc.setFont("helvetica", "normal");
+  doc.setFont(undefined, "normal");
   doc.setFontSize(FONT_SIZES.BODY);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const rightTxtX = w / 2 + 8;
@@ -441,7 +452,7 @@ export async function exportCpePostRehabPDF(params = {}) {
   y += 30;
 
   // ── Scala A-G îmbunătățită cu markeri ACTUAL + ESTIMAT + prag nZEB ──
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(FONT_SIZES.CAPTION);
   setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   doc.text("Scala energetică A-G (cu prag nZEB orientativ)", w / 2, y, { align: "center" });
@@ -541,11 +552,14 @@ export async function exportCpePostRehabPDF(params = {}) {
         fontStyle: "bold",
         fontSize: FONT_SIZES.TABLE_HEADER,
       },
+      // Sprint 8 mai 2026 — Footer DOAR pe ultima pagină (audit raportă că
+      // TOTAL ESTIMAT apărea pe pag. 2 ȘI pag. 3 când tabelul se rupe).
+      showFoot: "lastPage",
     });
     y = doc.lastAutoTable.finalY + SPACING.MD;
 
     // Sumar financiar
-    doc.setFont("helvetica", "normal");
+    doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.BODY);
     setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
     const lines = [

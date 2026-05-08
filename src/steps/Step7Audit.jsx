@@ -372,6 +372,11 @@ export default function Step7Audit(props) {
 
               showToast("⏳ Se generează pachetul complet... (poate dura 15-30 sec)", "info", 35000);
 
+              // Sprint 8 mai 2026 — Manifest A4 SHA-256 are nevoie de blob-urile
+               // REALE ale fișierelor pentru calcul hash valid (nu placeholder
+              // strings). Stocăm fiecare blob într-un Map indexat după nume,
+              // ca să-l putem pasa ulterior la generateManifestSHA256.
+              const generatedBlobs = new Map();
               const addToZip = async (name, fn) => {
                 try {
                   const result = await fn();
@@ -379,6 +384,7 @@ export default function Step7Audit(props) {
                   const blob = result instanceof Blob ? result : result.blob;
                   if (!blob) return;
                   zip.file(name, await blob.arrayBuffer());
+                  generatedBlobs.set(name, blob);
                   count++;
                 } catch (e) {
                   console.warn(`[ZIP] eroare la ${name}:`, e);
@@ -490,33 +496,82 @@ export default function Step7Audit(props) {
               // (nu există în Mc 001-2022 sau ordine MDLPA ca document obligatoriu;
               //  induce confuzie cu HG 622/2004; user feedback 8 mai 2026: nu folosită în practică).
 
-              // A6 → renumerotat A4 — Manifest SHA-256 (TXT)
-              await addToZip(`A4_manifest_SHA256_${today}.txt`, async () => {
-                const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
-                const r = await generateManifestSHA256({
-                  files: [
-                    { name: "dosar_audit.docx", blob: new Blob([cpeCode + "_audit"], { type: "text/plain" }) },
-                    { name: "pasaport.xml", blob: new Blob([cpeCode + "_pasaport"], { type: "text/plain" }) },
-                  ],
-                  auditor, building, cpeCode, download: false,
-                });
-                return r?.blob;
-              });
+              // Sprint 8 mai 2026 — Manifest A4 mutat la SFÂRȘITUL ZIP-ului
+              // pentru a hash-ui TOATE fișierele anterioare (A1-C1). Vezi finalul
+              // funcției pentru generare manifest.
 
               // A7 → renumerotat A5 — Plan M&V IPMVP (PDF)
+              // Sprint 8 mai 2026 — UNIFIED scenario sursă: A5 folosește acum
+              // `unified-rehab-costs.js` (la fel ca A2 CPE post-reab + B1 deviz)
+              // în loc de smartSuggestions (heuristic). Bug-fix audit 8 mai 2026:
+              // A5 raporta 8 măsuri/79.597 RON/24.903 RON/an în timp ce A2/B1
+              // raportau 6 măsuri/78.381 RON/17.922 RON/an pentru același scenariu.
               await addToZip(`A5_plan_MV_IPMVP_${today}.pdf`, async () => {
                 const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
-                const measuresFromSugg = (smartSuggestions || []).map(s => ({
-                  name: s.measure,
-                  cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRon),
-                }));
-                const totalCost = measuresFromSugg.reduce((s, m) => s + (m.cost_RON || 0), 0);
-                const expectedSavings = (smartSuggestions || []).reduce((s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0)
-                  * (parseFloat(building?.areaUseful) || 100) * 0.45;
+
+                let canonicalMeasures = [];
+                let totalCost = 0;
+                let expectedSavings = 0;
+
+                if (rehabScenarioInputs) {
+                  // Sursă canonică (același ca A2 + B1)
+                  const { buildCanonicalMeasures, buildFinancialSummary } =
+                    await import("../calc/unified-rehab-costs.js");
+                  const cm = buildCanonicalMeasures(
+                    rehabScenarioInputs, opaqueElements, glazingElements
+                  );
+                  canonicalMeasures = cm.map(m => ({
+                    name: m.label,
+                    cost_RON: m.costRON,
+                  }));
+                  totalCost = canonicalMeasures.reduce((s, m) => s + (m.cost_RON || 0), 0);
+                  // Economie anuală via buildFinancialSummary (signature:
+                  // (measures, options) - measures pozițional, opțiuni cu
+                  // qfSavedKwh + energyPrice).
+                  try {
+                    const qfSavedKwh = rehabComparison?.savings?.qfSaved || 0;
+                    const fuel = instSummary?.fuel?.id || "gaz";
+                    // Preț EUR/kWh aprox (gaz 0.09, electric 0.28, termoficare 0.07)
+                    const priceEUR = fuel === "electricitate" ? 0.28 :
+                                     fuel === "termoficare" ? 0.07 : 0.09;
+                    const fin = buildFinancialSummary(cm, {
+                      eurRon,
+                      qfSavedKwh,
+                      energyPriceEURperKwh: priceEUR,
+                    });
+                    expectedSavings = fin?.annualSavingRON || 0;
+                  } catch (e) {
+                    console.warn("[A5] buildFinancialSummary fail:", e.message);
+                    // Fallback simplu
+                    if (rehabComparison?.savings?.qfSaved) {
+                      const fuel = instSummary?.fuel?.id || "gaz";
+                      const priceRON = fuel === "electricitate" ? 1.40 :
+                                       fuel === "gaz" ? 0.45 : 0.35;
+                      expectedSavings = (rehabComparison.savings.qfSaved || 0) * priceRON;
+                    }
+                  }
+                } else {
+                  // Fallback istoric — DOAR dacă nu există rehabScenarioInputs
+                  // (ex: user a sărit Cardul Scenariu reabilitare). Marker:
+                  // measures.length === 0 alertează utilizatorul în PDF.
+                  console.warn("[A5] Lipsește rehabScenarioInputs — folosim smartSuggestions heuristic");
+                  canonicalMeasures = (smartSuggestions || []).map(s => ({
+                    name: s.measure,
+                    cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRon),
+                  }));
+                  totalCost = canonicalMeasures.reduce((s, m) => s + (m.cost_RON || 0), 0);
+                  expectedSavings = (smartSuggestions || []).reduce((s, x) => s + (parseFloat(x.epSaving_m2) || 0), 0)
+                    * (parseFloat(building?.areaUseful) || 100) * 0.45;
+                }
+
                 return generateMonitoringPlanPdf({
                   building, auditor, instSummary,
                   energyClass: enClass?.cls,
-                  scenario: { measures: measuresFromSugg, totalCost_RON: totalCost, expectedSavings_RON_y: expectedSavings },
+                  scenario: {
+                    measures: canonicalMeasures,
+                    totalCost_RON: totalCost,
+                    expectedSavings_RON_y: expectedSavings,
+                  },
                   download: false,
                 });
               });
@@ -550,10 +605,36 @@ export default function Step7Audit(props) {
                   const { exportFullAnnexesDOCX } = await import("../lib/element-annex-docx.js");
                   return exportFullAnnexesDOCX(
                     { opaque: opaqueElements, glazing: glazingElements, bridges: thermalBridges, systems: { heating, cooling, ventilation, lighting, acm } },
-                    { building, download: false }
+                    // Sprint 8 mai 2026 — pasăm auditor pentru banner header brand C1
+                    { building, auditor, download: false }
                   );
                 });
               }
+
+              // A4 — Manifest SHA-256 (TXT) — GENERAT ULTIMUL ca să cuprindă
+              // hash-uri pentru TOATE fișierele anterior generate (A1-A3, A5,
+              // B1, C1). Sprint 8 mai 2026 fix audit: anterior trimitea blob-uri
+              // placeholder ("cpeCode + '_audit'"), făcând manifestul invalid
+              // pentru deduplicare MDLPA Art. 11 Ord. 348/2026.
+              await addToZip(`A4_manifest_SHA256_${today}.txt`, async () => {
+                const { generateManifestSHA256 } = await import("../lib/dossier-extras.js");
+                const manifestFiles = [];
+                for (const [fname, fblob] of generatedBlobs.entries()) {
+                  // Excludem manifestul însuși (chicken-and-egg: nu existăm
+                  // încă în Map dar suntem defensivi)
+                  if (fname.startsWith("A4_manifest")) continue;
+                  manifestFiles.push({ name: fname, blob: fblob });
+                }
+                if (manifestFiles.length === 0) {
+                  console.warn("[ZIP] Manifest A4: niciun fișier anterior pentru hash");
+                  return null;
+                }
+                const r = await generateManifestSHA256({
+                  files: manifestFiles,
+                  auditor, building, cpeCode, download: false,
+                });
+                return r?.blob;
+              });
 
               if (count === 0) {
                 showToast("Nu s-a putut genera niciun document. Verificați datele introduse.", "error", 6000);

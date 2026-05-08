@@ -219,24 +219,29 @@ export function normalizeDiacritics(text) {
 // (chiar și când diacriticele funcționează).
 // ═══════════════════════════════════════════════════════════════
 const SYMBOL_MAP = {
-  // Bifă/cruce/atenție — folosite în verdicte conformitate
-  // IMPORTANT: NU folosim "DA"/"NU" ca înlocuiri — creează dublă negație
-  // în texte ca "✗ CLĂDIREA NU SE ÎNCADREAZĂ" → "NU CLĂDIREA NU SE
-  // ÎNCADREAZĂ". Folosim simboluri text neutre ASCII, semantic clare.
-  "✓": "[OK]",
-  "✔": "[OK]",
-  "✗": "[X]",
-  "✘": "[X]",
-  "❌": "[X]",
-  "⚠": "[!]",
-  "⚠️": "[!]",
-  "❗": "[!]",
-  "ℹ": "[i]",
-  "ℹ️": "[i]",
+  // Bifă/cruce/atenție — Liberation Sans NU le conține. Înlocuim cu glyph-uri
+  // EXISTENTE în Latin-1 (× U+00D7, √ U+221A nu există dar ✓→OK).
+  // IMPORTANT: NU folosim "DA"/"NU" — ar crea dublă negație ("✗ NU SE ÎNCADREAZĂ"
+  // → "NU NU SE ÎNCADREAZĂ"). Sprint 8 mai 2026: trecem de la "[OK]"/"[X]" la
+  // forme mai curate vizual — bifă text "OK", × multiplicare U+00D7 pentru cruce
+  // (există în Latin-1 supplement, deci se randează în Liberation Sans/Helvetica).
+  "✓": "OK",
+  "✔": "OK",
+  "✗": "×",
+  "✘": "×",
+  "❌": "×",
+  "⚠": "!",
+  "⚠️": "!",
+  "❗": "!",
+  "ℹ": "i",
+  "ℹ️": "i",
   "⭐": "*",
   "★": "*",
   "☆": "*",
-  // Săgeți speciale (-> și — funcționează nativ, dar variantele unicode pot lipsi)
+  // Săgeți speciale (→ U+2192 NU există în Liberation Sans — folosim ASCII)
+  "→": "->",
+  "←": "<-",
+  "↔": "<->",
   "⇒": "=>",
   "⇐": "<=",
   "⇔": "<=>",
@@ -249,13 +254,35 @@ const SYMBOL_MAP = {
   "◀": "<",
   "▲": "^",
   "▼": "v",
-  "■": "[X]",
+  "■": "X",
   "□": "[ ]",
   "●": "*",
   "○": "o",
+  // Sprint 8 mai 2026 — Subscripts (U+2080-U+2089) lipsesc din Liberation Sans.
+  // Înlocuim cu cifre normale (CO₂ → CO2, H₂O → H2O). Acceptabil științific.
+  "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4",
+  "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+  // Superscripts care lipsesc din Liberation Sans (¹²³ U+00B9/B2/B3 SUNT în Latin-1
+  // și se randează corect, dar ⁰⁴⁻⁺ și ⁻¹ nu sunt). Înlocuim cu echivalent text.
+  "⁰": "0", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+  "⁻": "-", "⁺": "+", "⁼": "=",
+  // Combinații specifice metrologie: m⁻¹ → "m^-1"
+  // (regex pe substring; aplicat în normalizeSymbols înainte de char-by-char)
 };
 
 const SYMBOL_RE = new RegExp(`[${Object.keys(SYMBOL_MAP).join("")}]`, "g");
+
+// Sprint 8 mai 2026 — substring patterns aplicate ÎNAINTE de char-by-char
+// (ex: m⁻¹ → "m^-1" mai natural decât "m-1" rezultat din replace ⁻ → "-").
+const SUBSTRING_PATTERNS = [
+  [/m⁻¹/g, "1/m"],         // raport Aenv/V (1 pe metru)
+  [/m⁻¹/g, "1/m"],
+  [/h⁻¹/g, "1/h"],         // permeabilitate aer n50 (1 pe oră)
+  [/h⁻¹/g, "1/h"],
+  [/s⁻¹/g, "1/s"],         // frecvență
+  [/kg\.?\s?CO₂\b/g, "kg CO2"], // emisii — păstrăm CO2 fără subscript
+  [/CO₂/g, "CO2"],          // dioxid de carbon (păstrare științifică clară)
+];
 
 /**
  * Înlocuiește simbolurile Unicode care lipsesc din Liberation Sans/Helvetica
@@ -266,7 +293,13 @@ const SYMBOL_RE = new RegExp(`[${Object.keys(SYMBOL_MAP).join("")}]`, "g");
  */
 export function normalizeSymbols(text) {
   if (typeof text !== "string") return text ?? "";
-  return text.replace(SYMBOL_RE, (c) => SYMBOL_MAP[c] || c);
+  let t = text;
+  // Substring patterns prima dată (m⁻¹ → 1/m, CO₂ → CO2)
+  for (const [pat, repl] of SUBSTRING_PATTERNS) {
+    t = t.replace(pat, repl);
+  }
+  // Apoi char-by-char fallback pentru orice simbol rămas
+  return t.replace(SYMBOL_RE, (c) => SYMBOL_MAP[c] || c);
 }
 
 /**

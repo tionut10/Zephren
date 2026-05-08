@@ -177,8 +177,11 @@ export async function generateFICPdf({
   drawRow("Perimetru clădire [m]", building.perimeter);
   drawRow("Etanșeitate n50 [h⁻¹]", building.n50);
   drawRow("Factor umbrire mediu", building.shadingFactor);
-  drawRow("Număr apartamente", building.nApartments);
-  drawRow("Număr ocupanți", building.nrOcupanti);
+  // Sprint 8 mai 2026 — Etichete dezambiguate (audit raport 8 mai 2026):
+  //   • „Număr apartamente" → „Apartamente în clădire (bloc)" — explicit nivel
+  //   • „Număr ocupanți" → „Ocupanți (unitate certificată)" — explicit unitate
+  drawRow("Apartamente în clădire (bloc)", building.nApartments);
+  drawRow("Ocupanți (unitate certificată)", building.nrOcupanti);
   y += 3;
 
   // Secțiunea 3: Date climatice
@@ -188,7 +191,8 @@ export async function generateFICPdf({
   // - name (selectedClimate)    → locality (FIC label)
   drawRow("3. DATE CLIMATICE (SR 4839/Mc 001-2022)", "", true);
   drawRow("Zonă climatică", climate.zone || building.zonaClimatica);
-  drawRow("Locality climatică", climate.locality || climate.name || building.locality || building.city);
+  // Sprint 8 mai 2026 — Typo fix: „Locality" (englezism) → „Localitate climatică"
+  drawRow("Localitate climatică", climate.locality || climate.name || building.locality || building.city);
   drawRow("Latitudine / Longitudine", `${building.latitude || climate.lat || "—"}° N / ${building.longitude || climate.lon || "—"}° E`);
   const tExtMin = climate.t_ext_min ?? climate.theta_e;
   const gradeZile = climate.gd ?? climate.ngz;

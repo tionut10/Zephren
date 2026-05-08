@@ -17,8 +17,11 @@ const ENV_VERSION =
   (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_APP_VERSION) ||
   null;
 
-/** Versiunea scurtă afișată în UI (ex: "v3.5"). */
-export const APP_VERSION = ENV_VERSION || "v3.5";
+/** Versiunea scurtă afișată în UI (ex: "v4.0").
+ * Sprint 8 mai 2026 — bump v3.5 → v4.0 după Sprint Visual-1..8 (brand kit unitar)
+ * + Sprint Conformitate P0/P1/P2/P3 (PDF/A-3, PAdES, manifest, dossier bundle).
+ */
+export const APP_VERSION = ENV_VERSION || "v4.0";
 
 /** Versiunea extinsă cu marca normativă (ex: "v3.5 — Mc 001-2022, ISO 52000-1/NA:2023"). */
 export const APP_VERSION_FULL = `${APP_VERSION} — Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275`;

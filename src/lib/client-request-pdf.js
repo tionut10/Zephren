@@ -549,7 +549,7 @@ function _drawLogoWhite(doc, x, y, width = 30) {
   doc.rect(x + 3.0 * scale, y + 26.76 * scale, 24.0 * scale, 0.84 * scale, "F");
 
   // Text "Zephren" alb
-  doc.setFont("helvetica", "bold");
+  doc.setFont(undefined, "bold");
   doc.setFontSize(12 * scale);
   doc.setTextColor(255, 255, 255);
   doc.text("Zephren", x + 15.0 * scale, y + 35.0 * scale, { align: "center" });
