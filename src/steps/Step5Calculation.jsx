@@ -457,49 +457,44 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   <div className="flex items-center justify-center">
-                    <svg viewBox="0 0 300 280" width="100%" style={{maxWidth:"400px"}} className="opacity-90">
+                    <svg viewBox="0 0 340 300" width="100%" style={{maxWidth:"460px"}}>
                       {(() => {
-                        const cx = 150, cy = 130, maxR = 100;
+                        const cx = 170, cy = 145, maxR = 108;
                         const utils = [
-                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#ef4444"},
-                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#f97316"},
-                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#3b82f6"},
-                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#8b5cf6"},
-                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#eab308"},
+                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0, max: 200, color:"#f87171"},
+                          {label:"ACM", val: Au > 0 ? instSummary.qf_w / Au : 0, max: 80, color:"#fb923c"},
+                          {label:"Răcire", val: Au > 0 ? instSummary.qf_c / Au : 0, max: 50, color:"#60a5fa"},
+                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0, max: 20, color:"#a78bfa"},
+                          {label:"Iluminat", val: Au > 0 ? instSummary.qf_l / Au : 0, max: 30, color:"#fde047"},
                         ];
                         const n = utils.length;
                         const angleStep = (2 * Math.PI) / n;
                         const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
-                        // Grid circles
                         const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
                           const r = maxR * f;
                           const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
-                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />;
+                          return <polygon key={f} points={pts} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="0.8" />;
                         });
-                        // Axes
                         const axes = utils.map((u, i) => {
-                          const [x, y] = getXY(i, maxR + 15);
+                          const [x, y] = getXY(i, maxR + 22);
                           const [ax, ay] = getXY(i, maxR);
-                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" /><text x={x} y={y} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.6)">{u.label}</text></g>;
+                          return <g key={i}><line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.20)" strokeWidth="0.8" /><text x={x} y={y+4} textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.90)" fontWeight="500">{u.label}</text></g>;
                         });
-                        // Data polygon
                         const pts = utils.map((u, i) => {
                           const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1));
                           return getXY(i, r).join(",");
                         }).join(" ");
-                        // Value labels
                         const vals = utils.map((u, i) => {
-                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 10;
+                          const r = Math.min(maxR, maxR * Math.min(u.val / u.max, 1)) + 14;
                           const [x, y] = getXY(i, r);
-                          return <text key={"v"+i} x={x} y={y} textAnchor="middle" fontSize="7" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
+                          return <text key={"v"+i} x={x} y={y+3} textAnchor="middle" fontSize="9.5" fill={u.color} fontWeight="bold">{u.val.toFixed(1)}</text>;
                         });
-                        // nZEB reference polygon
-                        const nzebVals = [49, 18, 13, 5, 6]; // Mc 001 A+ thresholds
+                        const nzebVals = [49, 18, 13, 5, 6];
                         const nzebPts = nzebVals.map((v, i) => {
                           const r = maxR * Math.min(v / utils[i].max, 1);
                           return getXY(i, r).join(",");
                         }).join(" ");
-                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.08)" stroke="#22c55e" strokeWidth="1" strokeDasharray="3 2" /><polygon points={pts} fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="1.5" />{vals}<text x={cx} y={cy + maxR + 40} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
+                        return <>{grid}{axes}<polygon points={nzebPts} fill="rgba(34,197,94,0.12)" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="4 2" /><polygon points={pts} fill="rgba(245,158,11,0.22)" stroke="#f59e0b" strokeWidth="2.5" />{vals}<text x={cx} y={cy + maxR + 44} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.65)">— — nZEB A+ referință | —— clădire reală [kWh/m²·an]</text></>;
                       })()}
                     </svg>
                   </div>
