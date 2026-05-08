@@ -13,6 +13,10 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📄",
+        "text": "update: @anthropic-ai/sdk 0.95.1, exceljs instalat, cachetools/lxml/tzdata/pdfminer Python actualizate"
+      },
+      {
+        "icon": "📄",
         "text": "update: toate dependențele la ultimele versiuni (react 19, vite 8, pdfjs 5, react-leaflet 5, uuid 14, cryptogr"
       },
       {
@@ -38,10 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "📥",
         "text": "refactor(documente): eliminare consistentă XML portal MDLPA standalone + din pachet ZIP (până 8.VII.2026)"
-      },
-      {
-        "icon": "📥",
-        "text": "fix(consistență): Pachet complet ZIP folosește Anexa MDLPA portal XML (Ord. 348/2026) în loc de XML vechi Ord."
       }
     ]
   },
