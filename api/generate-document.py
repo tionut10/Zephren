@@ -554,12 +554,47 @@ def insert_signature_stamp(doc, signature_b64, stamp_b64):
                             spacer_pPr = _OxEl_sp("w:pPr")
                             spacer_spacing = _OxEl_sp("w:spacing")
                             spacer_spacing.set(_qn_reord("w:before"), "0")
-                            spacer_spacing.set(_qn_reord("w:after"), "300")  # 300 twips = ~15mm spațiu
-                            spacer_spacing.set(_qn_reord("w:line"), "120")   # line height ~6mm
+                            spacer_spacing.set(_qn_reord("w:after"), "600")  # 600 twips = ~30mm spațiu
+                            spacer_spacing.set(_qn_reord("w:line"), "240")   # line height ~12mm
                             spacer_spacing.set(_qn_reord("w:lineRule"), "exact")
                             spacer_pPr.append(spacer_spacing)
                             spacer.append(spacer_pPr)
                             cod_tbl.addprevious(spacer)
+
+                            # Sprint 8 mai 2026 — Aliniere tabel COD UNIC la STÂNGA paginii +
+                            # text din celulă CENTRAT (orizontal + vertical)
+                            tblPr = cod_tbl.find(_qn_reord("w:tblPr"))
+                            if tblPr is None:
+                                tblPr = _OxEl_sp("w:tblPr")
+                                cod_tbl.insert(0, tblPr)
+                            jc_tbl = tblPr.find(_qn_reord("w:jc"))
+                            if jc_tbl is None:
+                                jc_tbl = _OxEl_sp("w:jc")
+                                tblPr.append(jc_tbl)
+                            jc_tbl.set(_qn_reord("w:val"), "left")  # tabel aliniat stânga
+
+                            # Pentru fiecare celulă din tabel: text CENTRAT
+                            for tc in cod_tbl.findall(".//" + _qn_reord("w:tc")):
+                                tcPr = tc.find(_qn_reord("w:tcPr"))
+                                if tcPr is None:
+                                    tcPr = _OxEl_sp("w:tcPr")
+                                    tc.insert(0, tcPr)
+                                vAlign = tcPr.find(_qn_reord("w:vAlign"))
+                                if vAlign is None:
+                                    vAlign = _OxEl_sp("w:vAlign")
+                                    tcPr.append(vAlign)
+                                vAlign.set(_qn_reord("w:val"), "center")  # vertical centru
+                                # Aliniere orizontală a textului în celulă
+                                for p in tc.findall(_qn_reord("w:p")):
+                                    p_pPr = p.find(_qn_reord("w:pPr"))
+                                    if p_pPr is None:
+                                        p_pPr = _OxEl_sp("w:pPr")
+                                        p.insert(0, p_pPr)
+                                    p_jc = p_pPr.find(_qn_reord("w:jc"))
+                                    if p_jc is None:
+                                        p_jc = _OxEl_sp("w:jc")
+                                        p_pPr.append(p_jc)
+                                    p_jc.set(_qn_reord("w:val"), "center")  # text centrat orizontal
                         except ValueError:
                             pass  # element nu e în listă (improbabil)
             except Exception:
