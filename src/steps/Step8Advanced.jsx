@@ -3428,55 +3428,19 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
 
                   {/* Export butoane */}
                   <div className="flex gap-2 pt-1">
-                    {/* Export PDF */}
+                    {/* Export PDF — Sprint V-B1 (8 mai 2026): refactor extract la
+                        src/lib/b1-deviz-pdf.js cu brand kit + bar chart + QR cod */}
                     <button
                       onClick={async () => {
-                        const { default: jsPDF } = await import("jspdf");
-                        await import("jspdf-autotable");
-                        const doc = new jsPDF();
-                        // S30A·A1 — diacritice RO via Liberation Sans embedded
-                        const fontOk = await setupRomanianFont(doc);
-                        const writeText = makeTextWriter(doc, fontOk);
-                        const dateStr = new Date().toLocaleDateString("ro-RO");
-                        // Header
-                        doc.setFontSize(14);
-                        writeText("Deviz estimativ reabilitare termică", 14, 18);
-                        doc.setFontSize(9); doc.setTextColor(100);
-                        writeText(`Clădire: ${building?.address || "—"} | Au: ${Au || "—"} m²`, 14, 26);
-                        writeText(`Data: ${dateStr} | Prețuri orientative 2024-2025 fără TVA`, 14, 31);
-                        doc.setTextColor(0);
-                        // Tabel items
-                        const rows = (devizResult.items || []).map((item, i) => [
-                          i + 1,
-                          item.label,
-                          item.unit || "—",
-                          item.qty != null ? String(item.qty) : "—",
-                          item.priceUnit != null ? item.priceUnit.toFixed(0) : "—",
-                          item.totalEUR != null ? item.totalEUR.toLocaleString("ro-RO", { maximumFractionDigits: 0 }) : "—",
-                        ]);
-                        doc.autoTable({
-                          head: [["Nr.", "Descriere lucrare", "UM", "Cantitate", "P.U. EUR", "Valoare EUR"]],
-                          body: rows, startY: 37,
-                          styles: { fontSize: 8, font: fontOk ? ROMANIAN_FONT : "helvetica" },
-                          headStyles: { fillColor: [79, 70, 229] },
-                          columnStyles: { 0: { halign: "center", cellWidth: 10 }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } },
+                        const { generateB1DevizPdf } = await import("../lib/b1-deviz-pdf.js");
+                        await generateB1DevizPdf({
+                          devizResult,
+                          building,
+                          auditor: auditor || {},
+                          userPlan,
+                          hasAccess: canAccess(userPlan, "devizPDF"),
+                          download: true,
                         });
-                        const y = doc.lastAutoTable.finalY + 5;
-                        const subtotal = devizResult.totalEUR || 0;
-                        const tva = subtotal * 0.21;
-                        doc.setFontSize(9);
-                        writeText(`Subtotal (fără TVA): ${subtotal.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 6, { align: "right" });
-                        writeText(`TVA 21%: ${tva.toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 12, { align: "right" });
-                        doc.setFontSize(10); doc.setFont(fontOk ? ROMANIAN_FONT : "helvetica", "bold");
-                        writeText(`TOTAL cu TVA: ${(subtotal + tva).toLocaleString("ro-RO", { maximumFractionDigits: 0 })} EUR`, 100, y + 20, { align: "right" });
-                        doc.setFont(fontOk ? ROMANIAN_FONT : "helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(120);
-                        writeText("Zephren Energy App — deviz orientativ, verificați cu antreprenori autorizați", 14, y + 30);
-                        // Watermark dacă Free
-                        if (!canAccess(userPlan, "devizPDF")) {
-                          doc.setFontSize(28); doc.setTextColor(180, 180, 180);
-                          writeText("ORIENTATIV — ZEPHREN FREE", 50, 160, { angle: 45, opacity: 0.3 });
-                        }
-                        doc.save(`Deviz_${building?.address || "cladire"}_${dateStr.replace(/\//g,"-")}.pdf`);
                       }}
                       className="flex-1 py-2 rounded-lg text-xs font-medium transition-all bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-1">
                       📄 Export PDF
@@ -3495,7 +3459,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                           ]),
                           [],
                           ["", "", "", "", "Subtotal (fără TVA) EUR:", devizResult.totalEUR?.toFixed(0) || ""],
-                          ["", "", "", "", "TVA 21%:", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
+                          ["", "", "", "", "TVA 21% (post 1.VIII.2025):", ((devizResult.totalEUR || 0) * 0.21).toFixed(0)],
                           ["", "", "", "", "TOTAL cu TVA EUR:", ((devizResult.totalEUR || 0) * 1.21).toFixed(0)],
                         ];
                         const ws = XLSX.utils.aoa_to_sheet(rows);

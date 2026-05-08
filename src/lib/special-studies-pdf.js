@@ -1,13 +1,15 @@
 /**
  * special-studies-pdf.js — Studii speciale obligatorii pentru construcții noi.
  *
+ * Sprint Conformitate P1-11..P1-14 (7 mai 2026) + Sprint Visual-6 (8 mai 2026).
+ *
  * Acoperă itemii P1-11..P1-14 din audit conformitate:
  *   - P1-11 Studiu sisteme alternative (Mc 001-2022 §11 + Art. 9 EPBD 2024/1275)
  *   - P1-12 Studiu pre-cabling EV (Art. 14 alin. 3-4 EPBD 2024/1275 + L. 238/2024)
  *   - P1-13 Foaie de parcurs (FdP) standalone — limbaj non-tehnic pentru beneficiar
  *   - P1-14 Plan M&V avansat IPMVP cu opțiunile A/B/C/D (extends dossier-extras.js)
  *
- * Sprint Conformitate P1-11..P1-14 (7 mai 2026).
+ * Sprint Visual-6: aplicare brand kit (SLATE_900 + WHITE pe headers tabele).
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
@@ -140,9 +142,9 @@ export async function generateAlternativeSystemsStudyPdf({
   doc.setFont(baseFont, "bold"); doc.setFontSize(11);
   writeText("2. ANALIZĂ COMPARATIVĂ 6 ALTERNATIVE", M, y); y += 6;
 
-  doc.setFillColor(35, 41, 70);
+  doc.setFillColor(15, 23, 42); // Sprint V6: SLATE_900 brand kit (era custom slate)
   doc.rect(M, y, pageW - 2 * M, 6, "F");
-  doc.setTextColor(251, 191, 36);
+  doc.setTextColor(255, 255, 255); // Sprint V6: WHITE brand kit (era amber accent)
   doc.setFont(baseFont, "bold"); doc.setFontSize(8);
   writeText("Sistem alternativ", M + 2, y + 4);
   writeText("Investiție RON", M + 75, y + 4);

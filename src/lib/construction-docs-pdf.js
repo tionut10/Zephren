@@ -1,17 +1,34 @@
 /**
  * construction-docs-pdf.js — Documente specifice construcții noi (Faza B/C).
  *
- * Sprint Conformitate P3-02..P3-04 (7 mai 2026).
+ * Sprint Conformitate P3-02..P3-04 (7 mai 2026) + Sprint Visual-6 (8 mai 2026).
  *
  * Module incluse:
  *   - generateCarteaTehnicaNotesPdf (P3-02) — Note pentru Cartea Tehnică (faza execuție)
  *   - generatePhotoAlbumPdf (P3-03) — Foto-album construcții noi (≥30 fotografii cu EXIF)
  *   - generateCtInsertionDossierPdf (P3-04) — Inserare CT recepție (agregat)
  *
+ * Sprint Visual-6: aplicare brand kit (SLATE_900 + WHITE pe header tabele,
+ * brand header/footer pe paginile principale).
+ *
  * Bază legală: HG 273/1994 Art. 17 (Cartea Tehnică obligatorie).
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderQrCode,
+  buildVerifyUrl,
+} from "./pdf-brand-layout.js";
 
 function _safeSlug(s) {
   return String(s || "")
@@ -78,9 +95,9 @@ export async function generateCarteaTehnicaNotesPdf({
   writeText("2. ABATERI vs PROIECT", M, y); y += 7;
 
   if (deviations.length > 0) {
-    doc.setFillColor(35, 41, 70);
+    doc.setFillColor(15, 23, 42); // Sprint V6: SLATE_900 brand kit (era custom slate)
     doc.rect(M, y, pageW - 2 * M, 7, "F");
-    doc.setTextColor(251, 191, 36);
+    doc.setTextColor(255, 255, 255); // Sprint V6: WHITE brand kit (era amber accent)
     doc.setFont(baseFont, "bold"); doc.setFontSize(8);
     writeText("Specificație", M + 2, y + 5);
     writeText("Planificat", M + 60, y + 5);
@@ -347,9 +364,9 @@ export async function generateEnergobilantPdf({
   writeText("2. PROCESE PRINCIPALE + INDICATORI SPECIFICI", M, y); y += 7;
 
   if (processes.length > 0) {
-    doc.setFillColor(35, 41, 70);
+    doc.setFillColor(15, 23, 42); // Sprint V6: SLATE_900 brand kit (era custom slate)
     doc.rect(M, y, pageW - 2 * M, 7, "F");
-    doc.setTextColor(251, 191, 36);
+    doc.setTextColor(255, 255, 255); // Sprint V6: WHITE brand kit (era amber accent)
     doc.setFont(baseFont, "bold"); doc.setFontSize(8.5);
     writeText("Proces", M + 2, y + 5);
     writeText("Consum kWh/an", M + 75, y + 5);

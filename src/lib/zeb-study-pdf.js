@@ -1,21 +1,33 @@
 /**
  * zeb-study-pdf.js — Studiu ZEB (Zero Emission Building) post-2030 EPBD 2024.
  *
- * Sprint Conformitate P3-01 (7 mai 2026).
+ * Sprint Conformitate P3-01 (7 mai 2026) + Sprint Visual-6 (8 mai 2026).
  *
  * Conform Art. 9 alin. 1 EPBD 2024/1275:
  *   - Post 1.I.2030: clădiri publice noi → ZEB obligatoriu
  *   - Post 1.I.2033: toate clădirile noi → ZEB obligatoriu
  *
- * ZEB e mai strict decât nZEB:
- *   - EP_nren = 0 (sau aproape 0) — interzis fossil fuels onsite
- *   - RER ≥ 70% (vs ~30% nZEB)
- *   - Producție onsite + grid sau district heating regenerabil
- *
- * Folosește ZEB_THRESHOLDS din u-reference.js (existing).
+ * Sprint Visual-6: aplicare brand kit unitar verde Zephren (header + footer +
+ * section headers + box semnătură + QR cod verificare integritate).
  */
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+import {
+  BRAND_COLORS,
+  FONT_SIZES,
+  A4,
+  STROKE_WIDTH,
+  setBrandColor,
+  formatRomanianDate,
+  buildBrandMetadata,
+} from "./pdf-brand-kit.js";
+import {
+  applyBrandHeader,
+  applyBrandFooter,
+  renderSectionHeader,
+  renderQrCode,
+  buildVerifyUrl,
+} from "./pdf-brand-layout.js";
 
 function _safeSlug(s) {
   return String(s || "")
@@ -106,18 +118,46 @@ export async function generateZebStudyPdf({
   const fontOk = await setupRomanianFont(doc);
   const writeText = makeTextWriter(doc, fontOk);
   const baseFont = fontOk ? ROMANIAN_FONT : "helvetica";
-  const M = 18;
-  const pageW = doc.internal.pageSize.getWidth();
-  let y = 22;
+  const M = A4.MARGIN_LEFT;
+  const pageW = A4.WIDTH;
 
-  doc.setFont(baseFont, "bold"); doc.setFontSize(15);
-  writeText("STUDIU ZEB (Zero Emission Building)", pageW / 2, y, { align: "center" });
+  // Sprint Visual-6: brand metadata
+  const brandMeta = buildBrandMetadata({
+    title: "Studiu ZEB (Zero Emission Building)",
+    cpeCode: building?.cpeCode || `ZEB-${formatRomanianDate(new Date(), "iso")}`,
+    building: {
+      address: building.address,
+      category: building.category,
+      areaUseful: building.areaUseful,
+      year: building.yearBuilt,
+      cadastral: building.cadastralNumber,
+    },
+    docType: "zeb-study",
+    version: "v4.0",
+  });
+
+  // Header brand
+  applyBrandHeader(doc, brandMeta);
+  let y = A4.MARGIN_TOP + 4;
+
+  // Antet titlu cu bară primary
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TITLE);
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "text");
+  writeText("STUDIU ZEB", pageW / 2, y, { align: "center" });
   y += 6;
-  doc.setFontSize(10); doc.setFont(baseFont, "normal"); doc.setTextColor(80, 80, 100);
-  writeText("Conform Art. 9 alin. 1 EPBD 2024/1275 — clădiri publice noi 1.I.2030, toate noi 1.I.2033",
-    pageW / 2, y, { align: "center" });
+  doc.setFontSize(FONT_SIZES.H3); doc.setFont(baseFont, "normal");
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("Zero Emission Building — EPBD 2024 Art. 9", pageW / 2, y, { align: "center" });
+  y += 4;
+  setBrandColor(doc, BRAND_COLORS.PRIMARY, "draw");
+  doc.setLineWidth(STROKE_WIDTH.HEAVY);
+  doc.line(pageW / 2 - 30, y, pageW / 2 + 30, y);
+  y += 4;
+  doc.setFontSize(FONT_SIZES.CAPTION);
+  setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+  writeText("clădiri publice noi 1.I.2030 · toate noi 1.I.2033", pageW / 2, y, { align: "center" });
   y += 8;
-  doc.setTextColor(0, 0, 0);
+  setBrandColor(doc, BRAND_COLORS.BLACK, "text");
 
   // 1. Verificare conformitate
   const compliance = checkZebCompliance({
@@ -127,8 +167,7 @@ export async function generateZebStudyPdf({
     rer: energy.rer,
   });
 
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("1. VERIFICARE CONFORMITATE ZEB", M, y); y += 7;
+  y = renderSectionHeader(doc, "1. Verificare conformitate ZEB", y);
 
   // Status banner
   const isCompliant = compliance.compliant;
@@ -144,13 +183,13 @@ export async function generateZebStudyPdf({
   y += 22;
 
   // 2. Praguri ZEB pentru categoria
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("2. PRAGURI ZEB CATEGORIA " + (building.category || "—"), M, y); y += 7;
+  y = renderSectionHeader(doc, "2. Praguri ZEB · Categoria " + (building.category || "—"), y);
 
-  doc.setFillColor(35, 41, 70);
+  // Header tabel custom cu brand colors (era custom slate dark + amber)
+  setBrandColor(doc, BRAND_COLORS.SLATE_900, "fill");
   doc.rect(M, y, pageW - 2 * M, 7, "F");
-  doc.setTextColor(251, 191, 36);
-  doc.setFont(baseFont, "bold"); doc.setFontSize(9);
+  setBrandColor(doc, BRAND_COLORS.WHITE, "text");
+  doc.setFont(baseFont, "bold"); doc.setFontSize(FONT_SIZES.TABLE_HEADER);
   writeText("Indicator", M + 2, y + 5);
   writeText("Valoare actuală", M + 70, y + 5);
   writeText("Prag ZEB", M + 115, y + 5);
@@ -182,10 +221,14 @@ export async function generateZebStudyPdf({
   y += 6;
 
   // 3. Comparație scenarii
-  if (y > 230) { doc.addPage(); y = 22; }
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("3. COMPARAȚIE SCENARII (curent / nZEB / ZEB)", M, y); y += 7;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9);
+  if (y > 230) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
+  y = renderSectionHeader(doc, "3. Comparație scenarii (curent / nZEB / ZEB)", y);
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.TABLE_BODY);
   const scLabels = ["Curent (existent)", "Țintă nZEB (Mc 001-2022)", "Țintă ZEB (EPBD 2024 Art. 9)"];
   const scKeys = ["current", "nzebTarget", "zebTarget"];
   scKeys.forEach((key, i) => {
@@ -197,10 +240,15 @@ export async function generateZebStudyPdf({
   y += 4;
 
   // 4. Recomandări tehnice
-  if (y > 240) { doc.addPage(); y = 22; }
-  doc.setFont(baseFont, "bold"); doc.setFontSize(11);
-  writeText("4. RECOMANDĂRI TEHNICE PENTRU ZEB", M, y); y += 7;
-  doc.setFont(baseFont, "normal"); doc.setFontSize(9);
+  if (y > 240) {
+    applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+    doc.addPage();
+    applyBrandHeader(doc, brandMeta);
+    y = A4.MARGIN_TOP + 4;
+  }
+  y = renderSectionHeader(doc, "4. Recomandări tehnice pentru ZEB", y);
+  doc.setFont(baseFont, "normal"); doc.setFontSize(FONT_SIZES.BODY);
+  setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
   const recommendations = isCompliant ? [
     "✓ Clădirea îndeplinește deja pragurile ZEB. Recomandăm:",
     "  • Monitorizare anuală performanță (M&V IPMVP)",
@@ -217,19 +265,33 @@ export async function generateZebStudyPdf({
     "  • Smart-grid conectivitate (OCPP / V2G ready)",
   ];
   recommendations.forEach(r => {
-    if (y > 270) { doc.addPage(); y = 22; }
+    if (y > 270) {
+      applyBrandFooter(doc, brandMeta, doc.internal.getNumberOfPages(), 0);
+      doc.addPage();
+      applyBrandHeader(doc, brandMeta);
+      y = A4.MARGIN_TOP + 4;
+    }
     writeText(r, M, y); y += 4.5;
   });
 
-  // Footer
-  doc.setDrawColor(150, 150, 170);
-  doc.line(M, 285, pageW - M, 285);
-  doc.setFont(baseFont, "italic"); doc.setFontSize(7); doc.setTextColor(100, 100, 130);
-  writeText("Generat de Zephren v4.0+ — Sprint Conformitate P3-01. " +
-    "Bază: Art. 9 EPBD 2024/1275 + L. 238/2024 + Mc 001-2022.",
-    M, 290, { maxWidth: pageW - 2 * M });
+  // QR cod verificare integritate (footer ultima pagină)
+  await renderQrCode(doc, buildVerifyUrl(brandMeta), {
+    x: A4.WIDTH - A4.MARGIN_RIGHT - 18,
+    y: A4.HEIGHT - 35 - 15,
+    size: 18,
+    label: "Verifică online",
+  });
 
-  const fname = `Studiu_ZEB_${_safeSlug(building.address || "cladire")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  // Footer brand toate paginile
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    applyBrandFooter(doc, brandMeta, i, totalPages, {
+      legalText: "Art. 9 EPBD 2024/1275 · L. 238/2024 · Mc 001-2022 · Sprint Conformitate P3-01",
+    });
+  }
+
+  const fname = `Studiu_ZEB_${_safeSlug(building.address || "cladire")}_${formatRomanianDate(new Date(), "iso")}.pdf`;
   if (download) doc.save(fname);
   return doc.output("blob");
 }

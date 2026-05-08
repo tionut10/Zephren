@@ -659,6 +659,105 @@ export function renderSignatureBox(doc, x, y, options = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 8.5 QR COD pentru verificare integritate document (Sprint Visual-6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generează QR cod și îl atașează la documentul jsPDF.
+ *
+ * Payload format recomandat:
+ *   - URL public: "https://zephren.ro/verify/{cpeCode}" (validator MDLPA viitor)
+ *   - Sau structurat: "ZEPHREN|{cpeCode}|{dateISO}|{hashSHA256_8chars}"
+ *
+ * Folosește pachetul `qrcode` (deja instalat). Async — folosi în context async.
+ *
+ * @param {jsPDF} doc
+ * @param {string} payload — text encodat în QR
+ * @param {object} [options]
+ * @param {number} [options.x=15]
+ * @param {number} [options.y=A4.HEIGHT - 35]
+ * @param {number} [options.size=18] — lățime/înălțime (mm) — recomandat 15-25
+ * @param {string} [options.label] — text dedesubt (ex: "Verifică online")
+ * @param {[number,number,number]} [options.darkColor] — culoare pixel-uri QR
+ * @returns {Promise<{x:number, y:number, size:number, payload:string}>}
+ */
+export async function renderQrCode(doc, payload, options = {}) {
+  const {
+    x = 15,
+    y = A4.HEIGHT - 35,
+    size = 18,
+    label,
+    darkColor = BRAND_COLORS.SLATE_900,
+  } = options;
+
+  if (!payload) return null;
+
+  try {
+    const QRCode = (await import("qrcode")).default;
+    const darkHex = `#${darkColor.map(c => c.toString(16).padStart(2, "0")).join("")}`;
+    const dataURL = await QRCode.toDataURL(String(payload), {
+      width: 256, // sursă mare pentru calitate
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: darkHex, light: "#ffffff" },
+    });
+
+    // jsPDF addImage(dataURL, format, x, y, w, h)
+    doc.addImage(dataURL, "PNG", x, y, size, size);
+
+    // Label dedesubt (opțional)
+    if (label) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(FONT_SIZES.FOOTER);
+      setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+      doc.text(String(label), x + size / 2, y + size + 2.5, { align: "center" });
+      setBrandColor(doc, BRAND_COLORS.BLACK, "text");
+    }
+
+    return { x, y, size, payload: String(payload) };
+  } catch (err) {
+    // Fallback grafic: chenar gri cu text "QR" + payload short
+    setBrandColor(doc, BRAND_COLORS.SLATE_400, "draw");
+    doc.setLineWidth(STROKE_WIDTH.THIN);
+    doc.rect(x, y, size, size, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(FONT_SIZES.CAPTION);
+    setBrandColor(doc, BRAND_COLORS.SLATE_500, "text");
+    doc.text("QR", x + size / 2, y + size / 2, { align: "center" });
+    if (label) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(FONT_SIZES.FOOTER);
+      doc.text(String(label).slice(0, 16), x + size / 2, y + size + 2.5, { align: "center" });
+    }
+    setBrandColor(doc, BRAND_COLORS.BLACK, "text");
+    setBrandColor(doc, BRAND_COLORS.BLACK, "draw");
+    return { x, y, size, payload: String(payload), error: err?.message };
+  }
+}
+
+/**
+ * Generează URL standard de verificare pentru un document Zephren.
+ *
+ * Format: https://zephren.ro/verify/{cpeCode}?t={dateISO}&h={hashShort}
+ *
+ * @param {object} meta — brand metadata (cpeCode, dateISO, etc.)
+ * @param {object} [options]
+ * @param {string} [options.baseUrl="https://zephren.ro/verify"]
+ * @param {string} [options.hashShort] — primele 8 caractere SHA-256 (opțional)
+ * @returns {string}
+ */
+export function buildVerifyUrl(meta = {}, options = {}) {
+  const { baseUrl = "https://zephren.ro/verify", hashShort } = options;
+  const cpeCode = meta.cpeCode || "no-code";
+  const dateISO = meta.dateISO || new Date().toISOString().slice(0, 10);
+  const safeCpeCode = encodeURIComponent(String(cpeCode));
+  const params = new URLSearchParams();
+  params.set("t", dateISO);
+  if (hashShort) params.set("h", String(hashShort).slice(0, 8));
+  return `${baseUrl}/${safeCpeCode}?${params.toString()}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 9. TABEL HEADER (helper pentru tabele zebra cu header brand)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -763,4 +862,6 @@ export default {
   renderSignatureBox,
   renderTableHeader,
   renderTableRow,
+  renderQrCode,
+  buildVerifyUrl,
 };
