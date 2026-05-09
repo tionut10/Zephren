@@ -473,7 +473,7 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   {(() => {
-                    const cx = 350, cy = 230, maxR = 150, maxMul = 2.0;
+                    const cx = 350, cy = 230, maxR = 150;
                     const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
                     const labels  = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
                     const icons   = ["🔥","💧","❄️","💨","💡"];
@@ -485,15 +485,31 @@ export default function Step5Calculation(props) {
                     const colOf  = r => r === 0 ? "#52525b" : r <= 1.0 ? "#22c55e" : r <= 1.8 ? "#f59e0b" : "#ef4444";
                     const ang = i => (2 * Math.PI * i) / n;
                     const xy  = (i, r) => [cx + r * Math.sin(ang(i)), cy - r * Math.cos(ang(i))];
-                    const dpts = ratios.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul));
                     const labelDist = maxR + 72;
                     const labelAngle = Math.PI / n;
 
-                    // Feature 1 — Scenariu reabilitare (after-polygon)
+                    // Feature 1 — Scenariu reabilitare — calculat înainte de maxMul
                     const hasRehab = !!rehabComparison?.rehab?.qfH !== undefined && rehabComparison;
                     const valsAfter   = hasRehab ? rehabKeys.map(k => Au > 0 ? (rehabComparison.rehab[k] || 0) / Au : 0) : null;
                     const ratiosAfter = valsAfter ? valsAfter.map((v, i) => nzebThresh[i] > 0 ? v / nzebThresh[i] : 0) : null;
-                    const dptsAfter   = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul)) : null;
+
+                    // maxMul dinamic — include valorile rehab pt ca poligonul cyan să fie mereu vizibil
+                    const allActiveRatios = [...ratios, ...(ratiosAfter || [])].filter(r => r > 0);
+                    const rawMax = allActiveRatios.length > 0 ? Math.max(...allActiveRatios) : 2;
+                    const maxMul = rawMax <= 2 ? 2 : Math.ceil(rawMax * 1.15 / 2.5) * 2.5;
+
+                    // dpts/dptsAfter calculate după maxMul
+                    const dpts      = ratios.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul));
+                    const dptsAfter = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul)) : null;
+
+                    // Inele radar dinamice — acoperă uniform intervalul [0..maxMul]
+                    const radarRings = (() => {
+                      if (maxMul <= 2) return [0.5, 1.0, 1.5, 2.0];
+                      const step = maxMul <= 5 ? 1 : maxMul <= 12.5 ? 2.5 : 5;
+                      const set = new Set([1.0]);
+                      for (let v = step; v <= maxMul + 0.001; v += step) set.add(Math.round(v * 10) / 10);
+                      return [...set].sort((a, b) => a - b);
+                    })();
 
                     const legendY = cy + maxR + 65;
                     const svgH = legendY + (hasRehab ? 38 : 22);
@@ -501,24 +517,25 @@ export default function Step5Calculation(props) {
                     return (
                       <div>
                         <svg viewBox={`0 0 700 ${svgH}`} width="100%" style={{display:"block"}}>
-                          {/* Inele de referință */}
-                          {[0.5, 1.0, 1.5, 2.0].map(f => {
-                            const isNzeb = f === 1.0, isWarn = f === 1.5, isCrit = f === 2.0;
-                            const r = maxR * f / maxMul;
+                          {/* Inele de referință — dinamice */}
+                          {radarRings.map(ratio => {
+                            const isNzeb = ratio === 1.0;
+                            const r = maxR * ratio / maxMul;
                             const pts = Array.from({length: n}, (_, i) => xy(i, r).join(",")).join(" ");
                             const rlx = cx + (r + 5) * Math.sin(labelAngle);
                             const rly = cy - (r + 5) * Math.cos(labelAngle);
+                            const ringStroke = isNzeb ? "#22c55e" : ratio > 1.8 ? "rgba(239,68,68,0.28)" : ratio > 1 ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.09)";
+                            const textFill  = isNzeb ? "rgba(74,222,128,0.75)" : ratio > 1.8 ? "rgba(239,68,68,0.45)" : ratio > 1 ? "rgba(245,158,11,0.40)" : "rgba(255,255,255,0.22)";
                             return (
-                              <g key={f}>
+                              <g key={ratio}>
                                 <polygon points={pts}
                                   fill={isNzeb ? "rgba(34,197,94,0.07)" : "none"}
-                                  stroke={isNzeb ? "#22c55e" : isCrit ? "rgba(239,68,68,0.28)" : isWarn ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.09)"}
+                                  stroke={ringStroke}
                                   strokeWidth={isNzeb ? 1.5 : 0.6}
-                                  strokeDasharray={f > 0.25 ? "4 3" : undefined} />
-                                <text x={rlx} y={rly} fontSize="7.5" textAnchor="start"
-                                  fill={isNzeb ? "rgba(74,222,128,0.75)" : isCrit ? "rgba(239,68,68,0.45)" : isWarn ? "rgba(245,158,11,0.40)" : "rgba(255,255,255,0.20)"}
-                                  fontWeight={isNzeb ? "600" : "400"}>
-                                  {isNzeb ? "nZEB A+" : `×${f}`}
+                                  strokeDasharray="4 3" />
+                                <text x={rlx} y={rly} fontSize="8" textAnchor="start"
+                                  fill={textFill} fontWeight={isNzeb ? "600" : "400"}>
+                                  {isNzeb ? "nZEB A+" : `×${ratio}`}
                                 </text>
                               </g>
                             );
