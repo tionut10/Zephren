@@ -3,6 +3,8 @@ import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-
 // Sprint Audit Prețuri (9 mai 2026) Task A — NPV chart 3 scenarii bandă low/mid/high
 // Sursa canonică: src/data/rehab-prices.js (Q1 2026 + HG 907/2016 + MDLPA + oferte contractori)
 import { REHAB_PRICES, getEurRonSync } from "../data/rehab-prices.js";
+// Sprint Audit Prețuri Tier 1 — indexare inflație construcții via Eurostat sts_copi_q
+import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost-index.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
@@ -53,6 +55,17 @@ export default function Step5Calculation(props) {
   // Faza C — verdict-uri inline pentru badge-uri din Dashboard sumar (fragment)
   const gwpGate = useGradeGate("gwpSimple", userPlan, auditorGrad);
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+
+  // Sprint Audit Prețuri Tier 1 — index inflație construcții (Eurostat sts_copi_q).
+  // Pre-fetch în background la mount + state local pentru re-render automat.
+  const [costIndex, setCostIndex] = React.useState(() => getCostInflationFactorSync());
+  React.useEffect(() => {
+    let cancelled = false;
+    getCostInflationFactor().then(r => {
+      if (!cancelled && r) setCostIndex(r);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
@@ -460,7 +473,7 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   {(() => {
-                    const cx = 250, cy = 198, maxR = 112, maxMul = 2.0;
+                    const cx = 350, cy = 230, maxR = 150, maxMul = 2.0;
                     const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
                     const labels  = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
                     const icons   = ["🔥","💧","❄️","💨","💡"];
@@ -473,7 +486,7 @@ export default function Step5Calculation(props) {
                     const ang = i => (2 * Math.PI * i) / n;
                     const xy  = (i, r) => [cx + r * Math.sin(ang(i)), cy - r * Math.cos(ang(i))];
                     const dpts = ratios.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul));
-                    const labelDist = maxR + 40;
+                    const labelDist = maxR + 72;
                     const labelAngle = Math.PI / n;
 
                     // Feature 1 — Scenariu reabilitare (after-polygon)
@@ -482,12 +495,12 @@ export default function Step5Calculation(props) {
                     const ratiosAfter = valsAfter ? valsAfter.map((v, i) => nzebThresh[i] > 0 ? v / nzebThresh[i] : 0) : null;
                     const dptsAfter   = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul)) : null;
 
-                    const legendY = cy + maxR + 58;
-                    const svgH = legendY + (hasRehab ? 44 : 26);
+                    const legendY = cy + maxR + 65;
+                    const svgH = legendY + (hasRehab ? 38 : 22);
 
                     return (
                       <div>
-                        <svg viewBox={`0 0 500 ${svgH}`} width="100%" style={{maxWidth:"520px",display:"block",margin:"0 auto"}}>
+                        <svg viewBox={`0 0 700 ${svgH}`} width="100%" style={{display:"block"}}>
                           {/* Inele de referință */}
                           {[0.5, 1.0, 1.5, 2.0].map(f => {
                             const isNzeb = f === 1.0, isWarn = f === 1.5, isCrit = f === 2.0;
@@ -591,11 +604,11 @@ export default function Step5Calculation(props) {
                           {/* Feature 3 — Clasă energetică în centru */}
                           {enClass && (
                             <g>
-                              <circle cx={cx} cy={cy} r="26" fill="rgba(0,0,0,0.72)" stroke={enClass.color || "#6b7280"} strokeWidth="1.5" />
-                              <text x={cx} y={cy - 4} textAnchor="middle" fontSize="17" fill={enClass.color || "#fff"} fontWeight="800" fontFamily="monospace">
+                              <circle cx={cx} cy={cy} r="30" fill="rgba(0,0,0,0.80)" stroke={enClass.color || "#6b7280"} strokeWidth="2" />
+                              <text x={cx} y={cy - 2} textAnchor="middle" fontSize="22" fill={enClass.color || "#fff"} fontWeight="900" fontFamily="monospace">
                                 {enClass.cls || "?"}
                               </text>
-                              <text x={cx} y={cy + 10} textAnchor="middle" fontSize="6.5" fill="rgba(255,255,255,0.45)">
+                              <text x={cx} y={cy + 14} textAnchor="middle" fontSize="7.5" fill="rgba(255,255,255,0.48)">
                                 {epFinal.toFixed(0)} kWh/m²
                               </text>
                             </g>
@@ -611,26 +624,26 @@ export default function Step5Calculation(props) {
                             const rAfter = ratiosAfter ? ratiosAfter[i] : null;
                             return (
                               <g key={i}>
-                                <text x={lx} y={ly - 2} textAnchor={ta} fontSize="10.5"
-                                  fill="rgba(255,255,255,0.88)" fontWeight="500">
+                                <text x={lx} y={ly - 2} textAnchor={ta} fontSize="12"
+                                  fill="rgba(255,255,255,0.92)" fontWeight="600">
                                   {icons[i]} {label}
                                 </text>
                                 {vals[i] > 0 ? (
                                   <>
-                                    <text x={lx} y={ly + 12} textAnchor={ta} fontSize="9.5" fill={col} fontWeight="700">
+                                    <text x={lx} y={ly + 15} textAnchor={ta} fontSize="11" fill={col} fontWeight="700">
                                       {vals[i].toFixed(1)} kWh/m²
                                     </text>
-                                    <text x={lx} y={ly + 24} textAnchor={ta} fontSize="8" fill={col} opacity="0.72">
-                                      ×{r.toFixed(1)}{capped ? "⁺" : ""} (prag {nzebThresh[i]})
+                                    <text x={lx} y={ly + 29} textAnchor={ta} fontSize="9.5" fill={col} opacity="0.75">
+                                      ×{r.toFixed(1)}{capped ? "⁺" : ""} · prag {nzebThresh[i]}
                                     </text>
                                     {rAfter !== null && rAfter < r && (
-                                      <text x={lx} y={ly + 35} textAnchor={ta} fontSize="7.5" fill="#06b6d4" opacity="0.85">
+                                      <text x={lx} y={ly + 42} textAnchor={ta} fontSize="9" fill="#06b6d4" opacity="0.90">
                                         ↓ ×{rAfter.toFixed(1)} după rehab
                                       </text>
                                     )}
                                   </>
                                 ) : (
-                                  <text x={lx} y={ly + 12} textAnchor={ta} fontSize="8.5" fill="#52525b">
+                                  <text x={lx} y={ly + 15} textAnchor={ta} fontSize="10" fill="#52525b">
                                     neinstalat
                                   </text>
                                 )}
@@ -639,46 +652,74 @@ export default function Step5Calculation(props) {
                           })}
 
                           {/* Legendă */}
-                          <g transform={`translate(${cx - 128}, ${legendY})`}>
-                            <circle cx={4} cy={-3} r={4} fill="#22c55e" />
-                            <text x={13} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">≤1× conform nZEB A+</text>
-                            <circle cx={128} cy={-3} r={4} fill="#f59e0b" />
-                            <text x={137} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">1–1.8× depășit</text>
-                            <circle cx={220} cy={-3} r={4} fill="#ef4444" />
-                            <text x={229} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">&gt;1.8× critic</text>
+                          <g transform={`translate(${cx - 160}, ${legendY})`}>
+                            <circle cx={5} cy={-3} r={4.5} fill="#22c55e" />
+                            <text x={15} y={0} fontSize="9" fill="rgba(255,255,255,0.50)">≤1× conform nZEB A+</text>
+                            <circle cx={155} cy={-3} r={4.5} fill="#f59e0b" />
+                            <text x={165} y={0} fontSize="9" fill="rgba(255,255,255,0.50)">1–1.8× depășit</text>
+                            <circle cx={265} cy={-3} r={4.5} fill="#ef4444" />
+                            <text x={275} y={0} fontSize="9" fill="rgba(255,255,255,0.50)">&gt;1.8× critic</text>
                           </g>
                           {hasRehab && (
-                            <g transform={`translate(${cx - 80}, ${legendY + 16})`}>
-                              <line x1={0} y1={-3} x2={18} y2={-3} stroke="#06b6d4" strokeWidth="2" strokeDasharray="5 3" />
-                              <text x={24} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">Scenariu reabilitare activ</text>
+                            <g transform={`translate(${cx - 100}, ${legendY + 20})`}>
+                              <line x1={0} y1={-3} x2={20} y2={-3} stroke="#06b6d4" strokeWidth="2" strokeDasharray="5 3" />
+                              <text x={26} y={0} fontSize="9" fill="rgba(255,255,255,0.50)">Scenariu reabilitare activ</text>
                             </g>
                           )}
                         </svg>
 
-                        {/* Mini-carduri sumar per utilitate */}
-                        <div className="grid grid-cols-5 gap-1.5 px-2 pb-3 mt-1">
-                          {labels.map((label, i) => {
-                            const r = ratios[i];
-                            const rA = ratiosAfter ? ratiosAfter[i] : null;
-                            const textCl = r === 0 ? "text-zinc-600" : r <= 1.0 ? "text-green-400" : r <= 1.8 ? "text-amber-400" : "text-red-400";
-                            const bgCl   = r === 0 ? "bg-white/[0.03]" : r <= 1.0 ? "bg-green-500/10" : r <= 1.8 ? "bg-amber-500/10" : "bg-red-500/10";
-                            return (
-                              <div key={i} className={`${bgCl} rounded-lg p-2 text-center`}>
-                                <div className="text-sm leading-tight">{icons[i]}</div>
-                                <div className="text-[9px] text-white/40 mt-0.5 leading-none truncate">{label}</div>
-                                <div className={`text-xs font-bold font-mono mt-1 ${textCl}`}>
-                                  {vals[i] > 0 ? vals[i].toFixed(0) : "—"}
-                                </div>
-                                <div className="text-[8px] text-white/25 leading-none">/{nzebThresh[i]}</div>
-                                {r > 0 && (
-                                  <div className={`text-[9px] font-mono font-semibold mt-0.5 ${textCl}`}>×{r.toFixed(1)}</div>
-                                )}
-                                {rA !== null && rA < r && (
-                                  <div className="text-[8px] font-mono text-cyan-400 mt-0.5">↓×{rA.toFixed(1)}</div>
-                                )}
-                              </div>
-                            );
-                          })}
+                        {/* Tabel sumar per utilitate */}
+                        <div className="mt-2 rounded-xl overflow-hidden border border-white/[0.07]">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="bg-white/[0.04] border-b border-white/[0.07]">
+                                <th className="text-left py-2 px-3 font-medium text-white/40 text-[10px] uppercase tracking-wider">Utilitate</th>
+                                <th className="text-right py-2 px-3 font-medium text-white/40 text-[10px] uppercase tracking-wider">Consum</th>
+                                <th className="text-right py-2 px-3 font-medium text-white/40 text-[10px] uppercase tracking-wider">Prag nZEB A+</th>
+                                <th className="text-right py-2 px-3 font-medium text-white/40 text-[10px] uppercase tracking-wider">Raport</th>
+                                <th className="text-right py-2 px-3 font-medium text-white/40 text-[10px] uppercase tracking-wider">Stare</th>
+                                {ratiosAfter && <th className="text-right py-2 px-3 font-medium text-cyan-400/60 text-[10px] uppercase tracking-wider">După rehab</th>}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {labels.map((label, i) => {
+                                const r = ratios[i];
+                                const rA = ratiosAfter ? ratiosAfter[i] : null;
+                                const col = colOf(r);
+                                const statusLabel = r === 0 ? "—" : r <= 1 ? "conform" : r <= 1.8 ? "depășit" : "critic";
+                                const statusCl = r === 0 ? "text-zinc-500" : r <= 1 ? "text-green-400" : r <= 1.8 ? "text-amber-400" : "text-red-400";
+                                return (
+                                  <tr key={i} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02] transition-colors">
+                                    <td className="py-2.5 px-3">
+                                      <span className="mr-1.5">{icons[i]}</span>
+                                      <span className="font-medium text-white/85">{label}</span>
+                                    </td>
+                                    <td className="text-right py-2.5 px-3 font-mono tabular-nums">
+                                      {vals[i] > 0
+                                        ? <><span className="font-semibold text-white/90">{vals[i].toFixed(1)}</span><span className="text-white/35 text-[10px] ml-0.5">kWh/m²</span></>
+                                        : <span className="text-white/20">—</span>}
+                                    </td>
+                                    <td className="text-right py-2.5 px-3 font-mono tabular-nums text-white/35">
+                                      {nzebThresh[i]}<span className="text-[10px] ml-0.5">kWh/m²</span>
+                                    </td>
+                                    <td className="text-right py-2.5 px-3 font-mono font-bold tabular-nums" style={{color: col}}>
+                                      {vals[i] > 0 ? `×${r.toFixed(1)}` : <span className="text-white/20">—</span>}
+                                    </td>
+                                    <td className={`text-right py-2.5 px-3 font-semibold ${statusCl}`}>
+                                      {statusLabel}
+                                    </td>
+                                    {ratiosAfter && (
+                                      <td className="text-right py-2.5 px-3 font-mono">
+                                        {rA !== null && rA < r
+                                          ? <span className="text-cyan-400 font-semibold">×{rA.toFixed(1)}</span>
+                                          : <span className="text-white/20">—</span>}
+                                      </td>
+                                    )}
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     );
@@ -1492,40 +1533,44 @@ export default function Step5Calculation(props) {
                 // Sprint Audit Prețuri (9 mai 2026) Task A — costFn returnează {low, mid, high} în RON
                 // Sursa canonică: REHAB_PRICES (rehab-prices.js) × curs EUR/RON live BNR.
                 const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+                // Tier 1 — multiplicator inflație construcții (Eurostat sts_copi_q RO).
+                // Vine din state local (costIndex), updated automat la fetch live în background.
+                const inflation = costIndex;
+                const inflationFactor = inflation.factor || 1.0;
                 const MEASURE_DEFS = [
                   { name: "Termoizolație pereți", short: "Pereți", color: "#3b82f6", savePct: 0.18,
-                    costFn: (au, eur) => ({
-                      low:  REHAB_PRICES.envelope.wall_eps_10cm.low  * au * 2.5 * eur,
-                      mid:  REHAB_PRICES.envelope.wall_eps_10cm.mid  * au * 2.5 * eur,
-                      high: REHAB_PRICES.envelope.wall_eps_10cm.high * au * 2.5 * eur,
+                    costFn: (au, eur, k) => ({
+                      low:  REHAB_PRICES.envelope.wall_eps_10cm.low  * au * 2.5 * eur * k,
+                      mid:  REHAB_PRICES.envelope.wall_eps_10cm.mid  * au * 2.5 * eur * k,
+                      high: REHAB_PRICES.envelope.wall_eps_10cm.high * au * 2.5 * eur * k,
                     }) },
                   { name: "Ferestre triple", short: "Ferestre", color: "#a855f7", savePct: 0.12,
-                    costFn: (au, eur) => ({
-                      low:  REHAB_PRICES.envelope.windows_u110.low  * au * 0.15 * eur,
-                      mid:  REHAB_PRICES.envelope.windows_u110.mid  * au * 0.15 * eur,
-                      high: REHAB_PRICES.envelope.windows_u110.high * au * 0.15 * eur,
+                    costFn: (au, eur, k) => ({
+                      low:  REHAB_PRICES.envelope.windows_u110.low  * au * 0.15 * eur * k,
+                      mid:  REHAB_PRICES.envelope.windows_u110.mid  * au * 0.15 * eur * k,
+                      high: REHAB_PRICES.envelope.windows_u110.high * au * 0.15 * eur * k,
                     }) },
                   { name: "Termoizolație acoperiș", short: "Acoperiș", color: "#f97316", savePct: 0.10,
-                    costFn: (au, eur) => ({
-                      low:  REHAB_PRICES.envelope.roof_eps_15cm.low  * au * eur,
-                      mid:  REHAB_PRICES.envelope.roof_eps_15cm.mid  * au * eur,
-                      high: REHAB_PRICES.envelope.roof_eps_15cm.high * au * eur,
+                    costFn: (au, eur, k) => ({
+                      low:  REHAB_PRICES.envelope.roof_eps_15cm.low  * au * eur * k,
+                      mid:  REHAB_PRICES.envelope.roof_eps_15cm.mid  * au * eur * k,
+                      high: REHAB_PRICES.envelope.roof_eps_15cm.high * au * eur * k,
                     }) },
                   { name: "Pompă de căldură", short: "Pompă", color: "#22c55e", savePct: 0.30,
-                    costFn: (_au, eur) => ({
-                      low:  REHAB_PRICES.heating.hp_aw_12kw.low  * eur,
-                      mid:  REHAB_PRICES.heating.hp_aw_12kw.mid  * eur,
-                      high: REHAB_PRICES.heating.hp_aw_12kw.high * eur,
+                    costFn: (_au, eur, k) => ({
+                      low:  REHAB_PRICES.heating.hp_aw_12kw.low  * eur * k,
+                      mid:  REHAB_PRICES.heating.hp_aw_12kw.mid  * eur * k,
+                      high: REHAB_PRICES.heating.hp_aw_12kw.high * eur * k,
                     }) },
                   { name: "PV 5kWp", short: "PV 5kWp", color: "#facc15", savePct: 0.15,
-                    costFn: (_au, eur) => ({
-                      low:  REHAB_PRICES.renewables.pv_kwp.low  * 5 * eur,
-                      mid:  REHAB_PRICES.renewables.pv_kwp.mid  * 5 * eur,
-                      high: REHAB_PRICES.renewables.pv_kwp.high * 5 * eur,
+                    costFn: (_au, eur, k) => ({
+                      low:  REHAB_PRICES.renewables.pv_kwp.low  * 5 * eur * k,
+                      mid:  REHAB_PRICES.renewables.pv_kwp.mid  * 5 * eur * k,
+                      high: REHAB_PRICES.renewables.pv_kwp.high * 5 * eur * k,
                     }) },
                 ];
                 const measures = MEASURE_DEFS.map(d => {
-                  const c = d.costFn(Au, eurRon);
+                  const c = d.costFn(Au, eurRon, inflationFactor);
                   return {
                     name: d.name, short: d.short, color: d.color, savePct: d.savePct,
                     costLow:  Math.round(c.low),
@@ -1727,7 +1772,15 @@ export default function Step5Calculation(props) {
                     </table>
                   </div>
                   <div className="text-xs opacity-50 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Bandă = scenariile <span className="opacity-80">low</span> – <span className="opacity-80">mid</span> – <span className="opacity-80">high</span> (sensibilitate preț) · Punct colorat = recuperare investiție (mid)</div>
-                  <div className="text-[10px] opacity-45 mt-1">Prețuri {new Date().getFullYear()} · sursa: <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated}) · curs {eurRon.toFixed(2)} RON/EUR</div>
+                  <div className="text-[10px] opacity-45 mt-1">
+                    Prețuri {new Date().getFullYear()} · sursa: <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated}) · curs {eurRon.toFixed(2)} RON/EUR
+                    {inflation.source !== 'fallback' && (
+                      <> · <span className="text-amber-400/70">📈 Inflație construcții {inflationFactor >= 1 ? '+' : ''}{((inflationFactor - 1) * 100).toFixed(1)}%</span> (Eurostat {inflation.currentPeriod || inflation.basePeriod} · {inflation.source})</>
+                    )}
+                    {inflation.source === 'fallback' && (
+                      <> · <span className="opacity-50">📈 Inflație: bază {inflation.basePeriod} (cache gol — refresh la 30 zile)</span></>
+                    )}
+                  </div>
                 </Card>
                 );
               })()}
