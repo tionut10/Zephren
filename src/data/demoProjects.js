@@ -1,21 +1,17 @@
 // ═════════════════════════════════════════════════════════════════════════════
-// demoProjects.js — 5 modele DEMO v2 (refacere completă 27 apr 2026)
+// demoProjects.js — 5 modele DEMO v3 (refactor 9 mai 2026)
 //
-// Fiecare demo:
-//   - acoperă o zonă climatică distinctă (I, II, III, IV, V) conform Mc 001-2022
-//   - parcurge TOATE etapele aplicației (Step 1 → Step 8) cu date complete
-//   - include `expectedResults` pentru verificare automată end-to-end via teste e2e
+// Tipologii noi (zone climatice I→V):
+//   M1 — Apartament bloc PAFP '75 — Constanța (Zona I, ≤2.000 GD) — DH RADET — clasă G
+//   M2 — Casă unifamilială cărămidă — Cluj-Napoca (Zona III, ~3.000 GD) — CT gaz cond + PV 3 kWp — clasă E
+//   M3 — Birouri BI 2005 — București (Zona II, ~2.300 GD) — VRF degradat + PV 15 + ST 20 m² — clasă C
+//   M4 — Școală gimnazială — Brașov (Zona IV, ~3.400 GD) — CT central gaz, NEREABILITATĂ — clasă F
+//   M5 — Casă unifamilială nouă nZEB — Sibiu (Zona V, ~3.900 GD) — PC sol-apă + VMC HR90 + PV 6 + ST 8 — clasă A
 //
-// Modele:
-//   M1 — Apartament panou mare PAFP '72 — Constanța (Zona I)   — DH RADET            — clasă F
-//   M2 — Birouri nZEB clasă A+          — București (Zona II)  — micro-CHP gaz + PV 30 kWp — clasă A+
-//   M3 — Casă BCA renovată parțial      — Cluj-Napoca (Zona III) — CT condensare + PV — clasă D
-//   M4 — Școală gimnazială reabilitată  — Brașov (Zona IV)     — CT central + PV 15 kWp — clasă B
-//   M5 — Pensiune turistică lemn masiv  — Predeal (Zona V)     — peleți + solar termic — clasă C
-//
-// Conformitate: Mc 001-2022, Ord. MDLPA 16/2023, EN ISO 13790, SR EN ISO 52120-1:2022
-// (BACS), SR EN ISO 52016-1, SR EN ISO 52010-1, EN 16798-1 IAQ, EN 15193-1 LENI,
-// EN 15316-3 ACM, L.238/2024 nZEB, EPBD 2024/1275/UE.
+// Conformitate: Mc 001-2022, Ord. MDLPA 16/2023, SR EN ISO 14683 (punți Ψ liniare),
+// SR EN ISO 6946 (Rsi/Rse stratigrafii), SR EN 10456 (λ/ρ materiale), EN 16798-1 (IAQ),
+// EN 15193-1 (LENI iluminat), EN 15316-3 (ACM), EN 15232 (BACS), L.238/2024 nZEB,
+// EPBD 2024/1275/UE, Ord. MDLPA 348/2026.
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -190,68 +186,115 @@ export const DEMO_MDLPA_DEFAULTS = buildMdlpaDefaults({
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// DEMO_PROJECTS — 5 modele v2 (zone climatice I→V, scenarii distincte end-to-end)
+// SVG semnătură + ștampilă DEMO (placeholder reutilizat — vezi Step 6 UI pentru încărcare reală)
+// ═════════════════════════════════════════════════════════════════════════════
+const DEMO_SIG_SVG = (name) => `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>${name}</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text></svg>`;
+
+const DEMO_STAMP_SVG = (name, code) => `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>${name}</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>${code}</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>`;
+
+// Boilerplate AnexaMDLPA — text generic reutilizat unde tipologia nu cere conținut specific
+const ANEXA_GENERIC = {
+  etapeImplementare:
+    "1. Identificați minimum 3 oferte comparative de la contractori autorizați.\n" +
+    "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, AFM Casa Verde Plus, fonduri locale).\n" +
+    "3. Obțineți autorizațiile legale necesare (AC, avize ISU, aprobări de mediu dacă sunt aplicabile).\n" +
+    "4. Implementați măsurile în ordinea priorităților: anvelopă → sisteme termice → surse regenerabile.\n" +
+    "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. (UE) 305/2011).\n" +
+    "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea clasei energetice (Ord. MDLPA 16/2023).",
+  stimulenteFinanciare:
+    "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice).\n" +
+    "— PNRR componenta C5 — Valul Renovării: granturi pentru renovarea energetică până la standard nZEB.\n" +
+    "— Credite verzi: BRD Eco Home / ING Green Loan / BCR Casa Ta — dobânzi preferențiale.\n" +
+    "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
+  solutiiAnvelopa:
+    "— Verificare la fața locului a stratificării reale a anvelopei (carotaje, termoviziune SR EN 13187).\n" +
+    "— Tratarea punților termice principale identificate (centură, soclu, glafuri, buiandruguri) — manșoane locale 5–10 cm.\n" +
+    "— Verificarea compatibilității coeficienților de difuzie a vaporilor (μ) între straturi (Glaser).\n" +
+    "— Inspecție hidroizolație acoperiș cf. CR 0-2012 / GP 070-2013.",
+  solutiiInstalatii:
+    "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială).\n" +
+    "— Reglaj automat al temperaturii pe cameră prin termostate Smart cu programare.\n" +
+    "— Inspecție și curățare anuală a generatorului termic conform prescripțiilor producătorului (HG 1043/2007).\n" +
+    "— Recuperare căldură din apele uzate calde (drain water heat recovery) la dușurile cu debit mare.",
+  masuriOrganizare:
+    "— Plan anual de monitorizare a consumurilor (electricitate, gaz, apă caldă) cu verificare lunară.\n" +
+    "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).\n" +
+    "— Audit energetic intermediar la fiecare 5 ani sau la modificarea regimului de utilizare (L.121/2014).\n" +
+    "— Stabilirea unei persoane responsabile cu eficiența energetică.",
+  masuriLocale:
+    "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.\n" +
+    "— Înlocuirea bateriilor sanitare cu modele cu limitare debit / aerator (clasă A WELL).\n" +
+    "— Becuri LED inteligente cu senzor prezență/lumină naturală în spații tranzit.\n" +
+    "— Programare orară a iluminatului și HVAC pe sezon și zi de săptămână.",
+  regenerabileCustom:
+    "— Sistem fotovoltaic on-grid cu invertor hibrid (autoconsum + reinjecție în rețea).\n" +
+    "— Pompă de căldură aer-apă COP > 4.0 pentru încălzire/răcire (R290 propan, GWP < 3).\n" +
+    "— Sistem solar termic cu colectoare plane pentru ACM (acoperire 50–70% an).\n" +
+    "— Recuperator căldură ape uzate (drain water heat exchanger) cuplat la circuitul ACM.",
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DEMO_PROJECTS — 5 modele v3 (zone climatice I→V, scenarii distincte end-to-end)
 // ═════════════════════════════════════════════════════════════════════════════
 export const DEMO_PROJECTS = [
 
   // ───────────────────────────────────────────────────────────────────────────
-  // M1 — Apartament 3 cam. bloc PAFP '72 — Constanța (ZONA I, ≤2.000 GD)
-  // Termoficare RADET (DH) + boiler electric ACM • neanvelopat • clasă F
-  // Scop: testare DH (heatGenLocation TERMOFICARE), penalizări p0-p11,
-  //       roadmap Pașaport renovare 3 etape, MEPS 2030 fail.
+  // M1 — Apartament 3 cam. bloc PAFP '75 — Constanța (ZONA I, ≤2.000 GD)
+  // Termoficare RADET (DH) + boiler electric ACM • neanvelopat • clasă G
+  // Scop CPE: renovare (validitate 10 ani, pre-Pașaport) • fără regenerabile
   // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "demo-1-constanta-pafp-1972",
-    title: "M1 · Apartament bloc PAFP '72 — Constanța (Zona I, DH RADET) — clasă F",
-    shortDesc: "Apt 65 m² panou mare neanvelopat, termoficare RADET + boiler electric, MEPS 2030 fail",
+    id: "demo-1-constanta-pafp-1975",
+    title: "M1 · Apartament bloc PAFP '75 — Constanța (Zona I, DH RADET) — clasă G",
+    shortDesc: "Apt 65 m² panou mare neanvelopat, termoficare RADET + boiler electric, baseline pur (clasă G)",
     building: {
       address: "Bd. Tomis nr. 287, bl. T8, sc. B, et. 2, ap. 18",
       city: "Constanța",
       county: "Constanța",
-      postal: "900725",                  // ADĂUGAT: Step1 citește `postal` (alias compatibilitate)
+      postal: "900725",
       postalCode: "900725",
       locality: "Constanța",
-      latitude: "44.1797",   // Constanța ~44.18°N (Zona I climă caldă)
-      longitude: "28.6348",  // Constanța ~28.63°E
+      latitude: "44.1797",
+      longitude: "28.6348",
       cadastralNumber: "215680-C1-U18",
       landBook: "CF nr. 215680-C1-U18 Constanța",
       owner: "Marinescu Vasile-Gheorghe",
-      ownerType: "PF",                   // ADĂUGAT: persoană fizică (proprietar individual apartament)
-      category: "RA",                    // Rezidențial — apartament bloc
-      structure: "Panouri mari prefabricate PAFP (3 straturi BA + PS + BA, blocuri comuniste 1965–1989)",
-      yearBuilt: "1972",
-      yearRenov: "",                     // Niciodată reabilitat
+      ownerType: "PF",
+      category: "RA",
+      structure: "Panouri mari prefabricate PAFP — sandwich BA exterior 80 mm + polistiren expandat 20 mm degradat + BA interior 150 mm (1965–1989)",
+      yearBuilt: "1975",
+      yearRenov: "",
       floors: "P+4",
       basement: true,
       attic: false,
       units: "1",
       stairs: "1",
-      nApartments: "30",                 // Bloc total — pentru calcul comune
+      nApartments: "30",
       apartmentNo: "18",
       staircase: "B",
       floor: "2",
       areaUseful: "65",
       areaBuilt: "73",
       areaHeated: "65",
-      volume: "162",                     // h_etaj efectiv 2.50 m
-      areaEnvelope: "78",                // Doar pereții exteriori + planșee per apartament
+      volume: "162",
+      areaEnvelope: "78",
       heightBuilding: "14",
       heightFloor: "2.50",
       perimeter: "32",
-      n50: "7.5",                        // Etanșeitate proastă, infiltrații rosturi panou mare
+      n50: "7.5",
       shadingFactor: "0.85",
-      gwpLifecycle: "520",               // GWP ridicat — clădire necalificată
+      gwpLifecycle: "520",
       solarReady: false,
       evChargingPoints: "0",
       evChargingPrepared: "0",
-      co2MaxPpm: "1450",                 // Ventilație inadecvată (cat. IV EN 16798-1)
-      pm25Avg: "22",                     // PM2.5 peste 15 μg/m³ WHO
+      co2MaxPpm: "1450",
+      pm25Avg: "22",
       scaleVersion: "2023",
-      scopCpe: "renovare",               // Scop CPE = pre-renovare → validitate 10 ani
+      scopCpe: "renovare",
       parkingSpaces: "0",
-      energyClassAfterRenov: "C",        // Țintă post-pașaport renovare
+      energyClassAfterRenov: "C",
       emissionClassAfterRenov: "C",
-      energySavings: "62",               // % față de baseline
+      energySavings: "62",
       co2Reduction: "58",
       apartments: [],
       commonSystems: {
@@ -261,14 +304,12 @@ export const DEMO_PROJECTS = [
         commonVentilation: { installed: false, powerKW: "",     hoursYear: "8760" },
         pumpGroup:         { installed: true,  powerKW: "1.5",  hoursYear: "8760" },
       },
-      // ── ADĂUGAT: Anexa 1+2 MDLPA — overrides pentru context PAFP nereabilitat 1972 ──
-      heatingCostAllocator: "nu",                          // override: PAFP nereabilitat → fără repartitoare costuri
-      acmPipeDiameterMm: "16",                             // override: boiler electric individual apartament (NU 25 mm bloc)
-      acmRecirculation: "nu_exista",                       // override: boiler individual = niciun circuit recirculare
-      ventilationFanCount: "0",                            // override: ventilație 100% naturală (fără ventilatoare)
-      ventilationHrType: "",                               // override: fără recuperator HR în ventilație naturală
-      lightingNetworkState: "uzata",                       // override: mix becuri vechi + LED parțial (1972 nereabilitat)
-      // ── ADĂUGAT: ANCPI bypass DEMO (deblocaj export DOCX CPE Step 6) ──
+      heatingCostAllocator: "nu",
+      acmPipeDiameterMm: "16",
+      acmRecirculation: "nu_exista",
+      ventilationFanCount: "0",
+      ventilationHrType: "",
+      lightingNetworkState: "uzata",
       ancpi: {
         verified: true,
         fileName: "demo-cf-215680-constanta.pdf",
@@ -278,63 +319,30 @@ export const DEMO_PROJECTS = [
         cadastralNr: "215680-C1-U18",
         carteFunciara: "CF nr. 215680-C1-U18 Constanța",
       },
-      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo Pas 6 ──
-      nrOcupanti: "4",                        // 4 persoane apartament 65 m² (cf. EN 16798-1 cat. III)
-      etapeImplementare:
-        "1. Identificați minimum 3 oferte comparative de la contractori autorizați.\n" +
-        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, Casa Verde Plus, fonduri locale).\n" +
-        "3. Obțineți acordul adunării generale a proprietarilor (L.196/2018) pentru lucrările pe părți comune (anvelopă, planșeu subsol).\n" +
-        "4. Implementați măsurile în ordinea priorităților: anvelopă → sisteme termice → surse regenerabile.\n" +
-        "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. (UE) 305/2011).\n" +
-        "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea clasei energetice (Ord. MDLPA 16/2023).",
-      stimulenteFinanciare:
-        "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice) — HG 209/2018 actualizat, ghid AFM 2024.\n" +
-        "— PNRR componenta C5 — Valul Renovării: granturi pentru renovarea energetică a apartamentelor în bloc până la standard nZEB.\n" +
-        "— Credite verzi: BRD Eco Home / ING Green Loan / BCR Casa Ta — dobânzi preferențiale (verifică ofertele active la momentul depunerii dosarului).\n" +
-        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
-      solutiiAnvelopa:
-        "— Verificare la fața locului a stratificării reale a anvelopei (carotaje, termoviziune SR EN 13187).\n" +
-        "— Tratarea punților termice principale identificate (balcoane, atice, buiandrugi) — manșoane locale 5–10 cm.\n" +
-        "— Decopertarea selectivă a fațadelor existente cu ETICS degradat și înlocuirea straturilor compromise.\n" +
-        "— Verificarea compatibilității coeficienților de difuzie a vaporilor (μ) între straturi (Glaser).",
-      solutiiInstalatii:
-        "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială).\n" +
-        "— Reglaj automat al temperaturii pe cameră prin termostate Smart (R²·D, controllers cu protocol Modbus/KNX).\n" +
-        "— Inspecție și curățare anuală a generatorului termic conform prescripțiilor producătorului (HG 1043/2007).\n" +
-        "— Recuperare căldură din apele uzate calde (drain water heat recovery) la dușurile cu debit mare.",
-      masuriOrganizare:
-        "— Întocmirea unui plan anual de monitorizare a consumurilor (electricitate, gaz, apă caldă) cu verificare lunară.\n" +
-        "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).\n" +
-        "— Audit energetic intermediar la fiecare 5 ani sau la modificarea regimului de utilizare (L.121/2014).\n" +
-        "— Stabilirea unei persoane responsabile cu eficiența energetică la nivelul asociației de proprietari.",
-      masuriLocale:
-        "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.\n" +
-        "— Înlocuirea bateriilor sanitare clasice cu modele cu limitare debit / aerator (clasă A WELL).\n" +
-        "— Becuri inteligente cu senzor prezență/lumină naturală în spații tranzit (holuri, scări, depozite).\n" +
-        "— Programare orară a iluminatului și HVAC pe sezon și zi de săptămână (timere standalone).\n" +
-        "— Curățarea periodică a recuperatorului de căldură ventilație (filtru G4/F7, schimb 6 luni).",
-      regenerabileCustom:
-        "— Sistem fotovoltaic on-grid 3 kWp pe acoperișul blocului (cota-parte 1/30 pentru apartament) cu invertor hibrid.\n" +
-        "— Pompă de căldură aer-aer COP > 4.0 pentru încălzire/răcire de vară (R290 propan, GWP < 3).\n" +
-        "— Sistem solar termic comun bloc cu colectoare plane pentru ACM (acoperire 50–70% an).\n" +
-        "— Recuperator căldură ape uzate (drain water heat exchanger) cuplat la circuitul ACM.",
+      nrOcupanti: "4",
+      ...ANEXA_GENERIC,
     },
     opaqueElements: [
       {
-        name: "Pereți PAFP 27 cm BA — Sud",
+        // U calculat: 1/(0.04 + 0.020/0.87 + 0.080/1.74 + 0.020/0.060 + 0.150/1.74 + 0.010/0.45 + 0.13) ≈ 1.47 W/m²K
+        name: "PAFP sandwich BA80+PS20deg+BA150 — Sud",
         type: "PE", area: "22", orientation: "S", tau: "1",
         layers: [
           { matName: "Tencuială exterioară var-ciment", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
-          { matName: "Beton armat panou mare PAFP", material: "Beton armat", thickness: "270", lambda: 1.74, rho: 2400 },
+          { matName: "Beton armat panou exterior", material: "Beton armat", thickness: "80", lambda: 1.74, rho: 2400 },
+          { matName: "Polistiren expandat degradat (50 ani)", material: "Polistiren expandat EPS umed/comprimat", thickness: "20", lambda: 0.060, rho: 22 },
+          { matName: "Beton armat panou interior", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
           { matName: "Tencuială interioară", material: "Tencuială var-gips", thickness: "10", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Pereți PAFP 27 cm BA — Nord (faţadă post-bloc)",
+        name: "PAFP sandwich BA80+PS20deg+BA150 — Nord",
         type: "PE", area: "16", orientation: "N", tau: "1",
         layers: [
           { matName: "Tencuială exterioară var-ciment", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
-          { matName: "Beton armat panou mare PAFP", material: "Beton armat", thickness: "270", lambda: 1.74, rho: 2400 },
+          { matName: "Beton armat panou exterior", material: "Beton armat", thickness: "80", lambda: 1.74, rho: 2400 },
+          { matName: "Polistiren expandat degradat (50 ani)", material: "Polistiren expandat EPS umed/comprimat", thickness: "20", lambda: 0.060, rho: 22 },
+          { matName: "Beton armat panou interior", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
           { matName: "Tencuială interioară", material: "Tencuială var-gips", thickness: "10", lambda: 0.45, rho: 1200 },
         ],
       },
@@ -345,101 +353,95 @@ export const DEMO_PROJECTS = [
           { matName: "Tencuială tavan subsol", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
           { matName: "Beton armat planșeu", material: "Beton armat", thickness: "160", lambda: 1.74, rho: 2400 },
           { matName: "Șapă mortar", material: "Șapă ciment", thickness: "30", lambda: 1.40, rho: 2000 },
-          { matName: "Parchet", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 700 },
+          { matName: "Parchet lemn", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 700 },
         ],
       },
     ],
     glazingElements: [
-      { name: "Termopan PVC 4-16-4 dublu — Sud (înlocuit 2005, fără Low-E)", area: "5.4",  u: "2.70", g: "0.75", orientation: "S", frameRatio: "25", type: "Dublu vitraj clasic" },
-      { name: "Termopan PVC 4-16-4 dublu — Nord", area: "3.6", u: "2.70", g: "0.75", orientation: "N", frameRatio: "25", type: "Dublu vitraj clasic" },
-      { name: "Ușă balcon Sud (vitraj integrat)",        area: "2.2", u: "2.85", g: "0.72", orientation: "S", frameRatio: "30", type: "Ușă vitraj dublu" },
+      { name: "Termopan PVC 4-16-4 fără Low-E — Sud (înlocuit 2005)", area: "5.4", u: "2.70", g: "0.75", orientation: "S", frameRatio: "25", type: "Dublu vitraj clasic" },
+      { name: "Termopan PVC 4-16-4 fără Low-E — Nord",                area: "3.6", u: "2.70", g: "0.75", orientation: "N", frameRatio: "25", type: "Dublu vitraj clasic" },
+      { name: "Ușă balcon Sud (vitraj integrat)",                      area: "2.2", u: "2.85", g: "0.72", orientation: "S", frameRatio: "30", type: "Ușă vitraj dublu" },
     ],
     thermalBridges: [
-      { name: "Rost orizontal panou mare (centură)",  type: "CB", psi: "0.65", length: "32" },
-      { name: "Rost vertical panou mare (stâlpișor)", type: "SB", psi: "0.55", length: "20" },
-      { name: "Glaf fereastră fără izolație",          type: "GF", psi: "0.35", length: "26" },
-      { name: "Buiandrug deasupra ferestrei",         type: "CB", psi: "0.45", length: "8" },
-      { name: "Parapet sub fereastră",                 type: "CB", psi: "0.40", length: "10" },
-      { name: "Colț bloc 90° neizolat",                type: "SB", psi: "0.50", length: "10" },
-      { name: "Soclu bloc fără izolație perimetrală", type: "SO", psi: "0.55", length: "32" },
-      { name: "Cornișă acoperiș terasă",               type: "CO", psi: "0.45", length: "32" },
+      // SR EN ISO 14683 — Ψ liniar 0.45-0.65 pentru PAFP nereabilitat (rosturi panou mare severe)
+      { name: "Rost orizontal panou mare (centură)",   type: "CB", psi: "0.65", length: "32" },
+      { name: "Rost vertical panou mare (stâlpișor)",  type: "SB", psi: "0.55", length: "20" },
+      { name: "Glaf fereastră fără izolație",           type: "GF", psi: "0.45", length: "26" },
+      { name: "Buiandrug deasupra ferestrei",          type: "CB", psi: "0.50", length: "8"  },
+      { name: "Parapet sub fereastră",                  type: "CB", psi: "0.45", length: "10" },
+      { name: "Colț bloc 90° neizolat",                 type: "SB", psi: "0.55", length: "10" },
+      { name: "Soclu bloc fără izolație perimetrală",  type: "SO", psi: "0.55", length: "32" },
+      { name: "Cornișă acoperiș terasă",                type: "CO", psi: "0.50", length: "32" },
     ],
     heating: {
-      source: "TERMO",                    // P1 fix: era "TERMOFICARE" — cod neîntâlnit în HEAT_SOURCES; corect "TERMO" (Termoficare urbană SACET)
+      source: "TERMO",                    // Termoficare urbană SACET (HEAT_SOURCES)
       power: "7",
-      eta_gen: "0.92",                    // Eficiență sursă DH la branșament (CET Constanța)
+      eta_gen: "0.92",
       nominalPower: "7",
-      emission: "RAD_FO",                 // P1 fix: era "RADIATOR" generic — corect "RAD_FO" (Radiatoare fontă, coloane clasice — comentariul confirmă „fontă vechi")
-      eta_em: "0.88",                     // Radiatoare fontă vechi
-      distribution: "SLAB_INT",           // P1 fix: era "PROST_INT_BLOC" — corect "SLAB_INT" (slab izolat interior, conform DISTRIBUTION_QUALITY)
+      emission: "RAD_FO",                 // Radiatoare fontă coloane clasice
+      eta_em: "0.88",
+      distribution: "SLAB_INT",           // Slab izolată interior (DISTRIBUTION_QUALITY)
       eta_dist: "0.78",
-      control: "FARA",                    // P1 fix: era "MANUAL" — corect "FARA" (fără reglaj — robinete fixe, manual conform CONTROL_TYPES line 150)
+      control: "FARA",                    // Fără reglaj (robinete fixe, manual) — CONTROL_TYPES
       eta_ctrl: "0.85",
       regime: "continuu",
       theta_int: "20",
-      nightReduction: "0",                // Fără reducere noapte (DH livrare continuă)
+      nightReduction: "0",
       tStaircase: "10",
       tBasement: "8",
       tAttic: "",
     },
     acm: {
-      source: "BOILER_E",                 // P1 fix: era "BOILER_EL" — corect "BOILER_E" (Boiler electric rezistiv cu acumulare, conform ACM_SOURCES line 291)
+      source: "BOILER_E",                 // Boiler electric rezistiv cu acumulare (ACM_SOURCES)
       consumers: "3",
       dailyLiters: "50",
       consumptionLevel: "med",
       tSupply: "55",
-      storageVolume: "80",                // Boiler electric 80L individual
+      storageVolume: "80",
       insulationClass: "B",
       pipeLength: "8",
-      pipeInsulated: false,               // Conducte ACM neizolate (bloc vechi)
+      pipeInsulated: false,
       pipeInsulationThickness: "0mm",
       pipeDiameter: "20",
       circRecirculation: false,
       circHours: "",
       circPumpType: "fara",
-      hasLegionella: false,               // Boiler 80L < 400L — fără cerință tratare
+      hasLegionella: false,
       legionellaFreq: "",
       legionellaT: "",
     },
     cooling: {
-      system: "NONE",                     // P1 fix: era "FARA" — corect "NONE" (Fără sistem de răcire activ, conform COOLING_SYSTEMS line 350)
-      power: "0",
-      eer: "",
-      seer: "",
+      system: "NONE",
+      power: "0", eer: "", seer: "",
       cooledArea: "0",
-      distribution: "",                   // P1 fix: era "FARA" — corect "" (no cooling = no distribution code)
+      distribution: "",
       hasCooling: false,
       setpoint: "26",
       shadingExternal: "0.85",
       useHourly: false,
-      emissionType: "",
-      eta_em: "",
-      distributionType: "",
-      eta_dist: "",
-      controlType: "",
-      eta_ctrl: "",
-      P_aux_pumps: "",
-      P_aux_fans: "",
+      emissionType: "", eta_em: "",
+      distributionType: "", eta_dist: "",
+      controlType: "", eta_ctrl: "",
+      P_aux_pumps: "", P_aux_fans: "",
       t_cooling_hours: "",
-      hasNightVent: false,
-      n_night: "",
+      hasNightVent: false, n_night: "",
       comfortCategory: "III",
       internalGainsOverride: "",
     },
     ventilation: {
-      type: "NAT",                        // P1 fix: era "NATURALA" — corect "NAT" (Ventilare naturală, conform VENTILATION_TYPES line 442)
-      airflow: "120",                     // Infiltrații + ferestre (necontrolate)
+      type: "NAT",                        // Ventilare naturală (VENTILATION_TYPES)
+      airflow: "120",
       fanPower: "0",
       operatingHours: "8760",
       hrEfficiency: "0",
     },
     lighting: {
-      type: "CFL",                        // P1 fix: era "MIXT" — UI nu are "MIXT"; ales "CFL" (Fluorescent compact CFL, închidere mix becuri vechi LIGHTING_TYPES line 480) — pentru bloc 1972 nereabilitat
-      pDensity: "8.5",                    // Mix becuri vechi + LED parțial
-      controlType: "MAN",                 // P1 fix: era "MANUAL" — corect "MAN" (Manual simplu, conform LIGHTING_CONTROL line 504)
-      fCtrl: "1.0",                       // Fără control automat
+      type: "CFL",                        // Fluorescent compact CFL (LIGHTING_TYPES) — mix becuri vechi 1975
+      pDensity: "8.5",
+      controlType: "MAN",                 // Manual simplu (LIGHTING_CONTROL)
+      fCtrl: "1.0",
       operatingHours: "2200",
-      naturalLightRatio: "20",            // Apartament cu 2 fațade orientate S+N
+      naturalLightRatio: "20",
       pEmergency: "0",
       pStandby: "0.3",
     },
@@ -456,9 +458,7 @@ export const DEMO_PROJECTS = [
     auditor: {
       name: "ing. Stoica Vlad-Răzvan",
       atestat: "CT-01875",
-      // S29 fix #8 — promovat la AE Ici pentru a permite emiterea Raportului de Conformare nZEB
-      // (Ord. MDLPA 348/2026 Art.6 §1 lit.c — necesită Grad I auditor Ici)
-      grade: "AE Ici",                    // Auditor Energetic Ici (individual + colectiv + nerezidențial)
+      grade: "AE Ici",
       specialty: "construcții și instalații",
       company: "EnergyConstanța Audit SRL",
       phone: "0744 123 456",
@@ -475,30 +475,23 @@ export const DEMO_PROJECTS = [
       codUnicMDLPA: "CE-2026-01875",
       dataExpirareDrept: "2030-06-30",
       dataTransmitereMDLPA: "2026-04-28",
-      // ADĂUGAT: Semnătură DEMO — PNG real (400×120 px, fundal transparent, stroke albastru "Ion P.")
-      // Generat procedural pentru testare embed în DOCX/PDF via api/generate-document.py
-      signatureDataURL: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAB4CAYAAADc36SXAAACbUlEQVR42u3d23WDMBBAQZXuQt0LbsDG6LHSIuZj/gImkMMNAuFyHEcBgFp2AgACAoCAACAgAAgIAAgIAAICgIAAICAACAgACAgAAgKAgAAgIAAICAAICAACAoCAACAgAAgIAAgIAAICgIAAICAACAgACAgAAgKAgAAgIAAICAAICAACAoCAACAgAAgIAAgIAAICgIAAICAAkC0gpbzeNRxAAAGpDoiDByAgl6LiYAEIyNKAjL6K6V3XqOVdsQECEhSQqBNs6/KjP19IAAEJCMi3E+ioE2zLcrMDJiKAgAQNV/Wc0Gt+/ixkM/aPiAACEjQ8FBWQs+2ZPYQmIICABP2XPfqE/G97BAQQkGQBmfWUVm8cBAQQkE2uQFrvKwgIICAb3QNZGZCr6xAQQECS3kQXEAEBBCTd47+/PmfUEJiAAAKyMCDRVyF3CIiJhICAJFy2d2KgV5kAArLRENZuAfGHDghI8qewsm8rgIAkvSktIICAeJVJ0+dlHmoDEJDgiAgIgJvoU4aTZl/xCAggIMnmgWSfb7IiIJ7kAnyh1MmrRu4+BCUggIAkmGjXuv7e32/l8obHAAGZ9B3kADwoIAAICAACIiAAAiIgAAKSIRZeTQ4gIKkeuQXgQUNYAAgIAAICgIDYCQAICAACAoCAjJjzAUCu6Q0CAiAehrAAEBAABAQAAQEAAQFAQAAQEAAEBAABAQABAUBAABAQAAQEAAEBAAEBQEAAEBAABAQAAQEAAQFAQAAQEAAEBAABAQABAUBAABAQAAQEAAEBAAEBQEAAEBAABAQAAQEAAQFAQAAQEAAEBAAEBAABAWCqD56IGWhdIuaBAAAAAElFTkSuQmCC",
-      stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Stoica V.R.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>CT-01875</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Apartament 3 camere etajul 2, bloc PAFP nereabilitat — termoficare RADET (CET Constanța, contor unic bloc), boiler electric apartament 80L. Anvelopă: PAFP 27 cm BA fără izolație suplimentară (U_pereți ≈ 1.45 W/m²·K), termopan PVC 4-16-4 fără Low-E (U_glaz ≈ 2.70). Punți termice severe: rosturi orizontale/verticale panou mare. n₅₀ = 7.5 h⁻¹ (etanșeitate proastă). Recomandare urgentă: reabilitare termică Pașaport Renovare în 3 etape (anvelopă + ferestre + sursa).",
+      signatureDataURL: DEMO_SIG_SVG("Stoica V.R."),
+      stampDataURL: DEMO_STAMP_SVG("Stoica V.R.", "CT-01875"),
+      observations: "Apartament 3 camere etajul 2, bloc PAFP nereabilitat 1975 — termoficare RADET (CET Constanța, contor unic bloc), boiler electric apartament 80L. Anvelopă: PAFP sandwich BA80+PS20deg+BA150 fără izolație suplimentară (U_pereți ≈ 1.47 W/m²·K), termopan PVC 4-16-4 fără Low-E (U_glaz ≈ 2.70). Punți termice severe SR EN ISO 14683 categoria 3 (Ψ 0.45-0.65 — rosturi orizontale/verticale panou mare). n₅₀ = 7.5 h⁻¹ (etanșeitate proastă). Recomandare urgentă: reabilitare termică Pașaport Renovare în 3 etape (anvelopă ETICS 15 cm + ferestre triplu Low-E + branșament individual gaz).",
       photo: "",
     },
-    // S29 (27.04.2026) → calibrat E_p=968. Sprint 06may2026 audit B11 — RECALIBRARE:
-    // Drift -19% după sprinturile P0-B (getURefAdaptive), P0-C (rehab-scenarios),
-    // P1 (energy-prices canonic), P2 (Eurostat live preț). CPE_XML 06.05.2026
-    // arată EP=781.2, Qf=45975, LENI=13.9, randament η=0.60 (era 0.54).
-    // Calibrare nouă reflectă motor curent (06 mai 2026, post-audit Pas 7).
     expectedResults: {
-      energyClass: "G",                  // > prag G pentru RA = 870 → încă G
-      E_p_total_kWh_m2_y: 781,           // recalibrat din 968 (CPE_XML 06.05.2026)
-      E_p_nren_kWh_m2_y: 740,            // recalibrat din 968 (XML ep_nren=739.9)
-      E_p_ren_kWh_m2_y: 41,              // recalibrat din 0 (XML ep_ren=41.3 — boiler electric mix RO grid 14% RES)
-      RER_pct: 0,                        // RER 0% (PV=0, ST=0, HP=0 — boiler E nu e RER)
+      energyClass: "G",
+      E_p_total_kWh_m2_y: 781,
+      E_p_nren_kWh_m2_y: 740,
+      E_p_ren_kWh_m2_y: 41,
+      RER_pct: 0,
       U_med_W_m2K: 2.10,
       U_max_violations: ["PE", "PL", "GLAZ"],
-      Q_inc_kWh_m2_y: 625,               // recalibrat din 637 (XML qf_h=40607/65=625)
+      Q_inc_kWh_m2_y: 625,
       Q_rac_kWh_m2_y: 0,
       Q_acm_kWh_m2_y: 71,
-      Q_il_kWh_m2_y: 14,                 // recalibrat din 15 (XML LENI=13.9)
+      Q_il_kWh_m2_y: 14,
       Q_aux_kWh_m2_y: 4,
       bacsClass: "D",
       fBac: 1.10,
@@ -510,472 +503,77 @@ export const DEMO_PROJECTS = [
       passportPhases: 3,
       passportTargetClass: "C",
       documentsExpected: ["CPE-RA", "CPE-AnexaIndividuala", "Raport-Audit", "Pasaport-Renovare"],
-      tolerances: { E_p_nren: 0.15, E_p_total: 0.15, RER: 5, U_med: 0.10, Q_inc: 0.15 },
+      tolerances: { E_p_nren: 0.18, E_p_total: 0.18, RER: 5, U_med: 0.15, Q_inc: 0.18 },
     },
   },
 
   // ───────────────────────────────────────────────────────────────────────────
-  // M2 — Birouri nZEB clasă A — București Pipera (ZONA II)
-  // CHP gaz natural 50 kWel/80 kWth + PV 30 kWp + PC reversibilă + recuperator 80%
-  // Scop: testare CHP (cogenEnabled), curtain wall, BACS clasă A, RER ridicat,
-  //       MEPS 2030/2033 pass, Pașaport NU (deja optim)
+  // M2 — Casă unifamilială cărămidă plină — Cluj-Napoca (ZONA III, ~3.000 GD)
+  // CT gaz condensare 24 kW + radiatoare oțel + PV 3 kWp acoperiș înclinat
+  // Scop CPE: vânzare • reabilitare parțială (ferestre 2010, fără izolație)
   // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "demo-2-bucuresti-nzeb-2024",
-    title: "M2 · Birouri nZEB — București Pipera (Zona II, micro-CHP+PV) — clasă A+",
-    shortDesc: "Birouri 5400 m² nZEB, micro-CHP 15 kWel + PV 30 kWp + PC 200 kW, BACS A, MEPS pass",
-    building: {
-      address: "Bd. Pipera nr. 1B, Tower Pipera Office",
-      city: "Voluntari",                  // CORECTAT: Pipera Tower e fizic în Voluntari (jud. Ilfov), NU București
-      county: "Ilfov",                     // CORECTAT: conform CF nr. 263410 Voluntari
-      postal: "077190",                    // ADĂUGAT: Step1 citește `postal` (nu `postalCode`)
-      postalCode: "077190",                // păstrat pentru compatibilitate retroactivă
-      locality: "București",              // CORECTAT: Voluntari nu e în CLIMATE_DB (60 localități); București = aceeași zonă climatică II metro București-Ilfov
-      latitude: "44.4799",   // Voluntari ~44.48°N (Zona II climatic — încadrat pe zona București metro)
-      longitude: "26.1378",  // Voluntari ~26.14°E
-      cadastralNumber: "263410-C1",
-      landBook: "CF nr. 263410 Voluntari, jud. Ilfov",
-      owner: "Pipera Tower Investment SRL",
-      ownerType: "PJ",                     // ADĂUGAT: SRL = persoană juridică (Step1 validare)
-      ownerCUI: "RO38456781",              // ADĂUGAT: CUI sintetic cu checksum valid (algoritm ANAF: 7-5-3-2-1-7-5-3-2) — necesar pentru ownerType=PJ
-      category: "BI",
-      structure: "Structură metalică — cadre oțel cu pereți cortină / panouri sandwich (post-1990)",
-      yearBuilt: "2024",
-      yearRenov: "",
-      floors: "P+5",
-      basement: true,
-      attic: false,
-      units: "1",
-      stairs: "2",
-      nApartments: "1",
-      apartmentNo: "",
-      staircase: "",
-      floor: "",
-      areaUseful: "5400",
-      areaBuilt: "6200",
-      areaHeated: "5400",
-      volume: "17280",                    // h=3.20 m × 5400 m²
-      areaEnvelope: "6890",               // P1 fix (28 apr 2026): aliniat cu Σ(opaci 4670 + vitraje 2220) — anvelopa reală curtain wall include spandrel + vitraj
-      heightBuilding: "23",
-      heightFloor: "3.20",
-      perimeter: "180",
-      n50: "1.0",                         // nZEB strict (test blower-door)
-      shadingFactor: "0.78",              // Curtain wall sticlă cu jaluzele automate
-      gwpLifecycle: "240",                // GWP redus — Level(s) compatibil
-      solarReady: true,
-      evChargingPoints: "10",             // P2 fix: era 8 → 10 (cerință EPBD 2024 Art. 14 §4 non-rezidențial: minim 10 instalate la 100 locuri)
-      evChargingPrepared: "50",            // P2 fix: era 20 → 50 (cerință EPBD 2024 Art. 14 §4: minim 50% precablate la non-rezidențial >20 locuri)
-      co2MaxPpm: "780",                   // EN 16798-1 cat. I (CO₂ < 800 ppm peste exterior)
-      pm25Avg: "6",
-      scaleVersion: "2023",
-      scopCpe: "receptie",
-      parkingSpaces: "100",
-      energyClassAfterRenov: "",
-      emissionClassAfterRenov: "",
-      energySavings: "",
-      co2Reduction: "",
-      apartments: [],
-      commonSystems: {
-        elevator:          { installed: true, powerKW: "11",   hoursYear: "4000" },
-        stairsLighting:    { installed: true, powerKW: "0.4",  hoursYear: "2200" },
-        centralHeating:    { installed: true, fuel: "PC_AA + CHP gaz" },
-        commonVentilation: { installed: true, powerKW: "8",    hoursYear: "3000" },
-        pumpGroup:         { installed: true, powerKW: "5",    hoursYear: "8760" },
-      },
-      // ── ADĂUGAT: Anexa 1+2 MDLPA — suprascriere defaults `buildMdlpaDefaults` greșite pentru BI office ──
-      // (Default-urile generice presupun radiatoare oțel + casa unifam — INCORECT pentru office cu PC AA + ventiloconvectoare + BACS A.)
-      heatingRadiatorType: "Ventiloconvector",            // override: NU radiatoare oțel; folosesc fan-coil (ventiloconvectoare)
-      heatingRadiators: [],                                // override: niciun corp static — emisia e prin ventiloconvectoare
-      heatingHasMeter: "da",                               // override: BACS A → contoare termice obligatorii
-      heatingPipeDiameterMm: "65",                         // override: PC centralizată 200 kW → DN65 (nu DN25 default)
-      unheatedSpaces: [                                    // override: subsol parcaj + zonă tehnică (nu „casă unifam")
-        { code: "ZU1", diameter_mm: "65", length_m: "120" },  // Distribuție agent termic prin subsol parcaj (riser principal)
-        { code: "ZU2", diameter_mm: "32", length_m: "85"  },  // Conducte ramificație tehnică
-      ],
-      acmFixtures: {                                       // override: 150 ocupanți office, NU 1 apartament
-        lavoare: "8", cada_baie: "0", spalatoare: "1", rezervor_wc: "8",
-        bideuri: "0", pisoare: "4", dus: "1",
-        masina_spalat_vase: "0", masina_spalat_rufe: "0",
-      },
-      acmConsumePointsCount: "20",                         // override: corespunde 8+1+8+4+1 = 22 puncte (rotunjit 20)
-      acmPipeDiameterMm: "32",                             // override: corespunde acm.pipeDiameter=32
-      acmHasMeter: "da",                                   // override: BACS A
-      acmFlowMeters: "peste_tot",                          // override: BACS A — debitmetre ACM
-      acmRecirculation: "functionala",                     // override: consistent cu acm.circRecirculation=true
-      coolingDehumPowerKw: "8",                            // ADĂUGAT: dezumidificare aux pentru cat. I confort
-      coolingIndoorUnits: "42",                            // override: 5400 m² / 130 m² per ventiloconvector ≈ 42 (NU 72 default)
-      coolingOutdoorUnits: "4",                            // override: 4 chillere centralizate (NU 36 default)
-      coolingPipeDiameterMm: "54",                         // override: chiller centralizat → DN54 (NU DN12 default)
-      coolingSpaceScope: "complet",                        // override: cooledArea=5400 = toată aria (NU partial)
-      coolingHumidityControl: "cu_control",                // override: BMS Siemens Desigo cat. I (NU fara)
-      coolingIndividualMeter: "da",                        // override: BACS A
-      ventilationHrType: "rotativ",                        // override: recuperator entalpic 80% (NU placi default)
-      ventilationControlType: "program",                   // override: BMS programat 8-19 (NU manual_simpla)
-      humidificationPowerKw: "5",                          // ADĂUGAT: umidificare birouri cat. I confort
-      // ── ADĂUGAT: ANCPI verificare cadastrală (Sprint D) — bypass pentru DEMO export DOCX CPE ──
-      ancpi: {
-        verified: true,                                     // DEMO: marcat verificat manual (în producție: extras CF real)
-        fileName: "demo-cf-263410-voluntari.pdf",
-        fileSize: 187456,
-        fileBase64: null,                                   // DEMO: PDF real lipsă (max 2 MB în UI Step 1)
-        uploadDate: "2024-11-22T10:00:00.000Z",
-        cadastralNr: "263410-C1",
-        carteFunciara: "CF nr. 263410 Voluntari, jud. Ilfov",
-      },
-      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M2 — Birouri Pipera ──
-      nrOcupanti: "120",                       // ~5400 m² × 25 m²/persoană density birouri cat. III
-      etapeImplementare:
-        "1. Aprobați planul de investiții prin decizia consiliului de administrație al companiei.\n" +
-        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR componenta C5, scheme de ajutor de stat eficiență energetică).\n" +
-        "3. Obțineți autorizațiile legale necesare pentru lucrări (AC + avize ISU/Mediu/Apă).\n" +
-        "4. Implementați măsurile în ordinea priorităților: BMS optimizare → etanșare perete cortină → expansiune PV.\n" +
-        "5. Documentați performanța atinsă (m&v M&V IPMVP Opțiunea C — comparație consum baseline vs. post-implementare).\n" +
-        "6. Solicitați re-certificare CPE după 3 ani sau la modificarea regimului de funcționare (Mc 001-2022 art. 7.5).",
-      stimulenteFinanciare:
-        "— PNRR componenta C5 — Eficiență energetică clădiri comerciale și de birouri: granturi pentru companii private.\n" +
-        "— Schema de ajutor de stat pentru eficiență energetică (Regulamentul CE 651/2014, art. 38–39).\n" +
-        "— EIB/BERD: credite verzi directe sau prin intermediari bancari autorizați (BCR, Raiffeisen, ING Wholesale).\n" +
-        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
-      solutiiAnvelopa:
-        "— Auditul intermediar al peretelui cortină la 5 ani (etanșeitate joints — testare cu fum trace + termoviziune SR EN 13187).\n" +
-        "— Reducerea G-value vitrajelor pe fațada Sud prin film solar suplimentar (ΔU < 0.05).\n" +
-        "— Verificare anuală fixări mecanice spandrel + ancorajul vatei minerale (CWCT TN 56).\n" +
-        "— Monitorizare condens perete cortină în zonele de punte termică punctuală (psi-value local optimizat).",
-      solutiiInstalatii:
-        "— Optimizare program BMS Siemens Desigo (occupancy-based set-points, night setback agresiv 16-18°C).\n" +
-        "— Verificare anuală chiller centralizat (curățare condensator, încărcare R-32 / R-454B conform F-Gas).\n" +
-        "— Calibrare senzori CO₂ (cat. I confort EN 16798-1 implică ±50 ppm precizie).\n" +
-        "— Recuperator entalpic rotor: schimb sigilantă antimicrobiană la 5 ani (NSF/ANSI 50).",
-      masuriOrganizare:
-        "— Implementarea unui program ISO 50001 cu manager energetic atestat ANRE pentru clădirea de birouri.\n" +
-        "— Audit energetic intermediar la fiecare 4 ani (L.121/2014 art. 9 alin. 1 — clădire non-rezidențială > 500 m²).\n" +
-        "— Plan anual de monitorizare cu raport trimestrial către management (consum kWh/m²·an, intensitate CO₂).\n" +
-        "— Instruirea ocupanților privind setările optimale prin newsletter intern (best practices ENERGY STAR).",
-      masuriLocale:
-        "— Programare orară a iluminatului zonal cu DALI-2 D4i (8-19 zone tehnice, 6-22 zone publice).\n" +
-        "— Senzori prezență și lumină naturală în coridoare/băi/sălile de ședințe (cf. EN 15193-1).\n" +
-        "— Curățare lunară a filtrelor F7 ventilație și schimb anual G4 (debit aer cat. I = 50 m³/h·persoană).\n" +
-        "— Etanșeizarea trecerilor prin peretele cortină (cabluri, conducte) cu mansetă EPDM + spumă PUR rezistentă la foc.",
-      regenerabileCustom:
-        "— Expansiune PV 100→250 kWp pe acoperiș (curent 80 kWp acoperiș, posibilă acoperire shed-uri).\n" +
-        "— CHP biogaz cogenerare pentru încălzire+electricitate la peak load iarnă.\n" +
-        "— Pompă de căldură geotermală (4 puțuri × 100 m) pentru baseload încălzire/răcire (COP > 4.5).\n" +
-        "— Sistem solar termic suplimentar (50 m² colectoare plane) pentru ACM birouri/cantină.",
-    },
-    opaqueElements: [
-      {
-        name: "Perete cortină — spandrel termoizolat (S+E+V)",
-        type: "PE", area: "1850", orientation: "S", tau: "1",
-        layers: [
-          { matName: "Aluminiu compozit ACM", material: "Aluminiu", thickness: "4", lambda: 200, rho: 2700 },
-          { matName: "Vată minerală densă fațadă", material: "Vată minerală bazaltică", thickness: "180", lambda: 0.036, rho: 80 },
-          { matName: "Tablă spandrel oțel", material: "Oțel", thickness: "2", lambda: 50, rho: 7800 },
-          { matName: "Cameră aer ventilat", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
-          { matName: "Gips-carton interior", material: "Gips-carton", thickness: "13", lambda: 0.21, rho: 800 },
-        ],
-      },
-      {
-        name: "Pereți opaci BCA umplutură + vată minerală 18 cm — Nord",
-        type: "PE", area: "920", orientation: "N", tau: "1",
-        layers: [
-          { matName: "Tencuială silicat fațadă", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
-          { matName: "Vată minerală densă fațadă", material: "Vată minerală bazaltică", thickness: "180", lambda: 0.036, rho: 80 },
-          { matName: "BCA 25 cm umplutură", material: "BCA (beton celular autoclavizat)", thickness: "250", lambda: 0.22, rho: 600 },
-          { matName: "Tencuială interioară", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
-        ],
-      },
-      {
-        name: "Terasă inversă XPS 22 cm + grădină verde",
-        type: "PT", area: "950", orientation: "H", tau: "1",
-        layers: [
-          { matName: "Substrat vegetal", material: "Substrat vegetal extensiv", thickness: "120", lambda: 0.50, rho: 1100 },
-          { matName: "Strat drenaj + filtru", material: "Strat drenaj poliuretan", thickness: "40", lambda: 0.15, rho: 30 },
-          { matName: "Polistiren extrudat XPS 22 cm", material: "Polistiren extrudat XPS", thickness: "220", lambda: 0.034, rho: 35 },
-          { matName: "Hidroizolație TPO antirăd", material: "Membrană TPO", thickness: "2", lambda: 0.20, rho: 950 },
-          { matName: "Beton armat placă", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
-        ],
-      },
-      {
-        name: "Planșeu peste subsol parcare + EPS 12 cm",
-        type: "PL", area: "950", orientation: "H", tau: "0.7",
-        layers: [
-          { matName: "Beton armat planșeu", material: "Beton armat", thickness: "220", lambda: 1.74, rho: 2400 },
-          { matName: "Polistiren expandat EPS 12 cm", material: "Polistiren expandat EPS", thickness: "120", lambda: 0.034, rho: 25 },
-          { matName: "Șapă mortar autonivel", material: "Șapă ciment autonivel", thickness: "60", lambda: 1.40, rho: 2000 },
-          { matName: "Pardoseală gresie tehnică", material: "Gresie ceramică", thickness: "12", lambda: 1.30, rho: 2300 },
-        ],
-      },
-    ],
-    glazingElements: [
-      { name: "Perete cortină triplu Low-E argon — Sud (jaluzele auto)",  area: "780", u: "0.85", g: "0.42", orientation: "S", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Perete cortină triplu Low-E argon — Est",                  area: "560", u: "0.85", g: "0.45", orientation: "E", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Perete cortină triplu Low-E argon — Vest",                 area: "560", u: "0.85", g: "0.45", orientation: "V", frameRatio: "12", type: "Triplu Low-E argon" },
-      { name: "Perete cortină triplu Low-E argon — Nord (mai mic)",       area: "320", u: "0.80", g: "0.50", orientation: "N", frameRatio: "12", type: "Triplu Low-E argon" },
-    ],
-    thermalBridges: [
-      { name: "Stâlp metalic MPC traversând peretele cortină", type: "SB", psi: "0.04", length: "120" },
-      { name: "Centură planșeu BA — fațadă ventilată",     type: "CB", psi: "0.03", length: "180" },
-      { name: "Profil aluminiu perete cortină (tip.)",      type: "GF", psi: "0.05", length: "1900" },
-      { name: "Cornișă atic terasă verde",                 type: "CO", psi: "0.05", length: "180" },
-      { name: "Soclu fațadă ventilată",                    type: "SO", psi: "0.04", length: "180" },
-      { name: "Conector spandrel — vitraj perete cortină", type: "CB", psi: "0.06", length: "240" },
-      { name: "Colț 90° clădire (S-E, S-V, N-E, N-V)",     type: "SB", psi: "0.05", length: "92" },
-      { name: "Tranziție terasă — atic perimetral",        type: "CO", psi: "0.06", length: "180" },
-      { name: "Penetrare ventilație ductă fațadă",         type: "GF", psi: "0.10", length: "12" },
-    ],
-    heating: {
-      source: "PC_AA",
-      power: "200",                       // PC aer-apă centralizată
-      eta_gen: "3.80",                    // SCOP încălzire (PC industriale Bucureşti)
-      nominalPower: "200",
-      emission: "FCU_4P",                 // P1 fix: era "VENTILOCONV" — corect "FCU_4P" (Ventiloconvectoare 4 țevi — încălzire+răcire simultan, conform PC reversibilă AA)
-      eta_em: "0.96",
-      distribution: "BINE_INT_NZB",
-      eta_dist: "0.97",
-      control: "INTELIG",                 // BACS clasa A — control inteligent BMS
-      eta_ctrl: "0.96",
-      regime: "intermitent",              // Birouri (program 8-19)
-      theta_int: "21",                    // Setpoint birouri EN 16798-1
-      nightReduction: "5",                // Reducere noapte 5°C (16°C noaptea)
-      tStaircase: "",
-      tBasement: "8",
-      tAttic: "",
-    },
-    acm: {
-      source: "PC_ACM",                   // PC sol-apă pentru ACM (ramură separată)
-      consumers: "150",                   // Cca 150 ocupanți birouri
-      dailyLiters: "8",                   // 8 L/persoană/zi (birouri — doar lavoare)
-      consumptionLevel: "low",            // P1 fix: era "scazut" — UI așteaptă "low|med|high" (Step3Systems.jsx:209)
-      tSupply: "55",
-      storageVolume: "1000",              // Buffer ACM 1000L
-      insulationClass: "A",
-      pipeLength: "85",
-      pipeInsulated: true,
-      pipeInsulationThickness: "30mm",
-      pipeDiameter: "32",
-      circRecirculation: true,
-      circHours: "12",
-      circPumpType: "iee_sub_023",
-      hasLegionella: true,
-      legionellaFreq: "weekly",
-      legionellaT: "70",
-    },
-    cooling: {
-      system: "PC_REV_AA",
-      power: "180",
-      eer: "5.10",
-      seer: "6.40",
-      cooledArea: "5400",
-      distribution: "BINE_INT_NZB",
-      hasCooling: true,
-      setpoint: "25",
-      shadingExternal: "0.78",
-      useHourly: true,
-      emissionType: "fan_coil",           // P1 fix: era "ventiloconvectoare" — corect "fan_coil" (4 țevi, conform COOLING_EMISSION_EFFICIENCY line 360)
-      eta_em: "0.96",
-      distributionType: "apa_rece_izolat_int",
-      eta_dist: "0.97",
-      controlType: "bacs_clasa_a",        // P1 fix: era "BMS_inteligent" — corect "bacs_clasa_a" (BACS A high-performance AI optimization, conform COOLING_CONTROL_EFFICIENCY line 397)
-      eta_ctrl: "0.97",
-      P_aux_pumps: "1.6",
-      P_aux_fans: "5.4",
-      t_cooling_hours: "1100",
-      hasNightVent: true,
-      n_night: "1.5",
-      comfortCategory: "I",
-      internalGainsOverride: "22",  // 22 W/m² realist nZEB birouri (EN 16798-1 cat.I echipamente eficiente vs 35 default)
-    },
-    ventilation: {
-      type: "MEC_HR80",                   // Recuperator entalpic 80%
-      airflow: "6750",                    // P1 fix: 12.5 L/s/persoană × 150 ocupanți × 3.6 = 6750 m³/h (cat. I EN 16798-1)
-      fanPower: "1125",                   // P1 fix: SFP 0.6 kW/(m³/s) × 1.875 m³/s = 1.125 kW = 1125 W (ventilatoare EC top, sub limita SFP1)
-      operatingHours: "3000",
-      hrEfficiency: "80",
-    },
-    lighting: {
-      type: "LED",
-      pDensity: "6.0",                    // LED DALI birouri 6.0 W/m² (target EN 15193)
-      controlType: "PREZ_DAY",            // Prezență + daylight control DALI
-      fCtrl: "0.55",
-      operatingHours: "2400",
-      naturalLightRatio: "55",            // Curtain wall expune 55% birouri la lumină naturală
-      pEmergency: "0.5",
-      pStandby: "0.1",
-    },
-    solarThermal: { enabled: false, type: "", area: "0", orientation: "S", tilt: "30", usage: "acm", storageVolume: "0", eta0: "0", a1: "0" },
-    photovoltaic: {
-      enabled: true,
-      type: "MONO",
-      area: "180",                        // 30 kWp × ~6 m²/kWp pentru module 400Wp
-      orientation: "S",
-      tilt: "20",                         // Optim București anual
-      inverterType: "PREM",
-      inverterEta: "0.98",
-      peakPower: "30",
-      usage: "all",                       // P1 fix: era "autoconsum" — UI așteaptă "all|lighting|hvac|export" (Step4Renewables.jsx:177)
-    },
-    heatPump: {
-      enabled: true,
-      type: "PC_AA",
-      cop: "3.80",
-      scopHeating: "3.50",
-      scopCooling: "5.20",
-      covers: "heating_cooling_acm",
-      bivalentTemp: "-15",
-      auxSource: "REZ_EL",
-      auxEta: "1.00",
-    },
-    biomass: { enabled: false },
-    otherRenew: {
-      windEnabled: false, windCapacity: "", windProduction: "",
-      cogenEnabled: true,
-      cogenElectric: "15",                // 15 kWel micro-CHP gaz (dimensionat pt 5400 m² birouri — 50 kWel supradimensionat credita EP negativ)
-      cogenThermal: "24",                 // 24 kWth recuperat (ratio 8:5 față de electric — identic cu original)
-      cogenFuel: "gaz_natural",
-      cogenType: "micro_chp_gaz",
-      cogenPowerEl: "15",
-      cogenHours: "5500",
-      proximityEnabled: false, proximityDistanceKm: "", proximityProduction: "", proximitySource: "",
-    },
-    battery: {
-      enabled: true,
-      type: "LFP",
-      capacity: "60",                     // 60 kWh utilă pentru autoconsum birouri
-      power: "30",
-      dod: "0.90",
-      selfConsumptionPct: "82",
-    },
-    auditor: {
-      name: "ing. dr. Constantinescu Mihaela",
-      atestat: "B-09245",
-      grade: "AE Ici",
-      specialty: "construcții și instalații",
-      company: "PassivTech Romania SRL",
-      phone: "0744 989 121",
-      email: "mihaela.c@passivtech.ro",
-      date: "2024-11-22",
-      mdlpaCode: "CE-2024-09245",
-      cpeNumber: "CPE-2024-00874",
-      cpeCode: "CE-2024-09245_20241122_Constantinescu_Mihaela_B_263410_001_CPE",
-      registryIndex: "874",
-      scopCpe: "receptie",
-      validityYears: "10",
-      registruEvidenta: "RE-2024-B-09245",
-      nrCadastral: "263410-C1",
-      codUnicMDLPA: "CE-2024-09245",
-      dataExpirareDrept: "2030-12-31",
-      dataTransmitereMDLPA: "2024-11-23",
-      // ── ADĂUGAT: Semnătură + ștampilă placeholder DEMO (PNG dataURL valid 1x1, deblochează pipeline export) ──
-      // În producție, auditorul încarcă PNG real (300×100 semnătură, Ø150 ștampilă conform Ord. MDLPA 348/2026 — 40 mm Ø)
-      // prin componenta `AuditorSignatureStampUpload.jsx` în Step 6.
-      signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Constantinescu M.</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text><text x='200' y='110' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23bbbbbb'>Inlocuieste prin UI Step 6 inainte de export oficial</text></svg>",
-      stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Constantinescu M.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>CE-2024-09245</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Clădire birouri Tower Pipera Office recepționată noiembrie 2024. nZEB conformă EPBD 2024 + L.238/2024. Anvelopă: perete cortină triplu Low-E argon U=0.85, fațadă ventilată vată minerală 18 cm, terasă verde XPS 22 cm. Sisteme: PC aer-apă centralizată 200 kW (SCOP 3.50), micro-CHP gaz natural 15 kWel/24 kWth (5500 h/an), PV 30 kWp + baterie LFP 60 kWh (autoconsum 82%), recuperator entalpic 80%. BACS clasa A — BMS Siemens Desigo. RER total ≈ 50% (PV + micro-CHP recuperare + PC). MEPS 2030/2033 PASS cu marjă. Pașaport renovare neaplicabil — clădire deja nZEB de top.",
-      photo: "",
-    },
-    expectedResults: {
-      energyClass: "A+",
-      E_p_total_kWh_m2_y: 45,
-      // Fix 9 mai 2026: micro-CHP 15 kWel (redus de la 50 kWel supradimensionat care genera credit EP > EP_total → ep_adjusted=0 → "—").
-      // Cu 15 kWel/24 kWth la 5500 h/an: credit CHP ≈ 9.0 kWh/(m²·an) + PV 18.1 = 27.1 kWh/(m²·an).
-      // ep_adjusted ≈ 65 − 27 ≈ 38–45 kWh/(m²·an) → clasă A+ (≤ 68 kWh/(m²·an) Mc 001-2022 Tab I.2 BI).
-      // RER ≈ 50% (cu useNA2023 ON, include componenta regenerabilă PC AA SCOP 3.5).
-      E_p_nren_kWh_m2_y: 28,
-      E_p_ren_kWh_m2_y: 17,
-      RER_pct: 50,
-      U_med_W_m2K: 0.18,
-      U_max_violations: [],
-      Q_inc_kWh_m2_y: 18,
-      Q_rac_kWh_m2_y: 9,
-      Q_acm_kWh_m2_y: 4,
-      Q_il_kWh_m2_y: 14,
-      Q_aux_kWh_m2_y: 5,
-      bacsClass: "A",
-      fBac: 0.81,
-      sriPct: 88,
-      meps2030_pass: true,
-      meps2033_pass: true,
-      meps2050_pass: true,
-      passportRequired: false,
-      passportPhases: 0,
-      passportTargetClass: "A",
-      documentsExpected: ["CPE-BI", "Raport-Audit", "Pasaport-Renovare-Empty"],
-      tolerances: { E_p_nren: 0.20, E_p_total: 0.20, RER: 5, U_med: 0.10, Q_inc: 0.20 },
-    },
-  },
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // M3 — Casă unifamilială BCA renovată parțial — Cluj-Napoca (ZONA III)
-  // CT condensare gaz + pardoseală + radiatoare + 4 kWp PV + split-uri inverter
-  // Scop: testare scenariu „mid-life renovation", PV mic, MEPS 2033 fail,
-  //       Pașaport renovare cu recomandări ușoare
-  // ───────────────────────────────────────────────────────────────────────────
-  {
-    id: "demo-3-cluj-casa-1998-ren-2015",
-    title: "M3 · Casă RI BCA renovată parțial — Cluj (Zona III, CT cond. + PV) — clasă D",
-    shortDesc: "Casă 145 m² BCA + EPS 5cm, CT cond. 22 kW + PV 4 kWp, MEPS 2033 fail, Pașaport recomandat",
+    id: "demo-2-cluj-casa-1965-caramida",
+    title: "M2 · Casă RI cărămidă plină 1965 — Cluj (Zona III, CT gaz cond + PV 3 kWp) — clasă E",
+    shortDesc: "Casă 120 m² cărămidă 500 mm fără izolație, ferestre PVC 2010, CT gaz cond. + PV 3 kWp",
     building: {
       address: "Str. Donath nr. 84",
       city: "Cluj-Napoca",
       county: "Cluj",
-      postal: "400270",                    // ADĂUGAT: alias compatibilitate Step1
+      postal: "400270",
       postalCode: "400270",
       locality: "Cluj-Napoca",
-      latitude: "46.7796",   // Cluj ~46.78°N (Zona III)
-      longitude: "23.5648",  // Cluj ~23.56°E
+      latitude: "46.7796",
+      longitude: "23.5648",
       cadastralNumber: "318745-C1",
       landBook: "CF nr. 318745 Cluj-Napoca UAT Cluj",
       owner: "Mureșan Andrei și Mureșan Ioana",
-      ownerType: "PF",                     // ADĂUGAT: cuplu proprietari persoane fizice (coproprietate)
+      ownerType: "PF",
       category: "RI",
-      structure: "Zidărie portantă — BCA (200–300 mm, 1970–prezent)",
-      yearBuilt: "1998",
-      yearRenov: "2015",
+      structure: "Zidărie portantă cărămidă plină 500 mm fără izolație — casă interbelică tardivă (1955–1975)",
+      yearBuilt: "1965",
+      yearRenov: "2010",                  // Doar ferestre înlocuite în 2010
       floors: "P+1",
       basement: false,
-      attic: true,                        // Pod nelocuit
+      attic: true,
       units: "1",
       stairs: "1",
       nApartments: "1",
       apartmentNo: "",
       staircase: "",
       floor: "",
-      areaUseful: "145",
-      areaBuilt: "165",
-      areaHeated: "145",
-      volume: "405",                      // h_etaj 2.80 × 145
-      areaEnvelope: "385",
-      heightBuilding: "7.5",
-      heightFloor: "2.80",
-      perimeter: "42",
-      n50: "4.0",                         // Etanșeitate moderată după renovare 2015
+      areaUseful: "120",
+      areaBuilt: "138",
+      areaHeated: "120",
+      volume: "324",                      // h_etaj 2.70 × 120
+      areaEnvelope: "320",
+      heightBuilding: "7.0",
+      heightFloor: "2.70",
+      perimeter: "38",
+      n50: "5.5",
       shadingFactor: "0.88",
-      gwpLifecycle: "380",
+      gwpLifecycle: "440",
       solarReady: true,
-      evChargingPoints: "1",
-      evChargingPrepared: "0",
-      co2MaxPpm: "1100",
-      pm25Avg: "12",
+      evChargingPoints: "0",
+      evChargingPrepared: "1",
+      co2MaxPpm: "1200",
+      pm25Avg: "14",
       scaleVersion: "2023",
       scopCpe: "vanzare",
       parkingSpaces: "2",
       energyClassAfterRenov: "B",
       emissionClassAfterRenov: "B",
-      energySavings: "32",
-      co2Reduction: "28",
+      energySavings: "42",
+      co2Reduction: "38",
       apartments: [],
       commonSystems: {
-        elevator:          { installed: false, powerKW: "",    hoursYear: "" },
-        stairsLighting:    { installed: false, powerKW: "",    hoursYear: "" },
+        elevator:          { installed: false, powerKW: "", hoursYear: "" },
+        stairsLighting:    { installed: false, powerKW: "", hoursYear: "" },
         centralHeating:    { installed: false, fuel: "" },
-        commonVentilation: { installed: false, powerKW: "",    hoursYear: "" },
-        pumpGroup:         { installed: false, powerKW: "",    hoursYear: "" },
+        commonVentilation: { installed: false, powerKW: "", hoursYear: "" },
+        pumpGroup:         { installed: false, powerKW: "", hoursYear: "" },
       },
-      // ── ADĂUGAT: Anexa 1+2 MDLPA — overrides pentru context casă unifam BCA 1998 ren. parțial 2015 + split-uri R32 inverter ──
-      coolingRefrigerant: "R32",                           // override: split-uri moderne post-renovare (default ar fi R410A pt yearBuilt 1998)
-      coolingOutdoorUnits: "2",                            // override: 2 split-uri = 2 unități exterioare (default formula da 1)
-      ventilationHrType: "",                               // override: ventilație NATURALA_HIBRID (extracție WC+bucătărie) — fără recuperator HR
-      // ── ADĂUGAT: ANCPI bypass DEMO ──
+      ventilationHrType: "",
       ancpi: {
         verified: true,
         fileName: "demo-cf-318745-cluj.pdf",
@@ -985,114 +583,77 @@ export const DEMO_PROJECTS = [
         cadastralNr: "318745-C1",
         carteFunciara: "CF nr. 318745 Cluj-Napoca UAT Cluj",
       },
-      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M3 — Casă Cluj 1998 ──
-      nrOcupanti: "4",                         // familie 4 persoane în casă RI 165 m²
-      etapeImplementare:
-        "1. Identificați minimum 3 oferte comparative de la contractori autorizați.\n" +
-        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR, AFM Casa Verde Plus, fonduri locale).\n" +
-        "3. Obțineți autorizațiile legale necesare (AC pentru extinderea ETICS, avize ISU dacă lucrările afectează căile de evacuare).\n" +
-        "4. Implementați măsurile în ordinea priorităților: continuare anvelopă (10→15 cm EPS) → upgrade CT condensare → expansiune PV.\n" +
-        "5. Documentați toate lucrările executate și obțineți declarațiile de performanță ale produselor (Reg. (UE) 305/2011).\n" +
-        "6. Solicitați o nouă auditare energetică după finalizarea renovării pentru confirmarea trecerii în clasa B/A.",
-      stimulenteFinanciare:
-        "— AFM Casa Verde Plus: finanțare 100% pentru pompe de căldură și panouri solare termice (persoane fizice, casă individuală).\n" +
-        "— PNRR componenta C5 — Valul Renovării: granturi pentru renovarea energetică a caselor individuale până la standard nZEB.\n" +
-        "— Credite verzi: BRD Eco Home / ING Green Loan / BCR Casa Ta — dobânzi preferențiale (verifică ofertele active la depunerea dosarului).\n" +
-        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
-      solutiiAnvelopa:
-        "— Continuare ETICS de la 5 cm la 15 cm EPS pe toate fațadele (peste actuala izolație degradată).\n" +
-        "— Tratarea punților termice principale identificate (atic, soclu, intersecție acoperiș-pereți) — manșoane locale 5–10 cm.\n" +
-        "— Înlocuire vitraje termopan vechi (anterior 2010) cu vitraj triplu Low-E argon (U_w < 1.0).\n" +
-        "— Verificare hidroizolație acoperiș tip șarpantă lemn — refacere dacă vârsta > 15 ani (CR 0-2012).",
-      solutiiInstalatii:
-        "— Echilibrare hidraulică completă a circuitelor de încălzire (robinete cu presetare diferențială, deja parțial echipate).\n" +
-        "— Reglaj automat al temperaturii pe cameră prin termostate Smart cu programare săptămânală.\n" +
-        "— Inspecție anuală obligatorie centrală termică condensare (HG 1043/2007 — orice cazan > 20 kW).\n" +
-        "— Adăugare pompă de circulație ACM cu detecție utilizare (eficiență ηₑₛ ≥ 0.27, EuP Lot 11).",
-      masuriOrganizare:
-        "— Plan anual de monitorizare consumuri (electricitate, gaz, apă caldă) cu verificare lunară.\n" +
-        "— Instruirea ocupanților privind setările optime ale termostatelor pe sezon (cf. Mc 001-2022 art. 7.3).\n" +
-        "— Audit energetic intermediar la fiecare 5 ani sau la modificarea componenței familiei.\n" +
-        "— Documentare lucrări de renovare (foto, facturi, declarații conformitate produse) pentru următorul CPE.",
-      masuriLocale:
-        "— Etanșeizarea trecerilor prin anvelopă (cabluri, conducte, ventilație) cu mansetă EPDM + spumă PUR.\n" +
-        "— Înlocuirea bateriilor sanitare cu modele cu limitare debit (clasă A WELL — economie ~30% apă caldă).\n" +
-        "— Becuri LED inteligente cu senzor prezență în spații tranzit (hol, scară, baie).\n" +
-        "— Programare orară a iluminatului și CT pe sezon și zi de săptămână (termostate cu cronoprogramare).",
-      regenerabileCustom:
-        "— Expansiune PV de la 5 kWp la 10 kWp (capacitate acoperiș rămasă 30 m², orientare Sud).\n" +
-        "— Adăugare baterie stocare 10 kWh (Tesla Powerwall sau Pylontech) pentru autoconsum nocturn.\n" +
-        "— Pompă de căldură aer-apă pentru pre-încălzire CT condensare (COP > 4.0, R290 propan).\n" +
-        "— Sistem solar termic 4-6 m² colectoare plane pentru ACM (acoperire 50–70% an, DH cuplat la rezervor 200L).",
+      nrOcupanti: "4",
+      ...ANEXA_GENERIC,
     },
     opaqueElements: [
       {
-        name: "Pereți BCA 30 cm + EPS 5 cm — Sud + Est + Vest",
+        // U calculat: 1/(0.04 + 0.020/0.87 + 0.500/0.80 + 0.015/0.45 + 0.13) ≈ 1.18 W/m²K
+        name: "Cărămidă plină 500 mm fără izolație — Sud + Est",
         type: "PE", area: "165", orientation: "S", tau: "1",
         layers: [
-          { matName: "Tencuială decorativă silicat", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
-          { matName: "EPS 5 cm (renovare 2015)", material: "Polistiren expandat EPS", thickness: "50", lambda: 0.038, rho: 18 },
-          { matName: "BCA 30 cm portant", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
-          { matName: "Tencuială var-gips interioară", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+          { matName: "Tencuială ciment exterioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Cărămidă plină 500 mm portantă", material: "Cărămidă plină arsă", thickness: "500", lambda: 0.80, rho: 1800 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Pereți BCA 30 cm + EPS 5 cm — Nord",
-        type: "PE", area: "65", orientation: "N", tau: "1",
+        name: "Cărămidă plină 500 mm fără izolație — Nord + Vest",
+        type: "PE", area: "135", orientation: "N", tau: "1",
         layers: [
-          { matName: "Tencuială decorativă silicat", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
-          { matName: "EPS 5 cm (renovare 2015)", material: "Polistiren expandat EPS", thickness: "50", lambda: 0.038, rho: 18 },
-          { matName: "BCA 30 cm portant", material: "BCA (beton celular autoclavizat)", thickness: "300", lambda: 0.22, rho: 600 },
-          { matName: "Tencuială var-gips interioară", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+          { matName: "Tencuială ciment exterioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Cărămidă plină 500 mm portantă", material: "Cărămidă plină arsă", thickness: "500", lambda: 0.80, rho: 1800 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Planșeu peste etaj sub pod nelocuit + vată minerală 15 cm (renovare 2015)",
+        name: "Planșeu peste pod nelocuit (BA + zgură 1965, fără izolație suplimentară)",
         type: "PT", area: "75", orientation: "H", tau: "0.8",
         layers: [
-          { matName: "Vată minerală 15 cm peste planșeu", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 60 },
-          { matName: "Beton armat planșeu peste etaj 1", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
           { matName: "Tencuială tavan", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+          { matName: "Beton armat planșeu", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
+          { matName: "Strat zgură fără sortare (1965)", material: "Zgură vrac 1965", thickness: "150", lambda: 0.40, rho: 1100 },
+          { matName: "Lambriu lemn pod", material: "Lemn brad", thickness: "20", lambda: 0.18, rho: 500 },
         ],
       },
       {
-        name: "Placă pe sol — neizolat (de renovat în pașaport)",
-        type: "PL", area: "75", orientation: "H", tau: "0.5",
+        name: "Placă pe sol — beton fără izolație (1965)",
+        type: "PL", area: "75", orientation: "H", tau: "0.6",
         layers: [
-          { matName: "Pietriș compactat", material: "Pietriș", thickness: "100", lambda: 0.70, rho: 1800 },
-          { matName: "Beton armat fundație", material: "Beton armat", thickness: "120", lambda: 1.74, rho: 2400 },
-          { matName: "Șapă mortar", material: "Șapă ciment", thickness: "60", lambda: 1.40, rho: 2000 },
-          { matName: "Folie polietilenă barieră vapori", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
-          { matName: "Parchet laminat", material: "Parchet laminat", thickness: "10", lambda: 0.18, rho: 700 },
+          { matName: "Pietriș compactat fundație", material: "Pietriș", thickness: "150", lambda: 0.70, rho: 1800 },
+          { matName: "Beton armat placă", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+          { matName: "Șapă mortar", material: "Șapă ciment", thickness: "40", lambda: 1.40, rho: 2000 },
+          { matName: "Parchet lemn / gresie", material: "Parchet lemn", thickness: "10", lambda: 0.18, rho: 700 },
         ],
       },
     ],
     glazingElements: [
-      { name: "PVC 5 camere dublu Low-E argon — Sud (înlocuit 2015)", area: "12", u: "1.35", g: "0.62", orientation: "S", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Est",                  area: "5",  u: "1.35", g: "0.62", orientation: "E", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Vest",                  area: "5",  u: "1.35", g: "0.62", orientation: "V", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Nord",                  area: "8",  u: "1.35", g: "0.62", orientation: "N", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "Ușă intrare lemn stratificat",                            area: "2.2", u: "1.80", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn stratificat" },
+      { name: "PVC 5 camere dublu vitraj clasic — Sud (înlocuit 2010)", area: "8", u: "1.40", g: "0.75", orientation: "S", frameRatio: "22", type: "Dublu vitraj clasic 4-16-4" },
+      { name: "PVC 5 camere dublu vitraj clasic — Est",                  area: "5", u: "1.40", g: "0.75", orientation: "E", frameRatio: "22", type: "Dublu vitraj clasic 4-16-4" },
+      { name: "PVC 5 camere dublu vitraj clasic — Vest",                  area: "5", u: "1.40", g: "0.75", orientation: "V", frameRatio: "22", type: "Dublu vitraj clasic 4-16-4" },
+      { name: "PVC 5 camere dublu vitraj clasic — Nord",                  area: "4", u: "1.40", g: "0.75", orientation: "N", frameRatio: "22", type: "Dublu vitraj clasic 4-16-4" },
+      { name: "Ușă intrare lemn stratificat",                              area: "2.2", u: "1.80", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn" },
     ],
     thermalBridges: [
-      { name: "Stâlpișori BA în zidărie BCA",         type: "SB", psi: "0.18", length: "32" },
-      { name: "Centuri BA peste etaje",                type: "CB", psi: "0.12", length: "84" },
-      { name: "Soclu fără izolație perimetrală (de remediat)", type: "SO", psi: "0.55", length: "42" },
-      { name: "Glaf fereastră PVC (renovare 2015)",   type: "GF", psi: "0.10", length: "60" },
-      { name: "Buiandrug deasupra ferestrei BA",       type: "CB", psi: "0.20", length: "12" },
-      { name: "Cornișă pod nelocuit",                  type: "CO", psi: "0.10", length: "42" },
+      // SR EN ISO 14683 — clădire necalificată cărămidă fără ETICS, Ψ moderat
+      { name: "Stâlpișori BA în zidărie cărămidă",      type: "SB", psi: "0.30", length: "28" },
+      { name: "Centură BA peste etaj",                   type: "CB", psi: "0.40", length: "76" },
+      { name: "Soclu fără izolație perimetrală",         type: "SO", psi: "0.50", length: "38" },
+      { name: "Glaf fereastră PVC fără manșoane",        type: "GF", psi: "0.30", length: "56" },
+      { name: "Buiandrug BA deasupra ferestrei",         type: "CB", psi: "0.30", length: "10" },
+      { name: "Cornișă acoperiș pod",                    type: "CO", psi: "0.30", length: "38" },
     ],
     heating: {
-      source: "GAZ_COND",
-      power: "22",
+      source: "GAZ_COND",                 // Cazan gaz natural condensare (HEAT_SOURCES)
+      power: "24",
       eta_gen: "0.97",
-      nominalPower: "22",
-      emission: "PARD",                   // P1 fix: era "MIXT_PARDOSEALA_RADIATOARE" — UI nu are mix; ales "PARD" (pardoseală radiantă, dominantă parter, EMISSION_SYSTEMS line 103). Etajul (radiatoare oțel) menționat în observații.
+      nominalPower: "24",
+      emission: "RAD_OT",                 // Radiatoare oțel panou (EMISSION_SYSTEMS)
       eta_em: "0.95",
-      distribution: "BINE_INT",
-      eta_dist: "0.93",
-      control: "PROG",                    // P1 fix: era "TERMOSTAT_CRONO" — corect "PROG" (Termostat ambiental programabil, CONTROL_TYPES line 152)
-      eta_ctrl: "0.92",
+      distribution: "BINE_INT",           // Bine izolată interior single-family (DISTRIBUTION_QUALITY)
+      eta_dist: "0.95",
+      control: "PROG",                    // Termostat ambiental programabil (CONTROL_TYPES)
+      eta_ctrl: "0.88",
       regime: "intermitent",
       theta_int: "21",
       nightReduction: "3",
@@ -1101,14 +662,14 @@ export const DEMO_PROJECTS = [
       tAttic: "10",
     },
     acm: {
-      source: "CAZAN_H",                  // P1 fix: era "GAZ_COND" — corect "CAZAN_H" (același cazan cu încălzirea, prioritate termică, ACM_SOURCES line 290)
+      source: "CAZAN_H",                  // Același cazan cu încălzirea (ACM_SOURCES)
       consumers: "4",
-      dailyLiters: "55",
+      dailyLiters: "50",
       consumptionLevel: "med",
       tSupply: "55",
-      storageVolume: "150",
+      storageVolume: "100",
       insulationClass: "B",
-      pipeLength: "18",
+      pipeLength: "12",
       pipeInsulated: true,
       pipeInsulationThickness: "20mm",
       pipeDiameter: "20",
@@ -1120,41 +681,34 @@ export const DEMO_PROJECTS = [
       legionellaT: "",
     },
     cooling: {
-      system: "SPLIT_INV",
-      power: "5",
-      eer: "4.20",
-      seer: "5.50",
-      cooledArea: "60",                   // Doar 2 dormitoare (split + dormitor matrim.)
-      distribution: "DIRECT",
-      hasCooling: true,
-      setpoint: "26",
-      shadingExternal: "0.85",
+      system: "NONE",
+      power: "0", eer: "", seer: "",
+      cooledArea: "0",
+      distribution: "",
+      hasCooling: false,
+      setpoint: "",
+      shadingExternal: "0.88",
       useHourly: false,
-      emissionType: "split_mural",        // P1 fix: era "split_perete" — corect "split_mural" (Split mural / unitate interioară VRF, COOLING_EMISSION_EFFICIENCY line 362)
-      eta_em: "0.95",
-      distributionType: "agent_frig",     // P1 fix: era "agent_R32_int" — corect "agent_frig" (Agent frigorific direct VRF/split, COOLING_DISTRIBUTION_EFFICIENCY line 375)
-      eta_dist: "0.98",
-      controlType: "termostat_prop",      // P1 fix: era "remote_inv" — corect "termostat_prop" (Termostat proporțional P/PI, COOLING_CONTROL_EFFICIENCY line 392)
-      eta_ctrl: "0.94",
-      P_aux_pumps: "0",
-      P_aux_fans: "0.05",
-      t_cooling_hours: "650",
-      hasNightVent: false,
-      n_night: "",
+      emissionType: "", eta_em: "",
+      distributionType: "", eta_dist: "",
+      controlType: "", eta_ctrl: "",
+      P_aux_pumps: "", P_aux_fans: "",
+      t_cooling_hours: "",
+      hasNightVent: false, n_night: "",
       comfortCategory: "II",
       internalGainsOverride: "",
     },
     ventilation: {
-      type: "NAT_HIBRIDA",                // P1 fix: era "NATURALA_HIBRID" — corect "NAT_HIBRIDA" (VENTILATION_TYPES line 443)
-      airflow: "180",
-      fanPower: "20",                     // Extracție WC + bucătărie
+      type: "NAT",                        // Ventilare naturală pură (casă veche)
+      airflow: "150",
+      fanPower: "0",
       operatingHours: "8760",
       hrEfficiency: "0",
     },
     lighting: {
-      type: "LED_E27",                    // P1 fix: era "MIXT" — UI nu are MIXT; ales "LED_E27" (LED retrofit, dominant 70% în mix conform comentariu, LIGHTING_TYPES line 488)
-      pDensity: "5.5",                    // Mix LED 70% + halogen 30%
-      controlType: "MAN",                 // P1 fix: era "MANUAL" — corect "MAN" (LIGHTING_CONTROL line 504)
+      type: "LED_E27",                    // LED retrofit E27/E14 (LIGHTING_TYPES)
+      pDensity: "5.0",
+      controlType: "MAN",
       fCtrl: "1.0",
       operatingHours: "1900",
       naturalLightRatio: "45",
@@ -1164,14 +718,14 @@ export const DEMO_PROJECTS = [
     solarThermal: { enabled: false, type: "", area: "0", orientation: "S", tilt: "30", usage: "acm", storageVolume: "0", eta0: "0", a1: "0" },
     photovoltaic: {
       enabled: true,
-      type: "MONO",
-      area: "22",
+      type: "MONO",                       // Monocristalin standard (PV_TYPES)
+      area: "17",                         // 3 kWp × ~5.5 m²/kWp (panouri 350Wp)
       orientation: "S",
-      tilt: "30",
-      inverterType: "STD",
-      inverterEta: "0.96",
-      peakPower: "4",
-      usage: "all",                       // P1 fix: era "autoconsum" — UI așteaptă "all|lighting|hvac|export"
+      tilt: "35",                         // Optim Cluj anual (lat 46.78° + 5°)
+      inverterType: "PREM",               // Invertor string premium (PV_INVERTER_ETA)
+      inverterEta: "0.97",
+      peakPower: "3",
+      usage: "all",
     },
     heatPump:   { enabled: false, type: "", cop: "0", scopHeating: "0", scopCooling: "0", covers: "", bivalentTemp: "", auxSource: "", auxEta: "0" },
     biomass:    { enabled: false },
@@ -1201,69 +755,68 @@ export const DEMO_PROJECTS = [
       codUnicMDLPA: "CE-2026-03142",
       dataExpirareDrept: "2031-03-15",
       dataTransmitereMDLPA: "2026-04-28",
-      // ADĂUGAT: Semnătură + ștampilă DEMO (placeholder SVG — înlocuiește prin UI Step 6 înainte de export oficial)
-      signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Pop Cosmin</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text></svg>",
-      stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Pop Cosmin</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>CJ-03142</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Casă unifamilială P+1 Cluj-Napoca, ren. parțial 2015 (geamuri PVC + EPS 5 cm pe pereți + vată 15 cm peste planșeu pod). Sisteme: CT condensare gaz 22 kW Vaillant ecoTEC plus, distribuție mixtă pardoseală radiantă (parter) + radiatoare oțel (etaj), boiler indirect 150L. Răcire: 2 split-uri R32 inverter clasa A++ (dormitoare). PV 4 kWp acoperiș Sud, autoconsum fără baterie. n₅₀ = 4.0 h⁻¹. Recomandări Pașaport Renovare: izolație suplimentară pereți (10 cm EPS-G către U=0.20), izolare placă sol perimetral, înlocuire CT cu pompă căldură aer-apă pentru clasă B. CPE valabil 10 ani — emis pentru tranzacție vânzare imobiliară.",
+      signatureDataURL: DEMO_SIG_SVG("Pop Cosmin"),
+      stampDataURL: DEMO_STAMP_SVG("Pop Cosmin", "CJ-03142"),
+      observations: "Casă unifamilială P+1 Cluj-Napoca, construită 1965 zidărie cărămidă plină 500 mm fără izolație suplimentară (U ≈ 1.18 W/m²·K). Reabilitare parțială 2010: înlocuire ferestre lemn cu termopan PVC dublu vitraj clasic (U ≈ 1.40, fără Low-E). Sisteme: CT gaz condensare 24 kW Vaillant ecoTEC plus, distribuție bine izolată, radiatoare oțel panou. ACM: cazan combi instantaneu. Răcire: niciun sistem activ. PV 3 kWp acoperiș Sud, autoconsum fără baterie. n₅₀ = 5.5 h⁻¹. CPE emis pentru tranzacție vânzare. Recomandări Pașaport: ETICS 12-15 cm pereți + izolare placă sol perimetral + înlocuire ferestre cu triplu Low-E + extindere PV → 5 kWp.",
       photo: "",
     },
     expectedResults: {
-      energyClass: "D",
-      E_p_total_kWh_m2_y: 165,
-      E_p_nren_kWh_m2_y: 145,
-      E_p_ren_kWh_m2_y: 20,
+      energyClass: "E",
+      E_p_total_kWh_m2_y: 280,
+      E_p_nren_kWh_m2_y: 245,
+      E_p_ren_kWh_m2_y: 35,
       RER_pct: 12,
-      U_med_W_m2K: 0.55,
-      U_max_violations: ["PL"],           // Placă pe sol depășește U_max 2022
-      Q_inc_kWh_m2_y: 95,
-      Q_rac_kWh_m2_y: 8,
-      Q_acm_kWh_m2_y: 28,
-      Q_il_kWh_m2_y: 12,
+      U_med_W_m2K: 1.20,
+      U_max_violations: ["PE", "PT", "PL"],
+      Q_inc_kWh_m2_y: 195,
+      Q_rac_kWh_m2_y: 0,
+      Q_acm_kWh_m2_y: 32,
+      Q_il_kWh_m2_y: 8,
       Q_aux_kWh_m2_y: 2,
       bacsClass: "C",
       fBac: 1.00,
-      sriPct: 48,
-      meps2030_pass: true,
+      sriPct: 38,
+      meps2030_pass: false,
       meps2033_pass: false,
       meps2050_pass: false,
       passportRequired: true,
       passportPhases: 2,
       passportTargetClass: "B",
       documentsExpected: ["CPE-RI", "Raport-Audit", "Pasaport-Renovare"],
-      tolerances: { E_p_nren: 0.15, E_p_total: 0.15, RER: 5, U_med: 0.10, Q_inc: 0.15 },
+      tolerances: { E_p_nren: 0.18, E_p_total: 0.18, RER: 5, U_med: 0.15, Q_inc: 0.18 },
     },
   },
 
   // ───────────────────────────────────────────────────────────────────────────
-  // M4 — Școală gimnazială reabilitată — Brașov Tractorul (ZONA IV, rece)
-  // CT condensare gaz central 350 kW + recuperator entalpic săli mari + PV 15 kWp
-  // Scop: testare clădire publică nerezidențială, regim intermitent (vacanțe
-  //       școlare), BACS clasa B, ventilație mixtă (naturală + mecanică),
-  //       MEPS 2030 pass marginal.
+  // M3 — Birouri BI 2005 — București (ZONA II, ~2.300 GD)
+  // VRF degradat (SEER 2.80) + CT gaz backup + ventiloconvectoare 4 țevi
+  // PV 15 kWp + Solar termic 20 m² ACM
+  // PROBLEMĂ INTENȚIONATĂ: răcire exagerată → Q_rac > 30 kWh/m²·an
+  // Scop CPE: vânzare/tranzacție • clasă C • MEPS 2033 fail
   // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "demo-4-brasov-scoala-1985-ren-2022",
-    title: "M4 · Școală gimnazială reabilitată — Brașov (Zona IV, CT central + PV) — clasă B",
-    shortDesc: "Școală 1850 m² zidărie + EPS 15cm, CT cond. 350 kW + 15 kWp PV + LED DALI, MEPS 2030 pass",
+    id: "demo-3-bucuresti-birouri-2005",
+    title: "M3 · Birouri BI 2005 — București (Zona II, VRF degradat + PV 15 + ST 20) — clasă C",
+    shortDesc: "Birouri 1500 m² BCA+EPS 4cm, VRF SEER 2.80 + CT gaz, PV 15 kWp + ST 20 m², Q_rac>30, MEPS 2033 fail",
     building: {
-      address: "Str. Aurel Vlaicu nr. 8, Școala Gimnazială Nr. 25",
-      city: "Brașov",
-      county: "Brașov",
-      postal: "500178",                    // ADĂUGAT: alias compatibilitate Step1
-      postalCode: "500178",
-      locality: "Brașov",
-      latitude: "45.6427",   // Brașov ~45.64°N (Zona IV climă rece)
-      longitude: "25.5887",  // Brașov ~25.59°E
-      cadastralNumber: "104587-C1",
-      landBook: "CF nr. 104587 Brașov UAT Brașov",
-      owner: "Primăria Municipiului Brașov",     // CURĂȚAT: CUI extras în câmp dedicat ownerCUI
-      ownerType: "PUB",                          // ADĂUGAT: instituție publică (Primăria — UAT)
-      ownerCUI: "4384206",                       // ADĂUGAT: extras din string original (CUI Primăria Brașov)
-      category: "ED",
-      structure: "Zidărie portantă — cărămidă plină (240 / 290 mm, ante 1980)",
-      yearBuilt: "1985",
-      yearRenov: "2022",
-      floors: "P+2",
+      address: "Bd. Decebal nr. 28, Centrul de Afaceri Decebal",
+      city: "București",
+      county: "București",
+      postal: "030971",
+      postalCode: "030971",
+      locality: "București",
+      latitude: "44.4268",
+      longitude: "26.1278",
+      cadastralNumber: "224580-C1",
+      landBook: "CF nr. 224580 București Sect. 3",
+      owner: "Decebal Office Investments SRL",
+      ownerType: "PJ",
+      ownerCUI: "RO24871235",
+      category: "BI",
+      structure: "Cadre BA + zidărie BCA 25 cm + ETICS EPS 4 cm degradat (post-2000, pre-EPBD 2010)",
+      yearBuilt: "2005",
+      yearRenov: "",
+      floors: "P+3",
       basement: true,
       attic: false,
       units: "1",
@@ -1272,265 +825,531 @@ export const DEMO_PROJECTS = [
       apartmentNo: "",
       staircase: "",
       floor: "",
-      areaUseful: "1850",
-      areaBuilt: "2150",
-      areaHeated: "1850",
-      volume: "6475",                     // h=3.50 m
-      areaEnvelope: "2200",
-      heightBuilding: "12",
-      heightFloor: "3.50",
-      perimeter: "165",
-      n50: "1.5",                         // Test blower-door post-reabilitare
-      shadingFactor: "0.90",
-      gwpLifecycle: "320",
+      areaUseful: "1500",
+      areaBuilt: "1720",
+      areaHeated: "1500",
+      volume: "4500",                     // h=3.0 × 1500
+      areaEnvelope: "1850",
+      heightBuilding: "13.5",
+      heightFloor: "3.00",
+      perimeter: "120",
+      n50: "2.5",
+      shadingFactor: "0.82",
+      gwpLifecycle: "350",
       solarReady: true,
-      evChargingPoints: "2",
-      evChargingPrepared: "4",
-      co2MaxPpm: "950",                   // Săli aglomerate, ventilație mecanică pe parțial
-      pm25Avg: "9",
+      evChargingPoints: "4",
+      evChargingPrepared: "8",
+      co2MaxPpm: "950",
+      pm25Avg: "11",
       scaleVersion: "2023",
-      scopCpe: "renovare_majora",
-      parkingSpaces: "12",
+      scopCpe: "vanzare",
+      parkingSpaces: "20",
+      energyClassAfterRenov: "",
+      emissionClassAfterRenov: "",
+      energySavings: "",
+      co2Reduction: "",
+      apartments: [],
+      commonSystems: {
+        elevator:          { installed: true,  powerKW: "7.5",  hoursYear: "3500" },
+        stairsLighting:    { installed: true,  powerKW: "0.4",  hoursYear: "2400" },
+        centralHeating:    { installed: true,  fuel: "PC_AERAER (VRF) + CT gaz backup" },
+        commonVentilation: { installed: true,  powerKW: "1.5",  hoursYear: "3000" },
+        pumpGroup:         { installed: true,  powerKW: "1.2",  hoursYear: "8760" },
+      },
+      heatingRadiatorType: "Ventiloconvector",
+      heatingRadiators: [],
+      heatingHasMeter: "da",
+      heatingPipeDiameterMm: "54",
+      acmFixtures: {
+        lavoare: "8", cada_baie: "0", spalatoare: "1", rezervor_wc: "8",
+        bideuri: "0", pisoare: "4", dus: "1",
+        masina_spalat_vase: "0", masina_spalat_rufe: "0",
+      },
+      acmConsumePointsCount: "18",
+      acmPipeDiameterMm: "32",
+      acmHasMeter: "da",
+      acmFlowMeters: "peste_tot",
+      acmRecirculation: "functionala",
+      coolingDehumPowerKw: "4",
+      coolingIndoorUnits: "32",
+      coolingOutdoorUnits: "4",
+      coolingPipeDiameterMm: "32",
+      coolingSpaceScope: "complet",
+      coolingHumidityControl: "fara",
+      coolingIndividualMeter: "da",
+      ventilationHrType: "rotativ",
+      ventilationControlType: "program",
+      ancpi: {
+        verified: true,
+        fileName: "demo-cf-224580-bucuresti.pdf",
+        fileSize: 187456,
+        fileBase64: null,
+        uploadDate: "2026-04-27T10:00:00.000Z",
+        cadastralNr: "224580-C1",
+        carteFunciara: "CF nr. 224580 București Sect. 3",
+      },
+      nrOcupanti: "80",
+      ...ANEXA_GENERIC,
+    },
+    opaqueElements: [
+      {
+        // U calculat: 1/(0.04 + 0.008/0.70 + 0.040/0.045 + 0.250/0.22 + 0.015/0.45 + 0.13) ≈ 0.45 W/m²K
+        name: "BCA 25 cm + ETICS EPS 4 cm degradat — Sud + Est + Vest",
+        type: "PE", area: "850", orientation: "S", tau: "1",
+        layers: [
+          { matName: "Tencuială silicat exterioară", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
+          { matName: "Polistiren expandat EPS 4 cm (degradat 2005)", material: "Polistiren expandat EPS", thickness: "40", lambda: 0.045, rho: 18 },
+          { matName: "BCA 25 cm umplutură", material: "BCA (beton celular autoclavizat)", thickness: "250", lambda: 0.22, rho: 600 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+        ],
+      },
+      {
+        name: "BCA 25 cm + ETICS EPS 4 cm degradat — Nord",
+        type: "PE", area: "320", orientation: "N", tau: "1",
+        layers: [
+          { matName: "Tencuială silicat exterioară", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
+          { matName: "Polistiren expandat EPS 4 cm (degradat 2005)", material: "Polistiren expandat EPS", thickness: "40", lambda: 0.045, rho: 18 },
+          { matName: "BCA 25 cm umplutură", material: "BCA (beton celular autoclavizat)", thickness: "250", lambda: 0.22, rho: 600 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+        ],
+      },
+      {
+        name: "Acoperiș terasă BA + EPS 8 cm + hidroizolație SBS",
+        type: "PT", area: "440", orientation: "H", tau: "1",
+        layers: [
+          { matName: "Pietriș protecție", material: "Pietriș", thickness: "50", lambda: 0.70, rho: 1800 },
+          { matName: "Polistiren expandat EPS 8 cm", material: "Polistiren expandat EPS", thickness: "80", lambda: 0.034, rho: 22 },
+          { matName: "Hidroizolație bituminoasă SBS", material: "Membrană SBS", thickness: "8", lambda: 0.20, rho: 1050 },
+          { matName: "Beton armat planșeu terasă", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+          { matName: "Tencuială tavan ultim etaj", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
+        ],
+      },
+      {
+        name: "Planșeu peste subsol parcaj + EPS 6 cm",
+        type: "PL", area: "440", orientation: "H", tau: "0.7",
+        layers: [
+          { matName: "Beton armat planșeu", material: "Beton armat", thickness: "200", lambda: 1.74, rho: 2400 },
+          { matName: "Polistiren expandat EPS 6 cm", material: "Polistiren expandat EPS", thickness: "60", lambda: 0.034, rho: 22 },
+          { matName: "Șapă mortar autonivel", material: "Șapă ciment autonivel", thickness: "60", lambda: 1.40, rho: 2000 },
+          { matName: "Pardoseală gresie tehnică", material: "Gresie ceramică", thickness: "12", lambda: 1.30, rho: 2300 },
+        ],
+      },
+    ],
+    glazingElements: [
+      // 2005 dublu Low-E argon standard pre-curtain wall, ratio fereastră ~30%
+      { name: "PVC 5 camere dublu Low-E argon — Sud (curtain partial)", area: "180", u: "1.80", g: "0.55", orientation: "S", frameRatio: "20", type: "Dublu Low-E argon" },
+      { name: "PVC 5 camere dublu Low-E argon — Est",                    area: "110", u: "1.80", g: "0.55", orientation: "E", frameRatio: "20", type: "Dublu Low-E argon" },
+      { name: "PVC 5 camere dublu Low-E argon — Vest",                    area: "110", u: "1.80", g: "0.55", orientation: "V", frameRatio: "20", type: "Dublu Low-E argon" },
+      { name: "PVC 5 camere dublu Low-E argon — Nord",                    area: "80",  u: "1.80", g: "0.55", orientation: "N", frameRatio: "20", type: "Dublu Low-E argon" },
+    ],
+    thermalBridges: [
+      // SR EN ISO 14683 — clădire post-2000, Ψ moderat (0.10-0.20)
+      { name: "Centură planșeu BA peste etaje (sub EPS)", type: "CB", psi: "0.20", length: "220" },
+      { name: "Stâlp colț 90° clădire",                    type: "SB", psi: "0.18", length: "54"  },
+      { name: "Stâlp metalic perete cortină parțial",      type: "SB", psi: "0.15", length: "80"  },
+      { name: "Glaf fereastră PVC",                        type: "GF", psi: "0.10", length: "320" },
+      { name: "Soclu cu protecție XPS perimetrală",        type: "SO", psi: "0.20", length: "120" },
+      { name: "Cornișă atic terasă EPS 8 cm",              type: "CO", psi: "0.15", length: "120" },
+      { name: "Penetrare ventilație ductă fațadă",         type: "GF", psi: "0.15", length: "12"  },
+    ],
+    heating: {
+      source: "PC_AERAER",                // Pompă de căldură aer-aer (multi-split / VRF) — HEAT_SOURCES
+      power: "60",
+      eta_gen: "2.80",                    // SCOP încălzire VRF degradat 2005
+      nominalPower: "60",
+      emission: "FCU_4P",                 // Ventiloconvectoare 4 țevi (EMISSION_SYSTEMS)
+      eta_em: "0.97",
+      distribution: "MED_INT",            // Mediu izolată interior (post-2000 not nZEB)
+      eta_dist: "0.92",
+      control: "COMP_CLIM",               // Compensare climatică BMS (BACS clasa B)
+      eta_ctrl: "0.90",
+      regime: "intermitent",
+      theta_int: "21",
+      nightReduction: "4",
+      tStaircase: "",
+      tBasement: "10",
+      tAttic: "",
+    },
+    acm: {
+      source: "SOLAR_GAZ",                // Solar termic + auxiliar gaz (ACM_SOURCES)
+      consumers: "80",
+      dailyLiters: "8",                   // Office — doar lavoare
+      consumptionLevel: "low",
+      tSupply: "55",
+      storageVolume: "800",
+      insulationClass: "A",
+      pipeLength: "60",
+      pipeInsulated: true,
+      pipeInsulationThickness: "20mm",
+      pipeDiameter: "25",
+      circRecirculation: true,
+      circHours: "11",
+      circPumpType: "iee_023_027",
+      hasLegionella: true,
+      legionellaFreq: "weekly",
+      legionellaT: "70",
+    },
+    cooling: {
+      // PROBLEMĂ INTENȚIONATĂ — răcire exagerată per brief utilizator (Q_rac > 30 kWh/m²·an)
+      system: "VRF",                      // Sistem VRF/VRV 2 pipe (COOLING_SYSTEMS)
+      power: "80",
+      eer: "2.20",
+      seer: "2.80",                       // ← USER REQUIREMENT (VRF vechi 2005 degradat)
+      cooledArea: "1500",                 // ← USER REQUIREMENT (toată suprafața utilă)
+      distribution: "MED_INT",
+      hasCooling: true,
+      setpoint: "25",
+      shadingExternal: "0.82",
+      useHourly: false,
+      emissionType: "fan_coil",           // Ventiloconvector 4 țevi (COOLING_EMISSION_EFFICIENCY)
+      eta_em: "0.97",
+      distributionType: "aer_tratat_slab", // Aer tratat, canale puțin izolate (COOLING_DISTRIBUTION_EFFICIENCY)
+      eta_dist: "0.85",                   // ← USER REQUIREMENT
+      controlType: "manual",              // Reglare manuală on/off utilizator (COOLING_CONTROL_EFFICIENCY)
+      eta_ctrl: "0.88",
+      P_aux_pumps: "1.2",
+      P_aux_fans: "4.5",
+      t_cooling_hours: "1400",            // ← USER REQUIREMENT (veri calde București + program lung)
+      hasNightVent: false,
+      n_night: "",
+      comfortCategory: "III",
+      internalGainsOverride: "",
+    },
+    ventilation: {
+      type: "MEC_HR80",                   // Recuperator căldură 80% (VENTILATION_TYPES)
+      airflow: "4500",                    // 80 ocupanți × 25 m³/h × 2.25 ratio cat. III
+      fanPower: "1500",                   // SFP ~1.0 kW/(m³/s)
+      operatingHours: "3000",
+      hrEfficiency: "80",
+    },
+    lighting: {
+      type: "LED",                        // LED panou 60×60 (LIGHTING_TYPES)
+      pDensity: "7.0",
+      controlType: "TIMER",               // Programator orar office (LIGHTING_CONTROL)
+      fCtrl: "0.90",
+      operatingHours: "2400",
+      naturalLightRatio: "35",
+      pEmergency: "0.5",
+      pStandby: "0.2",
+    },
+    solarThermal: {
+      enabled: true,
+      type: "PLAN",                       // Colector plan glazurat standard (SOLAR_THERMAL_TYPES)
+      area: "20",
+      orientation: "S",
+      tilt: "45",
+      usage: "acm",
+      storageVolume: "800",
+      eta0: "0.78",
+      a1: "3.80",
+    },
+    photovoltaic: {
+      enabled: true,
+      type: "MONO",
+      area: "85",                         // 15 kWp × ~5.7 m²/kWp
+      orientation: "S",
+      tilt: "15",                         // Acoperiș plat București — tilt jos optim autoconsum
+      inverterType: "STD",
+      inverterEta: "0.97",
+      peakPower: "15",
+      usage: "all",
+    },
+    heatPump:   { enabled: false, type: "", cop: "0", scopHeating: "0", scopCooling: "0", covers: "", bivalentTemp: "", auxSource: "", auxEta: "0" },
+    biomass:    { enabled: false },
+    otherRenew: {
+      windEnabled: false, windCapacity: "", windProduction: "",
+      cogenEnabled: false, cogenElectric: "", cogenThermal: "", cogenFuel: "", cogenType: "", cogenPowerEl: "", cogenHours: "",
+      proximityEnabled: false, proximityDistanceKm: "", proximityProduction: "", proximitySource: "",
+    },
+    battery: { enabled: false, type: "", capacity: "0", power: "0", dod: "0", selfConsumptionPct: "0" },
+    auditor: {
+      name: "ing. Constantinescu Mihaela",
+      atestat: "B-09245",
+      grade: "AE Ici",
+      specialty: "construcții și instalații",
+      company: "PassivTech Romania SRL",
+      phone: "0744 989 121",
+      email: "mihaela.c@passivtech.ro",
+      date: "2026-04-27",
+      mdlpaCode: "CE-2026-09245",
+      cpeNumber: "CPE-2026-00874",
+      cpeCode: "CE-2026-09245_20260427_Constantinescu_Mihaela_B_224580_001_CPE",
+      registryIndex: "874",
+      scopCpe: "vanzare",
+      validityYears: "10",
+      registruEvidenta: "RE-2026-B-09245",
+      nrCadastral: "224580-C1",
+      codUnicMDLPA: "CE-2026-09245",
+      dataExpirareDrept: "2031-06-30",
+      dataTransmitereMDLPA: "2026-04-28",
+      signatureDataURL: DEMO_SIG_SVG("Constantinescu M."),
+      stampDataURL: DEMO_STAMP_SVG("Constantinescu M.", "B-09245"),
+      observations: "Birouri Centrul Decebal, București Sect. 3 — clădire 2005 BCA 25 cm + ETICS EPS 4 cm degradat (U_pereți ≈ 0.45 W/m²·K), vitraje dublu Low-E argon (U ≈ 1.80, g ≈ 0.55). Sisteme: PC aer-aer VRF 60 kW (SCOP încălzire 2.80 — degradat după 20 ani exploatare) + CT gaz backup, ventiloconvectoare 4 țevi, recuperator entalpic rotativ 80%. RĂCIRE PROBLEMATICĂ: VRF reversibil SEER 2.80 (vs. cerere actuală ≥ 5.0), distribuție aer tratat slab izolat (η = 0.85), control manual la fiecare birou (η = 0.88), 1400 h funcționare/an (veri calde 2024-2026). PV 15 kWp acoperiș plat tilt 15° (autoconsum), Solar termic 20 m² ACM (acoperire ~ 60% sezon cald). RER ≈ 20% (PV + ST). MEPS 2030 PASS marginal, MEPS 2033 FAIL — necesită upgrade major: înlocuire VRF cu PC reversibilă (SEER ≥ 6.0), trecere la BMS clasa A cu reglaj zonal, ETICS suplimentar 8-10 cm.",
+      photo: "",
+    },
+    expectedResults: {
+      energyClass: "C",
+      E_p_total_kWh_m2_y: 240,
+      E_p_nren_kWh_m2_y: 195,
+      E_p_ren_kWh_m2_y: 45,
+      RER_pct: 19,
+      U_med_W_m2K: 0.65,
+      U_max_violations: ["GLAZ"],
+      Q_inc_kWh_m2_y: 55,
+      Q_rac_kWh_m2_y: 35,                 // ← TARGET > 30 (problemă răcire)
+      Q_acm_kWh_m2_y: 6,
+      Q_il_kWh_m2_y: 18,
+      Q_aux_kWh_m2_y: 8,
+      bacsClass: "C",
+      fBac: 1.00,
+      sriPct: 50,
+      meps2030_pass: true,
+      meps2033_pass: false,               // ← USER REQUIREMENT
+      meps2050_pass: false,
+      passportRequired: true,
+      passportPhases: 2,
+      passportTargetClass: "B",
+      documentsExpected: ["CPE-BI", "Raport-Audit", "Pasaport-Renovare"],
+      tolerances: { E_p_nren: 0.20, E_p_total: 0.20, RER: 5, U_med: 0.15, Q_inc: 0.20, Q_rac: 0.25 },
+    },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // M4 — Școală gimnazială ED — Brașov (ZONA IV, ~3.400 GD)
+  // CT central gaz STANDARD 120 kW + radiatoare fontă + ventilare naturală
+  // NEREABILITATĂ • niciun renewable • clasă F • eligibil PNRR C5.1
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: "demo-4-brasov-scoala-1980-nereabilitat",
+    title: "M4 · Școală gimnazială 1980 NEREABILITATĂ — Brașov (Zona IV, CT gaz central) — clasă F",
+    shortDesc: "Școală 1200 m² cărămidă goluri 30 cm fără izolație, CT gaz 120 kW + RAD fontă, baseline pre-PNRR (clasă F)",
+    building: {
+      address: "Str. Nicolae Bălcescu nr. 12, Școala Gimnazială Nr. 14",
+      city: "Brașov",
+      county: "Brașov",
+      postal: "500178",
+      postalCode: "500178",
+      locality: "Brașov",
+      latitude: "45.6427",
+      longitude: "25.5887",
+      cadastralNumber: "104587-C1",
+      landBook: "CF nr. 104587 Brașov UAT Brașov",
+      owner: "Primăria Municipiului Brașov",
+      ownerType: "PUB",
+      ownerCUI: "4384206",
+      category: "ED",
+      structure: "Zidărie portantă cărămidă cu goluri orizontale 30 cm fără izolație — clădire publică ante-1990 (1965-1989)",
+      yearBuilt: "1980",
+      yearRenov: "",                      // NEREABILITAT — eligibil PNRR C5.1
+      floors: "P+1",
+      basement: true,
+      attic: false,
+      units: "1",
+      stairs: "2",
+      nApartments: "1",
+      apartmentNo: "",
+      staircase: "",
+      floor: "",
+      areaUseful: "1200",
+      areaBuilt: "1380",
+      areaHeated: "1200",
+      volume: "4200",                     // h=3.50 × 1200
+      areaEnvelope: "1450",
+      heightBuilding: "8.5",
+      heightFloor: "3.50",
+      perimeter: "140",
+      n50: "5.0",
+      shadingFactor: "0.92",
+      gwpLifecycle: "510",
+      solarReady: false,
+      evChargingPoints: "0",
+      evChargingPrepared: "0",
+      co2MaxPpm: "1350",
+      pm25Avg: "13",
+      scaleVersion: "2023",
+      scopCpe: "renovare",                // Pre-renovare PNRR
+      parkingSpaces: "8",
       energyClassAfterRenov: "B",
       emissionClassAfterRenov: "B",
-      energySavings: "55",
-      co2Reduction: "48",
+      energySavings: "65",
+      co2Reduction: "60",
       apartments: [],
       commonSystems: {
         elevator:          { installed: false, powerKW: "",    hoursYear: "" },
         stairsLighting:    { installed: true,  powerKW: "0.5", hoursYear: "1100" },
-        centralHeating:    { installed: true,  fuel: "gaz_cond" },
-        commonVentilation: { installed: true,  powerKW: "4.5", hoursYear: "1800" },
-        pumpGroup:         { installed: true,  powerKW: "1.2", hoursYear: "2800" },
+        centralHeating:    { installed: true,  fuel: "gaz_std" },
+        commonVentilation: { installed: false, powerKW: "",    hoursYear: "" },
+        pumpGroup:         { installed: true,  powerKW: "0.8", hoursYear: "2500" },
       },
-      // ── ADĂUGAT: Anexa 1+2 MDLPA — overrides pentru școală 1850 m² CT central 350 kW + BACS B + ventilație hibridă ──
-      heatingRadiators: [{                                 // override: lista ridicolă (default = 234 buc) — realist 60+8 radiatoare
-        type: "Radiator oțel panou",
-        count_private: "60",      // săli clasă + birouri + sală festivă + sală sport (~60 corpuri)
-        count_common: "8",        // coridoare + holuri (~8 corpuri)
-        power_kw: "350.0",
+      heatingRadiators: [{
+        type: "Radiator fontă coloane clasice",
+        count_private: "45",
+        count_common: "8",
+        power_kw: "120.0",
       }],
-      heatingHasMeter: "da",                               // override: BACS B + școală publică → contor termic obligatoriu
-      heatingPipeDiameterMm: "65",                         // override: CT 350 kW → DN65 (NU DN25 default)
-      acmFixtures: {                                       // override: 320 ocupanți (280 elevi + 40 personal), nu 4 default școală
-        lavoare: "16", cada_baie: "0", spalatoare: "1", rezervor_wc: "16",
-        bideuri: "0", pisoare: "8", dus: "4",
+      heatingHasMeter: "nu",              // Pre-PNRR școală — fără contor termic
+      heatingPipeDiameterMm: "50",
+      acmFixtures: {
+        lavoare: "10", cada_baie: "0", spalatoare: "1", rezervor_wc: "10",
+        bideuri: "0", pisoare: "5", dus: "0",
         masina_spalat_vase: "0", masina_spalat_rufe: "0",
       },
-      acmConsumePointsCount: "30",                         // override: 16+1+16+8+4 = 45 (rotunjit operațional 30)
-      acmPipeDiameterMm: "32",                             // override: ACM 500L cu pipeLength 120m → DN32 realist
-      acmHasMeter: "da",                                   // override: BACS B + școală publică
-      acmFlowMeters: "peste_tot",                          // override: BACS B
-      acmRecirculation: "functionala",                     // override: consistent cu acm.circRecirculation=true
-      coolingRefrigerant: "R32",                           // override: split-uri moderne post-2018 (default ar fi R410A pt yearBuilt 1985)
-      coolingIndoorUnits: "4",                             // override: 2 săli IT × 2 split-uri = 4 unități interior
-      coolingOutdoorUnits: "2",                            // override: 1 outdoor per sală IT (NU 3 default)
-      coolingIndividualMeter: "da",                        // override: BACS B
-      ventilationFanCount: "6",                            // override: sala festivă + sala sport + AHU coridoare (NU 4 default)
-      ventilationHrType: "rotativ",                        // override: recuperator entalpic 75% (NU placi default)
-      ventilationControlType: "program",                   // override: BACS B programat (NU manual default)
-      // ── ADĂUGAT: ANCPI bypass DEMO ──
+      acmConsumePointsCount: "21",
+      acmPipeDiameterMm: "32",
+      acmHasMeter: "nu",
+      acmFlowMeters: "nu_exista",
+      acmRecirculation: "nu_exista",
+      ventilationFanCount: "0",           // Ventilare naturală 100% — fără ventilatoare
+      ventilationHrType: "",
+      ventilationControlType: "manual_simpla",
+      lightingNetworkState: "uzata",
       ancpi: {
         verified: true,
         fileName: "demo-cf-104587-brasov-scoala.pdf",
         fileSize: 198750,
         fileBase64: null,
-        uploadDate: "2022-09-25T08:45:00.000Z",
+        uploadDate: "2026-04-27T08:45:00.000Z",
         cadastralNr: "104587-C1",
         carteFunciara: "CF nr. 104587 Brașov UAT Brașov",
       },
-      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M4 — Școală Brașov ──
-      nrOcupanti: "320",                       // ~320 elevi + 30 cadre didactice + personal auxiliar
-      etapeImplementare:
-        "1. Aprobați planul de investiții prin Consiliul de Administrație al școlii și Inspectoratul Școlar Județean.\n" +
-        "2. Verificați eligibilitatea pentru programele de finanțare disponibile (PNRR componenta C5.1 Eficiență energetică clădiri publice, PODD FEDR).\n" +
-        "3. Obțineți autorizațiile legale necesare (AC, avize ISU pentru clădire publică, aprobări Direcția Sanitar-Veterinară pentru cantină).\n" +
-        "4. Implementați măsurile în vacanțele școlare (iulie-august) pentru a nu perturba activitatea didactică.\n" +
-        "5. Documentați performanța atinsă (m&v M&V IPMVP — comparație consum baseline vs. post-implementare prin facturare lunară).\n" +
-        "6. Solicitați re-certificare CPE după 3 ani sau la modificarea regimului de utilizare (Mc 001-2022 art. 7.5, L.121/2014).",
-      stimulenteFinanciare:
-        "— PNRR componenta C5.1 — Eficiență energetică clădiri publice: finanțare 100% din fonduri europene (prioritate maximă educație).\n" +
-        "— PODD — Programul Operațional Dezvoltare Durabilă (FEDR 2021-2027): accesibil unităților administrativ-teritoriale.\n" +
-        "— Buget de stat și buget local: investiții în infrastructura școlară (HG 907/2016 — expertiză tehnică + PT obligatoriu).\n" +
-        "— Granturi norvegiene/SEE pentru clădiri publice eficiente energetic (acord cu MMAP).",
-      solutiiAnvelopa:
-        "— Verificare anuală a stării ETICS aplicat în 2022 (termoviziune SR EN 13187 cf. ghid PNRR).\n" +
-        "— Tratarea punților termice principale identificate (atic, soclu, balcoane scării de incendiu) — manșoane locale 5–10 cm.\n" +
-        "— Refacere hidroizolație acoperiș tip terasă necirculabilă la 10 ani (CR 0-2012, GP 070-2013).\n" +
-        "— Verificarea integrității ferestrelor PVC 6 camere instalate în 2022 (etanșeitate joints, scurgere).",
-      solutiiInstalatii:
-        "— Optimizare program BMS pentru ocupare școlară (8-15 program normal, weekend setback 16°C, vacanțe shutdown).\n" +
-        "— Echilibrare hidraulică anuală a tronsoanelor cu utilizare neuniformă (sală sport, atelier, cantină).\n" +
-        "— Inspecție anuală obligatorie centrală termică (HG 1043/2007 — toate cazanele > 20 kW din clădire publică).\n" +
-        "— Calibrare senzori CO₂ pentru DCV (cf. EN 15251 cat. III școli — 800-1200 ppm setpoint).",
-      masuriOrganizare:
-        "— Implementare ISO 50001 cu manager energetic atestat ANRE (obligație clădire publică > 250 m²).\n" +
-        "— Audit energetic intermediar la fiecare 4 ani (L.121/2014 art. 9 alin. 1).\n" +
-        "— Plan anual monitorizare cu raport trimestrial către Direcția Tehnică a Primăriei (intensitate kWh/m²·an, kgCO₂/m²·an).\n" +
-        "— Instruirea cadrelor didactice și elevilor privind setările optimale (proiect educativ Erasmus+ Green Schools).",
-      masuriLocale:
-        "— Programare orară iluminat zonal cu DALI-2 (8-15 zone clase, 7-22 zone hol/cantină, weekend off).\n" +
-        "— Senzori prezență în săli de clasă neutilizate, băi, depozite (cf. EN 15193-1).\n" +
-        "— Curățare lunară filtre F7 ventilație și schimb anual G4 (debit aer cat. III școli = 25 m³/h·persoană).\n" +
-        "— Etanșeizarea trecerilor prin anvelopă (cabluri tablou electric, conducte gaz, evacuare hota cantină).",
-      regenerabileCustom:
-        "— Expansiune PV de la 60 kWp la 150 kWp (acoperiș terasă 1100 m² rămas neutilizat, sud-est).\n" +
-        "— Sistem solar termic suplimentar 100 m² colectoare plane pentru ACM cantină + dușuri sală sport.\n" +
-        "— Pompă de căldură geotermală (4 puțuri × 80 m) pentru baseload încălzire (COP > 4.5, R290 propan).\n" +
-        "— Stocare termică în rezervor 5000L cu PCM 30°C pentru shaving peak iarna (BTES alternativ).",
+      nrOcupanti: "280",
+      ...ANEXA_GENERIC,
     },
     opaqueElements: [
       {
-        name: "Pereți zidărie 38 cm + EPS 15 cm — Sud + Est",
-        type: "PE", area: "640", orientation: "S", tau: "1",
+        // U calculat: 1/(0.04 + 0.020/0.87 + 0.300/0.55 + 0.020/0.87 + 0.13) ≈ 1.31 W/m²K (target ~1.25)
+        name: "Cărămidă cu goluri orizontale 30 cm fără izolație — Sud + Est",
+        type: "PE", area: "420", orientation: "S", tau: "1",
         layers: [
-          { matName: "Tencuială decorativă silicat", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
-          { matName: "EPS 15 cm (reabilitare 2022)", material: "Polistiren expandat EPS", thickness: "150", lambda: 0.036, rho: 18 },
-          { matName: "Zidărie cărămidă plină 38 cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
-          { matName: "Tencuială interioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Tencuială ciment exterioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Cărămidă cu goluri orizontale 30 cm", material: "Cărămidă cu goluri", thickness: "300", lambda: 0.55, rho: 1400 },
+          { matName: "Tencuială interioară var-ciment", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
         ],
       },
       {
-        name: "Pereți zidărie 38 cm + EPS 15 cm — Nord + Vest",
-        type: "PE", area: "560", orientation: "N", tau: "1",
+        name: "Cărămidă cu goluri orizontale 30 cm fără izolație — Nord + Vest",
+        type: "PE", area: "360", orientation: "N", tau: "1",
         layers: [
-          { matName: "Tencuială decorativă silicat", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
-          { matName: "EPS 15 cm (reabilitare 2022)", material: "Polistiren expandat EPS", thickness: "150", lambda: 0.036, rho: 18 },
-          { matName: "Zidărie cărămidă plină 38 cm", material: "Cărămidă plină", thickness: "380", lambda: 0.80, rho: 1800 },
-          { matName: "Tencuială interioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Tencuială ciment exterioară", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
+          { matName: "Cărămidă cu goluri orizontale 30 cm", material: "Cărămidă cu goluri", thickness: "300", lambda: 0.55, rho: 1400 },
+          { matName: "Tencuială interioară var-ciment", material: "Tencuială var-ciment", thickness: "20", lambda: 0.87, rho: 1800 },
         ],
       },
       {
-        name: "Acoperiș terasă reabilitată EPS 18 cm + hidroizolație",
-        type: "PT", area: "620", orientation: "H", tau: "1",
+        name: "Acoperiș terasă necirculabilă fără izolație (1980 typical)",
+        type: "PT", area: "440", orientation: "H", tau: "1",
         layers: [
           { matName: "Pietriș protecție", material: "Pietriș", thickness: "50", lambda: 0.70, rho: 1800 },
-          { matName: "Polistiren expandat EPS 18 cm (reab. 2022)", material: "Polistiren expandat EPS", thickness: "180", lambda: 0.034, rho: 18 },
           { matName: "Hidroizolație bituminoasă SBS dublu", material: "Membrană SBS", thickness: "8", lambda: 0.20, rho: 1050 },
           { matName: "Beton armat planșeu terasă", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
           { matName: "Tencuială tavan ultim etaj", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
         ],
       },
       {
-        name: "Planșeu peste subsol nelocuit + EPS 8 cm (reab. 2022)",
-        type: "PB", area: "620", orientation: "H", tau: "0.6",
+        name: "Planșeu peste subsol nelocuit fără izolație",
+        type: "PB", area: "440", orientation: "H", tau: "0.6",
         layers: [
+          { matName: "Tencuială tavan subsol", material: "Tencuială var-ciment", thickness: "15", lambda: 0.87, rho: 1800 },
           { matName: "Beton armat planșeu", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
-          { matName: "Polistiren expandat EPS 8 cm", material: "Polistiren expandat EPS", thickness: "80", lambda: 0.036, rho: 18 },
-          { matName: "Șapă autonivel", material: "Șapă ciment autonivel", thickness: "50", lambda: 1.40, rho: 2000 },
+          { matName: "Șapă mortar", material: "Șapă ciment", thickness: "50", lambda: 1.40, rho: 2000 },
           { matName: "Pardoseală linoleum", material: "Linoleum", thickness: "5", lambda: 0.17, rho: 1200 },
         ],
       },
     ],
     glazingElements: [
-      { name: "Triplu vitraj Low-E argon PVC 6 camere — Sud (săli clasă)",     area: "120", u: "1.10", g: "0.55", orientation: "S", frameRatio: "20", type: "Triplu Low-E argon" },
-      { name: "Triplu vitraj Low-E argon PVC 6 camere — Est (săli clasă)",     area: "85",  u: "1.10", g: "0.55", orientation: "E", frameRatio: "20", type: "Triplu Low-E argon" },
-      { name: "Triplu vitraj Low-E argon PVC 6 camere — Vest (săli clasă)",    area: "85",  u: "1.10", g: "0.55", orientation: "V", frameRatio: "20", type: "Triplu Low-E argon" },
-      { name: "Triplu vitraj Low-E argon PVC 6 camere — Nord (coridoare)",     area: "60",  u: "1.10", g: "0.55", orientation: "N", frameRatio: "20", type: "Triplu Low-E argon" },
-      { name: "Ușă intrare principală aluminiu termorupt + dublu vitraj",      area: "8",   u: "1.50", g: "0.50", orientation: "S", frameRatio: "30", type: "Ușă aluminiu termorupt" },
+      // Termopan PVC dublu vitraj clasic (înlocuit ad-hoc 2000s, fără Low-E) + ușă veche
+      { name: "Termopan PVC dublu clasic — Sud (săli clasă)",     area: "90", u: "2.85", g: "0.78", orientation: "S", frameRatio: "22", type: "Dublu vitraj clasic" },
+      { name: "Termopan PVC dublu clasic — Est (săli clasă)",     area: "65", u: "2.85", g: "0.78", orientation: "E", frameRatio: "22", type: "Dublu vitraj clasic" },
+      { name: "Termopan PVC dublu clasic — Vest (săli clasă)",    area: "65", u: "2.85", g: "0.78", orientation: "V", frameRatio: "22", type: "Dublu vitraj clasic" },
+      { name: "Termopan PVC dublu clasic — Nord (coridoare)",     area: "45", u: "2.85", g: "0.78", orientation: "N", frameRatio: "22", type: "Dublu vitraj clasic" },
+      { name: "Ușă intrare aluminiu vechi (1980)",                area: "6",  u: "3.20", g: "0.45", orientation: "S", frameRatio: "30", type: "Ușă aluminiu fără termorupt" },
     ],
     thermalBridges: [
-      { name: "Stâlpișori BA — colț înglobat în EPS 15 cm",  type: "SB", psi: "0.10", length: "48" },
-      { name: "Centuri BA peste etaje (sub EPS)",            type: "CB", psi: "0.07", length: "330" },
-      { name: "Soclu cu protecție XPS 8 cm perimetral",       type: "SO", psi: "0.08", length: "165" },
-      { name: "Glaf fereastră triplu vitraj — atașat EPS",    type: "GF", psi: "0.05", length: "260" },
-      { name: "Buiandrug BA înglobat în EPS",                 type: "CB", psi: "0.10", length: "65" },
-      { name: "Cornișă atic terasă EPS 18 cm",                type: "CO", psi: "0.08", length: "165" },
-      { name: "Colț 90° clădire (4 colțuri)",                  type: "SB", psi: "0.06", length: "48" },
+      // SR EN ISO 14683 — clădire 1980 NEREABILITATĂ, Ψ severe (0.40-0.55)
+      { name: "Centură BA peste etaje (sub tencuială)",  type: "CB", psi: "0.55", length: "280" },  // ← USER REQUIREMENT
+      { name: "Stâlpișori BA în zidărie cărămidă",       type: "SB", psi: "0.45", length: "60"  },
+      { name: "Soclu fără izolație perimetrală",          type: "SO", psi: "0.55", length: "140" },
+      { name: "Glaf fereastră fără izolație",             type: "GF", psi: "0.40", length: "220" },  // ← USER REQUIREMENT
+      { name: "Buiandrug BA deasupra ferestrei",          type: "CB", psi: "0.45", length: "50"  },
+      { name: "Cornișă atic terasă fără izolație",        type: "CO", psi: "0.50", length: "140" },
+      { name: "Colț 90° clădire (4 colțuri)",              type: "SB", psi: "0.50", length: "34"  },
     ],
     heating: {
-      source: "GAZ_COND",
-      power: "350",                       // CT condensare central
-      eta_gen: "0.97",
-      nominalPower: "350",
-      emission: "RAD_OT",                  // P1 fix: era "RADIATOR" generic — corect "RAD_OT" (Radiatoare oțel panou, EMISSION_SYSTEMS line 83)
-      eta_em: "0.95",
-      distribution: "BINE_INT_NZB",
-      eta_dist: "0.95",
-      control: "COMP_CLIM",                // P1 fix: era "TERMOSTAT_PROP_OPT" — corect "COMP_CLIM" (compensare climatică outdoor reset, BACS B, CONTROL_TYPES line 153)
-      eta_ctrl: "0.94",
-      regime: "intermitent",               // Program școlar: 8-16 zile lucrătoare + vacanțe
+      source: "GAZ_STD",                  // Cazan gaz natural standard atmosferic (HEAT_SOURCES)
+      power: "120",                       // ← USER REQUIREMENT (CT central gaz 120 kW)
+      eta_gen: "0.85",
+      nominalPower: "120",
+      emission: "RAD_FO",                 // Radiatoare fontă coloane clasice ← USER REQUIREMENT
+      eta_em: "0.93",
+      distribution: "SLAB_INT",           // Slab izolată interior (școală 1980 nerenovat)
+      eta_dist: "0.78",
+      control: "CENTR",                   // Termostat ambiental simplu central on/off
+      eta_ctrl: "0.85",
+      regime: "intermitent",              // Program școlar 8-15 + vacanțe
       theta_int: "20",
-      nightReduction: "5",                 // Reducere nopți + week-end
-      tStaircase: "",
+      nightReduction: "5",
+      tStaircase: "12",
       tBasement: "10",
       tAttic: "",
     },
     acm: {
-      source: "CAZAN_H",                  // P1 fix: era "GAZ_COND" — corect "CAZAN_H" (același cazan cu încălzirea, ACM_SOURCES line 290)
-      consumers: "320",                    // 280 elevi + 40 personal
-      dailyLiters: "5",                    // ACM scăzut școală (doar lavoare + curățenie)
-      consumptionLevel: "low",            // P1 fix: era "scazut" — UI așteaptă "low|med|high"
+      source: "CAZAN_H",                  // Același cazan cu încălzirea
+      consumers: "280",                   // 250 elevi + 30 cadre
+      dailyLiters: "5",                   // ACM scăzut (doar lavoare + curățenie)
+      consumptionLevel: "low",
       tSupply: "55",
-      storageVolume: "500",
-      insulationClass: "A",
-      pipeLength: "120",
-      pipeInsulated: true,
-      pipeInsulationThickness: "30mm",
+      storageVolume: "300",               // 300L < 400L → fără cerință Legionella HG 1425/2006
+      insulationClass: "C",
+      pipeLength: "100",
+      pipeInsulated: false,               // Conducte ACM neizolate (școală nereabilitată)
+      pipeInsulationThickness: "0mm",
       pipeDiameter: "32",
-      circRecirculation: true,
-      circHours: "8",                      // Recirculare doar program școlar
-      circPumpType: "iee_sub_023",
-      hasLegionella: true,                 // Volum 500L > 400L → tratare obligatorie
-      legionellaFreq: "weekly",
-      legionellaT: "70",
+      circRecirculation: false,           // Fără recirculare (1980 typical)
+      circHours: "",
+      circPumpType: "fara",
+      hasLegionella: false,
+      legionellaFreq: "",
+      legionellaT: "",
     },
     cooling: {
-      system: "SPLIT_INV",
-      power: "12",                         // Doar săli IT (2 săli × 6 kW)
-      eer: "4.50",
-      seer: "5.80",
-      cooledArea: "120",                    // 2 săli IT × 60 m²
-      distribution: "DIRECT",
-      hasCooling: true,
-      setpoint: "26",
-      shadingExternal: "0.90",
+      system: "NONE",                     // ← USER REQUIREMENT (niciun sistem cooling)
+      power: "0", eer: "", seer: "",
+      cooledArea: "0",
+      distribution: "",
+      hasCooling: false,
+      setpoint: "",
+      shadingExternal: "0.92",
       useHourly: false,
-      emissionType: "split_mural",        // P1 fix: era "split_perete" — corect "split_mural" (COOLING_EMISSION_EFFICIENCY line 362)
-      eta_em: "0.95",
-      distributionType: "agent_frig",     // P1 fix: era "agent_R32_int" — corect "agent_frig" (COOLING_DISTRIBUTION_EFFICIENCY line 375)
-      eta_dist: "0.98",
-      controlType: "termostat_prop",      // P1 fix: era "remote_inv" — corect "termostat_prop" (Termostat proporțional)
-      eta_ctrl: "0.94",
-      P_aux_pumps: "0",
-      P_aux_fans: "0.12",
-      t_cooling_hours: "350",
-      hasNightVent: true,                   // Free cooling vară
-      n_night: "2.5",
-      comfortCategory: "II",
+      emissionType: "", eta_em: "",
+      distributionType: "", eta_dist: "",
+      controlType: "", eta_ctrl: "",
+      P_aux_pumps: "", P_aux_fans: "",
+      t_cooling_hours: "",
+      hasNightVent: false, n_night: "",
+      comfortCategory: "III",
       internalGainsOverride: "",
     },
     ventilation: {
-      type: "MEC_HR75",                     // P1 fix: era "MEC_HR75_HIBRID" — UI nu are sufix HIBRID; corect "MEC_HR75" (recuperator 75%, VENTILATION_TYPES line 453). Hibridizarea cu naturală pe coridoare e implicită prin ventilationFanCount=6 (zone tehnice).
-      airflow: "3500",                       // Doar săli mari (sport + festiv) ventilate mecanic
-      fanPower: "1800",                      // SFP 0.5 kW/(m³/s) ventilatoare EC
-      operatingHours: "1800",
-      hrEfficiency: "75",
+      type: "NAT",                        // ← USER REQUIREMENT (ventilare naturală)
+      airflow: "1500",
+      fanPower: "0",
+      operatingHours: "1700",
+      hrEfficiency: "0",
     },
     lighting: {
-      type: "LED",
-      pDensity: "8.0",                       // LED săli clasă (target EN 15193 — 8 W/m²)
-      controlType: "PREZ",                   // DALI cu prezență (fără daylight în săli interioare)
-      fCtrl: "0.65",
-      operatingHours: "1700",                // Program școlar 8-16 × 220 zile
+      type: "TUB_T8",                     // Tub fluorescent T8 cu balast magnetic — typical 1980 ← USER alternativă
+      pDensity: "12.0",
+      controlType: "MAN",
+      fCtrl: "1.0",
+      operatingHours: "1700",
       naturalLightRatio: "50",
-      pEmergency: "0.8",
-      pStandby: "0.15",
+      pEmergency: "0.6",
+      pStandby: "0.2",
     },
     solarThermal: { enabled: false, type: "", area: "0", orientation: "S", tilt: "30", usage: "acm", storageVolume: "0", eta0: "0", a1: "0" },
-    photovoltaic: {
-      enabled: true,
-      type: "MONO",
-      area: "85",
-      orientation: "S",
-      tilt: "35",                           // Optim Brașov anual (latitude +5°)
-      inverterType: "STD",
-      inverterEta: "0.97",
-      peakPower: "15",
-      usage: "all",                         // P1 fix: era "autoconsum" — UI așteaptă "all|lighting|hvac|export"
-    },
-    heatPump:   { enabled: false, type: "", cop: "0", scopHeating: "0", scopCooling: "0", covers: "", bivalentTemp: "", auxSource: "", auxEta: "0" },
-    biomass:    { enabled: false },
+    photovoltaic: { enabled: false, type: "", area: "0", orientation: "S", tilt: "0", inverterType: "", inverterEta: "0", peakPower: "0", usage: "" },
+    heatPump:     { enabled: false, type: "", cop: "0", scopHeating: "0", scopCooling: "0", covers: "", bivalentTemp: "", auxSource: "", auxEta: "0" },
+    biomass:      { enabled: false },
     otherRenew: {
       windEnabled: false, windCapacity: "", windProduction: "",
       cogenEnabled: false, cogenElectric: "", cogenThermal: "", cogenFuel: "", cogenType: "", cogenPowerEl: "", cogenHours: "",
@@ -1545,107 +1364,105 @@ export const DEMO_PROJECTS = [
       company: "Smart Energy Brașov SRL",
       phone: "0744 651 932",
       email: "daniel.iliescu@smartbv.ro",
-      date: "2022-09-30",                   // Data emiterii post-reabilitare 2022
-      mdlpaCode: "CE-2022-04217",
-      cpeNumber: "CPE-2022-00533",
-      cpeCode: "CE-2022-04217_20220930_Iliescu_Daniel_BV_104587_001_CPE",
+      date: "2026-04-27",
+      mdlpaCode: "CE-2026-04217",
+      cpeNumber: "CPE-2026-00533",
+      cpeCode: "CE-2026-04217_20260427_Iliescu_Daniel_BV_104587_001_CPE",
       registryIndex: "533",
-      scopCpe: "renovare_majora",
+      scopCpe: "renovare",
       validityYears: "10",
-      registruEvidenta: "RE-2022-BV-04217",
+      registruEvidenta: "RE-2026-BV-04217",
       nrCadastral: "104587-C1",
-      codUnicMDLPA: "CE-2022-04217",
-      dataExpirareDrept: "2030-09-30",
-      dataTransmitereMDLPA: "2022-10-01",
-      // ADĂUGAT: Semnătură + ștampilă DEMO (placeholder SVG — înlocuiește prin UI Step 6 înainte de export oficial)
-      signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Iliescu D.B.</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text></svg>",
-      stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Iliescu D.B.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>BV-04217</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Școală Gimnazială Nr. 25 Brașov — reabilitare termică majoră 2022 prin POR Axa 3.1.B (Bilanț + IPSEC + execuție). Anvelopă: pereți cărămidă 38 cm + EPS 15 cm grafitat (U=0.20), terasă EPS 18 cm (U=0.18), placă subsol EPS 8 cm (U=0.32), ferestre triplu Low-E argon PVC (U=1.10). Sisteme: CT condensare gaz central 350 kW (Viessmann Vitocrossal), radiatoare oțel panou, recuperator entalpic 75% pe sala festivă + sala sport, ventilație naturală pe coridoare. PV 15 kWp acoperiș sud (autoconsum, surplus reinjectat). LED DALI cu senzor prezență 100% interior. BACS clasa B (control programare + senzori). RER ≈ 22% (PV). MEPS 2030 PASS marginal. Pașaport recomandat doar mentenanță (curățare colectoare, calibrare DALI).",
+      codUnicMDLPA: "CE-2026-04217",
+      dataExpirareDrept: "2030-12-31",
+      dataTransmitereMDLPA: "2026-04-28",
+      signatureDataURL: DEMO_SIG_SVG("Iliescu D.B."),
+      stampDataURL: DEMO_STAMP_SVG("Iliescu D.B.", "BV-04217"),
+      observations: "Școala Gimnazială Nr. 14 Brașov — clădire 1980 NEREABILITATĂ termic, eligibilă pentru reabilitare PNRR Componenta C5.1 (clădiri publice eficiență energetică). Anvelopă: pereți cărămidă cu goluri orizontale 30 cm fără izolație (U ≈ 1.31 W/m²·K), terasă necirculabilă fără izolație (U ≈ 2.40), planșeu subsol fără izolație (U ≈ 3.20). Vitraje termopan PVC dublu clasic fără Low-E (U ≈ 2.85, g ≈ 0.78), uși aluminiu vechi fără termorupt (U ≈ 3.20). Punți termice severe SR EN ISO 14683 cat. 3: centură BA Ψ=0.55, glafuri Ψ=0.40, soclu Ψ=0.55. Sisteme: CT central gaz standard atmosferic 120 kW (η ≈ 0.85, vechi >25 ani), radiatoare fontă coloane, distribuție slab izolată interioară. ACM: același cazan, 300L acumulator. Ventilație: 100% naturală (fereastră deschisă). Iluminat: tub fluorescent T8 cu balast magnetic (12 W/m² — vechi, ineficient). Niciun renewable. n₅₀ = 5.0 h⁻¹. Recomandări reabilitare PNRR: ETICS 15 cm pereți + izolație terasă 18 cm + izolație subsol 8 cm + ferestre triplu Low-E + CT condensare + LED DALI + PV 30 kWp + recuperator entalpic săli mari → țintă clasă B (EP < 130 kWh/m²·an).",
       photo: "",
     },
     expectedResults: {
-      energyClass: "B",
-      E_p_total_kWh_m2_y: 115,
-      E_p_nren_kWh_m2_y: 88,
-      E_p_ren_kWh_m2_y: 27,
-      RER_pct: 22,
-      U_med_W_m2K: 0.24,
-      U_max_violations: [],
-      Q_inc_kWh_m2_y: 58,
-      Q_rac_kWh_m2_y: 4,
-      Q_acm_kWh_m2_y: 8,
-      Q_il_kWh_m2_y: 16,
-      Q_aux_kWh_m2_y: 6,
-      bacsClass: "B",
-      fBac: 0.88,
-      sriPct: 68,
-      meps2030_pass: true,
-      meps2033_pass: true,
+      energyClass: "F",
+      E_p_total_kWh_m2_y: 460,
+      E_p_nren_kWh_m2_y: 445,
+      E_p_ren_kWh_m2_y: 15,
+      RER_pct: 3,
+      U_med_W_m2K: 1.10,
+      U_max_violations: ["PE", "PT", "PB", "GLAZ"],
+      Q_inc_kWh_m2_y: 295,
+      Q_rac_kWh_m2_y: 0,
+      Q_acm_kWh_m2_y: 14,
+      Q_il_kWh_m2_y: 28,
+      Q_aux_kWh_m2_y: 4,
+      bacsClass: "D",
+      fBac: 1.10,
+      sriPct: 18,
+      meps2030_pass: false,
+      meps2033_pass: false,
       meps2050_pass: false,
       passportRequired: true,
-      passportPhases: 1,                     // Doar mentenanță majoră
-      passportTargetClass: "A",
-      documentsExpected: ["CPE-ED", "Raport-Audit", "Pasaport-Renovare-Mentenanta"],
-      tolerances: { E_p_nren: 0.15, E_p_total: 0.15, RER: 5, U_med: 0.10, Q_inc: 0.15 },
+      passportPhases: 3,
+      passportTargetClass: "B",
+      documentsExpected: ["CPE-ED", "Raport-Audit", "Pasaport-Renovare-PNRR"],
+      tolerances: { E_p_nren: 0.18, E_p_total: 0.18, RER: 5, U_med: 0.15, Q_inc: 0.18 },
     },
   },
 
   // ───────────────────────────────────────────────────────────────────────────
-  // M5 — Pensiune turistică lemn masiv — Predeal Cioplea (ZONA V, montană)
-  // Cazan biomasă peleți 40 kW + solar termic 8 m² + 2 kWp PV
-  // Scop: testare clădire turistică, structura lemn (cu inerție mai mică),
-  //       biomasă (RER 100% sursă), solar termic, regim sezonier.
+  // M5 — Casă unifamilială nouă RI nZEB — Sibiu (ZONA V, ~3.900 GD)
+  // PC sol-apă 12 kW (COP 4.5) + pardoseală radiantă + VMC HR 90%
+  // PV 6 kWp + Solar termic 8 m² ACM
+  // Scop CPE: construire (recepție) • clasă A • MEPS 2030/2033/2050 PASS
   // ───────────────────────────────────────────────────────────────────────────
   {
-    id: "demo-5-predeal-pensiune-2010",
-    title: "M5 · Pensiune turistică lemn masiv — Predeal (Zona V, peleți + solar) — clasă C",
-    shortDesc: "Pensiune 380 m² lemn masiv 20cm, peleți 40 kW + solar termic 8 m² + 2 kWp PV, RER 48%",
+    id: "demo-5-sibiu-casa-2022-nzeb",
+    title: "M5 · Casă RI nZEB nouă 2022 — Sibiu (Zona V, PC sol-apă + VMC HR90 + PV 6 + ST 8) — clasă A",
+    shortDesc: "Casă 140 m² nZEB BCA + vată 18cm, PC sol-apă 12 kW COP 4.5 + VMC HR 90% + PV 6 kWp + ST 8 m²",
     building: {
-      address: "Str. Cioplea nr. 142, Pensiunea Cocoșul de Munte",
-      city: "Predeal",
-      county: "Brașov",
-      postal: "505300",                     // ADĂUGAT: alias compatibilitate Step1
-      postalCode: "505300",
-      locality: "Predeal",
-      latitude: "45.5074",   // Predeal ~45.51°N (Zona V montană, GD > 3500)
-      longitude: "25.5736",  // Predeal ~25.57°E
-      cadastralNumber: "104287-C1",
-      landBook: "CF nr. 104287 Predeal UAT Predeal",
-      owner: "Munteanu Daniela-Adriana PFA",     // CURĂȚAT: CUI extras în câmp dedicat
-      ownerType: "PJ",                            // ADĂUGAT: PFA = entitate juridică (are CUI, emite facturi)
-      ownerCUI: "38456714",                       // ADĂUGAT: corectat checksum valid algoritm ANAF (era 38456712, invalid)
-      category: "HC",                       // Hoteluri & Cazare
-      structure: "Structură lemn — bârne masive (log house / casă din bușteni, tradițional)",
-      yearBuilt: "2010",
+      address: "Str. Mihai Viteazu nr. 47, Cartier Selimbăr",
+      city: "Sibiu",
+      county: "Sibiu",
+      postal: "550100",
+      postalCode: "550100",
+      locality: "Sibiu",
+      latitude: "45.7983",
+      longitude: "24.1256",
+      cadastralNumber: "401580-C1",
+      landBook: "CF nr. 401580 Sibiu UAT Sibiu",
+      owner: "Marin Andrei și Marin Elena",
+      ownerType: "PF",
+      category: "RI",
+      structure: "Cadre BA + zidărie BCA 25 cm + ETICS vată minerală 18 cm + ferestre triplu Low-E argon — construcție nZEB nouă L.238/2024",
+      yearBuilt: "2022",
       yearRenov: "",
-      floors: "P+1+M",                       // Mansardă utilizată
+      floors: "P+1",
       basement: false,
       attic: false,
       units: "1",
       stairs: "1",
-      nApartments: "1",                     // Pensiune ca entitate
+      nApartments: "1",
       apartmentNo: "",
       staircase: "",
       floor: "",
-      areaUseful: "380",
-      areaBuilt: "440",
-      areaHeated: "380",                     // 8 cam. + recepție + restaurant + bucătărie
-      volume: "1140",                       // h_etaj 3.00 × 380
-      areaEnvelope: "520",
-      heightBuilding: "9.5",
-      heightFloor: "3.00",
-      perimeter: "62",
-      n50: "3.0",                           // Etanșeitate medie lemn cu vată internă
-      shadingFactor: "0.75",                 // Munți + copaci umbresc parțial
-      gwpLifecycle: "190",                   // GWP redus — lemn masiv stochează C
+      areaUseful: "140",
+      areaBuilt: "160",
+      areaHeated: "140",
+      volume: "378",                      // h=2.70 × 140
+      areaEnvelope: "340",
+      heightBuilding: "6.5",
+      heightFloor: "2.70",
+      perimeter: "42",
+      n50: "0.6",                         // ← USER REQUIREMENT (PassivHaus level)
+      shadingFactor: "0.85",
+      gwpLifecycle: "180",
       solarReady: true,
       evChargingPoints: "1",
-      evChargingPrepared: "2",
-      co2MaxPpm: "1050",
-      pm25Avg: "10",
+      evChargingPrepared: "1",
+      co2MaxPpm: "780",
+      pm25Avg: "5",
       scaleVersion: "2023",
-      scopCpe: "inchiriere",                 // Pensiune turistică — chirie sezonieră
-      parkingSpaces: "8",
+      scopCpe: "construire",              // ← USER REQUIREMENT (recepție)
+      parkingSpaces: "2",
       energyClassAfterRenov: "",
       emissionClassAfterRenov: "",
       energySavings: "",
@@ -1653,248 +1470,200 @@ export const DEMO_PROJECTS = [
       apartments: [],
       commonSystems: {
         elevator:          { installed: false, powerKW: "",    hoursYear: "" },
-        stairsLighting:    { installed: true,  powerKW: "0.3", hoursYear: "4500" },
-        centralHeating:    { installed: true,  fuel: "peleti" },
-        commonVentilation: { installed: false, powerKW: "",    hoursYear: "" },
-        pumpGroup:         { installed: true,  powerKW: "0.6", hoursYear: "5500" },
+        stairsLighting:    { installed: false, powerKW: "",    hoursYear: "" },
+        centralHeating:    { installed: true,  fuel: "PC_SA + ST" },
+        commonVentilation: { installed: true,  powerKW: "0.075", hoursYear: "8760" },
+        pumpGroup:         { installed: true,  powerKW: "0.4", hoursYear: "5500" },
       },
-      // ── ADĂUGAT: Anexa 1+2 MDLPA — overrides pentru pensiune lemn masiv + cazan peleți Hargassner + solar termic ──
-      heatGenLocation: "CT_PROP",                          // override: cazan peleți Hargassner = centrală proprie modernă (NU SURSA_PROPRIE/sobă)
-      heatingRadiatorType: "Radiator aluminiu",            // override: radiatoare aluminiu (răspuns rapid pensiune sezonieră) — NU sobă teracotă
-      heatingRadiators: [{                                 // override: lista realistă (default formula da 27 buc. — prea mult)
-        type: "Radiator aluminiu",
-        count_private: "20",      // 8 camere × 1 + recepție + restaurant + bucătărie + băi (~20)
-        count_common: "0",
-        power_kw: "40.0",
-      }],
-      stoveCount: "0",                                     // override: NU sobe (default `1` pentru hasStove e fals-pozitiv pe „pelet")
-      acmFixtures: {                                       // override: 16 ocupanți pensiune (8 cam × 2) + 4 personal — 20 total
-        lavoare: "10", cada_baie: "4", spalatoare: "1", rezervor_wc: "10",
-        bideuri: "0", pisoare: "0", dus: "8",
-        masina_spalat_vase: "1", masina_spalat_rufe: "2",
-      },
-      acmConsumePointsCount: "30",                         // override: 10+4+1+8 = 23 + auxiliare bucătărie = 30
-      acmPipeDiameterMm: "25",                             // override: ACM acumulator 1000L cu pipeLength 65m → DN25 (consistent cu acm.pipeDiameter)
-      acmRecirculation: "functionala",                     // override: consistent cu acm.circRecirculation=true (recirculare turism)
-      ventilationFanCount: "3",                            // override: extracție bucătărie + 2 băi (NU 4 default)
-      ventilationHrType: "",                               // override: NATURALA pură (free cooling vară), fără recuperator HR
-      // ── ADĂUGAT: ANCPI bypass DEMO ──
+      heatingHasMeter: "da",              // BACS B+ → contor termic obligatoriu nZEB
+      heatingPipeDiameterMm: "22",
       ancpi: {
         verified: true,
-        fileName: "demo-cf-104287-predeal.pdf",
-        fileSize: 142800,
+        fileName: "demo-cf-401580-sibiu.pdf",
+        fileSize: 175600,
         fileBase64: null,
-        uploadDate: "2026-04-27T14:20:00.000Z",
-        cadastralNr: "104287-C1",
-        carteFunciara: "CF nr. 104287 Predeal UAT Predeal",
+        uploadDate: "2022-11-15T14:00:00.000Z",
+        cadastralNr: "401580-C1",
+        carteFunciara: "CF nr. 401580 Sibiu UAT Sibiu",
       },
-      // ── 2 mai 2026: pre-populare AnexaMDLPA pentru demo M5 — Pensiune Predeal ──
-      nrOcupanti: "20",                        // 8 camere × 2.5 ocupanți/cameră (ocupare medie sezonieră)
-      etapeImplementare:
-        "1. Aprobați planul de investiții prin decizie SRL/PFA proprietar pensiune.\n" +
-        "2. Verificați eligibilitatea pentru programele de finanțare (PNRR componenta C5 turism, scheme ajutor de stat IMM eficiență energetică).\n" +
-        "3. Obțineți autorizațiile legale necesare (AC pentru extinderea solar termic, avize ISU pentru clădire turism, autorizații sanitar-veterinare bucătărie).\n" +
-        "4. Implementați măsurile în extra-sezon (mai-iunie, septembrie-octombrie) pentru a nu afecta perioada de vârf turistic.\n" +
-        "5. Documentați performanța atinsă (m&v IPMVP — comparație ocupare-corectată kWh/cameră vs. baseline).\n" +
-        "6. Solicitați re-certificare CPE după 5 ani sau la modificarea regimului de utilizare (Mc 001-2022 art. 7.5).",
-      stimulenteFinanciare:
-        "— PNRR componenta C5 — Eficiență energetică în turism: granturi pentru pensiuni și hoteluri.\n" +
-        "— Schema de ajutor de stat pentru eficiență energetică IMM (Regulamentul CE 651/2014, art. 38–39).\n" +
-        "— EIB/BERD: credite verzi prin intermediari bancari autorizați pentru sectorul HoReCa.\n" +
-        "— Scheme fiscale active la data emiterii CPE pentru investiții în eficiență energetică (verifică anaf.ro).",
-      solutiiAnvelopa:
-        "— Verificare anuală a calafatuirii bârnelor lemn masiv (pasta de cânepă + ulei de in pe rosturi vizibile).\n" +
-        "— Tratare contra carii și mucegai cu produse certificate UE (boric acid + permetrină pe lemnul exterior).\n" +
-        "— Monitorizare condens cameră aer ventilată dintre lemn exterior și vată minerală (umiditate < 20%).\n" +
-        "— Verificare hidroizolație acoperiș țiglă ceramică + aerisire pod (CR 0-2012, GP 070-2013).",
-      solutiiInstalatii:
-        "— Curățare anuală cazan peleți obligatorie (cenușa + funingine — afectează randament cu 10%/an dacă neîntreținut).\n" +
-        "— Verificare etanșeitate sistem evacuare gaze arse (coș izolat termic, CO senzor pentru siguranță).\n" +
-        "— Optimizare program ACM solar termic + booster electric (priorizare panouri în zile însorite cu by-pass automat).\n" +
-        "— Echilibrare hidraulică circuite radiator/încălzire pardoseală (pensiunea are mix de sisteme).",
-      masuriOrganizare:
-        "— Plan anual de monitorizare consumuri (peleți tone/an, electricitate, apă) cu corelare la grad de ocupare.\n" +
-        "— Instruirea personalului privind setările optimale (recepție, cameristelor — programare termostate cameră goală vs ocupată).\n" +
-        "— Audit energetic intermediar la fiecare 5 ani sau la extindere (camere noi, restaurant, SPA).\n" +
-        "— Documentare provenienta peleți (certificare ENplus A1 sau DIN+ pentru calitate constantă).",
-      masuriLocale:
-        "— Etanșeizarea trecerilor prin anvelopă lemn (cabluri, conducte) cu materiale specifice lemn (silicon UV-stabil).\n" +
-        "— Înlocuirea bateriilor cabină duș cu modele cu limitator debit (clasă A WELL — economie 30% ACM solar).\n" +
-        "— Becuri LED dimmable cu senzor prezență în holuri/băi (compatibil rural — fără DALI complicat).\n" +
-        "— Programare orară încălzire pe zone (camere disponibile vs ocupate — sistem hotelier simplu Z-Wave).",
-      regenerabileCustom:
-        "— Expansiune solar termic 25→40 m² colectoare plane (acoperiș sud-vest 30° pantă optimă pentru zona V).\n" +
-        "— Adăugare PV 5-10 kWp pe acoperiș (autoconsum + injecție rețea Electrica Transilvania Sud).\n" +
-        "— Pompă de căldură aer-apă pentru pre-încălzire ACM (cuplată cu solar — COP > 3.5 la temperaturi joase Predeal).\n" +
-        "— Mini-hidro centrală 5-10 kW dacă proprietatea are pârâu cu cădere > 5 m (verificare debit minim sezonier).",
+      nrOcupanti: "4",
+      ...ANEXA_GENERIC,
     },
     opaqueElements: [
       {
-        name: "Pereți lemn masiv 20 cm + vată minerală 15 cm interior — Sud + Vest",
-        type: "PE", area: "180", orientation: "S", tau: "1",
+        // U calculat: 1/(0.04 + 0.008/0.70 + 0.180/0.036 + 0.250/0.22 + 0.015/0.45 + 0.13) ≈ 0.158 W/m²K (target ≤ 0.20)
+        name: "BCA 25 cm + vată minerală 18 cm — Sud + Est",
+        type: "PE", area: "115", orientation: "S", tau: "1",
         layers: [
-          { matName: "Lemn rindeluit decorativ exterior", material: "Lemn brad", thickness: "25", lambda: 0.13, rho: 450 },
-          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
-          { matName: "Lemn masiv brad 20 cm (bârne machetate)", material: "Lemn brad masiv", thickness: "200", lambda: 0.13, rho: 450 },
-          { matName: "Vată minerală 15 cm — termoizolație internă", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 60 },
-          { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
-          { matName: "Gips-carton 12.5 mm finisaj interior", material: "Gips-carton", thickness: "13", lambda: 0.21, rho: 800 },
+          { matName: "Tencuială silicat decorativă", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
+          { matName: "Vată minerală densă fațadă 18 cm", material: "Vată minerală bazaltică", thickness: "180", lambda: 0.036, rho: 80 },
+          { matName: "BCA 25 cm portant", material: "BCA (beton celular autoclavizat)", thickness: "250", lambda: 0.22, rho: 600 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Pereți lemn masiv 20 cm + vată minerală 15 cm interior — Nord + Est",
-        type: "PE", area: "140", orientation: "N", tau: "1",
+        name: "BCA 25 cm + vată minerală 18 cm — Nord + Vest",
+        type: "PE", area: "95", orientation: "N", tau: "1",
         layers: [
-          { matName: "Lemn rindeluit decorativ exterior", material: "Lemn brad", thickness: "25", lambda: 0.13, rho: 450 },
-          { matName: "Cameră aer ventilată", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
-          { matName: "Lemn masiv brad 20 cm (bârne machetate)", material: "Lemn brad masiv", thickness: "200", lambda: 0.13, rho: 450 },
-          { matName: "Vată minerală 15 cm — termoizolație internă", material: "Vată minerală bazaltică", thickness: "150", lambda: 0.038, rho: 60 },
-          { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
-          { matName: "Gips-carton 12.5 mm finisaj interior", material: "Gips-carton", thickness: "13", lambda: 0.21, rho: 800 },
+          { matName: "Tencuială silicat decorativă", material: "Tencuială silicat", thickness: "8", lambda: 0.70, rho: 1700 },
+          { matName: "Vată minerală densă fațadă 18 cm", material: "Vată minerală bazaltică", thickness: "180", lambda: 0.036, rho: 80 },
+          { matName: "BCA 25 cm portant", material: "BCA (beton celular autoclavizat)", thickness: "250", lambda: 0.22, rho: 600 },
+          { matName: "Tencuială interioară var-gips", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Acoperiș mansardă cu vată minerală 25 cm",
-        type: "PT", area: "165", orientation: "H", tau: "1",
+        name: "Acoperiș terasă + XPS 25 cm + hidroizolație TPO",
+        type: "PT", area: "75", orientation: "H", tau: "1",
         layers: [
-          { matName: "Țiglă ceramică", material: "Țiglă ceramică", thickness: "25", lambda: 1.00, rho: 1900 },
-          { matName: "Strat ventilat sub țiglă", material: "Aer", thickness: "30", lambda: 0.50, rho: 1.2 },
-          { matName: "Folie hidroizolatoare permeabilă", material: "Membrană traspirabilă", thickness: "1", lambda: 0.20, rho: 950 },
-          { matName: "Vată minerală 25 cm între căpriori", material: "Vată minerală bazaltică", thickness: "250", lambda: 0.038, rho: 60 },
-          { matName: "Folie barieră vapori PE", material: "Folie PE", thickness: "1", lambda: 0.40, rho: 950 },
-          { matName: "Lambriu brad finisaj mansardă", material: "Lemn brad", thickness: "20", lambda: 0.13, rho: 450 },
+          { matName: "Pietriș protecție", material: "Pietriș", thickness: "50", lambda: 0.70, rho: 1800 },
+          { matName: "Polistiren extrudat XPS 25 cm", material: "Polistiren extrudat XPS", thickness: "250", lambda: 0.034, rho: 35 },
+          { matName: "Hidroizolație TPO", material: "Membrană TPO", thickness: "2", lambda: 0.20, rho: 950 },
+          { matName: "Beton armat planșeu terasă", material: "Beton armat", thickness: "180", lambda: 1.74, rho: 2400 },
+          { matName: "Tencuială tavan ultim etaj", material: "Tencuială var-gips", thickness: "15", lambda: 0.45, rho: 1200 },
         ],
       },
       {
-        name: "Placă pe sol BA + EPS 10 cm + finisaj gresie/parchet",
-        type: "PL", area: "180", orientation: "H", tau: "0.6",
+        name: "Placă pe sol — beton + EPS 15 cm + șapă + parchet",
+        type: "PL", area: "75", orientation: "H", tau: "0.6",
         layers: [
-          { matName: "Pietriș compactat", material: "Pietriș", thickness: "150", lambda: 0.70, rho: 1800 },
-          { matName: "Beton armat fundație", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
-          { matName: "Polistiren expandat EPS 10 cm", material: "Polistiren expandat EPS", thickness: "100", lambda: 0.036, rho: 18 },
+          { matName: "Pietriș compactat fundație", material: "Pietriș", thickness: "150", lambda: 0.70, rho: 1800 },
+          { matName: "Beton armat placă", material: "Beton armat", thickness: "150", lambda: 1.74, rho: 2400 },
+          { matName: "Polistiren expandat EPS 15 cm", material: "Polistiren expandat EPS", thickness: "150", lambda: 0.036, rho: 25 },
           { matName: "Șapă mortar autonivel", material: "Șapă ciment autonivel", thickness: "60", lambda: 1.40, rho: 2000 },
-          { matName: "Gresie ceramică (recepție + băi) / Parchet (camere)", material: "Gresie ceramică", thickness: "12", lambda: 1.30, rho: 2300 },
+          { matName: "Parchet lemn stratificat", material: "Parchet lemn", thickness: "12", lambda: 0.18, rho: 700 },
         ],
       },
     ],
     glazingElements: [
-      { name: "PVC 5 camere dublu Low-E argon — Sud (vedere munți)", area: "22", u: "1.30", g: "0.62", orientation: "S", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Est",                  area: "12", u: "1.30", g: "0.62", orientation: "E", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Vest",                  area: "12", u: "1.30", g: "0.62", orientation: "V", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "PVC 5 camere dublu Low-E argon — Nord (mai mici)",       area: "8",  u: "1.30", g: "0.62", orientation: "N", frameRatio: "22", type: "Dublu Low-E argon" },
-      { name: "Ușă intrare lemn masiv termoizolat",                       area: "3.5", u: "1.60", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn termoizolat" },
+      // Triplu Low-E argon PassivHaus (frame PVC 6 camere termorupte 22%)
+      { name: "Triplu Low-E argon PVC 6 camere — Sud (vedere)",  area: "11", u: "0.85", g: "0.50", orientation: "S", frameRatio: "22", type: "Triplu Low-E argon" },
+      { name: "Triplu Low-E argon PVC 6 camere — Est",            area: "5",  u: "0.85", g: "0.50", orientation: "E", frameRatio: "22", type: "Triplu Low-E argon" },
+      { name: "Triplu Low-E argon PVC 6 camere — Vest",            area: "5",  u: "0.85", g: "0.50", orientation: "V", frameRatio: "22", type: "Triplu Low-E argon" },
+      { name: "Triplu Low-E argon PVC 6 camere — Nord (mai mici)", area: "4",  u: "0.85", g: "0.50", orientation: "N", frameRatio: "22", type: "Triplu Low-E argon" },
+      { name: "Ușă intrare lemn termizolat",                       area: "2.5", u: "1.20", g: "0.00", orientation: "S", frameRatio: "100", type: "Ușă lemn termizolat" },
     ],
     thermalBridges: [
-      { name: "Îmbinare bârne lemn în colț 90°",          type: "SB", psi: "0.06", length: "38" },
-      { name: "Centură planșeu BA peste etaj 1",           type: "CB", psi: "0.10", length: "62" },
-      { name: "Soclu fundație + EPS 8 cm perimetral",      type: "SO", psi: "0.10", length: "62" },
-      { name: "Glaf fereastră PVC în zid lemn",             type: "GF", psi: "0.08", length: "85" },
-      { name: "Buiandrug lemn deasupra ferestrei",         type: "CB", psi: "0.05", length: "22" },
-      { name: "Streașină acoperiș ventilat",                type: "CO", psi: "0.06", length: "62" },
+      // SR EN ISO 14683 — clădire nZEB nouă 2022, Ψ < 0.10 (PassivHaus level)
+      { name: "Stâlpișori BA înglobat în vată minerală", type: "SB", psi: "0.04", length: "30" },
+      { name: "Centură BA peste etaj (sub vată)",         type: "CB", psi: "0.05", length: "84" },
+      { name: "Soclu cu protecție XPS perimetrală",        type: "SO", psi: "0.05", length: "42" },
+      { name: "Glaf fereastră — atașat vată",              type: "GF", psi: "0.04", length: "70" },
+      { name: "Buiandrug BA înglobat în vată",             type: "CB", psi: "0.04", length: "18" },
+      { name: "Cornișă atic terasă XPS 25 cm",             type: "CO", psi: "0.05", length: "42" },
     ],
     heating: {
-      source: "BIO_AUT",                  // P1 fix: era "PELET" — corect "BIO_AUT" (Cazan peleți automat alimentare automată, HEAT_SOURCES line 27 — Hargassner 40 kW)
-      power: "40",                          // Cazan peleți Hargassner 40 kW
-      eta_gen: "0.91",                      // Cazan modern peleți condensare
-      nominalPower: "40",
-      emission: "RAD_AL",                 // P1 fix: era "RADIATOR" generic — corect "RAD_AL" (Radiatoare aluminiu, EMISSION_SYSTEMS line 85)
-      eta_em: "0.94",
-      distribution: "BINE_INT",
-      eta_dist: "0.93",
-      control: "PROG",                    // P1 fix: era "TERMOSTAT_CRONO" — corect "PROG" (Termostat ambiental programabil, CONTROL_TYPES line 152)
-      eta_ctrl: "0.92",
-      regime: "intermitent",                // Sezonier turistic + zone (camere ocupate)
+      source: "PC_SA",                    // Pompă căldură sol-apă sonde verticale geotermale (HEAT_SOURCES)
+      power: "12",                        // ← USER REQUIREMENT
+      eta_gen: "4.50",                    // ← USER REQUIREMENT (COP nominal)
+      nominalPower: "12",
+      emission: "PARD",                   // Încălzire pardoseală cu apă (EMISSION_SYSTEMS)
+      eta_em: "0.98",
+      distribution: "BINE_INT_NZB",       // Bine izolată interior nZEB (DISTRIBUTION_QUALITY)
+      eta_dist: "0.97",
+      control: "INTELIG",                 // Smart home / IoT wireless (CONTROL_TYPES)
+      eta_ctrl: "0.94",
+      regime: "continuu",                 // Pardoseală radiantă continuu cu setback
       theta_int: "21",
-      nightReduction: "3",
+      nightReduction: "1",
       tStaircase: "",
       tBasement: "",
       tAttic: "",
     },
     acm: {
-      source: "BOILER_BIOMASA",           // P1 fix: era "SOLAR_BACKUP_PELET" — UI nu are combinație; ales "BOILER_BIOMASA" (peleți dedicat ACM, ACM_SOURCES line 307). Solar termic 8m² urmează în secțiunea solarThermal cu enabled=true.
-      consumers: "20",                       // 8 cam × ~2.5 ocupanți medie + personal
-      dailyLiters: "45",                     // Turism — 45 L/persoană/zi (incl. duș)
+      source: "SOLAR_PC",                 // Solar termic + pompă căldură (ACM_SOURCES)
+      consumers: "4",
+      dailyLiters: "50",
       consumptionLevel: "med",
       tSupply: "55",
-      storageVolume: "1000",                // Acumulator combinat 1000L
+      storageVolume: "300",
       insulationClass: "A",
-      pipeLength: "65",
+      pipeLength: "18",
       pipeInsulated: true,
       pipeInsulationThickness: "30mm",
-      pipeDiameter: "25",
-      circRecirculation: true,
-      circHours: "16",                       // Recirculare zilnică turism
+      pipeDiameter: "22",
+      circRecirculation: false,
+      circHours: "",
       circPumpType: "iee_sub_023",
-      hasLegionella: true,                   // Volum > 400L → tratare obligatorie HG 1425/2006
-      legionellaFreq: "weekly",
-      legionellaT: "70",
+      hasLegionella: false,
+      legionellaFreq: "",
+      legionellaT: "",
     },
     cooling: {
-      system: "NONE",                       // P1 fix: era "FARA" — corect "NONE" (COOLING_SYSTEMS line 350)
-      power: "0",
-      eer: "",
-      seer: "",
-      cooledArea: "0",
-      distribution: "",                     // P1 fix: era "FARA" — corect "" (no cooling = no distribution code)
-      hasCooling: false,
-      setpoint: "",
-      shadingExternal: "0.75",
+      system: "PC_REV_SA",                // Pompă căldură reversibilă sol-apă (COOLING_SYSTEMS)
+      power: "5",
+      eer: "5.50",
+      seer: "7.50",
+      cooledArea: "80",
+      distribution: "BINE_INT_NZB",
+      hasCooling: true,
+      setpoint: "26",
+      shadingExternal: "0.85",
       useHourly: false,
-      emissionType: "",
-      eta_em: "",
-      distributionType: "",
-      eta_dist: "",
-      controlType: "",
-      eta_ctrl: "",
-      P_aux_pumps: "",
-      P_aux_fans: "",
-      t_cooling_hours: "",
-      hasNightVent: true,                    // Doar free cooling vară (ferestre + cross-vent)
-      n_night: "3.0",
+      emissionType: "pardoseala_rad",     // Pardoseală radiantă răcire (COOLING_EMISSION_EFFICIENCY)
+      eta_em: "0.97",
+      distributionType: "apa_rece_izolat_int", // Apă rece izolat ≥20mm (COOLING_DISTRIBUTION_EFFICIENCY)
+      eta_dist: "0.95",
+      controlType: "termostat_pid",       // Termostat PID + senzor CO₂/prezență (COOLING_CONTROL_EFFICIENCY)
+      eta_ctrl: "0.98",
+      P_aux_pumps: "0.2",
+      P_aux_fans: "0",
+      t_cooling_hours: "600",             // Climă montană Sibiu — sezon scurt
+      hasNightVent: true,
+      n_night: "2.0",
       comfortCategory: "II",
       internalGainsOverride: "",
     },
     ventilation: {
-      type: "NAT",                          // P1 fix: era "NATURALA" — corect "NAT" (Ventilare naturală, VENTILATION_TYPES line 442)
-      airflow: "300",
-      fanPower: "120",                       // Doar extracție bucătărie + băi
-      operatingHours: "5500",
-      hrEfficiency: "0",
+      type: "MEC_HR90",                   // ← USER REQUIREMENT (recuperator căldură 90%)
+      airflow: "280",                     // 4 persoane × 30 m³/h × 2.3 ratio cat. II
+      fanPower: "75",                     // SFP 1.0 kW/(m³/s) × 0.075 m³/s = 75 W
+      operatingHours: "8760",
+      hrEfficiency: "90",
     },
     lighting: {
-      type: "LED_E27",                      // P1 fix: era "MIXT" — UI nu are MIXT; ales "LED_E27" (dominant 80% LED retrofit, LIGHTING_TYPES line 488)
-      pDensity: "6.5",                       // LED 80% + corpuri rustice incandescente decor 20%
-      controlType: "MAN",                   // P1 fix: era "MANUAL" — corect "MAN" (LIGHTING_CONTROL line 504)
-      fCtrl: "1.0",
-      operatingHours: "2400",
-      naturalLightRatio: "40",
-      pEmergency: "0.4",
-      pStandby: "0.2",
+      type: "LED",                        // LED panou nZEB (LIGHTING_TYPES)
+      pDensity: "4.0",
+      controlType: "PREZ_DAY",            // ← USER REQUIREMENT (Combinat: prezență + daylight)
+      fCtrl: "0.55",
+      operatingHours: "1900",
+      naturalLightRatio: "50",
+      pEmergency: "0.3",
+      pStandby: "0.1",
     },
     solarThermal: {
       enabled: true,
-      type: "PLAN",                          // Panouri plate (mai fiabile la Predeal — gheață sezonieră)
-      area: "8",
+      type: "PLAN",                       // Colector plan glazurat standard (SOLAR_THERMAL_TYPES)
+      area: "8",                          // ← USER REQUIREMENT
       orientation: "S",
-      tilt: "55",                            // Optim iarnă latitude +10° (montan, sezon încălzire dominant)
-      usage: "acm",
-      storageVolume: "1000",
-      eta0: "0.75",                          // Randament optic plan (vs. tuburi vidate 0.80)
-      a1: "3.5",                             // Pierderi liniare W/m²·K
+      tilt: "45",                         // ← USER REQUIREMENT
+      usage: "acm",                       // ← USER REQUIREMENT
+      storageVolume: "300",
+      eta0: "0.78",                       // ← USER REQUIREMENT
+      a1: "3.80",                         // ← USER REQUIREMENT
     },
     photovoltaic: {
       enabled: true,
-      type: "MONO",
-      area: "12",
-      orientation: "S",
-      tilt: "45",                            // Optim Predeal anual + autocurățare zăpadă
-      inverterType: "STD",
+      type: "MONO",                       // ← USER REQUIREMENT
+      area: "32",                         // 6 kWp × ~5.4 m²/kWp
+      orientation: "S",                   // ← USER REQUIREMENT
+      tilt: "38",                         // ← USER REQUIREMENT
+      inverterType: "HIBRID",             // Cu pregătire baterie LFP viitoare
       inverterEta: "0.96",
-      peakPower: "2",
-      usage: "all",                          // P1 fix: era "autoconsum" — UI așteaptă "all|lighting|hvac|export"
+      peakPower: "6",                     // ← USER REQUIREMENT
+      usage: "all",
     },
-    heatPump:   { enabled: false, type: "", cop: "0", scopHeating: "0", scopCooling: "0", covers: "", bivalentTemp: "", auxSource: "", auxEta: "0" },
-    biomass:    { enabled: true },           // Sursă principală încălzire = peleți biomasă
+    heatPump: {
+      enabled: true,
+      type: "PC_SA",                      // ← USER REQUIREMENT (sol-apă sonde verticale)
+      cop: "4.50",                        // ← USER REQUIREMENT
+      scopHeating: "4.20",                // ← USER REQUIREMENT
+      scopCooling: "5.80",                // ← USER REQUIREMENT
+      covers: "heating_acm",              // ← USER REQUIREMENT
+      bivalentTemp: "-20",                // ← USER REQUIREMENT
+      auxSource: "REZ_EL",
+      auxEta: "1.00",
+    },
+    biomass:    { enabled: false },
     otherRenew: {
       windEnabled: false, windCapacity: "", windProduction: "",
       cogenEnabled: false, cogenElectric: "", cogenThermal: "", cogenFuel: "", cogenType: "", cogenPowerEl: "", cogenHours: "",
@@ -1903,57 +1672,53 @@ export const DEMO_PROJECTS = [
     battery: { enabled: false, type: "", capacity: "0", power: "0", dod: "0", selfConsumptionPct: "0" },
     auditor: {
       name: "ing. Vasilescu Ana-Maria",
-      atestat: "BV-04895",
-      grade: "AE Ici",                       // P1 fix: era „AE Ic" — grad inexistent; corect AE Ici (grad I civile, necesar pentru HC nerezidențial conform Art. 6 alin. 1 lit. b Ord. MDLPA 348/2026)
-      specialty: "construcții și instalații", // P1 fix: extins la „construcții și instalații" (HC pensiune cu instalații complexe peleți+solar)
+      atestat: "SB-04895",
+      grade: "AE Ici",
+      specialty: "construcții și instalații",
       company: "Eco Audit Carpați SRL",
       phone: "0744 268 519",
       email: "ana.vasilescu@ecocarpati.ro",
       date: "2026-04-27",
       mdlpaCode: "CE-2026-04895",
       cpeNumber: "CPE-2026-00098",
-      cpeCode: "CE-2026-04895_20260427_Vasilescu_Ana_BV_104287_001_CPE",
+      cpeCode: "CE-2026-04895_20260427_Vasilescu_Ana_SB_401580_001_CPE",
       registryIndex: "98",
-      scopCpe: "inchiriere",
+      scopCpe: "construire",
       validityYears: "10",
-      registruEvidenta: "RE-2026-BV-04895",
-      nrCadastral: "104287-C1",
+      registruEvidenta: "RE-2026-SB-04895",
+      nrCadastral: "401580-C1",
       codUnicMDLPA: "CE-2026-04895",
       dataExpirareDrept: "2031-08-15",
       dataTransmitereMDLPA: "2026-04-28",
-      // ADĂUGAT: Semnătură + ștampilă DEMO (placeholder SVG — înlocuiește prin UI Step 6 înainte de export oficial)
-      signatureDataURL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='120' viewBox='0 0 400 120'><rect width='400' height='120' fill='%23ffffff'/><text x='200' y='55' font-family='cursive,serif' font-size='28' text-anchor='middle' fill='%23000080' font-style='italic'>Vasilescu A.M.</text><line x1='80' y1='75' x2='320' y2='75' stroke='%23000080' stroke-width='1.5'/><text x='200' y='95' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23999999'>-- SEMNATURA DEMO (placeholder) --</text></svg>",
-      stampDataURL:     "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'><circle cx='75' cy='75' r='70' fill='none' stroke='%23000080' stroke-width='2.5'/><circle cx='75' cy='75' r='60' fill='none' stroke='%23000080' stroke-width='1'/><text x='75' y='42' font-family='sans-serif' font-size='8' text-anchor='middle' fill='%23000080' font-weight='bold'>AUDITOR ENERGETIC</text><text x='75' y='58' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>AE Ici</text><text x='75' y='78' font-family='sans-serif' font-size='9' text-anchor='middle' fill='%23000080'>Vasilescu A.M.</text><text x='75' y='95' font-family='sans-serif' font-size='7' text-anchor='middle' fill='%23000080'>BV-04895</text><text x='75' y='115' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23000080' font-weight='bold'>D E M O</text></svg>",
-      observations: "Pensiune turistică Cocoșul de Munte, Predeal Cioplea. Construcție 2010 lemn masiv brad 20 cm + vată minerală 15 cm interior, acoperiș mansardat vată 25 cm, placă pe sol EPS 10 cm. Sisteme: cazan biomasă peleți Hargassner 40 kW (RER sursă 100%), radiatoare aluminiu, acumulator combinat 1000L. ACM: solar termic plan 8 m² primar (acoperire 65% sezon cald) + peleți backup. Free cooling nocturn vară (climă montană, fără AC). PV 2 kWp acoperiș sud. RER total ≈ 48% (peleți biomasă recunoscut sursă regenerabilă + solar termic + PV). MEPS 2030/2033 PASS. Pașaport recomandat: extindere PV la 5 kWp + baterie LFP 8 kWh pentru autonomie sezon turistic vară.",
+      signatureDataURL: DEMO_SIG_SVG("Vasilescu A.M."),
+      stampDataURL: DEMO_STAMP_SVG("Vasilescu A.M.", "SB-04895"),
+      observations: "Casă unifamilială P+1 Cartier Selimbăr Sibiu — recepționată septembrie 2022 conform L.238/2024 nZEB + EPBD 2024/1275. Anvelopă: BCA 25 cm + ETICS vată minerală 18 cm (U_pereți ≈ 0.158 W/m²·K), terasă XPS 25 cm (U ≈ 0.128), placă sol EPS 15 cm (U ≈ 0.21), ferestre triplu Low-E argon PVC 6 camere (U ≈ 0.85, g ≈ 0.50). Punți termice nZEB SR EN ISO 14683: toate Ψ ≤ 0.05 (atașat vată minerală + termorupt). Sisteme: PC sol-apă 12 kW (3 sonde verticale 100 m, COP nominal 4.50, SCOP încălzire 4.20, SCOP răcire 5.80), pardoseală radiantă cu apă, BACS B+ (smart home wireless). ACM: solar termic 8 m² PLAN tilt 45° + booster PC dedicată (acoperire ~ 70% an). Răcire: PC reversibilă sol-apă pasivă (geo-cooling — energie minimă). VMC HR 90% (recuperator căldură sensibilă PassivHaus, SFP < 1.0). PV 6 kWp MONO Sud tilt 38° (autoconsum + injecție rețea Electrica Transilvania). RER total ≈ 50% (PC RES + PV + ST). MEPS 2030/2033/2050 PASS cu marjă. n₅₀ = 0.6 h⁻¹ (test blower-door PassivHaus). Pașaport renovare neaplicabil — clădire deja nZEB top.",
       photo: "",
     },
     expectedResults: {
-      energyClass: "C",
-      E_p_total_kWh_m2_y: 118,
-      // P1 fix (29 apr 2026): aliniat E_p_ren/E_p_nren cu RER 48% declarat (anterior: 23/95 = RER 19.5% — inconsistent).
-      // Recalcul: RER 48% × 118 = 57 kWh/m²·an regenerabil (peleți biomasă RER 100% sursă + solar termic 8 m² + PV 2 kWp).
-      // Conform L.238/2024 + SR EN ISO 52000-1: peleți recunoscut energie regenerabilă → contribuie integral la RER.
-      E_p_nren_kWh_m2_y: 61,
-      E_p_ren_kWh_m2_y: 57,
-      RER_pct: 48,
-      U_med_W_m2K: 0.30,
+      energyClass: "A",
+      E_p_total_kWh_m2_y: 60,
+      E_p_nren_kWh_m2_y: 32,
+      E_p_ren_kWh_m2_y: 28,
+      RER_pct: 47,
+      U_med_W_m2K: 0.18,
       U_max_violations: [],
-      Q_inc_kWh_m2_y: 145,                    // Climă rece montană → Q_inc mare absolut
-      Q_rac_kWh_m2_y: 0,                       // Fără răcire activă
-      Q_acm_kWh_m2_y: 38,
-      Q_il_kWh_m2_y: 14,
-      Q_aux_kWh_m2_y: 4,
-      bacsClass: "C",
-      fBac: 1.00,
-      sriPct: 52,
+      Q_inc_kWh_m2_y: 22,
+      Q_rac_kWh_m2_y: 4,
+      Q_acm_kWh_m2_y: 12,
+      Q_il_kWh_m2_y: 8,
+      Q_aux_kWh_m2_y: 3,
+      bacsClass: "B",
+      fBac: 0.85,
+      sriPct: 75,
       meps2030_pass: true,
       meps2033_pass: true,
-      meps2050_pass: false,
-      passportRequired: true,
-      passportPhases: 1,                        // Doar PV upgrade
-      passportTargetClass: "B",
-      documentsExpected: ["CPE-HC", "Raport-Audit", "Pasaport-Renovare-PV"],
-      tolerances: { E_p_nren: 0.15, E_p_total: 0.15, RER: 5, U_med: 0.10, Q_inc: 0.18 },
+      meps2050_pass: true,
+      passportRequired: false,
+      passportPhases: 0,
+      passportTargetClass: "A",
+      documentsExpected: ["CPE-RI", "Raport-Audit", "Pasaport-Renovare-Empty"],
+      tolerances: { E_p_nren: 0.20, E_p_total: 0.20, RER: 5, U_med: 0.10, Q_inc: 0.20 },
     },
   },
 

@@ -101,13 +101,17 @@ describe("DEMO_PROJECTS v2 — exact 5 modele cu zone climatice I-V", () => {
     }
   });
 
-  it("acoperă toate categoriile clădirilor: rezidențial individual, bloc, birouri, educație, cazare", () => {
+  it("acoperă categoriile critice: rezidențial bloc, casă unifamilială, birouri, educație", () => {
+    // Sprint refactor 9 mai 2026: tipologii noi M1-M5 (zone climatice I→V)
+    // M1=RA Constanța, M2=RI Cluj 1965, M3=BI București 2005, M4=ED Brașov 1980, M5=RI Sibiu 2022 nZEB
     const categories = DEMO_PROJECTS.map((d) => d.building.category);
-    expect(categories).toContain("RA");  // M1 apartament bloc
-    expect(categories).toContain("BI");  // M2 birouri
-    expect(categories).toContain("RI");  // M3 casă unifamilială
+    expect(categories).toContain("RA");  // M1 apartament bloc PAFP
+    expect(categories).toContain("RI");  // M2 + M5 case unifamiliale (vechi vs nouă)
+    expect(categories).toContain("BI");  // M3 birouri
     expect(categories).toContain("ED");  // M4 educație
-    expect(categories).toContain("HC");  // M5 cazare
+    // 4 categorii distincte (RA, RI, BI, ED) — RI ocupă 2 sloturi (M2 vechi 1965 + M5 nou 2022)
+    const uniqueCats = new Set(categories);
+    expect(uniqueCats.size).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -214,52 +218,83 @@ describe("DEMO_PROJECTS v2 — schema completă pentru fiecare model", () => {
 });
 
 describe("DEMO_PROJECTS v2 — diversitate scenarii (testare end-to-end)", () => {
-  it("M1 (Constanța) folosește termoficare DH RADET", () => {
-    // P1 fix (29 apr 2026): cod actualizat de la "TERMOFICARE" la "TERMO" (HEAT_SOURCES id valid)
+  // Sprint refactor 9 mai 2026 — tipologii noi:
+  //   M1=RA Constanța 1975 PAFP DH (clasă G, baseline pur)
+  //   M2=RI Cluj 1965 cărămidă plină + CT gaz cond + PV 3 kWp (clasă E)
+  //   M3=BI București 2005 + VRF degradat + PV 15 + ST 20 m² (clasă C, Q_rac>30, MEPS 2033 fail)
+  //   M4=ED Brașov 1980 nereabilitat + CT gaz central + niciun renewable (clasă F)
+  //   M5=RI Sibiu 2022 nZEB + PC sol-apă + VMC HR90 + PV 6 + ST 8 (clasă A)
+
+  it("M1 (Constanța) folosește termoficare DH RADET și e clasă G", () => {
     expect(DEMO_PROJECTS[0].heating.source).toBe("TERMO");
-    // S29 fix — M1 e clasă G (apartament panou mare neanvelopat, EP=968 kWh/m²·an)
+    expect(DEMO_PROJECTS[0].building.city).toBe("Constanța");
+    expect(DEMO_PROJECTS[0].building.category).toBe("RA");
     expect(DEMO_PROJECTS[0].expectedResults.energyClass).toBe("G");
     expect(DEMO_PROJECTS[0].expectedResults.RER_pct).toBe(0);
     expect(DEMO_PROJECTS[0].expectedResults.passportRequired).toBe(true);
-    expect(DEMO_PROJECTS[0].expectedResults.passportPhases).toBeGreaterThanOrEqual(2);
+    expect(DEMO_PROJECTS[0].photovoltaic.enabled).toBe(false);
+    expect(DEMO_PROJECTS[0].solarThermal.enabled).toBe(false);
+    expect(DEMO_PROJECTS[0].heatPump.enabled).toBe(false);
   });
 
-  it("M2 (București) are CHP gaz natural activ + PV", () => {
-    expect(DEMO_PROJECTS[1].otherRenew.cogenEnabled).toBe(true);
-    expect(DEMO_PROJECTS[1].otherRenew.cogenFuel).toBe("gaz_natural");
-    expect(parseFloat(DEMO_PROJECTS[1].otherRenew.cogenElectric)).toBeGreaterThan(0);
+  it("M2 (Cluj) e casă unifamilială cărămidă 1965 + CT gaz condensare + PV 3 kWp", () => {
+    expect(DEMO_PROJECTS[1].building.city).toBe("Cluj-Napoca");
+    expect(DEMO_PROJECTS[1].building.category).toBe("RI");
+    expect(DEMO_PROJECTS[1].building.yearBuilt).toBe("1965");
+    expect(DEMO_PROJECTS[1].heating.source).toBe("GAZ_COND");
+    expect(parseFloat(DEMO_PROJECTS[1].heating.power)).toBeLessThanOrEqual(30);
     expect(DEMO_PROJECTS[1].photovoltaic.enabled).toBe(true);
-    expect(parseFloat(DEMO_PROJECTS[1].photovoltaic.peakPower)).toBeGreaterThanOrEqual(20);
-    expect(DEMO_PROJECTS[1].expectedResults.energyClass).toBe("A+");
-    expect(DEMO_PROJECTS[1].expectedResults.RER_pct).toBeGreaterThanOrEqual(50);
-    expect(DEMO_PROJECTS[1].expectedResults.bacsClass).toBe("A");
+    expect(parseFloat(DEMO_PROJECTS[1].photovoltaic.peakPower)).toBe(3);
+    expect(DEMO_PROJECTS[1].solarThermal.enabled).toBe(false);
+    expect(DEMO_PROJECTS[1].heatPump.enabled).toBe(false);
+    expect(DEMO_PROJECTS[1].otherRenew.cogenEnabled).toBe(false);
+    expect(DEMO_PROJECTS[1].building.scopCpe).toBe("vanzare");
   });
 
-  it("M3 (Cluj) are renovare parțială (yearRenov 2015) + PV mic", () => {
-    expect(DEMO_PROJECTS[2].building.yearRenov).toBe("2015");
+  it("M3 (București) e birouri BI 2005 cu VRF degradat (SEER<3) + PV + ST mare, Q_rac>30", () => {
+    expect(DEMO_PROJECTS[2].building.city).toBe("București");
+    expect(DEMO_PROJECTS[2].building.category).toBe("BI");
+    expect(DEMO_PROJECTS[2].building.yearBuilt).toBe("2005");
+    expect(DEMO_PROJECTS[2].cooling.hasCooling).toBe(true);
+    expect(parseFloat(DEMO_PROJECTS[2].cooling.seer)).toBeLessThanOrEqual(3.0);
+    expect(parseFloat(DEMO_PROJECTS[2].cooling.t_cooling_hours)).toBeGreaterThanOrEqual(1300);
     expect(DEMO_PROJECTS[2].photovoltaic.enabled).toBe(true);
-    expect(parseFloat(DEMO_PROJECTS[2].photovoltaic.peakPower)).toBe(4);
-    expect(DEMO_PROJECTS[2].expectedResults.meps2030_pass).toBe(true);
+    expect(parseFloat(DEMO_PROJECTS[2].photovoltaic.peakPower)).toBe(15);
+    expect(DEMO_PROJECTS[2].solarThermal.enabled).toBe(true);
+    expect(parseFloat(DEMO_PROJECTS[2].solarThermal.area)).toBe(20);
+    expect(DEMO_PROJECTS[2].expectedResults.Q_rac_kWh_m2_y).toBeGreaterThan(30);
     expect(DEMO_PROJECTS[2].expectedResults.meps2033_pass).toBe(false);
   });
 
-  it("M4 (Brașov) este școală reabilitată cu CT central + PV", () => {
+  it("M4 (Brașov) e școală gimnazială ED 1980 NEREABILITATĂ + CT gaz + niciun renewable", () => {
+    expect(DEMO_PROJECTS[3].building.city).toBe("Brașov");
     expect(DEMO_PROJECTS[3].building.category).toBe("ED");
-    expect(DEMO_PROJECTS[3].building.yearRenov).toBe("2022");
-    expect(parseFloat(DEMO_PROJECTS[3].heating.power)).toBeGreaterThanOrEqual(300);
-    expect(DEMO_PROJECTS[3].photovoltaic.enabled).toBe(true);
-    expect(DEMO_PROJECTS[3].heating.regime).toBe("intermitent");
-    expect(DEMO_PROJECTS[3].expectedResults.bacsClass).toBe("B");
+    expect(DEMO_PROJECTS[3].building.yearBuilt).toBe("1980");
+    expect(DEMO_PROJECTS[3].building.yearRenov).toBe("");        // NEREABILITAT — pre-renovare PNRR
+    expect(parseFloat(DEMO_PROJECTS[3].heating.power)).toBeGreaterThanOrEqual(100);
+    expect(DEMO_PROJECTS[3].heating.emission).toBe("RAD_FO");    // radiatoare fontă
+    expect(DEMO_PROJECTS[3].photovoltaic.enabled).toBe(false);
+    expect(DEMO_PROJECTS[3].solarThermal.enabled).toBe(false);
+    expect(DEMO_PROJECTS[3].heatPump.enabled).toBe(false);
+    expect(DEMO_PROJECTS[3].expectedResults.energyClass).toMatch(/^[EFG]$/);
   });
 
-  it("M5 (Predeal) folosește biomasă peleți + solar termic + lipsa cooling activ", () => {
-    // P1 fix (29 apr 2026): cod actualizat de la "PELET" la "BIO_AUT" (HEAT_SOURCES id valid — Cazan peleți automat)
-    expect(DEMO_PROJECTS[4].heating.source).toBe("BIO_AUT");
-    expect(DEMO_PROJECTS[4].biomass.enabled).toBe(true);
+  it("M5 (Sibiu) e casă RI nouă 2022 nZEB cu PC sol-apă + VMC HR90 + PV 6 + ST 8", () => {
+    expect(DEMO_PROJECTS[4].building.city).toBe("Sibiu");
+    expect(DEMO_PROJECTS[4].building.category).toBe("RI");
+    expect(DEMO_PROJECTS[4].building.yearBuilt).toBe("2022");
+    expect(DEMO_PROJECTS[4].heating.source).toBe("PC_SA");
+    expect(DEMO_PROJECTS[4].ventilation.type).toBe("MEC_HR90");
+    expect(DEMO_PROJECTS[4].photovoltaic.enabled).toBe(true);
+    expect(parseFloat(DEMO_PROJECTS[4].photovoltaic.peakPower)).toBe(6);
     expect(DEMO_PROJECTS[4].solarThermal.enabled).toBe(true);
-    expect(DEMO_PROJECTS[4].cooling.hasCooling).toBe(false);
-    expect(DEMO_PROJECTS[4].expectedResults.RER_pct).toBeGreaterThanOrEqual(40);
-    expect(parseFloat(DEMO_PROJECTS[4].building.latitude)).toBeGreaterThan(45.4);
+    expect(parseFloat(DEMO_PROJECTS[4].solarThermal.area)).toBe(8);
+    expect(DEMO_PROJECTS[4].heatPump.enabled).toBe(true);
+    expect(DEMO_PROJECTS[4].biomass.enabled).toBe(false);
+    expect(DEMO_PROJECTS[4].expectedResults.energyClass).toMatch(/^A\+?$/);
+    expect(DEMO_PROJECTS[4].expectedResults.meps2030_pass).toBe(true);
+    expect(DEMO_PROJECTS[4].expectedResults.meps2033_pass).toBe(true);
+    expect(parseFloat(DEMO_PROJECTS[4].building.n50)).toBeLessThanOrEqual(0.6);
   });
 });
 
@@ -280,16 +315,16 @@ describe("buildMdlpaDefaults — derivare contextuală pentru cele 5 modele", ()
     expect(out.heatGenLocation).toBe("CT_PROP");
   });
 
-  it("M5 (PELET = biomasă) → heatGenLocation = SURSA_PROPRIE + stoveCount > 0", () => {
+  it("M5 (PC_SA) → heatGenLocation = CT_PROP + stoveCount = 0 (nu e sobă/biomasă)", () => {
     const out = buildMdlpaDefaults(DEMO_PROJECTS[4]);
-    expect(out.heatGenLocation).toBe("SURSA_PROPRIE");
-    expect(parseInt(out.stoveCount, 10)).toBeGreaterThan(0);
+    expect(out.heatGenLocation).toBe("CT_PROP");
+    expect(parseInt(out.stoveCount, 10) || 0).toBe(0);
   });
 
-  it("M1 + M2 → buildingHasDisconnectedApartments setat (M1 RA bloc) sau gol (M2 BI)", () => {
+  it("M1 + M3 → buildingHasDisconnectedApartments setat (M1 RA bloc) sau gol (M3 BI)", () => {
     const m1 = buildMdlpaDefaults(DEMO_PROJECTS[0]);
-    const m2 = buildMdlpaDefaults(DEMO_PROJECTS[1]);
+    const m3 = buildMdlpaDefaults(DEMO_PROJECTS[2]);
     expect(m1.buildingHasDisconnectedApartments).toBe("nu"); // RA bloc
-    expect(m2.buildingHasDisconnectedApartments).toBe("");    // BI nerezidențial
+    expect(m3.buildingHasDisconnectedApartments).toBe("");    // BI nerezidențial
   });
 });
