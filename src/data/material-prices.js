@@ -2,7 +2,12 @@
  * Prețuri materiale izolație termică — piața România 2025
  * Sursa: Leroy Merlin RO, Dedeman, Arabesque (medii orientative)
  * Actualizat: 2025-04-08
+ *
+ * Sprint Audit Prețuri (9 mai 2026) Task B — EUR/RON dinamic via getEurRonSync()
+ * (anterior hardcodat 5.00, inconsistent cu canonicul rehab-prices fallback 5.10
+ * + curs BNR live; vezi docs/AUDIT_PRETURI_2026-05-09.md §1.2).
  */
+import { getEurRonSync, REHAB_PRICES } from './rehab-prices.js';
 
 export const MATERIAL_PRICES_2025 = {
   // ── Termoizolație ───────────────────────────────────────────
@@ -29,8 +34,9 @@ export const MATERIAL_PRICES_2025 = {
 export const PRICES_UPDATED = "2025-04-08";
 export const PRICES_SOURCE  = "Leroy Merlin RO, Dedeman, Arabesque, furnizori HVAC — prețuri orientative";
 
-// Curs EUR/RON orientativ
-export const EUR_TO_RON = 5.00;
+// Curs EUR/RON: dinamic via getEurRonSync() (BNR cache 24h sau fallback canonic)
+// Anterior hardcodat 5.00 — vezi docs/AUDIT_PRETURI_2026-05-09.md §1.2 / Task B
+export const EUR_TO_RON = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
 
 // ── calcMaterialCost ──────────────────────────────────────────────────────────
 // Calculează costul materialului pentru o cantitate dată.
