@@ -2,6 +2,18 @@ import { useState, useEffect, useRef } from "react";
 
 export const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+// ── Formatare numere în convenție română (punct mii, virgulă zecimale) ──────
+// fmtRON(18459)        → "18.459"        fmtRON(70391.73, 2) → "70.391,73"
+// fmtEUR(13802.3, 1)   → "13.802,3"      fmtNum(536.12, 1)   → "536,1"
+const RO = "ro-RO";
+export const fmtRON = (val, dec = 0) => {
+  const n = Number(val);
+  if (!isFinite(n)) return "—";
+  return n.toLocaleString(RO, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+};
+export const fmtEUR = (val, dec = 2) => fmtRON(val, dec);
+export const fmtNum = (val, dec = 0) => fmtRON(val, dec);
+
 function TooltipIcon({ text }) {
   const [visible, setVisible] = useState(false);
   return (

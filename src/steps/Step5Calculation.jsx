@@ -8,7 +8,7 @@ import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
 import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
 import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
 import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
-import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
+import { cn, Select, Input, Badge, Card, ResultRow, fmtRON, fmtEUR, fmtNum } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax } from "../calc/smart-rehab.js";
 import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THRESHOLDS } from "../data/energy-classes.js";
@@ -1363,20 +1363,20 @@ export default function Step5Calculation(props) {
                       return (
                         <>
                           <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-amber-400">{costTotal.toFixed(0)}</div>
+                            <div className="text-xl font-bold text-amber-400">{fmtRON(costTotal)}</div>
                             <div className="text-[10px] opacity-40">RON/an total</div>
                           </div>
                           <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-white">{costPerM2.toFixed(1)}</div>
-                            <div className="text-[10px] opacity-40">RON/(m2 an)</div>
+                            <div className="text-xl font-bold text-white">{fmtRON(costPerM2, 1)}</div>
+                            <div className="text-[10px] opacity-40">RON/(m² an)</div>
                           </div>
                           <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-red-400">{costHeat.toFixed(0)}</div>
-                            <div className="text-[10px] opacity-40">RON incalzire</div>
+                            <div className="text-xl font-bold text-red-400">{fmtRON(costHeat)}</div>
+                            <div className="text-[10px] opacity-40">RON încălzire</div>
                           </div>
                           <div className="text-center p-3 rounded-lg bg-white/[0.03]">
-                            <div className="text-xl font-bold text-blue-400">{(costCool + costVentLight).toFixed(0)}</div>
-                            <div className="text-[10px] opacity-40">RON racire+vent+il</div>
+                            <div className="text-xl font-bold text-blue-400">{fmtRON(costCool + costVentLight)}</div>
+                            <div className="text-[10px] opacity-40">RON răcire+vent+il</div>
                           </div>
                         </>
                       );
@@ -1487,16 +1487,15 @@ export default function Step5Calculation(props) {
                   + instSummary.qf_v * priceElec
                   + instSummary.qf_l * priceElec;
                 const measures = [
-                  { name: "Termoizolație pereți", cost: Au * 45, savePct: 0.18, color: "#3b82f6" },
-                  { name: "Ferestre triple", cost: Au * 0.15 * 250, savePct: 0.12, color: "#8b5cf6" },
-                  { name: "Termoizolație acoperiș", cost: Au * 0.3 * 35, savePct: 0.10, color: "#06b6d4" },
-                  { name: "Pompă de căldură", cost: 12000, savePct: 0.30, color: "#22c55e" },
-                  { name: "PV 5kWp", cost: 5000, savePct: 0.15, color: "#f59e0b" },
+                  { name: "Termoizolație pereți",  short: "Pereți",   cost: Au * 45,         savePct: 0.18, color: "#3b82f6" },
+                  { name: "Ferestre triple",         short: "Ferestre", cost: Au * 0.15 * 250, savePct: 0.12, color: "#a855f7" },
+                  { name: "Termoizolație acoperiș", short: "Acoperiș", cost: Au * 0.3 * 35,   savePct: 0.10, color: "#f97316" },
+                  { name: "Pompă de căldură",        short: "Pompă",    cost: 12000,           savePct: 0.30, color: "#22c55e" },
+                  { name: "PV 5kWp",                 short: "PV 5kWp",  cost: 5000,            savePct: 0.15, color: "#facc15" },
                 ];
                 const discount = 0.05;
                 const years = 20;
 
-                // Curbe NPV cumulative în RON (pornesc negativ = -cost investiție)
                 const curves = measures.map(m => {
                   const annSave = annualCost * m.savePct;
                   const pts = [{ yr: 0, npv: -m.cost }];
@@ -1509,30 +1508,47 @@ export default function Step5Calculation(props) {
                   return { ...m, pts, paybackYr, annSave };
                 });
 
-                // Scala Y dinamică cu tick-uri rotunde
                 const allNPV = curves.flatMap(c => c.pts.map(p => p.npv));
                 const rawMin = Math.min(...allNPV), rawMax = Math.max(...allNPV);
-                const pad = (rawMax - rawMin) * 0.08;
+                const pad = (rawMax - rawMin) * 0.10;
                 const yMin = rawMin - pad, yMax = rawMax + pad;
-                const rawStep = (yMax - yMin) / 4;
+                const rawStep = (yMax - yMin) / 5;
                 const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
                 const niceStep = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= rawStep) || rawStep;
                 const niceMin = Math.floor(yMin / niceStep) * niceStep;
                 const yTicks = [];
                 for (let v = niceMin; v <= yMax + niceStep * 0.01; v += niceStep) yTicks.push(Math.round(v));
 
-                const W = 600, H = 300;
-                const pL = 80, pR = 24, pT = 16, pB = 32;
+                const W = 720, H = 320;
+                const pL = 80, pR = 76, pT = 24, pB = 36;
                 const cW = W - pL - pR, cH = H - pT - pB;
                 const toX = yr => pL + (yr / years) * cW;
                 const toY = v => pT + cH - ((v - yMin) / (yMax - yMin)) * cH;
-                const fmtRON = v => { const a = Math.abs(v); return `${v < 0 ? "-" : ""}${a >= 1000 ? (a / 1000).toFixed(0) + "k" : Math.round(a)}`; };
+                const fmtChart = v => { const a = Math.abs(v); return `${v < 0 ? "-" : ""}${a >= 1000 ? (a / 1000).toFixed(0) + "k" : Math.round(a)}`; };
                 const breakY = toY(0);
+
+                // Poziții etichete end-of-line fără suprapunere (sort desc NPV, offset minim 13px)
+                const sortedByNpv = [...curves].sort((a, b) => b.pts[years].npv - a.pts[years].npv);
+                const labelYMap = {};
+                let prevLabelY = -Infinity;
+                sortedByNpv.forEach(c => {
+                  const raw = toY(c.pts[years].npv);
+                  const ly = Math.max(raw, prevLabelY + 13);
+                  labelYMap[c.name] = ly;
+                  prevLabelY = ly;
+                });
 
                 return (
                 <Card title={lang==="EN"?"Investment payback (NPV 20 years)":"Amortizare investiție (NPV 20 ani)"} className="mb-6 border-amber-500/20">
                   <div className="overflow-x-auto">
                   <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="overflow-visible">
+                    {/* Zone colorate: verde deasupra break-even, roșu dedesubt */}
+                    {breakY > pT && breakY < pT + cH && (
+                      <>
+                        <rect x={pL} y={pT} width={cW} height={Math.max(0, breakY - pT)} fill="rgba(34,197,94,0.06)" />
+                        <rect x={pL} y={breakY} width={cW} height={Math.max(0, pT + cH - breakY)} fill="rgba(239,68,68,0.07)" />
+                      </>
+                    )}
                     {/* Y grid + etichete RON */}
                     {yTicks.map((v, i) => {
                       const y = toY(v);
@@ -1541,10 +1557,10 @@ export default function Step5Calculation(props) {
                       return (
                         <g key={"yt"+i}>
                           <line x1={pL} y1={y} x2={pL+cW} y2={y}
-                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.10)"}
-                            strokeWidth={isZero ? 1.5 : 0.7}
+                            stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.11)" : "rgba(0,0,0,0.10)"}
+                            strokeWidth={isZero ? 1.5 : 0.6}
                             strokeDasharray={isZero ? "5 3" : undefined} />
-                          <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#fbbf24" : "#b0b8c8"}>{fmtRON(v)}</text>
+                          <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#fbbf24" : "#b0b8c8"}>{fmtChart(v)}</text>
                         </g>
                       );
                     })}
@@ -1553,7 +1569,7 @@ export default function Step5Calculation(props) {
                       const x = toX(yr);
                       return (
                         <g key={"xt"+yr}>
-                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)"} strokeWidth="0.7" />
+                          <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"} strokeWidth="0.6" />
                           <text x={x} y={pT+cH+18} textAnchor="middle" fontSize="10" fill="#b0b8c8">{yr}</text>
                         </g>
                       );
@@ -1561,51 +1577,88 @@ export default function Step5Calculation(props) {
                     {/* Axe */}
                     <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
                     <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
-                    <text x={pL+cW/2} y={H-2} textAnchor="middle" fontSize="11" fill="#c8cfd8">Ani</text>
-                    <text x={pL-6} y={pT-4} textAnchor="end" fontSize="10" fill="#a8b0c0">RON</text>
-                    {/* Curbe + marcatori break-even */}
+                    <text x={pL+cW/2} y={H-4} textAnchor="middle" fontSize="11" fill="#c8cfd8">Ani</text>
+                    <text x={pL-6} y={pT-8} textAnchor="end" fontSize="10" fill="#a8b0c0">RON</text>
+                    {/* Etichete zone */}
+                    {breakY > pT + 18 && (
+                      <text x={pL+6} y={pT+14} fontSize="9" fill="rgba(34,197,94,0.55)" fontStyle="italic">Profit net</text>
+                    )}
+                    {breakY < pT + cH - 12 && (
+                      <text x={pL+6} y={pT+cH-6} fontSize="9" fill="rgba(239,68,68,0.50)" fontStyle="italic">Investiție nerecuperată</text>
+                    )}
+                    {/* Curbe + marcatori */}
                     {curves.map((c, ci) => {
                       const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
                       const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
-                      const npv20 = c.pts[c.pts.length-1].npv;
-                      const tipText = `${c.name}\nEconomie: ${fmtRON(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nNPV 20 ani: ${fmtRON(npv20)} RON\nRecuperare: ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
+                      const npv20 = c.pts[years].npv;
+                      const endX = toX(years);
+                      const endY = toY(npv20);
+                      const lY = labelYMap[c.name] ?? endY;
+                      const tipText = `${c.name}\nEconomie: ${fmtChart(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nNPV 20 ani: ${fmtChart(npv20)} RON\nRecuperare: ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
                       return (
                         <g key={"c"+ci}>
                           <title>{tipText}</title>
-                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" opacity="0.95" />
-                          <polyline points={ptStr} fill="none" stroke="transparent" strokeWidth="12" />
+                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+                          {/* hitbox larg pentru tooltip */}
+                          <polyline points={ptStr} fill="none" stroke="transparent" strokeWidth="14" />
+                          {/* Dot break-even */}
                           {pbX && (
-                            <>
-                              <line x1={pbX} y1={pT} x2={pbX} y2={pT+cH} stroke={c.color} strokeWidth="1" strokeDasharray="4 3" opacity="0.6" />
-                              <circle cx={pbX} cy={breakY} r="4.5" fill={c.color} />
-                            </>
+                            <circle cx={pbX} cy={breakY} r="5" fill={c.color} stroke="rgba(0,0,0,0.35)" strokeWidth="1.2" />
                           )}
-                          <circle cx={toX(0)} cy={toY(-c.cost)} r="3.5" fill={c.color} opacity="0.9" />
+                          {/* Dot start */}
+                          <circle cx={toX(0)} cy={toY(-c.cost)} r="3.5" fill={c.color} opacity="0.85" />
+                          {/* End-of-line label cu linie de legătură dacă e offset */}
+                          {Math.abs(lY - endY) > 3 && (
+                            <line x1={endX} y1={endY} x2={endX+7} y2={lY} stroke={c.color} strokeWidth="0.8" opacity="0.45" />
+                          )}
+                          <text x={endX+10} y={lY+4} fontSize="10" fill={c.color} fontWeight="500">{c.short}</text>
                         </g>
                       );
                     })}
-                    {/* Etichetă break-even */}
+                    {/* Badge break-even */}
                     {breakY > pT && breakY < pT+cH && (
-                      <text x={pL+cW-4} y={breakY-6} textAnchor="end" fontSize="10" fill="#fbbf24" fontWeight="500">break-even</text>
+                      <>
+                        <rect x={pL+cW-62} y={breakY-17} width={58} height={13} rx="3" fill="rgba(245,158,11,0.14)" />
+                        <text x={pL+cW-33} y={breakY-7} textAnchor="middle" fontSize="9.5" fill="#fbbf24" fontWeight="600">break-even</text>
+                      </>
                     )}
                   </svg>
                   </div>
-                  {/* Legendă */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 mt-4">
-                    {curves.map((m, i) => {
-                      const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
-                      const npv20 = m.pts[m.pts.length-1].npv;
-                      return (
-                        <div key={i} className="flex items-center gap-2 text-xs">
-                          <div className="w-5 h-[3px] rounded flex-shrink-0" style={{background: m.color}} />
-                          <span className="opacity-85">{m.name}</span>
-                          <span className="font-bold ml-auto">{payback}</span>
-                          <span className="opacity-60 text-[11px]">{fmtRON(npv20)} RON</span>
-                        </div>
-                      );
-                    })}
+                  {/* Legendă tabel */}
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[10px]">
+                          <th className="text-left py-1 pr-3 font-normal opacity-50">Măsură</th>
+                          <th className="text-right py-1 px-2 font-normal opacity-50">Cost est.</th>
+                          <th className="text-right py-1 px-2 font-normal opacity-50">Economie/an</th>
+                          <th className="text-right py-1 px-2 font-normal opacity-50">Recuperare</th>
+                          <th className="text-right py-1 pl-2 font-normal opacity-50">NPV 20 ani</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {curves.map((m, i) => {
+                          const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
+                          const npv20 = m.pts[years].npv;
+                          return (
+                            <tr key={i} className="border-b border-white/5">
+                              <td className="py-1.5 pr-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-[3px] rounded flex-shrink-0" style={{background: m.color}} />
+                                  <span className="opacity-85">{m.name}</span>
+                                </div>
+                              </td>
+                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtChart(m.cost)} RON</td>
+                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtChart(m.annSave)} RON</td>
+                              <td className="text-right py-1.5 px-2 font-bold tabular-nums" style={{color: m.color}}>{payback}</td>
+                              <td className="text-right py-1.5 pl-2 opacity-80 tabular-nums">{fmtChart(npv20)} RON</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="text-xs opacity-55 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
+                  <div className="text-xs opacity-50 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
                 </Card>
                 );
               })()}

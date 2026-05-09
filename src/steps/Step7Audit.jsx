@@ -36,7 +36,7 @@ import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fu
 import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
 import { generateThermalMapSVG } from "../calc/thermal-map.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
-import { cn, Select, Input, Badge, Card, ResultRow } from "../components/ui.jsx";
+import { cn, Select, Input, Badge, Card, ResultRow, fmtRON, fmtEUR } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax, getURefAdaptive, getURefGlazingAdaptive } from "../calc/smart-rehab.js";
 // Sprint 8 mai 2026 — helper centralizat obligativitate juridică raport nZEB
