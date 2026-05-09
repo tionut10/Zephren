@@ -43,7 +43,10 @@ import { calcOpaqueR as calcOpaqueRFull, FASTENER_TYPES } from "./calc/opaque.js
 import { CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS, BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES, CATEGORY_BASE_MAP, buildCatKey } from "./data/building-catalog.js";
 import { U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_RENOV_RES, U_REF_RENOV_NRES, U_REF_GLAZING, U_REF_NZEB, U_REF_RENOV, getURefNZEB, ZEB_THRESHOLDS, ZEB_FACTOR, FP_ELEC, getFPElecTot, CO2_ELEC, BACS_CLASSES, BACS_OBLIGATION_THRESHOLD_KW } from "./data/u-reference.js";
 import { checkBACSMandatoryISO, BACS_CLASS_LABELS, getBACSCategoryFromCode, getBACSFactors } from "./calc/bacs-iso52120.js";
-import { REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 } from "./data/rehab-costs.js";
+// Sprint Audit Prețuri P4.6 (9 mai 2026) — ZONE_COLORS mutat din rehab-costs.js (eliminat)
+import { ZONE_COLORS } from "./data/zone-colors.js";
+// Sprint Audit Prețuri P4.1 (9 mai 2026) — REHAB_COSTS legacy ELIMINAT, migrat la rehab-prices canonic
+import { getPrice, getEurRonSync, REHAB_PRICES } from "./data/rehab-prices.js";
 import { TIERS } from "./data/tiers.js";
 import { getMaxStep } from "./lib/planGating.js";
 import { BENCHMARKS } from "./data/benchmarks.js";
@@ -103,7 +106,7 @@ function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].
 
 // ── Constante inline eliminate → importate din data/ (Faza 4) ──
 // CONSTRUCTION_SOLUTIONS, GLAZING_DB, FRAME_DB, ORIENTATIONS → building-catalog.js
-// REHAB_COSTS, ZONE_COLORS, REHAB_COSTS_2025 → rehab-costs.js
+// ZONE_COLORS → zone-colors.js (P4.6 — rehab-costs.js ELIMINAT, prețurile sunt în rehab-prices.js)
 // U_REF_*, ZEB_*, BACS_*, FP_ELEC → u-reference.js
 // BUILDING_CATEGORIES, CPE_TEMPLATES, STRUCTURE_TYPES, ELEMENT_TYPES → building-catalog.js
 // CATEGORY_BASE_MAP, buildCatKey → building-catalog.js
@@ -1888,41 +1891,67 @@ export default function EnergyCalcApp({ cloud }) {
     if (!Au) return null;
     const ri = rehabScenarioInputs;
 
-    // Estimare cost investiție
+    // Sprint Audit Prețuri P4.1 (9 mai 2026) — toate prețurile din rehab-prices canonic
+    // (anterior REHAB_COSTS legacy). Selectarea tier-ului per grosime/U respectă logica
+    // unified-rehab-costs._internals (_resolveWallKey/_resolveRoofKey/_resolveWindowKey).
+    const _p = (cat, item, fb) => getPrice(cat, item, "mid")?.price ?? fb;
     let totalInvest = 0;
     if (ri.addInsulWall) {
       const wallArea = opaqueElements.filter(e => e.type === "PE").reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-      const unitCost = REHAB_COSTS.insulWall[ri.insulWallThickness] || REHAB_COSTS.insulWall[10] || 42;
+      const t = parseInt(ri.insulWallThickness) || 10;
+      const unitCost = _p("envelope", t > 12 ? "wall_eps_15cm" : "wall_eps_10cm", 49);
       totalInvest += wallArea * unitCost;
     }
     if (ri.addInsulRoof) {
       const roofArea = opaqueElements.filter(e => e.type === "PP" || e.type === "PT").reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-      const unitCost = REHAB_COSTS.insulRoof[ri.insulRoofThickness] || REHAB_COSTS.insulRoof[10] || 32;
+      const t = parseInt(ri.insulRoofThickness) || 15;
+      const unitCost = _p("envelope", t > 20 ? "roof_mw_25cm" : "roof_eps_15cm", 32);
       totalInvest += roofArea * unitCost;
     }
     if (ri.addInsulBasement) {
       const baseArea = opaqueElements.filter(e => e.type === "PB" || e.type === "PL").reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-      const unitCost = REHAB_COSTS.insulBasement[ri.insulBasementThickness] || REHAB_COSTS.insulBasement[8] || 45;
+      const unitCost = _p("envelope", "basement_xps_10cm", 32);
       totalInvest += baseArea * unitCost;
     }
     if (ri.replaceWindows) {
       const winArea = glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0);
-      const unitCost = REHAB_COSTS.windows[ri.newWindowU] || REHAB_COSTS.windows[0.90] || 280;
+      const u = parseFloat(ri.newWindowU) || 0.90;
+      const winKey = u <= 0.80 ? "windows_u070"
+                   : u <= 1.00 ? "windows_u090"
+                   : u <= 1.30 ? "windows_u110" : "windows_u140";
+      const unitCost = _p("envelope", winKey, 280);
       totalInvest += winArea * unitCost;
     }
     if (ri.addHR) {
+      // P3.3 — full-install: per m² Au + fix manoperă; eficiență 90% adaugă +30% premium
       const hrEff = parseFloat(ri.hrEfficiency) || 80;
-      totalInvest += hrEff >= 90 ? REHAB_COSTS.hr90 : hrEff >= 80 ? REHAB_COSTS.hr80 : REHAB_COSTS.hr70;
+      const perM2 = _p("cooling", "vmc_hr_full_install_per_m2", 150);
+      const fixed = _p("cooling", "vmc_hr_full_install_fixed", 800);
+      const effMult = hrEff >= 90 ? 1.30 : hrEff >= 80 ? 1.0 : 0.85;
+      totalInvest += (perM2 * Au + fixed) * effMult;
     }
-    if (ri.addPV) totalInvest += (parseFloat(ri.pvArea) || 0) * REHAB_COSTS.pvPerM2;
-    if (ri.addHP) totalInvest += Math.max(5, Au / 25) * REHAB_COSTS.hpPerKw;
-    if (ri.addSolarTh) totalInvest += (parseFloat(ri.solarThArea) || 0) * REHAB_COSTS.solarThPerM2;
+    if (ri.addPV) {
+      // pv_kwp.mid 1.100 EUR/kWp ÷ 5 m²/kWp = 220 EUR/m² panou (proxy)
+      const pvKwpEUR = _p("renewables", "pv_kwp", 1100);
+      totalInvest += (parseFloat(ri.pvArea) || 0) * (pvKwpEUR / 5);
+    }
+    if (ri.addHP) {
+      // hp_aw_12kw.mid 9.000 EUR / 12 = 750 EUR/kW
+      const hpUnitEUR = _p("heating", "hp_aw_12kw", 9000) / 12;
+      totalInvest += Math.max(5, Au / 25) * hpUnitEUR;
+    }
+    if (ri.addSolarTh) {
+      // solar_thermal_4m2.mid 2.000 EUR/set 4 m² = 500 EUR/m²
+      const solarUnitEUR = _p("heating", "solar_thermal_4m2", 2000) / 4;
+      totalInvest += (parseFloat(ri.solarThArea) || 0) * solarUnitEUR;
+    }
 
-    // Economie anuală energie [EUR]
+    // Economie anuală energie [EUR] — Sprint P4.1: curs canonic via getEurRonSync (BNR live)
     const savedKwh = rehabComparison.savings.qfSaved;
     const fuel = instSummary.fuel;
     const priceLeiKwh = fuel?.price_lei_kwh || 0.31;
-    const annualSavingEur = (savedKwh * priceLeiKwh) / 5.0; // ~5 lei/EUR
+    const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+    const annualSavingEur = (savedKwh * priceLeiKwh) / eurRonRate;
 
     return calcFinancialAnalysis({
       investCost: Math.round(totalInvest),
@@ -1950,11 +1979,13 @@ export default function EnergyCalcApp({ cloud }) {
     const costV = instSummary.qf_v * priceElec;
     const costL = instSummary.qf_l * priceElec;
     const total = costH + costW + costC + costV + costL;
+    // Sprint P4.1 — curs EUR/RON canonic (BNR live)
+    const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
     return {
       costH: Math.round(costH), costW: Math.round(costW),
       costC: Math.round(costC), costV: Math.round(costV),
       costL: Math.round(costL), total: Math.round(total),
-      totalEur: Math.round(total / 5.0),
+      totalEur: Math.round(total / eurRonRate),
       priceFuel, priceElec,
       note: "Prețuri 2025: gaz plafonat 0.31 lei/kWh, elec. ~1.10 lei/kWh",
     };

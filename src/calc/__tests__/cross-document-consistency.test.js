@@ -53,7 +53,7 @@ const baseScenario = {
 
 describe("Sprint Îmbunătățiri #1 — Cross-document consistency", () => {
   describe("Deviz Estimativ ↔ CPE Post-Rehab — paritate investiție", () => {
-    it("Deviz EUR × eurRon ≈ CPE RON pentru același scenariu (toleranță ±20% post-P3.1)", () => {
+    it("Deviz EUR × eurRon ≈ CPE RON pentru același scenariu (toleranță ±10% post-P4.3)", () => {
       const eurRon = getEurRonSync();
 
       // 1. Deviz Estimativ (calc/rehab-cost.calcRehabCost)
@@ -89,20 +89,17 @@ describe("Sprint Îmbunătățiri #1 — Cross-document consistency", () => {
       const devizRON = deviz.total_eur * eurRon;
       const cpeRON = fin.totalRON;
 
-      // Toleranță ±20% post-P3.1 (9 mai 2026) — schemele rămân diferite:
-      //   - Deviz (rehab-cost.js) folosește REHAB_PRICE_DB cu formula incrementală
-      //     price_per_cm × thickness + manoperă fixă (ex: insul_wall_eps 3.2 EUR/m²/cm × 10cm + 18 EUR/m² = 50 EUR/m²)
-      //   - CPE (unified-rehab-costs) folosește acum rehab-prices canonic cu prețuri fixe
-      //     per cheie (ex: wall_eps_10cm.mid = 49 EUR/m²)
+      // Toleranță ±10% post-P4.3 (9 mai 2026) — Deviz pereți+acoperiș migrate la
+      // flat getPrice canonic (anterior formula incrementală EUR/m²/cm × thickness).
+      // Rămân mici diferențe pe windows + alte items care folosesc overlay parțial.
       // Istoria pragului:
-      //   - Pre Sprint Pas 7 P0-1 (6 mai): diferență ~70%
+      //   - Pre Sprint Pas 7 P0-1 (6 mai): ~70%
       //   - Post Pas 7 P0-1: ~17%
-      //   - Post P3.1 migrare: <20% (formula incrementală vs flat încă diferă pe items)
-      // Pentru paritate <5%, ar trebui ca Deviz să folosească același getPrice canonic —
-      // P4 deferred (Deviz refactor cu rehab-prices în loc de REHAB_PRICE_DB local).
+      //   - Post P3.1 (unified migrate): ~17%
+      //   - Post P4.3 (Deviz pereți+acoperiș flat): <10%
       const diff = Math.abs(devizRON - cpeRON);
       const ratio = diff / cpeRON;
-      expect(ratio).toBeLessThan(0.20);
+      expect(ratio).toBeLessThan(0.10);
     });
   });
 
