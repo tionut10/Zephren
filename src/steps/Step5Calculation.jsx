@@ -1487,11 +1487,12 @@ export default function Step5Calculation(props) {
                   + instSummary.qf_v * priceElec
                   + instSummary.qf_l * priceElec;
                 const measures = [
-                  { name: "Termoizolație pereți",  short: "Pereți",   cost: Au * 45,         savePct: 0.18, color: "#3b82f6" },
-                  { name: "Ferestre triple",         short: "Ferestre", cost: Au * 0.15 * 250, savePct: 0.12, color: "#a855f7" },
-                  { name: "Termoizolație acoperiș", short: "Acoperiș", cost: Au * 0.3 * 35,   savePct: 0.10, color: "#f97316" },
-                  { name: "Pompă de căldură",        short: "Pompă",    cost: 12000,           savePct: 0.30, color: "#22c55e" },
-                  { name: "PV 5kWp",                 short: "PV 5kWp",  cost: 5000,            savePct: 0.15, color: "#facc15" },
+                  // costuri calibrate la piața RO 2025 (supply + manoperă)
+                  { name: "Termoizolație pereți",  short: "Pereți",   cost: Au * 2.5 * 110,  savePct: 0.18, color: "#3b82f6" },
+                  { name: "Ferestre triple",         short: "Ferestre", cost: Au * 0.15 * 1100,savePct: 0.12, color: "#a855f7" },
+                  { name: "Termoizolație acoperiș", short: "Acoperiș", cost: Au * 55,          savePct: 0.10, color: "#f97316" },
+                  { name: "Pompă de căldură",        short: "Pompă",    cost: 35000,           savePct: 0.30, color: "#22c55e" },
+                  { name: "PV 5kWp",                 short: "PV 5kWp",  cost: 20000,           savePct: 0.15, color: "#facc15" },
                 ];
                 const discount = 0.05;
                 const years = 20;
