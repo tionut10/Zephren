@@ -498,9 +498,11 @@ export default function Step5Calculation(props) {
                     const rawMax = allActiveRatios.length > 0 ? Math.max(...allActiveRatios) : 2;
                     const maxMul = rawMax <= 2 ? 2 : Math.ceil(rawMax * 1.15 / 2.5) * 2.5;
 
-                    // dpts/dptsAfter calculate după maxMul
-                    const dpts      = ratios.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul));
-                    const dptsAfter = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul)) : null;
+                    // Scala √ — comprimă valorile mari, face forma mai echilibrată (nu mai produce spike)
+                    const toR = ratio => ratio <= 0 ? 0 : maxR * Math.sqrt(Math.min(ratio, maxMul) / maxMul);
+
+                    const dpts      = ratios.map((r, i) => xy(i, toR(r)));
+                    const dptsAfter = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, toR(r))) : null;
 
                     // Inele radar dinamice — acoperă uniform intervalul [0..maxMul]
                     const radarRings = (() => {
@@ -520,7 +522,7 @@ export default function Step5Calculation(props) {
                           {/* Inele de referință — dinamice */}
                           {radarRings.map(ratio => {
                             const isNzeb = ratio === 1.0;
-                            const r = maxR * ratio / maxMul;
+                            const r = maxR * Math.sqrt(ratio / maxMul);
                             const pts = Array.from({length: n}, (_, i) => xy(i, r).join(",")).join(" ");
                             const rlx = cx + (r + 5) * Math.sin(labelAngle);
                             const rly = cy - (r + 5) * Math.cos(labelAngle);
