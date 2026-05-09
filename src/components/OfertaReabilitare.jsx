@@ -2,10 +2,24 @@ import React, { useState, useCallback } from "react";
 import { cn } from "./ui.jsx";
 import { nextDocNumber } from "../utils/doc-counter.js";
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
+// Sprint Audit Prețuri (9 mai 2026) Task D — scenariu MID + selector low/mid/high
+// Sursa canonică prețuri: rehab-prices.js (Q1 2026). Multiplicatorii sunt calibrați
+// pe raportul mediu low/mid și high/mid din REHAB_PRICES (vezi audit §5.4).
+import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const TODAY_RO = new Date().toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+// Multiplicatori scenariu vs valoarea de bază (MID). Calibrare conservatoare:
+// — low ≈ 85% mid (raport mediu rehab-prices: 42/49=0.86, 28/32=0.87, 1.400/1.750=0.80, 5.000/6.500=0.77 → ~0.85 mediu)
+// — high ≈ 118% mid (60/49=1.22, 40/32=1.25, 2.100/1.750=1.20, 8.500/6.500=1.31 → ~1.18 conservator)
+export const SCENARIO_MULTIPLIERS = { low: 0.85, mid: 1.0, high: 1.18 };
+export const SCENARIO_LABELS = {
+  low:  { name: "Optimist",   sub: "(low)",  desc: "preț minim piață" },
+  mid:  { name: "Realist",    sub: "(mid)",  desc: "preț mediu piață" },
+  high: { name: "Conservator",sub: "(high)", desc: "preț max piață" },
+};
 
 // Sprint A Task 7: counter secvențial, fără Math.random (risc coliziune)
 function makeOfertaNr() {
@@ -92,10 +106,16 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   const [scenarii, getScenarii] = useState([mkScenariu()]);
   const setScenarii = getScenarii;
   const [generating, setGenerating] = useState(false);
+  // Sprint Audit Prețuri Task D — scenariu activ pentru aplicarea multiplicatorului
+  // pe investiția de bază (introdusă manual sau din pașaport, considerată MID).
+  const [scenarioMode, setScenarioMode] = useState("mid");
 
   const pretKwhNum = parseFloat(pretKwh) || 0.92;
   const costAnual = +(ep * au * pretKwhNum).toFixed(0);
   const clasaActuala = epToClasa(ep);
+  // Curs EUR/RON live BNR (cache 24h) sau fallback canonic pentru afișare în footer.
+  const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+  const scenarioMultiplier = SCENARIO_MULTIPLIERS[scenarioMode] || 1.0;
 
   // Sprint 06may2026 audit P0 (B3) — la primul mount, dacă există passport,
   // prepopulez scenariul cu denumire + investiție derivate din pașaport.
@@ -124,12 +144,15 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
     const co2Nou = +(co2 * (1 - s.reducereEP / 100)).toFixed(2);
     const clasaNou = epToClasa(epNou);
     const econAn = +((ep - epNou) * au * pretKwhNum).toFixed(0);
-    const inv = parseFloat(s.investitie) || 0;
+    // Investiția stocată (s.investitie) este valoarea de bază MID. Multiplicatorul
+    // scenariu (low 0.85 / mid 1.0 / high 1.18) e aplicat la afișare/PDF.
+    const baseInv = parseFloat(s.investitie) || 0;
+    const inv = +(baseInv * scenarioMultiplier).toFixed(0);
     const subvTotal = s.finantari.reduce((acc, f) => acc + (s.subventii[f] || 0), 0);
     const subvPct = Math.min(subvTotal, 90);
     const invNet = +(inv * (1 - subvPct / 100)).toFixed(0);
     const payback = econAn > 0 ? +(invNet / econAn).toFixed(1) : "—";
-    return { epNou, co2Nou, clasaNou, econAn, inv, subvPct, invNet, payback };
+    return { epNou, co2Nou, clasaNou, econAn, inv, baseInv, subvPct, invNet, payback };
   }
 
   async function handleGeneratePDF() {
@@ -236,6 +259,15 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       doc.setFont(baseFont, "bold");
       doc.setFontSize(10);
       writeText("2. SCENARII PROPUSE", M, y); y += 6;
+      // Sprint Audit Prețuri Task D — indicator scenariu preț activ
+      doc.setFont(baseFont, "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(140, 100, 30);
+      const lblScenariu = SCENARIO_LABELS[scenarioMode];
+      writeText(`Bandă preț: ${lblScenariu.name} ${lblScenariu.sub} — ${lblScenariu.desc} (multiplicator ×${scenarioMultiplier.toFixed(2)} pe valoarea de bază mid)`, M, y);
+      doc.setTextColor(30, 30, 30);
+      doc.setFont(baseFont, "normal");
+      y += 5;
 
       scenarii.forEach((s, idx) => {
         const c = calcScenariu(s);
@@ -261,7 +293,7 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       doc.setFont(baseFont, "italic");
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      const nota = "Prețurile sunt estimative. Auditul energetic detaliat va preciza costurile exacte. Valoarea subvențiilor depinde de eligibilitate și disponibilitatea fondurilor.";
+      const nota = `Prețuri orientative ${YEAR} · sursa: piața RO + HG 907/2016 · rehab-prices.js (${REHAB_PRICES.last_updated}) · curs EUR/RON: ${eurRon.toFixed(2)} (BNR live). Fără TVA. Auditul energetic detaliat va preciza costurile exacte. Valoarea subvențiilor depinde de eligibilitate și disponibilitatea fondurilor.`;
       const notaLines = doc.splitTextToSize(nota, W - M * 2);
       writeText(notaLines, M, y); y += notaLines.length * 4 + 10;
 
@@ -308,6 +340,11 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
           <div>
             <h2 className="text-base font-bold text-white tracking-tight">Ofertă de Reabilitare Energetică</h2>
             <p className="text-xs text-white/40 mt-0.5">{building?.address || "Imobil"}</p>
+            <p className="text-[10px] opacity-45 mt-0.5">
+              Scenariu activ: <span className="text-amber-400/80">{SCENARIO_LABELS[scenarioMode].name} {SCENARIO_LABELS[scenarioMode].sub}</span>
+              {" · "}Multiplicator preț: ×{scenarioMultiplier.toFixed(2)}
+              {" · "}Sursa: <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated})
+            </p>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors text-xl leading-none">&times;</button>
         </div>
@@ -370,6 +407,35 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
           {/* 3. Scenarii */}
           <section>
             <SectionTitle>3. Scenarii propuse</SectionTitle>
+
+            {/* Sprint Audit Prețuri Task D — selector scenariu preț (low/mid/high) */}
+            <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Bandă preț estimat</div>
+                  <div className="text-[10px] text-white/50 mt-0.5">
+                    Selectați scenariul aplicat investiției — multiplicator pe valoarea de bază (mid).
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  {(["low", "mid", "high"]).map(mode => {
+                    const active = scenarioMode === mode;
+                    const lbl = SCENARIO_LABELS[mode];
+                    return (
+                      <button key={mode} type="button" onClick={() => setScenarioMode(mode)}
+                        title={`${lbl.name} ${lbl.sub} — ${lbl.desc} · ×${SCENARIO_MULTIPLIERS[mode].toFixed(2)}`}
+                        className={cn("text-xs px-3 py-1.5 rounded-lg border transition-all font-medium",
+                          active
+                            ? "bg-amber-500/30 border-amber-500/60 text-amber-200 shadow-sm"
+                            : "bg-white/5 border-white/10 text-white/50 hover:border-amber-500/30 hover:text-white/70")}>
+                        {lbl.name} <span className="opacity-60 ml-1 text-[10px]">{lbl.sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-4">
               {scenarii.map((s, idx) => {
                 const c = calcScenariu(s);
@@ -392,9 +458,15 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                           onChange={e => updateScenariu(s.id, { reducereEP: +e.target.value })}
                           className="w-full accent-amber-500" />
                       </Field>
-                      <Field label="Investiție estimată (RON)">
+                      <Field label="Investiție bază — mid (RON)">
                         <input type="number" className={inputCls} value={s.investitie} placeholder="0"
                           onChange={e => updateScenariu(s.id, { investitie: e.target.value })} />
+                        {s.investitie && scenarioMode !== "mid" && (
+                          <div className="text-[10px] text-amber-300/70 mt-1">
+                            Aplicat scenariu {SCENARIO_LABELS[scenarioMode].name.toLowerCase()}: <span className="font-mono">{c.inv.toLocaleString("ro-RO")} RON</span>
+                            {" "}(×{scenarioMultiplier.toFixed(2)})
+                          </div>
+                        )}
                       </Field>
                     </div>
 
@@ -453,6 +525,12 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
               </button>
             )}
           </section>
+
+          {/* Footer informativ Task D — sursa + curs */}
+          <div className="text-[10px] text-white/30 -mt-3 text-center">
+            Prețuri orientative {YEAR} · sursa: piață RO + HG 907/2016 · <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated})
+            {" · "}curs EUR/RON: {eurRon.toFixed(2)} (BNR live) · fără TVA
+          </div>
 
           {/* 4. Preview comparativ */}
           <section>
