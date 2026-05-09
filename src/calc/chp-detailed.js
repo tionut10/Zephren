@@ -183,7 +183,13 @@ export function calcCHP({
   const total_costs_ron = fuel_cost_ron + maintenance_ron;
   const net_savings_ron = Math.max(0, total_savings_ron - total_costs_ron);
 
-  // Cost investiție estimat: ~1500 RON/kW_el (micro) → 5000 RON/kW_el (fuel cell)
+  // Sprint Audit Prețuri P2.4 (9 mai 2026) — Cost investiție estimat:
+  // ~1500 RON/kW_el (micro CHP comercial) → 5000 RON/kW_el (fuel cell, premium).
+  // NOTĂ: rehab-prices.renewables.chp_micro_1kwe mid = 11.000 EUR/SET (1 kW_el)
+  // ≈ 56.000 RON/kW_el — schemă diferită (set complet 1kW vs scaling EUR/kW).
+  // Pentru sisteme >1 kW_el, scaling-ul nu este liniar; păstrăm 3500 RON/kW_el
+  // ca aproximare comercială medie. Migrare canonică amânată la P3 cu re-calibrare
+  // per range de putere (1-5 kW micro / 5-50 kW small / 50+ kW commercial).
   const invest = investCost_ron ?? (powerElec_kW * 3500);
   const payback_years = net_savings_ron > 0
     ? Math.round(invest / net_savings_ron * 10) / 10

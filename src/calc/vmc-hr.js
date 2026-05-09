@@ -8,6 +8,10 @@
  * - SR EN 308:1997 — Schimbătoare de căldură aer-aer (test η)
  */
 
+// Sprint Audit Prețuri P2.4 (9 mai 2026) — tarife energie ANRE + curs EUR/RON live
+import { getEnergyPriceFromPreset } from "../data/energy-prices.js";
+import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+
 // SFP limite conform EN 13779 Tabel B.5 + I5-2022
 export const SFP_CLASSES = {
   SFP1: { max: 500,  label: "SFP1 — Eficiență maximă (≤500 W/(m³/s))" },
@@ -127,10 +131,18 @@ export function calcVMCHR({
   const co2_saved_kg = E_saved_primary_kWh * 0.24; // factor emisie mediu rețea termică/gaz
 
   // ── Costuri și payback estimat ──
-  const cost_hr_eur = 150 * Au + 800; // euristică: ~150 EUR/m² instalat + 800 fix
-  const energy_price_eur_kwh = 0.12; // gaz ≈ 0.12 EUR/kWh
+  // Sprint Audit Prețuri P2.4 (9 mai 2026) — costul include centrală + tubulatură + grile + manoperă
+  // (~150 EUR/m² Au full install). NOTĂ: rehab-prices.cooling.vmc_hr_80_per_m2 mid = 22 EUR/m² Au
+  // este DOAR centrala (gross-rate echipament, fără rețea distribuție); diferă de costul total.
+  // Pentru prețul TOTAL instalat, folosim valoarea full-install de mai jos. Dacă rehab-prices
+  // adaugă în viitor o cheie `vmc_hr_full_install_per_m2`, migrăm aici.
+  const cost_hr_eur = 150 * Au + 800; // euristică full-install: ~150 EUR/m² + 800 fix manoperă
+  // Sprint Audit Prețuri P2.4 — tarife din ANRE casnic_2025 (RON) → conv. EUR via curs live
+  const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+  const energy_price_eur_kwh = getEnergyPriceFromPreset("gaz", "casnic_2025") / eurRon;
+  const elec_price_eur_kwh = getEnergyPriceFromPreset("electricitate", "casnic_2025") / eurRon;
   const saving_eur_year = E_saved_thermal_kWh * energy_price_eur_kwh;
-  const extra_elec_cost = E_fan_extra_kWh * 0.28; // electricitate ≈ 0.28 EUR/kWh
+  const extra_elec_cost = E_fan_extra_kWh * elec_price_eur_kwh;
   const net_saving_eur = Math.max(0, saving_eur_year - extra_elec_cost);
   const payback_years = net_saving_eur > 0 ? Math.round(cost_hr_eur / net_saving_eur * 10) / 10 : null;
 

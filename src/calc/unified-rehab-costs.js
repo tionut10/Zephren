@@ -21,7 +21,7 @@
  */
 
 import { REHAB_COSTS } from "../data/rehab-costs.js";
-import { getEurRonSync } from "../data/rehab-prices.js";
+import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 /**
  * Construiește lista canonică de măsuri din rehabScenarioInputs + elemente reale.
@@ -35,7 +35,7 @@ import { getEurRonSync } from "../data/rehab-prices.js";
  *                                            normativ, lifespan_years}]
  */
 export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingElements = [], options = {}) {
-  const { eurRon = getEurRonSync() || 5.05 } = options;
+  const { eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback } = options;
   const measures = [];
   if (!inputs || typeof inputs !== "object") return measures;
 
@@ -246,7 +246,7 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
  */
 export function buildFinancialSummary(measures, options = {}) {
   const {
-    eurRon = getEurRonSync() || 5.05,
+    eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback,
     qfSavedKwh = 0,
     energyPriceEURperKwh = 0.13,
     tvaRate = 0.21,

@@ -31,7 +31,7 @@ import PlanGate from "./PlanGate.jsx";
 import { buildRenovationPassport } from "../calc/renovation-passport.js";
 import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { getMepsThresholdsFor, getMepsStatus } from "./MEPSCheck.jsx";
-import { getEurRonSync } from "../data/rehab-prices.js";
+import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 /**
  * Convertor smartSuggestions[] → measures[] format așteptat de calcPhasedRehabPlan.
@@ -109,7 +109,7 @@ function PasaportBasicInternal({
   // Sprint P0-A P1-05 — Plan etapizat REAL prin calcPhasedRehabPlan din smartSuggestions.
   // Buget anual implicit 50.000 RON (configurabil în viitor); strategie balanced (mix anvelopă+sisteme).
   const phasedPlan = useMemo(() => {
-    const eurRon = getEurRonSync() || 5.05;
+    const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
     const measures = suggestionsToMeasures(smartSuggestions, eurRon);
     if (measures.length === 0) return null;
     const Au = parseFloat(building?.areaUseful) || 100;

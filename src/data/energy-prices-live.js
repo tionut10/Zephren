@@ -21,7 +21,7 @@
  */
 
 import { getEnergyPriceFromPreset, DEFAULT_ENERGY_PRICES } from "./energy-prices.js";
-import { getEurRonSync } from "./rehab-prices.js";
+import { getEurRonSync, REHAB_PRICES } from "./rehab-prices.js";
 
 const EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_204";
 const CACHE_KEY = "zephren_eurostat_electricity_ro";
@@ -102,7 +102,7 @@ export function getEurostatRoElectricityPriceSync() {
     if (!cached?.priceEUR || !cached?.fetchedAt) return null;
     const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
     if (ageMs > CACHE_TTL_MS) return null;
-    const eurRon = getEurRonSync() || 5.05;
+    const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
     return {
       ...cached,
       priceRON: Math.round(cached.priceEUR * eurRon * 100) / 100,

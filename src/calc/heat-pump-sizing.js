@@ -4,6 +4,9 @@
 // Tip: Aer-Apă (A/W), Sol-Apă (G/W), Apă-Apă (W/W)
 // ═══════════════════════════════════════════════════════════════
 
+// Sprint Audit Prețuri P2.4 (9 mai 2026) — costuri canonice rehab-prices
+import { getPrice } from "../data/rehab-prices.js";
+
 // Temperatura medie lunară de calcul pentru România (date INMH)
 // Folosim datele climatice din obiectul climate
 
@@ -176,7 +179,14 @@ export function calcBoreholeSizing(params) {
   const groutingVolume_L = nBH * actualDepth * 3.14 * 0.075 * 0.075 * 1000; // tuburi DN150
   const costPerMeter = lambda_s >= 2.5 ? 85 : 75; // EUR/m forare
   const costBorehole = nBH * actualDepth * costPerMeter;
-  const costEquipment = phi_H_design_kW * 600; // EUR/kW HP sol-apă
+  // Sprint Audit Prețuri P2.4 — preț canonic HP aer-apă (per kW): rehab-prices.heating.hp_aw_12kw mid 9000 EUR / 12 kW = 750 EUR/kW.
+  // HP sol-apă include rețea hidraulică suplimentară (pompă, vas tampon mai mare) — mid +20% peste aer-apă tipic.
+  // Folosim 750 (mid) ca proxy aer-apă, dar permitem fallback canonic gen 600 (anterior hardcoded ≈ low).
+  const hpUnitEUR = (() => {
+    const mid12 = getPrice("heating", "hp_aw_12kw", "mid")?.price;
+    return mid12 ? mid12 / 12 : 750; // EUR/kW
+  })();
+  const costEquipment = phi_H_design_kW * hpUnitEUR;
   const costTotal = costBorehole + costEquipment;
 
   // ── VERIFICARE TEMPERATURĂ FLUID ─────────────────────
@@ -259,7 +269,11 @@ export function calcHeatPumpSizing(params) {
   }
 
   // ─── Cost estimat total instalare ───
-  const costPerKw = hp.type === "GA" ? 1800 : 900; // EUR/kW
+  // Sprint Audit Prețuri P2.4 — canonic rehab-prices pentru HP aer-apă (default).
+  // GA = gas absorption (1800 EUR/kW) — schemă specializată, nu e în rehab-prices, păstrată hardcodată.
+  const costPerKw = hp.type === "GA"
+    ? 1800
+    : (getPrice("heating", "hp_aw_12kw", "mid")?.price / 12 || 900); // mid 9000/12 = 750 EUR/kW
   const costTotal = phi_nom_kW * costPerKw;
 
   // ─── Recomandare dimensionare vas tampon ───

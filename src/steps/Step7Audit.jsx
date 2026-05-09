@@ -8,7 +8,7 @@ import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { buildCanonicalMeasures } from "../calc/unified-rehab-costs.js";
 import { getMepsThresholdsFor } from "../components/MEPSCheck.jsx";
 import { buildRenovationPassport } from "../calc/renovation-passport.js";
-import { getEurRonSync } from "../data/rehab-prices.js";
+import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 // Sprint P1 (6 mai 2026) cleanup — sursă canonică prețuri energie ANRE 2025.
 import { getEnergyPriceFromPreset, DEFAULT_ENERGY_PRICES } from "../data/energy-prices.js";
 // Sprint P2 (6 mai 2026) — preț electricitate LIVE Eurostat (cu fallback ANRE static).
@@ -368,7 +368,7 @@ export default function Step7Audit(props) {
                 .replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 60);
               const cpeCode = building?.cpeCode || building?.cpeNumber
                 || `CE-${new Date().getFullYear()}-${(auditor?.atestat || "00000").replace(/[^0-9]/g, "").slice(0, 5)}`;
-              const eurRon = getEurRonSync() || 5.05;
+              const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
 
               showToast("⏳ Se generează pachetul complet... (poate dura 15-30 sec)", "info", 35000);
 
@@ -548,8 +548,9 @@ export default function Step7Audit(props) {
                     // Fallback simplu
                     if (rehabComparison?.savings?.qfSaved) {
                       const fuel = instSummary?.fuel?.id || "gaz";
-                      const priceRON = fuel === "electricitate" ? 1.40 :
-                                       fuel === "gaz" ? 0.45 : 0.35;
+                      // Sprint Audit Prețuri P2.3 — fallback canonic ANRE casnic_2025
+                      // anterior hardcoded electricitate=1.40, gaz=0.45, default=0.35
+                      const priceRON = getEnergyPriceFromPreset(fuel, "casnic_2025");
                       expectedSavings = (rehabComparison.savings.qfSaved || 0) * priceRON;
                     }
                   }
@@ -1134,7 +1135,7 @@ export default function Step7Audit(props) {
                         } else {
                           costKwhRON = getEnergyPriceFromPreset(fuelId, "casnic_2025");
                         }
-                        const eurRon = getEurRonSync() || 5.05;
+                        const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                         const totalKwh = instSummary.qf_h + instSummary.qf_w + instSummary.qf_c + instSummary.qf_v + instSummary.qf_l;
                         const annCost = (totalKwh * costKwhRON) / eurRon;
                         const epF = renewSummary.ep_adjusted_m2;
@@ -1620,7 +1621,7 @@ export default function Step7Audit(props) {
                 // Sprint 06may2026 audit P1 (B4) — UNIFICARE 3 SURSE COST.
                 // Prioritate: rehabScenarioInputs (Pas 5 user) > smartSuggestions (Pas 7 auto).
                 // Aliniere cu Deviz + CPE post-rehab care folosesc rehabScenarioInputs.
-                const eurRon = getEurRonSync() || 5.05;
+                const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                 const slugifyCard = (s, i) => {
                   const ascii = String(s || "")
                     .normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -1720,7 +1721,7 @@ export default function Step7Audit(props) {
                     // Prioritate: phasedPlan.totalCost_RON (cost real măsuri agregate) >
                     // financialAnalysis.globalCost (LCC poate fi NEGATIV când VAN beneficii>cost).
                     // Fix bug 06.05.2026 12:02 raport: „Investiție totală: -142.882 RON".
-                    const eurRonRate = getEurRonSync() || 5.05;
+                    const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                     const phasedCost = phasedPlan?.totalCost_RON || 0;
                     const lccCost = financialAnalysis
                       ? Math.abs((financialAnalysis.globalCost || 0) * eurRonRate)
@@ -2120,7 +2121,7 @@ export default function Step7Audit(props) {
                           try {
                             showToast("Se generează Plan M&V...", "info", 2000);
                             const { generateMonitoringPlanPdf } = await import("../lib/dossier-extras.js");
-                            const eurRonRate = getEurRonSync() || 5.05;
+                            const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                             const measuresFromSugg = (smartSuggestions || []).map((s) => ({
                               name: s.measure,
                               cost_RON: Math.round((parseFloat(String(s.costEstimate || "0").replace(/[^0-9.]/g, "")) || 0) * eurRonRate),
@@ -2195,7 +2196,7 @@ export default function Step7Audit(props) {
                       onClick={async () => {
                         try {
                           showToast("Se generează Pașaport Renovare PDF…", "info", 3000);
-                          const eurRon = getEurRonSync() || 5.05;
+                          const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                           // Sprint 06may2026 audit P0 (B9) — slug complet
                           const slugifyPDF = (s, i) => {
                             const ascii = String(s || "")
@@ -2340,7 +2341,7 @@ export default function Step7Audit(props) {
                       onClick={async () => {
                         try {
                           showToast("Se generează Pașaport XML…", "info", 2000);
-                          const eurRon = getEurRonSync() || 5.05;
+                          const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                           // Sprint 06may2026 audit P0 (B9) — slug complet diacritics-stripped
                           // în loc de slice(0,8) care cauzează ID-uri grotești (m_3_Instalar)
                           const slugify = (s, i) => {
@@ -2710,7 +2711,7 @@ export default function Step7Audit(props) {
                           auditor={auditor}
                           passport={(() => {
                             try {
-                              const eurRonRate = getEurRonSync() || 5.05;
+                              const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
                               const slug = (s, i) => {
                                 const a = String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                                   .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();

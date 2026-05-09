@@ -17,6 +17,26 @@
  *
  * Costuri: medii orientative piață RO 2025-2026, fără brand.
  *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ SCHEMA `priceRange` — IMPORTANT pentru consistența cu rehab-prices.js
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Sprint Audit Prețuri P2.6 (9 mai 2026) — clarificare schemă:
+ *
+ * `priceRange.{min, max}` în RON/{m²|buc|sistem} reprezintă DOAR materialul
+ * (consultanță tehnică pentru auditor — listă alternative).
+ *
+ * NU este 1:1 cu rehab-prices.js, care reprezintă sistem instalat COMPLET
+ * (material + manoperă + transport + accesorii). Diferență tipică: rehab-prices
+ * = 2-3× suggestions-catalog (ex: ins-eps-100 30 RON/m² material vs
+ * envelope.wall_eps_10cm.mid 49 EUR × 5.10 ≈ 250 RON/m² sistem ETICS instalat).
+ *
+ * Step8Advanced afișează explicit footer: „Adăugați 30-50% pentru manoperă".
+ *
+ * Pentru calcul cost OFERTA / DEVIZ / CPE Post-Rehab → folosiți rehab-prices.js
+ * (3 scenarii low/mid/high) sau wrapper-ul cost-index.js cu indexare inflație.
+ * Pentru consultanță tehnică selecție material → suggestions-catalog (acest fișier).
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * @module data/suggestions-catalog
  */
 

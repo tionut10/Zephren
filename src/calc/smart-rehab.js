@@ -253,10 +253,12 @@ export function calcSmartRehab(building, instSummary, renewSummary, opaqueElemen
   // ── PV
   if (rer < 30) {
     const pvKwp = Math.max(2, Au * 0.05); // ~5W/m² suprafață utilă
-    const costPV = pvKwp * 1100; // EUR/kWp instalat (2025-2026)
+    // Sprint Audit Prețuri P2.4 (9 mai 2026) — preț canonic rehab-prices.renewables.pv_kwp mid 1100 EUR/kWp
+    const pvUnitEUR = getPrice("renewables", "pv_kwp", "mid")?.price || 1100;
+    const costPV = pvKwp * pvUnitEUR;
     const epSav = estimateEpSaving("pv", gap, epActual);
     addSuggestion(1, "Regenerabile", "Instalare panouri fotovoltaice",
-      epSav, 1100 * pvKwp / Au, costPV,
+      epSav, pvUnitEUR * pvKwp / Au, costPV,
       `RER actual = ${rer.toFixed(0)}% (minim nZEB: 30%). PV ${pvKwp.toFixed(1)} kWp estimat.`);
   }
 

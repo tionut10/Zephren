@@ -5,6 +5,9 @@
  */
 import { useState, useMemo } from "react";
 import { cn } from "./ui.jsx";
+// Sprint Audit Prețuri P2.2 (9 mai 2026) — investiție auto din rehab-prices canonic
+// (anterior 4000 RON/kWp = 800 EUR × 5 RON/EUR fix; mid 1100 EUR × curs live ≈ 5610 RON/kWp).
+import { getPriceRON, getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 const MONTHS_RO = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -55,8 +58,11 @@ export default function PVDegradation({ renewSummary, building }) {
     const selfPct = (parseFloat(selfConsumeRate) || 70) / 100;
     const feedin = parseFloat(feedinTariff) || 0.30;
     const omPct = (parseFloat(omCostRate) || 1) / 100;
-    // Investiție: 800 EUR/kWp × 5 RON/EUR ≈ 4000 RON/kWp, sau custom
-    const investAuto = P0 * 4000;
+    // Sprint Audit Prețuri P2.2 — investiție auto din rehab-prices.renewables.pv_kwp
+    // (mid 1.100 EUR × curs EUR/RON live BNR; ~5.610 RON/kWp vs 4.000 hardcoded anterior).
+    const pvPriceRON = getPriceRON("renewables", "pv_kwp", "mid")?.priceRON
+                       ?? Math.round(1100 * (getEurRonSync() || REHAB_PRICES.eur_ron_fallback));
+    const investAuto = P0 * pvPriceRON;
     const invest = parseFloat(investCost) || investAuto;
     const omAnnual = invest * omPct;
 
@@ -119,7 +125,11 @@ export default function PVDegradation({ renewSummary, building }) {
           { label:"Autoconsum (%)", value:selfConsumeRate, set:setSelfConsumeRate, step:"5" },
           { label:"Tarif export (RON/kWh)", value:feedinTariff, set:setFeedinTariff, step:"0.05" },
           { label:"O&M (%/an din invest.)", value:omCostRate, set:setOmCostRate, step:"0.1" },
-          { label:"Investiție (RON)", value:investCost, set:setInvestCost, step:"500", placeholder:`auto: ${Math.round((parseFloat(pvPower)||5)*4000)} RON` },
+          { label:"Investiție (RON)", value:investCost, set:setInvestCost, step:"500", placeholder:`auto: ${(() => {
+            const pvP = getPriceRON("renewables", "pv_kwp", "mid")?.priceRON
+                        ?? Math.round(1100 * (getEurRonSync() || REHAB_PRICES.eur_ron_fallback));
+            return Math.round((parseFloat(pvPower)||5) * pvP).toLocaleString("ro-RO");
+          })()} RON (rehab-prices mid)` },
         ].map(({label, value, set, step, placeholder}) => (
           <div key={label}>
             <label className="text-[10px] text-slate-400 block mb-0.5">{label}</label>

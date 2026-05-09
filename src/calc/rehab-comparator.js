@@ -23,11 +23,17 @@ function getUnitCosts() {
     windows_u07: _p('envelope', 'windows_u070', 390),   // Ferestre U≤0.70
     vent_hr80:   _p('cooling',  'vmc_hr_80_per_m2', 22), // VMC HR 80%
     vent_hr90:   _p('cooling',  'vmc_hr_90_per_m2', 32), // VMC HR 90%
+    // Sprint Audit Prețuri P2.4 (9 mai 2026) — gross-rate normalizat per m² Au.
+    // NOT 1:1 cu rehab-prices: hp_aw_8kw mid 6500 EUR (set 8kW) ≈ 65 EUR/m²Au la 100m².
+    // 55 EUR/m²Au este aproximare conservatoare utilă în comparator (între low 8kW
+    // și low 12kW). Pentru calcul rigoros per kW, vezi heat-pump-sizing.js.
     hp_airwater: 55,                                      // Pompă căldură aer-apă [EUR/m² Au] — gross
     // Sprint 27 P2.7 — pv unitate consistentă cu PV catalog (EUR/kWp, NU EUR/m² panou)
     pv_per_kwp:  _p('renewables', 'pv_kwp', 1100),        // PV [EUR/kWp instalat]
     pv_3kwp:     180,                                     // @deprecated — păstrat backward compat (era EUR/m² panou)
     led:         _p('lighting', 'led_replacement', 8),    // Înlocuire LED
+    // Solar termic gross-rate per m² Au (NOT 1:1 cu rehab-prices.heating.solar_thermal_4m2 mid 2000 EUR/set).
+    // 15 EUR/m²Au la 100m² = 1500 EUR ≈ low solar_thermal_4m2. Conservator pentru comparator.
     solar_th:    15,                                      // Solar termic ACM [EUR/m² Au] — gross
   };
 }

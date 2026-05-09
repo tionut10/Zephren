@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
+import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS, getEnergyPriceFromPreset } from "../data/energy-prices.js";
 // Sprint Audit Prețuri (9 mai 2026) Task A — NPV chart 3 scenarii bandă low/mid/high
 // Sursa canonică: src/data/rehab-prices.js (Q1 2026 + HG 907/2016 + MDLPA + oferte contractori)
 import { REHAB_PRICES, getEurRonSync } from "../data/rehab-prices.js";
@@ -1523,8 +1523,10 @@ export default function Step5Calculation(props) {
               {(() => {
                 const Au = parseFloat(building.areaUseful) || 1;
                 const fuelId = instSummary.fuel?.id || "gaz";
-                const priceFuel = energyPrices?.[fuelId] || (fuelId === "gaz" ? 0.31 : fuelId === "electricitate" ? 1.10 : 0.30);
-                const priceElec = energyPrices?.electricitate || 1.10;
+                // Sprint Audit Prețuri P2.3 — fallback canonic getEnergyPriceFromPreset (ANRE casnic_2025)
+                // anterior hardcoded gaz=0.31, electricitate=1.10, default=0.30 — vezi audit §2.1
+                const priceFuel = energyPrices?.[fuelId] || getEnergyPriceFromPreset(fuelId, "casnic_2025");
+                const priceElec = energyPrices?.electricitate || getEnergyPriceFromPreset("electricitate", "casnic_2025");
                 const annualCost = instSummary.qf_h * priceFuel
                   + instSummary.qf_w * priceFuel
                   + instSummary.qf_c * priceElec

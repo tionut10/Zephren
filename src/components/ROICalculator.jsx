@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
 import { cn, Card, Input, Select } from "./ui.jsx";
+// Sprint Audit Prețuri P2.1 (9 mai 2026) — migrare DEFAULT_MEASURES la sursa
+// canonică rehab-prices.js (3 scenarii) + curs EUR/RON LIVE BNR (anterior fix 4.97).
+import { getPriceRON, getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 const OWNER_TYPES = [
   { value: "casa",        label: "Casă particulară" },
@@ -7,72 +10,79 @@ const OWNER_TYPES = [
   { value: "firma",       label: "Firmă / Spațiu comercial" },
 ];
 
-// Prețuri orientative Q1 2026 (RON, fără TVA, manoperă inclusă)
-// Sursa: src/data/rehab-prices.js × curs EUR/RON 4.97
-// costPerM2: RON/m²  |  costFixed: RON/set
-// Actualizat: 2026-04-18
-const DEFAULT_MEASURES = [
-  {
-    id: "izolatie_ext",
-    name: "Izolație exterior 10 cm EPS",
-    costPerM2: 209,      // 42 EUR/m² × 4.97 (rehab-prices: wall_eps_10cm mid)
-    areaFactor: "envelope",
-    savingsPct: 0.22,
-    co2FactorKg: 18,
-    desc: "Termosistem exterior cu polistiren expandat 10 cm, include tencuială și finisaj decorativ.",
-  },
-  {
-    id: "izolatie_pod",
-    name: "Izolație pod / acoperiș 25 cm vată minerală",
-    costPerM2: 338,      // 68 EUR/m² × 4.97 (rehab-prices: roof_mw_25cm mid)
-    areaFactor: "roof",
-    savingsPct: 0.10,
-    co2FactorKg: 7,
-    desc: "Izolație termică la nivelul planșeului podului cu vată minerală suflată, acces ușor.",
-  },
-  {
-    id: "ferestre_pvc",
-    name: "Ferestre PVC triplu vitraj Low-E (U≤0.9 W/m²K)",
-    costPerM2: 1392,     // 280 EUR/m² × 4.97 (rehab-prices: windows_u090 mid)
-    areaFactor: "windows",
-    savingsPct: 0.12,
-    co2FactorKg: 10,
-    desc: "Înlocuire ferestre vechi cu tâmplărie PVC triplu vitraj Low-E + Argon, U≤0.9 W/m²K.",
-  },
-  {
-    id: "centrala_cond",
-    name: "Centrală termică în condensație 24 kW",
-    costFixed: 8698,     // 1.750 EUR × 4.97 (rehab-prices: boiler_cond_24kw mid)
-    savingsPct: 0.15,
-    co2FactorKg: 12,
-    desc: "Înlocuire cazan vechi cu centrală în condensație 24 kW, randament >98%, instalare inclusă.",
-  },
-  {
-    id: "panouri_solare",
-    name: "Panouri solare termice ACM (4 m² + boiler 200 L)",
-    costFixed: 9940,     // 2.000 EUR × 4.97 (rehab-prices: solar_thermal_4m2 mid)
-    savingsPct: 0.08,
-    co2FactorKg: 6,
-    desc: "Sistem solar termic complet pentru apă caldă menajeră, 2 colectoare tuburi vidate + boiler bivalent.",
-  },
-  {
-    id: "izolatie_planseu",
-    name: "Izolație planșeu peste subsol (XPS 10 cm)",
-    costPerM2: 159,      // 32 EUR/m² × 4.97 (rehab-prices: basement_xps_10cm mid)
-    areaFactor: "floor",
-    savingsPct: 0.06,
-    co2FactorKg: 4,
-    desc: "Izolație termică XPS 10 cm aplicată pe tavan subsol / demisol neîncălzit, dibluri incluse.",
-  },
-  {
-    id: "pompa_caldura",
-    name: "Pompă de căldură aer-apă 8 kW",
-    costFixed: 32305,    // 6.500 EUR × 4.97 (rehab-prices: hp_aw_8kw mid)
-    savingsPct: 0.35,
-    co2FactorKg: 40,
-    desc: "Sistem de încălzire + ACM cu pompă de căldură aer-apă 8 kW, COP ≥ 3.2, boiler tampon inclus.",
-  },
-];
+// Prețuri orientative din rehab-prices.js (scenariu MID, RON live BNR).
+// Înlocuiește valori hardcodate cu curs fix 4.97 — vezi docs/AUDIT_PRETURI_2026-05-09.md §1.3.
+function buildDefaultMeasures() {
+  // Helper: extrage RON din getPriceRON (mid scenario), cu fallback dacă cheia nu există.
+  const _ron = (cat, item, fb) => getPriceRON(cat, item, "mid")?.priceRON ?? fb;
+  return [
+    {
+      id: "izolatie_ext",
+      name: "Izolație exterior 10 cm EPS",
+      costPerM2: _ron("envelope", "wall_eps_10cm", 250),  // mid 49 EUR × 5.10 ≈ 250
+      areaFactor: "envelope",
+      savingsPct: 0.22,
+      co2FactorKg: 18,
+      desc: "Termosistem exterior cu polistiren expandat 10 cm, include tencuială și finisaj decorativ.",
+    },
+    {
+      id: "izolatie_pod",
+      name: "Izolație pod / acoperiș 25 cm vată minerală",
+      costPerM2: _ron("envelope", "roof_mw_25cm", 347),   // mid 68 EUR × 5.10 ≈ 347
+      areaFactor: "roof",
+      savingsPct: 0.10,
+      co2FactorKg: 7,
+      desc: "Izolație termică la nivelul planșeului podului cu vată minerală suflată, acces ușor.",
+    },
+    {
+      id: "ferestre_pvc",
+      name: "Ferestre PVC triplu vitraj Low-E (U≤0.9 W/m²K)",
+      costPerM2: _ron("envelope", "windows_u090", 1428),  // mid 280 EUR × 5.10 ≈ 1428
+      areaFactor: "windows",
+      savingsPct: 0.12,
+      co2FactorKg: 10,
+      desc: "Înlocuire ferestre vechi cu tâmplărie PVC triplu vitraj Low-E + Argon, U≤0.9 W/m²K.",
+    },
+    {
+      id: "centrala_cond",
+      name: "Centrală termică în condensație 24 kW",
+      costFixed: _ron("heating", "boiler_cond_24kw", 8925), // mid 1750 EUR × 5.10 ≈ 8925
+      savingsPct: 0.15,
+      co2FactorKg: 12,
+      desc: "Înlocuire cazan vechi cu centrală în condensație 24 kW, randament >98%, instalare inclusă.",
+    },
+    {
+      id: "panouri_solare",
+      name: "Panouri solare termice ACM (4 m² + boiler 200 L)",
+      costFixed: _ron("heating", "solar_thermal_4m2", 10200), // mid 2000 EUR × 5.10 ≈ 10200
+      savingsPct: 0.08,
+      co2FactorKg: 6,
+      desc: "Sistem solar termic complet pentru apă caldă menajeră, 2 colectoare tuburi vidate + boiler bivalent.",
+    },
+    {
+      id: "izolatie_planseu",
+      name: "Izolație planșeu peste subsol (XPS 10 cm)",
+      costPerM2: _ron("envelope", "basement_xps_10cm", 163), // mid 32 EUR × 5.10 ≈ 163
+      areaFactor: "floor",
+      savingsPct: 0.06,
+      co2FactorKg: 4,
+      desc: "Izolație termică XPS 10 cm aplicată pe tavan subsol / demisol neîncălzit, dibluri incluse.",
+    },
+    {
+      id: "pompa_caldura",
+      name: "Pompă de căldură aer-apă 8 kW",
+      costFixed: _ron("heating", "hp_aw_8kw", 33150),  // mid 6500 EUR × 5.10 ≈ 33150
+      savingsPct: 0.35,
+      co2FactorKg: 40,
+      desc: "Sistem de încălzire + ACM cu pompă de căldură aer-apă 8 kW, COP ≥ 3.2, boiler tampon inclus.",
+    },
+  ];
+}
+
+// Snapshot la încărcarea modulului (curs live BNR + scenariu mid). Fix de stale-cache:
+// dacă utilizatorul deschide ROICalculator la mai mult de 24h după ce și-a încărcat
+// browserul, helperul `_ron` returnează cea mai recentă valoare din getEurRonSync.
+const DEFAULT_MEASURES = buildDefaultMeasures();
 
 function calcMeasureCost(m, building) {
   if (m.costFixed) return m.costFixed;
