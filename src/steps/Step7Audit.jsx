@@ -8,7 +8,7 @@ import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { buildCanonicalMeasures } from "../calc/unified-rehab-costs.js";
 import { getMepsThresholdsFor } from "../components/MEPSCheck.jsx";
 import { buildRenovationPassport } from "../calc/renovation-passport.js";
-import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+import { getEurRonSync, getPrice, REHAB_PRICES } from "../data/rehab-prices.js";
 // Sprint P1 (6 mai 2026) cleanup — sursă canonică prețuri energie ANRE 2025.
 import { getEnergyPriceFromPreset, DEFAULT_ENERGY_PRICES } from "../data/energy-prices.js";
 // Sprint P2 (6 mai 2026) — preț electricitate LIVE Eurostat (cu fallback ANRE static).
@@ -47,7 +47,7 @@ import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THR
 import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_GLAZING, getURefNZEB } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES } from "../data/building-catalog.js";
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL } from "../data/constants.js";
-import { REHAB_COSTS } from "../data/rehab-costs.js";
+// Sprint Audit Prețuri P4.2 (9 mai 2026) — REHAB_COSTS legacy ELIMINAT, totul migrat la rehab-prices canonic.
 import { T } from "../data/translations.js";
 import { generateRehabEstimatePDF } from "../lib/report-generators.js";
 
@@ -302,32 +302,56 @@ export default function Step7Audit(props) {
               const ri = rehabScenarioInputs;
               const fuel = instSummary.fuel;
 
-              // Cost estimation based on active scenario inputs
+              // Sprint Audit Prețuri P4.2 (9 mai 2026) — toate prețurile din rehab-prices canonic
+              // (anterior REHAB_COSTS legacy). Logica selecție tier identică cu unified-rehab-costs.
+              const _p = (cat, item, fb) => getPrice(cat, item, "mid")?.price ?? fb;
+              const Au = parseFloat(building?.areaUseful) || 100;
               let costEnvelope = 0;
               if (ri.addInsulWall) {
                 const wallArea = opaqueElements.filter(el => el.type === "PE").reduce((s, el) => s + (parseFloat(el.area)||0), 0);
-                costEnvelope += wallArea * (REHAB_COSTS.insulWall[parseInt(ri.insulWallThickness)] || 40);
+                const t = parseInt(ri.insulWallThickness) || 10;
+                costEnvelope += wallArea * _p("envelope", t > 12 ? "wall_eps_15cm" : "wall_eps_10cm", 49);
               }
               if (ri.addInsulRoof) {
                 const roofArea = opaqueElements.filter(el => el.type === "PP" || el.type === "PT").reduce((s, el) => s + (parseFloat(el.area)||0), 0);
-                costEnvelope += roofArea * (REHAB_COSTS.insulRoof[parseInt(ri.insulRoofThickness)] || 30);
+                const t = parseInt(ri.insulRoofThickness) || 15;
+                costEnvelope += roofArea * _p("envelope", t > 20 ? "roof_mw_25cm" : "roof_eps_15cm", 32);
               }
               if (ri.addInsulBasement) {
                 const baseArea = opaqueElements.filter(el => el.type === "PB" || el.type === "PL").reduce((s, el) => s + (parseFloat(el.area)||0), 0);
-                costEnvelope += baseArea * (REHAB_COSTS.insulBasement[parseInt(ri.insulBasementThickness)] || 40);
+                costEnvelope += baseArea * _p("envelope", "basement_xps_10cm", 32);
               }
               if (ri.replaceWindows) {
                 const winArea = glazingElements.reduce((s, el) => s + (parseFloat(el.area)||0), 0);
-                costEnvelope += winArea * (REHAB_COSTS.windows[parseFloat(ri.newWindowU)] || 200);
+                const u = parseFloat(ri.newWindowU) || 0.90;
+                const winKey = u <= 0.80 ? "windows_u070"
+                             : u <= 1.00 ? "windows_u090"
+                             : u <= 1.30 ? "windows_u110" : "windows_u140";
+                costEnvelope += winArea * _p("envelope", winKey, 280);
               }
 
               let costInstall = 0;
-              if (ri.addHR) costInstall += REHAB_COSTS["hr" + (parseInt(ri.hrEfficiency) >= 90 ? "90" : parseInt(ri.hrEfficiency) >= 80 ? "80" : "70")] || 5000;
-              if (ri.addHP) costInstall += (parseFloat(heating.power) || 10) * REHAB_COSTS.hpPerKw;
+              if (ri.addHR) {
+                const hrEff = parseInt(ri.hrEfficiency) || 80;
+                const perM2 = _p("cooling", "vmc_hr_full_install_per_m2", 150);
+                const fixed = _p("cooling", "vmc_hr_full_install_fixed", 800);
+                const effMult = hrEff >= 90 ? 1.30 : hrEff >= 80 ? 1.0 : 0.85;
+                costInstall += (perM2 * Au + fixed) * effMult;
+              }
+              if (ri.addHP) {
+                const hpUnitEUR = _p("heating", "hp_aw_12kw", 9000) / 12;
+                costInstall += (parseFloat(heating.power) || 10) * hpUnitEUR;
+              }
 
               let costRenew = 0;
-              if (ri.addPV) costRenew += (parseFloat(ri.pvArea) || 0) * REHAB_COSTS.pvPerM2;
-              if (ri.addSolarTh) costRenew += (parseFloat(ri.solarThArea) || 0) * REHAB_COSTS.solarThPerM2;
+              if (ri.addPV) {
+                const pvKwpEUR = _p("renewables", "pv_kwp", 1100);
+                costRenew += (parseFloat(ri.pvArea) || 0) * (pvKwpEUR / 5);
+              }
+              if (ri.addSolarTh) {
+                const solarUnitEUR = _p("heating", "solar_thermal_4m2", 2000) / 4;
+                costRenew += (parseFloat(ri.solarThArea) || 0) * solarUnitEUR;
+              }
 
               const totalCost = costEnvelope + costInstall + costRenew;
               const qfSaved = rehabComparison.savings.qfSaved || 0;
@@ -474,7 +498,7 @@ export default function Step7Audit(props) {
                   const { exportCpePostRehabPDF } = await import("../lib/cpe-post-rehab-pdf.js");
                   return exportCpePostRehabPDF({
                     building, auditor, rehabComparison, rehabScenarioInputs,
-                    opaqueElements, glazingElements, REHAB_COSTS, instSummary,
+                    opaqueElements, glazingElements, instSummary,
                     cpeCodeBase: building?.cpeNumber || null, download: false,
                   });
                 });
@@ -722,23 +746,69 @@ export default function Step7Audit(props) {
                 </Card>
 
                 {/* ── Radar performanță ── */}
-                {instSummary && envelopeSummary && (
-                <Card title={t("Radar performanță energetică",lang)}>
-                  <svg viewBox="0 0 240 220" width="240" height="200" className="mx-auto block">
-                    {(() => {
-                      var cx=120,cy=105,mR=80;
-                      var axes=[{l:"Anvelopă",v:Math.min(100,Math.max(0,100*(1-envelopeSummary.G/2.0)))},{l:"Încălzire",v:Math.min(100,(instSummary.eta_total_h||0)*100)},{l:"ACM",v:Math.min(100,(instSummary.acmDetailed?.eta_system||0)*100)},{l:"Ventilare",v:Math.min(100,instSummary.hrEta>0?instSummary.hrEta*100:20)},{l:"Regenerabile",v:Math.min(100,(renewSummary?renewSummary.rer:0)*1.5)}];
-                      var nn=axes.length, els=[];
-                      [0.25,0.5,0.75,1].forEach(function(f){var pts=[];for(var i=0;i<nn;i++){var a=(i*360/nn-90)*Math.PI/180;pts.push((cx+mR*f*Math.cos(a))+","+(cy+mR*f*Math.sin(a)));}els.push(<polygon key={"g"+f} points={pts.join(" ")} fill="none" stroke="#333" strokeWidth="0.5"/>);});
-                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;els.push(<line key={"a"+i} x1={cx} y1={cy} x2={cx+mR*Math.cos(a)} y2={cy+mR*Math.sin(a)} stroke="#444" strokeWidth="0.5"/>);els.push(<text key={"al"+i} x={cx+(mR+15)*Math.cos(a)} y={cy+(mR+15)*Math.sin(a)+3} textAnchor="middle" fontSize="7" fill="#888">{ax.l}</text>);});
-                      var dPts=axes.map(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);return (cx+r*Math.cos(a))+","+(cy+r*Math.sin(a));}).join(" ");
-                      els.push(<polygon key="dp" points={dPts} fill="rgba(245,158,11,0.12)" stroke="#f59e0b" strokeWidth="2"/>);
-                      axes.forEach(function(ax,i){var a=(i*360/nn-90)*Math.PI/180;var r=mR*(ax.v/100);els.push(<circle key={"dc"+i} cx={cx+r*Math.cos(a)} cy={cy+r*Math.sin(a)} r="3" fill="#f59e0b"/>);});
-                      return els;
-                    })()}
-                  </svg>
-                </Card>
-                )}
+                {instSummary && envelopeSummary && (() => {
+                  // G_ref — Mc 001-2022 Tab. 2.3, interpolare liniară după m=At/V
+                  const isRes = ["RI","RC","RA"].includes(building?.category);
+                  const mComp = Math.max(0.2, Math.min(1.2, envelopeSummary.totalArea / (envelopeSummary.volume || 1)));
+                  const gRef = isRes ? 0.19 + 0.72*mComp : 0.046 + 0.547*mComp;
+                  // scoruri normative (100% = referință normativă, >100% → clamped)
+                  const sAnv  = Math.min(100, Math.max(0, gRef / (envelopeSummary.G || 0.01) * 100));
+                  // Încălzire — EN 15316-1: η_ref=0.90 cazan condensare; pompe căldură COP_ref=3.5
+                  const etaH  = instSummary.eta_total_h || 0;
+                  const sInc  = Math.min(100, (instSummary.isCOP ? etaH/3.5 : etaH/0.90) * 100);
+                  // ACM — EN 15316-3: η_ref=0.75 sistem referință
+                  const sAcm  = Math.min(100, ((instSummary.acmDetailed?.eta_system)||0) / 0.75 * 100);
+                  // Ventilare — EN 16798-3: HR_ref=0.75 (75%); fără VMC-HR → 0%
+                  const sVent = Math.min(100, instSummary.hrEta > 0 ? instSummary.hrEta/0.75*100 : 0);
+                  // Regenerabile — Mc 001-2022 §4: RER_min_nZEB=30%; 100% la RER≥30%
+                  const rer   = renewSummary?.rer || 0;
+                  const sRen  = Math.min(100, rer / 30 * 100);
+                  const radarAxes = [
+                    {l:"Anvelopă",    v:sAnv,  ref:"G_ref="+gRef.toFixed(2)+" W/(m³K) · Mc 001-2022 Tab.2.3"},
+                    {l:"Încălzire",   v:sInc,  ref: instSummary.isCOP ? "COP_ref=3.5 · EN 15316-1" : "η_ref=0.90 · EN 15316-1"},
+                    {l:"ACM",         v:sAcm,  ref:"η_ref=0.75 · EN 15316-3"},
+                    {l:"Ventilare",   v:sVent, ref:"HR_ref=75% · EN 16798-3"},
+                    {l:"Regenerabile",v:sRen,  ref:"RER_min=30% · Mc 001-2022 §4"},
+                  ];
+                  const axColor = v => v>=70?"#22c55e":v>=40?"#f59e0b":"#ef4444";
+                  const nn=radarAxes.length, cx=170, cy=148, mR=108;
+                  const ang = i => (i*360/nn-90)*Math.PI/180;
+                  const pt = (r,i) => `${cx+r*Math.cos(ang(i))},${cy+r*Math.sin(ang(i))}`;
+                  const gridPts = f => Array.from({length:nn},(_,i)=>pt(mR*f,i)).join(" ");
+                  return (
+                  <Card title={t("Radar performanță energetică",lang)}>
+                    <svg viewBox="0 0 340 296" width="100%" height="260" className="mx-auto block">
+                      {[0.25,0.5,0.75,1].map((f,fi)=>(
+                        <polygon key={"g"+f} points={gridPts(f)} fill="none" stroke="#334155" strokeWidth="0.7" opacity={0.25+fi*0.12}/>
+                      ))}
+                      {radarAxes.map((_,i)=>(
+                        <line key={"ax"+i} x1={cx} y1={cy} x2={cx+mR*Math.cos(ang(i))} y2={cy+mR*Math.sin(ang(i))} stroke="#334155" strokeWidth="0.7"/>
+                      ))}
+                      {radarAxes.map((ax,i)=>(
+                        <text key={"lb"+i} x={cx+(mR+22)*Math.cos(ang(i))} y={cy+(mR+22)*Math.sin(ang(i))+4} textAnchor="middle" fontSize="10" fill="#94a3b8" fontWeight="500">{ax.l}</text>
+                      ))}
+                      <polygon points={radarAxes.map((_,i)=>pt(mR*(radarAxes[i].v/100),i)).join(" ")} fill="rgba(245,158,11,0.15)" stroke="#f59e0b" strokeWidth="2"/>
+                      {radarAxes.map((ax,i)=>(
+                        <circle key={"d"+i} cx={cx+mR*(ax.v/100)*Math.cos(ang(i))} cy={cy+mR*(ax.v/100)*Math.sin(ang(i))} r="4.5" fill={axColor(ax.v)} stroke="#0f172a" strokeWidth="1.5"/>
+                      ))}
+                    </svg>
+                    {/* tabel scoruri + referință normativă */}
+                    <div className="grid grid-cols-5 gap-x-2 gap-y-1 mt-1 px-2">
+                      {radarAxes.map((ax,i)=>(
+                        <div key={i} className="flex flex-col items-center gap-1">
+                          <span className="text-[9px] text-slate-400 text-center leading-tight">{ax.l}</span>
+                          <div className="w-full bg-slate-800 rounded-full h-1">
+                            <div className="h-1 rounded-full transition-all" style={{width:ax.v+"%", backgroundColor:axColor(ax.v)}}/>
+                          </div>
+                          <span className="text-[11px] font-bold" style={{color:axColor(ax.v)}}>{Math.round(ax.v)}%</span>
+                          <span className="text-[8px] text-slate-600 text-center leading-tight">{ax.ref}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-slate-600 text-center mt-2">100% = referință normativă per axă · exterior inel = conformitate deplină</p>
+                  </Card>
+                  );
+                })()}
 
                 {/* ── Recomandari Anvelopa ── */}
                 {envelopeAnalysis.length > 0 && (
@@ -1422,7 +1492,7 @@ export default function Step7Audit(props) {
                         <div className="text-[11px] opacity-80">
                           {paybackYear !== null && paybackYear < 5
                             ? "Payback < 5 ani e neobișnuit. Verifică costurile reale în Devizul detaliat."
-                            : "Costul afișat e estimat. Devizul detaliat (PDF) folosește aceleași REHAB_COSTS."}
+                            : "Costul afișat e estimat. Devizul detaliat (PDF) folosește rehab-prices canonic."}
                         </div>
                       </div>
                     </div>
@@ -2030,7 +2100,7 @@ export default function Step7Audit(props) {
                           await exportCpePostRehabPDF({
                             building, auditor,
                             rehabComparison, rehabScenarioInputs,
-                            opaqueElements, glazingElements, REHAB_COSTS,
+                            opaqueElements, glazingElements,
                             instSummary,
                             cpeCodeBase: building?.cpeNumber || null,
                           });
