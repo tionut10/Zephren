@@ -121,6 +121,27 @@ export function getCurrencySymbol(target) {
   return "€/RON";
 }
 
+// ─── Format pentru export PDF/DOCX (sync, fără React) ────────────────────────
+
+/**
+ * Sprint Audit Prețuri P4.4 (9 mai 2026) — helper specializat pentru PDF/DOCX
+ * generators. Citește mode global din localStorage SINCRON (fără hook), aplică
+ * curs EUR/RON canonic și returnează string formatat consistent cu UI.
+ *
+ * Diferența vs `fmtMoney`: target inferit automat din `getCurrencyMode()`
+ * (target nu mai trebuie pasat).
+ *
+ * @param {number} value - valoarea
+ * @param {'EUR'|'RON'} source - moneda sursă
+ * @param {Object} [options]
+ * @param {number} [options.eurRon] - curs (default live BNR)
+ * @param {number} [options.decimals] - default 0
+ * @returns {string} ex: "5.100 RON (1.000 EUR)" | "1.000 EUR" | "5.100 RON"
+ */
+export function formatCurrencyForExport(value, source = "RON", options = {}) {
+  return fmtMoney(value, source, { ...options, target: getCurrencyMode() });
+}
+
 // ─── React hook ──────────────────────────────────────────────────────────────
 // Pentru consumeri React, există un hook `useCurrencyMode` în CurrencyToggle.jsx
 // care folosește useSyncExternalStore. Helperele de mai sus pot fi folosite

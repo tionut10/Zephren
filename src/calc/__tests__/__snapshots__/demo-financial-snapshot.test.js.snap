@@ -35,11 +35,11 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
     "replace_windows",
   ],
   "measuresCount": 5,
-  "paybackYears": 24.1,
-  "ronPerM2": 1599,
-  "totalEUR": 20382,
-  "totalRON": 103948,
-  "totalWithTvaRON": 125777,
+  "paybackYears": 24.7,
+  "ronPerM2": 1638,
+  "totalEUR": 20882,
+  "totalRON": 106498,
+  "totalWithTvaRON": 128863,
 }
 `;
 
@@ -78,11 +78,11 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
     "replace_windows",
   ],
   "measuresCount": 5,
-  "paybackYears": 17.8,
-  "ronPerM2": 1180,
-  "totalEUR": 27760,
-  "totalRON": 141576,
-  "totalWithTvaRON": 171307,
+  "paybackYears": 18.1,
+  "ronPerM2": 1201,
+  "totalEUR": 28260,
+  "totalRON": 144126,
+  "totalWithTvaRON": 174392,
 }
 `;
 
@@ -122,10 +122,10 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
   ],
   "measuresCount": 5,
   "paybackYears": 11,
-  "ronPerM2": 730,
-  "totalEUR": 214750,
-  "totalRON": 1095225,
-  "totalWithTvaRON": 1325222,
+  "ronPerM2": 732,
+  "totalEUR": 215250,
+  "totalRON": 1097775,
+  "totalWithTvaRON": 1328308,
 }
 `;
 
@@ -165,10 +165,10 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
   ],
   "measuresCount": 5,
   "paybackYears": 11.2,
-  "ronPerM2": 740,
-  "totalEUR": 174100,
-  "totalRON": 887910,
-  "totalWithTvaRON": 1074371,
+  "ronPerM2": 742,
+  "totalEUR": 174600,
+  "totalRON": 890460,
+  "totalWithTvaRON": 1077457,
 }
 `;
 
@@ -207,11 +207,11 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
     "replace_windows",
   ],
   "measuresCount": 5,
-  "paybackYears": 16.7,
-  "ronPerM2": 1110,
-  "totalEUR": 30470,
-  "totalRON": 155397,
-  "totalWithTvaRON": 188030,
+  "paybackYears": 17,
+  "ronPerM2": 1128,
+  "totalEUR": 30970,
+  "totalRON": 157947,
+  "totalWithTvaRON": 191116,
 }
 `;
 
@@ -219,23 +219,23 @@ exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression
 [
   {
     "M": "M1",
-    "totalRON": 103948,
+    "totalRON": 106498,
   },
   {
     "M": "M2",
-    "totalRON": 141576,
+    "totalRON": 144126,
   },
   {
     "M": "M3",
-    "totalRON": 1095225,
+    "totalRON": 1097775,
   },
   {
     "M": "M4",
-    "totalRON": 887910,
+    "totalRON": 890460,
   },
   {
     "M": "M5",
-    "totalRON": 155397,
+    "totalRON": 157947,
   },
 ]
 `;

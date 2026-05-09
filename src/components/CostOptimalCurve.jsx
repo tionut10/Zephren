@@ -6,7 +6,10 @@
 import { useState, useMemo, useRef } from "react";
 import { cn } from "./ui.jsx";
 import { calcAllPerspectives } from "../calc/financial.js";
-import { getPrice } from "../data/rehab-prices.js";
+import { getPrice, getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+// Sprint Îmbunătățiri #3 + B (9 mai 2026) — currency switch global Auto/EUR/RON
+import { fmtMoney } from "../data/currency-context.js";
+import { useCurrencyMode } from "./CurrencyToggle.jsx";
 
 // Sprint 25 P0.8 — prețuri derivate din rehab-prices.js (sursă canonică).
 // Elimină PRICES constant local (era duplicat, pre-S25) → o singură sursă de adevăr.
@@ -350,6 +353,9 @@ export default function CostOptimalCurve({ building, instSummary, energyPrices, 
   const [exporting,   setExporting]     = useState(false);
   const [showWarning, setShowWarning]   = useState(false);
   const svgRef = useRef(null);
+  // Sprint Îmbunătățiri #3 + B — currency mode global (dual EUR/RON pe sumar)
+  const currencyMode = useCurrencyMode();
+  const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
 
   // 1. Generare pachete
   const packages = useMemo(
@@ -610,7 +616,7 @@ export default function CostOptimalCurve({ building, instSummary, energyPrices, 
               <tr className="border-b border-slate-600 text-slate-400 font-semibold">
                 <th className="px-2 py-1.5 text-left">#</th>
                 <th className="px-2 py-1.5 text-left">Pachet</th>
-                <th className="px-2 py-1.5 text-right">Investiție (EUR)</th>
+                <th className="px-2 py-1.5 text-right">Investiție{currencyMode === "EUR" ? " (EUR)" : currencyMode === "RON" ? " (RON)" : ""}</th>
                 <th className="px-2 py-1.5 text-right">EP final</th>
                 <th className="px-2 py-1.5 text-right">ΔEP %</th>
                 <th className="px-2 py-1.5 text-right">VAN ({PERSPECTIVES[perspective].label})</th>
@@ -638,7 +644,7 @@ export default function CostOptimalCurve({ building, instSummary, energyPrices, 
                       {p.label}
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono text-white">
-                      {Math.round(p.invest_eur).toLocaleString("ro-RO")}
+                      {fmtMoney(Math.round(p.invest_eur), "EUR", { target: currencyMode === "auto" ? "EUR" : currencyMode, eurRon })}
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono text-slate-300">
                       {p.ep_final.toFixed(0)} kWh/m²·an

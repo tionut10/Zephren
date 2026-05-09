@@ -131,13 +131,14 @@ describe('Sprint 25 P0.1 — rehab-cost folosește rehab-prices.js', () => {
     expect(basItem.price_unit).toBe(expected);
   });
 
-  it('airtightness = airtightness_n50.mid din rehab-prices', () => {
+  it.skip('airtightness = airtightness_n50.mid din rehab-prices (DEPRECATED post-P4.7)', () => {
+    // Sprint Audit Prețuri P4.7 (9 mai 2026) — airtightness DEZACTIVAT default
+    // în Deviz pentru a alinia paritate cu CPE Post-Rehab/Pașaport.
+    // Test skippat — ar fi util să fie reactivat când Deviz primește param explicit
+    // `addAirtightness: true` (opt-in scenariu blower door).
     const expected = getPrice('envelope', 'airtightness_n50', 'mid').price;
     const dev = calcRehabCost({
-      wallArea: 70,
-      wallInsulType: 'eps',
-      wallInsulThick: 12,
-      Au: 100,
+      wallArea: 70, wallInsulType: 'eps', wallInsulThick: 12, Au: 100,
     });
     const airItem = dev.items.find(i => i.label.toLowerCase().includes('etanșare'));
     expect(airItem).toBeDefined();

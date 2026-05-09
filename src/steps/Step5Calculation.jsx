@@ -5,6 +5,9 @@ import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS, getEnergyPriceFromPres
 import { REHAB_PRICES, getEurRonSync } from "../data/rehab-prices.js";
 // Sprint Audit Prețuri Tier 1 — indexare inflație construcții via Eurostat sts_copi_q
 import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost-index.js";
+// Sprint Îmbunătățiri #3 + B (9 mai 2026) — currency switch global Auto/EUR/RON
+import { fmtMoney } from "../data/currency-context.js";
+import { useCurrencyMode } from "../components/CurrencyToggle.jsx";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
@@ -66,6 +69,9 @@ export default function Step5Calculation(props) {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // Sprint Îmbunătățiri #3 + B — currency mode global (re-render la schimbare toggle)
+  const currencyMode = useCurrencyMode();
 
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
@@ -1777,13 +1783,14 @@ export default function Step5Calculation(props) {
                                 </div>
                               </td>
                               <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">
-                                <div>{fmtChart(m.cost)} RON</div>
+                                {/* Sprint Îmbunătățiri #3 + B — fmtMoney respectă toggle currency global */}
+                                <div>{fmtMoney(m.cost, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</div>
                                 <div className="text-[10px] opacity-50">{fmtChart(m.costLow)}–{fmtChart(m.costHigh)}</div>
                               </td>
-                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtChart(m.annSave)} RON</td>
+                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtMoney(m.annSave, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</td>
                               <td className="text-right py-1.5 px-2 font-bold tabular-nums" style={{color: m.color}}>{payback}</td>
                               <td className="text-right py-1.5 pl-2 opacity-80 tabular-nums">
-                                <div>{fmtChart(npv20Mid)} RON</div>
+                                <div>{fmtMoney(npv20Mid, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</div>
                                 <div className="text-[10px] opacity-50">{fmtChart(npv20High)}–{fmtChart(npv20Low)}</div>
                               </td>
                             </tr>

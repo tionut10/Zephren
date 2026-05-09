@@ -236,16 +236,19 @@ export function calcRehabCost({
   }
 
   // ── 1. Termoizolație pereți exteriori ──────────────────────────────────
-  // Sprint Audit Prețuri P4.3 (9 mai 2026) — flat prices din rehab-prices canonic
-  // (anterior formula incrementală EUR/m²/cm × grosime + manoperă fixă, care diferea
-  // de CPE/Pașaport cu ±20%). Acum toate cele 3 documente folosesc același getPrice.
+  // Sprint Audit Prețuri P4.3+P4.7 (9 mai 2026) — flat prices din rehab-prices canonic
+  // pentru TOATE tipurile (eps/mw/pur). Anterior formula incrementală EUR/m²/cm × grosime
+  // + manoperă fixă diferea cu ±20% de CPE. Acum paritate <5%.
   if (wallArea > 0 && wallInsulThick > 0) {
     const typeKey = "insul_wall_" + (wallInsulType || "eps");
     const dbEntry = REHAB_PRICE_DB[typeKey];
     if (dbEntry && Array.isArray(dbEntry)) {
       const [label] = dbEntry;
-      // Selectează tier flat în rehab-prices funcție de grosime (logica unified-rehab-costs)
-      const wallKey = wallInsulThick > 12 ? "wall_eps_15cm" : "wall_eps_10cm";
+      // Selectează cheia canonică funcție de tip+grosime (logica unified-rehab-costs)
+      let wallKey;
+      if (wallInsulType === "mw") wallKey = wallInsulThick > 12 ? "wall_mw_15cm" : "wall_mw_10cm";
+      else if (wallInsulType === "pur") wallKey = "wall_pur_8cm";
+      else wallKey = wallInsulThick > 12 ? "wall_eps_15cm" : "wall_eps_10cm";
       const priceTotal_m2 = getPrice("envelope", wallKey)?.price ?? (ETICS_FIXED_EUR_M2 + dbEntry[1] * wallInsulThick);
       addItem(`${label} (${wallInsulThick} cm)`, wallArea, "m²", priceTotal_m2);
     }
@@ -257,8 +260,11 @@ export function calcRehabCost({
     const dbEntry = REHAB_PRICE_DB[typeKey];
     if (dbEntry && Array.isArray(dbEntry)) {
       const [label] = dbEntry;
-      // Selectează tier flat în rehab-prices funcție de grosime
-      const roofKey = roofInsulThick > 20 ? "roof_mw_25cm" : "roof_eps_15cm";
+      // Selectează cheia canonică funcție de tip+grosime
+      let roofKey;
+      if (roofInsulType === "xps") roofKey = "roof_xps_12cm";
+      else if (roofInsulType === "mw") roofKey = "roof_mw_25cm";
+      else roofKey = roofInsulThick > 20 ? "roof_mw_25cm" : "roof_eps_15cm";
       const priceTotal_m2 = getPrice("envelope", roofKey)?.price ?? (ROOF_FIXED_EUR_M2 + dbEntry[1] * roofInsulThick);
       addItem(`${label} (${roofInsulThick} cm)`, roofArea, "m²", priceTotal_m2);
     }
@@ -286,11 +292,24 @@ export function calcRehabCost({
   }
 
   // ── 5. Pompă de căldură ──────────────────────────────────────────────
+  // Sprint P4.7 — canonic rehab-prices.heating: hp_aa_multisplit (EUR/kW direct)
+  // sau hp_aw_8/12/16 (EUR/set ÷ putere) pentru aer-apă.
   if (addHP && hpPower > 0) {
     const typeKey = "hp_" + (hpType || "aw");
     const dbEntry = REHAB_PRICE_DB[typeKey];
     if (dbEntry && dbEntry.price_kw) {
-      addItem(dbEntry.label, hpPower, "kW", dbEntry.price_kw);
+      let unitPrice;
+      if (hpType === "aa") {
+        unitPrice = getPrice("heating", "hp_aa_multisplit")?.price ?? dbEntry.price_kw;
+      } else {
+        // aer-apă: selectează tier-ul funcție de putere
+        const hpKey = hpPower <= 9 ? "hp_aw_8kw"
+                    : hpPower <= 14 ? "hp_aw_12kw" : "hp_aw_16kw";
+        const hpSetPrice = getPrice("heating", hpKey)?.price;
+        const refKw = hpKey === "hp_aw_8kw" ? 8 : hpKey === "hp_aw_12kw" ? 12 : 16;
+        unitPrice = hpSetPrice ? hpSetPrice / refKw : dbEntry.price_kw;
+      }
+      addItem(dbEntry.label, hpPower, "kW", unitPrice);
     }
   }
 
@@ -305,12 +324,15 @@ export function calcRehabCost({
   }
 
   // ── 7. Panouri solare termice ────────────────────────────────────────
+  // Sprint P4.7 — canonic solar_thermal_4m2 mid 2000 EUR / 4 m² = 500 EUR/m²
   if (addSolar && solarArea > 0) {
+    const solarSet = getPrice("heating", "solar_thermal_4m2")?.price;
+    const solarPerM2 = solarSet ? solarSet / 4 : REHAB_PRICE_DB.solar_thermal.price_m2;
     addItem(
       REHAB_PRICE_DB.solar_thermal.label,
       solarArea,
       "m²",
-      REHAB_PRICE_DB.solar_thermal.price_m2
+      solarPerM2
     );
   }
 
@@ -324,20 +346,18 @@ export function calcRehabCost({
     );
   }
 
-  // ── 9. Etanșare anvelopă (inclusă automat dacă există lucrări) ───────
-  const hasEnvelope = (wallArea > 0 || roofArea > 0);
-  if (hasEnvelope && Au > 0) {
-    addItem(
-      REHAB_PRICE_DB.airtightness.label,
-      Au,                                   // estimat pe baza ariei utile
-      "m²",
-      PRICES_CANONICAL.airtightness_m2
-    );
-  }
+  // ── 9. Etanșare anvelopă (OPT-IN — Sprint P4.7) ───────────────────────
+  // Sprint Audit Prețuri P4.7 (9 mai 2026) — etanșare DEZACTIVATĂ default
+  // pentru a alinia Deviz cu CPE Post-Rehab + Pașaport (care NU includ
+  // airtightness implicit). Auditorul poate reactiva via param explicit dacă scenariu n50.
+  const hasEnvelope = (wallArea > 0 || roofArea > 0);  // păstrat pentru funding eligibility (afm_max)
 
   // ── Totaluri ─────────────────────────────────────────────────────────
   const subtotal_eur = items.reduce((s, i) => s + i.total_eur, 0);
-  const contingencyFactor = Math.max(0.05, Math.min(0.30, contingency || 0.15));
+  // Sprint P4.7 — fix `contingency || 0.15`: 0 era interpretat falsy → folosea 0.15.
+  // Acum: 0 explicit dezactivează contingency (util pentru testare paritate cross-document).
+  const _ctgRaw = (typeof contingency === "number") ? contingency : 0.15;
+  const contingencyFactor = _ctgRaw === 0 ? 0 : Math.max(0.05, Math.min(0.30, _ctgRaw));
   const contingency_eur  = Math.round(subtotal_eur * contingencyFactor * 100) / 100;
   const total_eur        = Math.round((subtotal_eur + contingency_eur) * 100) / 100;
   const total_lei        = Math.round(total_eur * EUR_RON * 100) / 100;

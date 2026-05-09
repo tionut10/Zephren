@@ -208,9 +208,15 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
   if (inputs.addHP) {
     const cop = parseFloat(inputs.hpCOP) || 4.0;
     const powerKw = parseFloat(inputs.hpPower) || 6;
-    // Sprint P3.1 — preț per kW din rehab-prices.heating.hp_aw_12kw / 12 (= 750 EUR/kW mid)
-    const hpSetPrice = _price("heating", "hp_aw_12kw", 9000);
-    const unitPrice = hpSetPrice / 12;
+    // Sprint P3.1 + P4.7 — preț per kW selectat funcție de putere (consistent cu rehab-cost.js Deviz):
+    //   ≤9 kW → hp_aw_8kw mid 6500/8 ≈ 812 EUR/kW
+    //   ≤14 kW → hp_aw_12kw mid 9000/12 = 750 EUR/kW
+    //   >14 kW → hp_aw_16kw mid 11500/16 ≈ 718 EUR/kW
+    const hpKey = powerKw <= 9 ? "hp_aw_8kw"
+                : powerKw <= 14 ? "hp_aw_12kw" : "hp_aw_16kw";
+    const refKw = hpKey === "hp_aw_8kw" ? 8 : hpKey === "hp_aw_12kw" ? 12 : 16;
+    const hpSetPrice = _price("heating", hpKey, 9000);
+    const unitPrice = hpSetPrice / refKw;
     const costEUR = powerKw * unitPrice;
     measures.push({
       id: "heat_pump",

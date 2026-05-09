@@ -12,6 +12,9 @@ import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost
 import { logPriceEvent } from "../data/price-telemetry.js";
 // Sprint Îmbunătățiri #2 — outlier detection investiție
 import { detectOutlier } from "../calc/cost-outlier-detector.js";
+// Sprint Îmbunătățiri #3 + B + P4.4 — currency switch global + export PDF dual
+import { fmtMoney, formatCurrencyForExport } from "../data/currency-context.js";
+import { useCurrencyMode } from "./CurrencyToggle.jsx";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -117,6 +120,8 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   const [scenarioMode, setScenarioMode] = useState("mid");
   // Sprint Îmbunătățiri #6 — modal GHID auditor
   const [showScenarioGuide, setShowScenarioGuide] = useState(false);
+  // Sprint Îmbunătățiri #3 + B — currency mode global (re-render la schimbare toggle)
+  const currencyMode = useCurrencyMode();
 
   const pretKwhNum = parseFloat(pretKwh) || 0.92;
   const costAnual = +(ep * au * pretKwhNum).toFixed(0);
@@ -261,10 +266,11 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       ["Indicator", "Valoare", "Clasă"].forEach((h, i) => writeText(h, M + 3 + i * 55, y + 4));
       y += 7;
       doc.setFont(baseFont, "normal");
+      // Sprint P4.4 — formatCurrencyForExport respectă currency mode global pentru PDF
       const rows = [
         ["EP total", `${ep.toFixed(1)} kWh/m²·an`, clasaActuala],
         ["CO₂ total", `${co2.toFixed(2)} kgCO₂/m²·an`, ""],
-        ["Cost anual estimat", `${costAnual.toLocaleString("ro-RO")} RON/an`, ""],
+        ["Cost anual estimat", `${formatCurrencyForExport(costAnual, "RON", { eurRon })}/an`, ""],
       ];
       rows.forEach(r => {
         writeText(r[0], M + 3, y + 4);
@@ -300,9 +306,9 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
         doc.setFontSize(8.5);
         writeText(`EP: ${ep.toFixed(1)} → ${c.epNou} kWh/m²·an  |  Clasă: ${clasaActuala} → ${c.clasaNou}  |  CO₂: ${co2.toFixed(2)} → ${c.co2Nou} kgCO₂/m²·an`, M + 3, y);
         y += 5;
-        writeText(`Reducere EP: ${s.reducereEP}%  |  Economie anuală: ${c.econAn.toLocaleString("ro-RO")} RON/an  |  Payback simplu: ${c.payback} ani`, M + 3, y);
+        writeText(`Reducere EP: ${s.reducereEP}%  |  Economie anuală: ${formatCurrencyForExport(c.econAn, "RON", { eurRon })}/an  |  Payback simplu: ${c.payback} ani`, M + 3, y);
         y += 5;
-        writeText(`Investiție estimată: ${c.inv.toLocaleString("ro-RO")} RON  |  Subvenție: ${c.subvPct}%  |  Cost net: ${c.invNet.toLocaleString("ro-RO")} RON`, M + 3, y);
+        writeText(`Investiție estimată: ${formatCurrencyForExport(c.inv, "RON", { eurRon })}  |  Subvenție: ${c.subvPct}%  |  Cost net: ${formatCurrencyForExport(c.invNet, "RON", { eurRon })}`, M + 3, y);
         y += 5;
         if (s.finantari.length) writeText(`Finanțare: ${s.finantari.join(", ")}`, M + 3, y);
         y += 9;
@@ -412,7 +418,7 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                 { label: "EP actual", val: `${ep.toFixed(1)} kWh/m²·an` },
                 { label: "Clasă actuală", val: clasaActuala, color: CLASA_CULORI[clasaActuala] },
                 { label: "CO₂ actual", val: `${co2.toFixed(2)} kgCO₂/m²·an` },
-                { label: "Cost anual estimat", val: `${costAnual.toLocaleString("ro-RO")} RON` },
+                { label: "Cost anual estimat", val: fmtMoney(costAnual, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon }) },
               ].map(item => (
                 <div key={item.label} className="bg-white/5 rounded-xl p-3 border border-white/10">
                   <div className="text-xs text-white/40 mb-1">{item.label}</div>
@@ -643,7 +649,7 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                       {[
                         { label: "EP nou", val: `${c.epNou} kWh/m²·an` },
                         { label: "Clasă nouă", val: c.clasaNou, color: CLASA_CULORI[c.clasaNou] },
-                        { label: "Economie anuală", val: `${c.econAn.toLocaleString("ro-RO")} RON` },
+                        { label: "Economie anuală", val: fmtMoney(c.econAn, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon }) },
                         { label: "Payback net", val: `${c.payback} ani` },
                       ].map(item => (
                         <div key={item.label} className="bg-white/5 rounded-lg p-2 border border-white/10">

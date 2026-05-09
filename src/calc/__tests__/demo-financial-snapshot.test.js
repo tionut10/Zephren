@@ -18,6 +18,13 @@
  *   - Primul rulat creează __snapshots__/demo-financial-snapshot.test.js.snap
  *   - Rulările următoare COMPARĂ și eșuează la diff > 0
  *   - Pentru actualizare deliberată: `npm run test -- -u`
+ *
+ * ISTORIC SNAPSHOT REVISIONS:
+ *   - v1 (Sprint Tier 1+P2, 9 mai 2026): baseline cu rehab-costs.js legacy
+ *   - v2 (Sprint P3.1, 9 mai 2026): post-migrare unified→rehab-prices
+ *   - v3 (Sprint P4.7, 9 mai 2026): HP scaling per putere (hp_aw_8/12/16) +
+ *     contingency=0 fix. Diferențe vs v2: doar HP la demo-uri cu putere
+ *     necorespunzătoare hp_aw_12kw (8 kW → hp_aw_8kw).
  */
 
 import { describe, it, expect } from "vitest";

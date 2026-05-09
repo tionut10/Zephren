@@ -130,17 +130,14 @@ export const TAB_SECTIONS = [
   // Sprint Conformitate P3-01..P3-06 (7 mai 2026) — Construcție nouă
   { id:"constructie_noua", icon:"🏗️", label:"Construcție nouă",       category:"rapoarte" },
 
-  // 💼 06 ADMINISTRARE CABINET — ELIMINATĂ COMPLET (Sprint 08may2026)
-  // Toate cele 5 tab-uri (Portofoliu + Deviz servicii + Contract + Ofertă reabilitare + Echipă)
-  // au fost eliminate: user PFA fără echipă, fără contract scris, fără ofertă pre-contractuală
-  // formalizată, fără SPV e-Factură, fără portofoliu mare.
-  // Reactivare: decomentează linile + restituie categoria „cabinet" în CATEGORIES_RO/EN.
-  // { id:"portofoliu",    icon:"📁", label:"Portofoliu proiecte",      category:"cabinet" },
-  // { id:"facturare",     icon:"🧾", label:"Deviz servicii",           category:"cabinet" },
-  // { id:"contract",      icon:"📝", label:"Contract",                 category:"cabinet" },
-  // { id:"efactura",      icon:"🏛️", label:"e-Factură ANAF",           category:"cabinet" },
-  // { id:"oferta_reab",   icon:"📄", label:"Ofertă reabilitare",       category:"cabinet" },
-  // { id:"team",          icon:"👥", label:"Echipă",                   category:"cabinet" },
+  // 💼 06 ADMINISTRARE CABINET
+  // Sprint 08may2026 — eliminate Portofoliu/Deviz servicii/Contract/e-Factură/Echipă
+  // (PFA fără echipă, fără contract scris, fără SPV).
+  // Sprint Audit Prețuri Sub-task A (9 mai 2026) — REACTIVARE oferta_reab pentru a expune
+  // toate îmbunătățirile sprint-ului (Tier 1 inflație + #2 outlier warnings + #6 GHID modal +
+  // Task D selector low/mid/high). Componenta există în repo + e migrată canonic.
+  { id:"oferta_reab", icon:"📄", label:"Ofertă reabilitare", category:"rapoarte" },
+  // Restanțe deferred (PFA workflow): portofoliu / facturare / contract / efactura / team.
 
   // 🌐 07 DATE EXTERNE & CLOUD
   { id:"climate_import", icon:"📡", label:"Import climă",            category:"date_ext" },

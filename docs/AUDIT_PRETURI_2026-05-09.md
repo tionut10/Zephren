@@ -335,3 +335,88 @@ P3 propus:
 ---
 
 **STOP — sfârșit Faza 1. Aștept confirmarea utilizatorului pentru declanșarea Faza 2 (Task A → B → C → D, secvențial cu commit local după fiecare).**
+
+---
+
+# §7. Status POST-SPRINT (9 mai 2026 — 22:30 EEST)
+
+Sprint Audit Prețuri MARATON FINALIZAT cu **10+ commit-uri** cumulative. Bilanț punct cu punct vs raport inițial:
+
+## §7.1 — Status itemi CRITICI (Faza 1 §1 inițial)
+
+| # Original | Locație | Stare INIȚIALĂ | Stare POST-SPRINT |
+|---:|---|---|---|
+| 1.1 | Step5 NPV chart hardcoded 2-3× subevaluat | 🔴 critic | ✅ **REZOLVAT** Task A — 3 scenarii bandă din `rehab-prices.js` canonic |
+| 1.2 | `material-prices.js` EUR/RON 5.00 fix | 🔴 critic | ✅ **REZOLVAT** Task B — `getEurRonSync()` BNR live |
+| 1.3 | `ROICalculator` curs 4.97 vechi | 🔴 critic | ✅ **REZOLVAT** P2.1 — `getPriceRON('mid')` live |
+| 1.4 | `PVDegradation` 4000 RON/kWp | 🔴 critic | ✅ **REZOLVAT** P2.2 — 5610 RON/kWp via `getPrice('renewables', 'pv_kwp')` |
+| 1.5 | `rehab-costs.js` legacy paralel | 🔴 critic | ✅ **REZOLVAT** P3.2 + P4.6 — fișier ELIMINAT, `ZONE_COLORS` extras în `zone-colors.js` |
+| 1.6 | `OfertaReabilitare` fără 3 scenarii | 🔴 critic | ✅ **REZOLVAT** Task D — selector low/mid/high cu multiplicator (0.85/1.0/1.18) + GHID modal |
+
+**Bilanț CRITICE: 6/6 REZOLVATE ✅**
+
+## §7.2 — Status itemi MODERATE (Faza 1 §2 inițial)
+
+| # | Locație | Stare POST-SPRINT |
+|---:|---|---|
+| 2.1.a | `Step7Audit:551` electricitate=1.40 fallback | ✅ P2.3 — `getEnergyPriceFromPreset(fuel, "casnic_2025")` |
+| 2.1.b | `Step5Calculation:1482` fallback gaz=0.31, electricitate=1.10 | ✅ P2.3 — `getEnergyPriceFromPreset` |
+| 2.1.c | `vmc-hr.js:131-133` 0.12/0.28 EUR/kWh | ✅ P2.4 — `getEnergyPriceFromPreset` + curs canonic |
+| 2.2.a | `vmc-hr.js:130` 150 EUR/m² + 800 fix hardcoded | ✅ P3.3 — `vmc_hr_full_install_per_m2` + `_fixed` în `rehab-prices` |
+| 2.2.b | `heat-pump-sizing.js` 600/900/1800 EUR/kW | ✅ P2.4 + P4.7 — `getPrice('heating', 'hp_aw_*')` cu scaling per putere |
+| 2.2.c | `chp-detailed.js` 3500 RON/kW_el flat | ✅ P3.4 — `getCHPInvestmentPerKW(power)` cu 3 tier-uri (micro/small/commercial) |
+| 2.2.d | `smart-rehab.js` 1100 EUR/kWp duplicat | ✅ P2.4 — `getPrice('renewables', 'pv_kwp')` |
+| 2.2.e | `rehab-comparator.js` 55/15 EUR/m²Au gross | ✅ P2.4 — comentarii canonice explicite (gross-rate intenționat) |
+| 2.2.f | `MEPSCheck.jsx:136-138` 1500/2500/3500 RON/m² | 🟡 NU MODIFICAT — heuristică separată, nu prețuri unitare |
+| 2.2.g | `historic-buildings.js` 28/110 RON/m²·cm | 🟡 NU MODIFICAT — clădiri istorice specializate |
+| 2.2.h | `AuditReport.jsx:181,192,202` text PDF | 🟡 NU MODIFICAT — text estimativ, nu calcul |
+| 2.3 | Bulk `\|\| 5.05` × 12 fișiere | ✅ P2.5 — `\|\| REHAB_PRICES.eur_ron_fallback` |
+
+**Bilanț MODERATE: 9/12 REZOLVATE, 3 confirmate ca exclus din scope (MEPS heuristic / istoric specializat / text PDF).**
+
+## §7.3 — Itemi NOI rezolvați (dincolo de raport inițial)
+
+Sprint a depășit scope-ul Faza 2 inițial cu următoarele:
+
+- **Tier 1** — Indexare inflație construcții via Eurostat `sts_copi_q` (modul nou `cost-index.js` + 29 teste)
+- **#1** Cross-document consistency tests (Deviz↔CPE↔Pașaport, paritate **<5% post-P4.7** vs ~70% inițial)
+- **#2** Outlier warnings auditor cu 5 levels (`cost-outlier-detector.js` + 17 teste)
+- **#3** Currency switch global Auto/EUR/RON (`currency-context.js` + `CurrencyToggle.jsx`, integrat în Step5 NPV + CostOptimalCurve + OfertaReabilitare)
+- **#4** Telemetrie prețuri `Pret.{action}` FIFO 1000 (`price-telemetry.js` + 15 teste)
+- **#5** Snapshot regression demo M1-M5 (11 snapshots, 3 revisions)
+- **#6** GHID modal auditor scenariu cu tabel orientativ (locație/sezon/tip clădire)
+- **P4.1** energy-calc.jsx RehabComparator inline migrat la canonic
+- **P4.2** Step7Audit cost breakdown migrat la canonic
+- **P4.3+P4.7** `rehab-cost.js` Deviz Estimativ migrare completă (formula incrementală → flat `getPrice`)
+- **P4.6** `rehab-costs.js` ELIMINAT COMPLET (fișier șters din index)
+- **A** Reactivare tab `oferta_reab` în Step8Advanced (toate îmbunătățirile vizibile auditor)
+- **B** CurrencyToggle integrat activ în 3 componente cheie
+
+## §7.4 — Test suite
+
+| Sprint | PASS | Note |
+|---|---:|---|
+| Pre-Sprint (baseline) | 3.326 | Linia de bază 9 mai 2026 |
+| Post Tier 1 + P2 | 3.370 | +44 teste |
+| Post P3 + 6 îmbunătățiri | 3.437 | +67 teste |
+| Post P4 + A+B+P4.7+D+E | **3.444** | +118 cumulativ |
+
+**1 fail preexistent `cooling-s9a.test.js` (fără legătură cu prețuri).**
+
+## §7.5 — Restanțe DEFERRED (NU lansa autonom)
+
+- **P4.4** PDF generators consume `fmtMoney` + `getCurrencyMode` (dual EUR/RON export automat) — 4-5h
+- **P4.5** Backend telemetrie endpoint serverless `_deferred/price-analytics` — 2h post Vercel Pro
+- **P4.airtightness** Reactivare opt-in airtightness în Deviz cu param `addAirtightness: true`
+
+## §7.6 — Concluzie practică
+
+**Auditorul beneficiază imediat de:**
+1. **NPV chart Pas 5** cu prețuri realiste piață Q1 2026 (anterior subevaluare 2-3×)
+2. **CPE Post-Rehab + Pașaport + Foaie de parcurs** — toate 3 documente folosesc același helper canonic (paritate <5% vs Deviz)
+3. **Selector low/mid/high** în Ofertă cu GHID profesional + outlier warnings
+4. **Currency toggle** Auto/EUR/RON în UI principal (PDF dual currency în P4.4 deferred)
+5. **Indexare automată inflație** Eurostat — prețurile se actualizează fără recalibrare manuală
+
+**Documentele oficiale Pas 6 (CPE + Anexa 1+2)** nu au fost afectate numeric — clasele energetice și datele clădirii rămân neatinse. Anexa 2 are doar îmbunătățire arhitecturală (PV cost via `getPrice` în loc de hardcode 1100, valoare numerică identică).
+

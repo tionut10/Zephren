@@ -167,6 +167,41 @@ export function exportPriceEventsCSV() {
   return header + rows.join("\n");
 }
 
+/**
+ * Sprint Audit Prețuri P4.5 (9 mai 2026) — sync events către backend serverless.
+ * STATUS: DEFERRED — endpoint api/_deferred/price-analytics.js (mutat în api/
+ * după upgrade Vercel Pro). Helperul de mai jos e gata, dar nu e încă apelat
+ * automat. Trigger: cron Vercel sau buton manual „Sync analytics" în settings.
+ *
+ * @param {string} [endpoint] - URL endpoint (default: /api/price-analytics)
+ * @param {string} [userId] - identificator user (default "anonymous")
+ * @returns {Promise<{ ok: boolean, stored?: number, error?: string }>}
+ */
+export async function syncPriceTelemetryToBackend(endpoint = "/api/price-analytics", userId = "anonymous") {
+  const events = getPriceEvents();
+  if (events.length === 0) return { ok: true, stored: 0 };
+  try {
+    const sessionId = (typeof crypto !== "undefined" && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : String(Date.now());
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events, userId, sessionId }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      return { ok: false, error: `${res.status}: ${txt.slice(0, 100)}` };
+    }
+    const data = await res.json();
+    // Clear after successful sync (avoid double-count)
+    if (data?.stored > 0) clearPriceTelemetry();
+    return { ok: true, stored: data?.stored || 0 };
+  } catch (err) {
+    return { ok: false, error: String(err.message || err).slice(0, 100) };
+  }
+}
+
 export const _internals = {
   TELEMETRY_KEY,
   MAX_EVENTS,

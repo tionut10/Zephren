@@ -53,7 +53,7 @@ const baseScenario = {
 
 describe("Sprint Îmbunătățiri #1 — Cross-document consistency", () => {
   describe("Deviz Estimativ ↔ CPE Post-Rehab — paritate investiție", () => {
-    it("Deviz EUR × eurRon ≈ CPE RON pentru același scenariu (toleranță ±10% post-P4.3)", () => {
+    it("Deviz EUR × eurRon ≈ CPE RON pentru același scenariu (toleranță ±5% post-P4.7)", () => {
       const eurRon = getEurRonSync();
 
       // 1. Deviz Estimativ (calc/rehab-cost.calcRehabCost)
@@ -99,7 +99,9 @@ describe("Sprint Îmbunătățiri #1 — Cross-document consistency", () => {
       //   - Post P4.3 (Deviz pereți+acoperiș flat): <10%
       const diff = Math.abs(devizRON - cpeRON);
       const ratio = diff / cpeRON;
-      expect(ratio).toBeLessThan(0.10);
+      // Sprint P4.7 — paritate <5% după ce TOATE itemii rehab-cost.js folosesc
+      // getPrice canonic (incluzând wall_mw/pur, roof_xps/mw, hp_aw scaling).
+      expect(ratio).toBeLessThan(0.05);
     });
   });
 
