@@ -210,8 +210,8 @@ export function benchmarkBuilding(ep_value, building_type, county_code) {
   else if (ep_value <= nat_ep * 0.90)  { percentile = "top 40%";  label = "Peste medie";        }
   else if (ep_value <= nat_ep * 1.10)  { percentile = "medie";    label = "La medie";           }
   else if (ep_value <= nat_ep * 1.25)  { percentile = "sub medie";label = "Sub medie";          }
-  else if (ep_value <= nat_ep * 1.50)  { percentile = "bottom 25%";label = "Cu mult sub medie"; }
-  else                                  { percentile = "bottom 10%";label = "Ineficientă";      }
+  else if (ep_value <= nat_ep * 1.50)  { percentile = "ultimii 25%";label = "Cu mult sub medie"; }
+  else                                  { percentile = "ultimii 10%";label = "Ineficientă";      }
 
   return { vs_national, vs_county, percentile, label, nat_ep };
 }
