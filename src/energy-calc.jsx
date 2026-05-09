@@ -1824,7 +1824,7 @@ export default function EnergyCalcApp({ cloud }) {
     const co2Orig = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary.co2_total_m2 || 0);
     return {
       original: { ep: epOrig, co2: co2Orig, cls: getEnergyClass(epOrig, catKey), qfTotal: instSummary.qf_total },
-      rehab: { ep: newEpM2, co2: newCO2M2, cls: newClass, qfTotal: newQfTotal },
+      rehab: { ep: newEpM2, co2: newCO2M2, cls: newClass, qfTotal: newQfTotal, qfH: newQfH, qfW: newQfW, qfC: newQfC, qfV: newQfV, qfL: newQfL },
       savings: { epPct: epOrig>0?((epOrig-newEpM2)/epOrig*100):0, co2Pct: co2Orig>0?((co2Orig-newCO2M2)/co2Orig*100):0, qfSaved: instSummary.qf_total - newQfTotal },
     };
   }, [instSummary, envelopeSummary, building, cooling, selectedClimate, rehabScenarioInputs, opaqueElements, glazingElements, renewSummary, calcOpaqueR, ventilation.type, useNA2023]);

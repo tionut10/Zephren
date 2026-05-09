@@ -456,73 +456,230 @@ export default function Step5Calculation(props) {
               {/* #19 Grafic radar performanță pe utilități */}
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
-                  <div className="flex items-center justify-center">
-                    <svg viewBox="0 0 460 440" width="100%" style={{maxWidth:"520px"}}>
-                      {(() => {
-                        const cx = 230, cy = 190, maxR = 100, maxMul = 1.6;
-                        const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
-                        const utils = [
-                          {label:"Încălzire", val: Au > 0 ? instSummary.qf_h / Au : 0},
-                          {label:"ACM",       val: Au > 0 ? instSummary.qf_w / Au : 0},
-                          {label:"Răcire",    val: Au > 0 ? instSummary.qf_c / Au : 0},
-                          {label:"Ventilare", val: Au > 0 ? instSummary.qf_v / Au : 0},
-                          {label:"Iluminat",  val: Au > 0 ? instSummary.qf_l / Au : 0},
-                        ];
-                        const ratios = utils.map((u, i) => nzebThresh[i] > 0 ? u.val / nzebThresh[i] : 0);
-                        const n = utils.length;
-                        const angleStep = (2 * Math.PI) / n;
-                        const getXY = (i, r) => [cx + r * Math.sin(i * angleStep), cy - r * Math.cos(i * angleStep)];
-                        const getCol = r => r <= 1.0 ? "#22c55e" : r <= 1.8 ? "#f59e0b" : "#ef4444";
-                        // Grid: 0.25×, 0.5×, 0.75×, 1.0× (nZEB ref)
-                        const grid = [0.25, 0.5, 0.75, 1.0].map(f => {
-                          const isRef = f === 1.0;
-                          const r = maxR * f;
-                          const pts = utils.map((_, i) => getXY(i, r).join(",")).join(" ");
-                          return <g key={f}>
-                            <polygon points={pts} fill={isRef ? "rgba(34,197,94,0.07)" : "none"}
-                              stroke={isRef ? "#22c55e" : "rgba(255,255,255,0.13)"}
-                              strokeWidth={isRef ? 1.8 : 0.7}
-                              strokeDasharray={isRef ? "5 3" : undefined} />
-                            {isRef && <text x={292} y={108} textAnchor="start" fontSize="8.5" fill="#4ade80" fontWeight="600">nZEB A+</text>}
-                          </g>;
-                        });
-                        // Axes with value labels at fixed distance from center (not at polygon vertex)
-                        const axes = utils.map((u, i) => {
-                          const ratio = ratios[i];
-                          const col = getCol(ratio);
-                          const capped = ratio > maxMul;
-                          const [lx, ly] = getXY(i, maxR + 26);
-                          const [ax, ay] = getXY(i, maxR * maxMul);
-                          return <g key={i}>
-                            <line x1={cx} y1={cy} x2={ax} y2={ay} stroke="rgba(255,255,255,0.18)" strokeWidth="0.8" />
-                            <text x={lx} y={ly + 4} textAnchor="middle" fontSize="11" fill="rgba(255,255,255,0.90)" fontWeight="500">{u.label}</text>
-                            <text x={lx} y={ly + 17} textAnchor="middle" fontSize="8.5" fill={col} fontWeight="600">{u.val.toFixed(1)}{capped ? "⁺" : ""} · ×{ratio.toFixed(1)}</text>
-                          </g>;
-                        });
-                        // Data polygon — r normalized to nZEB, capped at maxMul
-                        const worstRatio = Math.max(...ratios);
-                        const polyCol = getCol(worstRatio);
-                        const pts = ratios.map((ratio, i) => {
-                          const r = Math.min(maxR * maxMul, maxR * ratio);
-                          return getXY(i, r).join(",");
-                        }).join(" ");
-                        const noteY = cy + maxR * maxMul + 34;
-                        return <>
-                          {grid}{axes}
-                          <polygon points={pts} fill={`${polyCol}22`} stroke={polyCol} strokeWidth="2.5" opacity="0.95" />
-                          <text x={cx} y={noteY} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,0.50)">Inelul verde = prag nZEB A+ · ×N = raport față de prag</text>
-                          <g transform={`translate(${cx - 110}, ${noteY + 15})`}>
-                            <rect x={0} y={-8} width={9} height={9} fill="#22c55e" rx="1.5" />
-                            <text x={13} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">≤1× conform nZEB</text>
-                            <rect x={108} y={-8} width={9} height={9} fill="#f59e0b" rx="1.5" />
-                            <text x={121} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">1–1.8× depășit</text>
-                            <rect x={210} y={-8} width={9} height={9} fill="#ef4444" rx="1.5" />
-                            <text x={223} y={0} fontSize="8" fill="rgba(255,255,255,0.50)">{">"}1.8× critic</text>
+                  {(() => {
+                    const cx = 250, cy = 198, maxR = 112, maxMul = 2.0;
+                    const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
+                    const labels  = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
+                    const icons   = ["🔥","💧","❄️","💨","💡"];
+                    const keys    = ["qf_h","qf_w","qf_c","qf_v","qf_l"];
+                    const rehabKeys = ["qfH","qfW","qfC","qfV","qfL"];
+                    const n = 5;
+                    const vals   = keys.map(k => Au > 0 ? (instSummary[k] || 0) / Au : 0);
+                    const ratios = vals.map((v, i) => nzebThresh[i] > 0 ? v / nzebThresh[i] : 0);
+                    const colOf  = r => r === 0 ? "#52525b" : r <= 1.0 ? "#22c55e" : r <= 1.8 ? "#f59e0b" : "#ef4444";
+                    const ang = i => (2 * Math.PI * i) / n;
+                    const xy  = (i, r) => [cx + r * Math.sin(ang(i)), cy - r * Math.cos(ang(i))];
+                    const dpts = ratios.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul));
+                    const labelDist = maxR + 40;
+                    const labelAngle = Math.PI / n;
+
+                    // Feature 1 — Scenariu reabilitare (after-polygon)
+                    const hasRehab = !!rehabComparison?.rehab?.qfH !== undefined && rehabComparison;
+                    const valsAfter   = hasRehab ? rehabKeys.map(k => Au > 0 ? (rehabComparison.rehab[k] || 0) / Au : 0) : null;
+                    const ratiosAfter = valsAfter ? valsAfter.map((v, i) => nzebThresh[i] > 0 ? v / nzebThresh[i] : 0) : null;
+                    const dptsAfter   = ratiosAfter ? ratiosAfter.map((r, i) => xy(i, maxR * Math.min(r, maxMul) / maxMul)) : null;
+
+                    const legendY = cy + maxR + 58;
+                    const svgH = legendY + (hasRehab ? 44 : 26);
+
+                    return (
+                      <div>
+                        <svg viewBox={`0 0 500 ${svgH}`} width="100%" style={{maxWidth:"520px",display:"block",margin:"0 auto"}}>
+                          {/* Inele de referință */}
+                          {[0.5, 1.0, 1.5, 2.0].map(f => {
+                            const isNzeb = f === 1.0, isWarn = f === 1.5, isCrit = f === 2.0;
+                            const r = maxR * f / maxMul;
+                            const pts = Array.from({length: n}, (_, i) => xy(i, r).join(",")).join(" ");
+                            const rlx = cx + (r + 5) * Math.sin(labelAngle);
+                            const rly = cy - (r + 5) * Math.cos(labelAngle);
+                            return (
+                              <g key={f}>
+                                <polygon points={pts}
+                                  fill={isNzeb ? "rgba(34,197,94,0.07)" : "none"}
+                                  stroke={isNzeb ? "#22c55e" : isCrit ? "rgba(239,68,68,0.28)" : isWarn ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.09)"}
+                                  strokeWidth={isNzeb ? 1.5 : 0.6}
+                                  strokeDasharray={f > 0.25 ? "4 3" : undefined} />
+                                <text x={rlx} y={rly} fontSize="7.5" textAnchor="start"
+                                  fill={isNzeb ? "rgba(74,222,128,0.75)" : isCrit ? "rgba(239,68,68,0.45)" : isWarn ? "rgba(245,158,11,0.40)" : "rgba(255,255,255,0.20)"}
+                                  fontWeight={isNzeb ? "600" : "400"}>
+                                  {isNzeb ? "nZEB A+" : `×${f}`}
+                                </text>
+                              </g>
+                            );
+                          })}
+
+                          {/* Linii axe */}
+                          {labels.map((_, i) => {
+                            const r = ratios[i];
+                            const [ex, ey] = xy(i, maxR);
+                            return <line key={i} x1={cx} y1={cy} x2={ex} y2={ey}
+                              stroke={r > 0 ? `${colOf(r)}50` : "rgba(255,255,255,0.11)"} strokeWidth="1" />;
+                          })}
+
+                          {/* Feature 1 — Poligon „după reabilitare" (dashed cyan, în spate) */}
+                          {dptsAfter && (
+                            <g opacity="0.85">
+                              {Array.from({length: n}, (_, i) => {
+                                const j = (i + 1) % n;
+                                const [x0,y0]=dptsAfter[i],[x1,y1]=dptsAfter[j];
+                                return <polygon key={i}
+                                  points={`${cx},${cy} ${x0},${y0} ${x1},${y1}`}
+                                  fill="rgba(6,182,212,0.13)" stroke="none" />;
+                              })}
+                              {Array.from({length: n}, (_, i) => {
+                                const j = (i + 1) % n;
+                                const [x0,y0]=dptsAfter[i],[x1,y1]=dptsAfter[j];
+                                return <line key={i} x1={x0} y1={y0} x2={x1} y2={y1}
+                                  stroke="#06b6d4" strokeWidth="1.8" strokeDasharray="5 3" strokeLinecap="round" />;
+                              })}
+                            </g>
+                          )}
+
+                          {/* Fill segmentat per-utilitate (situație curentă) */}
+                          {Array.from({length: n}, (_, i) => {
+                            const j = (i + 1) % n;
+                            const wR = Math.max(ratios[i], ratios[j]);
+                            const col = colOf(wR);
+                            const [x0, y0] = dpts[i], [x1, y1] = dpts[j];
+                            return <polygon key={i}
+                              points={`${cx},${cy} ${x0},${y0} ${x1},${y1}`}
+                              fill={`${col}28`} stroke="none" />;
+                          })}
+
+                          {/* Contur per-segment colorat */}
+                          {Array.from({length: n}, (_, i) => {
+                            const j = (i + 1) % n;
+                            const wR = Math.max(ratios[i], ratios[j]);
+                            const col = colOf(wR);
+                            const [x0, y0] = dpts[i], [x1, y1] = dpts[j];
+                            return <line key={i} x1={x0} y1={y0} x2={x1} y2={y1}
+                              stroke={col} strokeWidth="2.2" strokeLinecap="round" />;
+                          })}
+
+                          {/* Puncte vertex colorate */}
+                          {ratios.map((r, i) => {
+                            if (r === 0) return null;
+                            const col = colOf(r);
+                            const [x, y] = dpts[i];
+                            return <g key={i}>
+                              <circle cx={x} cy={y} r="6" fill={`${col}28`} />
+                              <circle cx={x} cy={y} r="3.5" fill={col} />
+                            </g>;
+                          })}
+
+                          {/* Feature 2 — Săgeți overflow pentru axe capate (ratio > maxMul) */}
+                          {ratios.map((r, i) => {
+                            if (r <= maxMul) return null;
+                            const col = colOf(r);
+                            const s = Math.sin(ang(i)), c = Math.cos(ang(i));
+                            const tip  = [cx + (maxR + 11) * s, cy - (maxR + 11) * c];
+                            const bl   = [cx + (maxR - 2) * s + 5 * c, cy - (maxR - 2) * c + 5 * s];
+                            const br   = [cx + (maxR - 2) * s - 5 * c, cy - (maxR - 2) * c - 5 * s];
+                            return (
+                              <g key={i}>
+                                <polygon points={`${tip[0]},${tip[1]} ${bl[0]},${bl[1]} ${br[0]},${br[1]}`}
+                                  fill={col} opacity="0.90" />
+                                <polygon points={`${tip[0]},${tip[1]} ${bl[0]},${bl[1]} ${br[0]},${br[1]}`}
+                                  fill="none" stroke={col} strokeWidth="0.5" opacity="0.60" />
+                              </g>
+                            );
+                          })}
+
+                          {/* Feature 3 — Clasă energetică în centru */}
+                          {enClass && (
+                            <g>
+                              <circle cx={cx} cy={cy} r="26" fill="rgba(0,0,0,0.72)" stroke={enClass.color || "#6b7280"} strokeWidth="1.5" />
+                              <text x={cx} y={cy - 4} textAnchor="middle" fontSize="17" fill={enClass.color || "#fff"} fontWeight="800" fontFamily="monospace">
+                                {enClass.cls || "?"}
+                              </text>
+                              <text x={cx} y={cy + 10} textAnchor="middle" fontSize="6.5" fill="rgba(255,255,255,0.45)">
+                                {epFinal.toFixed(0)} kWh/m²
+                              </text>
+                            </g>
+                          )}
+
+                          {/* Etichete axe cu valori */}
+                          {labels.map((label, i) => {
+                            const r = ratios[i];
+                            const col = colOf(r);
+                            const [lx, ly] = xy(i, labelDist);
+                            const ta = lx - cx > 12 ? "start" : lx - cx < -12 ? "end" : "middle";
+                            const capped = r > maxMul;
+                            const rAfter = ratiosAfter ? ratiosAfter[i] : null;
+                            return (
+                              <g key={i}>
+                                <text x={lx} y={ly - 2} textAnchor={ta} fontSize="10.5"
+                                  fill="rgba(255,255,255,0.88)" fontWeight="500">
+                                  {icons[i]} {label}
+                                </text>
+                                {vals[i] > 0 ? (
+                                  <>
+                                    <text x={lx} y={ly + 12} textAnchor={ta} fontSize="9.5" fill={col} fontWeight="700">
+                                      {vals[i].toFixed(1)} kWh/m²
+                                    </text>
+                                    <text x={lx} y={ly + 24} textAnchor={ta} fontSize="8" fill={col} opacity="0.72">
+                                      ×{r.toFixed(1)}{capped ? "⁺" : ""} (prag {nzebThresh[i]})
+                                    </text>
+                                    {rAfter !== null && rAfter < r && (
+                                      <text x={lx} y={ly + 35} textAnchor={ta} fontSize="7.5" fill="#06b6d4" opacity="0.85">
+                                        ↓ ×{rAfter.toFixed(1)} după rehab
+                                      </text>
+                                    )}
+                                  </>
+                                ) : (
+                                  <text x={lx} y={ly + 12} textAnchor={ta} fontSize="8.5" fill="#52525b">
+                                    neinstalat
+                                  </text>
+                                )}
+                              </g>
+                            );
+                          })}
+
+                          {/* Legendă */}
+                          <g transform={`translate(${cx - 128}, ${legendY})`}>
+                            <circle cx={4} cy={-3} r={4} fill="#22c55e" />
+                            <text x={13} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">≤1× conform nZEB A+</text>
+                            <circle cx={128} cy={-3} r={4} fill="#f59e0b" />
+                            <text x={137} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">1–1.8× depășit</text>
+                            <circle cx={220} cy={-3} r={4} fill="#ef4444" />
+                            <text x={229} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">&gt;1.8× critic</text>
                           </g>
-                        </>;
-                      })()}
-                    </svg>
-                  </div>
+                          {hasRehab && (
+                            <g transform={`translate(${cx - 80}, ${legendY + 16})`}>
+                              <line x1={0} y1={-3} x2={18} y2={-3} stroke="#06b6d4" strokeWidth="2" strokeDasharray="5 3" />
+                              <text x={24} y={0} fontSize="7.5" fill="rgba(255,255,255,0.44)">Scenariu reabilitare activ</text>
+                            </g>
+                          )}
+                        </svg>
+
+                        {/* Mini-carduri sumar per utilitate */}
+                        <div className="grid grid-cols-5 gap-1.5 px-2 pb-3 mt-1">
+                          {labels.map((label, i) => {
+                            const r = ratios[i];
+                            const rA = ratiosAfter ? ratiosAfter[i] : null;
+                            const textCl = r === 0 ? "text-zinc-600" : r <= 1.0 ? "text-green-400" : r <= 1.8 ? "text-amber-400" : "text-red-400";
+                            const bgCl   = r === 0 ? "bg-white/[0.03]" : r <= 1.0 ? "bg-green-500/10" : r <= 1.8 ? "bg-amber-500/10" : "bg-red-500/10";
+                            return (
+                              <div key={i} className={`${bgCl} rounded-lg p-2 text-center`}>
+                                <div className="text-sm leading-tight">{icons[i]}</div>
+                                <div className="text-[9px] text-white/40 mt-0.5 leading-none truncate">{label}</div>
+                                <div className={`text-xs font-bold font-mono mt-1 ${textCl}`}>
+                                  {vals[i] > 0 ? vals[i].toFixed(0) : "—"}
+                                </div>
+                                <div className="text-[8px] text-white/25 leading-none">/{nzebThresh[i]}</div>
+                                {r > 0 && (
+                                  <div className={`text-[9px] font-mono font-semibold mt-0.5 ${textCl}`}>×{r.toFixed(1)}</div>
+                                )}
+                                {rA !== null && rA < r && (
+                                  <div className="text-[8px] font-mono text-cyan-400 mt-0.5">↓×{rA.toFixed(1)}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </Card>
               )}
               {/* ── SUMAR FINAL ── */}
