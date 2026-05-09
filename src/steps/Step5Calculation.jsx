@@ -1,5 +1,8 @@
 import React, { useMemo } from "react";
 import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
+// Sprint Audit Prețuri (9 mai 2026) Task A — NPV chart 3 scenarii bandă low/mid/high
+// Sursa canonică: src/data/rehab-prices.js (Q1 2026 + HG 907/2016 + MDLPA + oferte contractori)
+import { REHAB_PRICES, getEurRonSync } from "../data/rehab-prices.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
@@ -1486,30 +1489,76 @@ export default function Step5Calculation(props) {
                   + instSummary.qf_c * priceElec
                   + instSummary.qf_v * priceElec
                   + instSummary.qf_l * priceElec;
-                const measures = [
-                  // costuri calibrate la piața RO 2025 (supply + manoperă)
-                  { name: "Termoizolație pereți",  short: "Pereți",   cost: Au * 2.5 * 110,  savePct: 0.18, color: "#3b82f6" },
-                  { name: "Ferestre triple",         short: "Ferestre", cost: Au * 0.15 * 1100,savePct: 0.12, color: "#a855f7" },
-                  { name: "Termoizolație acoperiș", short: "Acoperiș", cost: Au * 55,          savePct: 0.10, color: "#f97316" },
-                  { name: "Pompă de căldură",        short: "Pompă",    cost: 35000,           savePct: 0.30, color: "#22c55e" },
-                  { name: "PV 5kWp",                 short: "PV 5kWp",  cost: 20000,           savePct: 0.15, color: "#facc15" },
+                // Sprint Audit Prețuri (9 mai 2026) Task A — costFn returnează {low, mid, high} în RON
+                // Sursa canonică: REHAB_PRICES (rehab-prices.js) × curs EUR/RON live BNR.
+                const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+                const MEASURE_DEFS = [
+                  { name: "Termoizolație pereți", short: "Pereți", color: "#3b82f6", savePct: 0.18,
+                    costFn: (au, eur) => ({
+                      low:  REHAB_PRICES.envelope.wall_eps_10cm.low  * au * 2.5 * eur,
+                      mid:  REHAB_PRICES.envelope.wall_eps_10cm.mid  * au * 2.5 * eur,
+                      high: REHAB_PRICES.envelope.wall_eps_10cm.high * au * 2.5 * eur,
+                    }) },
+                  { name: "Ferestre triple", short: "Ferestre", color: "#a855f7", savePct: 0.12,
+                    costFn: (au, eur) => ({
+                      low:  REHAB_PRICES.envelope.windows_u110.low  * au * 0.15 * eur,
+                      mid:  REHAB_PRICES.envelope.windows_u110.mid  * au * 0.15 * eur,
+                      high: REHAB_PRICES.envelope.windows_u110.high * au * 0.15 * eur,
+                    }) },
+                  { name: "Termoizolație acoperiș", short: "Acoperiș", color: "#f97316", savePct: 0.10,
+                    costFn: (au, eur) => ({
+                      low:  REHAB_PRICES.envelope.roof_eps_15cm.low  * au * eur,
+                      mid:  REHAB_PRICES.envelope.roof_eps_15cm.mid  * au * eur,
+                      high: REHAB_PRICES.envelope.roof_eps_15cm.high * au * eur,
+                    }) },
+                  { name: "Pompă de căldură", short: "Pompă", color: "#22c55e", savePct: 0.30,
+                    costFn: (_au, eur) => ({
+                      low:  REHAB_PRICES.heating.hp_aw_12kw.low  * eur,
+                      mid:  REHAB_PRICES.heating.hp_aw_12kw.mid  * eur,
+                      high: REHAB_PRICES.heating.hp_aw_12kw.high * eur,
+                    }) },
+                  { name: "PV 5kWp", short: "PV 5kWp", color: "#facc15", savePct: 0.15,
+                    costFn: (_au, eur) => ({
+                      low:  REHAB_PRICES.renewables.pv_kwp.low  * 5 * eur,
+                      mid:  REHAB_PRICES.renewables.pv_kwp.mid  * 5 * eur,
+                      high: REHAB_PRICES.renewables.pv_kwp.high * 5 * eur,
+                    }) },
                 ];
+                const measures = MEASURE_DEFS.map(d => {
+                  const c = d.costFn(Au, eurRon);
+                  return {
+                    name: d.name, short: d.short, color: d.color, savePct: d.savePct,
+                    costLow:  Math.round(c.low),
+                    cost:     Math.round(c.mid),   // backward-compat: cost == mid pentru tabel
+                    costHigh: Math.round(c.high),
+                  };
+                });
                 const discount = 0.05;
                 const years = 20;
 
+                // Calculează 3 trasee NPV per măsură (low/mid/high) — economia anuală e identică,
+                // diferă doar investiția inițială. Bandă low–high arată sensibilitatea preț.
                 const curves = measures.map(m => {
                   const annSave = annualCost * m.savePct;
-                  const pts = [{ yr: 0, npv: -m.cost }];
-                  let cumNPV = -m.cost;
-                  for (let yr = 1; yr <= years; yr++) {
-                    if (annSave > 0) cumNPV += annSave / Math.pow(1 + discount, yr);
-                    pts.push({ yr, npv: cumNPV });
-                  }
-                  const paybackYr = annSave > 0 ? pts.findIndex(p => p.npv >= 0) : -1;
-                  return { ...m, pts, paybackYr, annSave };
+                  const buildPts = (cost) => {
+                    const pts = [{ yr: 0, npv: -cost }];
+                    let cumNPV = -cost;
+                    for (let yr = 1; yr <= years; yr++) {
+                      if (annSave > 0) cumNPV += annSave / Math.pow(1 + discount, yr);
+                      pts.push({ yr, npv: cumNPV });
+                    }
+                    return pts;
+                  };
+                  const ptsLow  = buildPts(m.costLow);
+                  const ptsMid  = buildPts(m.cost);
+                  const ptsHigh = buildPts(m.costHigh);
+                  // Break-even calculat pe scenariul MID (consistent cu badge break-even)
+                  const paybackYr = annSave > 0 ? ptsMid.findIndex(p => p.npv >= 0) : -1;
+                  return { ...m, pts: ptsMid, ptsLow, ptsHigh, paybackYr, annSave };
                 });
 
-                const allNPV = curves.flatMap(c => c.pts.map(p => p.npv));
+                // Y-domain include toate cele 3 trasee (low cel mai negativ start, high cel mai puțin profit final)
+                const allNPV = curves.flatMap(c => [...c.ptsLow, ...c.pts, ...c.ptsHigh].map(p => p.npv));
                 const rawMin = Math.min(...allNPV), rawMax = Math.max(...allNPV);
                 const pad = (rawMax - rawMin) * 0.10;
                 const yMin = rawMin - pad, yMax = rawMax + pad;
@@ -1587,28 +1636,44 @@ export default function Step5Calculation(props) {
                     {breakY < pT + cH - 12 && (
                       <text x={pL+6} y={pT+cH-6} fontSize="9" fill="rgba(239,68,68,0.50)" fontStyle="italic">Investiție nerecuperată</text>
                     )}
-                    {/* Curbe + marcatori */}
+                    {/* Curbe + marcatori — Sprint Audit Prețuri Task A: 3 scenarii bandă low/mid/high */}
                     {curves.map((c, ci) => {
-                      const ptStr = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                      const ptStrLow  = c.ptsLow.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                      const ptStrMid  = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                      const ptStrHigh = c.ptsHigh.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                      // Polygon bandă: low (sus) → high (jos, traseat invers) închis
+                      const bandPoints = [
+                        ...c.ptsLow.map(p => `${toX(p.yr)},${toY(p.npv)}`),
+                        ...c.ptsHigh.slice().reverse().map(p => `${toX(p.yr)},${toY(p.npv)}`),
+                      ].join(" ");
                       const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
-                      const npv20 = c.pts[years].npv;
+                      const npv20Mid  = c.pts[years].npv;
+                      const npv20Low  = c.ptsLow[years].npv;
+                      const npv20High = c.ptsHigh[years].npv;
                       const endX = toX(years);
-                      const endY = toY(npv20);
+                      const endY = toY(npv20Mid);
                       const lY = labelYMap[c.name] ?? endY;
-                      const tipText = `${c.name}\nEconomie: ${fmtChart(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nNPV 20 ani: ${fmtChart(npv20)} RON\nRecuperare: ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
+                      const tipText = `${c.name}\nEconomie: ${fmtChart(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nInvestiție bandă: ${fmtChart(c.costLow)}–${fmtChart(c.costHigh)} RON (mid: ${fmtChart(c.cost)})\nNPV 20 ani bandă: ${fmtChart(npv20High)}–${fmtChart(npv20Low)} RON (mid: ${fmtChart(npv20Mid)})\nRecuperare (mid): ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
                       return (
                         <g key={"c"+ci}>
                           <title>{tipText}</title>
-                          <polyline points={ptStr} fill="none" stroke={c.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+                          {/* 1. Bandă low→high translucidă (sensibilitate preț) */}
+                          <polygon points={bandPoints} fill={c.color} opacity="0.12" stroke="none" />
+                          {/* 2. Polyline LOW punctată (scenariu optimist) */}
+                          <polyline points={ptStrLow} fill="none" stroke={c.color} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" strokeLinecap="round" strokeLinejoin="round" />
+                          {/* 2. Polyline HIGH punctată (scenariu conservator) */}
+                          <polyline points={ptStrHigh} fill="none" stroke={c.color} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" strokeLinecap="round" strokeLinejoin="round" />
+                          {/* 3. Polyline MID solidă (scenariu realist) */}
+                          <polyline points={ptStrMid} fill="none" stroke={c.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
                           {/* hitbox larg pentru tooltip */}
-                          <polyline points={ptStr} fill="none" stroke="transparent" strokeWidth="14" />
-                          {/* Dot break-even */}
+                          <polyline points={ptStrMid} fill="none" stroke="transparent" strokeWidth="14" />
+                          {/* 4. Dot break-even pe MID */}
                           {pbX && (
                             <circle cx={pbX} cy={breakY} r="5" fill={c.color} stroke="rgba(0,0,0,0.35)" strokeWidth="1.2" />
                           )}
-                          {/* Dot start */}
+                          {/* Dot start pe MID */}
                           <circle cx={toX(0)} cy={toY(-c.cost)} r="3.5" fill={c.color} opacity="0.85" />
-                          {/* End-of-line label cu linie de legătură dacă e offset */}
+                          {/* 5. End-of-line label la MID cu linie de legătură dacă e offset */}
                           {Math.abs(lY - endY) > 3 && (
                             <line x1={endX} y1={endY} x2={endX+7} y2={lY} stroke={c.color} strokeWidth="0.8" opacity="0.45" />
                           )}
@@ -1640,7 +1705,9 @@ export default function Step5Calculation(props) {
                       <tbody>
                         {curves.map((m, i) => {
                           const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
-                          const npv20 = m.pts[years].npv;
+                          const npv20Mid  = m.pts[years].npv;
+                          const npv20Low  = m.ptsLow[years].npv;
+                          const npv20High = m.ptsHigh[years].npv;
                           return (
                             <tr key={i} className="border-b border-white/5">
                               <td className="py-1.5 pr-3">
@@ -1649,17 +1716,24 @@ export default function Step5Calculation(props) {
                                   <span className="opacity-85">{m.name}</span>
                                 </div>
                               </td>
-                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtChart(m.cost)} RON</td>
+                              <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">
+                                <div>{fmtChart(m.cost)} RON</div>
+                                <div className="text-[10px] opacity-50">{fmtChart(m.costLow)}–{fmtChart(m.costHigh)}</div>
+                              </td>
                               <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtChart(m.annSave)} RON</td>
                               <td className="text-right py-1.5 px-2 font-bold tabular-nums" style={{color: m.color}}>{payback}</td>
-                              <td className="text-right py-1.5 pl-2 opacity-80 tabular-nums">{fmtChart(npv20)} RON</td>
+                              <td className="text-right py-1.5 pl-2 opacity-80 tabular-nums">
+                                <div>{fmtChart(npv20Mid)} RON</div>
+                                <div className="text-[10px] opacity-50">{fmtChart(npv20High)}–{fmtChart(npv20Low)}</div>
+                              </td>
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
                   </div>
-                  <div className="text-xs opacity-50 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Punct colorat = recuperare investiție</div>
+                  <div className="text-xs opacity-50 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Bandă = scenariile <span className="opacity-80">low</span> – <span className="opacity-80">mid</span> – <span className="opacity-80">high</span> (sensibilitate preț) · Punct colorat = recuperare investiție (mid)</div>
+                  <div className="text-[10px] opacity-45 mt-1">Prețuri {new Date().getFullYear()} · sursa: <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated}) · curs {eurRon.toFixed(2)} RON/EUR</div>
                 </Card>
                 );
               })()}
