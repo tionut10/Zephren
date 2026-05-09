@@ -1657,12 +1657,7 @@ export default function Step5Calculation(props) {
                       return (
                         <g key={"c"+ci}>
                           <title>{tipText}</title>
-                          {/* 1. Bandă low→high translucidă (sensibilitate preț) */}
-                          <polygon points={bandPoints} fill={c.color} opacity="0.14" stroke="none" />
-                          {/* 2. Margini bandă foarte subtile */}
-                          <polyline points={ptStrLow}  fill="none" stroke={c.color} strokeWidth="0.7" opacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
-                          <polyline points={ptStrHigh} fill="none" stroke={c.color} strokeWidth="0.7" opacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
-                          {/* 3. Polyline MID solidă (scenariu realist) */}
+                          {/* Polyline MID solidă (scenariu realist) */}
                           <polyline points={ptStrMid} fill="none" stroke={c.color} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
                           {/* hitbox larg pentru tooltip */}
                           <polyline points={ptStrMid} fill="none" stroke="transparent" strokeWidth="16" />
