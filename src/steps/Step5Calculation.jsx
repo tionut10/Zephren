@@ -473,7 +473,7 @@ export default function Step5Calculation(props) {
               {instSummary && (
                 <Card title="Profil performanță energetică" className="mb-4">
                   {(() => {
-                    const cx = 350, cy = 230, maxR = 150;
+                    const cx = 350, cy = 270, maxR = 150;
                     const nzebThresh = [49, 18, 13, 5, 6]; // Mc 001-2022 A+ kWh/m²·an
                     const labels  = ["Încălzire","ACM","Răcire","Ventilare","Iluminat"];
                     const icons   = ["🔥","💧","❄️","💨","💡"];
@@ -623,11 +623,11 @@ export default function Step5Calculation(props) {
                           {/* Feature 3 — Clasă energetică în centru */}
                           {enClass && (
                             <g>
-                              <circle cx={cx} cy={cy} r="30" fill="rgba(0,0,0,0.80)" stroke={enClass.color || "#6b7280"} strokeWidth="2" />
-                              <text x={cx} y={cy - 2} textAnchor="middle" fontSize="22" fill={enClass.color || "#fff"} fontWeight="900" fontFamily="monospace">
+                              <circle cx={cx} cy={cy} r="22" fill="rgba(0,0,0,0.80)" stroke={enClass.color || "#6b7280"} strokeWidth="1.5" />
+                              <text x={cx} y={cy + 5} textAnchor="middle" fontSize="16" fill={enClass.color || "#fff"} fontWeight="900" fontFamily="monospace">
                                 {enClass.cls || "?"}
                               </text>
-                              <text x={cx} y={cy + 14} textAnchor="middle" fontSize="7.5" fill="rgba(255,255,255,0.48)">
+                              <text x={cx} y={cy + 18} textAnchor="middle" fontSize="6.5" fill="rgba(255,255,255,0.45)">
                                 {epFinal.toFixed(0)} kWh/m²
                               </text>
                             </g>
