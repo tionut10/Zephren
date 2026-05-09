@@ -6,6 +6,8 @@ import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-f
 // Sursa canonică prețuri: rehab-prices.js (Q1 2026). Multiplicatorii sunt calibrați
 // pe raportul mediu low/mid și high/mid din REHAB_PRICES (vezi audit §5.4).
 import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+// Tier 1 — indexare inflație construcții (Eurostat sts_copi_q RO)
+import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost-index.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -117,6 +119,15 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
   const scenarioMultiplier = SCENARIO_MULTIPLIERS[scenarioMode] || 1.0;
 
+  // Tier 1 — factor inflație construcții (Eurostat sts_copi_q). State + auto-fetch.
+  const [costIndex, setCostIndex] = React.useState(() => getCostInflationFactorSync());
+  React.useEffect(() => {
+    let cancelled = false;
+    getCostInflationFactor().then(r => { if (!cancelled && r) setCostIndex(r); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  const inflationFactor = costIndex.factor || 1.0;
+
   // Sprint 06may2026 audit P0 (B3) — la primul mount, dacă există passport,
   // prepopulez scenariul cu denumire + investiție derivate din pașaport.
   // Altfel rămâne placeholder „(fără denumire)" + 0 RON.
@@ -144,10 +155,12 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
     const co2Nou = +(co2 * (1 - s.reducereEP / 100)).toFixed(2);
     const clasaNou = epToClasa(epNou);
     const econAn = +((ep - epNou) * au * pretKwhNum).toFixed(0);
-    // Investiția stocată (s.investitie) este valoarea de bază MID. Multiplicatorul
-    // scenariu (low 0.85 / mid 1.0 / high 1.18) e aplicat la afișare/PDF.
+    // Investiția stocată (s.investitie) este valoarea de bază MID. La afișare/PDF
+    // se aplică DOI multiplicatori:
+    //   1) scenariu (low 0.85 / mid 1.0 / high 1.18) — bandă preț piață
+    //   2) inflație construcții (Tier 1, Eurostat sts_copi_q) — actualizare temporală
     const baseInv = parseFloat(s.investitie) || 0;
-    const inv = +(baseInv * scenarioMultiplier).toFixed(0);
+    const inv = +(baseInv * scenarioMultiplier * inflationFactor).toFixed(0);
     const subvTotal = s.finantari.reduce((acc, f) => acc + (s.subventii[f] || 0), 0);
     const subvPct = Math.min(subvTotal, 90);
     const invNet = +(inv * (1 - subvPct / 100)).toFixed(0);
@@ -293,7 +306,10 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       doc.setFont(baseFont, "italic");
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      const nota = `Prețuri orientative ${YEAR} · sursa: piața RO + HG 907/2016 · rehab-prices.js (${REHAB_PRICES.last_updated}) · curs EUR/RON: ${eurRon.toFixed(2)} (BNR live). Fără TVA. Auditul energetic detaliat va preciza costurile exacte. Valoarea subvențiilor depinde de eligibilitate și disponibilitatea fondurilor.`;
+      const inflationNote = costIndex.source !== 'fallback'
+        ? ` · indexare inflație construcții ${inflationFactor >= 1 ? '+' : ''}${((inflationFactor - 1) * 100).toFixed(1)}% (Eurostat ${costIndex.currentPeriod || costIndex.basePeriod})`
+        : '';
+      const nota = `Prețuri orientative ${YEAR} · sursa: piața RO + HG 907/2016 · rehab-prices.js (${REHAB_PRICES.last_updated}) · curs EUR/RON: ${eurRon.toFixed(2)} (BNR live)${inflationNote}. Fără TVA. Auditul energetic detaliat va preciza costurile exacte. Valoarea subvențiilor depinde de eligibilitate și disponibilitatea fondurilor.`;
       const notaLines = doc.splitTextToSize(nota, W - M * 2);
       writeText(notaLines, M, y); y += notaLines.length * 4 + 10;
 
@@ -526,10 +542,14 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
             )}
           </section>
 
-          {/* Footer informativ Task D — sursa + curs */}
+          {/* Footer informativ Task D + Tier 1 — sursa + curs + inflație */}
           <div className="text-[10px] text-white/30 -mt-3 text-center">
             Prețuri orientative {YEAR} · sursa: piață RO + HG 907/2016 · <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated})
-            {" · "}curs EUR/RON: {eurRon.toFixed(2)} (BNR live) · fără TVA
+            {" · "}curs EUR/RON: {eurRon.toFixed(2)} (BNR live)
+            {costIndex.source !== 'fallback' && (
+              <> {" · "}<span className="text-amber-300/60">📈 inflație construcții {inflationFactor >= 1 ? '+' : ''}{((inflationFactor - 1) * 100).toFixed(1)}%</span> (Eurostat {costIndex.currentPeriod || costIndex.basePeriod})</>
+            )}
+            {" · "}fără TVA
           </div>
 
           {/* 4. Preview comparativ */}
