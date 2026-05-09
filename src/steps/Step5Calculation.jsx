@@ -1569,8 +1569,8 @@ export default function Step5Calculation(props) {
                 const yTicks = [];
                 for (let v = niceMin; v <= yMax + niceStep * 0.01; v += niceStep) yTicks.push(Math.round(v));
 
-                const W = 720, H = 320;
-                const pL = 80, pR = 76, pT = 24, pB = 36;
+                const W = 800, H = 400;
+                const pL = 72, pR = 92, pT = 32, pB = 48;
                 const cW = W - pL - pR, cH = H - pT - pB;
                 const toX = yr => pL + (yr / years) * cW;
                 const toY = v => pT + cH - ((v - yMin) / (yMax - yMin)) * cH;
@@ -1590,8 +1590,8 @@ export default function Step5Calculation(props) {
 
                 return (
                 <Card title={lang==="EN"?"Investment payback (NPV 20 years)":"Amortizare investiție (NPV 20 ani)"} className="mb-6 border-amber-500/20">
-                  <div className="overflow-x-auto">
-                  <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="overflow-visible">
+                  <div className="w-full">
+                  <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', aspectRatio: `${W}/${H}` }} className="overflow-visible">
                     {/* Zone colorate: verde deasupra break-even, roșu dedesubt */}
                     {breakY > pT && breakY < pT + cH && (
                       <>
@@ -1658,15 +1658,14 @@ export default function Step5Calculation(props) {
                         <g key={"c"+ci}>
                           <title>{tipText}</title>
                           {/* 1. Bandă low→high translucidă (sensibilitate preț) */}
-                          <polygon points={bandPoints} fill={c.color} opacity="0.12" stroke="none" />
-                          {/* 2. Polyline LOW punctată (scenariu optimist) */}
-                          <polyline points={ptStrLow} fill="none" stroke={c.color} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" strokeLinecap="round" strokeLinejoin="round" />
-                          {/* 2. Polyline HIGH punctată (scenariu conservator) */}
-                          <polyline points={ptStrHigh} fill="none" stroke={c.color} strokeWidth="1" strokeDasharray="3 3" opacity="0.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <polygon points={bandPoints} fill={c.color} opacity="0.14" stroke="none" />
+                          {/* 2. Margini bandă foarte subtile */}
+                          <polyline points={ptStrLow}  fill="none" stroke={c.color} strokeWidth="0.7" opacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
+                          <polyline points={ptStrHigh} fill="none" stroke={c.color} strokeWidth="0.7" opacity="0.28" strokeLinecap="round" strokeLinejoin="round" />
                           {/* 3. Polyline MID solidă (scenariu realist) */}
-                          <polyline points={ptStrMid} fill="none" stroke={c.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+                          <polyline points={ptStrMid} fill="none" stroke={c.color} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
                           {/* hitbox larg pentru tooltip */}
-                          <polyline points={ptStrMid} fill="none" stroke="transparent" strokeWidth="14" />
+                          <polyline points={ptStrMid} fill="none" stroke="transparent" strokeWidth="16" />
                           {/* 4. Dot break-even pe MID */}
                           {pbX && (
                             <circle cx={pbX} cy={breakY} r="5" fill={c.color} stroke="rgba(0,0,0,0.35)" strokeWidth="1.2" />
