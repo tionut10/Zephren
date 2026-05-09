@@ -8,6 +8,10 @@ import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-f
 import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 // Tier 1 — indexare inflație construcții (Eurostat sts_copi_q RO)
 import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost-index.js";
+// Sprint Îmbunătățiri #4 — telemetrie prețuri
+import { logPriceEvent } from "../data/price-telemetry.js";
+// Sprint Îmbunătățiri #2 — outlier detection investiție
+import { detectOutlier } from "../calc/cost-outlier-detector.js";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -111,6 +115,8 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   // Sprint Audit Prețuri Task D — scenariu activ pentru aplicarea multiplicatorului
   // pe investiția de bază (introdusă manual sau din pașaport, considerată MID).
   const [scenarioMode, setScenarioMode] = useState("mid");
+  // Sprint Îmbunătățiri #6 — modal GHID auditor
+  const [showScenarioGuide, setShowScenarioGuide] = useState(false);
 
   const pretKwhNum = parseFloat(pretKwh) || 0.92;
   const costAnual = +(ep * au * pretKwhNum).toFixed(0);
@@ -425,10 +431,18 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
             <SectionTitle>3. Scenarii propuse</SectionTitle>
 
             {/* Sprint Audit Prețuri Task D — selector scenariu preț (low/mid/high) */}
+            {/* Sprint Îmbunătățiri #6 (9 mai 2026) — modal GHID cu tabel orientativ */}
             <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <div className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Bandă preț estimat</div>
+                  <div className="text-xs font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    Bandă preț estimat
+                    <button type="button" onClick={() => setShowScenarioGuide(true)}
+                      title="Ghid selecție scenariu — când să folosești fiecare"
+                      className="w-4 h-4 rounded-full bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 text-[10px] font-bold flex items-center justify-center transition-all">
+                      ℹ
+                    </button>
+                  </div>
                   <div className="text-[10px] text-white/50 mt-0.5">
                     Selectați scenariul aplicat investiției — multiplicator pe valoarea de bază (mid).
                   </div>
@@ -438,7 +452,12 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                     const active = scenarioMode === mode;
                     const lbl = SCENARIO_LABELS[mode];
                     return (
-                      <button key={mode} type="button" onClick={() => setScenarioMode(mode)}
+                      <button key={mode} type="button"
+                        onClick={() => {
+                          setScenarioMode(mode);
+                          // Sprint Îmbunătățiri #4 — telemetrie distribuție low/mid/high
+                          logPriceEvent("scenario.changed", { mode, multiplier: SCENARIO_MULTIPLIERS[mode], context: "OfertaReabilitare" });
+                        }}
                         title={`${lbl.name} ${lbl.sub} — ${lbl.desc} · ×${SCENARIO_MULTIPLIERS[mode].toFixed(2)}`}
                         className={cn("text-xs px-3 py-1.5 rounded-lg border transition-all font-medium",
                           active
@@ -451,6 +470,86 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                 </div>
               </div>
             </div>
+
+            {/* Modal GHID auditor — Sprint Îmbunătățiri #6 */}
+            {showScenarioGuide && (
+              <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={(e) => e.target === e.currentTarget && setShowScenarioGuide(false)}>
+                <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-900 shadow-2xl">
+                  <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 sticky top-0 bg-slate-900">
+                    <div>
+                      <h3 className="text-sm font-bold text-amber-300">Ghid selecție scenariu preț</h3>
+                      <p className="text-[10px] text-white/50">Când să folosești fiecare bandă · sursa: rehab-prices.js + experiență contractori RO 2025-2026</p>
+                    </div>
+                    <button onClick={() => setShowScenarioGuide(false)} className="text-white/40 hover:text-white text-xl leading-none">&times;</button>
+                  </div>
+                  <div className="p-5 space-y-4 text-sm text-white/80">
+                    <p className="text-xs leading-relaxed">
+                      Banda de prețuri în <span className="font-mono text-amber-300">rehab-prices.js</span> reflectă o gamă realistă a pieței româneşti
+                      la Q1 2026. Selectați scenariul în funcție de context proiect, locație și sezonul construcțiilor.
+                    </p>
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-amber-300/80">
+                          <th className="text-left py-2 px-2 font-semibold">Context</th>
+                          <th className="text-center py-2 px-2 font-semibold text-emerald-300">Optimist (low)<br/>×0.85</th>
+                          <th className="text-center py-2 px-2 font-semibold text-amber-300">Realist (mid)<br/>×1.00</th>
+                          <th className="text-center py-2 px-2 font-semibold text-orange-300">Conservator (high)<br/>×1.18</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-white/70">
+                        <tr className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium">📍 Localizare geografică</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Rural · oraș mic</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Reședință județ · suburb major</td>
+                          <td className="py-2 px-2 text-center text-[11px]">București · Cluj · centru istoric protejat</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium">📅 Sezonul construcțiilor</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Iarnă · contractori liberi</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Primăvară / toamnă</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Vară · cerere maximă</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium">🏢 Tip clădire</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Renovare standard rezidențial</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Mixed-use · birou clasic</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Patrimoniu · spital · școală</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium">⚡ Acces utilități</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Acces facil · branșament existent</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Standard</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Branșament nou · acces dificil</td>
+                        </tr>
+                        <tr className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium">💼 Tip ofertă</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Best-case marketing · negociere</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Ofertă oficială realistă</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Buget public · achiziție</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2 px-2 font-medium">🎯 Recomandat pentru</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Audit preliminar pre-vânzare</td>
+                          <td className="py-2 px-2 text-center text-[11px] text-amber-300 font-semibold">Default · ofertă audit</td>
+                          <td className="py-2 px-2 text-center text-[11px]">Plan financiar bancar · PNRR</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-[11px] text-amber-200/90">
+                      <strong>💡 Recomandare profesională:</strong> Folosiți întotdeauna <span className="font-semibold">Realist (mid)</span> ca default
+                      pentru raportul oficial. Folosiți <span className="font-semibold">Conservator (high)</span> când clientul are buget rigid (PNRR/AFM)
+                      — surprizele costă mai mult decât marja extra. <span className="font-semibold">Optimist (low)</span> e doar pentru a indica
+                      potențialul de negociere în text comercial.
+                    </div>
+                    <div className="text-[10px] text-white/40">
+                      Calibrare bandă: low ≈ 85% mid (raport mediu rehab-prices) · high ≈ 118% mid · derivat din wall_eps_10cm 42/49/60
+                      + roof_eps_15cm 28/32/40 + boiler_cond_24kw 1400/1750/2100 + hp_aw_8kw 5000/6500/8500 EUR.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col gap-4">
               {scenarii.map((s, idx) => {
@@ -483,6 +582,29 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                             {" "}(×{scenarioMultiplier.toFixed(2)})
                           </div>
                         )}
+                        {/* Sprint Îmbunătățiri #2 — outlier detection vs benchmark rehab-prices */}
+                        {s.investitie && au > 0 && (() => {
+                          const out = detectOutlier(parseFloat(s.investitie) || 0, au, { category: building?.category });
+                          if (out.level === "ok" || out.level === "unknown") return null;
+                          const colorMap = {
+                            "warn-low":      "bg-amber-500/10 border-amber-500/30 text-amber-200",
+                            "critical-low":  "bg-red-500/15 border-red-500/40 text-red-200",
+                            "warn-high":     "bg-amber-500/10 border-amber-500/30 text-amber-200",
+                            "critical-high": "bg-red-500/15 border-red-500/40 text-red-200",
+                          };
+                          const cls = colorMap[out.level] || "bg-white/5 border-white/10 text-white/60";
+                          // Logează outlier flag pentru telemetrie
+                          // (NOTĂ: efect lateral în render — ok pentru analitică simplă)
+                          if (typeof window !== "undefined") {
+                            try { logPriceEvent("outlier.flagged", { level: out.level, deltaPct: out.deltaPct, category: building?.category, Au: au }); } catch {}
+                          }
+                          return (
+                            <div className={cn("text-[10px] mt-1 px-2 py-1.5 rounded border", cls)}
+                              title={`Benchmark rehab-prices: ${(out.benchmark.low / 1000).toFixed(0)}–${(out.benchmark.high / 1000).toFixed(0)}k RON pentru ${au} m² · curs ${out.benchmark.eurRon.toFixed(2)}`}>
+                              {out.message}
+                            </div>
+                          );
+                        })()}
                       </Field>
                     </div>
 

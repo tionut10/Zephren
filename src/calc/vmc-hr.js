@@ -9,8 +9,9 @@
  */
 
 // Sprint Audit Prețuri P2.4 (9 mai 2026) — tarife energie ANRE + curs EUR/RON live
+// Sprint Audit Prețuri P3.3 (9 mai 2026) — getPrice canonic pentru full-install
 import { getEnergyPriceFromPreset } from "../data/energy-prices.js";
-import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+import { getEurRonSync, getPrice, REHAB_PRICES } from "../data/rehab-prices.js";
 
 // SFP limite conform EN 13779 Tabel B.5 + I5-2022
 export const SFP_CLASSES = {
@@ -131,12 +132,12 @@ export function calcVMCHR({
   const co2_saved_kg = E_saved_primary_kWh * 0.24; // factor emisie mediu rețea termică/gaz
 
   // ── Costuri și payback estimat ──
-  // Sprint Audit Prețuri P2.4 (9 mai 2026) — costul include centrală + tubulatură + grile + manoperă
-  // (~150 EUR/m² Au full install). NOTĂ: rehab-prices.cooling.vmc_hr_80_per_m2 mid = 22 EUR/m² Au
-  // este DOAR centrala (gross-rate echipament, fără rețea distribuție); diferă de costul total.
-  // Pentru prețul TOTAL instalat, folosim valoarea full-install de mai jos. Dacă rehab-prices
-  // adaugă în viitor o cheie `vmc_hr_full_install_per_m2`, migrăm aici.
-  const cost_hr_eur = 150 * Au + 800; // euristică full-install: ~150 EUR/m² + 800 fix manoperă
+  // Sprint Audit Prețuri P3.3 (9 mai 2026) — migrat la rehab-prices canonic full-install
+  // (cooling.vmc_hr_full_install_per_m2 + vmc_hr_full_install_fixed). Anterior 150 EUR/m² + 800 EUR
+  // hardcoded. Include: centrală + tubulatură + grile + izolație canal + comandă + manoperă.
+  const fullInstallPerM2 = getPrice("cooling", "vmc_hr_full_install_per_m2", "mid")?.price || 150;
+  const fullInstallFixed = getPrice("cooling", "vmc_hr_full_install_fixed", "mid")?.price || 800;
+  const cost_hr_eur = fullInstallPerM2 * Au + fullInstallFixed;
   // Sprint Audit Prețuri P2.4 — tarife din ANRE casnic_2025 (RON) → conv. EUR via curs live
   const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
   const energy_price_eur_kwh = getEnergyPriceFromPreset("gaz", "casnic_2025") / eurRon;

@@ -111,12 +111,24 @@ function writeCache(payload) {
 export function setUserCostInflationOverride(factor) {
   if (factor == null) {
     try { sessionStorage.removeItem(USER_OVERRIDE_KEY); } catch {}
+    // Sprint Îmbunătățiri #4 — telemetrie reset
+    _logTelemetryLazy("inflation.reset", { context: "cost-index" });
     return true;
   }
   const f = parseFloat(factor);
   if (!Number.isFinite(f) || f < FACTOR_MIN || f > FACTOR_MAX) return false;
   try { sessionStorage.setItem(USER_OVERRIDE_KEY, String(f)); } catch {}
+  // Sprint Îmbunătățiri #4 — telemetrie override
+  _logTelemetryLazy("inflation.override", { factor: f, context: "cost-index" });
   return true;
+}
+
+// Lazy import pentru a evita circular dependency cu price-telemetry.js
+function _logTelemetryLazy(action, meta) {
+  try {
+    // eslint-disable-next-line global-require
+    import("./price-telemetry.js").then(m => m.logPriceEvent?.(action, meta)).catch(() => {});
+  } catch {}
 }
 
 function getUserOverride() {

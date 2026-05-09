@@ -19,7 +19,7 @@ import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THR
 import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB, NZEB_EP_FALLBACK, getNzebEpMaxWithFallback } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
-import { REHAB_COSTS } from "../data/rehab-costs.js";
+// Sprint Audit Prețuri P3.2 (9 mai 2026) — dead import REHAB_COSTS eliminat (nefolosit aici).
 import { T } from "../data/translations.js";
 import { generateNZEBConformanceReport } from "../lib/report-generators.js";
 import { generateCPECode, validateCPECode } from "../utils/cpe-code.js";

@@ -5,9 +5,14 @@
  * între Deviz estimativ PDF (28.281 €), CPE Estimat Post-Rehab (94.614 RON)
  * și Pașaport Renovare PDF (79.597 RON) pentru aceeași clădire + scenariu.
  *
+ * Sprint Audit Prețuri P3.1 (9 mai 2026) — MIGRARE INTEGRALĂ la rehab-prices.js
+ * canonic. Toate prețurile vin acum din REHAB_PRICES (3 scenarii low/mid/high)
+ * via getPrice('category', 'item', 'mid'). Eliminat dependency rehab-costs.js
+ * legacy. Mapare detaliată în _resolveCanonicalPrice() de mai jos.
+ *
  * Calculează SINGURUL adevăr pentru:
  *   - Cantități per măsură (arii din opaqueElements + glazingElements reale)
- *   - Preț unitar din REHAB_COSTS (EUR/m² sau EUR/buc)
+ *   - Preț unitar din rehab-prices.js (EUR/m² sau EUR/buc, scenariu mid default)
  *   - Cost total per măsură (EUR + RON cu curs live BNR)
  *   - Sumar global: investiție totală EUR/RON, economii anuale, payback
  *
@@ -20,8 +25,37 @@
  * Pentru calcul EP post-reabilitare → vezi rehab-comparator.js / smart-rehab.js.
  */
 
-import { REHAB_COSTS } from "../data/rehab-costs.js";
-import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+import { getEurRonSync, getPrice, REHAB_PRICES } from "../data/rehab-prices.js";
+
+// ─── Mapping legacy keys → rehab-prices canonical (Sprint P3.1) ──────────────
+
+/**
+ * Selectează cea mai apropiată valoare U din rehab-prices.envelope (windows_uXXX).
+ * Mapare: 1.40 → windows_u140, 1.10 → windows_u110, 0.90 → windows_u090, 0.70 → windows_u070.
+ */
+function _resolveWindowKey(uValue) {
+  const u = parseFloat(uValue);
+  if (u <= 0.80) return "windows_u070";
+  if (u <= 1.00) return "windows_u090";
+  if (u <= 1.30) return "windows_u110";
+  return "windows_u140";
+}
+
+/**
+ * Selectează cheia rehab-prices pentru termoizolația pereți funcție de grosime.
+ * Aproximare: t ≤ 12 → wall_eps_10cm; t > 12 → wall_eps_15cm.
+ */
+function _resolveWallKey(thickness_cm) {
+  return parseInt(thickness_cm, 10) > 12 ? "wall_eps_15cm" : "wall_eps_10cm";
+}
+
+/**
+ * Selectează cheia rehab-prices pentru acoperiș funcție de grosime.
+ * Aproximare: t ≤ 20 → roof_eps_15cm; t > 20 → roof_mw_25cm.
+ */
+function _resolveRoofKey(thickness_cm) {
+  return parseInt(thickness_cm, 10) > 20 ? "roof_mw_25cm" : "roof_eps_15cm";
+}
 
 /**
  * Construiește lista canonică de măsuri din rehabScenarioInputs + elemente reale.
@@ -29,18 +63,18 @@ import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
  * @param {Object} inputs - rehabScenarioInputs (addInsulWall, replaceWindows, etc.)
  * @param {Array<Object>} opaqueElements - Step 2 elemente opace [{type:'PE',area:'120'},...]
  * @param {Array<Object>} glazingElements - Step 2 vitraje
- * @param {Object} [options] - { includeNormatives: true, eurRon: 5.05 }
+ * @param {Object} [options] - { eurRon: 5.10, scenario: 'mid' }
  * @returns {Array<Measure>} listă canonică [{id, label, system, qty, unit,
  *                                            unitPriceEUR, costEUR, costRON,
  *                                            normativ, lifespan_years}]
  */
 export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingElements = [], options = {}) {
-  const { eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback } = options;
+  const { eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback, scenario = "mid" } = options;
   const measures = [];
   if (!inputs || typeof inputs !== "object") return measures;
 
-  // Helper: convertește EUR în RON cu cursul curent
   const toRON = (eur) => Math.round(eur * eurRon);
+  const _price = (cat, key, fb) => getPrice(cat, key, scenario)?.price ?? fb;
 
   // ── 1. TERMOIZOLARE PEREȚI EXTERIORI ──
   if (inputs.addInsulWall) {
@@ -48,7 +82,8 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
     const wallArea = (opaqueElements || [])
       .filter(el => el.type === "PE")
       .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const unitPrice = REHAB_COSTS.insulWall[t] ?? 42; // fallback 10cm
+    // Sprint P3.1 — getPrice canonic; default wall_eps_10cm.mid = 49 EUR/m²
+    const unitPrice = _price("envelope", _resolveWallKey(t), 49);
     const costEUR = wallArea * unitPrice;
     measures.push({
       id: "insul_wall",
@@ -72,7 +107,8 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
     const roofArea = (opaqueElements || [])
       .filter(el => el.type === "PP" || el.type === "PT")
       .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const unitPrice = REHAB_COSTS.insulRoof[t] ?? 42; // fallback 15cm
+    // Sprint P3.1 — getPrice canonic; default roof_eps_15cm.mid = 32 EUR/m²
+    const unitPrice = _price("envelope", _resolveRoofKey(t), 32);
     const costEUR = roofArea * unitPrice;
     measures.push({
       id: "insul_roof",
@@ -96,7 +132,8 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
     const baseArea = (opaqueElements || [])
       .filter(el => el.type === "PB" || el.type === "PL")
       .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    const unitPrice = REHAB_COSTS.insulBasement[t] ?? 45; // fallback 8cm
+    // Sprint P3.1 — basement_xps_10cm.mid = 32 EUR/m² (1 cheie indiferent de grosime)
+    const unitPrice = _price("envelope", "basement_xps_10cm", 32);
     const costEUR = baseArea * unitPrice;
     measures.push({
       id: "insul_basement",
@@ -119,12 +156,9 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
     const newU = parseFloat(inputs.newWindowU) || 0.90;
     const winArea = (glazingElements || [])
       .reduce((s, el) => s + (parseFloat(el.area) || 0), 0);
-    // Caută cea mai apropiată valoare U în REHAB_COSTS.windows
-    const availableUs = Object.keys(REHAB_COSTS.windows).map(Number).sort((a, b) => a - b);
-    const closestU = availableUs.reduce((prev, curr) =>
-      Math.abs(curr - newU) < Math.abs(prev - newU) ? curr : prev
-    );
-    const unitPrice = REHAB_COSTS.windows[closestU];
+    // Sprint P3.1 — _resolveWindowKey selectează tier-ul corect din rehab-prices.envelope
+    const winKey = _resolveWindowKey(newU);
+    const unitPrice = _price("envelope", winKey, 280); // default windows_u090.mid
     const costEUR = winArea * unitPrice;
     measures.push({
       id: "replace_windows",
@@ -145,8 +179,15 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
   // ── 5. VENTILARE MECANICĂ CU RECUPERARE CĂLDURĂ ──
   if (inputs.addHR) {
     const eff = parseInt(inputs.hrEfficiency) || 80;
-    const tier = eff >= 90 ? "hr90" : eff >= 80 ? "hr80" : "hr70";
-    const costEUR = REHAB_COSTS[tier];
+    // Sprint P3.1 — folosim full_install per Au + fixed (P3.3 chei noi în rehab-prices)
+    const Au = parseFloat(inputs.Au) || 100;  // fallback 100 m² dacă nu e specificat
+    const perM2 = _price("cooling",
+      eff >= 90 ? "vmc_hr_full_install_per_m2" : "vmc_hr_full_install_per_m2",
+      150);
+    const fixed = _price("cooling", "vmc_hr_full_install_fixed", 800);
+    // Eficiență 90% adaugă ~30% premium peste 80% (multiplicator empiric)
+    const effMultiplier = eff >= 90 ? 1.30 : eff >= 80 ? 1.0 : 0.85;
+    const costEUR = (perM2 * Au + fixed) * effMultiplier;
     measures.push({
       id: "vmc_hr",
       label: `Ventilare mecanică cu recuperare (η = ${eff}%)`,
@@ -166,10 +207,10 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
   // ── 6. POMPĂ DE CĂLDURĂ ──
   if (inputs.addHP) {
     const cop = parseFloat(inputs.hpCOP) || 4.0;
-    // Putere estimată ~4 kW pentru apartament 65m², ~10 kW pentru casă 150m²
-    // Folosim 6 kW ca default rezonabil; la nevoie input separat
     const powerKw = parseFloat(inputs.hpPower) || 6;
-    const unitPrice = REHAB_COSTS.hpPerKw || 900;
+    // Sprint P3.1 — preț per kW din rehab-prices.heating.hp_aw_12kw / 12 (= 750 EUR/kW mid)
+    const hpSetPrice = _price("heating", "hp_aw_12kw", 9000);
+    const unitPrice = hpSetPrice / 12;
     const costEUR = powerKw * unitPrice;
     measures.push({
       id: "heat_pump",
@@ -190,7 +231,10 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
   // ── 7. PANOURI FOTOVOLTAICE ──
   if (inputs.addPV) {
     const pvArea = parseFloat(inputs.pvArea) || 0;
-    const unitPrice = REHAB_COSTS.pvPerM2 || 180;
+    // Sprint P3.1 — pv_kwp.mid = 1100 EUR/kWp; ~5 m² panou per kWp
+    // Conversie pvArea (m²) → kWp folosind 5 m²/kWp; preț unitar EUR/m² = pv_kwp / 5
+    const pvKwpPrice = _price("renewables", "pv_kwp", 1100);
+    const unitPrice = pvKwpPrice / 5; // EUR/m² panou
     const costEUR = pvArea * unitPrice;
     measures.push({
       id: "pv_system",
@@ -211,7 +255,9 @@ export function buildCanonicalMeasures(inputs, opaqueElements = [], glazingEleme
   // ── 8. COLECTOARE SOLARE TERMICE ──
   if (inputs.addSolarTh) {
     const solarArea = parseFloat(inputs.solarThArea) || 0;
-    const unitPrice = REHAB_COSTS.solarThPerM2 || 380;
+    // Sprint P3.1 — solar_thermal_4m2.mid = 2000 EUR/set 4m² → 500 EUR/m²
+    const solarSetPrice = _price("heating", "solar_thermal_4m2", 2000);
+    const unitPrice = solarSetPrice / 4; // EUR/m²
     const costEUR = solarArea * unitPrice;
     measures.push({
       id: "solar_thermal",
@@ -326,4 +372,7 @@ function estimateEpReduction(measure) {
 // Export internal helpers pentru testing
 export const _internals = {
   estimateEpReduction,
+  _resolveWallKey,
+  _resolveRoofKey,
+  _resolveWindowKey,
 };

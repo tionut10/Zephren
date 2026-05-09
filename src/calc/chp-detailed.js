@@ -19,6 +19,8 @@
 
 import { FUELS } from "../data/constants.js";
 import { FP_ELEC } from "../data/u-reference.js";
+// Sprint Audit Prețuri P3.4 (9 mai 2026) — CHP scaling per range putere
+import { getCHPInvestmentPerKW, getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
 
 // ── Catalog tipuri CHP ──────────────────────────────────────────
 // Parametri tipici conform EN 50465 + date producători
@@ -183,14 +185,13 @@ export function calcCHP({
   const total_costs_ron = fuel_cost_ron + maintenance_ron;
   const net_savings_ron = Math.max(0, total_savings_ron - total_costs_ron);
 
-  // Sprint Audit Prețuri P2.4 (9 mai 2026) — Cost investiție estimat:
-  // ~1500 RON/kW_el (micro CHP comercial) → 5000 RON/kW_el (fuel cell, premium).
-  // NOTĂ: rehab-prices.renewables.chp_micro_1kwe mid = 11.000 EUR/SET (1 kW_el)
-  // ≈ 56.000 RON/kW_el — schemă diferită (set complet 1kW vs scaling EUR/kW).
-  // Pentru sisteme >1 kW_el, scaling-ul nu este liniar; păstrăm 3500 RON/kW_el
-  // ca aproximare comercială medie. Migrare canonică amânată la P3 cu re-calibrare
-  // per range de putere (1-5 kW micro / 5-50 kW small / 50+ kW commercial).
-  const invest = investCost_ron ?? (powerElec_kW * 3500);
+  // Sprint Audit Prețuri P3.4 (9 mai 2026) — CHP scaling canonic per range putere.
+  // getCHPInvestmentPerKW selectează automat tier-ul corect (micro/small/commercial)
+  // pe baza puterii electrice. Toate cele 3 sunt în rehab-prices.renewables (3 scenarii).
+  const eurRonRate = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+  const chpUnit = getCHPInvestmentPerKW(powerElec_kW, "mid"); // EUR/kW_el
+  const investEUR = chpUnit.pricePerKW * powerElec_kW;
+  const invest = investCost_ron ?? Math.round(investEUR * eurRonRate);
   const payback_years = net_savings_ron > 0
     ? Math.round(invest / net_savings_ron * 10) / 10
     : null;

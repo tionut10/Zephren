@@ -55,8 +55,16 @@ export const REHAB_PRICES = {
   // ── Răcire / Ventilație ──────────────────────────────────────────────────
   cooling: {
     chiller_inverter_kw: { low: 320, mid: 400, high: 520, lifespan: 15, unit: 'EUR/kW' },
+    // NOTĂ: cele „per_m2" includ DOAR centrala VMC + comandă (echipament gross-rate)
     vmc_hr_80_per_m2:    { low: 18,  mid: 22,  high: 28,  lifespan: 20, unit: 'EUR/m²Au' },
     vmc_hr_90_per_m2:    { low: 25,  mid: 32,  high: 40,  lifespan: 20, unit: 'EUR/m²Au' },
+    // Sprint Audit Prețuri P3.3 (9 mai 2026) — cost FULL-INSTALL per m² Au:
+    // include centrală VMC + tubulatură rigidă/flexibilă + grile evacuare/insuflare +
+    // izolație canal + comandă + manoperă + punere în funcțiune.
+    // Calibrat pe oferte contractori RO Q1 2026 (ex: ~150 EUR/m² Au + ~800 EUR fix manoperă
+    // pentru o casă 100 m² → 15.800 EUR full-install). Folosit de calc/vmc-hr.js.
+    vmc_hr_full_install_per_m2: { low: 120, mid: 150, high: 190, lifespan: 20, unit: 'EUR/m²Au' },
+    vmc_hr_full_install_fixed:  { low: 600, mid: 800, high: 1100, lifespan: 20, unit: 'EUR/set' },
     night_vent_control:  { low: 800, mid: 1200, high: 1800, lifespan: 15, unit: 'EUR/set' },
   },
 
@@ -66,6 +74,16 @@ export const REHAB_PRICES = {
     pv_battery_kwh:       { low: 400,  mid: 550,  high: 750,  lifespan: 15, unit: 'EUR/kWh' },
     biomass_pellet_25kw:  { low: 5000, mid: 6500, high: 8500, lifespan: 20, unit: 'EUR/set' },
     chp_micro_1kwe:       { low: 8000, mid: 11000, high: 15000, lifespan: 20, unit: 'EUR/set' },
+    // Sprint Audit Prețuri P3.4 (9 mai 2026) — CHP scaling per range putere [EUR/kW_el].
+    // Curba de cost descrește cu puterea (economies of scale):
+    //   - micro 1-5 kW_el (rezidențial avansat / clădiri mici): tipic 3.000-5.000 EUR/kW_el
+    //   - small 5-50 kW_el (clădiri mijlocii / tertiar mic): 1.800-3.000 EUR/kW_el
+    //   - commercial 50-500 kW_el (industrie / district heating): 1.000-1.800 EUR/kW_el
+    // Sursa: SR EN 50465:2015, IEA CHP Task 26, oferte Viessmann/Bosch RO 2025-2026.
+    // Folosit de calc/chp-detailed.js prin getCHPInvestmentPerKW(power_kW).
+    chp_micro_per_kwe:       { low: 3000, mid: 4000, high: 5000,  lifespan: 20, unit: 'EUR/kW_el' },
+    chp_small_per_kwe:       { low: 1800, mid: 2400, high: 3000,  lifespan: 20, unit: 'EUR/kW_el' },
+    chp_commercial_per_kwe:  { low: 1000, mid: 1400, high: 1800,  lifespan: 25, unit: 'EUR/kW_el' },
   },
 
   // ── Iluminat ─────────────────────────────────────────────────────────────
@@ -222,6 +240,35 @@ export function getPriceRON(category, item, scenario = 'mid') {
     unit: p.unit,
     lifespan: p.lifespan,
     rate,
+  };
+}
+
+/**
+ * Sprint Audit Prețuri P3.4 (9 mai 2026) — selectează preț CHP per range putere.
+ * Curba de cost CHP descrește cu puterea (economies of scale):
+ *   - 1-5 kW_el → chp_micro_per_kwe (3000-5000 EUR/kW_el, mid 4000)
+ *   - 5-50 kW_el → chp_small_per_kwe (1800-3000 EUR/kW_el, mid 2400)
+ *   - >50 kW_el → chp_commercial_per_kwe (1000-1800 EUR/kW_el, mid 1400)
+ *
+ * @param {number} power_kW_el - puterea electrică instalată
+ * @param {'low'|'mid'|'high'} [scenario='mid']
+ * @returns {{ pricePerKW: number, range: string, lifespan: number, unit: string }}
+ */
+export function getCHPInvestmentPerKW(power_kW_el, scenario = 'mid') {
+  const p = parseFloat(power_kW_el) || 0;
+  let key, range;
+  if (p <= 5) { key = 'chp_micro_per_kwe';      range = 'micro (1-5 kW_el)'; }
+  else if (p <= 50) { key = 'chp_small_per_kwe'; range = 'small (5-50 kW_el)'; }
+  else { key = 'chp_commercial_per_kwe';         range = 'commercial (50+ kW_el)'; }
+  const entry = REHAB_PRICES.renewables[key];
+  if (!entry) {
+    return { pricePerKW: 4000, range, lifespan: 20, unit: 'EUR/kW_el' };
+  }
+  return {
+    pricePerKW: entry[scenario] ?? entry.mid,
+    range,
+    lifespan: entry.lifespan || 20,
+    unit: entry.unit || 'EUR/kW_el',
   };
 }
 

@@ -1,0 +1,241 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M1 — Constanța (RA, 65 m²) > benchmark investiție (calcBenchmarkInvestmentRON pe Au real) 1`] = `
+{
+  "M": "M1",
+  "areaUseful": 65,
+  "benchmarkHigh": 152694,
+  "benchmarkLow": 100993,
+  "benchmarkMid": 122362,
+  "breakdownMid": {
+    "hpRON": 33150,
+    "pvRON": 28050,
+    "roofRON": 10608,
+    "totalRON": 122362,
+    "wallRON": 40609,
+    "winRON": 9945,
+  },
+  "ronPerM2High": 2349,
+  "ronPerM2Low": 1554,
+  "ronPerM2Mid": 1882,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M1 — Constanța (RA, 65 m²) > financial summary cu pachet standard (canonical via unified-rehab-costs) 1`] = `
+{
+  "M": "M1",
+  "areaUseful": 65,
+  "category": "RA",
+  "city": "Constanța",
+  "measureIds": [
+    "heat_pump",
+    "insul_roof",
+    "insul_wall",
+    "pv_system",
+    "replace_windows",
+  ],
+  "measuresCount": 5,
+  "paybackYears": 24.1,
+  "ronPerM2": 1599,
+  "totalEUR": 20382,
+  "totalRON": 103948,
+  "totalWithTvaRON": 125777,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M2 — Cluj-Napoca (RI, 120 m²) > benchmark investiție (calcBenchmarkInvestmentRON pe Au real) 1`] = `
+{
+  "M": "M2",
+  "areaUseful": 120,
+  "benchmarkHigh": 216087,
+  "benchmarkLow": 145452,
+  "benchmarkMid": 174114,
+  "breakdownMid": {
+    "hpRON": 33150,
+    "pvRON": 28050,
+    "roofRON": 19584,
+    "totalRON": 174114,
+    "wallRON": 74970,
+    "winRON": 18360,
+  },
+  "ronPerM2High": 1801,
+  "ronPerM2Low": 1212,
+  "ronPerM2Mid": 1451,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M2 — Cluj-Napoca (RI, 120 m²) > financial summary cu pachet standard (canonical via unified-rehab-costs) 1`] = `
+{
+  "M": "M2",
+  "areaUseful": 120,
+  "category": "RI",
+  "city": "Cluj-Napoca",
+  "measureIds": [
+    "heat_pump",
+    "insul_roof",
+    "insul_wall",
+    "pv_system",
+    "replace_windows",
+  ],
+  "measuresCount": 5,
+  "paybackYears": 17.8,
+  "ronPerM2": 1180,
+  "totalEUR": 27760,
+  "totalRON": 141576,
+  "totalWithTvaRON": 171307,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M3 — București (BI, 1500 m²) > benchmark investiție (calcBenchmarkInvestmentRON pe Au real) 1`] = `
+{
+  "M": "M3",
+  "areaUseful": 1500,
+  "benchmarkHigh": 1806675,
+  "benchmarkLow": 1260975,
+  "benchmarkMid": 1472625,
+  "breakdownMid": {
+    "hpRON": 33150,
+    "pvRON": 28050,
+    "roofRON": 244800,
+    "totalRON": 1472625,
+    "wallRON": 937125,
+    "winRON": 229500,
+  },
+  "ronPerM2High": 1204,
+  "ronPerM2Low": 841,
+  "ronPerM2Mid": 982,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M3 — București (BI, 1500 m²) > financial summary cu pachet standard (canonical via unified-rehab-costs) 1`] = `
+{
+  "M": "M3",
+  "areaUseful": 1500,
+  "category": "BI",
+  "city": "București",
+  "measureIds": [
+    "heat_pump",
+    "insul_roof",
+    "insul_wall",
+    "pv_system",
+    "replace_windows",
+  ],
+  "measuresCount": 5,
+  "paybackYears": 11,
+  "ronPerM2": 730,
+  "totalEUR": 214750,
+  "totalRON": 1095225,
+  "totalWithTvaRON": 1325222,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M4 — Brașov (ED, 1200 m²) > benchmark investiție (calcBenchmarkInvestmentRON pe Au real) 1`] = `
+{
+  "M": "M4",
+  "areaUseful": 1200,
+  "benchmarkHigh": 1460895,
+  "benchmarkLow": 1018470,
+  "benchmarkMid": 1190340,
+  "breakdownMid": {
+    "hpRON": 33150,
+    "pvRON": 28050,
+    "roofRON": 195840,
+    "totalRON": 1190340,
+    "wallRON": 749700,
+    "winRON": 183600,
+  },
+  "ronPerM2High": 1217,
+  "ronPerM2Low": 849,
+  "ronPerM2Mid": 992,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M4 — Brașov (ED, 1200 m²) > financial summary cu pachet standard (canonical via unified-rehab-costs) 1`] = `
+{
+  "M": "M4",
+  "areaUseful": 1200,
+  "category": "ED",
+  "city": "Brașov",
+  "measureIds": [
+    "heat_pump",
+    "insul_roof",
+    "insul_wall",
+    "pv_system",
+    "replace_windows",
+  ],
+  "measuresCount": 5,
+  "paybackYears": 11.2,
+  "ronPerM2": 740,
+  "totalEUR": 174100,
+  "totalRON": 887910,
+  "totalWithTvaRON": 1074371,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M5 — Sibiu (RI, 140 m²) > benchmark investiție (calcBenchmarkInvestmentRON pe Au real) 1`] = `
+{
+  "M": "M5",
+  "areaUseful": 140,
+  "benchmarkHigh": 239139,
+  "benchmarkLow": 161619,
+  "benchmarkMid": 192933,
+  "breakdownMid": {
+    "hpRON": 33150,
+    "pvRON": 28050,
+    "roofRON": 22848,
+    "totalRON": 192933,
+    "wallRON": 87465,
+    "winRON": 21420,
+  },
+  "ronPerM2High": 1708,
+  "ronPerM2Low": 1154,
+  "ronPerM2Mid": 1378,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > M5 — Sibiu (RI, 140 m²) > financial summary cu pachet standard (canonical via unified-rehab-costs) 1`] = `
+{
+  "M": "M5",
+  "areaUseful": 140,
+  "category": "RI",
+  "city": "Sibiu",
+  "measureIds": [
+    "heat_pump",
+    "insul_roof",
+    "insul_wall",
+    "pv_system",
+    "replace_windows",
+  ],
+  "measuresCount": 5,
+  "paybackYears": 16.7,
+  "ronPerM2": 1110,
+  "totalEUR": 30470,
+  "totalRON": 155397,
+  "totalWithTvaRON": 188030,
+}
+`;
+
+exports[`Sprint Îmbunătățiri #5 — Demo M1-M5 financial snapshot regression > Sumar agregat M1-M5 > toate cele 5 demo-uri produc financial summary fără crash 1`] = `
+[
+  {
+    "M": "M1",
+    "totalRON": 103948,
+  },
+  {
+    "M": "M2",
+    "totalRON": 141576,
+  },
+  {
+    "M": "M3",
+    "totalRON": 1095225,
+  },
+  {
+    "M": "M4",
+    "totalRON": 887910,
+  },
+  {
+    "M": "M5",
+    "totalRON": 155397,
+  },
+]
+`;

@@ -85,6 +85,8 @@ const Step7Audit = lazy(() => import("./steps/Step7Audit.jsx"));
 const Step8Advanced = lazy(() => import("./steps/Step8Advanced.jsx"));
 const BridgeModal = lazy(() => import("./components/BridgeModal.jsx"));
 const TutorialWizard = lazy(() => import("./components/TutorialWizard.jsx"));
+// Sprint Îmbunătățiri #3 (9 mai 2026) — toggle global EUR/RON/Auto
+import CurrencyToggle from "./components/CurrencyToggle.jsx";
 // Sprint v6.2 (27 apr 2026) — banner global tranziție Ord. 2237/2010 → Ord. 348/2026
 const MDLPATransitionBanner = lazy(() => import("./components/MDLPATransitionBanner.jsx"));
 // ── Secondary components — lazy loaded (S6.1) ──
@@ -3242,12 +3244,15 @@ export default function EnergyCalcApp({ cloud }) {
                 className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}><span aria-hidden="true">↷</span></button>
             </div>
 
-            <button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
+<button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
               aria-label="Deschide tutorialul interactiv"
               aria-haspopup="dialog"
               className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
               <span aria-hidden="true">🎓</span><span className="hidden lg:inline ml-1">Tutorial</span>
             </button>
+
+            {/* Sprint Îmbunătățiri #3 — toggle global Auto/EUR/RON */}
+            <CurrencyToggle className="hidden md:inline-flex" />
 
             <input ref={importFileRef} type="file" accept=".json" className="hidden"
               onChange={e => { if (e.target.files[0]) { importProject(e.target.files[0]); e.target.value=""; } }} />
