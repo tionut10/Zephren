@@ -19,6 +19,9 @@
 
 import { setupRomanianFont, makeTextWriter, ROMANIAN_FONT } from "../utils/pdf-fonts.js";
 import { APP_VERSION } from "../data/app-version.js";
+// audit-mai2026 MEGA Visual-2.A — migrare la brand kit Sprint Visual-1 (8 mai 2026)
+import { buildBrandMetadata, BRAND_COLORS, setBrandColor } from "./pdf-brand-kit.js";
+import { applyBrandHeader, applyBrandFooter } from "./pdf-brand-layout.js";
 
 /**
  * Generează un raport PDF unificat pentru un modul Step 8.
@@ -47,20 +50,16 @@ export async function generateAdvancedReportPDF(payload) {
   const H = 297;
   let y = 18;
 
-  // ─── Header ─────────────────────────────────────────────────────────
-  doc.setFillColor(20, 30, 60);
-  doc.rect(0, 0, W, 26, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont(baseFont, "bold");
-  doc.setFontSize(15);
-  writeText("ZEPHREN", M, 12);
-  doc.setFontSize(9);
-  doc.setFont(baseFont, "normal");
-  writeText("Calculator energetic clădiri România", M, 18);
-  doc.setFontSize(8);
-  writeText(new Date().toLocaleDateString("ro-RO"), W - M, 12, { align: "right" });
-  writeText(`Zephren ${APP_VERSION}`, W - M, 18, { align: "right" });
-
+  // ─── Header (Visual-2.A audit-mai2026: migrare la brand kit) ─────────
+  const brandMeta = buildBrandMetadata({
+    title: payload.title || "Raport Zephren",
+    building: payload.building,
+    auditor: payload.auditor,
+    date: new Date(),
+    docType: payload.docType || "advanced-report",
+    version: APP_VERSION,
+  });
+  applyBrandHeader(doc, brandMeta);
   y = 35;
   doc.setTextColor(20, 30, 60);
   doc.setFont(baseFont, "bold");
@@ -182,19 +181,11 @@ export async function generateAdvancedReportPDF(payload) {
     }
   }
 
-  // ─── Footer pe fiecare pagină ───────────────────────────────────────
+  // ─── Footer pe fiecare pagină (Visual-2.A: migrare la brand kit) ─────
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFont(baseFont, "italic");
-    doc.setFontSize(6.5);
-    doc.setTextColor(120, 120, 140);
-    writeText(
-      `Zephren ${APP_VERSION} — Mc 001-2022, ISO 52000-1/NA:2023, EPBD 2024/1275 — pag. ${i}/${pageCount}`,
-      W / 2,
-      H - 6,
-      { align: "center" }
-    );
+    applyBrandFooter(doc, brandMeta, i, pageCount);
   }
 
   // Save
