@@ -97,8 +97,11 @@ export function useEnvelopeSummary({
     });
 
     // Punți termice liniare (ψ × L) — SR EN ISO 14683 §8.1
+    // Audit-mai2026 P0 fix: intrările cu bridge_type==="point" se gestionează în
+    // pointThermalBridges (χ × N). Le ignorăm aici ca să nu confundăm unitățile.
     let bridgeLoss = 0;
     thermalBridges.forEach(b => {
+      if (b.bridge_type === "point") return;
       bridgeLoss += (parseFloat(b.psi) || 0) * (parseFloat(b.length) || 0);
     });
     // Sprint 22 #2 — punți termice punctuale (χ × N) — SR EN ISO 14683 §8.3

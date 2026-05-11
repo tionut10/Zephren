@@ -99,6 +99,22 @@ export function calcDynamicBridges(thermalBridges = [], opaqueElements = []) {
     // Găsim intrarea în catalog corespunzătoare
     const catalogEntry = BRIDGES_DB.find(b => b.name === tb.desc || b.name === tb.cat || b.cat === tb.cat);
 
+    // Audit-mai2026 P0 fix: intrările cu bridge_type="point" sunt punți PUNCTUALE (χ în W/K),
+    // se calculează separat ca χ × N în state-ul `pointThermalBridges` (SR EN ISO 14683 §8.3).
+    // Dacă apar în lista liniară (din import legacy sau selecție greșită), NU le aplicăm
+    // formula ψ × L (ar fi unități eronate). Returnăm psiL_dyn=0 cu warning explicit.
+    if (tb.bridge_type === "point" || catalogEntry?.bridge_type === "point") {
+      return {
+        ...tb,
+        psi_dyn: 0,
+        psiL_dyn: 0,
+        isDynamic: false,
+        isPointBridge: true,
+        warning: "Punte punctuală (χ) selectată în lista liniară — folosește lista de punți punctuale (χ × N).",
+        R_ins_used: null,
+      };
+    }
+
     if (!catalogEntry) {
       // Punte personalizată — nu modificăm ψ
       return {
@@ -159,13 +175,28 @@ export function summarizeDynamicBridges(dynamicBridges = []) {
 }
 
 /**
- * Returnează toate tipurile de punți termice din catalog grupate pe categorii
+ * Returnează tipurile de punți termice LINIARE din catalog grupate pe categorii.
+ *
+ * Audit-mai2026 P0 fix: implicit, intrările cu `bridge_type === "point"`
+ * (punți punctuale χ, W/K) sunt excluse — acestea se gestionează separat
+ * în `getPointCatalog()` și state-ul `pointThermalBridges` (SR EN ISO 14683 §8.3).
+ * Pasează `{ includePoint: true }` pentru cataloage de audit ce listează ambele.
  */
-export function getCatalogByCategory() {
+export function getCatalogByCategory({ includePoint = false } = {}) {
   const result = {};
   BRIDGES_DB.forEach(b => {
+    if (!includePoint && b.bridge_type === "point") return;
     if (!result[b.cat]) result[b.cat] = [];
     result[b.cat].push(b);
   });
   return result;
+}
+
+/**
+ * Returnează doar punțile PUNCTUALE din catalog (χ în W/K).
+ * Folosit de UI-ul de selecție pentru `pointThermalBridges`.
+ * SR EN ISO 14683:2017 §8.3 — formula: H_tb,point = Σ(χ × N).
+ */
+export function getPointCatalog() {
+  return BRIDGES_DB.filter(b => b.bridge_type === "point");
 }

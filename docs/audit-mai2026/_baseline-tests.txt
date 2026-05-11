@@ -1,0 +1,34 @@
+
+> zephren@3.2.0 test
+> vitest run
+
+[vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
+
+ RUN  v4.1.5 D:/Claude Projects/Zephren/energy-app
+
+ ❯ src/calc/__tests__/cooling-s9a.test.js (7 tests | 1 failed) 18ms
+     × Test 7 — Metoda orară (cooling-hourly) produce Q_NC realist pt. sezon 7ms
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/calc/__tests__/cooling-s9a.test.js > Sprint 9a — Răcire partea 1 > Test 7 — Metoda orară (cooling-hourly) produce Q_NC realist pt. sezon
+AssertionError: expected 0 to be greater than 99
+ ❯ src/calc/__tests__/cooling-s9a.test.js:203:21
+    201|       + result.breakdown.transmission_pct
+    202|       + result.breakdown.ventilation_pct;
+    203|     expect(sum_pct).toBeGreaterThan(99);
+       |                     ^
+    204|     expect(sum_pct).toBeLessThan(101);
+    205|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 169 passed (170)
+      Tests  1 failed | 3474 passed | 5 skipped (3480)
+   Start at  22:46:39
+   Duration  16.83s (transform 16.80s, setup 0ms, import 31.86s, tests 15.59s, environment 101.51s)
+
