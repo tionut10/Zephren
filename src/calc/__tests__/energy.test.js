@@ -58,6 +58,18 @@ describe("getEnergyClass", () => {
     const r = getEnergyClass(78, "RI_nocool");
     expect(r.cls).toBe("A+"); // ep <= 78 → A+
   });
+
+  it("clădire net-zero (EP=0 după regenerabile) → clasa A+, nu —", () => {
+    const r = getEnergyClass(0, "RI_nocool");
+    expect(r.cls).toBe("A+");
+    expect(r.idx).toBe(0);
+  });
+
+  it("clădire net-pozitivă (EP negativ după regenerabile) → clasa A+", () => {
+    const r = getEnergyClass(-15, "RI_nocool");
+    expect(r.cls).toBe("A+");
+    expect(r.idx).toBe(0);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
