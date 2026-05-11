@@ -5598,6 +5598,8 @@ class handler(BaseHTTPRequestHandler):
                 # Sprint post-deploy fix (20 apr 2026) — regim înălțime "2 (nr)" / "5 (nr)"
                 # Aceste placeholder-e apar ca paragrafe separate în template,
                 # NU în celule de tabel. Înlocuim text literal cu numere reale.
+                # FIX 11 mai 2026 (TODO CLAUDE A3): la count=0 înlocuim cu "—" în loc
+                # să lăsăm placeholder-ul "2 (nr)" sau "5 (nr)" vizibil.
                 # ══════════════════════════════════════════════════════════
                 regime_str_rep = (data.get("regime", "") or "").upper().strip()
                 import re as _re_reg
@@ -5608,25 +5610,27 @@ class handler(BaseHTTPRequestHandler):
 
                 # Înlocuim paragrafele standalone "2 (nr)" și "5 (nr)"
                 # (placeholder-e în template MDLPA pentru regim înălțime)
+                s_label_top = str(n_subsoluri) if n_subsoluri > 0 else "—"
+                e_label_top = str(n_etaje) if n_etaje > 0 else "—"
                 for p in doc.paragraphs:
                     pt_stripped = p.text.strip()
                     # Match flexibil: "2 (nr)", "2(nr)", "2\n(nr)" etc.
                     txt_normalized = " ".join(pt_stripped.split())
-                    if txt_normalized in ("2 (nr)", "2(nr)") and n_subsoluri > 0:
+                    if txt_normalized in ("2 (nr)", "2(nr)"):
                         for r in p.runs:
                             if "2" in r.text and "(nr)" not in r.text:
-                                r.text = r.text.replace("2", str(n_subsoluri), 1)
+                                r.text = r.text.replace("2", s_label_top, 1)
                                 break
                             elif r.text.strip() == "2":
-                                r.text = str(n_subsoluri)
+                                r.text = s_label_top
                                 break
-                    elif txt_normalized in ("5 (nr)", "5(nr)") and n_etaje > 0:
+                    elif txt_normalized in ("5 (nr)", "5(nr)"):
                         for r in p.runs:
                             if "5" in r.text and "(nr)" not in r.text:
-                                r.text = r.text.replace("5", str(n_etaje), 1)
+                                r.text = r.text.replace("5", e_label_top, 1)
                                 break
                             elif r.text.strip() == "5":
-                                r.text = str(n_etaje)
+                                r.text = e_label_top
                                 break
 
                 # ══════════════════════════════════════════════════════════
@@ -5815,42 +5819,88 @@ class handler(BaseHTTPRequestHandler):
                             col_reg = _REGIM_COLS.get(rk)
                             if col_reg is not None and col_reg < len(tbl.rows[5].cells):
                                 _check_cell_checkbox(tbl.rows[5].cells[col_reg])
-                        # Înlocuire "2" și "5" literal din rândul regim cu numere reale
-                        # Template are celule cu "2 (nr)" pentru S, "5 (nr)" pentru E
-                        # AGRESIV: iterez TOATE paragrafele din TOATE celulele rândului 5
-                        # și înlocuiesc "2" cu n_subsoluri, "5" cu n_etaje
+                        # Sprint 11 mai 2026 (TODO CLAUDE A3) — FIX bug "P+4E → S=4".
+                        # Bug vechi: bucla agresivă peste TOATE celulele din rândul 5
+                        # putea înlocui "5" (placeholder etaj) și în zona S (subsol)
+                        # dacă template-ul avea valori similare. La n_subsoluri=0,
+                        # placeholder-ul "2 (nr)" rămânea neînlocuit (user vedea "2" la S).
+                        #
+                        # FIX: replacement column-aware bazat pe _REGIM_COLS:
+                        #   S col=1 → cell index 2 (post-checkbox) primește n_subsoluri
+                        #   E col=9 → cell index 10 (post-checkbox) primește n_etaje
+                        # Plus: când count=0, placeholder devine "—" (nu rămâne "2 (nr)").
                         regim_row_cells = tbl.rows[5].cells
-                        for ci, cell in enumerate(regim_row_cells):
+                        n_cells = len(regim_row_cells)
+
+                        def _replace_placeholder_in_cell(cell, placeholder_chars, new_value):
+                            """Înlocuiește placeholder text (ex: "2", "5") cu new_value
+                            în primul paragraf relevant din celulă. Tolerant la variante
+                            "2", "2 (nr)", "2\n(nr)". Returnează True dacă a făcut înlocuire."""
                             for para in cell.paragraphs:
                                 para_text = para.text.strip()
-                                # Cazurile posibile: "2", "2 (nr)", "2\n(nr)", "2(nr)"
-                                # Normalizez whitespace
                                 norm = " ".join(para_text.split())
-                                if n_subsoluri > 0 and norm in ("2", "2 (nr)", "2(nr)"):
-                                    # Înlocuiesc primul run care conține "2" cu n_subsoluri
-                                    for r in para.runs:
-                                        if r.text.strip() == "2":
-                                            r.text = str(n_subsoluri)
-                                            break
-                                        elif "2" in r.text:
-                                            r.text = r.text.replace("2", str(n_subsoluri), 1)
-                                            break
-                                elif n_etaje > 0 and norm in ("5", "5 (nr)", "5(nr)"):
-                                    for r in para.runs:
-                                        if r.text.strip() == "5":
-                                            r.text = str(n_etaje)
-                                            break
-                                        elif "5" in r.text:
-                                            r.text = r.text.replace("5", str(n_etaje), 1)
-                                            break
+                                # Match exact placeholder cu fallback variante
+                                accepted = set()
+                                for ch in placeholder_chars:
+                                    accepted.update([ch, f"{ch} (nr)", f"{ch}(nr)"])
+                                if norm not in accepted:
+                                    continue
+                                for r in para.runs:
+                                    stripped = r.text.strip()
+                                    if stripped in placeholder_chars:
+                                        r.text = new_value
+                                        return True
+                                    if any(ch in r.text for ch in placeholder_chars):
+                                        for ch in placeholder_chars:
+                                            if ch in r.text:
+                                                r.text = r.text.replace(ch, new_value, 1)
+                                                return True
+                                # Fallback: dacă runs au structură fragmentată,
+                                # rescriem complet paragraf
+                                if para.runs:
+                                    para.runs[0].text = new_value
+                                    for rr in para.runs[1:]:
+                                        rr.text = ""
+                                    return True
+                            return False
+
+                        # Calculează etichetele pentru fiecare nivel (0 → "—" nu "0")
+                        s_label = str(n_subsoluri) if n_subsoluri > 0 else "—"
+                        e_label = str(n_etaje) if n_etaje > 0 else "—"
+
+                        # Hartă coloane țintă (vecine celulelor de checkbox):
+                        # S checkbox = col 1, label-ul "2 (nr)" e în col 2 (chiar lângă)
+                        # E checkbox = col 9, label-ul "5 (nr)" e în col 10
+                        # Variante: în unele template-uri label-ul e în col +1 sau +2.
+                        TARGET_CELLS_S = [c for c in (2, 1) if c < n_cells]  # priori 2, fallback 1
+                        TARGET_CELLS_E = [c for c in (10, 9) if c < n_cells] # priori 10, fallback 9
+
+                        # Înlocuiesc S (placeholder "2") DOAR în coloanele aferente S
+                        replaced_s = False
+                        for ci in TARGET_CELLS_S:
+                            if _replace_placeholder_in_cell(regim_row_cells[ci], ("2",), s_label):
+                                replaced_s = True
+                                break
+                        # Înlocuiesc E (placeholder "5") DOAR în coloanele aferente E
+                        replaced_e = False
+                        for ci in TARGET_CELLS_E:
+                            if _replace_placeholder_in_cell(regim_row_cells[ci], ("5",), e_label):
+                                replaced_e = True
+                                break
+
+                        if not (replaced_s or replaced_e):
+                            print(f"[regim_table_0] WARN: placeholder neidentificat (s={s_label}, e={e_label}, regime='{regime_str}')", flush=True)
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
 
                 # ── FALLBACK DOC-LEVEL: Regim "2 (nr)" / "5 (nr)" ──
-                # Table-level fix poate eșua dacă Tabel 0 are structură diferită.
-                # Fallback: iter TOATE paragrafele doc-level + paragrafele din TOATE
-                # celulele tabelelor, match exact (normalized) → înlocuire.
+                # Sprint 11 mai 2026 (TODO CLAUDE A3) — FIX bug "S=4".
+                # Înainte: înlocuia placeholder-ul "5" cu n_etaje în ORICE paragraf
+                # care match-uia "5 (nr)" — inclusiv în coloanele de S când template
+                # avea "5 (nr)" și acolo (cazuri MDLPA legacy). Plus, dacă n_subsoluri=0
+                # placeholder "2 (nr)" rămânea vizibil.
+                # FIX: când count=0 → placeholder înlocuit cu "—" (NU rămâne "2 (nr)").
                 try:
                     # Colectare tuturor paragrafelor (doc + tabel cells)
                     all_paras = list(doc.paragraphs)
@@ -5858,24 +5908,28 @@ class handler(BaseHTTPRequestHandler):
                         for row in tbl.rows:
                             for cell in row.cells:
                                 all_paras.extend(cell.paragraphs)
+                    s_label_fb = str(n_subsoluri) if n_subsoluri > 0 else "—"
+                    e_label_fb = str(n_etaje) if n_etaje > 0 else "—"
                     for para in all_paras:
                         pt = para.text.strip()
                         norm = " ".join(pt.split())
-                        if n_subsoluri > 0 and norm in ("2 (nr)", "2(nr)"):
+                        # Match strict pe "2 (nr)" pentru subsol (NU pe "2" izolat!
+                        # evităm fals-pozitive ex. "2" ca număr de etaj într-un paragraf adiacent)
+                        if norm in ("2 (nr)", "2(nr)"):
                             for r in para.runs:
                                 if r.text.strip() == "2":
-                                    r.text = str(n_subsoluri)
+                                    r.text = s_label_fb
                                     break
                                 elif "2" in r.text:
-                                    r.text = r.text.replace("2", str(n_subsoluri), 1)
+                                    r.text = r.text.replace("2", s_label_fb, 1)
                                     break
-                        elif n_etaje > 0 and norm in ("5 (nr)", "5(nr)"):
+                        elif norm in ("5 (nr)", "5(nr)"):
                             for r in para.runs:
                                 if r.text.strip() == "5":
-                                    r.text = str(n_etaje)
+                                    r.text = e_label_fb
                                     break
                                 elif "5" in r.text:
-                                    r.text = r.text.replace("5", str(n_etaje), 1)
+                                    r.text = r.text.replace("5", e_label_fb, 1)
                                     break
                 except Exception as e_regim_fb:
                     print(f"[regim_fallback] eroare: {e_regim_fb}", flush=True)

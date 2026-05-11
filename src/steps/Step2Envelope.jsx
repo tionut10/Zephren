@@ -143,13 +143,25 @@ export default function Step2Envelope({
             )}
           </Card>
 
-          {/* Elemente vitrate */}
-          <Card title={t("Elemente vitrate",lang)} badge={<button onClick={() => { setEditingGlazing(null); setShowGlazingModal(true); }}
+          {/* Elemente vitrate — Mc 001-2022 §2.3.2 */}
+          {/* Sprint 11 mai 2026 (TODO CLAUDE B2) — Clarificare tipuri elemente vitrate
+              conform Mc 001-2022 §2.3.2 + SR EN 14351-1 (ferestre) + SR EN 14351-2 (uși).
+              FE = fereastră + ușă cu vitraj predominant (>50% suprafață).
+              UE = ușă opacă exterior — clasificată în „Elemente opace" categoria „Uși". */}
+          <Card title={t("Elemente vitrate (ferestre + uși vitrate)",lang)} badge={<button onClick={() => { setEditingGlazing(null); setShowGlazingModal(true); }}
             className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30">+ Adaugă</button>}>
+            <div className="text-[10px] text-slate-400 bg-slate-500/5 border border-slate-500/10 rounded-md px-2 py-1.5 mb-3">
+              <strong className="text-slate-300">📐 Mc 001-2022 §2.3.2 — Tipuri elemente vitrate:</strong>
+              <ul className="mt-1 space-y-0.5 list-disc list-inside opacity-80">
+                <li><strong>FE</strong> — fereastră sau ușă cu vitraj predominant (&gt;50% suprafață vitrată) — SR EN 14351-1</li>
+                <li><strong>UE</strong> — ușă opacă (vitraj &lt;30%) — adăugare în „Elemente opace" → categoria „Uși" (SR EN 14351-2)</li>
+                <li>Sub-tipuri FE: după cadru (PVC/AL/lemn) + geam (dublu/triplu/Low-E)</li>
+              </ul>
+            </div>
             {glazingElements.length === 0 ? (
               <div className="text-center py-8 opacity-30">
                 <div className="text-3xl mb-2">🪟</div>
-                <div className="text-xs">{t("Adaugă ferestre și uși cu vitraje",lang)}</div>
+                <div className="text-xs">{t("Adaugă ferestre și uși cu vitraje (>50% suprafață vitrată)",lang)}</div>
               </div>
             ) : (
               <div className="space-y-2">

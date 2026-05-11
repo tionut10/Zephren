@@ -374,13 +374,13 @@ export async function exportCpePostRehabPDF(params = {}) {
         color: BRAND_COLORS.PRIMARY,
       },
     ],
-    disclaimer: "Document orientativ generat pentru informare — NU înlocuiește CPE oficial emis după realizarea lucrărilor (Legea 372/2005, Mc 001-2022, Ord. MDLPA 348/2026). Performanța reală post-reabilitare se atestă prin CPE oficial înregistrat la portalul MDLPA.",
+    disclaimer: "ESTIMARE AUDIT — NU CPE VALID. Document orientativ generat în cadrul auditului energetic Cap. 7 Mc 001-2022. NU înlocuiește certificatul de performanță energetică oficial, care se emite EXCLUSIV după realizarea lucrărilor și se înregistrează la portalul MDLPA conform Legii 372/2005 + Ord. MDLPA 348/2026. Sprint 11 mai 2026 (TODO CLAUDE C7).",
   });
 
-  // Sprint 8 mai 2026 — Watermark cover ELIMINAT.
-  // Motiv audit 8 mai 2026: watermark "ESTIMAT" la centrul paginii se suprapune
-  // cu titlul "CPE ESTIMAT — POST-REABILITARE" care deja conține cuvântul
-  // ESTIMAT. Dublarea creează vizual confuz. Watermark rămâne pe pag. 2 detaliu.
+  // Sprint 11 mai 2026 (TODO CLAUDE C7) — Watermark discret pe cover (opacity foarte
+  // mică, fără să suprapună titlul "ESTIMAT" deja existent). Asigură că marcajul
+  // "ESTIMAT — NU CPE VALID" este vizibil pe AMBELE pagini ale documentului.
+  renderWatermark(doc, "ESTIMAT", { opacity: 0.025 });
 
   // ═══════════════════════════════════════════════════════════════════════
   // PAGINA 2 — DETALIU TEHNIC
@@ -634,8 +634,10 @@ export async function exportCpePostRehabPDF(params = {}) {
   renderWatermark(doc, "ESTIMAT", { opacity: 0.035 });
 
   // ── FOOTER pag 2 (brand kit) ──
+  // Sprint 11 mai 2026 (TODO CLAUDE C7) — mesaj footer întărit:
+  // "ESTIMARE AUDIT — NU CPE VALID" pentru claritate juridică.
   applyBrandFooter(doc, brandMeta, 2, 2, {
-    legalText: "Document orientativ — atestat prin CPE oficial post-lucrări (L. 372/2005, Mc 001-2022, Ord. MDLPA 348/2026)",
+    legalText: "ESTIMARE AUDIT (Cap. 7 Mc 001-2022) — NU CPE VALID. Document orientativ; CPE oficial se emite după lucrări (L. 372/2005, Ord. MDLPA 348/2026).",
   });
 
   const blob = doc.output("blob");

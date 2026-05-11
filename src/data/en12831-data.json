@@ -19,7 +19,8 @@
   "_comment_C91_2024": "Tabelele A17/A18 din SR EN 12831-1:2017/NA:2022, corectate prin C91:2024",
 
   "GROUND_TEMP_CORR": {
-    "_comment": "Tabel A17 — Factori corectie temperatura sol per zona climatica (C91:2024)",
+    "_comment": "Tabel A17 — Factori corectie temperatura sol per zona climatica (C91:2024). Aplicabil DOAR pentru elemente PL (placa pe sol) conform SR EN ISO 13370:2018 §7. Formula: Phi_PL = fg1 × fg2 × A × U × Gw × (theta_int - theta_me_annual). Sursa: SR EN 12831-1:2017/NA:2022 Tab.A17 + corigendum C91:2024.",
+    "_reference": "SR EN 12831-1:2017/NA:2022 Tab.A17 + C91:2024 + SR EN ISO 13370:2018 §7",
     "fg1": 1.45,
     "fg2": {
       "I":   0.29,
@@ -31,18 +32,28 @@
   },
 
   "GROUND_WATER_FACTOR": {
-    "_comment": "Tabel A18 — Factor influenta apa freatica Gw (C91:2024)",
+    "_comment": "Tabel A18 — Factor influenta apa freatica Gw (C91:2024). Apa freatica aproape de suprafata creste pierderile prin sol (Gw>1) datorita capacitatii termice mai mari + miscare apa.",
+    "_reference": "SR EN 12831-1:2017/NA:2022 Tab.A18 + C91:2024",
     "0_1m":    1.15,
     "1_3m":    1.10,
     "over_3m": 1.00
   },
 
   "THETA_ME_ANNUAL": {
-    "_comment": "Temperatura medie anuala exterioara per zona climatica [°C] — NA:2022 Tab.A17",
+    "_comment": "Temperatura medie anuala exterioara per zona climatica [°C] — NA:2022 Tab.A17. Conform SR EN ISO 13370:2018 §6.2, 'theta_me_annual' se foloseste ca proxy pentru calcul pierderi prin placa pe sol PL. NOTA: aceasta NU este temperatura solului la adancime (~10-12°C constant) ci media anuala a aerului exterior — combinata cu factorii fg1×fg2 ai standardului C91 redau corect pierderile prin sol. Valorile sunt mai joase decat temperatura sol la adancime pentru ca C91 a calibrat fg1×fg2 pe baza acestor valori medii aer.",
+    "_reference": "SR EN 12831-1:2017/NA:2022 Tab.A17 + SR EN ISO 13370:2018 §6.2",
     "I":   11.5,
     "II":  10.5,
     "III":  9.5,
     "IV":   8.0,
     "V":    5.5
+  },
+
+  "_unheated_space_temps_iso13789": {
+    "_comment": "Sprint 11 mai 2026 (TODO CLAUDE B1) — Temperaturi de referinta pentru spatii neincalzite (subsol, pod, scara comuna) conform SR EN ISO 13789:2018 §A.4 Tab.A.5. Folosite pentru factori tau in calc PB (planseu peste subsol), PV (planseu peste pasaj), pereti la rost cu scara comuna. Valorile sunt orientative; auditorul ajusteaza la situatia reala (izolatie, expunere, ocupare adiacenta). Folosite ca tooltip ghid in Step3Systems > Zone termice adiacente.",
+    "_reference": "SR EN ISO 13789:2018 §A.4 Tab.A.5 + Mc 001-2022 Cap. 2.5",
+    "T_basement_C": { "zone_I_II": "10-12", "zone_III_IV": "8-10", "zone_V": "5-8" },
+    "T_attic_C":    { "ventilat": "0-5",    "izolat":      "5-10" },
+    "T_staircase_C":{ "bloc_etans": "12-15", "bloc_deschis": "8-12" }
   }
 }

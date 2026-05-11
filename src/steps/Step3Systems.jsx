@@ -482,9 +482,23 @@ export default function Step3Systems({
                     </button>
                     {showMultiZone && (
                       <div className="grid grid-cols-3 gap-3 mt-2">
-                        <Input label="T scară/hol comun" value={heating.tStaircase || "15"} onChange={v => setHeating(p=>({...p,tStaircase:v}))} type="number" unit="°C" tooltip="Temperatura medie a scării/holului comun neîncălzit (afectează τ perete interior)" />
-                        <Input label="T subsol" value={heating.tBasement || "10"} onChange={v => setHeating(p=>({...p,tBasement:v}))} type="number" unit="°C" tooltip="Temperatura medie a subsolului neîncălzit" />
-                        <Input label="T pod" value={heating.tAttic || "5"} onChange={v => setHeating(p=>({...p,tAttic:v}))} type="number" unit="°C" tooltip="Temperatura medie a podului neîncălzit" />
+                        {/* Sprint 11 mai 2026 (TODO CLAUDE B1) — tooltipuri extinse cu referințe standard.
+                            Valorile implicite (15/10/5°C) sunt conforme cu SR EN ISO 13789:2018 §A.4
+                            („Reduced temperature of unheated spaces") + Mc 001-2022 Cap. 2.5 + Anexa 2.
+                            Range-uri admise per zonă climatică în tooltip — auditorul ajustează la
+                            situația reală (izolație subsol, expunere vânt, ocupare adiacentă). */}
+                        <Input label="T scară/hol comun" value={heating.tStaircase || "15"}
+                          onChange={v => setHeating(p=>({...p,tStaircase:v}))}
+                          type="number" unit="°C"
+                          tooltip="Temperatura medie a scării/holului comun neîncălzit (afectează τ perete interior). SR EN ISO 13789:2018 §A.4 + Mc 001-2022 Cap. 2.5. Recomandat: 12-15°C (bloc rezidențial cu scară etanșă), 8-12°C (bloc cu scară deschisă)." />
+                        <Input label="T subsol" value={heating.tBasement || "10"}
+                          onChange={v => setHeating(p=>({...p,tBasement:v}))}
+                          type="number" unit="°C"
+                          tooltip="Temperatura medie a subsolului neîncălzit. SR EN ISO 13789:2018 §A.4 + Mc 001-2022 §2.5 + SR EN ISO 13370:2018 §7. Recomandat: 10-12°C zone I-II (București, Constanța), 8-10°C zone III-IV (centru, nord), 5-8°C zona V (Brașov, munte). Valori mai înalte dacă subsolul are izolație termică pe pereți + planșeu (sub-sol cuplat termic cu solul, T medie ~12°C anual)." />
+                        <Input label="T pod" value={heating.tAttic || "5"}
+                          onChange={v => setHeating(p=>({...p,tAttic:v}))}
+                          type="number" unit="°C"
+                          tooltip="Temperatura medie a podului neîncălzit. SR EN ISO 13789:2018 §A.4 + Mc 001-2022 Cap. 2.5. Recomandat: 0-5°C (pod ventilat, fără izolație acoperiș), 5-10°C (pod izolat). Verifică standardul SR EN ISO 13789 Tab. A.5 pentru factor corecție τ." />
                       </div>
                     )}
                   </div>
