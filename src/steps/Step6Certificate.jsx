@@ -3146,8 +3146,9 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                               </span>
                             )}
                             {isExempted && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/15">
-                                exceptat (Art. 4 L.372/2005)
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/15"
+                                title={nzebReq.article}>
+                                exceptat ({nzebReq.article || "Art. 4 L.372/2005"})
                               </span>
                             )}
                             {!canNzebReport && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">PRO</span>}

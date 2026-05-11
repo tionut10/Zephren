@@ -2570,47 +2570,9 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
-              {/* ── Notificări push expirare CPE ── */}
-              <Card title="Notificări — Expirare CPE" className="mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs">
-                    <div className="opacity-50">Primește notificări când CPE-ul se apropie de expirare</div>
-                    {auditor.date && (
-                      <div className="mt-1 opacity-70">
-                        CPE expiră la: <strong>{(() => { const d = new Date(auditor.date); d.setFullYear(d.getFullYear()+10); return d.toLocaleDateString("ro-RO"); })()}</strong>
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={() => {
-                    if ("Notification" in window) {
-                      Notification.requestPermission().then(p => {
-                        if (p === "granted") {
-                          showToast("Notificări activate! Vei fi alertat cu 90 zile înainte de expirare.", "success");
-                          // Schedule check
-                          if (auditor.date) {
-                            const exp = new Date(auditor.date);
-                            exp.setFullYear(exp.getFullYear() + 10);
-                            const daysLeft = Math.floor((exp - new Date()) / 86400000);
-                            if (daysLeft <= 90 && daysLeft > 0) {
-                              new Notification("Zephren — CPE expiră în " + daysLeft + " zile", {
-                                body: building.address || "Verifică certificatul energetic",
-                                icon: "/favicon.svg"
-                              });
-                            }
-                          }
-                        } else {
-                          showToast("Notificările sunt blocate de browser", "error");
-                        }
-                      });
-                    } else {
-                      showToast("Browserul nu suportă notificări", "error");
-                    }
-                  }}
-                    className="px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-all">
-                    🔔 Activează notificări
-                  </button>
-                </div>
-              </Card>
+              {/* ── Sprint 11 mai 2026 — eliminat (TODO CLAUDE C2): Notificări push expirare CPE.
+                  Nu corespunde Cap. 7 Mc 001-2022 (audit energetic) — pipeline gestionare
+                  există deja prin butonul „📁 Proiecte" din header. */}
 
               {/* ── Digital Building Logbook ── DEZACTIVAT: EPBD 2024/1275 netranspus în RO la 8.V.2026.
                   Termen transpunere națională: 29.05.2026. Reactivare după adoptarea actului național. */}
@@ -2640,21 +2602,9 @@ export default function Step7Audit(props) {
                 </div>
               </Card>}
 
-              {/* ── Pipeline gestionare proiecte ── */}
-              <Card title="Pipeline proiecte — Status tracking" className="mb-4">
-                <div className="flex items-center gap-1 overflow-x-auto pb-2">
-                  {["Lead","Inspecție","Calcul","CPE emis","Facturat"].map((stage, si) => {
-                    const currentStage = instSummary ? (auditor.name ? (auditor.atestat ? 3 : 2) : 1) : 0;
-                    const isActive = si <= currentStage;
-                    return (
-                      <React.Fragment key={stage}>
-                        <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-medium ${isActive ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 opacity-30 border border-white/10"}`}>{stage}</div>
-                        {si < 4 && <div className={`w-4 h-0.5 flex-shrink-0 ${isActive ? "bg-emerald-500/40" : "bg-white/10"}`} />}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              </Card>
+              {/* ── Sprint 11 mai 2026 — eliminat (TODO CLAUDE C2): Pipeline gestionare proiecte.
+                  Nu corespunde Cap. 7 Mc 001-2022 (audit energetic).
+                  Gestionarea proiectelor există deja prin butonul „📁 Proiecte" din header. */}
 
 
               {/* ═══ INSTRUMENTE SUPLIMENTARE (pct. 9-17) — Sprint 08may2026 (followup 6) ═══

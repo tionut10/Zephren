@@ -138,6 +138,26 @@ export function requiresNZEBReport(building) {
     };
   }
 
+  // Sprint 11 mai 2026 (TODO CLAUDE C5) — apartament individual (RA)
+  // Mc 001-2022 §2.4 evaluează încadrarea nZEB la nivelul ÎNTREGII CLĂDIRI
+  // (bloc, categoria RC), NU al apartamentului individual. Pentru categoria RA
+  // raportul nZEB nu se elaborează niciodată la nivel de unitate; aparține
+  // întotdeauna nivelului bloc (RC). Blocare indiferent de scop (construire/
+  // renovare/proiectare/vânzare), după ce s-au verificat toate excepțiile Art. 4
+  // (astfel casa de vacanță RA cu ocupare <4 luni păstrează lit. e) explicit).
+  if (cat === "RA") {
+    return {
+      required: false,
+      severity: "exempted",
+      reason:
+        "Apartament individual (categoria RA) — Mc 001-2022 §2.4 evaluează " +
+        "încadrarea nZEB la nivelul ÎNTREGII CLĂDIRI (bloc, RC), nu al " +
+        "apartamentului. Raportul nZEB se elaborează exclusiv pentru bloc " +
+        "prin programe integrate (Casa Verde Asociații / PNRR Comp. C5 / ANRSC).",
+      article: "Mc 001-2022 §2.4",
+    };
+  }
+
   // ── 2. CAZURI OBLIGATORII (Art. 13¹ + Art. 9 EPBD) ──
 
   if (NEW_BUILDING_SCOPES.has(scop)) {

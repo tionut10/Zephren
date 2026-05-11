@@ -25,9 +25,9 @@ describe("requiresNZEBReport — gating juridic raport nZEB", () => {
       expect(r.severity).toBe("required");
     });
 
-    it("Proiectare (scopCpe=proiectare) → required", () => {
+    it("Proiectare (scopCpe=proiectare) → required (categorie nerezidențială BI)", () => {
       const r = requiresNZEBReport({
-        scopCpe: "proiectare", category: "RA", areaUseful: 65,
+        scopCpe: "proiectare", category: "BI", areaUseful: 800,
       });
       expect(r.required).toBe(true);
     });
@@ -143,9 +143,9 @@ describe("requiresNZEBReport — gating juridic raport nZEB", () => {
       expect(r.article).toContain("lit. e)");
     });
 
-    it("Casă cu ocupare 4 luni/an → NU mai e exceptată (limita ≥ 4)", () => {
+    it("Casă cu ocupare 4 luni/an → NU mai e exceptată lit.e (limita ≥ 4) — RI individuală", () => {
       const r = requiresNZEBReport({
-        scopCpe: "construire", category: "RA", areaUseful: 80,
+        scopCpe: "construire", category: "RI", areaUseful: 80,
         occupancyMonths: 4,
       });
       expect(r.required).toBe(true);
@@ -162,9 +162,9 @@ describe("requiresNZEBReport — gating juridic raport nZEB", () => {
   });
 
   describe("Cazuri OPȚIONALE — CPE existent", () => {
-    it("CPE vânzare → optional (nu obligatoriu)", () => {
+    it("CPE vânzare → optional (nu obligatoriu) — pentru clădire individuală RI", () => {
       const r = requiresNZEBReport({
-        scopCpe: "vanzare", category: "RA", areaUseful: 65,
+        scopCpe: "vanzare", category: "RI", areaUseful: 120,
       });
       expect(r.required).toBe(false);
       expect(r.severity).toBe("optional");
@@ -238,12 +238,49 @@ describe("requiresNZEBReport — gating juridic raport nZEB", () => {
     });
   });
 
-  describe("Compatibilitate cu demo M1 (Bd. Tomis 287)", () => {
-    it("Demo M1 (RA renovare 65 m²) → required", () => {
+  describe("Sprint 11 mai 2026 (TODO CLAUDE C5) — RA exempted Mc 001-2022 §2.4", () => {
+    it("RA renovare → exempted (raport nZEB la nivel BLOC, nu apartament)", () => {
       const r = requiresNZEBReport({
         scopCpe: "renovare",
         category: "RA",
         areaUseful: 65,
+      });
+      expect(r.required).toBe(false);
+      expect(r.severity).toBe("exempted");
+      expect(r.article).toBe("Mc 001-2022 §2.4");
+      expect(r.reason).toMatch(/nivelul ÎNTREGII CLĂDIRI/);
+    });
+
+    it("RA construire → exempted (raport nZEB la nivel BLOC, nu apartament)", () => {
+      const r = requiresNZEBReport({
+        scopCpe: "construire", category: "RA", areaUseful: 80,
+      });
+      expect(r.required).toBe(false);
+      expect(r.article).toBe("Mc 001-2022 §2.4");
+    });
+
+    it("RA vânzare → exempted (NU optional cum ar fi cazul general)", () => {
+      const r = requiresNZEBReport({
+        scopCpe: "vanzare", category: "RA", areaUseful: 65,
+      });
+      expect(r.required).toBe(false);
+      expect(r.severity).toBe("exempted");
+      expect(r.article).toBe("Mc 001-2022 §2.4");
+    });
+
+    it("RA cu ocupare <4 luni → PĂSTREAZĂ lit. e (excepție Art. 4 prioritară)", () => {
+      const r = requiresNZEBReport({
+        scopCpe: "construire", category: "RA", areaUseful: 80,
+        occupancyMonths: 3,
+      });
+      expect(r.required).toBe(false);
+      expect(r.severity).toBe("exempted");
+      expect(r.article).toContain("lit. e)"); // ocupare scăzută are prioritate
+    });
+
+    it("RC renovare (bloc întreg) — NU este blocat (raport la nivel bloc)", () => {
+      const r = requiresNZEBReport({
+        scopCpe: "renovare", category: "RC", areaUseful: 800,
       });
       expect(r.required).toBe(true);
       expect(r.severity).toBe("required");

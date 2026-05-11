@@ -1156,23 +1156,11 @@ export default function Step1Identification({
                 Sursa Grade-Zile: SR 4839:2014 — Calculul gradelor-zile de încălzire.
               </div>
 
-              {/* Versiune scală + Scenariu climatic — mutate din Dimensiuni */}
+              {/* Sprint 11 mai 2026 — eliminat (TODO CLAUDE A2): selector „Versiune scală energetică".
+                  Mc 001-2022 (A+..G) e singura scală validă în vigoare. Scala „2030_zeb" EPBD 2024
+                  Art. 19 e premature până la transpunerea națională (termen 29 mai 2026).
+                  scaleVersion = "2023" hardcoded (default Mc 001-2022). */}
               <div className="pt-2 border-t border-white/5 space-y-3">
-                <Select
-                  label={t("Versiune scală energetică", lang)}
-                  tooltip="2023 = Mc 001-2022 (A+..G) · 2030_zeb = EPBD 2024 Art. 19 (ZEB=A, clasele existente shifted)"
-                  value={building.scaleVersion || "2023"}
-                  onChange={v => updateBuilding("scaleVersion", v)}
-                  options={[
-                    { value: "2023", label: "2023 — Mc 001-2022 (A+..G)" },
-                    { value: "2030_zeb", label: "2030 — EPBD 2024 Art. 19 (ZEB=A)" },
-                  ]}
-                />
-                {building.scaleVersion === "2030_zeb" && (
-                  <div className="text-[10px] text-violet-300/80 bg-violet-500/5 border border-violet-500/20 rounded-lg p-2">
-                    ℹ EPBD 2024 Art. 19: din 1 ian 2030, ZEB = clasa A (shift). Clasele actuale A→B, B→C etc.
-                  </div>
-                )}
                 <Select
                   label={t("Scenariu climatic proiecție", lang)}
                   tooltip="EPBD 2024 Art. 11 cere adaptare la schimbări climatice. Scenariile CORDEX RCP 4.5/8.5 modifică temperaturile medii și radiația solară pentru prognoză 2050."
