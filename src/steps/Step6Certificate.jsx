@@ -628,6 +628,67 @@ export default function Step6Certificate(props) {
                     cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     baseCat),
                     cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", baseCat),
                     cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    baseCat),
+                    // Sprint 11 mai 2026 — CO2 per utilitate (real) pentru tabel sisteme
+                    // CO2_factor (kg/kWh): gaz natural=0.202, electric=0.299 (mix RO 2024),
+                    // termoficare=0.265. Pentru simplitate folosim co2_total_m2 distribuit
+                    // proporțional pe consumul fiecărei utilități.
+                    ...((() => {
+                      const totQf = (instSummary?.qf_h || 0) + (instSummary?.qf_w || 0) +
+                                    (instSummary?.qf_c || 0) + (instSummary?.qf_v || 0) +
+                                    (instSummary?.qf_l || 0);
+                      const co2TotalAnnual = co2Final_m2 * Au;
+                      const co2Share = (qfVal) => totQf > 0 ? co2TotalAnnual * (qfVal / totQf) : 0;
+                      return {
+                        co2_incalzire: Au > 0 ? fmtRo(co2Share(instSummary?.qf_h || 0) / Au, 1) : "0,0",
+                        co2_acm:       Au > 0 ? fmtRo(co2Share(instSummary?.qf_w || 0) / Au, 1) : "0,0",
+                        co2_racire:    Au > 0 ? fmtRo(co2Share(instSummary?.qf_c || 0) / Au, 1) : "0,0",
+                        co2_ventilare: Au > 0 ? fmtRo(co2Share(instSummary?.qf_v || 0) / Au, 1) : "0,0",
+                        co2_iluminat:  Au > 0 ? fmtRo(co2Share(instSummary?.qf_l || 0) / Au, 1) : "0,0",
+                      };
+                    })()),
+                    // Sprint 11 mai 2026 — CLĂDIREA DE REFERINȚĂ per utilitate (Mc 001-2022 Cap. 5).
+                    // refBuilding.qf_* = kWh/an total → /Au = kWh/(m²·an). Aceleași valori
+                    // populate în columele „Clădirea de referință" din tabelul sisteme MDLPA.
+                    ...((() => {
+                      // Factori de conversie energie finală → primară per utilitate (FP standard Mc 001):
+                      // termic (gaz natural standard) = 1.1; electric (mix RO 2024) = 2.6.
+                      const FP_THERMAL = 1.1;
+                      const FP_ELECTRIC = 2.6;
+                      const ep_h_ref = Au > 0 ? (refBuilding.qf_h * FP_THERMAL) / Au : 0;
+                      const ep_w_ref = Au > 0 ? (refBuilding.qf_w * FP_THERMAL) / Au : 0;
+                      const ep_c_ref = Au > 0 ? (refBuilding.qf_c * FP_ELECTRIC) / Au : 0;
+                      const ep_v_ref = Au > 0 ? (refBuilding.qf_v * FP_ELECTRIC) / Au : 0;
+                      const ep_l_ref = Au > 0 ? (refBuilding.qf_l * FP_ELECTRIC) / Au : 0;
+                      // CO2 ref: factori per kWh primar: termic 0.202, electric 0.299
+                      const CO2_THERMAL = 0.202;
+                      const CO2_ELECTRIC = 0.299;
+                      const co2_h_ref = ep_h_ref * CO2_THERMAL;
+                      const co2_w_ref = ep_w_ref * CO2_THERMAL;
+                      const co2_c_ref = ep_c_ref * CO2_ELECTRIC;
+                      const co2_v_ref = ep_v_ref * CO2_ELECTRIC;
+                      const co2_l_ref = ep_l_ref * CO2_ELECTRIC;
+                      return {
+                        ep_incalzire_ref: fmtRo(ep_h_ref, 1),
+                        ep_acm_ref:       fmtRo(ep_w_ref, 1),
+                        ep_racire_ref:    fmtRo(ep_c_ref, 1),
+                        ep_ventilare_ref: fmtRo(ep_v_ref, 1),
+                        ep_iluminat_ref:  fmtRo(ep_l_ref, 1),
+                        co2_incalzire_ref: fmtRo(co2_h_ref, 1),
+                        co2_acm_ref:       fmtRo(co2_w_ref, 1),
+                        co2_racire_ref:    fmtRo(co2_c_ref, 1),
+                        co2_ventilare_ref: fmtRo(co2_v_ref, 1),
+                        co2_iluminat_ref:  fmtRo(co2_l_ref, 1),
+                        // Clase referință per sistem (Mc 001-2022 Tab I.1)
+                        cls_incalzire_ref: getServiceClass(ep_h_ref, "heating",     baseCat),
+                        cls_acm_ref:       getServiceClass(ep_w_ref, "dhw",         baseCat),
+                        cls_racire_ref:    getServiceClass(ep_c_ref, "cooling",     baseCat),
+                        cls_ventilare_ref: getServiceClass(ep_v_ref, "ventilation", baseCat),
+                        cls_iluminat_ref:  getServiceClass(ep_l_ref, "lighting",    baseCat),
+                        // Totaluri reference
+                        ep_total_ref_per_m2: fmtRo(epRefMax, 1),
+                        co2_total_ref_per_m2: fmtRo(co2_h_ref + co2_w_ref + co2_c_ref + co2_v_ref + co2_l_ref, 1),
+                      };
+                    })()),
                     // #7 (audit Pas 6+7 V7, 7 mai 2026) — date analiza financiară (Pas 7) pentru
                     // bifare CORECTĂ Anexa 1 secțiunea „Costuri/Economii/Recuperare" (CB 48-64).
                     // Anterior Python folosea defaults hardcoded (10k-25k / 20-30% / 3-7 ani)
