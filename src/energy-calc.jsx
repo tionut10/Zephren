@@ -3690,6 +3690,8 @@ Zona {selectedClimate.zone}
             userPlan,            // Sprint Pricing v6.0 — pentru noile componente simple BACS/SRI/MEPS/Pasaport
             // Sprint 11 mai 2026 (TODO CLAUDE C6) — Solar-Ready check mutat Pas 5 → Pas 6
             solarReadyCheck,
+            // Sprint 11 mai 2026 (audit A5 fix) — flag NA:2023 pentru getFPElecTot
+            useNA2023,
           }} /></Suspense>}
 
           {/* ═══ STEP 7: AUDIT — RECOMANDĂRI DE REABILITARE ═══ */}

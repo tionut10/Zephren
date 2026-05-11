@@ -92,6 +92,9 @@ export default function Step6Certificate(props) {
     userPlan,           // Sprint Pricing v6.0 — pentru gating BACS/SRI/MEPS detaliate
     // Sprint 11 mai 2026 (TODO CLAUDE C6) — Solar-Ready check mutat din Pas 5 în Pas 6
     solarReadyCheck,
+    // Sprint 11 mai 2026 (audit A5 fix) — flag NA:2023 pentru getFPElecTot.
+    // Default true (recomandat MDLPA). Dacă propul nu e pasat, evităm ReferenceError.
+    useNA2023 = true,
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   // Pricing v6.1 — watermark diferențiat: Free → "Zephren DEMO", Edu → "SCOP DIDACTIC".
