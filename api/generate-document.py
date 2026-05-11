@@ -6478,35 +6478,69 @@ class handler(BaseHTTPRequestHandler):
                     print(f"[tabel_5_corpuri_statice] eroare: {e_t5}", flush=True)
 
                 # ── Tabel 7 — Spații neîncălzite (Cod | Diametru tronson | Lungime tronson) ──
+                # Sprint 11 mai 2026 (TODO CLAUDE) — FIX bug "ZU1 ZU1 ZU2 + 20 + 6 ghost".
+                # Template-ul MDLPA conține placeholder-uri DEFAULT (ZU1, ZU1, ZU2, ..., 20, 6)
+                # care RĂMÂNEAU vizibile când auditorul nu completa unheatedSpaces în UI.
+                # FIX: indiferent dacă unheated e gol sau plin → CURĂȚĂM toate celulele
+                # de date (col 1+) și apoi le repopulăm cu valorile reale dacă există.
                 try:
                     unheated_json = data.get("building_unheated_spaces", "[]")
                     unheated = json.loads(unheated_json) if unheated_json else []
-                    if unheated:
-                        for tbl in doc.tables:
-                            if len(tbl.rows) != 3:
-                                continue
-                            # Header r0c0 conține "Codul spațiului neîncălzit"
-                            h0 = tbl.rows[0].cells[0].text
-                            if "Codul spațiului" not in h0 and "Codul spa" not in h0:
-                                continue
-                            # Idempotent: skip dacă deja populat (r0c1 ≠ "ZU1")
-                            if tbl.rows[0].cells[1].text.strip() and tbl.rows[0].cells[1].text.strip() not in ("ZU1", "ZU2", "..."):
-                                # deja populat cu date reale
-                                pass
-                            n_cols = len(tbl.rows[0].cells) - 1  # exclud coloana label
-                            for i, sp in enumerate(unheated[:n_cols]):
-                                col_idx = 1 + i
-                                tbl.rows[0].cells[col_idx].text = str(sp.get("code", f"ZU{i+1}"))
-                                tbl.rows[1].cells[col_idx].text = str(sp.get("diameter_mm", "—"))
-                                tbl.rows[2].cells[col_idx].text = str(sp.get("length_m", "—"))
-                            for ri in range(3):
-                                for ci in range(1, 1 + n_cols):
-                                    for p in tbl.rows[ri].cells[ci].paragraphs:
-                                        for r in p.runs:
-                                            r.font.size = Pt(9)
-                            break
+                    for tbl in doc.tables:
+                        if len(tbl.rows) != 3:
+                            continue
+                        # Header r0c0 conține "Codul spațiului neîncălzit"
+                        h0 = tbl.rows[0].cells[0].text
+                        if "Codul spațiului" not in h0 and "Codul spa" not in h0:
+                            continue
+                        n_cols = len(tbl.rows[0].cells) - 1  # exclud coloana label
+                        # Pas 1: CURĂȚĂ celulele de date (col 1+) — elimină placeholder-uri default
+                        for ri in range(3):
+                            for ci in range(1, 1 + n_cols):
+                                cell = tbl.rows[ri].cells[ci]
+                                for para in cell.paragraphs:
+                                    for run in para.runs:
+                                        run.text = ""
+                        # Pas 2: Repopulează cu unheatedSpaces reale dacă există
+                        for i, sp in enumerate(unheated[:n_cols]):
+                            col_idx = 1 + i
+                            code_val = str(sp.get("code", f"ZU{i+1}"))
+                            diam_val = str(sp.get("diameter_mm", "—"))
+                            len_val = str(sp.get("length_m", "—"))
+                            # Adaugă text în primul paragraf (sau creează nou)
+                            for ri, val in enumerate([code_val, diam_val, len_val]):
+                                cell = tbl.rows[ri].cells[col_idx]
+                                if cell.paragraphs:
+                                    run = cell.paragraphs[0].add_run(val)
+                                    run.font.size = Pt(9)
+                                else:
+                                    para = cell.add_paragraph()
+                                    run = para.add_run(val)
+                                    run.font.size = Pt(9)
+                        print(f"[tabel_7_spatii_neincalzite] curat + populat {len(unheated)} spatii (capacitate {n_cols} col)", flush=True)
+                        break
                 except Exception as e_t7:
                     print(f"[tabel_7_spatii_neincalzite] eroare: {e_t7}", flush=True)
+
+                # ── Tabel: total lungime conducte spații neîncălzite ──
+                # Sprint 11 mai 2026 — Înlocuiește placeholder "_____" din fraza
+                # "Lungimea conductelor de agent termic amplasate în spații neîncălzite _____ m"
+                # cu suma length_m din unheated_spaces.
+                try:
+                    if unheated:
+                        total_len_unheated = sum(float(sp.get("length_m", 0) or 0) for sp in unheated)
+                        if total_len_unheated > 0:
+                            target_phrase = "Lungimea conductelor de agent termic amplasate în spații neîncălzite"
+                            for para in doc.paragraphs:
+                                if target_phrase in para.text:
+                                    for run in para.runs:
+                                        # Înlocuiesc primul match al "_____" (5+ underscore) cu valoarea
+                                        if "____" in run.text:
+                                            run.text = run.text.replace("_" * 5, format_ro(total_len_unheated, 1), 1)
+                                            break
+                                    break
+                except Exception:
+                    pass
 
                 # ── Tabel 8 + T12 — Grad ocupare (încălzire + răcire) ──
                 # Defaults rezidențial / nerezidențial
@@ -6542,14 +6576,38 @@ class handler(BaseHTTPRequestHandler):
                         # Idempotent: skip dacă celula (1,1) e deja populată
                         if tbl.rows[1].cells[1].text.strip():
                             continue
+                        # Sprint 11 mai 2026 (TODO CLAUDE) — FIX bug "Grad ocupare gol".
+                        # Cauză: template-ul MDLPA are label-uri pe MAI MULTE rânduri text
+                        # (ex: "Grad de ocupare zilnic/\nsăptămânal/lunar [m²/pers]") iar
+                        # match-ul `k in label` eșua când label-ul colapsat avea spațiu
+                        # între `/` și `săptămânal` (sau alte variații).
+                        # FIX: normalizare AGRESIVĂ ambele părți pentru match (strip,
+                        # lowercase, eliminare spații, normalizare diacritice).
+                        def _norm_label(s):
+                            """Normalizare pentru match: lowercase, fără diacritice,
+                            fără spații, fără paranteze pătrate vs rotunde."""
+                            t = s.lower()
+                            # Diacritice română → ascii echivalent
+                            for ro, asc in [("ă","a"),("â","a"),("î","i"),("ș","s"),("ț","t"),("ş","s"),("ţ","t")]:
+                                t = t.replace(ro, asc)
+                            # Elimină toate spațiile (inclusiv line-breaks)
+                            t = "".join(t.split())
+                            # Egalizează paranteze rotunde vs pătrate
+                            t = t.replace("[", "(").replace("]", ")")
+                            return t
+
+                        # Pre-normalizează keys pentru match rapid
+                        normalized_defaults = {_norm_label(k): v for k, v in sched_defaults.items()}
+
                         # Pentru fiecare rând de date (după header r0)
                         for ri in range(1, len(tbl.rows)):
                             row = tbl.rows[ri]
                             label = " ".join(row.cells[0].text.split()).strip()
-                            # Match label la defaults
+                            label_norm = _norm_label(label)
+                            # Match label normalizat la defaults
                             sd = None
-                            for k, v in sched_defaults.items():
-                                if k in label or label in k:
+                            for k_norm, v in normalized_defaults.items():
+                                if k_norm in label_norm or label_norm in k_norm:
                                     sd = v
                                     break
                             if not sd:
