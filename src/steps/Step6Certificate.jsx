@@ -3,8 +3,12 @@ import { renderAsync } from "docx-preview";
 const PDFViewer = lazy(() => import("../components/PDFViewer.jsx"));
 import ApartmentClasses from "../components/ApartmentClasses.jsx";
 import CpeAnexa from "../components/CpeAnexa.jsx";
-// Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACSSelectorSimple/SRIScoreAuto/MEPSCheckBinar
-// imports eliminate; secțiunea "Conformitate EPBD 2024" e acum în Step5Calculation.jsx.
+// Sprint 11 mai 2026 (TODO CLAUDE C6) — SRI + MEPS + Solar-Ready aduse înapoi în Pas 6
+// (locul corect conform Cap. 6 Mc 001-2022 + EPBD 2024 — apar pe CPE).
+// BACS s-a mutat în Pas 3 (Cap. 3 — Instalații tehnice, e input).
+// solarReadyCheck e calculat în energy-calc.jsx și pasat ca prop (NU import calc aici).
+import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
+import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
 import { APP_VERSION as TECH_VERSION } from "../data/landingData.js";
 // S30A·A5 — versiune document marketing (v3.5) pentru CPE/Anexe, separată de tech_version (0.5.0).
 import { APP_VERSION } from "../data/app-version.js";
@@ -84,6 +88,8 @@ export default function Step6Certificate(props) {
     bacsClass, bacsCheck, setBacsClass,
     buildingPhotos,
     userPlan,           // Sprint Pricing v6.0 — pentru gating BACS/SRI/MEPS detaliate
+    // Sprint 11 mai 2026 (TODO CLAUDE C6) — Solar-Ready check mutat din Pas 5 în Pas 6
+    solarReadyCheck,
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   // Pricing v6.1 — watermark diferențiat: Free → "Zephren DEMO", Edu → "SCOP DIDACTIC".
@@ -2419,6 +2425,54 @@ ${(() => {
                   </div>
                 );
               })()}
+
+              {/* ═══ Sprint 11 mai 2026 (TODO CLAUDE C6) — CONFORMITATE EPBD 2024 ═══
+                  Mutate din Pas 5 → Pas 6 conform Mc 001-2022 Cap. 6 (Certificat):
+                    - SRI: indicator inteligență clădire (EPBD 2024 Art. 14) — apare pe CPE
+                    - MEPS: verificare prag 2030 (EPBD 2024 Art. 9) — apare pe CPE
+                    - Solar-Ready: pregătire instalare PV (EPBD 2024 Art. 11) — apare pe CPE
+                  BACS rămâne în Pas 3 (sistem tehnic input, NU rezultat calcul).
+                  Versiunea detaliată (42 servicii SRI, optimizator MEPS roadmap 2050) → Pas 8 Expert. */}
+              <div className="mb-5">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>{lang === "EN" ? "EPBD 2024 compliance — transposition pending" : "Conformitate EPBD 2024 — transpunere în curs"}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <SRIScoreAuto
+                    building={building}
+                    heating={heating}
+                    cooling={cooling}
+                    ventilation={ventilation}
+                    lighting={lighting}
+                    acm={acm}
+                    photovoltaic={photovoltaic}
+                  />
+                  <MEPSCheckBinar
+                    energyClass={enClass?.cls}
+                    buildingCategory={baseCatResolved}
+                  />
+                </div>
+                {solarReadyCheck && (
+                  <Card title="Solar-Ready (EPBD Art. 11)" className="mt-3"
+                    badge={<Badge color={solarReadyCheck.compliant ? "green" : "amber"}>{solarReadyCheck.verdict}</Badge>}>
+                    <div className="space-y-1.5">
+                      {solarReadyCheck.checks.map((c, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span style={{color: c.ok ? "#22c55e" : "#ef4444"}}>{c.ok ? "✓" : "✗"}</span>
+                          <span className="opacity-60">{c.label}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex-1 bg-white/[0.03] rounded-full h-2 overflow-hidden">
+                          <div className="h-full rounded-full" style={{width: solarReadyCheck.pct+"%", backgroundColor: solarReadyCheck.color}} />
+                        </div>
+                        <span className="text-xs font-mono" style={{color: solarReadyCheck.color}}>{solarReadyCheck.pct}%</span>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
 
               {/* T1.7 Sprint Tranziție 2026 — banner informativ pentru plan AE IIci.
                   Filozofie: plan-urile sunt orientate FUNCȚIONAL (nu pe grad atestat).

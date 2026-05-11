@@ -834,17 +834,37 @@ export default function Step1Identification({
               )}
               {/* Pentru apartament (RA) — identificare apartament specific (Sprint 21 #6) */}
               {building.category === "RA" && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <Input
-                    label={t("Nr. apartament",lang)}
-                    value={building.apartmentNo || ""}
-                    onChange={v => updateBuilding("apartmentNo",v)}
-                    placeholder="12"
-                    error={fieldErr("apartmentNo")}
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Input
+                      label={t("Nr. apartament",lang)}
+                      value={building.apartmentNo || ""}
+                      onChange={v => updateBuilding("apartmentNo",v)}
+                      placeholder="12"
+                      error={fieldErr("apartmentNo")}
+                    />
+                    <Input label={t("Scara",lang)} value={building.staircase || ""} onChange={v => updateBuilding("staircase",v)} placeholder="A" />
+                    <Input label={t("Etaj",lang)} value={building.floor || ""} onChange={v => updateBuilding("floor",v)} placeholder="3" />
+                  </div>
+                  {/* Sprint 11 mai 2026 (TODO CLAUDE C3) — Poziție apartament în bloc.
+                      Folosit de motorul de recomandări Pas 7 pentru a filtra măsuri
+                      fizic imposibile la apartament (ex: placă pe sol pt. apartament
+                      intermediar). Mc 001-2022 Cap. 7 — măsurile trebuie adecvate
+                      tipului de unitate. */}
+                  <Select
+                    label={t("Poziție în bloc", lang)}
+                    tooltip="Folosit la filtrarea recomandărilor de reabilitare (Pas 7). Mc 001-2022 Cap. 7 — măsurile trebuie adecvate poziției apartamentului."
+                    value={building.positionInBlock || ""}
+                    onChange={v => updateBuilding("positionInBlock", v)}
+                    options={[
+                      { value: "",              label: lang === "EN" ? "— Select —" : "— Selectează —" },
+                      { value: "parter",        label: lang === "EN" ? "Ground floor (placa pe sol)" : "Parter (cu placă pe sol)" },
+                      { value: "intermediar",   label: lang === "EN" ? "Intermediate floor (no exterior surfaces above/below)" : "Etaj intermediar (fără suprafețe orizontale exterioare)" },
+                      { value: "ultim_etaj",    label: lang === "EN" ? "Top floor (with roof/terrace)" : "Ultim etaj (cu terasă/acoperiș)" },
+                      { value: "parter_ultim",  label: lang === "EN" ? "Ground + top (P+1 single-stack)" : "Parter și ultim (bloc P+1, ambele suprafețe)" },
+                    ]}
                   />
-                  <Input label={t("Scara",lang)} value={building.staircase || ""} onChange={v => updateBuilding("staircase",v)} placeholder="A" />
-                  <Input label={t("Etaj",lang)} value={building.floor || ""} onChange={v => updateBuilding("floor",v)} placeholder="3" />
-                </div>
+                </>
               )}
               {/* Sprint 21 #27 — Hint cross-step Step 1 → Step 7 */}
               {(building.owner || building.cadastralNumber || building.landBook) && (

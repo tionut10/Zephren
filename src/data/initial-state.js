@@ -30,6 +30,15 @@ export const INITIAL_BUILDING = {
   apartmentNo:"",        // Număr apartament individual (pentru RA)
   staircase:"",          // Scara (ex: "A", "B")
   floor:"",              // Etaj (pentru apartament)
+  // ── Sprint 11 mai 2026 (TODO CLAUDE C3) — Poziție apartament în bloc ──
+  // Folosit de motorul de recomandări Pas 7 (cpe-recommendations.js) pentru
+  // a filtra măsuri fizic imposibile la un apartament dat:
+  //   - "parter"     → fără placă pe sol propriu / fără terasă
+  //   - "intermediar"→ fără placă pe sol propriu, fără terasă proprie
+  //   - "ultim_etaj" → fără placă pe sol propriu, ARE terasă
+  //   - "parter_ultim" → ARE placă pe sol + terasă (apartament parter-ultim
+  //                       într-un bloc cu un singur etaj sau parter+1)
+  positionInBlock:"",    // "parter" | "intermediar" | "ultim_etaj" | "parter_ultim" | ""
   // ── Sprint 15 — EPBD 2024 indicatori noi ──
   evChargingPoints:"0",  // Nr. puncte de încărcare EV instalate (EPBD 2024 Art. 14)
   evChargingPrepared:"0", // Nr. locuri parcare pregătite EV (precablare) — L.238/2024

@@ -12,9 +12,8 @@ import UComplianceTable from "../components/UComplianceTable.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — BACS+SRI+MEPS mutate din Pas 6 (vezi sprint_reorg_pas5_pas6_01may2026.md).
 // Justificare: f_BAC ajustează EP final → aparține bilanțului energetic (Pas 5), nu emiterii CPE.
-import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
-import SRIScoreAuto from "../components/SRIScoreAuto.jsx";
-import MEPSCheckBinar from "../components/MEPSCheckBinar.jsx";
+// Sprint 11 mai 2026 (TODO CLAUDE C6) — imports BACS/SRI/MEPS eliminate.
+// Componente mutate: BACSSelectorSimple → Pas 3 (Cap. 3), SRIScoreAuto + MEPSCheckBinar → Pas 6 (Cap. 6).
 import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
 import { cn, Select, Input, Badge, Card, ResultRow, fmtRON, fmtEUR, fmtNum } from "../components/ui.jsx";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
@@ -995,9 +994,21 @@ export default function Step5Calculation(props) {
                       {" · "}Tipologie ISO 52120: <strong className="text-white/80">{bacsCheck.category}</strong>
                     </div>
 
-                    {/* Selector clasă BACS (4 butoane) */}
+                    {/* Sprint 11 mai 2026 (TODO CLAUDE C6) — Clasa BACS READ-ONLY în Pas 5.
+                        Selectorul interactiv s-a mutat în Pas 3 → tab BACS (Cap. 3 Mc 001-2022 —
+                        Instalații tehnice). Aici afișăm doar clasa selectată + impactul ei pe EP. */}
                     <div>
-                      <div className="text-xs uppercase tracking-wider text-white/40 mb-2">Clasa BACS</div>
+                      <div className="text-xs uppercase tracking-wider text-white/40 mb-2 flex items-center justify-between">
+                        <span>Clasa BACS (selectată)</span>
+                        <button
+                          type="button"
+                          onClick={() => setStep(3)}
+                          className="text-[10px] text-amber-400 hover:text-amber-300 underline normal-case tracking-normal"
+                          title="Modifică selecția în Pas 3 — Instalații → BACS"
+                        >
+                          ✏️ Modifică în Pas 3
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {["A","B","C","D"].map(k => {
                           const info = BACS_CLASS_LABELS[k];
@@ -1005,12 +1016,12 @@ export default function Step5Calculation(props) {
                           const isBelowMin = bacsCheck.minClass &&
                             ({A:4,B:3,C:2,D:1}[k] < {A:4,B:3,C:2,D:1}[bacsCheck.minClass]);
                           return (
-                            <button key={k} type="button" onClick={() => setBacsClass(k)}
+                            <div key={k}
                               className={cn(
                                 "p-2 rounded-lg border text-left transition-all",
                                 isSel
                                   ? "bg-amber-500/15 border-amber-500/40 ring-2 ring-amber-500/30"
-                                  : "bg-white/[0.02] border-white/10 hover:bg-white/5"
+                                  : "bg-white/[0.02] border-white/10 opacity-50"
                               )}>
                               <div className="flex items-center justify-between">
                                 <span className="text-lg font-black" style={{color: info?.color}}>{info?.shortLabel}</span>
@@ -1018,7 +1029,7 @@ export default function Step5Calculation(props) {
                               </div>
                               <div className="text-[10px] font-semibold" style={{color: info?.color}}>{info?.economyPct}</div>
                               <div className="text-[10px] text-white/40 mt-1 leading-tight">{info?.desc}</div>
-                            </button>
+                            </div>
                           );
                         })}
                       </div>
@@ -1103,37 +1114,14 @@ export default function Step5Calculation(props) {
                   </div>
                 </Card>
               )}
-              {/* ═══ CONFORMITATE EPBD 2024 OBLIGATORIE (BACS + SRI + MEPS Simple) ═══
-                  Mutat din Pas 6 → Pas 5 (1 mai 2026): f_BAC ajustează EP final, deci aparține
-                  bilanțului energetic. SRI auto + MEPS binar decurg din bilanț.
-                  Versiune detaliată (200 factori BACS, 42 servicii SRI, optimizator MEPS) → Pas 8 Expert. */}
-              <div className="mt-6">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                  <span>📋</span>
-                  <span>{lang === "EN" ? "EPBD 2024 compliance — transposition pending" : "Conformitate EPBD 2024 — transpunere în curs"}</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <BACSSelectorSimple
-                    value={bacsClass}
-                    onChange={setBacsClass}
-                    epBase={instSummary?.ep_total_m2 || renewSummary?.ep_adjusted_m2 || 0}
-                    lang={lang}
-                  />
-                  <SRIScoreAuto
-                    building={building}
-                    heating={heating}
-                    cooling={cooling}
-                    ventilation={ventilation}
-                    lighting={lighting}
-                    acm={acm}
-                    photovoltaic={photovoltaic}
-                  />
-                  <MEPSCheckBinar
-                    energyClass={enClass?.cls}
-                    buildingCategory={baseCatResolved}
-                  />
-                </div>
-              </div>
+              {/* ═══ Sprint 11 mai 2026 (TODO CLAUDE C6) — Secțiune mutată conform Mc 001-2022 ═══
+                  - BACS selector → Pas 3 (Cap. 3 — Instalații tehnice). BACS este sistem tehnic,
+                    NU rezultat calcul; f_BAC ajustează EP la rezultatul din Pas 5 (input).
+                  - SRI auto + MEPS binar + Solar-Ready → Pas 6 (Cap. 6 — CPE). Acești indicatori
+                    sunt verificări de conformitate care apar pe certificatul oficial CPE,
+                    nu fac parte din Cap. 5 (calcul energetic).
+                  Pas 5 rămâne strict pentru: bilanț termic ISO 13790, EP calculat, clasare A+..G,
+                  RER, ZEB ready, conformitate L.238/2024 — toate REZULTATE ale calculului. */}
               {/* ═══ NEW: EV CHARGER (A6) ═══ (Faza B — recomandare proiectare, EPBD Art. 12: ascuns la IIci) */}
               {evChargerCalc && evChargerCalc.required && (
               <GradeGate feature="evCharger" plan={userPlan} auditorGrad={auditorGrad}>
@@ -1150,25 +1138,8 @@ export default function Step5Calculation(props) {
                 </Card>
               </GradeGate>
               )}
-              {/* ═══ NEW: SOLAR-READY CHECK (A7) ═══ */}
-              {solarReadyCheck && (
-                <Card title="Solar-Ready (EPBD Art.11)" className="mb-6" badge={<Badge color={solarReadyCheck.compliant ? "green" : "amber"}>{solarReadyCheck.verdict}</Badge>}>
-                  <div className="space-y-1.5">
-                    {solarReadyCheck.checks.map((c, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs">
-                        <span style={{color: c.ok ? "#22c55e" : "#ef4444"}}>{c.ok ? "✓" : "✗"}</span>
-                        <span className="opacity-60">{c.label}</span>
-                      </div>
-                    ))}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-1 bg-white/[0.03] rounded-full h-2 overflow-hidden">
-                        <div className="h-full rounded-full" style={{width: solarReadyCheck.pct+"%", backgroundColor: solarReadyCheck.color}} />
-                      </div>
-                      <span className="text-xs font-mono" style={{color: solarReadyCheck.color}}>{solarReadyCheck.pct}%</span>
-                    </div>
-                  </div>
-                </Card>
-              )}
+              {/* Sprint 11 mai 2026 (TODO CLAUDE C6) — Solar-Ready Card mutat în Pas 6
+                  (Cap. 6 Mc 001-2022 + EPBD 2024 Art. 11 — apare pe CPE). */}
               {/* ── CONFORMITATE nZEB / ZEB / L.238/2024 ── */}
               {instSummary && renewSummary && (
                 <Card title={lang==="EN"?"Regulatory compliance":"Conformitate normativă"} className="mb-6 border-amber-500/20">

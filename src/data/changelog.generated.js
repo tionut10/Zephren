@@ -1,47 +1,64 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-08
+// Ultima generare: 2026-05-11
 
-export const APP_VERSION = "0.6.0";
+export const APP_VERSION = "0.6.1";
 export const CHANGELOG = [
   {
-    "version": "0.6.0",
-    "week": "Săpt. 6",
-    "dateRange": "4 – 10 mai 2026",
+    "version": "0.6.1",
+    "week": "Săpt. 7",
+    "dateRange": "11 – 17 mai 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
-        "icon": "📄",
-        "text": "refactor(Step7): reordonare flux logic — diagnostic → recomandări → financiar → export"
+        "icon": "🔬",
+        "text": "TODO CLAUDE Val 1: cleanup Pas 7 + Pas 1 + blocare nZEB pt apartamente"
+      },
+      {
+        "icon": "🔧",
+        "text": "corectare text EPBD — 'obligatoriu' → 'transpunere în curs' (termen mai 2026)"
+      }
+    ]
+  },
+  {
+    "version": "0.6.0",
+    "week": "Săpt. 6",
+    "dateRange": "4 – 10 mai 2026",
+    "color": "#6366f1",
+    "label": "",
+    "items": [
+      {
+        "icon": "✨",
+        "text": "feat(audit-preturi): A+B+P4.7+D+E+C+F+P4.5+G+P4.4 — sprint 10 task-uri închise"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(audit-preturi): P4 complet — eliminare REHAB_COSTS legacy + paritate Deviz↔CPE <10%"
       },
       {
         "icon": "🔬",
-        "text": "fix(landing): elimină warnings React 19 — separare border/borderLeft (săgeată Founder + carduri normative)"
+        "text": "fix(Step7): radar performanță energetică — formule normative corecte"
       },
       {
-        "icon": "🚀",
-        "text": "security: xlsx 0.18.5→0.20.3 (CDN oficial fără vulnerabilități) + websockets Python 15→16 (eliminat supabase P"
-      },
-      {
-        "icon": "📄",
-        "text": "update: @anthropic-ai/sdk 0.95.1, exceljs instalat, cachetools/lxml/tzdata/pdfminer Python actualizate"
-      },
-      {
-        "icon": "📄",
-        "text": "update: toate dependențele la ultimele versiuni (react 19, vite 8, pdfjs 5, react-leaflet 5, uuid 14, cryptogr"
+        "icon": "✨",
+        "text": "feat(audit-preturi): P3 + 6 îmbunătățiri — sprint maraton complet"
       },
       {
         "icon": "🔸",
-        "text": "checkpoint: versiuni stabile pre-update major (node 24, python 3.14, toate dependențele safe actualizate)"
+        "text": "Radar: cy 230→270 (label Încălzire vizibil complet), badge clasă energetică mai mic"
       },
       {
-        "icon": "🔀",
-        "text": "refactor(Pas 7): elimin secțiunea „INSTRUMENTE SUPLIMENTARE\" (8 tool-uri duplicate cu Step 8)"
+        "icon": "🎨",
+        "text": "Radar chart: aplică scală √ și pe inelele de referință (consistență cu poligoanele)"
       },
       {
-        "icon": "📄",
-        "text": "refactor(Pas 6): optimizare spațiu grid export + elimin Raport conformare nZEB HTML inline (duplicat)"
+        "icon": "🎨",
+        "text": "maxMul dinamic pe graficul radar performanță energetică"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(audit-preturi): P2 complet — 6 task-uri restanțe Sprint Audit Prețuri"
       }
     ]
   },
@@ -49,7 +66,7 @@ export const CHANGELOG = [
     "version": "0.5.0",
     "week": "Săpt. 5",
     "dateRange": "27 apr – 3 mai 2026",
-    "color": "#6366f1",
+    "color": "#10b981",
     "label": "",
     "items": [
       {
@@ -90,7 +107,7 @@ export const CHANGELOG = [
     "version": "0.4.0",
     "week": "Săpt. 4",
     "dateRange": "20 – 26 apr 2026",
-    "color": "#10b981",
+    "color": "#22c55e",
     "label": "",
     "items": [
       {
@@ -131,7 +148,7 @@ export const CHANGELOG = [
     "version": "0.3.0",
     "week": "Săpt. 3",
     "dateRange": "13 – 19 apr 2026",
-    "color": "#22c55e",
+    "color": "#8b5cf6",
     "label": "",
     "items": [
       {
@@ -172,7 +189,7 @@ export const CHANGELOG = [
     "version": "0.2.0",
     "week": "Săpt. 2",
     "dateRange": "6 – 12 apr 2026",
-    "color": "#8b5cf6",
+    "color": "#f97316",
     "label": "",
     "items": [
       {
@@ -213,7 +230,7 @@ export const CHANGELOG = [
     "version": "0.1.0",
     "week": "Săpt. 1",
     "dateRange": "30 mar – 5 apr 2026",
-    "color": "#f97316",
+    "color": "#06b6d4",
     "label": "LANSARE",
     "items": [
       {

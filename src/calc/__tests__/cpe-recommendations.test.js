@@ -206,6 +206,98 @@ describe("savings — audit P1.12 (no fallback 20%)", () => {
   });
 });
 
+describe("Sprint 11 mai 2026 (TODO CLAUDE C3+C4) — filtrare recomandări apartament (RA)", () => {
+  const BASE_RA_CTX = {
+    ...PERFORMANT_CTX,
+    building: { areaUseful: "65", n50: "3.0", category: "RA" },
+    envelopeSummary: { G: 1.2 },          // generează A1
+    glazingElements: [{ u: "2.5" }],      // generează A2
+    opaqueElements: [
+      { type: "PT", layers: [] },         // pentru A3 (planșeu superior)
+    ],
+    calcOpaqueR: () => ({ u: 0.5 }),      // U PT > 0.25 → A3 declanșat
+  };
+
+  it("Apartament parter — A3 (terasă/pod) ELIMINAT din recomandări", () => {
+    const ctx = { ...BASE_RA_CTX, building: { ...BASE_RA_CTX.building, positionInBlock: "parter" } };
+    const r = generateCpeRecommendations(ctx);
+    expect(r.find(x => x.code === "A3")).toBeUndefined();
+  });
+
+  it("Apartament intermediar — A3 ELIMINAT (nu are terasă proprie)", () => {
+    const ctx = { ...BASE_RA_CTX, building: { ...BASE_RA_CTX.building, positionInBlock: "intermediar" } };
+    const r = generateCpeRecommendations(ctx);
+    expect(r.find(x => x.code === "A3")).toBeUndefined();
+  });
+
+  it("Apartament ultim etaj — A3 PĂSTRAT (are terasă/pod propriu)", () => {
+    const ctx = { ...BASE_RA_CTX, building: { ...BASE_RA_CTX.building, positionInBlock: "ultim_etaj" } };
+    const r = generateCpeRecommendations(ctx);
+    expect(r.find(x => x.code === "A3")).toBeDefined();
+  });
+
+  it("Apartament intermediar — A1 (pereți) PĂSTRAT cu avertisment 'nivel BLOC'", () => {
+    const ctx = { ...BASE_RA_CTX, building: { ...BASE_RA_CTX.building, positionInBlock: "intermediar" } };
+    const r = generateCpeRecommendations(ctx);
+    const a1 = r.find(x => x.code === "A1");
+    expect(a1).toBeDefined();
+    expect(a1.detail).toContain("nivelul BLOCULUI");
+    expect(a1.detail).toContain("Mc 001-2022 §2.4");
+  });
+
+  it("Apartament parter — C1/C2 (PV/solar termic) păstrat cu avertisment + prioritate scăzută", () => {
+    const ctx = {
+      ...BASE_RA_CTX,
+      building: { ...BASE_RA_CTX.building, positionInBlock: "parter" },
+      photovoltaic: { enabled: false },
+      solarThermal: { enabled: false },
+      rer: 10,                                    // forțează C1
+      instSummary: { qf_w: 5000, leni: 5 },       // forțează C2 (qf_w/Au = 5000/65 > 10)
+    };
+    const r = generateCpeRecommendations(ctx);
+    const c1 = r.find(x => x.code === "C1");
+    expect(c1).toBeDefined();
+    expect(c1.detail).toContain("nivelul BLOCULUI");
+    // Prioritate demoted de la "înaltă" la "medie"
+    expect(c1.priority).toBe("medie");
+  });
+
+  it("Apartament ultim_etaj — C1 PV păstrat fără avertisment (acces propriu acoperiș)", () => {
+    const ctx = {
+      ...BASE_RA_CTX,
+      building: { ...BASE_RA_CTX.building, positionInBlock: "ultim_etaj" },
+      photovoltaic: { enabled: false },
+      rer: 10,
+    };
+    const r = generateCpeRecommendations(ctx);
+    const c1 = r.find(x => x.code === "C1");
+    expect(c1).toBeDefined();
+    expect(c1.detail).not.toContain("nivelul BLOCULUI");
+  });
+
+  it("Clădire individuală RI — fără filtrare apartament (toate recomandările normale)", () => {
+    const ctx = {
+      ...BASE_RA_CTX,
+      building: { areaUseful: "120", n50: "3.0", category: "RI" },
+    };
+    const r = generateCpeRecommendations(ctx);
+    expect(r.find(x => x.code === "A3")).toBeDefined();
+    const a1 = r.find(x => x.code === "A1");
+    expect(a1).toBeDefined();
+    expect(a1.detail).not.toContain("nivelul BLOCULUI");
+  });
+
+  it("RA fără positionInBlock setat — fallback: toate recomandările păstrate fără modificări", () => {
+    const ctx = { ...BASE_RA_CTX, building: { ...BASE_RA_CTX.building, positionInBlock: "" } };
+    const r = generateCpeRecommendations(ctx);
+    // A3 rămâne (fără pos cunoscut nu putem filtra)
+    expect(r.find(x => x.code === "A3")).toBeDefined();
+    // A1 încă primește avertismentul „nivel BLOC" (RA = mereu intervenție colectivă)
+    const a1 = r.find(x => x.code === "A1");
+    expect(a1.detail).toContain("nivelul BLOCULUI");
+  });
+});
+
 describe("formatRecommendationsForTable", () => {
   it("convertește la format compact n/m/d/e/p", () => {
     const recs = [

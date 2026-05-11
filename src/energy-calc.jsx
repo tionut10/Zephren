@@ -3623,6 +3623,7 @@ Zona {selectedClimate.zone}
             setStep={setStep} goToStep={goToStep}
             showToast={showToast}
             userPlan={userPlan}
+            bacsClass={bacsClass} setBacsClass={setBacsClass}
           /></Suspense>}
 
 
@@ -3687,6 +3688,8 @@ Zona {selectedClimate.zone}
             bacsClass, bacsCheck, setBacsClass,
             buildingPhotos,
             userPlan,            // Sprint Pricing v6.0 — pentru noile componente simple BACS/SRI/MEPS/Pasaport
+            // Sprint 11 mai 2026 (TODO CLAUDE C6) — Solar-Ready check mutat Pas 5 → Pas 6
+            solarReadyCheck,
           }} /></Suspense>}
 
           {/* ═══ STEP 7: AUDIT — RECOMANDĂRI DE REABILITARE ═══ */}

@@ -339,15 +339,77 @@ export function generateCpeRecommendations(ctx) {
 
   // Audit P1.12 — dacă financialAnalysis e disponibil, override savings cu valoarea reală
   // (doar pentru recomandări fără valoare default specifică)
+  let result = recs;
   if (financialAnalysis?.energySavingsPercent) {
-    return recs.map((r) =>
+    result = recs.map((r) =>
       r.savings === "necalculat (necesită Pas 7)"
         ? { ...r, savings: realSavings(financialAnalysis) }
         : r
     );
   }
 
-  return recs;
+  // ─────────────────────────────────────────────────
+  // Sprint 11 mai 2026 (TODO CLAUDE C3+C4) — Filtrare recomandări pentru apartament
+  // Mc 001-2022 §2.4 + Cap. 7: măsurile trebuie adecvate tipului unității.
+  // Pentru RA (apartament individual), unele măsuri sunt:
+  //   (a) fizic imposibile la nivel de apartament — eliminate complet
+  //   (b) posibile DOAR la nivel de bloc (RC) — păstrate cu avertisment explicit
+  // ─────────────────────────────────────────────────
+  return filterApartmentRecommendations(result, building);
+}
+
+/**
+ * Filtrează / anotează recomandările pentru apartament individual (RA) după
+ * `building.positionInBlock` (parter / intermediar / ultim_etaj / parter_ultim).
+ *
+ * Mc 001-2022 §2.4 — măsurile asupra anvelopei opace + acoperiș + placă pe sol
+ * APARȚIN BLOCULUI (RC), nu apartamentului. Auditorul vede aceste recomandări
+ * marcate ca „intervenție colectivă (Asociația de Proprietari)".
+ *
+ * @param {Array} recs - lista de recomandări generate
+ * @param {Object} building - obiectul building cu category + positionInBlock
+ * @returns {Array} recomandări filtrate + anotate
+ */
+function filterApartmentRecommendations(recs, building) {
+  if (!building || building.category !== "RA") return recs;
+
+  const pos = String(building.positionInBlock || "").toLowerCase();
+  const hasGroundSlab = pos === "parter" || pos === "parter_ultim";
+  const hasTopRoof = pos === "ultim_etaj" || pos === "parter_ultim";
+  const isIntermediate = pos === "intermediar";
+
+  // Notă comună pentru intervenții la nivel de bloc.
+  const BLOCK_LEVEL_NOTE =
+    " ⚠ Intervenție la nivelul BLOCULUI (Asociația de Proprietari) — Mc 001-2022 §2.4. " +
+    "Recomandare integrată prin programe Casa Verde Asociații / PNRR Comp. C5 / ANRSC.";
+
+  return recs.reduce((out, r) => {
+    // (a) FILTRARE — măsuri fizic imposibile la apartament:
+    //   A3 = termoizolare planșeu superior (terasă/pod) — DOAR ultim_etaj
+    if (r.code === "A3" && pos && !hasTopRoof) {
+      return out; // eliminat: apartament parter sau intermediar nu are terasă proprie
+    }
+    //   Solar termic / PV — necesită acces propriu la acoperiș (DOAR ultim_etaj)
+    //   Pentru intermediar și parter, sistemul aparține blocului
+    if ((r.code === "C1" || r.code === "C2") && pos && !hasTopRoof) {
+      out.push({
+        ...r,
+        detail: r.detail + BLOCK_LEVEL_NOTE,
+        priority: r.priority === "înaltă" ? "medie" : r.priority, // demote priority
+      });
+      return out;
+    }
+
+    // (b) AVERTISMENT — măsuri posibile DOAR la nivel de bloc:
+    //   A1 (pereți exteriori), A4 (punți), E1 (etanșeitate) — toate la BLOC
+    if (["A1", "A4", "E1"].includes(r.code)) {
+      out.push({ ...r, detail: r.detail + BLOCK_LEVEL_NOTE });
+      return out;
+    }
+
+    out.push(r);
+    return out;
+  }, []);
 }
 
 /**

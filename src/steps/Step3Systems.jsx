@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { cn, Select, Input, Card, ResultRow } from "../components/ui.jsx";
+// Sprint 11 mai 2026 (TODO CLAUDE C6) — BACS selector mutat din Pas 5
+import BACSSelectorSimple from "../components/BACSSelectorSimple.jsx";
 import { T } from "../data/translations.js";
 import InvoiceOCR from "../components/InvoiceOCR.jsx";
 import SuggestionPanel from "../components/SuggestionPanel.jsx";
@@ -150,6 +152,9 @@ export default function Step3Systems({
   setStep, goToStep,
   showToast,
   userPlan,
+  // Sprint 11 mai 2026 (TODO CLAUDE C6) — BACS selector mutat din Pas 5
+  // Cap. 3 Mc 001-2022 (Instalații tehnice) — BACS este sistem tehnic, NU rezultat calcul
+  bacsClass, setBacsClass,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [showOCR, setShowOCR] = useState(false);
@@ -368,6 +373,8 @@ export default function Step3Systems({
           {id:"ventilation",label:t("Ventilare"),icon:"💨"},
           {id:"cooling",label:t("Climatizare"),icon:"❄️"},
           {id:"lighting",label:t("Iluminat"),icon:"💡"},
+          // Sprint 11 mai 2026 (TODO CLAUDE C6) — BACS mutat din Pas 5 (Cap. 3 Mc 001-2022)
+          {id:"bacs",label:"BACS",icon:"🤖"},
         ].map(tab => (
           <button key={tab.id} onClick={() => setInstSubTab(tab.id)}
             className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
@@ -1395,6 +1402,37 @@ export default function Step3Systems({
             </>
             );
           })()}
+
+          {/* ── BACS — BUILDING AUTOMATION & CONTROL SYSTEMS ──
+              Sprint 11 mai 2026 (TODO CLAUDE C6) — mutat din Pas 5 conform structurii
+              Mc 001-2022 (Cap. 3 = Instalații tehnice). BACS este sistem tehnic al
+              clădirii, NU rezultat de calcul; f_BAC se aplică LA bilanțul energetic
+              din Pas 5 (input → rezultat). SR EN ISO 52120-1:2022 + L.238/2024 art. 14. */}
+          {instSubTab === "bacs" && (
+            <>
+              <Card title={t("Sistem automatizare clădire (BACS)", lang)}
+                subtitle={lang === "EN"
+                  ? "EPBD 2024/1275 Art. 14 + L.238/2024 — class A-D selector. f_BAC factor applied to EP in Step 5."
+                  : "EPBD 2024/1275 Art. 14 + L.238/2024 — selector clasă A-D. Factorul f_BAC se aplică la EP în Pas 5."}>
+                <BACSSelectorSimple
+                  value={bacsClass}
+                  onChange={setBacsClass}
+                  epBase={instSummary?.ep_total_m2 || 0}
+                  lang={lang}
+                />
+                <div className="mt-3 text-[10px] text-slate-400 bg-slate-500/5 border border-slate-500/20 rounded-lg p-2.5">
+                  <div className="font-medium mb-1">📋 Mc 001-2022 Cap. 3 — Sistem tehnic al clădirii</div>
+                  <div className="opacity-80 leading-relaxed">
+                    BACS (Building Automation &amp; Control Systems) este un <strong>sistem tehnic</strong> conform
+                    SR EN ISO 52120-1:2022, configurat aici (Pas 3 — Instalații). Factorul de ajustare
+                    <code className="px-1 bg-white/5 rounded">f_BAC</code> se aplică la calculul energiei primare
+                    în Pas 5 (Calcul). Versiune detaliată cu 200 factori personalizabili → upgrade la
+                    <strong> Zephren Expert</strong>.
+                  </div>
+                </div>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* ── RIGHT PANEL: SUMAR ENERGIE ── */}
