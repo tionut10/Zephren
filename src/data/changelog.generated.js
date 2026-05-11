@@ -12,12 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🔬",
-        "text": "TODO CLAUDE Val 1: cleanup Pas 7 + Pas 1 + blocare nZEB pt apartamente"
+        "icon": "📋",
+        "text": "Audit Anexa 1+2 P2 (restante): radiatoare reale NU inventate, area_built warning, thermal_bridges + monthly_is"
+      },
+      {
+        "icon": "📋",
+        "text": "Audit Anexa 1+2 P1 (MEDIUM): R_NORMAT per categorie, NU mai inventa fixtures ACM, nrOcupanti real, traduceri o"
+      },
+      {
+        "icon": "📋",
+        "text": "Audit Anexa 1+2 P0: elimina valori inventate, foloseste date reale din calculul aplicatiei"
+      },
+      {
+        "icon": "📄",
+        "text": "Fix CPE/Anexa: spatii neincalzite ZU ghost + grad ocupare match diacritice"
+      },
+      {
+        "icon": "📄",
+        "text": "Fix CPE/Anexa MDLPA: Tabel 2 anvelopa layout multi-row + Tabel 3 sisteme cu coloane referinta"
       },
       {
         "icon": "🔧",
-        "text": "corectare text EPBD — 'obligatoriu' → 'transpunere în curs' (termen mai 2026)"
+        "text": "Fix Python A3 v2: curatare AGRESIVA placeholder numerice multiple in celule regim inaltime"
+      },
+      {
+        "icon": "🔧",
+        "text": "TODO CLAUDE Val 3: bug Python regim, ghid temperaturi spatii neincalzite, watermark post-reab, clarificare ele"
+      },
+      {
+        "icon": "🔬",
+        "text": "TODO CLAUDE Val 2: positionInBlock + filtrare recomandari + reorganizare BACS/SRI/MEPS conform Mc 001-2022"
       }
     ]
   },

@@ -5609,44 +5609,17 @@ class handler(BaseHTTPRequestHandler):
                                     break
                             break
 
-                # ══════════════════════════════════════════════════════════
-                # Sprint post-deploy fix (20 apr 2026) — regim înălțime "2 (nr)" / "5 (nr)"
-                # Aceste placeholder-e apar ca paragrafe separate în template,
-                # NU în celule de tabel. Înlocuim text literal cu numere reale.
-                # FIX v2 11 mai 2026 (TODO CLAUDE A3): la count=0 înlocuim cu TEXT GOL
-                # (nu "—") pentru consistență cu fix-ul din Tabel 0.
-                # ══════════════════════════════════════════════════════════
+                # Sprint 11 mai 2026 (TODO CLAUDE A3) v3 — top-level fix ELIMINAT.
+                # Template MDLPA corect (curățat de "2" și "5" hardcoded) nu mai are
+                # paragrafe standalone "2 (nr)" / "5 (nr)". Logica e acum în Tabel 0
+                # column-aware care înlocuiește " (nr)" cu valoarea reală.
+                # Păstrăm doar parsing regime_str_rep care e folosit mai jos.
                 regime_str_rep = (data.get("regime", "") or "").upper().strip()
                 import re as _re_reg
                 m_sub_rep = _re_reg.search(r"(\d+)S", regime_str_rep)
                 n_subsoluri = int(m_sub_rep.group(1)) if m_sub_rep else (1 if "S" in regime_str_rep else 0)
                 m_et_rep = _re_reg.search(r"(\d+)E", regime_str_rep)
                 n_etaje = int(m_et_rep.group(1)) if m_et_rep else (1 if "E" in regime_str_rep else 0)
-
-                # Înlocuim paragrafele standalone "2 (nr)" și "5 (nr)"
-                # (placeholder-e în template MDLPA pentru regim înălțime)
-                s_label_top = str(n_subsoluri) if n_subsoluri > 0 else ""
-                e_label_top = str(n_etaje) if n_etaje > 0 else ""
-                for p in doc.paragraphs:
-                    pt_stripped = p.text.strip()
-                    # Match flexibil: "2 (nr)", "2(nr)", "2\n(nr)" etc.
-                    txt_normalized = " ".join(pt_stripped.split())
-                    if txt_normalized in ("2 (nr)", "2(nr)"):
-                        for r in p.runs:
-                            if "2" in r.text and "(nr)" not in r.text:
-                                r.text = r.text.replace("2", s_label_top, 1)
-                                break
-                            elif r.text.strip() == "2":
-                                r.text = s_label_top
-                                break
-                    elif txt_normalized in ("5 (nr)", "5(nr)"):
-                        for r in p.runs:
-                            if "5" in r.text and "(nr)" not in r.text:
-                                r.text = r.text.replace("5", e_label_top, 1)
-                                break
-                            elif r.text.strip() == "5":
-                                r.text = e_label_top
-                                break
 
                 # ══════════════════════════════════════════════════════════
                 # Sprint post-deploy fix — Structura constructivă CB (fuzzy match)
@@ -5834,126 +5807,58 @@ class handler(BaseHTTPRequestHandler):
                             col_reg = _REGIM_COLS.get(rk)
                             if col_reg is not None and col_reg < len(tbl.rows[5].cells):
                                 _check_cell_checkbox(tbl.rows[5].cells[col_reg])
-                        # Sprint 11 mai 2026 (TODO CLAUDE A3) v2 — FIX bug placeholder
-                        # multipli pe rând regim înălțime.
+                        # Sprint 11 mai 2026 (TODO CLAUDE A3) v3 — FIX final după
+                        # audit template MDLPA real.
                         #
-                        # USER feedback: pentru P+1 demo, screenshot arată:
-                        #   S | "2 ☐ 1"     (2 placeholder-uri reziduale înainte/după checkbox)
-                        #   E | "1 ☐ 1"     (placeholder dreapta nesetat)
+                        # DESCOPERIRE: template-ul ANEXA-1-si-ANEXA-2-la-CPE-cladire.docx
+                        # AVEA "2" și "5" hardcoded LITERAL ca text înainte de FORMCHECKBOX
+                        # (probabil rezidual din editarea inițială). Asta cauza vizualul
+                        # "2 ☐ (nr)" și "5 ☐ (nr)" pe ecran.
                         #
-                        # Cauză: template-ul MDLPA are MULTIPLE paragrafe per celulă
-                        # (un placeholder "2 (nr)" + un placeholder "1" pentru index/contor),
-                        # iar fix-ul anterior înlocuia DOAR primul match → reziduuri vizibile.
-                        #
-                        # FIX v2: într-o singură pasare per celulă, curățez TOATE
-                        # paragrafele cu placeholder numeric IZOLAT (cifră singură sau
-                        # cifră + "(nr)"). Mapare:
-                        #   - col 1-2 (zona S): toate cifrele → s_label (sau "" dacă 0)
-                        #   - col 9-10 (zona E): toate cifrele → e_label (sau "" dacă 0)
+                        # FIX 1 (în template direct): am eliminat "<w:t>2</w:t>" și
+                        # "<w:t>5</w:t>" din celulele S și E din document.xml.
+                        # FIX 2 (aici): doar înlocuiesc " (nr)" cu " <N>" unde N e
+                        # nr_subsoluri / n_etaje real. Dacă N=0 → curățăm " (nr)".
+                        # FORMCHECKBOX-urile sunt bifate deja prin loop-ul de mai sus.
                         regim_row_cells = tbl.rows[5].cells
                         n_cells = len(regim_row_cells)
 
-                        # Regex placeholder numeric: "1", "2", "5", "1 (nr)", "5(nr)", "5\n(nr)" etc.
-                        import re as _re_ph
-                        _NUMERIC_PH = _re_ph.compile(r"^\d+\s*(\(nr\))?$", _re_ph.IGNORECASE)
-
-                        def _clean_cell_numeric_placeholders(cell, target_value, keep_first_only=True):
-                            """Înlocuiește TOATE paragrafele cu placeholder numeric izolat
-                            (ex: "1", "2", "5", "5 (nr)") din celulă cu target_value.
-                            Dacă keep_first_only=True, primul placeholder primește target_value
-                            și restul sunt curățate (text gol) — asta evită duplicarea vizuală
-                            "1 1" în celula E când n_etaje=1.
-                            Returnează nr de paragrafe modificate."""
-                            modified = 0
-                            first_set = False
+                        def _replace_nr_placeholder(cell, value_to_insert):
+                            """Înlocuiește textul " (nr)" din celulă cu value_to_insert (ex: " 4")
+                            sau elimină " (nr)" complet dacă value_to_insert e gol."""
+                            modified = False
                             for para in cell.paragraphs:
-                                para_text = para.text.strip()
-                                norm = " ".join(para_text.split())
-                                if not norm:
-                                    continue
-                                if not _NUMERIC_PH.match(norm):
-                                    continue
-                                # Acesta este un placeholder numeric — îl curățăm
-                                if keep_first_only and first_set:
-                                    new_val = ""  # restul → gol pentru a evita "1 1" duplicat
-                                else:
-                                    new_val = target_value
-                                    first_set = True
-                                # Înlocuire pe runs
-                                if para.runs:
-                                    para.runs[0].text = new_val
-                                    for rr in para.runs[1:]:
-                                        rr.text = ""
-                                modified += 1
+                                for run in para.runs:
+                                    if "(nr)" in run.text:
+                                        # Înlocuim întregul fragment " (nr)" cu valoarea
+                                        run.text = run.text.replace(" (nr)", f" {value_to_insert}" if value_to_insert else "")
+                                        modified = True
                             return modified
 
-                        # Calculează etichetele pentru fiecare nivel (0 → "" pentru a evita
-                        # "—" estetic; celula rămâne goală iar checkbox-ul nebifat indică absența).
                         s_label = str(n_subsoluri) if n_subsoluri > 0 else ""
                         e_label = str(n_etaje) if n_etaje > 0 else ""
 
-                        # Hartă coloane țintă — TOATE cele 2 celule adiacente per nivel,
-                        # pentru a acoperi variațiile de template (number col +1 sau +2).
-                        # S: checkbox col 1, placeholder-uri în col 2 (uneori 1 chiar).
-                        # E: checkbox col 9, placeholder-uri în col 10 (uneori 9).
-                        # Procesăm AMBELE coloane (nu break după primul match) pentru a
-                        # curăța eventualele placeholder-uri reziduale.
+                        # Celulele țintă: pentru S checkbox e col 1 (text " (nr)" în
+                        # același run ca FORMCHECKBOX); pentru E col 9 similar.
                         TARGET_CELLS_S = [c for c in (1, 2) if c < n_cells]
                         TARGET_CELLS_E = [c for c in (9, 10) if c < n_cells]
 
-                        total_modified_s = 0
-                        for ci in TARGET_CELLS_S:
-                            total_modified_s += _clean_cell_numeric_placeholders(
-                                regim_row_cells[ci], s_label, keep_first_only=True)
-                        total_modified_e = 0
-                        for ci in TARGET_CELLS_E:
-                            total_modified_e += _clean_cell_numeric_placeholders(
-                                regim_row_cells[ci], e_label, keep_first_only=True)
+                        rep_s = any(_replace_nr_placeholder(regim_row_cells[ci], s_label)
+                                    for ci in TARGET_CELLS_S)
+                        rep_e = any(_replace_nr_placeholder(regim_row_cells[ci], e_label)
+                                    for ci in TARGET_CELLS_E)
 
-                        print(f"[regim_table_0] s_label='{s_label}' (mod {total_modified_s}), e_label='{e_label}' (mod {total_modified_e}), regime='{regime_str}'", flush=True)
+                        print(f"[regim_table_0] s_label='{s_label}' (rep={rep_s}), e_label='{e_label}' (rep={rep_e}), regime='{regime_str}'", flush=True)
                         break
                 except Exception as e_t0:
                     print(f"[tabel_0_zone] eroare: {e_t0}", flush=True)
 
-                # ── FALLBACK DOC-LEVEL: Regim "2 (nr)" / "5 (nr)" ──
-                # Sprint 11 mai 2026 (TODO CLAUDE A3) v2 — FIX bug "S=4" + "1 1" duplicare.
-                # Înlocuiește placeholder-ul "X (nr)" strict (cu paranteze obligatorii)
-                # pentru a evita match accidental pe simplu "5" (număr de etaj real într-un
-                # paragraf adiacent). La count=0 → text gol (NU "—") pentru a evita
-                # confuzie vizuală.
-                try:
-                    # Colectare tuturor paragrafelor (doc + tabel cells)
-                    all_paras = list(doc.paragraphs)
-                    for tbl in doc.tables:
-                        for row in tbl.rows:
-                            for cell in row.cells:
-                                all_paras.extend(cell.paragraphs)
-                    s_label_fb = str(n_subsoluri) if n_subsoluri > 0 else ""
-                    e_label_fb = str(n_etaje) if n_etaje > 0 else ""
-                    for para in all_paras:
-                        pt = para.text.strip()
-                        norm = " ".join(pt.split())
-                        # Match strict pe "X (nr)" — cifra + paranteze (placeholder template)
-                        if norm in ("2 (nr)", "2(nr)"):
-                            new_val = s_label_fb
-                            for r in para.runs:
-                                if r.text.strip() == "2":
-                                    r.text = new_val
-                                    break
-                                elif "2" in r.text:
-                                    r.text = r.text.replace("2", new_val, 1)
-                                    break
-                        elif norm in ("5 (nr)", "5(nr)"):
-                            new_val = e_label_fb
-                            for r in para.runs:
-                                if r.text.strip() == "5":
-                                    r.text = new_val
-                                    break
-                                elif "5" in r.text:
-                                    r.text = r.text.replace("5", new_val, 1)
-                                    break
-                except Exception as e_regim_fb:
-                    print(f"[regim_fallback] eroare: {e_regim_fb}", flush=True)
+                # Sprint 11 mai 2026 (TODO CLAUDE A3) v3 — fallback DOC-LEVEL ELIMINAT.
+                # Anterior căuta "2 (nr)" / "5 (nr)" globally — nu mai e necesar pentru
+                # că template-ul corect MDLPA are doar " (nr)" în celulele specifice S/E,
+                # care sunt acum gestionate direct în handler-ul Tabel 0 (column-aware).
+                # Vechea logică introducea fals-pozitive când " (nr)" apărea în alte
+                # contexte ale documentului.
 
                 # ── Tabel 5 — Apartamente debranșate condominiu ──
                 # Pentru clădiri RC/RA (bloc) → "Nu există" default; pentru altele skip.
