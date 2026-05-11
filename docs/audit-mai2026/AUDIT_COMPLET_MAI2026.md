@@ -50,21 +50,49 @@
 
 ### Implementări realizate în această sesiune
 
-**7 commit-uri intermediare**:
+**13 commit-uri push-uite — toate LIVE producție**:
+
+Audit F1-F7 (7 commits — 11 mai 2026):
 1. `c5582d2` F1 — baseline + Pas 1+2 + fix P0 bridge_type:point filter
 2. `b083fd9` F2 — Pas 3 (HVAC) + Pas 4 (RES) + verificare prețuri 2026
 3. `7db94f8` F3 — Pas 5 — bilanț energetic + clasă + NPV
 4. `62bf36e` F4 — Pas 6 — CPE + Anexa 1+2 + wrapper AE IIci
 5. `9cc1847` F5 — Pas 7 — recomandări reabilitare + chat AI multiplexare
 6. `9a54c2f` F6 — Documente generate + intent='narrative'
-7. `<F7 final>` — Flux date + raport consolidat + reordonare + AI architecture
+7. `b4ed1bf` F7 — Flux date + raport consolidat + reordonare + AI architecture
+
+Sprint P1/P2/P3 post-audit (2 commits — 11 mai 2026):
+8. `a77faa6` P1.1 wrapper AE IIci activat + P2.2 VMC HR kit + P3 documentație Pro
+9. `53fca54` AINarrativeButton.jsx + fetchNarrativeAI helper (P1.2 foundation reusabilă)
+
+Sprint MEGA (5 commits — 12 mai 2026):
+10. `938b068` MEGA P1.2.a OfertaReabilitare AI intro + JSX syntax fix
+11. `6242cc3` MEGA P1.2.b/c Narativ AI Cap.1+Cap.8+intro Pașaport în Step7Audit
+12. `37e1d76` MEGA P1.3 Tier-uri 1/2/3 RES Step4Renewables + reorder tabs
+13. `f59ff44` MEGA P2 Catalog punți 5 ψ_izolat corectate target PHI (P2.A/C NO-OP)
+14. `6e284fc` MEGA Visual-2 brand kit advanced-report-pdf (propagă 14+ module Step 8)
 
 ### Stare teste
 
 - **Baseline F0**: 3474 PASS / 1 FAIL preexistent (cooling-s9a Test 7)
-- **Post F7**: **3522 PASS / 1 FAIL preexistent / 5 skipped**
-- **+48 teste noi adăugate** (5 F1 + 14 F4 + 11 F5 + 18 F6)
-- **ZERO regresii** introduse de auditul mai 2026
+- **Post F7**: 3522 PASS / 1 FAIL preexistent / 5 skipped (+48 noi)
+- **Post Sprint P1/P2/P3 + MEGA**: **3529 PASS / 1 FAIL preexistent / 5 skipped**
+- **+55 teste noi cumulativ** (5 F1 + 14 F4 + 11 F5 + 18 F6 + 7 AINarrativeButton)
+- **ZERO regresii** introduse de auditul mai 2026 + Sprint MEGA
+
+### Sprint MEGA findings critice
+
+**8 din 13 task-uri planificate = NO-OP descoperite** (sprint-uri anterioare le acoperiseră):
+- P2.A 4 perechi duplicate divergente — DEJA clarificate (HEA100/200, Velux EDH/generic,
+  Schöck KXT alias, Timber PHI/standard)
+- P2.C 8 lipsuri taxonomice D1-D8 — TOATE 8 deja în catalog (BIPV, hota, rost dilatație,
+  casete jaluzele, terasă circulabilă, mullion CW, CTS variabil, lift fațadă)
+- Visual-2.B + Visual-2.C — pasivhaus-pdf și step8-pdf-exports doar delegă la advanced-report-pdf,
+  deci migrarea Visual-2.A propagă AUTOMAT în 14+ module Step 8
+
+**Estimare inițială 30h → realitate ~3h** muncă efectivă datorită verificării state pre-implementare.
+Pattern lesson: înainte de a porni sprint dedicat, grep catalog/code să confirme că findings nu
+sunt deja remediate.
 
 ---
 

@@ -13,35 +13,35 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "📋",
-        "text": "Audit Anexa 1+2 P2 (restante): radiatoare reale NU inventate, area_built warning, thermal_bridges + monthly_is"
+        "text": "audit-mai2026/MEGA P1.2.a: AINarrativeButton integrat în OfertaReabilitare"
       },
       {
         "icon": "📋",
-        "text": "Audit Anexa 1+2 P1 (MEDIUM): R_NORMAT per categorie, NU mai inventa fixtures ACM, nrOcupanti real, traduceri o"
+        "text": "audit-mai2026/post: AINarrativeButton.jsx + fetchNarrativeAI helper (P1.2 foundation)"
       },
       {
         "icon": "📋",
-        "text": "Audit Anexa 1+2 P0: elimina valori inventate, foloseste date reale din calculul aplicatiei"
+        "text": "audit-mai2026/post: P1.1 wrapper AE IIci activat + P2.2 VMC HR kit + P3 Pro"
       },
       {
         "icon": "📄",
-        "text": "Fix CPE/Anexa: spatii neincalzite ZU ghost + grad ocupare match diacritice"
+        "text": "audit-mai2026/F7: Flux date + raport final consolidat + reorganizare + AI architecture"
+      },
+      {
+        "icon": "📋",
+        "text": "audit-mai2026/F6: Documente generate + intent='narrative' (scor design 92/100)"
+      },
+      {
+        "icon": "📋",
+        "text": "audit-mai2026/F5: Pas 7 — recomandări reabilitare + chat AI multiplexare (scor 98/100)"
       },
       {
         "icon": "📄",
-        "text": "Fix CPE/Anexa MDLPA: Tabel 2 anvelopa layout multi-row + Tabel 3 sisteme cu coloane referinta"
+        "text": "audit-mai2026/F4: Pas 6 — CPE + Anexa 1+2 + wrapper AE IIci (scor 97/100)"
       },
       {
-        "icon": "🔧",
-        "text": "Fix Python A3 v2: curatare AGRESIVA placeholder numerice multiple in celule regim inaltime"
-      },
-      {
-        "icon": "🔧",
-        "text": "TODO CLAUDE Val 3: bug Python regim, ghid temperaturi spatii neincalzite, watermark post-reab, clarificare ele"
-      },
-      {
-        "icon": "🔬",
-        "text": "TODO CLAUDE Val 2: positionInBlock + filtrare recomandari + reorganizare BACS/SRI/MEPS conform Mc 001-2022"
+        "icon": "📋",
+        "text": "audit-mai2026/F3: Pas 5 — bilanț energetic + clasă + NPV (scor 95/100)"
       }
     ]
   },

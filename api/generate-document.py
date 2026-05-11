@@ -3965,6 +3965,17 @@ class handler(BaseHTTPRequestHandler):
             systems = body.get("systems", {}) or {}
             climate = body.get("climate", {}) or body.get("selectedClimate", {}) or {}
 
+            # ──────────────────────────────────────────────────────────────
+            # audit-mai2026 MEGA P1.2.b — Narativ AI opțional pentru Cap. 1 + Cap. 8.
+            # Generat client-side via api/ai-assistant intent="narrative" și pasat
+            # în payload.customNarrative. Dacă lipsește/gol → fallback la template static.
+            # Reproductibilitate audit MDLPA: CPE oficial NU folosește narativ AI;
+            # raportul DOCX permite narrative AI pentru capitole descriptive.
+            # ──────────────────────────────────────────────────────────────
+            custom_narrative = body.get("customNarrative", {}) or {}
+            narrative_cap1 = (custom_narrative.get("cap1") or "").strip() if isinstance(custom_narrative, dict) else ""
+            narrative_cap8 = (custom_narrative.get("cap8") or "").strip() if isinstance(custom_narrative, dict) else ""
+
             doc = Document()
             enforce_a4_portrait(doc)
 
@@ -4053,6 +4064,15 @@ class handler(BaseHTTPRequestHandler):
             rh1 = h1.add_run("1. Date de identificare a clădirii")
             rh1.bold = True
             rh1.font.size = _Pt(13)
+
+            # MEGA P1.2.b — Narativ AI opțional înainte de tabel (descriere clădire).
+            # Cap. 1 = descriere narrativă + tabel date tehnice (Mc 001-2022 Cap. 1).
+            if narrative_cap1:
+                p_narrative = doc.add_paragraph()
+                rn = p_narrative.add_run(narrative_cap1)
+                rn.font.name = "Calibri"
+                rn.font.size = _Pt(10)
+                doc.add_paragraph()  # spacer
 
             tbl = doc.add_table(rows=0, cols=2)
             tbl.style = "Light Grid Accent 1"
@@ -4511,17 +4531,25 @@ class handler(BaseHTTPRequestHandler):
             rh8 = h8.add_run("8. Concluzii")
             rh8.bold = True
             rh8.font.size = _Pt(13)
+            # MEGA P1.2.b — Narativ AI opțional pentru Cap. 8 (concluzii).
+            # Dacă există → folosit ca text principal; altfel cade pe template static cu fapte.
             p8 = doc.add_paragraph()
-            p8.add_run(
-                f"Clădirea analizată ({building.get('address', '—')}) prezintă "
-                f"un consum de energie primară de {ep_val:.1f} kWh/(m²·an), "
-                f"încadrată în clasa energetică {en_class.get('cls', '—')}. "
-                f"Cota energiei regenerabile este de {rer_val:.1f}%. "
-                f"{'Clădirea este conformă cu cerințele nZEB.' if (ep_conform and rer_conform) else 'Clădirea NU îndeplinește cerințele nZEB și necesită lucrări de reabilitare.'} "
-                f"Implementarea măsurilor recomandate la Cap. 7 va asigura conformitatea "
-                f"cu Mc 001-2022 și L.238/2024 Art. 6, având un orizont de recuperare "
-                f"a investiției de 8-15 ani la prețurile actuale ale energiei."
-            )
+            if narrative_cap8:
+                # Narativ AI generat client-side cu Sonnet 4.6 (200-400 cuvinte).
+                rn8 = p8.add_run(narrative_cap8)
+                rn8.font.name = "Calibri"
+                rn8.font.size = _Pt(10)
+            else:
+                p8.add_run(
+                    f"Clădirea analizată ({building.get('address', '—')}) prezintă "
+                    f"un consum de energie primară de {ep_val:.1f} kWh/(m²·an), "
+                    f"încadrată în clasa energetică {en_class.get('cls', '—')}. "
+                    f"Cota energiei regenerabile este de {rer_val:.1f}%. "
+                    f"{'Clădirea este conformă cu cerințele nZEB.' if (ep_conform and rer_conform) else 'Clădirea NU îndeplinește cerințele nZEB și necesită lucrări de reabilitare.'} "
+                    f"Implementarea măsurilor recomandate la Cap. 7 va asigura conformitatea "
+                    f"cu Mc 001-2022 și L.238/2024 Art. 6, având un orizont de recuperare "
+                    f"a investiției de 8-15 ani la prețurile actuale ale energiei."
+                )
             p8.paragraph_format.space_before = _Pt(4)
 
             # ── Semnătură ──────────────────────────────
