@@ -160,7 +160,8 @@ export const SANDBOX_PRESETS = [
  * pentru clădiri rezidențiale).
  */
 export function estimateEnergyClass(ep) {
-  if (ep == null || ep <= 0) return { class: "—", color: "#6b7280" };
+  if (ep == null || isNaN(ep)) return { class: "—", color: "#6b7280" };
+  if (ep <= 0) return { class: "A+", color: "#059669" };
   if (ep <= 50)  return { class: "A+", color: "#059669" };
   if (ep <= 100) return { class: "A",  color: "#10b981" };
   if (ep <= 150) return { class: "B",  color: "#84cc16" };

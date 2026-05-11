@@ -158,9 +158,13 @@ describe("estimateEnergyClass — clase Mc 001-2022", () => {
     });
   });
 
-  it("returnează „—\" pentru EP null/0/negativ", () => {
-    expect(estimateEnergyClass(0).class).toBe("—");
+  it("returnează „—\" doar pentru EP null/NaN (input invalid)", () => {
     expect(estimateEnergyClass(null).class).toBe("—");
-    expect(estimateEnergyClass(-10).class).toBe("—");
+    expect(estimateEnergyClass(NaN).class).toBe("—");
+  });
+
+  it("EP=0 sau negativ (net-zero) → A+, nu —", () => {
+    expect(estimateEnergyClass(0).class).toBe("A+");
+    expect(estimateEnergyClass(-10).class).toBe("A+");
   });
 });
