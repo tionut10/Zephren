@@ -5985,10 +5985,30 @@ class handler(BaseHTTPRequestHandler):
                     glaz_u_anv = float((data.get("glazing_max_u", "0") or "0").replace(",", "."))
                     glaz_area_anv = float((data.get("glazing_area_total_m2", "0") or "0").replace(",", "."))
                     if opaque_u_anv or glaz_area_anv > 0:
-                        R_NORMAT = {
-                            "PE": 1.80, "PT": 5.00, "PP": 5.00, "PB": 4.50, "PL": 4.50,
-                            "FE": 0.77, "UE": 0.77, "SE": 4.50, "CS": 1.80, "Sb": 4.50,
-                        }
+                        # Sprint 11 mai 2026 (audit A6) — R_NORMAT diferentiat per categorie
+                        # Mc 001-2022 Tab 2.4 (rezidential nZEB) / Tab 2.7 (rezidential renov) /
+                        # Tab 2.10a (birouri nZEB) / Tab 2.10b (educational/sanitar).
+                        # Inainte: valori unice rezidentiale aplicate pentru ORICE categorie.
+                        is_res = category in ("RI", "RC", "RA", "BC")
+                        is_educ_san = category in ("ED", "SA")
+                        if is_res:
+                            R_NORMAT = {
+                                "PE": 1.80, "PT": 5.00, "PP": 5.00, "PB": 4.50, "PL": 4.50,
+                                "FE": 0.77, "UE": 0.77, "SE": 4.50, "CS": 1.80, "Sb": 4.50,
+                            }
+                        elif is_educ_san:
+                            # Educational/sanitar — cerinte stricte Mc 001-2022 Tab 2.10b
+                            R_NORMAT = {
+                                "PE": 2.00, "PT": 5.50, "PP": 5.50, "PB": 4.80, "PL": 4.80,
+                                "FE": 0.83, "UE": 0.83, "SE": 4.80, "CS": 2.00, "Sb": 4.80,
+                            }
+                        else:
+                            # Birouri/comercial/hoteluri/altele (BI, CO, HC, SP, AL)
+                            # Mc 001-2022 Tab 2.10a — valori standard NRES
+                            R_NORMAT = {
+                                "PE": 1.50, "PT": 4.50, "PP": 4.50, "PB": 4.00, "PL": 4.00,
+                                "FE": 0.71, "UE": 0.71, "SE": 4.00, "CS": 1.50, "Sb": 4.00,
+                            }
                         # Mapare prefix etichetă template → cod tip element
                         LABEL_PREFIX_MAP = [
                             ("PE",  ["PE"]),
@@ -6663,45 +6683,21 @@ class handler(BaseHTTPRequestHandler):
                     print(f"[tabel_8_12_grad_ocupare] eroare: {e_t8}", flush=True)
 
                 # ── Tabel 11 — Obiecte sanitare ACM (Lavoare, Cadă, Spălătoare, etc.) ──
-                # Populare AGRESIVĂ pentru rezidențial: chiar dacă fixtures[] are toate "0",
-                # tot aplicăm defaults bazate pe n_apartments
+                # Sprint 11 mai 2026 (audit A2) — NU MAI INVENTĂM fixtures.
+                # Inainte: dacă fixtures[] era gol, populăm cu "n_apartments × 1 lavoar/cadă/dus"
+                # → valori fictive în CPE pentru blocuri cu 100 apt scriam 100 lavoare etc.
+                # Acum: doar populăm DOAR cu valori reale din `acm.fixtures`. Dacă lipsesc,
+                # tabelul rămâne necompletat și auditorul completează manual (corect Mc 001-2022).
                 try:
                     fixtures_json = data.get("acm_fixtures", "{}")
                     try:
                         fixtures = json.loads(fixtures_json) if fixtures_json else {}
                     except (ValueError, TypeError):
                         fixtures = {}
-                    # Detectare "efectiv gol" — toate valorile goale/0
-                    fixtures_empty = not fixtures or all(
-                        not v or str(v).strip() in ("", "0") for v in fixtures.values()
-                    )
-                    is_res_t11 = category in ("RI", "RC", "RA", "BC")
-                    if fixtures_empty and is_res_t11:
-                        n_apt_int = max(1, int(str(data.get("n_apartments_count", "1") or "1").split(".")[0]))
-                        fixtures = {
-                            "lavoare": str(n_apt_int),
-                            "cada_baie": str(n_apt_int),
-                            "spalatoare": str(n_apt_int),
-                            "rezervor_wc": str(n_apt_int),
-                            "bideuri": "0",
-                            "pisoare": "0",
-                            "dus": str(n_apt_int),
-                            "masina_spalat_vase": "0",
-                            "masina_spalat_rufe": str(n_apt_int),
-                        }
-                    elif fixtures_empty and not is_res_t11:
-                        # Nerezidențial minimal: 1 lavoar + 1 WC (evită tabel complet gol)
-                        fixtures = {
-                            "lavoare": "1",
-                            "cada_baie": "0",
-                            "spalatoare": "0",
-                            "rezervor_wc": "1",
-                            "bideuri": "0",
-                            "pisoare": "0",
-                            "dus": "0",
-                            "masina_spalat_vase": "0",
-                            "masina_spalat_rufe": "0",
-                        }
+                    # Filtrăm doar valorile pozitive REALE — nu mai inventăm fallback
+                    fixtures = {k: v for k, v in fixtures.items() if v and str(v).strip() not in ("", "0")}
+                    if not fixtures:
+                        print(f"[tabel_11_acm_fixtures] acm.fixtures gol — tabel ramane gol (NU inventam date)", flush=True)
                     if fixtures:
                         # Map între cheia semantică și label-ul din template
                         # Fix 20 apr 2026: normalizare diacritice pentru match robust

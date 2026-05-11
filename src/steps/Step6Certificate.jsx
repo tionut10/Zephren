@@ -838,14 +838,20 @@ export default function Step6Certificate(props) {
                     // Etapa 7d (20 apr 2026) — câmpuri suplimentare pentru gap-urile P0
                     acm_power: acm?.power ? fmtRo(parseFloat(acm.power), 1) : "",
                     ventilation_flow_m3h: (() => {
-                      // Debit aer proaspăt: priority pe ventilation.flowRate, fallback calc EN 16798-1
-                      // (4.5 l/s/persoană × ocupanți)
+                      // Sprint 11 mai 2026 (audit C2) — debit aer proaspăt cu nrOcupanti REAL.
+                      // Priority: ventilation.flowRate explicit → building.nrOcupanti × 4.5l/s →
+                      // fallback Au/m²pers (EN 16798-1 categoria II — 30 m²/pers rezid, 15 m²/pers nrez).
                       const direct = ventilation?.flowRate || ventilation?.flow_m3h;
                       if (direct) return fmtRo(parseFloat(direct), 0);
-                      // Fallback: 4.5 l/s × ocupanți (15 m²/pers nrez, 30 m²/pers rez) → m³/h
+                      // Folosim nrOcupanti REAL dacă disponibil (deja trimis în payload `nr_persoane`)
+                      const realOcc = parseInt(building?.nrOcupanti, 10) || 0;
+                      if (realOcc > 0) {
+                        return String(Math.round(realOcc * 4.5 * 3.6));  // l/s × 3.6 → m³/h
+                      }
+                      // Fallback estimare doar dacă nu avem nrOcupanti
                       const isRes = ["RI","RC","RA"].includes(building?.category);
-                      const occ = Math.max(1, Math.round(Au / (isRes ? 30 : 15)));
-                      return String(Math.round(occ * 4.5 * 3.6));  // l/s → m³/h
+                      const occEst = Math.max(1, Math.round(Au / (isRes ? 30 : 15)));
+                      return String(Math.round(occEst * 4.5 * 3.6));
                     })(),
                     // ── Sprint monolith (20 apr 2026) — Anexa 1+2 MDLPA extinderi ──
                     // Toate câmpurile opționale pentru completarea automată a tabelelor
@@ -918,7 +924,15 @@ export default function Step6Certificate(props) {
                       if (area > 0) return String(Math.max(1, Math.ceil(area / 2)));
                       return "";
                     })(),
-                    solar_th_orientation: (solarThermal?.enabled && solarThermal?.orientation) || "",
+                    // Sprint 11 mai 2026 (audit B8) — traduceri orientation S/SE → Sud/Sud-Est
+                    solar_th_orientation: (() => {
+                      if (!solarThermal?.enabled || !solarThermal?.orientation) return "";
+                      const ORIENT_MAP = {
+                        N: "Nord", NE: "Nord-Est", E: "Est", SE: "Sud-Est",
+                        S: "Sud", SV: "Sud-Vest", SW: "Sud-Vest", V: "Vest", W: "Vest", NV: "Nord-Vest", NW: "Nord-Vest",
+                      };
+                      return ORIENT_MAP[String(solarThermal.orientation).toUpperCase()] || solarThermal.orientation;
+                    })(),
                     solar_th_tilt: (solarThermal?.enabled && solarThermal?.tilt) || "",
                     solar_th_usage: (() => {
                       if (!solarThermal?.enabled) return "";
@@ -939,7 +953,15 @@ export default function Step6Certificate(props) {
                       if (peak > 0) return String(Math.max(1, Math.ceil(peak / 0.4)));
                       return "";
                     })(),
-                    pv_orientation: (photovoltaic?.enabled && photovoltaic?.orientation) || "",
+                    // Sprint 11 mai 2026 (audit B8) — traduceri orientation S/SE → Sud/Sud-Est
+                    pv_orientation: (() => {
+                      if (!photovoltaic?.enabled || !photovoltaic?.orientation) return "";
+                      const ORIENT_MAP = {
+                        N: "Nord", NE: "Nord-Est", E: "Est", SE: "Sud-Est",
+                        S: "Sud", SV: "Sud-Vest", SW: "Sud-Vest", V: "Vest", W: "Vest", NV: "Nord-Vest", NW: "Nord-Vest",
+                      };
+                      return ORIENT_MAP[String(photovoltaic.orientation).toUpperCase()] || photovoltaic.orientation;
+                    })(),
                     pv_tilt: (photovoltaic?.enabled && photovoltaic?.tilt) || "",
                     pv_usage: (() => {
                       if (!photovoltaic?.enabled) return "";
