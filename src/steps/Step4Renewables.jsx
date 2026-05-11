@@ -133,18 +133,34 @@ export default function Step4Renewables({
         <p className="text-xs opacity-40">Capitolul 4 Mc 001-2022 — Solar termic, Fotovoltaic, Pompe de căldură, Biomasă, Eolian, Cogenerare. Catalog NEUTRU bilingv RO+EN ({RENEWABLE_META.totalEntries} entries în 11 categorii) — afișare fără brand, parteneriate viitoare în brands-registry.json.</p>
       </div>
 
-      {/* Sub-tabs */}
+      {/* audit-mai2026 MEGA P1.3 — Tier-uri 1/2/3 RES pentru orientare auditori per tipologie clădire.
+          Tier 1 (rezidențial frecvent): PV, Solar termic, HP — cele mai uzuale 2026 prosumator+Casa Verde Plus.
+          Tier 2 (case rurale + complexe): Biomasă — pentru zone fără gaz/DH.
+          Tier 3 (industrial + community + avansat): CHP, Eolian — opțional pentru proiecte complexe. */}
+      <div className="mb-3 px-3 py-2 rounded-lg bg-emerald-500/[0.04] border border-emerald-500/15 text-[10px] text-emerald-200/70 flex items-start gap-2">
+        <span className="text-base mt-[-2px]">💡</span>
+        <span>
+          <strong className="text-emerald-300/90">Tier-uri orientare:</strong>
+          {" "}<span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-medium">T1</span> rezidențial frecvent (PV+Solar+HP — Casa Verde Plus 2026);
+          {" "}<span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 font-medium">T2</span> case rurale (biomasă);
+          {" "}<span className="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 font-medium">T3</span> industrial / community (CHP + eolian).
+        </span>
+      </div>
+
+      {/* Sub-tabs — reorder Tier 1 → 2 → 3 (P1.3 audit-mai2026) */}
       <div className="flex gap-1 mb-6 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] overflow-x-auto no-scrollbar">
         {[
-          {id:"solar_th",label:"Solar termic",icon:"☀️"},
-          {id:"heat_pump",label:"Pompe căldură",icon:"♨️"},
-          {id:"pv",label:"Fotovoltaic",icon:"🔋"},
-          {id:"biomass",label:"Biomasă",icon:"🌳"},
-          {id:"other",label:"CHP / Eolian",icon:"⚡"},
+          {id:"pv",label:"Fotovoltaic",icon:"🔋",tier:"T1",tierColor:"text-emerald-300"},
+          {id:"solar_th",label:"Solar termic",icon:"☀️",tier:"T1",tierColor:"text-emerald-300"},
+          {id:"heat_pump",label:"Pompe căldură",icon:"♨️",tier:"T1",tierColor:"text-emerald-300"},
+          {id:"biomass",label:"Biomasă",icon:"🌳",tier:"T2",tierColor:"text-amber-300"},
+          {id:"other",label:"CHP / Eolian",icon:"⚡",tier:"T3",tierColor:"text-violet-300"},
         ].map(tab => (
           <button key={tab.id} onClick={() => setRenewSubTab(tab.id)}
-            className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
+            title={`${tab.tier} — ${tab.label}`}
+            className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap min-w-[80px]",
               renewSubTab===tab.id ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "hover:bg-white/5 border border-transparent")}>
+            <span className={cn("text-[9px] font-bold opacity-60", tab.tierColor)}>{tab.tier}</span>
             <span>{tab.icon}</span>{t(tab.label,lang)}
           </button>
         ))}
