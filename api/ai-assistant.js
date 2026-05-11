@@ -61,6 +61,32 @@ Răspunsuri scurte (max 6-8 propoziții) dacă utilizatorul cere sumar. Răspuns
 
 Dacă întrebarea este în afara reabilitării energetice clădiri, redirecționează politicos la subiectul corect.`;
 
+// audit-mai2026 F6 — Sistem prompt dedicat pentru text narativ documente generate.
+// Folosit pentru: Cap. 1 (descriere clădire), Cap. 8 (concluzii audit), Intro Pașaport,
+// Intro Foaie de Parcurs, recomandări Anexa 1+2 (text generic AE IIci).
+const SYSTEM_PROMPT_NARRATIVE = `Ești un redactor tehnic specialist în rapoarte de audit energetic clădiri (România 2026). Scrii în limba română cu diacritice corecte (ă, â, î, ș, ț). Stilul tău este:
+
+1. **Tehnic dar accesibil** — folosește terminologia normativă corectă (Mc 001-2022, SR EN ISO, EPBD), dar evită jargonul gratuit.
+2. **Factual și obiectiv** — descrii doar fapte din datele primite, fără speculații.
+3. **Cu citări normative** — referă explicit articole (ex: „conform Cap. 9 Mc 001-2022", „Art. 6 Ord. MDLPA 348/2026").
+4. **Concis** — 200-400 cuvinte pe secțiune (decât altfel specificat).
+
+Tipuri de secțiuni cerute (parametru `section` din request):
+- "cap1_descriere" — Descrierea clădirii (Cap. 1 raport audit): localizare, categorie, geometrie, sistem constructiv, sisteme tehnice existente, scop audit. Bazat pe Pas 1-3.
+- "cap8_concluzii" — Concluzii audit (Cap. 8 raport): performanța energetică curentă, conformitate nZEB/MEPS, priorități intervenție, drum la conformitate. Bazat pe Pas 5-7.
+- "intro_pasaport" — Intro Pașaport Renovare (Anexa VIII EPBD 2024 Art. 12, EU): obiectiv, faze planificate, beneficiar. Disclaimer EPBD nu e transpus RO până 29.05.2026.
+- "intro_foaie_parcurs" — Intro Foaie de Parcurs renovare: scop, etape multi-an, indicatori monitorizare. Bazat pe Pas 7 phased-rehab.
+- "recomandari_anexa_aeIIci" — Text generic recomandări Anexa 1+2 pentru tier AE IIci: ordine Mc 001 Cap. 9 + intervale standard cost, FĂRĂ analiză cost-optimă detaliată (rezervată Pas 7 AE Ici).
+- "summary_audit_exec" — Sumar executiv 1 pagină pentru beneficiar.
+
+Reguli stricte:
+- NU inventa date care nu sunt în context (categorie, EP, suprafețe, U-uri). Dacă lipsesc → folosește placeholder „[neîn cunoscut]" și sugerează completare.
+- NU folosi formulări marketing („foarte eficient", „remarcabil"). Folosește limbaj normativ neutru.
+- NU promova brand-uri comerciale. Recomandă pe categorii generice.
+- NU exagera reducerile economii — interval realistic 8-25% per măsură per Mc 001 Cap. 9.
+
+Output format: text continuu cu paragrafe scurte (max 4 propoziții/paragraf). Folosește subtitluri H3 (\`###\`) doar dacă sectionLength > 400 cuvinte.`;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -92,8 +118,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "A valid 'question' string is required" });
     }
 
-    // audit-mai2026 F5 — Routing pe intent (default = q&a normativ, rehab-chat = chat reabilitare Pas 7)
+    // audit-mai2026 F5/F6 — Routing pe intent:
+    //   default = q&a normativ (Haiku 4.5)
+    //   rehab-chat = chat reabilitare Pas 7 (Sonnet 4.6 + history)
+    //   narrative = text narativ secțiuni documente (Sonnet 4.6, fără history)
     const isRehabChat = intent === "rehab-chat";
+    const isNarrative = intent === "narrative";
 
     // Build context message from building data if provided
     let contextMessage = "";
@@ -115,7 +145,7 @@ export default async function handler(req, res) {
         parts.push(`Categorie cladire: ${context.category}`);
       }
       // F5 — context extins pentru rehab-chat: U mediu opac, U vitraj, sisteme, zonă climatică
-      if (isRehabChat) {
+      if (isRehabChat || isNarrative) {
         if (context.zoneClimatica) parts.push(`Zona climatica: ${context.zoneClimatica}`);
         if (context.uOpacMediu !== undefined) parts.push(`U mediu opac: ${context.uOpacMediu} W/(m²·K)`);
         if (context.uVitrajMediu !== undefined) parts.push(`U mediu vitraj: ${context.uVitrajMediu} W/(m²·K)`);
@@ -124,6 +154,14 @@ export default async function handler(req, res) {
         if (context.buget) parts.push(`Buget estimat: ${context.buget} EUR`);
         if (context.au !== undefined) parts.push(`Au: ${context.au} m²`);
         if (context.yearBuilt) parts.push(`An constructie: ${context.yearBuilt}`);
+      }
+      // F6 — context narrative-specific: secțiunea cerută + date suplimentare audit
+      if (isNarrative) {
+        if (context.section) parts.push(`Sectiune cerere: ${context.section}`);
+        if (context.sectionLength) parts.push(`Lungime tinta: ${context.sectionLength} cuvinte`);
+        if (context.measures) parts.push(`Masuri recomandate: ${JSON.stringify(context.measures).slice(0, 500)}`);
+        if (context.nzebStatus) parts.push(`Status nZEB: ${context.nzebStatus}`);
+        if (context.tier) parts.push(`Tier auditor: ${context.tier}`);
       }
       if (parts.length > 0) {
         contextMessage = `\n\nContextul proiectului curent:\n${parts.join("\n")}`;
@@ -148,12 +186,18 @@ export default async function handler(req, res) {
       messages = [{ role: "user", content: question + contextMessage }];
     }
 
-    // F5 — model selection per intent:
+    // F5/F6 — model + system + tokens selection per intent:
     // - rehab-chat: Sonnet 4.6 (calitate sugestii reabilitare complexe)
+    // - narrative: Sonnet 4.6 (calitate text redactare documente)
     // - default Q&A normativ: Haiku 4.5 (viteză + cost redus)
-    const model = isRehabChat ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
-    const system = isRehabChat ? SYSTEM_PROMPT_REHAB_CHAT : SYSTEM_PROMPT;
-    const maxTokens = isRehabChat ? 1500 : 1024;
+    const useSonnet = isRehabChat || isNarrative;
+    const model = useSonnet ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+    const system = isRehabChat
+      ? SYSTEM_PROMPT_REHAB_CHAT
+      : isNarrative
+      ? SYSTEM_PROMPT_NARRATIVE
+      : SYSTEM_PROMPT;
+    const maxTokens = isNarrative ? 2000 : isRehabChat ? 1500 : 1024;
 
     const response = await client.messages.create({
       model,
