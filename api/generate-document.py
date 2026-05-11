@@ -5478,12 +5478,15 @@ class handler(BaseHTTPRequestHandler):
                     _fill_para_blank("Puterea electrică instalată totală a sistemului de iluminat", light_power, " kW")
 
                 # ── Regenerabile (energie exportată on-site) ───────────
-                solar_th = data.get("solar_th_kwh_year", "")
-                if solar_th and solar_th != "0":
-                    _fill_para_blank("Energia termică exportată", solar_th, " kWh/an")
-                pv_kwh = data.get("pv_kwh_year", "")
-                if pv_kwh and pv_kwh != "0":
-                    _fill_para_blank("Energia electrică exportată", pv_kwh, " kWh/an")
+                # Sprint 11 mai 2026 (user feedback) — completare AGRESIVĂ: dacă valoarea
+                # e gol sau "0" în payload, completăm cu "0" EXPLICIT (NU lăsăm placeholder
+                # dotted-underline vizibil). Frontend trimite "0" pentru clădiri fără export.
+                energie_term_exp = data.get("energia_termica_exportata", "") or \
+                                    data.get("solar_th_kwh_year", "") or "0"
+                _fill_para_blank("Energia termică exportată", energie_term_exp, " kWh/an")
+                energie_elec_exp = data.get("energia_electrica_exportata", "") or \
+                                    data.get("pv_kwh_year", "") or "0"
+                _fill_para_blank("Energia electrică exportată", energie_elec_exp, " kWh/an")
                 wind_kwh = data.get("wind_kwh_year", "")
                 if wind_kwh and wind_kwh != "0":
                     # Para 414 are placeholder cu puncte — chirurgical, doar în paragraful eolian
@@ -6473,13 +6476,13 @@ class handler(BaseHTTPRequestHandler):
                     pass
 
                 # ── Tabel 8 + T12 — Grad ocupare (încălzire + răcire) ──
-                # Sprint 11 mai 2026 (audit A1) — schedule REAL din payload (heating.theta_int +
-                # heating.nightReduction + Au/nrOcupanti) cu fallback la defaults Mc 001-2022.
-                # Înainte: defaults hardcoded EN 16798-1 (16/24/24, 20/18/20, 30/30/30) →
-                # date fictive în Anexa 2 Tabel 8/12 indiferent de configurația reală.
+                # Sprint 11 mai 2026 (audit A1 + user feedback) — FIX defaults orare:
+                # Înainte: noaptea=24h (absurd; "nu poți petrece 24h pe noapte").
+                # Acum: program HEAT zi=16, noapte=8 (orele de somn), weekend=24h.
+                # Plus: pentru clădiri FĂRĂ răcire → program COOL = 0 (NU duplicat încălzire).
                 try:
                     is_res_t8 = category in ("RI", "RC", "RA", "BC")
-                    # Citește valori REALE din payload (trimise de frontend din heating.*)
+                    # Citește valori REALE din payload (trimise de frontend din heating.* + cooling.*)
                     sched_real = {
                         "program":  (data.get("schedule_program_zi_lucru", "") or "",
                                      data.get("schedule_program_noapte", "") or "",
@@ -6491,9 +6494,10 @@ class handler(BaseHTTPRequestHandler):
                                      data.get("schedule_ocupare_noapte", "") or "",
                                      data.get("schedule_ocupare_weekend", "") or ""),
                     }
-                    # Fallback defaults DOAR dacă payload nu a trimis valori
+                    # Fallback defaults Mc 001-2022 + EN 16798-1
+                    # Rezidențial: ZI=16h treaz, NOAPTE=8h somn, WEEKEND=24h ocupat
                     if is_res_t8:
-                        fb_prog = ("16", "24", "24")
+                        fb_prog = ("16", "8", "24")  # FIX user feedback: 8 (NU 24) pentru noapte
                         fb_temp = ("20", "18", "20")
                         fb_ocup = ("30", "30", "30")
                     else:
@@ -6686,13 +6690,16 @@ class handler(BaseHTTPRequestHandler):
                     if not _vf_filled:
                         _fill_para_blank("Debitul minim de aer proaspăt", vent_flow, " m³/h")
 
-                # p424, p425 — duplicate cu p422/p423 (acelaș text dar contains "din surse regenerabile")
-                if data.get("solar_th_kwh_year") and data["solar_th_kwh_year"] != "0":
-                    _fill_para_blank("Energia termică exportată din surse regenerabile",
-                                     data["solar_th_kwh_year"], " kWh/an")
-                if data.get("pv_kwh_year") and data["pv_kwh_year"] != "0":
-                    _fill_para_blank("Energia electrică exportată din surse regenerabile",
-                                     data["pv_kwh_year"], " kWh/an")
+                # p424, p425 — completare AGRESIVĂ (Sprint 11 mai 2026 user feedback):
+                # frontend trimite "0" explicit dacă nu există export → completam mereu cu valoarea
+                _term_sre = data.get("energia_termica_exp_sre", "") or \
+                            data.get("solar_th_kwh_year", "") or "0"
+                _fill_para_blank("Energia termică exportată din surse regenerabile",
+                                 _term_sre, " kWh/an")
+                _elec_sre = data.get("energia_electrica_exp_sre", "") or \
+                            data.get("pv_kwh_year", "") or "0"
+                _fill_para_blank("Energia electrică exportată din surse regenerabile",
+                                 _elec_sre, " kWh/an")
 
                 # p426 — EPP (Indicatorul energiei primare)
                 # FIX 20 apr 2026 (Sprint monolith): elimin skip pe "0,0" — completez întotdeauna

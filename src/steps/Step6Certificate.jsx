@@ -677,10 +677,14 @@ export default function Step6Certificate(props) {
                     cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     baseCat),
                     cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", baseCat),
                     cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    baseCat),
-                    // Sprint 11 mai 2026 (audit A1) — schedule REAL pentru Tabel 8 (Program orar)
-                    // Înainte: Python folosea defaults hardcoded EN 16798-1 (16/24/24 + 20/18/20)
-                    // pentru rezidențial. Acum: trimitem valorile din heating.theta_int +
-                    // nightReduction (real-din-UI). Default conform Mc 001-2022 Anexa 5.
+                    // Sprint 11 mai 2026 (audit A1 + user feedback) — schedule REAL pentru Tabel 8.
+                    // FIX user feedback: "noaptea 24h" era ABSURD. Mc 001-2022 Anexa 5
+                    // definește orele de FUNCȚIONARE per perioadă din 24h, NU orele totale
+                    // disponibile. Corect:
+                    //   - Zi lucru: 16h (10h sus/dimineata + 6h seara — clădire ocupată)
+                    //   - Noapte: 8h (orele de somn — funcționare redusă cu nightReduction)
+                    //   - Weekend zi: 24h (rezidențial = ocupat toată ziua)
+                    // Pentru clădiri fără răcire/climatizare → schedule_*_racire = 0.
                     ...((() => {
                       const isRes = ["RI","RC","RA","BC"].includes(baseCat);
                       const tInt = parseFloat(heating?.theta_int) ||
@@ -689,20 +693,29 @@ export default function Step6Certificate(props) {
                                      baseCat === "CO" ? 18 : 20);
                       const nightRed = parseFloat(heating?.nightReduction) || (isRes ? 2 : 5);
                       const tNight = Math.max(10, tInt - nightRed);
-                      // Program orar (h/zi) — din heating.operatingHours sau default
+                      // Program orar (h/zi din 24h) — din heating.operatingHours sau default
+                      // Rezidențial: ZI=16h (treaz), NOAPTE=8h (somn), WEEKEND=24h (ocupat tot)
+                      // Nerezidențial: ZI=10h (ore birou), NOAPTE=0 (neocupat), WEEKEND=0
                       const opHoursDay = parseFloat(heating?.operatingHours) ||
                                           (isRes ? 16 :
                                            baseCat === "BI" ? 10 :
                                            baseCat === "ED" ? 8 :
                                            baseCat === "SA" ? 24 :
                                            baseCat === "CO" ? 12 : 10);
-                      const opHoursNight = isRes ? 24 : 0;  // rezidențial = ocupat noapte
-                      const opHoursWE = isRes ? 24 : 0;     // rezidențial weekend = ocupat
+                      const opHoursNight = isRes ? 8 : 0;   // FIX: 8h (somn), NU 24h
+                      const opHoursWE = isRes ? 24 : 0;
                       // Grad ocupare (m²/pers) — calculat din Au / nrOcupanti
                       const nrOcup = parseInt(building.nrOcupanti, 10) ||
                                      parseInt(building.units || "1", 10) * (isRes ? 2.5 : 1);
                       const m2PerPers = nrOcup > 0 && Au > 0 ? Au / nrOcup : (isRes ? 30 : 15);
+                      // Pentru clădiri FĂRĂ răcire → schedule răcire = 0 (NU duplicăm încălzirea)
+                      const hasCooling = cooling?.hasCooling === true;
+                      const coolDay = hasCooling ? opHoursDay : 0;
+                      const coolNight = hasCooling ? opHoursNight : 0;
+                      const coolWE = hasCooling ? opHoursWE : 0;
+                      const tIntCool = hasCooling ? (parseFloat(cooling?.theta_int) || 26) : 0;
                       return {
+                        // Schedule încălzire (Tabel 8)
                         schedule_program_zi_lucru: String(opHoursDay),
                         schedule_program_noapte:   String(opHoursNight),
                         schedule_program_weekend:  String(opHoursWE),
@@ -712,6 +725,16 @@ export default function Step6Certificate(props) {
                         schedule_ocupare_zi_lucru: String(Math.round(m2PerPers)),
                         schedule_ocupare_noapte:   String(Math.round(m2PerPers)),
                         schedule_ocupare_weekend:  String(Math.round(m2PerPers)),
+                        // Schedule răcire (Tabel 12) — DIFERIT de încălzire pentru clădiri fără cooling
+                        schedule_cool_program_zi_lucru: String(coolDay),
+                        schedule_cool_program_noapte:   String(coolNight),
+                        schedule_cool_program_weekend:  String(coolWE),
+                        schedule_cool_temp_zi_lucru:    hasCooling ? String(tIntCool) : "0",
+                        schedule_cool_temp_noapte:      hasCooling ? String(tIntCool + 2) : "0",
+                        schedule_cool_temp_weekend:     hasCooling ? String(tIntCool) : "0",
+                        schedule_cool_ocupare_zi_lucru: hasCooling ? String(Math.round(m2PerPers)) : "0",
+                        schedule_cool_ocupare_noapte:   hasCooling ? String(Math.round(m2PerPers)) : "0",
+                        schedule_cool_ocupare_weekend:  hasCooling ? String(Math.round(m2PerPers)) : "0",
                       };
                     })()),
                     // Sprint 11 mai 2026 (audit Anexa 1+2 A4+A5) — CO2 + EP per utilitate
@@ -866,6 +889,20 @@ export default function Step6Certificate(props) {
                     pv_kwh_year:        renewSummary?.qPV_kWh ? fmtRo(renewSummary.qPV_kWh, 0) : "",
                     solar_th_kwh_year:  renewSummary?.qSolarTh ? fmtRo(renewSummary.qSolarTh, 0) : "",
                     wind_kwh_year:      renewSummary?.qWind ? fmtRo(renewSummary.qWind, 0) : "",
+                    // Sprint 11 mai 2026 (user feedback) — Energie EXPORTATĂ on-site (PV + solar termic + eolian).
+                    // Înainte: placeholder dotted-underline lăsat gol → vizual __________ kWh/an
+                    // Acum: trimitem 0 explicit dacă nu există export (corect Mc 001-2022 §6.4)
+                    energia_termica_exportata: solarThermal?.enabled && renewSummary?.qSolarTh_exported
+                      ? fmtRo(renewSummary.qSolarTh_exported, 0) : "0",
+                    energia_electrica_exportata: photovoltaic?.enabled && renewSummary?.qPV_exported
+                      ? fmtRo(renewSummary.qPV_exported, 0)
+                      : (photovoltaic?.enabled && renewSummary?.qPV_kWh
+                          ? fmtRo(renewSummary.qPV_kWh, 0)  // fallback: tot ce PV produce e exportat
+                          : "0"),
+                    energia_termica_exp_sre: solarThermal?.enabled && renewSummary?.qSolarTh_exported
+                      ? fmtRo(renewSummary.qSolarTh_exported, 0) : "0",
+                    energia_electrica_exp_sre: photovoltaic?.enabled && renewSummary?.qPV_kWh
+                      ? fmtRo(renewSummary.qPV_kWh, 0) : "0",
                     glazing_area_total_m2: glazingElements?.length
                       ? fmtRo(glazingElements.reduce((s, g) => s + (parseFloat(g.area) || 0), 0), 1)
                       : "",
