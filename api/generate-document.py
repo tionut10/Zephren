@@ -3380,10 +3380,14 @@ def compute_checkbox_keys(data, category):
         keys.append("REC_DHW_RECIRC")
 
     # REC_HEAT_EQUIP — echipament CT vechi (η < 0.85) sau >15 ani
+    # Sprint 11 mai 2026 (audit B3) — fallback ZERO (NU 1.0) când eta lipsește.
+    # Înainte: default 1.0 (100% randament absurd) → recomandarea REC_HEAT_EQUIP
+    # NU se activa niciodată chiar pentru cazane vechi cu η<85%.
     try:
-        heat_eta = float(data.get("heating_eta_gen", "1.0") or "1.0")
-    except Exception:
-        heat_eta = 1.0
+        heat_eta_raw = data.get("heating_eta_gen", "") or ""
+        heat_eta = float(str(heat_eta_raw).replace(",", "."))
+    except (ValueError, TypeError):
+        heat_eta = 0  # 0 = lipsă date (NU 1.0); REC_HEAT_EQUIP nu se activează fără date
     if 0 < heat_eta < 0.85 and h_src and h_src not in ("electric_direct", "pc_aer_aer"):
         keys.append("REC_HEAT_EQUIP")
     elif heat_year and (datetime.datetime.now().year - heat_year) > 15 and h_src not in ("electric_direct", "pc_aer_aer"):
@@ -5182,10 +5186,21 @@ class handler(BaseHTTPRequestHandler):
                         f"Volumul interior de referință V, al clădirii/unității de clădire: {vol} m³"
                     )
                 # Factor formă
+                # Sprint 11 mai 2026 (audit B2) — folosesc area_envelope REAL CALCULAT
+                # din frontend (envelopeSummary.totalArea). Înainte: fallback Au×1.3 care
+                # putea eroare ±40% pentru clădiri non-cubice.
                 try:
                     au_f = float(au.replace(",", ".")) if au else 0
                     vol_f = float(vol.replace(",", ".")) if vol else 0
-                    ae = float(data.get("area_envelope", "0").replace(",", ".")) if data.get("area_envelope") else au_f * 1.3
+                    ae_raw = data.get("area_envelope", "0") or "0"
+                    try:
+                        ae = float(str(ae_raw).replace(",", "."))
+                    except (ValueError, TypeError):
+                        ae = 0
+                    # Fallback Au×1.3 DOAR dacă frontend nu a trimis valoare (caz patologic)
+                    if ae <= 0 and au_f > 0:
+                        ae = au_f * 1.3
+                        print(f"[area_envelope] WARN: lipsă în payload, fallback Au×1.3 = {ae:.1f}", flush=True)
                     se_v = ae / vol_f if vol_f > 0 else 0
                     if se_v > 0:
                         _replace_full_para(
@@ -6543,26 +6558,46 @@ class handler(BaseHTTPRequestHandler):
                     pass
 
                 # ── Tabel 8 + T12 — Grad ocupare (încălzire + răcire) ──
-                # Defaults rezidențial / nerezidențial
+                # Sprint 11 mai 2026 (audit A1) — schedule REAL din payload (heating.theta_int +
+                # heating.nightReduction + Au/nrOcupanti) cu fallback la defaults Mc 001-2022.
+                # Înainte: defaults hardcoded EN 16798-1 (16/24/24, 20/18/20, 30/30/30) →
+                # date fictive în Anexa 2 Tabel 8/12 indiferent de configurația reală.
                 try:
                     is_res_t8 = category in ("RI", "RC", "RA", "BC")
-                    # Defaults EN 16798-1 + Mc 001-2022
+                    # Citește valori REALE din payload (trimise de frontend din heating.*)
+                    sched_real = {
+                        "program":  (data.get("schedule_program_zi_lucru", "") or "",
+                                     data.get("schedule_program_noapte", "") or "",
+                                     data.get("schedule_program_weekend", "") or ""),
+                        "temp":     (data.get("schedule_temp_zi_lucru", "") or "",
+                                     data.get("schedule_temp_noapte", "") or "",
+                                     data.get("schedule_temp_weekend", "") or ""),
+                        "ocupare":  (data.get("schedule_ocupare_zi_lucru", "") or "",
+                                     data.get("schedule_ocupare_noapte", "") or "",
+                                     data.get("schedule_ocupare_weekend", "") or ""),
+                    }
+                    # Fallback defaults DOAR dacă payload nu a trimis valori
                     if is_res_t8:
-                        sched_defaults = {
-                            "Programul (h)":         {"zi_lucru": "16", "noaptea": "24", "weekend": "24"},
-                            "Programul [h]":         {"zi_lucru": "16", "noaptea": "24", "weekend": "24"},
-                            "Temperatura interioară (grdC)": {"zi_lucru": "20", "noaptea": "18", "weekend": "20"},
-                            "Temperatura interioară [grdC]": {"zi_lucru": "20", "noaptea": "18", "weekend": "20"},
-                            "Grad de ocupare zilnic/săptămânal/lunar [m²/pers]": {"zi_lucru": "30", "noaptea": "30", "weekend": "30"},
-                        }
+                        fb_prog = ("16", "24", "24")
+                        fb_temp = ("20", "18", "20")
+                        fb_ocup = ("30", "30", "30")
                     else:
-                        sched_defaults = {
-                            "Programul (h)":         {"zi_lucru": "10", "noaptea": "0", "weekend": "0"},
-                            "Programul [h]":         {"zi_lucru": "10", "noaptea": "0", "weekend": "0"},
-                            "Temperatura interioară (grdC)": {"zi_lucru": "20", "noaptea": "15", "weekend": "15"},
-                            "Temperatura interioară [grdC]": {"zi_lucru": "26", "noaptea": "28", "weekend": "28"},
-                            "Grad de ocupare zilnic/săptămânal/lunar [m²/pers]": {"zi_lucru": "15", "noaptea": "15", "weekend": "15"},
-                        }
+                        fb_prog = ("10", "0", "0")
+                        fb_temp = ("20", "15", "15")
+                        fb_ocup = ("15", "15", "15")
+                    def _use_real_or_fallback(real_tuple, fb_tuple):
+                        return tuple(r if r else fb_tuple[i] for i, r in enumerate(real_tuple))
+                    prog = _use_real_or_fallback(sched_real["program"], fb_prog)
+                    temp = _use_real_or_fallback(sched_real["temp"], fb_temp)
+                    ocup = _use_real_or_fallback(sched_real["ocupare"], fb_ocup)
+                    sched_defaults = {
+                        "Programul (h)":         {"zi_lucru": prog[0], "noaptea": prog[1], "weekend": prog[2]},
+                        "Programul [h]":         {"zi_lucru": prog[0], "noaptea": prog[1], "weekend": prog[2]},
+                        "Temperatura interioară (grdC)": {"zi_lucru": temp[0], "noaptea": temp[1], "weekend": temp[2]},
+                        "Temperatura interioară [grdC]": {"zi_lucru": temp[0], "noaptea": temp[1], "weekend": temp[2]},
+                        "Grad de ocupare zilnic/săptămânal/lunar [m²/pers]": {"zi_lucru": ocup[0], "noaptea": ocup[1], "weekend": ocup[2]},
+                    }
+                    print(f"[tabel_8_grad_ocupare] prog={prog} temp={temp} ocup={ocup} (real={sched_real})", flush=True)
                     for tbl in doc.tables:
                         if len(tbl.rows) < 2 or len(tbl.columns) < 4:
                             continue

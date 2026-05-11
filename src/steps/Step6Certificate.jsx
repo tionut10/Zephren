@@ -23,6 +23,8 @@ import { ENERGY_CLASSES_DB, CLASS_LABELS, CLASS_COLORS, CO2_CLASSES_DB, NZEB_THR
 import { ZEB_THRESHOLDS, ZEB_FACTOR, U_REF_NZEB_RES, U_REF_NZEB_NRES, U_REF_GLAZING, getURefNZEB, NZEB_EP_FALLBACK, getNzebEpMaxWithFallback } from "../data/u-reference.js";
 import { CATEGORY_BASE_MAP, BUILDING_CATEGORIES, ELEMENT_TYPES, CPE_TEMPLATES } from "../data/building-catalog.js";
 import { FUELS, HEAT_SOURCES, ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES, LIGHTING_CONTROL, SOLAR_THERMAL_TYPES, PV_TYPES } from "../data/constants.js";
+// Sprint 11 mai 2026 (audit Anexa 1+2 P0) — factori reali per combustibil
+import { FP_ELEC, CO2_ELEC, getFPElecTot } from "../data/u-reference.js";
 // Sprint Audit Prețuri P3.2 (9 mai 2026) — dead import REHAB_COSTS eliminat (nefolosit aici).
 import { T } from "../data/translations.js";
 import { generateNZEBConformanceReport } from "../lib/report-generators.js";
@@ -388,6 +390,14 @@ export default function Step6Certificate(props) {
                     software: "ZEPHREN " + APP_VERSION,
                     area_ref: fmtRo(Aref, 1),
                     area_gross: fmtRo(arieDesf, 1),
+                    // Sprint 11 mai 2026 (audit B2) — trimit Aenv real CALCULAT (NU fallback Au×1.3 server)
+                    area_envelope: fmtRo(
+                      parseFloat(building.areaEnvelope) ||
+                      (envelopeSummary?.totalArea) ||
+                      (opaqueElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0) +
+                       glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0)),
+                      1
+                    ),
                     volume: Math.round(Vol).toString(),
                     nr_units: nrCam,
                     category_label: BUILDING_CATEGORIES.find(c=>c.id===baseCat)?.label || "",
@@ -628,51 +638,105 @@ export default function Step6Certificate(props) {
                     cls_racire:    getServiceClass(Au > 0 ? (instSummary?.ep_c || 0) / Au : 0, "cooling",     baseCat),
                     cls_ventilare: getServiceClass(Au > 0 ? (instSummary?.ep_v || 0) / Au : 0, "ventilation", baseCat),
                     cls_iluminat:  getServiceClass(Au > 0 ? (instSummary?.ep_l || 0) / Au : 0, "lighting",    baseCat),
-                    // Sprint 11 mai 2026 — CO2 per utilitate (real) pentru tabel sisteme
-                    // CO2_factor (kg/kWh): gaz natural=0.202, electric=0.299 (mix RO 2024),
-                    // termoficare=0.265. Pentru simplitate folosim co2_total_m2 distribuit
-                    // proporțional pe consumul fiecărei utilități.
+                    // Sprint 11 mai 2026 (audit A1) — schedule REAL pentru Tabel 8 (Program orar)
+                    // Înainte: Python folosea defaults hardcoded EN 16798-1 (16/24/24 + 20/18/20)
+                    // pentru rezidențial. Acum: trimitem valorile din heating.theta_int +
+                    // nightReduction (real-din-UI). Default conform Mc 001-2022 Anexa 5.
                     ...((() => {
-                      const totQf = (instSummary?.qf_h || 0) + (instSummary?.qf_w || 0) +
-                                    (instSummary?.qf_c || 0) + (instSummary?.qf_v || 0) +
-                                    (instSummary?.qf_l || 0);
-                      const co2TotalAnnual = co2Final_m2 * Au;
-                      const co2Share = (qfVal) => totQf > 0 ? co2TotalAnnual * (qfVal / totQf) : 0;
+                      const isRes = ["RI","RC","RA","BC"].includes(baseCat);
+                      const tInt = parseFloat(heating?.theta_int) ||
+                                    (baseCat === "SA" ? 22 :
+                                     baseCat === "SP" ? 17 :
+                                     baseCat === "CO" ? 18 : 20);
+                      const nightRed = parseFloat(heating?.nightReduction) || (isRes ? 2 : 5);
+                      const tNight = Math.max(10, tInt - nightRed);
+                      // Program orar (h/zi) — din heating.operatingHours sau default
+                      const opHoursDay = parseFloat(heating?.operatingHours) ||
+                                          (isRes ? 16 :
+                                           baseCat === "BI" ? 10 :
+                                           baseCat === "ED" ? 8 :
+                                           baseCat === "SA" ? 24 :
+                                           baseCat === "CO" ? 12 : 10);
+                      const opHoursNight = isRes ? 24 : 0;  // rezidențial = ocupat noapte
+                      const opHoursWE = isRes ? 24 : 0;     // rezidențial weekend = ocupat
+                      // Grad ocupare (m²/pers) — calculat din Au / nrOcupanti
+                      const nrOcup = parseInt(building.nrOcupanti, 10) ||
+                                     parseInt(building.units || "1", 10) * (isRes ? 2.5 : 1);
+                      const m2PerPers = nrOcup > 0 && Au > 0 ? Au / nrOcup : (isRes ? 30 : 15);
                       return {
-                        co2_incalzire: Au > 0 ? fmtRo(co2Share(instSummary?.qf_h || 0) / Au, 1) : "0,0",
-                        co2_acm:       Au > 0 ? fmtRo(co2Share(instSummary?.qf_w || 0) / Au, 1) : "0,0",
-                        co2_racire:    Au > 0 ? fmtRo(co2Share(instSummary?.qf_c || 0) / Au, 1) : "0,0",
-                        co2_ventilare: Au > 0 ? fmtRo(co2Share(instSummary?.qf_v || 0) / Au, 1) : "0,0",
-                        co2_iluminat:  Au > 0 ? fmtRo(co2Share(instSummary?.qf_l || 0) / Au, 1) : "0,0",
+                        schedule_program_zi_lucru: String(opHoursDay),
+                        schedule_program_noapte:   String(opHoursNight),
+                        schedule_program_weekend:  String(opHoursWE),
+                        schedule_temp_zi_lucru:    String(tInt),
+                        schedule_temp_noapte:      String(Math.round(tNight)),
+                        schedule_temp_weekend:     String(tInt),
+                        schedule_ocupare_zi_lucru: String(Math.round(m2PerPers)),
+                        schedule_ocupare_noapte:   String(Math.round(m2PerPers)),
+                        schedule_ocupare_weekend:  String(Math.round(m2PerPers)),
                       };
                     })()),
-                    // Sprint 11 mai 2026 — CLĂDIREA DE REFERINȚĂ per utilitate (Mc 001-2022 Cap. 5).
-                    // refBuilding.qf_* = kWh/an total → /Au = kWh/(m²·an). Aceleași valori
-                    // populate în columele „Clădirea de referință" din tabelul sisteme MDLPA.
+                    // Sprint 11 mai 2026 (audit Anexa 1+2 A4+A5) — CO2 + EP per utilitate
+                    // folosind FACTORI REALI per combustibil din FUELS Mc 001-2022 Tab 7.1.
+                    // Înainte: distribuție proporțională CO2_total × qf/qf_total (eroare ±30%
+                    // pentru clădiri cu mix gaz+electric); FP hardcoded 1.1/2.6 (greșit pt
+                    // termoficare 1.41, biomasă 0.2, GPL 1.15).
                     ...((() => {
-                      // Factori de conversie energie finală → primară per utilitate (FP standard Mc 001):
-                      // termic (gaz natural standard) = 1.1; electric (mix RO 2024) = 2.6.
-                      const FP_THERMAL = 1.1;
-                      const FP_ELECTRIC = 2.6;
-                      const ep_h_ref = Au > 0 ? (refBuilding.qf_h * FP_THERMAL) / Au : 0;
-                      const ep_w_ref = Au > 0 ? (refBuilding.qf_w * FP_THERMAL) / Au : 0;
-                      const ep_c_ref = Au > 0 ? (refBuilding.qf_c * FP_ELECTRIC) / Au : 0;
-                      const ep_v_ref = Au > 0 ? (refBuilding.qf_v * FP_ELECTRIC) / Au : 0;
-                      const ep_l_ref = Au > 0 ? (refBuilding.qf_l * FP_ELECTRIC) / Au : 0;
-                      // CO2 ref: factori per kWh primar: termic 0.202, electric 0.299
-                      const CO2_THERMAL = 0.202;
-                      const CO2_ELECTRIC = 0.299;
-                      const co2_h_ref = ep_h_ref * CO2_THERMAL;
-                      const co2_w_ref = ep_w_ref * CO2_THERMAL;
-                      const co2_c_ref = ep_c_ref * CO2_ELECTRIC;
-                      const co2_v_ref = ep_v_ref * CO2_ELECTRIC;
-                      const co2_l_ref = ep_l_ref * CO2_ELECTRIC;
+                      // Identifică combustibilul fiecărui sistem
+                      const heatFuelId = instSummary?.fuel?.id ||
+                        HEAT_SOURCES.find(s => s.id === heating?.source)?.fuel || "gaz";
+                      const heatFuel = FUELS.find(f => f.id === heatFuelId) || FUELS[0];
+                      // ACM: dacă boilerul folosește aceeași sursă ca încălzirea, fuel = heatFuel
+                      const acmSourceObj = ACM_SOURCES.find(a => a.id === acm?.source);
+                      const acmFuelId = acm?.source === "CAZAN_H"
+                        ? heatFuelId
+                        : (acmSourceObj?.fuel || heatFuelId);
+                      const acmFuel = FUELS.find(f => f.id === acmFuelId) || heatFuel;
+                      // Răcire/ventilare/iluminat = electric (rare cazuri non-electrice ignorate)
+                      const fP_e = getFPElecTot(useNA2023);
+                      const fCO2_e = CO2_ELEC;
+
+                      // Factori conversie energie finală → primară per sistem
+                      const fpH = heatFuelId === "electricitate" ? fP_e : heatFuel.fP_tot;
+                      const fpW = acmFuelId === "electricitate" ? fP_e : acmFuel.fP_tot;
+                      const co2H = heatFuelId === "electricitate" ? fCO2_e : heatFuel.fCO2;
+                      const co2W = acmFuelId === "electricitate" ? fCO2_e : acmFuel.fCO2;
+
+                      // CO2 REAL per utilitate: qf_finalã × fCO2_combustibil / Au
+                      // (NU distribuție proporțională care ignora factori diferiți).
+                      const co2_h_real = Au > 0 ? (instSummary?.qf_h || 0) * co2H / Au : 0;
+                      const co2_w_real = Au > 0 ? (instSummary?.qf_w || 0) * co2W / Au : 0;
+                      const co2_c_real = Au > 0 ? (instSummary?.qf_c || 0) * fCO2_e / Au : 0;
+                      const co2_v_real = Au > 0 ? (instSummary?.qf_v || 0) * fCO2_e / Au : 0;
+                      const co2_l_real = Au > 0 ? (instSummary?.qf_l || 0) * fCO2_e / Au : 0;
+
+                      // CLĂDIREA DE REFERINȚĂ — Mc 001-2022 Cap. 5: aceleași combustibili,
+                      // dar cu echipamente standard (η_ref). qf_*_ref e deja calculat
+                      // cu randamente referință în calcReferenceBuilding.js.
+                      const ep_h_ref = Au > 0 ? (refBuilding.qf_h * fpH) / Au : 0;
+                      const ep_w_ref = Au > 0 ? (refBuilding.qf_w * fpW) / Au : 0;
+                      const ep_c_ref = Au > 0 ? (refBuilding.qf_c * fP_e) / Au : 0;
+                      const ep_v_ref = Au > 0 ? (refBuilding.qf_v * fP_e) / Au : 0;
+                      const ep_l_ref = Au > 0 ? (refBuilding.qf_l * fP_e) / Au : 0;
+                      const co2_h_ref = Au > 0 ? (refBuilding.qf_h * co2H) / Au : 0;
+                      const co2_w_ref = Au > 0 ? (refBuilding.qf_w * co2W) / Au : 0;
+                      const co2_c_ref = Au > 0 ? (refBuilding.qf_c * fCO2_e) / Au : 0;
+                      const co2_v_ref = Au > 0 ? (refBuilding.qf_v * fCO2_e) / Au : 0;
+                      const co2_l_ref = Au > 0 ? (refBuilding.qf_l * fCO2_e) / Au : 0;
+
                       return {
+                        // CO2 real per utilitate (kg CO2/m²·an) — bazat pe factori reali
+                        co2_incalzire: fmtRo(co2_h_real, 1),
+                        co2_acm:       fmtRo(co2_w_real, 1),
+                        co2_racire:    fmtRo(co2_c_real, 1),
+                        co2_ventilare: fmtRo(co2_v_real, 1),
+                        co2_iluminat:  fmtRo(co2_l_real, 1),
+                        // EP referință per utilitate
                         ep_incalzire_ref: fmtRo(ep_h_ref, 1),
                         ep_acm_ref:       fmtRo(ep_w_ref, 1),
                         ep_racire_ref:    fmtRo(ep_c_ref, 1),
                         ep_ventilare_ref: fmtRo(ep_v_ref, 1),
                         ep_iluminat_ref:  fmtRo(ep_l_ref, 1),
+                        // CO2 referință per utilitate
                         co2_incalzire_ref: fmtRo(co2_h_ref, 1),
                         co2_acm_ref:       fmtRo(co2_w_ref, 1),
                         co2_racire_ref:    fmtRo(co2_c_ref, 1),
@@ -684,9 +748,12 @@ export default function Step6Certificate(props) {
                         cls_racire_ref:    getServiceClass(ep_c_ref, "cooling",     baseCat),
                         cls_ventilare_ref: getServiceClass(ep_v_ref, "ventilation", baseCat),
                         cls_iluminat_ref:  getServiceClass(ep_l_ref, "lighting",    baseCat),
-                        // Totaluri reference
+                        // Totaluri referință
                         ep_total_ref_per_m2: fmtRo(epRefMax, 1),
                         co2_total_ref_per_m2: fmtRo(co2_h_ref + co2_w_ref + co2_c_ref + co2_v_ref + co2_l_ref, 1),
+                        // Trasabilitate — debug (loggable pentru audit)
+                        _fuel_h_id: heatFuelId,
+                        _fuel_w_id: acmFuelId,
                       };
                     })()),
                     // #7 (audit Pas 6+7 V7, 7 mai 2026) — date analiza financiară (Pas 7) pentru
@@ -738,12 +805,23 @@ export default function Step6Certificate(props) {
                       return hasHR ? "Da" : "Nu";
                     })(),
                     lighting_power_kw: (() => {
-                      // Putere iluminat: din W_P × Au sau qf_l / ore funcționare standard
+                      // Sprint 11 mai 2026 (audit C4) — Putere iluminat instalată
+                      // P_lighting [kW] = LENI [kWh/(m²·an)] × Au [m²] / ore_funcționare [h/an]
+                      // Înainte: împărțeam la 8760h (an total) → subestimare 3-4x.
+                      // Real: ore_funcționare ≈ 2000-3500h pentru rezidențial, 2000-2500h
+                      // pentru birou, 1500-2000h pentru școală (EN 15193-1 Tab. F.1).
                       const wp = parseFloat(lighting?.totalPowerInstalled) || 0;
                       if (wp > 0) return fmtRo(wp / 1000, 2);  // W → kW
-                      // Fallback: leni × Au / 8760h → kW mediu
                       const leni = parseFloat(instSummary?.leni) || 0;
-                      if (leni > 0 && Au > 0) return fmtRo(leni * Au / 8760, 2);
+                      const opHours = parseFloat(lighting?.operatingHours) ||
+                                       parseFloat(instSummary?.lighting_hours) ||
+                                       (["RI","RC","RA"].includes(baseCat) ? 2500 :
+                                        baseCat === "BI" ? 2200 :
+                                        baseCat === "ED" ? 1800 :
+                                        baseCat === "SA" ? 4000 :
+                                        baseCat === "CO" ? 4500 :
+                                        baseCat === "SP" ? 3000 : 2500); // EN 15193-1 Tab. F.1
+                      if (leni > 0 && Au > 0) return fmtRo(leni * Au / opHours, 2);
                       return "";
                     })(),
                     pv_kwh_year:        renewSummary?.qPV_kWh ? fmtRo(renewSummary.qPV_kWh, 0) : "",
