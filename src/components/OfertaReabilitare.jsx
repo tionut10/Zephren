@@ -15,6 +15,8 @@ import { detectOutlier } from "../calc/cost-outlier-detector.js";
 // Sprint Îmbunătățiri #3 + B + P4.4 — currency switch global + export PDF dual
 import { fmtMoney, formatCurrencyForExport } from "../data/currency-context.js";
 import { useCurrencyMode } from "./CurrencyToggle.jsx";
+// P1.2.a (audit-mai2026 post) — AI narrative pentru intro custom
+import AINarrativeButton from "./AINarrativeButton.jsx";
 
 const YEAR = new Date().getFullYear();
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
@@ -112,6 +114,8 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
   const [clientEmail, setClientEmail] = useState("");
   const [salut, setSalut] = useState("Stimate Domn/Doamnă");
   const [pretKwh, setPretKwh] = useState("0.92");
+  // P1.2.a (audit-mai2026 post) — intro custom override-abil via AINarrativeButton (Sonnet 4.6)
+  const [customIntro, setCustomIntro] = useState("");
   const [scenarii, getScenarii] = useState([mkScenariu()]);
   const setScenarii = getScenarii;
   const [generating, setGenerating] = useState(false);
@@ -236,7 +240,10 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
       doc.setFontSize(9);
       doc.setFont(baseFont, "normal");
       writeText(`${salut},`, M, y); y += 6;
-      const intro = `Vă prezentăm oferta de reabilitare energetică pentru imobilul dumneavoastră, elaborată în baza analizei energetice efectuate.`;
+      // P1.2.a — intro AI override (customIntro) sau default static
+      const intro = customIntro?.trim()
+        ? customIntro.trim()
+        : `Vă prezentăm oferta de reabilitare energetică pentru imobilul dumneavoastră, elaborată în baza analizei energetice efectuate.`;
       const introLines = doc.splitTextToSize(intro, W - M * 2);
       writeText(introLines, M, y); y += introLines.length * 4 + 6;
 
@@ -704,6 +711,40 @@ export default function OfertaReabilitare({ building, instSummary, auditor, pass
                   </div>
                 );
               })}
+            </div>
+          </section>
+
+          {/* P1.2.a (audit-mai2026 post) — Intro custom AI (apare în PDF înainte de DATE IMOBIL) */}
+          <section className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-violet-300/90">✍ Intro personalizată (opțional)</div>
+              <AINarrativeButton
+                section="intro_foaie_parcurs"
+                context={{
+                  building: building?.address ? { categorie: building.category, au: building.areaUseful, address: building.address, yearBuilt: building.yearBuilt } : undefined,
+                  category: building?.category,
+                  energyClass: passport?.baseline?.energyClass,
+                  ep: instSummary?.ep_total_m2,
+                  au: building?.areaUseful,
+                  yearBuilt: building?.yearBuilt,
+                  zoneClimatica: building?.climateZone,
+                  tier: "AE Ici",
+                }}
+                onGenerated={(text) => setCustomIntro(text)}
+                sectionLength={150}
+                size="sm"
+                label="Generează AI"
+              />
+            </div>
+            <textarea
+              value={customIntro}
+              onChange={(e) => setCustomIntro(e.target.value)}
+              placeholder={'Lasă gol pentru text default. Click „🤖 Generează" pentru intro AI personalizat pe clădirea specifică (categorie, an, EP, clasă).'}
+              rows={3}
+              className="w-full text-xs px-3 py-2 rounded-lg bg-slate-800 border border-white/10 text-white/90 placeholder-white/30 focus:outline-none focus:border-violet-500/50"
+            />
+            <div className="text-[9px] text-white/30 mt-1">
+              {customIntro?.trim() ? `${customIntro.trim().length} caractere — va apărea în PDF` : "Text default va fi folosit dacă lăsați gol"}
             </div>
           </section>
         </div>
