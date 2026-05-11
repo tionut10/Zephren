@@ -64,7 +64,7 @@ export default function SRIScoreAuto({ building, heating, cooling, ventilation, 
           {grade.label}
         </div>
         <div style={{ marginTop: "8px", fontSize: "12px", opacity: 0.8 }}>
-          Conform EPBD 2024 art. 14 + L.238/2024 — obligatoriu pentru CPE.
+          Conform EPBD 2024 art. 14 + L.238/2024 — transpunere în curs (termen mai 2026).
         </div>
       </div>
 

@@ -1110,7 +1110,7 @@ export default function Step5Calculation(props) {
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                   <span>📋</span>
-                  <span>{lang === "EN" ? "EPBD 2024 mandatory compliance" : "Conformitate EPBD 2024 obligatorie"}</span>
+                  <span>{lang === "EN" ? "EPBD 2024 compliance — transposition pending" : "Conformitate EPBD 2024 — transpunere în curs"}</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <BACSSelectorSimple

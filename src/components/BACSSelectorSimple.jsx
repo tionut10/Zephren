@@ -29,7 +29,7 @@ export default function BACSSelectorSimple({ value, onChange, epBase, lang = "RO
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
         <h3 style={{ margin: 0, fontSize: "16px" }}>
-          🤖 BACS — Building Automation (EPBD obligatoriu)
+          🤖 BACS — Building Automation (EPBD 2024 — transpunere în curs)
         </h3>
         <Badge color={selected.color}>{value || "C"}</Badge>
       </div>
