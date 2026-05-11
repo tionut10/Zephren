@@ -30,6 +30,8 @@ import MEPSCheck, { getMepsStatus } from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
 import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
+// audit-mai2026 F5 — Chat AI Reabilitare (multiplexare api/ai-assistant intent="rehab-chat")
+import RehabAIChat from "../components/RehabAIChat.jsx";
 // Sprint v6.2 (27 apr 2026): AnexaMDLPAFields mutat în Step 6 pentru self-sufficiency CPE + Anexa 1+2.
 // Conform Ord. MDLPA 348/2026 (MO 292/14.IV.2026), AE Ic și AE IIc completează aceeași anexă.
 import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
@@ -77,6 +79,16 @@ export default function Step7Audit(props) {
     userPlan,     // Sprint Pricing v6.0 — gating Step 7 + Pașaport basic
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+
+  // audit-mai2026 F5 — clasă energetică la nivel funcție (pentru RehabAIChat context).
+  // Calcul minimal — nu duplică deep IIFE de la linia 159 (acela acoperă cazuri edge).
+  const enClassForChat = (() => {
+    if (!instSummary || !building?.category) return null;
+    const baseCat = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
+    const catKey = baseCat + (["RI","RC","RA"].includes(baseCat) ? (cooling?.hasCooling ? "_cool" : "_nocool") : "");
+    const ep = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
+    try { return getEnergyClass(ep, catKey); } catch { return null; }
+  })();
 
   // Sprint Pricing v6.0 — Step 7 audit energetic e blocat pentru Free + Audit (199).
   // Acces: Pro 499 (Step 1-7 complet), Expert, Birou, Enterprise, Edu.
@@ -2862,6 +2874,23 @@ export default function Step7Audit(props) {
                   - Step7ManifestSigned → ELIMINAT (mock signer fără valoare juridică conform eIDAS 2;
                     utilizator PFA fără cont certSIGN B2B activ; același principiu ca PDF/A-3 + PAdES BETA
                     eliminat în commit-ul db089d2). Helper lib/dossier-extras.js păstrat pentru reactivare. */}
+
+              {/* audit-mai2026 F5 — Chat AI Reabilitare (panel flotant bottom-right).
+                  Gating: AI Pack inclus în plan Pro/Expert/Birou/Enterprise (v7.1).
+                  Multiplexare pe api/ai-assistant.js cu intent="rehab-chat" (zero slot Vercel nou). */}
+              <RehabAIChat
+                building={building}
+                envelopeSummary={envelopeSummary}
+                instSummary={instSummary}
+                energyClass={enClassForChat}
+                heating={heating}
+                acm={acm}
+                opaqueElements={opaqueElements}
+                glazingElements={glazingElements}
+                projectId={auditor?.cpeCode || auditor?.mdlpaCode || building?.address || "default"}
+                hasAccess={canAccess(userPlan, "step7Audit")}
+                requireUpgrade={(msg) => showToast && showToast(msg, "info", 5000)}
+              />
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
