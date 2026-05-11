@@ -65,6 +65,15 @@ export const REHAB_PRICES = {
     // pentru o casă 100 m² → 15.800 EUR full-install). Folosit de calc/vmc-hr.js.
     vmc_hr_full_install_per_m2: { low: 120, mid: 150, high: 190, lifespan: 20, unit: 'EUR/m²Au' },
     vmc_hr_full_install_fixed:  { low: 600, mid: 800, high: 1100, lifespan: 20, unit: 'EUR/set' },
+    // Audit mai 2026 P2.2 — KIT STANDARD apartament (alternativă sub-premium):
+    // include unitate VMC centralizată + tubulatură flexibilă standard + grile + manoperă 1 zi.
+    // Calibrat pe Altecovent + Viessmann RO 2026 (apartament 65 m² → ~2.300-3.300 EUR
+    // vs full-install premium ~10k+ EUR). Surse: Altecovent „costul sistem ventilație
+    // recuperare căldură" (mai 2026), Viessmann VMC-HR c522 (ianuarie 2026), Komfovent
+    // Domekt CF 400 V (15.842 RON unit only). Folosit DEFAULT pentru rezidențial standard;
+    // auditorul comută manual la full_install pentru proiecte cu tubulatură HVAC complexă.
+    vmc_hr_kit_standard_per_m2: { low: 30, mid: 45, high: 65, lifespan: 20, unit: 'EUR/m²Au' },
+    vmc_hr_kit_standard_fixed:  { low: 400, mid: 600, high: 850, lifespan: 20, unit: 'EUR/set' },
     night_vent_control:  { low: 800, mid: 1200, high: 1800, lifespan: 15, unit: 'EUR/set' },
   },
 

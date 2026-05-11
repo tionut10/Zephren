@@ -6,7 +6,11 @@ import { computeAutoSRI } from "../calc/sri-auto-map.js";
 import { SRI_CLASS_LABELS } from "../calc/sri-indicator.js";
 import AnexaBloc from "./AnexaBloc.jsx";
 // Audit 2 mai 2026 — P1.4: motor unificat recomandări (înainte 2 motoare divergente)
-import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
+// Audit mai 2026 P1.1 — folosim wrapper tier-aware (anexa-recommendations-aeIIci.js)
+import {
+  generateAnexaRecommendations,
+  formatAnexaLegalNote,
+} from "../lib/anexa-recommendations-aeIIci.js";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
@@ -48,6 +52,8 @@ export default function CpeAnexa({
   // ── Sprint 16 — Anexa 2 bloc multi-apartament ──
   annexType,          // "apartment" | "building" | undefined (auto)
   categoryKey,        // ex: "RC_cool", "RA_nocool" — pentru clasificare apt
+  // Audit mai 2026 P1.1 — userPlan pentru tier auto-detection în wrapper recomandări
+  userPlan,
 }) {
   // Auto-detectare annexType dacă nu e furnizat explicit
   const aptCount = Array.isArray(building?.apartments) ? building.apartments.length : 0;
@@ -120,15 +126,25 @@ export default function CpeAnexa({
 
   // Audit 2 mai 2026 — P1.4: motor unificat (înainte: 6 reguli inline divergente
   // de Step6Certificate). Acum sursă unică în src/calc/cpe-recommendations.js.
-  const recommendations = generateCpeRecommendations({
-    building, envelopeSummary, opaqueElements, glazingElements,
-    thermalBridges: building?.thermalBridges,
-    heating, acm, cooling, ventilation, lighting,
-    solarThermal, photovoltaic,
-    instSummary, renewSummary,
-    rer: renewSummary?.rer,
-    calcOpaqueR,
-  });
+  // Audit mai 2026 P1.1 — wrapper tier-aware (Ord. 348/2026 Art. 6 alin. 1/2).
+  // Detectare tier auto din auditor.gradMdlpa (păstrat default conservator IIci).
+  const anexaResult = generateAnexaRecommendations(
+    {
+      building, envelopeSummary, opaqueElements, glazingElements,
+      thermalBridges: building?.thermalBridges,
+      heating, acm, cooling, ventilation, lighting,
+      solarThermal, photovoltaic,
+      instSummary, renewSummary,
+      rer: renewSummary?.rer,
+      calcOpaqueR,
+    },
+    {
+      userPlan,
+      gradMdlpa: auditor?.gradMdlpa,
+    }
+  );
+  const recommendations = anexaResult.recommendations;
+  const anexaLegalNote = formatAnexaLegalNote(anexaResult);
 
   const priorityColor = { "înaltă": "#ef4444", "medie": "#eab308", "scăzută": "#22c55e" };
 
@@ -470,6 +486,13 @@ export default function CpeAnexa({
                 <p className="text-[10px] opacity-50">{r.detail}</p>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Audit mai 2026 P1.1 — Bază juridică tier + categorii acoperite (Ord. 348/2026 Art. 6) */}
+        {anexaLegalNote && (
+          <div className="mt-3 pt-2 border-t border-violet-500/20 text-[9px] text-violet-300/60 italic">
+            {anexaLegalNote}
           </div>
         )}
 

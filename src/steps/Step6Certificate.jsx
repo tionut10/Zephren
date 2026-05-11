@@ -3931,6 +3931,7 @@ ${["BI","ED","SA","HC","CO","SP"].includes(building.category) && Au > 250 ? '<di
                         LIGHTING_TYPES={LIGHTING_TYPES}
                         calcOpaqueR={calcOpaqueR}
                         lang={lang}
+                        userPlan={userPlan}
                       />
                     </Card>
                   )}
