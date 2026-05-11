@@ -320,15 +320,21 @@ export default function Step6Certificate(props) {
                 const yearStr = building.yearBuilt || "____";
                 const regimStr = building.floors || "____";
                 const nrCam = building.units || "3";
-                // #2 (audit Pas 6+7 — V6, 7 mai 2026) — Aria construit desfășurată (Acd):
-                // prioritate la input user (building.areaBuilt din Pas 1, măsurată conform
-                // Mc 001-2022 §3.2), fallback la heuristică Au × 1.15 (factor formă RO mediu)
-                // doar dacă utilizatorul nu a introdus valoarea reală.
-                // Format CPE template MDLPA: „Aria utilă a apartamentului: Au / Acd m²".
+                // #2 (audit Pas 6+7 — V6, 7 mai 2026) — Aria construit desfășurată (Acd).
+                // Sprint 11 mai 2026 (audit C1) — log warning când fallback factor magic
+                // 1.15 e folosit. Real Acd/Au variază 1.05-1.40 dependent de:
+                //  - tip construcție (PE/PR), grosime pereți, zone neutile
+                //  - blocuri RC cu zone comune mari pot avea ratio >1.30
+                // Pentru CPE oficial, auditorul TREBUIE să introducă building.areaBuilt
+                // direct (Mc 001-2022 §3.2 + STAS 6932-89). Factor 1.15 = fallback estimativ.
                 const areaBuiltUser = parseFloat(building?.areaBuilt);
-                const arieDesf = Number.isFinite(areaBuiltUser) && areaBuiltUser > 0
-                  ? areaBuiltUser
-                  : Aref * 1.15;
+                const hasRealAreaBuilt = Number.isFinite(areaBuiltUser) && areaBuiltUser > 0;
+                const arieDesf = hasRealAreaBuilt ? areaBuiltUser : Aref * 1.15;
+                if (!hasRealAreaBuilt && Aref > 0) {
+                  // eslint-disable-next-line no-console
+                  console.warn("[CPE/Anexa] Aria construită desfășurată (Acd) folosește fallback Au × 1.15. " +
+                    "Pentru acuratețe MDLPA, completați building.areaBuilt în Pas 1.");
+                }
 
                 const baseCat = baseCatResolved; // sub-categorie rezolvată la baza Mc 001-2022
                 const co2Grid = CO2_CLASSES_DB[baseCat] || CO2_CLASSES_DB.AL;
@@ -397,6 +403,36 @@ export default function Step6Certificate(props) {
                       (opaqueElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0) +
                        glazingElements.reduce((s, e) => s + (parseFloat(e.area) || 0), 0)),
                       1
+                    ),
+                    // Sprint 11 mai 2026 (audit B6) — Punți termice JSON pentru Python T2 anvelopă.
+                    // Inainte: thermalBridges niciodată trimis → Σψ·L pierdut în Anexa.
+                    thermal_bridges_json: JSON.stringify(
+                      (thermalBridges || []).map(tb => ({
+                        type: tb?.type || "",
+                        psi: parseFloat(tb?.psi) || 0,
+                        length: parseFloat(tb?.length) || 0,
+                        psi_l: (parseFloat(tb?.psi) || 0) * (parseFloat(tb?.length) || 0),
+                      })).filter(tb => tb.psi > 0 && tb.length > 0)
+                    ),
+                    thermal_bridges_total_psi_l: fmtRo(
+                      (thermalBridges || []).reduce((s, b) =>
+                        s + (parseFloat(b?.psi) || 0) * (parseFloat(b?.length) || 0), 0), 2
+                    ),
+                    // Sprint 11 mai 2026 (audit B5) — Bilanț lunar Q_h/Q_w/Q_c pentru Anexa 2 tabel lunar.
+                    // Înainte: monthlyISO calculat în engine NU era trimis → tabel lunar Anexa
+                    // rămânea cu valori inventate (distribuție liniară a anuali sau gol).
+                    monthly_iso_json: JSON.stringify(
+                      Array.isArray(monthlyISO)
+                        ? monthlyISO.map((m, i) => ({
+                            month: i + 1,
+                            t_ext: parseFloat(m?.tExt) || 0,
+                            q_h: parseFloat(m?.qH || m?.qf_h) || 0,
+                            q_w: parseFloat(m?.qW || m?.qf_w) || 0,
+                            q_c: parseFloat(m?.qC || m?.qf_c) || 0,
+                            q_v: parseFloat(m?.qV || m?.qf_v) || 0,
+                            q_l: parseFloat(m?.qL || m?.qf_l) || 0,
+                          })).filter(m => m.q_h > 0 || m.q_w > 0 || m.q_c > 0)
+                        : []
                     ),
                     volume: Math.round(Vol).toString(),
                     nr_units: nrCam,

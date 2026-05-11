@@ -6412,32 +6412,22 @@ class handler(BaseHTTPRequestHandler):
                 # ══════════════════════════════════════════════════════════
 
                 # ── Tabel 5 — Corpuri statice (Tip | Număr | Putere termică) ──
-                # Populare AGRESIVĂ: force defaults pentru orice clădire cu încălzire funcțională
+                # Sprint 11 mai 2026 (audit A3) — NU MAI INVENTĂM 1 radiator fictiv.
+                # Inainte: dacă heating_radiators=[] (nu există UI pentru introducere
+                # corpuri statice), populam cu 1 radiator generic + heuristic 1.5 kW/buc.
+                # → date complet inventate în CPE pentru orice clădire fără radiatoare definite.
+                # Acum: doar valori REALE din heating.radiators. Dacă lipsesc, tabelul rămâne
+                # gol (corect; auditorul completează manual conform Mc 001-2022 §3.5).
                 try:
                     radiators_json = data.get("heating_radiators", "[]")
                     radiators = json.loads(radiators_json) if radiators_json else []
-                    # Fallback FORCE: dacă lista e goală dar avem încălzire → 1 rând default
+                    # Filtrăm doar radiatoare cu date reale (count_private > 0 sau power_kw set)
+                    radiators = [r for r in radiators if r and (
+                        (r.get("count_private") and str(r.get("count_private")).strip() not in ("", "0")) or
+                        (r.get("power_kw") and str(r.get("power_kw")).strip() not in ("", "0", "—"))
+                    )]
                     if not radiators:
-                        try:
-                            pw_str = str(data.get("heating_power", "") or "0").replace(",", ".").strip()
-                            pw = float(pw_str) if pw_str else 0.0
-                            # Chiar dacă pw=0, tot populăm cu placeholder pentru a nu lăsa tabelul gol
-                            radiator_type_guess = data.get("heating_radiator_type", "") or "Radiator oțel"
-                            # Heuristic: 1.5 kW/radiator; fallback 1 radiator când pw=0
-                            n_rads = int(max(1, pw / 1.5)) if pw > 0 else 1
-                            radiators = [{
-                                "type": radiator_type_guess,
-                                "count_private": n_rads,
-                                "count_common": 0,
-                                "power_kw": format_ro(pw, 1) if pw > 0 else "—",
-                            }]
-                        except (ValueError, TypeError):
-                            radiators = [{
-                                "type": "Radiator oțel",
-                                "count_private": 1,
-                                "count_common": 0,
-                                "power_kw": "—",
-                            }]
+                        print(f"[tabel_5_radiatoare] heating.radiators gol — tabel ramane gol (NU inventam date)", flush=True)
                     if radiators:
                         for tbl in doc.tables:
                             # Header complex: 4 rânduri, uneori 9 coloane (subheadere merged)
