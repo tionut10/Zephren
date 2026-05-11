@@ -32,6 +32,8 @@ import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 // audit-mai2026 F5 — Chat AI Reabilitare (multiplexare api/ai-assistant intent="rehab-chat")
 import RehabAIChat from "../components/RehabAIChat.jsx";
+// audit-mai2026 MEGA P1.2.b/c — narativ AI pentru Cap.1, Cap.8, intro Pașaport
+import AINarrativeButton from "../components/AINarrativeButton.jsx";
 // Sprint v6.2 (27 apr 2026): AnexaMDLPAFields mutat în Step 6 pentru self-sufficiency CPE + Anexa 1+2.
 // Conform Ord. MDLPA 348/2026 (MO 292/14.IV.2026), AE Ic și AE IIc completează aceeași anexă.
 import { calcMaintenanceFund, BUILDING_COMPONENTS } from "../calc/maintenance-fund.js";
@@ -89,6 +91,29 @@ export default function Step7Audit(props) {
     const ep = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
     try { return getEnergyClass(ep, catKey); } catch { return null; }
   })();
+
+  // audit-mai2026 MEGA P1.2.b/c — narativ AI pre-generat pentru documente.
+  // Stocat în state local; transmis la export ca câmpuri opționale în payload.
+  // Generator-ul DOCX/PDF folosește dacă există, altfel cade pe template static.
+  // 3 secțiuni cheie acoperite: Cap.1 (raport audit), Cap.8 (concluzii), intro pașaport renovare.
+  const [customNarrative, setCustomNarrative] = useState({
+    cap1: "",
+    cap8: "",
+    intro_pasaport: "",
+  });
+  const narrativeContextBase = {
+    building: building?.address ? { categorie: building.category, au: building.areaUseful, address: building.address, yearBuilt: building.yearBuilt } : undefined,
+    category: building?.category,
+    energyClass: enClassForChat,
+    ep: instSummary?.ep_total_m2,
+    rer: renewSummary?.rer,
+    au: building?.areaUseful,
+    yearBuilt: building?.yearBuilt,
+    zoneClimatica: building?.climateZone,
+    heating: heating?.source,
+    acm: acm?.source,
+    tier: "AE Ici",
+  };
 
   // Sprint Pricing v6.0 — Step 7 audit energetic e blocat pentru Free + Audit (199).
   // Acces: Pro 499 (Step 1-7 complet), Expert, Birou, Enterprise, Edu.
@@ -493,6 +518,13 @@ export default function Step7Audit(props) {
                   // Sprint 8 mai 2026 — pasăm climate (lipsea → API NameError 500
                   // pe Capitolul 0 ipoteze care referă climate.get('zone')).
                   climate: selectedClimate || {},
+                  // audit-mai2026 MEGA P1.2.b — narativ AI opțional pentru Cap.1 + Cap.8.
+                  // Generator Python (api/generate-document.py) folosește dacă sunt non-empty,
+                  // altfel cade pe template static Mc 001-2022.
+                  customNarrative: {
+                    cap1: customNarrative.cap1?.trim() || null,
+                    cap8: customNarrative.cap8?.trim() || null,
+                  },
                 };
                 const res = await fetch("/api/generate-document?type=audit", {
                   method: "POST", headers: { "Content-Type": "application/json" },
@@ -2874,6 +2906,57 @@ export default function Step7Audit(props) {
                   - Step7ManifestSigned → ELIMINAT (mock signer fără valoare juridică conform eIDAS 2;
                     utilizator PFA fără cont certSIGN B2B activ; același principiu ca PDF/A-3 + PAdES BETA
                     eliminat în commit-ul db089d2). Helper lib/dossier-extras.js păstrat pentru reactivare. */}
+
+              {/* audit-mai2026 MEGA P1.2.b/c — Narativ AI pentru documente (Cap.1 + Cap.8 + Pașaport).
+                  Stocat în state customNarrative; transmis la export ca câmpuri opționale.
+                  Generator DOCX folosește dacă există, altfel template default. */}
+              {canAccess(userPlan, "step7Audit") && (
+                <Card title="🤖 Narativ AI documente (opțional)" className="mb-4 border-violet-500/20">
+                  <div className="text-[10px] opacity-60 mb-3">
+                    Pre-generează text narativ AI pentru secțiunile cheie ale documentelor. Lasă gol pentru template static (default).
+                    Cap. 1 (descriere clădire) și Cap. 8 (concluzii audit) apar în Raportul de Audit DOCX. Intro Pașaport apare în Pașaportul de Renovare.
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    {[
+                      { key: "cap1", section: "cap1_descriere", title: "📖 Cap. 1 — Descriere clădire", placeholder: "Generează narativ Cap. 1 descrierea clădirii (din date Pas 1-3)" },
+                      { key: "cap8", section: "cap8_concluzii", title: "🎯 Cap. 8 — Concluzii audit", placeholder: "Generează narativ Cap. 8 concluzii audit (din date Pas 5-7)" },
+                      { key: "intro_pasaport", section: "intro_pasaport", title: "📋 Intro Pașaport Renovare", placeholder: "Generează intro Pașaport Renovare (Anexa VIII EPBD 2024)" },
+                    ].map((s) => (
+                      <div key={s.key} className="rounded-lg border border-violet-500/15 bg-violet-500/5 p-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] font-semibold text-violet-300/90 truncate">{s.title}</div>
+                          <AINarrativeButton
+                            section={s.section}
+                            context={narrativeContextBase}
+                            onGenerated={(text) => setCustomNarrative(prev => ({ ...prev, [s.key]: text }))}
+                            sectionLength={s.key === "intro_pasaport" ? 180 : 300}
+                            size="sm"
+                            label="AI"
+                            hasAccess={canAccess(userPlan, "step7Audit")}
+                            showToast={showToast}
+                          />
+                        </div>
+                        <textarea
+                          value={customNarrative[s.key]}
+                          onChange={(e) => setCustomNarrative(prev => ({ ...prev, [s.key]: e.target.value }))}
+                          placeholder={s.placeholder}
+                          rows={4}
+                          className="w-full text-[10px] px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-white/85 placeholder-white/25 focus:outline-none focus:border-violet-500/40 resize-none"
+                        />
+                        <div className="text-[9px] text-white/30 mt-1">
+                          {customNarrative[s.key]?.trim()
+                            ? `${customNarrative[s.key].trim().length} caractere`
+                            : "gol → template default"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[9px] opacity-40 mt-2 italic">
+                    Reproductibilitate audit MDLPA: CPE oficial NU folosește narativ AI (rămâne pe formularistica Mc 001-2022 fără variație).
+                    Narativ AI se aplică DOAR la Raport DOCX + Pașaport (documente narative, nu certificate normative).
+                  </div>
+                </Card>
+              )}
 
               {/* audit-mai2026 F5 — Chat AI Reabilitare (panel flotant bottom-right).
                   Gating: AI Pack inclus în plan Pro/Expert/Birou/Enterprise (v7.1).
