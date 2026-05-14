@@ -1596,31 +1596,32 @@ export default function Step7Audit(props) {
                       </div>
                     </div>
                     {/* Cashflow chart */}
-                    {financialAnalysis.cumulativeCF && (
-                      <div className="mb-4">
-                        <div className="text-[10px] opacity-30 mb-2">Cashflow cumulat actualizat (perioada {finAnalysisInputs.period || 30} ani)</div>
-                        <div className="flex items-end gap-px h-28 bg-white/[0.02] rounded-lg p-2">
-                          {financialAnalysis.cumulativeCF.map((v, i) => {
-                            const maxAbs = Math.max(...financialAnalysis.cumulativeCF.map(Math.abs), 1);
-                            const pct = Math.abs(v) / maxAbs * 100;
-                            const isPos = v >= 0;
-                            return (
-                              <div key={i} className="flex-1 flex flex-col justify-end h-full relative" title={`An ${i}: ${v.toLocaleString("ro-RO")} EUR`}>
-                                {isPos ? (
-                                  <div className="w-full rounded-t" style={{ height: `${pct * 0.45}%`, backgroundColor: "#22c55e", minHeight: pct > 0 ? "1px" : "0" }} />
-                                ) : (
-                                  <div className="w-full rounded-b mt-auto" style={{ height: `${pct * 0.45}%`, backgroundColor: "#ef4444", minHeight: pct > 0 ? "1px" : "0" }} />
-                                )}
-                              </div>
-                            );
-                          })}
+                    {financialAnalysis.cumulativeCF && (() => {
+                      const vals = financialAnalysis.cumulativeCF;
+                      const minV = Math.min(...vals);
+                      const maxV = Math.max(...vals);
+                      const range = (maxV - minV) || 1;
+                      return (
+                        <div className="mb-4">
+                          <div className="text-[10px] opacity-30 mb-2">Cashflow cumulat (perioada {finAnalysisInputs.period || 30} ani)</div>
+                          <div className="flex items-end gap-px h-28 bg-white/[0.02] rounded-lg p-2">
+                            {vals.map((v, i) => {
+                              const heightPct = ((v - minV) / range) * 88 + 2;
+                              const isPos = v >= 0;
+                              return (
+                                <div key={i} className="flex-1 flex flex-col justify-end h-full" title={`An ${i}: ${v.toLocaleString("ro-RO")} EUR`}>
+                                  <div className="w-full rounded-t" style={{ height: `${heightPct}%`, backgroundColor: isPos ? "#22c55e" : "#ef4444" }} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex justify-between text-[10px] opacity-25 mt-1 px-1">
+                            <span>An 0: {vals[0].toLocaleString("ro-RO")} EUR</span>
+                            <span>An {vals.length - 1}: {vals[vals.length - 1].toLocaleString("ro-RO")} EUR</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-[10px] opacity-25 mt-1 px-1">
-                          <span>An 0</span>
-                          <span>An {financialAnalysis.cumulativeCF.length - 1}</span>
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                     {/* Verdict */}
                     <div className="flex items-center justify-between">
                       <Badge color={financialAnalysis.verdict === "PROFITABIL" ? "green" : "red"}>

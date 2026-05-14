@@ -233,6 +233,7 @@ export function calcFinancialAnalysis(params) {
     // Cashflows
     cashFlows,
     cumulativeCF,
+    cumulativeDiscCF,
     // Input-uri reflectate
     investCost,
     annualSaving,
