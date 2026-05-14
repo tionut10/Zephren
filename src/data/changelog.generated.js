@@ -1,47 +1,47 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-11
+// Ultima generare: 2026-05-14
 
-export const APP_VERSION = "0.6.1";
+export const APP_VERSION = "0.7.0";
 export const CHANGELOG = [
   {
-    "version": "0.6.1",
+    "version": "0.7.0",
     "week": "Săpt. 7",
     "dateRange": "11 – 17 mai 2026",
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
       {
-        "icon": "📋",
-        "text": "audit-mai2026/MEGA P1.2.a: AINarrativeButton integrat în OfertaReabilitare"
-      },
-      {
-        "icon": "📋",
-        "text": "audit-mai2026/post: AINarrativeButton.jsx + fetchNarrativeAI helper (P1.2 foundation)"
-      },
-      {
-        "icon": "📋",
-        "text": "audit-mai2026/post: P1.1 wrapper AE IIci activat + P2.2 VMC HR kit + P3 Pro"
+        "icon": "🎨",
+        "text": "fix(classification): EP=0 net-zero → clasa A+, nu —; cashflow chart range-normalized"
       },
       {
         "icon": "📄",
-        "text": "audit-mai2026/F7: Flux date + raport final consolidat + reorganizare + AI architecture"
+        "text": "audit-mai2026/MEGA finalize: Python wiring narrative + raport update + cleanup"
+      },
+      {
+        "icon": "🔧",
+        "text": "sandbox estimateEnergyClass — EP=0/negativ → A+ (net-zero)"
+      },
+      {
+        "icon": "🔧",
+        "text": "clădiri net-zero (EP≤0) afișează clasa A+ în loc de —"
+      },
+      {
+        "icon": "✨",
+        "text": "audit-mai2026/MEGA Visual-2: Migrare brand kit advanced-report-pdf.js (propagă în 14+ module)"
+      },
+      {
+        "icon": "📦",
+        "text": "audit-mai2026/MEGA P2: Catalog punți — 5 ψ_izolat slabe corectate la target PHI"
       },
       {
         "icon": "📋",
-        "text": "audit-mai2026/F6: Documente generate + intent='narrative' (scor design 92/100)"
+        "text": "audit-mai2026/MEGA P1.3: Tier-uri 1/2/3 RES în Step4Renewables (UX rapid)"
       },
       {
         "icon": "📋",
-        "text": "audit-mai2026/F5: Pas 7 — recomandări reabilitare + chat AI multiplexare (scor 98/100)"
-      },
-      {
-        "icon": "📄",
-        "text": "audit-mai2026/F4: Pas 6 — CPE + Anexa 1+2 + wrapper AE IIci (scor 97/100)"
-      },
-      {
-        "icon": "📋",
-        "text": "audit-mai2026/F3: Pas 5 — bilanț energetic + clasă + NPV (scor 95/100)"
+        "text": "audit-mai2026/MEGA P1.2.b+c: Narativ AI Cap.1+Cap.8+intro Pașaport în Step7Audit"
       }
     ]
   },

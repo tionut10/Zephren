@@ -7,7 +7,10 @@
  * Uses ANTHROPIC_API_KEY from server environment (not exposed to client).
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+// audit-mai2026 production-fix (12 mai 2026): import dinamic Anthropic SDK pentru
+// a captura erori la module load (FUNCTION_INVOCATION_FAILED pe Vercel când SDK
+// lipsește din deployment artifact sau există incompatibilitate ESM). Top-level
+// `import Anthropic` arunca la nivel pre-handler → 500 silent. Lazy load = OK.
 import { requireAuth, requirePlan } from "./_middleware/auth.js";
 import { checkRateLimit, sendRateLimitError } from "./_middleware/rateLimit.js";
 
@@ -71,7 +74,7 @@ const SYSTEM_PROMPT_NARRATIVE = `Ești un redactor tehnic specialist în rapoart
 3. **Cu citări normative** — referă explicit articole (ex: „conform Cap. 9 Mc 001-2022", „Art. 6 Ord. MDLPA 348/2026").
 4. **Concis** — 200-400 cuvinte pe secțiune (decât altfel specificat).
 
-Tipuri de secțiuni cerute (parametru `section` din request):
+Tipuri de secțiuni cerute (parametru "section" din request):
 - "cap1_descriere" — Descrierea clădirii (Cap. 1 raport audit): localizare, categorie, geometrie, sistem constructiv, sisteme tehnice existente, scop audit. Bazat pe Pas 1-3.
 - "cap8_concluzii" — Concluzii audit (Cap. 8 raport): performanța energetică curentă, conformitate nZEB/MEPS, priorități intervenție, drum la conformitate. Bazat pe Pas 5-7.
 - "intro_pasaport" — Intro Pașaport Renovare (Anexa VIII EPBD 2024 Art. 12, EU): obiectiv, faze planificate, beneficiar. Disclaimer EPBD nu e transpus RO până 29.05.2026.
@@ -168,6 +171,18 @@ export default async function handler(req, res) {
       }
     }
 
+    // audit-mai2026 production-fix: lazy load Anthropic SDK pentru a captura
+    // eventuale erori la rezolvarea modulului (mai degrabă decât crash silent).
+    let Anthropic;
+    try {
+      ({ default: Anthropic } = await import("@anthropic-ai/sdk"));
+    } catch (loadErr) {
+      console.error("[api/ai-assistant] Anthropic SDK load error:", loadErr);
+      return res.status(200).json({
+        answer: "AI Pack indisponibil temporar (SDK init eșuat). Reîncercați în câteva minute sau contactați suport.",
+        error: true,
+      });
+    }
     const client = new Anthropic({ apiKey });
 
     // F5 — chat history support pentru rehab-chat (max 10 mesaje istoric).

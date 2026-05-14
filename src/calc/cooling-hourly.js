@@ -295,11 +295,16 @@ export function calcCoolingHourly({
 
     Q_annual_kWh += Q_total_month_kWh;
 
-    // Acumulare pentru structura sarcinii
-    sum_solar    += Q_solar_month_kWh;
-    sum_internal += Q_internal_month_kWh;
-    sum_trans    += Q_trans_month_kWh;
-    sum_vent     += Q_vent_month_kWh;
+    // Acumulare pentru structura sarcinii — clamp lunar la 0 (audit-mai2026 fix).
+    // FIX cooling-s9a Test 7: iarna trans/vent au delta_T = T_e − 26°C foarte negativ
+    // (ex. ianuarie București: −28°C), producând Q_trans/Q_vent puternic negative.
+    // Aceste valori reflectă căldură EXFILTRATĂ (pierdere reală, nu sarcină de răcire);
+    // pentru breakdown-ul sarcinii de răcire, atribuim doar contribuțiile lunare
+    // pozitive — coincide cu logica Q_total_month_kWh = max(0, sumă).
+    sum_solar    += Math.max(0, Q_solar_month_kWh);
+    sum_internal += Math.max(0, Q_internal_month_kWh);
+    sum_trans    += Math.max(0, Q_trans_month_kWh);
+    sum_vent     += Math.max(0, Q_vent_month_kWh);
 
     // ── Sarcina de vârf [kW] — estimată din luna de vârf ────────────
     // Metodă: sarcina orară maximă în ziua de design (T_e = T_e_max + 5°C)

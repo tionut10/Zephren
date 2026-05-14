@@ -18,6 +18,18 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// audit-mai2026 production-fix (12 mai 2026): test smoke care prinde erori
+// de sintaxă JS la deploy-time. Anterior testele citeau fișierul ca string
+// (readFileSync) și nu îl executau ca modul → bug F6 cu backticks duble în
+// template literal (`section` în interior de \`...\`) a trecut de teste DAR
+// a făcut FUNCTION_INVOCATION_FAILED pe production Vercel.
+describe("audit-mai2026 production-fix — module importable smoke test", () => {
+  it("api/ai-assistant.js poate fi importat ca ES module (no syntax errors)", async () => {
+    const mod = await import("../ai-assistant.js");
+    expect(typeof mod.default).toBe("function");
+  });
+});
 const AI_ASSISTANT_PATH = join(__dirname, "..", "ai-assistant.js");
 const FILE_CONTENT = readFileSync(AI_ASSISTANT_PATH, "utf-8");
 
