@@ -13,8 +13,52 @@ export const U_REF_NZEB_NRES = { PE:0.33, PR:0.80, PS:0.35, PT:0.17, PP:0.17, PB
 export const U_REF_RENOV_RES = { PE:0.33, PR:0.90, PS:0.35, PT:0.20, PP:0.20, PB:0.40, PI:null, PL:0.22, SE:0.22 };
 // Tabel 2.10b — Renovare majoră clădiri nerezidențiale
 export const U_REF_RENOV_NRES = { PE:0.40, PR:1.00, PS:0.40, PT:0.22, PP:0.22, PB:0.45, PI:null, PL:0.25, SE:0.25 };
-// Ferestre: nZEB rez 1.11, nZEB nerez 1.20, renovare 1.20, uși ext 1.30
-export const U_REF_GLAZING = { nzeb_res:1.11, nzeb_nres:1.20, renov:1.20, door:1.30 };
+// Ferestre: nZEB rez 1.11, nZEB nerez 1.20, renovare 1.20, uși vitrate 1.30, uși opace 1.80
+// Sprint v1.3 (16 mai 2026) — adăugat `opaque_door: 1.80` (Mc 001-2022 Anexa F + Tab 2.5)
+// pentru a corecta calculul U'max nZEB pentru uși exterioare opace (g=0). Anterior modal
+// arăta 1.20 (prag fereastră) pentru orice ușă, indiferent de zona vitrată — bug confirmat
+// în screenshot user 16 mai 2026.
+//
+// Surse:
+//   - Mc 001-2022 §4.5 Tabel 2.5: "Uși exterioare opace, intrare principală" U_max = 1.80 W/m²K
+//   - Mc 001-2022 §4.5 Tabel 2.5: "Uși exterioare vitrate (≥50% vitraj)" U_max = 1.30 W/m²K
+//   - Mc 001-2022 §4.5 Tabel 2.4 (nZEB rez): U_max ferestre = 1.11 W/m²K (Z1-Z3 mediată)
+//   - Mc 001-2022 §4.5 Tabel 2.7 (nZEB nerez): U_max ferestre = 1.20 W/m²K
+export const U_REF_GLAZING = {
+  nzeb_res: 1.11,      // Fereastră în clădire rezidențială nZEB
+  nzeb_nres: 1.20,     // Fereastră în clădire nerezidențială nZEB
+  renov: 1.20,         // Renovare majoră (rez + nerez)
+  door: 1.30,          // Ușă exterioară VITRATĂ (≥50% vitraj, g>0)
+  opaque_door: 1.80,   // Ușă exterioară OPACĂ (g=0, fără vitraj sau ochi <10%)
+};
+
+/**
+ * Rezolvă pragul U'max pentru un element vitrat conform Mc 001-2022 §4.5.
+ * Distinge fereastră/ușă-vitrată/ușă-opacă × rezidențial/nerezidențial × nzeb/renovare.
+ *
+ * @param {Object} opts
+ * @param {string} opts.elementCategory - "window" | "door" | "skylight" | "curtainwall"
+ * @param {string} opts.buildingCategory - "RI" | "RC" | "RA" | "BI" | ...
+ * @param {number} opts.gValue - factor solar g [0..1]; pentru ușă, g=0 ⇒ opacă, g>0 ⇒ vitrată
+ * @param {string} [opts.scope="nzeb"] - "nzeb" | "renov" — context construcție/renovare
+ * @returns {number} prag U_max în W/(m²·K)
+ */
+export function getURefGlazingFor(opts = {}) {
+  const { elementCategory = "window", buildingCategory = "RI", gValue = 0, scope = "nzeb" } = opts;
+  const isRes = ["RI", "RC", "RA"].includes(buildingCategory);
+
+  // Uși: distincție g=0 (opacă) vs g>0 (vitrată)
+  if (elementCategory === "door") {
+    if (gValue <= 0.05) return U_REF_GLAZING.opaque_door; // 1.80 — toleranță 5% pentru micro-ochi
+    return U_REF_GLAZING.door; // 1.30 — uși vitrate (≥50% sticlă)
+  }
+
+  // Skylight: același prag ca fereastră (Mc 001-2022 Tab 2.5)
+  // Curtainwall: pragul fereastră dar cu corecție +0.10 ψ_spacer (SR EN 13830)
+  // Window: nZEB rez/nres vs renovare
+  if (scope === "renov") return U_REF_GLAZING.renov;
+  return isRes ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
+}
 
 // Legacy aliases
 export const U_REF_NZEB = U_REF_NZEB_RES;

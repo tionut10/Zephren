@@ -106,7 +106,10 @@ export const GLAZING_DB = [
   ..._EXTENDED_GLAZING.filter(g => !_glazingNames.has(g.name.toLowerCase())),
 ];
 
-// ── Extindere din frameTypes.json (17 entries, deduplicate după name) ──────
+// ── Extindere din frameTypes.json (34 entries v1.2, deduplicate după name) ─
+// Batch 15 mai 2026: +12 rame specifice ușilor (toc oțel/alu RT, blindate,
+// antifoc EI60, glisante auto, multi-strat PHI). Câmp applicableElements
+// pentru filtrare UI per categoria elementului vitrat selectat.
 const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
   id: fr.id,
   name: fr.label,
@@ -120,6 +123,9 @@ const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
   desc: fr.notes ? fr.notes.slice(0, 100) : (fr.material || ""),
   tags: fr.tags || [],
   source: fr.source,
+  // v1.2: filtrare per categoria elementului vitrat (window/door/skylight/curtainwall)
+  applicableElements: fr.applicableElements || null,
+  doorSubtype: fr.doorSubtype || null,
   brand: null, supplierId: null, affiliateUrl: null, sponsored: false,
 }));
 
@@ -128,6 +134,39 @@ export const FRAME_DB = [
   ..._LEGACY_FRAMES,
   ..._EXTENDED_FRAMES.filter(f => !_frameNames.has(f.name.toLowerCase())),
 ];
+
+/**
+ * Filtrează rama după categoria elementului vitrat. Backward-compat:
+ * rame fără applicableElements (legacy 22 + 6 LEGACY) sunt considerate
+ * universale (window+door+skylight+curtainwall) deoarece descriu profile
+ * generice de material care funcționează pe orice categorie.
+ *
+ * Rame cu applicableElements explicit (12 noi v1.2) sunt restricționate
+ * la categoriile listate. Ex: toc blindat RC3-RC4 doar pentru "door".
+ *
+ * @param {string} category - "window" | "door" | "skylight" | "curtainwall"
+ * @returns {Array} entries cu compatibilitate pe categorie
+ */
+export function filterFramesByCategory(category) {
+  if (!category) return FRAME_DB;
+  return FRAME_DB.filter(f => {
+    if (!f.applicableElements) return true; // legacy = universal
+    return f.applicableElements.includes(category);
+  });
+}
+
+/**
+ * Returnează numărul de rame compatibile per categorie (statistică UI).
+ * @returns {Object} { window: N, door: N, skylight: N, curtainwall: N }
+ */
+export function countFramesByCategory() {
+  return {
+    window: filterFramesByCategory("window").length,
+    door: filterFramesByCategory("door").length,
+    skylight: filterFramesByCategory("skylight").length,
+    curtainwall: filterFramesByCategory("curtainwall").length,
+  };
+}
 
 // ── U_REF vitraj (Mc 001-2022) ────────────────────────────────────────────
 export const U_REF_GLAZING = { nzeb_res: 1.11, nzeb_nres: 1.20, renov: 1.20, door: 1.30 };

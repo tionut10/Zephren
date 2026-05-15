@@ -132,10 +132,13 @@ const _LEGACY_FRAMES = [
   { name:"Lemn-aluminiu", u:1.20 },
 ];
 
-// Extindere FRAME_DB din frameTypes.json (17 entries, deduplicate)
+// Extindere FRAME_DB din frameTypes.json (33 entries v1.3 — 21 ferestre + 12 uși)
+// v1.2 (15 mai 2026): +12 rame noi specifice ușilor cu applicableElements + doorSubtype
+// v1.3 (16 mai 2026): cele 12 rame uși îmbogățite cu labelEN + manufacturer + model + priceRangeEUR/RON
 const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
   id: fr.id,
   name: fr.label,
+  nameEN: fr.labelEN || null, // v1.3 — i18n EN pentru ramele uși
   shortLabel: fr.shortLabel,
   u: fr.uf,
   material: fr.material,
@@ -145,6 +148,14 @@ const _EXTENDED_FRAMES = (FRAME_TYPES_DATA.frames || []).map(fr => ({
   tags: fr.tags || [],
   source: fr.source,
   notes: fr.notes,
+  // v1.2: filtrare per categoria elementului vitrat
+  applicableElements: fr.applicableElements || null,
+  doorSubtype: fr.doorSubtype || null,
+  // v1.3: producători + prețuri orientative (politic neutru — afișate numai la cerere auditor)
+  manufacturer: fr.manufacturer || null,
+  model: fr.model || null,
+  priceRangeEUR: fr.priceRangeEUR || null,
+  priceRangeRON_2026: fr.priceRangeRON_2026 || null,
   brand: null,
   supplierId: null,
   affiliateUrl: null,
@@ -156,6 +167,23 @@ export const FRAME_DB = [
   ..._LEGACY_FRAMES,
   ..._EXTENDED_FRAMES.filter(f => !_frameNames.has(f.name.toLowerCase())),
 ];
+
+/**
+ * Filtrează FRAME_DB după categoria elementului vitrat (window/door/skylight/curtainwall).
+ * Backward-compat: rame fără applicableElements (legacy 6 + 22 generic) considerate
+ * universale și apar în toate categoriile. Cele 12 rame v1.2 cu applicableElements
+ * explicit sunt restricționate (ex: toc blindat RC3-RC4 doar pentru "door").
+ *
+ * @param {string} category - "window" | "door" | "skylight" | "curtainwall"
+ * @returns {Array} FRAME_DB filtrat
+ */
+export function filterFramesByCategory(category) {
+  if (!category) return FRAME_DB;
+  return FRAME_DB.filter(f => {
+    if (!f.applicableElements) return true; // legacy = universal
+    return f.applicableElements.includes(category);
+  });
+}
 
 export const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
 

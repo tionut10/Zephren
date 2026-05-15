@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "✨",
+        "text": "feat(step2-ai): PR5 — EnvelopeAssistant tab AI + integrare finală"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step2-ai): PR4 — RampFile AI sus + intent envelope-fill backend"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step2-ai): PR3 — Smart Input multimodal ACTIVAT (1A-1E)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step2-ai): PR2 — EnvelopeAIReviewModal + drop zone AI (Layer 2D activat)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(step2-ai): PR1 — orchestrator AI envelope + telemetrie FIFO 500"
+      },
+      {
+        "icon": "🔀",
+        "text": "refactor(Step1): AI-first ULTRA-agresiv — 4 cards AI prioritare + hero multimodal unitar"
+      },
+      {
         "icon": "💰",
         "text": "Sprint Prețuri P4.4-bis — 3 PDF generators consume formatMoney (currency toggle global)"
       },
       {
         "icon": "✨",
         "text": "feat(Step7): mută DocumentUploadCenter din Pas 1 → Pas 7 (înainte de export dosar)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(landing): adaugă link Tutorial NEW în navigation desktop + mobile"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint Smart Input 2026 — B4+D1+D2+D3+D4+D6: foto preview + auto-save + Smart Input pe S2 + voice commands + s"
-      },
-      {
-        "icon": "🔬",
-        "text": "Sprint Smart Input 2026 — B1+B2+B3+B5+D5: polish a11y + smart sort + Mc 001 refs + OSM fallback + pasteRouter "
-      },
-      {
-        "icon": "✨",
-        "text": "fix(vercel): adaugă SPA rewrites pentru /tutorial /privacy /terms /mobile"
-      },
-      {
-        "icon": "🔧",
-        "text": "fix(tutorial): sticky topbar/sidebar rupte de overflow:hidden global pe html/body"
-      },
-      {
-        "icon": "🎨",
-        "text": "fix(tutorial): grupează header + BranchSelector în topbar fix și fixează sidebar"
       }
     ]
   },

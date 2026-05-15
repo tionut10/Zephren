@@ -1,15 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { T } from "../data/translations.js";
 import { Select, Input, Card, ResultRow } from "./ui.jsx";
-import { U_REF_GLAZING } from "../data/u-reference.js";
+import { U_REF_GLAZING, getURefGlazingFor } from "../data/u-reference.js";
 import { calcFsh } from "../calc/shading-factor.js";
 // Sprint Catalog NEUTRAL 30 apr 2026: import GLAZING_DB + FRAME_DB extinse
-// din building-catalog.js (28 vitraje + 23 rame, sincronizate cu JSON-uri).
-import { GLAZING_DB, FRAME_DB } from "../data/building-catalog.js";
+// din building-catalog.js. v1.2 (15 mai 2026): 28 vitraje + 34 rame (+12 toc uși specifice)
+// v1.3 (16 mai 2026): +5 vitraje uși parțial vitrate + +5 vitraje specializate (laminat/skylight/SSG/acustic/electrocromic)
+// + filterFramesByCategory pentru filtrare automată pe categoria elementului
+// + filtru doorSubtype chip + hint "ușă opacă" + getURefGlazingFor() corect per element.
+import { GLAZING_DB, FRAME_DB, filterFramesByCategory } from "../data/building-catalog.js";
 
 function t(key, lang) { if (lang === "EN" && T[key] && T[key].EN) return T[key].EN; return key; }
 
 const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
+
+// v1.3 — sub-tipuri uși pentru filtru chip secundar
+const DOOR_SUBTYPES = [
+  { id: "all",                label: "Toate",                labelEN: "All" },
+  { id: "intrare-principala", label: "Intrare principală",   labelEN: "Main entrance" },
+  { id: "antifoc",            label: "Antifoc EI30/EI60",    labelEN: "Fire-rated EI30/EI60" },
+  { id: "blindata",           label: "Blindată RC3/RC4",     labelEN: "Armored RC3/RC4" },
+  { id: "automata-glisanta",  label: "Automată glisantă",    labelEN: "Automatic sliding" },
+  { id: "tehnica",            label: "Tehnică",              labelEN: "Technical" },
+  { id: "comerciala",         label: "Comercială",           labelEN: "Commercial" },
+];
 
 /**
  * GlazingModal — editor for glazing elements (windows, glass doors)
@@ -20,9 +34,38 @@ const ORIENTATIONS = ["N","NE","E","SE","S","SV","V","NV","Orizontal"];
  *   - buildingCategory: building.category string (e.g. "RI","RC",...)
  */
 // Inferă frameType din câmpul name/type (ex: "Termopan PVC …" → "PVC (5 camere)")
+// v1.3 (16 mai 2026) — extension legacy mapper pentru import CPE cu rame uși:
+//   oțel, blindată, antifoc, automată glisantă, multi-strat PHI, lemn masiv stejar.
 function inferFrameType(base) {
   if (base.frameType && FRAME_DB.find(f => f.name === base.frameType)) return base.frameType;
   const s = ((base.name || "") + " " + (base.type || "")).toLowerCase();
+
+  // Priority 1: uși cu sub-tip specific (mai specifice → primele)
+  if (s.includes("blindat") || s.includes("blindată") || s.includes("rc3") || s.includes("rc4"))
+    return "Toc blindat PIR + armătură oțel (uși securitate RC3/RC4)";
+  if (s.includes("antifoc") || s.includes("ei30") || s.includes("ei60") || s.includes("ei90"))
+    return "Toc oțel inox antifoc EI30/EI60 (uși tehnice)";
+  if (s.includes("automat") || s.includes("glisant") || (s.includes("ușă") && s.includes("public")))
+    return "Cadru ușă automată glisantă comercială";
+  if (s.includes("passivhaus") || s.includes("phi") || s.includes("multi-strat") || s.includes("hibrid alu-lemn-pir"))
+    return "Toc multi-strat hibrid PHI (lemn+alu+PIR)";
+
+  // Priority 2: oțel — distincție pe baza calității izolației
+  if (s.includes("oțel") || s.includes("otel") || s.includes("steel")) {
+    if (s.includes("premium") || s.includes("ph") || s.includes("passivhaus") || s.includes("thermopro"))
+      return "Toc oțel cu RT premium (uși Hörmann ThermoPro)";
+    if (s.includes("rt complexă") || s.includes("rt complex") || s.includes("nzeb") || s.includes("44") || s.includes("pur"))
+      return "Toc oțel cu RT complexă (uși nZEB)";
+    if (s.includes("rt") || s.includes("rupere") || s.includes("16-24") || s.includes("poliamid"))
+      return "Toc oțel cu RT simplă (uși 1990-2010)";
+    return "Toc oțel galvanizat fără RT (uși industriale pre-1990)";
+  }
+
+  // Priority 3: lemn masiv pentru uși vechi (pre-1990) — distinge de lemn stratificat fereastră
+  if (s.includes("ușă") && s.includes("lemn") && (s.includes("masiv") || s.includes("stejar") || s.includes("fag")))
+    return "Toc lemn masiv stejar/fag (uși existente pre-1990)";
+
+  // Priority 4: rame generale (legacy behavior)
   if (s.includes("pvc")) return "PVC (5 camere)";
   if (s.includes("curtain wall") || (s.includes("aluminiu") && (s.includes("rpt") || s.includes("rupere")))) return "Aluminiu cu RPT";
   if (s.includes("aluminiu")) return "Aluminiu fără RPT";
@@ -77,11 +120,39 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
       }
     }, [el.glazingType, el.frameType, el.frameRatio]);
 
-    const uRef = ["RI","RC","RA"].includes(buildingCategory) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres;
-    const uVal = parseFloat(el.u) || 0;
-    const uStatus = uVal <= uRef ? "ok" : uVal <= 1.40 ? "warn" : "fail";
-    const uGlazingVal = GLAZING_DB.find(g => g.name === el.glazingType)?.u;
+    const selectedGlazing = GLAZING_DB.find(g => g.name === el.glazingType);
+    const uGlazingVal = selectedGlazing?.u;
     const uFrameVal = FRAME_DB.find(f => f.name === el.frameType)?.u;
+    const gEffective = parseFloat(el.g) || 0;
+
+    // v1.2 (15 mai 2026): filtrează rame după categoria vitrajului selectat.
+    // Window/skylight → toate ramele generice + window-specific
+    // Door → toate ramele generice + cele 12 toc-uri uși specifice (RT oțel, blindate, antifoc, glisante, multi-strat PHI)
+    const elementCategory = selectedGlazing?.elementCategory || "window";
+    const isDoor = elementCategory === "door";
+    const isOpaqueDoor = isDoor && gEffective <= 0.05;
+
+    // v1.3 — filtru chip pe doorSubtype (numai pentru categoria "door")
+    const [doorSubtypeFilter, setDoorSubtypeFilter] = useState("all");
+    const FILTERED_FRAMES = useMemo(() => {
+      const byCategory = filterFramesByCategory(elementCategory);
+      if (!isDoor || doorSubtypeFilter === "all") return byCategory;
+      return byCategory.filter(f => {
+        // Rame fără doorSubtype = generale (acceptate la orice filtru sub-tip)
+        if (!f.doorSubtype) return true;
+        return f.doorSubtype === doorSubtypeFilter;
+      });
+    }, [elementCategory, doorSubtypeFilter, isDoor]);
+
+    // v1.3 — U_max nZEB corect per element (Mc 001-2022 Tab 2.4/2.5/2.7)
+    const uRef = getURefGlazingFor({
+      elementCategory,
+      buildingCategory,
+      gValue: gEffective,
+      scope: "nzeb",
+    });
+    const uVal = parseFloat(el.u) || 0;
+    const uStatus = uVal <= uRef ? "ok" : uVal <= uRef + 0.20 ? "warn" : "fail";
 
     // Sprint 22 #15 — F_sh protecție solară (Mc 001-2022 Anexa E)
     const shadingRes = calcFsh(el);
@@ -101,9 +172,54 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
             <Select label={t("Tip vitraj",lang)} value={el.glazingType} onChange={v => setEl(p=>({...p,glazingType:v}))}
               options={GLAZING_DB.map(g=>g.name)} />
             <Select label={t("Tip ramă",lang)} value={el.frameType} onChange={v => setEl(p=>({...p,frameType:v}))}
-              options={FRAME_DB.map(f=>f.name)} />
+              options={FILTERED_FRAMES.map(f=>f.name)} />
             <Input label={t("Fracție ramă",lang)} value={el.frameRatio} onChange={v => setEl(p=>({...p,frameRatio:v}))} type="number" unit="%" min="10" max="50" className="col-span-2" />
           </div>
+
+          {/* v1.3 (16 mai 2026) — Filtru chip sub-tip ușă (numai când categoria este "door") */}
+          {isDoor && (
+            <div className="mb-4">
+              <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2">
+                {t("Filtru sub-tip ușă",lang)}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {DOOR_SUBTYPES.map(st => {
+                  const active = doorSubtypeFilter === st.id;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setDoorSubtypeFilter(st.id)}
+                      className={`px-2.5 py-1 text-[11px] rounded-full transition ${
+                        active
+                          ? "bg-amber-500 text-black font-medium"
+                          : "bg-white/5 text-white/70 hover:bg-white/10"
+                      }`}
+                    >
+                      {lang === "EN" ? st.labelEN : st.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] opacity-50 mt-1.5">
+                {FILTERED_FRAMES.length} {t("rame compatibile",lang)} ·
+                {doorSubtypeFilter === "all"
+                  ? ` ${t("toate sub-tipurile",lang)}`
+                  : ` ${t("filtrat",lang)}: ${DOOR_SUBTYPES.find(s=>s.id===doorSubtypeFilter)?.label}`}
+              </div>
+            </div>
+          )}
+
+          {/* v1.3 — Hint ușă opacă (g=0): Mc 001-2022 §4.5 — aporturi solare ignorate */}
+          {isOpaqueDoor && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[11px] text-blue-200">
+              <div className="font-medium mb-1">ℹ️ {t("Ușă opacă (fără vitraj)",lang)}</div>
+              <div className="opacity-80">
+                {t("Factor solar g=0 — aporturi solare ignorate (Mc 001-2022 §4.5).",lang)}{" "}
+                {t("Prag U'max nZEB: 1.80 W/(m²·K) pentru uși opace (Tab 2.5).",lang)}
+              </div>
+            </div>
+          )}
 
           {/* Sprint 22 #15 — Protecție solară (Mc 001-2022 Anexa E) */}
           <Card title={t("Protecție solară (F_sh)",lang)} className="mb-4">
@@ -153,7 +269,11 @@ export default function GlazingModal({ element, onSave, onClose, lang, buildingC
             <ResultRow label="Factor solar g efectiv" value={el.g} />
             <ResultRow label="F_sh protecție solară" value={shadingRes.fsh.toFixed(3)} />
             <ResultRow label="g × F_sh (efectiv cu umbrire)" value={((parseFloat(el.g)||0) * shadingRes.fsh).toFixed(3)} />
-            <ResultRow label="U'max nZEB" value={(["RI","RC","RA"].includes(buildingCategory) ? U_REF_GLAZING.nzeb_res : U_REF_GLAZING.nzeb_nres).toFixed(2)} unit="W/(m²·K)" />
+            <ResultRow
+              label={isOpaqueDoor ? "U'max ușă opacă (Mc 001-2022 Tab 2.5)" : isDoor ? "U'max ușă vitrată" : "U'max nZEB"}
+              value={uRef.toFixed(2)}
+              unit="W/(m²·K)"
+            />
           </Card>
 
           <div className="flex gap-3 justify-end">

@@ -461,6 +461,11 @@ describe("Brand Registry — Extensii regenerabile", () => {
     const validCats = [
       "heating", "cooling", "acm", "ventilation", "lighting", "smart-home",
       "distribution", "solar", "battery", "fuels", "wind", "chp",
+      // v1.3 (16 mai 2026): envelope categories pentru extensia rame uși +
+      // brand-uri tâmplărie (Hörmann, Schüco, Reynaers, Internorm, Pirnar,
+      // Dierre, Oikos, Porta, Adlo, Gerda, QFort, Voestalpine Sadef, Tormax,
+      // dormakaba, Star Doors, Solid Doors, Saint-Gobain, AGC, Guardian, View).
+      "envelope-doors", "envelope-windows", "envelope-curtainwall",
     ];
     brandsRegistry.brands.forEach(b => {
       expect(Array.isArray(b.categories)).toBe(true);
