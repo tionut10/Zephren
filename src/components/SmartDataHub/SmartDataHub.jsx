@@ -17,6 +17,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import RampInstant from "./RampInstant.jsx";
 import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
+import UnifiedSmartInput from "./UnifiedSmartInput.jsx";
 import { validateStep1, computeStep1Progress } from "../../calc/step1-validators.js";
 import {
   useAutoSaveStep1Draft,
@@ -144,6 +145,8 @@ export default function SmartDataHub({
   // Sprint Smart Input 2026 (1.5) — duplică proiect recent
   onDuplicateRecent,
   currentProjectId,
+  // Sprint Smart Input 2026 (2.1) — paste handler text → Chat AI cu text inițial
+  onPasteText,
   // Utils
   showToast,
 }) {
@@ -232,6 +235,50 @@ export default function SmartDataHub({
 
   const handleDragOver  = useCallback((e) => { e.preventDefault(); setDragOver(true); }, []);
   const handleDragLeave = useCallback(() => setDragOver(false), []);
+
+  // Sprint Smart Input 2026 (2.1) — Paste handler universal pe drop zone.
+  // Detectează 3 cazuri: imagine din clipboard, fișier (rar), text plain ≥30 chars.
+  const handlePaste = useCallback((e) => {
+    if (!e?.clipboardData) return;
+    const items = e.clipboardData.items;
+    if (!items?.length) return;
+
+    // Caut întâi imagine din clipboard (Ctrl+C pe imagine, screenshot, etc.)
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) continue;
+        // Construiesc un File cu nume sintetic și-l rutez prin same router ca drag&drop
+        const ext = blob.type.split("/")[1] || "png";
+        const synthetic = new File([blob], `clipboard-${Date.now()}.${ext}`, { type: blob.type });
+        routeFile(synthetic);
+        setDropInfo({ label: `Imagine din clipboard → Planșă AI`, type: "success" });
+        return;
+      }
+      if (item.kind === "file") {
+        // Alt tip de fișier (rar via paste, dar posibil în Firefox)
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) routeFile(file);
+        return;
+      }
+    }
+
+    // Apoi text plain: ≥30 chars → routează la Chat AI cu text pre-completat
+    const text = e.clipboardData.getData("text/plain");
+    if (text && text.trim().length >= 30 && typeof onPasteText === "function") {
+      e.preventDefault();
+      onPasteText(text.trim());
+      setDropInfo({
+        label: `Text lipit (${text.trim().length} caractere) → Chat AI`,
+        type: "success",
+      });
+      return;
+    }
+    // Text scurt sau fără handler → lăsăm comportamentul default browser
+  }, [routeFile, onPasteText]);
 
   const toggleRamp = useCallback((id) => {
     setActiveRamp(prev => prev === id ? null : id);
@@ -404,6 +451,18 @@ export default function SmartDataHub({
         </div>
       )}
 
+      {/* ── Sprint Smart Input 2026 (2.2) — Unified Smart Input ──────────── */}
+      {(onPasteText || routeFile) && (
+        <div className="px-4 pt-3">
+          <UnifiedSmartInput
+            onSubmitText={onPasteText}
+            onPickImage={(file) => { routeFile(file); }}
+            onPickFile={(file) => { routeFile(file); }}
+            showToast={showToast}
+          />
+        </div>
+      )}
+
       {/* ── Drop zone universal ──────────────────────────────────────────────── */}
       <div className="px-4 pt-3 pb-3">
         <input
@@ -415,12 +474,13 @@ export default function SmartDataHub({
         />
         <div
           role="region"
-          aria-label="Zonă drag și drop fișiere"
+          aria-label="Zonă drag și drop fișiere — acceptă și paste Ctrl+V cu text sau imagini"
           aria-describedby="drop-zone-filetypes"
           tabIndex={0}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
+          onPaste={handlePaste}
           onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); browseFileRef.current?.click(); } }}
           className={`rounded-xl border-2 border-dashed py-3 px-3 text-center transition-all select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${
             dragOver
@@ -431,7 +491,9 @@ export default function SmartDataHub({
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <div className="text-xl" aria-hidden="true">🎯</div>
             <div className="text-left">
-              <div className="text-xs font-medium text-slate-300">Trage orice fișier aici</div>
+              <div className="text-xs font-medium text-slate-300">
+                Trage fișier · sau lipește <kbd className="px-1 py-0.5 rounded bg-white/10 text-[9px] font-mono text-slate-200 border border-white/10">Ctrl+V</kbd> text/imagine
+              </div>
               <div id="drop-zone-filetypes" className="text-[10px] text-slate-500">
                 <span className="text-emerald-400/70">.ifc</span> ·{" "}
                 <span className="text-indigo-400/70">.pdf/.jpg/.png</span> ·{" "}

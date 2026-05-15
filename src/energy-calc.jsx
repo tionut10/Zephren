@@ -472,6 +472,8 @@ export default function EnergyCalcApp({ cloud }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showQuickFill, setShowQuickFill] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  // Sprint Smart Input 2026 (2.1) — text inițial pentru ChatImport (paste Ctrl+V din Step 1)
+  const [chatInitialText, setChatInitialText] = useState("");
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [projectList, setProjectList] = useState([]);
@@ -3597,6 +3599,12 @@ Zona {selectedClimate.zone}
                 showToast("Eroare la duplicare proiect: " + e.message, "error");
               }
             }}
+            onPasteText={(text) => {
+              // Sprint Smart Input 2026 (2.1) — text lipit ≥30 chars → deschide Chat AI cu pre-fill
+              setChatInitialText(text);
+              setShowChat(true);
+              showToast?.(`Text lipit (${text.length} caractere) → Chat AI`, "info");
+            }}
           /></Suspense>}
 
 
@@ -4076,6 +4084,7 @@ Zona {selectedClimate.zone}
         userPlan={userPlan}
         isOpen={showChat}
         onOpenChange={setShowChat}
+        initialText={chatInitialText}
         onApply={(data) => {
           pushUndo();
           if (data.building && Object.keys(data.building).length) setBuilding(p => ({...INITIAL_BUILDING, ...p, ...data.building}));

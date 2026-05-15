@@ -17,7 +17,7 @@ const EXAMPLES = [
   "Birouri P+3 Brașov, VRF Daikin, LED, HR 80%, fațadă cortină, 2500m²",
 ];
 
-export default function ChatImport({ onApply, showToast, isOpen, onOpenChange, userPlan }) {
+export default function ChatImport({ onApply, showToast, isOpen, onOpenChange, userPlan, initialText }) {
   // Pricing v6.0 — AI Pack disponibil Pro+ / Edu. Plan-uri inferioare nu văd butonul.
   // Hook-urile sunt apelate ÎNTOTDEAUNA (rule-of-hooks compliance);
   // gating-ul se aplică doar la randarea JSX finală.
@@ -44,6 +44,15 @@ export default function ChatImport({ onApply, showToast, isOpen, onOpenChange, u
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
+
+  // Sprint Smart Input 2026 (2.1) — paste handler: pre-completează input la deschidere
+  // Activat doar când chatul se deschide ȘI există un text inițial (din paste pe drop zone)
+  useEffect(() => {
+    if (open && initialText && typeof initialText === "string" && initialText.trim()) {
+      setInput(initialText.trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialText]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

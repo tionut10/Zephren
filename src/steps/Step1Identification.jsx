@@ -270,6 +270,7 @@ export default function Step1Identification({
   applyBuildingPatch, // Sprint Smart Input 2026 (1.3) — restore draft + bulk auto-fill
   onDuplicateRecent,  // Sprint Smart Input 2026 (1.5) — duplică proiect recent
   currentProjectId,
+  onPasteText,        // Sprint Smart Input 2026 (2.1) — paste text → Chat AI
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -658,6 +659,7 @@ export default function Step1Identification({
         applyBuildingPatch={applyBuildingPatch}
         onDuplicateRecent={onDuplicateRecent}
         currentProjectId={currentProjectId}
+        onPasteText={onPasteText}
       />
 
       <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
