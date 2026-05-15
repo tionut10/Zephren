@@ -28,6 +28,10 @@
 // 1. PALETĂ CULORI
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Sprint P4.4-bis (15 mai 2026) — currency toggle support pentru formatMoney.
+// Import explicit (chain singular: currency-context → rehab-prices → leaf).
+import { formatCurrencyForExport as _formatCurrencyForExport } from "../data/currency-context.js";
+
 /**
  * Paletă brand Zephren — derivată din logo.svg.
  *
@@ -261,6 +265,30 @@ export function formatRON(n) {
 export function formatEUR(n) {
   if (!Number.isFinite(n)) return "—";
   return `${formatRomanianNumber(n, 0)} €`;
+}
+
+/**
+ * Sprint P4.4-bis (15 mai 2026) — format money respectând currency toggle global.
+ *
+ * Spre deosebire de `formatRON` (fix RON, păstrat pentru documente legale MDLPA
+ * unde RON e obligatoriu), `formatMoney` respectă alegerea utilizatorului din
+ * `CurrencyToggle` (Auto/EUR/RON). Folosit în export-uri B2B / multilingv.
+ *
+ * @param {number} n
+ * @param {"RON"|"EUR"} sourceCurrency — moneda în care e stocată valoarea (default RON)
+ * @param {{ decimals?: number }} [options]
+ * @returns {string}
+ */
+export function formatMoney(n, sourceCurrency = "RON", options = {}) {
+  if (!Number.isFinite(Number(n))) return "—";
+  try {
+    return _formatCurrencyForExport(Number(n), sourceCurrency, {
+      decimals: options.decimals ?? 0,
+    });
+  } catch {
+    // Fallback dacă currency-context nu e disponibil (test environment without DOM)
+    return sourceCurrency === "EUR" ? formatEUR(Number(n)) : formatRON(Number(n));
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

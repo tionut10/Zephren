@@ -25,6 +25,7 @@ import {
   setBrandColor,
   formatRomanianDate,
   formatRomanianNumber,
+  formatMoney,           // Sprint P4.4-bis (15 mai 2026) — currency toggle
   buildBrandMetadata,
 } from "./pdf-brand-kit.js";
 import {
@@ -285,12 +286,13 @@ export async function generateB1DevizPdf({
     bodyStyles: { fontSize: FONT_SIZES.TABLE_BODY, font: fontOk ? ROMANIAN_FONT : "helvetica" },
     alternateRowStyles: { fillColor: BRAND_COLORS.SLATE_50 },
     columnStyles: { 0: { cellWidth: 90, fontStyle: "bold" }, 1: { halign: "right" } },
+    // Sprint P4.4-bis — formatMoney respectă currency toggle global (Auto/EUR/RON)
+    // Sumele native sunt în EUR; conversia EUR↔RON folosește curs live BNR (5.10 fallback).
     body: [
-      ["Subtotal (fără TVA)", `${formatRomanianNumber(subtotalEUR, 0)} EUR`],
-      ["TVA 21% (Codul Fiscal RO post 1.VIII.2025)", `${formatRomanianNumber(tvaEUR, 0)} EUR`],
-      ["TOTAL cu TVA", `${formatRomanianNumber(totalCuTvaEUR, 0)} EUR`],
-      ["Cost specific suprafață utilă", Au > 0 ? `${formatRomanianNumber(subtotalEUR / Au, 0)} EUR/m²` : "—"],
-      ["Total în RON (curs orientativ 5 RON/EUR)", `${formatRomanianNumber(totalCuTvaEUR * 5, 0)} RON`],
+      ["Subtotal (fără TVA)", formatMoney(subtotalEUR, "EUR", { decimals: 0 })],
+      ["TVA 21% (Codul Fiscal RO post 1.VIII.2025)", formatMoney(tvaEUR, "EUR", { decimals: 0 })],
+      ["TOTAL cu TVA", formatMoney(totalCuTvaEUR, "EUR", { decimals: 0 })],
+      ["Cost specific suprafață utilă", Au > 0 ? `${formatMoney(subtotalEUR / Au, "EUR", { decimals: 0 })}/m²` : "—"],
     ],
   });
   y = doc.lastAutoTable.finalY + 6;

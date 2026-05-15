@@ -40,7 +40,7 @@ import {
   setBrandColor,
   formatRomanianDate,
   formatRomanianNumber,
-  formatRON,
+  formatMoney,  // Sprint P4.4-bis (15 mai 2026) — respectă currency toggle global
   buildBrandMetadata,
 } from "./pdf-brand-kit.js";
 
@@ -542,13 +542,14 @@ export async function exportCpePostRehabPDF(params = {}) {
         1: { cellWidth: "auto" },
         2: { cellWidth: 35, halign: "right" },
       },
-      head: [["#", "Măsură", "Cost estimat (RON)"]],
+      // Sprint P4.4-bis — header fără unitate (formatMoney include unitate per valoare)
+      head: [["#", "Măsură", "Cost estimat"]],
       body: measures.map((m, idx) => [
         String(idx + 1),
         m.label + (m.area ? ` · ${fmt(m.area, 0)} ${m.unit || "m²"}` : ""),
-        m.cost ? fmt(m.cost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.") : "—",
+        m.cost ? formatMoney(m.cost, "RON", { decimals: 0 }) : "—",
       ]),
-      foot: [["", "TOTAL ESTIMAT", fmt(totalCost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")]],
+      foot: [["", "TOTAL ESTIMAT", formatMoney(totalCost, "RON", { decimals: 0 })]],
       footStyles: {
         fillColor: BRAND_COLORS.PRIMARY_FAINT,
         textColor: BRAND_COLORS.PRIMARY_DARK,
@@ -565,9 +566,10 @@ export async function exportCpePostRehabPDF(params = {}) {
     doc.setFont(undefined, "normal");
     doc.setFontSize(FONT_SIZES.BODY);
     setBrandColor(doc, BRAND_COLORS.SLATE_700, "text");
+    // Sprint P4.4-bis — formatMoney respectă currency toggle global (Auto/EUR/RON)
     const lines = [
-      `Cost total estimat: ${fmt(totalCost, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")} RON (fără TVA, fără proiectare/avize)`,
-      `Economie anuală estimată: ~${fmt(annualSavingRON, 0).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.")} RON/an (preț energie 2025)`,
+      `Cost total estimat: ${formatMoney(totalCost, "RON", { decimals: 0 })} (fără TVA, fără proiectare/avize)`,
+      `Economie anuală estimată: ~${formatMoney(annualSavingRON, "RON", { decimals: 0 })}/an (preț energie 2025)`,
       `Perioadă de recuperare simplă: ${paybackYears > 0 && paybackYears < 100 ? fmt(paybackYears, 1) + " ani" : "—"}`,
     ];
     lines.forEach((line) => { doc.text(line, A4.MARGIN_LEFT, y); y += 5; });

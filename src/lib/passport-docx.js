@@ -1,7 +1,13 @@
 /**
  * Export pașaport renovare ca document DOCX A4 portret.
  * Format obligatoriu conform feedback proiect: 11906 x 16838 DXA (A4 portret).
+ *
+ * Sprint P4.4-bis (15 mai 2026) — sumele financiare respectă currency toggle
+ * global (Auto/EUR/RON) via formatCurrencyForExport. Auditorul B2B UE
+ * exportă pașaport în EUR fără modificare cod.
  */
+
+import { formatCurrencyForExport } from "../data/currency-context.js";
 
 function defaultFilename(passport) {
   const id = (passport?.passportId || "nou").slice(0, 8);
@@ -15,6 +21,13 @@ function fmtNum(v, decimals = 0) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+}
+
+// Sprint P4.4-bis — helper money cu currency toggle global
+// Source = moneda stocată ('RON' implicit pentru Pașaport, sumele sunt native RON).
+function fmtMoney(v, decimals = 0) {
+  if (v === null || v === undefined || !Number.isFinite(Number(v))) return "—";
+  return formatCurrencyForExport(Number(v), "RON", { decimals });
 }
 
 function buildKeyValueRows(Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, rows) {
@@ -177,8 +190,8 @@ export async function exportPassportDOCX(passport, options = {}) {
     buildTable([
       ["Strategie", road.strategy || "—"],
       ["Durată totală plan", `${road.totalYears || 0} ani`],
-      ["Buget anual", `${fmtNum(road.annualBudgetRON, 0)} RON`],
-      ["Preț energie", `${fmtNum(road.energyPriceRON, 2)} RON/kWh`],
+      ["Buget anual", fmtMoney(road.annualBudgetRON, 0)],
+      ["Preț energie", `${fmtMoney(road.energyPriceRON, 2)}/kWh`],
       ["Rată actualizare", `${fmtNum((road.discountRate || 0) * 100, 1)} %`],
       ["Nr. faze", String((road.phases || []).length)],
     ]),
@@ -195,10 +208,10 @@ export async function exportPassportDOCX(passport, options = {}) {
         ],
       }),
       buildTable([
-        ["Cost fază", `${fmtNum(p.phaseCost_RON, 0)} RON`],
-        ["Cost cumulativ", `${fmtNum(p.cumulativeCost_RON, 0)} RON`],
+        ["Cost fază", fmtMoney(p.phaseCost_RON, 0)],
+        ["Cost cumulativ", fmtMoney(p.cumulativeCost_RON, 0)],
         ["EP după", `${fmtNum(p.ep_after, 1)} kWh/(m²·an)`],
-        ["Economie anuală", `${fmtNum(p.annualSaving_RON, 0)} RON/an`],
+        ["Economie anuală", `${fmtMoney(p.annualSaving_RON, 0)}/an`],
         [
           "MEPS 2030",
           p.mepsComplianceAfterPhase?.meps2030 ? "atins" : "nu încă",
@@ -234,10 +247,10 @@ export async function exportPassportDOCX(passport, options = {}) {
       children: [new TextRun({ text: "5. Analiză financiară", bold: true })],
     }),
     buildTable([
-      ["Investiție totală", `${fmtNum(fin.totalInvestment_RON, 0)} RON`],
-      ["Grant total", `${fmtNum(fin.totalGrant_RON, 0)} RON`],
-      ["Investiție netă", `${fmtNum(fin.netInvestment_RON, 0)} RON`],
-      ["NPV 30 ani", `${fmtNum(fin.npv_30years_RON, 0)} RON`],
+      ["Investiție totală", fmtMoney(fin.totalInvestment_RON, 0)],
+      ["Grant total", fmtMoney(fin.totalGrant_RON, 0)],
+      ["Investiție netă", fmtMoney(fin.netInvestment_RON, 0)],
+      ["NPV 30 ani", fmtMoney(fin.npv_30years_RON, 0)],
       ["IRR", `${fmtNum(fin.irr_pct, 1)} %`],
       ["Payback simplu", `${fmtNum(fin.paybackSimple_years, 1)} ani`],
       ["Payback actualizat", `${fmtNum(fin.paybackDiscounted_years, 1)} ani`],
