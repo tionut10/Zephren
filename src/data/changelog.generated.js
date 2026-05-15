@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-14
+// Ultima generare: 2026-05-15
 
 export const APP_VERSION = "0.7.0";
 export const CHANGELOG = [
@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "🎨",
-        "text": "fix(classification): EP=0 net-zero → clasa A+, nu —; cashflow chart range-normalized"
+        "icon": "💰",
+        "text": "docs+demo: rebalansare M1-M4 expectedResults la live snapshot + investigation doc"
       },
       {
-        "icon": "📄",
-        "text": "audit-mai2026/MEGA finalize: Python wiring narrative + raport update + cleanup"
+        "icon": "📋",
+        "text": "fix(audit): JS gotcha `|| ep_total` → `?? ep_total` în 9 fișiere"
+      },
+      {
+        "icon": "💰",
+        "text": "fix(demoProjects): rebalansare M5 ZEB + meta header sprint + TODO M1-M4"
       },
       {
         "icon": "🔧",
-        "text": "sandbox estimateEnergyClass — EP=0/negativ → A+ (net-zero)"
-      },
-      {
-        "icon": "🔧",
-        "text": "clădiri net-zero (EP≤0) afișează clasa A+ în loc de —"
-      },
-      {
-        "icon": "✨",
-        "text": "audit-mai2026/MEGA Visual-2: Migrare brand kit advanced-report-pdf.js (propagă în 14+ module)"
+        "text": "fix(Step5): clarificare EP/CO2 net vs brut + badge ZEB pentru clădiri energy-positive"
       },
       {
         "icon": "📦",
-        "text": "audit-mai2026/MEGA P2: Catalog punți — 5 ψ_izolat slabe corectate la target PHI"
+        "text": "data: extindere catalog ferestre/uși bazată pe cercetare web (v2.1)"
+      },
+      {
+        "icon": "✨",
+        "text": "secțiune SVG specifică pentru ușile din Pasul 2 (DoorSection)"
       },
       {
         "icon": "📋",
-        "text": "audit-mai2026/MEGA P1.3: Tier-uri 1/2/3 RES în Step4Renewables (UX rapid)"
+        "text": "audit-mai2026/MEGA cleanup: fix cooling-s9a + production FUNCTION_INVOCATION_FAILED"
       },
       {
-        "icon": "📋",
-        "text": "audit-mai2026/MEGA P1.2.b+c: Narativ AI Cap.1+Cap.8+intro Pașaport în Step7Audit"
+        "icon": "🎨",
+        "text": "fix(classification): EP=0 net-zero → clasa A+, nu —; cashflow chart range-normalized"
       }
     ]
   },

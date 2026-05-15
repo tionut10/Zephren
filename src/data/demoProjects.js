@@ -516,6 +516,41 @@ export const DEMO_PROJECTS = [
       observations: "Apartament 3 camere etajul 2, bloc PAFP nereabilitat 1975 — termoficare RADET (CET Constanța, contor unic bloc), boiler electric apartament 80L. Anvelopă: PAFP sandwich BA80+PS20deg+BA150 fără izolație suplimentară (U_pereți ≈ 1.47 W/m²·K), termopan PVC 4-16-4 fără Low-E (U_glaz ≈ 2.70). Punți termice severe SR EN ISO 14683 categoria 3 (Ψ 0.45-0.65 — rosturi orizontale/verticale panou mare). n₅₀ = 7.5 h⁻¹ (etanșeitate proastă). Recomandare urgentă: reabilitare termică Pașaport Renovare în 3 etape (anvelopă ETICS 15 cm + ferestre triplu Low-E + branșament individual gaz).",
       photo: "",
     },
+    // ── PAS 7 — Scenariu reabilitare specific apartament bloc PAFP'75 (Sprint demo coerență 15 mai 2026)
+    // M1 e bloc — PE individual nu poate adăuga PV / acoperiș / subsol (toate sunt comune).
+    // Doar ETICS pereți individual (anvelopă proprietate apartament) + ferestre triplu Low-E.
+    rehabScenarioInputs: {
+      addInsulWall: true, insulWallThickness: "15",       // ETICS 15 cm exterior pereți S+N (acord asociație)
+      addInsulRoof: false, insulRoofThickness: "0",        // Comun bloc — neaplicabil individual
+      addInsulBasement: false, insulBasementThickness: "0", // Comun bloc — neaplicabil individual
+      replaceWindows: true, newWindowU: "0.85",            // Triplu Low-E argon înlocuire termopan 2005
+      addHR: false, hrEfficiency: "0",                     // Apartament bloc — VMC HR neviabil structural
+      addPV: false, pvArea: "0",                            // Bloc — fără acces acoperiș individual
+      addHP: false, hpCOP: "0",                             // Termoficare colectiv — schimbare neaplicabilă
+      addSolarTh: false, solarThArea: "0",                  // Idem PV — fără acces acoperiș
+    },
+    // ── PAS 8 — Inputs specifici typology (sarcini per cameră EN 12831-3, dimensionare HP/sonde, IEQ)
+    step8Inputs: {
+      ieqCategory: "II",                                   // Apartament rezidențial — categoria II EN 16798-1
+      hpTypeId: "AA_STD",                                  // Pentru analiză „dacă bloc trece la mini-PC apartament"
+      collectorType: "PLAN_SEL",                           // Dacă vine acord asociație ST acoperiș
+      nPersons: "4",                                       // 3 camere × 1.3 ocupanți
+      groundTypeId: "sol_mixt",                            // Litoral nisip+argilă
+      boreholeDepth: "100",
+      nBoreholes: "2",
+      boreholeOp: "2400",
+      externalNoise: "60",                                 // Bd. Tomis trafic moderat
+      epAfterRehabInput: "150",                            // țintă post-Pașaport faza 3 (clasă C)
+      rooms: [
+        { id:1, name:"Living + sufragerie", type:"living",   area:"22", height:"2.5", exposedWalls:"2", floorType:"mid" },
+        { id:2, name:"Dormitor matrimonial",  type:"bedroom",  area:"14", height:"2.5", exposedWalls:"2", floorType:"mid" },
+        { id:3, name:"Dormitor copil",         type:"bedroom",  area:"12", height:"2.5", exposedWalls:"1", floorType:"mid" },
+        { id:4, name:"Bucătărie",              type:"kitchen",  area:"8",  height:"2.5", exposedWalls:"1", floorType:"mid" },
+        { id:5, name:"Baie",                   type:"bathroom", area:"5",  height:"2.5", exposedWalls:"1", floorType:"mid" },
+        { id:6, name:"Hol",                    type:"hallway",  area:"4",  height:"2.5", exposedWalls:"0", floorType:"mid" },
+        // Total 65 m² = areaUseful M1
+      ],
+    },
     expectedResults: {
       // Sprint Rebalansare 15 mai 2026 — snapshot live calc (a NU se confunda cu target normativ).
       // M1 (apartament bloc PAFP'75 neanvelopat Constanța) — calculator dă valori conform PassivHaus-NRG metodologie.
@@ -799,6 +834,42 @@ export const DEMO_PROJECTS = [
       stampDataURL: DEMO_STAMP_SVG("Pop Cosmin", "CJ-03142"),
       observations: "Casă unifamilială P+1 Cluj-Napoca, construită 1965 zidărie cărămidă plină 500 mm fără izolație suplimentară (U ≈ 1.18 W/m²·K). Reabilitare parțială 2010: înlocuire ferestre lemn cu termopan PVC dublu vitraj clasic (U ≈ 1.40, fără Low-E). Sisteme: CT gaz condensare 24 kW Vaillant ecoTEC plus, distribuție bine izolată, radiatoare oțel panou. ACM: cazan combi instantaneu. Răcire: niciun sistem activ. PV 3 kWp acoperiș Sud, autoconsum fără baterie. n₅₀ = 5.5 h⁻¹. CPE emis pentru tranzacție vânzare. Recomandări Pașaport: ETICS 12-15 cm pereți + izolare placă sol perimetral + înlocuire ferestre cu triplu Low-E + extindere PV → 5 kWp.",
       photo: "",
+    },
+    // ── PAS 7 — Scenariu reabilitare casă unifamilială C cărămidă (Sprint demo coerență 15 mai 2026)
+    // M2 e casă proprie — toate intervențiile sunt feasible. Pașaport renovare 3 faze țintă clasă C.
+    rehabScenarioInputs: {
+      addInsulWall: true, insulWallThickness: "15",        // ETICS vată minerală 15 cm — Faza 1
+      addInsulRoof: true, insulRoofThickness: "20",        // Vată minerală 20 cm pe planșeul peste pod — Faza 1
+      addInsulBasement: true, insulBasementThickness: "10", // EPS perimetral 10 cm placă pe sol — Faza 1
+      replaceWindows: true, newWindowU: "0.85",            // Triplu Low-E argon înlocuire termopan 2010 — Faza 2
+      addHR: true, hrEfficiency: "85",                     // VMC HR 85% (recuperator entalpic) — Faza 2
+      addPV: true, pvArea: "30",                            // Extindere PV 3→5 kWp (30 m² panouri) — Faza 3
+      addHP: true, hpCOP: "4.5",                            // Înlocuire CT gaz cu PC aer-apă R290 — Faza 3
+      addSolarTh: true, solarThArea: "8",                   // ST 8 m² pentru ACM (acoperire 60% an) — Faza 2
+    },
+    step8Inputs: {
+      ieqCategory: "II",                                   // Locuință — categoria II
+      hpTypeId: "AA_LT",                                   // Aer-Apă Low-Temp pentru pardoseală radiantă viitoare
+      collectorType: "PLAN_SEL",                           // Plan selectiv standard
+      nPersons: "4",                                       // 2 părinți + 2 copii
+      groundTypeId: "argila_uscata",                       // Cluj zona Donath — argilă/loess
+      boreholeDepth: "80",                                 // Sonda 80 m × 2 buc
+      nBoreholes: "2",
+      boreholeOp: "2200",
+      externalNoise: "50",                                 // Cartier Donath — zonă rezidențială liniștită
+      epAfterRehabInput: "120",                            // țintă post-Pașaport faza 3 (clasă C)
+      rooms: [
+        { id:1, name:"Living + sufragerie", type:"living",   area:"32", height:"2.7", exposedWalls:"3", floorType:"ground" },
+        { id:2, name:"Bucătărie",            type:"kitchen",  area:"14", height:"2.7", exposedWalls:"2", floorType:"ground" },
+        { id:3, name:"Hol parter + scară",   type:"hallway",  area:"8",  height:"2.7", exposedWalls:"1", floorType:"ground" },
+        { id:4, name:"Baie parter (oaspeți)",type:"bathroom", area:"4",  height:"2.7", exposedWalls:"1", floorType:"ground" },
+        { id:5, name:"Birou parter",         type:"office",   area:"10", height:"2.7", exposedWalls:"2", floorType:"ground" },
+        { id:6, name:"Dormitor matrimonial", type:"bedroom",  area:"18", height:"2.7", exposedWalls:"3", floorType:"top" },
+        { id:7, name:"Dormitor copil 1",     type:"bedroom",  area:"16", height:"2.7", exposedWalls:"2", floorType:"top" },
+        { id:8, name:"Dormitor copil 2",     type:"bedroom",  area:"12", height:"2.7", exposedWalls:"2", floorType:"top" },
+        { id:9, name:"Baie etaj",            type:"bathroom", area:"6",  height:"2.7", exposedWalls:"1", floorType:"top" },
+        // Total 120 m² = areaUseful M2
+      ],
     },
     expectedResults: {
       // Sprint Rebalansare 15 mai 2026 — snapshot live calc.
@@ -1135,6 +1206,40 @@ export const DEMO_PROJECTS = [
       observations: "Birouri Centrul Decebal, București Sect. 3 — clădire 2005 BCA 25 cm + ETICS EPS 4 cm degradat (U_pereți ≈ 0.45 W/m²·K), vitraje dublu Low-E argon (U ≈ 1.80, g ≈ 0.55). Sisteme: PC aer-aer VRF 60 kW (SCOP încălzire 2.80 — degradat după 20 ani exploatare) + CT gaz backup, ventiloconvectoare 4 țevi, recuperator entalpic rotativ 80%. RĂCIRE PROBLEMATICĂ: VRF reversibil SEER 2.80 (vs. cerere actuală ≥ 5.0), distribuție aer tratat slab izolat (η = 0.85), control manual la fiecare birou (η = 0.88), 1400 h funcționare/an (veri calde 2024-2026). PV 15 kWp acoperiș plat tilt 15° (autoconsum), Solar termic 20 m² ACM (acoperire ~ 60% sezon cald). RER ≈ 20% (PV + ST). MEPS 2030 PASS marginal, MEPS 2033 FAIL — necesită upgrade major: înlocuire VRF cu PC reversibilă (SEER ≥ 6.0), trecere la BMS clasa A cu reglaj zonal, ETICS suplimentar 8-10 cm.",
       photo: "",
     },
+    // ── PAS 7 — Scenariu reabilitare birouri 2005 (Sprint demo coerență 15 mai 2026)
+    // M3 — clădire 2005 deja parțial echipată (ETICS 4cm degradat, ST 20m², PV 15kWp). Trebuie:
+    // ETICS suplimentar peste cei existenți + VRF nou + extindere PV. NU înlocuim subsol/acoperiș.
+    rehabScenarioInputs: {
+      addInsulWall: true, insulWallThickness: "10",        // ETICS suplimentar 10 cm peste cei 4 cm existenți
+      addInsulRoof: false, insulRoofThickness: "0",        // Deja izolat 8 cm EPS — păstrăm
+      addInsulBasement: false, insulBasementThickness: "0", // Deja izolat 6 cm EPS — păstrăm
+      replaceWindows: true, newWindowU: "1.10",            // Curtain wall triplu Low-E argon
+      addHR: false, hrEfficiency: "0",                     // Deja are recuperator entalpic 80%
+      addPV: true, pvArea: "60",                            // Extindere PV 15→25 kWp (60 m² panouri suplimentare)
+      addHP: true, hpCOP: "5.5",                            // VRF nou R32 SEER ≥ 6.0 (înlocuire VRF degradat 2005)
+      addSolarTh: false, solarThArea: "0",                  // Deja are ST 20 m² funcțional
+    },
+    step8Inputs: {
+      ieqCategory: "II",                                   // Birouri — categoria II EN 16798-1 (uzual)
+      hpTypeId: "AA_HT",                                   // VRF aer-aer high-temp pentru fan-coil 4 țevi
+      collectorType: "PLAN_SEL",                           // Cei 20 m² existenți — plan selectiv
+      nPersons: "80",                                      // 80 ocupanți birouri
+      groundTypeId: "sol_mixt",                            // București — mixed (alluvial)
+      boreholeDepth: "100",
+      nBoreholes: "4",
+      boreholeOp: "2200",                                  // Birouri program 8h × 250 zile
+      externalNoise: "65",                                 // Bd. Decebal — trafic intens
+      epAfterRehabInput: "180",                            // țintă post-renovare clasă B
+      rooms: [
+        { id:1, name:"Recepție + open space P",  type:"office",    area:"300", height:"3.0", exposedWalls:"4", floorType:"ground" },
+        { id:2, name:"Sala conferințe parter",   type:"office",    area:"60",  height:"3.0", exposedWalls:"2", floorType:"ground" },
+        { id:3, name:"Open space etaj 1",         type:"office",    area:"380", height:"3.0", exposedWalls:"4", floorType:"mid" },
+        { id:4, name:"Birouri închise etaj 1",    type:"office",    area:"120", height:"3.0", exposedWalls:"3", floorType:"mid" },
+        { id:5, name:"Open space etaj 2",         type:"office",    area:"380", height:"3.0", exposedWalls:"4", floorType:"mid" },
+        { id:6, name:"Open space etaj 3 (mansard)", type:"office",  area:"260", height:"3.0", exposedWalls:"4", floorType:"top" },
+        // Total 1500 m² = areaUseful M3
+      ],
+    },
     expectedResults: {
       // Sprint Rebalansare 15 mai 2026 — snapshot live calc.
       // M3 (birouri BI BCA+ETICS 4cm 2005 București) — discrepanță moderată ~27% peste target.
@@ -1434,6 +1539,49 @@ export const DEMO_PROJECTS = [
       stampDataURL: DEMO_STAMP_SVG("Iliescu D.B.", "BV-04217"),
       observations: "Școala Gimnazială Nr. 14 Brașov — clădire 1980 NEREABILITATĂ termic, eligibilă pentru reabilitare PNRR Componenta C5.1 (clădiri publice eficiență energetică). Anvelopă: pereți cărămidă cu goluri orizontale 30 cm fără izolație (U ≈ 1.31 W/m²·K), terasă necirculabilă fără izolație (U ≈ 2.40), planșeu subsol fără izolație (U ≈ 3.20). Vitraje termopan PVC dublu clasic fără Low-E (U ≈ 2.85, g ≈ 0.78), uși aluminiu vechi fără termorupt (U ≈ 3.20). Punți termice severe SR EN ISO 14683 cat. 3: centură BA Ψ=0.55, glafuri Ψ=0.40, soclu Ψ=0.55. Sisteme: CT central gaz standard atmosferic 120 kW (η ≈ 0.85, vechi >25 ani), radiatoare fontă coloane, distribuție slab izolată interioară. ACM: același cazan, 300L acumulator. Ventilație: 100% naturală (fereastră deschisă). Iluminat: tub fluorescent T8 cu balast magnetic (12 W/m² — vechi, ineficient). Niciun renewable. n₅₀ = 5.0 h⁻¹. Recomandări reabilitare PNRR: ETICS 15 cm pereți + izolație terasă 18 cm + izolație subsol 8 cm + ferestre triplu Low-E + CT condensare + LED DALI + PV 30 kWp + recuperator entalpic săli mari → țintă clasă B (EP < 130 kWh/m²·an).",
       photo: "",
+    },
+    // ── PAS 7 — Scenariu reabilitare PNRR școală 1980 (Sprint demo coerență 15 mai 2026)
+    // M4 — clădire publică NEREABILITATĂ. Pachet COMPLET (toate intervențiile PNRR C5.1).
+    // CT gaz condensare păstrată (PNRR public preferă gaz vs. PC pentru sezonalitate școlară).
+    rehabScenarioInputs: {
+      addInsulWall: true, insulWallThickness: "15",        // ETICS 15 cm vată minerală — PNRR standard
+      addInsulRoof: true, insulRoofThickness: "20",        // Izolație terasă XPS 20 cm + termoizolație nouă
+      addInsulBasement: true, insulBasementThickness: "10", // Izolație planșeu subsol XPS 10 cm
+      replaceWindows: true, newWindowU: "0.85",            // Triplu Low-E argon înlocuire termopan vechi
+      addHR: true, hrEfficiency: "85",                     // Recuperator entalpic în săli clasă mari
+      addPV: true, pvArea: "180",                           // PV 30 kWp (180 m²) acoperiș plat — autoconsum + PNRR
+      addHP: false, hpCOP: "0",                             // Păstrăm CT (înlocuit cu condensare în Faza 1)
+      addSolarTh: true, solarThArea: "20",                  // ST 20 m² pentru ACM duș vestiare sport
+    },
+    step8Inputs: {
+      ieqCategory: "II",                                   // Școală — categoria II strict (CO₂ < 950 ppm)
+      hpTypeId: "AA_HT",                                   // Pentru analiză viitoare (Faza 4 PNRR opțional)
+      collectorType: "PLAN_SEL",                           // ST 20 m² — plan selectiv standard
+      nPersons: "280",                                     // 250 elevi + 30 cadre
+      groundTypeId: "roca_sedim",                          // Brașov zona Tâmpa — rocă sedimentară
+      boreholeDepth: "100",
+      nBoreholes: "6",
+      boreholeOp: "1700",                                  // Doar perioadă școlară 8h × 220 zile
+      externalNoise: "55",                                 // Str. Bălcescu — semi-rezidențial
+      epAfterRehabInput: "130",                            // țintă post-PNRR clasă B
+      rooms: [
+        { id:1,  name:"Sală clasă parter S1",  type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"ground" },
+        { id:2,  name:"Sală clasă parter S2",  type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"ground" },
+        { id:3,  name:"Sală clasă parter S3",  type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"ground" },
+        { id:4,  name:"Sală clasă parter S4",  type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"ground" },
+        { id:5,  name:"Cabinet director + secretariat", type:"office", area:"40", height:"3.5", exposedWalls:"2", floorType:"ground" },
+        { id:6,  name:"Hol parter + casa scării", type:"hallway", area:"60",  height:"3.5", exposedWalls:"1", floorType:"ground" },
+        { id:7,  name:"Sală clasă etaj S5",    type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"top" },
+        { id:8,  name:"Sală clasă etaj S6",    type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"top" },
+        { id:9,  name:"Sală clasă etaj S7",    type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"top" },
+        { id:10, name:"Sală clasă etaj S8",    type:"classroom", area:"55",  height:"3.5", exposedWalls:"2", floorType:"top" },
+        { id:11, name:"Laborator etaj",         type:"classroom", area:"60",  height:"3.5", exposedWalls:"2", floorType:"top" },
+        { id:12, name:"Sala festivă + cantină", type:"classroom", area:"180", height:"3.5", exposedWalls:"3", floorType:"ground" },
+        { id:13, name:"Sala sport (anex)",      type:"office",    area:"200", height:"3.5", exposedWalls:"4", floorType:"ground" },
+        { id:14, name:"Săli sanitar + vestiar", type:"bathroom",  area:"60",  height:"3.5", exposedWalls:"1", floorType:"ground" },
+        { id:15, name:"Hol etaj + scară",       type:"hallway",   area:"100", height:"3.5", exposedWalls:"1", floorType:"top" },
+        // Total 1240 m² ≈ areaUseful M4 (1200, ~3% over — restul: pereți interiori)
+      ],
     },
     expectedResults: {
       // Sprint Rebalansare 15 mai 2026 — snapshot live calc.
@@ -1758,6 +1906,44 @@ export const DEMO_PROJECTS = [
       stampDataURL: DEMO_STAMP_SVG("Vasilescu A.M.", "SB-04895"),
       observations: "Casă unifamilială P+1 Cartier Selimbăr Sibiu — recepționată septembrie 2022 conform L.238/2024 nZEB + EPBD 2024/1275. Anvelopă: BCA 25 cm + ETICS vată minerală 18 cm (U_pereți ≈ 0.158 W/m²·K), terasă XPS 25 cm (U ≈ 0.128), placă sol EPS 15 cm (U ≈ 0.21), ferestre triplu Low-E argon PVC 6 camere (U ≈ 0.85, g ≈ 0.50). Punți termice nZEB SR EN ISO 14683: toate Ψ ≤ 0.05 (atașat vată minerală + termorupt). Sisteme: PC sol-apă 12 kW (3 sonde verticale 100 m, COP nominal 4.50, SCOP încălzire 4.20, SCOP răcire 5.80), pardoseală radiantă cu apă, BACS B+ (smart home wireless). ACM: solar termic 8 m² PLAN tilt 45° + booster PC dedicată (acoperire ~ 70% an). Răcire: PC reversibilă sol-apă pasivă (geo-cooling — energie minimă). VMC HR 90% (recuperator căldură sensibilă PassivHaus, SFP < 1.0). PV 6 kWp MONO Sud tilt 38° (autoconsum + injecție rețea Electrica Transilvania). RER total ≈ 50% (PC RES + PV + ST). MEPS 2030/2033/2050 PASS cu marjă. n₅₀ = 0.6 h⁻¹ (test blower-door PassivHaus). Pașaport renovare neaplicabil — clădire deja nZEB top.",
       photo: "",
+    },
+    // ── PAS 7 — Scenariu reabilitare ZEB nou 2022 (Sprint demo coerență 15 mai 2026)
+    // M5 — clădire deja ZEB top (clasa A+ legitim cu credit export PV ≥ consum brut).
+    // NU se mai poate îmbunătăți semnificativ. Toate flag-urile false (Pașaport gol acceptat).
+    rehabScenarioInputs: {
+      addInsulWall: false, insulWallThickness: "0",        // ETICS vată 18 cm deja — peste C107 nZEB
+      addInsulRoof: false, insulRoofThickness: "0",        // XPS 25 cm deja — peste cerințe
+      addInsulBasement: false, insulBasementThickness: "0", // EPS 15 cm deja — peste cerințe
+      replaceWindows: false, newWindowU: "0.85",            // Triplu Low-E deja instalat 2022
+      addHR: false, hrEfficiency: "0",                     // VMC HR 90% deja instalat
+      addPV: false, pvArea: "0",                            // PV 6 kWp suficient pentru ZEB (extindere posibilă viitoare)
+      addHP: false, hpCOP: "0",                             // PC sol-apă 12 kW SCOP 4.20 deja instalat
+      addSolarTh: false, solarThArea: "0",                  // ST 8 m² deja instalat
+    },
+    step8Inputs: {
+      ieqCategory: "I",                                    // ZEB top — categoria I IEQ (highest comfort)
+      hpTypeId: "GA",                                      // Sol-Apă cu sonde geotermale (matching system)
+      collectorType: "PLAN_SEL",                           // ST 8 m² plan selectiv (matching system)
+      nPersons: "4",                                       // 2 părinți + 2 copii
+      groundTypeId: "roca_sedim",                          // Sibiu Selimbăr — roca sedimentară (verificat foraj)
+      boreholeDepth: "100",                                // 3 sonde × 100 m (matching system)
+      nBoreholes: "3",
+      boreholeOp: "5500",                                  // Continuu HP 12 luni încălzire+răcire+ACM
+      externalNoise: "35",                                 // Cartier rezidențial liniștit Selimbăr
+      epAfterRehabInput: "0",                              // ZEB — niciun audit suplimentar țintă
+      rooms: [
+        { id:1,  name:"Living open space",         type:"living",   area:"42", height:"2.7", exposedWalls:"3", floorType:"ground" },
+        { id:2,  name:"Bucătărie open",             type:"kitchen",  area:"14", height:"2.7", exposedWalls:"2", floorType:"ground" },
+        { id:3,  name:"Hol intrare + scară parter", type:"hallway",  area:"10", height:"2.7", exposedWalls:"1", floorType:"ground" },
+        { id:4,  name:"Baie parter (oaspeți)",      type:"bathroom", area:"4",  height:"2.7", exposedWalls:"1", floorType:"ground" },
+        { id:5,  name:"Birou parter",                type:"office",   area:"10", height:"2.7", exposedWalls:"2", floorType:"ground" },
+        { id:6,  name:"Dormitor matrimonial etaj",   type:"bedroom",  area:"22", height:"2.7", exposedWalls:"2", floorType:"top" },
+        { id:7,  name:"Dormitor copil 1 etaj",       type:"bedroom",  area:"14", height:"2.7", exposedWalls:"2", floorType:"top" },
+        { id:8,  name:"Dormitor copil 2 etaj",       type:"bedroom",  area:"12", height:"2.7", exposedWalls:"2", floorType:"top" },
+        { id:9,  name:"Baie etaj",                   type:"bathroom", area:"6",  height:"2.7", exposedWalls:"1", floorType:"top" },
+        { id:10, name:"Hol etaj",                    type:"hallway",  area:"6",  height:"2.7", exposedWalls:"0", floorType:"top" },
+        // Total 140 m² = areaUseful M5
+      ],
     },
     expectedResults: {
       // Sprint Rebalansare M5 ZEB (15 mai 2026) — aliniere completă cu calculul actual.

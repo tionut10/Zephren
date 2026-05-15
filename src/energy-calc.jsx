@@ -1101,6 +1101,14 @@ export default function EnergyCalcApp({ cloud }) {
       ...d.auditor,
       date: new Date().toISOString().slice(0, 10),
     }));
+    // Sprint demo coerență (15 mai 2026) — Pas 7 + Pas 8 pre-populate per typology.
+    // Demo-ul devine COMPLET pe toți 8 pași (Step 7 scenariu reabilitare + Step 8 inputs).
+    if (d.rehabScenarioInputs) {
+      setRehabScenarioInputs(prev => ({ ...prev, ...d.rehabScenarioInputs }));
+    }
+    if (d.step8Inputs) {
+      setStep8Inputs(d.step8Inputs);
+    }
     setStep(1);
     // S30A·A6 — activează demo mode pentru bypass plan-gating (Pro/Expert features unlocked).
     // Cerere user: demo-urile trebuie să poată parcurge TOATE etapele (Step 1-8) pentru
@@ -1736,6 +1744,10 @@ export default function EnergyCalcApp({ cloud }) {
     addHP: false, hpCOP: "4.0",
     addSolarTh: true, solarThArea: "6",
   });
+
+  // Sprint demo coerență (15 mai 2026) — Pas 8 inputs pre-populate per typology demo.
+  // Pasat ca prop la Step8Advanced; null = folosesc defaults locale (proiect non-demo).
+  const [step8Inputs, setStep8Inputs] = useState(null);
 
   const rehabComparison = useMemo(() => {
     if (!instSummary || !envelopeSummary) return null;
@@ -3734,6 +3746,9 @@ Zona {selectedClimate.zone}
               // S29 fix #40 — Step 8 nu primea auditor → CPE XML al treilea avea „AE-XXXX" placeholder
               auditor,
             },
+            // Sprint demo coerență (15 mai 2026) — pre-populate Step 8 inputs din demo typology.
+            // null = proiect non-demo, Step 8 folosește defaults locale.
+            demoStep8Inputs: step8Inputs,
             onOpenTutorial: () => setShowTutorial(true),
           }} /></Suspense>}
           </div>

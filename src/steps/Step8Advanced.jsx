@@ -207,7 +207,7 @@ const CATEGORIES_EN = [
   { id: "expert",        label: "🔬 Advanced" },
 ];
 
-export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan, bacsClass: bacsClassProp, setBacsClass: setBacsClassProp }) {
+export default function Step8Advanced({ building, climate, opaqueElements, glazingElements, thermalBridges, instSummary, renewSummary, systems, lang = "RO", onOpenTutorial, userPlan, bacsClass: bacsClassProp, setBacsClass: setBacsClassProp, demoStep8Inputs = null }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [activeTab, setActiveTab] = useState("benchmark");
   // Sprint 18 UX — search + filtrare categorii
@@ -358,6 +358,30 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   // Sprint 08may2026 — eliminat state showEFactura (tab e-Factură eliminat)
   // const [showEFactura, setShowEFactura] = useState(false);
   const [showOferta, setShowOferta] = useState(false);
+
+  // ═══════════════════════════════════════════════════════════════
+  // Sprint demo coerență (15 mai 2026) — sync state Pas 8 cu inputs din demo typology.
+  // Când utilizatorul încarcă un demo M1-M5, demoStep8Inputs vine populat cu rooms,
+  // nPersons, hpTypeId, collectorType, groundTypeId, boreholeDepth, etc. specifice
+  // tipologiei (apartament bloc / casă cărămidă / birouri / școală / ZEB).
+  // useEffect rulează doar când demoStep8Inputs se schimbă (ID demo nou) — NU suprascrie
+  // modificările manuale ulterioare ale utilizatorului în Step 8 (idempotent per demo).
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!demoStep8Inputs || typeof demoStep8Inputs !== "object") return;
+    if (demoStep8Inputs.rooms && Array.isArray(demoStep8Inputs.rooms)) setRooms(demoStep8Inputs.rooms);
+    if (demoStep8Inputs.nPersons != null) setNPersons(String(demoStep8Inputs.nPersons));
+    if (demoStep8Inputs.ieqCategory) setIeqCategory(demoStep8Inputs.ieqCategory);
+    if (demoStep8Inputs.hpTypeId) setHpTypeId(demoStep8Inputs.hpTypeId);
+    if (demoStep8Inputs.collectorType) setCollectorType(demoStep8Inputs.collectorType);
+    if (demoStep8Inputs.groundTypeId) setGroundTypeId(demoStep8Inputs.groundTypeId);
+    if (demoStep8Inputs.boreholeDepth != null) setBoreholeDepth(Number(demoStep8Inputs.boreholeDepth));
+    if (demoStep8Inputs.nBoreholes != null) setNBoreholes(Number(demoStep8Inputs.nBoreholes));
+    if (demoStep8Inputs.boreholeOp != null) setBoreholeOp(Number(demoStep8Inputs.boreholeOp));
+    if (demoStep8Inputs.externalNoise != null) setExternalNoise(Number(demoStep8Inputs.externalNoise));
+    if (demoStep8Inputs.epAfterRehabInput != null) setEpAfterRehabInput(String(demoStep8Inputs.epAfterRehabInput));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoStep8Inputs]);
 
   // ── Climate import state ──
   const [climImportStatus, setClimImportStatus]   = useState(null); // null | "loading" | "ok" | "error"

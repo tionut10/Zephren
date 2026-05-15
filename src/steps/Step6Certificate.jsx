@@ -360,8 +360,10 @@ export default function Step6Certificate(props) {
 
                 const scaleEP = (ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCat] || ENERGY_CLASSES_DB.AL).thresholds;
 
-                // S30A·A15 — mapping unificat scopCpe (suport renovare + renovare_majora).
-                const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție","informare":"Informare","renovare":"Renovare majoră","renovare_majora":"Renovare majoră","alt":"Alt scop"};
+                // S30A·A15 — mapping unificat scopCpe (suport renovare + renovare_majora + construire).
+                // Sprint demo coerență (15 mai 2026) — adăugat „construire" (folosit de M5 ZEB recepționat 2022,
+                // DocumentUploadCenter Art. 9 EPBD, Step1 condiții Acd). Fără el → fallback gresit „Vânzare".
+                const scopeLabels = {"vanzare":"Vânzare","inchiriere":"Închiriere","receptie":"Recepție clădire nouă","construire":"Construire / Recepție clădire nouă","informare":"Informare","renovare":"Renovare majoră","renovare_majora":"Renovare majoră","alt":"Alt scop"};
                 const nzebDocx = NZEB_THRESHOLDS[baseCat] || NZEB_THRESHOLDS.AL;
                 const nzebOk = epFinal <= epRefMax && (renewSummary?.rer || 0) >= nzebDocx.rer_min;
                 const enClassDocx = getEnergyClass(epFinal, catKey);
@@ -2359,7 +2361,7 @@ ${hasWatermark ? '<div style="position:fixed;top:0;left:0;width:100%;height:100%
 <table class="c">
 <tr>
   <td colspan="5" class="L" style="background:#E7E6E6"><strong>Scopul elabor\u0103rii CPE:</strong></td>
-  <td colspan="8" class="L">${({"vanzare":"V\u00e2nzare","inchiriere":"\u00cenchiriere","receptie":"Recep\u021bie cl\u0103dire nou\u0103","informare":"Informare proprietar","renovare":"Renovare major\u0103","renovare_majora":"Renovare major\u0103","alt":"Alt scop"})[building.scopCpe] || "V\u00e2nzare"}</td>
+  <td colspan="8" class="L">${({"vanzare":"V\u00e2nzare","inchiriere":"\u00cenchiriere","receptie":"Recep\u021bie cl\u0103dire nou\u0103","construire":"Construire / Recep\u021bie cl\u0103dire nou\u0103","informare":"Informare proprietar","renovare":"Renovare major\u0103","renovare_majora":"Renovare major\u0103","alt":"Alt scop"})[building.scopCpe] || "V\u00e2nzare"}</td>
   <td colspan="7" class="L"><strong>Program de calcul:</strong> Zephren ${APP_VERSION}</td>
 </tr>
 </table>
