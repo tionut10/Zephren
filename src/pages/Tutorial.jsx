@@ -147,6 +147,30 @@ export default function Tutorial() {
     return Math.round(((currentStep - 1 + stepProgress) / 8) * 100);
   }, [currentStep, activeSection, stepContent]);
 
+  // Fix sticky: index.css setează `html, body { overflow-x: hidden }` global pentru
+  // anti-overflow orizontal — DAR aceasta creează un nou scroll containing block care
+  // anulează position:sticky pe topbar și sidebar. Suprapunem overflow:visible pentru
+  // ruta /tutorial doar (layoutul Tutorial e safe — max-w-[1400px] + mx-auto).
+  // Restaurăm valorile vechi la unmount ca să nu afectăm restul aplicației.
+  useEffect(() => {
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlOverflow = htmlEl.style.overflow;
+    const prevHtmlOverflowX = htmlEl.style.overflowX;
+    const prevBodyOverflow = bodyEl.style.overflow;
+    const prevBodyOverflowX = bodyEl.style.overflowX;
+    htmlEl.style.overflow = "visible";
+    htmlEl.style.overflowX = "clip"; // 'clip' previne scroll orizontal FĂRĂ să creeze scroll container (spre deosebire de 'hidden')
+    bodyEl.style.overflow = "visible";
+    bodyEl.style.overflowX = "clip";
+    return () => {
+      htmlEl.style.overflow = prevHtmlOverflow;
+      htmlEl.style.overflowX = prevHtmlOverflowX;
+      bodyEl.style.overflow = prevBodyOverflow;
+      bodyEl.style.overflowX = prevBodyOverflowX;
+    };
+  }, []);
+
   // Keyboard shortcuts: ← / → pentru navigare pași, Esc pentru închidere
   useEffect(() => {
     const onKey = (e) => {
