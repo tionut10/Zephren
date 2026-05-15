@@ -103,11 +103,32 @@ function formatRelativeShort(isoString) {
   }
 }
 
-export function useRecentProjects({ limit = 3, excludeId = null } = {}) {
+// Sprint Smart Input 2026 (B2) — score smart pentru sortare prioritizată
+// Logica: proiectele cu același category ca cel curent capătă +1000 puncte,
+// același county +200, restul ordonate doar după recency. Threshold 1000+
+// asigură că niciun proiect "vechi same-category" nu e împins sub un proiect
+// "nou diferit-category" pentru auditorii repeat pe același tip clădire.
+function scoreProject(p, prioritize) {
+  let score = 0;
+  if (prioritize) {
+    if (prioritize.category && p.building?.category === prioritize.category) score += 1000;
+    if (prioritize.county   && p.building?.county   === prioritize.county)   score +=  200;
+  }
+  // Bonus recency (timestamp ms / 1e10 → câteva sute pentru 2026)
+  if (p.savedAt) {
+    score += new Date(p.savedAt).getTime() / 1e10;
+  }
+  return score;
+}
+
+export function useRecentProjects({ limit = 3, excludeId = null, prioritize = null } = {}) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tick, setTick] = useState(0); // pentru refresh
+
+  // Memoizez prioritize pentru a evita re-run la fiecare render
+  const prioritizeKey = prioritize ? `${prioritize.category || ""}|${prioritize.county || ""}` : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -134,16 +155,16 @@ export function useRecentProjects({ limit = 3, excludeId = null } = {}) {
               savedAtShort: formatRelativeShort(savedAt),
               summary,
               raw: p,
+              // B2 — flag UI dacă match cu categoria curentă
+              isCategoryMatch: prioritize?.category
+                ? p.building?.category === prioritize.category
+                : false,
             };
           })
           // Filtrăm proiectele cu prea puține date (sub 3 câmpuri = goale)
           .filter(p => p.summary.fieldsCount >= 3)
-          // Sortare DESC după savedAt
-          .sort((a, b) => {
-            const ta = a.savedAt ? new Date(a.savedAt).getTime() : 0;
-            const tb = b.savedAt ? new Date(b.savedAt).getTime() : 0;
-            return tb - ta;
-          })
+          // Sortare DESC prin score (cu prioritize) sau savedAt fallback
+          .sort((a, b) => scoreProject(b, prioritize) - scoreProject(a, prioritize))
           .slice(0, limit);
 
         setProjects(enriched);
@@ -156,7 +177,8 @@ export function useRecentProjects({ limit = 3, excludeId = null } = {}) {
     })();
 
     return () => { cancelled = true; };
-  }, [limit, excludeId, tick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, excludeId, prioritizeKey, tick]);
 
   const refresh = useCallback(() => setTick(t => t + 1), []);
 

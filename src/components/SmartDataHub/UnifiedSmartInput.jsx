@@ -26,7 +26,9 @@
  * butonul 🎤 e ascuns. Detecție via `'webkitSpeechRecognition' in window`.
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+// Sprint Smart Input 2026 (D3) — voice commands proceduriale
+import { classifyVoiceCommand } from "./voiceCommandsRO.js";
 
 const MIN_TEXT_CHARS = 10; // sub atât e considerat „prea scurt pentru AI"
 
@@ -47,6 +49,10 @@ export default function UnifiedSmartInput({
   onSubmitText,
   onPickImage,
   onPickFile,
+  onVoiceCommand,  // (D3) opțional: dacă există, intercept comenzi proceduriale înainte de submit
+  // (D6) Autocomplete inline din templates RO
+  templates,         // array de {id, label, cat} — opțional
+  onApplyTemplate,   // (templateId) => void — apelat la click pe sugestie
   showToast,
   className = "",
 }) {
@@ -59,6 +65,27 @@ export default function UnifiedSmartInput({
   const fileInputRef = useRef(null);
 
   const speechSupported = SupportsSpeech();
+
+  // (D6) Autocomplete inline — filtrează templates după text (substring case-insensitive)
+  const autocompleteMatches = useMemo(() => {
+    if (!Array.isArray(templates) || templates.length === 0) return [];
+    const q = text.trim().toLowerCase();
+    if (q.length < 2) return [];
+    // Match dacă label sau id conține query-ul
+    const matches = templates.filter(t => {
+      const label = String(t.label || "").toLowerCase();
+      const id    = String(t.id    || "").toLowerCase();
+      const cat   = String(t.cat   || "").toLowerCase();
+      return label.includes(q) || id.includes(q) || cat.includes(q);
+    });
+    // Sortăm: match la început de label > match interior
+    matches.sort((a, b) => {
+      const la = String(a.label || "").toLowerCase().startsWith(q) ? 0 : 1;
+      const lb = String(b.label || "").toLowerCase().startsWith(q) ? 0 : 1;
+      return la - lb;
+    });
+    return matches.slice(0, 4);
+  }, [text, templates]);
 
   // Rotire placeholder la 4s pentru aer (utilizator vede exemple)
   useEffect(() => {
@@ -76,11 +103,20 @@ export default function UnifiedSmartInput({
       showToast?.(`Adaugă minim ${MIN_TEXT_CHARS} caractere pentru a folosi AI`, "info");
       return;
     }
+    // Sprint D3 — întâi încearcă comenzi proceduriale (voice/text scurt acțiune)
+    if (typeof onVoiceCommand === "function") {
+      const cmd = classifyVoiceCommand(trimmed);
+      if (cmd) {
+        onVoiceCommand(cmd);
+        setText("");
+        return;
+      }
+    }
     if (typeof onSubmitText === "function") {
       onSubmitText(trimmed);
       setText("");
     }
-  }, [text, onSubmitText, showToast]);
+  }, [text, onSubmitText, onVoiceCommand, showToast]);
 
   // ── Voice recognition (Web Speech API) ────────────────────────────────────
   const startListening = useCallback(() => {
@@ -215,6 +251,10 @@ export default function UnifiedSmartInput({
               REC
             </span>
           )}
+          {/* B3 — anunț stare pentru screen readers (invizibil vizual) */}
+          <span className="sr-only" aria-live="polite" role="status">
+            {listening ? "Înregistrare audio activă" : ""}
+          </span>
         </div>
 
         {/* ── Buton mic 🎤 (doar dacă suportat) ─────────────────────────── */}
@@ -283,6 +323,38 @@ export default function UnifiedSmartInput({
           →
         </button>
       </div>
+
+      {/* ── D6 — Autocomplete inline din templates RO ──────────────────── */}
+      {autocompleteMatches.length > 0 && typeof onApplyTemplate === "function" && (
+        <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-1.5">
+          <div className="text-[9px] text-amber-400/70 uppercase tracking-wide px-2 py-0.5">
+            📋 {autocompleteMatches.length} șabloane potrivite — click pentru aplicare
+          </div>
+          <div className="space-y-0.5">
+            {autocompleteMatches.map(tpl => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => {
+                  onApplyTemplate(tpl.id);
+                  setText("");
+                  showToast?.(`Șablon aplicat: ${tpl.label}`, "success");
+                }}
+                className="w-full flex items-center gap-2 px-2 py-1 rounded hover:bg-amber-500/[0.10] text-left transition-colors group"
+                aria-label={`Aplică șablon: ${tpl.label}`}
+              >
+                <span className="text-[10px] text-amber-200/90 group-hover:text-amber-100 truncate flex-1">
+                  {tpl.label}
+                </span>
+                {tpl.cat && (
+                  <span className="text-[8px] font-mono text-amber-400/60 shrink-0">{tpl.cat}</span>
+                )}
+                <span className="text-amber-400/40 group-hover:text-amber-300 text-[10px] shrink-0">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Hint state ──────────────────────────────────────────────────── */}
       <div className="mt-1.5 text-[9px] text-slate-500 flex items-center gap-3 flex-wrap">

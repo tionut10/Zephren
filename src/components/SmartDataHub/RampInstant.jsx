@@ -76,10 +76,14 @@ export default function RampInstant({
 
   const hasAddress = !!(building.address || building.city);
 
-  // Sprint Smart Input 2026 (1.5) — citește top 3 proiecte recente din IndexedDB
+  // Sprint Smart Input 2026 (1.5 + B2) — top 3 proiecte recente cu smart sort
+  // Prioritizează proiectele cu același category/county ca proiectul curent.
   const { projects: recentProjects, loading: loadingRecent } = useRecentProjects({
     limit: 3,
     excludeId: currentProjectId,
+    prioritize: building?.category || building?.county
+      ? { category: building.category, county: building.county }
+      : null,
   });
 
   return (
@@ -115,8 +119,16 @@ export default function RampInstant({
                 aria-label={`Duplică proiectul ${p.summary.title}`}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-emerald-100 truncate group-hover:text-emerald-50">
+                  <div className="text-xs font-semibold text-emerald-100 truncate group-hover:text-emerald-50 flex items-center gap-1.5">
                     {p.summary.title}
+                    {p.isCategoryMatch && (
+                      <span
+                        title="Aceeași categorie ca proiectul curent"
+                        className="text-[8px] font-bold uppercase tracking-wide px-1 py-0.5 rounded bg-emerald-400/20 text-emerald-200 border border-emerald-400/30"
+                      >
+                        match
+                      </span>
+                    )}
                   </div>
                   <div className="text-[10px] text-emerald-300/60 flex items-center gap-2 flex-wrap mt-0.5">
                     <span>{p.summary.categoryLabel}</span>

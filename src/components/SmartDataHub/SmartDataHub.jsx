@@ -19,6 +19,7 @@ import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import UnifiedSmartInput from "./UnifiedSmartInput.jsx";
 import { validateStep1, computeStep1Progress } from "../../calc/step1-validators.js";
+import { routePaste } from "./pasteRouter.js";
 import {
   useAutoSaveStep1Draft,
   readStep1Draft,
@@ -149,6 +150,11 @@ export default function SmartDataHub({
   currentProjectId,
   // Sprint Smart Input 2026 (2.1) — paste handler text → Chat AI cu text inițial
   onPasteText,
+  // Sprint Smart Input 2026 (D3) — voice commands proceduriale (open tutorial / quickfill / chat)
+  onVoiceCommand,
+  // Sprint Smart Input 2026 (D6) — autocomplete inline din templates RO
+  templates,
+  onApplyTemplate,
   // Sprint Smart Input 2026 (3.2) — Import CPE precedent
   cpePriorLoading,
   onCpePriorFile,
@@ -241,48 +247,22 @@ export default function SmartDataHub({
   const handleDragOver  = useCallback((e) => { e.preventDefault(); setDragOver(true); }, []);
   const handleDragLeave = useCallback(() => setDragOver(false), []);
 
-  // Sprint Smart Input 2026 (2.1) — Paste handler universal pe drop zone.
-  // Detectează 3 cazuri: imagine din clipboard, fișier (rar), text plain ≥30 chars.
+  // Sprint Smart Input 2026 (2.1) — Paste handler universal (refactor 1.5b)
+  // Logica e extrasă în `pasteRouter.routePaste` pentru testare unitară fără React.
   const handlePaste = useCallback((e) => {
     if (!e?.clipboardData) return;
-    const items = e.clipboardData.items;
-    if (!items?.length) return;
-
-    // Caut întâi imagine din clipboard (Ctrl+C pe imagine, screenshot, etc.)
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        e.preventDefault();
-        const blob = item.getAsFile();
-        if (!blob) continue;
-        // Construiesc un File cu nume sintetic și-l rutez prin same router ca drag&drop
-        const ext = blob.type.split("/")[1] || "png";
-        const synthetic = new File([blob], `clipboard-${Date.now()}.${ext}`, { type: blob.type });
-        routeFile(synthetic);
-        setDropInfo({ label: `Imagine din clipboard → Planșă AI`, type: "success" });
-        return;
-      }
-      if (item.kind === "file") {
-        // Alt tip de fișier (rar via paste, dar posibil în Firefox)
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (file) routeFile(file);
-        return;
-      }
-    }
-
-    // Apoi text plain: ≥30 chars → routează la Chat AI cu text pre-completat
-    const text = e.clipboardData.getData("text/plain");
-    if (text && text.trim().length >= 30 && typeof onPasteText === "function") {
+    const result = routePaste({
+      clipboardData: e.clipboardData,
+      callbacks: {
+        onImage: routeFile,
+        onFile:  routeFile,
+        onText:  onPasteText,
+      },
+    });
+    if (result.handled) {
       e.preventDefault();
-      onPasteText(text.trim());
-      setDropInfo({
-        label: `Text lipit (${text.trim().length} caractere) → Chat AI`,
-        type: "success",
-      });
-      return;
+      if (result.info) setDropInfo({ label: result.info, type: "success" });
     }
-    // Text scurt sau fără handler → lăsăm comportamentul default browser
   }, [routeFile, onPasteText]);
 
   const toggleRamp = useCallback((id) => {
@@ -349,7 +329,7 @@ export default function SmartDataHub({
           </div>
         </div>
 
-        {/* Bară tri-segment: esențial (verde) | recomandat (galben) | oficial (sky) */}
+        {/* Bară tri-segment cu refs Mc 001-2022 (B5) */}
         <div className="flex items-center gap-2">
           <div
             className="flex-1 flex h-1.5 gap-0.5 rounded-full overflow-hidden bg-white/[0.04]"
@@ -360,21 +340,30 @@ export default function SmartDataHub({
             aria-valuenow={progress.filled}
           >
             {/* Segment 1 — ESENȚIAL (verde) */}
-            <div className="flex-[2] relative bg-white/[0.04]" title={`Esențial pentru calcul: ${progress.essential.filled}/${progress.essential.total}`}>
+            <div
+              className="flex-[2] relative bg-white/[0.04]"
+              title={`ESENȚIAL pentru calcul: ${progress.essential.filled}/${progress.essential.total} câmpuri\n\nReferință: Mc 001-2022 Cap. 1 §1.3 (identificare clădire) — categorie + an + Au + localitate climatică sunt minimul absolut pentru a iniția algoritmul ISO 13790.`}
+            >
               <div
                 className="absolute inset-y-0 left-0 bg-green-500 transition-all duration-500"
                 style={{ width: `${pctEssential}%` }}
               />
             </div>
             {/* Segment 2 — RECOMANDAT (amber) */}
-            <div className="flex-[4] relative bg-white/[0.04]" title={`Recomandat pentru CPE de calitate: ${progress.recommended.filled}/${progress.recommended.total}`}>
+            <div
+              className="flex-[4] relative bg-white/[0.04]"
+              title={`RECOMANDAT pentru CPE de calitate: ${progress.recommended.filled}/${progress.recommended.total} câmpuri\n\nReferință: Mc 001-2022 Cap. 2 §2.1 (geometrie) + Ord. MDLPA 16/2023 Anexa 1 — geometria completă (V, A_env, h_etaj) reduce eroarea EP cu până la 15% față de estimări implicite.`}
+            >
               <div
                 className="absolute inset-y-0 left-0 bg-amber-500 transition-all duration-500"
                 style={{ width: `${pctRecommended}%` }}
               />
             </div>
-            {/* Segment 3 — OFICIAL (sky) */}
-            <div className="flex-[1] relative bg-white/[0.04]" title={`Obligatoriu pentru depunere MDLPA: ${progress.official.filled}/${progress.official.total}`}>
+            {/* Segment 3 — OFICIAL MDLPA (sky) */}
+            <div
+              className="flex-[1] relative bg-white/[0.04]"
+              title={`OBLIGATORIU pentru depunere oficială MDLPA: ${progress.official.filled}/${progress.official.total} câmpuri\n\nReferință: Ord. MDLPA 16/2023 + L. 238/2024 Art. 12 — număr cadastral + CF obligatorii pentru CPE depus la portalul MDLPA (din 8.VII.2026 conform Ord. 348/2026).`}
+            >
               <div
                 className="absolute inset-y-0 left-0 bg-sky-500 transition-all duration-500"
                 style={{ width: `${pctOfficial}%` }}
@@ -386,12 +375,27 @@ export default function SmartDataHub({
           </span>
         </div>
 
-        {/* Legendă mini (doar pe desktop, când progres < 100%) */}
+        {/* Legendă mini cu tooltips Mc 001 refs (B5) */}
         {pct < 100 && (
           <div className="hidden sm:flex items-center gap-3 mt-1.5 text-[9px] text-slate-500">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500" /> esențial calcul</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-500" /> recomandat CPE</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-500" /> oficial MDLPA</span>
+            <span
+              className="flex items-center gap-1 cursor-help"
+              title="Mc 001-2022 Cap. 1 §1.3 — minim pentru EP/clasificare"
+            >
+              <span className="w-2 h-2 rounded-sm bg-green-500" /> esențial calcul
+            </span>
+            <span
+              className="flex items-center gap-1 cursor-help"
+              title="Mc 001-2022 Cap. 2 §2.1 + Anexa 1 MDLPA 16/2023 — geometrie + scop"
+            >
+              <span className="w-2 h-2 rounded-sm bg-amber-500" /> recomandat CPE
+            </span>
+            <span
+              className="flex items-center gap-1 cursor-help"
+              title="Ord. MDLPA 16/2023 + L. 238/2024 Art. 12 — cadastru + CF obligatorii"
+            >
+              <span className="w-2 h-2 rounded-sm bg-sky-500" /> oficial MDLPA
+            </span>
           </div>
         )}
       </div>
@@ -463,6 +467,9 @@ export default function SmartDataHub({
             onSubmitText={onPasteText}
             onPickImage={(file) => { routeFile(file); }}
             onPickFile={(file) => { routeFile(file); }}
+            onVoiceCommand={onVoiceCommand}
+            templates={templates}
+            onApplyTemplate={onApplyTemplate}
             showToast={showToast}
           />
         </div>
@@ -516,7 +523,11 @@ export default function SmartDataHub({
             </button>
           </div>
           {dropInfo && (
-            <div className="mt-2 text-[10px] text-green-400 font-medium">
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-2 text-[10px] text-green-400 font-medium"
+            >
               ✓ {dropInfo.label}
             </div>
           )}

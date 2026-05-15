@@ -271,6 +271,8 @@ export default function Step1Identification({
   onDuplicateRecent,  // Sprint Smart Input 2026 (1.5) — duplică proiect recent
   currentProjectId,
   onPasteText,        // Sprint Smart Input 2026 (2.1) — paste text → Chat AI
+  onVoiceCommand,     // Sprint Smart Input 2026 (D3) — comenzi vocale proceduriale
+  smartInputTemplates,  // Sprint Smart Input 2026 (D6) — autocomplete inline
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -374,6 +376,9 @@ export default function Step1Identification({
     return searchStreetOSM(q, building.city, building.county);
   }, [building.city, building.county]);
 
+  // Sprint Smart Input 2026 (D5) — banner Overpass indisponibil pentru transparență user
+  const [overpassUnavailable, setOverpassUnavailable] = useState(false);
+
   const handleGeocode = useCallback(async () => {
     if (!building.address && !building.city) {
       showToast("Completați adresa sau localitatea mai întâi", "info");
@@ -381,6 +386,7 @@ export default function Step1Identification({
     }
     setGeoStatus("loading");
     setGeoSuggestion(null);
+    setOverpassUnavailable(false);
     try {
       const geo = await geocodeAddress({ address: building.address, city: building.city, county: building.county });
       if (geo.city && !building.city) updateBuilding("city", geo.city);
@@ -391,10 +397,17 @@ export default function Step1Identification({
       // Setăm ok implicit; dacă footprint-ul găsit → afișăm sugestie, dar starea rămâne "ok"
       setGeoStatus("ok");
       try {
-        const fp = await getBuildingFootprint(geo.lat, geo.lon);
+        // Timeout 8s explicit — Overpass uneori e lent (queue) sau down
+        const fp = await Promise.race([
+          getBuildingFootprint(geo.lat, geo.lon),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("overpass-timeout")), 8000)),
+        ]);
         if (fp) setGeoSuggestion(fp);
-      } catch {
+      } catch (overpassErr) {
         // footprint opțional — geocodarea principală a reușit
+        // D5: marcăm Overpass indisponibil pentru a afișa banner amber non-blocant
+        setOverpassUnavailable(true);
+        console.info("[Overpass] indisponibil:", overpassErr?.message || overpassErr);
       }
     } catch (e) {
       setGeoStatus("error");
@@ -539,10 +552,15 @@ export default function Step1Identification({
     showToast("Date IFC/BIM aplicate cu succes", "success");
   }, [updateBuilding, showToast]);
 
-  // ── Sprint Smart Input 2026 (3.1) — Handler upload foto fațadă AI ─────────
+  // ── Sprint Smart Input 2026 (3.1 + B4) — Handler foto fațadă AI cu preview ──
   // Apelează /api/import-document cu fileType=facade (prompt specializat:
   // numără ferestre, estimează an din stil arhitectural, detectează izolație ETICS).
+  // B4: în loc să apply automat, afișează preview thumbnail + listă câmpuri propuse
+  // și cere confirmarea user-ului. Reduce erori AI + crește încrederea.
   const [facadeLoading, setFacadeLoading] = useState(false);
+  const [facadePreview, setFacadePreview] = useState(null);
+    // null sau { imageDataUrl, patch: {key:value}, confidence: {...}, raw: object }
+
   const handleFacadeUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -577,30 +595,38 @@ export default function Step1Identification({
       }
       const b = json.data.building || {};
       const conf = json.data.confidence || {};
-      // Bulk apply prin applyBuildingPatch (single re-render)
+      // Construim patch-ul propus DAR NU îl aplicăm încă — așteptăm confirmare user (B4)
       const patch = {};
       ["category", "structure", "yearBuilt", "floors", "heightFloor", "areaUseful"]
         .forEach(k => { if (b[k] && String(b[k]).trim() && !building[k]) patch[k] = String(b[k]).trim(); });
-      if (Object.keys(patch).length && typeof applyBuildingPatch === "function") {
-        applyBuildingPatch(patch);
+
+      if (Object.keys(patch).length === 0) {
+        showToast("AI nu a identificat câmpuri noi (sunt deja completate).", "info");
+        return;
       }
-      const summary = [
-        conf.buildingType && `tip ${conf.buildingType}`,
-        conf.yearEstimate && `an ${conf.yearEstimate}`,
-        conf.insulationStatus && `izolație ${conf.insulationStatus}`,
-        conf.windowType && `ferestre ${conf.windowType}`,
-      ].filter(Boolean).join(" · ");
-      showToast(
-        `Foto fațadă analizată: ${Object.keys(patch).length} câmpuri propuse (${summary || "estimare AI"})`,
-        Object.keys(patch).length > 0 ? "success" : "info",
-        6000
-      );
+      // Afișează preview cu thumbnail + câmpuri propuse pentru confirmare
+      setFacadePreview({
+        imageDataUrl: base64,
+        patch,
+        confidence: conf,
+        raw: json.data,
+      });
     } catch (err) {
       showToast("Eroare la analiza fațadei: " + err.message, "error");
     } finally {
       setFacadeLoading(false);
     }
-  }, [building, applyBuildingPatch, showToast]);
+  }, [building, showToast]);
+
+  // B4 — Confirmă și aplică câmpurile din preview
+  const applyFacadeFields = useCallback(() => {
+    if (!facadePreview || !applyBuildingPatch) return;
+    applyBuildingPatch(facadePreview.patch);
+    showToast(`${Object.keys(facadePreview.patch).length} câmpuri aplicate din foto fațadă`, "success");
+    setFacadePreview(null);
+  }, [facadePreview, applyBuildingPatch, showToast]);
+
+  const dismissFacadePreview = useCallback(() => setFacadePreview(null), []);
 
   // ── Sprint Smart Input 2026 (3.2) — Handler import CPE existent ─────────────
   // Apelează /api/ocr-cpe cu mode=cpe (extract auditor + building + EP class
@@ -797,6 +823,9 @@ export default function Step1Identification({
         onDuplicateRecent={onDuplicateRecent}
         currentProjectId={currentProjectId}
         onPasteText={onPasteText}
+        onVoiceCommand={onVoiceCommand}
+        templates={smartInputTemplates}
+        onApplyTemplate={loadTypicalBuilding}
         cpePriorLoading={cpePriorLoading}
         onCpePriorFile={handleImportCpePrior}
       />
@@ -856,6 +885,105 @@ export default function Step1Identification({
                 </div>
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} autoComplete="postal-code" />
+
+              {/* Sprint Smart Input 2026 (B4) — Preview foto fațadă + confirmare apply */}
+              {facadePreview && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.05] p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                      🏠 Foto fațadă analizată — confirmă datele
+                      <span className="text-[9px] font-normal text-amber-400/70 uppercase tracking-wide">
+                        {Object.keys(facadePreview.patch).length} câmpuri propuse
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5">
+                      ⚠ estimare AI ±15%
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3 items-start">
+                    {/* Thumbnail */}
+                    <img
+                      src={facadePreview.imageDataUrl}
+                      alt="Foto fațadă încărcată"
+                      className="w-24 h-24 object-cover rounded-lg border border-white/10 shrink-0"
+                    />
+                    {/* Listă câmpuri */}
+                    <div className="flex-1 min-w-0 space-y-1 text-[10px]">
+                      {Object.entries(facadePreview.patch).map(([key, val]) => {
+                        const label = ({
+                          category: "Categorie",
+                          structure: "Structură",
+                          yearBuilt: "An construcție",
+                          floors: "Regim înălțime",
+                          heightFloor: "Înălțime etaj",
+                          areaUseful: "Au estimat",
+                        })[key] || key;
+                        const displayVal = key === "category"
+                          ? (BUILDING_CATEGORIES.find(c => c.id === val)?.label || val)
+                          : val;
+                        return (
+                          <div key={key} className="flex items-center justify-between gap-2 px-2 py-1 rounded bg-white/[0.02]">
+                            <span className="opacity-60">{label}:</span>
+                            <span className="font-medium text-amber-100 truncate">{displayVal}</span>
+                          </div>
+                        );
+                      })}
+                      {/* Confidence summary */}
+                      {(facadePreview.confidence?.buildingType || facadePreview.confidence?.insulationStatus) && (
+                        <div className="text-[9px] text-amber-300/60 pt-1 border-t border-amber-500/10">
+                          Încredere AI:
+                          {facadePreview.confidence?.buildingType && ` tip ${facadePreview.confidence.buildingType}`}
+                          {facadePreview.confidence?.yearEstimate && ` · an ${facadePreview.confidence.yearEstimate}`}
+                          {facadePreview.confidence?.insulationStatus && ` · izolație ${facadePreview.confidence.insulationStatus}`}
+                          {facadePreview.confidence?.windowType && ` · ferestre ${facadePreview.confidence.windowType}`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={applyFacadeFields}
+                      className="flex-1 py-1.5 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 text-amber-100 text-[11px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                    >
+                      ✓ Aplică {Object.keys(facadePreview.patch).length} câmpuri
+                    </button>
+                    <button
+                      type="button"
+                      onClick={dismissFacadePreview}
+                      className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] opacity-60 hover:opacity-90 transition-all"
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Sprint Smart Input 2026 (D5) — banner amber când Overpass timeout/down */}
+              {overpassUnavailable && !geoSuggestion && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/[0.07] p-3 flex items-start gap-2"
+                >
+                  <span className="text-amber-300 text-sm leading-none shrink-0" aria-hidden="true">⚠️</span>
+                  <div className="flex-1 text-[11px] text-amber-200/90 leading-snug">
+                    <strong className="font-semibold">OSM Overpass indisponibil acum</strong> — geocodarea
+                    de bază a reușit, dar nu am putut citi amprenta clădirii și etajele.
+                    Completați manual câmpurile, sau reîncercați în 1-2 min (serverul OSM
+                    are uneori queue saturat).
+                    <button
+                      type="button"
+                      onClick={() => setOverpassUnavailable(false)}
+                      className="ml-2 underline text-amber-100/80 hover:text-amber-50"
+                    >
+                      închide
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Sprint Smart Input 2026 (1.4) — Sugestie OSM++ cu 4 câmpuri propuse */}
               {geoSuggestion && (() => {
