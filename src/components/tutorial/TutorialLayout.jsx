@@ -61,57 +61,63 @@ export default function TutorialLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-2 group">
-            <img src="/logo.svg" alt="Zephren" className="h-7 sm:h-8 w-auto" />
-            <span className="hidden sm:inline text-sm text-slate-400 group-hover:text-slate-200 transition-colors">
-              ← Înapoi la pagina principală
-            </span>
-          </a>
+      {/* Topbar fix — header + BranchSelector grupate într-un singur container sticky.
+          Înălțime totală ~120-128px desktop / ~140px mobile. Folosit ca offset pentru sidebar
+          (vezi --topbar-height variabilă CSS de mai jos). */}
+      <div className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 shadow-lg shadow-slate-950/50">
+        <header>
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <a href="/" className="flex items-center gap-2 group">
+              <img src="/logo.svg" alt="Zephren" className="h-7 sm:h-8 w-auto" />
+              <span className="hidden sm:inline text-sm text-slate-400 group-hover:text-slate-200 transition-colors">
+                ← Înapoi la pagina principală
+              </span>
+            </a>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block text-right">
-              <div className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-                Tutorial complet — flux Zephren
+            <div className="flex items-center gap-3">
+              <div className="hidden md:block text-right">
+                <div className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">
+                  Tutorial complet — flux Zephren
+                </div>
+                <div className="text-xs text-slate-400">
+                  Pas {currentStep} din 8 · {totalSections} secțiuni
+                </div>
               </div>
-              <div className="text-xs text-slate-400">
-                Pas {currentStep} din 8 · {totalSections} secțiuni
-              </div>
+
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                aria-label="Închide tutorialul"
+                title="Esc — Închide"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              aria-label="Închide tutorialul"
-              title="Esc — Închide"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
-        </div>
 
-        {/* Progress bar global */}
-        <TutorialProgressBar progress={globalProgress} colorGradient={c.gradient} />
-      </header>
+          {/* Progress bar global */}
+          <TutorialProgressBar progress={globalProgress} colorGradient={c.gradient} />
+        </header>
 
-      {/* Demo switcher banner */}
-      <BranchSelector
-        demoOptions={demoOptions}
-        activeDemo={activeDemo}
-        setActiveDemo={setActiveDemo}
-      />
+        {/* Demo switcher banner — inclus în topbar pentru sticky comun */}
+        <BranchSelector
+          demoOptions={demoOptions}
+          activeDemo={activeDemo}
+          setActiveDemo={setActiveDemo}
+        />
+      </div>
 
       {/* Main body */}
       <div className="flex-1 max-w-[1400px] mx-auto w-full px-2 sm:px-4 py-4 sm:py-6">
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
 
-          {/* Sidebar — desktop */}
+          {/* Sidebar — desktop. Sticky cu offset egal cu înălțimea topbar fix (~128px).
+              Max-height permite scroll intern dacă sidebar e mai înalt decât viewport
+              (8 pași + 21 secțiuni pe ecran scurt). */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-[88px]">
+            <div className="sticky top-[136px] max-h-[calc(100vh-152px)] overflow-y-auto overflow-x-hidden rounded-2xl">
               <TutorialSidebar
                 stepsMeta={stepsMeta}
                 currentStep={currentStep}

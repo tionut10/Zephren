@@ -39,8 +39,10 @@ export default function SectionRenderer({ section, index, isActive, onActivate, 
     <section
       id={anchorId}
       onMouseEnter={onActivate}
+      // scroll-mt-36 (144px) > înălțimea topbar fix (~128px) pentru a păstra titlul
+      // secțiunii vizibil când se face scrollIntoView din sidebar.
       className={cn(
-        "rounded-xl bg-slate-900/40 border transition-all scroll-mt-24",
+        "rounded-xl bg-slate-900/40 border transition-all scroll-mt-36",
         isActive ? "border-slate-700 shadow-lg" : "border-slate-800/50"
       )}
     >
