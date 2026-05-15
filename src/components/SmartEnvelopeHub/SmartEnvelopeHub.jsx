@@ -340,7 +340,10 @@ export default function SmartEnvelopeHub({
   }, []);
 
   const handlePreviewGlazing = useCallback((el) => {
-    setPreviewModal({ type: "glazing", element: el });
+    const isDoor = el.elementCategory === "door"
+      || /u[șşs][ăa]/i.test(el.name || "")
+      || /^u[șşs][ăa]/i.test(el.glazingType || "");
+    setPreviewModal({ type: isDoor ? "door" : "glazing", element: el });
   }, []);
 
   const handlePreviewBridge = useCallback((b) => {

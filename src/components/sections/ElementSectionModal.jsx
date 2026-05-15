@@ -14,6 +14,7 @@
 import { useRef, useEffect } from "react";
 import OpaqueSection from "./OpaqueSection.jsx";
 import GlazingSection from "./GlazingSection.jsx";
+import DoorSection from "./DoorSection.jsx";
 import BridgeIllustration from "../thermal-bridges/bridgeIllustrations.jsx";
 
 const SHOW_BRIDGE_ILLUSTRATIONS = false;
@@ -94,9 +95,10 @@ export default function ElementSectionModal({
   }
 
   const title =
-    type === "opaque" ? `Secțiune element opac: ${element?.name || "—"}` :
+    type === "opaque"  ? `Secțiune element opac: ${element?.name || "—"}` :
     type === "glazing" ? `Secțiune element vitrat: ${element?.name || "—"}` :
-    type === "bridge" ? `Secțiune punte termică: ${element?.name || "—"}` :
+    type === "door"    ? `Secțiune ușă: ${element?.name || "—"}` :
+    type === "bridge"  ? `Secțiune punte termică: ${element?.name || "—"}` :
     "Secțiune element";
 
   // Punțile termice au nevoie de mai mult spațiu — folosim aproape întreg ecranul
@@ -122,13 +124,14 @@ export default function ElementSectionModal({
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-2xl">
-              {type === "opaque" ? "🧱" : type === "glazing" ? "🪟" : "🔶"}
+              {type === "opaque" ? "🧱" : type === "glazing" ? "🪟" : type === "door" ? "🚪" : "🔶"}
             </span>
             <div className="min-w-0">
               <div className="text-sm font-bold truncate">{title}</div>
               <div className="text-[11px] opacity-65 mt-0.5">
-                {type === "opaque" ? "Secțiune verticală la scală · cote · profil termic"
+                {type === "opaque"  ? "Secțiune verticală la scală · cote · profil termic"
                   : type === "glazing" ? "Secțiune plan · ramă + pachet sticlă + camere gaz · Low-E"
+                  : type === "door"   ? "Secțiune plan · toc + canat + miez termoizolant"
                   : "Secțiune constructivă · flux termic · zone condens"}
               </div>
             </div>
@@ -175,6 +178,16 @@ export default function ElementSectionModal({
           )}
           {type === "glazing" && element && (
             <GlazingSection
+              element={element}
+              width={720}
+              height={420}
+              showDimensions={true}
+              showLegend={true}
+              compact={false}
+            />
+          )}
+          {type === "door" && element && (
+            <DoorSection
               element={element}
               width={720}
               height={420}
@@ -233,8 +246,9 @@ export default function ElementSectionModal({
         <div className="px-5 py-2 border-t border-white/10 bg-white/[0.02] flex justify-between text-[10px] opacity-65">
           <span>Click afară sau Esc pentru închidere</span>
           <span>
-            {type === "opaque" ? "SR EN ISO 6946 · C107/3"
+            {type === "opaque"  ? "SR EN ISO 6946 · C107/3"
               : type === "glazing" ? "SR EN ISO 10077-1 · EN 673"
+              : type === "door"   ? "SR EN 14351-1 · EN ISO 10077-1"
               : "SR EN ISO 14683 · Mc 001-2022"}
           </span>
         </div>

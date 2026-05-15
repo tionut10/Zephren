@@ -106,6 +106,7 @@ const _EXTENDED_GLAZING = (GLAZING_TYPES_DATA.glazings || []).map(gl => ({
   g: gl.g,
   tlight: gl.tlight,
   composition: gl.composition,
+  elementCategory: gl.elementCategory || null,
   era: gl.era,
   tags: gl.tags || [],
   source: gl.source,

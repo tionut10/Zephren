@@ -219,22 +219,25 @@ export default function WizardGlazing({
     const finalArea = useDimensions
       ? (computedAreaTotal).toFixed(3)
       : (parseFloat(element.area) * (parseInt(element.units) || 1)).toFixed(3);
+    const selGlazingEntry = GLAZING_DB.find(g => g.name === element.glazingType);
     onSave?.({
-      name:       element.name,
-      orientation: element.orientation,
-      area:        finalArea,
+      name:            element.name,
+      orientation:     element.orientation,
+      area:            finalArea,
       // P1-10: păstrăm H/W pentru documentare CPE
-      height:      element.height,
-      width:       element.width,
-      units:       parseInt(element.units) || 1,
-      glazingType: element.glazingType,
-      frameType:   element.frameType,
-      frameRatio:  element.frameRatio,
-      spacerId:    element.spacerId,
-      u:           calcResult.u.toFixed(2),
-      g:           calcResult.g.toFixed(2),
-      uFrame:      calcResult.uFrame,
-      psiSpacer:   calcResult.psiSpacer,
+      height:          element.height,
+      width:           element.width,
+      units:           parseInt(element.units) || 1,
+      glazingType:     element.glazingType,
+      frameType:       element.frameType,
+      frameRatio:      element.frameRatio,
+      spacerId:        element.spacerId,
+      elementCategory: selGlazingEntry?.elementCategory || null,
+      composition:     selGlazingEntry?.composition || null,
+      u:               calcResult.u.toFixed(2),
+      g:               calcResult.g.toFixed(2),
+      uFrame:          calcResult.uFrame,
+      psiSpacer:       calcResult.psiSpacer,
     });
     if (opts.duplicate) {
       // Reset la Pas 1 cu nume incrementat — păstrează vitraj/ramă/spacer/dim
