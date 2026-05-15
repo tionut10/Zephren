@@ -87,7 +87,7 @@ function getStateSummary({ building, opaqueElements, glazingElements, thermalBri
     nOpaque: opaqueElements?.length || 0,
     nGlazing: glazingElements?.length || 0,
     nBridges: thermalBridges?.length || 0,
-    epTotal: (renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0).toFixed(1),
+    epTotal: (renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0).toFixed(1),
     energyClass: renewSummary?.energyClass?.class || instSummary?.energyClass?.class || "—",
     rer: renewSummary?.rer ? renewSummary.rer.toFixed(1) + "%" : "—",
     co2: instSummary?.co2_total_m2 ? instSummary.co2_total_m2.toFixed(1) + " kg/m²·an" : "—",

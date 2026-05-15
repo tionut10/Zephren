@@ -453,7 +453,7 @@ export function exportXML(ctx) {
   <BilantEnergetic>
     <EnergieFinala unit="kWh/an">${fmtAbs(instSummary.qf_total)}</EnergieFinala>
     <EnergieFinalaSpecifica unit="kWh/(m2·an)">${fmtSpec(instSummary.qf_total_m2)}</EnergieFinalaSpecifica>
-    <EnergiePrimara unit="kWh/an">${fmtAbs(renewSummary?.ep_adjusted || instSummary.ep_total || 0)}</EnergiePrimara>
+    <EnergiePrimara unit="kWh/an">${fmtAbs(renewSummary?.ep_adjusted ?? instSummary.ep_total ?? 0)}</EnergiePrimara>
     <EnergiePrimaraSpecifica unit="kWh/(m2·an)">${fmtSpec(epF)}</EnergiePrimaraSpecifica>
     <EmisiiCO2 unit="kgCO2/(m2·an)">${fmtSpec(co2F)}</EmisiiCO2>
     <ClasaEnergetica>${cls.cls}</ClasaEnergetica>
@@ -1042,7 +1042,7 @@ export async function exportPDFNative(ctx) {
         ["Ventilare", instSummary.qf_v?.toFixed(0) || "-", instSummary.ep_v?.toFixed(0) || "-"],
         ["Iluminat", instSummary.qf_l?.toFixed(0) || "-", instSummary.ep_l?.toFixed(0) || "-"],
       ],
-      foot: [["TOTAL", instSummary.qf_total?.toFixed(0) || "-", (renewSummary?.ep_adjusted || instSummary.ep_total || 0).toFixed(0)]],
+      foot: [["TOTAL", instSummary.qf_total?.toFixed(0) || "-", (renewSummary?.ep_adjusted ?? instSummary.ep_total ?? 0).toFixed(0)]],
       footStyles: { fillColor: [240, 244, 248], fontStyle: "bold", fontSize: 8 },
     });
     y = doc.lastAutoTable.finalY + 4;
@@ -1549,9 +1549,9 @@ export async function exportFullReport(ctx) {
       ],
       foot: [["TOTAL",
         instSummary.qf_total?.toFixed(0) || "0", (instSummary.qf_total_m2)?.toFixed(1) || "0",
-        (renewSummary?.ep_adjusted || instSummary.ep_total || 0).toFixed(0),
+        (renewSummary?.ep_adjusted ?? instSummary.ep_total ?? 0).toFixed(0),
         epF.toFixed(1),
-        (renewSummary?.co2_adjusted || instSummary.co2_total || 0).toFixed(0),
+        (renewSummary?.co2_adjusted ?? instSummary.co2_total ?? 0).toFixed(0),
       ]],
       footStyles: { fillColor: LGRAY, fontStyle: "bold", fontSize: 7.5 },
     });

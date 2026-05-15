@@ -1338,7 +1338,7 @@ export async function exportFullAnnexesDOCX(data, options = {}) {
     if (u <= u107 + 0.005) glazingOK_C107++; else glazingFail_C107++;
   });
 
-  const epTotal_final = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0;
+  const epTotal_final = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
   const rer_total = renewSummary?.rer || 0;
 
   const checkRows = [

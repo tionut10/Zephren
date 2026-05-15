@@ -447,6 +447,9 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
   const V = parseFloat(building?.volume) || Au * 2.8;
   const cat = building?.category || "RI";
   const zone = climate?.zone || "III";
+  // Sprint Audit JS Gotcha (15 mai 2026): `||` INTENȚIONAT aici — pentru analiza avansată Step 8
+  // (BACS/MEPS/optimizer) folosim EP brut consum, nu EP net ZEB. Dacă ZEB (ep_adjusted=0),
+  // cădem pe ep_total_m2 (consumul brut) ca metric reprezentativ. Default 150 = placeholder no-calc.
   const epActual = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 150;
 
   // ── BACS ──
@@ -4027,6 +4030,8 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
                 const hasAddress = !!(building?.address?.trim().length > 2);
                 const hasCadastre = !!(building?.cadastralNumber || building?.cfNumber);
                 const hasEnergyClass = !!(renewSummary?.energyClass?.class || instSummary?.energyClass?.class);
+                // Sprint Audit JS Gotcha (15 mai 2026): `||` INTENȚIONAT — check "have any EP data".
+                // Pentru ZEB legitim (ep_adjusted=0), fall-through la ep_total_m2 (consumul brut) e CORECT.
                 const hasEpTotal = (renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0) > 0;
                 const hasXmlExported = xmlGenerated;
 

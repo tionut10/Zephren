@@ -157,7 +157,9 @@ export function getURefGlazingAdaptive(category, building) {
 export function calcSmartRehab(building, instSummary, renewSummary, opaqueElements, glazingElements, climate) {
   if (!instSummary) return [];
   const suggestions = [];
-  const epActual = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 999;
+  // Sprint Audit JS Gotcha (15 mai 2026): `??` tratează 0 ca valid (ZEB).
+  // Pentru ZEB ep_adjusted=0 ≤ nzebEpMax → no rehab needed (corect normativ).
+  const epActual = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 999;
   const rer = renewSummary?.rer || 0;
   const cat = building?.category || "AL";
   const nzeb = NZEB_THRESHOLDS[cat] || NZEB_THRESHOLDS.AL;

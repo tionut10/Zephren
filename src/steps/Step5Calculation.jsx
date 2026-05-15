@@ -1981,8 +1981,8 @@ export default function Step5Calculation(props) {
                 <Card title={t("Dashboard sumar",lang)} className="mb-6">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999) <= (getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
-                      { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 || instSummary.co2_total_m2 || 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
+                      { label:"Energie primară", value: (renewSummary?.ep_adjusted_m2 ?? instSummary.ep_total_m2 ?? 0).toFixed(1), unit:"kWh/(m²·an)", color: (renewSummary?.ep_adjusted_m2 ?? instSummary.ep_total_m2 ?? 999) <= (getNzebEpMax(baseCatResolved, selectedClimate?.zone) || 999) ? "#22c55e" : "#ef4444" },
+                      { label:t("Emisii CO₂", lang), value: (renewSummary?.co2_adjusted_m2 ?? instSummary.co2_total_m2 ?? 0).toFixed(1), unit:"kgCO₂/(m²·an)", color: "#8b5cf6" },
                       { label:"Energie finală", value: (instSummary.qf_total_m2 || 0).toFixed(1), unit:"kWh/(m²·an)", color: "#3b82f6" },
                       { label:"RER", value: (renewSummary?.rer || 0).toFixed(0)+"%", unit:"min 30% nZEB", color: (renewSummary?.rer || 0) >= 30 ? "#22c55e" : "#ef4444" },
                     ].map((kpi, i) => (
@@ -1996,7 +1996,7 @@ export default function Step5Calculation(props) {
                   {/* Quick status badges */}
                   <div className="flex flex-wrap gap-2 mt-3 justify-center">
                     {(() => {
-                      const ep = renewSummary?.ep_adjusted_m2 || instSummary.ep_total_m2 || 999;
+                      const ep = renewSummary?.ep_adjusted_m2 ?? instSummary.ep_total_m2 ?? 999;
                       const nzeb = NZEB_THRESHOLDS[baseCatResolved] || NZEB_THRESHOLDS.AL;
                       const rer = renewSummary?.rer || 0;
                       const isNZEB = ep <= getNzebEpMax(baseCatResolved, selectedClimate?.zone) && rer >= nzeb.rer_min;

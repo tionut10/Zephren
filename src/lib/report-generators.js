@@ -1731,9 +1731,9 @@ export async function generateNZEBConformanceReport(opts) {
     const epW = _ep_per_m2("ep_w", "ep_w_m2");
     const epV = _ep_per_m2("ep_v", "ep_v_m2");
     const epL = _ep_per_m2("ep_l", "ep_l_m2");
-    const epTotal = instSummary?.ep_total_m2 || 0;
-    const epRenew = renewSummary?.ep_renew_m2 || 0;
-    const epFinal = renewSummary?.ep_adjusted_m2 || epTotal;
+    const epTotal = instSummary?.ep_total_m2 ?? 0;
+    const epRenew = renewSummary?.ep_renew_m2 ?? 0;
+    const epFinal = renewSummary?.ep_adjusted_m2 ?? epTotal;
 
     // Sprint 8 mai 2026 — Iluminat: label condițional pe categorie clădire.
     // Pentru rezidențial (RI/RC/RA) iluminatul se calculează cu metodologie
@@ -1783,7 +1783,7 @@ export async function generateNZEBConformanceReport(opts) {
     y = sectionTitle(doc, "IV. INDICATORI GLOBALI ANVELOPĂ ȘI INSTALAȚII", y);
     const rer = compliance.rer;
     const rerOnsite = compliance.rerOnsite;
-    const co2Final = renewSummary?.co2_adjusted_m2 || instSummary?.co2_total_m2 || 0;
+    const co2Final = renewSummary?.co2_adjusted_m2 ?? instSummary?.co2_total_m2 ?? 0;
 
     y = autoTable(doc, {
       startY: y,

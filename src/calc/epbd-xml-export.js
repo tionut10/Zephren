@@ -53,7 +53,7 @@ export function generateEPBDXML(data) {
   } = data;
 
   const today = certDate || new Date().toISOString().split('T')[0];
-  const epTotal = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0;
+  const epTotal = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
   const rer = renewSummary?.rer || 0;
 
   // ─── Secțiune anvelopă ───

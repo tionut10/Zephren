@@ -150,11 +150,12 @@ export function generateAnexaMdlpaXml({
   expiryDate.setFullYear(expiryDate.getFullYear() + Number(validityYears));
   const expiryDateStr = formatXmlDate(expiryDate);
 
-  // EP + clasă
-  const epPrimary = renewSummary?.ep_adjusted_m2 || instSummary?.ep_total_m2 || 0;
-  const epNren = renewSummary?.ep_nren_m2 || instSummary?.ep_nren_m2 || 0;
-  const epRen = renewSummary?.ep_ren_m2 || 0;
-  const co2Final = renewSummary?.co2_adjusted_m2 || instSummary?.co2_total_m2 || 0;
+  // EP + clasă — `??` (nullish coalescing) tratează 0 ca valoare validă (ZEB).
+  // Sprint Audit JS Gotcha (15 mai 2026): `||` ar cădea pe ep_total_m2 când ep_adjusted_m2=0.
+  const epPrimary = renewSummary?.ep_adjusted_m2 ?? instSummary?.ep_total_m2 ?? 0;
+  const epNren = renewSummary?.ep_nren_m2 ?? instSummary?.ep_nren_m2 ?? 0;
+  const epRen = renewSummary?.ep_ren_m2 ?? 0;
+  const co2Final = renewSummary?.co2_adjusted_m2 ?? instSummary?.co2_total_m2 ?? 0;
   const rer = renewSummary?.rer || 0;
 
   // Auditor grade
