@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "🔸",
+        "text": "Sprint Smart Input 2026 — B4+D1+D2+D3+D4+D6: foto preview + auto-save + Smart Input pe S2 + voice commands + s"
+      },
+      {
+        "icon": "🔬",
+        "text": "Sprint Smart Input 2026 — B1+B2+B3+B5+D5: polish a11y + smart sort + Mc 001 refs + OSM fallback + pasteRouter "
+      },
+      {
+        "icon": "✨",
+        "text": "fix(vercel): adaugă SPA rewrites pentru /tutorial /privacy /terms /mobile"
+      },
+      {
+        "icon": "🔧",
+        "text": "fix(tutorial): sticky topbar/sidebar rupte de overflow:hidden global pe html/body"
+      },
+      {
+        "icon": "🎨",
+        "text": "fix(tutorial): grupează header + BranchSelector în topbar fix și fixează sidebar"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(tutorial): rescrie tutorialul de la zero ca pagină /tutorial (8 pași × 20+ secțiuni)"
+      },
+      {
         "icon": "📄",
         "text": "Sprint Smart Input 2026 — 3.1+3.2: foto fațadă AI + import CPE existent"
       },
       {
         "icon": "🔸",
         "text": "Sprint Smart Input 2026 — 2.1+2.2: paste handler + Unified Smart Input multimodal"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint Smart Input 2026 — 1.4+1.5: OSM++ category/Au + duplică proiecte recente"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint Smart Input 2026 — 1.1+1.2+1.3: ierarhie tri-nivel + grupare RampFile + auto-save draft"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(templates): tooltip preview U-values + HVAC baseline + tag-uri vizuale"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(demos): Pas 7+8 coerență cross-step pentru M1-M5 + fix scopCpe=\"construire\""
-      },
-      {
-        "icon": "✨",
-        "text": "feat(templates): +35 tipologii cercetate web + filtrare epocă + sortare EP"
-      },
-      {
-        "icon": "✨",
-        "text": "adaugă buildingTemplatesFull în planGating + actualizare text lock șabloane"
       }
     ]
   },

@@ -28,6 +28,7 @@ import LCCAnalysis from "../components/LCCAnalysis.jsx";
 import CostOptimalCurve from "../components/CostOptimalCurve.jsx";
 import MEPSCheck, { getMepsStatus } from "../components/MEPSCheck.jsx";
 import OfertaReabilitare from "../components/OfertaReabilitare.jsx";
+import DocumentUploadCenter from "../components/DocumentUploadCenter.jsx";
 import RenovationPassport from "../components/RenovationPassport.jsx";
 import ConsumReconciliere from "../components/ConsumReconciliere.jsx";
 // audit-mai2026 F5 — Chat AI Reabilitare (multiplexare api/ai-assistant intent="rehab-chat")
@@ -2975,6 +2976,20 @@ export default function Step7Audit(props) {
                 hasAccess={canAccess(userPlan, "step7Audit")}
                 requireUpgrade={(msg) => showToast && showToast(msg, "info", 5000)}
               />
+
+              {/* Documente client — mutat din Pas 1 (mai logic la finalul auditului, înainte de export dosar) */}
+              <div className="mt-6">
+                <DocumentUploadCenter
+                  cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
+                  buildingCategory={building.category}
+                  buildingYearBuilt={building.yearBuilt}
+                  scopCpe={building.scopCpe}
+                  isResidentialCollective={building.category === "RC"}
+                  protectedZone={!!building.protectedZone}
+                  isHistoric={!!building.isHistoric}
+                  showInfo={true}
+                />
+              </div>
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
