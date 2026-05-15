@@ -539,6 +539,141 @@ export default function Step1Identification({
     showToast("Date IFC/BIM aplicate cu succes", "success");
   }, [updateBuilding, showToast]);
 
+  // ── Sprint Smart Input 2026 (3.1) — Handler upload foto fațadă AI ─────────
+  // Apelează /api/import-document cu fileType=facade (prompt specializat:
+  // numără ferestre, estimează an din stil arhitectural, detectează izolație ETICS).
+  const [facadeLoading, setFacadeLoading] = useState(false);
+  const handleFacadeUpload = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Foto depășește limita de 5 MB.", "error");
+      return;
+    }
+    setFacadeLoading(true);
+    showToast("Se analizează fațada...", "info", 8000);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = ev => resolve(ev.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch("/api/import-document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileType: "facade",
+          fileData: base64,
+          mimeType: file.type || "image/jpeg",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.data) {
+        showToast(json.error || "Analiza fațadei a eșuat.", "error");
+        return;
+      }
+      const b = json.data.building || {};
+      const conf = json.data.confidence || {};
+      // Bulk apply prin applyBuildingPatch (single re-render)
+      const patch = {};
+      ["category", "structure", "yearBuilt", "floors", "heightFloor", "areaUseful"]
+        .forEach(k => { if (b[k] && String(b[k]).trim() && !building[k]) patch[k] = String(b[k]).trim(); });
+      if (Object.keys(patch).length && typeof applyBuildingPatch === "function") {
+        applyBuildingPatch(patch);
+      }
+      const summary = [
+        conf.buildingType && `tip ${conf.buildingType}`,
+        conf.yearEstimate && `an ${conf.yearEstimate}`,
+        conf.insulationStatus && `izolație ${conf.insulationStatus}`,
+        conf.windowType && `ferestre ${conf.windowType}`,
+      ].filter(Boolean).join(" · ");
+      showToast(
+        `Foto fațadă analizată: ${Object.keys(patch).length} câmpuri propuse (${summary || "estimare AI"})`,
+        Object.keys(patch).length > 0 ? "success" : "info",
+        6000
+      );
+    } catch (err) {
+      showToast("Eroare la analiza fațadei: " + err.message, "error");
+    } finally {
+      setFacadeLoading(false);
+    }
+  }, [building, applyBuildingPatch, showToast]);
+
+  // ── Sprint Smart Input 2026 (3.2) — Handler import CPE existent ─────────────
+  // Apelează /api/ocr-cpe cu mode=cpe (extract auditor + building + EP class
+  // din CPE PDF/imagine emis în trecut). Util EPBD 8-ani interval.
+  const [cpePriorLoading, setCpePriorLoading] = useState(false);
+  const handleImportCpePrior = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Documentul CPE depășește limita de 5 MB.", "error");
+      return;
+    }
+    setCpePriorLoading(true);
+    showToast("Se citește CPE-ul anterior...", "info", 8000);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = ev => resolve(ev.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch("/api/ocr-cpe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "cpe",
+          image: base64,
+          mimeType: file.type || "image/jpeg",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.data) {
+        showToast(json.error || "Citire CPE eșuată.", "error");
+        return;
+      }
+      const d = json.data;
+      // Map ocr-cpe schema → building patch
+      const patch = {};
+      const tryAdd = (key, val) => {
+        if (val != null && String(val).trim() && !building[key]) {
+          patch[key] = String(val).trim();
+        }
+      };
+      tryAdd("address", d.address);
+      tryAdd("city", d.city);
+      tryAdd("county", d.county);
+      tryAdd("yearBuilt", d.yearBuilt);
+      tryAdd("category", d.category);
+      tryAdd("areaUseful", d.areaUseful);
+      tryAdd("volume", d.volume);
+      tryAdd("floors", d.floors);
+      tryAdd("scopCpe", d.scope);
+
+      if (Object.keys(patch).length && typeof applyBuildingPatch === "function") {
+        applyBuildingPatch(patch);
+      }
+      const epInfo = d.energyClass && d.epSpecific
+        ? ` · CPE precedent: clasa ${d.energyClass}, EP=${d.epSpecific} kWh/m²·an`
+        : "";
+      showToast(
+        `CPE precedent importat: ${Object.keys(patch).length} câmpuri completate${epInfo}`,
+        Object.keys(patch).length > 0 ? "success" : "info",
+        7000
+      );
+    } catch (err) {
+      showToast("Eroare la import CPE: " + err.message, "error");
+    } finally {
+      setCpePriorLoading(false);
+    }
+  }, [building, applyBuildingPatch, showToast]);
+
   // ── Handler upload planșă tehnică ─────────────────────────────────────────────
   const handleDrawingUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
@@ -649,6 +784,8 @@ export default function Step1Identification({
         onOpenMeteoImport={handleOpenMeteoImport}
         drawingLoading={drawingLoading}
         onDrawingFile={handleDrawingUpload}
+        facadeLoading={facadeLoading}
+        onFacadeFile={handleFacadeUpload}
         onOpenIFC={() => setShowIFC(true)}
         onCSVImport={handleCSVImport}
         onEPWImport={handleEPWImport}
@@ -660,6 +797,8 @@ export default function Step1Identification({
         onDuplicateRecent={onDuplicateRecent}
         currentProjectId={currentProjectId}
         onPasteText={onPasteText}
+        cpePriorLoading={cpePriorLoading}
+        onCpePriorFile={handleImportCpePrior}
       />
 
       <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

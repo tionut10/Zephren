@@ -133,6 +133,8 @@ export default function SmartDataHub({
   // Callback-uri RampFile
   drawingLoading,
   onDrawingFile,
+  facadeLoading,        // Sprint Smart Input 2026 (3.1) — Foto fațadă AI
+  onFacadeFile,
   onOpenIFC,
   onCSVImport,
   onEPWImport,
@@ -147,6 +149,9 @@ export default function SmartDataHub({
   currentProjectId,
   // Sprint Smart Input 2026 (2.1) — paste handler text → Chat AI cu text inițial
   onPasteText,
+  // Sprint Smart Input 2026 (3.2) — Import CPE precedent
+  cpePriorLoading,
+  onCpePriorFile,
   // Utils
   showToast,
 }) {
@@ -590,6 +595,8 @@ export default function SmartDataHub({
               showToast={showToast}
               onDuplicateRecent={onDuplicateRecent}
               currentProjectId={currentProjectId}
+              cpePriorLoading={cpePriorLoading}
+              onCpePriorFile={onCpePriorFile}
             />
           </div>
         )}
@@ -598,6 +605,8 @@ export default function SmartDataHub({
             <RampFile
               drawingLoading={drawingLoading}
               onDrawingFile={onDrawingFile}
+              facadeLoading={facadeLoading}
+              onFacadeFile={onFacadeFile}
               onOpenIFC={onOpenIFC}
               onCSVImport={onCSVImport}
               onEPWImport={onEPWImport}

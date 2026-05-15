@@ -52,8 +52,12 @@ export default function RampFile({
   importStatus,
   importStatusMsg,
   importedClimateData,
+  // Sprint Smart Input 2026 (3.1) — Foto fațadă AI
+  facadeLoading,
+  onFacadeFile,
 }) {
   const drawingRef = useRef(null);
+  const facadeRef  = useRef(null);
   const csvRef     = useRef(null);
   const epwRef     = useRef(null);
   const jsonRef    = useRef(null);
@@ -72,6 +76,29 @@ export default function RampFile({
           <span className="text-xs font-semibold text-slate-300">📐 Geometrie clădire</span>
           <span className="text-[9px] text-slate-500 uppercase tracking-wide">completează Step 1</span>
         </div>
+
+        {/* ── Sprint 3.1 — Foto fațadă AI (mai vizibil decât planșă pentru mobile) ── */}
+        {onFacadeFile && (
+          <>
+            <input
+              ref={facadeRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={onFacadeFile}
+              className="hidden"
+            />
+            <ActionButton
+              icon="🏠"
+              title={facadeLoading ? "Se analizează fațada..." : "Foto fațadă (AI)"}
+              description="Fotografiază clădirea — AI estimează etaje, an, structură, categorie, izolație ETICS, tip ferestrele"
+              accent="amber"
+              onClick={() => facadeRef.current?.click()}
+              disabled={facadeLoading}
+              loading={facadeLoading}
+            />
+          </>
+        )}
 
         {/* ── Planșă tehnică AI ────────────────────────────────────────────── */}
         <input

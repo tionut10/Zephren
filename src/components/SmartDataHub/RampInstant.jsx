@@ -11,7 +11,7 @@
  * Toate acțiunile sunt non-destructive — completează doar câmpuri goale sau
  * afișează un modal de confirmare înainte de a suprascrie.
  */
-import { useState, lazy, Suspense } from "react";
+import { useState, useRef, lazy, Suspense } from "react";
 import { DEMO_PROJECTS } from "../../data/demoProjects.js";
 // Sprint Smart Input 2026 (1.5) — proiecte recente
 import { useRecentProjects } from "../../hooks/useRecentProjects.js";
@@ -65,8 +65,12 @@ export default function RampInstant({
   // Sprint Smart Input 2026 (1.5) — proiecte recente
   onDuplicateRecent,
   currentProjectId,
+  // Sprint Smart Input 2026 (3.2) — Import CPE precedent
+  cpePriorLoading,
+  onCpePriorFile,
   showToast,
 }) {
+  const cpePriorRef = useRef(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
 
@@ -127,6 +131,28 @@ export default function RampInstant({
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── Sprint 3.2 — Import CPE precedent (8 ani EPBD re-audit) ─────── */}
+      {onCpePriorFile && (
+        <>
+          <input
+            ref={cpePriorRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={onCpePriorFile}
+            className="hidden"
+          />
+          <ActionButton
+            icon="📄"
+            title={cpePriorLoading ? "Se citește CPE precedent..." : "Import CPE existent (re-audit EPBD)"}
+            description="Ai CPE-ul vechi din 2018-2020? Încarcă-l (PDF/foto) — AI extrage adresa, geometria, clasa anterioară și pre-completează Step 1."
+            accent="violet"
+            onClick={() => cpePriorRef.current?.click()}
+            disabled={cpePriorLoading}
+            loading={cpePriorLoading}
+          />
+        </>
       )}
 
       {/* ── Șabloane clădiri tip românești ──────────────────────────────────── */}
