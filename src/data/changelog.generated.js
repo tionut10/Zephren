@@ -12,6 +12,18 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
+        "icon": "💰",
+        "text": "Sprint Prețuri P4.4-bis — 3 PDF generators consume formatMoney (currency toggle global)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(Step7): mută DocumentUploadCenter din Pas 1 → Pas 7 (înainte de export dosar)"
+      },
+      {
+        "icon": "✨",
+        "text": "feat(landing): adaugă link Tutorial NEW în navigation desktop + mobile"
+      },
+      {
         "icon": "🔸",
         "text": "Sprint Smart Input 2026 — B4+D1+D2+D3+D4+D6: foto preview + auto-save + Smart Input pe S2 + voice commands + s"
       },
@@ -30,18 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🎨",
         "text": "fix(tutorial): grupează header + BranchSelector în topbar fix și fixează sidebar"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(tutorial): rescrie tutorialul de la zero ca pagină /tutorial (8 pași × 20+ secțiuni)"
-      },
-      {
-        "icon": "📄",
-        "text": "Sprint Smart Input 2026 — 3.1+3.2: foto fațadă AI + import CPE existent"
-      },
-      {
-        "icon": "🔸",
-        "text": "Sprint Smart Input 2026 — 2.1+2.2: paste handler + Unified Smart Input multimodal"
       }
     ]
   },

@@ -13,11 +13,15 @@
  *   ├─ 3 cartele mari (Instant / Fișier / Ghidat) — una se expandează la un moment dat
  *   └─ Hint contextual ("ai scris adresa, vrei să geocodăm?")
  */
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import RampInstant from "./RampInstant.jsx";
 import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import UnifiedSmartInput from "./UnifiedSmartInput.jsx";
+
+// AI-first agresiv (15 mai 2026): modal șabloane RO promovat din RampInstant
+// la nivelul SmartDataHub pentru acces 1-click din chip-ul rapid.
+const BuildingTemplateModal = lazy(() => import("../BuildingTemplateModal.jsx"));
 import { validateStep1, computeStep1Progress } from "../../calc/step1-validators.js";
 import { routePaste } from "./pasteRouter.js";
 import {
@@ -75,37 +79,6 @@ function computeProgress(building) {
   };
 }
 
-// ── Cartelă rampă (click → expandare) ─────────────────────────────────────────
-function RampCard({ id, icon, title, subtitle, accent, active, onToggle }) {
-  const accentMap = {
-    amber:  { border: "border-amber-500/30",  bg: "bg-amber-500/5",  text: "text-amber-300",  hover: "hover:bg-amber-500/10",  ring: "focus-visible:ring-amber-400/60"  },
-    sky:    { border: "border-sky-500/30",    bg: "bg-sky-500/5",    text: "text-sky-300",    hover: "hover:bg-sky-500/10",    ring: "focus-visible:ring-sky-400/60"    },
-    violet: { border: "border-violet-500/30", bg: "bg-violet-500/5", text: "text-violet-300", hover: "hover:bg-violet-500/10", ring: "focus-visible:ring-violet-400/60" },
-  };
-  const c = accentMap[accent] || accentMap.sky;
-  return (
-    <button
-      id={`ramp-tab-${id}`}
-      role="tab"
-      aria-selected={active}
-      aria-controls={`ramp-panel-${id}`}
-      onClick={onToggle}
-      className={`flex-1 flex flex-col items-start gap-1 rounded-xl border-2 transition-all p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${c.ring} ${
-        active
-          ? `${c.border} ${c.bg} ${c.text} shadow-md`
-          : `border-white/10 bg-white/[0.02] ${c.hover} text-white/80`
-      }`}
-    >
-      <div className="flex items-center gap-2 w-full">
-        <span className="text-2xl">{icon}</span>
-        <span className="font-semibold text-sm">{title}</span>
-        <span className={`ml-auto text-xs transition-transform ${active ? "rotate-180" : ""}`}>▾</span>
-      </div>
-      <span className="text-[10px] opacity-60">{subtitle}</span>
-    </button>
-  );
-}
-
 export default function SmartDataHub({
   // State clădire (pentru progress + context hints)
   building,
@@ -161,12 +134,23 @@ export default function SmartDataHub({
   // Utils
   showToast,
 }) {
-  // Rampă activă (null = toate colapsate, doar cartelele vizibile)
-  // Default: dacă proiect gol → deschis "Instant", altfel toate colapsate
-  const [activeRamp, setActiveRamp] = useState(isEmptyProject ? "instant" : null);
+  // AI-first agresiv (15 mai 2026):
+  //   - Smart Input + Drop zone = focus principal (deja la top)
+  //   - 2 chip-uri rapide (OSM + Șablon RO) = acces 1-click la cele mai folosite non-AI
+  //   - "Alte metode" accordion = restul (Cadastral, CPE, Demo, Fișiere avansate, Wizard, Chat AI)
+  const [showOtherMethods, setShowOtherMethods] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dropInfo, setDropInfo] = useState(null);
   const browseFileRef = useRef(null);
+
+  // AI-first ULTRA-agresiv (15 mai 2026): file refs pentru cele 3 funcții AI
+  // promovate la Nivel 2 (mini-cards "Acțiuni AI recomandate") — Foto fațadă,
+  // Planșă tehnică, CPE precedent. Componentele Ramp* păstrează refs proprii
+  // ca fallback când utilizatorul expandează accordion-ul "Fără AI".
+  const facadeRefTop  = useRef(null);
+  const drawingRefTop = useRef(null);
+  const cpePriorRefTop = useRef(null);
 
   // ── Sprint Smart Input 2026 (1.3) — Auto-save draft Step 1 ──────────────
   // Salvează building cu debounce 2s în localStorage pentru recovery la F5/crash.
@@ -210,19 +194,19 @@ export default function SmartDataHub({
     if (type === "ifc") {
       onOpenIFC?.();
       setDropInfo({ label: `${file.name} → Import IFC/BIM`, type: "success" });
-      setActiveRamp("file");
+      setShowOtherMethods(true);
       return;
     }
     if (type === "epw") {
       onEPWImport?.({ target: { files: [file], value: "" } });
       setDropInfo({ label: `${file.name} → Import climă EPW`, type: "success" });
-      setActiveRamp("file");
+      setShowOtherMethods(true);
       return;
     }
     if (type === "csv") {
       onCSVImport?.({ target: { files: [file], value: "" } });
       setDropInfo({ label: `${file.name} → Import climă CSV`, type: "success" });
-      setActiveRamp("file");
+      setShowOtherMethods(true);
       return;
     }
     if (type === "json") {
@@ -233,7 +217,7 @@ export default function SmartDataHub({
     if (type === "drawing") {
       onDrawingFile?.({ target: { files: [file], value: "" } });
       setDropInfo({ label: `${file.name} → Analiză planșă AI`, type: "success" });
-      setActiveRamp("file");
+      setShowOtherMethods(true);
     }
   }, [onOpenIFC, onEPWImport, onCSVImport, onOpenJSONImport, onDrawingFile, showToast]);
 
@@ -265,10 +249,6 @@ export default function SmartDataHub({
     }
   }, [routeFile, onPasteText]);
 
-  const toggleRamp = useCallback((id) => {
-    setActiveRamp(prev => prev === id ? null : id);
-  }, []);
-
   // ── Sugestie contextuală (next-best-action) ────────────────────────────────
   const contextHint = useMemo(() => {
     if (building.address && building.city && !selectedClimate) {
@@ -285,9 +265,11 @@ export default function SmartDataHub({
     if (contextHint.action === "geocode") {
       onGeocode?.();
     } else if (contextHint.action === "template") {
-      setActiveRamp("instant");
+      setShowTemplates(true);
     }
   }, [contextHint, onGeocode]);
+
+  const hasAddress = !!(building?.address || building?.city);
 
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] overflow-hidden">
@@ -460,9 +442,11 @@ export default function SmartDataHub({
         </div>
       )}
 
-      {/* ── Sprint Smart Input 2026 (2.2) — Unified Smart Input ──────────── */}
+      {/* ── Sprint Smart Input 2026 (2.2) — Unified Smart Input + Drop Zone fuzionate ──
+          15 mai 2026: Drop zone integrată în hero AI unic (text · voce · paste · drop).
+          Wrapper comun cu space-y mic = continuitate vizuală indigo/violet. */}
       {(onPasteText || routeFile) && (
-        <div className="px-4 pt-3">
+        <div className="px-4 pt-3 pb-3 space-y-1.5">
           <UnifiedSmartInput
             onSubmitText={onPasteText}
             onPickImage={(file) => { routeFile(file); }}
@@ -472,175 +456,367 @@ export default function SmartDataHub({
             onApplyTemplate={onApplyTemplate}
             showToast={showToast}
           />
-        </div>
-      )}
 
-      {/* ── Drop zone universal ──────────────────────────────────────────────── */}
-      <div className="px-4 pt-3 pb-3">
-        <input
-          ref={browseFileRef}
-          type="file"
-          accept=".ifc,.epw,.csv,.txt,.json,image/jpeg,image/png,image/webp,application/pdf"
-          onChange={e => { const f = e.target.files?.[0]; if (f) routeFile(f); e.target.value = ""; }}
-          className="hidden"
-        />
-        <div
-          role="region"
-          aria-label="Zonă drag și drop fișiere — acceptă și paste Ctrl+V cu text sau imagini"
-          aria-describedby="drop-zone-filetypes"
-          tabIndex={0}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onPaste={handlePaste}
-          onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); browseFileRef.current?.click(); } }}
-          className={`rounded-xl border-2 border-dashed py-3 px-3 text-center transition-all select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${
-            dragOver
-              ? "border-indigo-400/70 bg-indigo-500/10 scale-[1.005]"
-              : "border-white/10 bg-white/[0.015] hover:border-white/20"
-          }`}
-        >
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="text-xl" aria-hidden="true">🎯</div>
-            <div className="text-left">
-              <div className="text-xs font-medium text-slate-300">
-                Trage fișier · sau lipește <kbd className="px-1 py-0.5 rounded bg-white/10 text-[9px] font-mono text-slate-200 border border-white/10">Ctrl+V</kbd> text/imagine
-              </div>
-              <div id="drop-zone-filetypes" className="text-[10px] text-slate-500">
+          {/* Drop zone compactă — bară orizontală fuzionată cu Smart Input */}
+          <input
+            ref={browseFileRef}
+            type="file"
+            accept=".ifc,.epw,.csv,.txt,.json,image/jpeg,image/png,image/webp,application/pdf"
+            onChange={e => { const f = e.target.files?.[0]; if (f) routeFile(f); e.target.value = ""; }}
+            className="hidden"
+          />
+          <div
+            role="region"
+            aria-label="Zonă drag și drop fișiere — acceptă și paste Ctrl+V cu text sau imagini"
+            aria-describedby="drop-zone-filetypes"
+            tabIndex={0}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onPaste={handlePaste}
+            onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); browseFileRef.current?.click(); } }}
+            className={`rounded-xl border py-2 px-3 transition-all select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-[#0f1117] ${
+              dragOver
+                ? "border-indigo-400/70 bg-indigo-500/10 scale-[1.005]"
+                : "border-indigo-500/15 bg-indigo-500/[0.025] hover:border-indigo-500/30 hover:bg-indigo-500/[0.04]"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-base shrink-0" aria-hidden="true">🎯</span>
+              <span className="text-[11px] font-medium text-slate-300 shrink-0">
+                sau trage fișier · paste <kbd className="px-1 py-0.5 rounded bg-white/10 text-[9px] font-mono text-slate-200 border border-white/10">Ctrl+V</kbd>
+              </span>
+              <span id="drop-zone-filetypes" className="text-[10px] text-slate-500 shrink-0">
                 <span className="text-emerald-400/70">.ifc</span> ·{" "}
                 <span className="text-indigo-400/70">.pdf/.jpg/.png</span> ·{" "}
                 <span className="text-violet-400/70">.epw</span> ·{" "}
                 <span className="text-slate-400/70">.csv</span> ·{" "}
                 <span className="text-sky-400/70">.json</span>
-              </div>
+              </span>
+              <button
+                onClick={() => browseFileRef.current?.click()}
+                aria-label="Alege fișier de pe disc"
+                className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-indigo-500/30 bg-indigo-500/[0.08] hover:bg-indigo-500/15 text-indigo-200 hover:text-white text-[11px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60"
+              >
+                <span aria-hidden="true">📂</span> Alege fișier
+              </button>
             </div>
-            <button
-              onClick={() => browseFileRef.current?.click()}
-              aria-label="Alege fișier de pe disc"
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-[11px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            >
-              <span aria-hidden="true">📂</span> Alege fișier
-            </button>
+            {dropInfo && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-1.5 text-[10px] text-green-400 font-medium"
+              >
+                ✓ {dropInfo.label}
+              </div>
+            )}
           </div>
-          {dropInfo && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="mt-2 text-[10px] text-green-400 font-medium"
-            >
-              ✓ {dropInfo.label}
+
+          {/* Context hint (next-best-action) */}
+          {contextHint && !dropInfo && (
+            <div className="flex items-center gap-2 rounded-lg bg-indigo-500/[0.06] border border-indigo-500/15 px-3 py-2">
+              <span className="text-sm">{contextHint.icon}</span>
+              <span className="text-[11px] text-indigo-200/80 flex-1">{contextHint.text}</span>
+              <button
+                onClick={handleHintAction}
+                className="text-[10px] px-2 py-1 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold transition-all"
+              >
+                Aplică
+              </button>
             </div>
           )}
         </div>
+      )}
 
-        {/* Context hint (next-best-action) */}
-        {contextHint && !dropInfo && (
-          <div className="mt-2 flex items-center gap-2 rounded-lg bg-indigo-500/[0.06] border border-indigo-500/15 px-3 py-2">
-            <span className="text-sm">{contextHint.icon}</span>
-            <span className="text-[11px] text-indigo-200/80 flex-1">{contextHint.text}</span>
-            <button
-              onClick={handleHintAction}
-              className="text-[10px] px-2 py-1 rounded-md bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold transition-all"
-            >
-              Aplică
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── 3 Rampe — cartele ────────────────────────────────────────────────── */}
-      <div className="px-4 pb-4 pt-1">
-        <div className="flex flex-col sm:flex-row gap-2" role="tablist" aria-label="Metode introducere date clădire">
-          <RampCard
-            id="instant"
-            icon="⚡"
-            title="Instant"
-            subtitle="~10-30 sec · șabloane, OSM, demo"
-            accent="amber"
-            active={activeRamp === "instant"}
-            onToggle={() => toggleRamp("instant")}
-          />
-          <RampCard
-            id="file"
-            icon="📎"
-            title="Din fișier"
-            subtitle="IFC, planșă, JSON · climă opțional"
-            accent="sky"
-            active={activeRamp === "file"}
-            onToggle={() => toggleRamp("file")}
-          />
-          <RampCard
-            id="guided"
-            icon="✍️"
-            title="Ghidat"
-            subtitle="wizard, chat AI, manual"
-            accent="violet"
-            active={activeRamp === "guided"}
-            onToggle={() => toggleRamp("guided")}
-          />
+      {/* ── NIVEL 2: Acțiuni AI recomandate (4 mini-cards) ────────────────────
+          Diferențiatorul Zephren: AI extrage automat din artefacte pe care
+          auditorul oricum le are (poză, planșă, CPE vechi, descriere verbală).
+          Ordine: Foto (wow factor max) → Planșă (workflow standard) →
+          CPE precedent (EPBD 2026 re-audit) → Chat AI (multi-turn). */}
+      <div className="px-4 pb-2 pt-2">
+        <div className="text-[10px] uppercase tracking-wide font-semibold mb-2 px-1 flex items-center gap-1.5 text-purple-300">
+          <span aria-hidden="true">✨</span>
+          <span>Acțiuni AI recomandate</span>
+          <span className="text-purple-300/40 font-normal normal-case text-[9px] tracking-normal ml-1">
+            — Zephren detectează datele automat
+          </span>
         </div>
 
-        {/* Conținut rampă activă */}
-        {activeRamp === "instant" && (
-          <div id="ramp-panel-instant" role="tabpanel" aria-labelledby="ramp-tab-instant" className="mt-3">
-            <RampInstant
-              building={building}
-              loadDemoByIndex={loadDemoByIndex}
-              loadTypicalBuilding={loadTypicalBuilding}
-              userPlan={userPlan}
-              onGeocode={onGeocode}
-              geoStatus={geoStatus}
-              cadastralNr={cadastralNr}
-              onCadastralNrChange={onCadastralNrChange}
-              onCadastralLookup={onCadastralLookup}
-              cadastralLoading={cadastralLoading}
-              cadastralMsg={cadastralMsg}
-              cadastralSimulated={cadastralSimulated}
-              cadastralBannerDismissed={cadastralBannerDismissed}
-              onCadastralBannerDismiss={onCadastralBannerDismiss}
-              selectedClimate={selectedClimate}
-              importStatus={importStatus}
-              importStatusMsg={importStatusMsg}
-              importedClimateData={importedClimateData}
-              onOpenMeteoImport={onOpenMeteoImport}
-              showToast={showToast}
-              onDuplicateRecent={onDuplicateRecent}
-              currentProjectId={currentProjectId}
-              cpePriorLoading={cpePriorLoading}
-              onCpePriorFile={onCpePriorFile}
-            />
-          </div>
+        {/* Inputs hidden pentru cele 3 funcții AI promovate la nivel 1 */}
+        {onFacadeFile && (
+          <input
+            ref={facadeRefTop}
+            type="file"
+            accept="image/*"
+            onChange={(e) => { onFacadeFile?.(e); if (e.target) e.target.value = ""; }}
+            className="hidden"
+          />
         )}
-        {activeRamp === "file" && (
-          <div id="ramp-panel-file" role="tabpanel" aria-labelledby="ramp-tab-file" className="mt-3">
-            <RampFile
-              drawingLoading={drawingLoading}
-              onDrawingFile={onDrawingFile}
-              facadeLoading={facadeLoading}
-              onFacadeFile={onFacadeFile}
-              onOpenIFC={onOpenIFC}
-              onCSVImport={onCSVImport}
-              onEPWImport={onEPWImport}
-              onOpenJSONImport={onOpenJSONImport}
-              importStatus={importStatus}
-              importStatusMsg={importStatusMsg}
-              importedClimateData={importedClimateData}
-            />
-          </div>
+        {onDrawingFile && (
+          <input
+            ref={drawingRefTop}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={(e) => { onDrawingFile?.(e); if (e.target) e.target.value = ""; }}
+            className="hidden"
+          />
         )}
-        {activeRamp === "guided" && (
-          <div id="ramp-panel-guided" role="tabpanel" aria-labelledby="ramp-tab-guided" className="mt-3">
-            <RampGuided
-              onOpenQuickFill={onOpenQuickFill}
-              onOpenChat={onOpenChat}
-              onOpenTutorial={onOpenTutorial}
-            />
+        {onCpePriorFile && (
+          <input
+            ref={cpePriorRefTop}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={(e) => { onCpePriorFile?.(e); if (e.target) e.target.value = ""; }}
+            className="hidden"
+          />
+        )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Card 1 — Foto fațadă AI (wow factor maxim) */}
+          <button
+            type="button"
+            onClick={() => facadeRefTop.current?.click()}
+            disabled={facadeLoading || !onFacadeFile}
+            title="Fotografiază clădirea — AI estimează etaje, an construcție, structură, categorie, izolație ETICS, tip ferestre"
+            className="flex flex-col items-start gap-1 p-2.5 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/[0.08] to-fuchsia-500/[0.06] hover:from-purple-500/[0.15] hover:to-fuchsia-500/[0.12] text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/60 group"
+          >
+            <div className="flex items-center gap-1.5 w-full">
+              <span className="text-lg">🏠</span>
+              {facadeLoading && (
+                <span className="w-3 h-3 rounded-full border border-purple-300 border-t-transparent animate-spin ml-auto" />
+              )}
+            </div>
+            <span className="text-[11px] font-bold text-purple-100 leading-tight">
+              Foto fațadă AI
+            </span>
+            <span className="text-[9px] text-purple-200/60 leading-snug">
+              1-click cameră → etaje, an, structură
+            </span>
+          </button>
+
+          {/* Card 2 — Planșă tehnică AI (workflow auditor standard) */}
+          <button
+            type="button"
+            onClick={() => drawingRefTop.current?.click()}
+            disabled={drawingLoading || !onDrawingFile}
+            title="Încarcă planșă PDF/imagine — Claude Vision extrage Au, V, etaje, înălțime, structură, adresă"
+            className="flex flex-col items-start gap-1 p-2.5 rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/[0.08] to-blue-500/[0.06] hover:from-indigo-500/[0.15] hover:to-blue-500/[0.12] text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 group"
+          >
+            <div className="flex items-center gap-1.5 w-full">
+              <span className="text-lg">📐</span>
+              {drawingLoading && (
+                <span className="w-3 h-3 rounded-full border border-indigo-300 border-t-transparent animate-spin ml-auto" />
+              )}
+            </div>
+            <span className="text-[11px] font-bold text-indigo-100 leading-tight">
+              Planșă tehnică AI
+            </span>
+            <span className="text-[9px] text-indigo-200/60 leading-snug">
+              PDF/imagine → Au, V, etaje auto
+            </span>
+          </button>
+
+          {/* Card 3 — CPE precedent (EPBD 2026 re-audit diferențiator) */}
+          <button
+            type="button"
+            onClick={() => cpePriorRefTop.current?.click()}
+            disabled={cpePriorLoading || !onCpePriorFile}
+            title="Ai CPE-ul vechi 2018-2020 expirat? AI extrage adresa, geometria și clasa anterioară pentru re-audit EPBD 2026"
+            className="flex flex-col items-start gap-1 p-2.5 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.08] to-teal-500/[0.06] hover:from-emerald-500/[0.15] hover:to-teal-500/[0.12] text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 group"
+          >
+            <div className="flex items-center gap-1.5 w-full">
+              <span className="text-lg">📄</span>
+              {cpePriorLoading && (
+                <span className="w-3 h-3 rounded-full border border-emerald-300 border-t-transparent animate-spin ml-auto" />
+              )}
+            </div>
+            <span className="text-[11px] font-bold text-emerald-100 leading-tight">
+              CPE precedent
+            </span>
+            <span className="text-[9px] text-emerald-200/60 leading-snug">
+              Re-audit EPBD din CPE vechi
+            </span>
+          </button>
+
+          {/* Card 4 — Chat AI descriere (multi-turn conversațional) */}
+          <button
+            type="button"
+            onClick={onOpenChat}
+            disabled={!onOpenChat}
+            title="Descrie clădirea conversațional — Claude extrage datele structurat prin întrebări inteligente"
+            className="flex flex-col items-start gap-1 p-2.5 rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/[0.08] to-pink-500/[0.06] hover:from-violet-500/[0.15] hover:to-pink-500/[0.12] text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 group"
+          >
+            <div className="flex items-center gap-1.5 w-full">
+              <span className="text-lg">💬</span>
+            </div>
+            <span className="text-[11px] font-bold text-violet-100 leading-tight">
+              Chat AI descriere
+            </span>
+            <span className="text-[9px] text-violet-200/60 leading-snug">
+              Descrie în text — AI întreabă rest
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── NIVEL 3: Chip-uri geo-AI rapide (OSM + Climă Open-Meteo) ─────── */}
+      <div className="px-4 pb-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mr-1">
+            Sau geo-lookup:
+          </span>
+          <button
+            type="button"
+            onClick={onGeocode}
+            disabled={!hasAddress || geoStatus === "loading"}
+            title={hasAddress
+              ? "Detectează județul, codul poștal și amprenta clădirii din OpenStreetMap"
+              : "Scrie mai întâi adresa în formularul de mai jos"}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-500/30 bg-sky-500/[0.07] hover:bg-sky-500/15 text-sky-200 text-[11px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
+          >
+            {geoStatus === "loading"
+              ? <span className="w-3 h-3 rounded-full border border-sky-300 border-t-transparent animate-spin" />
+              : <span>📍</span>}
+            Adresă OSM
+          </button>
+          {onOpenMeteoImport && (
+            <button
+              type="button"
+              onClick={onOpenMeteoImport}
+              disabled={!building?.locality || importStatus === "loading"}
+              title={building?.locality
+                ? `Descarcă datele climatice ERA5 8760h pentru ${building.locality} via Open-Meteo (gratuit)`
+                : "Selectează mai întâi localitatea climatică pentru a putea descărca date Open-Meteo"}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] hover:bg-cyan-500/15 text-cyan-200 text-[11px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+            >
+              {importStatus === "loading"
+                ? <span className="w-3 h-3 rounded-full border border-cyan-300 border-t-transparent animate-spin" />
+                : <span>🌡️</span>}
+              Climă Open-Meteo
+              {selectedClimate && importedClimateData && (
+                <span className="text-[9px] font-normal px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-100">✓</span>
+              )}
+            </button>
+          )}
+          {geoStatus === "ok" && (
+            <span className="text-[10px] text-green-400 font-medium">✓ Geocodare reușită</span>
+          )}
+          {geoStatus === "error" && (
+            <span className="text-[10px] text-red-400 font-medium">✗ Adresa nu a fost găsită</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── NIVEL 4: "Fără AI? Metode clasice" (accordion colapsat) ────────
+          Etichetare explicită că AI e default + non-AI = excepție.
+          Conține: cadastru ANCPI, șabloane RO, mostre demo, recent,
+          QuickFill Wizard, Tutorial, manual, IFC/BIM, JSON, climatice. */}
+      <div className="px-4 pb-4 pt-1">
+        <button
+          type="button"
+          onClick={() => setShowOtherMethods(v => !v)}
+          aria-expanded={showOtherMethods}
+          aria-controls="other-methods-panel"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] text-slate-300 hover:text-white text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+        >
+          <span className="text-base" aria-hidden="true">🛠</span>
+          <span className="flex-1 text-left">
+            Fără AI? Metode clasice
+            <span className="text-[10px] font-normal text-slate-500 ml-2">
+              (cadastru ANCPI · șabloane · demo · wizard · IFC/BIM · manual)
+            </span>
+          </span>
+          <span className={`text-xs text-slate-400 transition-transform ${showOtherMethods ? "rotate-180" : ""}`}>▼</span>
+        </button>
+
+        {showOtherMethods && (
+          <div id="other-methods-panel" className="mt-3 space-y-4">
+            {/* Grup 1 — Instant (recente, CPE, ANCPI, demo, climă) */}
+            <section aria-labelledby="other-instant-h">
+              <h3 id="other-instant-h" className="text-[10px] uppercase tracking-wide text-amber-400/80 font-semibold mb-2 px-1">
+                ⚡ Date instant
+              </h3>
+              <RampInstant
+                building={building}
+                loadDemoByIndex={loadDemoByIndex}
+                loadTypicalBuilding={loadTypicalBuilding}
+                userPlan={userPlan}
+                onGeocode={onGeocode}
+                geoStatus={geoStatus}
+                cadastralNr={cadastralNr}
+                onCadastralNrChange={onCadastralNrChange}
+                onCadastralLookup={onCadastralLookup}
+                cadastralLoading={cadastralLoading}
+                cadastralMsg={cadastralMsg}
+                cadastralSimulated={cadastralSimulated}
+                cadastralBannerDismissed={cadastralBannerDismissed}
+                onCadastralBannerDismiss={onCadastralBannerDismiss}
+                selectedClimate={selectedClimate}
+                importStatus={importStatus}
+                importStatusMsg={importStatusMsg}
+                importedClimateData={importedClimateData}
+                onOpenMeteoImport={onOpenMeteoImport}
+                showToast={showToast}
+                onDuplicateRecent={onDuplicateRecent}
+                currentProjectId={currentProjectId}
+                cpePriorLoading={cpePriorLoading}
+                onCpePriorFile={onCpePriorFile}
+              />
+            </section>
+
+            {/* Grup 2 — Fișier avansat (IFC, planșă, EPW, CSV, JSON) */}
+            <section aria-labelledby="other-file-h">
+              <h3 id="other-file-h" className="text-[10px] uppercase tracking-wide text-sky-400/80 font-semibold mb-2 px-1">
+                📎 Fișiere avansate
+              </h3>
+              <RampFile
+                drawingLoading={drawingLoading}
+                onDrawingFile={onDrawingFile}
+                facadeLoading={facadeLoading}
+                onFacadeFile={onFacadeFile}
+                onOpenIFC={onOpenIFC}
+                onCSVImport={onCSVImport}
+                onEPWImport={onEPWImport}
+                onOpenJSONImport={onOpenJSONImport}
+                importStatus={importStatus}
+                importStatusMsg={importStatusMsg}
+                importedClimateData={importedClimateData}
+              />
+            </section>
+
+            {/* Grup 3 — Ghidat (wizard, chat AI, tutorial) */}
+            <section aria-labelledby="other-guided-h">
+              <h3 id="other-guided-h" className="text-[10px] uppercase tracking-wide text-violet-400/80 font-semibold mb-2 px-1">
+                ✍️ Ghidat pas cu pas
+              </h3>
+              <RampGuided
+                onOpenQuickFill={onOpenQuickFill}
+                onOpenChat={onOpenChat}
+                onOpenTutorial={onOpenTutorial}
+              />
+            </section>
           </div>
         )}
       </div>
 
-      {/* ── Lista câmpuri lipsă (când progres < 100% și rampă închisă) ─────── */}
-      {activeRamp === null && progress.filled < progress.total && progress.filled > 0 && (
+      {/* ── Modal Șabloane (promovat din RampInstant) ────────────────────────── */}
+      {showTemplates && (
+        <Suspense fallback={null}>
+          <BuildingTemplateModal
+            isOpen={showTemplates}
+            onClose={() => setShowTemplates(false)}
+            onApply={(id) => {
+              loadTypicalBuilding?.(id);
+              showToast?.("Șablon aplicat cu succes", "success");
+              setShowTemplates(false);
+            }}
+            userPlan={userPlan}
+          />
+        </Suspense>
+      )}
+
+      {/* ── Lista câmpuri lipsă (când progres < 100% și accordion închis) ─── */}
+      {!showOtherMethods && progress.filled < progress.total && progress.filled > 0 && (
         <div className="px-4 pb-4 pt-0">
           <details className="rounded-lg border border-white/[0.06] bg-white/[0.015] overflow-hidden">
             <summary className="px-3 py-2 text-[11px] text-slate-400 cursor-pointer hover:bg-white/[0.02] select-none">
