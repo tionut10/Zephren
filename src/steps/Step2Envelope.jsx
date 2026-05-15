@@ -3,6 +3,8 @@ import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx"
 import { T } from "../data/translations.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import SmartEnvelopeHub from "../components/SmartEnvelopeHub/SmartEnvelopeHub.jsx";
+// Sprint Smart Input 2026 (D2) — Smart Input replicat pe Step 2 (anvelopă)
+import UnifiedSmartInput from "../components/SmartDataHub/UnifiedSmartInput.jsx";
 
 export default function Step2Envelope({
   building, lang, selectedClimate,
@@ -23,6 +25,8 @@ export default function Step2Envelope({
   airInfiltrationCalc, naturalLightingCalc,
   csvImportRef, importCSV,
   setStep, goToStep,
+  // Sprint Smart Input 2026 (D2) — paste handler text → Chat AI cu pre-fill
+  onPasteText,
   // SmartEnvelopeHub (S4 GA — feature flag controlled; default ON, ?envelopeHub=0 → legacy grid)
   envelopeHubEnabled = false,
   applyEnvelopeTemplate,
@@ -53,6 +57,22 @@ export default function Step2Envelope({
             onChange={function(e){if(e.target.files[0]){importCSV(e.target.files[0]);e.target.value="";}}} />
         </div>
       </div>
+
+      {/* Sprint Smart Input 2026 (D2) — Smart Input pe Step 2 anvelopă
+           Auditorul poate descrie anvelopa în cuvinte → AI extrage pereți + ferestre. */}
+      {onPasteText && (
+        <UnifiedSmartInput
+          onSubmitText={onPasteText}
+          onPickImage={(file) => {
+            // Imagine de planșă/secțiune → routează la Chat AI (drawing handler nu există în Step 2)
+            showToast?.("Pentru planșă tehnică, folosește Pas 1 → Smart Input cu Drawing AI.", "info");
+          }}
+          onPickFile={(file) => {
+            showToast?.("Fișierul nu poate fi importat din Step 2. Folosește Pas 1.", "info");
+          }}
+          showToast={showToast}
+        />
+      )}
 
       {/* SmartEnvelopeHub — S4 GA (default ON; ?envelopeHub=0 → legacy grid fallback). */}
       {envelopeHubEnabled && (

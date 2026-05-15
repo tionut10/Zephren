@@ -2,6 +2,13 @@ import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } fro
 import { createPortal } from "react-dom";
 import { renderAsync } from "docx-preview";
 import ChatImport from "./components/ChatImport.jsx"; // static — floating button render at mount
+// Sprint Smart Input 2026 (D1) — Auto-save proiect complet (debounce 5s LS) + recovery
+import {
+  useAutoSaveProjectDraft,
+  readProjectDraft,
+  clearProjectDraft,
+  formatRelativeTime as formatRelativeTimeDraft,
+} from "./hooks/useAutoSaveProjectDraft.js";
 // ── Import/share modals — lazy loaded (S6.3) ──
 const ImportModal = lazy(() => import("./import/ImportModal.jsx"));
 const ShareModal = lazy(() => import("./components/ShareModal.jsx"));
@@ -70,6 +77,8 @@ import { useProjectHistory } from "./hooks/useProjectHistory.js";
 import { cn, Select, Input, Badge, Card, ResultRow } from "./components/ui.jsx";
 // Sprint Reorganizare Pas 5/6 (1 mai 2026) — Statistici auditor mutate din Pas 6 → Sidebar global.
 import AuditorStatsBadge from "./components/AuditorStatsBadge.jsx";
+// Sprint Smart Input 2026 (D4) — card recent proiecte vizibil în sidebar pe toate pașii
+import RecentProjectsSidebarCard from "./components/RecentProjectsSidebarCard.jsx";
 // Sprint Conformitate P2-16 (7 mai 2026) — banner expiry atestat în sidebar
 import { buildExpiryNotification as _buildExpiryNotification } from "./lib/auditor-expiry-notifier.js";
 // ── Envelope modals — lazy loaded (S6.2) ──
@@ -414,6 +423,34 @@ export default function EnergyCalcApp({ cloud }) {
   // ─── STEP 6 STATE ───
   
   const [auditor, setAuditor] = useState({...INITIAL_AUDITOR});
+
+  // ── Sprint Smart Input 2026 (D1) — Auto-save proiect complet (debounce 5s LS) ──
+  // Complementar lui useAutoBackup (30s IDB+Supabase). Folosit pentru recovery la F5.
+  // Banner-ul de recovery e afișat la mount din useEffect de mai jos.
+  const projectDraftPayload = useMemo(() => ({
+    building, opaqueElements, glazingElements, thermalBridges,
+    heating, acm, cooling, ventilation, lighting,
+    solarThermal, photovoltaic, heatPump, biomass, auditor,
+  }), [
+    building, opaqueElements, glazingElements, thermalBridges,
+    heating, acm, cooling, ventilation, lighting,
+    solarThermal, photovoltaic, heatPump, biomass, auditor,
+  ]);
+
+  // Salvare automată (debounce 5s) → localStorage
+  useAutoSaveProjectDraft(projectDraftPayload, { enabled: true });
+
+  // Recovery banner — verificat o singură dată la mount
+  const [projectDraftRecovery, setProjectDraftRecovery] = useState(() => {
+    // Snapshot e util doar dacă draft conține semnificativ mai mult decât current
+    const draft = readProjectDraft();
+    if (!draft || draft.completeness < 5) return null;
+    // Verificăm și că proiectul curent e relativ gol (sub 3 câmpuri Step 1) —
+    // altfel ar fi confuzie pentru user care continuă un proiect care are deja conținut.
+    const currentFields = Object.values({}).filter(Boolean).length;
+    if (currentFields > 3) return null;
+    return draft;
+  });
 
   // ── Toggle Tabel 5.17 / Tabel A.16 (SR EN ISO 52000-1/NA:2023) ──
   const [useNA2023, setUseNA2023] = useState(true); // implicit: NA:2023 (recomandat MDLPA)
@@ -2978,6 +3015,54 @@ export default function EnergyCalcApp({ cloud }) {
         <MDLPATransitionBanner lang={lang} />
       </Suspense>
 
+      {/* Sprint Smart Input 2026 (D1) — Banner Recovery Project Draft global */}
+      {projectDraftRecovery && (
+        <div
+          role="alert"
+          className="mx-4 mt-3 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/[0.10] to-orange-500/[0.07] p-3 flex items-start gap-3 shadow-lg"
+        >
+          <span className="text-2xl shrink-0" aria-hidden="true">💾</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-amber-200 text-xs mb-0.5 flex items-center gap-2 flex-wrap">
+              Sesiune anterioară nesalvată detectată
+              <span className="text-[9px] font-normal text-amber-300/70">
+                {formatRelativeTimeDraft(projectDraftRecovery.savedAt)} · {projectDraftRecovery.completeness} câmpuri populate
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-200/80 leading-snug mb-2">
+              Browserul a fost închis fără să salvezi proiectul. Restaurăm întregul flux (Pas 1-8)?
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const json = JSON.stringify(projectDraftRecovery.state);
+                    const blob = new Blob([json], { type: "application/json" });
+                    const file = new File([blob], `recovery-${Date.now()}.json`, { type: "application/json" });
+                    importProject(file);
+                    clearProjectDraft();
+                    setProjectDraftRecovery(null);
+                  } catch (e) {
+                    showToast("Eroare la restaurare: " + e.message, "error");
+                  }
+                }}
+                className="px-3 py-1 rounded-lg text-[11px] font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+              >
+                💾 Restaurează sesiunea
+              </button>
+              <button
+                type="button"
+                onClick={() => { clearProjectDraft(); setProjectDraftRecovery(null); }}
+                className="px-3 py-1 rounded-lg text-[10px] font-medium border border-amber-500/30 hover:bg-amber-500/10 text-amber-300/80 hover:text-amber-200 transition-all"
+              >
+                Ignoră
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tier modals */}
       <UpgradeModal />
       <PricingPage />
@@ -3512,6 +3597,22 @@ Zona {selectedClimate.zone}
             );
           })()}
 
+          {/* Sprint Smart Input 2026 (D4) — Card recent proiecte vizibil pe toate pașii */}
+          <RecentProjectsSidebarCard
+            currentBuilding={building}
+            onDuplicate={(projectData) => {
+              try {
+                const json = JSON.stringify(projectData);
+                const blob = new Blob([json], { type: "application/json" });
+                const file = new File([blob], `duplicate-${Date.now()}.json`, { type: "application/json" });
+                importProject(file);
+              } catch (e) {
+                showToast("Eroare la duplicare proiect: " + e.message, "error");
+              }
+            }}
+            lang={lang}
+          />
+
           {/* Sprint Conformitate P2-16 (7 mai 2026) — Banner expiry atestat auditor.
                Severity-based (verde/amber/red), vizibil DOAR dacă issueDate setată
                și < 365 zile până expirare. Click → toast cu actionRequired detail. */}
@@ -3629,6 +3730,33 @@ Zona {selectedClimate.zone}
               setShowChat(true);
               showToast?.(`Text lipit (${text.length} caractere) → Chat AI`, "info");
             }}
+            onVoiceCommand={(cmd) => {
+              // Sprint Smart Input 2026 (D3) — comenzi proceduriale RO
+              switch (cmd.command) {
+                case "open_tutorial":
+                  setShowTutorial(true);
+                  showToast?.("🎤 Tutorial deschis", "success");
+                  break;
+                case "open_quickfill":
+                case "apply_template":
+                  setShowQuickFill(true);
+                  showToast?.("🎤 QuickFill Wizard deschis", "success");
+                  break;
+                case "open_chat":
+                  setShowChat(true);
+                  showToast?.("🎤 Chat AI deschis", "success");
+                  break;
+                case "duplicate_recent":
+                  showToast?.("🎤 Voce recunoscută — selectează manual din 'Proiecte recente' din sidebar", "info", 5000);
+                  break;
+                case "cancel":
+                  showToast?.("🎤 Anulat", "info");
+                  break;
+                default:
+                  showToast?.(`🎤 Comandă necunoscută: ${cmd.command}`, "info");
+              }
+            }}
+            smartInputTemplates={[...TYPICAL_BUILDINGS, ...TYPICAL_BUILDINGS_EXTRA]}
           /></Suspense>}
 
 
@@ -3664,6 +3792,12 @@ Zona {selectedClimate.zone}
             onOpenIFC={() => setShowImportWizard(true)}
             onLoadDemoTutorial={() => loadDemoByIndex(1)}
             showToast={showToast}
+            onPasteText={(text) => {
+              // Sprint Smart Input 2026 (D2) — text descriere anvelopă → Chat AI
+              setChatInitialText(text);
+              setShowChat(true);
+              showToast?.(`Text trimis la Chat AI (${text.length} caractere)`, "info");
+            }}
           /></Suspense>}
 
 
