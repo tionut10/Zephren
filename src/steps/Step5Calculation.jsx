@@ -75,9 +75,20 @@ export default function Step5Calculation(props) {
             const Au = parseFloat(building.areaUseful) || 0;
             const baseCatResolved = (CATEGORY_BASE_MAP?.[building.category]) || building.category;
             const catKey = baseCatResolved + (["RI","RC","RA"].includes(baseCatResolved) ? (cooling.hasCooling ? "_cool" : "_nocool") : "");
+            // Mc 001-2022 §5.4 + Anexa 4 — clasificare pe EP_total (după credit export, Math.max(0, ..)).
+            // ep_adjusted_m2 reprezintă EP după aplicarea creditului export per ISO 52000-1 §11.7 + Mc 001 §5.7.3.
+            // ep_total_m2 = EP consum brut (înainte credit) — afișat ca metric INFORMATIV când diferă semnificativ.
             const epFinal = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary?.ep_total_m2 || 0);
             const co2Final = renewSummary ? renewSummary.co2_adjusted_m2 : (instSummary?.co2_total_m2 || 0);
-            // Sprint 19 Performanță — memoizare calcule derivate (altfel rulează la fiecare re-render parent)
+            // Sprint Fix DEMO M5 (15 mai 2026) — EP brut consum (informativ, când regenerabilele reduc semnificativ).
+            // Justificare normativă: per Mc 001-2022 §5.4 clasificarea folosește EP_net (după credit), dar pentru
+            // clădiri ZEB / energy-positive EP_net=0 e confuz fără context. Afișăm și EP_brut + badge ZEB.
+            const epGross = instSummary?.ep_total_m2 || 0;
+            const co2Gross = instSummary?.co2_total_m2 || 0;
+            const epReductionPctRender = (epGross > 0 && renewSummary) ? Math.min(100, (renewSummary.ep_reduction / instSummary.ep_total) * 100) : 0;
+            // Clădire ZEB = EP_net clamped la 0 prin Math.max în useRenewableSummary (credit export ≥ consum brut).
+            // Per L. 238/2024 Art. 5 + EPBD 2024/1275 Art. 9: clădire cu emisii nete zero.
+            const isZebEffective = !!(renewSummary && epFinal < 0.5 && epGross > 1);
             const enClass = useMemo(() => getEnergyClass(epFinal, catKey), [epFinal, catKey]);
             const co2Class = useMemo(() => getCO2Class(co2Final, baseCatResolved), [co2Final, baseCatResolved]);
             const grid = ENERGY_CLASSES_DB[catKey] || ENERGY_CLASSES_DB[baseCatResolved];
@@ -330,7 +341,9 @@ export default function Step5Calculation(props) {
                       <div className="pt-2 border-t border-white/10">
                         <ResultRow label="Total EP (fără regenerabile)" value={instSummary.ep_total.toFixed(0)} unit="kWh/an" />
                         <ResultRow label="Reducere regenerabile" value={renewSummary ? `-${renewSummary.ep_reduction.toFixed(0)}` : "0"} unit="kWh/an" status="ok" />
-                        <ResultRow label="EP FINAL ajustat" value={(renewSummary?.ep_adjusted || instSummary.ep_total).toFixed(0)} unit="kWh/an" />
+                        {/* Sprint Fix DEMO M5 (15 mai 2026) — fix JS gotcha: `||` cădea pe ep_total când ep_adjusted=0.
+                            Per Mc 001-2022 §5.4 + ISO 52000-1 §11.7: EP_net e clamped la 0 prin Math.max în useRenewableSummary. */}
+                        <ResultRow label="EP FINAL ajustat (net, după credit export)" value={(renewSummary ? renewSummary.ep_adjusted : instSummary.ep_total).toFixed(0)} unit="kWh/an" />
                         <ResultRow label="EP specific FINAL" value={epFinal.toFixed(1)} unit="kWh/(m²·an)"
                           status={enClass.idx <= 1 ? "ok" : enClass.idx <= 3 ? "warn" : "fail"} />
                       </div>
@@ -351,8 +364,30 @@ export default function Step5Calculation(props) {
                     {enClass.cls}
                   </div>
                   <div className="text-2xl font-bold font-mono" style={{color:enClass.color}}>{epFinal.toFixed(1)}</div>
-                  <div className="text-xs opacity-40">kWh/(m2·an) energie primară</div>
+                  <div className="text-xs opacity-40">kWh/(m2·an) energie primară<span className="opacity-60"> (net, după credit export)</span></div>
                   <div className="text-xs opacity-30 mt-1">Nota energetică: {enClass.score}/100</div>
+                  {/* Sprint Fix DEMO M5 (15 mai 2026) — context EP brut + badge ZEB pentru clădiri energy-positive.
+                      Per Mc 001-2022 §5.4 + Anexa 4: clasificarea se aplică pe EP_net. Pentru ZEB / energy-positive,
+                      EP_net=0 → clasa A+ corectă, dar utilizatorul trebuie să vadă și EP_brut (consumul real al clădirii). */}
+                  {renewSummary && epGross > epFinal + 0.5 && (
+                    <div className="mt-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[10px] leading-relaxed">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="opacity-60">EP consum brut:</span>
+                        <span className="font-mono opacity-80">{epGross.toFixed(1)} kWh/(m²·an)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="opacity-60">Credit export regenerabile:</span>
+                        <span className="font-mono text-emerald-400">−{Math.min(epGross, epGross - epFinal).toFixed(1)} kWh/(m²·an)</span>
+                      </div>
+                      {isZebEffective && (
+                        <div className="mt-1.5 pt-1.5 border-t border-white/10 flex items-center gap-1.5 text-emerald-400">
+                          <span aria-hidden="true">🌱</span>
+                          <span className="font-semibold">Clădire ZEB — credit export ≥ consum brut</span>
+                        </div>
+                      )}
+                      <div className="mt-1 opacity-40 text-[9px]">Clasificare per Mc 001-2022 §5.4 + Anexa 4 (ISO 52000-1 §11.7)</div>
+                    </div>
+                  )}
 
                   {/* Scală oficială clasare */}
                   <div className="mt-4">
@@ -401,8 +436,28 @@ export default function Step5Calculation(props) {
                     {co2Class.cls}
                   </div>
                   <div className="text-2xl font-bold font-mono" style={{color:co2Class.color}}>{co2Final.toFixed(1)}</div>
-                  <div className="text-xs opacity-40">kg CO2/(m2·an)</div>
+                  <div className="text-xs opacity-40">kg CO2/(m2·an)<span className="opacity-60"> (net, după credit export)</span></div>
                   <div className="text-xs opacity-30 mt-1">Nota de mediu: {co2Class.score}/100</div>
+                  {/* Sprint Fix DEMO M5 — context CO2 brut + badge net-zero emissions.
+                      Per Mc 001-2022 + EPBD 2024/1275 Art. 9: clasificarea CO2 pe valoarea netă (după PV/regenerabile). */}
+                  {renewSummary && co2Gross > co2Final + 0.1 && (
+                    <div className="mt-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-[10px] leading-relaxed">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="opacity-60">CO₂ brut consum:</span>
+                        <span className="font-mono opacity-80">{co2Gross.toFixed(1)} kg/(m²·an)</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="opacity-60">Reducere regenerabile:</span>
+                        <span className="font-mono text-emerald-400">−{Math.min(co2Gross, co2Gross - co2Final).toFixed(1)} kg/(m²·an)</span>
+                      </div>
+                      {co2Final < 0.5 && co2Gross > 0.5 && (
+                        <div className="mt-1.5 pt-1.5 border-t border-white/10 flex items-center gap-1.5 text-emerald-400">
+                          <span aria-hidden="true">🌍</span>
+                          <span className="font-semibold">Net-zero emissions (EPBD 2024/1275 Art. 9)</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Scală vizuală CO2 — bare SVG */}
                   <div className="mt-4">

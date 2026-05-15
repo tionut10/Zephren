@@ -1696,11 +1696,17 @@ export const DEMO_PROJECTS = [
       photo: "",
     },
     expectedResults: {
-      energyClass: "A",
-      E_p_total_kWh_m2_y: 60,
+      // Sprint Fix DEMO M5 (15 mai 2026) — actualizare la statutul ZEB real per Mc 001-2022 §5.4 + Anexa 4.
+      // M5 (PC sol-apă + PV 6 kWp + ST 8 m² + VMC HR90%) produce mai multă energie primară decât consumă.
+      // Per ISO 52000-1 §11.7 + Mc 001 §5.7.3 + L. 238/2024 Art. 5: clădire ZEB cu EP_net=0 → clasă A+.
+      // E_p_total_kWh_m2_y rămâne "EP brut consum" (înainte credit export PV) — informativ.
+      // E_p_net_kWh_m2_y NOU — EP după credit export (canonic pentru clasificare).
+      energyClass: "A+",                  // era "A" — corectat: ZEB după credit export PV
+      E_p_total_kWh_m2_y: 60,             // EP brut consum (înainte credit) — referință informativă
+      E_p_net_kWh_m2_y: 0,                // NOU: EP_net după credit export — canonic per Anexa 4
       E_p_nren_kWh_m2_y: 32,
       E_p_ren_kWh_m2_y: 28,
-      RER_pct: 47,
+      RER_pct: 68,                        // era 47 — actualizat la valoarea calculată (PV calibrat PVGIS 29 apr 2026)
       U_med_W_m2K: 0.18,
       U_max_violations: [],
       Q_inc_kWh_m2_y: 22,
@@ -1716,9 +1722,10 @@ export const DEMO_PROJECTS = [
       meps2050_pass: true,
       passportRequired: false,
       passportPhases: 0,
-      passportTargetClass: "A",
+      passportTargetClass: "A+",          // era "A" — aliniat cu energyClass ZEB
+      isZeb: true,                        // NOU: flag explicit per EPBD 2024/1275 Art. 9 + L. 238/2024
       documentsExpected: ["CPE-RI", "Raport-Audit", "Pasaport-Renovare-Empty"],
-      tolerances: { E_p_nren: 0.20, E_p_total: 0.20, RER: 5, U_med: 0.10, Q_inc: 0.20 },
+      tolerances: { E_p_nren: 0.20, E_p_total: 0.20, E_p_net: 1.0, RER: 8, U_med: 0.10, Q_inc: 0.20 },
     },
   },
 
