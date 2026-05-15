@@ -1122,6 +1122,31 @@ export default function EnergyCalcApp({ cloud }) {
     showToast(`Demo ${idx + 1} încărcat — ${d.shortDesc}`, "success", 5000);
   }, [pushUndo, showToast]);
 
+  // ═══════════════════════════════════════════════════════════
+  // Tutorial v2 (15 mai 2026) — la întoarcere din /tutorial cu „Aplică demo",
+  // citește localStorage și încarcă demo-ul corespunzător (M1-M5 → idx 0-4).
+  // Ștergem cheia după aplicare ca să nu re-aplice la fiecare reload.
+  // ═══════════════════════════════════════════════════════════
+  useEffect(() => {
+    try {
+      const demoId = localStorage.getItem("zephren-tutorial-apply-demo");
+      if (demoId && /^M[1-5]$/.test(demoId)) {
+        const idx = parseInt(demoId.replace("M", ""), 10) - 1; // M1 → 0, M2 → 1, ..., M5 → 4
+        if (idx >= 0 && idx < DEMO_PROJECTS.length) {
+          // Delay scurt pentru a permite mount-ul complet + side-effects inițiale
+          const timer = setTimeout(() => {
+            loadDemoByIndex(idx);
+            showToast(`🎓 Demo ${demoId} aplicat din tutorial — explorează rezultatele!`, "success", 6000);
+            localStorage.removeItem("zephren-tutorial-apply-demo");
+          }, 300);
+          return () => clearTimeout(timer);
+        }
+      }
+    } catch (_e) {
+      // localStorage indisponibil (private mode) — ignoră silent
+    }
+  }, [loadDemoByIndex, showToast]);
+
 
   // ═══════════════════════════════════════════════════════════
   // SmartEnvelopeHub — handler-uri pentru RampInstant (S3)
@@ -3289,9 +3314,8 @@ export default function EnergyCalcApp({ cloud }) {
                 className={cn("text-xs px-1.5 py-1 rounded-r-lg border border-l-0 border-white/10 transition-colors", redoStack.length>0?"hover:bg-white/5":"opacity-30 cursor-not-allowed")}><span aria-hidden="true">↷</span></button>
             </div>
 
-<button onClick={() => setShowTutorial(true)} title="Tutorial interactiv"
-              aria-label="Deschide tutorialul interactiv"
-              aria-haspopup="dialog"
+<button onClick={() => window.open('/tutorial', '_blank', 'noopener,noreferrer')} title="Tutorial complet — flux Zephren (deschide în tab nou)"
+              aria-label="Deschide tutorialul complet în tab nou"
               className="text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-purple-500/25 bg-purple-500/8 text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-300 transition-all shrink-0">
               <span aria-hidden="true">🎓</span><span className="hidden lg:inline ml-1">Tutorial</span>
             </button>
@@ -3580,7 +3604,7 @@ Zona {selectedClimate.zone}
             loadDemoByIndex={loadDemoByIndex}
             loadTypicalBuilding={loadTypicalBuilding} showToast={showToast}
             goToStep={goToStep}
-            onOpenTutorial={() => setShowTutorial(true)}
+            onOpenTutorial={() => window.open('/tutorial', '_blank', 'noopener,noreferrer')}
             onOpenQuickFill={() => setShowQuickFill(true)}
             onOpenChat={() => setShowChat(true)}
             onOpenJSONImport={importProject}
@@ -3770,7 +3794,7 @@ Zona {selectedClimate.zone}
             // Sprint demo coerență (15 mai 2026) — pre-populate Step 8 inputs din demo typology.
             // null = proiect non-demo, Step 8 folosește defaults locale.
             demoStep8Inputs: step8Inputs,
-            onOpenTutorial: () => setShowTutorial(true),
+            onOpenTutorial: () => window.open('/tutorial', '_blank', 'noopener,noreferrer'),
           }} /></Suspense>}
           </div>
         </main>

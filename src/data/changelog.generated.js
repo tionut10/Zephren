@@ -12,36 +12,36 @@ export const CHANGELOG = [
     "label": "CURENT",
     "items": [
       {
-        "icon": "💰",
-        "text": "docs+demo: rebalansare M1-M4 expectedResults la live snapshot + investigation doc"
+        "icon": "📄",
+        "text": "Sprint Smart Input 2026 — 3.1+3.2: foto fațadă AI + import CPE existent"
       },
       {
-        "icon": "📋",
-        "text": "fix(audit): JS gotcha `|| ep_total` → `?? ep_total` în 9 fișiere"
+        "icon": "🔸",
+        "text": "Sprint Smart Input 2026 — 2.1+2.2: paste handler + Unified Smart Input multimodal"
       },
       {
-        "icon": "💰",
-        "text": "fix(demoProjects): rebalansare M5 ZEB + meta header sprint + TODO M1-M4"
+        "icon": "🔸",
+        "text": "Sprint Smart Input 2026 — 1.4+1.5: OSM++ category/Au + duplică proiecte recente"
       },
       {
-        "icon": "🔧",
-        "text": "fix(Step5): clarificare EP/CO2 net vs brut + badge ZEB pentru clădiri energy-positive"
-      },
-      {
-        "icon": "📦",
-        "text": "data: extindere catalog ferestre/uși bazată pe cercetare web (v2.1)"
+        "icon": "🔸",
+        "text": "Sprint Smart Input 2026 — 1.1+1.2+1.3: ierarhie tri-nivel + grupare RampFile + auto-save draft"
       },
       {
         "icon": "✨",
-        "text": "secțiune SVG specifică pentru ușile din Pasul 2 (DoorSection)"
+        "text": "feat(templates): tooltip preview U-values + HVAC baseline + tag-uri vizuale"
       },
       {
-        "icon": "📋",
-        "text": "audit-mai2026/MEGA cleanup: fix cooling-s9a + production FUNCTION_INVOCATION_FAILED"
+        "icon": "✨",
+        "text": "feat(demos): Pas 7+8 coerență cross-step pentru M1-M5 + fix scopCpe=\"construire\""
       },
       {
-        "icon": "🎨",
-        "text": "fix(classification): EP=0 net-zero → clasa A+, nu —; cashflow chart range-normalized"
+        "icon": "✨",
+        "text": "feat(templates): +35 tipologii cercetate web + filtrare epocă + sortare EP"
+      },
+      {
+        "icon": "✨",
+        "text": "adaugă buildingTemplatesFull în planGating + actualizare text lock șabloane"
       }
     ]
   },

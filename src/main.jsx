@@ -12,6 +12,7 @@ const TermsOfService = lazy(() => import("./components/TermsOfService.jsx"));
 const CookieBanner = lazy(() => import("./components/CookieBanner.jsx"));
 const ChangelogPage = lazy(() => import("./components/ChangelogPage.jsx"));
 const WhatsNewModal = lazy(() => import("./components/WhatsNewModal.jsx"));
+const TutorialPage = lazy(() => import("./pages/Tutorial.jsx"));
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -57,16 +58,19 @@ function isMobileRoute() {
 }
 
 // Sprint 20 — detectare rute legale din pathname + hash
+// Tutorial v2 (15 mai 2026) — adăugare rută /tutorial cu suport hash pas (#pas-N)
 function computeInitialRoute(viewData) {
   if (isMobileRoute()) return "mobile";
   if (viewData) return "view";
   const p = window.location.pathname;
   if (p === "/privacy" || p === "/privacy/") return "privacy";
   if (p === "/terms"   || p === "/terms/")   return "terms";
+  if (p === "/tutorial" || p === "/tutorial/") return "tutorial";
   const h = window.location.hash;
   if (h === "#privacy")   return "privacy";
   if (h === "#terms")     return "terms";
   if (h === "#changelog") return "changelog";
+  if (h === "#tutorial" || h.startsWith("#tutorial/") || h.startsWith("#pas-")) return "tutorial";
   return h === "#app" ? "app" : "landing";
 }
 
@@ -107,6 +111,8 @@ function Router() {
           ? <TermsOfService />
           : route === "changelog"
           ? <ChangelogPage />
+          : route === "tutorial"
+          ? <TutorialPage />
           : route === "app"
             ? <EnergyCalcApp />
             : <LandingPage onStart={goToApp} />
@@ -115,7 +121,7 @@ function Router() {
         {route === "app" && <WhatsNewModal />}
       </ErrorBoundary>
       {/* Cookie banner (GDPR Art. 7 + Legea 506/2004) */}
-      {(route === "landing" || route === "privacy" || route === "terms" || route === "changelog") && <CookieBanner />}
+      {(route === "landing" || route === "privacy" || route === "terms" || route === "changelog" || route === "tutorial") && <CookieBanner />}
     </Suspense>
   );
 }
