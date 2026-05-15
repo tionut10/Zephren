@@ -667,6 +667,8 @@ export default function SmartEnvelopeHub({
             setShowOpaqueModal={setShowOpaqueModal}
             setShowBridgeCatalog={setShowBridgeCatalog}
             showToast={showToast}
+            /* Sprint Pas 2 AI-First — EnvelopeAssistant tab AI propagă rezultatul */
+            onAIResultsReady={setAIResults}
           />
         </div>
       )}

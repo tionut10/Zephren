@@ -61,6 +61,9 @@ export default function RampGuided({
   onLoadDemoTutorial,            // tutorial final → încarcă demo
   onSwitchRamp,                  // (rampId) → schimbă tab curent în Hub
 
+  // Sprint Pas 2 AI-First (16 mai 2026)
+  onAIResultsReady,              // (envelope) → Hub setAIResults → review modal
+
   showToast,
 }) {
   const [showWizardOpaque, setShowWizardOpaque] = useState(false);
@@ -204,6 +207,8 @@ export default function RampGuided({
           thermalBridges={thermalBridges}
           envelopeSummary={envelopeSummary}
           calcOpaqueR={calcOpaqueR}
+          onAIResultsReady={onAIResultsReady}    /* Sprint Pas 2 AI-First */
+          showToast={showToast}
         />
       )}
 
