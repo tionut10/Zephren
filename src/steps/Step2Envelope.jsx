@@ -3,8 +3,15 @@ import { cn, Select, Input, Card, Badge, ResultRow } from "../components/ui.jsx"
 import { T } from "../data/translations.js";
 import UComplianceTable from "../components/UComplianceTable.jsx";
 import SmartEnvelopeHub from "../components/SmartEnvelopeHub/SmartEnvelopeHub.jsx";
+import EnvelopeAIReviewModal from "../components/SmartEnvelopeHub/EnvelopeAIReviewModal.jsx";
 // Sprint Smart Input 2026 (D2) — Smart Input replicat pe Step 2 (anvelopă)
 import UnifiedSmartInput from "../components/SmartDataHub/UnifiedSmartInput.jsx";
+// Sprint Pas 2 AI-First (16 mai 2026) — orchestrator multimodal AI
+import {
+  extractFromImage,
+  extractFromFile,
+  extractFromText,
+} from "../lib/envelope-ai-orchestrator.js";
 
 export default function Step2Envelope({
   building, lang, selectedClimate,
@@ -40,6 +47,44 @@ export default function Step2Envelope({
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
 
+  // ── AI Review Modal state (Sprint Pas 2 AI-First, 16 mai 2026) ─────────────
+  const [aiResults, setAIResults] = useState(null);
+  const [aiBusy, setAIBusy] = useState(false);
+
+  // Wrapper helper: rulează orchestrator + deschide modal review
+  async function runAIExtraction(promise, sourceLabel) {
+    setAIBusy(true);
+    try {
+      const result = await promise;
+      const envelope = result?.envelope || result;
+      if (envelope?.delegated) {
+        // .ifc / .csv / .json → ramificare la handler-ele legacy
+        if (envelope.delegated === "ifc") onOpenIFC?.();
+        else if (envelope.delegated === "csv" && envelope.file) {
+          importCSV?.(envelope.file);
+        } else if (envelope.delegated === "json" && envelope.file) {
+          onOpenJSONImport?.(envelope.file);
+        }
+        showToast?.(`${sourceLabel} → import determinist ${envelope.delegated.toUpperCase()}`, "success");
+        return;
+      }
+      if (envelope?.opaqueElements || envelope?.glazingElements || envelope?.thermalBridges) {
+        setAIResults(envelope);
+        showToast?.(`AI a propus ${envelope.opaqueElements?.length || 0} pereți + ${envelope.glazingElements?.length || 0} vitraje`, "success");
+      } else {
+        showToast?.("AI nu a putut extrage elemente. Încearcă wizard sau CSV.", "info");
+      }
+    } catch (err) {
+      console.error("[step2-ai]", err);
+      showToast?.(
+        `AI eșuat: ${err?.message || "necunoscut"}. Folosește un nivel inferior (CSV/Wizard).`,
+        "error",
+      );
+    } finally {
+      setAIBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div>
@@ -58,20 +103,32 @@ export default function Step2Envelope({
         </div>
       </div>
 
-      {/* Sprint Smart Input 2026 (D2) — Smart Input pe Step 2 anvelopă
-           Auditorul poate descrie anvelopa în cuvinte → AI extrage pereți + ferestre. */}
+      {/* Sprint Pas 2 AI-First (16 mai 2026) — Smart Input multimodal ACTIVAT
+           5 căi AI: text/voice/paste → chat envelope-fill | image → vision facade
+           | file PDF → vision drawing | file IFC/CSV/JSON → delegate legacy parsers */}
       {onPasteText && (
         <UnifiedSmartInput
-          onSubmitText={onPasteText}
+          onSubmitText={(text) => {
+            // Prima încercare: envelope-fill AI direct → modal review.
+            // Dacă AI eșuează, parintele primește textul prin onPasteText (chat-import legacy).
+            runAIExtraction(extractFromText(text, building), `"${text.slice(0, 40)}…"`);
+          }}
           onPickImage={(file) => {
-            // Imagine de planșă/secțiune → routează la Chat AI (drawing handler nu există în Step 2)
-            showToast?.("Pentru planșă tehnică, folosește Pas 1 → Smart Input cu Drawing AI.", "info");
+            runAIExtraction(extractFromImage(file, "facade"), `📷 ${file.name}`);
           }}
           onPickFile={(file) => {
-            showToast?.("Fișierul nu poate fi importat din Step 2. Folosește Pas 1.", "info");
+            runAIExtraction(extractFromFile(file), `📎 ${file.name}`);
           }}
           showToast={showToast}
         />
+      )}
+
+      {/* AI Loading non-blocking badge */}
+      {aiBusy && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sm text-sky-300">
+          <div className="animate-spin h-3 w-3 border-2 border-sky-400 border-t-transparent rounded-full" />
+          <span>🤖 AI analizează datele anvelopei…</span>
+        </div>
       )}
 
       {/* SmartEnvelopeHub — S4 GA (default ON; ?envelopeHub=0 → legacy grid fallback). */}
@@ -820,6 +877,22 @@ export default function Step2Envelope({
           Pasul 3: Instalații →
         </button>
       </div>
+
+      {/* AI Review Modal (Sprint Pas 2 AI-First, 16 mai 2026) — strict review pentru
+          rezultatele Smart Input text/voice/image/file. Niciun element nu intră în
+          state fără click manual. */}
+      {aiResults && (
+        <EnvelopeAIReviewModal
+          results={aiResults}
+          onAcceptOpaque={(els) => setOpaqueElements?.((prev) => [...(prev || []), ...els])}
+          onAcceptGlazing={(els) => setGlazingElements?.((prev) => [...(prev || []), ...els])}
+          onAcceptBridges={(brs) => setThermalBridges?.((prev) => [...(prev || []), ...brs])}
+          onEditOpaque={(el) => { setEditingOpaque?.(el); setShowOpaqueModal?.(true); setAIResults(null); }}
+          onEditGlazing={(el) => { setEditingGlazing?.(el); setShowGlazingModal?.(true); setAIResults(null); }}
+          onEditBridge={(br) => { setEditingBridge?.(br); setShowBridgeModal?.(true); setAIResults(null); }}
+          onClose={() => setAIResults(null)}
+        />
+      )}
     </div>
   );
 }
