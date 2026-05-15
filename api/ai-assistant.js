@@ -90,6 +90,94 @@ Reguli stricte:
 
 Output format: text continuu cu paragrafe scurte (max 4 propoziții/paragraf). Folosește subtitluri H3 (\`###\`) doar dacă sectionLength > 400 cuvinte.`;
 
+// Sprint Pas 2 AI-First (16 mai 2026) — Sistem prompt pentru completare automată
+// anvelopă termică (Pas 2) din descriere text/voce a utilizatorului.
+// Output STRICT JSON compatibil cu envelope-ai-orchestrator.js sanitizeEnvelope().
+const SYSTEM_PROMPT_ENVELOPE_FILL = `Ești expert Mc 001-2022 Cap. 2 anvelopă termică clădiri România 2026.
+
+Utilizatorul descrie în limbaj natural o clădire (categorie, an, structură, izolație, ferestre).
+Tu extragi pereți + vitraje + punți termice cu valori realiste și marchezi confidence.
+
+OUTPUT JSON STRICT (fără text înainte sau după):
+{
+  "opaqueElements": [
+    {
+      "name": "ex: Perete S izolat ETICS",
+      "type": "PE|PT|PP|PL|PB|PI",
+      "area": "120",
+      "orientation": "N|NE|E|SE|S|SV|V|NV",
+      "tau": 1.0,
+      "layers": [
+        {"matName": "BCA", "thickness": "250", "lambda": 0.30, "rho": 800},
+        {"matName": "EPS", "thickness": "100", "lambda": 0.038, "rho": 25}
+      ],
+      "confidence": "high|medium|low"
+    }
+  ],
+  "glazingElements": [
+    {
+      "name": "Ferestre PVC dublu Low-E",
+      "area": "20",
+      "u": 1.4, "g": 0.55,
+      "orientation": "S", "frameRatio": "25",
+      "type": "Dublu vitraj Low-E",
+      "confidence": "high|medium|low"
+    }
+  ],
+  "thermalBridges": [
+    {
+      "name": "Colț exterior vertical",
+      "type": "COL_EXT",
+      "psi": 0.10, "length": "10",
+      "confidence": "medium"
+    }
+  ],
+  "assumptions": [
+    "BCA 25cm '80-90 fără izolație → U≈0.50",
+    "Ferestre PVC dublu standard RO 2010+ → Uw 1.4"
+  ],
+  "notes": "Observații libere relevante (1-2 propoziții).",
+  "confidence": "high|medium|low"
+}
+
+REGULI U RO 2026:
+- BCA 25cm fără izolație ≈ U 0.50; cu EPS 10cm ≈ 0.30; EPS 15cm ≈ 0.23
+- Cărămidă 30cm cu goluri ≈ U 1.20; cu EPS 12cm ≈ 0.28
+- Panou prefabricat '70-'80 (5cm polistiren) ≈ U 0.85; reabilitare ETICS 10cm ≈ 0.28
+- Beton armat 25cm fără izolație ≈ U 2.8; cu EPS 10cm ≈ 0.30
+- Terasă necirculabilă fără izolație ≈ U 1.5; cu vată minerală 20cm ≈ 0.20
+- Planșeu pe sol fără izolație ≈ U 1.5; cu XPS 8cm ≈ 0.35
+- Tâmplărie: PVC simplu vechi → Uw 2.8; PVC dublu 2010+ → Uw 1.4; Low-E argon → Uw 1.1;
+  Triplu Low-E → Uw 1.0; lemn vechi simplu → Uw 4.5
+
+PUNȚI TIPICE REZIDENȚIAL (psi W/mK):
+- Joncțiune perete-terasă (PE-PT): 0.35 — colț vertical (COL_EXT): 0.10
+- Glaf fereastră (GLAF): 0.10 — soclu / planșeu sol (SOCLU): 0.45
+- Balcon ieșind: 0.85
+
+CATEGORII Mc 001:
+RI=casă, RC=bloc, RA=apartament, BI=birou, ED=școală, SA=spital, HC=hotel,
+CO=comercial, SP=sport, AL=altele.
+
+INFERENȚE AN CONSTRUCȚIE:
+- 1900-1945: cărămidă plină 40-60cm, lemn simplu
+- 1945-1970: cărămidă 30cm, lemn dublu
+- 1970-1989: panou prefabricat 27cm (5cm polistiren), lemn/PVC simplu
+- 1990-2010: BCA 25-30cm sau cărămidă goluri, PVC dublu standard
+- 2010+: BCA+EPS sau cărămidă+EPS, PVC dublu Low-E
+- 2020+: respectă C107/2010 → U_max impus normativ
+
+REGULI CRITICE:
+1. NU inventa date. Marchează confidence="low" pentru câmpuri estimate fără context clar.
+2. Dacă utilizatorul NU menționează orientare → pune orientation="" (nu ghici).
+3. Dacă NU menționează arie → pune area="" (nu valoare random).
+4. Cuvinte cheie:
+   - "izolat", "reabilitat", "termoizolat" → adăugare strat EPS 10cm pe pereți
+   - "panel", "panou", "PEFAB" → structure="Panouri prefabricate"
+   - "vechi", "neizolat" → fără strat izolant, U mare
+5. Toate stringurile în română cu diacritice (ă, â, î, ș, ț).
+6. RĂSPUNDE DOAR CU JSON, FĂRĂ alt text.`;
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -125,8 +213,10 @@ export default async function handler(req, res) {
     //   default = q&a normativ (Haiku 4.5)
     //   rehab-chat = chat reabilitare Pas 7 (Sonnet 4.6 + history)
     //   narrative = text narativ secțiuni documente (Sonnet 4.6, fără history)
+    //   envelope-fill = completare anvelopă Pas 2 (Sonnet 4.6, output JSON strict)
     const isRehabChat = intent === "rehab-chat";
     const isNarrative = intent === "narrative";
+    const isEnvelopeFill = intent === "envelope-fill";
 
     // Build context message from building data if provided
     let contextMessage = "";
@@ -201,18 +291,21 @@ export default async function handler(req, res) {
       messages = [{ role: "user", content: question + contextMessage }];
     }
 
-    // F5/F6 — model + system + tokens selection per intent:
+    // F5/F6 + Sprint Pas 2 AI-First — model + system + tokens selection per intent:
     // - rehab-chat: Sonnet 4.6 (calitate sugestii reabilitare complexe)
     // - narrative: Sonnet 4.6 (calitate text redactare documente)
+    // - envelope-fill: Sonnet 4.6 (calitate JSON anvelopă cu valori normate Mc 001)
     // - default Q&A normativ: Haiku 4.5 (viteză + cost redus)
-    const useSonnet = isRehabChat || isNarrative;
+    const useSonnet = isRehabChat || isNarrative || isEnvelopeFill;
     const model = useSonnet ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
-    const system = isRehabChat
+    const system = isEnvelopeFill
+      ? SYSTEM_PROMPT_ENVELOPE_FILL
+      : isRehabChat
       ? SYSTEM_PROMPT_REHAB_CHAT
       : isNarrative
       ? SYSTEM_PROMPT_NARRATIVE
       : SYSTEM_PROMPT;
-    const maxTokens = isNarrative ? 2000 : isRehabChat ? 1500 : 1024;
+    const maxTokens = isEnvelopeFill ? 2000 : isNarrative ? 2000 : isRehabChat ? 1500 : 1024;
 
     const response = await client.messages.create({
       model,

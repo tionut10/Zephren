@@ -231,29 +231,33 @@ export default function SmartEnvelopeHub({
     if (type === "drawing") {
       // Sprint Pas 2 AI-First (Layer 2D activat) — orchestrator AI vision
       setActiveRamp("file");
-      setAILoading(true);
-      setDropInfo({ label: `${file.name} → analiză AI în progres…`, type: "info" });
       const isImage = (file.type || "").startsWith("image/");
-      const hint = isImage ? "facade" : "drawing"; // PDF → planșă; JPG/PNG → fațadă
-      extractFromImage(file, hint)
-        .then((res) => {
-          setAIResults(res);
-          setDropInfo({
-            label: `${file.name} → ${res.opaqueElements.length} pereți + ${res.glazingElements.length} vitraje propuse`,
-            type: "success",
-          });
-        })
-        .catch((err) => {
-          console.error("[envelope-ai drop]", err);
-          showToast?.(
-            `AI eșuat: ${err?.message || "necunoscut"}. Folosește CSV/Wizard ca alternativă.`,
-            "error",
-          );
-          setDropInfo({ label: `${file.name} → AI indisponibil`, type: "error" });
-        })
-        .finally(() => setAILoading(false));
+      handleAIFile(file, isImage ? "facade" : "drawing");
     }
   }, [onOpenIFC, onCSVImport, onOpenJSONImport, showToast]);
+
+  // ── Handler AI partajat (drop zone + RampFile 4F) ──────────────────────────
+  const handleAIFile = useCallback((file, hint = "facade") => {
+    setAILoading(true);
+    setDropInfo({ label: `${file.name} → analiză AI în progres…`, type: "info" });
+    extractFromImage(file, hint)
+      .then((res) => {
+        setAIResults(res);
+        setDropInfo({
+          label: `${file.name} → ${res.opaqueElements.length} pereți + ${res.glazingElements.length} vitraje propuse`,
+          type: "success",
+        });
+      })
+      .catch((err) => {
+        console.error("[envelope-ai]", err);
+        showToast?.(
+          `AI eșuat: ${err?.message || "necunoscut"}. Folosește CSV/Wizard ca alternativă.`,
+          "error",
+        );
+        setDropInfo({ label: `${file.name} → AI indisponibil`, type: "error" });
+      })
+      .finally(() => setAILoading(false));
+  }, [showToast]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -633,6 +637,7 @@ export default function SmartEnvelopeHub({
             setGlazingElements={setGlazingElements}
             setThermalBridges={setThermalBridges}
             showToast={showToast}
+            onPickAIFile={handleAIFile}   /* Sprint Pas 2 AI-First — 4F activat */
           />
         </div>
       )}

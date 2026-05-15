@@ -175,11 +175,15 @@ export default function RampFile({
   setGlazingElements,
   setThermalBridges,
   showToast,
+  // Sprint Pas 2 AI-First (16 mai 2026):
+  onPickAIFile,                  // (file, hint="facade"|"drawing") → orchestrator
 }) {
   const csvOpaqueRef   = useRef(null);
   const csvGlazingRef  = useRef(null);
   const csvBridgesRef  = useRef(null);
   const jsonRef        = useRef(null);
+  const aiImageRef     = useRef(null);  // NEW: input pentru AI planșă
+  const aiCatalogRef   = useRef(null);  // NEW: input pentru AI catalog producător (S6)
 
   const handleGlazingFile = useCallback((file) => {
     if (!file) return;
@@ -215,7 +219,64 @@ export default function RampFile({
   return (
     <div className="space-y-2">
       <div className="text-[11px] text-sky-200/70 mb-2">
-        📁 Import din fișiere BIM/CAD/CSV. Parser IFC complet în roadmap Pro.
+        📁 Import din fișiere — AI primul, determinist dupa.
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* 🤖 SECȚIUNEA AI — Sprint Pas 2 AI-First (16 mai 2026)            */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <div className="text-[10px] uppercase tracking-widest text-violet-300/80 font-semibold pt-1">
+        🤖 Cu AI (extragere automată)
+      </div>
+
+      {/* ─── 4F. Planșă PDF / imagine (AI) — ACTIVAT ───────────────────── */}
+      <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-violet-500/30 bg-violet-500/[0.05] hover:bg-violet-500/10 transition-all group">
+        <span className="text-xl shrink-0" aria-hidden="true">🖼️</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold text-violet-200 flex items-center gap-2">
+            Planșă PDF / fotografie (AI)
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-normal">NEW</span>
+          </div>
+          <div className="text-[10px] text-violet-100/60 mt-0.5 leading-snug">
+            AI detectează pereți, vitraje, dimensiuni din plan arhitectural sau foto fațadă. Review manual înainte de import.
+          </div>
+        </div>
+        <button
+          onClick={() => aiImageRef.current?.click()}
+          disabled={!onPickAIFile}
+          className="text-xs px-2.5 py-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/40 text-violet-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Încarcă →
+        </button>
+      </div>
+      <input
+        ref={aiImageRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) {
+            const isImage = (f.type || "").startsWith("image/");
+            onPickAIFile?.(f, isImage ? "facade" : "drawing");
+          }
+          e.target.value = "";
+        }}
+      />
+
+      {/* ─── 4G. Catalog producător PDF — placeholder S6 (out-of-scope) ─ */}
+      <PlaceholderAction
+        icon="📑"
+        title="Catalog producător (fișe PDF)"
+        description="Import materiale și coeficienți U direct din fișe tehnice producător → bibliotecă materiale separată."
+        sessionTag="S6"
+      />
+
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* 📊 SECȚIUNEA DETERMINIST                                          */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <div className="text-[10px] uppercase tracking-widest text-sky-300/70 font-semibold pt-3 border-t border-white/[0.06] mt-2">
+        📊 Determinist (fără AI, parser nativ)
       </div>
 
       {/* ─── 1. IFC / gbXML (funcțional) ──────────────────────────────── */}
@@ -318,27 +379,13 @@ export default function RampFile({
         </>
       )}
 
-      {/* ─── Placeholders S4 ──────────────────────────────────────────── */}
-      <div className="pt-2 mt-2 border-t border-white/[0.06] space-y-2">
-        <div className="text-[10px] uppercase tracking-widest text-slate-500">
-          Următoarea sesiune (S4)
-        </div>
-        <PlaceholderAction
-          icon="📗"
-          title="Excel .xlsx multi-sheet"
-          description="Un singur fișier cu 3 sheet-uri: Pereți / Vitraje / Punți. Parser openpyxl serverless."
-        />
-        <PlaceholderAction
-          icon="🖼️"
-          title="Planșă PDF / imagine (AI)"
-          description="Detectează pereți exteriori și dimensiuni din plan arhitectural scanat sau PDF."
-        />
-        <PlaceholderAction
-          icon="📑"
-          title="Catalog producător (fișe PDF)"
-          description="Import materiale și coeficienți U direct din fișe tehnice producător."
-        />
-      </div>
+      {/* ─── 4E. Excel xlsx (placeholder S6) ──────────────────────────── */}
+      <PlaceholderAction
+        icon="📗"
+        title="Excel .xlsx multi-sheet"
+        description="Un singur fișier cu 3 sheet-uri: Pereți / Vitraje / Punți. Parser openpyxl serverless."
+        sessionTag="S6"
+      />
     </div>
   );
 }
