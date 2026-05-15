@@ -31,11 +31,13 @@ import ElementsList from "./ElementsList.jsx";
 import EnvelopeLossChart from "./EnvelopeLossChart.jsx";
 import ElementSectionModal from "../sections/ElementSectionModal.jsx";
 import EnvelopeHealthCheck from "./EnvelopeHealthCheck.jsx";
+import EnvelopeAIReviewModal from "./EnvelopeAIReviewModal.jsx";
 import { getBridgeDetails, classifyIsoLevel } from "../../calc/thermal-bridges-metadata.js";
 import { getURefNZEB } from "../../data/u-reference.js";
 import { U_REF_GLAZING } from "../../data/u-reference.js";
 import { computeEnvelopeProgress, STEP2_FIELDS } from "./EnvelopeProgress.js";
 import { computeEnvelopeHint } from "./utils/envelopeHints.js";
+import { extractFromImage } from "../../lib/envelope-ai-orchestrator.js";
 
 // ── Detectare tip fișier pentru drop zone universal ─────────────────────────
 function detectEnvelopeFileType(file) {
@@ -184,6 +186,10 @@ export default function SmartEnvelopeHub({
   const [gatesExpanded, setGatesExpanded] = useState(false);
   const browseFileRef = useRef(null);
 
+  // ── AI Review Modal state (Sprint Pas 2 AI-First, 16 mai 2026) ─────────────
+  const [aiResults, setAIResults] = useState(null);
+  const [aiLoading, setAILoading] = useState(false);
+
   // ── Progres calculat (10 gate-uri STEP2_FIELDS) ────────────────────────────
   const progress = useMemo(
     () => computeEnvelopeProgress({
@@ -223,9 +229,29 @@ export default function SmartEnvelopeHub({
       return;
     }
     if (type === "drawing") {
-      // TODO S3: planșă AI pentru detectare geometrie pereți
-      showToast?.("Import planșă AI pentru anvelopă vine în S3", "info");
-      setDropInfo({ label: `${file.name} → Analiză planșă (S3)`, type: "info" });
+      // Sprint Pas 2 AI-First (Layer 2D activat) — orchestrator AI vision
+      setActiveRamp("file");
+      setAILoading(true);
+      setDropInfo({ label: `${file.name} → analiză AI în progres…`, type: "info" });
+      const isImage = (file.type || "").startsWith("image/");
+      const hint = isImage ? "facade" : "drawing"; // PDF → planșă; JPG/PNG → fațadă
+      extractFromImage(file, hint)
+        .then((res) => {
+          setAIResults(res);
+          setDropInfo({
+            label: `${file.name} → ${res.opaqueElements.length} pereți + ${res.glazingElements.length} vitraje propuse`,
+            type: "success",
+          });
+        })
+        .catch((err) => {
+          console.error("[envelope-ai drop]", err);
+          showToast?.(
+            `AI eșuat: ${err?.message || "necunoscut"}. Folosește CSV/Wizard ca alternativă.`,
+            "error",
+          );
+          setDropInfo({ label: `${file.name} → AI indisponibil`, type: "error" });
+        })
+        .finally(() => setAILoading(false));
     }
   }, [onOpenIFC, onCSVImport, onOpenJSONImport, showToast]);
 
@@ -477,6 +503,9 @@ export default function SmartEnvelopeHub({
             <div className="text-left">
               <div className="text-xs font-medium text-slate-300">Trage fișier anvelopă aici</div>
               <div id="env-drop-zone-filetypes" className="text-[10px] text-slate-500">
+                <span className="text-violet-400/80 font-medium" title="Sprint Pas 2 AI-First: foto fațadă / planșă PDF → AI propune elemente + vitraje + punți">
+                  🤖 .jpg / .png / .pdf (AI)
+                </span> ·{" "}
                 <span className="text-emerald-400/70" title="Momentan suportă doar gbXML. Import IFC complet în roadmap Pro.">
                   .ifc / .gbxml
                 </span> ·{" "}
@@ -713,6 +742,28 @@ export default function SmartEnvelopeHub({
             t={t}
             size="sm"
           />
+        </div>
+      )}
+
+      {/* AI Review Modal — Sprint Pas 2 AI-First (16 mai 2026) */}
+      {aiResults && (
+        <EnvelopeAIReviewModal
+          results={aiResults}
+          onAcceptOpaque={(els) => setOpaqueElements?.((prev) => [...(prev || []), ...els])}
+          onAcceptGlazing={(els) => setGlazingElements?.((prev) => [...(prev || []), ...els])}
+          onAcceptBridges={(brs) => setThermalBridges?.((prev) => [...(prev || []), ...brs])}
+          onEditOpaque={(el) => { setEditingOpaque?.(el); setShowOpaqueModal?.(true); setAIResults(null); }}
+          onEditGlazing={(el) => { setEditingGlazing?.(el); setShowGlazingModal?.(true); setAIResults(null); }}
+          onEditBridge={(br) => { setEditingBridge?.(br); setShowBridgeModal?.(true); setAIResults(null); }}
+          onClose={() => setAIResults(null)}
+        />
+      )}
+
+      {/* AI Loading overlay non-blocking — vizibil pe drop drawing */}
+      {aiLoading && (
+        <div className="fixed bottom-6 right-6 z-40 bg-[#0f1117] border border-sky-500/40 rounded-lg px-4 py-3 shadow-xl flex items-center gap-3">
+          <div className="animate-spin h-4 w-4 border-2 border-sky-400 border-t-transparent rounded-full" />
+          <span className="text-sm text-sky-300">🤖 AI analizează planșa…</span>
         </div>
       )}
     </div>
