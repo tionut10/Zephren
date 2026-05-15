@@ -22,6 +22,8 @@ function extractYear(label) {
   return m ? parseInt(m[1]) : null;
 }
 
+const EP_RANK = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5, G: 6 };
+
 function estimateEPClass(tpl) {
   // estimare rapidă bazată pe an + izolație din label
   const yr = parseInt(tpl.building?.yearBuilt) || extractYear(tpl.label) || 1980;
@@ -33,8 +35,29 @@ function estimateEPClass(tpl) {
   return { cls: "E", color: "#ef4444" };
 }
 
+// Epoci constructive — praguri aliniate cu schimbări normative RO
+const EPOCHS = [
+  { id: "all",      label: "Orice epocă",     min: 0,    max: 9999 },
+  { id: "pre1945",  label: "Pre-1945",        min: 0,    max: 1944 },
+  { id: "1945_89",  label: "1945-1989",       min: 1945, max: 1989 },
+  { id: "1990_07",  label: "1990-2007",       min: 1990, max: 2007 },
+  { id: "2008_18",  label: "2008-2018",       min: 2008, max: 2018 },
+  { id: "post2019", label: "Post-2019 nZEB",  min: 2019, max: 9999 },
+];
+
+const SORT_OPTIONS = [
+  { id: "default",  label: "Implicit" },
+  { id: "year_asc", label: "An ↑" },
+  { id: "year_desc",label: "An ↓" },
+  { id: "ep_best",  label: "Clasă EP A→G" },
+  { id: "ep_worst", label: "Clasă EP G→A" },
+  { id: "alpha",    label: "Alfabetic" },
+];
+
 export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPlan }) {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [activeEpoch, setActiveEpoch] = useState("all");
+  const [sortMode, setSortMode] = useState("default");
   const [search, setSearch] = useState("");
   const [hovered, setHovered] = useState(null);
 
@@ -51,12 +74,33 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
   }, [allTemplates]);
 
   const filtered = useMemo(() => {
-    return allTemplates.filter(t => {
+    const epoch = EPOCHS.find(e => e.id === activeEpoch) || EPOCHS[0];
+    const list = allTemplates.filter(t => {
       const matchCat = activeCategory === "all" || t.cat === activeCategory;
       const matchSearch = !search || t.label.toLowerCase().includes(search.toLowerCase());
-      return matchCat && matchSearch;
+      const yr = parseInt(t.building?.yearBuilt) || extractYear(t.label) || 1980;
+      const matchEpoch = yr >= epoch.min && yr <= epoch.max;
+      return matchCat && matchSearch && matchEpoch;
     });
-  }, [allTemplates, activeCategory, search]);
+    if (sortMode === "default") return list;
+    const arr = [...list];
+    if (sortMode === "year_asc" || sortMode === "year_desc") {
+      arr.sort((a, b) => {
+        const ya = parseInt(a.building?.yearBuilt) || extractYear(a.label) || 1980;
+        const yb = parseInt(b.building?.yearBuilt) || extractYear(b.label) || 1980;
+        return sortMode === "year_asc" ? ya - yb : yb - ya;
+      });
+    } else if (sortMode === "ep_best" || sortMode === "ep_worst") {
+      arr.sort((a, b) => {
+        const ra = EP_RANK[estimateEPClass(a).cls] ?? 9;
+        const rb = EP_RANK[estimateEPClass(b).cls] ?? 9;
+        return sortMode === "ep_best" ? ra - rb : rb - ra;
+      });
+    } else if (sortMode === "alpha") {
+      arr.sort((a, b) => a.label.localeCompare(b.label, "ro"));
+    }
+    return arr;
+  }, [allTemplates, activeCategory, activeEpoch, sortMode, search]);
 
   const isLocked = (tpl) => {
     if (hasFull) return false;
@@ -106,6 +150,28 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
                 </button>
               );
             })}
+          </div>
+          <div className="flex gap-2 items-center flex-wrap pt-1">
+            <div className="flex gap-1 flex-wrap">
+              {EPOCHS.map(ep => (
+                <button key={ep.id}
+                  onClick={() => setActiveEpoch(ep.id)}
+                  className={`px-2 py-0.5 rounded text-[10px] transition-all ${
+                    activeEpoch === ep.id
+                      ? "bg-sky-500/25 border border-sky-500/40 text-sky-200"
+                      : "bg-white/5 border border-white/10 text-white/50 hover:text-white"
+                  }`}>
+                  {ep.label}
+                </button>
+              ))}
+            </div>
+            <div className="ml-auto flex items-center gap-1.5">
+              <span className="text-[10px] text-white/40">Sortare:</span>
+              <select value={sortMode} onChange={e => setSortMode(e.target.value)}
+                className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white/70 focus:outline-none focus:border-amber-500/40">
+                {SORT_OPTIONS.map(s => <option key={s.id} value={s.id} className="bg-[#1a1f2e]">{s.label}</option>)}
+              </select>
+            </div>
           </div>
         </div>
 

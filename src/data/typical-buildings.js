@@ -1,4 +1,5 @@
-export const TYPICAL_BUILDINGS_EXTRA = [];
+import { TYPICAL_BUILDINGS_EXTRA_LIST } from "./typical-buildings-extra.js";
+export const TYPICAL_BUILDINGS_EXTRA = TYPICAL_BUILDINGS_EXTRA_LIST;
 
 export const TYPICAL_BUILDINGS = [
 
@@ -8,7 +9,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 1. Casă P, anii '60-'70, sat — cărămidă plină 50cm, fără izolație
   { id:"CASA_SAT_60", label:"Casă P sat, anii '60-'70 (cărămidă 50cm, neizolată)", cat:"RI",
-    building:{ category:"RI", structure:"Zidărie portantă", floors:"P", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"3.50", heightFloor:"2.80" },
+    building:{ category:"RI", structure:"Zidărie portantă", floors:"P", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"3.50", heightFloor:"2.80", yearBuilt:1965 },
     opaque:[
       { name:"Pereți ext. cărămidă plină 50cm", type:"PE", area:"130", layers:[
         { material:"Tencuială var-ciment", thickness:"25", lambda:0.87, rho:1800 },
@@ -37,7 +38,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 2. Casă P+1, anii '90 — GVP 25cm + BCA, izolație parțială sau fără
   { id:"CASA_P1_90", label:"Casă P+1, anii '90 (GVP 25cm, fără izolație)", cat:"RI",
-    building:{ category:"RI", structure:"Zidărie portantă", floors:"P+1", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"6.50", heightFloor:"2.80" },
+    building:{ category:"RI", structure:"Zidărie portantă", floors:"P+1", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"6.50", heightFloor:"2.80", yearBuilt:1992 },
     opaque:[
       { name:"Pereți ext. GVP 25cm", type:"PE", area:"165", layers:[
         { material:"Tencuială var-ciment", thickness:"20", lambda:0.87, rho:1800 },
@@ -68,7 +69,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 3. Vilă P+1+M, post-2005 — BCA 30cm + EPS 10cm, bine izolată
   { id:"VILA_P1M_2005", label:"Vilă P+1+M, post-2005 (BCA 30cm + EPS 10cm)", cat:"RI",
-    building:{ category:"RI", structure:"Cadre beton armat", floors:"P+1+M", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"8.50", heightFloor:"2.80" },
+    building:{ category:"RI", structure:"Cadre beton armat", floors:"P+1+M", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"8.50", heightFloor:"2.80", yearBuilt:2008 },
     opaque:[
       { name:"Pereți ext. BCA 30cm + EPS 10cm", type:"PE", area:"220", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -101,7 +102,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 4. Casă pasivă P+1, 2024 — Porotherm 44 T + vată 20cm, nZEB
   { id:"CASA_PASIVA_2024", label:"Casă pasivă P+1, 2024 (Porotherm 44T + vată 20cm, nZEB)", cat:"RI",
-    building:{ category:"RI", structure:"Zidărie portantă", floors:"P+1", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"6.20", heightFloor:"2.80" },
+    building:{ category:"RI", structure:"Zidărie portantă", floors:"P+1", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"6.20", heightFloor:"2.80", yearBuilt:2024 },
     opaque:[
       { name:"Pereți ext. Porotherm 44T + vată 20cm", type:"PE", area:"175", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -140,7 +141,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 5. Apartament 2 cam bloc P+4, anii '70, panouri BCA 30cm, nereabilitat
   { id:"APT2_BLOC_P4_70", label:"Apt. 2 cam bloc P+4, anii '70 (BCA 30cm, nereabilitat)", cat:"RC",
-    building:{ category:"RC", structure:"Panouri prefabricate mari", floors:"P+4", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"16.5", heightFloor:"2.75" },
+    building:{ category:"RC", structure:"Panouri prefabricate mari", floors:"P+4", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"16.5", heightFloor:"2.75", yearBuilt:1975 },
     opaque:[
       { name:"Pereți ext. panouri BCA 30cm", type:"PE", area:"38", layers:[
         { material:"Tencuială var-ciment", thickness:"20", lambda:0.87, rho:1800 },
@@ -166,7 +167,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 6. Apartament 3 cam bloc P+8, anii '80, panouri prefabricate, reabilitat ETICS EPS 10cm
   { id:"APT3_BLOC_P8_80", label:"Apt. 3 cam bloc P+8, anii '80 (reabilitat EPS 10cm)", cat:"RC",
-    building:{ category:"RC", structure:"Panouri prefabricate mari", floors:"P+8", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"27", heightFloor:"2.75" },
+    building:{ category:"RC", structure:"Panouri prefabricate mari", floors:"P+8", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"27", heightFloor:"2.75", yearBuilt:1985 },
     opaque:[
       { name:"Pereți ext. prefab. + EPS 10cm (reabilitat)", type:"PE", area:"52", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -194,7 +195,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 7. Bloc nou P+6, 2025 — beton armat + EPS grafitat 15cm, nZEB
   { id:"BLOC_NOU_P6_2025", label:"Bloc nou P+6, 2025 (EPS grafitat 15cm, nZEB)", cat:"RC",
-    building:{ category:"RC", structure:"Cadre beton armat", floors:"P+6", basement:true, attic:false, units:"48", stairs:"2", heightBuilding:"21", heightFloor:"2.80" },
+    building:{ category:"RC", structure:"Cadre beton armat", floors:"P+6", basement:true, attic:false, units:"48", stairs:"2", heightBuilding:"21", heightFloor:"2.80", yearBuilt:2025 },
     opaque:[
       { name:"Pereți ext. beton armat + EPS grafitat 15cm", type:"PE", area:"1600", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -231,7 +232,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 8. Birouri P+3, post-2010 — fațadă cortină + beton, tripan Low-E
   { id:"BIROURI_P3_2010", label:"Birouri P+3, post-2010 (fațadă cortină, tripan Low-E)", cat:"BI",
-    building:{ category:"BI", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"14", heightFloor:"3.20" },
+    building:{ category:"BI", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"14", heightFloor:"3.20", yearBuilt:2012 },
     opaque:[
       { name:"Pereți opaci beton + vată 12cm", type:"PE", area:"480", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -262,7 +263,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 9. Birouri vechi P+2, anii '80 — cărămidă 38cm, nereabilitat
   { id:"BIROURI_P2_80", label:"Birouri P+2, anii '80 (cărămidă 38cm, nereabilitat)", cat:"BI",
-    building:{ category:"BI", structure:"Cadre beton armat", floors:"P+2", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"11.5", heightFloor:"3.20" },
+    building:{ category:"BI", structure:"Cadre beton armat", floors:"P+2", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"11.5", heightFloor:"3.20", yearBuilt:1985 },
     opaque:[
       { name:"Pereți ext. cărămidă 38cm", type:"PE", area:"580", layers:[
         { material:"Tencuială var-ciment", thickness:"25", lambda:0.87, rho:1800 },
@@ -298,7 +299,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 10. Școală/grădiniță P+1, anii '80 — cărămidă 38cm, reabilitată EPS 15cm
   { id:"SCOALA_P1_80", label:"Școală P+1, anii '80 (cărămidă 38cm, reabilitată EPS 15cm)", cat:"ED",
-    building:{ category:"ED", structure:"Cadre beton armat", floors:"P+1", basement:true, attic:false, units:"1", stairs:"2", heightBuilding:"8.00", heightFloor:"3.50" },
+    building:{ category:"ED", structure:"Cadre beton armat", floors:"P+1", basement:true, attic:false, units:"1", stairs:"2", heightBuilding:"8.00", heightFloor:"3.50", yearBuilt:1985 },
     opaque:[
       { name:"Pereți ext. cărămidă 38cm + EPS 15cm (reab.)", type:"PE", area:"520", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -336,7 +337,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 11. Supermarket P, structură metalică, sandwich 10cm
   { id:"SUPERMARKET_P", label:"Supermarket P, structură metalică (sandwich 10cm)", cat:"CO",
-    building:{ category:"CO", structure:"Structură metalică", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"6.00", heightFloor:"5.50" },
+    building:{ category:"CO", structure:"Structură metalică", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"6.00", heightFloor:"5.50", yearBuilt:2010 },
     opaque:[
       { name:"Pereți panouri sandwich 10cm (vată)", type:"PE", area:"480", layers:[
         { material:"Oțel", thickness:"0.5", lambda:58.0, rho:7850 },
@@ -372,7 +373,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 10b. Casă lemn/piatră pre-1960 — structură lemn + chirpici, fără izolație
   { id:"CASA_LEMN_1950", label:"Casă P tradiționala pre-1960 (lemn + chirpici/piatră, fără izolație)", cat:"RI",
-    building:{ category:"RI", structure:"Zidărie portantă", floors:"P", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"3.30", heightFloor:"2.70" },
+    building:{ category:"RI", structure:"Zidărie portantă", floors:"P", basement:false, attic:true, units:"1", stairs:"1", heightBuilding:"3.30", heightFloor:"2.70", yearBuilt:1955 },
     opaque:[
       { name:"Pereți chirpici + tencuiala lut 45cm", type:"PE", area:"95", layers:[
         { material:"Tencuială var-ciment", thickness:"20", lambda:0.87, rho:1800 },
@@ -401,7 +402,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 10c. Bloc cărămidă 1960–1972 — cadre BA + zidărie GVP, neizolat (tipic Bucuresti/Cluj)
   { id:"BLOC_CARAMIDA_1965", label:"Bloc P+4 cărămidă 1960–1972 (GVP 30cm, nereabilitat)", cat:"RC",
-    building:{ category:"RC", structure:"Cadre beton armat", floors:"P+4", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"16", heightFloor:"2.75" },
+    building:{ category:"RC", structure:"Cadre beton armat", floors:"P+4", basement:true, attic:false, units:"1", stairs:"1", heightBuilding:"16", heightFloor:"2.75", yearBuilt:1965 },
     opaque:[
       { name:"Pereți ext. GVP 30cm (neizolat)", type:"PE", area:"45", layers:[
         { material:"Tencuială var-ciment", thickness:"20", lambda:0.87, rho:1800 },
@@ -437,7 +438,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 11b. Grădiniță P, anii '80 — cărămidă 38cm, nereabilitată
   { id:"GRADINITA_P_80", label:"Grădiniță P, anii '80 (cărămidă 38cm, nereabilitată)", cat:"GR",
-    building:{ category:"GR", structure:"Cadre beton armat", floors:"P", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"4.50", heightFloor:"3.20" },
+    building:{ category:"GR", structure:"Cadre beton armat", floors:"P", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"4.50", heightFloor:"3.20", yearBuilt:1985 },
     opaque:[
       { name:"Pereți ext. cărămidă 38cm (fără izolație)", type:"PE", area:"380", layers:[
         { material:"Tencuială var-ciment", thickness:"25", lambda:0.87, rho:1800 },
@@ -468,7 +469,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 11c. Grădiniță P nouă, post-2010 — BCA 30cm + EPS 15cm, nZEB-ready
   { id:"GRADINITA_P_NOU", label:"Grădiniță P nouă, post-2010 (BCA 30cm + EPS 15cm)", cat:"GR",
-    building:{ category:"GR", structure:"Cadre beton armat", floors:"P", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"4.20", heightFloor:"3.40" },
+    building:{ category:"GR", structure:"Cadre beton armat", floors:"P", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"4.20", heightFloor:"3.40", yearBuilt:2015 },
     opaque:[
       { name:"Pereți ext. BCA 30cm + EPS 15cm", type:"PE", area:"340", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -506,7 +507,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 13. Spital P+3, anii '70 — cadre BA + cărămidă 38cm, nereabilitat
   { id:"SPITAL_P3_70", label:"Spital P+3, anii '70 (cărămidă 38cm, nereabilitat)", cat:"SPA_H",
-    building:{ category:"SPA_H", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"3", heightBuilding:"16", heightFloor:"3.50" },
+    building:{ category:"SPA_H", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"3", heightBuilding:"16", heightFloor:"3.50", yearBuilt:1975 },
     opaque:[
       { name:"Pereți ext. cărămidă 38cm (nereabilitat)", type:"PE", area:"2200", layers:[
         { material:"Tencuială var-ciment", thickness:"25", lambda:0.87, rho:1800 },
@@ -536,7 +537,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 14. Policlinică P+1, reabilitată, post-2000 — BCA + EPS 12cm
   { id:"POLICLINICA_P1_2005", label:"Policlinică P+1, reabilitată (BCA 25cm + EPS 12cm)", cat:"CL",
-    building:{ category:"CL", structure:"Cadre beton armat", floors:"P+1", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"8.00", heightFloor:"3.50" },
+    building:{ category:"CL", structure:"Cadre beton armat", floors:"P+1", basement:false, attic:false, units:"1", stairs:"2", heightBuilding:"8.00", heightFloor:"3.50", yearBuilt:2008 },
     opaque:[
       { name:"Pereți ext. BCA 25cm + EPS 12cm", type:"PE", area:"580", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -572,7 +573,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 15. Hotel P+5, post-comunism 1995 — cărămidă GVP 25cm, ferestre schimbate
   { id:"HOTEL_P5_1995", label:"Hotel P+5, 1995 (GVP 25cm, parțial reabilitat)", cat:"HO",
-    building:{ category:"HO", structure:"Cadre beton armat", floors:"P+5", basement:true, attic:false, units:"60", stairs:"2", heightBuilding:"20", heightFloor:"3.00" },
+    building:{ category:"HO", structure:"Cadre beton armat", floors:"P+5", basement:true, attic:false, units:"60", stairs:"2", heightBuilding:"20", heightFloor:"3.00", yearBuilt:1995 },
     opaque:[
       { name:"Pereți ext. GVP 25cm (fără izolație)", type:"PE", area:"1400", layers:[
         { material:"Tencuială var-ciment", thickness:"20", lambda:0.87, rho:1800 },
@@ -602,7 +603,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 16. Hotel modern P+8, 2015 — fațadă ventilată + tripan Low-E
   { id:"HOTEL_MODERN_2015", label:"Hotel modern P+8, 2015 (fațadă ventilată + tripan Low-E)", cat:"HO",
-    building:{ category:"HO", structure:"Cadre beton armat", floors:"P+8", basement:true, attic:false, units:"120", stairs:"3", heightBuilding:"30", heightFloor:"3.20" },
+    building:{ category:"HO", structure:"Cadre beton armat", floors:"P+8", basement:true, attic:false, units:"120", stairs:"3", heightBuilding:"30", heightFloor:"3.20", yearBuilt:2015 },
     opaque:[
       { name:"Fațadă ventilată (vată 18cm + placaj)", type:"PE", area:"3200", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
@@ -638,7 +639,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 17. Hală industrială P, comunistă 1975 — beton prefabricat, neizolată
   { id:"HALA_INDUSTRIALA_75", label:"Hală industrială P, 1975 (beton prefab. panou, neizolată)", cat:"IN",
-    building:{ category:"IN", structure:"Cadre beton prefabricate", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"8.00", heightFloor:"7.50" },
+    building:{ category:"IN", structure:"Cadre beton prefabricate", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"8.00", heightFloor:"7.50", yearBuilt:1975 },
     opaque:[
       { name:"Pereți panou beton prefabricat 24cm (neizolat)", type:"PE", area:"1600", layers:[
         { material:"Beton armat", thickness:"120", lambda:1.74, rho:2400 },
@@ -667,7 +668,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 18. Hală logistică modernă P, 2020 — structură metalică, sandwich PIR 12cm
   { id:"HALA_LOGISTICA_2020", label:"Hală logistică P, 2020 (structură metalică, sandwich PIR 12cm)", cat:"IN",
-    building:{ category:"IN", structure:"Structură metalică", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"10.00", heightFloor:"9.50" },
+    building:{ category:"IN", structure:"Structură metalică", floors:"P", basement:false, attic:false, units:"1", stairs:"1", heightBuilding:"10.00", heightFloor:"9.50", yearBuilt:2020 },
     opaque:[
       { name:"Pereți panouri sandwich PIR 12cm", type:"PE", area:"2400", layers:[
         { material:"Oțel", thickness:"0.5", lambda:58.0, rho:7850 },
@@ -702,7 +703,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 19. Clădire administrativă P+3, 1975 — cărămidă plină 38cm, nereabilitată
   { id:"CLADIRE_ADM_1975", label:"Clădire administrativă P+3, 1975 (cărămidă 38cm, nereabilitată)", cat:"AD",
-    building:{ category:"AD", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"2", heightBuilding:"16", heightFloor:"3.50" },
+    building:{ category:"AD", structure:"Cadre beton armat", floors:"P+3", basement:true, attic:false, units:"1", stairs:"2", heightBuilding:"16", heightFloor:"3.50", yearBuilt:1975 },
     opaque:[
       { name:"Pereți ext. cărămidă plină 38cm (fără izolație)", type:"PE", area:"1800", layers:[
         { material:"Tencuială var-ciment", thickness:"25", lambda:0.87, rho:1800 },
@@ -737,7 +738,7 @@ export const TYPICAL_BUILDINGS = [
 
   // 20. Pensiune P+1, reabilitată — zidărie 50cm + vată 15cm
   { id:"PENSIUNE_P1", label:"Pensiune P+1, reabilitată (zidărie 50cm + vată 15cm)", cat:"SA",
-    building:{ category:"SA", structure:"Zidărie portantă", floors:"P+1", basement:true, attic:true, units:"8", stairs:"1", heightBuilding:"7.50", heightFloor:"3.00" },
+    building:{ category:"SA", structure:"Zidărie portantă", floors:"P+1", basement:true, attic:true, units:"8", stairs:"1", heightBuilding:"7.50", heightFloor:"3.00", yearBuilt:2010 },
     opaque:[
       { name:"Pereți ext. cărămidă 50cm + vată 15cm", type:"PE", area:"250", layers:[
         { material:"Tencuială decorativă", thickness:"5", lambda:0.70, rho:1600 },
