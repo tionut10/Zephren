@@ -61,5 +61,14 @@
       "path": "/api/submit-mdlpa?cron=1",
       "schedule": "0 3 * * *"
     }
+  ],
+  "rewrites": [
+    { "source": "/tutorial", "destination": "/index.html" },
+    { "source": "/tutorial/:path*", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/privacy/", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" },
+    { "source": "/terms/", "destination": "/index.html" },
+    { "source": "/mobile", "destination": "/index.html" }
   ]
 }
