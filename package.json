@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.101.0",
     "@vercel/blob": "^2.3.3",
     "ajv": "^8.18.0",
+    "browser-image-compression": "^2.0.2",
     "docx": "^9.6.1",
     "docx-preview": "^0.3.7",
     "exceljs": "^4.4.0",
