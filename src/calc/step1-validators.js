@@ -355,25 +355,47 @@ const FIELD_VALIDATORS = {
 // warnings = non-blocante (suspicious / unusual / inconsistente) — afișate ca hint
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Sprint 27 P2.4 — cadastralNumber + landBook promovate la CRITICAL
-// (obligatorii pentru CPE conform Ord. MDLPA 16/2023 + L.238/2024 Art. 12)
-const CRITICAL_FIELDS = [
+// Sprint Smart Input 2026 — ierarhie tri-nivel pe câmpuri Step 1
+//
+// ESSENTIAL = minim absolut pentru a rula motor calcul Mc 001-2022 (calcul preliminar)
+//   - 4 câmpuri: fără acestea NU există EP/clasificare
+//
+// RECOMMENDED = pentru CPE de calitate (fallback-uri rezonabile dar trebuie completate)
+//   - majoritar geometrie + scop + condiționate RA/RC
+//
+// OFFICIAL_REQUIRED = pentru depunere oficială MDLPA (Ord. 16/2023 + L.238/2024 Art. 12)
+//   - cadastru + CF
+//
+// CRITICAL_FIELDS păstrează back-compat = ESSENTIAL + RECOMMENDED + OFFICIAL_REQUIRED
+export const ESSENTIAL_FIELDS = [
+  "category",
+  "yearBuilt",
+  "areaUseful",
+  "locality",
+];
+
+export const RECOMMENDED_FIELDS = [
   "city",
   "county",
-  "category",
   "structure",
-  "yearBuilt",
   "floors",
-  "areaUseful",
   "volume",
   "areaEnvelope",
   "heightFloor",
-  "locality",
   "scopCpe",
   "apartmentNo",
   "nApartments",
+];
+
+export const OFFICIAL_REQUIRED_FIELDS = [
   "cadastralNumber",
   "landBook",
+];
+
+const CRITICAL_FIELDS = [
+  ...ESSENTIAL_FIELDS,
+  ...RECOMMENDED_FIELDS,
+  ...OFFICIAL_REQUIRED_FIELDS,
 ];
 
 const WARNING_ONLY_FIELDS = [
@@ -434,20 +456,59 @@ export function validateStep1Critical(building, lang = "RO") {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Progress tracker — sync cu CRITICAL_FIELDS, fără override STEP1_FIELDS paralel
+//
+// Sprint Smart Input 2026 — extins cu sub-counters tri-nivel:
+//   - essential   : minim pentru calcul Mc 001-2022 (4 câmpuri)
+//   - recommended : pentru CPE de calitate (geometrie + scop + condiționate)
+//   - official    : pentru depunere MDLPA (cadastru + CF)
+//
+// Câmpurile condiționate (apartmentNo/nApartments) sunt filtrate prin
+// aplicabilitate înainte de contorizare, ca să nu apară false "missing".
+//
+// Forma returnată păstrează back-compat cu sprinturile anterioare:
+//   { filled, total, missing }  — peste CRITICAL_FIELDS (essential+recommended+official)
+// + sub-counters noi:
+//   { essential, recommended, official, cpeReady, cpeOfficial }
 // ─────────────────────────────────────────────────────────────────────────────
-export function computeStep1Progress(building, lang = "RO") {
-  const { errors } = validateStep1(building, lang);
-  const applicable = CRITICAL_FIELDS.filter((f) => {
-    // Câmpuri condiționate: sunt contabilizate doar dacă sunt aplicabile
-    if (f === "apartmentNo") return building?.category === "RA";
-    if (f === "nApartments") return building?.category === "RC";
-    return true;
-  });
+function isFieldApplicable(field, building) {
+  if (field === "apartmentNo") return building?.category === "RA";
+  if (field === "nApartments") return building?.category === "RC";
+  return true;
+}
+
+function countFilled(fields, building, errors) {
+  const applicable = fields.filter((f) => isFieldApplicable(f, building));
   const missing = applicable.filter((f) => errors[f]);
   return {
     filled: applicable.length - missing.length,
     total: applicable.length,
     missing,
+    complete: missing.length === 0 && applicable.length > 0,
+  };
+}
+
+export function computeStep1Progress(building, lang = "RO") {
+  const { errors } = validateStep1(building, lang);
+
+  const essential   = countFilled(ESSENTIAL_FIELDS,        building, errors);
+  const recommended = countFilled(RECOMMENDED_FIELDS,      building, errors);
+  const official    = countFilled(OFFICIAL_REQUIRED_FIELDS, building, errors);
+
+  const applicable = CRITICAL_FIELDS.filter((f) => isFieldApplicable(f, building));
+  const missing = applicable.filter((f) => errors[f]);
+
+  return {
+    // Back-compat top-level (Sprint 21 #14)
+    filled: applicable.length - missing.length,
+    total: applicable.length,
+    missing,
+    // Sub-counters tri-nivel (Sprint Smart Input 2026)
+    essential,
+    recommended,
+    official,
+    // Praguri logice
+    cpeReady: essential.complete,                                      // pot rula calcul preliminar
+    cpeOfficial: essential.complete && recommended.complete && official.complete, // pot depune oficial MDLPA
   };
 }
 

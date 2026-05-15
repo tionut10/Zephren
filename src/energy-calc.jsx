@@ -3584,6 +3584,7 @@ Zona {selectedClimate.zone}
             onOpenJSONImport={importProject}
             buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
             userPlan={userPlan}
+            applyBuildingPatch={(patch) => setBuilding(p => ({ ...p, ...patch }))}
           /></Suspense>}
 
 

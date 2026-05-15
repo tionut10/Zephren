@@ -18,6 +18,12 @@ import RampInstant from "./RampInstant.jsx";
 import RampFile from "./RampFile.jsx";
 import RampGuided from "./RampGuided.jsx";
 import { validateStep1, computeStep1Progress } from "../../calc/step1-validators.js";
+import {
+  useAutoSaveStep1Draft,
+  readStep1Draft,
+  clearStep1Draft,
+  formatRelativeTime,
+} from "../../hooks/useAutoSaveStep1Draft.js";
 
 // ── Detectare tip fișier pentru drop zone universal ───────────────────────────
 function detectFileType(file) {
@@ -51,13 +57,19 @@ const FIELD_LABELS_RO = {
   nApartments:     "Nr. apartamente",
 };
 
-// Sincronizat cu `src/calc/step1-validators.js` (Sprint 21 #14)
+// Sincronizat cu `src/calc/step1-validators.js` (Sprint 21 #14 + Sprint Smart Input 2026)
+// Acum returnează și sub-counters tri-nivel pentru bar de progres segmentat.
 function computeProgress(building) {
   const p = computeStep1Progress(building, "RO");
   return {
     filled: p.filled,
     total: p.total,
     missing: p.missing.map(key => ({ key, label: FIELD_LABELS_RO[key] || key })),
+    essential: p.essential,
+    recommended: p.recommended,
+    official: p.official,
+    cpeReady: p.cpeReady,
+    cpeOfficial: p.cpeOfficial,
   };
 }
 
@@ -127,6 +139,8 @@ export default function SmartDataHub({
   // Callback-uri RampGuided
   onOpenQuickFill,
   onOpenChat,
+  // Sprint Smart Input 2026 (1.3) — restore draft
+  applyBuildingPatch,
   // Utils
   showToast,
 }) {
@@ -137,9 +151,37 @@ export default function SmartDataHub({
   const [dropInfo, setDropInfo] = useState(null);
   const browseFileRef = useRef(null);
 
-  // Progress calculat dinamic
+  // ── Sprint Smart Input 2026 (1.3) — Auto-save draft Step 1 ──────────────
+  // Salvează building cu debounce 2s în localStorage pentru recovery la F5/crash.
+  useAutoSaveStep1Draft(building, { enabled: true });
+
+  // Recovery banner: la mount, dacă există draft cu mai multe câmpuri decât building actual
+  const [draftRecovery, setDraftRecovery] = useState(() => {
+    if (!isEmptyProject) return null; // doar pentru proiecte goale propunem recovery
+    const draft = readStep1Draft();
+    if (!draft || draft.fieldsCount < 2) return null;
+    return draft;
+  });
+
+  const handleRestoreDraft = useCallback(() => {
+    if (!draftRecovery || typeof applyBuildingPatch !== "function") return;
+    applyBuildingPatch(draftRecovery.building);
+    clearStep1Draft();
+    setDraftRecovery(null);
+    showToast?.(`Draft restaurat (${draftRecovery.fieldsCount} câmpuri)`, "success");
+  }, [draftRecovery, applyBuildingPatch, showToast]);
+
+  const handleDismissDraft = useCallback(() => {
+    clearStep1Draft();
+    setDraftRecovery(null);
+  }, []);
+
+  // Progress calculat dinamic (cu sub-counters tri-nivel)
   const progress = useMemo(() => computeProgress(building), [building]);
   const pct = Math.round((progress.filled / progress.total) * 100);
+  const pctEssential   = progress.essential.total   ? Math.round((progress.essential.filled   / progress.essential.total)   * 100) : 0;
+  const pctRecommended = progress.recommended.total ? Math.round((progress.recommended.filled / progress.recommended.total) * 100) : 0;
+  const pctOfficial    = progress.official.total    ? Math.round((progress.official.filled    / progress.official.total)    * 100) : 0;
 
   // ── Router drop zone universal ─────────────────────────────────────────────
   const routeFile = useCallback((file) => {
@@ -215,9 +257,9 @@ export default function SmartDataHub({
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.025] overflow-hidden">
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      {/* ── Header (Sprint Smart Input 2026 — tri-nivel) ───────────────────── */}
       <div className="px-4 pt-4 pb-3 border-b border-white/[0.06]">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="text-base">📥</span>
             <span className="font-semibold text-sm text-white">Date clădire</span>
@@ -225,23 +267,119 @@ export default function SmartDataHub({
               alege cum vrei să începi
             </span>
           </div>
-          {/* Badge progres compact */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-400">
-              Step 1: <span className={pct >= 80 ? "text-green-400 font-semibold" : pct >= 50 ? "text-amber-400 font-semibold" : "text-slate-300 font-semibold"}>{progress.filled}/{progress.total}</span>
-            </span>
-            <div className="w-20 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+          {/* Badge stare CPE (înlocuiește vechiul X/Y) */}
+          <div className="flex items-center gap-1.5">
+            {progress.cpeOfficial ? (
+              <span
+                title="Toate câmpurile esențiale + geometrie + cadastru/CF completate. Poți emite CPE pentru depunere oficială MDLPA."
+                className="text-[10px] px-2 py-0.5 rounded-md bg-green-500/15 text-green-300 border border-green-500/30 font-semibold"
+              >
+                📋 Gata pentru depunere oficială
+              </span>
+            ) : progress.cpeReady ? (
+              <span
+                title="Câmpurile esențiale sunt completate. Poți rula calcul preliminar Mc 001-2022; pentru depunere oficială mai trebuie geometrie + cadastru."
+                className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold"
+              >
+                🟢 CPE generabil ({progress.essential.filled}/{progress.essential.total} esențiale)
+              </span>
+            ) : (
+              <span
+                title="Mai trebuie completate câteva câmpuri esențiale înainte de a putea rula motorul de calcul."
+                className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/10 font-semibold"
+              >
+                Esențiale: {progress.essential.filled}/{progress.essential.total}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bară tri-segment: esențial (verde) | recomandat (galben) | oficial (sky) */}
+        <div className="flex items-center gap-2">
+          <div
+            className="flex-1 flex h-1.5 gap-0.5 rounded-full overflow-hidden bg-white/[0.04]"
+            role="progressbar"
+            aria-label="Progres completare câmpuri Step 1"
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.filled}
+          >
+            {/* Segment 1 — ESENȚIAL (verde) */}
+            <div className="flex-[2] relative bg-white/[0.04]" title={`Esențial pentru calcul: ${progress.essential.filled}/${progress.essential.total}`}>
               <div
-                className={`h-full transition-all duration-500 ${pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-amber-500" : "bg-slate-400"}`}
-                style={{ width: `${pct}%` }}
+                className="absolute inset-y-0 left-0 bg-green-500 transition-all duration-500"
+                style={{ width: `${pctEssential}%` }}
+              />
+            </div>
+            {/* Segment 2 — RECOMANDAT (amber) */}
+            <div className="flex-[4] relative bg-white/[0.04]" title={`Recomandat pentru CPE de calitate: ${progress.recommended.filled}/${progress.recommended.total}`}>
+              <div
+                className="absolute inset-y-0 left-0 bg-amber-500 transition-all duration-500"
+                style={{ width: `${pctRecommended}%` }}
+              />
+            </div>
+            {/* Segment 3 — OFICIAL (sky) */}
+            <div className="flex-[1] relative bg-white/[0.04]" title={`Obligatoriu pentru depunere MDLPA: ${progress.official.filled}/${progress.official.total}`}>
+              <div
+                className="absolute inset-y-0 left-0 bg-sky-500 transition-all duration-500"
+                style={{ width: `${pctOfficial}%` }}
               />
             </div>
           </div>
+          <span className="text-[10px] text-slate-500 tabular-nums shrink-0 min-w-[2.5rem] text-right">
+            {progress.filled}/{progress.total}
+          </span>
         </div>
+
+        {/* Legendă mini (doar pe desktop, când progres < 100%) */}
+        {pct < 100 && (
+          <div className="hidden sm:flex items-center gap-3 mt-1.5 text-[9px] text-slate-500">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500" /> esențial calcul</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-500" /> recomandat CPE</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-500" /> oficial MDLPA</span>
+          </div>
+        )}
       </div>
 
+      {/* ── Sprint Smart Input 2026 (1.3) — Banner Recovery Draft ─────────── */}
+      {draftRecovery && applyBuildingPatch && (
+        <div
+          role="alert"
+          className="mx-4 mt-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/[0.08] to-orange-500/[0.06] p-3 flex items-start gap-3"
+        >
+          <span className="text-2xl shrink-0" aria-hidden="true">💾</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-amber-200 text-xs mb-0.5 flex items-center gap-2 flex-wrap">
+              Draft nesalvat detectat
+              <span className="text-[9px] font-normal text-amber-300/70">
+                {formatRelativeTime(draftRecovery.savedAt)}
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-200/80 leading-snug mb-2">
+              Ai început completarea Step 1 cu <strong className="text-amber-100">{draftRecovery.fieldsCount} câmpuri</strong> dar nu ai salvat proiectul. Le restaurăm acum?
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleRestoreDraft}
+                className="px-3 py-1 rounded-lg text-[11px] font-bold bg-amber-600 hover:bg-amber-500 text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+              >
+                💾 Restaurează draft
+              </button>
+              <button
+                type="button"
+                onClick={handleDismissDraft}
+                className="px-3 py-1 rounded-lg text-[10px] font-medium border border-amber-500/30 hover:bg-amber-500/10 text-amber-300/80 hover:text-amber-200 transition-all"
+              >
+                Ignoră
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Welcome banner (proiect gol + tutorial) ────────────────────────── */}
-      {isEmptyProject && onOpenTutorial && (
+      {isEmptyProject && onOpenTutorial && !draftRecovery && (
         <div className="mx-4 mt-3 rounded-xl border border-purple-500/25 bg-purple-500/[0.07] p-3 flex items-start gap-3">
           <span className="text-2xl shrink-0" aria-hidden="true">🎓</span>
           <div className="flex-1 min-w-0">
@@ -345,7 +483,7 @@ export default function SmartDataHub({
             id="file"
             icon="📎"
             title="Din fișier"
-            subtitle="IFC, planșă, climă, JSON"
+            subtitle="IFC, planșă, JSON · climă opțional"
             accent="sky"
             active={activeRamp === "file"}
             onToggle={() => toggleRamp("file")}

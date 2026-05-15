@@ -13,6 +13,9 @@ import {
   CADASTRAL_REGEX,
   parseFloorsRegime,
   countAboveGroundFloors,
+  ESSENTIAL_FIELDS,
+  RECOMMENDED_FIELDS,
+  OFFICIAL_REQUIRED_FIELDS,
 } from "../step1-validators.js";
 
 describe("step1-validators — Sprint 21", () => {
@@ -308,6 +311,92 @@ describe("step1-validators — Sprint 21", () => {
       const p = computeStep1Progress(b, "RO");
       expect(p.missing).not.toContain("nApartments");
       expect(p.missing).not.toContain("apartmentNo");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sprint Smart Input 2026 — ierarhie tri-nivel ESSENTIAL/RECOMMENDED/OFFICIAL
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("computeStep1Progress — sub-counters tri-nivel (Smart Input 2026)", () => {
+    it("exportă constantele ESSENTIAL/RECOMMENDED/OFFICIAL_REQUIRED", () => {
+      expect(ESSENTIAL_FIELDS).toContain("category");
+      expect(ESSENTIAL_FIELDS).toContain("yearBuilt");
+      expect(ESSENTIAL_FIELDS).toContain("areaUseful");
+      expect(ESSENTIAL_FIELDS).toContain("locality");
+      expect(ESSENTIAL_FIELDS).toHaveLength(4);
+      expect(RECOMMENDED_FIELDS).toContain("scopCpe");
+      expect(RECOMMENDED_FIELDS).toContain("volume");
+      expect(OFFICIAL_REQUIRED_FIELDS).toEqual(["cadastralNumber", "landBook"]);
+    });
+
+    it("proiect gol → essential 0/4, cpeReady=false, cpeOfficial=false", () => {
+      const p = computeStep1Progress({}, "RO");
+      expect(p.essential.filled).toBe(0);
+      expect(p.essential.total).toBe(4);
+      expect(p.cpeReady).toBe(false);
+      expect(p.cpeOfficial).toBe(false);
+    });
+
+    it("doar 4 câmpuri esențiale → cpeReady=true, cpeOfficial=false", () => {
+      const b = {
+        category: "RI",
+        yearBuilt: "1985",
+        areaUseful: "120",
+        locality: "Cluj",
+      };
+      const p = computeStep1Progress(b, "RO");
+      expect(p.essential.complete).toBe(true);
+      expect(p.cpeReady).toBe(true);
+      expect(p.cpeOfficial).toBe(false);
+      expect(p.recommended.complete).toBe(false);
+    });
+
+    it("essential + recommended dar fără cadastru → cpeOfficial=false", () => {
+      const b = {
+        category: "RI", yearBuilt: "1985", areaUseful: "120", locality: "Cluj",
+        city: "Cluj", county: "Cluj", structure: "Diafragme b.a.",
+        floors: "P+1E", volume: "300", areaEnvelope: "220",
+        heightFloor: "2.7", scopCpe: "vanzare",
+      };
+      const p = computeStep1Progress(b, "RO");
+      expect(p.cpeReady).toBe(true);
+      expect(p.recommended.complete).toBe(true);
+      expect(p.official.complete).toBe(false);
+      expect(p.cpeOfficial).toBe(false);
+    });
+
+    it("toate trei nivele complete → cpeOfficial=true", () => {
+      const b = {
+        category: "RI", yearBuilt: "1985", areaUseful: "120", locality: "Cluj",
+        city: "Cluj", county: "Cluj", structure: "Diafragme b.a.",
+        floors: "P+1E", volume: "300", areaEnvelope: "220",
+        heightFloor: "2.7", scopCpe: "vanzare",
+        cadastralNumber: "123456", landBook: "CF nr. 123456 Cluj",
+      };
+      const p = computeStep1Progress(b, "RO");
+      expect(p.cpeOfficial).toBe(true);
+      expect(p.official.filled).toBe(2);
+    });
+
+    it("RC: nApartments contează în recommended; absent → recommended incomplet", () => {
+      const b = {
+        category: "RC", yearBuilt: "1985", areaUseful: "1000", locality: "Cluj",
+        city: "Cluj", county: "Cluj", structure: "Diafragme b.a.",
+        floors: "P+4E", volume: "2700", areaEnvelope: "1500",
+        heightFloor: "2.7", scopCpe: "vanzare",
+        // lipsă: nApartments
+      };
+      const p = computeStep1Progress(b, "RO");
+      expect(p.recommended.missing).toContain("nApartments");
+      expect(p.recommended.complete).toBe(false);
+    });
+
+    it("back-compat: filled/total/missing top-level rămân disponibile", () => {
+      const p = computeStep1Progress({}, "RO");
+      expect(p).toHaveProperty("filled");
+      expect(p).toHaveProperty("total");
+      expect(p).toHaveProperty("missing");
+      expect(Array.isArray(p.missing)).toBe(true);
     });
   });
 

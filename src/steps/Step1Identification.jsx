@@ -7,9 +7,6 @@ import SmartDataHub from "../components/SmartDataHub/SmartDataHub.jsx";
 import BuildingMapAdvanced from "../components/BuildingMapAdvanced.jsx"; // Sprint D Task 5: Leaflet + Overpass + shading
 import TMYPanel from "../components/TMYPanel.jsx"; // Sprint B Task 2: TMY orar (Pro+)
 import ANCPIVerificationPanel from "../components/ANCPIVerificationPanel.jsx"; // Sprint D Task 1: verificare cadastru
-// Sprint Conformitate P0-05..09 + P2-01..11 (7 mai 2026) — DocumentUploadCenter pentru
-// upload condiționat documente input client (18 sloturi: 8 standard + 10 extensie NR/RC/audit).
-import DocumentUploadCenter from "../components/DocumentUploadCenter.jsx";
 import { canAccess } from "../lib/planGating.js";
 import { findNearestLocality } from "../utils/exif-gps.js"; // Sprint D Task 6: GPS auto-localitate
 import CLIMATE_FOR_GPS from "../data/climate.json";
@@ -192,6 +189,7 @@ export default function Step1Identification({
   onOpenJSONImport,
   buildingPhotos, setBuildingPhotos,
   userPlan,
+  applyBuildingPatch, // Sprint Smart Input 2026 (1.3) — restore draft + bulk auto-fill
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -577,6 +575,7 @@ export default function Step1Identification({
         onOpenQuickFill={onOpenQuickFill}
         onOpenChat={onOpenChat}
         showToast={showToast}
+        applyBuildingPatch={applyBuildingPatch}
       />
 
       <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1456,25 +1455,6 @@ export default function Step1Identification({
                 "success"
               );
             }}
-          />
-        </Card>
-      </div>
-
-      {/* Sprint Conformitate P0-05..09 + P2-01..11 (7 mai 2026) — DocumentUploadCenter
-           Card additive (NU modifică niciun câmp existing). 18 sloturi cu IndexedDB store,
-           hash SHA-256, magic bytes validation. Sloturi condiționate pe yearBuilt/scopCpe/
-           category/protectedZone/isHistoric. */}
-      <div className="mt-6">
-        <Card title="📄 Documente client (upload)">
-          <DocumentUploadCenter
-            cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
-            buildingCategory={building.category}
-            buildingYearBuilt={building.yearBuilt}
-            scopCpe={building.scopCpe}
-            isResidentialCollective={building.category === "RC"}
-            protectedZone={!!building.protectedZone}
-            isHistoric={!!building.isHistoric}
-            showInfo={true}
           />
         </Card>
       </div>
