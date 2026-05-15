@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { TYPICAL_BUILDINGS, TYPICAL_BUILDINGS_EXTRA } from "../data/typical-buildings.js";
 import { canAccess } from "../lib/planGating.js";
+import { calcTemplateMetrics, fmtU } from "../lib/template-metrics.js";
+import { getHvacBaselineFor, summarizeHvac } from "../lib/hvac-baseline-defaults.js";
 
 const CAT_META = {
   RI:    { label: "Rezidențial individual", icon: "🏠", free: true },
@@ -33,6 +35,20 @@ function estimateEPClass(tpl) {
   if (yr >= 2005 || lbl.includes("eps 10") || lbl.includes("reabilitat")) return { cls: "C", color: "#fde68a" };
   if (yr >= 1990) return { cls: "D", color: "#fb923c" };
   return { cls: "E", color: "#ef4444" };
+}
+
+// Tag-uri derivate (badge-uri vizuale) — Task 3
+function deriveTags(tpl) {
+  const lbl = tpl.label.toLowerCase();
+  const yr = parseInt(tpl.building?.yearBuilt) || extractYear(tpl.label) || 1980;
+  const tags = [];
+  if (lbl.includes("nzeb") || (yr >= 2022 && !lbl.includes("monument"))) tags.push({ key: "nzeb", label: "nZEB", color: "#22c55e" });
+  if (lbl.includes("pasiv") || lbl.includes("enerphit")) tags.push({ key: "pasiv", label: "Pasiv", color: "#10b981" });
+  if (lbl.includes("reabilitat")) tags.push({ key: "reab", label: "Reabilitat", color: "#3b82f6" });
+  if (lbl.includes("monument") || lbl.includes("istoric") || lbl.includes("biserică") || lbl.includes("teatru")) tags.push({ key: "mon", label: "Monument", color: "#a855f7" });
+  if (lbl.includes("nereabilitat") || lbl.includes("fără izolație") || lbl.includes("neizolat") || lbl.includes("neizolată")) tags.push({ key: "neiz", label: "Neizolat", color: "#ef4444" });
+  if (lbl.includes("panou prefab") || lbl.includes("ipct") || lbl.includes("t744r") || lbl.includes("1340")) tags.push({ key: "panou", label: "Panou", color: "#94a3b8" });
+  return tags;
 }
 
 // Epoci constructive — praguri aliniate cu schimbări normative RO
@@ -190,6 +206,9 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
               const nrOpaque = tpl.opaque?.length || 0;
               const nrGlazing = tpl.glazing?.length || 0;
               const isHov = hovered === tpl.id;
+              const tags = deriveTags(tpl);
+              const metrics = isHov ? calcTemplateMetrics(tpl) : null;
+              const hvac = isHov ? getHvacBaselineFor(tpl) : null;
 
               return (
                 <button key={tpl.id}
@@ -226,8 +245,38 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
                         {nrOpaque > 0 && <span>{nrOpaque} elem. opace</span>}
                         {nrGlazing > 0 && <span>{nrGlazing} vitraj</span>}
                       </div>
+                      {/* Tag-uri vizuale (Task 3) */}
+                      {tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap mt-1.5">
+                          {tags.map(t => (
+                            <span key={t.key} className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                              style={{ background: t.color + "22", color: t.color, border: `1px solid ${t.color}33` }}>
+                              {t.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Tooltip preview on-hover (Task 2) */}
+                  {isHov && !locked && metrics && (
+                    <div className="mt-2 pt-2 border-t border-white/10 text-[10px] text-white/60 space-y-0.5">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                        {metrics.walls?.U != null && <div><span className="text-white/40">Pereți:</span> {fmtU(metrics.walls.U)}</div>}
+                        {metrics.roof?.U != null && <div><span className="text-white/40">Acoperiș:</span> {fmtU(metrics.roof.U)}</div>}
+                        {metrics.floor?.U != null && <div><span className="text-white/40">Planșeu:</span> {fmtU(metrics.floor.U)}</div>}
+                        {metrics.glazingU != null && <div><span className="text-white/40">Ferestre:</span> {fmtU(metrics.glazingU)}</div>}
+                        {metrics.glazingRatio != null && <div><span className="text-white/40">Vitraj:</span> {metrics.glazingRatio.toFixed(0)}%</div>}
+                        {metrics.bridgesPsi.count > 0 && <div><span className="text-white/40">Punți Σψ·L:</span> {metrics.bridgesPsi.sum.toFixed(1)} W/K</div>}
+                      </div>
+                      {hvac && (
+                        <div className="text-[9px] text-amber-300/70 pt-1">
+                          🔥 {summarizeHvac(hvac)}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Lock overlay */}
                   {locked && (
