@@ -481,6 +481,15 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               )}
             </div>
 
+            {/* Tutorial complet — flux Zephren (15 mai 2026) */}
+            <a href="/tutorial" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#a78bfa", textDecoration: "none", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.25)", transition: "background 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(167,139,250,0.20)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(167,139,250,0.10)"; }}
+              title={lang === "EN" ? "Complete tutorial — Zephren workflow (8 steps, opens in new tab)" : "Tutorial complet — fluxul Zephren (8 pași, deschide în tab nou)"}>
+              <span style={{ fontSize: "11px" }}>🎓</span>
+              {lang === "EN" ? "Tutorial" : "Tutorial"}
+              <span style={{ fontSize: "9px", padding: "1px 5px", borderRadius: "4px", background: "rgba(167,139,250,0.30)", color: "#c4b5fd", fontWeight: 700, letterSpacing: "0.3px" }}>NEW</span>
+            </a>
             <a href="#changelog" style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#f59e0b", textDecoration: "none", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)", transition: "background 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,158,11,0.16)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,158,11,0.08)"; }}>
@@ -546,6 +555,13 @@ export default function LandingPage({ onStart, onLogin, onRegister, onGoogleLogi
               </div>
             </div>
           )}
+
+          {/* Tutorial — mobil */}
+          <a href="/tutorial" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenu(false)} style={{ fontSize: "14px", color: "#a78bfa", textDecoration: "none", padding: "10px 12px", display: "flex", alignItems: "center", gap: "8px", background: "rgba(167,139,250,0.10)", border: "1px solid rgba(167,139,250,0.25)", borderRadius: "8px", fontWeight: 600 }}>
+            <span>🎓</span>
+            <span>{lang === "EN" ? "Complete tutorial" : "Tutorial complet"}</span>
+            <span style={{ fontSize: "9px", padding: "1px 5px", borderRadius: "4px", background: "rgba(167,139,250,0.30)", color: "#c4b5fd", fontWeight: 700, marginLeft: "auto" }}>NEW</span>
+          </a>
 
           <button onClick={() => { setMobileMenu(false); setShowLogin(true); }} style={{ fontSize: "13px", padding: "10px 16px", borderRadius: "8px", border: `1px solid ${border}`, background: "transparent", color: text, cursor: "pointer", textAlign: "left" }}>{T("nav_login", "Autentificare")}</button>
           <button onClick={() => { setMobileMenu(false); onStart(); }} style={{ fontSize: "13px", fontWeight: "600", padding: "10px 20px", borderRadius: "8px", border: "none", background: "#f59e0b", color: "#000", cursor: "pointer" }}>{T("nav_open", "Deschide aplicația →")}</button>
