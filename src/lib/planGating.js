@@ -143,6 +143,8 @@ export const PLAN_FEATURES = {
     // EDU specific
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: false,       // free: doar RI+RC (CAT_META.free=true)
   },
 
   // ─────────────────────────── EDU (gratis cu dovadă) ───────────────────────────
@@ -221,6 +223,8 @@ export const PLAN_FEATURES = {
     trainingHours:      0,
     isEdu:              true,
     eduValidationDate:  null,        // se completează la activare
+    // Șabloane clădiri tip
+    buildingTemplatesFull: true,        // edu: acces complet toate 11 categorii
   },
 
   // ─────────────────────────── AUDIT — „Zephren AE IIci" (199 RON) ───────────────────────────
@@ -315,6 +319,8 @@ export const PLAN_FEATURES = {
     trainingHours:      0,
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: false,       // AE IIci: legal doar rezidențial (RI+RC rămân free)
   },
 
   // ─────────────────────────── PRO — „Zephren AE Ici" (499 RON) ⭐ POPULAR ───────────────────────────
@@ -411,6 +417,8 @@ export const PLAN_FEATURES = {
     trainingHours:      0,
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: true,        // AE Ici: toate 11 categorii (grad I = toate clădirile)
   },
 
   // ─────────────────────────── EXPERT (899 RON) ───────────────────────────
@@ -501,6 +509,8 @@ export const PLAN_FEATURES = {
     trainingHours:      0,
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: true,        // Expert: toate 11 categorii
   },
 
   // ─────────────────────────── BIROU (1.890 RON flat) ───────────────────────────
@@ -581,6 +591,8 @@ export const PLAN_FEATURES = {
     trainingHours:      2,           // 2h training inclus
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: true,        // Birou: toate 11 categorii + multi-user
   },
 
   // ─────────────────────────── ENTERPRISE (de la 4.990 RON) ───────────────────────────
@@ -661,6 +673,8 @@ export const PLAN_FEATURES = {
     trainingHours:      8,           // 8h training inclus
     isEdu:              false,
     eduValidationDate:  null,
+    // Șabloane clădiri tip
+    buildingTemplatesFull: true,        // Enterprise: toate 11 categorii
   },
 };
 

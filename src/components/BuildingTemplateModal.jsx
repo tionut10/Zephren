@@ -168,7 +168,7 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
                     <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/20">
                       <div className="text-center">
                         <div className="text-base">🔒</div>
-                        <div className="text-[10px] text-white/50 mt-0.5">Standard+</div>
+                        <div className="text-[10px] text-white/50 mt-0.5">AE Ici+</div>
                       </div>
                     </div>
                   )}
@@ -184,7 +184,7 @@ export default function BuildingTemplateModal({ isOpen, onClose, onApply, userPl
             {filtered.length} șabloane afișate
             {!hasFull && (
               <span className="ml-2 text-amber-400/70">
-                · <strong>Standard+</strong> deblochează toate categoriile
+                · <strong>AE Ici</strong> (1.499 RON/lună) deblochează toate 11 categoriile
               </span>
             )}
           </div>
