@@ -3585,6 +3585,18 @@ Zona {selectedClimate.zone}
             buildingPhotos={buildingPhotos} setBuildingPhotos={setBuildingPhotos}
             userPlan={userPlan}
             applyBuildingPatch={(patch) => setBuilding(p => ({ ...p, ...patch }))}
+            onDuplicateRecent={(projectData) => {
+              // Sprint Smart Input 2026 (1.5) — duplică proiect recent prin importProject
+              // Convertim obiectul JSON la File (Blob) pentru a reutiliza handler-ul existent
+              try {
+                const json = JSON.stringify(projectData);
+                const blob = new Blob([json], { type: "application/json" });
+                const file = new File([blob], `recent-${Date.now()}.json`, { type: "application/json" });
+                importProject(file);
+              } catch (e) {
+                showToast("Eroare la duplicare proiect: " + e.message, "error");
+              }
+            }}
           /></Suspense>}
 
 

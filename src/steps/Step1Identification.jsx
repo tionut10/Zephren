@@ -124,6 +124,66 @@ function polygonAreaM2(coords) {
   return Math.abs(area2) / 2;
 }
 
+// Sprint Smart Input 2026 (1.4) — OSM tag `building` → categorie Zephren
+// Maparea e conservativă; orice tag necunoscut returnează null (nu propunem).
+// Heuristică pentru `residential`/`yes`: ≥3 niveluri → bloc colectiv (RC), altfel casă (RI).
+function osmTagToCategory(tag, levels) {
+  if (!tag) return null;
+  const t = String(tag).toLowerCase();
+  // Rezidențial
+  if (t === "apartments")                              return "RC";
+  if (t === "residential" || t === "yes")              return (levels && levels >= 3) ? "RC" : "RI";
+  if (t === "house" || t === "detached"
+   || t === "semidetached_house" || t === "bungalow"
+   || t === "terrace" || t === "static_caravan")       return "RI";
+  // Educație
+  if (t === "school")                                  return "SC";
+  if (t === "kindergarten")                            return "GR";
+  if (t === "college" || t === "university")           return "UN";
+  if (t === "dormitory")                               return "CP";
+  // Birouri & administrație
+  if (t === "office" || t === "commercial")            return "BI";
+  if (t === "government" || t === "civic"
+   || t === "public" || t === "courthouse")            return "AD";
+  if (t === "bank")                                    return "BA_OFF";
+  // Sănătate
+  if (t === "hospital")                                return "SPA_H";
+  if (t === "clinic")                                  return "CL";
+  if (t === "nursing_home")                            return "AS_SOC";
+  // Cazare
+  if (t === "hotel")                                   return "HC";
+  if (t === "hostel")                                  return "HOSTEL";
+  // Comerț & alimentație
+  if (t === "supermarket")                             return "SUPER";
+  if (t === "retail" || t === "shop")                  return "MAG";
+  if (t === "mall")                                    return "MALL";
+  if (t === "restaurant")                              return "REST";
+  // Sport
+  if (t === "sports_centre" || t === "sports_hall"
+   || t === "stadium" || t === "pavilion")             return "SP";
+  // Industrial / altele
+  if (t === "industrial" || t === "warehouse"
+   || t === "manufacture")                             return "AL";
+  return null;
+}
+
+// Sprint Smart Input 2026 (1.4) — levels → regim înălțime (ex: 5 → "P+4E")
+function levelsToFloorsRegime(levels) {
+  if (!levels || levels < 1) return null;
+  const lvl = parseInt(levels);
+  if (!Number.isFinite(lvl) || lvl < 1) return null;
+  if (lvl === 1) return "P";
+  return `P+${lvl - 1}E`;
+}
+
+// Sprint Smart Input 2026 (1.4) — footprint × etaje × 0.85 ≈ suprafață utilă
+// Multiplicator 0.85 reflectă: pereți (~10%), casa scării (~3-5%), balcoane neîncălzite (~1-2%).
+// Conservativ pentru clădiri urbane RO — banner UI obligatoriu „estimare ±15%".
+function estimateAreaUseful(footprintM2, levels) {
+  if (!footprintM2 || !levels || footprintM2 < 10 || levels < 1) return null;
+  return Math.round(footprintM2 * levels * 0.85);
+}
+
 async function getBuildingFootprint(lat, lon) {
   const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
   const cached = _overpassCache.get(key);
@@ -144,15 +204,33 @@ async function getBuildingFootprint(lat, lon) {
   if (!way.geometry?.length) return null;
   const area = polygonAreaM2(way.geometry);
   const tags = way.tags || {};
+  const levels = parseInt(tags["building:levels"] || tags.levels || "0") || null;
+  const buildingType = tags.building || null;
+
+  // Anul construcției: tag-uri OSM uzuale (start_date, construction_date, building:year)
+  let yearBuilt = tags["start_date"] || tags["construction_date"] || tags["building:year"] || null;
+  // Curăță „1985-09-01" → „1985" sau „c. 1900" → „1900"
+  if (yearBuilt) {
+    const m = String(yearBuilt).match(/\d{4}/);
+    yearBuilt = m ? m[0] : null;
+  }
+
   const result = {
     footprintM2: Math.round(area),
-    levels: parseInt(tags["building:levels"] || tags.levels || "0") || null,
-    yearBuilt: tags["start_date"] || tags["construction_date"] || null,
-    buildingType: tags.building || null,
+    levels,
+    yearBuilt,
+    buildingType,
+    // Sprint Smart Input 2026 (1.4) — câmpuri derivate (estimări)
+    floorsRegime: levelsToFloorsRegime(levels),
+    categoryGuess: osmTagToCategory(buildingType, levels),
+    areaUsefulEstimate: estimateAreaUseful(Math.round(area), levels),
   };
   _overpassCache.set(key, { t: Date.now(), v: result });
   return result;
 }
+
+// Export pentru teste unitare Sprint 1.4
+export { osmTagToCategory, levelsToFloorsRegime, estimateAreaUseful };
 
 // ── Validare câmpuri critice Step 1 — DEPRECATED ──────────────────────────────
 // Delegată în `src/calc/step1-validators.js` (Sprint 21). Păstrăm stub-ul pentru
@@ -190,6 +268,8 @@ export default function Step1Identification({
   buildingPhotos, setBuildingPhotos,
   userPlan,
   applyBuildingPatch, // Sprint Smart Input 2026 (1.3) — restore draft + bulk auto-fill
+  onDuplicateRecent,  // Sprint Smart Input 2026 (1.5) — duplică proiect recent
+  currentProjectId,
 }) {
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
   const [geoStatus, setGeoStatus] = useState(null); // null | "loading" | "ok" | "error"
@@ -576,6 +656,8 @@ export default function Step1Identification({
         onOpenChat={onOpenChat}
         showToast={showToast}
         applyBuildingPatch={applyBuildingPatch}
+        onDuplicateRecent={onDuplicateRecent}
+        currentProjectId={currentProjectId}
       />
 
       <div data-manual-form-anchor className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -634,46 +716,127 @@ export default function Step1Identification({
               </div>
               <Input label={t("Cod poștal",lang)} value={building.postal} onChange={v => updateBuilding("postal",v)} autoComplete="postal-code" />
 
-              {/* Sugestie footprint clădire */}
-              {geoSuggestion && (
-                <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-3 space-y-2">
-                  <div className="text-xs font-semibold text-sky-300">📐 Date clădire din OpenStreetMap</div>
-                  <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div className="opacity-60">Amprentă:</div>
-                    <div className="font-medium">{geoSuggestion.footprintM2} m²</div>
-                    {geoSuggestion.levels && <><div className="opacity-60">Etaje:</div><div className="font-medium">{geoSuggestion.levels}</div></>}
-                    {geoSuggestion.yearBuilt && <><div className="opacity-60">An construcție:</div><div className="font-medium">{geoSuggestion.yearBuilt}</div></>}
-                    {geoSuggestion.buildingType && <><div className="opacity-60">Tip OSM:</div><div className="font-medium">{geoSuggestion.buildingType}</div></>}
+              {/* Sprint Smart Input 2026 (1.4) — Sugestie OSM++ cu 4 câmpuri propuse */}
+              {geoSuggestion && (() => {
+                // Calculează ce s-ar aplica (doar câmpuri necompletate, fără overwrite)
+                const proposed = {};
+                if (geoSuggestion.areaUsefulEstimate && !building.areaUseful)
+                  proposed.areaUseful = String(geoSuggestion.areaUsefulEstimate);
+                if (geoSuggestion.floorsRegime && !building.floors)
+                  proposed.floors = geoSuggestion.floorsRegime;
+                if (geoSuggestion.yearBuilt && !building.yearBuilt)
+                  proposed.yearBuilt = geoSuggestion.yearBuilt;
+                if (geoSuggestion.categoryGuess && !building.category)
+                  proposed.category = geoSuggestion.categoryGuess;
+
+                const nProposed = Object.keys(proposed).length;
+                const categoryLabel = geoSuggestion.categoryGuess
+                  ? BUILDING_CATEGORIES.find(c => c.id === geoSuggestion.categoryGuess)?.label
+                  : null;
+
+                return (
+                  <div className="rounded-lg border border-sky-500/25 bg-sky-500/[0.06] p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="text-xs font-semibold text-sky-300 flex items-center gap-1.5">
+                        📐 Date din OpenStreetMap
+                        <span className="text-[9px] font-normal text-sky-400/70 uppercase tracking-wide">
+                          {nProposed} câmpuri propuse
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5">
+                        ⚠ estimare ±15% — confirmați
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                      <div className="flex items-center justify-between">
+                        <span className="opacity-60">Amprentă:</span>
+                        <span className="font-medium">{geoSuggestion.footprintM2} m²</span>
+                      </div>
+                      {geoSuggestion.levels && (
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-60">Etaje OSM:</span>
+                          <span className="font-medium">
+                            {geoSuggestion.levels}
+                            {geoSuggestion.floorsRegime && (
+                              <span className="text-sky-300 ml-1">→ {geoSuggestion.floorsRegime}</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                      {geoSuggestion.areaUsefulEstimate && (
+                        <div className="flex items-center justify-between sm:col-span-2 mt-0.5 pt-0.5 border-t border-sky-500/10">
+                          <span className="opacity-60">Au estimat (footprint × etaje × 0.85):</span>
+                          <span className="font-semibold text-emerald-300">≈ {geoSuggestion.areaUsefulEstimate} m²</span>
+                        </div>
+                      )}
+                      {geoSuggestion.yearBuilt && (
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-60">An construcție:</span>
+                          <span className="font-medium">{geoSuggestion.yearBuilt}</span>
+                        </div>
+                      )}
+                      {geoSuggestion.buildingType && (
+                        <div className="flex items-center justify-between">
+                          <span className="opacity-60">Tip OSM:</span>
+                          <span className="font-medium text-slate-300">{geoSuggestion.buildingType}</span>
+                        </div>
+                      )}
+                      {categoryLabel && (
+                        <div className="flex items-center justify-between sm:col-span-2">
+                          <span className="opacity-60">Categorie propusă:</span>
+                          <span className="font-semibold text-violet-300">{categoryLabel}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {nProposed > 0 ? (
+                      <div className="flex gap-2 items-center">
+                        <button
+                          type="button"
+                          aria-label={`Aplică ${nProposed} câmpuri din OSM`}
+                          onClick={() => {
+                            // Folosim applyBuildingPatch pentru update batch (un singur re-render)
+                            if (typeof applyBuildingPatch === "function") {
+                              applyBuildingPatch(proposed);
+                            } else {
+                              // Fallback: apeluri sequenţiale (back-compat)
+                              for (const [k, v] of Object.entries(proposed)) updateBuilding(k, v);
+                            }
+                            setGeoSuggestion(null);
+                            setGeoStatus("ok");
+                            showToast(`${nProposed} câmpuri OSM aplicate`, "success");
+                          }}
+                          className="flex-1 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 text-[11px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
+                        >
+                          ✓ Aplică {nProposed} câmpuri
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Ignoră sugestia OSM"
+                          onClick={() => { setGeoSuggestion(null); setGeoStatus("ok"); }}
+                          className="px-3 py-1.5 rounded-lg border border-white/10 text-[10px] opacity-50 hover:opacity-70 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                        >
+                          Ignoră
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-emerald-400/80">
+                          ✓ Toate câmpurile sunt deja completate — fără modificări.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => { setGeoSuggestion(null); setGeoStatus("ok"); }}
+                          className="px-2 py-1 rounded-lg text-[10px] opacity-50 hover:opacity-70 transition-all"
+                        >
+                          Închide
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      aria-label={lang === "EN"
-                        ? `Apply OSM building data: ${geoSuggestion.footprintM2} m² footprint, ${geoSuggestion.levels || "?"} floors`
-                        : `Aplică datele OSM: amprentă ${geoSuggestion.footprintM2} m², ${geoSuggestion.levels || "?"} etaje`
-                      }
-                      onClick={() => {
-                        if (geoSuggestion.footprintM2 && !building.areaUseful) {
-                          const estimatedUseful = Math.round(geoSuggestion.footprintM2 * (geoSuggestion.levels || 1) * 0.85);
-                          updateBuilding("areaUseful", String(estimatedUseful));
-                        }
-                        if (geoSuggestion.yearBuilt && !building.yearBuilt) updateBuilding("yearBuilt", geoSuggestion.yearBuilt);
-                        if (geoSuggestion.levels && !building.floors) updateBuilding("floors", `P+${geoSuggestion.levels - 1}E`);
-                        setGeoSuggestion(null);
-                        setGeoStatus("ok");
-                        showToast("Date OSM aplicate", "success");
-                      }}
-                      className="flex-1 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-[10px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
-                    >Aplică date</button>
-                    <button
-                      type="button"
-                      aria-label={lang === "EN" ? "Dismiss OSM suggestion" : "Ignoră sugestia OSM"}
-                      onClick={() => { setGeoSuggestion(null); setGeoStatus("ok"); }}
-                      className="px-3 py-1 rounded-lg border border-white/10 text-[10px] opacity-50 hover:opacity-70 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                    >Ignoră</button>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </Card>
 

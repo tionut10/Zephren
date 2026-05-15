@@ -141,6 +141,9 @@ export default function SmartDataHub({
   onOpenChat,
   // Sprint Smart Input 2026 (1.3) — restore draft
   applyBuildingPatch,
+  // Sprint Smart Input 2026 (1.5) — duplică proiect recent
+  onDuplicateRecent,
+  currentProjectId,
   // Utils
   showToast,
 }) {
@@ -523,6 +526,8 @@ export default function SmartDataHub({
               importedClimateData={importedClimateData}
               onOpenMeteoImport={onOpenMeteoImport}
               showToast={showToast}
+              onDuplicateRecent={onDuplicateRecent}
+              currentProjectId={currentProjectId}
             />
           </div>
         )}

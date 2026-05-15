@@ -13,6 +13,8 @@
  */
 import { useState, lazy, Suspense } from "react";
 import { DEMO_PROJECTS } from "../../data/demoProjects.js";
+// Sprint Smart Input 2026 (1.5) — proiecte recente
+import { useRecentProjects } from "../../hooks/useRecentProjects.js";
 
 const BuildingTemplateModal = lazy(() => import("../BuildingTemplateModal.jsx"));
 
@@ -60,6 +62,9 @@ export default function RampInstant({
   cadastralSimulated,
   cadastralBannerDismissed,
   onCadastralBannerDismiss,
+  // Sprint Smart Input 2026 (1.5) — proiecte recente
+  onDuplicateRecent,
+  currentProjectId,
   showToast,
 }) {
   const [showTemplates, setShowTemplates] = useState(false);
@@ -67,8 +72,62 @@ export default function RampInstant({
 
   const hasAddress = !!(building.address || building.city);
 
+  // Sprint Smart Input 2026 (1.5) — citește top 3 proiecte recente din IndexedDB
+  const { projects: recentProjects, loading: loadingRecent } = useRecentProjects({
+    limit: 3,
+    excludeId: currentProjectId,
+  });
+
   return (
     <div className="space-y-2">
+
+      {/* ── Sprint 1.5 — Duplică din proiectele recente (top 3) ──────────── */}
+      {onDuplicateRecent && !loadingRecent && recentProjects.length > 0 && (
+        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] overflow-hidden">
+          <div className="px-3 py-2 border-b border-emerald-500/15 flex items-center gap-2">
+            <span className="text-lg">📋</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-emerald-200">
+                Duplică din proiectele recente
+                <span className="ml-2 text-[9px] font-normal text-emerald-400/70 uppercase tracking-wide">
+                  cel mai rapid pentru bloc-uri similare
+                </span>
+              </div>
+              <div className="text-[10px] text-emerald-300/60 mt-0.5">
+                Cele mai recente {recentProjects.length} proiecte salvate
+              </div>
+            </div>
+          </div>
+          <div className="px-2 py-2 space-y-1">
+            {recentProjects.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  onDuplicateRecent(p.raw);
+                  showToast?.(`Duplicat: ${p.summary.title}`, "success");
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 transition-all text-left group"
+                aria-label={`Duplică proiectul ${p.summary.title}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-emerald-100 truncate group-hover:text-emerald-50">
+                    {p.summary.title}
+                  </div>
+                  <div className="text-[10px] text-emerald-300/60 flex items-center gap-2 flex-wrap mt-0.5">
+                    <span>{p.summary.categoryLabel}</span>
+                    <span className="opacity-50">·</span>
+                    <span>{p.summary.fieldsCount} câmpuri</span>
+                    <span className="opacity-50">·</span>
+                    <span className="font-mono text-emerald-400/60">{p.savedAtShort}</span>
+                  </div>
+                </div>
+                <span className="opacity-40 group-hover:opacity-80 text-xs shrink-0 transition-opacity">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Șabloane clădiri tip românești ──────────────────────────────────── */}
       <ActionButton
