@@ -39,6 +39,9 @@ import {
 } from "../utils/cpe-completeness.js";
 // Audit 2 mai 2026 — P1.4: motor unificat recomandări CPE/Anexa 2
 import { generateCpeRecommendations } from "../calc/cpe-recommendations.js";
+// Sprint Suggestion Queue C (16 mai 2026) — merge măsuri aprobate din coada Pas 7
+import { getMeasures } from "../store/proposed-measures.js";
+import { mergeApprovedIntoCpeRecommendations } from "../calc/merge-approved-measures.js";
 // Audit 2 mai 2026 — P1.9: bilanț clădire de referință cu echipamente standard
 import { calcReferenceBuilding } from "../calc/reference-building.js";
 // Audit 2 mai 2026 — P2.8: format dată per limbă (RO=dd.mm.yyyy, EN=yyyy-mm-dd)
@@ -2023,7 +2026,7 @@ export default function Step6Certificate(props) {
               const isEN = lang === "EN";
               // Audit 2 mai 2026 — P1.4: motor unificat recomandări
               // (eliminat motor inline divergent față de CpeAnexa.jsx)
-              const unifiedRecs = generateCpeRecommendations({
+              const autoRecs = generateCpeRecommendations({
                 building, envelopeSummary, opaqueElements, glazingElements,
                 thermalBridges, heating, acm, cooling, ventilation, lighting,
                 solarThermal, photovoltaic,
@@ -2032,6 +2035,16 @@ export default function Step6Certificate(props) {
                 calcOpaqueR,
                 financialAnalysis,
               });
+              // Sprint Suggestion Queue C (16 mai 2026) — INJECTĂM măsurile aprobate
+              // de auditor din coada Pas 7 ÎNAINTE de export HTML. Conform Mc 001-2022
+              // §10 + Ord. MDLPA 348/2026 Anexa 1. Auditorul are autoritate explicită
+              // → măsurile manuale apar primele, urmate de cele auto. Dedupe inclus.
+              const approvedMeasures = getMeasures({ status: ["approved", "edited"] });
+              const unifiedRecs = mergeApprovedIntoCpeRecommendations(
+                autoRecs,
+                approvedMeasures,
+                { maxItems: 20 }
+              );
               const T = {
                 title: isEN ? "Energy Performance Certificate" : "Certificat de Performan\u021b\u0103 Energetic\u0103",
                 subtitle: isEN ? "of the building / building unit" : "a cl\u0103dirii / unit\u0103\u021bii de cl\u0103dire",

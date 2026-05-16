@@ -32,6 +32,9 @@ import { buildRenovationPassport } from "../calc/renovation-passport.js";
 import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { getMepsThresholdsFor, getMepsStatus } from "./MEPSCheck.jsx";
 import { getEurRonSync, REHAB_PRICES } from "../data/rehab-prices.js";
+// Sprint Suggestion Queue C (16 mai 2026) — măsuri aprobate auditor în pașaport
+import { getMeasures } from "../store/proposed-measures.js";
+import { mergeApprovedIntoPassportRoadmap } from "../calc/merge-approved-measures.js";
 
 /**
  * Convertor smartSuggestions[] → measures[] format așteptat de calcPhasedRehabPlan.
@@ -154,6 +157,19 @@ function PasaportBasicInternal({
         changeReason: "Generare pașaport renovare basic (Pas 7)",
         changedBy: auditor?.name || "Auditor",
       });
+
+      // Sprint Suggestion Queue C (16 mai 2026) — INJECTĂM măsurile aprobate
+      // de auditor (din coada Pas 7) ca fază adițională în roadmap pașaport.
+      // Conform EPBD 2024/1275 Art. 12 + Anexa VIII: roadmap-ul trebuie să
+      // includă măsurile concrete identificate în audit. Auditor măsurile
+      // sunt prioritate explicit aleasă vs. smartSuggestions auto-generate.
+      const approvedAuditorMeasures = getMeasures({ status: ["approved", "edited"] });
+      if (approvedAuditorMeasures.length > 0 && passport.roadmap) {
+        passport.roadmap = mergeApprovedIntoPassportRoadmap(
+          passport.roadmap,
+          approvedAuditorMeasures
+        );
+      }
 
       const lib = await import("../lib/passport-export.js");
 

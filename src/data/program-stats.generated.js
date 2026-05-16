@@ -1,10 +1,10 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-features.js
-// Ultima generare: 2026-05-15
+// Ultima generare: 2026-05-16
 
 export const CALC_MODULES_COUNT  = 91;
 export const API_ENDPOINTS_COUNT = 9;
-export const COMPONENTS_COUNT    = 101;
+export const COMPONENTS_COUNT    = 103;
 export const IMPORT_SOURCES_COUNT= 10;
 export const EXPORT_FORMATS_COUNT= 10;
 export const STEPS_REAL_COUNT    = 8;

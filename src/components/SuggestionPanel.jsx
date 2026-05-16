@@ -110,7 +110,11 @@ function formatTechSummary(entry) {
 }
 
 // ── Card individual ─────────────────────────────────────────────────────────
-function SuggestionCard({ entry, onSelect, mode, lang }) {
+// v1.3 (16 mai 2026) — Sprint Suggestion Queue:
+//   - onPropose (primary, default): adaugă măsura în coadă propuneri Pas 7
+//   - onSelect (secondary, legacy): aplică direct ca baseline (Pas 3/4 form)
+//   - alreadyProposed: badge "✓ Propusă" + buton dezactivat pentru a evita duplicat
+function SuggestionCard({ entry, onPropose, onSelect, alreadyProposed, mode, lang }) {
   const isCompact = mode === "compact";
   const icon = CATEGORY_ICONS[entry.category] || "📦";
   const tech = formatTechSummary(entry);
@@ -118,30 +122,22 @@ function SuggestionCard({ entry, onSelect, mode, lang }) {
   const meets = entry.meetsTarget;
   const sponsored = entry.sponsored;
 
-  const interactive = typeof onSelect === "function";
-  const Wrapper = interactive ? "button" : "div";
+  const hasPropose = typeof onPropose === "function";
+  const hasApplyBaseline = typeof onSelect === "function";
 
   return (
-    <Wrapper
-      {...(interactive
-        ? {
-            type: "button",
-            onClick: () => onSelect(entry),
-            "aria-label": `Aplică sugestia ${entry.label}`,
-          }
-        : {})}
+    <div
       className={cn(
-        "block w-full text-left rounded-xl border transition-all",
-        "p-3",
+        "block w-full text-left rounded-xl border transition-all p-3",
         meets === false
           ? "border-amber-500/25 bg-amber-500/5"
+          : alreadyProposed
+          ? "border-emerald-500/30 bg-emerald-500/[0.05]"
           : "border-violet-500/20 bg-violet-500/[0.04]",
-        interactive &&
-          "hover:border-violet-400/50 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60",
         sponsored && "ring-1 ring-amber-400/30"
       )}
     >
-      {/* Header — icon + label + sponsored badge */}
+      {/* Header — icon + label + status badge */}
       <div className="flex items-start gap-2 mb-1.5">
         <span className="text-lg shrink-0" aria-hidden="true">{icon}</span>
         <div className="flex-1 min-w-0">
@@ -154,9 +150,17 @@ function SuggestionCard({ entry, onSelect, mode, lang }) {
             </div>
           )}
         </div>
-        {sponsored && (
+        {alreadyProposed && (
           <span
-            className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30"
+            className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 shrink-0"
+            title={lang === "EN" ? "Already proposed — see Step 7" : "Deja propusă — vezi Pas 7 (Recomandări)"}
+          >
+            ✓ {lang === "EN" ? "Proposed" : "Propusă"}
+          </span>
+        )}
+        {sponsored && !alreadyProposed && (
+          <span
+            className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30 shrink-0"
             title="Sugestie sponsorizată — disclosure"
           >
             Sponsor
@@ -172,7 +176,7 @@ function SuggestionCard({ entry, onSelect, mode, lang }) {
       )}
 
       {/* Footer — preț + tags */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
         <span className="text-[10px] text-white/60 font-medium">
           ~ <span className="font-mono text-white/85">{price}</span>
         </span>
@@ -185,7 +189,7 @@ function SuggestionCard({ entry, onSelect, mode, lang }) {
 
       {/* Status meets target */}
       {meets === false && (
-        <div className="mt-1.5 text-[10px] text-amber-300/90 flex items-center gap-1">
+        <div className="mb-2 text-[10px] text-amber-300/90 flex items-center gap-1">
           <span aria-hidden="true">⚠</span>
           <span>
             {lang === "EN"
@@ -197,21 +201,72 @@ function SuggestionCard({ entry, onSelect, mode, lang }) {
 
       {/* Avertizări (ex. fade-out 2030) */}
       {entry.warnings && entry.warnings.length > 0 && (
-        <div className="mt-1.5 text-[9px] text-amber-300/80 leading-snug">
+        <div className="mb-2 text-[9px] text-amber-300/80 leading-snug">
           {entry.warnings[0]}
         </div>
       )}
-    </Wrapper>
+
+      {/* v1.3 — Action buttons (Propune primary + Aplică baseline secondary) */}
+      <div className="flex items-stretch gap-1.5 mt-2 pt-2 border-t border-white/5">
+        {hasPropose && (
+          <button
+            type="button"
+            onClick={() => !alreadyProposed && onPropose(entry)}
+            disabled={alreadyProposed}
+            className={cn(
+              "flex-1 text-[11px] font-semibold rounded-lg px-2.5 py-1.5 transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60",
+              alreadyProposed
+                ? "bg-emerald-500/15 text-emerald-200/70 cursor-not-allowed"
+                : "bg-violet-500/20 text-violet-100 hover:bg-violet-500/30 border border-violet-400/30"
+            )}
+            aria-label={lang === "EN" ? `Propose ${entry.label} as improvement measure` : `Propune ${entry.label} ca măsură de îmbunătățire`}
+            title={lang === "EN"
+              ? "Adds to Step 7 improvement queue (does not modify baseline)"
+              : "Adaugă în coada Pas 7 (NU modifică baseline-ul existent)"}
+          >
+            {alreadyProposed
+              ? (lang === "EN" ? "✓ In queue" : "✓ În coadă")
+              : (lang === "EN" ? "📋 Propose" : "📋 Propune")}
+          </button>
+        )}
+        {hasApplyBaseline && (
+          <button
+            type="button"
+            onClick={() => onSelect(entry)}
+            className={cn(
+              "text-[10px] rounded-lg px-2 py-1.5 transition",
+              "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 border border-white/10"
+            )}
+            aria-label={lang === "EN" ? `Apply ${entry.label} as existing baseline` : `Aplică ${entry.label} ca baseline existent`}
+            title={lang === "EN"
+              ? "OVERWRITES existing form values — use only if baseline was wrong"
+              : "SUPRASCRIE valorile baseline existente — folosește DOAR dacă baseline a fost greșit"}
+          >
+            ⚙ {lang === "EN" ? "Baseline" : "Baseline"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
 // ── Container principal ─────────────────────────────────────────────────────
+// v1.3 (16 mai 2026) — Sprint Suggestion Queue:
+//   - onPropose(entry, meta): adaugă în coada Pas 7 (primary, default flow)
+//   - onSelect(entry): aplică ca baseline (secondary, legacy — folosit DOAR când baseline e greșit)
+//   - proposeMeta: { sourceStep, category } pentru store-ul de coadă
+//   - proposedEntryIds: Set<string> de IDs catalog deja propuse (pentru badge ✓ Propusă)
 export default function SuggestionPanel({
   suggestions = [],
   title,
   subtitle,
   mode = "card",
-  onSelect,
+  onSelect,           // legacy — apply as baseline (overwrites form)
+  onPropose,          // NEW — adds to Step 7 proposed measures queue
+  proposeMeta,        // NEW — { sourceStep: "Step3"|"Step4", category: "heating"|... }
+  proposedEntryIds,   // NEW — Set/Array de catalogEntryId-uri deja propuse (pentru visual feedback)
   emptyText,
   lang = "RO",
   showDisclaimer = true,
@@ -220,6 +275,20 @@ export default function SuggestionPanel({
     () => (Array.isArray(suggestions) ? suggestions.filter(Boolean) : []),
     [suggestions]
   );
+
+  // Normalizează proposedEntryIds în Set pentru lookup O(1)
+  const proposedSet = useMemo(() => {
+    if (!proposedEntryIds) return new Set();
+    if (proposedEntryIds instanceof Set) return proposedEntryIds;
+    if (Array.isArray(proposedEntryIds)) return new Set(proposedEntryIds);
+    return new Set();
+  }, [proposedEntryIds]);
+
+  // Wrap onPropose cu meta-ul componentului
+  const handlePropose = useMemo(() => {
+    if (!onPropose || !proposeMeta) return null;
+    return (entry) => onPropose(entry, proposeMeta);
+  }, [onPropose, proposeMeta]);
 
   if (items.length === 0) {
     if (!emptyText) return null;
@@ -254,6 +323,13 @@ export default function SuggestionPanel({
           {subtitle && (
             <p className="text-[10px] text-white/55 mt-0.5 leading-snug">{subtitle}</p>
           )}
+          {handlePropose && (
+            <p className="text-[10px] text-emerald-300/80 mt-1 leading-snug">
+              💡 {lang === "EN"
+                ? `Click "Propose" to add to Step 7 improvement measures — does NOT modify the baseline below.`
+                : `Click „Propune” pentru a adăuga în Pas 7 (Recomandări audit) — NU modifică baseline-ul de mai sus.`}
+            </p>
+          )}
         </header>
       )}
 
@@ -262,7 +338,9 @@ export default function SuggestionPanel({
           <SuggestionCard
             key={entry.id || i}
             entry={entry}
+            onPropose={handlePropose}
             onSelect={onSelect}
+            alreadyProposed={entry.id ? proposedSet.has(entry.id) : false}
             mode={mode}
             lang={lang}
           />

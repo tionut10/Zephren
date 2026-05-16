@@ -11,6 +11,9 @@ import {
   generateAnexaRecommendations,
   formatAnexaLegalNote,
 } from "../lib/anexa-recommendations-aeIIci.js";
+// Sprint Suggestion Queue C (16 mai 2026) — merge măsuri aprobate din coada Pas 7
+import { useProposedMeasures } from "../store/useProposedMeasures.js";
+import { mergeApprovedIntoCpeRecommendations } from "../calc/merge-approved-measures.js";
 
 /**
  * CpeAnexa — Preview Anexa 1 + Anexa 2 Certificat Performanță Energetică
@@ -143,7 +146,17 @@ export default function CpeAnexa({
       gradMdlpa: auditor?.gradMdlpa,
     }
   );
-  const recommendations = anexaResult.recommendations;
+  // Sprint Suggestion Queue C (16 mai 2026) — INJECTĂM măsurile aprobate de auditor
+  // din coada Pas 7 (status="approved" sau "edited") în lista Anexa 2.
+  // Filozofie: auditorul are autoritate explicită — măsurile lui apar PRIMELE
+  // (vs. cele auto-generate care vin după). Dedupe pe category+measure semnificative.
+  // Conform Mc 001-2022 §10 + Ord. MDLPA 348/2026 Anexa 1.
+  const approvedMeasures = useProposedMeasures({ status: ["approved", "edited"] });
+  const recommendations = mergeApprovedIntoCpeRecommendations(
+    anexaResult.recommendations,
+    approvedMeasures,
+    { maxItems: 20 } // Anexa 2: limită 20 măsuri (pagină A4 single)
+  );
   const anexaLegalNote = formatAnexaLegalNote(anexaResult);
 
   const priorityColor = { "înaltă": "#ef4444", "medie": "#eab308", "scăzută": "#22c55e" };

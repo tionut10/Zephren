@@ -10,6 +10,9 @@ import {
   HEAT_SOURCES, EMISSION_SYSTEMS, DISTRIBUTION_QUALITY, CONTROL_TYPES,
   ACM_SOURCES, COOLING_SYSTEMS, VENTILATION_TYPES, LIGHTING_TYPES,
 } from "../data/constants.js";
+// Sprint Suggestion Queue C (16 mai 2026) — măsuri aprobate auditor în raport PDF
+import { getMeasures } from "../store/proposed-measures.js";
+import { convertMeasureToAuditCard } from "../calc/merge-approved-measures.js";
 import {
   BUILDING_CATEGORIES, ELEMENT_TYPES, buildCatKey,
 } from "../data/building-catalog.js";
@@ -1699,9 +1702,55 @@ export async function exportFullReport(ctx) {
     addPageFooter();
 
     // ── PAGINA 7: RECOMANDĂRI ─────────────────────────────────────
-    if (rehabComparison || (financialAnalysis)) {
+    // Sprint Suggestion Queue C (16 mai 2026): includem măsurile aprobate de
+    // auditor (status="approved"/"edited") din coada Pas 7 ÎNAINTE de tabelul
+    // rehabComparison. Conform Mc 001-2022 §10 (soluții de îmbunătățire).
+    const approvedAuditorMeasures = getMeasures({ status: ["approved", "edited"] });
+    const hasApprovedMeasures = approvedAuditorMeasures.length > 0;
+
+    if (rehabComparison || financialAnalysis || hasApprovedMeasures) {
       doc.addPage();
       addPageHeader(7, "6. Scenariu de reabilitare și analiză financiară");
+
+      // ── 6.0 Măsuri aprobate de auditor (din coada Pas 7) ──
+      if (hasApprovedMeasures) {
+        doc.setFontSize(9); doc.setFont(undefined, "bold"); doc.setTextColor(...BLUE);
+        doc.text(`6.0 Măsuri propuse de auditor (${approvedAuditorMeasures.length})`, 15, y);
+        y += 4;
+        doc.setFontSize(7); doc.setFont(undefined, "italic"); doc.setTextColor(...GRAY);
+        doc.text("Selectate manual din catalog Pas 7. Conform Mc 001-2022 §10.", 15, y);
+        y += 4;
+        doc.setFont(undefined, "normal"); doc.setTextColor(0);
+
+        const auditorRows = approvedAuditorMeasures.map((m, i) => {
+          const card = convertMeasureToAuditCard(m);
+          return [
+            String(i + 1),
+            card.category || "—",
+            (card.name || "").slice(0, 50),
+            (card.detail || "—").slice(0, 35),
+            (card.priority || "medie").toUpperCase(),
+            card.status === "approved" ? "Aprobat" : card.status === "edited" ? "Editat" : "Propus",
+          ];
+        });
+
+        doc.autoTable({
+          startY: y, margin: { left: 15, right: 15 }, theme: "grid",
+          head: [["#", "Categorie", "Măsură", "Detalii tehnice", "Prioritate", "Status"]],
+          headStyles: { fillColor: LGRAY, textColor: [26, 26, 46], fontStyle: "bold", fontSize: 7 },
+          bodyStyles: { fontSize: 6.5 },
+          columnStyles: {
+            0: { cellWidth: 7, halign: "center" },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 45 },
+            4: { cellWidth: 18, halign: "center" },
+            5: { cellWidth: 18, halign: "center" },
+          },
+          body: auditorRows,
+        });
+        y = doc.lastAutoTable.finalY + 6;
+      }
 
       if (rehabComparison) {
         doc.autoTable({

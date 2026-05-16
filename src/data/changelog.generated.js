@@ -1,6 +1,6 @@
 // GENERAT AUTOMAT — nu edita manual
 // Script: scripts/update-changelog.js
-// Ultima generare: 2026-05-15
+// Ultima generare: 2026-05-16
 
 export const APP_VERSION = "0.7.0";
 export const CHANGELOG = [
@@ -11,6 +11,14 @@ export const CHANGELOG = [
     "color": "#f59e0b",
     "label": "CURENT",
     "items": [
+      {
+        "icon": "✨",
+        "text": "feat(rame+vitraje): Mc 001-2022 P0+P1+P2 — 12 rame uși îmbogățite + 10 vitraje noi + 20 brand-uri envelope"
+      },
+      {
+        "icon": "💰",
+        "text": "docs(sprint-s6): plan restanțe Pas 2 AI-First out-of-scope"
+      },
       {
         "icon": "✨",
         "text": "feat(step2-ai): PR5 — EnvelopeAssistant tab AI + integrare finală"
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "🔀",
         "text": "refactor(Step1): AI-first ULTRA-agresiv — 4 cards AI prioritare + hero multimodal unitar"
-      },
-      {
-        "icon": "💰",
-        "text": "Sprint Prețuri P4.4-bis — 3 PDF generators consume formatMoney (currency toggle global)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(Step7): mută DocumentUploadCenter din Pas 1 → Pas 7 (înainte de export dosar)"
       }
     ]
   },
