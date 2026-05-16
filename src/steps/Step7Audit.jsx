@@ -1,8 +1,12 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { canAccess } from "../lib/planGating.js";
 import { canEmitForBuilding } from "../lib/canEmitForBuilding.js";
 import PlanGate from "../components/PlanGate.jsx";
 import PasaportBasic from "../components/PasaportBasic.jsx";
+// Sprint Suggestion Queue B (16 mai 2026) — catalog sugestii + panou propuneri
+// Sugestiile de îmbunătățire energetică (Mc 001-2022 §10) sunt acum AICI (nu în Pas 3+4).
+import ProposedMeasuresPanel from "../components/ProposedMeasuresPanel.jsx";
+import SuggestionCatalogBrowser from "../components/SuggestionCatalogBrowser.jsx";
 // Sprint P0-A (6 mai 2026) — refactor Card „Pașaport de Renovare" cu plan etapizat REAL.
 import { calcPhasedRehabPlan } from "../calc/phased-rehab.js";
 import { buildCanonicalMeasures } from "../calc/unified-rehab-costs.js";
@@ -42,6 +46,15 @@ import { calcPNRRFunding, FUNDING_PROGRAMS } from "../calc/pnrr-funding.js";
 import { generateThermalMapSVG } from "../calc/thermal-map.js";
 import { checkAcousticConformity } from "../calc/acoustic.js";
 import { cn, Select, Input, Badge, Card, ResultRow, fmtRON, fmtEUR } from "../components/ui.jsx";
+// Sprint Reorg Pas 5/7 (15 mai 2026) — imports pentru cele 6 carduri mutate din Pas 5
+// Justificare: Cap. 8 Mc 001-2022 (audit + cost-optim) trebuie complet în Pas 7, nu în Pas 5 (Cap. 5 = bilanț pur)
+import { ENERGY_PRICE_PRESETS, PRICE_LABELS, PRICE_ICONS } from "../data/energy-prices.js";
+import { getCostInflationFactor, getCostInflationFactorSync } from "../data/cost-index.js";
+import { fmtMoney } from "../data/currency-context.js";
+import { useCurrencyMode } from "../components/CurrencyToggle.jsx";
+import GradeGate from "../components/GradeGate.jsx";
+import BenchmarkNational from "../components/BenchmarkNational.jsx";
+import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax, getURefAdaptive, getURefGlazingAdaptive } from "../calc/smart-rehab.js";
 // Sprint 8 mai 2026 — helper centralizat obligativitate juridică raport nZEB
@@ -80,8 +93,22 @@ export default function Step7Audit(props) {
     setThermalBridges,
     setBuilding,  // Sprint 17: pentru a stoca passportUUID pe building
     userPlan,     // Sprint Pricing v6.0 — gating Step 7 + Pașaport basic
+    // Sprint Reorg Pas 5/7 (15 mai 2026) — props pentru cele 6 carduri mutate din Pas 5 (Cap. 8 Mc 001-2022)
+    rehabCostEstimate, annualEnergyCost, energyPrices, setEnergyPrices,
+    showScenarioCompare, setShowScenarioCompare,
   } = props;
   const t = (key) => lang === "RO" ? key : (T[key]?.EN || key);
+  // Sprint Reorg Pas 5/7 — variabile locale pentru cardurile mutate
+  const auditorGrad = auditor?.grade || null;
+  const currencyMode = useCurrencyMode();
+  const [costIndex, setCostIndex] = useState(() => getCostInflationFactorSync());
+  useEffect(() => {
+    let cancelled = false;
+    getCostInflationFactor().then(r => {
+      if (!cancelled && r) setCostIndex(r);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // audit-mai2026 F5 — clasă energetică la nivel funcție (pentru RehabAIChat context).
   // Calcul minimal — nu duplică deep IIFE de la linia 159 (acela acoperă cazuri edge).
@@ -855,6 +882,22 @@ export default function Step7Audit(props) {
                   );
                 })()}
 
+                {/* ── Sprint Suggestion Queue B (16 mai 2026) — Catalog + Propuneri ── */}
+                {/* Catalog browser PRIMUL (auditorul alege măsuri din 6 categorii),    */}
+                {/* apoi panoul cu coada de propuneri (review/aprobare/respingere).      */}
+                {/* Sugestiile NU mai apar în Pas 3+4 — acolo doar baseline existent.  */}
+                <SuggestionCatalogBrowser
+                  building={building}
+                  selectedClimate={selectedClimate}
+                  heating={heating}
+                  cooling={cooling}
+                  ventilation={ventilation}
+                  acm={acm}
+                  photovoltaic={photovoltaic}
+                  lang={lang}
+                />
+                <ProposedMeasuresPanel lang={lang} />
+
                 {/* ── Recomandari Anvelopa ── */}
                 {envelopeAnalysis.length > 0 && (
                 <Card title={t("R1 — Recomandari Anvelopa Termica",lang)}>
@@ -1126,10 +1169,85 @@ export default function Step7Audit(props) {
                     rigoros per scenariu, auditorul trebuie să încarce preset-ul în
                     Pas 5 (loadScenarioPreset) și să recalculeze prin motorul de
                     instalații. Acest tabel e DOAR comparativ măsuri, nu rezultate. */}
+
+                {/* ── UI CONFIGURARE SCENARII REABILITARE ── (Sprint Reorg Pas 5/7, 15 mai 2026 — mutat din Pas 5) */}
+                <GradeGate feature="rehabScenarios" plan={userPlan} auditorGrad={auditorGrad}>
+                <Card title={t("Configurează pachet reabilitare propus",lang)} className="mb-4 border-amber-500/20" badge={
+                  <button onClick={() => setShowScenarioCompare(!showScenarioCompare)}
+                    className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-lg hover:bg-amber-500/30">
+                    {showScenarioCompare ? "Ascunde" : "Configurează reabilitare"}
+                  </button>}>
+                  {showScenarioCompare && (
+                    <div className="space-y-3 mb-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                      <div className="text-xs font-medium opacity-50 mb-2">Măsuri de reabilitare propuse:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { key:"addInsulWall", label:"Suplimentare izolație pereți", unitKey:"insulWallThickness", unit:"cm EPS" },
+                          { key:"addInsulRoof", label:"Suplimentare izolație acoperiș", unitKey:"insulRoofThickness", unit:"cm vată" },
+                          { key:"addInsulBasement", label:"Izolație subsol/sol", unitKey:"insulBasementThickness", unit:"cm XPS" },
+                          { key:"replaceWindows", label:"Înlocuire tâmplărie", unitKey:"newWindowU", unit:"W/m²K" },
+                          { key:"addHR", label:"Ventilare cu recuperare", unitKey:"hrEfficiency", unit:"% HR" },
+                          { key:"addPV", label:"Panouri fotovoltaice", unitKey:"pvArea", unit:"m²" },
+                          { key:"addHP", label:"Pompă de căldură", unitKey:"hpCOP", unit:"COP" },
+                          { key:"addSolarTh", label:"Solar termic", unitKey:"solarThArea", unit:"m²" },
+                        ].map(item => (
+                          <div key={item.key} className="flex items-center gap-2">
+                            <input type="checkbox" checked={rehabScenarioInputs[item.key]}
+                              onChange={e => setRehabScenarioInputs(p => ({...p, [item.key]: e.target.checked}))}
+                              className="accent-amber-500" />
+                            <span className="text-xs flex-1">{item.label}</span>
+                            {rehabScenarioInputs[item.key] && (
+                              <input type="number" value={rehabScenarioInputs[item.unitKey]}
+                                onChange={e => setRehabScenarioInputs(p => ({...p, [item.unitKey]: e.target.value}))}
+                                className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-center" />
+                            )}
+                            {rehabScenarioInputs[item.key] && <span className="text-[10px] opacity-30">{item.unit}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {rehabComparison && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                          <div className="text-[10px] opacity-40 mb-1">ACTUAL</div>
+                          <div className="text-xl font-black" style={{color: rehabComparison.original.cls.color}}>{rehabComparison.original.cls.cls}</div>
+                          <div className="text-sm font-bold mt-1">{rehabComparison.original.ep.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-30">kWh/(m²·an)</div>
+                        </div>
+                        <div className="p-3 flex flex-col items-center justify-center">
+                          <div className="text-2xl opacity-20">→</div>
+                          <div className={`text-sm font-bold ${rehabComparison.savings.epPct >= 0 ? "text-green-400" : "text-red-400"}`}>{rehabComparison.savings.epPct >= 0 ? "-" : "+"}{Math.abs(rehabComparison.savings.epPct).toFixed(0)}%</div>
+                        </div>
+                        <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                          <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
+                          <div className="text-xl font-black" style={{color: rehabComparison.rehab.cls.color}}>{rehabComparison.rehab.cls.cls}</div>
+                          <div className="text-sm font-bold mt-1">{rehabComparison.rehab.ep.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-30">kWh/(m²·an)</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="flex justify-between p-2 rounded bg-white/[0.03]">
+                          <span className="opacity-50">CO₂ actual / reabilitat</span>
+                          <span className="font-medium">{rehabComparison.original.co2.toFixed(1)} → {rehabComparison.rehab.co2.toFixed(1)} <span className={rehabComparison.savings.co2Pct >= 0 ? "text-green-400" : "text-red-400"}>({rehabComparison.savings.co2Pct >= 0 ? "-" : "+"}{Math.abs(rehabComparison.savings.co2Pct).toFixed(0)}%)</span></span>
+                        </div>
+                        <div className="flex justify-between p-2 rounded bg-white/[0.03]">
+                          <span className="opacity-50">Economie Ef anuală</span>
+                          <span className="font-medium text-green-400">{rehabComparison.savings.qfSaved.toFixed(0)} kWh/an</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {!instSummary && (
+                    <div className="text-center py-6 opacity-30 text-xs">Completează pașii 1-4 pentru comparație scenarii</div>
+                  )}
+                </Card>
+                </GradeGate>
+
                 <Card title={t("Comparație scenarii reabilitare",lang)} badge={<Badge color="purple">{multiScenarios.length} scenarii</Badge>}>
                   <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border-l-2 border-amber-500/40 text-[10px] text-amber-300/80">
-                    ⚠️ Comparație măsuri (preset). Pentru EP recalculat rigoros per scenariu,
-                    încarcă preset-ul în Pas 5 și recalculează bilanțul energetic.
+                    ⚠️ Comparație măsuri (preset SCENARIO_PRESETS). Pentru rezultatul propriu, folosește „Configurează pachet" mai sus.
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
@@ -1298,6 +1416,409 @@ export default function Step7Audit(props) {
                   </Card>
                   );
                 })()}
+
+                {/* ═════ Sprint Reorg Pas 5/7 (15 mai 2026) — carduri mutate din Pas 5 ═════ */}
+                {/* Justificare: Cap. 8 Mc 001-2022 (audit + cost-optim) trebuie în Pas 7. */}
+                {/* Cele 5 carduri de mai jos erau în Pas 5 — toate gateate IIci (audit, nu calcul). */}
+
+                {/* ── COST ANUAL ENERGIE ESTIMAT ── (Mc 001-2022 §8.5 — analiză cost orientativă) */}
+                {annualEnergyCost && (
+                  <Card title={t("Cost anual energie estimat (prețuri 2025)",lang)} className="mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="text-center sm:text-left">
+                        <div className="text-3xl font-black font-mono text-amber-400">{annualEnergyCost.total.toLocaleString("ro-RO")} <span className="text-lg opacity-60">lei/an</span></div>
+                        <div className="text-sm opacity-40 mt-1">≈ {annualEnergyCost.totalEur.toLocaleString("ro-RO")} EUR/an</div>
+                        <div className="text-[10px] opacity-25 mt-2">{annualEnergyCost.note}</div>
+                      </div>
+                      <div className="space-y-2">
+                        {[
+                          { label: "Încălzire", val: annualEnergyCost.costH, color: "#ef4444" },
+                          { label: "Apă caldă", val: annualEnergyCost.costW, color: "#f97316" },
+                          { label: "Răcire", val: annualEnergyCost.costC, color: "#3b82f6" },
+                          { label: "Ventilare", val: annualEnergyCost.costV, color: "#8b5cf6" },
+                          { label: "Iluminat", val: annualEnergyCost.costL, color: "#eab308" },
+                        ].map(item => {
+                          const pct = annualEnergyCost.total > 0 ? (item.val / annualEnergyCost.total * 100) : 0;
+                          return (
+                            <div key={item.label} className="flex items-center gap-2">
+                              <span className="text-[10px] opacity-50 w-16 text-right shrink-0">{item.label}</span>
+                              <div className="flex-1 h-4 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: item.color, minWidth: pct > 0 ? "4px" : "0" }} />
+                              </div>
+                              <span className="text-[10px] font-mono opacity-60 w-16 shrink-0">{item.val.toLocaleString("ro-RO")} lei</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* ── ESTIMARE COST ENERGIE ANUAL cu preseturi ANRE ── (Faza A — Mc 001 §8.5, ascuns la IIci) */}
+                {instSummary && (
+                <GradeGate feature="costAnnualDetail" plan={userPlan} auditorGrad={auditorGrad}>
+                  <Card title={t("Estimare cost energie anual",lang)} className="mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {(() => {
+                        const Au = parseFloat(building.areaUseful) || 0;
+                        const prices = energyPrices || {};
+                        const fuelId = instSummary.fuel?.id || "gaz";
+                        const priceFuel = prices[fuelId] || 0.32;
+                        const priceElec = prices.electricitate || 1.10;
+                        const costHeat = instSummary.qf_h * priceFuel;
+                        const costACM = instSummary.qf_w * (fuelId === "electricitate" ? priceElec : priceFuel);
+                        const costCool = instSummary.qf_c * priceElec;
+                        const costVentLight = (instSummary.qf_v + instSummary.qf_l) * priceElec;
+                        const costTotal = costHeat + costACM + costCool + costVentLight;
+                        const costPerM2 = Au > 0 ? costTotal / Au : 0;
+                        return (
+                          <>
+                            <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                              <div className="text-xl font-bold text-amber-400">{fmtRON(costTotal)}</div>
+                              <div className="text-[10px] opacity-40">RON/an total</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                              <div className="text-xl font-bold text-white">{fmtRON(costPerM2, 1)}</div>
+                              <div className="text-[10px] opacity-40">RON/(m² an)</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                              <div className="text-xl font-bold text-red-400">{fmtRON(costHeat)}</div>
+                              <div className="text-[10px] opacity-40">RON încălzire</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-white/[0.03]">
+                              <div className="text-xl font-bold text-blue-400">{fmtRON(costCool + costVentLight)}</div>
+                              <div className="text-[10px] opacity-40">RON răcire+vent+il</div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Preseturi ANRE 2025</div>
+                      <div className="grid grid-cols-2 gap-1.5 mb-3">
+                        {ENERGY_PRICE_PRESETS.map(preset => (
+                          <button key={preset.id} onClick={() => setEnergyPrices(p => ({ ...p, ...preset.prices }))}
+                            className="flex items-start gap-2 p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] transition-all text-left">
+                            <span className="text-sm mt-0.5">{preset.icon}</span>
+                            <div>
+                              <div className="text-[10px] font-semibold leading-tight">{preset.label}</div>
+                              <div className="text-[10px] opacity-40 leading-tight">{preset.sublabel}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider opacity-40 mb-2">Tarife personalizate (RON/kWh)</div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                        {Object.entries(energyPrices || {}).map(function(entry) { return (
+                          <div key={entry[0]} className="flex items-center gap-1.5">
+                            <span className="text-xs">{PRICE_ICONS[entry[0]] || "⚙️"}</span>
+                            <span className="text-[10px] opacity-50 flex-1 truncate">{PRICE_LABELS[entry[0]] || entry[0]}</span>
+                            <input type="number" value={entry[1]} step="0.01" min="0"
+                              onChange={function(e){setEnergyPrices(function(p){var n=Object.assign({},p);n[entry[0]]=parseFloat(e.target.value)||0;return n;});}}
+                              className="w-16 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-right"/>
+                          </div>
+                        ); })}
+                      </div>
+                    </div>
+                  </Card>
+                </GradeGate>
+                )}
+
+                {/* ── COST ESTIMATIV REABILITARE TERMICĂ + FINANȚARE ── (Faza A — Art. 6 alin. 2, ascuns la IIci) */}
+                {rehabCostEstimate && (
+                <GradeGate feature="rehabCostEstimate" plan={userPlan} auditorGrad={auditorGrad}>
+                  <Card title="Cost estimativ reabilitare termică" className="mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 text-center">
+                        <div className="text-2xl font-black font-mono text-amber-400">{rehabCostEstimate.total_lei.toLocaleString("ro-RO")}</div>
+                        <div className="text-[10px] opacity-40 mt-1">lei (total cu neprevăzut {(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                        <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_eur.toLocaleString("ro-RO")}</div>
+                        <div className="text-[10px] opacity-40 mt-1">EUR (fără TVA)</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                        <div className="text-xl font-bold font-mono opacity-70">{rehabCostEstimate.total_per_m2.toLocaleString("ro-RO")}</div>
+                        <div className="text-[10px] opacity-40 mt-1">EUR/m² util</div>
+                      </div>
+                    </div>
+                    {rehabCostEstimate.items.length > 0 && (
+                      <div className="space-y-1.5">
+                        {rehabCostEstimate.items.map((item, i) => {
+                          const pct = rehabCostEstimate.subtotal_eur > 0 ? (item.total_eur / rehabCostEstimate.subtotal_eur * 100) : 0;
+                          return (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                              <span className="opacity-50 truncate w-52 shrink-0">{item.label}</span>
+                              <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "#f59e0b", minWidth: pct > 0 ? "2px" : "0" }} />
+                              </div>
+                              <span className="font-mono opacity-60 w-20 text-right shrink-0">{item.total_eur.toLocaleString("ro-RO")} €</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+                          <span className="opacity-40">Neprevăzut ({(rehabCostEstimate.contingency_pct*100).toFixed(0)}%)</span>
+                          <span className="font-mono opacity-50">{rehabCostEstimate.contingency_eur.toLocaleString("ro-RO")} €</span>
+                        </div>
+                      </div>
+                    )}
+                    {(rehabCostEstimate.fundingEligible.pnrr_max > 0 || rehabCostEstimate.fundingEligible.casa_verde_max > 0 || rehabCostEstimate.fundingEligible.afm_max > 0) && (
+                      <div className="mt-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+                        <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">Finanțare eligibilă orientativă</div>
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          {rehabCostEstimate.fundingEligible.pnrr_max > 0 && (
+                            <span className="text-emerald-400">PNRR: max {rehabCostEstimate.fundingEligible.pnrr_max.toLocaleString("ro-RO")} €</span>
+                          )}
+                          {rehabCostEstimate.fundingEligible.casa_verde_max > 0 && (
+                            <span className="text-emerald-400">Casa Verde: max {rehabCostEstimate.fundingEligible.casa_verde_max.toLocaleString("ro-RO")} €</span>
+                          )}
+                          {rehabCostEstimate.fundingEligible.afm_max > 0 && (
+                            <span className="text-emerald-400">AFM: max {rehabCostEstimate.fundingEligible.afm_max.toLocaleString("ro-RO")} €</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3 text-[10px] opacity-25">{rehabCostEstimate.meta.note}</div>
+                  </Card>
+                </GradeGate>
+                )}
+
+                {/* ── NPV 20 ANI BANDĂ LOW/MID/HIGH — 5 MĂSURI COMPARATE ── (Faza A — Mc 001-2022 §8.5, ascuns la IIci) */}
+                {/* Complementar cu „Analiză amortizare 20 ani" (scenariu activ singular). Aici e analiză comparativă multi-măsură. */}
+                {instSummary && renewSummary && envelopeSummary && (
+                <GradeGate feature="npvCurve" plan={userPlan} auditorGrad={auditorGrad}>
+                {(() => {
+                  const Au = parseFloat(building.areaUseful) || 1;
+                  const fuelId = instSummary.fuel?.id || "gaz";
+                  const priceFuel = energyPrices?.[fuelId] || getEnergyPriceFromPreset(fuelId, "casnic_2025");
+                  const priceElec = energyPrices?.electricitate || getEnergyPriceFromPreset("electricitate", "casnic_2025");
+                  const annualCost = instSummary.qf_h * priceFuel
+                    + instSummary.qf_w * priceFuel
+                    + instSummary.qf_c * priceElec
+                    + instSummary.qf_v * priceElec
+                    + instSummary.qf_l * priceElec;
+                  const eurRon = getEurRonSync() || REHAB_PRICES.eur_ron_fallback;
+                  const inflation = costIndex;
+                  const inflationFactor = inflation.factor || 1.0;
+                  const MEASURE_DEFS = [
+                    { name: "Termoizolație pereți", short: "Pereți", color: "#3b82f6", savePct: 0.18,
+                      costFn: (au, eur, k) => ({
+                        low:  REHAB_PRICES.envelope.wall_eps_10cm.low  * au * 2.5 * eur * k,
+                        mid:  REHAB_PRICES.envelope.wall_eps_10cm.mid  * au * 2.5 * eur * k,
+                        high: REHAB_PRICES.envelope.wall_eps_10cm.high * au * 2.5 * eur * k,
+                      }) },
+                    { name: "Ferestre triple", short: "Ferestre", color: "#a855f7", savePct: 0.12,
+                      costFn: (au, eur, k) => ({
+                        low:  REHAB_PRICES.envelope.windows_u110.low  * au * 0.15 * eur * k,
+                        mid:  REHAB_PRICES.envelope.windows_u110.mid  * au * 0.15 * eur * k,
+                        high: REHAB_PRICES.envelope.windows_u110.high * au * 0.15 * eur * k,
+                      }) },
+                    { name: "Termoizolație acoperiș", short: "Acoperiș", color: "#f97316", savePct: 0.10,
+                      costFn: (au, eur, k) => ({
+                        low:  REHAB_PRICES.envelope.roof_eps_15cm.low  * au * eur * k,
+                        mid:  REHAB_PRICES.envelope.roof_eps_15cm.mid  * au * eur * k,
+                        high: REHAB_PRICES.envelope.roof_eps_15cm.high * au * eur * k,
+                      }) },
+                    { name: "Pompă de căldură", short: "Pompă", color: "#22c55e", savePct: 0.30,
+                      costFn: (_au, eur, k) => ({
+                        low:  REHAB_PRICES.heating.hp_aw_12kw.low  * eur * k,
+                        mid:  REHAB_PRICES.heating.hp_aw_12kw.mid  * eur * k,
+                        high: REHAB_PRICES.heating.hp_aw_12kw.high * eur * k,
+                      }) },
+                    { name: "PV 5kWp", short: "PV 5kWp", color: "#facc15", savePct: 0.15,
+                      costFn: (_au, eur, k) => ({
+                        low:  REHAB_PRICES.renewables.pv_kwp.low  * 5 * eur * k,
+                        mid:  REHAB_PRICES.renewables.pv_kwp.mid  * 5 * eur * k,
+                        high: REHAB_PRICES.renewables.pv_kwp.high * 5 * eur * k,
+                      }) },
+                  ];
+                  const measures = MEASURE_DEFS.map(d => {
+                    const c = d.costFn(Au, eurRon, inflationFactor);
+                    return {
+                      name: d.name, short: d.short, color: d.color, savePct: d.savePct,
+                      costLow:  Math.round(c.low),
+                      cost:     Math.round(c.mid),
+                      costHigh: Math.round(c.high),
+                    };
+                  });
+                  const discount = 0.05;
+                  const years = 20;
+                  const curves = measures.map(m => {
+                    const annSave = annualCost * m.savePct;
+                    const buildPts = (cost) => {
+                      const pts = [{ yr: 0, npv: -cost }];
+                      let cumNPV = -cost;
+                      for (let yr = 1; yr <= years; yr++) {
+                        if (annSave > 0) cumNPV += annSave / Math.pow(1 + discount, yr);
+                        pts.push({ yr, npv: cumNPV });
+                      }
+                      return pts;
+                    };
+                    const ptsLow  = buildPts(m.costLow);
+                    const ptsMid  = buildPts(m.cost);
+                    const ptsHigh = buildPts(m.costHigh);
+                    const paybackYr = annSave > 0 ? ptsMid.findIndex(p => p.npv >= 0) : -1;
+                    return { ...m, pts: ptsMid, ptsLow, ptsHigh, paybackYr, annSave };
+                  });
+                  const allNPV = curves.flatMap(c => [...c.ptsLow, ...c.pts, ...c.ptsHigh].map(p => p.npv));
+                  const rawMin = Math.min(...allNPV), rawMax = Math.max(...allNPV);
+                  const pad = (rawMax - rawMin) * 0.10;
+                  const yMin = rawMin - pad, yMax = rawMax + pad;
+                  const rawStep = (yMax - yMin) / 5;
+                  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
+                  const niceStep = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= rawStep) || rawStep;
+                  const niceMin = Math.floor(yMin / niceStep) * niceStep;
+                  const yTicks = [];
+                  for (let v = niceMin; v <= yMax + niceStep * 0.01; v += niceStep) yTicks.push(Math.round(v));
+                  const W = 800, H = 400;
+                  const pL = 72, pR = 92, pT = 32, pB = 48;
+                  const cW = W - pL - pR, cH = H - pT - pB;
+                  const toX = yr => pL + (yr / years) * cW;
+                  const toY = v => pT + cH - ((v - yMin) / (yMax - yMin)) * cH;
+                  const fmtChart = v => { const a = Math.abs(v); return `${v < 0 ? "-" : ""}${a >= 1000 ? (a / 1000).toFixed(0) + "k" : Math.round(a)}`; };
+                  const breakY = toY(0);
+                  const sortedByNpv = [...curves].sort((a, b) => b.pts[years].npv - a.pts[years].npv);
+                  const labelYMap = {};
+                  let prevLabelY = -Infinity;
+                  sortedByNpv.forEach(c => {
+                    const raw = toY(c.pts[years].npv);
+                    const ly = Math.max(raw, prevLabelY + 13);
+                    labelYMap[c.name] = ly;
+                    prevLabelY = ly;
+                  });
+                  return (
+                  <Card title={lang==="EN"?"NPV 20y comparison — 5 measures (low/mid/high band)":"NPV 20 ani — comparativ 5 măsuri (bandă low/mid/high)"} className="mb-6 border-amber-500/20">
+                    <div className="w-full">
+                    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', aspectRatio: `${W}/${H}` }} className="overflow-visible">
+                      {breakY > pT && breakY < pT + cH && (
+                        <>
+                          <rect x={pL} y={pT} width={cW} height={Math.max(0, breakY - pT)} fill="rgba(34,197,94,0.06)" />
+                          <rect x={pL} y={breakY} width={cW} height={Math.max(0, pT + cH - breakY)} fill="rgba(239,68,68,0.07)" />
+                        </>
+                      )}
+                      {yTicks.map((v, i) => {
+                        const y = toY(v);
+                        if (y < pT - 2 || y > pT + cH + 2) return null;
+                        const isZero = v === 0;
+                        return (
+                          <g key={"yt"+i}>
+                            <line x1={pL} y1={y} x2={pL+cW} y2={y}
+                              stroke={isZero ? "#f59e0b" : theme==="dark" ? "rgba(255,255,255,0.11)" : "rgba(0,0,0,0.10)"}
+                              strokeWidth={isZero ? 1.5 : 0.6}
+                              strokeDasharray={isZero ? "5 3" : undefined} />
+                            <text x={pL-6} y={y+4} textAnchor="end" fontSize="10" fill={isZero ? "#fbbf24" : "#b0b8c8"}>{fmtChart(v)}</text>
+                          </g>
+                        );
+                      })}
+                      {[0,5,10,15,20].map(yr => {
+                        const x = toX(yr);
+                        return (
+                          <g key={"xt"+yr}>
+                            <line x1={x} y1={pT} x2={x} y2={pT+cH} stroke={theme==="dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"} strokeWidth="0.6" />
+                            <text x={x} y={pT+cH+18} textAnchor="middle" fontSize="10" fill="#b0b8c8">{yr}</text>
+                          </g>
+                        );
+                      })}
+                      <line x1={pL} y1={pT} x2={pL} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
+                      <line x1={pL} y1={pT+cH} x2={pL+cW} y2={pT+cH} stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
+                      <text x={pL+cW/2} y={H-4} textAnchor="middle" fontSize="11" fill="#c8cfd8">Ani</text>
+                      <text x={pL-6} y={pT-8} textAnchor="end" fontSize="10" fill="#a8b0c0">RON</text>
+                      {breakY > pT + 18 && (
+                        <text x={pL+6} y={pT+14} fontSize="9" fill="rgba(34,197,94,0.55)" fontStyle="italic">Profit net</text>
+                      )}
+                      {breakY < pT + cH - 12 && (
+                        <text x={pL+6} y={pT+cH-6} fontSize="9" fill="rgba(239,68,68,0.50)" fontStyle="italic">Investiție nerecuperată</text>
+                      )}
+                      {curves.map((c, ci) => {
+                        const ptStrMid  = c.pts.map(p => `${toX(p.yr)},${toY(p.npv)}`).join(" ");
+                        const pbX = c.paybackYr > 0 ? toX(c.paybackYr) : null;
+                        const npv20Mid  = c.pts[years].npv;
+                        const npv20Low  = c.ptsLow[years].npv;
+                        const npv20High = c.ptsHigh[years].npv;
+                        const endX = toX(years);
+                        const endY = toY(npv20Mid);
+                        const lY = labelYMap[c.name] ?? endY;
+                        const tipText = `${c.name}\nEconomie: ${fmtChart(c.annSave)} RON/an (${(c.annSave/Au).toFixed(0)} RON/m²·an)\nInvestiție bandă: ${fmtChart(c.costLow)}–${fmtChart(c.costHigh)} RON (mid: ${fmtChart(c.cost)})\nNPV 20 ani bandă: ${fmtChart(npv20High)}–${fmtChart(npv20Low)} RON (mid: ${fmtChart(npv20Mid)})\nRecuperare (mid): ${c.paybackYr > 0 ? c.paybackYr+" ani" : ">20 ani"}`;
+                        return (
+                          <g key={"c"+ci}>
+                            <title>{tipText}</title>
+                            <polyline points={ptStrMid} fill="none" stroke={c.color} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+                            <polyline points={ptStrMid} fill="none" stroke="transparent" strokeWidth="16" />
+                            {pbX && (
+                              <circle cx={pbX} cy={breakY} r="5" fill={c.color} stroke="rgba(0,0,0,0.35)" strokeWidth="1.2" />
+                            )}
+                            <circle cx={toX(0)} cy={toY(-c.cost)} r="3.5" fill={c.color} opacity="0.85" />
+                            {Math.abs(lY - endY) > 3 && (
+                              <line x1={endX} y1={endY} x2={endX+7} y2={lY} stroke={c.color} strokeWidth="0.8" opacity="0.45" />
+                            )}
+                            <text x={endX+10} y={lY+4} fontSize="10" fill={c.color} fontWeight="500">{c.short}</text>
+                          </g>
+                        );
+                      })}
+                      {breakY > pT && breakY < pT+cH && (
+                        <>
+                          <rect x={pL+cW-62} y={breakY-17} width={58} height={13} rx="3" fill="rgba(245,158,11,0.14)" />
+                          <text x={pL+cW-33} y={breakY-7} textAnchor="middle" fontSize="9.5" fill="#fbbf24" fontWeight="600">break-even</text>
+                        </>
+                      )}
+                    </svg>
+                    </div>
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-white/10 text-[10px]">
+                            <th className="text-left py-1 pr-3 font-normal opacity-50">Măsură</th>
+                            <th className="text-right py-1 px-2 font-normal opacity-50">Cost est.</th>
+                            <th className="text-right py-1 px-2 font-normal opacity-50">Economie/an</th>
+                            <th className="text-right py-1 px-2 font-normal opacity-50">Recuperare</th>
+                            <th className="text-right py-1 pl-2 font-normal opacity-50">NPV 20 ani</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {curves.map((m, i) => {
+                            const payback = m.annSave > 0 ? (m.paybackYr > 0 ? `${m.paybackYr} ani` : ">20 ani") : "—";
+                            const npv20Mid  = m.pts[years].npv;
+                            const npv20Low  = m.ptsLow[years].npv;
+                            const npv20High = m.ptsHigh[years].npv;
+                            return (
+                              <tr key={i} className="border-b border-white/5">
+                                <td className="py-1.5 pr-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-[3px] rounded flex-shrink-0" style={{background: m.color}} />
+                                    <span className="opacity-85">{m.name}</span>
+                                  </div>
+                                </td>
+                                <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">
+                                  <div>{fmtMoney(m.cost, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</div>
+                                  <div className="text-[10px] opacity-50">{fmtChart(m.costLow)}–{fmtChart(m.costHigh)}</div>
+                                </td>
+                                <td className="text-right py-1.5 px-2 opacity-65 tabular-nums">{fmtMoney(m.annSave, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</td>
+                                <td className="text-right py-1.5 px-2 font-bold tabular-nums" style={{color: m.color}}>{payback}</td>
+                                <td className="text-right py-1.5 pl-2 opacity-80 tabular-nums">
+                                  <div>{fmtMoney(npv20Mid, "RON", { target: currencyMode === "auto" ? "RON" : currencyMode, eurRon })}</div>
+                                  <div className="text-[10px] opacity-50">{fmtChart(npv20High)}–{fmtChart(npv20Low)}</div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="text-xs opacity-50 mt-2">NPV cu rată discount 5%/an · prețuri constante {priceFuel.toFixed(2)} RON/kWh ({fuelId}) · elec. {priceElec.toFixed(2)} RON/kWh · Bandă = scenariile <span className="opacity-80">low</span> – <span className="opacity-80">mid</span> – <span className="opacity-80">high</span> (sensibilitate preț) · Punct colorat = recuperare investiție (mid)</div>
+                    <div className="text-[10px] opacity-45 mt-1">
+                      Prețuri {new Date().getFullYear()} · sursa: <span className="font-mono">rehab-prices.js</span> ({REHAB_PRICES.last_updated}) · curs {eurRon.toFixed(2)} RON/EUR
+                      {inflation.source !== 'fallback' && (
+                        <> · <span className="text-amber-400/70">📈 Inflație construcții {inflationFactor >= 1 ? '+' : ''}{((inflationFactor - 1) * 100).toFixed(1)}%</span> (Eurostat {inflation.currentPeriod || inflation.basePeriod} · {inflation.source})</>
+                      )}
+                      {inflation.source === 'fallback' && (
+                        <> · <span className="opacity-50">📈 Inflație: bază {inflation.basePeriod} (cache gol — refresh la 30 zile)</span></>
+                      )}
+                    </div>
+                  </Card>
+                  );
+                })()}
+                </GradeGate>
+                )}
 
                 {/* ── Analiză amortizare investiție 20 ani ──
                     Sprint Pas 7 docs follow-up (6 mai 2026) — refactor major:
@@ -1544,6 +2065,48 @@ export default function Step7Audit(props) {
                   </Card>
                   );
                 })()}
+
+                {/* ── BENCHMARKING REFERINȚE (clădire veche → Pasivhaus) ── (Faza B — context audit, ascuns la IIci) */}
+                {instSummary && (
+                <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
+                  <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
+                    <div className="space-y-2">
+                      {(function() {
+                        const cat = building.category || "RI";
+                        const isRes = ["RI","RC","RA"].includes(cat);
+                        const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
+                        return isRes ? [
+                          {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
+                          {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
+                          {label:"Clădire conformă 2010-2020",ep:120,co2:15},
+                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:8},
+                          {label:"Pasivhaus",ep:40,co2:4},
+                        ] : [
+                          {label:"Clădire veche neizolată (pre-1990)",ep:450,co2:55},
+                          {label:"Clădire izolată parțial (1990-2010)",ep:250,co2:30},
+                          {label:"Clădire conformă 2010-2020",ep:160,co2:18},
+                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:10},
+                          {label:"Best practice",ep:60,co2:5},
+                        ];
+                      })().map(function(ref,i) {
+                        var myEp = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
+                        var maxEp = 400;
+                        return (
+                          <div key={i} className="flex items-center gap-3">
+                            <span className="text-[10px] opacity-50 w-40 shrink-0 truncate">{ref.label}</span>
+                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden relative">
+                              <div className="h-full rounded-full opacity-40" style={{width:Math.min(100,ref.ep/maxEp*100)+"%",backgroundColor:"#666"}}/>
+                              <div className="absolute top-0 left-0 h-full w-0.5 bg-amber-500" style={{left:Math.min(100,(renewSummary?renewSummary.ep_adjusted_m2:instSummary.ep_total_m2)/maxEp*100)+"%"}}/>
+                            </div>
+                            <span className="text-[10px] font-mono opacity-40 w-10 text-right">{ref.ep}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
+                    </div>
+                  </Card>
+                </GradeGate>
+                )}
 
                 {/* ── ANALIZĂ FINANCIARĂ EN 15459-1 ── */}
                 {financialAnalysis && (
