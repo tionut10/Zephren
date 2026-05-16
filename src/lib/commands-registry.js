@@ -70,8 +70,8 @@ export const COMMANDS = [
   // ─── ACȚIUNI RAPIDE (5 comenzi) ────────────────────────────
   { id: "action.preflight", label: "Verifică conformitate (Preflight)", group: COMMAND_GROUPS.ACTIUNI, icon: "🔍", keywords: ["preflight", "verificare", "validare", "conformitate"],
     action: ctx => ctx.showToast?.("Preflight check engine — sprint B3 în curs de implementare") },
-  { id: "action.clone", label: "Clonează proiect curent", group: COMMAND_GROUPS.ACTIUNI, icon: "📋", keywords: ["clona", "duplicate", "copiaza", "punct start"],
-    action: ctx => ctx.showToast?.("Clonare proiect — sprint C2 în curs de implementare") },
+  { id: "action.clone", label: "Clonează proiect curent ca punct start", group: COMMAND_GROUPS.ACTIUNI, icon: "📋", keywords: ["clona", "duplicate", "copiaza", "punct start", "audit similar"],
+    action: ctx => ctx.cloneCurrentProject?.() || ctx.showToast?.("Funcția de clonare necesită un proiect activ salvat") },
   { id: "action.currency", label: "Comută monedă EUR ↔ RON", group: COMMAND_GROUPS.ACTIUNI, icon: "💱", keywords: ["eur", "ron", "moneda", "currency", "curs"],
     action: ctx => ctx.toggleCurrency?.() || ctx.showToast?.("Comutare monedă din sidebar settings") },
   { id: "action.save", label: "Salvează draft manual (Ctrl+S)", group: COMMAND_GROUPS.ACTIUNI, icon: "💾", keywords: ["save", "salvare", "backup", "export"],

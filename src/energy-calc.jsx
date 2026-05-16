@@ -58,6 +58,7 @@ import { ZONE_COLORS } from "./data/zone-colors.js";
 import { getPrice, getEurRonSync, REHAB_PRICES } from "./data/rehab-prices.js";
 import { TIERS } from "./data/tiers.js";
 import { getMaxStep } from "./lib/planGating.js";
+import { cloneProjectToStorage } from "./lib/project-clone.js"; // C2 Sprint Optimizări 16 mai 2026
 import { BENCHMARKS } from "./data/benchmarks.js";
 import { INITIAL_BUILDING, INITIAL_HEATING, INITIAL_ACM, INITIAL_COOLING, INITIAL_VENTILATION, INITIAL_LIGHTING, INITIAL_SOLAR_TH, INITIAL_PV, INITIAL_HP, INITIAL_BIO, INITIAL_OTHER, INITIAL_BATTERY, INITIAL_AUDITOR } from "./data/initial-state.js";
 import { DEMO_PROJECTS, buildMdlpaDefaults } from "./data/demoProjects.js";
@@ -773,6 +774,26 @@ export default function EnergyCalcApp({ cloud }) {
       showToast("Proiect șters.", "info");
     } catch(e) {}
   }, [refreshProjectList, showToast]);
+
+  // C2 Sprint Optimizări 16 mai 2026 — Clonare proiect ca punct start
+  // Reduce timp Pas 1-4 de la ~45min la ~10min pentru proiecte similare
+  // (foarte comun în portofoliul auditor: blocuri P+4 1970s, vile 2010-2015 etc.)
+  const cloneProject = useCallback(async (sourceId, sourceName) => {
+    if (typeof window === "undefined" || !window.storage) return;
+    const confirmMsg = `Vei începe un proiect nou bazat pe „${sourceName || sourceId}".\n\nDate PĂSTRATE (punct start): geometrie, anvelopă, instalații, măsuri.\nDate RESETATE (nou audit): cod CPE, semnătură auditor, pașaport renovare, documente.\n\nContinuă?`;
+    if (!confirm(confirmMsg)) return;
+    try {
+      // Salvăm proiectul curent înainte de clonare
+      await saveCurrentProject();
+      const { newId } = await cloneProjectToStorage(sourceId, sourceName, window.storage);
+      await refreshProjectList();
+      // Încarcă automat clona în state (auditor poate începe imediat editarea)
+      await loadProject(newId);
+      showToast(`✅ Proiect clonat din „${sourceName}". Cod CPE + semnătură resetate.`, "success", 6000);
+    } catch (e) {
+      showToast("Eroare clonare proiect: " + e.message, "error");
+    }
+  }, [refreshProjectList, loadProject, saveCurrentProject, showToast]);
 
   // Cloud sync functions
   const saveToCloud = useCallback(async () => {
@@ -4305,6 +4326,13 @@ Zona {selectedClimate.zone}
               toggleDashboard: () => setShowDashboard(d => !d),
               startTour: () => setShowTour(true),
               openProjectManager: () => setShowProjectManager(true),
+              cloneCurrentProject: () => {
+                if (activeProjectId) {
+                  cloneProject(activeProjectId, building.address || activeProjectId);
+                } else {
+                  showToast("Salvează mai întâi proiectul curent pentru a-l putea clona", "error");
+                }
+              },
               toggleCurrency: () => showToast?.("Comutare monedă disponibilă din sidebar settings"),
               resetProject: () => { setStep(1); /* Reset minimal — full reset prin reload */ },
             }}
@@ -4812,6 +4840,10 @@ Zona {selectedClimate.zone}
                     }} className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 hover:bg-white/10 opacity-50 hover:opacity-100 transition-all shrink-0">
                       🕐
                     </button>
+                    {/* C2 Sprint Optimizări 16 mai 2026 — Clonare proiect ca punct start */}
+                    <button onClick={(e) => { e.stopPropagation(); cloneProject(p.id, p.name); }}
+                      title="Clonează ca punct start pentru un proiect nou"
+                      className="w-7 h-7 rounded-full hover:bg-indigo-500/20 flex items-center justify-center text-indigo-400/50 hover:text-indigo-300 text-xs transition-all shrink-0">📋</button>
                     <button onClick={(e) => { e.stopPropagation(); if (p.id !== activeProjectId) deleteProject(p.id); else showToast("Nu poți șterge proiectul activ.", "error"); }}
                       className="w-7 h-7 rounded-full hover:bg-red-500/20 flex items-center justify-center text-red-400/50 hover:text-red-400 text-xs transition-all shrink-0">🗑</button>
                   </div>
