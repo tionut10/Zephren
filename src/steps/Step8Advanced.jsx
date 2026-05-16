@@ -4743,7 +4743,7 @@ export default function Step8Advanced({ building, climate, opaqueElements, glazi
         <Card className="p-4">
           <SectionHeader icon="📊" title="Reconciliere consum facturat vs calculat"
             subtitle="Comparare EP măsurat din facturi cu EP calculat — coeficient corelație R², diagnoze automate" />
-          <ConsumReconciliere instSummary={instSummary} building={building} />
+          <ConsumReconciliere instSummary={instSummary} building={building} userPlan={userPlan} />
         </Card>
       )}
 

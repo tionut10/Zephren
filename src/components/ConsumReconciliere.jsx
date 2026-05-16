@@ -5,6 +5,7 @@ import {
   calibrationFactor,
 } from "../calc/climate-normalization.js";
 import { lookupClimate } from "../data/climate-data-na-2023.js";
+import InvoiceOCR from "./InvoiceOCR.jsx";
 
 const LUNI = ["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
 const LS_KEY = "zephren_measured_consumption";
@@ -106,7 +107,7 @@ function BarChart({ measuredMonthly, calculatedMonthly }) {
   );
 }
 
-export default function ConsumReconciliere({ instSummary = {}, building = {} }) {
+export default function ConsumReconciliere({ instSummary = {}, building = {}, userPlan = "free" }) {
   const {
     ep_total_m2 = null,
     monthly = [],
@@ -122,6 +123,11 @@ export default function ConsumReconciliere({ instSummary = {}, building = {} }) 
   const [anualElec, setAnualElec] = useState("");
   // Sprint 8 — normalizare climatică: GZE real an facturi (opțional override)
   const [gzeRealOverride, setGzeRealOverride] = useState("");
+
+  // A1 OCR facturi (Sprint Optimizări 16 mai 2026) — integrare InvoiceOCR existent
+  // Pattern: factură anuală → setează anualGaz (kWh→m³) + anualElec; auto-switch la „Date anuale"
+  const [showOcr, setShowOcr] = useState(false);
+  const [ocrNotice, setOcrNotice] = useState(null); // { supplier, periodi, gasKwh, elecKwh, heatKwh }
 
   // localStorage init
   useEffect(() => {
@@ -157,6 +163,49 @@ export default function ConsumReconciliere({ instSummary = {}, building = {} }) 
   function handleAnualElec(v) { setAnualElec(v); persist(rows, factorConv, anualGaz, v, modul); }
   function handleModul(v) { setModul(v); persist(rows, factorConv, anualGaz, anualElec, v); }
   function handleGzeReal(v) { setGzeRealOverride(v); persist(rows, factorConv, anualGaz, anualElec, modul, v); }
+
+  // A1 OCR facturi — handler aplicare date extrase din factură
+  // InvoiceOCR returnează: measuredGasKwh / measuredElecKwh / measuredHeatKwh (toate kWh anuale)
+  //                     + supplier + invoicePeriod (string) + address + tariffGas/Elec
+  // Strategie: convertim kWh→m³ pentru gaz (÷ factorConv) + setăm anualGaz/anualElec
+  //            + auto-switch la „Date anuale" + banner cu sumarul aplicat
+  // Notă: termoficarea (heatKwh) adunată la anualElec pentru reconciliere — Mc 001 §9.2
+  //       tratează kWh livrat indiferent de vector ca input total în EP_masurat
+  const handleOcrApply = useCallback((toApply) => {
+    const fcCurrent = parseFloat(factorConv) || DEF_FACTOR;
+    const gasKwh = parseFloat(toApply.measuredGasKwh) || 0;
+    const elecKwh = parseFloat(toApply.measuredElecKwh) || 0;
+    const heatKwh = parseFloat(toApply.measuredHeatKwh) || 0;
+
+    // Gaz: kWh → m³ pentru consistență UI (factorConv aplicat la calcul)
+    const gasM3 = gasKwh > 0 ? (gasKwh / fcCurrent).toFixed(1) : "";
+    // Electric + termoficare adunate (ambele kWh, ambele = energie finală livrată)
+    const elecTotal = elecKwh + heatKwh;
+    const elecStr = elecTotal > 0 ? elecTotal.toFixed(0) : "";
+
+    if (gasM3) setAnualGaz(gasM3);
+    if (elecStr) setAnualElec(elecStr);
+
+    // Auto-switch la „Date anuale" (factura conține totaluri anuale)
+    setModul("anual");
+
+    // Persist
+    persist(rows, fcCurrent, gasM3 || anualGaz, elecStr || anualElec, "anual");
+
+    // Banner cu sumar
+    setOcrNotice({
+      supplier: toApply.supplier || "—",
+      period: toApply.invoicePeriod || "",
+      gasKwh: gasKwh > 0 ? gasKwh.toFixed(0) : null,
+      gasM3: gasM3 || null,
+      elecKwh: elecKwh > 0 ? elecKwh.toFixed(0) : null,
+      heatKwh: heatKwh > 0 ? heatKwh.toFixed(0) : null,
+      timestamp: new Date().toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }),
+    });
+
+    // Auto-dismiss banner după 15s
+    setTimeout(() => setOcrNotice(null), 15000);
+  }, [factorConv, rows, anualGaz, anualElec, persist]);
 
   // Calcule
   const fc = parseFloat(factorConv) || DEF_FACTOR;
@@ -284,6 +333,12 @@ export default function ConsumReconciliere({ instSummary = {}, building = {} }) 
               </button>
             ))}
           </div>
+          <button onClick={() => setShowOcr(true)}
+            title="Extrage automat date din factură (Claude Vision AI)"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs transition-colors">
+            <span>📸</span>
+            <span>Importă din factură</span>
+          </button>
           <button onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 rounded-lg text-xs transition-colors">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -315,6 +370,37 @@ export default function ConsumReconciliere({ instSummary = {}, building = {} }) 
           GZE convențional pentru {climateData.nume} (zona {climateData.zona}): {climateData.gzeConv} K·zi/an ·
           k_clim aplicat: <span className={cn("font-mono", kClim !== 1 ? "text-amber-400" : "text-slate-400")}>{kClim.toFixed(3)}</span>
         </p>
+      )}
+
+      {/* A1 OCR facturi — banner sumar date aplicate din factură */}
+      {ocrNotice && (
+        <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-4 py-3 flex items-start gap-3 text-xs">
+          <span className="text-xl">📸</span>
+          <div className="flex-1 space-y-1">
+            <div className="font-medium text-indigo-300">
+              Date aplicate din factură {ocrNotice.supplier !== "—" && `· ${ocrNotice.supplier}`}
+              <span className="text-slate-500 ml-2 text-[10px]">la {ocrNotice.timestamp}</span>
+            </div>
+            {ocrNotice.period && (
+              <div className="text-slate-400 text-[11px]">Perioadă factură: {ocrNotice.period}</div>
+            )}
+            <div className="flex flex-wrap gap-3 text-slate-300 mt-1.5">
+              {ocrNotice.gasKwh && (
+                <span>🔥 Gaz: <strong className="text-amber-300 font-mono">{parseFloat(ocrNotice.gasKwh).toLocaleString("ro-RO")} kWh</strong> ({ocrNotice.gasM3} m³)</span>
+              )}
+              {ocrNotice.elecKwh && (
+                <span>⚡ Electric: <strong className="text-amber-300 font-mono">{parseFloat(ocrNotice.elecKwh).toLocaleString("ro-RO")} kWh</strong></span>
+              )}
+              {ocrNotice.heatKwh && (
+                <span>♨️ Termoficare: <strong className="text-amber-300 font-mono">{parseFloat(ocrNotice.heatKwh).toLocaleString("ro-RO")} kWh</strong> (adunat la electric)</span>
+              )}
+            </div>
+            <div className="text-[10px] text-slate-500 italic mt-1">
+              Aplicat în modul „Date anuale". Comutați la „Date lunare" dacă vreți defalcare lună-cu-lună (introducere manuală).
+            </div>
+          </div>
+          <button onClick={() => setOcrNotice(null)} className="text-slate-500 hover:text-slate-300 text-sm">✕</button>
+        </div>
       )}
 
       {/* Input date */}
@@ -412,6 +498,15 @@ export default function ConsumReconciliere({ instSummary = {}, building = {} }) 
             Consumul calculat include Q_NH + Q_NC + Q_ACM (distribuit sezonier) + Q_L iluminat
           </p>
         </div>
+      )}
+
+      {/* A1 OCR facturi modal — Claude Vision via /api/import-document */}
+      {showOcr && (
+        <InvoiceOCR
+          onApply={handleOcrApply}
+          onClose={() => setShowOcr(false)}
+          userPlan={userPlan}
+        />
       )}
     </div>
   );
