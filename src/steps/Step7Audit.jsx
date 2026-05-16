@@ -937,44 +937,13 @@ export default function Step7Audit(props) {
                 </PhaseHeader>
                 {/* ═════════════════════════════════════ END F1 ═════════════════════════════════════ */}
 
-                {/* ═══════════════════════════════════════════════════════════════════ */}
-                {/* F2 · INPUT DOCUMENTAR — Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6 */}
-                {/* DocumentUploadCenter (mutat din final 3559) + Fotografii (mutat din 2295) */}
-                {/* ═══════════════════════════════════════════════════════════════════ */}
-                <PhaseHeader icon="📂" title="F2 · Input documentar"
-                             normative="Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6"
-                             color="violet">
-
-                  {/* Documente client — mutat din Pas 1 → Pas 7 final → F2 (Sprint reorg-pas7 16 mai 2026) */}
-                  <DocumentUploadCenter
-                    cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
-                    buildingCategory={building.category}
-                    buildingYearBuilt={building.yearBuilt}
-                    scopCpe={building.scopCpe}
-                    isResidentialCollective={building.category === "RC"}
-                    protectedZone={!!building.protectedZone}
-                    isHistoric={!!building.isHistoric}
-                    showInfo={true}
-                  />
-
-                  {/* Fotografii clădire — mutat din 2295 (Sprint reorg-pas7 16 mai 2026) */}
-                  <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
-                    <BuildingPhotos
-                      buildingPhotos={buildingPhotos}
-                      setBuildingPhotos={setBuildingPhotos}
-                      showToast={showToast}
-                      cn={cn}
-                    />
-                  </Card>
-
-                </PhaseHeader>
-                {/* ═════════════════════════════════════ END F2 ═════════════════════════════════════ */}
+                {/* F2 (Input documentar) MUTAT în F7 (Anexe documente) înainte de F8 Export — Sprint reorg-pas7-v2 (16 mai 2026) */}
 
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                {/* F3 · IDENTIFICARE MĂSURI — Mc 001-2022 §6.2-6.4                     */}
+                {/* F2 · IDENTIFICARE MĂSURI — Mc 001-2022 §6.2-6.4                     */}
                 {/* SuggCat + Proposed + R1 + R2 + R3 + IEQ (mutat) + Sugestii inteligente */}
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                <PhaseHeader icon="🔧" title="F3 · Identificare măsuri"
+                <PhaseHeader icon="🔧" title="F2 · Identificare măsuri"
                              normative="Mc 001-2022 §6.2-6.4"
                              color="blue">
 
@@ -1188,14 +1157,14 @@ export default function Step7Audit(props) {
                 )}
 
                 </PhaseHeader>
-                {/* ═════════════════════════════════════ END F3 ═════════════════════════════════════ */}
+                {/* ═════════════════════════════════════ END F2 ═════════════════════════════════════ */}
 
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                {/* F4 · PRIORITIZARE & SELECȚIE PACHET — EPBD Art. 6 + Reg. UE 244/2012 */}
+                {/* F3 · PRIORITIZARE & SELECȚIE PACHET — EPBD Art. 6 + Reg. UE 244/2012 */}
                 {/* Prioritizare + Configurează + Comparație multi + Cost-optim + Costuri */}
                 {/* Notă: Scenariu Proiecție trece în F6 Roadmap (mutat în P2.6)         */}
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                <PhaseHeader icon="⚖️" title="F4 · Prioritizare & Selecție pachet"
+                <PhaseHeader icon="⚖️" title="F3 · Prioritizare & Selecție pachet"
                              normative="EPBD Art. 6 + Reg. UE 244/2012"
                              color="emerald">
 
@@ -1595,13 +1564,13 @@ export default function Step7Audit(props) {
                 )}
 
                 </PhaseHeader>
-                {/* ═════════════════════════════════════ END F4 ═════════════════════════════════════ */}
+                {/* ═════════════════════════════════════ END F3 ═════════════════════════════════════ */}
 
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                {/* F5 · ANALIZĂ ECONOMICĂ — EN 15459-1 + Mc 001-2022 §6.6-6.7          */}
+                {/* F4 · ANALIZĂ ECONOMICĂ — EN 15459-1 + Mc 001-2022 §6.6-6.7          */}
                 {/* Cost estimativ + NPV 20y + Amortizare + Analiză financiară EN 15459-1 */}
                 {/* ═══════════════════════════════════════════════════════════════════ */}
-                <PhaseHeader icon="💰" title="F5 · Analiză economică"
+                <PhaseHeader icon="💰" title="F4 · Analiză economică"
                              normative="EN 15459-1 + Mc 001-2022 §6.6-6.7"
                              color="amber">
 
@@ -2259,17 +2228,17 @@ export default function Step7Audit(props) {
                 </div>
 
                 </PhaseHeader>
-                {/* ═════════════════════════════════════ END F5 ═════════════════════════════════════ */}
+                {/* ═════════════════════════════════════ END F4 ═════════════════════════════════════ */}
 
               </div>
               )}
 
               {/* ═══════════════════════════════════════════════════════════════════ */}
-              {/* F6 · SCENARIU PROIECTAT & ROADMAP — EPBD Art. 12 + Anexa VIII       */}
+              {/* F5 · SCENARIU PROIECTAT & ROADMAP — EPBD Art. 12 + Anexa VIII       */}
               {/* Scenariu Reabilitare (mutat din 1182 F4) + Pașaport (dezactivat marker) */}
               {/* OUTSIDE ternary — vizibil chiar dacă instSummary lipsește (subject la rehabScenario) */}
               {/* ═══════════════════════════════════════════════════════════════════ */}
-              <PhaseHeader icon="🗺️" title="F6 · Scenariu proiectat & Roadmap"
+              <PhaseHeader icon="🗺️" title="F5 · Scenariu proiectat & Roadmap"
                            normative="EPBD Art. 12 + Anexa VIII"
                            color="violet">
 
@@ -2387,7 +2356,7 @@ export default function Step7Audit(props) {
                     Codul Pașaport rămâne în repo la fostele linii 2350-2580ish (false &&). NU îl mut fizic — risc fără beneficiu. */}
 
               </PhaseHeader>
-              {/* ═════════════════════════════════════ END F6 ═════════════════════════════════════ */}
+              {/* ═════════════════════════════════════ END F5 ═════════════════════════════════════ */}
 
               {/* ═══════════════════════════════════════════════════════════════════ */}
               {/* CARD CENTRAL — GENERARE DOCUMENTE PAS 7 (6 mai 2026) — MUTAT în F8  */}
@@ -2685,10 +2654,10 @@ export default function Step7Audit(props) {
               })()}
 
               {/* ═══════════════════════════════════════════════════════════════════ */}
-              {/* F7 · CONFORMARE — Mc 001-2022 Cap. 7 + Ord. MDLPA 348/2026 Art. 6c   */}
+              {/* F6 · CONFORMARE — Mc 001-2022 Cap. 7 + Ord. MDLPA 348/2026 Art. 6c   */}
               {/* MEPI redirect Pas 8 + Raport conformare nZEB (gated Ici+)            */}
               {/* ═══════════════════════════════════════════════════════════════════ */}
-              <PhaseHeader icon="✅" title="F7 · Conformare"
+              <PhaseHeader icon="✅" title="F6 · Conformare"
                            normative="Mc 001-2022 Cap. 7 + Ord. 348/2026 Art. 6c"
                            color="green">
 
@@ -2759,6 +2728,41 @@ export default function Step7Audit(props) {
                   </Card>
                 );
               })()}
+
+              </PhaseHeader>
+              {/* ═════════════════════════════════════ END F6 ═════════════════════════════════════ */}
+
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* F7 · ANEXE DOCUMENTE — Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6  */}
+              {/* DocumentUploadCenter + Fotografii → atașamente ZIP final             */}
+              {/* MUTAT din F2 (post-F1) → F7 (înainte F8) — Sprint reorg-pas7-v2     */}
+              {/* OUTSIDE ternary: docs+poze upload-abile chiar fără calc complet      */}
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              <PhaseHeader icon="📂" title="F7 · Anexe documente"
+                           normative="Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6"
+                           color="violet">
+
+                {/* Documente client — atașamente ZIP final (titlu proprietate, plan amplasament, contract) */}
+                <DocumentUploadCenter
+                  cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
+                  buildingCategory={building.category}
+                  buildingYearBuilt={building.yearBuilt}
+                  scopCpe={building.scopCpe}
+                  isResidentialCollective={building.category === "RC"}
+                  protectedZone={!!building.protectedZone}
+                  isHistoric={!!building.isHistoric}
+                  showInfo={true}
+                />
+
+                {/* Fotografii clădire — anexă vizuală raport DOCX (defecte, fațade, instalații) */}
+                <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
+                  <BuildingPhotos
+                    buildingPhotos={buildingPhotos}
+                    setBuildingPhotos={setBuildingPhotos}
+                    showToast={showToast}
+                    cn={cn}
+                  />
+                </Card>
 
               </PhaseHeader>
               {/* ═════════════════════════════════════ END F7 ═════════════════════════════════════ */}
