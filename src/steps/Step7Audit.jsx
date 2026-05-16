@@ -54,6 +54,8 @@ import { fmtMoney } from "../data/currency-context.js";
 import { useCurrencyMode } from "../components/CurrencyToggle.jsx";
 import GradeGate from "../components/GradeGate.jsx";
 import BenchmarkNational from "../components/BenchmarkNational.jsx";
+// Sprint reorg-pas7 (16 mai 2026) — divizoare vizuale 8 faze audit (Mc 001-2022 §11)
+import { PhaseHeader } from "../components/PhaseHeader.jsx";
 import { countyNameToCode, categoryToBenchmarkType } from "../data/benchmark-national.js";
 import { getEnergyClass, getCO2Class } from "../calc/classification.js";
 import { getNzebEpMax, getURefAdaptive, getURefGlazingAdaptive } from "../calc/smart-rehab.js";
@@ -790,6 +792,13 @@ export default function Step7Audit(props) {
               ) : (
               <div className="space-y-5">
 
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                {/* F1 · DIAGNOSTIC — Mc 001-2022 §8.2 + EN 16247-2                    */}
+                {/* Sprint reorg-pas7 (16 mai 2026) — 8 faze logice audit                */}
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                <PhaseHeader icon="📊" title="F1 · Diagnostic"
+                             normative="Mc 001-2022 §8.2 + EN 16247-2"
+                             color="amber">
 
                 {/* ── Sumar situatie actuala ── */}
                 <Card title={t("Situatia actuala — Sumar diagnostic",lang)}>
@@ -882,6 +891,93 @@ export default function Step7Audit(props) {
                   );
                 })()}
 
+                {/* ── BENCHMARKING REFERINȚE (mutat din linia 2072 în F1 Diagnostic — Sprint reorg-pas7) ── */}
+                {/* Faza B — context audit, ascuns la IIci. Mc 001-2022 §8.2 comparație construcții similare. */}
+                {instSummary && (
+                <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
+                  <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
+                    <div className="space-y-2">
+                      {(function() {
+                        const cat = building.category || "RI";
+                        const isRes = ["RI","RC","RA"].includes(cat);
+                        const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
+                        return isRes ? [
+                          {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
+                          {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
+                          {label:"Clădire conformă 2010-2020",ep:120,co2:15},
+                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:8},
+                          {label:"Pasivhaus",ep:40,co2:4},
+                        ] : [
+                          {label:"Clădire veche neizolată (pre-1990)",ep:450,co2:55},
+                          {label:"Clădire izolată parțial (1990-2010)",ep:250,co2:30},
+                          {label:"Clădire conformă 2010-2020",ep:160,co2:18},
+                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:10},
+                          {label:"Best practice",ep:60,co2:5},
+                        ];
+                      })().map(function(ref,i) {
+                        var myEp = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
+                        var maxEp = 400;
+                        return (
+                          <div key={i} className="flex items-center gap-3">
+                            <span className="text-[10px] opacity-50 w-40 shrink-0 truncate">{ref.label}</span>
+                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden relative">
+                              <div className="h-full rounded-full opacity-40" style={{width:Math.min(100,ref.ep/maxEp*100)+"%",backgroundColor:"#666"}}/>
+                              <div className="absolute top-0 left-0 h-full w-0.5 bg-amber-500" style={{left:Math.min(100,(renewSummary?renewSummary.ep_adjusted_m2:instSummary.ep_total_m2)/maxEp*100)+"%"}}/>
+                            </div>
+                            <span className="text-[10px] font-mono opacity-40 w-10 text-right">{ref.ep}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
+                    </div>
+                  </Card>
+                </GradeGate>
+                )}
+
+                </PhaseHeader>
+                {/* ═════════════════════════════════════ END F1 ═════════════════════════════════════ */}
+
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                {/* F2 · INPUT DOCUMENTAR — Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6 */}
+                {/* DocumentUploadCenter (mutat din final 3559) + Fotografii (mutat din 2295) */}
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                <PhaseHeader icon="📂" title="F2 · Input documentar"
+                             normative="Mc 001-2022 Anexa G + Ord. 348/2026 Art. 4.6"
+                             color="violet">
+
+                  {/* Documente client — mutat din Pas 1 → Pas 7 final → F2 (Sprint reorg-pas7 16 mai 2026) */}
+                  <DocumentUploadCenter
+                    cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
+                    buildingCategory={building.category}
+                    buildingYearBuilt={building.yearBuilt}
+                    scopCpe={building.scopCpe}
+                    isResidentialCollective={building.category === "RC"}
+                    protectedZone={!!building.protectedZone}
+                    isHistoric={!!building.isHistoric}
+                    showInfo={true}
+                  />
+
+                  {/* Fotografii clădire — mutat din 2295 (Sprint reorg-pas7 16 mai 2026) */}
+                  <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
+                    <BuildingPhotos
+                      buildingPhotos={buildingPhotos}
+                      setBuildingPhotos={setBuildingPhotos}
+                      showToast={showToast}
+                      cn={cn}
+                    />
+                  </Card>
+
+                </PhaseHeader>
+                {/* ═════════════════════════════════════ END F2 ═════════════════════════════════════ */}
+
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                {/* F3 · IDENTIFICARE MĂSURI — Mc 001-2022 §6.2-6.4                     */}
+                {/* SuggCat + Proposed + R1 + R2 + R3 + IEQ (mutat) + Sugestii inteligente */}
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                <PhaseHeader icon="🔧" title="F3 · Identificare măsuri"
+                             normative="Mc 001-2022 §6.2-6.4"
+                             color="blue">
+
                 {/* ── Sprint Suggestion Queue B (16 mai 2026) — Catalog + Propuneri ── */}
                 {/* Catalog browser PRIMUL (auditorul alege măsuri din 6 categorii),    */}
                 {/* apoi panoul cu coada de propuneri (review/aprobare/respingere).      */}
@@ -935,6 +1031,35 @@ export default function Step7Audit(props) {
                       <div className="text-center text-sm text-green-400 py-3">✓ Anvelopa termica conforma — nu sunt necesare interventii</div>
                     )}
                   </div>
+
+                  {/* ── MCCL Catalog ponți termice (refactor din 2360 — Sprint reorg-pas7 16 mai 2026) ── */}
+                  {/* Subordonat R1 Anvelopă: catalog selecție punți termice MCCL conform SR EN 14683. */}
+                  <details className="mt-4 group border-t border-white/[0.06] pt-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider opacity-60 hover:opacity-100 transition flex items-center gap-2 py-2">
+                      <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+                      📚 Catalog MCCL — Punți termice (SR EN 14683)
+                      <span className="ml-auto text-[10px] opacity-50 normal-case font-normal">
+                        {MCCL_CATALOG.length} tipuri · click pentru adăugare
+                      </span>
+                    </summary>
+                    <div className="mt-3 max-h-48 overflow-y-auto space-y-1">
+                      {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
+                        <div key={cat}>
+                          <div className="text-[10px] font-bold opacity-40 mt-2 mb-1">{cat}</div>
+                          {MCCL_CATALOG.filter(m => m.cat === cat).map(m => (
+                            <div key={m.id} className="flex items-center justify-between text-[10px] py-0.5 px-2 rounded hover:bg-white/5 cursor-pointer" onClick={() => {
+                              setThermalBridges(prev => [...prev, { name: m.desc, psi: String(m.psi), length: "1" }]);
+                              showToast("Adăugat: " + m.desc, "success");
+                            }}>
+                              <span className="opacity-60">{m.desc}</span>
+                              <span className="font-mono">Ψ={m.psi} / {m.psi_izolat}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice (Pas 2 Envelope)</div>
+                  </details>
                 </Card>
                 )}
 
@@ -966,6 +1091,27 @@ export default function Step7Audit(props) {
                       <div className="text-center text-sm text-green-400 py-3">✓ Instalațiile sunt în parametri normali</div>
                     )}
                   </div>
+
+                  {/* ── CHP Cogenerare (refactor din 2347 — Sprint reorg-pas7 16 mai 2026) ── */}
+                  {/* Subordonat R2 Instalații: cogenerare căldură + electricitate (EN 50465 / EN 60904). */}
+                  <details className="mt-4 group border-t border-white/[0.06] pt-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider opacity-60 hover:opacity-100 transition flex items-center gap-2 py-2">
+                      <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+                      ⚡ Cogenerare (CHP) — căldură + electricitate
+                      <span className="ml-auto text-[10px] opacity-50 normal-case font-normal">
+                        {CHP_TYPES.length} tipuri · EN 50465
+                      </span>
+                    </summary>
+                    <div className="mt-3 space-y-1.5">
+                      {CHP_TYPES.map(chp => (
+                        <div key={chp.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs">
+                          <span>{chp.label}</span>
+                          <span className="font-mono opacity-60">η_el={chp.eta_el} η_th={chp.eta_th}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-[10px] opacity-30 mt-2">Disponibil pentru clădiri cu consum termic {">"} 100 MWh/an</div>
+                  </details>
                 </Card>
 
                 {/* ── Recomandari Regenerabile ── */}
@@ -996,6 +1142,23 @@ export default function Step7Audit(props) {
                 )}
 
 
+                {/* ── IEQ Calitate aer interior (mutat din 2279) — EN 16798-1/NA:2019 ──
+                    Condiție concomitentă pentru orice măsură de reabilitare (ventilare/HRV).
+                    Sprint reorg-pas7 16 mai 2026. */}
+                <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    {IEQ_CATEGORIES.map(cat => (
+                      <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
+                        <div className="text-sm font-bold">{cat.id}</div>
+                        <div className="text-[10px] opacity-40">{cat.tempRange}</div>
+                        <div className="text-[10px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
+                        <div className="text-[10px] opacity-40">{cat.lux} lux</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform SR EN 16798-1:2019/NA:2019</div>
+                </Card>
+
                 {/* ═══ NEW: SUGESTII SMART REABILITARE (E5) ═══ */}
                 {smartSuggestions && smartSuggestions.length > 0 && (
                   <Card title={t("Sugestii inteligente reabilitare",lang)} badge={<Badge color="amber">{smartSuggestions.length} măsuri</Badge>}>
@@ -1023,6 +1186,18 @@ export default function Step7Audit(props) {
                     </div>
                   </Card>
                 )}
+
+                </PhaseHeader>
+                {/* ═════════════════════════════════════ END F3 ═════════════════════════════════════ */}
+
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                {/* F4 · PRIORITIZARE & SELECȚIE PACHET — EPBD Art. 6 + Reg. UE 244/2012 */}
+                {/* Prioritizare + Configurează + Comparație multi + Cost-optim + Costuri */}
+                {/* Notă: Scenariu Proiecție trece în F6 Roadmap (mutat în P2.6)         */}
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                <PhaseHeader icon="⚖️" title="F4 · Prioritizare & Selecție pachet"
+                             normative="EPBD Art. 6 + Reg. UE 244/2012"
+                             color="emerald">
 
                 {/* ── Prioritizare masuri ── */}
                 <Card title={t("Prioritizare Masuri de Interventie",lang)}>
@@ -1054,114 +1229,7 @@ export default function Step7Audit(props) {
                   </div>
                 </Card>
 
-                {/* ── Scenariu Reabilitat — Comparatie ── */}
-                {rehabScenario && (
-                <Card title={t("Scenariu Reabilitare — Proiectie",lang)} className="border-amber-500/20">
-
-                  <div className="flex gap-2 mb-4">
-                    {SCENARIO_PRESETS.map(function(sp) { return (
-                      <button key={sp.id} onClick={function(){ loadScenarioPreset(sp.id); }}
-                        className={cn("flex-1 py-2 rounded-lg text-xs font-medium transition-all border",
-                          activeScenario===sp.id ? "bg-amber-500/15 border-amber-500/30 text-amber-400" : "border-white/10 hover:bg-white/5")}>
-                        {sp.label}
-                      </button>
-                    ); })}
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Comparatie clase */}
-                    <div>
-                      <div className="text-xs font-medium opacity-50 mb-3">Comparatie Clasa Energetica</div>
-                      <div className="flex items-center justify-center gap-6">
-                        <div className="text-center">
-                          <div className="text-[10px] opacity-40 mb-1">ACTUAL</div>
-                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
-                            style={{backgroundColor: rehabScenario.classCurrent.color + "30", color: rehabScenario.classCurrent.color, border:`2px solid ${rehabScenario.classCurrent.color}`}}>
-                            {rehabScenario.classCurrent.cls}
-                          </div>
-                          <div className="text-sm font-bold mt-1">{rehabScenario.epCurrent.toFixed(1)}</div>
-                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
-                        </div>
-                        <div className="text-2xl opacity-20">→</div>
-                        <div className="text-center">
-                          <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
-                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
-                            style={{backgroundColor: rehabScenario.classRehab.color + "30", color: rehabScenario.classRehab.color, border:`2px solid ${rehabScenario.classRehab.color}`}}>
-                            {rehabScenario.classRehab.cls}
-                          </div>
-                          <div className="text-sm font-bold mt-1">{rehabScenario.epRehab.toFixed(1)}</div>
-                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
-                        </div>
-                      </div>
-                      <div className="text-center mt-3">
-                        <span className="text-sm font-bold text-green-400">
-                          -{((1 - rehabScenario.epRehab / Math.max(1, rehabScenario.epCurrent)) * 100).toFixed(0)}%
-                        </span>
-                        <span className="text-xs opacity-40 ml-2">reducere consum energie primara</span>
-                      </div>
-                      <div className="text-center mt-1">
-                        <span className="text-sm font-bold text-green-400">-{rehabScenario.co2Reduction.toFixed(1)} kg/(m²·an)</span>
-                        <span className="text-xs opacity-40 ml-2">reducere emisii CO₂</span>
-                      </div>
-
-                      {/* Grafic comparativ */}
-                      <svg viewBox="0 0 280 80" width="100%" height="70" className="mt-3">
-                        {(() => {
-                          var epO = rehabScenario.epCurrent, epN = rehabScenario.epRehab, mx = Math.max(epO, epN, 1);
-                          return (<g>
-                            <text x="0" y="15" fontSize="7" fill="#888">Actual</text>
-                            <rect x="50" y="6" width={Math.max(2,epO/mx*200)} height="16" fill={rehabScenario.classCurrent.color} rx="2" opacity="0.8"/>
-                            <text x={53+epO/mx*200} y="18" fontSize="7" fill="#ccc">{epO.toFixed(0)}</text>
-                            <text x="0" y="42" fontSize="7" fill="#f59e0b">Reabilitat</text>
-                            <rect x="50" y="33" width={Math.max(2,epN/mx*200)} height="16" fill={rehabScenario.classRehab.color} rx="2" opacity="0.8"/>
-                            <text x={53+epN/mx*200} y="45" fontSize="7" fill="#ccc">{epN.toFixed(0)}</text>
-                            <rect x={50+epN/mx*200} y="33" width={Math.max(0,(epO-epN)/mx*200)} height="16" fill="#22c55e" rx="2" opacity="0.12"/>
-                            <text x="140" y="68" textAnchor="middle" fontSize="7" fill="#22c55e">Economie: {Math.max(0,epO-epN).toFixed(0)} kWh/(m2a)</text>
-                          </g>);
-                        })()}
-                      </svg>
-
-                    </div>
-
-                    {/* Estimare costuri */}
-                    <div>
-                      <div className="text-xs font-medium opacity-50 mb-3">Estimare Costuri Orientative</div>
-                      <div className="space-y-2">
-                        {rehabScenario.costEnvelope > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">🏗️ Anvelopa (termoizolare + tamplarie)</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costEnvelope).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        {rehabScenario.costInstall > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">⚙️ Instalatii (modernizare)</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costInstall).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        {rehabScenario.costRenew > 0 && (
-                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
-                            <span className="text-xs">☀️ Surse regenerabile</span>
-                            <span className="text-sm font-bold">{(rehabScenario.costRenew).toLocaleString("ro-RO")} €</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <span className="text-sm font-medium">TOTAL ESTIMAT</span>
-                          <span className="text-lg font-black text-amber-400">{(rehabScenario.totalCost).toLocaleString("ro-RO")} €</span>
-                        </div>
-                        {rehabScenario.payback > 0 && rehabScenario.payback < 30 && (
-                          <div className="text-center text-xs opacity-40 mt-1">
-                            Durata estimata recuperare investitie: ~{rehabScenario.payback.toFixed(0)} ani
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-3 p-2 rounded bg-white/[0.02] text-[10px] opacity-30">
-                        * Costurile sunt estimative orientative si pot varia semnificativ in functie de piata locala, specificul cladirii si solutiile tehnice alese. Se recomanda obtinerea de oferte de pret de la furnizori.
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-                )}
+                {/* Scenariu Reabilitare Proiecție MUTAT în F6 Roadmap (Sprint reorg-pas7 16 mai 2026) */}
 
                 {/* ═══ COMPARAȚIE MULTI-SCENARIU — Sprint P0-C P0-05 marker explicit ═══
                     Tabelul afișează măsurile per scenariu DIN preset-uri canonice
@@ -1423,7 +1491,8 @@ export default function Step7Audit(props) {
 
                 {/* ── COST ANUAL ENERGIE ESTIMAT ── (Mc 001-2022 §8.5 — analiză cost orientativă) */}
                 {annualEnergyCost && (
-                  <Card title={t("Cost anual energie estimat (prețuri 2025)",lang)} className="mb-6">
+                  <Card title={t("Cost anual energie estimat (prețuri 2025)",lang)} className="mb-6"
+                        subtitle={<span className="text-[10px] opacity-50">Sumar rapid · toate planurile</span>}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="text-center sm:text-left">
                         <div className="text-3xl font-black font-mono text-amber-400">{annualEnergyCost.total.toLocaleString("ro-RO")} <span className="text-lg opacity-60">lei/an</span></div>
@@ -1457,7 +1526,8 @@ export default function Step7Audit(props) {
                 {/* ── ESTIMARE COST ENERGIE ANUAL cu preseturi ANRE ── (Faza A — Mc 001 §8.5, ascuns la IIci) */}
                 {instSummary && (
                 <GradeGate feature="costAnnualDetail" plan={userPlan} auditorGrad={auditorGrad}>
-                  <Card title={t("Estimare cost energie anual",lang)} className="mb-6">
+                  <Card title={t("Estimare cost energie anual",lang)} className="mb-6"
+                        subtitle={<span className="text-[10px] opacity-50">Editor tarife ANRE · AE Ici+</span>}>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {(() => {
                         const Au = parseFloat(building.areaUseful) || 0;
@@ -1523,6 +1593,17 @@ export default function Step7Audit(props) {
                   </Card>
                 </GradeGate>
                 )}
+
+                </PhaseHeader>
+                {/* ═════════════════════════════════════ END F4 ═════════════════════════════════════ */}
+
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                {/* F5 · ANALIZĂ ECONOMICĂ — EN 15459-1 + Mc 001-2022 §6.6-6.7          */}
+                {/* Cost estimativ + NPV 20y + Amortizare + Analiză financiară EN 15459-1 */}
+                {/* ═══════════════════════════════════════════════════════════════════ */}
+                <PhaseHeader icon="💰" title="F5 · Analiză economică"
+                             normative="EN 15459-1 + Mc 001-2022 §6.6-6.7"
+                             color="amber">
 
                 {/* ── COST ESTIMATIV REABILITARE TERMICĂ + FINANȚARE ── (Faza A — Art. 6 alin. 2, ascuns la IIci) */}
                 {rehabCostEstimate && (
@@ -2066,47 +2147,7 @@ export default function Step7Audit(props) {
                   );
                 })()}
 
-                {/* ── BENCHMARKING REFERINȚE (clădire veche → Pasivhaus) ── (Faza B — context audit, ascuns la IIci) */}
-                {instSummary && (
-                <GradeGate feature="benchmarkPeer" plan={userPlan} auditorGrad={auditorGrad}>
-                  <Card title={lang==="EN"?"Benchmarking vs. reference buildings":"Benchmarking — comparație referințe"} className="mb-6">
-                    <div className="space-y-2">
-                      {(function() {
-                        const cat = building.category || "RI";
-                        const isRes = ["RI","RC","RA"].includes(cat);
-                        const nzebEp = getNzebEpMax(cat, selectedClimate?.zone);
-                        return isRes ? [
-                          {label:"Clădire veche neizolată (pre-1990)",ep:350,co2:45},
-                          {label:"Clădire izolată parțial (1990-2010)",ep:180,co2:25},
-                          {label:"Clădire conformă 2010-2020",ep:120,co2:15},
-                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:8},
-                          {label:"Pasivhaus",ep:40,co2:4},
-                        ] : [
-                          {label:"Clădire veche neizolată (pre-1990)",ep:450,co2:55},
-                          {label:"Clădire izolată parțial (1990-2010)",ep:250,co2:30},
-                          {label:"Clădire conformă 2010-2020",ep:160,co2:18},
-                          {label:"Standard nZEB (2021+)",ep:nzebEp,co2:10},
-                          {label:"Best practice",ep:60,co2:5},
-                        ];
-                      })().map(function(ref,i) {
-                        var myEp = renewSummary ? renewSummary.ep_adjusted_m2 : (instSummary.ep_total_m2 || 0);
-                        var maxEp = 400;
-                        return (
-                          <div key={i} className="flex items-center gap-3">
-                            <span className="text-[10px] opacity-50 w-40 shrink-0 truncate">{ref.label}</span>
-                            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden relative">
-                              <div className="h-full rounded-full opacity-40" style={{width:Math.min(100,ref.ep/maxEp*100)+"%",backgroundColor:"#666"}}/>
-                              <div className="absolute top-0 left-0 h-full w-0.5 bg-amber-500" style={{left:Math.min(100,(renewSummary?renewSummary.ep_adjusted_m2:instSummary.ep_total_m2)/maxEp*100)+"%"}}/>
-                            </div>
-                            <span className="text-[10px] font-mono opacity-40 w-10 text-right">{ref.ep}</span>
-                          </div>
-                        );
-                      })}
-                      <div className="text-[10px] opacity-30 mt-1">Linia amber = clădirea dvs. ({(renewSummary ? renewSummary.ep_adjusted_m2 : instSummary.ep_total_m2).toFixed(0)} kWh/m2a) | Bare gri = referințe tipice</div>
-                    </div>
-                  </Card>
-                </GradeGate>
-                )}
+                {/* Benchmarking referințe MUTAT în F1 Diagnostic (Sprint reorg-pas7 16 mai 2026) */}
 
                 {/* ── ANALIZĂ FINANCIARĂ EN 15459-1 ── */}
                 {financialAnalysis && (
@@ -2216,75 +2257,146 @@ export default function Step7Audit(props) {
                     <div>Directiva UE 2024/1275 (EPBD IV, termen transpunere mai 2026) va introduce: clădiri cu emisii zero (ZEB) obligatoriu din 2028/2030, scală armonizată A-G (fără A+), pașaport renovare, jurnal digital al clădirii, și standarde minime de performanță energetică (MEPS).</div>
                   </div>
                 </div>
+
+                </PhaseHeader>
+                {/* ═════════════════════════════════════ END F5 ═════════════════════════════════════ */}
+
               </div>
               )}
 
-              {/* ═══════════════════════════════════════════════════════════════
-                  CARD CENTRAL — GENERARE DOCUMENTE PAS 7 (6 mai 2026)
-                  Toate butoanele de export într-un singur loc, grupate logic:
-                    A. Documente OFICIALE pentru client (Raport Audit Energetic + CPE estimat)
-                    B. Documente CLIENT orientative (Deviz + Pașaport renovare)
-                    C. Date tehnice export (XML MDLPA + Excel + PDF tehnic + anexe)
-                  Pașaportul de Renovare e mutat aici din locul vechi (era jos, izolat).
-              ═══════════════════════════════════════════════════════════════ */}
-              {/* ── IEQ — Calitate aer interior ── */}
-              <Card title="IEQ — Calitate aer interior (EN 16798-1/NA:2019)" className="mb-4">
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  {IEQ_CATEGORIES.map(cat => (
-                    <div key={cat.id} className={`rounded-lg p-2 border ${cat.id === "II" ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/10 bg-white/[0.02]"}`}>
-                      <div className="text-sm font-bold">{cat.id}</div>
-                      <div className="text-[10px] opacity-40">{cat.tempRange}</div>
-                      <div className="text-[10px] opacity-40">CO₂ ≤{cat.co2Max} ppm</div>
-                      <div className="text-[10px] opacity-40">{cat.lux} lux</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Categoria II (normală) este cerința minimă conform SR EN 16798-1:2019/NA:2019</div>
-              </Card>
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* F6 · SCENARIU PROIECTAT & ROADMAP — EPBD Art. 12 + Anexa VIII       */}
+              {/* Scenariu Reabilitare (mutat din 1182 F4) + Pașaport (dezactivat marker) */}
+              {/* OUTSIDE ternary — vizibil chiar dacă instSummary lipsește (subject la rehabScenario) */}
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              <PhaseHeader icon="🗺️" title="F6 · Scenariu proiectat & Roadmap"
+                           normative="EPBD Art. 12 + Anexa VIII"
+                           color="violet">
 
-              {/* ── CHP — Cogenerare ── */}
-              <Card title="Cogenerare (CHP) — producție combinată căldură + electricitate" className="mb-4">
-                <div className="space-y-1.5">
-                  {CHP_TYPES.map(chp => (
-                    <div key={chp.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/5 text-xs">
-                      <span>{chp.label}</span>
-                      <span className="font-mono opacity-60">η_el={chp.eta_el} η_th={chp.eta_th}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Disponibil pentru clădiri cu consum termic {">"} 100 MWh/an</div>
-              </Card>
+                {/* ── Scenariu Reabilitat — Proiecție (mutat din F4 Prioritizare în F6 Roadmap) ── */}
+                {/* Output al pachetului ales, nu input pentru decizie. Sprint reorg-pas7 16 mai 2026. */}
+                {rehabScenario && (
+                <Card title={t("Scenariu Reabilitare — Proiectie",lang)} className="border-amber-500/20">
 
-              {/* ── MCCL — Catalog ponți termice extins ── */}
-              <Card title={`MCCL — Catalog ponți termice (${MCCL_CATALOG.length} tipuri)`} className="mb-4">
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {[...new Set(MCCL_CATALOG.map(m => m.cat))].map(cat => (
-                    <div key={cat}>
-                      <div className="text-[10px] font-bold opacity-40 mt-2 mb-1">{cat}</div>
-                      {MCCL_CATALOG.filter(m => m.cat === cat).map(m => (
-                        <div key={m.id} className="flex items-center justify-between text-[10px] py-0.5 px-2 rounded hover:bg-white/5 cursor-pointer" onClick={() => {
-                          setThermalBridges(prev => [...prev, { name: m.desc, psi: String(m.psi), length: "1" }]);
-                          showToast("Adăugat: " + m.desc, "success");
-                        }}>
-                          <span className="opacity-60">{m.desc}</span>
-                          <span className="font-mono">Ψ={m.psi} / {m.psi_izolat}</span>
+                  <div className="flex gap-2 mb-4">
+                    {SCENARIO_PRESETS.map(function(sp) { return (
+                      <button key={sp.id} onClick={function(){ loadScenarioPreset(sp.id); }}
+                        className={cn("flex-1 py-2 rounded-lg text-xs font-medium transition-all border",
+                          activeScenario===sp.id ? "bg-amber-500/15 border-amber-500/30 text-amber-400" : "border-white/10 hover:bg-white/5")}>
+                        {sp.label}
+                      </button>
+                    ); })}
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Comparatie clase */}
+                    <div>
+                      <div className="text-xs font-medium opacity-50 mb-3">Comparatie Clasa Energetica</div>
+                      <div className="flex items-center justify-center gap-6">
+                        <div className="text-center">
+                          <div className="text-[10px] opacity-40 mb-1">ACTUAL</div>
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
+                            style={{backgroundColor: rehabScenario.classCurrent.color + "30", color: rehabScenario.classCurrent.color, border:`2px solid ${rehabScenario.classCurrent.color}`}}>
+                            {rehabScenario.classCurrent.cls}
+                          </div>
+                          <div className="text-sm font-bold mt-1">{rehabScenario.epCurrent.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
                         </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[10px] opacity-30 mt-2">Click pe un tip pentru a-l adăuga la lista de punți termice</div>
-              </Card>
+                        <div className="text-2xl opacity-20">→</div>
+                        <div className="text-center">
+                          <div className="text-[10px] text-amber-400 mb-1">REABILITAT</div>
+                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-black"
+                            style={{backgroundColor: rehabScenario.classRehab.color + "30", color: rehabScenario.classRehab.color, border:`2px solid ${rehabScenario.classRehab.color}`}}>
+                            {rehabScenario.classRehab.cls}
+                          </div>
+                          <div className="text-sm font-bold mt-1">{rehabScenario.epRehab.toFixed(1)}</div>
+                          <div className="text-[10px] opacity-40">kWh/(m²·an)</div>
+                        </div>
+                      </div>
+                      <div className="text-center mt-3">
+                        <span className="text-sm font-bold text-green-400">
+                          -{((1 - rehabScenario.epRehab / Math.max(1, rehabScenario.epCurrent)) * 100).toFixed(0)}%
+                        </span>
+                        <span className="text-xs opacity-40 ml-2">reducere consum energie primara</span>
+                      </div>
+                      <div className="text-center mt-1">
+                        <span className="text-sm font-bold text-green-400">-{rehabScenario.co2Reduction.toFixed(1)} kg/(m²·an)</span>
+                        <span className="text-xs opacity-40 ml-2">reducere emisii CO₂</span>
+                      </div>
 
-              {/* ── Fotografii clădire + adnotări ── */}
-              <Card title="📷 Fotografii clădire — documentare și adnotări" className="mb-4">
-                <BuildingPhotos
-                  buildingPhotos={buildingPhotos}
-                  setBuildingPhotos={setBuildingPhotos}
-                  showToast={showToast}
-                  cn={cn}
-                />
-              </Card>
+                      {/* Grafic comparativ */}
+                      <svg viewBox="0 0 280 80" width="100%" height="70" className="mt-3">
+                        {(() => {
+                          var epO = rehabScenario.epCurrent, epN = rehabScenario.epRehab, mx = Math.max(epO, epN, 1);
+                          return (<g>
+                            <text x="0" y="15" fontSize="7" fill="#888">Actual</text>
+                            <rect x="50" y="6" width={Math.max(2,epO/mx*200)} height="16" fill={rehabScenario.classCurrent.color} rx="2" opacity="0.8"/>
+                            <text x={53+epO/mx*200} y="18" fontSize="7" fill="#ccc">{epO.toFixed(0)}</text>
+                            <text x="0" y="42" fontSize="7" fill="#f59e0b">Reabilitat</text>
+                            <rect x="50" y="33" width={Math.max(2,epN/mx*200)} height="16" fill={rehabScenario.classRehab.color} rx="2" opacity="0.8"/>
+                            <text x={53+epN/mx*200} y="45" fontSize="7" fill="#ccc">{epN.toFixed(0)}</text>
+                            <rect x={50+epN/mx*200} y="33" width={Math.max(0,(epO-epN)/mx*200)} height="16" fill="#22c55e" rx="2" opacity="0.12"/>
+                            <text x="140" y="68" textAnchor="middle" fontSize="7" fill="#22c55e">Economie: {Math.max(0,epO-epN).toFixed(0)} kWh/(m2a)</text>
+                          </g>);
+                        })()}
+                      </svg>
+
+                    </div>
+
+                    {/* Estimare costuri */}
+                    <div>
+                      <div className="text-xs font-medium opacity-50 mb-3">Estimare Costuri Orientative</div>
+                      <div className="space-y-2">
+                        {rehabScenario.costEnvelope > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">🏗️ Anvelopa (termoizolare + tamplarie)</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costEnvelope).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        {rehabScenario.costInstall > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">⚙️ Instalatii (modernizare)</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costInstall).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        {rehabScenario.costRenew > 0 && (
+                          <div className="flex justify-between items-center p-2 rounded bg-white/[0.03]">
+                            <span className="text-xs">☀️ Surse regenerabile</span>
+                            <span className="text-sm font-bold">{(rehabScenario.costRenew).toLocaleString("ro-RO")} €</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <span className="text-sm font-medium">TOTAL ESTIMAT</span>
+                          <span className="text-lg font-black text-amber-400">{(rehabScenario.totalCost).toLocaleString("ro-RO")} €</span>
+                        </div>
+                        {rehabScenario.payback > 0 && rehabScenario.payback < 30 && (
+                          <div className="text-center text-xs opacity-40 mt-1">
+                            Durata estimata recuperare investitie: ~{rehabScenario.payback.toFixed(0)} ani
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 p-2 rounded bg-white/[0.02] text-[10px] opacity-30">
+                        * Costurile sunt estimative orientative si pot varia semnificativ in functie de piata locala, specificul cladirii si solutiile tehnice alese. Se recomanda obtinerea de oferte de pret de la furnizori.
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+                )}
+
+                {/* PHASE F6 — Pașaport Renovare (cod inactiv la linia ~2350+, activează la transpunere EPBD RO 29.05.2026)
+                    Codul Pașaport rămâne în repo la fostele linii 2350-2580ish (false &&). NU îl mut fizic — risc fără beneficiu. */}
+
+              </PhaseHeader>
+              {/* ═════════════════════════════════════ END F6 ═════════════════════════════════════ */}
+
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* CARD CENTRAL — GENERARE DOCUMENTE PAS 7 (6 mai 2026) — MUTAT în F8  */}
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* IEQ MUTAT în F3 Identificare măsuri (Sprint reorg-pas7 16 mai 2026) */}
+
+              {/* CHP+MCCL MUTATE ca <details> în R1 Anvelopă + R2 Instalații (Sprint reorg-pas7 16 mai 2026) */}
+
+              {/* Fotografii clădire MUTAT în F2 Input documentar (Sprint reorg-pas7 16 mai 2026) */}
 
               {/* ── Pașaport de Renovare — Foaie de parcurs etapizată (EPBD Art. 12 + Anexa VIII) ──
                   Sprint 08may2026 (followup 3) — DEZACTIVAT prin `false && ...`
@@ -2572,6 +2684,14 @@ export default function Step7Audit(props) {
                 );
               })()}
 
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* F7 · CONFORMARE — Mc 001-2022 Cap. 7 + Ord. MDLPA 348/2026 Art. 6c   */}
+              {/* MEPI redirect Pas 8 + Raport conformare nZEB (gated Ici+)            */}
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              <PhaseHeader icon="✅" title="F7 · Conformare"
+                           normative="Mc 001-2022 Cap. 7 + Ord. 348/2026 Art. 6c"
+                           color="green">
+
               {/* ── MEPI — Sprint P1 (6 mai 2026) P0-06: înlocuit Card mock UI cu trimitere la
                   modulul real ConsumReconciliere (Step 8 tab `consum`). Card-ul vechi avea
                   inputs fără value/onChange/setState — date introduse se pierdeau imediat.
@@ -2639,6 +2759,69 @@ export default function Step7Audit(props) {
                   </Card>
                 );
               })()}
+
+              </PhaseHeader>
+              {/* ═════════════════════════════════════ END F7 ═════════════════════════════════════ */}
+
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              {/* F8 · OUTPUT — EXPORT DOSAR AUDIT — Ord. 2237/2010 Anexa 1            */}
+              {/* Narativ AI (mutat din 3573) + Master Card export + Marketplace      */}
+              {/* ═══════════════════════════════════════════════════════════════════ */}
+              <PhaseHeader icon="📑" title="F8 · Output — Export dosar audit"
+                           normative="Ord. 2237/2010 Anexa 1"
+                           color="red">
+
+              {/* audit-mai2026 MEGA P1.2.b/c — Narativ AI (MUTAT din 3573 înainte de Master Card)
+                  Stocat în state customNarrative; transmis la export ca câmpuri opționale.
+                  Generator DOCX folosește dacă există, altfel template default.
+                  Sprint reorg-pas7 16 mai 2026 — auditorul completează narativul ÎNAINTE de export. */}
+              {canAccess(userPlan, "step7Audit") && (
+                <Card title="🤖 Narativ AI documente (opțional)" className="mb-4 border-violet-500/20">
+                  <div className="text-[10px] opacity-60 mb-3">
+                    Pre-generează text narativ AI pentru secțiunile cheie ale documentelor. Lasă gol pentru template static (default).
+                    Cap. 1 (descriere clădire) și Cap. 8 (concluzii audit) apar în Raportul de Audit DOCX. Intro Pașaport apare în Pașaportul de Renovare.
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    {[
+                      { key: "cap1", section: "cap1_descriere", title: "📖 Cap. 1 — Descriere clădire", placeholder: "Generează narativ Cap. 1 descrierea clădirii (din date Pas 1-3)" },
+                      { key: "cap8", section: "cap8_concluzii", title: "🎯 Cap. 8 — Concluzii audit", placeholder: "Generează narativ Cap. 8 concluzii audit (din date Pas 5-7)" },
+                      { key: "intro_pasaport", section: "intro_pasaport", title: "📋 Intro Pașaport Renovare", placeholder: "Generează intro Pașaport Renovare (Anexa VIII EPBD 2024)" },
+                    ].map((s) => (
+                      <div key={s.key} className="rounded-lg border border-violet-500/15 bg-violet-500/5 p-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] font-semibold text-violet-300/90 truncate">{s.title}</div>
+                          <AINarrativeButton
+                            section={s.section}
+                            context={narrativeContextBase}
+                            onGenerated={(text) => setCustomNarrative(prev => ({ ...prev, [s.key]: text }))}
+                            sectionLength={s.key === "intro_pasaport" ? 180 : 300}
+                            size="sm"
+                            label="AI"
+                            hasAccess={canAccess(userPlan, "step7Audit")}
+                            showToast={showToast}
+                          />
+                        </div>
+                        <textarea
+                          value={customNarrative[s.key]}
+                          onChange={(e) => setCustomNarrative(prev => ({ ...prev, [s.key]: e.target.value }))}
+                          placeholder={s.placeholder}
+                          rows={4}
+                          className="w-full text-[10px] px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-white/85 placeholder-white/25 focus:outline-none focus:border-violet-500/40 resize-none"
+                        />
+                        <div className="text-[9px] text-white/30 mt-1">
+                          {customNarrative[s.key]?.trim()
+                            ? `${customNarrative[s.key].trim().length} caractere`
+                            : "gol → template default"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[9px] opacity-40 mt-2 italic">
+                    Reproductibilitate audit MDLPA: CPE oficial NU folosește narativ AI (rămâne pe formularistica Mc 001-2022 fără variație).
+                    Narativ AI se aplică DOAR la Raport DOCX + Pașaport (documente narative, nu certificate normative).
+                  </div>
+                </Card>
+              )}
 
               <Card title="📑 Generare documente — pachet client reabilitare" className="mt-6 border-2 border-amber-500/30 bg-amber-500/[0.03]">
                 {/* ── Buton descărcare totală ZIP ── */}
@@ -3179,6 +3362,9 @@ export default function Step7Audit(props) {
                 </div>
               </Card>
 
+              </PhaseHeader>
+              {/* ═════════════════════════════════════ END F8 ═════════════════════════════════════ */}
+
               {/* ── Sprint 11 mai 2026 — eliminat (TODO CLAUDE C2): Notificări push expirare CPE.
                   Nu corespunde Cap. 7 Mc 001-2022 (audit energetic) — pipeline gestionare
                   există deja prin butonul „📁 Proiecte" din header. */}
@@ -3472,56 +3658,7 @@ export default function Step7Audit(props) {
                     utilizator PFA fără cont certSIGN B2B activ; același principiu ca PDF/A-3 + PAdES BETA
                     eliminat în commit-ul db089d2). Helper lib/dossier-extras.js păstrat pentru reactivare. */}
 
-              {/* audit-mai2026 MEGA P1.2.b/c — Narativ AI pentru documente (Cap.1 + Cap.8 + Pașaport).
-                  Stocat în state customNarrative; transmis la export ca câmpuri opționale.
-                  Generator DOCX folosește dacă există, altfel template default. */}
-              {canAccess(userPlan, "step7Audit") && (
-                <Card title="🤖 Narativ AI documente (opțional)" className="mb-4 border-violet-500/20">
-                  <div className="text-[10px] opacity-60 mb-3">
-                    Pre-generează text narativ AI pentru secțiunile cheie ale documentelor. Lasă gol pentru template static (default).
-                    Cap. 1 (descriere clădire) și Cap. 8 (concluzii audit) apar în Raportul de Audit DOCX. Intro Pașaport apare în Pașaportul de Renovare.
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    {[
-                      { key: "cap1", section: "cap1_descriere", title: "📖 Cap. 1 — Descriere clădire", placeholder: "Generează narativ Cap. 1 descrierea clădirii (din date Pas 1-3)" },
-                      { key: "cap8", section: "cap8_concluzii", title: "🎯 Cap. 8 — Concluzii audit", placeholder: "Generează narativ Cap. 8 concluzii audit (din date Pas 5-7)" },
-                      { key: "intro_pasaport", section: "intro_pasaport", title: "📋 Intro Pașaport Renovare", placeholder: "Generează intro Pașaport Renovare (Anexa VIII EPBD 2024)" },
-                    ].map((s) => (
-                      <div key={s.key} className="rounded-lg border border-violet-500/15 bg-violet-500/5 p-2">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="text-[10px] font-semibold text-violet-300/90 truncate">{s.title}</div>
-                          <AINarrativeButton
-                            section={s.section}
-                            context={narrativeContextBase}
-                            onGenerated={(text) => setCustomNarrative(prev => ({ ...prev, [s.key]: text }))}
-                            sectionLength={s.key === "intro_pasaport" ? 180 : 300}
-                            size="sm"
-                            label="AI"
-                            hasAccess={canAccess(userPlan, "step7Audit")}
-                            showToast={showToast}
-                          />
-                        </div>
-                        <textarea
-                          value={customNarrative[s.key]}
-                          onChange={(e) => setCustomNarrative(prev => ({ ...prev, [s.key]: e.target.value }))}
-                          placeholder={s.placeholder}
-                          rows={4}
-                          className="w-full text-[10px] px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-white/85 placeholder-white/25 focus:outline-none focus:border-violet-500/40 resize-none"
-                        />
-                        <div className="text-[9px] text-white/30 mt-1">
-                          {customNarrative[s.key]?.trim()
-                            ? `${customNarrative[s.key].trim().length} caractere`
-                            : "gol → template default"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-[9px] opacity-40 mt-2 italic">
-                    Reproductibilitate audit MDLPA: CPE oficial NU folosește narativ AI (rămâne pe formularistica Mc 001-2022 fără variație).
-                    Narativ AI se aplică DOAR la Raport DOCX + Pașaport (documente narative, nu certificate normative).
-                  </div>
-                </Card>
-              )}
+              {/* Narativ AI MUTAT în F8 Output (înaintea Master Card) — Sprint reorg-pas7 16 mai 2026 */}
 
               {/* audit-mai2026 F5 — Chat AI Reabilitare (panel flotant bottom-right).
                   Gating: AI Pack inclus în plan Pro/Expert/Birou/Enterprise (v7.1).
@@ -3540,19 +3677,7 @@ export default function Step7Audit(props) {
                 requireUpgrade={(msg) => showToast && showToast(msg, "info", 5000)}
               />
 
-              {/* Documente client — mutat din Pas 1 (mai logic la finalul auditului, înainte de export dosar) */}
-              <div className="mt-6">
-                <DocumentUploadCenter
-                  cpeCode={`session_${building.cadastralNumber || building.address?.slice(0, 20) || "default"}`}
-                  buildingCategory={building.category}
-                  buildingYearBuilt={building.yearBuilt}
-                  scopCpe={building.scopCpe}
-                  isResidentialCollective={building.category === "RC"}
-                  protectedZone={!!building.protectedZone}
-                  isHistoric={!!building.isHistoric}
-                  showInfo={true}
-                />
-              </div>
+              {/* DocumentUploadCenter MUTAT în F2 Input documentar (Sprint reorg-pas7 16 mai 2026) */}
 
               {/* Navigation */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 mt-4">
