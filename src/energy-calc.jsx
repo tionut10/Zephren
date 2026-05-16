@@ -13,6 +13,8 @@ import {
 const ImportModal = lazy(() => import("./import/ImportModal.jsx"));
 const ShareModal = lazy(() => import("./components/ShareModal.jsx"));
 const QuickFillWizard = lazy(() => import("./components/QuickFillWizard.jsx"));
+// D3 Sprint Optimizări 16 mai 2026 — Command Palette Ctrl+K (cmdk)
+const CommandPalette = lazy(() => import("./components/CommandPalette.jsx"));
 // decodeShareableData rămâne dynamic-imported în useEffect (S6.3)
 
 // ── Data imports ──
@@ -513,6 +515,8 @@ export default function EnergyCalcApp({ cloud }) {
   const [chatInitialText, setChatInitialText] = useState("");
   const [tourStep, setTourStep] = useState(0);
   const [showProjectManager, setShowProjectManager] = useState(false);
+  // D3 Sprint Optimizări — Command Palette state (Ctrl+K)
+  const [showCmdK, setShowCmdK] = useState(false);
   const [projectList, setProjectList] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState("default");
   const [projectVersions, setProjectVersions] = useState([]); // versiuni pt proiectul selectat în manager
@@ -1375,6 +1379,8 @@ export default function EnergyCalcApp({ cloud }) {
       if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "8") { e.preventDefault(); setStep(parseInt(e.key)); }
       if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); setStep(s => Math.max(1, s - 1)); }
       if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); setStep(s => Math.min(7, s + 1)); }
+      // D3 Sprint Optimizări 16 mai 2026 — Ctrl+K / Cmd+K → Command Palette toggle
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setShowCmdK(s => !s); }
       if (e.key === "Escape") { setPdfPreviewHtml(null); setNzebReportHtml(null); setShowProjectManager(false); setShowClimateMap(false); setShowPhotoGallery(false); setShowProductCatalog(false); }
       // New shortcuts (C7)
       if ((e.ctrlKey || e.metaKey) && e.key === "m") { e.preventDefault(); setShowClimateMap(true); }
@@ -4281,6 +4287,30 @@ Zona {selectedClimate.zone}
       })()}
 
       {/* Reset confirmation modal */}
+
+      {/* ═══ D3 Sprint Optimizări 16 mai 2026 — Command Palette Ctrl+K ═══ */}
+      {showCmdK && (
+        <Suspense fallback={null}>
+          <CommandPalette
+            open={showCmdK}
+            onOpenChange={setShowCmdK}
+            context={{
+              currentStep: step,
+              setStep,
+              userPlan: userTier,
+              showToast,
+              exportProject,
+              undo,
+              redo,
+              toggleDashboard: () => setShowDashboard(d => !d),
+              startTour: () => setShowTour(true),
+              openProjectManager: () => setShowProjectManager(true),
+              toggleCurrency: () => showToast?.("Comutare monedă disponibilă din sidebar settings"),
+              resetProject: () => { setStep(1); /* Reset minimal — full reset prin reload */ },
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* ═══ NEW: CLIMATE MAP MODAL (C9) ═══ */}
       {showClimateMap && (
