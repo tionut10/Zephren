@@ -27,7 +27,11 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const step7Path = path.resolve(__dirname, "../Step7Audit.jsx");
-const source = readFileSync(step7Path, "utf-8");
+// D1 Sprint Optimizări 16 mai 2026 — F1 Diagnostic extras în sub-component;
+// concatenăm sursele pentru ca verificările de phase order + content să acopere ambele fișiere.
+// Phase1Diagnose.jsx e PREPENDED ca să păstreze ordinea F1→F8 în matches.
+const phase1Path = path.resolve(__dirname, "../Step7/Phase1Diagnose.jsx");
+const source = readFileSync(phase1Path, "utf-8") + "\n\n/* === D1 PHASE EXTRACT BOUNDARY === */\n\n" + readFileSync(step7Path, "utf-8");
 
 const phaseHeaderPath = path.resolve(__dirname, "../../components/PhaseHeader.jsx");
 
@@ -172,7 +176,8 @@ describe("Sprint reorg-pas7 v2 — F7 Anexe documente plasat OUTSIDE ternary, î
 
   it("F7 Anexe documente este OUTSIDE ternary (după închiderea space-y-5 div)", () => {
     // Ternary close pattern: </div>\n              )}
-    const ternaryCloseIdx = source.indexOf("              )}\n");
+    // D1 Sprint Optimizări — fără \n după )} pentru a fi CRLF-compatible pe Windows
+    const ternaryCloseIdx = source.indexOf("              )}");
     const f7OpenIdx = source.indexOf('title="F7 · Anexe documente"');
     expect(ternaryCloseIdx).toBeGreaterThan(0);
     expect(f7OpenIdx).toBeGreaterThan(ternaryCloseIdx);
