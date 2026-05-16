@@ -13,6 +13,14 @@ export const CHANGELOG = [
     "items": [
       {
         "icon": "✨",
+        "text": "feat(suggestion-queue): coadă măsuri Pas 3+4 + catalog Pas 7 + conexiune Anexa 2 CPE + Raport audit + Pașaport"
+      },
+      {
+        "icon": "📋",
+        "text": "refactor(Pas5/Pas7): mut 6 carduri audit din Pas 5 → Pas 7 (Cap. 8 Mc 001-2022)"
+      },
+      {
+        "icon": "✨",
         "text": "feat(rame+vitraje): Mc 001-2022 P0+P1+P2 — 12 rame uși îmbogățite + 10 vitraje noi + 20 brand-uri envelope"
       },
       {
@@ -34,14 +42,6 @@ export const CHANGELOG = [
       {
         "icon": "✨",
         "text": "feat(step2-ai): PR2 — EnvelopeAIReviewModal + drop zone AI (Layer 2D activat)"
-      },
-      {
-        "icon": "✨",
-        "text": "feat(step2-ai): PR1 — orchestrator AI envelope + telemetrie FIFO 500"
-      },
-      {
-        "icon": "🔀",
-        "text": "refactor(Step1): AI-first ULTRA-agresiv — 4 cards AI prioritare + hero multimodal unitar"
       }
     ]
   },
